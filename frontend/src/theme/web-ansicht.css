@@ -1,0 +1,1287 @@
+/* ===================================================================
+   Web-Ansicht (03.10.2026, docs/planung/support-web.md, Entscheidung 2)
+
+   Simon: "Die Webansicht muss insgesamt webmaessiger sein, nicht einfach
+   der Look. Wir brauchen eine eigene CSS fuer Webansichten." und "Die
+   Verwaltung auf dem Handy ist ok."
+
+   Diese Datei gilt NUR fuer die Web-Fassungen der Seiten (Browser ab
+   992 px Breite, navigation/breitesLayout.ts). Alle Klassen tragen das
+   Praefix web-; die App und das schmale Fenster rendern ohne sie, wie
+   bisher. Gebaut wird aus den Bausteinen in components/support/web/ --
+   Tabellen mit Kopfzeile, Kennzahl-Kacheln, Karten im Raster, Filter-Chips,
+   Akkordeons, Diagramme in eigenem SVG.
+
+   REGELN
+   - Farben, Abstaende, Radien, Schatten und Schrift nur ueber die Tokens
+     der App (variables.css, abstaende.css, typografie.css). Wo ein Wert
+     im Dunkeln ein anderes Token braucht (Seitengrund, Hover), steht er
+     als --web-Alias unten und wird im Dunkelblock umgelegt -- kein
+     eigener Farbwert.
+   - Keine Uebergaenge und Animationen: Die Regel fuer reduzierte Bewegung
+     (barrierefreiheit.css) greift nur an app-Klassen, und eine Web-Ansicht
+     mit Daten braucht keine Bewegung. Auch der Ladezustand steht still.
+   - Sichtbarer Fokus bei Tastaturbedienung an allem Bedienbaren.
+   - Nichts hier setzt eine Regel auf ion-*-Elemente ausser dem Inhalt der
+     Seite (ion-content.web-inhalt): Ionics Bausteine bleiben, wie sie sind.
+   =================================================================== */
+
+:root {
+  /* Seitengrund hinter den Karten: hell ein Hauch Grau, dunkel der Grund der
+     Plattform (dort ist die Karte die helle Flaeche). */
+  --web-grund: var(--app-surface-soft);
+  --web-karte: var(--app-surface-card);
+  --web-text: var(--app-text-emphasis);
+  --web-text-leise: var(--app-text-system);
+  --web-linie: var(--app-border);
+  --web-linie-leise: var(--app-border-soft);
+  /* Hover einer Tabellenzeile: ein Schritt ueber der Karte. */
+  --web-hover: var(--app-surface-soft);
+  /* Breite des Inhalts neben der Leiste (ersetzt --app-lesebreite). */
+  --web-inhaltsbreite: 1360px;
+  /* Farben der Reihen in den Diagrammen: die Bereichsfarben als TEXT-Tokens,
+     denn nur die stehen im Dunkeln auf einem aufgehellten Ton, der auf der
+     Karte mindestens 4,5:1 haelt (variables.css, Dunkelblock). Hell sind
+     sie gleich den Bereichsfarben. */
+  --web-reihe-konfi: var(--app-text-konfis);
+  --web-reihe-team: var(--app-text-teamer);
+  --web-reihe-gemeinden: var(--app-text-leitung);
+  --web-reihe-anfragen: var(--app-text-material);
+  --web-reihe-antraege: var(--app-text-activities);
+  --web-reihe-buchungen: var(--app-text-jahrgang);
+  --web-reihe-nachrichten: var(--app-text-bonus);
+  --web-reihe-gesamt: var(--app-text-users);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --web-grund: var(--ion-background-color);
+    --web-hover: var(--app-surface-muted);
+  }
+}
+
+/* --- Die Seite: Inhalt neben der Leiste, breiter als in der App --- */
+ion-content.web-inhalt {
+  --background: var(--web-grund);
+  --padding-start: var(--app-abstand-weit);
+  --padding-end: var(--app-abstand-weit);
+  /* Seitenleiste.css deckelt den Inhalt auf --app-lesebreite; die Web-Fassung
+     braucht fuer Tabellen mehr. */
+  --app-lesebreite: var(--web-inhaltsbreite);
+}
+
+.web-seite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-weit);
+  padding: var(--app-abstand-weit) 0 var(--app-abstand-block);
+  color: var(--web-text);
+  font-size: var(--app-text-sekundaer);
+  line-height: 1.45;
+}
+
+.web-seite *,
+.web-seite *::before,
+.web-seite *::after {
+  box-sizing: border-box;
+}
+
+/* --- Seitenkopf: Titel, Untertitel, Aktionen rechts --- */
+.web-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--app-abstand-basis);
+}
+
+.web-kopf__text {
+  min-width: 0;
+}
+
+.web-titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-ueberschrift);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--web-text);
+}
+
+.web-untertitel {
+  margin: var(--app-abstand-mini) 0 0;
+  font-size: var(--app-text-sekundaer);
+  color: var(--web-text-leise);
+}
+
+.web-kopf__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+/* --- Raster --- */
+.web-raster {
+  display: grid;
+  gap: var(--app-abstand-basis);
+  align-items: start;
+}
+
+.web-raster--kacheln {
+  grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
+  /* Alle Kacheln einer Reihe gleich hoch. */
+  align-items: stretch;
+}
+
+.web-raster--zwei {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+  /* Karten einer Reihe gleich hoch. */
+  align-items: stretch;
+}
+
+/* --- Karte mit Kopf --- */
+.web-karte {
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+  min-width: 0;
+}
+
+.web-karte__kopf {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross) var(--app-abstand-mittel);
+}
+
+.web-karte__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-standard);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: -0.01em;
+  color: var(--web-text);
+}
+
+.web-karte__untertitel {
+  margin: var(--app-abstand-winzig) 0 0;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-karte__aktion {
+  flex: 0 0 auto;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  white-space: nowrap;
+}
+
+.web-karte__inhalt {
+  padding: 0 var(--app-abstand-gross) var(--app-abstand-gross);
+}
+
+/* Inhalt ohne Rand: Tabellen und Listen reichen bis an die Kanten. */
+.web-karte__inhalt--bund {
+  padding: 0;
+}
+
+.web-karte--leer .web-karte__inhalt {
+  padding-top: var(--app-abstand-eng);
+}
+
+/* --- Kennzahl-Kachel --- */
+.web-kachel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  min-width: 0;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+  color: var(--web-text);
+  text-decoration: none;
+}
+
+a.web-kachel {
+  color: var(--web-text);
+  text-decoration: none;
+}
+
+a.web-kachel:hover {
+  background: var(--web-hover);
+  text-decoration: none;
+}
+
+.web-kachel__label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  min-height: 22px;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-mittel);
+  color: var(--web-text-leise);
+}
+
+.web-kachel__wert {
+  /* Grosse Zahl: proportionale Ziffern, kein tabular-nums -- erst in Spalten. */
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-zahl);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--web-text);
+}
+
+.web-kachel__zusatz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  font-size: var(--app-text-klein);
+  color: var(--web-text-leise);
+}
+
+.web-kachel--achtung {
+  border-color: var(--app-rand-warnung);
+}
+
+.web-kachel__pfeil {
+  color: var(--web-text-leise);
+}
+
+/* --- Status-Marke (Pill) --- */
+.web-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  padding: var(--app-abstand-haar) var(--app-abstand-schmal);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-gross);
+  background: var(--app-surface-muted);
+  color: var(--app-text-secondary);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.web-pill--info {
+  background: var(--app-flaeche-hinweis);
+  border-color: var(--app-rand-hinweis);
+  color: var(--app-text-hinweis-dunkel);
+}
+
+.web-pill--erfolg {
+  background: var(--app-flaeche-erfolg);
+  border-color: var(--app-rand-erfolg);
+  color: var(--app-color-success-tief);
+}
+
+.web-pill--warnung {
+  background: var(--app-flaeche-warnung);
+  border-color: var(--app-rand-warnung);
+  color: var(--app-text-warnung);
+}
+
+.web-pill--fehler {
+  background: var(--app-flaeche-fehler);
+  border-color: var(--app-rand-fehler);
+  color: var(--app-text-fehler);
+}
+
+/* Das Postfach (moin@, support@): eckiger, in Schreibmaschinen-Optik. */
+.web-pill--postfach {
+  border-radius: var(--app-radius-fein);
+  font-weight: var(--app-schrift-mittel);
+}
+
+.web-pill__punkt {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--app-radius-kreis);
+  background: currentColor;
+}
+
+/* --- Links und Knoepfe --- */
+.web-link {
+  color: var(--ion-color-primary);
+  text-decoration: none;
+  border-radius: var(--app-radius-fein);
+}
+
+.web-link:hover {
+  text-decoration: underline;
+}
+
+.web-link--text {
+  color: inherit;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-link:focus-visible,
+.web-knopf:focus-visible,
+.web-chip:focus-visible,
+.web-akkordeon__kopf:focus-visible,
+.web-suche__eingabe:focus-visible,
+.web-diagramm__flaeche:focus-visible,
+a.web-kachel:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* Der ganze Zeilenbereich ist ein Link: Das Netz des Links spannt sich ueber
+   die Zeile, andere Links und Knoepfe in der Zeile liegen darueber.
+   Mittelklick, Strg-Klick und Rechtsklick gehen so auch ueber die Zeile. */
+.web-zeile {
+  position: relative;
+}
+
+.web-link--zeile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.web-link--zeile:focus-visible {
+  outline: none;
+}
+
+.web-link--zeile:focus-visible::after {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+  border-radius: var(--app-radius-fein);
+}
+
+.web-vorn {
+  position: relative;
+  z-index: 1;
+}
+
+.web-knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-abstand-eng);
+  min-height: 36px;
+  padding: 0 var(--app-abstand-mittelweit);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.2;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-knopf:hover {
+  background: var(--web-hover);
+  text-decoration: none;
+}
+
+.web-knopf--primaer {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.web-knopf--primaer:hover {
+  background: var(--ion-color-primary-shade, var(--ion-color-primary));
+}
+
+.web-knopf--text {
+  border-color: transparent;
+  background: transparent;
+  color: var(--ion-color-primary);
+}
+
+.web-knopf--gefahr {
+  color: var(--app-text-fehler);
+}
+
+.web-knopf--klein {
+  min-height: 30px;
+  padding: 0 var(--app-abstand-mittel);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-knopf--symbol {
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+}
+
+.web-knopf[disabled] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* --- Filter-Chips mit Zahl --- */
+.web-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+}
+
+.web-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-height: 34px;
+  padding: 0 var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-gross);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-chip:hover {
+  background: var(--web-hover);
+}
+
+.web-chip[aria-pressed='true'] {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+.web-chip__zahl {
+  min-width: 20px;
+  padding: 0 var(--app-abstand-kompakt);
+  border-radius: var(--app-radius-gross);
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 20px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Die rote Zahl: wie die an den Eintraegen der Leiste. */
+.web-chip__zahl--rot {
+  background: var(--app-color-danger);
+  color: var(--app-weiss);
+}
+
+/* --- Werkzeugleiste: Suche, Chips, Aktionen --- */
+.web-werkzeuge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-mittel) var(--app-abstand-basis);
+}
+
+.web-werkzeuge__rechts {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin-left: auto;
+}
+
+/* --- Suchfeld --- */
+.web-suche {
+  position: relative;
+  flex: 1 1 360px;
+  max-width: 560px;
+  min-width: 300px;
+}
+
+.web-suche__symbol {
+  position: absolute;
+  top: 50%;
+  left: var(--app-abstand-mittel);
+  transform: translateY(-50%);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-standard);
+  pointer-events: none;
+}
+
+.web-suche__eingabe {
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--app-abstand-extraweit) 0 var(--app-abstand-riesig);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  /* Mindestens 1rem: kleinere Felder zoomt iOS beim Antippen heran
+     (zoomUndSchrift.test.ts), und ein breites Fenster steht auch auf dem iPad. */
+  font-size: var(--app-text-standard);
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-suche__eingabe::placeholder {
+  color: var(--web-text-leise);
+}
+
+.web-suche__eingabe::-webkit-search-cancel-button {
+  display: none;
+}
+
+.web-suche__leeren {
+  position: absolute;
+  top: 50%;
+  right: var(--app-abstand-kompakt);
+  transform: translateY(-50%);
+}
+
+/* --- Tabelle --- */
+.web-tabelle-huelle {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+.web-tabelle {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--app-text-sekundaer);
+}
+
+.web-tabelle th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: var(--app-abstand-schmal) var(--app-abstand-basis);
+  background: var(--web-karte);
+  border-bottom: 1px solid var(--web-linie);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.web-tabelle td {
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border-bottom: 1px solid var(--web-linie-leise);
+  vertical-align: top;
+  min-width: 0;
+}
+
+.web-tabelle--fest {
+  table-layout: fixed;
+}
+
+.web-tabelle--mittig td {
+  vertical-align: middle;
+}
+
+.web-tabelle tbody tr:hover td {
+  background: var(--web-hover);
+}
+
+.web-tabelle tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.web-tabelle .web-zahl {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.web-tabelle td:first-child,
+.web-tabelle th:first-child {
+  padding-left: var(--app-abstand-gross);
+}
+
+.web-tabelle td:last-child,
+.web-tabelle th:last-child {
+  padding-right: var(--app-abstand-gross);
+}
+
+.web-tabelle--ohne-kopf-rand th {
+  border-bottom-color: var(--web-linie-leise);
+}
+
+/* Spalten, die auf schmaler Flaeche zuerst weichen. */
+@container (max-width: 1000px) {
+  .web-tabelle .web-optional {
+    display: none;
+  }
+
+  /* Feste Prozentbreiten passen nur auf eine breite Flaeche: Marken und
+     Zahlen wuerden sonst in die Nachbarspalte laufen. Schmal verteilt der
+     Browser die Breite nach dem Inhalt, und was dann nicht mehr passt,
+     scrollt waagerecht -- statt aus der Karte zu laufen. (Die Kopfzeile
+     bleibt dort nicht mehr beim Scrollen der Seite stehen: ein
+     Scroll-Bereich ist der Bezug von sticky.) */
+  .web-tabelle-scroll {
+    overflow-x: auto;
+  }
+
+  .web-tabelle--fest {
+    table-layout: auto;
+    min-width: 700px;
+  }
+
+  .web-tabelle td,
+  .web-tabelle th {
+    padding-left: var(--app-abstand-mittel);
+    padding-right: var(--app-abstand-mittel);
+  }
+
+  /* Aktionen schmal nur als Symbole (der Name steht im aria-label und als Tooltip). */
+  /* Mit .web-tabelle davor, damit diese Regeln die weiter unten stehenden
+     Grundregeln der Aktionen uebertrumpfen (gleiche Staerke, spaeter gewinnt). */
+  .web-tabelle .web-spalte-aktionen {
+    width: 1px;
+  }
+
+  .web-tabelle .web-aktionen {
+    grid-template-columns: repeat(3, auto);
+    width: auto;
+  }
+
+  .web-tabelle .web-aktionen > :first-child {
+    grid-column: auto;
+  }
+
+  .web-tabelle .web-aktionen .web-knopf {
+    width: 30px;
+    padding: 0;
+  }
+
+  .web-tabelle .web-knopf__text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.web-zelle-titel {
+  display: block;
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-zelle-leise {
+  display: block;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-einzeilig {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-ungelesen {
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-gedaempft {
+  color: var(--web-text-leise);
+}
+
+/* Der Punkt vor einer ungelesenen Zeile steht ausserhalb des Textes. */
+.web-mit-punkt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-mit-punkt > .app-ungelesen-punkt,
+.web-punkt-platz {
+  flex: 0 0 10px;
+  margin-top: var(--app-abstand-kompakt);
+}
+
+.web-punkt-platz {
+  width: 10px;
+  height: 10px;
+}
+
+.web-punkt-zeile {
+  margin: 0 auto;
+}
+
+/* Ungelesene Zeilen tragen einen Hauch der Hauptfarbe. */
+.web-tabelle tbody tr.web-zeile--ungelesen td {
+  background: color-mix(in srgb, var(--ion-color-primary) 5%, var(--web-karte));
+}
+
+.web-tabelle tbody tr.web-zeile--ungelesen:hover td {
+  background: color-mix(in srgb, var(--ion-color-primary) 9%, var(--web-karte));
+}
+
+mark.web-treffer {
+  padding: 0 var(--app-abstand-winzig);
+  border-radius: var(--app-radius-fein);
+  background: var(--app-flaeche-warnung);
+  box-shadow: 0 0 0 1px var(--app-rand-warnung);
+  color: inherit;
+}
+
+/* --- Feed: Zeilen in einer Karte (neueste Anfragen und Mails) --- */
+.web-feed {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.web-feed__zeile {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-feed__zeile:hover {
+  background: var(--web-hover);
+}
+
+.web-feed__haupt {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.web-feed__rechts {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--app-abstand-mini);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  white-space: nowrap;
+}
+
+.web-feed__zeile:last-child {
+  border-radius: 0 0 var(--app-radius-karte) var(--app-radius-karte);
+}
+
+.web-feed__titel {
+  display: block;
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-feed__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-mini) var(--app-abstand-mittel);
+  margin-top: var(--app-abstand-winzig);
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-feed__meta > * {
+  min-width: 0;
+}
+
+/* --- Akkordeon --- */
+.web-akkordeon {
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+}
+
+.web-akkordeon__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-gross);
+  border: 0;
+  border-radius: var(--app-radius-karte);
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-akkordeon__kopf:hover {
+  background: var(--web-hover);
+}
+
+.web-akkordeon__pfeil {
+  flex: 0 0 auto;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-standard);
+}
+
+/* Geschlossen zeigt der Pfeil nach rechts, offen nach unten. */
+.web-akkordeon__kopf[aria-expanded='true'] > .web-akkordeon__pfeil {
+  transform: rotate(90deg);
+}
+
+.web-akkordeon__titel {
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: -0.01em;
+}
+
+.web-akkordeon__meta {
+  margin-left: auto;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  white-space: nowrap;
+}
+
+.web-akkordeon--innen {
+  border: 0;
+  border-top: 1px solid var(--web-linie-leise);
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.web-akkordeon--innen > .web-akkordeon__kopf {
+  padding-left: var(--app-abstand-extraweit);
+  border-radius: 0;
+}
+
+.web-akkordeon--innen .web-akkordeon__titel {
+  font-size: var(--app-text-standard);
+}
+
+.web-akkordeon__inhalt {
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-akkordeon--innen > .web-akkordeon__inhalt {
+  border-top: 0;
+}
+
+/* --- Zustaende: leer, Fehler, Laden --- */
+.web-leer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-block) var(--app-abstand-gross);
+  text-align: center;
+  color: var(--web-text-leise);
+}
+
+.web-leer__symbol {
+  font-size: var(--app-anzeige-basis);
+  color: var(--web-text-leise);
+}
+
+.web-leer__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-leer__text {
+  margin: 0;
+  max-width: 44ch;
+}
+
+.web-fehler {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  border: 1px solid var(--app-rand-fehler);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-flaeche-fehler);
+  color: var(--app-text-fehler);
+}
+
+.web-fehler__text {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+/* Ladezustand: Platzhalter in der Form des Inhalts, ohne Bewegung. */
+.web-skelett {
+  display: block;
+  border-radius: var(--app-radius-klein);
+  background: var(--app-surface-dim);
+}
+
+.web-skelett--kachel {
+  height: 112px;
+  border-radius: var(--app-radius-karte);
+}
+
+.web-skelett--karte {
+  height: 280px;
+  border-radius: var(--app-radius-karte);
+}
+
+.web-skelett--zeile {
+  height: 20px;
+}
+
+/* --- Hinweisstreifen (Postfaecher) --- */
+.web-statuszeile {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+  gap: var(--app-abstand-mittel);
+}
+
+.web-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-abstand-mini);
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-status__kopf,
+.web-status__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-kompakt) var(--app-abstand-mittel);
+}
+
+.web-status--fehler {
+  border-color: var(--app-rand-fehler);
+  background: var(--app-flaeche-fehler);
+  color: var(--app-text-fehler);
+}
+
+.web-status--warnung {
+  border-color: var(--app-rand-warnung);
+  background: var(--app-flaeche-warnung);
+  color: var(--app-text-warnung);
+}
+
+.web-status__name {
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+/* --- Diagramme (eigenes SVG) --- */
+.web-diagramm {
+  position: relative;
+  margin: 0;
+  min-width: 0;
+}
+
+.web-diagramm__flaeche {
+  position: relative;
+  border-radius: var(--app-radius-klein);
+}
+
+.web-diagramm__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.web-diagramm__gitter {
+  stroke: var(--app-border-soft);
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+
+.web-diagramm__achse {
+  stroke: var(--app-border);
+  stroke-width: 1px;
+  shape-rendering: crispEdges;
+}
+
+.web-diagramm__text {
+  fill: var(--app-text-system);
+  font-family: inherit;
+  font-size: var(--app-text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-diagramm__text--stark {
+  fill: var(--app-text-emphasis);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-diagramm__text--rechts {
+  text-anchor: end;
+}
+
+.web-diagramm__text--mitte {
+  text-anchor: middle;
+}
+
+.web-diagramm__band {
+  fill: var(--app-text-system);
+  opacity: 0.1;
+}
+
+.web-diagramm__fuehrung {
+  stroke: var(--app-text-system);
+  stroke-width: 1px;
+  opacity: 0.5;
+  shape-rendering: crispEdges;
+}
+
+.web-diagramm__linie {
+  fill: none;
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.web-diagramm__flaeche-fuellung {
+  stroke: none;
+  opacity: 0.12;
+}
+
+.web-diagramm__punkt {
+  stroke: var(--app-surface-card);
+  stroke-width: 2px;
+}
+
+.web-diagramm__treffer {
+  fill: transparent;
+  cursor: default;
+}
+
+.web-diagramm__tooltip {
+  position: absolute;
+  z-index: 3;
+  min-width: 150px;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-klein);
+  background: var(--app-surface-card);
+  box-shadow: var(--app-schatten-schwebend);
+  color: var(--web-text);
+  font-size: var(--app-text-klein);
+  pointer-events: none;
+  /* Rechts neben der gewaehlten Saeule; in der rechten Haelfte links davon. */
+  transform: translateX(var(--app-abstand-mittel));
+}
+
+.web-diagramm__tooltip--links {
+  transform: translateX(calc(-100% - var(--app-abstand-mittel)));
+}
+
+.web-diagramm__tooltip-kopf {
+  margin-bottom: var(--app-abstand-mini);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-diagramm__tooltip-zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-diagramm__tooltip-zeile > .web-diagramm__tooltip-wert {
+  margin-left: auto;
+  padding-left: var(--app-abstand-basis);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt) var(--app-abstand-basis);
+  margin: var(--app-abstand-mittel) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--app-text-klein);
+  color: var(--app-text-secondary);
+}
+
+.web-legende__eintrag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-legende__marke {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--app-radius-fein);
+}
+
+.web-legende__marke--linie {
+  height: 3px;
+  width: 14px;
+  border-radius: var(--app-radius-kreis);
+}
+
+/* Fuer Vorleseprogramme: die Werte des Diagramms als Tabelle, optisch weg. */
+.web-nur-vorlesen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Waagerechte Balken: Name links, Balken, Wert rechts. */
+.web-balkenliste__name {
+  fill: var(--app-text-secondary);
+}
+
+/* Mehrere kleine Diagramme untereinander, jedes mit eigener Werteachse. */
+.web-minis {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-basis);
+}
+
+.web-mini__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mini);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-mini__name {
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-mini__summe {
+  margin-left: auto;
+  color: var(--web-text-leise);
+}
+
+/* Kleine Linie in einer Kachel. */
+.web-spark {
+  flex: 0 0 auto;
+  display: block;
+  overflow: visible;
+}
+
+/* --- Leitung einer Gemeinde in der Tabelle --- */
+.web-person {
+  display: block;
+}
+
+.web-person + .web-person {
+  margin-top: var(--app-abstand-mittel);
+}
+
+.web-person__kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-kompakt) var(--app-abstand-eng);
+}
+
+.web-person__name {
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-person__zeile {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--app-abstand-mittel);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  overflow-wrap: anywhere;
+}
+
+/* Konfi-Limit mit Balken */
+.web-limit {
+  display: block;
+  width: 72px;
+  height: 4px;
+  margin-top: var(--app-abstand-kompakt);
+  margin-left: auto;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-surface-dim);
+  overflow: hidden;
+}
+
+.web-limit__fuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-info);
+}
+
+.web-limit__fuellung--warnung {
+  background: var(--app-color-warning);
+}
+
+.web-limit__fuellung--fehler {
+  background: var(--app-color-danger);
+}
+
+.web-aktionen {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--app-abstand-kompakt);
+  width: 152px;
+  margin-left: auto;
+}
+
+/* Bearbeiten steht oben ueber die ganze Breite, Schreiben und Loeschen darunter. */
+.web-aktionen > :first-child {
+  grid-column: 1 / -1;
+}
+
+.web-spalte-aktionen {
+  width: 184px;
+}
+
+.web-pillreihe {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt);
+}
+
+/* Akkordeons untereinander */
+.web-gruppen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-zeile--gesperrt .web-zelle-titel {
+  color: var(--web-text-leise);
+}
