@@ -42,7 +42,8 @@ test.describe('Web-Version: Leiste links ab 992 px', () => {
     for (const [name, pfad] of [['Chat', '/admin/chat'], ['Mitmachen', '/admin/events'], ['Konfis', '/admin/konfis']] as const) {
       const link = leiste.getByRole('link', { name: new RegExp(`^${name}`) });
       await link.click();
-      await expect(page).toHaveURL(new RegExp(pfad.replace(/\//g, '\\/')));
+      // Pfad als Text, nicht als Muster: alle Sonderzeichen maskiert (CodeQL).
+      await expect(page).toHaveURL(new RegExp(pfad.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')));
       await expect(link).toHaveAttribute('aria-current', 'page');
       // Nicht nur die Adresse: die Seite ist sichtbar (keine weisse Seite).
       await expect(page.locator('ion-content:visible').first()).toBeVisible({ timeout: 10_000 });
