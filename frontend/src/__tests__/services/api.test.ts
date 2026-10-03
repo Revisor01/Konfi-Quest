@@ -254,7 +254,9 @@ describe('ensureFreshToken', () => {
 
     expect(result).toBe(newToken);
     expect(postSpy).toHaveBeenCalledTimes(1);
-    expect(postSpy.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1' });
+    // jsdom ist die Web-Version: dort traegt der Refresh die Zusage fuer
+    // Konten ohne Gemeinde (services/ohneGemeinde.ts, seit 03.10.2026).
+    expect(postSpy.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1', kann_ohne_gemeinde: true });
     expect(tokenStore.setToken).toHaveBeenCalledWith(newToken);
     // Schalter der biometrischen Anmeldung aus (Browser): wie bisher auch in
     // die Preferences (klartext: true; biometrieOhneKlartextNachRotation.test.ts).

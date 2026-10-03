@@ -6,6 +6,7 @@ Allow: /$
 Allow: /impressum
 Allow: /datenschutz
 Allow: /konto-loeschen
+Allow: /einwilligung
 Allow: /account-deletion
 
 # App-Bereich: kein Mehrwert im Index, teilweise nur eingeloggt erreichbar

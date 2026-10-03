@@ -43,6 +43,29 @@ Wochentag: Mo., 14.09.2026. Wo wenig Platz ist — im Chat, in der
 Anwesenheitsliste —, steht nur 14.09. Maßgeblich ist die Zeit, auf die das
 Handy eingestellt ist.
 
+### Im Browser mit der Leiste links arbeiten
+
+Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
+992 Pixeln — stehen die Reiter nicht unten, sondern als **Leiste links**. Sie
+zeigt dieselben Bereiche in derselben Reihenfolge und mit denselben roten
+Zahlen wie die Reiterleiste. Unten in der Leiste stehen dein **Profil** und
+**Abmelden**; wer mehreren Gemeinden angehört, wechselt dort auch die
+Gemeinde (siehe [In mehreren Gemeinden mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)).
+Der Inhalt steht daneben, auf breiten Bildschirmen mittig.
+
+- **Einklappen:** Der Pfeil oben in der Leiste klappt sie ein. Dann stehen
+  nur die Symbole da; zeigst du mit der Maus auf eines, erscheint sein Name.
+  Derselbe Pfeil klappt sie wieder aus. Der Browser merkt sich, wie du sie
+  zuletzt hattest.
+- **Neuer Tab:** Die Einträge sind gewöhnliche Links. Mit Strg-Klick (am Mac
+  ⌘-Klick) oder der mittleren Maustaste öffnet sich ein Bereich in einem
+  neuen Tab.
+- **Tastatur:** Mit der Tab-Taste gehst du von Eintrag zu Eintrag, mit der
+  Eingabetaste öffnest du ihn.
+
+Wird das Fenster schmaler, kehrt die Reiterleiste unten zurück. In den Apps
+auf Handy und Tablet bleibt es immer bei der Reiterleiste.
+
 ### Den Umschalter finden, hinter dem etwas auf dich wartet
 
 Als Leitung und in den Challenges auch als Teamer:in siehst du in den
@@ -113,8 +136,9 @@ gestartete Challenges (die Challenge-Liste zählt selbst) und Chat-Nachrichten
 Im Postfach steht Ungelesenes fett und mit einem **blauen Punkt** in der
 Ecke. **Antippen**
 markiert die Mitteilung als gelesen und führt an die passende Stelle: zum
-Badges, in die Antragsliste, an das Event, bei einem Stempel zu den
-Challenges, bei einem Level-Aufstieg auf die Startseite. Punkte — aus einem
+Badges, in die Antragsliste, an das Event, bei einem Stempel, einem neuen
+oder ausgeblendeten Beitrag in die Challenge, bei einem Level-Aufstieg auf
+die Startseite. Punkte — aus einem
 Event, als Bonus oder für eine eingetragene Aktivität — öffnen die
 Punkte-Übersicht im Profil; der Jahresrückblick öffnet genau die Ausgabe, um
 die es geht. **„Alle gelesen"** räumt auf einmal auf.

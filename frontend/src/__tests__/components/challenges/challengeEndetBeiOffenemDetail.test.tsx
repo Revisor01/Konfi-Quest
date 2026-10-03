@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
-import ChallengeDetailModal from '../../../components/konfi/modals/ChallengeDetailModal';
+import KonfiChallengeDetailPage from '../../../components/konfi/pages/KonfiChallengeDetailPage';
 
 // Eine Challenge, die endet, während ihr Detail offen ist, muss sich als
 // beendet zeigen (Release-Audit 26.09.2026, Toolchain BF-12).
@@ -49,7 +49,7 @@ const detailAntwort = (challenge: Record<string, unknown>) => ({
   data: { challenge, gallery: [], own_submissions: [] }
 });
 
-describe('ChallengeDetailModal: Ende bei offenem Detail', () => {
+describe('KonfiChallengeDetailPage: Ende bei offener Challenge', () => {
   beforeEach(() => {
     vi.mocked(api.get).mockReset();
   });
@@ -61,7 +61,7 @@ describe('ChallengeDetailModal: Ende bei offenem Detail', () => {
     vi.mocked(api.get).mockResolvedValue(detailAntwort(challenge));
 
     const { container } = render(
-      <ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} onSubmit={vi.fn()} />
+      <KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />
     );
 
     await waitFor(() => {
@@ -86,7 +86,7 @@ describe('ChallengeDetailModal: Ende bei offenem Detail', () => {
     vi.mocked(api.get).mockResolvedValue(detailAntwort(challenge));
 
     const { container } = render(
-      <ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} onSubmit={vi.fn()} />
+      <KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />
     );
 
     await waitFor(() => {

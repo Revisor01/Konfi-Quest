@@ -94,7 +94,7 @@ const EINSTELLUNG_SCHLUESSEL = 'konfi_app_sperre_verzoegerung';
  *     an der Hülle vorbei, und bei 'sofort' sperrte jede Dateiauswahl
  *     (Simons Befund, Android-Testbuild 128).
  *   - Teilen-Dialog   (Share.share / navigator.share in chatTeilen.ts,
- *     shareUtils.ts, FileViewerModal, ChallengeLeitungModal, AdminInvitePage)
+ *     shareUtils.ts, FileViewerModal, ChallengeLeitungView, AdminInvitePage)
  *   - Karten und Links (Maps, Store, Musik- und Weblinks) — über linkOeffnen
  *     in services/systemDialoge.ts. Bis zum 29.09.2026 riefen die Stellen
  *     window.open selbst, an der Hülle vorbei.

@@ -288,6 +288,9 @@ export {
   globeOutline as ICON_WELT,
   compassOutline as ICON_KOMPASS,
   gitNetworkOutline as ICON_NETZWERK,
+  // Support-Ansicht der Web-Version (03.10.2026): der Weg dorthin unter
+  // "Mehr" und der Kopf der Uebersicht.
+  headsetOutline as ICON_SUPPORT,
 
   // --- Sonstiges ---
   settings as ICON_EINSTELLUNGEN_GEFUELLT,

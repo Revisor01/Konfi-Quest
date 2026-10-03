@@ -160,6 +160,39 @@ describe('Organizations Routes', () => {
       expect(res.status).toBe(403);
     });
 
+    // Wunschlizenz (Simon, 03.10.2026; Migration 192): aus der Anfrage, aus
+    // der die Gemeinde entstanden ist -- die juengste, wenn es mehrere gibt.
+    // Ein zusaetzliches Feld, sonst bleibt die Antwort, wie sie war.
+    describe('wunsch_lizenz', () => {
+      const anfrageAnlegen = (orgId, lizenz, tageHer) => db.query(
+        `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am, status, status_seit, organization_id, wunsch_lizenz)
+         VALUES ('G', 'K', 'k@example.test', NOW(), 'angelegt', NOW() - ($1::int * interval '1 day'), $2, $3)`,
+        [tageHer, orgId, lizenz]);
+      const holen = () => request(app)
+        .get(`/api/organizations/${ORGS.testGemeinde.id}`)
+        .set('Authorization', `Bearer ${superAdminToken}`);
+
+      it('ohne Anfrage: null', async () => {
+        const res = await holen();
+        expect(res.status).toBe(200);
+        expect(res.body.wunsch_lizenz).toBeNull();
+      });
+
+      it('aus der Anfrage der Gemeinde, nicht aus der einer anderen', async () => {
+        await anfrageAnlegen(ORGS.testGemeinde.id, 'plus', 3);
+        await anfrageAnlegen(ORGS.andereGemeinde.id, 'gross', 1);
+        const res = await holen();
+        expect(res.body.wunsch_lizenz).toBe('plus');
+      });
+
+      it('bei mehreren Anfragen die zuletzt angelegte', async () => {
+        await anfrageAnlegen(ORGS.testGemeinde.id, 'klein', 30);
+        await anfrageAnlegen(ORGS.testGemeinde.id, 'standard', 2);
+        const res = await holen();
+        expect(res.body.wunsch_lizenz).toBe('standard');
+      });
+    });
+
     // Die Route liefert SELECT * der Organisation: Kontaktdaten der Leitung
     // (Name, Telefon, Privatadresse), Lizenz- und Trial-Angaben. Geprueft wurde
     // bisher nur die Org-Zugehoerigkeit, nicht die Rolle — damit bekam auch

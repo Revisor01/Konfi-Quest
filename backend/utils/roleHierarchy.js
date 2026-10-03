@@ -113,19 +113,24 @@ const checkUserHierarchy = (operation = 'manage') => {
         // Fuehren beide Quellen dieselbe Gemeinde, gewinnt die Rolle am
         // Nutzerkonto (wie in GET /auth/my-organizations und orgMitglieder.js).
         const query = `
-          SELECT u.id, r.id AS role_id, r.name as role_name, u.is_super_admin
+          SELECT u.id, r.id AS role_id, r.name as role_name, u.is_super_admin,
+                 u.organization_id AS stamm_organization_id
           FROM users u
           JOIN roles r ON r.id = u.role_id
           WHERE u.id = $1 AND u.organization_id = $2
           UNION ALL
-          SELECT u.id, r.id AS role_id, r.name as role_name, u.is_super_admin
+          SELECT u.id, r.id AS role_id, r.name as role_name, u.is_super_admin,
+                 u.organization_id AS stamm_organization_id
           FROM user_organizations uo
           JOIN users u ON u.id = uo.user_id
           JOIN roles r ON r.id = uo.role_id
           WHERE uo.user_id = $1 AND uo.organization_id = $2
-            AND u.organization_id <> $2
+            AND u.organization_id IS DISTINCT FROM $2
           LIMIT 1
         `;
+        // IS DISTINCT FROM (03.10.2026): Ein Konto ohne Gemeinde
+        // (organization_id NULL, Support als Gast) fiel mit `<>` heraus --
+        // die Leitung bekam 404 statt der Ablehnung unten.
         const { rows: [targetUser] } = await req.db.query(query, [targetUserId, req.user.organization_id]);
 
         if (!targetUser) {
@@ -141,7 +146,21 @@ const checkUserHierarchy = (operation = 'manage') => {
         // Kontos setzen oder es loeschen und damit ALLE Gemeinden uebernehmen.
         // Gilt ausdruecklich fuer Rolle ODER Flag, wie verifyTokenRBAC das
         // Flag des Aufrufers auch aus beidem bildet.
-        if (istSuperAdminKonto(targetUser) && req.user.is_super_admin !== true) {
+        //
+        // EINE AUSNAHME (Simon, 03.10.2026): Die Gemeindeleitung darf einen
+        // SUPPORT-GAST aus ihrer Gemeinde nehmen -- ein Konto ohne
+        // Stamm-Gemeinde (organization_id NULL, das gibt es nur mit
+        // Super-Admin-Merkmal, Migration 190), das hier ueber
+        // user_organizations Mitglied ist. DELETE /users/:id beendet bei einem
+        // solchen Konto immer nur die Mitgliedschaft in dieser Gemeinde
+        // (users.js, Fall 1); das Konto bleibt. Bearbeiten, Passwort,
+        // Jahrgaenge und Detailansicht bleiben gesperrt, ebenso jedes
+        // Super-Admin-Konto MIT Stamm-Gemeinde (Simons Konto) und jede andere
+        // Rolle als die Gemeindeleitung.
+        const supportGastEntfernen = operation === 'delete'
+          && targetUser.stamm_organization_id === null
+          && userRole === 'org_admin';
+        if (istSuperAdminKonto(targetUser) && req.user.is_super_admin !== true && !supportGastEntfernen) {
           return res.status(403).json({
             error: 'Super-Admin-Konten kann nur ein Super-Admin bearbeiten.'
           });

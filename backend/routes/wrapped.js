@@ -3182,6 +3182,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           //
           // Die Rolle wird fuer DIESE Gemeinde aufgeloest (uo.role_id), damit
           // die Jahrgangs-Pruefung darunter am richtigen Wert greift.
+          // IS DISTINCT FROM: auch ein Gast ohne Gemeinde (organization_id
+          // NULL, Support-Konto) gehoert dazu (03.10.2026).
           const { rows: [targetUser] } = await db.query(
             `SELECT u.id, r.name AS role_name
                FROM users u
@@ -3193,7 +3195,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                JOIN users u ON u.id = uo.user_id
                JOIN roles r ON r.id = uo.role_id
               WHERE uo.user_id = $1 AND uo.organization_id = $2
-                AND u.organization_id <> $2
+                AND u.organization_id IS DISTINCT FROM $2
               LIMIT 1`,
             [targetUserId, req.user.organization_id]
           );

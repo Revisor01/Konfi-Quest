@@ -40,7 +40,9 @@ describe('Handbuch: Trennlinien', () => {
   });
 
   it('die Zählung trifft die Kapitel mit Trennlinien (Stand 27.09.2026)', () => {
-    expect(trennlinienDerQuelle('80-challenges.md')).toBe(10);
+    // 11 seit 02.10.2026: der Abschnitt „Eine Challenge öffnen" (2.4.0)
+    // steht wie jeder h2 des Kapitels hinter einer eigenen Trennlinie.
+    expect(trennlinienDerQuelle('80-challenges.md')).toBe(11);
     // 13 seit 28.09.2026: der Abschnitt „Im Verlauf zurückblättern" steht wie
     // jeder h2 des Kapitels hinter einer eigenen Trennlinie.
     expect(trennlinienDerQuelle('90-chat.md')).toBe(13);

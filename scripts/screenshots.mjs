@@ -157,9 +157,10 @@ const AUFNAHMEN = {
 };
 
 /**
- * Eine Challenge aus der Liste antippen und warten, bis das Detail steht.
- * Das Detail ist ein Modal ohne eigene Adresse — es gibt also keinen Weg,
- * es direkt anzusteuern.
+ * Eine Challenge aus der Liste antippen und warten, bis ihre Seite steht.
+ * Seit 2.4.0 ist das Detail eine eigene Seite (/konfi/challenges/:id) statt
+ * eines Modals. Angetippt wird trotzdem in der Liste: Welche Kennung oben
+ * steht, haengt am Datenstand.
  */
 async function challengeOeffnen(page, welche) {
   // "welche" ist die Position in der Liste (1 = die oberste), nicht der
@@ -174,8 +175,25 @@ async function challengeOeffnen(page, welche) {
   await page.waitForTimeout(400);
   await karte.waitFor({ state: 'visible', timeout: 15_000 });
   await karte.click();
-  await page.locator('ion-modal ion-segment-button').first().waitFor({ state: 'visible', timeout: 15_000 });
+  await page.waitForFunction(
+    () => /^\/konfi\/challenges\/\d+$/.test(window.location.pathname),
+    null,
+    { timeout: 15_000 }
+  );
+  // "Worum geht es?" (laufend) bzw. "Worum ging es?" (beendet) steht nur auf
+  // der Seite der Challenge, nicht in der Liste dahinter.
+  await page.getByText(/Worum (geht|ging) es\?/).filter({ visible: true }).first()
+    .waitFor({ state: 'visible', timeout: 15_000 });
   await page.waitForTimeout(1_200);
+}
+
+/** Von der Seite einer Challenge zurueck in die Liste. */
+async function challengeVerlassen(page) {
+  if (!/^\/konfi\/challenges\/\d+$/.test(new URL(page.url()).pathname)) return;
+  await page.locator('ion-header ion-buttons[slot="start"] ion-button').filter({ visible: true }).first()
+    .click({ timeout: 5_000 }).catch(() => {});
+  await page.waitForFunction(() => window.location.pathname === '/konfi/challenges', null, { timeout: 8_000 })
+    .catch(() => {});
 }
 
 /**
@@ -193,13 +211,13 @@ async function challengeMitBeitraegenOeffnen(page, ab) {
   for (let pos = ab; pos <= anzahl; pos++) {
     await challengeOeffnen(page, pos);
     const leer = await page
-      .locator('ion-modal:visible')
       .getByText('Noch keine geteilten Beiträge')
+      .filter({ visible: true })
       .first()
       .isVisible()
       .catch(() => false);
     if (!leer || pos === anzahl) return;
-    await modalSchliessen(page);
+    await challengeVerlassen(page);
     await page.waitForTimeout(600);
   }
 }
@@ -213,7 +231,12 @@ async function challengeMitBeitraegenOeffnen(page, ab) {
  */
 async function zumFeedScrollen(page) {
   await page.evaluate(async () => {
-    const inhalt = document.querySelector('ion-modal ion-content');
+    // Die sichtbare Seite der Challenge: das ion-content, in dem der
+    // Abschnitt "Aus deiner Gruppe" steht und das gerade zu sehen ist.
+    const inhalt = [...document.querySelectorAll('ion-content')].find((c) =>
+      c.getBoundingClientRect().width > 0 &&
+      [...c.querySelectorAll('ion-list-header')].some((h) => (h.innerText || '').includes('Aus deiner Gruppe'))
+    );
     if (!inhalt) return;
     const flaeche = await inhalt.getScrollElement();
     const kopf = [...inhalt.querySelectorAll('ion-list-header')].find((h) =>
@@ -503,6 +526,9 @@ async function main() {
             }
             abdruecke.set(abdruck, seite.name);
             await modalSchliessen(page);
+            // Die Challenge ist eine eigene Seite: zurueck in die Liste, damit
+            // das naechste Bild dort anfaengt.
+            await challengeVerlassen(page);
             console.log(`  ${rolle}-${seite.name}.png`);
             geschossen++;
           } catch (fehler) {

@@ -9,7 +9,85 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Hinzugefügt
+- Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
+  dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
+  den Challenges.
+- Support-Konten ohne eigene Gemeinde lassen sich anlegen, sperren und
+  löschen; sie melden sich nur im Browser an (die Apps zeigen einen Hinweis)
+  und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
+- Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
+  löschen.
+- Im breiten Browserfenster zeigt die Web-Version links eine ein- und
+  ausklappbare Leiste statt der Reiterleiste unten — mit denselben Bereichen
+  und Zahlen, dazu Profil und Abmelden; im schmalen Fenster und in den Apps
+  bleibt alles, wie es ist.
+- Eine Support-Ansicht im Browser bündelt für den Betrieb Kennzahlen je
+  Landeskirche, Kirchenkreis und Gemeinde (Konten je Rolle, in den letzten 30
+  Tagen aktive Konten, Jahrgänge — ohne Namen), die Anfragen von Gemeinden,
+  die Zuordnung zu Kirchenkreisen und Landeskirchen und die Support-Konten.
+- Eine Gemeinde kann Konfi Quest über ein Formular auf konfi-quest.de
+  anfragen und dabei ihre Wunschlizenz wählen: Die anfragende Adresse bekommt
+  eine Bestätigung, der Support
+  einen Hinweis ohne Kontaktdaten. Der Support macht daraus mit wenigen
+  Schritten die Gemeinde samt erster Gemeindeleitung — mit denselben
+  Vorlagen wie beim Anlegen einer Gemeinde. Abgelehnte Anfragen werden 180
+  Tage nach der Ablehnung gelöscht, unbearbeitete nach 365 Tagen ohne
+  Änderung.
+- Gemeinden lassen sich einem Kirchenkreis und darüber einer Landeskirche
+  zuordnen; die bisher eingetragenen Kirchenkreise werden dabei übernommen.
+- Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
+  Ausdrucken bereit.
+
+### Geändert
+- Eine neue Gemeinde startet in der Testphase mit einem Limit von 5 Konfis;
+  danach gilt die Lizenz, die sie gewählt hat. Die Tarif-Auswahl nennt den
+  Preis; die Tarife 15, 50, 75 und 100 und „Unbegrenzt" bleiben wählbar.
+- Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
+  die Support-Ansicht statt direkt zu den Gemeinden.
+- Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,
+  wozu und wie lange.
+- Die Gemeindeleitung kann ein Konto des Supports, das als Gast in ihrer
+  Gemeinde ist, selbst wieder herausnehmen; das Konto des Supports bleibt.
+- Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
+  Liste — für Konfis, Team und Leitung; der Pfeil oben führt zurück in die
+  Liste.
+- Mitteilungen zu einer Challenge — neue Challenge, neuer Beitrag, Stempel,
+  ausgeblendeter Beitrag — führen beim Antippen direkt in diese Challenge, auf
+  dem Gerät wie im Postfach. Liegt sie in einer anderen Gemeinde, wechselt die
+  App vorher dorthin.
+- Eine Challenge auf der Startseite öffnet beim Antippen gleich diese
+  Challenge statt der Liste.
+- Gemeindeleitung (Indigo), Leitung (Petrol) und Teamer:innen (Beere) stehen
+  in jeder Personenliste in ihrer eigenen Farbe — am Strich links, am Kreis,
+  an der Marke in der Ecke und an den kleinen Symbolen: bei den
+  Chat-Mitgliedern, beim Hinzufügen von Mitgliedern, beim Anlegen eines Chats,
+  in der Benutzerliste, in den offenen Einladungen, beim Zuordnen von Team und
+  Leitung zu einem Event und beim Zugriff auf einen neuen Jahrgang.
+
+### Behoben
+- Nach einem Update zeigt die Web-Version sofort die neuen Bilder der
+  Startseite, des Rückblicks und die neue Fassung der API-Referenz; bisher
+  konnte der Browser bis zu ein Jahr lang die alten zeigen.
+- In der Mitgliederliste eines Chats trug die Marke in der Ecke die Farbe der
+  Rolle aus der Stamm-Gemeinde; Personen, die eine Gemeinde zusätzlich
+  betreuen, erscheinen dort jetzt mit ihrer Rolle in dieser Gemeinde.
+- Beim Anlegen eines Chats stand jede Leitung und Gemeindeleitung in der Farbe
+  der Teamer:innen.
+- Die Gemeindeleitung einer Gemeinde stand beim Bearbeiten der Gemeinde in der
+  Farbe der Teamer:innen.
+- Beim Zuordnen der Leitung zu einem Event heißt die Gemeindeleitung jetzt
+  „Gemeindeleitung" statt „Leitung".
+- Ein gesperrtes Konto mit Super-Admin-Recht kann sich nicht mehr anmelden;
+  bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
+- Ein Support-Konto ohne Gemeinde kann sich im Browser abmelden; bisher gab es
+  dort keinen Weg hinaus.
+
 ### Sonstiges
+- Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne
+  Gemeinde statt einer eigenen Gemeinde für den Betrieb.
+- Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von
+  Mitteilungen mitbringt.
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
   Punkte stehen jeweils an einer Stelle.
@@ -23,6 +101,8 @@ Versionsüberschrift.
   Web-Version trotzdem ausgeliefert wurde und nur die Store-Builds warten.
 - Verwaiste Upload-Dateien werden nur noch aufgelistet; gelöscht wird erst auf
   ausdrücklichen Wunsch und nur, was mindestens eine Woche alt ist.
+- Der Bau der Android-App bricht ohne die Zugangsdatei für Mitteilungen und
+  Absturzberichte nicht mehr gleich zu Beginn ab; er läuft dann ohne beides.
 
 ## [2.3.0] - 2026-10-02
 

@@ -222,7 +222,9 @@ E-Mail-Adresse.
 
 ## Eine neue Gemeinde einrichten
 
-Eine Gemeinde legt der Betrieb von Konfi Quest an, nicht die Gemeinde selbst.
+Eine Gemeinde legt der Betrieb von Konfi Quest an, nicht die Gemeinde selbst —
+angefragt wird sie über das Formular auf der Startseite (siehe [Konfi Quest
+für eure Gemeinde anfragen](00-start.md#konfi-quest-fuer-eure-gemeinde-anfragen)).
 Dabei entsteht das erste Konto der **Gemeindeleitung**; Benutzername und
 Passwort bekommst du vom Betrieb. Melde dich damit an, ändere zuerst das
 Passwort (siehe [Selbst ändern, wenn man angemeldet
@@ -258,8 +260,11 @@ Weiter geht es in dieser Reihenfolge:
    eigene Gemeinde anpassen, die Beispiel-Challenges bearbeiten oder löschen.
 
 **Laufzeit und Konfi-Zahl** vereinbart die Gemeinde mit dem Betrieb. Ohne
-andere Absprache beginnt eine Gemeinde mit **30 Tagen Testphase**; solange
-steht auf den Startseiten „Testphase: noch … Tage". Danach kann sich in der
+andere Absprache beginnt eine Gemeinde mit **30 Tagen Testphase** und bis zu
+**5 Konfis**; solange steht auf den Startseiten „Testphase: noch … Tage". Mit
+der Lizenz gilt die Konfi-Zahl der Lizenz, die die Gemeinde gewählt hat —
+etwa bis 50 Konfis mit der Lizenz Standard.
+Läuft die Testphase ohne Lizenz aus, kann sich in der
 Gemeinde niemand mehr anmelden, bis der Betrieb die Laufzeit verlängert (siehe
 [Die Meldung beim Anmelden einordnen](35-passwoerter.md#die-meldung-beim-anmelden-einordnen)).
 Ist eine Höchstzahl an Konfis vereinbart und erreicht, fragt die App beim

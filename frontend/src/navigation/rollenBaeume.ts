@@ -6,11 +6,13 @@ import {
   ICON_DATEI_GEFUELLT,
   ICON_GRUPPE_GEFUELLT,
   ICON_MEHR,
+  ICON_PERSON_GEFUELLT,
   ICON_STARTSEITE_GEFUELLT,
   ICON_ABZEICHEN_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
 } from '../components/shared/icons';
 import type { Rolle, RollenBaum } from './routes';
+import { SUPPORT_BEREICHE } from './supportMenue';
 
 // Code-Splitting entlang der Rollen (30.08.2026): Jede Seite wird per
 // React.lazy erst geladen, wenn ihre Route erstmals rendert. Ein Konfi laedt
@@ -157,6 +159,9 @@ const AdminDashboardSettingsPage = faul(() => import('../components/admin/pages/
 const AdminLevelsPage = faul(() => import('../components/admin/pages/AdminLevelsPage'));
 const AdminInvitePage = faul(() => import('../components/admin/pages/AdminInvitePage'));
 const AdminChallengesPage = faul(() => import('../components/admin/pages/AdminChallengesPage'));
+// Eine Challenge als eigene Seite fuer Team und Leitung (2.4.0) -- dieselbe
+// Seite in beiden Baeumen, wie die Liste (shared/ChallengesPage).
+const ChallengeLeitungPage = faul(() => import('../components/shared/ChallengeLeitungPage'));
 const ChatOverviewPage = faul(() => import('../components/chat/pages/ChatOverviewPage'));
 const ChatRoomView = faul(() => import('../components/chat/views/ChatRoomView'));
 const KonfiDetailView = faul(() => import('../components/admin/views/KonfiDetailView'));
@@ -166,6 +171,7 @@ const KonfiEventsPage = faul(() => import('../components/konfi/pages/KonfiEvents
 const KonfiEventDetailPage = faul(() => import('../components/konfi/pages/KonfiEventDetailPage'));
 const KonfiBadgesPage = faul(() => import('../components/konfi/pages/KonfiBadgesPage'));
 const KonfiChallengesPage = faul(() => import('../components/konfi/pages/KonfiChallengesPage'));
+const KonfiChallengeDetailPage = faul(() => import('../components/konfi/pages/KonfiChallengeDetailPage'));
 const KonfiProfilePage = faul(() => import('../components/konfi/pages/KonfiProfilePage'));
 const TeamerDashboardPage = faul(() => import('../components/teamer/pages/TeamerDashboardPage'));
 const TeamerEventsPage = faul(() => import('../components/teamer/pages/TeamerEventsPage'));
@@ -174,6 +180,29 @@ const TeamerProfilePage = faul(() => import('../components/teamer/pages/TeamerPr
 const TeamerBadgesPage = faul(() => import('../components/teamer/pages/TeamerBadgesPage'));
 const TeamerKonfiStatsPage = faul(() => import('../components/teamer/pages/TeamerKonfiStatsPage'));
 const TeamerChallengesPage = faul(() => import('../components/teamer/pages/TeamerChallengesPage'));
+// Support-Ansicht der Web-Version (03.10.2026, docs/planung/web-version.md):
+// Uebersicht, Anfragen, eine Anfrage, Struktur, Support-Konten. Dazu gehoeren
+// die vorhandenen Seiten Gemeinden und Betrieb. Die Seiten zeigen sich nur
+// Konten mit Super-Admin-Recht (components/support/SupportBausteine.tsx).
+const SupportUebersichtPage = faul(() => import('../components/support/SupportUebersichtPage'));
+const SupportAnfragenPage = faul(() => import('../components/support/SupportAnfragenPage'));
+const SupportAnfrageDetailPage = faul(() => import('../components/support/SupportAnfrageDetailPage'));
+const SupportStrukturPage = faul(() => import('../components/support/SupportStrukturPage'));
+const SupportKontenPage = faul(() => import('../components/support/SupportKontenPage'));
+
+// Die Routen der Support-Ansicht, in zwei Baeumen gleich: im Baum super_admin
+// (Support-Konto ohne Gemeinde) und im Baum der Leitung, weil Simons Konto --
+// Gemeindeleitung mit Super-Admin-Merkmal -- dort lebt und die Ansicht ueber
+// "Mehr" erreicht (AdminSettingsPage). Andere Leitungen sehen keinen Weg
+// dorthin; wer die Adresse eintippt, bekommt den Hinweis "Nur fuer den
+// Support", und der Server antwortet ohnehin 403 (requireSuperAdmin).
+const SUPPORT_ROUTEN: RollenBaum['routes'] = [
+  { path: '/admin/support', page: SupportUebersichtPage },
+  { path: '/admin/support/anfragen/:id', page: SupportAnfrageDetailPage, param: 'id', propName: 'anfrageId' },
+  { path: '/admin/support/anfragen', page: SupportAnfragenPage },
+  { path: '/admin/support/struktur', page: SupportStrukturPage },
+  { path: '/admin/support/konten', page: SupportKontenPage },
+];
 
 // Die drei Rollenbäume als Tabelle. Reihenfolge der Routen ist bedeutsam:
 // spezifischere Pfade (/admin/events/:id) müssen VOR den allgemeineren
@@ -198,6 +227,11 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { path: '/admin/settings/dashboard', page: AdminDashboardSettingsPage },
       { path: '/admin/settings', page: AdminSettingsPage },
       { path: '/admin/badges', page: AdminBadgesPage },
+      // Eine Challenge als eigene Seite statt im Dialog (2.4.0, Simon
+      // 02.10.2026: "damit man direkt auf die challenge linken kann aus
+      // einem push"). Wie /admin/events/:id: Kennung als challengeId, der
+      // Zurueck-Weg ohne Verlauf ist die Liste (MainTabs, elternPfad).
+      { path: '/admin/challenges/:id', page: ChallengeLeitungPage, param: 'id', propName: 'challengeId' },
       { path: '/admin/challenges', page: AdminChallengesPage },
       { path: '/admin/users', page: AdminUsersPage },
       { path: '/admin/organizations', page: AdminOrganizationsPage },
@@ -208,6 +242,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       // role_name=org_admin (is_super_admin=true). Die Seite prüft die
       // Berechtigung serverseitig (403 für nicht-super-admins).
       { path: '/admin/metrics', page: AdminMetricsPage },
+      ...SUPPORT_ROUTEN,
     ],
     redirects: [
       { from: '/admin', to: '/admin/konfis' },
@@ -225,6 +260,8 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { tab: 'admin-challenges', href: '/admin/challenges', icon: ICON_CHALLENGE_GEFUELLT, label: 'Challenges', badge: 'challenges' },
       { tab: 'admin-settings', href: '/admin/settings', icon: ICON_MEHR, label: 'Mehr' },
     ],
+    // Unten in der Seitenleiste der Web-Version, ueber „Abmelden".
+    profil: { path: '/admin/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
   },
 
   teamer: {
@@ -236,6 +273,10 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { path: '/teamer/events', page: TeamerEventsPage },
       { path: '/teamer/material', page: TeamerMaterialPage },
       { path: '/teamer/badges', page: TeamerBadgesPage },
+      // Eigene Seite auch fuers Team (Festlegung 02.10.2026) -- anders als
+      // beim Termin, dessen Teamer-Detail in der Liste lebt
+      // (/teamer/events/:id unten bei den Umleitungen).
+      { path: '/teamer/challenges/:id', page: ChallengeLeitungPage, param: 'id', propName: 'challengeId' },
       { path: '/teamer/challenges', page: TeamerChallengesPage },
       { path: '/teamer/profile/badges', page: TeamerBadgesPage },
       { path: '/teamer/profile/material', page: TeamerMaterialPage },
@@ -269,6 +310,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       // gelegentlich an.
       { tab: 'teamer-material', href: '/teamer/profile/material', icon: ICON_DATEI_GEFUELLT, label: 'Material' },
     ],
+    profil: { path: '/teamer/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
   },
 
   konfi: {
@@ -279,6 +321,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
         path: '/konfi/events/:id', page: KonfiEventDetailPage },
       { path: '/konfi/events', page: KonfiEventsPage },
       { path: '/konfi/badges', page: KonfiBadgesPage },
+      { path: '/konfi/challenges/:id', page: KonfiChallengeDetailPage, param: 'id', propName: 'challengeId' },
       { path: '/konfi/challenges', page: KonfiChallengesPage },
       { path: '/konfi/chat', page: ChatOverviewPage },
       { path: '/konfi/chat/room/:roomId', page: ChatRoomView, param: 'roomId', propName: 'roomId' },
@@ -295,16 +338,23 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { tab: 'events', href: '/konfi/events', icon: ICON_TERMIN_GEFUELLT, label: 'Mitmachen' },
       { tab: 'badges', href: '/konfi/badges', icon: ICON_ABZEICHEN_GEFUELLT, label: 'Badges', badge: 'badges' },
     ],
+    profil: { path: '/konfi/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
   },
 
-  // Super-Admins bekommen nur die Organisations-Verwaltung, ohne Tab-Leiste.
+  // Support-Konto ohne Gemeinde (Systemrolle super_admin): die
+  // Support-Ansicht, ohne Reiterleiste. Startseite ist die Uebersicht -- sie
+  // traegt auf schmalen Bildschirmen den Weg zu allen Bereichen und das
+  // Abmelden; breit zeigt die Seitenleiste der Web-Version dieselben Bereiche
+  // (`menue`, eine Liste mit der Uebersicht: navigation/supportMenue.ts).
   super_admin: {
-    home: '/admin/organizations',
+    home: '/admin/support',
     routes: [
+      ...SUPPORT_ROUTEN,
       { path: '/admin/organizations', page: AdminOrganizationsPage },
       { path: '/admin/metrics', page: AdminMetricsPage },
     ],
-    redirects: [{ from: '/admin', to: '/admin/organizations' }],
+    redirects: [{ from: '/admin', to: '/admin/support' }],
     tabs: [],
+    menue: SUPPORT_BEREICHE.map(({ path, label, icon, gruppe }) => ({ path, label, icon, gruppe })),
   },
 };

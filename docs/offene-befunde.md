@@ -19,6 +19,29 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Code
 
+- **Bearbeiten-Knopf bei Super-Admin-Konten.** `GET /users` setzt `can_edit`
+  allein nach der Rolle (`filterUsersByHierarchy`); bei einem Konto mit
+  Super-Admin-Recht — Simons Konto in seiner Gemeinde, ein Support-Gast —
+  steht `can_edit: true`, Bearbeiten, Entfernen und Passwort enden aber mit
+  403 „Super-Admin-Konten kann nur ein Super-Admin bearbeiten." (Schutz seit
+  26.09.2026, Sicherheit BF-01). Die App bietet also Knöpfe an, die nicht
+  gehen. Fix: `can_edit` zusätzlich nach `istSuperAdminKonto`
+  (`utils/roleHierarchy.js`), dafür `is_super_admin` in die Abfrage.
+  Gefunden 03.10.2026.
+- **Benutzername einer Gemeindeleitung ohne Zeichenregel.** `POST
+  /organizations` (erste Gemeindeleitung), `POST /organizations/:id/admins`
+  und `POST /support/anfragen/:id/anlegen` prüfen den Benutzernamen nur auf
+  „nicht leer" und systemweit frei; Leerzeichen und Sonderzeichen gehen
+  durch. Überall sonst gilt `commonValidations.username` (3 bis 50 Zeichen,
+  Buchstaben, Ziffern, Punkt, Bindestrich), auch für Support-Konten. Fix:
+  dieselbe Regel an den drei Stellen (für Bestandskonten folgenlos). Am Code
+  gefunden 03.10.2026.
+- **Mail nach „Passwort setzen" für Support-Konten.** `PUT
+  /users/:id/reset-password` schickt einem Support-Konto „die Leitung deiner
+  Gemeinde hat ein neues Passwort gesetzt"; `PUT
+  /organizations/support-konten/:id/passwort` schickt deshalb gar keine Mail.
+  Eine passende Vorlage fehlt. Gefunden 03.10.2026.
+
 - **Challenge-Urheber:innen nur aus der Stamm-Gemeinde.** `GET
   /challenges/admin/authors` und die Urheber-Prüfung beim Anlegen und Ändern
   lesen nur `users.organization_id`; wer als Teamer:in in einer weiteren
@@ -27,6 +50,23 @@ Stand: 02.10.2026, gegen den Code geprüft.
   umgestellt. Teil der Prüfung in
   [planung/mehrfach-konten.md](planung/mehrfach-konten.md), Punkt 3
   (Chat BF-08, Rest).
+- **Rolle aus der Stamm-Gemeinde in Termin-Teilnehmern und Chat-Nachrichten.**
+  `GET /events/:id` (Teilnehmerliste, `backend/routes/events/lesen.js`) und
+  `GET /chat/rooms/:roomId/messages` (`sender_role_name`) lesen die Rolle über
+  `users.role_id`. Wer eine Gemeinde zusätzlich betreut, steht dort mit der
+  Rolle der Stamm-Gemeinde: In der Teilnehmerliste hängen daran das Wort
+  „Leitung", die Trennung Konfi/Team und die Zähler, in der Nachricht das
+  Rollenwort hinter dem Namen. Die Chat-Mitgliederliste zieht die Rolle seit
+  02.10.2026 je Gemeinde (Regel wie `ladeRolleInGemeinde`,
+  `backend/utils/orgMitglieder.js`). Gefunden 02.10.2026 beim Nachstellen der
+  Rollenfarben; Teil der Prüfung in
+  [planung/mehrfach-konten.md](planung/mehrfach-konten.md).
+- **Gemeindeleitung beim Bearbeiten einer Gemeinde nur aus der
+  Stamm-Gemeinde.** `GET /organizations/:id/admins` fragt
+  `u.organization_id = $1`; wer die Gemeinde über `user_organizations` als
+  Gemeindeleitung betreut, fehlt im Abschnitt „Gemeindeleitung" — in
+  Produktion hat Organisation 2 ihre ganze Leitung nur dort (gemessen
+  25.09.2026). Gefunden 02.10.2026.
 - **Punktart steht nicht am Beleg.** Seit Migration 163 speichert
   `user_activities` den Punktwert zum Zeitpunkt der Vergabe, die Art
   (Gottesdienst/Gemeinde) aber nicht. Ändert die Leitung die Art einer
@@ -80,18 +120,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   globaler Limiter hängen in `backend/createApp.js`, nicht an der Route);
   am 29.09.2026 begründet, in GitHub als „False positive" zu schließen —
   ob es geschehen ist, ist nicht vermerkt.
-- **Doku und Bilder ein Jahr im Zwischenspeicher.** In `frontend/nginx.conf`
-  gilt die Regel für Dateiendungen (`location ~* \.(js|css|png|…)$`, „expires
-  1y", `immutable`) auch unter `/docs/` — reguläre Ausdrücke gehen in nginx
-  vor `location /docs/`. Handbuch-Bilder, Swagger UI und Bilder der
-  Homepage tragen aber keine Prüfsumme im Namen: Nach einem Update sehen
-  Nutzer:innen weiter die alten. Gefunden 02.10.2026; vorgesehen für 2.4.0.
-- **Biometrie einschalten hat keinen Aufrufer mehr.** `biometrieAktivieren`
-  und `biometrieAusschalten` (`frontend/src/services/biometrics.ts`) ruft nur
-  `BiometrieSchalter.tsx`, und den bindet seit dem 27.08.2026 keine Seite
-  mehr ein. Die Anmeldung per Biometrie auf der Anmeldeseite gibt es damit
-  nur noch auf Geräten, die sie vorher eingeschaltet hatten. Behalten (und
-  den Schalter zurückholen) oder entfernen? Gefunden 02.10.2026.
 
 ### Tests und CI
 
@@ -118,18 +146,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   BF-07, Rest).
 - **`armv7` in der Info.plist.** `UIRequiredDeviceCapabilities` nennt noch
   `armv7`; beim nächsten Umbau mit Xcode entfernen (CI BF-15, Rest).
-- **Android-Build bricht ohne Firebase-Datei ab.** In
-  `frontend/android/app/build.gradle` steht der Block `firebaseCrashlytics`
-  außerhalb der Bedingung, die das Crashlytics-Plugin nur mit
-  `google-services.json` anwendet. Fehlt die Datei (lokaler Bau, Fork),
-  scheitert Gradle schon beim Konfigurieren statt ohne Push und
-  Absturzberichte zu bauen. Gefunden 02.10.2026.
-- **Text der CI-Meldung stimmt nicht bei rotem Android-Test.**
-  `.github/scripts/ci-meldung.py` schreibt in das Issue bei rotem `main`, die
-  CI „baut und deployt" dann nicht. Der Job `android-test` gehört aber nicht
-  zu den Voraussetzungen von Build und Deploy — ist nur er rot, wird trotzdem
-  gebaut und ausgerollt; nur das Release-Tor sperrt den Store-Build.
-  Gefunden 02.10.2026.
 
 ### Betrieb
 
@@ -184,13 +200,12 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Release
 
-- **Store-Release 2.3.0 freigeben lassen.** Eingereicht am 02.10.2026
-  (Merge-Commit `dac246eb`, Tag `2.3.0`): Android versionCode 134 in
-  Produktion gestaffelt mit 10 %, iOS-Build 240 in App Store Connect. Offen:
-  die Prüfung beider Stores abwarten, danach den Android-Anteil in der Play
-  Console auf 100 % heben. Beim lokalen Agenten:
-  [auftraege/lokaler-agent/13-store-freigabe-2.3.0.md](auftraege/lokaler-agent/13-store-freigabe-2.3.0.md);
-  Ablauf: [betrieb/release.md](betrieb/release.md).
+- **Store-Release 2.3.0: Freigabe bei Apple abwarten.** Android 2.3.0 (134)
+  steht seit 03.10.2026 in Produktion bei 100 %, Tag `2.3.0` liegt auf
+  `dac246eb`. iOS-Build 240 ist am 02.10.2026 eingereicht und wartet auf die
+  Prüfung; nach der Freigabe erscheint er automatisch (wie 2.2.0). Ergebnis
+  des lokalen Agenten:
+  [auftraege/lokaler-agent/13-store-freigabe-2.3.0.md](auftraege/lokaler-agent/13-store-freigabe-2.3.0.md).
 
 ## Bei Simon zu entscheiden
 
@@ -241,15 +256,17 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ## Geplant
 
-- **Version 2.4.0** — Challenges als eigene Seiten wie Events, damit
-  Push, Postfach und Links direkt in die Challenge führen; die drei
-  Rollenfarben in allen Personenlisten; dazu „darf freigeben",
+- **Version 2.4.0** — „darf freigeben",
   Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
-- **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
-  Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
-  Homepage, Gemeinde zuerst mit Zuordnung zu Kirchenkreis und Landeskirche:
-  [planung/web-version.md](planung/web-version.md).
+- **Web-Version: was nach der Support-Ansicht noch fehlt** — Leiste links,
+  Support-Ansicht, Anfrageformular und Struktur sind gebaut (03.10.2026).
+  Offen: auf Anfragen antworten und die Antworten zuordnen (als Nächstes,
+  Postfach bei Simon), die Gruppe „Verwaltung" in der Leiste, der Rückweg
+  „ohne Gemeinde" nach einem Gemeindewechsel, eine Route für eine einzelne
+  Anfrage und ein Löschknopf, weitere
+  Kennzahlen, „Einwilligung liegt vor" am Konfi-Profil:
+  [planung/web-version.md](planung/web-version.md), Abschnitt „Offen".
 - **„Darf freigeben"** — ein Recht, Anträge zu entscheiden, Events zu
   verbuchen und Beiträge freizugeben, statt dass jede Leitung alles in die
   Zahl bekommt; sechs Fragen offen:

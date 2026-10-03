@@ -54,7 +54,7 @@ describe('Alle Rollen-Beschriftungen lesen rollenName', () => {
     'src/components/admin/modals/OrganizationManagementModal.tsx',
     'src/components/chat/modals/MembersModal.tsx',
     'src/components/shared/EinladungenKarte.tsx',
-    'src/components/konfi/modals/ChallengeDetailModal.tsx',
+    'src/components/konfi/pages/KonfiChallengeDetailPage.tsx',
   ];
 
   for (const pfad of ansichten) {

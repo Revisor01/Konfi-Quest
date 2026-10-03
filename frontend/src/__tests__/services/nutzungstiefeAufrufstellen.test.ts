@@ -38,7 +38,7 @@ const STELLEN: Array<{
     vorher: '/bonus-points`, body)'
   },
   {
-    datei: 'src/components/admin/modals/ChallengeLeitungModal.tsx',
+    datei: 'src/components/admin/views/ChallengeLeitungView.tsx',
     handlung: 'beitrag-moderiert',
     vorher: '/moderate`'
   },

@@ -530,7 +530,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={challenge.id}
                         className="app-dashboard-glass-card"
-                        onClick={() => router.push('/konfi/challenges')}
+                        onClick={() => router.push(`/konfi/challenges/${challenge.id}`)}
                         style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}
                       >
                         <div style={{

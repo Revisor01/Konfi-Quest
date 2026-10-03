@@ -61,10 +61,11 @@ vi.mock('@ionic/react', async (original) => ({
   useIonActionSheet: () => [vi.fn()],
 }));
 
-import ChallengeDetailModal from '../../../components/konfi/modals/ChallengeDetailModal';
-import ChallengeLeitungModal from '../../../components/admin/modals/ChallengeLeitungModal';
+import KonfiChallengeDetailPage from '../../../components/konfi/pages/KonfiChallengeDetailPage';
+import ChallengeLeitungView from '../../../components/admin/views/ChallengeLeitungView';
 import ChallengeMomenteSlide from '../../../components/wrapped/slides/ChallengeMomenteSlide';
 import { clearMediaCache } from '../../../services/mediaCache';
+import { offlineCache } from '../../../services/offlineCache';
 
 class SofortSichtbar {
   private cb: IntersectionObserverCallback;
@@ -116,7 +117,7 @@ beforeEach(async () => {
 afterEach(() => cleanup());
 
 const oeffnen = async () => {
-  const ansicht = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+  const ansicht = render(<KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />);
   await waitFor(() => expect(ansicht.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
   return ansicht;
 };
@@ -168,7 +169,7 @@ describe('Konfi-Ansicht: zweites Öffnen einer Challenge mit Bild', () => {
 
     // Die Leitung hat den Beitrag ausgeblendet: Der Server führt ihn nicht mehr.
     galerie = [];
-    const zweites = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+    const zweites = render(<KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />);
     await waitFor(() => expect(zweites.container.textContent).toContain('Noch keine geteilten Beiträge'));
 
     expect(zweites.container.querySelector('img')).toBeNull();
@@ -178,18 +179,18 @@ describe('Konfi-Ansicht: zweites Öffnen einer Challenge mit Bild', () => {
 
 describe('Leitungsansicht', () => {
   it('lädt über denselben Cache: zweites Öffnen ohne Datei-Download', async () => {
-    const erstes = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    const erstes = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
     await waitFor(() => expect(erstes.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
     erstes.unmount();
 
-    const zweites = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    const zweites = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
     await waitFor(() => expect(zweites.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
 
     expect(dateiAufrufe()).toBe(1);
   });
 
   it('gelöscht: die Datei verschwindet auch vom Gerät', async () => {
-    const { container } = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    const { container } = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
     await waitFor(() => expect(container.querySelector('img[alt="foto.png"]')).not.toBeNull());
     expect(cacheInhalt()).toEqual([`challenges-${FOTO}`]);
 
@@ -246,17 +247,20 @@ describe('Ohne Netz', () => {
     apiGet.mockReset();
     apiGet.mockRejectedValue(netzWeg);
 
-    const { container } = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+    const { container } = render(<KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />);
 
     await waitFor(() => expect(container.querySelector('img[alt="foto.png"]')).not.toBeNull());
     expect(dateiAufrufe()).toBe(0);
   });
 
   it('nie geladen: sagt, dass die Beiträge offline fehlen, statt "keine Beiträge"', async () => {
+    // Aus der Liste geoeffnet: Die kennt die Challenge (Kopf), ihre Beitraege
+    // waren auf dem Geraet nie geladen.
+    await offlineCache.set('konfi:challenges:4', { active: [challenge], archive: [], marks: [] }, 60_000);
     online = false;
     apiGet.mockRejectedValue(netzWeg);
 
-    const { container } = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+    const { container } = render(<KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />);
 
     await waitFor(() => expect(container.textContent).toContain('Die Liste der Beiträge ist offline nicht verfügbar.'));
     expect(container.textContent).not.toContain('Noch keine geteilten Beiträge');
@@ -267,15 +271,18 @@ describe('Ohne Netz', () => {
     apiGet.mockReset();
     apiGet.mockRejectedValue(Object.assign(new Error('403'), { response: { status: 403, data: { error: 'Zugriff verweigert' } } }));
 
-    const { container } = render(<ChallengeDetailModal challenge={challenge as never} onClose={vi.fn()} />);
+    const { container } = render(<KonfiChallengeDetailPage challengeId={challenge.id} onBack={vi.fn()} />);
 
-    await waitFor(() => expect(stabil.setError).toHaveBeenCalled());
+    // Seit 2.4.0 eine Seite mit eigener Adresse: Sie nennt den Grund, statt
+    // einen roten Kasten ueber eine leere Galerie zu legen.
+    await waitFor(() => expect(container.textContent).toContain('Diese Challenge ist nicht für dich'));
     expect(container.querySelector('img')).toBeNull();
     expect(container.textContent).not.toContain('offline nicht verfügbar');
+    expect(container.textContent).not.toContain('Zeig uns ein Bild');
   });
 
   it('Leitungsansicht: dasselbe — Stand vom Gerät ohne Netz', async () => {
-    const erstes = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    const erstes = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
     await waitFor(() => expect(erstes.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
     erstes.unmount();
     await neustart();
@@ -283,7 +290,7 @@ describe('Ohne Netz', () => {
     apiGet.mockReset();
     apiGet.mockRejectedValue(netzWeg);
 
-    const zweites = render(<ChallengeLeitungModal challenge={challenge as never} onClose={vi.fn()} />);
+    const zweites = render(<ChallengeLeitungView challenge={challenge as never} onBack={vi.fn()} />);
 
     await waitFor(() => expect(zweites.container.querySelector('img[alt="foto.png"]')).not.toBeNull());
     expect(dateiAufrufe()).toBe(0);

@@ -175,6 +175,31 @@ export const resolveOrgForPush = async (
 };
 
 /**
+ * Ziel einer Challenge-Mitteilung (2.4.0, Simon 02.10.2026: "challenge nicht
+ * in modal öffnen, sondern in unterseite, damit man direkt auf die challenge
+ * linken kann aus einem push").
+ *
+ * Alle vier Arten (challenge_started -- auch als Feed-Hinweis --,
+ * challenge_submission, challenge_badge_earned, challenge_submission_hidden)
+ * tragen die Kennung als `challengeId` (pushService.js); das Postfach liest
+ * sie aus derselben Spalte. Mit Kennung geht es auf die Seite der Challenge
+ * (/<rolle>/challenges/:id, rollenBaeume.ts), ohne -- aeltere Eintraege --
+ * wie bisher auf die Liste. Nur eine positive ganze Zahl wird zur Adresse;
+ * alles andere waere eine kaputte Route und fiele in den Catch-all.
+ *
+ * ALT-APP-VERTRAG: Store-Apps bis 2.3.x kennen die Detailroute nicht und
+ * bauen mit IHRER Weiche weiter die Liste. Die Push-Daten bleiben dafuer
+ * unveraendert.
+ */
+const challengeZiel = (routePrefix: string, data: Record<string, unknown> | undefined): string => {
+  const roh = data?.challengeId ?? data?.challenge_id;
+  const kennung = roh === undefined || roh === null ? '' : String(roh);
+  return /^[1-9]\d*$/.test(kennung)
+    ? `${routePrefix}/challenges/${kennung}`
+    : `${routePrefix}/challenges`;
+};
+
+/**
  * Ziel-URL für einen angetippten Push. Reine Funktion — der userType muss
  * bereits der Typ in der ZIEL-Organisation sein (siehe resolveOrgForPush).
  * Leerer String = keine Navigation (unbekannter Typ).
@@ -340,15 +365,15 @@ export const buildPushTargetUrl = (
       return userType === 'admin' ? '/admin/konfis' : `${routePrefix}/dashboard`;
 
     case 'challenge_started':
-      // Neue Challenge gestartet -> Challenge-Seite der eigenen Rolle. Seit
-      // 27.09.2026 bekommen den Push auch Team und Leitung, wo sie selbst
-      // mitmachen (Backend: utils/challengeLeitungSicht.js); dort liegt die
-      // neue Challenge in ihrer Challenge-Liste.
-      return `${routePrefix}/challenges`;
+      // Neue Challenge gestartet (oder, mit anlass 'challenge_feed', ein neuer
+      // Beitrag in der Galerie) -> in die Challenge, Seite der eigenen Rolle.
+      // Seit 27.09.2026 bekommen den Start auch Team und Leitung, wo sie
+      // selbst mitmachen (Backend: utils/challengeLeitungSicht.js).
+      return challengeZiel(routePrefix, data);
 
     case 'challenge_submission':
-      // Neuer Beitrag -> Moderation in der Leitungs-Ansicht.
-      return userType === 'konfi' ? '/konfi/challenges' : `${routePrefix}/challenges`;
+      // Neuer Beitrag -> in die Challenge, dort die Moderation ("Wartet").
+      return challengeZiel(routePrefix, data);
 
     case 'wrapped': {
       // Der JEWEILIGE Rueckblick (Simon, 25.09.2026: "Rückblick zeigt das
@@ -411,17 +436,18 @@ export const buildPushTargetUrl = (
     }
 
     case 'challenge_badge_earned':
-      // Stempel aus einer Challenge -> Challenge-Seite der Rolle. Dort ist
-      // der Abschnitt "Deine Stempel" (Simon, 25.09.2026: "Challenge Stempel
-      // muss auf die Challenge Seite da sind die Stempel"). Bis dahin fuehrte
-      // der Tap zu den Abzeichen -- Stempel sind aber keine Abzeichen und
-      // stehen dort nicht (Challenges 2.0: Abzeichen ohne Badge-System).
-      return `${routePrefix}/challenges`;
+      // Stempel aus einer Challenge -> in die Challenge, aus der er stammt
+      // (2.4.0, Simon 02.10.2026: direkt auf die Challenge linken). Ohne
+      // Kennung die Liste mit dem Abschnitt "Deine Stempel" (Simon,
+      // 25.09.2026: "Challenge Stempel muss auf die Challenge Seite da sind
+      // die Stempel"). Nie zu den Abzeichen -- Stempel sind keine Abzeichen
+      // und stehen dort nicht (Challenges 2.0: Abzeichen ohne Badge-System).
+      return challengeZiel(routePrefix, data);
 
     case 'challenge_submission_hidden':
-      // Eigener Beitrag ausgeblendet -> Challenge-Bereich, dort steht die
-      // Begruendung am Beitrag.
-      return `${routePrefix}/challenges`;
+      // Eigener Beitrag ausgeblendet -> in die Challenge, dort steht die
+      // Begruendung am Beitrag ("Meins").
+      return challengeZiel(routePrefix, data);
 
     case 'certificate':
       // Zertifikat -> Profil, dort liegt der Download.

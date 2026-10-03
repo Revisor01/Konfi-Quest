@@ -50,6 +50,65 @@ kommen per Mail.
 8. **Einwilligung der Eltern bleibt in den Gemeinden.** Keine Bestätigung per
    Eltern-Mail in der App; die Gemeinde holt sie ein (analog oder mit ihrem
    Anmeldeformular). konfi-quest.de stellt eine Vorlage bereit.
+9. **Bauweise: dieselbe App mit breitem Layout** (Simon, 02.10.2026). Die
+   bestehende App bekommt für breite Bildschirme eine ein- und ausklappbare
+   Leiste links statt der Reiterleiste unten. Eine Codebasis; die Apps auf
+   iPhone und Android bleiben, wie sie sind. Ionic bringt dafür
+   `IonSplitPane` und `IonMenu` mit, heute ungenutzt. Die API bleibt eine;
+   neue Routen und Felder nur additiv.
+10. **Die Support-Person hat dieselben Rechte wie ein Super-Admin** (Simon,
+    02.10.2026) — kein eigenes, engeres Merkmal.
+11. **Super-Admin mit und ohne Gemeinde** (Simon, 02.10.2026: „Ohne Gemeinde
+    eigentlich gut einmal prüfen, was das heißt. Es soll ja beides gehen."):
+    Ein Super-Admin kann Mitglied in Gemeinden sein (wie heute) oder ein
+    Support-Konto ganz ohne Gemeinde haben. Wie das technisch geht, wird am
+    Code geprüft (unten, „Offen").
+12. **Konto ohne Gemeinde: die Gemeinde am Konto wird optional** (Simon,
+    03.10.2026, nach der Prüfung unten): `users.organization_id` nullable,
+    nur für Super-Admins, mit einer gemeindefreien Systemrolle — keine
+    versteckte Betriebs-Gemeinde.
+13. **Support arbeitet nur im Browser.** Meldet sich ein Konto ohne Gemeinde
+    in einer App an, alt oder neu, kommt ein klarer Hinweis auf die
+    Support-Ansicht im Browser.
+14. **Support darf als Gast in eine Gemeinde**, nur auf ausdrücklichen
+    Schritt und für die Gemeinde sichtbar: Das Konto steht dann als
+    Gemeindeleitung in ihrer Benutzerliste, solange es eingetragen ist.
+15. **Simons eigenes Konto bleibt, wie es ist** (Gemeindeleitung in seiner
+    Gemeinde mit Super-Admin-Merkmal). Das Support-Konto ist ein zweites,
+    eigenes Konto.
+
+### Antworten nach dem Bau (Simon, 03.10.2026)
+
+16. **Konfi-Limit: Testphase 5, danach die Wunschlizenz.** Wörtlich:
+    „Testphase 5 danach unbegrenzt. Das andere als Optionen solange es noch
+    nicht von der EKD gekauft ist." Und gleich danach: „Die anderen Limits
+    müssen aber erhalten bleiben. […] Am Anfang dürfen die die Limits auch
+    auswählen. Bis die EKD wirklich zahlt. Also die Leute wählen ihre
+    Wunschlizenz!" Gebaut: Auswahl „Gewünschte Lizenz" im Anfrageformular
+    (Migration 192, `backend/utils/lizenzen.js`); beide Formulare belegen in
+    der Testphase 5 vor und stellen beim Ausschalten auf die Konfi-Zahl der
+    Wunschlizenz, ohne Wunsch und beim Verbund auf unbegrenzt; die Tarife
+    15/50/75/100 bleiben wählbar (`frontend/src/utils/konfiLimitVorgabe.ts`,
+    [betrieb/gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md)).
+    „Unbegrenzt für alle" kommt erst, wenn die EKD zahlt. Nachgeschärft:
+    „Unbegrenzt will ich aber setzen können" (etwa für die eigene Gemeinde)
+    und „bei der Auswahl muss auch der Preis mit stehen" — beide Formulare
+    nutzen dieselbe Tarif-Auswahl mit Preis und Unbegrenzt
+    (`TARIF_OPTIONEN` in `frontend/src/utils/lizenzen.ts`).
+17. **Kleine Zahlen in der Statistik** werden ungefiltert gezeigt; nur
+    Super-Admins sehen sie. Bleibt so.
+18. **Anfragen „neu" oder „in Arbeit" ohne Bewegung** gehen nach 365 Tagen
+    ohne Änderung (gebaut: `cleanupUnbewegteAnfragen`; Datenschutzerklärung
+    9c).
+19. **Grenze von 3 Anfragen pro Tag und E-Mail-Adresse** bleibt.
+20. **Gesperrte Konten** zählen in der Statistik nicht mit. Bleibt so.
+21. **Unter „Mehr"** führt das Symbol oben rechts in die Support-Ansicht.
+    Bleibt so.
+22. **Lesebreite 960 px** neben der Leiste. Bleibt so.
+23. **Unterseiten von „Mehr" als Gruppe „Verwaltung" in die Leiste** — ja,
+    als nächster Schritt (unten, „Offen").
+24. **Einwilligungsvorlage, Abschnitt 9c der Datenschutzerklärung und die
+    Anrede „ihr/euch" in der Bestätigungsmail:** „erstmal ok".
 
 ## Vorschlag
 
@@ -75,10 +134,11 @@ Noch nicht mit Simon abgestimmt, abgeleitet aus den Punkten oben.
 
 Am Code geprüft am 02.10.2026.
 
-**Super-Admin** ist ein Merkmal am Konto (`users.is_super_admin`), keine
-eigene Rolle. `requireSuperAdmin` (`backend/middleware/rbac.js`) antwortet
-ohne das Merkmal mit 403. Die heutigen Super-Admin-Konten sind
-Gemeindeleitungen mit Merkmal in ihrer Stamm-Gemeinde.
+**Super-Admin** ist ein Merkmal am Konto (`users.is_super_admin`).
+`requireSuperAdmin` (`backend/middleware/rbac.js`) antwortet ohne das
+Merkmal mit 403. Die heutigen Super-Admin-Konten sind Gemeindeleitungen mit
+Merkmal in ihrer Stamm-Gemeinde; Support-Konten ohne Gemeinde tragen dazu die
+Systemrolle `super_admin` (unten, Konto ohne Gemeinde).
 
 Routen in `backend/routes/organizations.js` (eingehängt unter
 `/api/organizations`):
@@ -94,52 +154,185 @@ Routen in `backend/routes/organizations.js` (eingehängt unter
 | `GET /:id/members`, `POST /:id/members`, `DELETE /:id/members/:userId` | Super-Admin | Mitglieder und Zuweisungen über Gemeindegrenzen, mit Rolle |
 | `GET /:id/users`, `GET /:id/admins`, `POST /:id/admins` | Super-Admin oder Gemeindeleitung der eigenen Gemeinde | Konten der Gemeinde, Gemeindeleitungen anlegen |
 | `GET /current`, `GET /:id`, `GET /:id/stats` | Super-Admin oder Team der Gemeinde | Gemeinde lesen, Kennzahlen |
+| `GET /support-konten`, `POST /support-konten`, `PATCH /support-konten/:id`, `PUT /support-konten/:id/passwort`, `DELETE /support-konten/:id` | Super-Admin | Support-Konten ohne Gemeinde (seit 03.10.2026) |
+
+Dazu seit dem 03.10.2026 `POST /api/anfragen` (öffentlich, das
+Anfrageformular) und unter `/api/support` (nur Super-Admin) Anfragen,
+Landeskirchen, Kirchenkreise und Statistik — unten, „Support-Ansicht,
+Backend".
 
 Dazu `GET /api/metrics`, `/api/metrics/history` und `/api/metrics/local`
 (nur Super-Admin, `backend/createApp.js`): Serverzeiten, Fehler,
 Lastverteilung je Replica.
 
-**Daten:** `organizations` kennt `kirchenkreis` als Freitext (Migration 086),
-dazu Ansprechperson, E-Mail, Telefon, Adresse, Website, Laufzeit
-(`trial_ends_at`, `is_trial`) und `max_konfis`. Eine Landeskirche, Anfragen
-oder Support-Fälle gibt es im Schema nicht. Mails verschickt
+**Konto ohne Gemeinde** (gebaut am 03.10.2026, Entscheidungen 12 bis 15;
+Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
+
+- **Schema** (Migration 190): `users.organization_id` ist nullable, aber nur
+  für Super-Admins (`CHECK (organization_id IS NOT NULL OR is_super_admin
+  IS TRUE)`); dazu die gemeindefreie Systemrolle `super_admin` (eine Zeile in
+  `roles`, eindeutig über einen partiellen Index). Sie steht in keiner
+  Rollenliste einer Gemeinde und lässt sich dort nicht vergeben.
+- **Routen** `/api/organizations/support-konten` (nur Super-Admin): auflisten
+  mit Gast-Gemeinden, anlegen (Benutzername systemweit eindeutig, Passwortregeln
+  wie überall), sperren und entsperren (beendet alle Sitzungen), Passwort
+  setzen, löschen (gemeinsame Kontolöschung). Das letzte aktive
+  Super-Admin-Konto lässt sich weder sperren noch löschen, auch nicht über
+  die Selbstlöschung.
+- **Anmeldung nur im Browser:** Ein Konto ohne Gemeinde meldet sich nur an,
+  wenn der Client `kann_ohne_gemeinde: true` schickt — das tut allein die
+  Web-Version, bei Anmeldung und Refresh. Sonst 403 `user_inactive` mit
+  `grund: konto_ohne_gemeinde` und dem Hinweis auf konfi-quest.de. Die
+  Store-App 2.3.0 zeigt diesen Text; 1.5.3 bis 2.2.x zeigen bei jeder
+  Ablehnung „Keine Verbindung zum Server" (Fehler ihrer Anmeldeseite) und
+  sind trotzdem abgewiesen. Bedienkomfort, keine Sicherheitsgrenze — die
+  Rechte hält `rbac.js`.
+- **Als Gast in einer Gemeinde** über `POST /organizations/:id/members`
+  (Super-Admin, Rolle Gemeindeleitung): Die Gemeinde sieht das Konto in ihrer
+  Benutzerliste als Gemeindeleitung aus einer weiteren Gemeinde; bearbeiten
+  kann es dort nur ein Super-Admin, aus der Gemeinde nehmen auch die
+  Gemeindeleitung selbst (seit 03.10.2026, nur die Mitgliedschaft endet).
+  Gemeindewechsel und Rückweg über `switch-org` und den Refresh wie bei
+  jedem Konto.
+- **Erster Zugang einer neuen Instanz** (seit 03.10.2026):
+  `scripts/ersteinrichtung.js` legt ein Support-Konto ohne Gemeinde an statt
+  einer Gemeinde „Betrieb" ([init-scripts/README.md](../../init-scripts/README.md)).
+- **Behoben auf dem Weg:** die acht Stellen, die bei `organization_id` NULL
+  falsch rechneten (Benutzerliste, Detail, Hierarchieprüfung, Rückblick,
+  Passwort setzen, `POST /chat/rooms`, `is_primary`), und die Anmeldung
+  eines gesperrten Super-Admin-Kontos (Login 200, danach jede Anfrage 401).
+  Für bestehende Konten ändert sich keine Antwortform (Vertragstest).
+
+**Breites Layout** (gebaut am 03.10.2026, Entscheidungen 1 und 9; Handbuch:
+[Im Browser mit der Leiste links arbeiten](../handbuch/03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)):
+
+- In der Web-Version ab 992 px Breite eine Leiste links statt der
+  Reiterleiste (`frontend/src/components/layout/Seitenleiste.tsx`), ein- und
+  ausklappbar, der Zustand je Browser in `localStorage`. Darunter und in den
+  Apps bleibt die Reiterleiste; die Frage „Leiste oder Reiter" beantwortet
+  eine Stelle (`navigation/breitesLayout.ts`), die Zahlen an beiden rechnet
+  `navigation/reiterZaehler.ts`.
+- Inhalt je Rolle aus `navigation/rollenBaeume.ts`: die Reiter, dazu das
+  optionale Feld `menue` (Einträge mit `path`, `label`, `icon`, `gruppe`),
+  unten `profil`, Gemeinde-Umschalter und Abmelden. Der Baum `super_admin`
+  hat keine Reiter; seine Leiste zeigt `menue` (die sechs Bereiche der
+  Support-Ansicht aus `navigation/supportMenue.ts`) und Abmelden.
+- Im Browser steht um das Outlet immer eine `IonSplitPane`; die Breite
+  schaltet nur ihr `when`. So wird das Outlet beim Ziehen des Fensters nie
+  neu montiert. In den Apps gibt es den Rahmen nicht. Die E2E-Specs laufen
+  mit 960 px Fensterbreite (`playwright.config.ts`), die Leiste prüft
+  `e2e/seitenleiste.spec.ts`.
+
+**Support-Ansicht, Backend** (gebaut am 03.10.2026, Entscheidungen 3 bis 7;
+Betrieb: [betrieb/support-ansicht.md](../betrieb/support-ansicht.md)):
+
+- **Daten** (Migration 191): `landeskirchen`, `kirchenkreise` (Landeskirche
+  darf fehlen), `organizations.kirchenkreis_id`; die vorhandenen Freitexte
+  sind als Kirchenkreise ohne Landeskirche übernommen und verknüpft, die
+  Textspalte bleibt für die Apps bis 2.3.0 und trägt den Namen des
+  zugeordneten Kirchenkreises (`utils/kirchenkreisZuordnung.js`).
+  `gemeinde_anfragen` mit den Feldern des Formulars, Status
+  neu/in_arbeit/angelegt/abgelehnt, Zeitpunkt der Einwilligung.
+- **Anfrageformular** `POST /api/anfragen`: Honigtopf, Pflichtfelder,
+  Einwilligung, 5 Anfragen je Stunde und Client-IP, 3 je Tag und
+  E-Mail-Adresse; Bestätigung mit festem Text an die Adresse, Hinweis ohne
+  Kontaktdaten an die aktiven Super-Admin-Konten; im Protokoll nur die
+  Kennung. Abgelehnte Anfragen gehen 180 Tage nach der Ablehnung, angelegte
+  mit ihrer Gemeinde (Datenschutzerklärung 9c).
+- **Support-Routen** `/api/support`: Anfragen auflisten, Status und Notiz,
+  „Anlegen" mit derselben Funktion wie `POST /organizations`
+  (`utils/gemeindeAnlegen.js`, in einer Transaktion mit der Anfrage);
+  Landeskirchen und Kirchenkreise; Statistik je Gemeinde (Konten je Rolle aus
+  beiden Quellen der Zugehörigkeit, aktive Konten in 30 Tagen, Jahrgänge,
+  ohne Personennamen, ohne Support-Konten ohne Gemeinde).
+- `PUT /organizations/:id` nimmt `kirchenkreis_id` (nur Super-Admin),
+  `GET /organizations` liefert `kirchenkreis_id`, `landeskirche_id`,
+  `landeskirche` zusätzlich, `POST /organizations` nimmt `kirchenkreis_id`.
+
+**Weitere Daten:** `organizations` trägt Ansprechperson, E-Mail, Telefon,
+Adresse, Website, Laufzeit (`trial_ends_at`, `is_trial`) und `max_konfis`.
+Support-Fälle über Anfragen hinaus gibt es im Schema nicht. Mails verschickt
 `backend/services/emailService.js`; eingehende Mails verarbeitet nichts.
+
+**Support-Ansicht und Anfrageformular** (gebaut am 03.10.2026,
+Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
+[betrieb/support-ansicht.md](../betrieb/support-ansicht.md)):
+
+- **Seiten** unter `/admin/support` (`frontend/src/components/support/`):
+  Übersicht mit Kennzahlen gesamt, je Landeskirche, je Kirchenkreis und je
+  Gemeinde (aufklappbar, zusammengefasst in der Oberfläche,
+  `utils/supportStatistik.ts`), Zahl der neuen Anfragen, Weg zu allen
+  Bereichen und Abmelden; Anfragen mit Filter nach Status; eine Anfrage mit
+  Status, Notiz und „Gemeinde anlegen" (vorbelegt aus der Anfrage,
+  `utils/supportAnfragen.ts`); Struktur aus Landeskirchen und Kirchenkreisen;
+  Support-Konten. Gemeinden und Betrieb sind die vorhandenen Seiten; das
+  Formular „Gemeinde" wählt den Kirchenkreis aus der Struktur (Freitext, wenn
+  sie nicht lädt), die Liste zeigt Kirchenkreis und Landeskirche, und
+  `/admin/organizations?gemeinde=<id>` öffnet eine Gemeinde direkt.
+- **Navigation:** Der Baum `super_admin` startet auf `/admin/support` und
+  trägt die Bereiche als `menue` für die Seitenleiste
+  (`navigation/supportMenue.ts`, eine Liste für Leiste und Übersicht).
+  Dieselben Seiten liegen im Baum der Leitung; Simons Konto erreicht sie
+  über „Mehr" (Headset-Symbol, ersetzt „Gemeinden verwalten"). Alle Seiten
+  zeigen Konten ohne Super-Admin-Recht nur „Nur für den Support" und rufen
+  nichts ab.
+- **Homepage:** Formular „Konfi Quest für eure Gemeinde anfragen" im
+  Schlussabschnitt von `landing.html` (an `POST /api/anfragen`, Fehler am Feld
+  und gesammelt mit `role="alert"`, 400/429 verständlich, Honigtopf
+  `website`, Grenzen wie der Server); Vorlage zur Einwilligung der Eltern
+  als druckbare Seite `/einwilligung` (nginx, robots.txt, Sitemap), verlinkt
+  von Fußzeile, Datenschutz-Frage und Dank.
+- **Backend** dafür, mit Abschnitt 9c der Datenschutzerklärung und der
+  Aufbewahrung der Anfragen: oben, „Support-Ansicht, Backend" (Routen unter
+  `/api/support` und `/api/anfragen`, Migration 191).
 
 ## Offen
 
-- **Konto ohne Gemeinde.** `users.organization_id` ist `NOT NULL`. Ein
-  Super-Admin ohne Gemeinde braucht entweder eine eigene „Betrieb"-Gemeinde,
-  die nirgends als Gemeinde erscheint, oder eine nullable Spalte — dann jede
-  Stelle prüfen, die die Gemeinde des Kontos liest (Token, `rbac.js`,
-  Umschalter, Zähler). Ausgelieferte Apps dürfen daran nicht brechen
-  (CLAUDE.md).
-- **Bauweise der Web-Version.** Dieselbe React-App mit eigenem Layout für
-  breite Bildschirme (Ionic bringt dafür `IonSplitPane` und `IonMenu` mit,
-  heute ungenutzt) oder ein eigenes Frontend. Die API bleibt eine; neue
-  Routen und Felder nur additiv.
-- **Datenmodell Kirchenkreis und Landeskirche.** Eigene Tabellen mit
-  Zuordnung an der Gemeinde; der Freitext `kirchenkreis` bleibt, bis die
-  Bestände übertragen sind (Migration additiv). Die bestehenden Gemeinden,
-  auch der Dom Schwerin, werden eingeordnet.
-- **Anfragen.** Öffentlicher Endpunkt mit eigener Grenze gegen Missbrauch,
-  Bestätigungsmail, Datenschutzhinweis am Formular, Aufbewahrungsfrist
-  abgelehnter Anfragen.
-- **Mails im Support.** Ob eingehende Mails (etwa an die Kontaktadresse) in
-  der Ansicht landen sollen und auf welchem Weg.
-- **Rechte der Support-Person.** Heute darf ein Super-Admin Mitglieder jeder
-  Rolle in jede Gemeinde eintragen (`POST /:id/members`). Nach Punkt 5 der
-  Entscheidungen braucht die Support-Person nur die Gemeindeleitungen —
-  eigenes Merkmal mit engeren Rechten, oder dasselbe Merkmal?
-- **Statistik.** Welche Kennzahlen, und ab welcher Größe eine Zahl
-  ausgewiesen wird (kleine Gemeinden sind sonst personenbezogen, wie bei der
-  Nutzungsmessung, [messung/umami.md](../messung/umami.md)).
+- **Gruppe „Verwaltung" in der Leiste** (Entscheidung 23): Die Unterseiten
+  von „Mehr" (Benutzer:innen, Badges, Material, Jahrgänge …) stehen im
+  breiten Fenster direkt in der Leiste, als eigene Gruppe.
+- **Oberfläche für Konten ohne Gemeinde.** Support-Konten verwalten und
+  Abmelden gibt es in der Support-Ansicht (oben). Es fehlt der Rückweg „ohne
+  Gemeinde" nach einem Gemeindewechsel (Refresh ohne Kopfzeile, der Server
+  kann das schon) und ein Umschalter in der Support-Ansicht. In der
+  Benutzerliste der Gemeinde steht der Support-Gast heute mit
+  „zuhause in einer anderen Gemeinde" und Bearbeiten-Knopf, obwohl der
+  Server das Bearbeiten mit 403 ablehnt (siehe
+  [offene-befunde.md](../offene-befunde.md), „Bearbeiten-Knopf bei
+  Super-Admin-Konten"); für eine eigene Kennzeichnung bräuchte `GET /users`
+  ein zusätzliches Feld.
+- **Bestände einordnen.** Die Tabellen stehen (oben, „Support-Ansicht,
+  Backend"); nach dem Deploy die übernommenen Kirchenkreise ihren
+  Landeskirchen zuordnen, Tippvarianten zusammenführen und die Gemeinden
+  ohne Angabe einordnen, auch den Dom Schwerin
+  ([betrieb/support-ansicht.md](../betrieb/support-ansicht.md)).
+- **Anfragen.** Eine Route für eine einzelne Anfrage (die Seite einer
+  Anfrage holt heute die ganze Liste) und ein Knopf, eine Anfrage auf Wunsch
+  sofort zu löschen.
+- **Auf Anfragen antworten, Antworten zuordnen** (Simon, 03.10.2026: „Ich
+  muss auch auf eine Anfrage reagieren können etc. Deren Antwort richtig
+  sortiert werden."). Vorschlag, als nächstes Paket:
+  - In der Anfrage ein Feld „Antworten"; der Server schickt die Mail an die
+    anfragende Adresse, mit der Kennung im Betreff („[Anfrage 12]") und
+    eigener Message-ID, und legt sie im Verlauf der Anfrage ab
+    (neue Tabelle, Migration).
+  - Antworten der Gemeinde holt der Server per IMAP aus dem Postfach, an das
+    die Antwort-Adresse geht, und ordnet sie über In-Reply-To/References oder
+    die Kennung im Betreff der Anfrage zu; was sich nicht zuordnen lässt,
+    landet in einem Eingang „Nicht zugeordnet".
+  - Der Verlauf steht in der Anfrage nach Zeit sortiert; neue Antworten
+    zählen am Bereich Anfragen als rote Zahl.
+  - Offen bei Simon: welches Postfach (etwa moin@konfi-quest.de) und ob der
+    Server es lesen darf; die Zugangsdaten setzt der lokale Agent als
+    Stack-Variablen. Die Datenschutzerklärung 9c nennt dann auch den
+    Schriftwechsel; er geht mit der Anfrage.
+- **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
+  Jahrgänge je Gemeinde, nur für Super-Admins; jede Zahl steht ungefiltert da
+  (Entscheidung 17). Offen: weitere Kennzahlen (Speicher, Termine).
 - **Einwilligung am Profil.** Ein Vermerk „Einwilligung liegt vor" am
   Konfi-Profil, den nur die Leitung sieht. Simons Gedanke: „kann ja mit in
-  das konfiprofil bzw. die anwesenheitsmatrix" (E-01). Dazu die Vorlage auf
-  der Homepage.
-- **Doku.** Das Handbuch richtet sich an Gemeinden; ein Betriebs-Kapitel gibt
-  es nicht (Simon, 27.09.2026). Die Support-Ansicht beschreibt deshalb
-  `docs/betrieb/`, neben [gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md).
+  das konfiprofil bzw. die anwesenheitsmatrix" (E-01). Die Vorlage auf der
+  Homepage steht (`/einwilligung`).
 
 ## Was beim Bauen gilt
 

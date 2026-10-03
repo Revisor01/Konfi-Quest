@@ -19,6 +19,17 @@ const { WOANDERS_MITGLIED_SQL } = require('../utils/konfiOderTeam');
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
 
+// Abgelehnte Anfragen vom Formular auf konfi-quest.de gehen so viele Tage
+// nach der Ablehnung (gemeinde_anfragen.status_seit). Die
+// Datenschutzerklaerung nennt die Zahl (Abschnitt 9c; ein Test haelt beide
+// zusammen).
+const ABGELEHNTE_ANFRAGEN_TAGE = 180;
+
+// Anfragen, die "neu" oder "in Arbeit" sind und sich so viele Tage nicht
+// bewegt haben (gemeinde_anfragen.updated_at), gehen ebenfalls (Simon,
+// 03.10.2026). Auch diese Zahl nennt die Datenschutzerklaerung (9c).
+const UNBEWEGTE_ANFRAGEN_TAGE = 365;
+
 // Termin-Erinnerungen (Befund 01.10.2026, siehe sendEventReminders): Vorlauf
 // je Art und der Spielraum danach. Der Takt laeuft zur vollen Viertelstunde;
 // der Spielraum von zwei Takten faengt einen ausgefallenen Takt auf.
@@ -1414,9 +1425,65 @@ class BackgroundService {
       } catch (e) {
         console.error('Einladungs-Mitteilungen aufraeumen failed:', e);
       }
+      // Fuenfter Schritt (03.10.2026): abgelehnte und unbewegte Anfragen
+      // vom Formular.
+      try {
+        await this.cleanupAbgelehnteAnfragen(db);
+        await this.cleanupUnbewegteAnfragen(db);
+      } catch (e) {
+        console.error('Anfragen aufraeumen failed:', e.code || '', e.message);
+      }
     }, {
       timezone: 'Europe/Berlin'
     });
+  }
+
+  /**
+   * Loescht Anfragen vom Formular auf konfi-quest.de, die seit mehr als
+   * ABGELEHNTE_ANFRAGEN_TAGE (180) Tagen abgelehnt sind. Gezaehlt wird ab der
+   * Ablehnung (status_seit), nicht ab dem Eingang. Anfragen, die neu, in
+   * Arbeit oder angelegt sind, bleiben; eine angelegte geht mit ihrer
+   * Gemeinde (DELETE /organizations/:id). Gibt die Anzahl zurueck; das
+   * Protokoll nennt nur sie, keine Daten der Anfragen.
+   *
+   * Simon/Vertrag vom 03.10.2026 (docs/betrieb/support-ansicht.md,
+   * Abschnitt Aufbewahrung; Datenschutzerklaerung 9c).
+   */
+  static async cleanupAbgelehnteAnfragen(db) {
+    const { rowCount } = await db.query(
+      `DELETE FROM gemeinde_anfragen
+        WHERE status = 'abgelehnt'
+          AND status_seit < NOW() - ($1::int * interval '1 day')`,
+      [ABGELEHNTE_ANFRAGEN_TAGE]
+    );
+    if (rowCount > 0) {
+      console.log(`Anfragen aufraeumen: ${rowCount} abgelehnte Anfragen aelter als ${ABGELEHNTE_ANFRAGEN_TAGE} Tage geloescht`);
+    }
+    return rowCount;
+  }
+
+  /**
+   * Loescht Anfragen, die "neu" oder "in Arbeit" sind und seit mehr als
+   * UNBEWEGTE_ANFRAGEN_TAGE (365) Tagen nicht geaendert wurden. Gezaehlt wird
+   * ab der letzten Aenderung (updated_at -- PATCH /support/anfragen/:id setzt
+   * es bei Status und Notiz), nicht ab dem Eingang. Abgelehnte haben ihre
+   * eigene Frist (cleanupAbgelehnteAnfragen), angelegte gehen mit ihrer
+   * Gemeinde. Gibt die Anzahl zurueck; das Protokoll nennt nur sie.
+   *
+   * Simon, 03.10.2026 (Frage 3 zur Web-Version: "darf so bleiben" auf die
+   * Empfehlung, nach 365 Tagen zu loeschen).
+   */
+  static async cleanupUnbewegteAnfragen(db) {
+    const { rowCount } = await db.query(
+      `DELETE FROM gemeinde_anfragen
+        WHERE status IN ('neu', 'in_arbeit')
+          AND updated_at < NOW() - ($1::int * interval '1 day')`,
+      [UNBEWEGTE_ANFRAGEN_TAGE]
+    );
+    if (rowCount > 0) {
+      console.log(`Anfragen aufraeumen: ${rowCount} unbewegte Anfragen aelter als ${UNBEWEGTE_ANFRAGEN_TAGE} Tage geloescht`);
+    }
+    return rowCount;
   }
 
   /**

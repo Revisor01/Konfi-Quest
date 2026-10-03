@@ -20,7 +20,7 @@ import { SectionHeader, ListSection } from '../shared';
 import { AdminUser } from '../../types/user';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { datumKurz } from '../../utils/dateUtils';
-import { rollenName, rollenFarbeVar } from '../../utils/rollenNamen';
+import { rollenName, rollenDarstellung } from '../../utils/rollenNamen';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -81,10 +81,10 @@ const UsersView: React.FC<UsersViewProps> = ({
   const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
   const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
 
-  // Rollenfarbe als Token (25.09.2026) -- seit 29.09.2026 aus EINER Stelle
-  // (utils/rollenNamen: rollenFarbe), mit eigener Farbe fuer die Leitung.
+  // Rollenfarbe (25.09.2026) -- seit 29.09.2026 aus EINER Stelle, seit
+  // 02.10.2026 als Klassen wie in jeder Personenliste (utils/rollenNamen:
+  // rollenDarstellung) statt als Inline-Farbe ueber app-list-item--users.
   // Sie steht als linker Rahmen, Symbolkreis und Eck-Marke auf der Karte.
-  const getRoleColor = (roleName: string) => rollenFarbeVar(roleName);
 
 
   const formatDate = (dateString: string) => {
@@ -174,7 +174,7 @@ const UsersView: React.FC<UsersViewProps> = ({
         emptyIconColor="var(--app-color-users)"
       >
         {filteredAndSortedUsers.map((user, index) => {
-              const roleColor = getRoleColor(user.role_name);
+              const rolle = rollenDarstellung(user.role_name);
               const rolleText = rollenName(user.role_name);
               const rolleIcon = user.role_name === 'org_admin' ? ICON_ORGANISATION_GEFUELLT : user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT;
 
@@ -199,8 +199,8 @@ const UsersView: React.FC<UsersViewProps> = ({
                   className="app-item-transparent"
                 >
                   <div
-                    className="app-list-item app-list-item--users"
-                    style={{ borderLeftColor: roleColor, opacity: user.is_active ? 1 : 0.6 }}
+                    className={`app-list-item ${rolle.strich}`}
+                    style={{ opacity: user.is_active ? 1 : 0.6 }}
                   >
                     {/* Eselsohr-Style Corner Badge */}
                     {/* Rolle als Symbol statt Wort (Eck-Badges zeigen in der
@@ -214,8 +214,8 @@ const UsersView: React.FC<UsersViewProps> = ({
                         Wort steht in title/aria-label. */}
                     <div className="app-corner-badges">
                       <div
-                        className="app-corner-badge"
-                        style={{ backgroundColor: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                        className={`app-corner-badge ${rolle.marke}`}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                         title={rolleText}
                         role="img"
                         aria-label={rolleText}
@@ -227,10 +227,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         {/* Role Icon */}
-                        <div
-                          className="app-icon-circle app-icon-circle--lg"
-                          style={{ backgroundColor: roleColor }}
-                        >
+                        <div className={`app-icon-circle app-icon-circle--lg ${rolle.kreis}`}>
                           <IonIcon icon={user.role_name === 'org_admin' || user.role_name === 'admin' ? ICON_SCHILD_GEFUELLT : ICON_PERSON_GEFUELLT} />
                         </div>
 

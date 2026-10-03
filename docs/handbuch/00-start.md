@@ -61,3 +61,18 @@ installierte, steht auf der Startseite eine blaue Karte **„Version … ist da"
 die direkt zur Store-Seite führt. Wie sie funktioniert, was passiert, wenn
 eine Version nicht mehr unterstützt wird, und wo Wartungshinweise erscheinen,
 steht unter [Die App aktuell halten](03-bedienung.md#die-app-aktuell-halten).
+
+## Konfi Quest für eure Gemeinde anfragen
+
+Eine Gemeinde kommt über das Formular **„Konfi Quest für eure Gemeinde
+anfragen"** auf [konfi-quest.de](https://konfi-quest.de/#kontakt) zu Konfi
+Quest. Die verantwortliche Person trägt die Gemeinde mit Kirchenkreis und
+Landeskirche ein, dazu Name, Funktion, E-Mail-Adresse, Mobilnummer und die
+ungefähre Zahl der Konfis und Teamer:innen; eine Bestätigung kommt per Mail.
+Der Support von Konfi Quest legt daraus die Gemeinde an und schickt die
+Zugangsdaten der ersten Gemeindeleitung. Wie es danach weitergeht, steht unter
+[Eine neue Gemeinde einrichten](30-leitung.md#eine-neue-gemeinde-einrichten).
+
+Die Einwilligung der Eltern holt die Gemeinde selbst ein, auf Papier oder mit
+ihrem Anmeldeformular. Eine Vorlage zum Ausdrucken und Anpassen steht unter
+[konfi-quest.de/einwilligung](https://konfi-quest.de/einwilligung).

@@ -1,14 +1,17 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
-import ChallengeDetailModal from '../../../components/konfi/modals/ChallengeDetailModal';
+import KonfiChallengeDetailPage from '../../../components/konfi/pages/KonfiChallengeDetailPage';
 
 // Beendete Challenge, Reiter "Meins", kein eigener Beitrag: Der Leerzustand
 // sagte "Tippe oben auf das Plus, um etwas einzureichen" — aber das Plus gibt
 // es bei beendeten Challenges gar nicht (canSubmitMore verlangt isActive).
 // Der Hinweis zeigte auf einen Knopf, der nicht existiert.
 
+// Stabile Identitaet wie im echten Kontext (setError per useCallback): Eine
+// je Rendern neue Attrappe liesse das Laden endlos neu anlaufen.
+const { setError } = vi.hoisted(() => ({ setError: vi.fn() }));
 vi.mock('../../../contexts/AppContext', () => ({
-  useApp: () => ({ setError: vi.fn() })
+  useApp: () => ({ setError })
 }));
 
 // Das Detail meldet sich beim Oeffnen als gelesen (Neuigkeiten-Zaehler,
@@ -40,13 +43,13 @@ vi.mock('../../../services/api', () => ({
 
 import api from '../../../services/api';
 
-describe('ChallengeDetailModal: Leerzustand "Meins" ohne toten Plus-Hinweis', () => {
+describe('KonfiChallengeDetailPage: Leerzustand "Meins" ohne toten Plus-Hinweis', () => {
   it('beendete Challenge ohne eigenen Beitrag: KEIN Hinweis auf das Plus', async () => {
     const beendet = { ...basisChallenge, starts_at: vorZweiWochen, ends_at: vorEinerWoche };
     vi.mocked(api.get).mockResolvedValue(detailAntwort(beendet));
 
     const { container } = render(
-      <ChallengeDetailModal challenge={beendet as never} onClose={vi.fn()} />
+      <KonfiChallengeDetailPage challengeId={beendet.id} onBack={vi.fn()} />
     );
 
     await waitFor(() => {
@@ -61,7 +64,7 @@ describe('ChallengeDetailModal: Leerzustand "Meins" ohne toten Plus-Hinweis', ()
     vi.mocked(api.get).mockResolvedValue(detailAntwort(aktiv));
 
     const { container } = render(
-      <ChallengeDetailModal challenge={aktiv as never} onClose={vi.fn()} onSubmit={vi.fn()} />
+      <KonfiChallengeDetailPage challengeId={aktiv.id} onBack={vi.fn()} />
     );
 
     await waitFor(() => {

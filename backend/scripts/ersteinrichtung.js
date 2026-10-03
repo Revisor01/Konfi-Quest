@@ -1,27 +1,34 @@
 // backend/scripts/ersteinrichtung.js
 //
-// Der erste Zugang einer NEUEN Instanz: eine Gemeinde fuer den Betrieb, ihre
-// vier Standardrollen und ein Konto mit Super-Admin-Recht.
+// Der erste Zugang einer NEUEN Instanz: ein Support-Konto ohne Gemeinde mit
+// Super-Admin-Recht.
 //
 // Anlass (Audit 26.09.2026, Datenbank "Erst-Einrichtung"; durchgespielt am
 // 29.09.2026 mit postgres:15-alpine nach der Referenz-Compose): Das Schema
 // entsteht vollstaendig, aber leer. Gemeinden legt nur ein Super-Admin an
 // (POST /api/organizations), Konten nur eine Leitung -- auf einer frischen
 // Instanz gibt es beides nicht, und nichts im Repo beschrieb den Weg hinein.
-// Die Tabelle permissions braucht es dafuer nicht: Rechte haengen am
-// Rollennamen (middleware/rbac.js), nicht an ihr.
 //
-// Das Skript legt nur das Noetigste an. Die eigentlichen Gemeinden entstehen
-// danach in der App ("Gemeinde anlegen") -- mit Abzeichen, Zertifikatstypen
-// und Stufen, wie jede andere auch.
+// SEIT 03.10.2026 (Simon: "ja", "wird aber nie vorkommen"): Bis dahin legte
+// das Skript eine Gemeinde "Betrieb" mit vier Rollen und einer
+// Gemeindeleitung mit Merkmal an -- eine versteckte Betriebs-Gemeinde, wie es
+// sie nach Simons Entscheidung 12 (docs/planung/web-version.md) nicht geben
+// soll. Jetzt entsteht ein Support-Konto wie ueber
+// POST /organizations/support-konten (routes/supportKonten.js): ohne
+// Gemeinde, mit der gemeindefreien Systemrolle super_admin (Migration 190)
+// und dem Merkmal is_super_admin. Es meldet sich nur im Browser an
+// (docs/betrieb/support-konto.md). Die Gemeinden entstehen danach dort --
+// mit Abzeichen, Zertifikatstypen und Stufen, wie jede andere auch.
 //
 // Aufruf IM BACKEND-CONTAINER, nachdem das Backend einmal gestartet ist (dann
-// sind alle Migrationen gelaufen):
+// sind alle Migrationen gelaufen, auch 190 mit der Systemrolle):
 //   docker exec -e ERST_BENUTZERNAME=... -e ERST_PASSWORT=... \
-//     -e ERST_ANZEIGENAME=... [-e ERST_EMAIL=...] [-e ERST_GEMEINDE="Betrieb"] \
+//     -e ERST_ANZEIGENAME=... [-e ERST_EMAIL=...] \
 //     <backend-container> node scripts/ersteinrichtung.js
-// Das Passwort muss die Regeln der App erfuellen (utils/passwordUtils.js).
-// Danach in der App mit diesem Konto anmelden und das Passwort aendern.
+// Benutzername und Passwort folgen den Regeln der Support-Konten
+// (3 bis 50 Zeichen aus Buchstaben, Ziffern, Punkt und Bindestrich;
+// utils/passwordUtils.js). Danach im Browser anmelden und das Passwort
+// aendern.
 //
 // Laeuft nur auf einer LEEREN Datenbank: Gibt es schon eine Gemeinde oder
 // ein Konto, bricht es ab und aendert nichts.
@@ -32,28 +39,16 @@ const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
 const { validatePassword } = require('../utils/passwordUtils');
 
-// Dieselben Rollen wie beim Anlegen einer Gemeinde (routes/organizations.js).
-const STANDARDROLLEN = [
-  { name: 'org_admin', display_name: 'Gemeindeleitung', description: 'Vollzugriff auf alle Jahrgänge der Gemeinde' },
-  { name: 'admin', display_name: 'Leitung', description: 'Vollzugriff mit Jahrgangs-Beschränkungen' },
-  { name: 'teamer', display_name: 'Teamer:in', description: 'Kann Anträge bearbeiten und zugewiesene Jahrgänge verwalten' },
-  { name: 'konfi', display_name: 'Konfirmand:in', description: 'Konfirmand:innen haben Zugriff auf eigene Daten und können Aktivitäten beantragen' },
-];
-
-function slugAus(name) {
-  const slug = name.toLowerCase()
-    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return slug || 'betrieb';
-}
+// Dieselbe Regel wie commonValidations.username (middleware/validation.js),
+// die auch POST /organizations/support-konten anwendet.
+const BENUTZERNAME = /^[a-zA-Z0-9.-]{3,50}$/;
 
 /**
  * @param {import('pg').Pool} pool
- * @param {{gemeinde?: string, benutzername: string, passwort: string, anzeigename: string, email?: string}} angaben
- * @returns {Promise<{organisation: number, konto: number, slug: string}>}
+ * @param {{benutzername: string, passwort: string, anzeigename: string, email?: string}} angaben
+ * @returns {Promise<{konto: number}>}
  */
 async function ersteinrichtung(pool, angaben) {
-  const gemeinde = (angaben.gemeinde || 'Betrieb').trim();
   const benutzername = (angaben.benutzername || '').trim();
   const anzeigename = (angaben.anzeigename || '').trim();
   const email = (angaben.email || '').trim() || null;
@@ -62,6 +57,9 @@ async function ersteinrichtung(pool, angaben) {
   if (!benutzername || !anzeigename) {
     throw new Error('ERST_BENUTZERNAME und ERST_ANZEIGENAME fehlen.');
   }
+  if (!BENUTZERNAME.test(benutzername)) {
+    throw new Error('ERST_BENUTZERNAME: 3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich.');
+  }
   const passwortFehler = validatePassword(passwort);
   if (passwortFehler) throw new Error(`ERST_PASSWORT: ${passwortFehler}`);
 
@@ -69,43 +67,35 @@ async function ersteinrichtung(pool, angaben) {
   try {
     await client.query('BEGIN');
     // Nur auf einer leeren Datenbank -- auch nicht "nachlegen", wenn schon
-    // eine Gemeinde da ist: Dafuer gibt es den Weg in der App.
+    // eine Gemeinde oder ein Konto da ist: Dafuer gibt es die Support-Ansicht.
     const { rows: [bestand] } = await client.query(
       'SELECT (SELECT count(*) FROM organizations)::int AS gemeinden, (SELECT count(*) FROM users)::int AS konten'
     );
     if (bestand.gemeinden > 0 || bestand.konten > 0) {
       throw new Error(
         `Die Datenbank ist nicht leer (${bestand.gemeinden} Gemeinden, ${bestand.konten} Konten). `
-        + 'Die Ersteinrichtung laeuft nur auf einer neuen Instanz; weitere Gemeinden legt ein Super-Admin in der App an.'
+        + 'Die Ersteinrichtung laeuft nur auf einer neuen Instanz; weitere Konten und Gemeinden legt ein Super-Admin an.'
       );
     }
 
-    const slug = slugAus(gemeinde);
-    const { rows: [org] } = await client.query(
-      `INSERT INTO organizations (name, slug, display_name, description, is_trial, trial_ends_at, is_active)
-       VALUES ($1, $2, $1, 'Gemeinde des Betriebs (Ersteinrichtung)', false, NULL, true) RETURNING id`,
-      [gemeinde, slug]
+    const { rows: [rolle] } = await client.query(
+      "SELECT id FROM roles WHERE organization_id IS NULL AND name = 'super_admin'"
     );
-
-    let orgAdminRolle = null;
-    for (const rolle of STANDARDROLLEN) {
-      const { rows: [r] } = await client.query(
-        `INSERT INTO roles (organization_id, name, display_name, description, is_system_role)
-         VALUES ($1, $2, $3, $4, true) RETURNING id`,
-        [org.id, rolle.name, rolle.display_name, rolle.description]
+    if (!rolle) {
+      throw new Error(
+        'Die Systemrolle super_admin fehlt (Migration 190). Das Backend einmal starten, damit alle Migrationen laufen, dann erneut aufrufen.'
       );
-      if (rolle.name === 'org_admin') orgAdminRolle = r.id;
     }
 
     const hash = await bcrypt.hash(passwort, 10);
     const { rows: [konto] } = await client.query(
       `INSERT INTO users (organization_id, role_id, username, email, password_hash, display_name, is_active, is_super_admin)
-       VALUES ($1, $2, $3, $4, $5, $6, true, true) RETURNING id`,
-      [org.id, orgAdminRolle, benutzername, email, hash, anzeigename]
+       VALUES (NULL, $1, $2, $3, $4, $5, true, true) RETURNING id`,
+      [rolle.id, benutzername, email, hash, anzeigename]
     );
 
     await client.query('COMMIT');
-    return { organisation: org.id, konto: konto.id, slug };
+    return { konto: Number(konto.id) };
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
     throw err;
@@ -114,7 +104,7 @@ async function ersteinrichtung(pool, angaben) {
   }
 }
 
-module.exports = { ersteinrichtung, STANDARDROLLEN };
+module.exports = { ersteinrichtung, BENUTZERNAME };
 
 if (require.main === module) {
   const url = process.env.DATABASE_URL;
@@ -124,16 +114,17 @@ if (require.main === module) {
   }
   const pool = new Pool({ connectionString: url, max: 1 });
   ersteinrichtung(pool, {
-    gemeinde: process.env.ERST_GEMEINDE,
     benutzername: process.env.ERST_BENUTZERNAME,
     passwort: process.env.ERST_PASSWORT,
     anzeigename: process.env.ERST_ANZEIGENAME,
     email: process.env.ERST_EMAIL,
   })
-    .then(({ organisation, konto, slug }) => {
+    .then(({ konto }) => {
       process.stdout.write(
-        `OK: Gemeinde ${organisation} (${slug}) und Konto ${konto} mit Super-Admin-Recht angelegt.\n`
-        + 'Jetzt in der App anmelden, das Passwort aendern und die Gemeinden anlegen.\n'
+        `OK: Support-Konto ${konto} ohne Gemeinde angelegt (Super-Admin).\n`
+        + 'Jetzt im Browser anmelden (die Apps nehmen Konten ohne Gemeinde nicht an), '
+        + 'das Passwort aendern und die Gemeinden anlegen.\n'
+        + (process.env.ERST_GEMEINDE ? 'Hinweis: ERST_GEMEINDE wird nicht mehr gebraucht; es entsteht keine Gemeinde.\n' : '')
       );
       return pool.end().then(() => process.exit(0));
     })

@@ -7,6 +7,7 @@ import {
   ICON_FILTER,
   ICON_GRUPPE_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
+  ICON_NETZWERK,
   ICON_ORGANISATION,
   ICON_ORGANISATION_GEFUELLT,
   ICON_PERSON,
@@ -35,6 +36,11 @@ interface Organization {
   max_konfis?: number | null;
   trial_ends_at?: string | null;
   is_trial?: boolean;
+  // Zuordnung (Support-Ansicht, Web-Version): Kirchenkreis als Text (auch
+  // von aelteren Servern) und die Landeskirche, wenn der Kirchenkreis einer
+  // zugeordnet ist.
+  kirchenkreis?: string | null;
+  landeskirche?: string | null;
   created_at: string;
   updated_at: string;
   // Statistics
@@ -63,7 +69,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
   const [selectedFilter, setSelectedFilter] = useState('alle');
 
   const filteredAndSortedOrganizations = (() => {
-    let result = filterBySearchTerm(organizations, searchTerm, ['name', 'display_name', 'description', 'contact_email']);
+    let result = filterBySearchTerm(organizations, searchTerm, ['name', 'display_name', 'description', 'contact_email', 'kirchenkreis', 'landeskirche']);
 
     if (selectedFilter === 'aktiv') {
       result = result.filter(org => org.is_active);
@@ -240,6 +246,14 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
                           <div className="app-list-item__title">
                             {organization.display_name}
                           </div>
+                          {(organization.kirchenkreis || organization.landeskirche) && (
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">
+                                <IonIcon icon={ICON_NETZWERK} style={{ color: 'var(--app-text-users)' }} />
+                                {[organization.kirchenkreis, organization.landeskirche].filter(Boolean).join(' · ')}
+                              </span>
+                            </div>
+                          )}
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={ICON_GRUPPE_GEFUELLT} style={{ color: 'var(--app-text-konfis)' }} />

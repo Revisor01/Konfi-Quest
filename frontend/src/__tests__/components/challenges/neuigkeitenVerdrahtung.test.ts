@@ -13,8 +13,10 @@ const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8'
 
 const baeume = lies('src/navigation/rollenBaeume.ts');
 const mainTabs = lies('src/components/layout/MainTabs.tsx');
+const reiterZaehler = lies('src/navigation/reiterZaehler.ts');
 const konfiSeite = lies('src/components/konfi/pages/KonfiChallengesPage.tsx');
-const detail = lies('src/components/konfi/modals/ChallengeDetailModal.tsx');
+const detail = lies('src/components/konfi/pages/KonfiChallengeDetailPage.tsx');
+const leitungsDetail = lies('src/components/shared/ChallengeLeitungPage.tsx');
 const chatListe = lies('src/components/chat/ChatOverview.tsx');
 const challengeListe = lies('src/components/konfi/views/ChallengesView.tsx');
 const leitungsSeite = lies('src/components/shared/ChallengesPage.tsx');
@@ -28,8 +30,11 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
 
   it('Navi-Tab: Freigaben (Team/Leitung) und Neuigkeiten (Konfis) laufen im selben Schluessel zusammen', () => {
     // Der Server liefert je Rolle nur einen der beiden Anteile; der andere
-    // ist 0. Die Summe ist deshalb nie eine Mischung.
-    expect(mainTabs).toContain('challenges: pendingChallengesCount + challengeUpdatesTotal');
+    // ist 0. Die Summe ist deshalb nie eine Mischung. Gerechnet seit dem
+    // 03.10.2026 in navigation/reiterZaehler.ts (auch fuer die Seitenleiste
+    // der Web-Version), MainTabs ruft es.
+    expect(reiterZaehler).toContain('challenges: pendingChallengesCount + challengeUpdatesTotal');
+    expect(mainTabs).toContain('const zaehler = useReiterZaehler();');
   });
 
   it('Challenge: die Liste bekommt die Zahl je Challenge aus dem BadgeContext', () => {
@@ -38,7 +43,9 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
   });
 
   it('Challenge: das Oeffnen meldet sie als gelesen', () => {
-    expect(detail).toContain('markChallengeAsRead(challenge.id)');
+    // Seit 2.4.0 eine eigene Seite: gemeldet wird, sobald die Challenge da
+    // ist (challengeOeffnenMeldetGelesen.test.tsx prueft es gerendert).
+    expect(detail).toContain('markChallengeAsRead(current.id)');
   });
 
   it('Challenge (Team und Leitung): die Liste bekommt die offenen Freigaben je Challenge aus dem BadgeContext', () => {
@@ -68,9 +75,12 @@ describe('Challenge-Neuigkeiten: drei Orte, eine Quelle', () => {
     expect(leitungsSeite).toContain('neuigkeiten={challengeUpdatesByChallenge}');
     expect(leitungsSeite).toContain('neueBeitraege={challengeNeueBeitraegeByChallenge ?? undefined}');
     expect(leitungsSeite).toContain('neueWartend={challengeNeueWartendByChallenge}');
-    // Oeffnen setzt die Zahl zurueck, beim Aufgehen und beim Schliessen.
-    expect(leitungsSeite).toMatch(/const openModeration[\s\S]*?void gesehen\(challenge\)/);
-    expect(leitungsSeite).toMatch(/onClose: \(\) => \{[\s\S]*?void gesehen\(moderationChallenge\)/);
+    // Oeffnen setzt die Zahl zurueck, beim Aufgehen und beim Verlassen --
+    // seit 2.4.0 auf der Seite der Challenge statt im Dialog der Liste
+    // (gerendert geprueft in challengeSeiteLeitung.test.tsx).
+    expect(leitungsDetail).toMatch(/void gesehen\(challenge\)/);
+    expect(leitungsDetail).toMatch(/useEffect\(\(\) => \(\) => \{[\s\S]*?void gesehen\(challengeRef\.current\)/);
+    expect(leitungsSeite).not.toContain('markChallengeAsRead');
     // Die alte Inline-Kugel der Chat-Liste ist weg -- sonst gaebe es wieder
     // zwei Fassungen, die auseinanderlaufen.
     expect(chatListe).not.toContain("'9+'");

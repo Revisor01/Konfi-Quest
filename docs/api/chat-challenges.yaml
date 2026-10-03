@@ -669,7 +669,7 @@ paths:
                   room_id: { type: integer }
                   created: { type: boolean }
         '400': { description: "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026), ODER eine Person in participants gehört nicht zur Gemeinde (error_code teilnehmende_nicht_in_gemeinde, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher fiel sie still heraus und der Raum entstand ohne sie; jetzt entsteht kein Raum)" }
-        '403': { description: "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)" }
+        '403': { description: "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer), ODER (seit 03.10.2026) keine aktive Gemeinde -- ein Support-Konto ohne Gemeinde ohne X-Active-Organization (error_code keine_aktive_gemeinde; vorher 500, weil chat_rooms.organization_id NOT NULL ist)" }
         '500': { description: Datenbankfehler }
       x-berechtigung:
         rollen: [org_admin, admin, teamer, konfi]
@@ -1005,6 +1005,15 @@ paths:
     get:
       tags: ["Chat"]
       summary: Teilnehmerliste eines Raums
+      description: >
+        role_name und role_display_name sind die Rolle in der Gemeinde des
+        Raums (der aktiven Gemeinde): in der Stamm-Gemeinde users.role_id,
+        auch wenn user_organizations sie noch einmal fuehrt, in jeder weiteren
+        user_organizations.role_id -- dieselbe Regel wie TEAM_MITGLIED_ROLLE
+        und utils/orgMitglieder.js (ladeRolleInGemeinde). Wer nicht (mehr)
+        Mitglied der Gemeinde ist, behaelt die Rolle am Konto. Die Oberflaeche
+        faerbt damit Strich, Kreis und Eck-Marke je Rolle (Gemeindeleitung,
+        Leitung, Teamer:in).
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
@@ -1022,8 +1031,8 @@ paths:
                     joined_at: { type: string, format: date-time }
                     name: { type: string }
                     role_title: { type: [string, "null"] }
-                    role_name: { type: string }
-                    role_display_name: { type: string }
+                    role_name: { type: string, description: "Rolle in der Gemeinde des Raums (seit 2026-10-02; vorher die Rolle der Stamm-Gemeinde)" }
+                    role_display_name: { type: string, description: "Datenbank-Anzeigename derselben Rolle" }
                     jahrgang_id: { type: [integer, "null"] }
                     jahrgang_name: { type: [string, "null"] }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
@@ -1033,6 +1042,11 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher sah jeder admin die Teilnehmerliste jedes gemeinschaftlichen Raums der Org"
+        # BEHOBEN 02.10.2026 (Rollenfarben, Paket 2.4.0): role_name kam aus
+        # users.role_id, also aus der Stamm-Gemeinde. Wer die Gemeinde ueber
+        # user_organizations betreut, stand in ihren Chats mit der Rolle seiner
+        # Heimat da (zuhause Teamer:in, hier Gemeindeleitung -> Eck-Marke in
+        # Beere statt Indigo). Antwortform unveraendert.
     post:
       tags: ["Chat"]
       summary: Teilnehmer zu Gruppenchat hinzufuegen (nur Admins)
@@ -1821,6 +1835,59 @@ paths:
         objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
 
   /api/challenges/admin/{id}:
+    get:
+      tags: ["Challenges (Leitung)"]
+      summary: "Eine Challenge der Leitungsliste (NEU 2026-10-02, 2.4.0)"
+      description: >
+        Fuer die eigene Seite einer Challenge bei Team und Leitung
+        (/admin/challenges/:id, /teamer/challenges/:id), auf die Push,
+        Postfach und Listen fuehren (Simon, 02.10.2026: "challenge nicht in
+        modal öffnen, sondern in unterseite, damit man direkt auf die
+        challenge linken kann aus einem push"). ADDITIV: Die Antwort ist
+        genau ein Eintrag aus GET /api/challenges/admin -- dieselbe Abfrage,
+        dieselben Felder (status, locked, Zaehler, eigene Teilnahme,
+        jahrgaenge) --, und sie kommt genau dann, wenn die Liste diese
+        Challenge fuehrt: dieselbe Regel (utils/challengeLeitungSicht.js),
+        org_admin jede Challenge der Gemeinde (auch Entwuerfe ohne
+        Jahrgang), admin und teamer 'nur_team' immer, sonst nur ueber einen
+        zugewiesenen Jahrgang mit can_view. Liste, Beitraege und alle
+        bestehenden Antwortformen bleiben unveraendert; aeltere Apps rufen
+        die Route nicht.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer, minimum: 1 }, description: "ID der Challenge" }
+      responses:
+        '200':
+          description: "Ein Objekt (kein Array) -- Feld fuer Feld wie ein Eintrag aus GET /api/challenges/admin"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: { type: integer }
+                  title: { type: string }
+                  status: { type: string, enum: [draft, scheduled, active, ended] }
+                  locked: { type: boolean }
+                  submission_count: { type: integer }
+                  pending_count: { type: integer }
+                  own_submission_count: { type: integer }
+                  has_badge: { type: boolean }
+                  earned_at: { type: [string, "null"], format: date-time }
+                  jahrgaenge:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        name: { type: string }
+        '400': { description: Ungueltige ID }
+        '403': { description: "requireTeamer ODER die Challenge gehoert zu keinem zugewiesenen Jahrgang (error_code 'jahrgang_nicht_zugewiesen'); die Seite nennt den Grund" }
+        '404': { description: "Challenge nicht in eigener Gemeinde oder geloescht" }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [rbacVerifier, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "Dieselbe Abfrage wie GET /api/challenges/admin mit zusaetzlichem c.id-Filter (leitungsChallenges): 200 genau dann, wenn die Liste die Challenge fuehrt (Test challengeLeitungDetail.test.js)"
     put:
       tags: ["Challenges (Leitung)"]
       summary: Challenge bearbeiten (Konsens-Felder nach Start eingefroren)

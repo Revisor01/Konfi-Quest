@@ -623,6 +623,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(400).json({ error: 'Ungültiger Chat-Typ' });
       }
 
+      // OHNE AKTIVE GEMEINDE KEIN RAUM (03.10.2026). Ein Support-Konto ohne
+      // Gemeinde (organization_id NULL) kam bis hierher durch -- ein Raum
+      // gehoert aber immer einer Gemeinde (chat_rooms.organization_id NOT
+      // NULL), und das Anlegen endete mit 500. Als Gast in einer Gemeinde
+      // (X-Active-Organization) geht es wie fuer ihre Leitung.
+      if (!organizationId) {
+        return res.status(403).json({
+          error: 'Chats gibt es nur in einer Gemeinde. Wechsle zuerst in eine Gemeinde.',
+          error_code: 'keine_aktive_gemeinde'
+        });
+      }
+
       // ZWEIERGESPRAECH HEISST GENAU ZWEI PERSONEN (Audit 26.09.2026, Chat
       // BF-01, HOCH). Der Typ 'direct' ist ueberall sonst das Signal "privat,
       // auch vor der Leitung" (darfRaumOeffnen, Export, Loeschen, Umfragen).
@@ -1665,6 +1677,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }
 
       // Get participants with their details
+      //
+      // DIE ROLLE IST DIE DIESER GEMEINDE (02.10.2026, Rollenfarben). Bis
+      // hierher stand `LEFT JOIN roles r ON u.role_id = r.id` -- die Rolle
+      // in der STAMM-Gemeinde. Wer diese Gemeinde ueber user_organizations
+      // betreut, stand in ihren Chats mit der Rolle seiner Heimat da (zuhause
+      // Teamer:in, hier Gemeindeleitung: Beere statt Indigo an der
+      // Eck-Marke). Die Liste zum Hinzufuegen (GET /users) loest die Rolle
+      // seit dem 26.09.2026 je Gemeinde auf -- deshalb stimmte die Farbe
+      // dort und hier nicht.
+      //
+      // Regel wie utils/orgMitglieder.js (ladeRolleInGemeinde) und
+      // TEAM_MITGLIED_ROLLE: In der Stamm-Gemeinde gilt users.role_id, auch
+      // wenn user_organizations sie noch einmal fuehrt; in jeder weiteren
+      // user_organizations.role_id. Wer nicht (mehr) Mitglied ist, behaelt
+      // den bisherigen Wert. Die Antwortform bleibt -- dieselben Felder,
+      // derselbe Typ; ausgelieferte Apps zeigen damit ebenfalls die richtige
+      // Rolle und Farbe.
       const query = `
       SELECT
         cp.user_id,
@@ -1685,14 +1714,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         END as jahrgang_name
       FROM chat_participants cp
       LEFT JOIN users u ON cp.user_id = u.id
-      LEFT JOIN roles r ON u.role_id = r.id
+      LEFT JOIN user_organizations uo
+        ON uo.user_id = u.id AND uo.organization_id = $2
+      LEFT JOIN roles r
+        ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id
+                       ELSE COALESCE(uo.role_id, u.role_id) END
       LEFT JOIN konfi_profiles kp ON cp.user_type = 'konfi' AND cp.user_id = kp.user_id
       LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
       WHERE cp.room_id = $1
       ORDER BY cp.joined_at ASC
     `;
-      
-      const { rows: participants } = await db.query(query, [roomId]);
+
+      const { rows: participants } = await db.query(query, [roomId, organizationId]);
       res.json(participants);
       
     } catch (err) {

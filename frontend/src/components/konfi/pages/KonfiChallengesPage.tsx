@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   IonPage,
   IonContent,
   IonRefresher,
   IonRefresherContent,
-  useIonModal
+  useIonRouter
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
@@ -16,9 +16,8 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ChallengesView from '../views/ChallengesView';
-import ChallengeSubmitModal from '../modals/ChallengeSubmitModal';
-import ChallengeDetailModal from '../modals/ChallengeDetailModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { konfiChallengeListe } from '../../../utils/challengeListen';
 import type { KonfiChallenge, KonfiChallengesResponse } from '../../../types/challenges';
 
 const EMPTY_RESPONSE: KonfiChallengesResponse = { active: [], archive: [], marks: [], offene_stempel: [] };
@@ -28,10 +27,13 @@ const KonfiChallengesPage: React.FC = () => {
   // Neuigkeiten je Challenge aus derselben Quelle wie die Zahl am Reiter --
   // der Eintrag zeigt, WO es Neues gibt, der Reiter WIE VIEL insgesamt.
   const { challengeUpdatesByChallenge } = useBadge();
-  const { pageRef, presentingElement } = useModalPage('konfi-challenges');
+  const { pageRef } = useModalPage('konfi-challenges');
+  const router = useIonRouter();
 
+  // Schluessel in utils/challengeListen.ts: Die Seite einer Challenge liest
+  // diese Liste ohne Netz mit.
   const { data, loading, refresh, refreshLive } = useOfflineQuery<KonfiChallengesResponse>(
-    'konfi:challenges:' + user?.id,
+    konfiChallengeListe(user),
     () => api.get('/challenges/konfi').then((r) => r.data),
     { ttl: CACHE_TTL.REQUESTS }
   );
@@ -45,45 +47,17 @@ const KonfiChallengesPage: React.FC = () => {
   // Cache-Eintrag oder ein aelterer Server das Feld nicht traegt.
   const offeneStempel = Array.isArray(response.offene_stempel) ? response.offene_stempel : [];
 
-  const [selectedChallenge, setSelectedChallenge] = useState<KonfiChallenge | null>(null);
-
-  const modalPresenting = () => pageRef.current || presentingElement || undefined;
-
-  const [presentSubmitModal, dismissSubmitModal] = useIonModal(ChallengeSubmitModal, {
-    challenge: selectedChallenge,
-    // selectedChallenge wird beim Schliessen bewusst NICHT zurückgesetzt: das
-    // Modal ist während der Dismiss-Animation noch gemountet und wuerde bei
-    // null kurz den Ladezustand aufblitzen lassen. Der nächste Aufruf setzt die
-    // Challenge ohnehin neu.
-    onClose: () => dismissSubmitModal(),
-    onSuccess: () => {
-      dismissSubmitModal();
-      refresh();
-    }
-  });
-
-  const [presentDetailModal, dismissDetailModal] = useIonModal(ChallengeDetailModal, {
-    challenge: selectedChallenge,
-    onClose: () => dismissDetailModal(),
-    onSubmit: (challenge: KonfiChallenge) => {
-      // Aus dem Detail heraus einreichen: Detail schliessen, dann das
-      // Einreich-Modal auf der Seite praesentieren (kein Modal-im-Modal).
-      dismissDetailModal();
-      setSelectedChallenge(challenge);
-      setTimeout(() => {
-        presentSubmitModal({ presentingElement: modalPresenting() });
-      }, 300);
-    }
-  });
-
   useLiveRefresh('challenges', refreshLive);
 
+  // Eine Challenge oeffnet sich als eigene Seite, nicht mehr im Dialog
+  // (2.4.0, Simon 02.10.2026: "challenge nicht in modal öffnen, sondern in
+  // unterseite, damit man direkt auf die challenge linken kann aus einem
+  // push"). Dieselbe Adresse fuehrt aus Push und Postfach hinein
+  // (utils/pushNavigation.ts). Mitmachen und Gelesen-Melden stehen jetzt
+  // dort (KonfiChallengeDetailPage).
   const handleSelectChallenge = useCallback((challenge: KonfiChallenge) => {
-    setSelectedChallenge(challenge);
-    presentDetailModal({ presentingElement: modalPresenting() });
-    // presentDetailModal ist stabil; pageRef/presentingElement werden lazy gelesen.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [presentDetailModal]);
+    router.push(`/konfi/challenges/${challenge.id}`);
+  }, [router]);
 
   return (
     <IonPage ref={pageRef}>

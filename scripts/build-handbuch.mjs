@@ -546,9 +546,12 @@ const MITLESEN = `
  * bricht mit dem Hinweis unten ab — derselbe rote Schritt wie bei jedem
  * vergessenen Neuerzeugen.
  *
- * Die Adresse trägt die Prüfsumme (?v=...). nginx liefert Bilder mit
- * "immutable" und einem Jahr Gültigkeit aus; ohne sie sähen Leser nach dem
- * nächsten Neuziehen der Bildschirmfotos bis zu ein Jahr lang die alten.
+ * Die Adresse trägt die Prüfsumme (?v=...). Bis 03.10.2026 lieferte nginx
+ * die Bilder mit "immutable" und einem Jahr Gültigkeit aus; ohne die
+ * Prüfsumme sähen Leser nach dem Neuziehen der Bildschirmfotos bis zu ein
+ * Jahr lang die alten. Seitdem fragt der Browser unter /docs/ jedes Mal nach
+ * (frontend/nginx.conf); die Prüfsumme bleibt als zweite Sicherung, etwa
+ * gegen einen Zwischenspeicher unterwegs.
  */
 const BILDER_QUELLE = join(WURZEL, 'docs', 'screenshots');
 const BILDER_STANDARD = join(WURZEL, 'frontend', 'public', 'docs', 'bilder');
@@ -989,6 +992,8 @@ ${karten}
       { pfad: '/impressum', freq: 'yearly', prio: '0.3' },
       { pfad: '/datenschutz', freq: 'yearly', prio: '0.3' },
       { pfad: '/konto-loeschen', freq: 'yearly', prio: '0.2' },
+      // Vorlage zur Einwilligung der Eltern (03.10.2026), statisch wie die Rechtstexte.
+      { pfad: '/einwilligung', freq: 'yearly', prio: '0.3' },
     ];
     const alt = readFileSync(sitemapDatei, 'utf8');
     // Ohne Regex: Der Pfad wurde vorher nur an Schraegstrichen maskiert, andere

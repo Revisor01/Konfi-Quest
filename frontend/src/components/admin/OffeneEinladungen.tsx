@@ -5,7 +5,7 @@ import { useApp } from '../../contexts/AppContext';
 import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { datumKurz } from '../../utils/dateUtils';
-import { rollenName, rollenFarbeVar, rollenTextFarbeVar } from '../../utils/rollenNamen';
+import { rollenName, rollenDarstellung } from '../../utils/rollenNamen';
 import { ListSection } from '../shared';
 import {
   ICON_AT_ZEICHEN,
@@ -136,20 +136,21 @@ const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
       iconColorClass="users"
     >
       {einladungen.map((einladung, index) => {
-        const farbe = rollenFarbeVar(einladung.role_name);
+        // Strich, Kreis und Rollen-Symbol aus EINER Stelle wie in jeder
+        // Personenliste (utils/rollenNamen: rollenDarstellung, 02.10.2026).
+        const darstellung = rollenDarstellung(einladung.role_name);
         const rolle = rollenName(einladung.role_name, einladung.role_display_name ?? undefined);
         return (
           <div
             key={einladung.id}
-            className="app-list-item app-list-item--users"
+            className={`app-list-item ${darstellung.strich}`}
             style={{
-              borderLeftColor: farbe,
               marginBottom: index < einladungen.length - 1 ? 'var(--app-abstand-eng)' : '0'
             }}
           >
             <div className="app-list-item__row">
               <div className="app-list-item__main">
-                <div className="app-icon-circle app-icon-circle--lg" style={{ backgroundColor: farbe }}>
+                <div className={`app-icon-circle app-icon-circle--lg ${darstellung.kreis}`}>
                   <IonIcon icon={ICON_MAIL_GEFUELLT} aria-hidden="true" />
                 </div>
                 <div className="app-list-item__content">
@@ -162,7 +163,7 @@ const OffeneEinladungen: React.FC<Props> = ({ aktualisierung }) => {
                     <span className="app-list-item__meta-item">
                       <IonIcon
                         icon={einladung.role_name === 'teamer' ? ICON_PERSON_GEFUELLT : ICON_SCHILD_GEFUELLT}
-                        style={{ color: rollenTextFarbeVar(einladung.role_name) }}
+                        className={darstellung.schrift}
                         aria-hidden="true"
                       />
                       als {rolle}

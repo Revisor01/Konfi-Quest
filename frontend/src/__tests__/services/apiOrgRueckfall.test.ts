@@ -92,7 +92,9 @@ describe('api — 403-Rueckfall auf die Stamm-Gemeinde', () => {
     expect(postSpy).toHaveBeenCalledTimes(1);
     const [url, body, config] = postSpy.mock.calls[0];
     expect(String(url)).toMatch(/\/auth\/refresh$/);
-    expect(body).toEqual({ refresh_token: 'refresh-1' });
+    // jsdom = Web-Version: mit der Zusage fuer Konten ohne Gemeinde
+    // (services/ohneGemeinde.ts).
+    expect(body).toEqual({ refresh_token: 'refresh-1', kann_ohne_gemeinde: true });
     const headers = (config as { headers?: Record<string, string> } | undefined)?.headers;
     expect(headers?.['X-Active-Organization']).toBeUndefined();
 

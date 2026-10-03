@@ -3,7 +3,7 @@
  *
  * Der wichtigste Test hier ist der LISTEN-ABGLEICH ganz unten: Laufen
  * STANDARD_SEITEN (wrappedKategorien.js) und defaultCategories
- * (routes/organizations.js) auseinander, entstehen Kategorien ohne Seite
+ * (utils/gemeindeAnlegen.js) auseinander, entstehen Kategorien ohne Seite
  * oder Seiten ohne Kategorie -- und das faellt sonst niemandem auf, weil
  * beides fuer sich genommen funktioniert.
  */
@@ -158,13 +158,13 @@ describe('seiteFuerKategorie', () => {
   });
 });
 
-describe('Listen-Abgleich mit routes/organizations.js', () => {
+describe('Listen-Abgleich mit utils/gemeindeAnlegen.js', () => {
   // Der Test, der die stille Fehlerquelle abdeckt: Wenn jemand eine
   // Standardkategorie ergaenzt oder umbenennt, ohne STANDARD_SEITEN
   // nachzuziehen, entsteht eine Kategorie ohne Seite -- sichtbar erst
   // dann, wenn eine Gemeinde sie benutzt und der Rueckblick sie ignoriert.
   const quelle = fs.readFileSync(
-    path.join(__dirname, '../../routes/organizations.js'), 'utf8'
+    path.join(__dirname, '../../utils/gemeindeAnlegen.js'), 'utf8'
   );
   const block = quelle.slice(
     quelle.indexOf('const defaultCategories = ['),
@@ -172,7 +172,7 @@ describe('Listen-Abgleich mit routes/organizations.js', () => {
   );
   const standardNamen = [...block.matchAll(/name: '([^']+)'/g)].map(m => m[1]);
 
-  test('die Liste in organizations.js ist lesbar', () => {
+  test('die Liste in gemeindeAnlegen.js ist lesbar', () => {
     expect(standardNamen.length).toBeGreaterThanOrEqual(10);
   });
 

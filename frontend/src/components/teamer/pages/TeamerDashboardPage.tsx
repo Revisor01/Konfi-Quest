@@ -820,7 +820,7 @@ const TeamerDashboardPage: React.FC = () => {
                     <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={challenge.id}
                       className="app-dashboard-glass-card"
-                      onClick={() => router.push('/teamer/challenges')}
+                      onClick={() => router.push(`/teamer/challenges/${challenge.id}`)}
                       style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}
                     >
                       <div style={{

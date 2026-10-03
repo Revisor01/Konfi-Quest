@@ -686,6 +686,10 @@ ion-item-sliding:last-child {
 /* Grau fuer Zustaende ohne Wertung: die nachgetragene Abmeldung ist weder
    ein Erfolg (gruen) noch ein Fehlen (rot). */
 .app-list-item--neutral, ion-item.app-list-item--neutral { border-left-color: var(--app-color-neutral); }
+/* Leitung (Rolle admin) in Personenlisten, Petrol (02.10.2026). Gemeindeleitung
+   nimmt --users, Teamer:in --teamer, Konfi --konfi; die Zuordnung steht in
+   utils/rollenNamen.ts (rollenDarstellung). */
+.app-list-item--leitung, ion-item.app-list-item--leitung { border-left-color: var(--app-color-leitung); }
 
 /* Chat-Raumtyp-Farben */
 /* (verschoben — siehe app-list-item--teamer Block) */
@@ -708,6 +712,8 @@ ion-item-sliding:last-child {
 .app-list-item--bonus.app-list-item--selected { background: rgba(var(--app-color-bonus-rgb), 0.08); }
 .app-list-item--activities.app-list-item--selected { background: rgba(var(--app-color-activities-rgb), 0.08); }
 .app-list-item--users.app-list-item--selected { background: rgba(var(--app-color-users-rgb), 0.08); }
+.app-list-item--leitung.app-list-item--selected { background: rgba(var(--app-color-leitung-rgb), 0.08); }
+.app-list-item--neutral.app-list-item--selected { background: rgba(var(--app-color-neutral-rgb), 0.08); }
 .app-list-item--level.app-list-item--selected { background: rgba(var(--app-color-level-rgb), 0.08); }
 .app-list-item--organizations.app-list-item--selected { background: rgba(var(--app-color-users-rgb), 0.08); }
 .app-list-item--info.app-list-item--selected { background: rgba(var(--app-color-info-rgb), 0.08); }
@@ -854,6 +860,10 @@ ion-item-sliding:last-child {
 /* Chat-Raumtyp-Farben */
 .app-corner-badge--team { background-color: var(--app-color-teamer); }
 .app-corner-badge--teamer { background-color: var(--app-color-teamer); }
+/* Rollen in Personenlisten (02.10.2026, utils/rollenNamen.ts): Gemeindeleitung
+   Indigo, Leitung Petrol -- Teamer:in und Konfi stehen oben/unten. */
+.app-corner-badge--users { background-color: var(--app-color-users); }
+.app-corner-badge--leitung { background-color: var(--app-color-leitung); }
 .app-corner-badge--challenges { background-color: var(--app-color-challenges); }
 .app-corner-badge--chat-jahrgang { background-color: var(--app-color-chat); }
 .app-corner-badge--konfi { background-color: var(--app-color-konfis); }
@@ -983,6 +993,7 @@ ion-list[inset] ion-list-header {
 .app-icon-circle--team { background-color: var(--app-color-teamer); }
 .app-icon-circle--challenges { background-color: var(--app-color-challenges); }
 .app-icon-circle--users { background-color: var(--app-color-users); }
+.app-icon-circle--leitung { background-color: var(--app-color-leitung); }
 .app-icon-circle--level { background-color: var(--app-color-level); }
 .app-icon-circle--organizations { background-color: var(--app-color-users); }
 .app-icon-circle--badges { background-color: var(--app-color-badges); }
@@ -2343,6 +2354,16 @@ ion-toggle.app-toggle--events {
 .app-icon-color--text-primary { color: var(--app-text-primary); }
 .app-icon-color--text-secondary { color: var(--app-text-secondary); }
 .app-icon-color--text-muted { color: var(--app-text-muted); }
+
+/* Schrift und kleine Symbole in der Farbe einer Rolle (02.10.2026,
+   utils/rollenNamen.ts: rollenDarstellung). Ueber die Text-Tokens, nicht die
+   Flaechenfarben: Im Dunkeln liest sich Beere oder Petrol als Schrift auf der
+   Karte nicht (Dunkelmodus-Audit BF-06). */
+.app-rollen-schrift--users { color: var(--app-text-users); }
+.app-rollen-schrift--leitung { color: var(--app-text-leitung); }
+.app-rollen-schrift--teamer { color: var(--app-text-teamer); }
+.app-rollen-schrift--konfis { color: var(--app-text-konfis); }
+.app-rollen-schrift--neutral { color: var(--app-text-system); }
 
 /* === Status-Box (Erfolg/Fehler/Warnung in Detail-Action-Bereichen) === */
 /* Nutzung: <div class="app-status-box app-status-box--success"> */

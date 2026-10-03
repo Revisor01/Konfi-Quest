@@ -74,13 +74,15 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('event_changed', {}, 'teamer')).toBe('/teamer/events');
   });
 
-  it('"Neue Challenge" fuehrt jede Rolle auf ihre Challenge-Seite', () => {
+  it('"Neue Challenge" fuehrt jede Rolle in die Challenge, auf ihrer eigenen Seite', () => {
     // Seit 27.09.2026 (Audit "Wer bekommt was", BF-07) bekommen den Start
     // auch Team und Leitung, wo sie mitmachen -- ihr Ziel ist die eigene
-    // Challenge-Seite, nicht die der Konfis.
-    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'konfi')).toBe('/konfi/challenges');
-    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'teamer')).toBe('/teamer/challenges');
-    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'admin')).toBe('/admin/challenges');
+    // Challenge-Seite, nicht die der Konfis. Seit 2.4.0 (Simon, 02.10.2026)
+    // direkt in die Challenge statt auf die Liste; alle vier Arten je
+    // Rolle, mit und ohne Kennung, in pushNavigationChallengeSeite.test.ts.
+    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'konfi')).toBe('/konfi/challenges/5');
+    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'teamer')).toBe('/teamer/challenges/5');
+    expect(buildPushTargetUrl('challenge_started', { challengeId: '5' }, 'admin')).toBe('/admin/challenges/5');
   });
 
   it('Absage fuehrt zum Termin, wenn die Kennung mitkommt', () => {
@@ -179,9 +181,10 @@ describe('M2: Die Ziele passen zur Rolle', () => {
     expect(buildPushTargetUrl('certificate', {}, 'teamer')).toBe('/teamer/profile');
   });
 
-  it('Stempel fuehrt zu den Challenges -- dort ist "Deine Stempel"', () => {
+  it('Stempel ohne Kennung fuehrt zu den Challenges -- dort ist "Deine Stempel"', () => {
     // Bis zum 25.09.2026 zu den Abzeichen; Stempel sind aber keine
-    // Abzeichen und stehen dort nicht.
+    // Abzeichen und stehen dort nicht. Mit Kennung seit 2.4.0 in die
+    // Challenge, aus der er stammt.
     expect(buildPushTargetUrl('challenge_badge_earned', {}, 'konfi')).toBe('/konfi/challenges');
   });
 
@@ -248,8 +251,8 @@ describe('Durchsicht 25.09.2026: Punkte, Rueckblick, Stempel', () => {
     expect(buildPushTargetUrl('wrapped', { ausgabe_id: '42' }, 'admin')).toBe('/admin/dashboard');
   });
 
-  it('Stempel fuehrt alle Rollen zu den Challenges', () => {
-    expect(buildPushTargetUrl('challenge_badge_earned', { challengeId: '5' }, 'konfi')).toBe('/konfi/challenges');
+  it('Stempel fuehrt alle Rollen zu den Challenges -- mit Kennung in die Challenge (2.4.0)', () => {
+    expect(buildPushTargetUrl('challenge_badge_earned', { challengeId: '5' }, 'konfi')).toBe('/konfi/challenges/5');
     expect(buildPushTargetUrl('challenge_badge_earned', {}, 'teamer')).toBe('/teamer/challenges');
     expect(buildPushTargetUrl('challenge_badge_earned', {}, 'admin')).toBe('/admin/challenges');
   });

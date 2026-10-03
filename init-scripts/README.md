@@ -114,17 +114,22 @@ dort nicht noch einmal als Datei.
 
    ```bash
    docker exec -e ERST_BENUTZERNAME=<name> -e ERST_ANZEIGENAME=<anzeige> \
-     -e ERST_PASSWORT=<passwort> [-e ERST_EMAIL=<adresse>] [-e ERST_GEMEINDE=Betrieb] \
+     -e ERST_PASSWORT=<passwort> [-e ERST_EMAIL=<adresse>] \
      <backend-container> node scripts/ersteinrichtung.js
    ```
 
-   Das legt eine Gemeinde fuer den Betrieb an, ihre vier Standardrollen und
-   ein Konto mit Super-Admin-Recht (Rolle Gemeindeleitung plus
-   `is_super_admin`); es laeuft nur auf einer leeren Datenbank und bricht
-   sonst ohne Aenderung ab. Das Passwort muss die Regeln der App erfuellen.
-   Danach in der App anmelden, das Passwort aendern und die eigentlichen
+   Das legt ein **Support-Konto ohne Gemeinde** an: Systemrolle
+   `super_admin` aus Migration 190, Merkmal `is_super_admin` — dasselbe wie
+   `POST /api/organizations/support-konten`. Eine Gemeinde entsteht dabei
+   nicht (bis zum 03.10.2026 war es eine Gemeinde „Betrieb" mit einer
+   Gemeindeleitung). Es laeuft nur auf einer leeren Datenbank und bricht
+   sonst ohne Aenderung ab; Benutzername und Passwort folgen den Regeln der
+   Support-Konten. Danach **im Browser** anmelden (die Apps nehmen Konten
+   ohne Gemeinde nicht an), das Passwort aendern und die eigentlichen
    Gemeinden anlegen — jede bekommt dabei ihre Rollen, Abzeichen,
-   Zertifikatstypen und Stufen. Test: `backend/tests/schema/ersteinrichtung.test.js`.
+   Zertifikatstypen und Stufen. Mehr in
+   [docs/betrieb/support-konto.md](../docs/betrieb/support-konto.md). Test:
+   `backend/tests/schema/ersteinrichtung.test.js`.
 
 Ergebnis: eine neue Instanz startet auf dem Stand des Dumps, durchlaeuft
 danach dieselben Migrationen wie die Produktion und landet auf demselben

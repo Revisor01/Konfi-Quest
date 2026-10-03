@@ -1,12 +1,8 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { fehlerStatus, fehlerText } from '../../../utils/fehler';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   IonPage,
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonButtons,
   IonButton,
   IonIcon,
   IonCard,
@@ -18,7 +14,8 @@ import {
   IonSegment,
   IonRefresher,
   IonRefresherContent,
-  IonSpinner
+  IonSpinner,
+  useIonModal
 } from '@ionic/react';
 import {
   ICON_BILD,
@@ -29,7 +26,6 @@ import {
   ICON_LINK,
   ICON_MIKROFON,
   ICON_PERSON,
-  ICON_SCHLIESSEN_GEFUELLT,
   ICON_SICHTBAR,
   ICON_VERBORGEN,
   ICON_SPERRE,
@@ -39,6 +35,7 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
+import { useLiveRefresh, useLiveUpdate } from '../../../contexts/LiveUpdateContext';
 import { useJetztMitGrenzen } from '../../../hooks/useJetztMitGrenzen';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 
@@ -46,9 +43,13 @@ import { datumUhrzeit } from '../../../utils/dateUtils';
 type KonfiReiter = 'feed' | 'meins';
 import api from '../../../services/api';
 import { netzZuerstLaden } from '../../../services/netzZuerst';
-import { CACHE_TTL } from '../../../services/offlineCache';
+import { CACHE_TTL, offlineCache } from '../../../services/offlineCache';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { EmptyState } from '../../shared';
+import AppKopfzeile from '../../shared/AppKopfzeile';
+import ChallengeHinweis, { type ChallengeHinweisArt } from '../../shared/ChallengeHinweis';
+import ChallengeSubmitModal from '../modals/ChallengeSubmitModal';
+import { konfiChallengeListe } from '../../../utils/challengeListen';
 import ChallengeMedium from '../../shared/ChallengeMedium';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { triggerPullHaptic } from '../../../utils/haptics';
@@ -58,15 +59,25 @@ import MusikLink from '../../shared/MusikLink';
 import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
 import type {
   KonfiChallenge,
+  KonfiChallengesResponse,
   KonfiChallengeDetail,
   ChallengeSubmission,
   ChallengeGalerieZeile,
   ChallengeMediaType
 } from '../../../types/challenges';
 
-// Detailansicht einer Challenge für Konfis: Beschreibung, oeffentliche Galerie
-// (anonyme Beitraege OHNE Namen — das Backend liefert dort gar keinen Namen mit)
-// und die eigenen Beitraege mit Status.
+// Eine Challenge für Konfis als eigene Seite (/konfi/challenges/:id):
+// Beschreibung, oeffentliche Galerie (anonyme Beitraege OHNE Namen — das
+// Backend liefert dort gar keinen Namen mit) und die eigenen Beitraege mit
+// Status; Mitmachen ueber das Einreich-Modal auf dieser Seite.
+//
+// Bis 2.3 ein Dialog ueber der Liste. Simon, 02.10.2026, woertlich: "der
+// umbau von challenges, so dass es analog zu events funktioniert. also
+// challenge nicht in modal öffnen, sondern in unterseite, damit man direkt
+// auf die challenge linken kann aus einem push." Die Seite holt die
+// Challenge deshalb selbst ueber ihre Kennung -- ein Push kann hierher
+// fuehren, ohne dass die Liste je geladen war, auch zu einer Challenge, die
+// es nicht mehr gibt (ChallengeHinweis statt leerer Seite).
 
 const MEDIA_ICON: Record<ChallengeMediaType, string> = {
   text: ICON_TEXTDOKUMENT,
@@ -228,44 +239,61 @@ const SubmissionCard: React.FC<{
   </div>
 );
 
-interface ChallengeDetailModalProps {
-  // Kann im ersten Render-Frame null sein — siehe Hinweis im Einreich-Modal
-  // (useIonModal reicht die Props des present()-Renders durch).
-  challenge: KonfiChallenge | null;
-  onClose: () => void;
-  /** Oeffnet das Einreich-Modal (wird von der Seite gesteuert). */
-  onSubmit?: (challenge: KonfiChallenge) => void;
+interface KonfiChallengeDetailPageProps {
+  /** Aus der Adresse, als Zahl (MainTabs, ParamSeite). */
+  challengeId: number;
+  /** Zurueck: mit Verlauf zurueck, ohne (nach einem Push) auf die Liste. */
+  onBack: () => void;
 }
 
-interface ChallengeDetailContentProps {
-  challenge: KonfiChallenge;
-  onClose: () => void;
-  onSubmit?: (challenge: KonfiChallenge) => void;
+/** Die Detail-Antwort in die Form der Ansicht bringen. */
+const ausDetailAntwort = (data: {
+  challenge?: KonfiChallenge;
+  gallery?: ChallengeGalerieZeile[];
+  own_submissions?: ChallengeSubmission[];
+} | null | undefined): KonfiChallengeDetail | null => {
+  if (!data?.challenge) return null;
+  // Backend liefert { challenge, gallery, own_submissions } — Challenge-Felder
+  // müssen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
+  // die Challenge erscheint faelschlich als beendet.
+  // Die Galerie-Query liefert den Namen als display_name (bei anonymen
+  // Beitraegen NULL), das UI liest konfi_name -> hier normalisieren, sonst
+  // erscheint JEDER Galerie-Beitrag als "Anonym".
+  // Galerie-Zeilen tragen keinen Freigabe-Stand (es steht nur Freigegebenes
+  // darin); die Ansicht liest sie wie Beitraege -- wie vor 2.4.0, als die
+  // Antwort ungetypt durchlief.
+  const gallery = (data.gallery ?? []).map((row) => ({
+    ...row,
+    konfi_name: row.konfi_name ?? row.display_name ?? null
+  })) as ChallengeSubmission[];
+  return { ...data.challenge, gallery, own_submissions: data.own_submissions || [] };
+};
+
+interface KonfiChallengeDetailInhaltProps extends KonfiChallengeDetailPageProps {
+  /** Die IonPage der Seite -- fuer die Card-Optik des Einreich-Modals. */
+  pageRef: React.RefObject<HTMLElement | null>;
 }
 
-const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
-  challenge,
-  onClose,
-  onSubmit
+const KonfiChallengeDetailInhalt: React.FC<KonfiChallengeDetailInhaltProps> = ({
+  challengeId,
+  onBack,
+  pageRef
 }) => {
   const { user, setError } = useApp();
   const { markChallengeAsRead } = useBadge();
+  const { triggerRefresh } = useLiveUpdate();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
+  // Ohne Netz und ohne gespeicherten Stand dieser Challenge: ihr Eintrag aus
+  // der zuletzt geladenen Liste -- so wie der fruehere Dialog ihn bekam.
+  const [ausListe, setAusListe] = useState<KonfiChallenge | null>(null);
+  const [hinweis, setHinweis] = useState<ChallengeHinweisArt | null>('laedt');
   const [loading, setLoading] = useState(true);
   // Ohne Netz und ohne gespeicherten Stand: sagen, dass die Beiträge offline
   // fehlen, statt eine leere Galerie zu zeigen ("Noch keine geteilten
   // Beiträge" wäre dann schlicht falsch).
   const [offlineOhneStand, setOfflineOhneStand] = useState(false);
   const benutzerId = user?.id;
-
-  // Beim Oeffnen als gelesen melden -- wie ChatRoom beim Betreten eines
-  // Raums. Ab jetzt zaehlt der Neuigkeiten-Zaehler neu; ohne den Aufruf
-  // bliebe die rote Zahl am Eintrag, am Reiter und am App-Symbol stehen,
-  // egal wie oft man hineinsieht. Die Huelle remountet pro Challenge (key),
-  // deshalb feuert das je geoeffneter Challenge genau einmal.
-  useEffect(() => {
-    markChallengeAsRead(challenge.id);
-  }, [challenge.id, markChallengeAsRead]);
+  const listenSchluessel = konfiChallengeListe(user);
 
   const loadDetail = useCallback(async () => {
     try {
@@ -273,46 +301,134 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
       // in der Galerie steht — ein ausgeblendeter oder gelöschter Beitrag
       // erscheint nicht, auch nicht kurz aus dem Speicher. Ohne Netz zeigt
       // die Ansicht den zuletzt geladenen Stand, die Fotos kommen dann aus
-      // dem Medien-Cache.
+      // dem Medien-Cache. Antwortet der Server (404, 403), gibt es bewusst
+      // keinen Rueckgriff auf den Speicher (services/netzZuerst.ts).
       const { daten: data } = await netzZuerstLaden(
-        `konfi:challenge:${benutzerId}:${challenge.id}`,
-        () => api.get(`/challenges/konfi/${challenge.id}`).then((res) => res.data),
+        `konfi:challenge:${benutzerId}:${challengeId}`,
+        () => api.get(`/challenges/konfi/${challengeId}`).then((res) => res.data),
         CACHE_TTL.REQUESTS
       );
       setOfflineOhneStand(false);
-      // Backend liefert { challenge, gallery, own_submissions } — Challenge-Felder
-      // müssen auf die oberste Ebene, sonst ist starts_at/ends_at undefined und
-      // die Challenge erscheint faelschlich als beendet.
-      // Die Galerie-Query liefert den Namen als display_name (bei anonymen
-      // Beitraegen NULL), das UI liest konfi_name -> hier normalisieren, sonst
-      // erscheint JEDER Galerie-Beitrag als "Anonym".
-      const gallery = ((data?.gallery ?? []) as ChallengeGalerieZeile[]).map((row) => ({
-        ...row,
-        konfi_name: row.konfi_name ?? row.display_name ?? null
-      }));
-      setDetail(
-        data?.challenge
-          ? { ...data.challenge, gallery, own_submissions: data.own_submissions || [] }
-          : null
-      );
+      const neu = ausDetailAntwort(data);
+      setDetail(neu);
+      setHinweis(neu ? null : 'weg');
     } catch (err) {
-      if ((err as { response?: unknown })?.response === undefined) {
+      const status = fehlerStatus(err);
+      if (status === undefined) {
+        // Ohne Netz: Die Beitraege fehlen; der Kopf kommt, wenn es ihn
+        // nicht schon gibt, aus der Liste.
         setOfflineOhneStand(true);
+        const liste = await offlineCache.get<KonfiChallengesResponse>(listenSchluessel).catch(() => null);
+        const daten = liste?.data;
+        const eintrag = daten && typeof daten === 'object'
+          ? [...(Array.isArray(daten.active) ? daten.active : []), ...(Array.isArray(daten.archive) ? daten.archive : [])]
+            .find((c) => c.id === challengeId)
+          : undefined;
+        if (eintrag) setAusListe(eintrag);
+        setHinweis((vorher) => (vorher !== 'laedt' ? vorher : eintrag ? null : 'offline'));
+      } else if (status === 404) {
+        // Geloescht -- oder fuer Konfis gar nicht da (Entwurf, noch nicht
+        // gestartet, nur fuers Team). Kein roter Kasten, ein Hinweis.
+        setDetail(null);
+        setAusListe(null);
+        setHinweis('weg');
+      } else if (status === 403) {
+        // Die Challenge gehoert zu einem anderen Jahrgang.
+        setDetail(null);
+        setAusListe(null);
+        setHinweis('nichtFuerDich');
       } else {
         setError(fehlerText(err, 'Fehler beim Laden der Challenge'));
+        setHinweis((vorher) => (vorher === 'laedt' ? 'fehler' : vorher));
       }
     } finally {
       setLoading(false);
     }
-  }, [challenge.id, benutzerId, setError]);
+  }, [challengeId, benutzerId, listenSchluessel, setError]);
 
   useEffect(() => {
     setLoading(true);
     loadDetail();
   }, [loadDetail]);
 
-  // Basis für Kopf/Status: das Detail (frisch) hat Vorrang vor der Listenkarte.
-  const current: KonfiChallenge = detail || challenge;
+  // Aenderungen kommen als Live-Ereignis 'challenges' (neue Beitraege in der
+  // Galerie, Freigabe des eigenen, Loeschen) -- wie bei der Liste. Wird die
+  // Challenge geloescht, waehrend sie offen ist, steht danach der Hinweis.
+  useLiveRefresh('challenges', loadDetail);
+
+  // Basis für Kopf/Status: das Detail (frisch) hat Vorrang vor dem Eintrag
+  // aus der Liste.
+  const current: KonfiChallenge | null = detail || ausListe;
+
+  // Beim Oeffnen als gelesen melden -- wie ChatRoom beim Betreten eines
+  // Raums. Ab jetzt zaehlt der Neuigkeiten-Zaehler neu; ohne den Aufruf
+  // bliebe die rote Zahl am Eintrag, am Reiter und am App-Symbol stehen,
+  // egal wie oft man hineinsieht. Gemeldet wird, sobald die Challenge da
+  // ist (auch aus dem Speicher) -- eine geloeschte oder fremde gibt es
+  // nicht zu lesen. Die Seite montiert je Challenge neu (key), deshalb genau
+  // einmal je geoeffneter Challenge.
+  const gemeldetRef = useRef(false);
+  useEffect(() => {
+    if (!current || gemeldetRef.current) return;
+    gemeldetRef.current = true;
+    markChallengeAsRead(current.id);
+  }, [current, markChallengeAsRead]);
+
+  // Mitmachen: das Einreich-Modal auf dieser Seite (vorher aus dem Dialog
+  // heraus auf der Liste). Danach Galerie und Liste neu laden -- das
+  // Live-Ereignis erreicht beide.
+  const [presentSubmitModal, dismissSubmitModal] = useIonModal(ChallengeSubmitModal, {
+    challenge: current,
+    onClose: () => dismissSubmitModal(),
+    onSuccess: () => {
+      dismissSubmitModal();
+      triggerRefresh('challenges');
+    }
+  });
+
+  if (!current) {
+    return (
+      <ChallengeHinweis
+        art={hinweis ?? 'laedt'}
+        onBack={onBack}
+        onNochmal={() => { setHinweis('laedt'); void loadDetail(); }}
+      />
+    );
+  }
+
+  return (
+    <KonfiChallengeDetailAnsicht
+      current={current}
+      detail={detail}
+      loading={loading}
+      offlineOhneStand={offlineOhneStand}
+      onBack={onBack}
+      onRefresh={loadDetail}
+      onSubmit={() => presentSubmitModal({ presentingElement: pageRef.current || undefined })}
+    />
+  );
+};
+
+interface KonfiChallengeDetailAnsichtProps {
+  current: KonfiChallenge;
+  detail: KonfiChallengeDetail | null;
+  loading: boolean;
+  offlineOhneStand: boolean;
+  onBack: () => void;
+  onRefresh: () => Promise<void>;
+  onSubmit: () => void;
+}
+
+/** Die eigentliche Seite -- erst, wenn es eine Challenge zu zeigen gibt. */
+const KonfiChallengeDetailAnsicht: React.FC<KonfiChallengeDetailAnsichtProps> = ({
+  current,
+  detail,
+  loading,
+  offlineOhneStand,
+  onBack,
+  onRefresh,
+  onSubmit
+}) => {
   const author = getAuthorLabel(current);
   // „Läuft" folgt der Uhr, nicht nur den Daten: Beginn und Ende stellen einen
   // Wecker, der die Ansicht genau dann neu zeichnet. Bis 29.09.2026 hing der
@@ -351,9 +467,9 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
   // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
   // bekommt (User-Hinweis 10.08.). Dieselbe Angabe steht zusätzlich in der
   // Meta-Zeile unter "Worum geht es".
-  // Rollenneutral formulieren: Dieses Modal gehört seit der Zusammenlegung
+  // Rollenneutral formulieren: Diese Ansicht gehört seit der Zusammenlegung
   // (11.08.) allein den Konfis — Teamer und Leitung nutzen
-  // ChallengeLeitungModal. Der Text bleibt trotzdem neutral, weil hier früher
+  // admin/views/ChallengeLeitungView. Der Text bleibt trotzdem neutral, weil hier früher
   // faelschlich "Nur für euch in der Leitung" stand (Audit 10.08.).
   const visibilityShort = useMemo(() => {
     if (current.visibility === 'private') return 'Nur das Leitungsteam sieht die Beiträge';
@@ -369,30 +485,28 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
     return current.moderated ? 'Sichtbar nach Freigabe' : 'Sofort sichtbar';
   }, [current.visibility, current.moderated]);
 
+  // KEINE EIGENE IonPage: Kopfzeile und Inhalt stehen in der IonPage der
+  // Seite (KonfiChallengeDetailPage unten), die je Route genau einmal
+  // montiert wird -- auch waehrend sie noch laedt.
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Challenge</IonTitle>
-          <IonButtons slot="start">
-            <IonButton className="app-modal-close-btn" onClick={onClose} aria-label="Schließen">
-              <IonIcon icon={ICON_SCHLIESSEN_GEFUELLT} />
-            </IonButton>
-          </IonButtons>
-          {canSubmitMore && onSubmit && (
-            <IonButtons slot="end">
-              <IonButton onClick={() => onSubmit(current)} title="Beitrag einreichen" aria-label="Beitrag einreichen">
-                <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
-              </IonButton>
-            </IonButtons>
-          )}
-        </IonToolbar>
-      </IonHeader>
+    <>
+      {/* Die gemeinsame Kopfzeile wie auf jeder Seite, mit Zurueck statt des
+          frueheren Schliessen-Kreuzes; die Glocke bleibt (wie am Termin). */}
+      <AppKopfzeile
+        titel="Challenge"
+        onZurueck={onBack}
+        gemeindeUmschalter={false}
+        rechts={canSubmitMore ? (
+          <IonButton onClick={onSubmit} title="Beitrag einreichen" aria-label="Beitrag einreichen">
+            <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
+          </IonButton>
+        ) : undefined}
+      />
 
-      <IonContent className="app-gradient-background">
+      <IonContent className="app-gradient-background" fullscreen>
         <IonRefresher
           slot="fixed"
-          onIonRefresh={async (e) => { await loadDetail(); e.detail.complete(); }}
+          onIonRefresh={async (e) => { await onRefresh(); e.detail.complete(); }}
           onIonPull={triggerPullHaptic}
         >
           <IonRefresherContent />
@@ -560,46 +674,26 @@ const ChallengeDetailContent: React.FC<ChallengeDetailContentProps> = ({
         )}
 
       </IonContent>
+    </>
+  );
+};
+
+// EINE IonPage fuer alle Zustaende -- laedt, Hinweis, Challenge. Der
+// IonRouterOutlet registriert die IonPage beim Einhaengen; tauschte die Seite
+// sie spaeter gegen eine andere, bliebe die neue weiss (MainTabs.tsx,
+// SeiteMitChunk; Test keinTauschImOutlet). Getauscht wird deshalb nur der
+// Inhalt darin.
+//
+// Der Inhalt beginnt je Challenge frisch (key): Fuehrt ein Link von einer
+// Challenge zur naechsten, steht wieder "laedt" da, und die neue wird als
+// gelesen gemeldet -- wie die Huelle des frueheren Dialogs.
+const KonfiChallengeDetailPage: React.FC<KonfiChallengeDetailPageProps> = ({ challengeId, onBack }) => {
+  const pageRef = useRef<HTMLElement | null>(null);
+  return (
+    <IonPage ref={pageRef}>
+      <KonfiChallengeDetailInhalt key={challengeId} challengeId={challengeId} onBack={onBack} pageRef={pageRef} />
     </IonPage>
   );
 };
 
-/** Huelle: wartet auf die durchgereichte Challenge und remountet pro Challenge. */
-const ChallengeDetailModal: React.FC<ChallengeDetailModalProps> = ({
-  challenge,
-  onClose,
-  onSubmit
-}) => {
-  if (!challenge) {
-    return (
-      <IonPage>
-        <IonHeader>
-          <IonToolbar>
-            <IonTitle>Challenge</IonTitle>
-            <IonButtons slot="start">
-              <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose}>
-                <IonIcon icon={ICON_SCHLIESSEN_GEFUELLT} />
-              </IonButton>
-            </IonButtons>
-          </IonToolbar>
-        </IonHeader>
-        <IonContent className="app-gradient-background">
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-riesig)' }}>
-            <IonSpinner name="crescent" />
-          </div>
-        </IonContent>
-      </IonPage>
-    );
-  }
-
-  return (
-    <ChallengeDetailContent
-      key={challenge.id}
-      challenge={challenge}
-      onClose={onClose}
-      onSubmit={onSubmit}
-    />
-  );
-};
-
-export default ChallengeDetailModal;
+export default KonfiChallengeDetailPage;

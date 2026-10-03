@@ -42,6 +42,7 @@ const GRUPPEN = [
   { tag: 'Anmeldung & Konto', farbe: '#047857' },
   { tag: 'Passwörter & Einladungen', farbe: '#b45309' },
   { tag: 'Organisationen', farbe: '#0369a1' },
+  { tag: 'Support', farbe: '#0f766e' },
   { tag: 'Benutzer & Rollen', farbe: '#7c3aed' },
   { tag: 'Konfis (Verwaltung)', farbe: '#5b21b6' },
   { tag: 'Konfi-Profil & Dashboard', farbe: '#5b21b6' },

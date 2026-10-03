@@ -3,6 +3,7 @@ import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
 import {
   ROLLEN_FARBEN,
+  rollenDarstellung,
   rollenFarbe,
   rollenFarbeVar,
   rollenTextFarbeVar,
@@ -141,6 +142,39 @@ describe('Die Farbe der Leitung: lesbar und deutlich anders', () => {
   });
 });
 
+describe('Personenlisten (rollenDarstellung): jede Klasse liest das Token ihrer Rolle', () => {
+  // 02.10.2026, Paket 2.4.0, Punkt 6: Strich, Kreis, Eck-Marke und Schrift
+  // kommen als Klassen aus utils/rollenNamen. Die gerenderten Tests der Listen
+  // pruefen die Klassen; hier steht, dass jede Klasse im Stylesheet die
+  // Farbe ihrer Rolle traegt -- Flaeche ueber --app-color-*, Schrift ueber
+  // --app-text-* (im Dunkeln aufgehellt).
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regel = (selektor: string): string => {
+    const m = hell.match(new RegExp(`(^|[\\s,}])${esc(selektor)}\\s*(,[^{]*)?\\{([^}]*)\\}`, 'm'));
+    if (!m) throw new Error(`${selektor} fehlt im Stylesheet`);
+    return m[3];
+  };
+  const FLAECHE: Record<string, string> = {
+    users: 'users', leitung: 'leitung', teamer: 'teamer', konfis: 'konfis', neutral: 'neutral',
+  };
+
+  it.each(['org_admin', 'admin', 'teamer', 'konfi', 'unbekannt'])('%s: Strich, Kreis, Marke und Schrift', (rolle) => {
+    const d = rollenDarstellung(rolle);
+    const token = FLAECHE[d.farbe];
+    expect(regel(`.${d.strich}`)).toMatch(new RegExp(`border-left-color:\\s*var\\(--app-color-${token}\\)`));
+    expect(regel(`.${d.kreis}`)).toMatch(new RegExp(`background-color:\\s*var\\(--app-color-${token}\\)`));
+    expect(regel(`.${d.marke}`)).toMatch(new RegExp(`background-color:\\s*var\\(--app-color-${token}\\)`));
+    const schrift = d.farbe === 'neutral' ? 'var\\(--app-text-system\\)' : `var\\(--app-text-${token}\\)`;
+    expect(regel(`.${d.schrift}`)).toMatch(new RegExp(`color:\\s*${schrift}`));
+  });
+
+  it.each(['org_admin', 'admin', 'teamer', 'konfi'])('%s: ausgewaehlt mit zartem Grund in der Rollenfarbe', (rolle) => {
+    const d = rollenDarstellung(rolle);
+    expect(regel(`.${d.strich}.app-list-item--selected`))
+      .toMatch(new RegExp(`background:\\s*rgba\\(var\\(--app-color-${FLAECHE[d.farbe]}-rgb\\),\\s*0\\.08\\)`));
+  });
+});
+
 describe('Keine Ansicht rechnet die Rollenfarbe mehr selbst aus', () => {
   const dateien = (verzeichnis: string): string[] => {
     const voll = resolve(process.cwd(), verzeichnis);
@@ -162,14 +196,34 @@ describe('Keine Ansicht rechnet die Rollenfarbe mehr selbst aus', () => {
     expect(treffer).toEqual([]);
   });
 
+  // Die Rollenauswahl (Benutzer anlegen, Einladen) faerbt Rollen, keine
+  // Personen: weiter rollenFarbeVar. Jede Personenliste nimmt seit dem
+  // 02.10.2026 rollenDarstellung (Strich, Kreis, Eck-Marke, Schrift).
   it.each([
-    'src/components/admin/UsersView.tsx',
     'src/components/admin/modals/UserManagementModal.tsx',
     'src/components/admin/modals/EinladungModal.tsx',
+  ])('%s holt die Farbe aus utils/rollenNamen', (datei) => {
+    expect(lies(datei)).toMatch(/import \{[^}]*rollenFarbeVar[^}]*\} from '[./]+\/utils\/rollenNamen'/);
+  });
+
+  it.each([
+    'src/components/admin/UsersView.tsx',
     'src/components/admin/OffeneEinladungen.tsx',
     'src/components/chat/modals/MembersModal.tsx',
     'src/components/chat/modals/SimpleCreateChatModal.tsx',
-  ])('%s holt die Farbe aus utils/rollenNamen', (datei) => {
-    expect(lies(datei)).toMatch(/import \{[^}]*rollenFarbeVar[^}]*\} from '[./]+\/utils\/rollenNamen'/);
+    'src/components/admin/modals/OrganizationManagementModal.tsx',
+    'src/components/admin/modals/ParticipantManagementModal.tsx',
+    'src/components/admin/pages/AdminJahrgaengeePage.tsx',
+  ])('%s holt die Personendarstellung aus utils/rollenNamen', (datei) => {
+    expect(lies(datei)).toMatch(/import \{[^}]*rollenDarstellung[^}]*\} from '[./]+\/utils\/rollenNamen'/);
+  });
+
+  it('keine Personenliste traegt mehr die allgemeine Team-Farbe fuer Strich oder Kreis', () => {
+    // app-list-item--team / app-icon-circle--team bleiben fuer die Raumtypen
+    // der Chat-Uebersicht (Team-Chat) bestehen -- dort als Variable
+    // (app-list-item--${colorClass}), nicht als fester Klassenname.
+    const treffer = dateien('src/components').filter((d) =>
+      /app-(list-item|icon-circle|corner-badge)--team\b/.test(lies(d)));
+    expect(treffer).toEqual([]);
   });
 });

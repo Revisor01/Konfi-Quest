@@ -47,7 +47,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istTeamTyp } from '../../../utils/chatRoles';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { rollenName, rollenFarbeVar, rollenTextFarbeVar } from '../../../utils/rollenNamen';
+import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 
 interface Participant {
   user_id: number;
@@ -328,24 +328,25 @@ const MembersModal: React.FC<MembersModalProps> = ({
     const participantId = `${isTeam ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
     const roleText = getRoleText(targetUser);
     const jahrgang = getJahrgang(targetUser);
-    // Eck-Marke in der Farbe der Rolle (utils/rollenNamen, 29.09.2026):
-    // Org-Leitung Indigo, Leitung Petrol, Teamer:in Beere; ohne Rollennamen
-    // (aeltere Antworten) bleibt es bei der Team-Farbe.
-    const rolleImTeam = 'role_name' in targetUser ? targetUser.role_name : undefined;
-    const badgeColor = isTeam ? rollenFarbeVar(rolleImTeam, 'teamer') : 'var(--app-color-konfis)';
+    // Strich, Kreis, Eck-Marke und Schrift in der Farbe der Rolle -- aus EINER
+    // Stelle (utils/rollenNamen: rollenDarstellung, 02.10.2026). Bis dahin
+    // las nur die Eck-Marke die Rolle; Strich und Kreis trugen die
+    // allgemeine Team-Farbe (Beere) auch fuer jede Leitung. Ohne Rolle in der
+    // Antwort entscheidet der Typ; Konfis bleiben in ihrer Farbe.
+    const rolle = rollenDarstellung(isTeam ? targetUser : 'konfi');
 
     return (
       <div role={isSelectable ? 'button' : undefined} tabIndex={isSelectable ? 0 : undefined} onKeyDown={isSelectable ? tastaturKlick : undefined} aria-pressed={isSelectable ? isSelected : undefined}
         key={participantId}
-        className={`app-list-item ${isTeam ? 'app-list-item--team' : 'app-list-item--konfi'} ${isSelected ? 'app-list-item--selected' : ''}`}
+        className={`app-list-item ${rolle.strich} ${isSelected ? 'app-list-item--selected' : ''}`}
         onClick={isSelectable ? onToggle : undefined}
         style={{ cursor: isSelectable ? 'pointer' : 'default', position: 'relative', overflow: 'hidden', width: '100%' }}
       >
         {/* Eselsohr mit Rolle als Icon */}
         <div className="app-corner-badges">
           <div
-            className="app-corner-badge"
-            style={{ backgroundColor: badgeColor, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+            className={`app-corner-badge ${rolle.marke}`}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
             title={roleText}
             role="img"
             aria-label={roleText}
@@ -356,7 +357,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
 
         <div className="app-list-item__row">
           <div className="app-list-item__main">
-            <div className={`app-icon-circle app-icon-circle--lg ${isTeam ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
+            <div className={`app-icon-circle app-icon-circle--lg ${rolle.kreis}`}>
               <IonIcon icon={ICON_PERSON_GEFUELLT} />
             </div>
             <div className="app-list-item__content">
@@ -365,7 +366,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {isTeam && roleText && (
                 <div className="app-list-item__meta">
                   <span className="app-list-item__meta-item">
-                    <IonIcon icon={ICON_GRUPPE} style={{ color: rollenTextFarbeVar(rolleImTeam, 'teamer') }} />
+                    <IonIcon icon={ICON_GRUPPE} className={rolle.schrift} />
                     {roleText}
                   </span>
                 </div>

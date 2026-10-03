@@ -5,6 +5,7 @@ dabei entsteht und was die Gemeinde danach tut. Was die Gemeinde selbst lesen
 soll, steht im Handbuch unter
 [Eine neue Gemeinde einrichten](../handbuch/30-leitung.md#eine-neue-gemeinde-einrichten).
 Belegt am Code (`backend/routes/organizations.js`, `POST /organizations`;
+die Anlage selbst mit allen Vorlagen in `backend/utils/gemeindeAnlegen.js`;
 `frontend/src/components/admin/modals/OrganizationManagementModal.tsx`) und
 am 29.09.2026 gegen eine lokale Instanz nachgespielt.
 
@@ -16,22 +17,65 @@ Eine Gemeinde kann sich nicht selbst anlegen.
 
 ## Wo in der App
 
-Als Super-Admin: Reiter **„Mehr"** › oben rechts das **Gebäude-Symbol**
-(„Gemeinden verwalten") › oben rechts **Plus**. Das Formular öffnet sich
-direkt zum Ausfüllen.
+In der Support-Ansicht ([support-ansicht.md](support-ansicht.md)) unter
+**Gemeinden** › oben rechts **Plus**; als Gemeindeleitung mit
+Super-Admin-Merkmal kommt man dorthin über Reiter **„Mehr"** › oben rechts das
+**Headset-Symbol**. Das Formular öffnet sich direkt zum Ausfüllen.
+
+Kommt die Gemeinde über das Formular auf der Startseite, geht es kürzer: Die
+Anfrage öffnen und **„Gemeinde anlegen"** — Name, Kirchenkreis, Kontakt,
+Testphase und erste Gemeindeleitung sind dort aus der Anfrage vorbelegt
+([support-ansicht.md](support-ansicht.md#anfragen-bearbeiten)).
+
+Kam die Gemeinde über das Anfrageformular auf konfi-quest.de, geht es auch
+aus der Anfrage heraus — mit derselben Anlage, siehe
+[support-ansicht.md](support-ansicht.md#eine-anfrage-in-eine-gemeinde-umwandeln).
 
 | Abschnitt | Feld | Pflicht | Wirkung |
 |---|---|---|---|
 | Gemeinde | Name der Gemeinde | ja | Anzeigename überall in der App. Daraus entsteht der **Systemname** (Kleinbuchstaben, Umlaute als ae/oe/ue/ss, Leerzeichen zu Bindestrichen, alles andere fällt weg: aus „Büsum" wird `buesum`). Er muss eindeutig sein, sonst meldet der Server „Gemeinde-Slug existiert bereits". Gemeinden, die vor dem 29.09.2026 angelegt wurden, behalten ihren Systemnamen ohne Umlaut. |
-| Gemeinde | Beschreibung, Kirchenkreis | nein | nur Anzeige |
+| Gemeinde | Beschreibung | nein | nur Anzeige |
+| Gemeinde | Kirchenkreis | nein | Auswahl aus der Struktur der Support-Ansicht, die Landeskirche ergibt sich daraus; zählt für die Kennzahlen je Kirchenkreis und Landeskirche. Der Name steht zugleich in der alten Textspalte, die ältere Apps lesen. Lädt die Struktur nicht, bleibt ein Freitextfeld. |
 | Kontakt | Ansprechpartner:in, E-Mail, Telefon, Adresse, Website | nein | Die **E-Mail** wird zugleich die E-Mail-Adresse des ersten Gemeindeleitungs-Kontos — dorthin gehen „Passwort vergessen" und der Hinweis 14 Tage vor Ablauf der Laufzeit. |
 | Gemeindeleitung | Name, Login-Benutzername, Passwort | ja | das erste Konto mit der Rolle Gemeindeleitung (`org_admin`). Der Benutzername muss im ganzen System frei sein, ohne Unterschied zwischen Groß- und Kleinschreibung; sonst meldet der Server „Benutzername existiert bereits (muss systemweit eindeutig sein)" und legt nichts an. Passwort nach der Richtlinie (8 Zeichen, Groß- und Kleinbuchstabe, Ziffer, Sonderzeichen, keine Leerzeichen); „Sicheres Passwort vorschlagen" erzeugt eines. |
 | Laufzeit | 30 Tage (Testphase), 1 Jahr, Unbegrenzt, eigenes Datum | vorbelegt: 30 Tage | Nach dem Datum ist die Anmeldung für alle außer Super-Admins gesperrt. „Testphase" zeigt den Hinweis „Testphase: noch … Tage" auf den Startseiten; eine Lizenz mit Datum läuft still ab. |
-| Konfi-Limit | Tarif (15, 50, 75, 100, Unbegrenzt) oder eigenes Limit | vorbelegt: leer = unbegrenzt | Ab dem Limit fragt die App die Leitung beim Anlegen, ob trotzdem; bis 5 über dem Limit geht es nach Bestätigung, danach nicht mehr. Selbstregistrierung per Einladungscode läuft bis zu dieser festen Grenze ohne Rückfrage. |
+| Konfi-Limit | Tarif mit Preis (Testphase 5 kostenlos, Klein 15 · 49 €, Standard 50 · 99 €, Plus 75 · 139 €, Groß 100 · 179 €, Unbegrenzt) oder eigenes Limit | vorbelegt: 5 (Testphase) | Ab dem Limit fragt die App die Leitung beim Anlegen, ob trotzdem; bis 5 über dem Limit geht es nach Bestätigung, danach nicht mehr. Selbstregistrierung per Einladungscode läuft bis zu dieser festen Grenze ohne Rückfrage. |
 
 Laufzeit und Limit lassen sich später in derselben Ansicht ändern
 (`PUT /organizations/:id`, `PATCH /organizations/:id/limit`, beides nur
 Super-Admin).
+
+### Konfi-Limit: Testphase 5, danach die Wunschlizenz
+
+Festgelegt von Simon am 03.10.2026: „Testphase 5 danach unbegrenzt. Das
+andere als Optionen solange es noch nicht von der EKD gekauft ist." Und
+gleich danach: „Die anderen Limits müssen aber erhalten bleiben. […] Am
+Anfang dürfen die die Limits auch auswählen. Bis die EKD wirklich zahlt. Also
+die Leute wählen ihre Wunschlizenz!"
+
+- **In der Testphase** (Laufzeit mit Datum und „Als Testphase kennzeichnen")
+  steht das Limit auf **5**, wie auf der Startseite zugesagt.
+- **Danach** — Testphase ausgeschaltet oder Laufzeit „Unbegrenzt" — steht es
+  auf der Konfi-Zahl der **Wunschlizenz**, die die Gemeinde im Anfrageformular
+  gewählt hat (Klein 15, Standard 50, Plus 75, Groß 100). Ohne Wunsch und
+  beim Verbund (bis 4 Gemeinden, Limit nach Absprache) steht es auf
+  **unbegrenzt**.
+- Die Tarife 15, 50, 75 und 100 und ein eigenes Limit bleiben wählbar, die
+  Auswahl nennt den Preis. **Unbegrenzt** geht immer, auch in der Testphase —
+  etwa für die eigene Gemeinde (Simon, 03.10.2026: „Unbegrenzt will ich aber
+  setzen können"). Wer einen Tarif eingetragen hat, behält ihn beim
+  Umschalten; nur ein Limit, das noch auf der Vorgabe steht, folgt.
+
+Unter dem Tarif steht die Wunschlizenz aus der Anfrage, wenn es eine gibt
+(`GET /organizations/:id` liefert sie als `wunsch_lizenz`).
+
+Es ist eine Vorgabe im Formular, keine Regel des Servers: Gespeichert wird,
+was beim Speichern im Formular steht. Beide Formulare — dieses und das
+Anlegen aus einer Anfrage in der Support-Ansicht — lesen dieselbe Stelle
+(`frontend/src/utils/konfiLimitVorgabe.ts`, die Lizenzen aus
+`frontend/src/utils/lizenzen.ts`). Bestehende Gemeinden ändern sich dadurch
+nicht; ihr Limit wechselt erst, wenn jemand die Testphase umschaltet
+und speichert.
 
 Der Systemname bleibt beim späteren Speichern, solange der Name der Gemeinde
 gleich bleibt. Wer den Namen ändert, bekommt den Systemnamen neu gebildet,

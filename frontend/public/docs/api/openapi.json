@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n271 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n290 Operationen."
   },
   "servers": [
     {
@@ -30,7 +30,7 @@
     },
     {
       "name": "Organisationen",
-      "description": "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung)."
+      "description": "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung); Support-Konten ohne Gemeinde (nur Super-Admin)."
     },
     {
       "name": "Passwörter & Einladungen",
@@ -39,6 +39,10 @@
     {
       "name": "System & Monitoring",
       "description": "Health-Check, Status und Metriken des Servers."
+    },
+    {
+      "name": "Support",
+      "description": "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik (nur Super-Admin)."
     },
     {
       "name": "Abzeichen",
@@ -108,7 +112,7 @@
           "Anmeldung & Konto"
         ],
         "summary": "Login für alle Rollen (case-insensitiver Username)",
-        "description": "KONTOSPERRE seit 27.09.2026 (Audit Sicherheit BF-04, HOCH): Nach 10 falschen Passwoertern (401) innerhalb einer Stunde nimmt das Konto keine Anmeldung mehr an -- auch nicht mit dem richtigen Passwort (429, error_code account_locked). Gezaehlt wird je Konto, nicht je IP: Schluessel ist SHA-256 ueber LOWER(username), gerechnet von Postgres (dieselbe Funktion wie die Kontosuche); unbekannte Benutzernamen werden genauso gezaehlt, die Sperre verraet also nicht, ob es ein Konto gibt. Der Zaehler liegt in rate_limit_zaehler (Migration 167) und gilt ueber alle Replicas. Festes Fenster ab dem ersten Fehlversuch; weitere Versuche verlaengern es nicht. Eine erfolgreiche Anmeldung setzt den Zaehler auf 0; jedes neu gesetzte Passwort und jedes neu angelegte Konto ebenso (POST /auth/change-password, /auth/reset-password, /auth/register-konfi, POST und PUT /users, PUT /users/{id}/reset-password, POST /admin/konfis und /admin/konfis/{id}/regenerate-password, POST /organizations und /organizations/{id}/admins). Leere Felder (400), deaktivierte oder geloeschte Konten (403) und Serverfehler zaehlen nicht. Keine RateLimit-Kopfzeilen fuer die Kontosperre (sie verrieten, wie oft ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze (authLimiter) bleibt davor bestehen. Antwortform wie beim authLimiter: { error } mit Status 429, zusaetzlich error_code.\n\nGERAETEBINDUNG seit 28.09.2026 (Audit Sicherheit BF-08, Migration 171): Schickt die App device_id mit, wird das Refresh-Token an diese Kennung gebunden (refresh_tokens.device_id) und gilt beim Refresh nur mit derselben (siehe POST /api/auth/refresh). Ohne device_id -- die Store-Apps 2.2.x und 2.3.0 senden sie hier nie -- bleibt es ungebunden wie bisher. Antwortform unveraendert.\n\nOBERGRENZE seit 01.10.2026 (backend/utils/refreshTokenGrenze.js, Migration 186): Nach jeder Ausgabe eines Refresh-Tokens -- hier, bei POST /api/auth/register-konfi, /api/auth/refresh und /api/auth/change-password -- bleiben je Konto hoechstens die ZEHN juengsten offenen Refresh-Tokens; aeltere werden beendet (revoked_at + expires_at = NOW(), wie beim Logout: keine Gnadenfrist, kein Diebstahl-Signal). Mit device_id endet zusaetzlich jedes andere offene Token desselben Kontos auf DEMSELBEN Geraet. Ein beendetes Token bekommt beim Refresh ein schlichtes 401; die App (auch 2.2.x und 2.3.0) leert die Sitzung und zeigt die Anmeldeseite mit \"Sitzung abgelaufen\". Antwortform unveraendert. Gemessen 01.10.2026: 1.281 offene Tokens auf 133 Konten, das groesste mit 208; echte Konten hatten hoechstens fuenf Tokens aus den letzten sieben Tagen.\n",
+        "description": "KONTOSPERRE seit 27.09.2026 (Audit Sicherheit BF-04, HOCH): Nach 10 falschen Passwoertern (401) innerhalb einer Stunde nimmt das Konto keine Anmeldung mehr an -- auch nicht mit dem richtigen Passwort (429, error_code account_locked). Gezaehlt wird je Konto, nicht je IP: Schluessel ist SHA-256 ueber LOWER(username), gerechnet von Postgres (dieselbe Funktion wie die Kontosuche); unbekannte Benutzernamen werden genauso gezaehlt, die Sperre verraet also nicht, ob es ein Konto gibt. Der Zaehler liegt in rate_limit_zaehler (Migration 167) und gilt ueber alle Replicas. Festes Fenster ab dem ersten Fehlversuch; weitere Versuche verlaengern es nicht. Eine erfolgreiche Anmeldung setzt den Zaehler auf 0; jedes neu gesetzte Passwort und jedes neu angelegte Konto ebenso (POST /auth/change-password, /auth/reset-password, /auth/register-konfi, POST und PUT /users, PUT /users/{id}/reset-password, POST /admin/konfis und /admin/konfis/{id}/regenerate-password, POST /organizations und /organizations/{id}/admins). Leere Felder (400), deaktivierte oder geloeschte Konten (403) und Serverfehler zaehlen nicht. Keine RateLimit-Kopfzeilen fuer die Kontosperre (sie verrieten, wie oft ein Konto durchprobiert wurde), nur Retry-After. Die IP-Grenze (authLimiter) bleibt davor bestehen. Antwortform wie beim authLimiter: { error } mit Status 429, zusaetzlich error_code.\n\nGERAETEBINDUNG seit 28.09.2026 (Audit Sicherheit BF-08, Migration 171): Schickt die App device_id mit, wird das Refresh-Token an diese Kennung gebunden (refresh_tokens.device_id) und gilt beim Refresh nur mit derselben (siehe POST /api/auth/refresh). Ohne device_id -- die Store-Apps 2.2.x und 2.3.0 senden sie hier nie -- bleibt es ungebunden wie bisher. Antwortform unveraendert.\n\nOBERGRENZE seit 01.10.2026 (backend/utils/refreshTokenGrenze.js, Migration 186): Nach jeder Ausgabe eines Refresh-Tokens -- hier, bei POST /api/auth/register-konfi, /api/auth/refresh und /api/auth/change-password -- bleiben je Konto hoechstens die ZEHN juengsten offenen Refresh-Tokens; aeltere werden beendet (revoked_at + expires_at = NOW(), wie beim Logout: keine Gnadenfrist, kein Diebstahl-Signal). Mit device_id endet zusaetzlich jedes andere offene Token desselben Kontos auf DEMSELBEN Geraet. Ein beendetes Token bekommt beim Refresh ein schlichtes 401; die App (auch 2.2.x und 2.3.0) leert die Sitzung und zeigt die Anmeldeseite mit \"Sitzung abgelaufen\". Antwortform unveraendert. Gemessen 01.10.2026: 1.281 offene Tokens auf 133 Konten, das groesste mit 208; echte Konten hatten hoechstens fuenf Tokens aus den letzten sieben Tagen.\n\nKONTO OHNE GEMEINDE seit 03.10.2026 (Simon; docs/planung/web-version.md, Punkt 12 und 13): Ein Support-Konto (users.organization_id NULL, Systemrolle super_admin, Merkmal is_super_admin) meldet sich nur an, wenn die Anfrage kann_ohne_gemeinde: true traegt -- das schickt allein die Web-Version, die Apps auf iPhone und Android nie. Ohne die Zusage 403 mit error_code user_inactive und grund konto_ohne_gemeinde (siehe unten). Die Store-App 2.3.0 zeigt den Text; 1.5.3 bis 2.2.x zeigen bei jeder Ablehnung \"Keine Verbindung zum Server\" (Fehler ihrer Anmeldeseite) und sind trotzdem abgewiesen. Mit der Zusage: 200, im User-Objekt organization null, role_name super_admin, is_super_admin true. Fuer Konten mit Gemeinde aendert das Feld nichts. Bedienkomfort, keine Sicherheitsgrenze -- die Rechte haelt verifyTokenRBAC. Tests: backend/tests/routes/kontoOhneGemeindeAnmeldung.test.js.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -130,6 +134,10 @@
                     "type": "string",
                     "maxLength": 255,
                     "description": "Optional (seit 28.09.2026): Geraete-Kennung (iOS identifierForVendor, Android ANDROID_ID, im Browser eine einmal erzeugte Kennung). Bindet das Refresh-Token an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe."
+                  },
+                  "kann_ohne_gemeinde": {
+                    "type": "boolean",
+                    "description": "Optional (seit 03.10.2026): Zusage der Web-Version, dass hier ein Konto ohne Gemeinde arbeiten darf. Nur das boolesche true zaehlt. Die Apps schicken es nie. Ohne das Feld weist der Server ein Konto ohne Gemeinde mit 403 grund konto_ohne_gemeinde ab; fuer alle anderen Konten ohne Wirkung."
                   }
                 }
               }
@@ -144,7 +152,34 @@
             "description": "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)"
           },
           "403": {
-            "description": "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung"
+            "description": "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin (Rolle oder Merkmal) von Org- und Trial-Sperre ausgenommen, seit 03.10.2026 nicht mehr von der Deaktivierung, nie von der Loeschung. Seit 03.10.2026 auch: Konto ohne Gemeinde ohne kann_ohne_gemeinde (error_code user_inactive, grund konto_ohne_gemeinde, Text 'Dieses Konto gehört zu keiner Gemeinde und ist für die Support-Ansicht im Browser bestimmt. Bitte melde dich auf konfi-quest.de an.')",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "error_code": {
+                      "type": "string",
+                      "enum": [
+                        "user_inactive",
+                        "org_inactive",
+                        "org_trial_expired"
+                      ]
+                    },
+                    "grund": {
+                      "type": "string",
+                      "enum": [
+                        "konto_ohne_gemeinde"
+                      ],
+                      "description": "Nur wenn ein Konto ohne Gemeinde nicht aus der Web-Version kommt (seit 03.10.2026, additiv)"
+                    }
+                  }
+                }
+              }
+            }
           },
           "429": {
             "description": "Zwei Quellen, gleiche Form { error } (Vertrag mit den Apps; die Store-Apps 2.2.x zeigen wegen eines Fehlers der Anmeldeseite bei jeder Ablehnung \"Keine Verbindung zum Server\", ab 2.3.0 steht dort der Text aus error): authLimiter -- 300 Fehlversuche/15min pro Client-IP (Zähler seit 26.09.2026 replica-übergreifend in der Datenbank, Betrieb BF-09), Meldung \"Zu viele Login-Versuche. Bitte warte 15 Minuten.\" -- oder die Kontosperre (seit 27.09.2026): 10 falsche Passwörter je Stunde und Konto, Meldung \"Zu viele falsche Anmeldeversuche für dieses Konto. Versuche es in einer Stunde wieder oder bitte die Leitung deiner Gemeinde um ein neues Passwort.\" mit error_code account_locked und Retry-After. Der Text ist fest und nennt keinen Namen.\n",
@@ -187,7 +222,7 @@
             "kontoSperre"
           ],
           "org-scope": false,
-          "objekt-pruefung": "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle",
+          "objekt-pruefung": "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; is_active = false und deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle",
           "hinweis": "Offene Route; setzt last_login_at; setzt nach Erfolg den Zaehler der Kontosperre zurueck"
         }
       }
@@ -290,7 +325,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "409": {
-            "description": "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026)"
+            "description": "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)"
           },
           "500": {
             "description": "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen"
@@ -1253,6 +1288,10 @@
                     "type": "string",
                     "maxLength": 255,
                     "description": "Optional (seit 28.09.2026): Geraete-Kennung. Pflicht fuer gebundene Tokens; bindet ein ungebundenes Token beim Rotieren an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe."
+                  },
+                  "kann_ohne_gemeinde": {
+                    "type": "boolean",
+                    "description": "Optional (seit 03.10.2026): wie bei POST /api/auth/login. Die Web-Version schickt es bei jedem Refresh mit; ohne das Feld endet der Refresh eines Kontos ohne Gemeinde mit 403 grund konto_ohne_gemeinde (das eingereichte Token ist dann rotiert und widerrufen, ein neues gibt es nicht). Fuer alle anderen Konten ohne Wirkung."
                   }
                 }
               }
@@ -1267,7 +1306,7 @@
             "description": "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung"
           },
           "403": {
-            "description": "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt"
+            "description": "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org- und Trial-Sperre ausgenommen, seit 03.10.2026 nicht mehr von der Deaktivierung, nie von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt. Seit 03.10.2026 auch: Konto ohne Gemeinde ohne kann_ohne_gemeinde -> { error, error_code: user_inactive, grund: konto_ohne_gemeinde }, Text wie bei der Anmeldung"
           },
           "429": {
             "description": "{ error } -- mehr als 300 abgelehnte Tokens (401) je Viertelstunde von derselben Adresse (refreshLimiter, seit 29.09.2026). Erfolgreiche Erneuerungen, 403, 400 und 500 zaehlen nicht. ACHTUNG: Die App (2.2.x, 2.3.0) meldet sich bei jeder abgelehnten Erneuerung ab, auch bei 429 -- deshalb so weit wie die Fehlversuche beim Login; ein Geraet erzeugt hoechstens zwei 401, bevor die App den Token verwirft"
@@ -1439,9 +1478,10 @@
           "Organisationen"
         ],
         "summary": "Alle Organisationen mit Team-/Konfi-Zaehlern (nur Super-Admin)",
+        "description": "Seit 03.10.2026 (Migration 191, nur neue Felder): kirchenkreis_id (aus organizations.*), dazu landeskirche_id und landeskirche aus dem zugeordneten Kirchenkreis (sonst null). Alle bisherigen Felder bleiben, auch die Textspalte kirchenkreis.\n",
         "responses": {
           "200": {
-            "description": "Array aller Orgs inkl. user_count/konfi_count"
+            "description": "Array aller Orgs: organizations.* (seit 03.10.2026 mit kirchenkreis_id) inkl. user_count/konfi_count/event_count, dazu landeskirche_id und landeskirche"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -1464,7 +1504,7 @@
           "Organisationen"
         ],
         "summary": "Gemeinde anlegen inkl. erster Gemeindeleitung und Standard-Daten (4 Rollen, 36 Badges, 4 Zertifikat-Typen, 6 Levels, 14 Kategorien, 9 Aktivitäten, 3 Beispiel-Challenges)",
-        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\nBEHOBEN 29.09.2026 (Nebenbefund Screens/Leitung BF-15): (1) GANZ ODER GAR NICHT: Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in EINER Transaktion; scheitert ein Schritt, bleibt nichts stehen (500) -- vorher eine halbe Gemeinde mit belegtem Systemnamen. (2) admin_username wird SYSTEMWEIT und ohne Gross/klein geprueft wie in POST /api/users und POST /api/organizations/{id}/admins: 409 \"Benutzername existiert bereits (muss systemweit eindeutig sein)\", nichts wird angelegt. Vorher griff nur der Index (organization_id, username) -- in einer neuen Gemeinde nie; die Anmeldung per LOWER(username) wurde mehrdeutig. (3) SYSTEMNAME MIT UMLAUTEN: Die App bildet name/slug aus dem Anzeigenamen und verliert dabei Umlaute (\"Büsum\" -> \"bsum\"). Entspricht ein geschickter Wert genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe, ü->ue, ß->ss (\"buesum\"); ein eigener Wert bleibt, nur Umlaute darin werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert weiter, was geschickt wird. Antwortform unveraendert. NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test gegen diese Funktion); der Server behaelt, was sie schickt. Die Store-App 2.2.x schickt weiter die verlustbehaftete Form.\nSTARTBESTAND (nachgezaehlt 30.09.2026; die Zusammenfassung nannte bis dahin 27 Badges, 5 Kategorien und 5 Aktivitaeten): 4 Rollen (org_admin, admin, teamer, konfi); 36 Badges -- 27 fuer Konfis und 9 fuers Team (target_role 'teamer'); 4 Zertifikat-Typen; 6 Levels; 14 Kategorien; 9 Aktivitaeten -- 5 fuer Konfis mit Punkten und 4 fuers Team ohne Punkte und Punktetyp; 3 Beispiel-Challenges als Entwurf ohne Jahrgang. Die Zaehler der Antwort nennen dieselben Zahlen.\nBEHOBEN 30.09.2026: Das Feld message nannte nur die 5 Aktivitaeten fuer Konfis, default_activities_created daneben 9. Jetzt nennen beide 9. Die App liest message nicht.\n",
+        "description": "Standardrollen (display_name): org_admin \"Org-Leitung\", admin \"Leitung\", teamer \"Teamer:in\", konfi \"Konfirmand:in\" (seit 28.09.2026; vorher \"Organisations-Admin\" und \"Hauptamt\"). Bestehende Gemeinden behalten ihre display_name-Werte -- keine Migration; die App beschriftet Rollen nach role_name.\nBEHOBEN 29.09.2026 (Nebenbefund Screens/Leitung BF-15): (1) GANZ ODER GAR NICHT: Gemeinde, Rollen, erste Gemeindeleitung und alle Vorlagen entstehen in EINER Transaktion; scheitert ein Schritt, bleibt nichts stehen (500) -- vorher eine halbe Gemeinde mit belegtem Systemnamen. (2) admin_username wird SYSTEMWEIT und ohne Gross/klein geprueft wie in POST /api/users und POST /api/organizations/{id}/admins: 409 \"Benutzername existiert bereits (muss systemweit eindeutig sein)\", nichts wird angelegt. Vorher griff nur der Index (organization_id, username) -- in einer neuen Gemeinde nie; die Anmeldung per LOWER(username) wurde mehrdeutig. (3) SYSTEMNAME MIT UMLAUTEN: Die App bildet name/slug aus dem Anzeigenamen und verliert dabei Umlaute (\"Büsum\" -> \"bsum\"). Entspricht ein geschickter Wert genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe, ü->ue, ß->ss (\"buesum\"); ein eigener Wert bleibt, nur Umlaute darin werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert weiter, was geschickt wird. Antwortform unveraendert. NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test gegen diese Funktion); der Server behaelt, was sie schickt. Die Store-App 2.2.x schickt weiter die verlustbehaftete Form.\nSTARTBESTAND (nachgezaehlt 30.09.2026; die Zusammenfassung nannte bis dahin 27 Badges, 5 Kategorien und 5 Aktivitaeten): 4 Rollen (org_admin, admin, teamer, konfi); 36 Badges -- 27 fuer Konfis und 9 fuers Team (target_role 'teamer'); 4 Zertifikat-Typen; 6 Levels; 14 Kategorien; 9 Aktivitaeten -- 5 fuer Konfis mit Punkten und 4 fuers Team ohne Punkte und Punktetyp; 3 Beispiel-Challenges als Entwurf ohne Jahrgang. Die Zaehler der Antwort nennen dieselben Zahlen.\nBEHOBEN 30.09.2026: Das Feld message nannte nur die 5 Aktivitaeten fuer Konfis, default_activities_created daneben 9. Jetzt nennen beide 9. Die App liest message nicht.\nSEIT 03.10.2026: Die Anlage steht in utils/gemeindeAnlegen.js; dieselbe Funktion ruft POST /api/support/anfragen/{id}/anlegen. Fuer dieselbe Anfrage legt die Route Stueck fuer Stueck dasselbe an wie vorher (tests/routes/gemeindeAnlegenGemeinsam.test.js, Pruefsumme vom Stand davor). Neu und optional: kirchenkreis_id -- dann steht dessen Name in der Textspalte kirchenkreis, ein geschickter Freitext zaehlt nicht.\n",
         "requestBody": {
           "required": true,
           "content": {
@@ -1508,7 +1548,15 @@
                     "type": "string"
                   },
                   "kirchenkreis": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Freitext; mit kirchenkreis_id uebergangen"
+                  },
+                  "kirchenkreis_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "seit 03.10.2026, optional: Zuordnung zu einem Kirchenkreis (GET /api/support/kirchenkreise); unbekannt 400 'Kirchenkreis nicht gefunden', kein Verweis 400 'Ungültiger Kirchenkreis' -- nichts angelegt"
                   },
                   "max_konfis": {
                     "type": [
@@ -1582,7 +1630,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle)"
+            "description": "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle). Support-Konten ohne Gemeinde stehen mit primary_organization_name null und primary_role_name super_admin darin -- so werden sie als Gast in eine Gemeinde aufgenommen (POST /organizations/{id}/members)"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -1598,6 +1646,327 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "keine (org-uebergreifend, bewusst)"
+        }
+      }
+    },
+    "/api/organizations/support-konten": {
+      "get": {
+        "tags": [
+          "Organisationen"
+        ],
+        "summary": "Alle Support-Konten (Super-Admin ohne Gemeinde) mit ihren Gast-Gemeinden",
+        "description": "NEU 03.10.2026 (Simon; docs/planung/web-version.md, Punkt 10 bis 15). Ein Support-Konto hat keine Gemeinde (users.organization_id NULL), traegt die Systemrolle super_admin und das Merkmal is_super_admin (Migration 190) und hat dieselben Rechte wie jeder Super-Admin. Es meldet sich nur in der Web-Version an (POST /api/auth/login, kann_ohne_gemeinde). Diese Liste zeigt nur Konten ohne Gemeinde; Super-Admins mit Gemeinde stehen in deren Benutzerliste. Geloeschte (deleted_at) fehlen.\n",
+        "responses": {
+          "200": {
+            "description": "Array, nach Anzeigename sortiert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "integer"
+                      },
+                      "username": {
+                        "type": "string"
+                      },
+                      "display_name": {
+                        "type": "string"
+                      },
+                      "email": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "is_active": {
+                        "type": "boolean"
+                      },
+                      "last_login_at": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "format": "date-time"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "gemeinden": {
+                        "type": "array",
+                        "description": "Gast-Mitgliedschaften (user_organizations): id, name, display_name, role_name",
+                        "items": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "description": "Kein Super-Admin (Rolle oder Merkmal)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "nur users.organization_id IS NULL",
+          "hinweis": "Eigene Datei backend/routes/supportKonten.js, eingehaengt in organizations.js vor /:id. Tests: backend/tests/routes/supportKonten.test.js"
+        }
+      },
+      "post": {
+        "tags": [
+          "Organisationen"
+        ],
+        "summary": "Support-Konto anlegen (ohne Gemeinde, Systemrolle super_admin, Merkmal is_super_admin)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "display_name",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 50,
+                    "pattern": "^[a-zA-Z0-9.-]+$",
+                    "description": "Systemweit frei, ohne Gross/klein -- geprueft unter derselben Sperre wie POST /users (utils/benutzernameSperre.js)"
+                  },
+                  "display_name": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "description": "volle validatePassword-Policy"
+                  },
+                  "email": {
+                    "type": "string",
+                    "description": "Optional; fuer 'Passwort vergessen'"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "{ id, username, display_name, email, is_active, created_at, gemeinden: [] }"
+          },
+          "400": {
+            "description": "Benutzername, Anzeigename, Passwort oder E-Mail ungueltig"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "409": {
+            "description": "Benutzername existiert bereits (muss systemweit eindeutig sein)"
+          },
+          "500": {
+            "description": "u. a. 'Die Rolle für Support-Konten fehlt. Bitte den Migrationsstand prüfen.' -- die Systemrolle aus Migration 190 fehlt"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Rolle = Systemrolle super_admin (organization_id NULL); das neue Konto startet ohne Kontosperre nach Fehlversuchen"
+        }
+      }
+    },
+    "/api/organizations/support-konten/{id}": {
+      "patch": {
+        "tags": [
+          "Organisationen"
+        ],
+        "summary": "Support-Konto sperren oder entsperren",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "User-ID des Support-Kontos"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "is_active"
+                ],
+                "properties": {
+                  "is_active": {
+                    "type": "boolean",
+                    "description": "false sperrt, true entsperrt (nur echte Booleans)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ id, username, display_name, email, is_active }. Sperren beendet alle Sitzungen: token_invalidated_at, alle Refresh-Tokens widerrufen und sofort abgelaufen, Push-Tokens geloescht, Rechte-Cache geleert, Sockets getrennt. Danach Anmeldung und Refresh 403 user_inactive"
+          },
+          "400": {
+            "description": "is_active fehlt oder ist kein Boolean"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "Kein Support-Konto (Konto mit Gemeinde, geloescht oder unbekannt) -- dann aendert sich nichts"
+          },
+          "409": {
+            "description": "'Das letzte aktive Super-Admin-Konto lässt sich nicht sperren. Lege zuerst ein weiteres an.' -- gezaehlt werden alle aktiven, nicht geloeschten Konten mit Rolle super_admin oder Merkmal, mit oder ohne Gemeinde (utils/superAdminKonten.js, unter einer Sperre gegen gleichzeitiges Sperren)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "nur users.organization_id IS NULL; das eigene Konto ist erlaubt, solange ein weiteres aktives Super-Admin-Konto bleibt"
+        }
+      },
+      "delete": {
+        "tags": [
+          "Organisationen"
+        ],
+        "summary": "Support-Konto loeschen (gemeinsame Kontoloeschung)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "User-ID des Support-Kontos"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message: 'Support-Konto gelöscht' } -- utils/kontoLoeschen.js wie bei jeder Kontoloeschung: Gast-Mitgliedschaften, Chats, Mitteilungen, alles der Person; Dateien nach dem COMMIT"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "Kein Support-Konto -- ein Konto mit Gemeinde bleibt"
+          },
+          "409": {
+            "description": "'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.'"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "nur users.organization_id IS NULL; Schutz des letzten aktiven Super-Admin-Kontos"
+        }
+      }
+    },
+    "/api/organizations/support-konten/{id}/passwort": {
+      "put": {
+        "tags": [
+          "Organisationen"
+        ],
+        "summary": "Passwort eines Support-Kontos setzen",
+        "description": "Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen und hebt eine Kontosperre nach Fehlversuchen auf. ANDERS: keine Bestaetigungsmail -- deren Vorlage spricht von \"der Leitung deiner Gemeinde\". PUT /api/users/{id}/reset-password geht fuer Support-Konten ebenfalls (Super-Admin, seit 03.10.2026 korrekt) und schickt diese Mail.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "User-ID des Support-Kontos"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "password"
+                ],
+                "properties": {
+                  "password": {
+                    "type": "string",
+                    "description": "volle validatePassword-Policy"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "{ message: 'Passwort gesetzt' }"
+          },
+          "400": {
+            "description": "Policy verletzt"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "Kein Support-Konto -- ein Konto mit Gemeinde bleibt unveraendert"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "nur users.organization_id IS NULL"
         }
       }
     },
@@ -1651,7 +2020,7 @@
         ],
         "responses": {
           "200": {
-            "description": "SELECT * + user/teamer/admin/konfi/... counts"
+            "description": "SELECT * + user/teamer/admin/konfi/... counts; dazu wunsch_lizenz (seit 03.10.2026, Migration 192) -- die Wunschlizenz aus der juengsten Anfrage, aus der die Gemeinde entstanden ist, sonst null"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -1733,7 +2102,15 @@
                     "type": "string"
                   },
                   "kirchenkreis": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Freitext wie bisher (alle Apps bis 2.3.0). Seit 03.10.2026: Ist die Gemeinde einem Kirchenkreis zugeordnet und weicht der Text von dessen Namen ab (ohne Gross/klein und Randleerzeichen), endet die Zuordnung (kirchenkreis_id NULL); derselbe Text laesst sie stehen. Mit kirchenkreis_id uebergangen"
+                  },
+                  "kirchenkreis_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "Seit 03.10.2026, nur super_admin (von anderen stillschweigend uebergangen, wie is_active). Setzt die Zuordnung und schreibt den Namen des Kirchenkreises in die Textspalte kirchenkreis; null hebt beides auf. Unbekannt 400 'Kirchenkreis nicht gefunden', kein Verweis 400 'Ungültiger Kirchenkreis' -- dann aendert sich nichts. Regel: utils/kirchenkreisZuordnung.js"
                   },
                   "is_active": {
                     "type": "boolean",
@@ -1758,7 +2135,10 @@
         },
         "responses": {
           "200": {
-            "description": "Aktualisiert"
+            "description": "{ message: 'Gemeinde erfolgreich aktualisiert' } (unveraendert)"
+          },
+          "400": {
+            "description": "seit 03.10.2026: kirchenkreis_id unbekannt ('Kirchenkreis nicht gefunden') oder kein Verweis ('Ungültiger Kirchenkreis'), nur fuer super_admin; daneben Validierungsfehler der Stammdaten"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -1788,7 +2168,7 @@
           "Organisationen"
         ],
         "summary": "Organisation vollstaendig löschen (explizite CASCADE-Kette in einer Transaktion, inkl. Datei-Cleanup nach COMMIT)",
-        "description": "Konten der Gemeinde (users.organization_id = id), 29.09.2026:\n- auch in einer anderen Gemeinde Mitglied (user_organizations): das Konto zieht um,\n  wie DELETE /api/users/{id} Fall 2 (aktive Gemeinde vor gesperrter, dann die älteste\n  Mitgliedschaft; Rolle von dort). Anmeldungen, Geräte und die Arbeit in der anderen\n  Gemeinde bleiben.\n- nur hier Mitglied: gemeinsame Kontolöschung wie auf allen Löschwegen\n  (utils/kontoLoeschen.js, für alle Konten in einem Durchgang) — auch Anträge,\n  Dateien, Zweiergespräche und Buchungen in anderen Gemeinden (Nachrücken dort).\nBehoben 29.09.2026: Vorher `DELETE FROM users WHERE organization_id` — Spuren eines\nKontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am\nFremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und\nKonten mit weiterer Mitgliedschaft verschwanden ganz.\n\nBehoben 29.09.2026 (Nebenbefund Paket E): Die eigene Stamm-Gemeinde\n(users.organization_id des Aufrufers, nicht die aktive) lässt sich nicht löschen,\nsolange das Konto nirgends sonst Mitglied ist — 409, nichts wird gelöscht. Vorher\nlöschte der Super-Admin dabei sein eigenes Konto mit und sperrte sich aus. Mit einer\nweiteren Mitgliedschaft bleibt es erlaubt: Das Konto zieht um und behält\nis_super_admin. Eine andere Person mit Super-Admin-Recht darf die Gemeinde löschen.\n",
+        "description": "Konten der Gemeinde (users.organization_id = id), 29.09.2026:\n- auch in einer anderen Gemeinde Mitglied (user_organizations): das Konto zieht um,\n  wie DELETE /api/users/{id} Fall 2 (aktive Gemeinde vor gesperrter, dann die älteste\n  Mitgliedschaft; Rolle von dort). Anmeldungen, Geräte und die Arbeit in der anderen\n  Gemeinde bleiben.\n- nur hier Mitglied: gemeinsame Kontolöschung wie auf allen Löschwegen\n  (utils/kontoLoeschen.js, für alle Konten in einem Durchgang) — auch Anträge,\n  Dateien, Zweiergespräche und Buchungen in anderen Gemeinden (Nachrücken dort).\nBehoben 29.09.2026: Vorher `DELETE FROM users WHERE organization_id` — Spuren eines\nKontos in einer anderen Gemeinde (Antrag, angelegter Termin) ließen die Löschung am\nFremdschlüssel mit 500 scheitern, Dateien und Zweiergespräche dort blieben liegen, und\nKonten mit weiterer Mitgliedschaft verschwanden ganz.\n\nBehoben 29.09.2026 (Nebenbefund Paket E): Die eigene Stamm-Gemeinde\n(users.organization_id des Aufrufers, nicht die aktive) lässt sich nicht löschen,\nsolange das Konto nirgends sonst Mitglied ist — 409, nichts wird gelöscht. Vorher\nlöschte der Super-Admin dabei sein eigenes Konto mit und sperrte sich aus. Mit einer\nweiteren Mitgliedschaft bleibt es erlaubt: Das Konto zieht um und behält\nis_super_admin. Eine andere Person mit Super-Admin-Recht darf die Gemeinde löschen.\n\nSeit 03.10.2026: Die Anfrage vom Formular, aus der die Gemeinde entstanden ist\n(gemeinde_anfragen.organization_id), geht mit — Datenschutzerklärung Abschnitt 9c.\nAntwortform unverändert.\n",
         "parameters": [
           {
             "name": "id",
@@ -2081,7 +2461,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array mit is_primary-Kennzeichnung"
+            "description": "Array (id, username, display_name, email, role_name, role_display_name, is_primary, created_at); is_primary ist immer ein Boolean -- BEHOBEN 03.10.2026: bei einem Konto ohne Gemeinde (Support als Gast) stand dort null"
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"
@@ -2260,6 +2640,998 @@
         }
       }
     },
+    "/api/anfragen": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Anfrage einer Gemeinde vom Formular auf konfi-quest.de (OEFFENTLICH, ohne Anmeldung)",
+        "description": "NEU 03.10.2026. Speichert die Anfrage (gemeinde_anfragen, Status neu, einwilligung_am = jetzt) und antwortet 201 { ok: true } -- ohne Kennung. NACH der Antwort: eine Bestaetigung mit festem Text an `email` (keine Eingabe aus dem Formular darin -- sonst liesse sich ueber den Server beliebiger Text an fremde Adressen schicken) und ein Hinweis an jedes aktive Super-Admin-Konto mit Adresse (Merkmal oder Rolle, mit oder ohne Gemeinde; utils/superAdminKonten.js) mit Kennung, Gemeinde, Kirchenkreis und Landeskirche, ohne Kontaktdaten. Scheitert eine Mail, bleibt die Anfrage.\nHONIGTOPF: Ist `website` nicht leer, antwortet die Route ebenfalls 201 { ok: true } -- auch bei sonst ungueltigen Feldern --, speichert aber nichts und schickt nichts.\nGRENZEN (Zaehler im gemeinsamen Store beider Replicas): 5 angenommene Anfragen je Stunde und Client-IP (clientIp: X-Real-IP nur aus dem Docker-Netz), danach 429; abgewiesene (400) zaehlen nicht, der Honigtopf zaehlt mit. Dazu 3 angenommene Anfragen je Tag und E-Mail-Adresse (ohne Gross/klein und Leerraum, ueber alle Client-Adressen; gezaehlt wird ein SHA-256-Pruefwert der Adresse).\nPROTOKOLL: nur die Kennung der Anfrage (\"Gemeinde-Anfrage 12 eingegangen\"), bei Fehlern Kennung und Fehlercode -- keine Daten der Anfrage, auch nicht die Domain der Adresse.\nAUFBEWAHRUNG: abgelehnte Anfragen loescht der 02:00-Lauf 180 Tage nach der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab status_seit); neue und in Arbeit befindliche nach 365 Tagen ohne Aenderung (cleanupUnbewegteAnfragen, gezaehlt ab updated_at); eine angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}). Datenschutzerklaerung Abschnitt 9c.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "gemeinde",
+                  "kontakt_name",
+                  "email",
+                  "einwilligung"
+                ],
+                "properties": {
+                  "gemeinde": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "getrimmt, nicht leer"
+                  },
+                  "kirchenkreis": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "landeskirche": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "kontakt_name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "verantwortliche Person; getrimmt, nicht leer"
+                  },
+                  "funktion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "email": {
+                    "type": "string",
+                    "maxLength": 254,
+                    "description": "gueltige Adresse; dorthin geht die Bestaetigung"
+                  },
+                  "mobil": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 40,
+                    "description": "nur Ziffern, Leerzeichen und + ( ) / -"
+                  },
+                  "anzahl_konfis": {
+                    "type": [
+                      "integer",
+                      "string",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 100000,
+                    "description": "ungefaehr; Zahl oder Ziffernfolge, leer = null"
+                  },
+                  "anzahl_teamer": {
+                    "type": [
+                      "integer",
+                      "string",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 100000
+                  },
+                  "wunsch_lizenz": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "klein",
+                      "standard",
+                      "plus",
+                      "gross",
+                      "verbund",
+                      "",
+                      null
+                    ],
+                    "description": "Wunschlizenz (seit 03.10.2026, Migration 192); leer = keine Angabe. Anderes -> 400 'Bitte eine Lizenz aus der Liste wählen'."
+                  },
+                  "nachricht": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 5000
+                  },
+                  "einwilligung": {
+                    "type": "boolean",
+                    "const": true,
+                    "description": "muss genau true sein (nicht \"true\", nicht 1)"
+                  },
+                  "website": {
+                    "type": "string",
+                    "description": "Honigtopf: muss leer sein oder fehlen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "{ ok: true } -- gespeichert, oder Honigtopf gefuellt (dann nichts gespeichert)"
+          },
+          "400": {
+            "description": "{ error: 'Validierungsfehler', details: [{ field, message }] } -- ohne die Eingaben; nichts gespeichert, keine Mail"
+          },
+          "429": {
+            "description": "{ error } -- 'Zu viele Anfragen von dieser Verbindung. ...' (je Client-IP) oder 'Für diese E-Mail-Adresse sind heute schon mehrere Anfragen eingegangen. ...' (je Adresse)"
+          },
+          "500": {
+            "description": "{ error: 'Die Anfrage konnte nicht gespeichert werden. Bitte versucht es später erneut.' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [
+            "ipGrenze",
+            "honigtopf",
+            "adressGrenze",
+            "express-validator"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine; Tests: backend/tests/routes/anfragen.test.js, tests/services/anfragenAufraeumen.test.js"
+        }
+      }
+    },
+    "/api/support/anfragen": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Anfragen vom Formular, neueste zuerst",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "neu",
+                "in_arbeit",
+                "angelegt",
+                "abgelehnt"
+              ]
+            },
+            "description": "filtert; ein anderer Wert 400"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array, nach created_at absteigend",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GemeindeAnfrage"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "unbekannter status"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine (alle Anfragen)"
+        }
+      }
+    },
+    "/api/support/anfragen/{id}": {
+      "patch": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Status und Notiz einer Anfrage setzen",
+        "description": "Aendert sich der Status, beginnt status_seit neu (die 180-Tage-Frist abgelehnter Anfragen zaehlt ab dort); derselbe Status noch einmal laesst sie stehen. bearbeitet_von = aufrufendes Konto. Eine Anfrage, aus der eine Gemeinde entstanden ist (angelegt mit organization_id), behaelt den Status: ein anderer gibt 409; die Notiz bleibt aenderbar. \"angelegt\" laesst sich auch von Hand setzen (Gemeinde auf anderem Weg angelegt) -- dann ohne organization_id.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "neu",
+                      "in_arbeit",
+                      "angelegt",
+                      "abgelehnt"
+                    ]
+                  },
+                  "notiz": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 5000,
+                    "description": "getrimmt; leer = null"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Die Anfrage",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GemeindeAnfrage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "weder status noch notiz ('Nichts zu ändern: status oder notiz angeben'), unbekannter status, Notiz zu lang"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Anfrage nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'Aus dieser Anfrage ist schon eine Gemeinde entstanden. Der Status bleibt „angelegt\".' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz der Anfrage, Zeile gesperrt (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/anfragen/{id}/anlegen": {
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Aus einer Anfrage eine Gemeinde samt erster Gemeindeleitung anlegen",
+        "description": "DIESELBE Anlage wie POST /api/organizations (utils/gemeindeAnlegen.js: Rollen, erste Gemeindeleitung, 36 Abzeichen, 4 Zertifikatsarten, 6 Stufen, 14 Kategorien, 9 Aktivitaeten, 3 Beispiel-Challenges, Benutzername systemweit unter derselben Sperre, Laufzeit und Konfi-Limit nach denselben Regeln) -- in EINER Transaktion mit der Anfrage: Danach status angelegt, organization_id gesetzt, bearbeitet_von = aufrufendes Konto. Scheitert die Anlage, bleibt die Anfrage unveraendert und es entsteht nichts.\nSYSTEMNAME: Ohne display_name ist `name` der Name der Gemeinde, wie er im Formular steht; der Systemname (name/slug) entsteht daraus mit Umlauten als ae/oe/ue/ss (\"Kirchengemeinde Büsum\" -> kirchengemeinde-buesum). Mit display_name ist `name` der Systemname wie bei POST /organizations (dieselbe Regel); sieht er nicht wie einer aus (Leerzeichen, Grossbuchstaben ...), entsteht er aus display_name.\nKIRCHENKREIS nur ueber kirchenkreis_id; dessen Name steht dann auch in der Textspalte kirchenkreis (Apps bis 2.3.0). Die Freitexte der Anfrage (kirchenkreis, landeskirche) werden nicht uebernommen. Kontakt- und Leitungsangaben nur aus dem Koerper (die Oberflaeche fuellt sie aus der Anfrage vor); E-Mail der Gemeindeleitung: admin_email, sonst contact_email.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Kennung der Anfrage"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "admin_username",
+                  "admin_display_name",
+                  "admin_password"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "display_name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "kirchenkreis_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "contact_name": {
+                    "type": "string"
+                  },
+                  "contact_email": {
+                    "type": "string"
+                  },
+                  "contact_phone": {
+                    "type": "string"
+                  },
+                  "address": {
+                    "type": "string"
+                  },
+                  "website_url": {
+                    "type": "string"
+                  },
+                  "max_konfis": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "description": "wie POST /organizations; leer = unbegrenzt"
+                  },
+                  "trial_ends_at": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "format": "date-time",
+                    "description": "wie POST /organizations: fehlt das Feld, 30 Tage Testphase; null = unbegrenzt"
+                  },
+                  "is_trial": {
+                    "type": "boolean",
+                    "description": "nur zusammen mit trial_ends_at"
+                  },
+                  "admin_username": {
+                    "type": "string"
+                  },
+                  "admin_display_name": {
+                    "type": "string"
+                  },
+                  "admin_email": {
+                    "type": "string",
+                    "description": "gueltige Adresse; fehlt sie, contact_email"
+                  },
+                  "admin_password": {
+                    "type": "string",
+                    "description": "volle validatePassword-Policy"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Angelegt",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "organization_id": {
+                      "type": "integer"
+                    },
+                    "admin_id": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validierungsfehler (details je Feld), 'Konfi-Limit muss eine Zahl ab 0 oder leer sein', 'Kirchenkreis nicht gefunden', 'Ungültiger Kirchenkreis', 'Aus diesem Namen lässt sich kein Systemname bilden'"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Anfrage nicht gefunden' }"
+          },
+          "409": {
+            "description": "'Benutzername existiert bereits (muss systemweit eindeutig sein)', 'Gemeinde-Slug existiert bereits' (wie POST /organizations) oder 'Aus dieser Anfrage ist schon eine Gemeinde entstanden.'"
+          },
+          "500": {
+            "description": "{ error: 'Datenbankfehler' } -- nichts angelegt, Anfrage unveraendert"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Anfrage existiert und ist nicht angelegt (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/landeskirchen": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirchen mit ihren Kirchenkreisen",
+        "responses": {
+          "200": {
+            "description": "Array nach Name (ohne Gross/klein); kirchenkreise ebenso sortiert",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Landeskirche"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine"
+        }
+      },
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirche anlegen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "getrimmt, nicht leer"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Die Landeskirche, kirchenkreise: []",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Landeskirche"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Name fehlt oder zu lang"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "409": {
+            "description": "{ error: 'Diese Landeskirche gibt es schon' } (Name ohne Gross/klein)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine"
+        }
+      }
+    },
+    "/api/support/landeskirchen/{id}": {
+      "put": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirche umbenennen",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Die Landeskirche samt Kirchenkreisen",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Landeskirche"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Name fehlt oder zu lang"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Landeskirche nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'Diese Landeskirche gibt es schon' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz"
+        }
+      },
+      "delete": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Landeskirche loeschen -- nur ohne Kirchenkreise",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "{ message: 'Landeskirche gelöscht' }"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Landeskirche nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'An dieser Landeskirche hängen noch N Kirchenkreise. Ordne sie zuerst einer anderen zu oder lösche sie.' } -- nichts geloescht"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz, keine Kirchenkreise (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/kirchenkreise": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreise mit Landeskirche und Zahl der zugeordneten Gemeinden",
+        "responses": {
+          "200": {
+            "description": "Array: zuerst die ohne Landeskirche, dann nach Landeskirche und Name",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Kirchenkreis"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine"
+        }
+      },
+      "post": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreis anlegen",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "landeskirche_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "darf fehlen"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Der Kirchenkreis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kirchenkreis"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Name fehlt oder zu lang; 'Ungültige Landeskirche'; { error: 'Landeskirche nicht gefunden' }"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "409": {
+            "description": "{ error: 'Diesen Kirchenkreis gibt es in dieser Landeskirche schon' } (eindeutig je Landeskirche und Name ohne Gross/klein, auch ohne Landeskirche)"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Landeskirche existiert"
+        }
+      }
+    },
+    "/api/support/kirchenkreise/{id}": {
+      "put": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreis umbenennen oder einer Landeskirche zuordnen",
+        "description": "landeskirche_id nur, wenn mitgeschickt (null loest die Zuordnung); fehlt das Feld, bleibt sie. Der neue Name zieht in die Textspalte organizations.kirchenkreis aller zugeordneten Gemeinden (utils/kirchenkreisZuordnung.js), in derselben Transaktion.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "landeskirche_id": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Der Kirchenkreis",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Kirchenkreis"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "wie POST"
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Kirchenkreis nicht gefunden' }"
+          },
+          "409": {
+            "description": "{ error: 'Diesen Kirchenkreis gibt es in dieser Landeskirche schon' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz"
+        }
+      },
+      "delete": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Kirchenkreis loeschen -- die Gemeinden bleiben, ohne Zuordnung",
+        "description": "Setzt organizations.kirchenkreis_id UND die gespiegelte Textspalte kirchenkreis der zugeordneten Gemeinden auf NULL, dann loeschen -- in einer Transaktion.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Geloescht",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "description": "'Kirchenkreis gelöscht'"
+                    },
+                    "gemeinden_ohne_zuordnung": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          },
+          "404": {
+            "description": "{ error: 'Kirchenkreis nicht gefunden' }"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Existenz (FOR UPDATE)"
+        }
+      }
+    },
+    "/api/support/statistik": {
+      "get": {
+        "tags": [
+          "Support"
+        ],
+        "summary": "Statistik je Gemeinde -- Konten je Rolle, aktive Konten, Jahrgaenge; ohne Namen von Personen",
+        "description": "Alle Gemeinden (auch gesperrte und solche ohne Konten), nach Name. Zusammenfassen je Kirchenkreis und Landeskirche macht die Oberflaeche. KONTEN je Gemeinde aus beiden Quellen der Zugehoerigkeit (utils/orgMitglieder.js, zaehleKontenJeGemeinde): Rolle je Gemeinde (Stamm users.role_id, weitere user_organizations.role_id; steht die Stamm-Gemeinde in beiden, zaehlt die Person einmal mit der Rolle am Konto); geloeschte und gesperrte Konten nicht; Support-Konten ohne Gemeinde nicht, auch nicht als Gast. AKTIV_30_TAGE: davon die Konten mit Anmeldung (last_login_at) oder erneuerter Anmeldung (Refresh-Token) in den letzten 30 Tagen -- je Konto, wer in zwei Gemeinden mitarbeitet, zaehlt in beiden. KIRCHENKREIS und LANDESKIRCHE aus der Zuordnung (kirchenkreis_id), nicht aus dem Freitext.\n",
+        "responses": {
+          "200": {
+            "description": "{ stand, gemeinden }",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "stand": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "gemeinden": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string",
+                            "description": "Anzeigename (organizations.display_name, sonst name)"
+                          },
+                          "systemname": {
+                            "type": "string",
+                            "description": "organizations.name (zusaetzlich zum Vertrag)"
+                          },
+                          "is_active": {
+                            "type": "boolean"
+                          },
+                          "kirchenkreis_id": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "kirchenkreis": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "landeskirche_id": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "landeskirche": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "konten": {
+                            "type": "object",
+                            "properties": {
+                              "konfi": {
+                                "type": "integer"
+                              },
+                              "teamer": {
+                                "type": "integer"
+                              },
+                              "admin": {
+                                "type": "integer"
+                              },
+                              "org_admin": {
+                                "type": "integer"
+                              }
+                            }
+                          },
+                          "aktiv_30_tage": {
+                            "type": "integer"
+                          },
+                          "jahrgaenge": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Kein Super-Admin"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireSuperAdmin"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine (alle Gemeinden); keine Personennamen in der Antwort"
+        }
+      }
+    },
     "/api/users": {
       "get": {
         "tags": [
@@ -2402,7 +3774,7 @@
             "userHierarchyMiddleware('view')"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org)",
+          "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); Super-Admin-Konten nur fuer Super-Admins (403)",
           "hinweis": "GEAENDERT 26.09.2026: role_id, role_name und assigned_jahrgaenge gelten fuer die AKTIVE Organisation. Wer hier org_admin und in seiner Stamm-Gemeinde Teamer:in ist, wird als org_admin angezeigt; die Jahrgaenge der anderen Gemeinden stehen nicht in der Antwort. Die Antwortform ist unveraendert (dieselben Felder, dieselben Typen) — nur die Werte beziehen sich jetzt auf die richtige Gemeinde.\"\n"
         }
       },
@@ -2499,7 +3871,7 @@
           "Benutzer & Rollen"
         ],
         "summary": "User aus der Gemeinde entfernen -- Hard-Delete nur, wenn die Person keiner anderen Gemeinde angehört",
-        "description": "Drei Fälle (seit 27.09.2026), die Antwort trägt additiv `konto_bleibt` (boolean): (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier über user_organizations mit: nur diese Mitgliedschaft endet, `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`. BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen, Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026 raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId} ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und Chat-Plaetze der Gemeinde), damit die Wege nicht wieder auseinanderlaufen (Audit \"Wer bekommt was\", BF-08). BEHOBEN 27.09.2026 (BF-13 / F-07): Dieselbe Funktion nimmt in Fall 1 und Fall 2 auch die eigenen Postfach-Mitteilungen der Person aus DIESER Gemeinde mit (notifications.organization_id); die aus anderen Gemeinden bleiben. Vorher las sie das Postfach der alten Gemeinde weiter, und es zaehlte an Glocke und App-Symbol. (2) Die Person ist hier zuhause UND hat eine Zeile in user_organizations für eine andere Gemeinde: Das Konto zieht um, `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`. Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID); users.organization_id und users.role_id übernehmen Gemeinde und Rolle dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team, Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort. (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt, `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.\nHard-Delete (Fall 3): Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-13 / F-07): Ebenso alle Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson: Registrierung, Abmeldung, Opt-out/-in, Challenge-Beitrag, Teamer-Zu-/Absage, neuer Antrag, Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil). Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei der Leitung. GEAENDERT 28.09.2026 (Simon: \"konto löschen muss wirklich alles löschen.\"): Fall 3 hat keinen eigenen Loeschblock mehr, sondern ruft utils/kontoLoeschen.js -- dieselbe Funktion wie DELETE /admin/konfis/{id}, POST /auth/delete-account und die Auto-Loeschung (Regel und Umfang bei DELETE /admin/konfis/{id} in konfis-events). BEHOBEN dabei: Auf die frei werdenden Plaetze der Person rueckt jetzt die Warteliste nach (Team-Platz an wartende Teamer:innen), mit Push; Zweiergespraeche mit ihr gehen ganz (vorher nur, wenn niemand mehr darin sass); Einladungscodes der Person bleiben der Gemeinde (vorher geloescht); der Zaehler der Anmeldesperre geht mit. Fall 1 und 2 unveraendert -- dort bleibt das Konto.\n",
+        "description": "Drei Fälle (seit 27.09.2026), die Antwort trägt additiv `konto_bleibt` (boolean): (1) Die Person ist in einer anderen Gemeinde zuhause und arbeitet hier über user_organizations mit: nur diese Mitgliedschaft endet, `{ message: 'Mitgliedschaft in dieser Gemeinde beendet', konto_bleibt: true }`. BEHOBEN 27.09.2026: Mit der Mitgliedschaft gehen die Plaetze in ALLEN Chat-Raeumen dieser Gemeinde (vorher nur, was syncTeamChat und syncJahrgangChat fuer zugewiesene Jahrgaenge erfassten -- Gruppen, Zweierraeume und Jahrgangs-Chats ohne Zuweisung blieben, samt Push zu jeder Nachricht). Antwortform unveraendert. Seit 27.09.2026 raeumen Fall 1, Fall 2 und DELETE /organizations/{id}/members/{userId} ueber DIESELBE Funktion (utils/mitgliedschaftEnde.js: Zuweisungen und Chat-Plaetze der Gemeinde), damit die Wege nicht wieder auseinanderlaufen (Audit \"Wer bekommt was\", BF-08). BEHOBEN 27.09.2026 (BF-13 / F-07): Dieselbe Funktion nimmt in Fall 1 und Fall 2 auch die eigenen Postfach-Mitteilungen der Person aus DIESER Gemeinde mit (notifications.organization_id); die aus anderen Gemeinden bleiben. Vorher las sie das Postfach der alten Gemeinde weiter, und es zaehlte an Glocke und App-Symbol. (2) Die Person ist hier zuhause UND hat eine Zeile in user_organizations für eine andere Gemeinde: Das Konto zieht um, `{ message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen', konto_bleibt: true }`. Neue Stamm-Gemeinde ist bevorzugt eine aktive, darunter die älteste Mitgliedschaft (created_at, bei Gleichstand die Zeilen-ID); users.organization_id und users.role_id übernehmen Gemeinde und Rolle dieser Mitgliedschaft, ihre Zeile und eine etwaige Zeile für diese Gemeinde verschwinden. Mit ihr gehen die Jahrgangs-Zuweisungen dieser Gemeinde und die Plätze in ALLEN Chat-Räumen dieser Gemeinde (Team, Jahrgänge, Gruppen, Zweiergespräche); was die Person hier angelegt hat, bleibt unverändert und wird nicht anonymisiert. Rechte-Cache geleert, Sockets getrennt; token_invalidated_at bleibt unberührt, weil rbac.js und die Socket-Anmeldung Gemeinde und Rolle je Anfrage aus der Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort. (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt, `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.\nSUPPORT-GAST (seit 03.10.2026, Simon): Ein Super-Admin-Konto ist fuer alle ausser Super-Admins gesperrt (403 \"Super-Admin-Konten kann nur ein Super-Admin bearbeiten.\") -- mit EINER Ausnahme: Die Gemeindeleitung (org_admin der aktiven Gemeinde) darf ein Support-Konto OHNE Stamm-Gemeinde (users.organization_id NULL), das hier ueber user_organizations Gast ist, aus ihrer Gemeinde nehmen. Das ist immer Fall 1: nur die Mitgliedschaft endet, das Konto bleibt (`konto_bleibt: true`). Weiter 403: Leitung und Team, ein Super-Admin-Konto MIT Stamm-Gemeinde, und fuer die Gemeindeleitung Bearbeiten, Passwort, Jahrgaenge und Detailansicht des Gasts. Fremde Gemeinde: 404 wie bei jedem Konto. Regel: checkUserHierarchy (utils/roleHierarchy.js); Tests: kontoOhneGemeinde.test.js.\nHard-Delete (Fall 3): Anonymisiert die Urheberschaft (admin_id/created_by/approved_by -> NULL, seit 24.08.2026 auch events.created_by, custom_badges.created_by, levels.created_by und user_jahrgang_assignments.assigned_by — vorher blockierten diese Fremdschlüssel das Löschen mit 500) und räumt die eigene Historie ab, inkl. user_certificates.user_id (ebenfalls seit 24.08.2026, vorher war jede ausgezeichnete Person unlöschbar). Nachweisfotos UND Challenge-Dateien werden nach dem COMMIT von der Platte entfernt. Seit 25.09.2026 gehen auch die Postfach-Mitteilungen \"Neuer Antrag eingegangen\" bei der Leitung mit, die auf Anträge der geloeschten Person zeigten (utils/postfachAufraeumen.js). BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-13 / F-07): Ebenso alle Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson: Registrierung, Abmeldung, Opt-out/-in, Challenge-Beitrag, Teamer-Zu-/Absage, neuer Antrag, Einladung beantwortet -- Kennung konfi_id bzw. user_id im data-Teil). Vorher standen sie mit Name und Grund bis zum 365-Tage-Aufraeumen bei der Leitung. GEAENDERT 28.09.2026 (Simon: \"konto löschen muss wirklich alles löschen.\"): Fall 3 hat keinen eigenen Loeschblock mehr, sondern ruft utils/kontoLoeschen.js -- dieselbe Funktion wie DELETE /admin/konfis/{id}, POST /auth/delete-account und die Auto-Loeschung (Regel und Umfang bei DELETE /admin/konfis/{id} in konfis-events). BEHOBEN dabei: Auf die frei werdenden Plaetze der Person rueckt jetzt die Warteliste nach (Team-Platz an wartende Teamer:innen), mit Push; Zweiergespraeche mit ihr gehen ganz (vorher nur, wenn niemand mehr darin sass); Einladungscodes der Person bleiben der Gemeinde (vorher geloescht); der Zaehler der Anmeldesperre geht mit. Fall 1 und 2 unveraendert -- dort bleibt das Konto.\n",
         "parameters": [
           {
             "name": "id",
@@ -2746,7 +4118,7 @@
             "$ref": "#/components/responses/Forbidden"
           },
           "404": {
-            "$ref": "#/components/responses/NotFound"
+            "description": "Konto nicht gefunden -- seit 03.10.2026 auch, wenn die Aenderung keine Zeile trifft (dann werden weder Sitzungen beendet noch Mails verschickt)"
           }
         },
         "x-berechtigung": {
@@ -7997,7 +9369,7 @@
             "description": "Typ/Name fehlt, ungueltiger Typ, jahrgang_id fehlt, ODER type='direct' ohne genau eine weitere Person (error_code direct_nur_zu_zweit, seit 26.09.2026), ODER eine Person in participants gehört nicht zur Gemeinde (error_code teilnehmende_nicht_in_gemeinde, seit 29.09.2026, Audit Sicherheit BF-16 -- vorher fiel sie still heraus und der Raum entstand ohne sie; jetzt entsteht kein Raum)"
           },
           "403": {
-            "description": "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer)"
+            "description": "Konfi mit type != direct, Jahrgang nicht in eigener Org, ODER Konfi-Teilnehmer ausserhalb der zugewiesenen Jahrgaenge (admin/teamer), ODER (seit 03.10.2026) keine aktive Gemeinde -- ein Support-Konto ohne Gemeinde ohne X-Active-Organization (error_code keine_aktive_gemeinde; vorher 500, weil chat_rooms.organization_id NOT NULL ist)"
           },
           "500": {
             "description": "Datenbankfehler"
@@ -8611,6 +9983,7 @@
           "Chat"
         ],
         "summary": "Teilnehmerliste eines Raums",
+        "description": "role_name und role_display_name sind die Rolle in der Gemeinde des Raums (der aktiven Gemeinde): in der Stamm-Gemeinde users.role_id, auch wenn user_organizations sie noch einmal fuehrt, in jeder weiteren user_organizations.role_id -- dieselbe Regel wie TEAM_MITGLIED_ROLLE und utils/orgMitglieder.js (ladeRolleInGemeinde). Wer nicht (mehr) Mitglied der Gemeinde ist, behaelt die Rolle am Konto. Die Oberflaeche faerbt damit Strich, Kreis und Eck-Marke je Rolle (Gemeindeleitung, Leitung, Teamer:in).\n",
         "parameters": [
           {
             "name": "roomId",
@@ -8652,10 +10025,12 @@
                         ]
                       },
                       "role_name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Rolle in der Gemeinde des Raums (seit 2026-10-02; vorher die Rolle der Stamm-Gemeinde)"
                       },
                       "role_display_name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Datenbank-Anzeigename derselben Rolle"
                       },
                       "jahrgang_id": {
                         "type": [
@@ -10127,6 +11502,115 @@
       }
     },
     "/api/challenges/admin/{id}": {
+      "get": {
+        "tags": [
+          "Challenges (Leitung)"
+        ],
+        "summary": "Eine Challenge der Leitungsliste (NEU 2026-10-02, 2.4.0)",
+        "description": "Fuer die eigene Seite einer Challenge bei Team und Leitung (/admin/challenges/:id, /teamer/challenges/:id), auf die Push, Postfach und Listen fuehren (Simon, 02.10.2026: \"challenge nicht in modal öffnen, sondern in unterseite, damit man direkt auf die challenge linken kann aus einem push\"). ADDITIV: Die Antwort ist genau ein Eintrag aus GET /api/challenges/admin -- dieselbe Abfrage, dieselben Felder (status, locked, Zaehler, eigene Teilnahme, jahrgaenge) --, und sie kommt genau dann, wenn die Liste diese Challenge fuehrt: dieselbe Regel (utils/challengeLeitungSicht.js), org_admin jede Challenge der Gemeinde (auch Entwuerfe ohne Jahrgang), admin und teamer 'nur_team' immer, sonst nur ueber einen zugewiesenen Jahrgang mit can_view. Liste, Beitraege und alle bestehenden Antwortformen bleiben unveraendert; aeltere Apps rufen die Route nicht.\n",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "description": "ID der Challenge"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ein Objekt (kein Array) -- Feld fuer Feld wie ein Eintrag aus GET /api/challenges/admin",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string",
+                      "enum": [
+                        "draft",
+                        "scheduled",
+                        "active",
+                        "ended"
+                      ]
+                    },
+                    "locked": {
+                      "type": "boolean"
+                    },
+                    "submission_count": {
+                      "type": "integer"
+                    },
+                    "pending_count": {
+                      "type": "integer"
+                    },
+                    "own_submission_count": {
+                      "type": "integer"
+                    },
+                    "has_badge": {
+                      "type": "boolean"
+                    },
+                    "earned_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "jahrgaenge": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ungueltige ID"
+          },
+          "403": {
+            "description": "requireTeamer ODER die Challenge gehoert zu keinem zugewiesenen Jahrgang (error_code 'jahrgang_nicht_zugewiesen'); die Seite nennt den Grund"
+          },
+          "404": {
+            "description": "Challenge nicht in eigener Gemeinde oder geloescht"
+          },
+          "500": {
+            "description": "Datenbankfehler"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "rbacVerifier",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "Dieselbe Abfrage wie GET /api/challenges/admin mit zusaetzlichem c.id-Filter (leitungsChallenges): 200 genau dann, wenn die Liste die Challenge fuehrt (Test challengeLeitungDetail.test.js)"
+        }
+      },
       "put": {
         "tags": [
           "Challenges (Leitung)"
@@ -13910,7 +15394,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "403": {
-            "description": "Weder eigene Daten noch admin/org_admin derselben Organisation"
+            "description": "Weder eigene Daten noch admin/org_admin derselben Organisation. Seit 03.10.2026 zaehlt auch ein Gast ohne Gemeinde (Support-Konto, organization_id NULL) zur Gemeinde, in der er Mitglied ist -- vorher 403"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"
@@ -15630,7 +17114,7 @@
           "org-scope": true,
           "objekt-pruefung": "Inline: ['super_admin','org_admin','admin'].includes(req.user.role_name); WHERE r.organization_id = req.user.organization_id; danach filterRolesByHierarchy fuer admin",
           "seit": "31.08.2026 (PR #148): admin ergaenzt, damit der Dialog zum Anlegen von Teamer:innen seine Rollenauswahl fuellen kann. Vorher bot die Oberflaeche den Knopf an und das Backend antwortete mit 403.",
-          "hinweis": "GEAENDERT 31.08.2026: admin darf die Liste sehen, weil die Leitung Teamer:innen anlegen darf und der Anlege-Dialog seine Rollenauswahl hier holt. Die Antwort wird fuer admin per filterRolesByHierarchy auf die Rollen reduziert, die canManageRole ihm erlaubt (teamer, konfi) — sonst boete der Dialog Rollen an, die POST /users danach mit 403 zurueckweist. super_admin und org_admin bekommen weiterhin alle Rollen der Organisation samt Nutzer-Zaehlern. Die Antwortform bleibt ein Array. Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array.\n"
+          "hinweis": "GEAENDERT 31.08.2026: admin darf die Liste sehen, weil die Leitung Teamer:innen anlegen darf und der Anlege-Dialog seine Rollenauswahl hier holt. Die Antwort wird fuer admin per filterRolesByHierarchy auf die Rollen reduziert, die canManageRole ihm erlaubt (teamer, konfi) — sonst boete der Dialog Rollen an, die POST /users danach mit 403 zurueckweist. super_admin und org_admin bekommen weiterhin alle Rollen der Organisation samt Nutzer-Zaehlern. Die Antwortform bleibt ein Array. Der Inline-Check prüft strikt role_name und NICHT das is_super_admin-Flag — abweichend von der Projekt-Regel und von GET /roles/list/assignable, das beides berücksichtigt. Praktisch folgenlos, weil ein org_admin mit Flag ohnehin über role_name durchkommt. Die Rolle super_admin selbst hat keine organization_id, erhält hier also ein leeres Array. SYSTEMROLLE (Migration 190, 03.10.2026): Die gemeindefreie Rolle super_admin (organization_id NULL, eindeutig per uq_roles_name_ohne_gemeinde) steht in keiner Liste einer Gemeinde -- die Abfrage filtert auf r.organization_id -- und laesst sich dort nicht vergeben: POST und PUT /users mit ihrer role_id enden in checkUserHierarchy mit 403 (canCreateRole kennt super_admin fuer niemanden als vergebbares Ziel), POST /organizations/{id}/members lehnt role_name super_admin mit 400 ab (backend/tests/routes/kontoOhneGemeinde.test.js).\n"
         }
       }
     },
@@ -15737,6 +17221,165 @@
         "properties": {
           "error": {
             "type": "string"
+          }
+        }
+      },
+      "GemeindeAnfrage": {
+        "type": "object",
+        "description": "Eine Anfrage vom Formular (gemeinde_anfragen, Migration 191). Genau diese Felder.",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "gemeinde": {
+            "type": "string"
+          },
+          "kirchenkreis": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Freitext aus dem Formular"
+          },
+          "landeskirche": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Freitext aus dem Formular"
+          },
+          "kontakt_name": {
+            "type": "string"
+          },
+          "funktion": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": "string"
+          },
+          "mobil": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "anzahl_konfis": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "anzahl_teamer": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "nachricht": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "neu",
+              "in_arbeit",
+              "angelegt",
+              "abgelehnt"
+            ]
+          },
+          "notiz": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "organization_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "die daraus entstandene Gemeinde"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "wunsch_lizenz": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "klein",
+              "standard",
+              "plus",
+              "gross",
+              "verbund",
+              null
+            ],
+            "description": "Wunschlizenz aus dem Formular (Migration 192, seit 03.10.2026); null = keine Angabe. Werte wie backend/utils/lizenzen.js."
+          }
+        }
+      },
+      "Landeskirche": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kirchenkreise": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Kirchenkreis": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "landeskirche_id": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "landeskirche": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "anzahl_gemeinden": {
+            "type": "integer",
+            "description": "zugeordnete Gemeinden (zusaetzlich zum Vertrag)"
           }
         }
       },

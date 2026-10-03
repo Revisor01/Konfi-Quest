@@ -207,6 +207,40 @@ dieser Stelle schlicht nichts geliefert.
 
 ---
 
+## Eine Challenge öffnen
+
+Ein Tipp auf eine Challenge in der Liste öffnet ihre eigene Seite: oben
+Titel, Sichtbarkeit und die Zahl der Beiträge, darunter die Aufgabe und die
+Beiträge in ihren Reitern. In der Leiste stehen der Stift zum
+[Bearbeiten](#eine-challenge-anlegen), das Plus zum Mitmachen (solange die
+Challenge läuft) und der [Export](#die-beitraege-exportieren). Der Pfeil
+links führt zurück in die Liste; die Reiter unten bleiben dabei stehen.
+
+Jede Challenge hat ihre eigene Adresse. Tippst du eine Mitteilung zu ihr an
+— „Neue Challenge", „Neuer Challenge-Beitrag", einen Stempel oder „Beitrag
+ausgeblendet", auf dem Gerät oder im
+[Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) —, öffnet sich
+genau diese Seite. Gehört die Challenge zu einer anderen Gemeinde, wechselt
+die App vorher dorthin, so wie bei Events. Der Pfeil führt auch dann in die
+Liste der Challenges, wenn davor keine Seite offen war.
+
+Kann die Seite die Challenge nicht zeigen, sagt sie, warum, und bietet
+**Zu den Challenges** an:
+
+| Fall | Hinweis auf der Seite |
+|---|---|
+| Die Challenge wurde gelöscht | „Diese Challenge gibt es nicht mehr" |
+| Sie gehört zu einem Jahrgang, dem du nicht zugewiesen bist | „Nicht deinem Jahrgang zugeordnet" |
+| Kein Netz, und auf dem Gerät ist weder die Challenge noch die Liste geladen | „Diese Challenge wurde noch nicht geladen — dafür brauchst du eine Verbindung.", dazu **Erneut versuchen** |
+
+Die Seite zeigt eine Challenge genau denen, die sie auch in der Liste
+finden — und das sind dieselben, die ihre Mitteilungen bekommen (siehe
+[Nachsehen, wer was mitbekommt](#nachsehen-wer-was-mitbekommt)). Konfis
+öffnen ihre Challenges auf dieselbe Weise, siehe
+[Bei einer Challenge mitmachen](10-konfis.md#bei-einer-challenge-mitmachen).
+
+---
+
 ## Beiträge freigeben, ausblenden, löschen
 
 Ist der Schalter „Beiträge erst nach Freigabe zeigen" an (Voreinstellung),
@@ -343,7 +377,8 @@ Wann er kommt, hängt an der Freigabe-Pflicht:
   alle gleich, auch für Teamer:innen und die Leitung.
 
 An der Anzahl hängt nichts: Wer fünf Beiträge schickt, hat trotzdem genau einen
-Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät.
+Stempel. Mit dem Stempel kommt eine Mitteilung aufs Gerät; ein Tipp darauf
+öffnet die Challenge, aus der er stammt.
 
 Gesammelte Stempel stehen im Challenges-Tab — bei Konfis, im Team und in der
 Leitung gleichermaßen, denn alle drei machen selbst mit. Die Leitung sieht die
@@ -530,7 +565,8 @@ Wer sie angelegt hat, bekommt keine, und niemand bekommt sie doppelt:
 | „Nur die Konfis" | die Konfis der gewählten Jahrgänge — ihr im Team lest mit und seht neue Beiträge an der roten Zahl |
 | „Nur das Team" | das ganze Team der Gemeinde, mit und ohne Jahrgang; Konfis nie |
 
-Außerdem:
+Ein Tipp auf eine dieser Mitteilungen öffnet die Challenge selbst, siehe
+[Eine Challenge öffnen](#eine-challenge-oeffnen). Außerdem:
 
 - **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
   Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die

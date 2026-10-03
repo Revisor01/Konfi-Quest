@@ -40,6 +40,7 @@ import {
   ICON_HINZUFUEGEN_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
   ICON_MAIL,
+  ICON_NETZWERK,
   ICON_OFFLINE,
   ICON_ORGANISATION,
   ICON_ORT,
@@ -67,8 +68,12 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { generateStrongPassword } from '../../../utils/passwortVorschlag';
 import { tageBis } from '../../shared/eventFormatting';
 import { datumKurz } from '../../../utils/dateUtils';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
+import { kirchenkreisFinden } from '../../../utils/supportAnfragen';
+import { limitNachUmschalten, limitVorgabe } from '../../../utils/konfiLimitVorgabe';
+import { EIGENES_LIMIT, TARIF_OPTIONEN, istTarif, lizenzFinden, lizenzLimit, lizenzText } from '../../../utils/lizenzen';
+import type { Kirchenkreis } from '../../../types/support';
 
 interface Organization {
   id: number;
@@ -82,6 +87,8 @@ interface Organization {
   address?: string;
   website_url?: string;
   kirchenkreis?: string;
+  /** Zuordnung aus der Struktur der Support-Ansicht (GET /organizations/:id liefert die Spalte mit). */
+  kirchenkreis_id?: number | null;
   trial_ends_at?: string | null;
   is_trial?: boolean;
   is_active: boolean;
@@ -93,6 +100,8 @@ interface Organization {
   konfi_count: number;
   event_count: number;
   max_konfis?: number | null;
+  /** Wunschlizenz aus der Anfrage, aus der die Gemeinde entstanden ist (Migration 192). */
+  wunsch_lizenz?: string | null;
 }
 
 interface OrgAdmin {
@@ -123,6 +132,10 @@ interface MemberSearchResult {
   primary_role_name?: string;
 }
 
+// GET /organizations/:id/admins liefert nur die Gemeindeleitung (org_admin);
+// ihre Farbe aus derselben Stelle wie jede Personenliste (02.10.2026).
+const GEMEINDELEITUNG = rollenDarstellung('org_admin');
+
 const MEMBER_ROLE_OPTIONS = ['org_admin', 'admin', 'teamer'].map((value) => ({
   value, label: rollenName(value)
 }));
@@ -133,15 +146,10 @@ interface OrganizationManagementModalProps {
   onSuccess: () => void;
 }
 
-// Tarif-Stufen wie auf der Website (landing.html / marketing-copy.md).
-// value als String für direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
-const KONFI_TARIFE: { label: string; value: string }[] = [
-  { label: 'Klein', value: '15' },
-  { label: 'Standard', value: '50' },
-  { label: 'Plus', value: '75' },
-  { label: 'Groß', value: '100' },
-  { label: 'Unbegrenzt', value: '' }
-];
+// Tarif-Auswahl mit Preisen aus der einen Liste (utils/lizenzen.ts,
+// TARIF_OPTIONEN): Testphase 5, Klein bis Groß, Unbegrenzt -- dazu
+// "Eigenes Limit". Vorgabe: Testphase 5, danach die Wunschlizenz aus der
+// Anfrage, ohne sie unbegrenzt (utils/konfiLimitVorgabe.ts).
 
 // Zeitraum-Schnellauswahl: Tage ab heute (0 = unbegrenzt, -1 = eigenes Datum)
 const ZEITRAUM_OPTIONEN: { label: string; days: number }[] = [
@@ -211,6 +219,41 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   }, [formData]);
 
   const [organization, setOrganization] = useState<Organization | null>(null);
+
+  // Kirchenkreis als Auswahl aus der Struktur (Support-Ansicht, Web-Version,
+  // 03.10.2026) -- nur fuer Super-Admins, die die Struktur pflegen. Laedt die
+  // Liste nicht (aelterer Server, Fehler), bleibt das Freitextfeld wie
+  // bisher. Gespeichert wird beides: kirchenkreis_id und der Name in der
+  // alten Textspalte, die aeltere Apps weiter lesen.
+  const [kirchenkreise, setKirchenkreise] = useState<Kirchenkreis[] | null>(null);
+  const [kirchenkreisId, setKirchenkreisId] = useState<number | null>(null);
+  // Hat jemand die Auswahl angefasst? Sonst bleibt ein Freitext, zu dem es
+  // (noch) keinen Kirchenkreis gibt, beim Speichern stehen.
+  const [kirchenkreisBeruehrt, setKirchenkreisBeruehrt] = useState(false);
+  const mitStruktur = isSuperAdmin && kirchenkreise !== null;
+  // Ohne gespeicherte Zuordnung den Freitext in der Struktur suchen (Gemeinden
+  // von vor der Struktur) -- ein Vorschlag, der gilt, bis jemand waehlt.
+  const kirchenkreisVorschlag = organization && kirchenkreise && organization.kirchenkreis_id == null
+    ? kirchenkreisFinden(organization.kirchenkreis, null, kirchenkreise)
+    : null;
+  const wirksamerKreisId = kirchenkreisBeruehrt ? kirchenkreisId : (kirchenkreisId ?? kirchenkreisVorschlag?.id ?? null);
+  const gewaehlterKreis = kirchenkreise?.find((k) => k.id === wirksamerKreisId) ?? null;
+
+  const handleKirchenkreisChange = (id: number | null) => {
+    setKirchenkreisId(id);
+    setKirchenkreisBeruehrt(true);
+    if (initializedRef.current) setIsDirty(true);
+  };
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let abgebrochen = false;
+    api.get('/support/kirchenkreise')
+      .then((antwort) => { if (!abgebrochen) setKirchenkreise(Array.isArray(antwort.data) ? antwort.data : null); })
+      .catch(() => { if (!abgebrochen) setKirchenkreise(null); });
+    return () => { abgebrochen = true; };
+  }, [isSuperAdmin]);
+
   // Konfi-Limit (nur für super_admin sichtbar/setzbar). Leeres Feld = unbegrenzt (NULL).
   // Wird zusammen mit dem Modal gespeichert (kein separater Button).
   const [maxKonfis, setMaxKonfis] = useState<string>('');
@@ -223,12 +266,25 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // "Eigenes Datum"-Modus für den Zeitraum (Datepicker statt Schnellauswahl)
   const [isCustomTrialDate, setIsCustomTrialDate] = useState<boolean>(false);
 
+  // Testphase an oder aus (Datum UND Kennzeichnung, wie beim Speichern): Das
+  // Limit folgt der Vorgabe -- Testphase 5, danach unbegrenzt --, solange es
+  // noch darauf steht. Ein gewaehlter Tarif bleibt (utils/konfiLimitVorgabe.ts).
+  const limitFolgtTestphase = (warTestphase: boolean, istTestphase: boolean) => {
+    const neu = limitNachUmschalten(maxKonfis, warTestphase, istTestphase, lizenzLimit(organization?.wunsch_lizenz));
+    if (neu !== maxKonfis) {
+      setMaxKonfis(neu);
+      setIsCustomLimit(false);
+    }
+  };
+
   const handleTrialChange = (value: string) => {
+    limitFolgtTestphase(!!trialEndsAt.trim() && isTrial, !!value.trim() && isTrial);
     setTrialEndsAt(value);
     if (initializedRef.current) setIsDirty(true);
   };
 
   const handleIsTrialChange = (value: boolean) => {
+    limitFolgtTestphase(!!trialEndsAt.trim() && isTrial, !!trialEndsAt.trim() && value);
     setIsTrial(value);
     if (initializedRef.current) setIsDirty(true);
   };
@@ -263,12 +319,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
   const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
 
-  // Neue Org: Default 30-Tage-Testphase vorbelegen (super_admin kann es ändern)
+  // Neue Org: Default 30-Tage-Testphase mit ihrem Konfi-Limit vorbelegen
+  // (super_admin kann beides ändern)
   useEffect(() => {
     if (!organizationId) {
       setTrialEndsAt(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
       setIsTrial(true);
       setIsCustomTrialDate(false);
+      setMaxKonfis(limitVorgabe(true));
+      setIsCustomLimit(false);
     }
   }, [organizationId]);
 
@@ -315,10 +374,11 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       const orgData = response.data;
 
       setOrganization(orgData);
+      setKirchenkreisId(typeof orgData.kirchenkreis_id === 'number' ? orgData.kirchenkreis_id : null);
       const loadedLimit = orgData.max_konfis !== null && orgData.max_konfis !== undefined ? String(orgData.max_konfis) : '';
       setMaxKonfis(loadedLimit);
       // Wenn der geladene Wert keinem Tarif entspricht (und nicht leer/unbegrenzt ist), ist es ein eigenes Limit
-      setIsCustomLimit(loadedLimit !== '' && !KONFI_TARIFE.some(t => t.value === loadedLimit));
+      setIsCustomLimit(!istTarif(loadedLimit));
       setTrialEndsAt(orgData.trial_ends_at || '');
       setIsTrial(orgData.is_trial === true);
       // Wenn ein Datum gesetzt ist, das keiner Schnellauswahl entspricht -> "eigenes Datum"
@@ -438,6 +498,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           address: string | null;
           website_url: string | null;
           kirchenkreis: string | null;
+          kirchenkreis_id?: number | null;
           is_active: boolean;
           trial_ends_at?: string | null;
           is_trial?: boolean;
@@ -458,6 +519,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           kirchenkreis: formData.kirchenkreis.trim() || null,
           is_active: formData.is_active
         };
+
+        // Kirchenkreis aus der Struktur: die Kennung plus derselbe Name in der
+        // Textspalte, damit beide Staende zusammenpassen.
+        if (mitStruktur && (kirchenkreisBeruehrt || wirksamerKreisId !== null)) {
+          orgData.kirchenkreis_id = wirksamerKreisId;
+          orgData.kirchenkreis = gewaehlterKreis ? gewaehlterKreis.name : null;
+        }
 
         // Zeitraum + Trial-Kennzeichnung nur super_admin.
         // Kein Datum -> unbegrenzt, dann ist es auch keine Testphase (is_trial=false).
@@ -681,6 +749,26 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     </div>
                   )}
 
+                  {(gewaehlterKreis || organization.kirchenkreis) && (
+                    <div className="app-info-row">
+                      <IonIcon icon={ICON_NETZWERK} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Kirchenkreis</div>
+                        <div className="app-info-row__value">{gewaehlterKreis ? gewaehlterKreis.name : organization.kirchenkreis}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {gewaehlterKreis?.landeskirche && (
+                    <div className="app-info-row">
+                      <IonIcon icon={ICON_NETZWERK} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Landeskirche</div>
+                        <div className="app-info-row__value">{gewaehlterKreis.landeskirche}</div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="app-info-row">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
@@ -830,15 +918,41 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   />
                 </IonItem>
 
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
-                  <IonInput aria-label="Kirchenkreis (optional)"
-                    value={formData.kirchenkreis}
-                    onIonInput={(e) => setFormData({ ...formData, kirchenkreis: e.detail.value! })}
-                    placeholder="z.B. Kirchenkreis Dithmarschen"
-                    disabled={isSubmitting}
-                  />
-                </IonItem>
+                {mitStruktur ? (
+                  <>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
+                    <IonSelect aria-label="Kirchenkreis (optional)"
+                      interface="popover"
+                      value={wirksamerKreisId ?? 'ohne'}
+                      onIonChange={(e) => handleKirchenkreisChange(e.detail.value === 'ohne' ? null : Number(e.detail.value))}
+                      disabled={isSubmitting}
+                    >
+                      <IonSelectOption value="ohne">Ohne Kirchenkreis</IonSelectOption>
+                      {(kirchenkreise ?? []).map((k) => (
+                        <IonSelectOption key={k.id} value={k.id}>
+                          {k.landeskirche ? `${k.name} (${k.landeskirche})` : k.name}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
+                  <IonNote style={{ display: 'block', padding: '0 var(--app-abstand-basis)', fontSize: 'var(--app-text-meta)' }}>
+                    {gewaehlterKreis
+                      ? `Landeskirche: ${gewaehlterKreis.landeskirche || 'noch keine zugeordnet'}`
+                      : 'Neue Kirchenkreise und Landeskirchen unter Support › Struktur.'}
+                  </IonNote>
+                  </>
+                ) : (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
+                    <IonInput aria-label="Kirchenkreis (optional)"
+                      value={formData.kirchenkreis}
+                      onIonInput={(e) => setFormData({ ...formData, kirchenkreis: e.detail.value! })}
+                      placeholder="z.B. Kirchenkreis Dithmarschen"
+                      disabled={isSubmitting}
+                    />
+                  </IonItem>
+                )}
               </IonList>
             </IonCardContent>
           </IonCard>
@@ -1009,6 +1123,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 {/* Bestehende Admins */}
                 {orgAdmins.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {/* Die Gemeindeleitung in IHRER Farbe (Indigo) -- bis
+                        02.10.2026 stand sie hier in der Teamer-Farbe. */}
                     {orgAdmins.map((admin) => (
                       <div key={admin.id} style={{ marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonItem
@@ -1027,13 +1143,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           }}
                         >
                           <div
-                            className="app-list-item app-list-item--teamer"
+                            className={`app-list-item ${GEMEINDELEITUNG.strich}`}
                             style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
                           >
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div
-                                  className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer"
+                                  className={`app-icon-circle app-icon-circle--lg ${GEMEINDELEITUNG.kreis}`}
                                   style={{ color: 'white', fontWeight: 'var(--app-schrift-halbfett)' }}
                                 >
                                   {getInitials(admin.display_name)}
@@ -1042,12 +1158,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                                   <div className="app-list-item__title">{admin.display_name}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-text-teamer)' }} />
+                                      <IonIcon icon={ICON_PERSON} className={GEMEINDELEITUNG.schrift} />
                                       {admin.username}
                                     </span>
                                     {admin.email && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={ICON_MAIL} style={{ color: 'var(--app-text-teamer)' }} />
+                                        <IonIcon icon={ICON_MAIL} className={GEMEINDELEITUNG.schrift} />
                                         {admin.email}
                                       </span>
                                     )}
@@ -1276,13 +1392,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonLabel position="stacked">Tarif</IonLabel>
                     <IonSelect
                       aria-label="Tarif"
-                      value={isCustomLimit ? '__custom__' : maxKonfis.trim()}
+                      value={isCustomLimit ? EIGENES_LIMIT : maxKonfis.trim()}
                       interface="popover"
                       interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
                       placeholder="Tarif wählen"
                       onIonChange={(e) => {
                         const val = e.detail.value;
-                        if (val === '__custom__') {
+                        if (val === EIGENES_LIMIT) {
                           // Auf Eigenes Limit umschalten: Feld leeren falls es vorher ein Tarif war
                           setIsCustomLimit(true);
                         } else {
@@ -1291,12 +1407,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         }
                       }}
                     >
-                      {KONFI_TARIFE.map((tarif) => (
-                        <IonSelectOption key={tarif.label} value={tarif.value}>
-                          {tarif.label}{tarif.value ? ` — bis ${tarif.value} Konfis` : ' — unbegrenzt'}
-                        </IonSelectOption>
+                      {TARIF_OPTIONEN.map((tarif) => (
+                        <IonSelectOption key={tarif.name} value={tarif.wert}>{tarif.text}</IonSelectOption>
                       ))}
-                      <IonSelectOption value="__custom__">Eigenes Limit…</IonSelectOption>
+                      <IonSelectOption value={EIGENES_LIMIT}>Eigenes Limit…</IonSelectOption>
                     </IonSelect>
                   </IonItem>
 
@@ -1317,6 +1431,17 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     </IonItem>
                   )}
                 </IonList>
+
+                {/* Wunschlizenz aus der Anfrage: nach der Testphase die Vorgabe */}
+                {(() => {
+                  const wunsch = lizenzFinden(organization?.wunsch_lizenz);
+                  return wunsch ? (
+                    <p data-testid="wunschlizenz" style={{ margin: 'var(--app-abstand-eng) 0 0', fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-body)' }}>
+                      Wunschlizenz aus der Anfrage: <strong>{lizenzText(wunsch)}</strong>.{' '}
+                      {wunsch.konfis === null ? 'Das Limit wird abgesprochen.' : 'Nach der Testphase steht das Limit darauf.'}
+                    </p>
+                  ) : null;
+                })()}
 
                 <IonItem lines="none" style={{ '--background': 'rgba(var(--app-color-users-rgb), 0.08)', borderRadius: 'var(--app-radius-knopf)', marginTop: 'var(--app-abstand-eng)' }}>
                   <IonIcon icon={ICON_WARNHINWEIS} slot="start" style={{ color: 'var(--app-text-users)' }} />

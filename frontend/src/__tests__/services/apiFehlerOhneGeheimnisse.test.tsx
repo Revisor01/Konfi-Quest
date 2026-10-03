@@ -194,8 +194,10 @@ describe('endgueltige Fehler der Instanz', () => {
     refreshAblehnen(undefined);
     const [f1, f2] = await Promise.all([erste, zweite]);
 
-    // Voraussetzung: Der Refresh ging mit dem Refresh-Token im Koerper hinaus.
-    expect(vi.mocked(axios.post).mock.calls[0][1]).toEqual({ refresh_token: REFRESH });
+    // Voraussetzung: Der Refresh ging mit dem Refresh-Token im Koerper hinaus
+    // (jsdom = Web-Version, dazu die Zusage fuer Konten ohne Gemeinde,
+    // services/ohneGemeinde.ts).
+    expect(vi.mocked(axios.post).mock.calls[0][1]).toEqual({ refresh_token: REFRESH, kann_ohne_gemeinde: true });
     expect(konsole.aufrufe()).toHaveLength(2);
     expect(konsole.enthaelt(REFRESH)).toBe(false);
     expect(konsole.enthaelt(ZUGANG)).toBe(false);

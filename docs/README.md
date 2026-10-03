@@ -13,7 +13,7 @@ Wie Doku zusammen mit dem Code geändert wird, steht in
 | [architektur.md](architektur.md) | wie die Teile zusammenhängen: Gemeinden, Rollen, Backend, Datenbank, Push, Apps, Deploy | Entwicklung, Betrieb |
 | [offene-befunde.md](offene-befunde.md) | **die eine Liste für alles Offene**: Fehler, Entscheidungen bei Simon, Geplantes, Zurückgestelltes | alle |
 | [planung/](planung/) | was als Nächstes gebaut wird: [Umfang von 2.4.0](planung/2.4.0.md), [Web-Version mit Support-Ansicht](planung/web-version.md), [„darf freigeben"](planung/darf-freigeben.md), [Mehrfach-Konten](planung/mehrfach-konten.md), [Feature-Empfehlungen](planung/feature-empfehlungen.md) | Simon, Entwicklung |
-| [betrieb/](betrieb/) | [Sicherung und Wiederherstellung](betrieb/sicherung.md), [Gemeinde anlegen](betrieb/gemeinde-anlegen.md), [wiederkehrende Routinen](betrieb/routinen.md), [Release](betrieb/release.md) | Betrieb |
+| [betrieb/](betrieb/) | [Sicherung und Wiederherstellung](betrieb/sicherung.md), [Gemeinde anlegen](betrieb/gemeinde-anlegen.md), [Support-Konto anlegen](betrieb/support-konto.md), [Support-Ansicht benutzen: Anfragen, Struktur, Konten](betrieb/support-ansicht.md), [wiederkehrende Routinen](betrieb/routinen.md), [Release](betrieb/release.md) | Betrieb |
 | [auftraege/lokaler-agent/](auftraege/lokaler-agent/) | aktuelle Aufträge an den lokalen Agenten mit Server- und Konsolenzugang | lokaler Agent |
 | [wissen/](wissen/) | Hintergrund: [Gestaltung](wissen/gestaltung.md), [Dunkelmodus prüfen](wissen/dunkelmodus-pruefen.md) | Entwicklung |
 | [messung/umami.md](messung/umami.md) | anonyme Nutzungsmessung: was gemessen wird, was nicht, offene Vorschläge | Simon, Entwicklung |

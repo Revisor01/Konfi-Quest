@@ -57,8 +57,17 @@ Jahrgang. Alle Regeln stehen im Kapitel
 ![Der Challenges-Bereich mit den Reitern Aktuell und Archiv.](/docs/bilder/iphone/konfi-challenges.png)
 
 Zwei Reiter: **Aktuell** und **Archiv**, dazwischen deine gesammelten
-[Stempel](80-challenges.md#den-stempel-vergeben). Beim Einreichen wählst du, wie du antwortest — Text, Foto, Audio,
+[Stempel](80-challenges.md#den-stempel-vergeben). Ein Tipp auf eine Challenge
+öffnet ihre Seite: oben die Aufgabe, darunter **Feed** mit den Beiträgen
+deiner Gruppe und **Meins** mit deinen eigenen. Mit dem Plus oben reichst du
+etwas ein, solange die Challenge läuft; der Pfeil links führt zurück in die
+Liste. Beim Einreichen wählst du, wie du antwortest — Text, Foto, Audio,
 Video oder ein Link, je nachdem, was erlaubt ist.
+
+Eine Mitteilung zu einer Challenge — eine neue Challenge, ein Stempel, ein
+ausgeblendeter Beitrag — öffnet beim Antippen genau diese Seite. Gibt es die
+Challenge nicht mehr, steht dort „Diese Challenge gibt es nicht mehr" und
+darunter der Weg zurück zu deinen Challenges.
 
 Bei manchen Challenges entscheidest du selbst, wer deinen Beitrag sieht, und
 manche Beiträge werden erst nach Freigabe durch das Team sichtbar. Was dabei
