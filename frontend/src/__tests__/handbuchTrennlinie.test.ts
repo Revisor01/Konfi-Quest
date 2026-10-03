@@ -45,7 +45,9 @@ describe('Handbuch: Trennlinien', () => {
     expect(trennlinienDerQuelle('80-challenges.md')).toBe(11);
     // 13 seit 28.09.2026: der Abschnitt „Im Verlauf zurückblättern" steht wie
     // jeder h2 des Kapitels hinter einer eigenen Trennlinie.
-    expect(trennlinienDerQuelle('90-chat.md')).toBe(13);
+    // 14 seit 03.10.2026: der Abschnitt „Im Browser Liste und Chat nebeneinander
+    // nutzen" steht ebenso hinter einer eigenen Trennlinie.
+    expect(trennlinienDerQuelle('90-chat.md')).toBe(14);
     expect(trennlinienDerQuelle('60-badges.md')).toBe(2);
   });
 });

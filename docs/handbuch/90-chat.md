@@ -626,3 +626,88 @@ gelesen markieren" und kein Wieder-auf-ungelesen-Setzen.
 > **Achtung:** Kurz in einen Chat hineinschauen setzt den Zähler zurück, auch
 > wenn du nicht bis nach unten gescrollt hast. Wer eine Nachricht später
 > beantworten will, sollte sie sich anders merken.
+
+---
+
+## Im Browser Liste und Chat nebeneinander nutzen
+
+Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
+992 Pixeln — steht der Chat wie in einem Messenger auf zwei Spalten: **links
+die Chats, rechts der geöffnete**. Alles, was oben beschrieben ist, gilt
+unverändert; hier steht nur, wie du es mit Maus und Tastatur erreichst. Auf
+Handy und Tablet in der App und in einem schmalen Fenster bleibt es bei der
+Liste, aus der ein Chat auf einer eigenen Seite aufgeht.
+
+### Einen Chat öffnen und wechseln
+
+Ein Klick auf einen Chat öffnet ihn rechts; die Adresse im Browser wechselt mit,
+die Zurück-Taste des Browsers führt zum vorigen Chat. Ohne geöffneten Chat steht
+rechts *„Chat auswählen"*.
+
+Die Einträge sind gewöhnliche Links: Mit Strg-Klick (am Mac ⌘-Klick) oder der
+mittleren Maustaste öffnet sich ein Chat in einem neuen Tab. Mit Pfeil hoch und
+runter gehst du durch die Liste, mit der Eingabetaste öffnest du einen Chat.
+Nach einem Klick steht der Cursor gleich im Feld „Nachricht schreiben…"; nach
+der Eingabetaste bleibst du auf dem Eintrag.
+
+Ein angefangener, noch nicht gesendeter Text bleibt je Chat stehen, wenn du in
+einen anderen wechselst — solange das Fenster offen ist.
+
+### In der Liste suchen und filtern
+
+Suche und Reiter arbeiten wie in der App, siehe
+[Sich in der Chat-Übersicht zurechtfinden](#sich-in-der-chat-uebersicht-zurechtfinden);
+die Zahl am Reiter *Ungelesen* ist die Summe aller Zähler. Pro Chat stehen in
+der Liste:
+
+- die **Art** — Gruppe, Direkt, Team, Jahrgang oder Event; Team-Chats tragen
+  das Wort *Team*, auch ein Zweiergespräch mit dem Team (*Team · Direkt*),
+- die **letzte Nachricht** mit dem Namen des Absenders, deine eigene als *Du:*;
+  in Zweiergesprächen nur der Text der anderen Person,
+- die **Zeit** der letzten Nachricht: heute die Uhrzeit, gestern *Gestern*,
+  sonst das Datum, und
+- die **rote Zahl** der ungelesenen Nachrichten.
+
+Suchbegriff, Reiter und Scrollposition der Liste bleiben beim Wechsel zwischen
+Chats stehen.
+
+### Nachrichten schreiben und Dateien mitschicken
+
+**Enter** sendet, **Umschalt+Enter** beginnt eine neue Zeile. Das Feld wächst mit
+dem Text, bis etwa acht Zeilen. Eine Datei hängst du mit der Büroklammer an, per
+Ziehen auf den Chat oder mit Strg+V (am Mac ⌘+V), wenn ein Bild in der
+Zwischenablage liegt; es gelten dieselben Grenzen wie bei
+[Eine Datei mitschicken](#eine-datei-mitschicken). Über dem Feld steht, worauf
+du antwortest oder welche Datei mitgeht; ein Kreuz nimmt beides wieder weg.
+
+### Die Aktionen einer Nachricht nutzen
+
+Fährst du mit der Maus über eine Nachricht — oder erreichst sie mit der
+Tab-Taste —, erscheint darüber eine kleine Leiste: **Reagieren**, **Antworten**,
+**Text kopieren**, **Teilen** (nur, wo der Browser es kann) und, wer darf,
+**Löschen**; die Regeln stehen unter
+[Eine Nachricht löschen](#eine-nachricht-loeschen). Der Reaktions-Picker klappt
+unter der Nachricht auf; Escape schließt ihn.
+
+Konnte eine Nachricht nicht gesendet werden, stehen direkt darunter der Grund und
+die Wege weiter: **Erneut senden** und **Verwerfen** — bei einer abgelehnten
+Nachricht nur **Verwerfen**.
+
+### Wissen, wann ein Chat als gelesen gilt
+
+Ein Chat zählt als gelesen, **solange er rechts geöffnet ist und der Tab sichtbar
+ist**. Steht der Tab im Hintergrund, während Nachrichten eintreffen, bleibt der
+Zähler stehen, bis du den Tab wieder ansiehst. Die Liste daneben zeigt
+Vorschau, Zeit und rote Zahlen live.
+
+### Mitglieder, Umfragen und weitere Aktionen finden
+
+Oben rechts im Chat stehen die Knöpfe **Mitglieder** (bei Gruppen und
+Jahrgangs-Chats) und **Umfrage** (nur Leitung und Gemeindeleitung); Mitglieder
+und Umfrage öffnen sich als Fenster über dem Chat. Hinter den drei Punkten
+liegen **Chat-Verlauf exportieren**, **Chat verlassen**, **Team-Chat leeren** und
+**Chat löschen** — jeweils nur, wo die Rechte es erlauben. Die Regeln dazu
+stehen unter [Einen Chat verlassen](#einen-chat-verlassen),
+[Einen Chat löschen](#einen-chat-loeschen) und
+[Einen Chat exportieren](#einen-chat-exportieren). Ohne Internet sind sie
+gesperrt.
