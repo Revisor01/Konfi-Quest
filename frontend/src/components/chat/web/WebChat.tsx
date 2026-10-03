@@ -37,6 +37,7 @@ import WebChatListe from './WebChatListe';
 import WebChatRaum from './WebChatRaum';
 import { chatListeAdresse, chatRaumAdresse } from './chatAdresse';
 import { listenMerkerFuer } from './chatListenMerker';
+import { useOhneSeitenanimation } from './useOhneSeitenanimation';
 import '../../../theme/web/chat.css';
 
 export interface WebChatProps {
@@ -97,6 +98,8 @@ const RaumRechts: React.FC<{
 
 /** Der Inhalt der Seite, nur gebaut, solange sie vorn liegt. */
 const WebChatInhalt: React.FC<WebChatProps> = ({ roomId }) => {
+  // Auch die Zurueck-Taste wechselt den Raum ohne Seitenuebergang.
+  useOhneSeitenanimation();
   const { user } = useApp();
   const router = useIonRouter();
   const typ = user?.type;

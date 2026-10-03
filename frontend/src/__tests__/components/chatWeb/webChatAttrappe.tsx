@@ -38,6 +38,13 @@ const IonContentAttrappe = React.forwardRef<unknown, Kinder & {
 });
 IonContentAttrappe.displayName = 'IonContentAttrappe';
 
+/** Ionics Einstellungen: Der Test liest, ob "animated" gerade an oder aus ist. */
+export const ionicKonfig = {
+  werte: { animated: true } as Record<string, boolean>,
+  getBoolean: (name: string, vorgabe: boolean) => ionicKonfig.werte[name] ?? vorgabe,
+  set: (name: string, wert: boolean) => { ionicKonfig.werte[name] = wert; },
+};
+
 export function ionicAttrappe(optionen: {
   presentAlert?: (o: AlertOptionen) => void;
   presentActionSheet?: (o: unknown) => void;
@@ -63,6 +70,7 @@ export function ionicAttrappe(optionen: {
     useIonActionSheet: () => [optionen.presentActionSheet ?? (() => {}), () => {}],
     useIonModal: (komponente: unknown, props: unknown) => [optionen.presentModal ? optionen.presentModal(komponente, props) : () => {}, () => {}],
     useIonRouter: () => optionen.router ?? { push: () => {}, goBack: () => {}, canGoBack: () => false },
+    getConfig: () => ionicKonfig,
     useIonViewWillEnter: () => {},
     useIonViewDidLeave: () => {},
   };

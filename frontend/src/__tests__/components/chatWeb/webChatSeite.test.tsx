@@ -128,7 +128,7 @@ vi.mock('../../../components/chat/ChatOverview', () => ({
 vi.mock('../../../components/chat/ChatRoom', () => ({ default: () => <div data-testid="app-raum">App-Raum</div> }));
 vi.mock('../../../components/common/LoadingSpinner', () => ({ default: () => null }));
 
-import { socketNachbau } from './webChatAttrappe';
+import { socketNachbau, ionicKonfig } from './webChatAttrappe';
 import ChatOverviewPage from '../../../components/chat/pages/ChatOverviewPage';
 import ChatRoomView from '../../../components/chat/views/ChatRoomView';
 import SimpleCreateChatModal from '../../../components/chat/modals/SimpleCreateChatModal';
@@ -580,6 +580,52 @@ describe('Chat (Web): die Liste bleibt ueber den Seitenwechsel stehen', () => {
     expect(await screen.findByText('Chats werden geladen')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Chats durchsuchen' })).toHaveValue('');
     expect(within(liste()).queryAllByRole('link')).toEqual([]);
+  });
+});
+
+describe('Chat (Web): keine Seitenuebergaenge, auch nicht mit der Zurueck-Taste', () => {
+  beforeEach(() => { ionicKonfig.werte.animated = true; });
+
+  it('solange eine Chat-Seite offen ist, sind Ionics Uebergaenge aus -- danach wieder wie vorher', async () => {
+    const seite = await zeigenListe();
+    expect(ionicKonfig.werte.animated).toBe(false);
+    seite.unmount();
+    expect(ionicKonfig.werte.animated).toBe(true);
+  });
+
+  it('beim Wechsel zwischen zwei Chat-Seiten bleiben sie aus -- gleich, ob die alte Seite vor oder nach der neuen abgebaut wird', async () => {
+    // Beide Seiten stehen kurz nebeneinander im Router (der Standort ist hier
+    // fest, darum zwei Instanzen derselben Adresse).
+    h.standort = { pathname: '/konfi/chat/room/3', search: '', state: null };
+    const alt = render(<ChatRoomView roomId={3} onBack={vi.fn()} />);
+    const neu = render(<ChatRoomView roomId={3} onBack={vi.fn()} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(ionicKonfig.werte.animated).toBe(false);
+    alt.unmount();
+    expect(ionicKonfig.werte.animated).toBe(false);
+    neu.unmount();
+    expect(ionicKonfig.werte.animated).toBe(true);
+  });
+
+  it('wer "Bewegung reduzieren" eingestellt hat (animated aus), behaelt das nach dem Verlassen', async () => {
+    ionicKonfig.werte.animated = false;
+    const seite = await zeigenListe();
+    seite.unmount();
+    expect(ionicKonfig.werte.animated).toBe(false);
+  });
+
+  it('eine abgelegte Seite (baut nichts auf) zaehlt nicht mit', async () => {
+    h.standort = { pathname: '/konfi/chat/room/3', search: '', state: null };
+    const abgelegt = render(<ChatRoomView roomId={2} onBack={vi.fn()} />);
+    await act(async () => { await Promise.resolve(); });
+    expect(ionicKonfig.werte.animated).toBe(true);
+    abgelegt.unmount();
+  });
+
+  it('die App-Fassung (schmales Fenster) rührt die Einstellung nicht an', async () => {
+    h.breit = false;
+    render(<ChatOverviewPage />);
+    expect(ionicKonfig.werte.animated).toBe(true);
   });
 });
 
