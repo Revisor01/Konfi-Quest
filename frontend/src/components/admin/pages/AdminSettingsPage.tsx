@@ -13,6 +13,8 @@ import {
   useIonModal
 } from '@ionic/react';
 import AdminInvitePage from './AdminInvitePage';
+import WebMehr from '../web/leitung/WebMehr';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import {
   ICON_ABMELDEN_GEFUELLT,
@@ -63,6 +65,9 @@ const AdminSettingsPage: React.FC = () => {
   const { user, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
+  // Im Browser ab 992 px ein Raster aus Kacheln (web/leitung/WebMehr.tsx); die
+  // Erklaerungen und die Fenster dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   // Tour und Update-Hinweis jederzeit erneut aufrufbar (Vollbild-Overlays,
   // keine Modals — identisch zum automatischen Ablauf beim ersten Start).
@@ -203,6 +208,46 @@ const AdminSettingsPage: React.FC = () => {
       ]
     });
   };
+
+  // Tour, Aenderungsanzeige und Erklaerung: Vollbild-Ueberlagerungen, in der
+  // App wie in der Web-Fassung dieselben.
+  const ueberlagerungen = (
+    <>
+      {showOnboarding && (
+        <AdminOnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {showUpdateWalkthrough && (
+        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="admin"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
+      )}
+    </>
+  );
+
+  if (breit) {
+    return (
+      <WebMehr
+        konto={user}
+        infos={INFOS}
+        onAktion={(aktion) => {
+          if (aktion === 'tour') setShowOnboarding(true);
+          else if (aktion === 'neuigkeiten') setShowUpdateWalkthrough(true);
+          else setShowMitmachenErklaerung(true);
+        }}
+        pageRef={pageRef}
+        overlays={ueberlagerungen}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>
@@ -602,23 +647,7 @@ const AdminSettingsPage: React.FC = () => {
         <div className="ion-padding-bottom"></div>
       </IonContent>
 
-      {showOnboarding && (
-        <AdminOnboardingModal
-          onClose={() => setShowOnboarding(false)}
-          displayName={(user?.display_name || '').split(' ')[0]}
-        />
-      )}
-
-      {showUpdateWalkthrough && (
-        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
-      )}
-
-      {showMitmachenErklaerung && (
-        <MitmachenErklaerungModal
-          rolle="admin"
-          onClose={() => setShowMitmachenErklaerung(false)}
-        />
-      )}
+      {ueberlagerungen}
     </IonPage>
   );
 };

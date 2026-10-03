@@ -66,6 +66,45 @@
   min-width: 0;
 }
 
+/* --- Rolle als Marke: Farbe der Rolle (Gemeindeleitung, Leitung, Teamer:in), Wort immer dabei --- */
+.web-rolle {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--app-abstand-haar) var(--app-abstand-schmal);
+  border: 1px solid color-mix(in srgb, var(--app-color-neutral) 35%, var(--web-karte));
+  border-radius: var(--app-radius-gross);
+  background: color-mix(in srgb, var(--app-color-neutral) 14%, var(--web-karte));
+  color: var(--app-text-system);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.web-rolle--users {
+  border-color: color-mix(in srgb, var(--app-color-users) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-users) 14%, var(--web-karte));
+  color: var(--app-text-users);
+}
+
+.web-rolle--leitung {
+  border-color: color-mix(in srgb, var(--app-color-leitung) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-leitung) 14%, var(--web-karte));
+  color: var(--app-text-leitung);
+}
+
+.web-rolle--teamer {
+  border-color: color-mix(in srgb, var(--app-color-teamer) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-teamer) 14%, var(--web-karte));
+  color: var(--app-text-teamer);
+}
+
+.web-rolle--konfis {
+  border-color: color-mix(in srgb, var(--app-color-konfis) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-konfis) 14%, var(--web-karte));
+  color: var(--app-text-konfis);
+}
+
 /* --- Fortschritt: "7 / 10" mit schmalem Balken --- */
 .web-fortschritt {
   display: flex;
@@ -198,6 +237,11 @@
   border-radius: var(--app-radius-fein);
 }
 
+/* Eine gesperrte Person steht gedaempft da. */
+.web-zeile--gesperrt .web-zeilenknopf {
+  color: var(--web-text-leise);
+}
+
 /* --- Kleinkram in Zellen --- */
 .web-zahl-mit-symbol {
   display: inline-flex;
@@ -212,7 +256,7 @@
 }
 
 .web-spalte-aktionen-breit {
-  width: 172px;
+  width: 200px;
 }
 
 .web-spalte-aktionen-schmal {
@@ -265,3 +309,155 @@
   color: var(--web-text-leise);
   font-size: var(--app-text-hinweis);
 }
+
+/* --- "Mehr": gruppierte Kacheln --- */
+.web-mehr-gruppe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittelweit);
+}
+
+.web-mehr-gruppe__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: -0.01em;
+  color: var(--web-text);
+}
+
+.web-mehr-gruppe__text {
+  margin: var(--app-abstand-mini) 0 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-mehr-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-mehr-kachel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+}
+
+.web-mehr-kachel:hover {
+  background: var(--web-hover);
+}
+
+/* Das Netz des Links spannt sich ueber die ganze Kachel; das "i" liegt darueber. */
+.web-mehr-kachel .web-mehr-kachel__link {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  color: var(--web-text);
+  text-decoration: none;
+}
+
+.web-mehr-kachel .web-mehr-kachel__link:hover {
+  text-decoration: none;
+}
+
+.web-mehr-kachel__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--app-radius-karte);
+}
+
+.web-mehr-kachel__link:focus-visible {
+  outline: none;
+}
+
+.web-mehr-kachel__link:focus-visible::after {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-mehr-kachel .web-mehr-kachel__link--knopf {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-mehr-kachel__symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-karte);
+  background: var(--app-color-users);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-mehr-kachel__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-mehr-kachel__titel {
+  font-weight: var(--app-schrift-halbfett);
+  font-size: var(--app-text-standard);
+}
+
+.web-mehr-kachel__beschreibung {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-mehr-kachel__info {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+}
+
+.web-mehr-kachel__info-symbol {
+  font-size: var(--app-text-gross);
+}
+
+.web-mehr-kachel__pfeil {
+  flex: 0 0 auto;
+  color: var(--web-text-leise);
+}
+
+.web-mehr-absatz {
+  margin: 0;
+}
+
+.web-mehr-farbe--users { background: var(--app-color-users); }
+.web-mehr-farbe--activities { background: var(--app-color-activities); }
+.web-mehr-farbe--badges { background: var(--app-color-badges); }
+.web-mehr-farbe--jahrgang { background: var(--app-color-jahrgang); }
+.web-mehr-farbe--categories { background: var(--app-color-categories); }
+.web-mehr-farbe--level { background: var(--app-color-level); }
+.web-mehr-farbe--material { background: var(--app-color-material); }
+.web-mehr-farbe--wrapped { background: var(--app-color-wrapped); }
+.web-mehr-farbe--teamer { background: var(--app-color-teamer); }
+.web-mehr-farbe--organizations { background: var(--app-color-organizations); }
+.web-mehr-farbe--konfis { background: var(--app-color-konfis); }
+.web-mehr-farbe--events { background: var(--app-color-events); }
+.web-mehr-farbe--chat { background: var(--app-color-chat); }

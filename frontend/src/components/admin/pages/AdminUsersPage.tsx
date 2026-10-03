@@ -22,15 +22,21 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
 import OffeneEinladungen from '../OffeneEinladungen';
+import WebBenutzer from '../web/leitung/WebBenutzer';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EinladungModal from '../modals/EinladungModal';
 import UserManagementModal from '../modals/UserManagementModal';
 import { AdminUser } from '../../../types/user';
+import { kontoBleibt as kontoBleibtNachEntfernen } from '../../../utils/mitgliedschaft';
 import { triggerPullHaptic } from '../../../utils/haptics';
 
 const AdminUsersPage: React.FC = () => {
   const { setError, setSuccess, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebBenutzer.tsx); Daten,
+  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
   
   // Offline-Query: Users
   const { data: users, loading, refresh: refreshUsers, refreshLive: refreshUsersLive } = useOfflineQuery<AdminUser[]>(
@@ -99,7 +105,7 @@ const AdminUsersPage: React.FC = () => {
     // In den ersten beiden Faellen bleibt das Konto -- der Knopf heisst dann
     // "Entfernen", sonst klaenge es nach Kontoloeschung.
     const weitere = userToDelete.mitgliedschaft === 'weitere';
-    const kontoBleibt = weitere || (userToDelete.weitere_gemeinden ?? 0) > 0;
+    const kontoBleibt = kontoBleibtNachEntfernen(userToDelete);
     const abfrage = weitere
       ? {
           header: 'Mitgliedschaft beenden',
@@ -151,6 +157,24 @@ const AdminUsersPage: React.FC = () => {
       presentingElement: presentingElement
     });
   };
+
+  if (breit) {
+    return (
+      <WebBenutzer
+        users={users || []}
+        laedt={loading}
+        // Verwalten darf nur org_admin (users.js, requireOrgAdmin) -- Anlegen,
+        // Einladen, Entfernen und die offenen Einladungen, wie in der App.
+        darfVerwalten={user?.role_name === 'org_admin'}
+        einladungenStand={einladungenStand}
+        pageRef={pageRef}
+        onBearbeiten={handleSelectUser}
+        onLoeschen={handleDeleteUser}
+        onAnlegen={presentUserModal}
+        onEinladen={() => presentEinladungHook({ presentingElement })}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

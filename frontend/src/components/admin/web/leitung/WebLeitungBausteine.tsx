@@ -8,6 +8,7 @@ import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AUFKLAPPEN, ICON_EXTERN_OEFFNEN } from '../../../shared/icons';
 import { linkOeffnen } from '../../../../services/systemDialoge';
+import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
 import '../../../../theme/web/leitung.css';
 
 // --- Kreis mit Initialen ----------------------------------------------------------
@@ -17,6 +18,17 @@ export type AvatarFarbe = 'konfis' | 'erreicht' | 'teamer' | 'users' | 'leitung'
 /** Kreis mit zwei Buchstaben vor einem Namen; die Farbe ist die der Rolle bzw. des Standes. */
 export const WebAvatar: React.FC<{ text: string; farbe?: AvatarFarbe; gross?: boolean }> = ({ text, farbe = 'konfis', gross = false }) => (
   <span className={`web-avatar web-avatar--${farbe}${gross ? ' web-avatar--gross' : ''}`} aria-hidden="true">{text}</span>
+);
+
+// --- Rolle als Marke ----------------------------------------------------------------
+
+/**
+ * Die Rolle einer Person als Marke in der Farbe der Rolle (utils/rollenNamen:
+ * Gemeindeleitung, Leitung, Teamer:in -- dieselbe Farbe wie Strich und Kreis
+ * in der App). Der Text ist das Wort der Rolle, die Farbe nie allein der Traeger.
+ */
+export const WebRolleMarke: React.FC<{ rolle?: string | null; text?: string }> = ({ rolle, text }) => (
+  <span className={`web-rolle web-rolle--${rollenFarbe(rolle)}`}>{text ?? rollenName(rolle)}</span>
 );
 
 // --- Fortschritt -----------------------------------------------------------------
