@@ -20,8 +20,10 @@ import {
   ICON_AKTION_GEFUELLT,
   ICON_APPS,
   ICON_DATEI_GEFUELLT,
+  ICON_EXTERN_OEFFNEN,
   ICON_FUNKELN,
   ICON_GRUPPE_GEFUELLT,
+  ICON_HILFE,
   ICON_INFO,
   ICON_JAHRGANG,
   ICON_JAHRGANG_GEFUELLT,
@@ -52,6 +54,8 @@ import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { istSuperAdmin } from '../../../utils/superAdmin';
+import { SUPPORT_FORMULAR_URL, sieheHilfeEintrag } from '../../../utils/supportFormular';
+import { linkOeffnen } from '../../../services/systemDialoge';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
@@ -285,6 +289,31 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Hilfe und Support: das Formular auf der Homepage (Simon,
+                  03.10.2026: "Support kommt auf die HP") -- Art, Bereich und
+                  Dringlichkeit als Auswahl, damit der Support es gleich
+                  sortiert hat. Ein Link nach draussen, kein Formular in der
+                  App. Nur fuer Gemeindeleitung und Leitung. */}
+              {sieheHilfeEintrag(user?.role_name) && (
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
+                  className="app-list-item app-list-item--users"
+                  onClick={() => linkOeffnen(SUPPORT_FORMULAR_URL)}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                    <IonIcon icon={ICON_HILFE} />
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Hilfe und Support</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Frage, Fehler oder Wunsch an uns schicken – öffnet konfi-quest.de</span></div>
+                    </div>
+                    </div>
+                    <IonIcon icon={ICON_EXTERN_OEFFNEN} aria-hidden="true" style={{ color: 'var(--app-text-system)' }} />
+                  </div>
+                </div>
+              )}
                 </div>
             </IonCardContent>
           </IonCard>

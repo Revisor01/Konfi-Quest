@@ -11,6 +11,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   push: vi.fn(),
+  linkOeffnen: vi.fn(),
   user: null as null | Record<string, unknown>,
 }));
 
@@ -19,6 +20,12 @@ vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttra
 }));
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('./ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../contexts/AppContext', () => ({ useApp: () => ({ user: h.user, signOut: vi.fn() }) }));
+// Links nach draussen laufen durch die Huelle (services/systemDialoge.ts); hier
+// zaehlt, WOHIN der Eintrag fuehrt, nicht das Oeffnen des Fensters.
+vi.mock('../../../services/systemDialoge', async (original) => ({
+  ...(await original<typeof import('../../../services/systemDialoge')>()),
+  linkOeffnen: h.linkOeffnen,
+}));
 vi.mock('../../../contexts/ModalContext', () => ({ useModalPage: () => ({ pageRef: { current: null }, presentingElement: null }) }));
 vi.mock('../../../components/admin/pages/AdminInvitePage', () => ({ default: () => null }));
 vi.mock('../../../components/shared/InfoModal', () => ({ default: () => null }));
@@ -55,5 +62,41 @@ describe('"Mehr": der Weg zur Support-Ansicht', () => {
     expect(screen.queryByRole('button', { name: 'Support-Ansicht öffnen' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Performance anzeigen' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Gemeinden verwalten' })).toBeNull();
+  });
+});
+
+// Hilfe und Support (Simon, 03.10.2026: „Support kommt auf die HP"): Das Formular
+// steht auf der Startseite von konfi-quest.de, in der App gibt es nur den Weg
+// dorthin -- ein einziger Eintrag unter „Mehr", als Link nach draussen. Zu sehen
+// fuer Gemeindeleitung und Leitung (docs/planung/support-vorgaenge.md,
+// Entscheidung 4); verbotener UND erlaubter Fall.
+describe('"Mehr": Hilfe und Support', () => {
+  const eintrag = () => screen.queryByRole('button', { name: /^Hilfe und Support/ });
+
+  it.each([
+    ['Gemeindeleitung', { id: 1, type: 'admin', role_name: 'org_admin', is_super_admin: false }],
+    ['Leitung', { id: 3, type: 'admin', role_name: 'admin' }],
+    ['Gemeindeleitung mit Super-Admin-Merkmal (Simons Konto)', { id: 1, type: 'admin', role_name: 'org_admin', is_super_admin: true }],
+  ])('erlaubt: %s sieht den Eintrag -- ein Antippen öffnet das Formular auf der Startseite', (_name, user) => {
+    h.user = user;
+    render(<AdminSettingsPage />);
+    expect(screen.getAllByRole('button', { name: /^Hilfe und Support/ })).toHaveLength(1);
+    expect(eintrag()).toHaveTextContent('öffnet konfi-quest.de');
+    fireEvent.click(eintrag()!);
+    expect(h.linkOeffnen).toHaveBeenCalledTimes(1);
+    expect(h.linkOeffnen).toHaveBeenCalledWith('https://konfi-quest.de/#support');
+    // Kein Formular in der App und keine eigene Seite dafuer.
+    expect(h.push).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['Teamer:in als Leitung gefuehrt', { id: 4, type: 'admin', role_name: 'teamer', is_super_admin: false }],
+    ['Support-Konto ohne Gemeinde', { id: 5, type: 'admin', role_name: 'super_admin', is_super_admin: true }],
+    ['ohne Konto', null],
+  ])('verboten: %s -- kein Eintrag, kein Aufruf', (_name, user) => {
+    h.user = user;
+    render(<AdminSettingsPage />);
+    expect(eintrag()).toBeNull();
+    expect(h.linkOeffnen).not.toHaveBeenCalled();
   });
 });
