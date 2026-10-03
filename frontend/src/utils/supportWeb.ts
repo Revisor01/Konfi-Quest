@@ -14,7 +14,7 @@
 // (fehlende Felder zaehlen 0 bzw. leer), ein Objekt der falschen Form ergibt
 // null -- die Seite zeigt dann ihren Fehlerzustand statt zu stuerzen.
 
-import type { AnfrageStatus, GemeindeAnfrage, MailEingangEintrag } from '../types/support';
+import type { AnfrageStatus, MailEingangEintrag } from '../types/support';
 import type { LizenzSchluessel } from './lizenzen';
 import { datumKurz } from './dateUtils';
 import { tageBis } from '../components/shared/eventFormatting';
@@ -75,6 +75,14 @@ export interface MailEingangWeb extends Omit<MailEingangEintrag, 'auszug' | 'anh
   anfrage_id: number | null;
   organization_id: number | null;
   gemeinde_name: string | null;
+  /**
+   * Der Vorgang, in den die Mail einsortiert ist (docs/planung/
+   * support-vorgaenge.md); ohne: nicht einsortiert, liegt im Posteingang.
+   * Aeltere Server liefern das Feld nicht.
+   */
+  vorgang_id?: number | null;
+  /** Gesetzt: im Archiv des Posteingangs. */
+  archiviert_am?: string | null;
 }
 
 export interface UebersichtTestphase {
@@ -115,6 +123,8 @@ export function mailLesen(roh: unknown): MailEingangWeb | null {
     anfrage_id: idOderNull(roh.anfrage_id),
     organization_id: idOderNull(roh.organization_id),
     gemeinde_name: textOderNull(roh.gemeinde_name),
+    vorgang_id: idOderNull(roh.vorgang_id),
+    archiviert_am: textOderNull(roh.archiviert_am),
   };
 }
 
@@ -549,21 +559,7 @@ export function limitTon(anteil: number): PillTon {
   return anteil >= 1 ? 'fehler' : anteil >= 0.9 ? 'warnung' : 'info';
 }
 
-/** Status und Ton einer Anfrage (Marke in Listen). */
-export const ANFRAGE_TON: Record<AnfrageStatus, PillTon> = {
-  neu: 'warnung',
-  in_arbeit: 'info',
-  angelegt: 'erfolg',
-  abgelehnt: 'neutral',
-};
-
-// --- Anfragen: Zaehler, Suche, Filter ---------------------------------------------------
-
-/** "offen" = neu und in Arbeit zusammen (Aufgaben), "ungelesen" = mit ungelesenen Mails, gleich in welchem Status. */
-export type AnfragenFilter = AnfrageStatus | 'alle' | 'offen' | 'ungelesen';
-
-/** Alle Filter der Anfragen -- die Werte, die `?filter=` in der Adresse annimmt. */
-export const ANFRAGEN_FILTER: readonly AnfragenFilter[] = ['alle', 'offen', 'neu', 'in_arbeit', 'angelegt', 'abgelehnt', 'ungelesen'];
+// --- Filter aus der Adresse -------------------------------------------------------------
 
 /**
  * Ein Filter aus der Adresse (`?filter=offen`). Unbekanntes und Fehlendes
@@ -574,75 +570,33 @@ export function filterAusAdresse<T extends string>(search: string, erlaubt: read
   return wert !== null && (erlaubt as readonly string[]).includes(wert) ? (wert as T) : null;
 }
 
-/** Ungelesene Mails einer Anfrage; aeltere Server liefern das Feld nicht (dann 0). */
-export const ungelesenVonAnfrage = (a: Pick<GemeindeAnfrage, 'ungelesen'>): number =>
-  typeof a.ungelesen === 'number' && a.ungelesen > 0 ? a.ungelesen : 0;
-
-/** Zahl je Filter: je Status, alle und mit ungelesenen Mails. */
-export function anfragenZaehlen(anfragen: readonly GemeindeAnfrage[]): Record<AnfragenFilter, number> {
-  const z: Record<AnfragenFilter, number> = { neu: 0, in_arbeit: 0, angelegt: 0, abgelehnt: 0, alle: anfragen.length, offen: 0, ungelesen: 0 };
-  for (const a of anfragen) {
-    if (a.status in z) z[a.status] += 1;
-    if (a.status === 'neu' || a.status === 'in_arbeit') z.offen += 1;
-    if (ungelesenVonAnfrage(a) > 0) z.ungelesen += 1;
-  }
-  return z;
-}
-
-/** Die Felder einer Anfrage, in denen gesucht wird. */
-export const anfrageSuchtexte = (a: GemeindeAnfrage): string[] =>
-  [a.gemeinde, a.kontakt_name, a.funktion ?? '', a.email, a.kirchenkreis ?? '', a.landeskirche ?? ''];
-
-/** Filter (Status, alle, ungelesen) und Suche zusammen. */
-export function anfragenFiltern(anfragen: readonly GemeindeAnfrage[], filter: AnfragenFilter, eingabe: string): GemeindeAnfrage[] {
-  const s = suchbegriff(eingabe);
-  return anfragen.filter((a) => {
-    if (!passtZumFilter(a, filter)) return false;
-    return !s || anfrageSuchtexte(a).some((t) => falten(t).includes(s));
-  });
-}
-
-const passtZumFilter = (a: GemeindeAnfrage, filter: AnfragenFilter): boolean => {
-  switch (filter) {
-    case 'alle': return true;
-    case 'offen': return a.status === 'neu' || a.status === 'in_arbeit';
-    case 'ungelesen': return ungelesenVonAnfrage(a) > 0;
-    default: return a.status === filter;
-  }
-};
-
 const zeitpunkt = (iso: string | null | undefined): number => {
   const t = new Date(iso ?? '').getTime();
   return Number.isNaN(t) ? 0 : t;
 };
 
-/**
- * Die Anfragen nach Eingang, die neueste zuerst; bei gleicher Zeit die mit der
- * hoeheren Kennung. Die Tabelle verlaesst sich nicht auf die Reihenfolge des
- * Servers.
- */
-export function anfragenSortieren<T extends Pick<GemeindeAnfrage, 'id' | 'created_at'>>(anfragen: readonly T[]): T[] {
-  return [...anfragen].sort((a, b) => zeitpunkt(b.created_at) - zeitpunkt(a.created_at) || b.id - a.id);
-}
-
 // --- Posteingang: Filter ---------------------------------------------------------------
 
-/** "offen" = nicht zugeordnet; "ungelesen" = alle ungelesenen, auch zugeordnete. */
-export type EingangFilter = 'alle' | 'ungelesen' | 'offen' | 'moin' | 'support';
+/**
+ * Der Posteingang zeigt nur Mails, die in keinem Vorgang liegen und nicht
+ * archiviert sind (docs/planung/support-vorgaenge.md, Entscheidung 7). Filter:
+ * Alle, Ungelesen, je Postfach -- und „Archiv", die archivierten Mails (eigener
+ * Abruf, GET /support/mail/eingang?archiv=1).
+ */
+export type EingangFilter = 'alle' | 'ungelesen' | 'moin' | 'support' | 'archiv';
 
 /** Alle Filter des Posteingangs -- die Werte, die `?filter=` in der Adresse annimmt. */
-export const EINGANG_FILTER: readonly EingangFilter[] = ['alle', 'ungelesen', 'offen', 'moin', 'support'];
+export const EINGANG_FILTER: readonly EingangFilter[] = ['alle', 'ungelesen', 'moin', 'support', 'archiv'];
 
-/** Ist die Mail keiner Anfrage und keiner Gemeinde zugeordnet? */
-export const istNichtZugeordnet = (m: Pick<MailEingangWeb, 'anfrage_id' | 'organization_id'>): boolean =>
-  m.anfrage_id === null && m.organization_id === null;
+/** Ist die Mail keiner Anfrage, keiner Gemeinde und keinem Vorgang zugeordnet? */
+export const istNichtZugeordnet = (m: Pick<MailEingangWeb, 'anfrage_id' | 'organization_id' | 'vorgang_id'>): boolean =>
+  m.anfrage_id === null && m.organization_id === null && (m.vorgang_id ?? null) === null;
 
-/** Zahl je Filter ("offen" = nicht zugeordnet). */
-export function eingangZaehlen(mails: readonly MailEingangWeb[]): Record<EingangFilter, number> {
+/** Zahl je Filter der Liste des Posteingangs (ohne Archiv: das ist eine andere Liste). */
+export function eingangZaehlen(mails: readonly MailEingangWeb[]): Record<Exclude<EingangFilter, 'archiv'>, number> {
   return {
     alle: mails.length,
     ungelesen: mails.filter((m) => !m.gelesen_am).length,
-    offen: mails.filter(istNichtZugeordnet).length,
     moin: mails.filter((m) => m.postfach === 'moin').length,
     support: mails.filter((m) => m.postfach === 'support').length,
   };
@@ -651,7 +605,6 @@ export function eingangZaehlen(mails: readonly MailEingangWeb[]): Record<Eingang
 export function eingangFiltern(mails: readonly MailEingangWeb[], filter: EingangFilter): MailEingangWeb[] {
   switch (filter) {
     case 'ungelesen': return mails.filter((m) => !m.gelesen_am);
-    case 'offen': return mails.filter(istNichtZugeordnet);
     case 'moin': return mails.filter((m) => m.postfach === 'moin');
     case 'support': return mails.filter((m) => m.postfach === 'support');
     default: return [...mails];
@@ -664,16 +617,21 @@ export function eingangSortieren<T extends Pick<MailEingangWeb, 'id' | 'gesendet
 }
 
 /**
- * Wohin gehoert die Mail? Anfrage -> ihre Seite, Gemeinde -> deren
- * Schriftwechsel, sonst nichts. Der Name kommt vom Server (`gemeinde_name`).
+ * Wohin gehoert die Mail? In ihren Vorgang; aeltere Server nennen nur Anfrage
+ * oder Gemeinde -- beide Adressen fuehren ebenfalls zu Vorgaengen (die
+ * Anfrage zu ihrem Vorgang, die Gemeinde zur Liste ihrer Vorgaenge). Der Name
+ * kommt vom Server (`gemeinde_name`).
  */
-export function zuordnungZiel(m: Pick<MailEingangWeb, 'anfrage_id' | 'organization_id' | 'gemeinde_name'>):
-  { art: 'anfrage' | 'gemeinde'; pfad: string; text: string } | null {
+export function zuordnungZiel(m: Pick<MailEingangWeb, 'anfrage_id' | 'organization_id' | 'gemeinde_name'> & { vorgang_id?: number | null }):
+  { art: 'vorgang' | 'anfrage' | 'gemeinde'; pfad: string; text: string } | null {
+  if (m.vorgang_id) {
+    return { art: 'vorgang', pfad: `/admin/support/vorgaenge/${m.vorgang_id}`, text: m.gemeinde_name ?? `Vorgang ${m.vorgang_id}` };
+  }
   if (m.anfrage_id !== null) {
     return { art: 'anfrage', pfad: `/admin/support/anfragen/${m.anfrage_id}`, text: m.gemeinde_name ?? `Anfrage ${m.anfrage_id}` };
   }
   if (m.organization_id !== null) {
-    return { art: 'gemeinde', pfad: `/admin/support/post/gemeinde/${m.organization_id}`, text: m.gemeinde_name ?? `Gemeinde ${m.organization_id}` };
+    return { art: 'gemeinde', pfad: `/admin/support/vorgaenge?gemeinde=${m.organization_id}`, text: m.gemeinde_name ?? `Gemeinde ${m.organization_id}` };
   }
   return null;
 }

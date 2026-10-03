@@ -7,23 +7,25 @@
 // Anfragen, neueste Support-Anfragen, saubere Statistik mit Entwicklung."
 //
 // Also ein Dashboard aus GET /support/uebersicht: Kennzahl-Kacheln, die
-// neuesten Anfragen und Mails (Aufgaben zuerst), Entwicklung als Diagramme,
+// neuesten Vorgänge und Mails (Aufgaben zuerst), Entwicklung als Diagramme,
 // Testphasen, die bald enden, Gemeinden je Landeskirche (aus
 // GET /support/statistik, wie bisher).
+//
+// Seit den Vorgängen (docs/planung/support-vorgaenge.md) zeigen Kachel und
+// Liste, was früher „Anfragen" hieß, als offene und neueste Vorgänge -- aus
+// GET /support/vorgaenge?filter=offen. Die Kachel „Posteingang" zählt dieselben
+// Mails wie die rote Zahl der Leiste.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_AKTUALISIEREN, ICON_MAIL, ICON_ORGANISATION } from '../../shared/icons';
+import { ICON_AKTUALISIEREN, ICON_LISTE, ICON_MAIL, ICON_ORGANISATION } from '../../shared/icons';
 import api from '../../../services/api';
-import { ANFRAGE_STATUS } from '../../../utils/supportAnfragen';
-import { lizenzFinden } from '../../../utils/lizenzen';
 import { POSTFACH_INFO } from '../../../utils/supportMail';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
 import { tageBis } from '../../shared/eventFormatting';
 import { kennzahlenBaum, zahl } from '../../../utils/supportStatistik';
 import {
-  ANFRAGE_TON,
   monatKurz,
   monatLang,
   monatName,
@@ -32,8 +34,11 @@ import {
   wocheLang,
   zuordnungZiel,
   type SupportUebersicht,
-  type UebersichtAnfrage,
 } from '../../../utils/supportWeb';
+import { artKurz, brauchtAufmerksamkeit, vorgaengeSortieren, vorgaengeZaehlen, type Vorgang } from '../../../utils/supportVorgaenge';
+import { useSupportMailZaehler } from '../../../navigation/supportMailZaehler';
+import { vorgaengeLaden } from '../useVorgangsliste';
+import { StatusPill } from './WebVorgangTeile';
 import WebSeite from '../../web/WebSeite';
 import WebKarte from '../../web/WebKarte';
 import WebKachel from '../../web/WebKachel';
@@ -44,22 +49,25 @@ import WebSpark from '../../web/WebSpark';
 import WebDiagramm from '../../web/WebDiagramm';
 import WebBalkenListe from '../../web/WebBalkenListe';
 import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
-import { useWebDaten } from '../../web/useWebDaten';
+import { useSupportDaten } from '../useSupportDaten';
 
 interface UebersichtDaten {
   uebersicht: SupportUebersicht;
+  /** Die offenen Vorgaenge; null, wenn sie nicht kamen (Kachel und Liste sagen das). */
+  vorgaenge: Vorgang[] | null;
   /** Gemeinden je Landeskirche; null, wenn die Statistik nicht kam (die Karte entfaellt dann). */
   landeskirchen: Array<{ schluessel: string; name: string; gemeinden: number }> | null;
 }
 
 async function ladeUebersicht(): Promise<UebersichtDaten> {
-  const [roh, statistik] = await Promise.allSettled([api.get('/support/uebersicht'), api.get('/support/statistik')]);
+  const [roh, statistik, vorgaenge] = await Promise.allSettled([api.get('/support/uebersicht'), api.get('/support/statistik'), vorgaengeLaden('offen')]);
   if (roh.status !== 'fulfilled') throw roh.reason;
   const uebersicht = uebersichtLesen(roh.value.data);
   if (!uebersicht) throw new Error('Die Übersicht kam in einer unbekannten Form');
   const gemeinden = statistik.status === 'fulfilled' && Array.isArray(statistik.value.data?.gemeinden) ? statistik.value.data.gemeinden : null;
   return {
     uebersicht,
+    vorgaenge: vorgaenge.status === 'fulfilled' ? vorgaenge.value : null,
     landeskirchen: gemeinden
       ? kennzahlenBaum(gemeinden).landeskirchen
         .map((lk) => ({ schluessel: lk.schluessel, name: lk.name, gemeinden: lk.summe.gemeinden }))
@@ -82,32 +90,30 @@ const Punkt: React.FC<{ ungelesen: boolean }> = ({ ungelesen }) => (
     : <span className="web-punkt-platz" aria-hidden="true" />
 );
 
-const AnfrageZeile: React.FC<{ a: UebersichtAnfrage }> = ({ a }) => {
-  const status = ANFRAGE_STATUS[a.status] ?? ANFRAGE_STATUS.neu;
-  const wunsch = lizenzFinden(a.wunsch_lizenz);
-  return (
-    <li className="web-feed__zeile">
-      <Punkt ungelesen={a.ungelesen > 0} />
-      <div className="web-feed__haupt">
-        <WebLink href={`/admin/support/anfragen/${a.id}`} className="web-link--zeile web-feed__titel web-einzeilig">
-          {a.gemeinde}
-          {a.ungelesen > 0 && <span className="web-nur-vorlesen">, {a.ungelesen} ungelesene {a.ungelesen === 1 ? 'Mail' : 'Mails'}</span>}
-        </WebLink>
-        <div className="web-feed__meta">
-          <span>{a.kontakt_name}</span>
-          {wunsch && <span>Wunschlizenz {wunsch.name}</span>}
-        </div>
+const VorgangZeile: React.FC<{ v: Vorgang }> = ({ v }) => (
+  <li className="web-feed__zeile">
+    <Punkt ungelesen={brauchtAufmerksamkeit(v)} />
+    <div className="web-feed__haupt">
+      <WebLink href={`/admin/support/vorgaenge/${v.id}`} className="web-link--zeile web-feed__titel web-einzeilig">
+        {v.betreff || '(ohne Betreff)'}
+        {v.ungelesen > 0 && <span className="web-nur-vorlesen">, {v.ungelesen} ungelesene {v.ungelesen === 1 ? 'Mail' : 'Mails'}</span>}
+      </WebLink>
+      <div className="web-feed__meta">
+        <span>{artKurz(v.art)}</span>
+        <span>{v.gemeinde_name ?? 'Nicht zugeordnet'}</span>
       </div>
-      <div className="web-feed__rechts">
-        <WebPill ton={ANFRAGE_TON[a.status]}>{status.label}</WebPill>
-        <span>{zeitpunktText(a.created_at)}</span>
-      </div>
-    </li>
-  );
-};
+    </div>
+    <div className="web-feed__rechts">
+      <StatusPill status={v.status} />
+      <span>{zeitpunktText(v.created_at)}</span>
+    </div>
+  </li>
+);
 
 const Uebersicht: React.FC = () => {
-  const { daten, laedt, stand, neuLaden } = useWebDaten(ladeUebersicht);
+  const { daten, laedt, stand, neuLaden } = useSupportDaten(ladeUebersicht);
+  // Dieselbe Zahl wie die rote Zahl am Posteingang in der Leiste.
+  const mailZaehler = useSupportMailZaehler(true);
 
   const aktualisieren = (
     <WebKnopf onClick={() => { void neuLaden(); }}>
@@ -123,7 +129,12 @@ const Uebersicht: React.FC = () => {
   } else if (!daten) {
     inhalt = <WebFehler text="Die Übersicht konnte nicht geladen werden." onErneut={() => { void neuLaden(); }} />;
   } else {
-    const { uebersicht: u, landeskirchen } = daten;
+    const { uebersicht: u, landeskirchen, vorgaenge } = daten;
+    const offeneZahlen = vorgaenge ? vorgaengeZaehlen(vorgaenge) : null;
+    const neuesteVorgaenge = vorgaenge
+      ? [...vorgaengeSortieren(vorgaenge)].sort((a, b) => (new Date(b.created_at).getTime() || 0) - (new Date(a.created_at).getTime() || 0) || b.id - a.id).slice(0, 6)
+      : [];
+    const posteingang = mailZaehler ? mailZaehler.posteingang : u.kennzahlen.mails_ungelesen;
     const k = u.kennzahlen;
     const e = u.entwicklung;
     const a = u.aktivitaet;
@@ -162,40 +173,42 @@ const Uebersicht: React.FC = () => {
             zusatz={[`${aktivProzent} % von ${zahl(konten)} Konten`]}
           />
           <WebKachel
-            label="Offene Anfragen"
-            wert={zahl(k.anfragen_offen)}
-            href="/admin/support/anfragen?filter=offen"
-            achtung={k.anfragen_offen > 0}
-            zusatz={['Neu oder in Arbeit']}
+            label="Offene Vorgänge"
+            wert={offeneZahlen ? zahl(offeneZahlen.offen) : zahl(k.anfragen_offen)}
+            href="/admin/support/vorgaenge?filter=offen"
+            achtung={(offeneZahlen ? offeneZahlen.offen : k.anfragen_offen) > 0}
+            zusatz={[offeneZahlen ? `${zahl(offeneZahlen.neu)} neu · ${zahl(offeneZahlen.in_arbeit)} in Arbeit · ${zahl(offeneZahlen.wartet)} wartet` : 'Neu oder in Arbeit']}
           />
           <WebKachel
-            label="Ungelesene Mails"
-            wert={zahl(k.mails_ungelesen)}
+            label="Posteingang"
+            wert={zahl(posteingang)}
             href="/admin/support/post?filter=ungelesen"
-            achtung={k.mails_ungelesen > 0}
-            zusatz={['An moin@ und support@']}
+            achtung={posteingang > 0}
+            zusatz={['Ungelesen, noch nicht einsortiert']}
           />
         </div>
 
         <div className="web-raster web-raster--zwei">
           <WebKarte
-            titel="Neueste Anfragen"
-            untertitel="Aus dem Formular auf der Startseite"
-            aktion={<WebLink href="/admin/support/anfragen">Alle Anfragen →</WebLink>}
+            titel="Neueste Vorgänge"
+            untertitel="Anfragen, Support-Anliegen und Mails, die noch offen sind"
+            aktion={<WebLink href="/admin/support/vorgaenge">Alle Vorgänge →</WebLink>}
             bund
           >
-            {u.neueste_anfragen.length > 0 ? (
+            {vorgaenge === null ? (
+              <WebLeer icon={ICON_LISTE} titel="Vorgänge nicht geladen" text="Die Vorgänge konnten gerade nicht geladen werden. „Aktualisieren“ versucht es noch einmal." />
+            ) : neuesteVorgaenge.length > 0 ? (
               <ul className="web-feed">
-                {u.neueste_anfragen.map((x) => <AnfrageZeile key={x.id} a={x} />)}
+                {neuesteVorgaenge.map((v) => <VorgangZeile key={v.id} v={v} />)}
               </ul>
             ) : (
-              <WebLeer icon={ICON_ORGANISATION} titel="Noch keine Anfragen" text="Sobald jemand das Formular auf der Startseite ausfüllt, steht die Anfrage hier." />
+              <WebLeer icon={ICON_ORGANISATION} titel="Nichts offen" text="Sobald jemand das Formular auf der Startseite ausfüllt oder eine Mail kommt, steht der Vorgang hier." />
             )}
           </WebKarte>
 
           <WebKarte
             titel="Neueste Mails"
-            untertitel="Eingang an moin@ und support@"
+            untertitel="Eingang an moin@ und support@, auch die schon einem Vorgang zugeordneten"
             aktion={<WebLink href="/admin/support/post">Zum Posteingang →</WebLink>}
             bund
           >
@@ -219,11 +232,11 @@ const Uebersicht: React.FC = () => {
                           <WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill>
                           <span>{absender}</span>
                           {ziel ? (
-                            <WebLink href={ziel.pfad} vorn title={ziel.art === 'anfrage' ? 'Zur Anfrage' : 'Zum Schriftwechsel der Gemeinde'}>
+                            <WebLink href={ziel.pfad} vorn title={ziel.art === 'gemeinde' ? 'Zu den Vorgängen der Gemeinde' : 'Zum Vorgang'}>
                               → {ziel.text}
                             </WebLink>
                           ) : (
-                            <WebPill ton="warnung">Nicht zugeordnet</WebPill>
+                            <WebPill ton="warnung">Nicht einsortiert</WebPill>
                           )}
                         </div>
                       </div>

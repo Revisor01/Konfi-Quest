@@ -37,6 +37,7 @@ import {
 } from '../../utils/supportMail';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
+import { meldeSupportGeaendert, useSupportGeaendert } from '../../utils/supportAktualisieren';
 
 export interface AntwortFormularProps {
   /** Von welchem Postfach die Antwort geht: Bausteine dieses Postfachs, sein Zustand. */
@@ -53,8 +54,12 @@ export interface AntwortFormularProps {
   empfaengerFehlt?: boolean;
   /** Schickt die Antwort; wirft beim Scheitern (axios-Fehler). */
   senden: (koerper: MailAntwortDaten) => Promise<unknown>;
-  /** Nach dem Senden (Verlauf neu laden). */
-  onGesendet: () => void;
+  /**
+   * Nach dem Senden, falls die Seite noch etwas tun will. Verlauf, Listen und
+   * rote Zahlen laden von selbst neu: Der Editor meldet "Support-Daten
+   * geaendert" (utils/supportAktualisieren.ts).
+   */
+  onGesendet?: () => void;
 }
 
 export function useAntwortEditor({
@@ -85,23 +90,27 @@ export function useAntwortEditor({
   }, [betreffVorschlag]);
 
   // Bausteine, Fusszeile und Zustand des Postfachs -- jedes fuer sich; was
-  // fehlt, laesst das Formular trotzdem benutzbar.
-  useEffect(() => {
-    let aktiv = true;
-    void (async () => {
-      const [b, e, s] = await Promise.allSettled([
-        api.get('/support/mail/bausteine'),
-        api.get('/support/mail/einstellungen'),
-        api.get('/support/mail/status'),
-      ]);
-      if (!aktiv) return;
-      setBausteine(b.status === 'fulfilled' && Array.isArray(b.value.data) ? b.value.data : []);
-      setEinstellungen(e.status === 'fulfilled' && e.value.data && typeof e.value.data === 'object' ? e.value.data : null);
-      const liste = s.status === 'fulfilled' && Array.isArray(s.value.data?.postfaecher) ? s.value.data.postfaecher as MailPostfachStatus[] : [];
-      setStatus(liste.find((p) => p.postfach === postfach) ?? null);
-    })();
-    return () => { aktiv = false; };
+  // fehlt, laesst das Formular trotzdem benutzbar. Aendert sich etwas an den
+  // Bausteinen oder der Fusszeile (eine andere Seite), steht es hier sofort da.
+  const aktiv = useRef(true);
+  const rahmenHolen = useCallback(async () => {
+    const [b, e, s] = await Promise.allSettled([
+      api.get('/support/mail/bausteine'),
+      api.get('/support/mail/einstellungen'),
+      api.get('/support/mail/status'),
+    ]);
+    if (!aktiv.current) return;
+    setBausteine(b.status === 'fulfilled' && Array.isArray(b.value.data) ? b.value.data : []);
+    setEinstellungen(e.status === 'fulfilled' && e.value.data && typeof e.value.data === 'object' ? e.value.data : null);
+    const liste = s.status === 'fulfilled' && Array.isArray(s.value.data?.postfaecher) ? s.value.data.postfaecher as MailPostfachStatus[] : [];
+    setStatus(liste.find((p) => p.postfach === postfach) ?? null);
   }, [postfach]);
+  useEffect(() => {
+    aktiv.current = true;
+    void rahmenHolen();
+    return () => { aktiv.current = false; };
+  }, [rahmenHolen]);
+  useSupportGeaendert(rahmenHolen, { beimBetreten: false });
 
   const passend = useMemo(() => bausteineFuer(bausteine, postfach), [bausteine, postfach]);
   const serverAus = !aufDiesemServer(status);
@@ -159,7 +168,8 @@ export function useAntwortEditor({
                 await senden(koerper);
                 setEntwurf({ betreff: betreffVorschlag, text: '' });
                 setSuccess('Antwort gesendet');
-                onGesendet();
+                meldeSupportGeaendert();
+                onGesendet?.();
               } catch (err) {
                 const art = sendeProblem(fehlerStatus(err), fehlerDaten(err)?.error);
                 if (art) setProblem(art);

@@ -1,0 +1,116 @@
+/* ===================================================================
+   Web-Fassung der Vorgänge und des Posteingangs (03.10.2026,
+   docs/planung/support-vorgaenge.md). Ergänzt theme/web-ansicht.css um das,
+   was nur diese Seiten brauchen: Auswahlkästchen in Tabellen, die Leiste für
+   Sammelaktionen, den Kopf eines Vorgangs und die Gemeinde-Angabe aus dem
+   Formular.
+
+   Dieselben Regeln wie dort: Präfix web-, nur Tokens (var(--app-…),
+   var(--ion-…), var(--web-…)), der Dunkelmodus kommt über die Tokens, keine
+   Übergänge und Animationen, kein Eingriff in Ionic-Bausteine, Schrift nur
+   als Token. Der Wächter webAnsichtCss.test.ts prüft das.
+   =================================================================== */
+
+/* --- Auswahlkästchen: in der Tabelle je Zeile und „Alle auswählen" --- */
+.web-kontrollkasten {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--ion-color-primary);
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.web-kontrollkasten:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+/* --- Leiste über der Tabelle: Alle auswählen, bei einer Auswahl die Aktionen --- */
+.web-sammelleiste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-mittel) var(--app-abstand-basis);
+  min-height: 48px;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+}
+
+.web-sammelleiste__alle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  color: var(--web-text);
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
+  cursor: pointer;
+}
+
+.web-sammelleiste__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--app-abstand-eng);
+  margin-left: auto;
+}
+
+/* Das Auswahlfeld „Status setzen" in der Leiste: schmal, die Beschriftung nur für Vorleseprogramme. */
+.web-sammelleiste__status {
+  min-width: 200px;
+}
+
+.web-sammelleiste__status .web-feld__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Art und Gemeinde in der Werkzeugleiste der Liste: nebeneinander, mit fester Mindestbreite. */
+.web-werkzeuge__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-werkzeuge__links .web-feld {
+  min-width: 200px;
+}
+
+/* Zwei Auswahlfelder nebeneinander (Art und Bereich in den Dialogen); bei wenig Platz untereinander. */
+.web-feldpaar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--app-abstand-mittel);
+}
+
+/* Die Aktionen einer Zeile (Einsortieren, Archivieren, Löschen) bleiben in einer Reihe. */
+.web-spalte-aktionen .web-zeilenaktionen {
+  flex-wrap: nowrap;
+}
+
+/* --- Kopf eines Vorgangs: Nummer, Status, Dringlichkeit, Gemeinde in einer Zeile --- */
+.web-vorgangskopf {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-kompakt) var(--app-abstand-eng);
+}
+
+.web-vorgangskopf__gemeinde {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Die Gemeinde, wie die Person sie im Formular nannte --- */
+.web-gemeindeangabe {
+  font-size: var(--app-text-standard);
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}

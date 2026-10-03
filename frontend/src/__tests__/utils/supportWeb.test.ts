@@ -4,13 +4,8 @@
 // Landeskirche -> Kirchenkreis, Laufzeit und Limit, Filter und Zaehler von
 // Anfragen und Posteingang.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import type { GemeindeAnfrage } from '../../types/support';
 import {
-  ANFRAGEN_FILTER,
   EINGANG_FILTER,
-  anfragenFiltern,
-  anfragenSortieren,
-  anfragenZaehlen,
   eingangFiltern,
   eingangLesen,
   eingangSortieren,
@@ -20,6 +15,7 @@ import {
   gemeindenGruppieren,
   gemeindenLesen,
   gruppenSchluessel,
+  istNichtZugeordnet,
   laufzeitAngabe,
   limitAnteil,
   limitTon,
@@ -37,6 +33,7 @@ import {
   type MailEingangWeb,
   type SupportGemeinde,
 } from '../../utils/supportWeb';
+import { VORGANG_FILTER } from '../../utils/supportVorgaenge';
 
 // Datumsangaben im Test sind die eines Geraets in Deutschland.
 let vorherTZ: string | undefined;
@@ -124,7 +121,9 @@ describe('uebersichtLesen: der Vertrag von GET /support/uebersicht', () => {
 describe('Mails mit Zuordnung', () => {
   it('mailLesen: Zuordnung und Gemeindename; ohne Zuordnung null', () => {
     expect(mailLesen({ id: 1, postfach: 'moin', von_adresse: 'a@example.org', anfrage_id: 41, gemeinde_name: 'Musterdorf' })).toMatchObject({ id: 1, anfrage_id: 41, organization_id: null, gemeinde_name: 'Musterdorf', postfach: 'moin' });
-    expect(mailLesen({ id: 2, postfach: 'support' })).toMatchObject({ anfrage_id: null, organization_id: null, gemeinde_name: null });
+    expect(mailLesen({ id: 2, postfach: 'support' })).toMatchObject({ anfrage_id: null, organization_id: null, gemeinde_name: null, vorgang_id: null, archiviert_am: null });
+    // Seit den Vorgaengen: der Vorgang der Mail und das Archivdatum.
+    expect(mailLesen({ id: 3, postfach: 'moin', vorgang_id: 12, archiviert_am: '2026-10-03T08:00:00Z' })).toMatchObject({ vorgang_id: 12, archiviert_am: '2026-10-03T08:00:00Z' });
     expect(mailLesen({ postfach: 'moin' })).toBeNull();
     expect(mailLesen('x')).toBeNull();
   });
@@ -134,9 +133,12 @@ describe('Mails mit Zuordnung', () => {
     expect(eingangLesen({})).toBeNull();
   });
 
-  it('zuordnungZiel: Anfrage, Gemeinde, nichts', () => {
+  it('zuordnungZiel: Vorgang, sonst Anfrage oder Gemeinde (aeltere Server), nichts', () => {
+    expect(zuordnungZiel({ vorgang_id: 12, anfrage_id: 41, organization_id: 7, gemeinde_name: 'Musterdorf' })).toEqual({ art: 'vorgang', pfad: '/admin/support/vorgaenge/12', text: 'Musterdorf' });
+    expect(zuordnungZiel({ vorgang_id: 12, anfrage_id: null, organization_id: null, gemeinde_name: null })).toEqual({ art: 'vorgang', pfad: '/admin/support/vorgaenge/12', text: 'Vorgang 12' });
+    // Die alten Adressen fuehren in die Vorgaenge: die Anfrage zu ihrem Vorgang, die Gemeinde zur Liste ihrer Vorgaenge.
     expect(zuordnungZiel({ anfrage_id: 41, organization_id: null, gemeinde_name: 'Musterdorf' })).toEqual({ art: 'anfrage', pfad: '/admin/support/anfragen/41', text: 'Musterdorf' });
-    expect(zuordnungZiel({ anfrage_id: null, organization_id: 7, gemeinde_name: null })).toEqual({ art: 'gemeinde', pfad: '/admin/support/post/gemeinde/7', text: 'Gemeinde 7' });
+    expect(zuordnungZiel({ anfrage_id: null, organization_id: 7, gemeinde_name: null })).toEqual({ art: 'gemeinde', pfad: '/admin/support/vorgaenge?gemeinde=7', text: 'Gemeinde 7' });
     expect(zuordnungZiel({ anfrage_id: null, organization_id: null, gemeinde_name: null })).toBeNull();
   });
 
@@ -146,12 +148,21 @@ describe('Mails mit Zuordnung', () => {
   });
   const mails = [mail(1, 'moin', { anfrage_id: 4 }), mail(2, 'support', { organization_id: 3 }), mail(3, 'support'), mail(4, 'moin')];
 
-  it('Zaehler und Filter: Alle, Ungelesen, Nicht zugeordnet, moin@, support@', () => {
-    expect(eingangZaehlen(mails)).toEqual({ alle: 4, ungelesen: 4, offen: 2, moin: 2, support: 2 });
+  it('Zaehler und Filter des Posteingangs: Alle, Ungelesen, moin@, support@ -- „Archiv" ist eine andere Liste', () => {
+    expect(eingangZaehlen(mails)).toEqual({ alle: 4, ungelesen: 4, moin: 2, support: 2 });
     expect(eingangFiltern(mails, 'alle').map((m) => m.id)).toEqual([1, 2, 3, 4]);
-    expect(eingangFiltern(mails, 'offen').map((m) => m.id)).toEqual([3, 4]);
     expect(eingangFiltern(mails, 'moin').map((m) => m.id)).toEqual([1, 4]);
     expect(eingangFiltern(mails, 'support').map((m) => m.id)).toEqual([2, 3]);
+    // Das Archiv wird eigens geladen; auf der geladenen Liste filtert es nichts weg.
+    expect(eingangFiltern(mails, 'archiv').map((m) => m.id)).toEqual([1, 2, 3, 4]);
+    expect(EINGANG_FILTER).toEqual(['alle', 'ungelesen', 'moin', 'support', 'archiv']);
+  });
+
+  it('istNichtZugeordnet: ohne Anfrage, Gemeinde und Vorgang', () => {
+    expect(istNichtZugeordnet(mail(1, 'moin'))).toBe(true);
+    expect(istNichtZugeordnet(mail(2, 'moin', { vorgang_id: 3 }))).toBe(false);
+    expect(istNichtZugeordnet(mail(3, 'moin', { anfrage_id: 3 }))).toBe(false);
+    expect(istNichtZugeordnet(mail(4, 'moin', { organization_id: 3 }))).toBe(false);
   });
 
   it('Ungelesen zaehlt jede Mail ohne Lesezeit, zugeordnet oder nicht', () => {
@@ -327,72 +338,22 @@ describe('Laufzeit und Limit', () => {
   });
 });
 
-describe('Anfragen: Zaehler und Filter', () => {
-  const anfrage = (id: number, status: GemeindeAnfrage['status'], gemeinde: string, extra: Partial<GemeindeAnfrage> = {}): GemeindeAnfrage => ({
-    id, gemeinde, kirchenkreis: null, landeskirche: null, kontakt_name: 'Alex Beispiel', funktion: null, email: `kontakt${id}@example.org`, mobil: null,
-    anzahl_konfis: null, anzahl_teamer: null, nachricht: null, status, notiz: null, organization_id: null, created_at: '2026-10-01T00:00:00Z', updated_at: '2026-10-01T00:00:00Z', ...extra,
-  });
-  const liste = [
-    anfrage(1, 'neu', 'Musterdorf', { ungelesen: 2 }),
-    anfrage(2, 'neu', 'Seehausen'),
-    anfrage(3, 'in_arbeit', 'Büsum', { kirchenkreis: 'Küstenland', ungelesen: 0 }),
-    anfrage(4, 'angelegt', 'Lindenau', { kontakt_name: 'Sam Muster' }),
-    anfrage(5, 'abgelehnt', 'Verein'),
-  ];
-
-  it('Zahl je Status, offen (neu und in Arbeit), alle und ungelesen', () => {
-    expect(anfragenZaehlen(liste)).toEqual({ neu: 2, in_arbeit: 1, angelegt: 1, abgelehnt: 1, alle: 5, offen: 3, ungelesen: 1 });
-    expect(anfragenZaehlen([])).toEqual({ neu: 0, in_arbeit: 0, angelegt: 0, abgelehnt: 0, alle: 0, offen: 0, ungelesen: 0 });
-  });
-
-  it('Offen zeigt neu und in Arbeit, aber weder angelegt noch abgelehnt', () => {
-    expect(anfragenFiltern(liste, 'offen', '').map((a) => a.id)).toEqual([1, 2, 3]);
-    expect(anfragenFiltern(liste, 'offen', 'büsum').map((a) => a.id)).toEqual([3]);
-    expect(anfragenFiltern(liste, 'offen', 'verein')).toEqual([]);
-  });
-
-  it('anfragenSortieren: neueste zuerst, bei gleichem Eingang die hoehere Kennung; die Eingabe bleibt unberuehrt', () => {
-    const wirr = [
-      anfrage(34, 'abgelehnt', 'A', { created_at: '2026-09-03T08:30:00Z' }),
-      anfrage(36, 'angelegt', 'B', { created_at: '2026-09-14T08:30:00Z' }),
-      anfrage(40, 'neu', 'C', { created_at: '2026-10-02T12:30:00Z' }),
-      anfrage(41, 'neu', 'D', { created_at: '2026-10-02T12:30:00Z' }),
-      anfrage(35, 'neu', 'E', { created_at: '2026-09-11T08:30:00Z' }),
-    ];
-    expect(anfragenSortieren(wirr).map((a) => a.id)).toEqual([41, 40, 36, 35, 34]);
-    expect(wirr.map((a) => a.id)).toEqual([34, 36, 40, 41, 35]);
-  });
-
-  it('anfragenSortieren: ein unlesbarer Eingang steht ganz unten', () => {
-    const wirr = [anfrage(1, 'neu', 'A', { created_at: '' }), anfrage(2, 'neu', 'B', { created_at: '2026-09-03T08:30:00Z' })];
-    expect(anfragenSortieren(wirr).map((a) => a.id)).toEqual([2, 1]);
-  });
-
-  it('Filter nach Status, ungelesen und Suche (auch Umlaute und Kontakt)', () => {
-    expect(anfragenFiltern(liste, 'alle', '').map((a) => a.id)).toEqual([1, 2, 3, 4, 5]);
-    expect(anfragenFiltern(liste, 'neu', '').map((a) => a.id)).toEqual([1, 2]);
-    expect(anfragenFiltern(liste, 'ungelesen', '').map((a) => a.id)).toEqual([1]);
-    expect(anfragenFiltern(liste, 'alle', 'buesum').map((a) => a.id)).toEqual([3]);
-    expect(anfragenFiltern(liste, 'alle', 'sam muster').map((a) => a.id)).toEqual([4]);
-    expect(anfragenFiltern(liste, 'alle', 'KONTAKT2@').map((a) => a.id)).toEqual([2]);
-    expect(anfragenFiltern(liste, 'neu', 'küstenland')).toEqual([]);
-    expect(anfragenFiltern(liste, 'in_arbeit', 'küstenland').map((a) => a.id)).toEqual([3]);
-  });
-});
-
 describe('filterAusAdresse', () => {
   it('liest ?filter= und kennt nur erlaubte Werte', () => {
-    expect(filterAusAdresse('?filter=offen', ANFRAGEN_FILTER)).toBe('offen');
-    expect(filterAusAdresse('?foo=1&filter=in_arbeit', ANFRAGEN_FILTER)).toBe('in_arbeit');
+    expect(filterAusAdresse('?filter=offen', VORGANG_FILTER)).toBe('offen');
+    expect(filterAusAdresse('?foo=1&filter=in_arbeit', VORGANG_FILTER)).toBe('in_arbeit');
     expect(filterAusAdresse('?filter=ungelesen', EINGANG_FILTER)).toBe('ungelesen');
+    expect(filterAusAdresse('?filter=archiv', EINGANG_FILTER)).toBe('archiv');
   });
 
   it('Unbekanntes, Leeres und Fehlendes ergibt null -- auch ein Wert, der nur in der anderen Liste steht', () => {
-    expect(filterAusAdresse('?filter=blau', ANFRAGEN_FILTER)).toBeNull();
-    expect(filterAusAdresse('?filter=', ANFRAGEN_FILTER)).toBeNull();
-    expect(filterAusAdresse('', ANFRAGEN_FILTER)).toBeNull();
+    expect(filterAusAdresse('?filter=blau', VORGANG_FILTER)).toBeNull();
+    expect(filterAusAdresse('?filter=', VORGANG_FILTER)).toBeNull();
+    expect(filterAusAdresse('', VORGANG_FILTER)).toBeNull();
     expect(filterAusAdresse('?gemeinde=3', EINGANG_FILTER)).toBeNull();
     expect(filterAusAdresse('?filter=neu', EINGANG_FILTER)).toBeNull();
-    expect(filterAusAdresse('?filter=moin', ANFRAGEN_FILTER)).toBeNull();
+    expect(filterAusAdresse('?filter=moin', VORGANG_FILTER)).toBeNull();
+    // „Nicht zugeordnet“ gibt es im Posteingang nicht mehr: Er zeigt nur noch Nicht-Einsortiertes.
+    expect(filterAusAdresse('?filter=offen', EINGANG_FILTER)).toBeNull();
   });
 });

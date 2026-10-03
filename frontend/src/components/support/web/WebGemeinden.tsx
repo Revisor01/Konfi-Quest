@@ -53,7 +53,7 @@ import WebAkkordeon from '../../web/WebAkkordeon';
 import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
 import WebTreffer from '../../web/WebTreffer';
 import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
-import { useWebDaten } from '../../web/useWebDaten';
+import { useSupportDaten } from '../useSupportDaten';
 
 /** Wo sich der Browser merkt, welche Gruppen zugeklappt sind (Liste der Schluessel). */
 export const SCHLUESSEL_GEMEINDEN_ZU = 'konfiquest.support.gemeinden.zu';
@@ -209,7 +209,7 @@ const Tabelle: React.FC<{
 };
 
 const WebGemeinden: React.FC = () => {
-  const { daten, laedt, neuLaden } = useWebDaten(ladeGemeinden);
+  const { daten, laedt, neuLaden } = useSupportDaten(ladeGemeinden);
   const aktionen = useGemeindeAktionen(neuLaden);
   useLiveRefresh('organizations', neuLaden);
 

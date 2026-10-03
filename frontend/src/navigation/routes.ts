@@ -25,10 +25,10 @@ export type Rolle = 'admin' | 'teamer' | 'konfi' | 'super_admin';
  * die zwei der Support-Ansicht aus GET /support/mail/zaehler
  * (navigation/supportMailZaehler.ts) -- beide über navigation/reiterZaehler.ts.
  */
-export type BadgeKey = 'chat' | 'events' | 'challenges' | 'badges' | 'supportAnfragen' | 'supportPost';
+export type BadgeKey = 'chat' | 'events' | 'challenges' | 'badges' | 'supportVorgaenge' | 'supportPosteingang';
 
 /** Die Zähler der Support-Mail (rote Zahl in der Support-Ansicht, kein Push). */
-export const SUPPORT_MAIL_ZAEHLER: readonly BadgeKey[] = ['supportAnfragen', 'supportPost'];
+export const SUPPORT_MAIL_ZAEHLER: readonly BadgeKey[] = ['supportVorgaenge', 'supportPosteingang'];
 
 /**
  * Eine Route. Entweder ohne Parameter, oder mit — dann gehören `param` (wie
@@ -65,7 +65,7 @@ export type RouteDef =
       /** Name des Parameters in der URL. */
       param: 'id' | 'roomId';
       /** Unter welchem Prop-Namen die Seite den Wert erwartet (als Zahl). */
-      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId' | 'nachrichtId' | 'organizationId';
+      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId' | 'vorgangId' | 'nachrichtId' | 'organizationId';
     };
 
 export interface RedirectDef {

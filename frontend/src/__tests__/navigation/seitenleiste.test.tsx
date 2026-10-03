@@ -350,11 +350,12 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
   it('super_admin (ohne Reiter): die Bereiche der Support-Ansicht, kein Profil', () => {
     // Nach dem Zusammenfuehren mit der Support-Ansicht (Paket C, 03.10.2026)
     // traegt der Baum super_admin die Bereiche aus supportMenue.ts -- seit
-    // der Support-Mail (03.10.2026) acht, mit Posteingang und Textbausteinen.
+    // der Support-Mail (03.10.2026) acht, mit Posteingang und Textbausteinen;
+    // seit den Vorgaengen (03.10.2026) heisst der zweite Bereich „Vorgänge".
     zustand.konto = KONTEN.super_admin;
     zeigeLeiste('/admin/support');
     expect(linkNamen(leiste()!)).toEqual([
-      'Übersicht', 'Anfragen', 'Posteingang', 'Gemeinden', 'Struktur', 'Support-Konten', 'Textbausteine', 'Betrieb',
+      'Übersicht', 'Vorgänge', 'Posteingang', 'Gemeinden', 'Struktur', 'Support-Konten', 'Textbausteine', 'Betrieb',
     ]);
   });
 
@@ -490,30 +491,33 @@ describe('Zahlen an den Eintraegen: dieselbe Quelle wie die Reiterleiste', () =>
 });
 
 // Support-Mail (03.10.2026, docs/planung/support-mail.md, Entscheidung 5):
-// rote Zahl in der Support-Ansicht, kein Push. Anfragen zaehlt die
-// ungelesenen Mails zu Anfragen, Posteingang die nicht zugeordneten und die
-// der Gemeinden (deren Schriftwechsel erreicht man ueber den Posteingang).
+// rote Zahl in der Support-Ansicht, kein Push. Seit den Vorgaengen
+// (docs/planung/support-vorgaenge.md, Entscheidung 7) liefert der Server beide
+// Zahlen fertig: `vorgaenge` (nicht archivierte Vorgaenge mit Status „Neu" oder
+// ungelesener Mail) und `posteingang` (ungelesene, nicht einsortierte, nicht
+// archivierte Mails) -- die Leiste rechnet nichts mehr zusammen.
 describe('Zahlen der Support-Mail in der Leiste', () => {
-  const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 } };
+  const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 }, vorgaenge: 5, posteingang: 4 };
 
-  it('super_admin: Anfragen und Posteingang tragen die Zahl aus GET /support/mail/zaehler', async () => {
+  it('super_admin: Vorgänge und Posteingang tragen die Zahlen aus GET /support/mail/zaehler', async () => {
     apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? ZAEHLER : {} }));
     zustand.konto = KONTEN.super_admin;
     zeigeLeiste('/admin/support');
     const posteingang = await screen.findByRole('link', { name: 'Posteingang, 4 offen' });
     expect(posteingang.getAttribute('href')).toBe('/admin/support/post');
-    expect(screen.getByRole('link', { name: 'Anfragen, 2 offen' })).not.toBeNull();
+    const vorgaenge = screen.getByRole('link', { name: 'Vorgänge, 5 offen' });
+    expect(vorgaenge.getAttribute('href')).toBe('/admin/support/vorgaenge');
     // Nur diese beiden Eintraege tragen eine Zahl.
-    expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['2', '4']);
+    expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['5', '4']);
     expect(apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
   });
 
   it('ab zehn „9+", wie an den Reitern', async () => {
-    apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? { ...ZAEHLER, eingang: 12 } : {} }));
+    apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? { ...ZAEHLER, posteingang: 12 } : {} }));
     zustand.konto = KONTEN.super_admin;
     zeigeLeiste('/admin/support');
-    await screen.findByRole('link', { name: 'Posteingang, 13 offen' });
-    expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['2', '9+']);
+    await screen.findByRole('link', { name: 'Posteingang, 12 offen' });
+    expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['5', '9+']);
   });
 
   it('Gemeindeleitung mit Super-Admin-Merkmal (Simons Konto): Abruf -- ihre Leiste traegt die Support-Eintraege', async () => {
@@ -647,7 +651,7 @@ describe('Gemeinde-Umschalter in der Leiste', () => {
 describe('Support-Gruppen in Simons Leiste', () => {
   const SUPPORT = SUPPORT_BEREICHE.map((b) => b.label);
   const EIGENE = ['Konfis', 'Chat', 'Mitmachen', 'Challenges', 'Mehr'];
-  const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 } };
+  const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 }, vorgaenge: 5, posteingang: 4 };
   const ueberschriften = () => within(leiste()!).queryAllByRole('heading').map((h) => h.textContent);
 
   /** Beschriftung -> Zahl, wie sie an den Eintraegen der Leiste steht. */
@@ -687,7 +691,7 @@ describe('Support-Gruppen in Simons Leiste', () => {
     zustand.konto = KONTEN.simon;
     zeigeLeiste('/admin/konfis');
     await screen.findByRole('link', { name: 'Posteingang, 4 offen' });
-    expect(zahlenRein).toEqual({ Anfragen: '2', Posteingang: '4' });
+    expect(zahlenRein).toEqual({ Vorgänge: '5', Posteingang: '4' });
     expect(zahlenDerLeiste(leiste()!)).toEqual(zahlenRein);
     expect(apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
   });
@@ -734,10 +738,9 @@ describe('Support-Gruppen in Simons Leiste', () => {
 
     it.each([
       ['/admin/support', '/admin/support'],
-      ['/admin/support/anfragen', '/admin/support/anfragen'],
-      ['/admin/support/anfragen/12', '/admin/support/anfragen'],
+      ['/admin/support/vorgaenge', '/admin/support/vorgaenge'],
+      ['/admin/support/vorgaenge/12', '/admin/support/vorgaenge'],
       ['/admin/support/post', '/admin/support/post'],
-      ['/admin/support/post/gemeinde/7', '/admin/support/post'],
       ['/admin/support/post/9', '/admin/support/post'],
       ['/admin/support/struktur', '/admin/support/struktur'],
       ['/admin/support/konten', '/admin/support/konten'],

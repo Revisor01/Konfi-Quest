@@ -1,6 +1,6 @@
 import {
   ICON_AT_ZEICHEN,
-  ICON_MAIL,
+  ICON_LISTE,
   ICON_NETZWERK,
   ICON_ORGANISATION,
   ICON_PULS,
@@ -22,8 +22,10 @@ import type { MenueEintrag } from './routes';
 // an beiden Stellen.
 //
 // `badge` haengt eine rote Zahl an den Eintrag (navigation/reiterZaehler.ts):
-// Anfragen und Posteingang zaehlen ungelesene Mails (Support-Mail,
-// 03.10.2026, docs/planung/support-mail.md).
+// Vorgaenge zaehlen die nicht archivierten mit Status „Neu" oder ungelesener
+// Mail, der Posteingang die ungelesenen, nicht einsortierten Mails
+// (docs/planung/support-vorgaenge.md, Entscheidung 7). „Anfragen" ist kein
+// eigener Eintrag mehr, sondern ein Filter der Vorgaenge (Art „Neue Gemeinde").
 
 export interface SupportBereich extends MenueEintrag {
   /** Ein Satz, wofuer der Bereich da ist (Uebersichtsseite). */
@@ -31,14 +33,16 @@ export interface SupportBereich extends MenueEintrag {
 }
 
 export const SUPPORT_START = '/admin/support';
+export const SUPPORT_VORGAENGE = '/admin/support/vorgaenge';
+export const SUPPORT_POSTEINGANG = '/admin/support/post';
 
 export const SUPPORT_BEREICHE: SupportBereich[] = [
   { path: SUPPORT_START, label: 'Übersicht', icon: ICON_STATISTIK, gruppe: 'Support',
     beschreibung: 'Kennzahlen je Landeskirche, Kirchenkreis und Gemeinde' },
-  { path: '/admin/support/anfragen', label: 'Anfragen', icon: ICON_MAIL, gruppe: 'Support', badge: 'supportAnfragen',
-    beschreibung: 'Anfragen von der Homepage bearbeiten, beantworten und Gemeinden anlegen' },
-  { path: '/admin/support/post', label: 'Posteingang', icon: ICON_AT_ZEICHEN, gruppe: 'Support', badge: 'supportPost',
-    beschreibung: 'Mails an moin@ und support@ zuordnen und beantworten, Schriftwechsel mit Gemeinden' },
+  { path: SUPPORT_VORGAENGE, label: 'Vorgänge', icon: ICON_LISTE, gruppe: 'Support', badge: 'supportVorgaenge',
+    beschreibung: 'Anfragen, Support-Anliegen und Mails an einer Stelle bearbeiten, einordnen und archivieren' },
+  { path: SUPPORT_POSTEINGANG, label: 'Posteingang', icon: ICON_AT_ZEICHEN, gruppe: 'Support', badge: 'supportPosteingang',
+    beschreibung: 'Mails an moin@ und support@, die noch zu keinem Vorgang gehören, einsortieren' },
   { path: '/admin/organizations', label: 'Gemeinden', icon: ICON_ORGANISATION, gruppe: 'Verwaltung',
     beschreibung: 'Stammdaten, Laufzeit, Konfi-Limit und Gemeindeleitungen' },
   { path: '/admin/support/struktur', label: 'Struktur', icon: ICON_NETZWERK, gruppe: 'Verwaltung',

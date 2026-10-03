@@ -1,18 +1,24 @@
-// Verlauf und Antworten in einer Anfrage (/admin/support/anfragen/:id),
-// gerendert (Support-Mail, 03.10.2026, docs/planung/support-mail.md):
-// Verlauf chronologisch, ein- und ausgehend unterscheidbar, Zitate
-// eingeklappt, ungelesene als gelesen gemeldet; Antworten mit Bausteinen
-// (moin@ und beide), Platzhaltern der Anfrage, Vorschau mit Fusszeile,
-// Rueckfrage; 503/502 verstaendlich, der Text bleibt; auf diesem Server aus.
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// Verlauf und Antworten in einem Vorgang, gerendert (Support-Mail, 03.10.2026,
+// docs/planung/support-mail.md; seit den Vorgängen unter /admin/support/
+// vorgaenge/:id): Verlauf chronologisch, ein- und ausgehend unterscheidbar,
+// Zitate eingeklappt, ungelesene als gelesen gemeldet; Antworten mit Bausteinen
+// (moin@ und beide), Platzhaltern der Anfrage, Vorschau mit Fußzeile,
+// Rückfrage; 503/502 verständlich, der Text bleibt; auf diesem Server aus.
+// Ein Vorgang aus einer Anfrage antwortet immer von moin@ an die Adresse der
+// Anfrage; derselbe Antwort-Editor dient auch den Vorgängen ohne Anfrage und den
+// Mails im Posteingang. Die Seite des Vorgangs selbst steht in
+// supportVorgangDetail.test.tsx und webVorgangDetail.test.tsx.
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import type { AlertOptionen } from './ionicAttrappe';
+import { ANFRAGE_41, mail, vorgang, vorgaengeServer } from './vorgaengeServer';
 
 const h = vi.hoisted(() => ({
   apiGet: vi.fn(),
   apiPost: vi.fn(),
   apiPatch: vi.fn(),
+  apiDelete: vi.fn(),
   push: vi.fn(),
   setError: vi.fn(),
   setSuccess: vi.fn(),
@@ -26,32 +32,22 @@ vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttra
 }));
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('./ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/common/LoadingSpinner', () => ({ default: ({ message }: { message: string }) => <p>{message}</p> }));
-vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, post: h.apiPost, patch: h.apiPatch } }));
+vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete } }));
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: h.setError, setSuccess: h.setSuccess, isOnline: true }),
 }));
+vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => false }));
 
-import SupportAnfrageDetailPage from '../../../components/support/SupportAnfrageDetailPage';
+import SupportVorgangDetailPage from '../../../components/support/SupportVorgangDetailPage';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 
+let vorherTZ: string | undefined;
+beforeAll(() => { vorherTZ = process.env.TZ; process.env.TZ = 'Europe/Berlin'; });
+afterAll(() => { if (vorherTZ === undefined) delete process.env.TZ; else process.env.TZ = vorherTZ; });
+
 const ANFRAGE = {
-  id: 4, gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche',
-  kontakt_name: 'Anna Beispiel', funktion: 'Pastorin', email: 'anna@example.org', mobil: null,
-  anzahl_konfis: 25, anzahl_teamer: 6, nachricht: 'Wir starten im November.', status: 'neu', notiz: null,
-  organization_id: null, created_at: '2026-10-02T08:00:00Z', updated_at: '2026-10-02T08:00:00Z', ungelesen: 1,
+  ...ANFRAGE_41, id: 4, gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', mobil: null, wunsch_lizenz: null, ungelesen: 1,
 };
-const mail = (id: number, extra: Record<string, unknown> = {}) => ({
-  id, postfach: 'moin', richtung: 'ein', anfrage_id: 4, organization_id: null,
-  von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', an_adressen: ['moin@konfi-quest.de'],
-  betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]', text: 'Hallo', anhaenge: [],
-  gesendet_am: '2026-10-02T09:00:00Z', gelesen_am: null, ...extra,
-});
-// Absichtlich nicht chronologisch: die Seite sortiert.
-const VERLAUF = [
-  mail(12, { richtung: 'aus', von_adresse: 'moin@konfi-quest.de', von_name: 'Support', an_adressen: ['anna@example.org'],
-    gesendet_am: '2026-10-02T11:00:00Z', gelesen_am: '2026-10-02T11:00:00Z', text: 'Gern, hier die Schritte.\n\n> Hallo\n> wie geht es weiter?' }),
-  mail(11, { text: 'Hallo\nwie geht es weiter?' }),
-];
 const BAUSTEINE = [
   { id: 1, titel: 'Zugangsdaten unterwegs', betreff: 'Zugang für {{gemeinde}}', text: 'Zugang für {{benutzername}} ist unterwegs.', postfach: 'support', sortierung: 1 },
   { id: 2, titel: 'Eingang bestätigt', betreff: null, text: 'Hallo {{name}},\ndanke für eure Anfrage für {{gemeinde}} ({{lizenz}}). {{unbekannt}}\n{{absender}}', postfach: 'moin', sortierung: 1 },
@@ -62,47 +58,50 @@ const statusMit = (extra: Record<string, unknown> = {}) => ({
   postfaecher: [{ postfach: 'moin', adresse: 'moin@konfi-quest.de', eingerichtet: true, abgeholt_am: null, fehler: null, fehler_am: null, ...extra }],
 });
 
-let antworten: Record<string, unknown>;
+let server: ReturnType<typeof vorgaengeServer>;
+let status: unknown;
 
 beforeEach(() => {
   vi.clearAllMocks();
-  h.apiGet.mockReset();
-  h.apiPost.mockReset();
   h.alert = null;
   h.user = { id: 9, role_name: 'super_admin', is_super_admin: true };
   supportMailZaehlerZuruecksetzen();
-  antworten = {
-    '/support/anfragen': [ANFRAGE],
-    '/support/kirchenkreise': [],
-    '/support/landeskirchen': [],
-    '/support/anfragen/4/verlauf': VERLAUF,
-    '/support/mail/bausteine': BAUSTEINE,
-    '/support/mail/einstellungen': { fusszeile: 'Konfi Quest\nmoin@konfi-quest.de', absendername: 'Support-Team' },
-    '/support/mail/status': statusMit({ auf_diesem_server: true }),
-    '/support/mail/platzhalter': PLATZHALTER,
-  };
-  h.apiGet.mockImplementation((pfad: string) => {
-    const wert = antworten[pfad];
-    if (wert === undefined) return Promise.reject(new Error(`unerwartet: ${pfad}`));
-    return wert instanceof Error ? Promise.reject(wert) : Promise.resolve({ data: wert });
+  status = statusMit({ auf_diesem_server: true });
+  server = vorgaengeServer({
+    vorgaenge: [vorgang(4, { art: 'neue_gemeinde', bereich: null, status: 'neu', betreff: 'Anfrage Kirchengemeinde Heide', quelle: 'anfrage', anfrage_id: 4, anfrage: { ...ANFRAGE } })],
+    mails: [
+      // Absichtlich nicht chronologisch im Speicher: die Seite sortiert.
+      mail(12, 4, { postfach: 'moin', richtung: 'aus', von_adresse: 'moin@konfi-quest.de', von_name: 'Support', an_adressen: ['anna@example.org'], betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]',
+        gesendet_am: '2026-10-02T11:00:00Z', gelesen_am: '2026-10-02T11:00:00Z', text: 'Gern, hier die Schritte.\n\n> Hallo\n> wie geht es weiter?' }),
+      mail(11, 4, { postfach: 'moin', von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', an_adressen: ['moin@konfi-quest.de'], betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]',
+        gesendet_am: '2026-10-02T09:00:00Z', text: 'Hallo\nwie geht es weiter?' }),
+    ],
   });
-  h.apiPost.mockResolvedValue({ data: {} });
+  server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
+  const vorher = h.apiGet.getMockImplementation()!;
+  h.apiGet.mockImplementation((pfad: string, o?: unknown) => {
+    if (pfad === '/support/mail/bausteine') return Promise.resolve({ data: BAUSTEINE });
+    if (pfad === '/support/mail/einstellungen') return Promise.resolve({ data: { fusszeile: 'Konfi Quest\nmoin@konfi-quest.de', absendername: 'Support-Team' } });
+    if (pfad === '/support/mail/platzhalter') return Promise.resolve({ data: PLATZHALTER });
+    if (pfad === '/support/mail/status') return Promise.resolve({ data: status });
+    return vorher(pfad, o as never);
+  });
 });
 
 const oeffnen = async () => {
-  render(<SupportAnfrageDetailPage anfrageId={4} />);
-  await screen.findByText('Wir starten im November.');
+  render(<SupportVorgangDetailPage vorgangId={4} />);
   await screen.findAllByRole('article');
-  // Bausteine, Einstellungen und Zustand laden im Formular fuer sich.
+  // Bausteine, Einstellungen und Zustand laden im Formular für sich.
   await waitFor(() => expect((screen.getByLabelText('Textbaustein') as HTMLSelectElement).options.length).toBeGreaterThan(1));
 };
 
 const text = () => screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement;
 const senden = () => screen.getByRole('button', { name: 'Antwort senden' });
 const bestaetigen = async () => { await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Senden')?.handler?.(); }); };
+const betreff = () => screen.getByLabelText('Betreff') as HTMLInputElement;
 
-describe('Anfrage: Verlauf', () => {
-  it('aelteste zuerst, ein- und ausgehend unterscheidbar; die ungelesene wird gemeldet und traegt „Neu"', async () => {
+describe('Vorgang aus einer Anfrage: Verlauf', () => {
+  it('älteste zuerst, ein- und ausgehend unterscheidbar; die ungelesene wird gemeldet und trägt „Neu“', async () => {
     await oeffnen();
     const mails = screen.getAllByRole('article');
     expect(mails.map((m) => m.getAttribute('aria-label'))).toEqual([
@@ -122,22 +121,17 @@ describe('Anfrage: Verlauf', () => {
     expect(screen.getByText(/> wie geht es weiter\?/)).toBeInTheDocument();
   });
 
-  it('leer: ein Satz; Fehler: Hinweis mit neuem Versuch, die Anfrage bleibt bedienbar', async () => {
-    antworten['/support/anfragen/4/verlauf'] = new Error('Netz weg');
-    render(<SupportAnfrageDetailPage anfrageId={4} />);
-    await screen.findByText('Wir starten im November.');
-    expect(await screen.findByText('Der Verlauf konnte nicht geladen werden.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Speichern' })).toBeInTheDocument();
-    antworten['/support/anfragen/4/verlauf'] = [];
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Verlauf neu laden' })); });
-    expect(await screen.findByText('Noch keine Mails zu dieser Anfrage.')).toBeInTheDocument();
-    // Ohne Verlauf antwortet der Support auf die automatische Bestaetigung.
-    expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Re: Eure Anfrage bei Konfi Quest');
+  it('ohne Mails: ein Satz; der Betreff antwortet auf die automatische Bestätigung', async () => {
+    server.stand.mails = [];
+    render(<SupportVorgangDetailPage vorgangId={4} />);
+    expect(await screen.findByText('Noch keine Mails in diesem Vorgang.')).toBeInTheDocument();
+    await waitFor(() => expect((screen.getByLabelText('Textbaustein') as HTMLSelectElement).options.length).toBeGreaterThan(1));
+    expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest');
   });
 });
 
-describe('Anfrage: Antworten', () => {
-  it('Bausteine nur fuer moin@ und beide; Einfuegen fuellt die Platzhalter der Anfrage, Unbekanntes bleibt stehen', async () => {
+describe('Vorgang aus einer Anfrage: Antworten', () => {
+  it('Bausteine nur für moin@ und beide; Einfügen füllt die Platzhalter der Anfrage, Unbekanntes bleibt stehen', async () => {
     await oeffnen();
     const auswahl = screen.getByLabelText('Textbaustein') as HTMLSelectElement;
     expect([...auswahl.options].map((o) => o.textContent)).toEqual(['Baustein wählen', 'Eingang bestätigt', 'Absage']);
@@ -148,7 +142,7 @@ describe('Anfrage: Antworten', () => {
     // {{absender}} fehlt in den Platzhaltern -> Absendername aus den Einstellungen.
     expect(text().value).toBe('Hallo Anna Beispiel,\ndanke für eure Anfrage für Kirchengemeinde Heide (Standard). {{unbekannt}}\nSupport-Team');
     // Der Betreff bleibt der Vorschlag aus dem Verlauf.
-    expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Re: Eure Anfrage bei Konfi Quest [Anfrage 4]');
+    expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest [Anfrage 4]');
   });
 
   it('ein zweiter Baustein kommt unter den Text, nichts geht verloren', async () => {
@@ -159,65 +153,60 @@ describe('Anfrage: Antworten', () => {
     expect(text().value).toBe('Hallo Anna,\n\nLeider nein.');
   });
 
-  it('Vorschau: Text, darunter „-- " und die Fusszeile', async () => {
+  it('Vorschau: Text, darunter „-- “ und die Fußzeile', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna,\nes geht los.' } });
     expect(screen.getByRole('region', { name: 'Vorschau der Antwort' }).textContent)
       .toBe('Hallo Anna,\nes geht los.\n\n-- \nKonfi Quest\nmoin@konfi-quest.de');
   });
 
-  it('ohne Text: Meldung, keine Rueckfrage, kein Versand', async () => {
+  it('ohne Text: Meldung, keine Rückfrage, kein Versand', async () => {
     await oeffnen();
     fireEvent.click(senden());
     expect(h.setError).toHaveBeenCalledWith('Bitte einen Text schreiben');
     expect(h.alert).toBeNull();
   });
 
-  it('Senden mit Rueckfrage; Koerper an den Server; danach Verlauf neu, Text leer, Status „In Arbeit"', async () => {
+  it('Senden mit Rückfrage; Körper an den Vorgang; danach Verlauf neu, Text leer, Status „In Arbeit“', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna,\nes geht los.\n\n' } });
     fireEvent.click(senden());
     expect(h.alert?.message).toBe('An anna@example.org: „Re: Eure Anfrage bei Konfi Quest [Anfrage 4]“ von moin@ senden?');
-    expect(h.apiPost).not.toHaveBeenCalledWith('/support/anfragen/4/antworten', expect.anything());
+    expect(server.aufrufe('post', /antworten$/)).toHaveLength(0);
 
-    const verlaufVorher = h.apiGet.mock.calls.filter(([p]) => p === '/support/anfragen/4/verlauf').length;
+    const abrufeVorher = server.aufrufe('get', '/support/vorgaenge/4').length;
     await bestaetigen();
-    expect(h.apiPost).toHaveBeenCalledWith('/support/anfragen/4/antworten', {
+    expect(server.aufrufe('post', '/support/vorgaenge/4/antworten').map((a) => a.koerper)).toEqual([{
       text: 'Hallo Anna,\nes geht los.',
       betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]',
-    });
+    }]);
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     expect(text().value).toBe('');
-    await waitFor(() => expect(h.apiGet.mock.calls.filter(([p]) => p === '/support/anfragen/4/verlauf').length).toBe(verlaufVorher + 1));
-    expect(screen.getAllByText('In Arbeit').length).toBeGreaterThan(0);
-    expect((screen.getByLabelText('Status') as HTMLSelectElement).value).toBe('in_arbeit');
+    await waitFor(() => expect(server.aufrufe('get', '/support/vorgaenge/4').length).toBeGreaterThan(abrufeVorher));
+    await waitFor(() => expect((screen.getByLabelText('Status') as HTMLSelectElement).value).toBe('in_arbeit'));
+    expect(screen.getAllByRole('article')).toHaveLength(3);
   });
 
-  it('der unberuehrte Betreff folgt dem Vorschlag aus dem neuen Verlauf; ein getippter bleibt', async () => {
-    antworten['/support/anfragen/4/verlauf'] = [];
-    render(<SupportAnfrageDetailPage anfrageId={4} />);
-    await screen.findByText('Noch keine Mails zu dieser Anfrage.');
-    expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Re: Eure Anfrage bei Konfi Quest');
+  it('der unberührte Betreff folgt dem Vorschlag aus dem neuen Verlauf; ein getippter bleibt', async () => {
+    server.stand.mails = [];
+    render(<SupportVorgangDetailPage vorgangId={4} />);
+    await screen.findByText('Noch keine Mails in diesem Vorgang.');
+    await waitFor(() => expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest'));
     fireEvent.change(text(), { target: { value: 'Hallo Anna' } });
     fireEvent.click(senden());
-    // Der Server hat die Kennung in den Betreff gesetzt.
-    antworten['/support/anfragen/4/verlauf'] = [mail(13, { richtung: 'aus', gelesen_am: '2026-10-03T08:00:00Z', betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]' })];
     await bestaetigen();
-    await waitFor(() => expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Re: Eure Anfrage bei Konfi Quest [Anfrage 4]'));
+    // Der Server hat die Nummer des Vorgangs in den Betreff gesetzt.
+    await waitFor(() => expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest [Vorgang 4]'));
 
-    fireEvent.change(screen.getByLabelText('Betreff'), { target: { value: 'Termine im November' } });
+    fireEvent.change(betreff(), { target: { value: 'Termine im November' } });
     fireEvent.change(text(), { target: { value: 'Noch etwas' } });
     fireEvent.click(senden());
-    antworten['/support/anfragen/4/verlauf'] = [
-      mail(13, { richtung: 'aus', gelesen_am: '2026-10-03T08:00:00Z', betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]' }),
-      mail(14, { gesendet_am: '2026-10-03T09:00:00Z', betreff: 'AW: Re: Eure Anfrage bei Konfi Quest [Anfrage 4]' }),
-    ];
     h.apiPost.mockRejectedValueOnce({ response: { status: 502, data: {} } });
     await bestaetigen();
-    expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Termine im November');
+    expect(betreff().value).toBe('Termine im November');
   });
 
-  it('503 ohne Text: „Postfach noch nicht eingerichtet", der Text bleibt', async () => {
+  it('503 ohne Text: „Postfach noch nicht eingerichtet“, der Text bleibt', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna' } });
     fireEvent.click(senden());
@@ -230,10 +219,10 @@ describe('Anfrage: Antworten', () => {
     expect(h.setError).not.toHaveBeenCalled();
   });
 
-  it('503 „Auf diesem Server ist der Versand aus.": der Text des Servers, der Entwurf bleibt', async () => {
+  it('503 „Auf diesem Server ist der Versand aus.“: der Text des Servers, der Entwurf bleibt', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna' } });
-    fireEvent.change(screen.getByLabelText('Betreff'), { target: { value: 'Eigener Betreff' } });
+    fireEvent.change(betreff(), { target: { value: 'Eigener Betreff' } });
     fireEvent.click(senden());
     h.apiPost.mockRejectedValueOnce({ response: { status: 503, data: { error: 'Auf diesem Server ist der Versand aus.' } } });
     await bestaetigen();
@@ -242,10 +231,10 @@ describe('Anfrage: Antworten', () => {
     expect(hinweis).toHaveTextContent('Auf diesem Server ist der Versand aus. Dein Text bleibt hier stehen.');
     expect(hinweis).not.toHaveTextContent('Zugangsdaten');
     expect(text().value).toBe('Hallo Anna');
-    expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Eigener Betreff');
+    expect(betreff().value).toBe('Eigener Betreff');
   });
 
-  it('502: „Versand gescheitert", der Text bleibt; ein neuer Versuch raeumt den Hinweis', async () => {
+  it('502: „Versand gescheitert“, der Text bleibt; ein neuer Versuch räumt den Hinweis', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna' } });
     fireEvent.click(senden());
@@ -271,23 +260,23 @@ describe('Anfrage: Antworten', () => {
   });
 
   it('auf diesem Server aus: Hinweis, Senden aus -- mit Grund daneben', async () => {
-    antworten['/support/mail/status'] = statusMit({ auf_diesem_server: false });
+    status = statusMit({ auf_diesem_server: false });
     await oeffnen();
     await waitFor(() => expect(senden()).toBeDisabled());
     expect(screen.getByText('Auf diesem Server aus – Versand und Abholen laufen auf dem Hauptserver')).toBeInTheDocument();
     expect(screen.getByText('Senden ist aus: Auf diesem Server aus – Versand und Abholen laufen auf dem Hauptserver.')).toBeInTheDocument();
   });
 
-  it('Gegenprobe: ohne das Feld auf_diesem_server (aelterer Server) bleibt Senden an', async () => {
-    antworten['/support/mail/status'] = statusMit();
+  it('Gegenprobe: ohne das Feld auf_diesem_server (älterer Server) bleibt Senden an', async () => {
+    status = statusMit();
     await oeffnen();
     await act(async () => {});
     expect(senden()).not.toBeDisabled();
     expect(screen.queryByText(/Senden ist aus/)).toBeNull();
   });
 
-  it('Postfach nicht eingerichtet: Hinweis schon vor dem Senden, Senden bleibt moeglich', async () => {
-    antworten['/support/mail/status'] = statusMit({ eingerichtet: false });
+  it('Postfach nicht eingerichtet: Hinweis schon vor dem Senden, Senden bleibt möglich', async () => {
+    status = statusMit({ eingerichtet: false });
     await oeffnen();
     expect(await screen.findByText('Postfach noch nicht eingerichtet')).toBeInTheDocument();
     expect(senden()).not.toBeDisabled();

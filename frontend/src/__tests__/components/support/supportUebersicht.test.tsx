@@ -2,7 +2,7 @@
 //
 // Startseite eines Support-Kontos ohne Gemeinde: Kennzahlen gesamt, je
 // Landeskirche, je Kirchenkreis und je Gemeinde (aufklappbar), neue
-// Anfragen, der Weg zu allen Bereichen und das Abmelden -- der Baum
+// Vorgänge, der Weg zu allen Bereichen und das Abmelden -- der Baum
 // super_admin hatte bis 03.10.2026 kein Abmelden. Fuer Konten ohne
 // Super-Admin-Recht zeigt die Seite nur einen Hinweis und ruft nichts ab.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -52,10 +52,16 @@ const STATISTIK = {
   ],
 };
 
+// Ein offener Vorgang, wie ihn GET /support/vorgaenge?filter=offen liefert.
+const offen = (id: number, status: 'neu' | 'in_arbeit' | 'wartet' = 'neu') => ({
+  id, art: 'frage', bereich: 'chat', dringlichkeit: 'normal', status, betreff: `Vorgang ${id}`, quelle: 'formular', organization_id: null,
+  gemeinde_name: null, anfrage_id: null, ungelesen: 0, letzte_aktivitaet: '2026-10-03T08:00:00Z', created_at: '2026-10-03T08:00:00Z', archiviert_am: null,
+});
+
 const antworten = (statistik: unknown, neue: unknown[] | Error = [], mailZaehler?: unknown) => {
   h.apiGet.mockImplementation((pfad: string) => {
     if (pfad === '/support/statistik') return statistik instanceof Error ? Promise.reject(statistik) : Promise.resolve({ data: statistik });
-    if (pfad === '/support/anfragen') return neue instanceof Error ? Promise.reject(neue) : Promise.resolve({ data: neue });
+    if (pfad === '/support/vorgaenge') return neue instanceof Error ? Promise.reject(neue) : Promise.resolve({ data: neue });
     if (pfad === '/support/mail/zaehler' && mailZaehler !== undefined) return Promise.resolve({ data: mailZaehler });
     return Promise.reject(new Error(`unerwartet: ${pfad}`));
   });
@@ -70,13 +76,13 @@ beforeEach(() => {
 });
 
 describe('Support-Uebersicht: Laden, Fehler, leer', () => {
-  it('zeigt erst den Ladezustand, dann die Kennzahlen; fragt Statistik und neue Anfragen ab', async () => {
-    antworten(STATISTIK, [{ id: 1 }, { id: 2 }]);
+  it('zeigt erst den Ladezustand, dann die Kennzahlen; fragt Statistik und die offenen Vorgänge ab', async () => {
+    antworten(STATISTIK, [offen(1), offen(2)]);
     render(<SupportUebersichtPage />);
     expect(screen.getByText('Kennzahlen werden geladen...')).toBeInTheDocument();
     expect(await screen.findByRole('group', { name: 'Konfis: 62' })).toBeInTheDocument();
     expect(h.apiGet).toHaveBeenCalledWith('/support/statistik');
-    expect(h.apiGet).toHaveBeenCalledWith('/support/anfragen', { params: { status: 'neu' } });
+    expect(h.apiGet).toHaveBeenCalledWith('/support/vorgaenge', { params: { filter: 'offen' } });
   });
 
   it('Fehler beim Laden: Hinweis mit erneutem Versuch, der wirklich neu laedt', async () => {
@@ -99,7 +105,7 @@ describe('Support-Uebersicht: Laden, Fehler, leer', () => {
 
 describe('Support-Uebersicht: Kennzahlen', () => {
   it('Gesamt: Gemeinden mit aktiven und ohne Zuordnung, Konten je Rolle, aktiv, Jahrgaenge', async () => {
-    antworten(STATISTIK, [{ id: 1 }]);
+    antworten(STATISTIK, [offen(1)]);
     render(<SupportUebersichtPage />);
     const gemeinden = await screen.findByRole('group', { name: 'Gemeinden: 3' });
     expect(gemeinden).toHaveTextContent('2 aktiv · 1 ohne Zuordnung');
@@ -142,13 +148,14 @@ describe('Support-Uebersicht: Kennzahlen', () => {
   });
 });
 
-describe('Support-Uebersicht: Bereiche, neue Anfragen und Abmelden', () => {
+describe('Support-Uebersicht: Bereiche, neue Vorgänge und Abmelden', () => {
   it('fuehrt zu allen Bereichen der Support-Ansicht', async () => {
-    antworten(STATISTIK, [{ id: 1 }, { id: 2 }]);
+    // Zwei neue und ein Vorgang in Arbeit: nur die neuen zaehlen an der Marke.
+    antworten(STATISTIK, [offen(1), offen(2), offen(3, 'in_arbeit')]);
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 62' });
     const ziele: Array<[string, string]> = [
-      ['Anfragen', '/admin/support/anfragen'],
+      ['Vorgänge', '/admin/support/vorgaenge'],
       ['Posteingang', '/admin/support/post'],
       ['Gemeinden', '/admin/organizations'],
       ['Struktur', '/admin/support/struktur'],
@@ -161,20 +168,21 @@ describe('Support-Uebersicht: Bereiche, neue Anfragen und Abmelden', () => {
       fireEvent.click(screen.getByText(label, { selector: '.app-list-item__title' }));
       expect(h.push, label).toHaveBeenCalledWith(pfad);
     }
-    // Die Zahl der neuen Anfragen steht am Eintrag "Anfragen".
-    const anfragen = screen.getByText('Anfragen', { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
-    expect(within(anfragen).getByText('2 neu')).toBeInTheDocument();
+    // Die Zahl der neuen Vorgänge steht am Eintrag "Vorgänge"; "Anfragen" gibt es nicht mehr als Bereich.
+    const vorgaenge = screen.getByText('Vorgänge', { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
+    expect(within(vorgaenge).getByText('2 neu')).toBeInTheDocument();
+    expect(screen.queryByText('Anfragen', { selector: '.app-list-item__title' })).toBeNull();
   });
 
   // Support-Mail (03.10.2026): dieselbe Zahl wie in der Leiste
   // (navigation/supportMailZaehler.ts, supportMailZahl).
-  it('ungelesene Mails als rote Kugel an Anfragen und Posteingang (dort nicht zugeordnete plus Gemeinden)', async () => {
-    antworten(STATISTIK, [], { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: {}, je_gemeinde: {} });
+  it('rote Kugel an Vorgängen (Neu oder ungelesen) und Posteingang (ungelesen, nicht einsortiert) -- die Zahlen kommen fertig vom Server', async () => {
+    antworten(STATISTIK, [], { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: {}, je_gemeinde: {}, vorgaenge: 5, posteingang: 4 });
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 62' });
     const eintrag = (label: string) => screen.getByText(label, { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
     expect((await within(eintrag('Posteingang')).findByText('4')).className).toBe('app-zaehler-kugel');
-    expect(within(eintrag('Anfragen')).getByText('2').className).toBe('app-zaehler-kugel');
+    expect(within(eintrag('Vorgänge')).getByText('5').className).toBe('app-zaehler-kugel');
     expect(eintrag('Gemeinden').querySelector('.app-zaehler-kugel')).toBeNull();
     expect(h.apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
   });
