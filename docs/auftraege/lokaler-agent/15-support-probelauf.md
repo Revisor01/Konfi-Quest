@@ -55,7 +55,7 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
       Ergebnis: je Postfach Ja/Nein, ein Fehlertext ohne Adressen.
 
 - [ ] **6. Probe-Anfrage an moin@.** Auf der Homepage das Formular
-      „Gemeinde anfragen" ausfüllen: Gemeinde „Probe – bitte nicht
+      „Konfi Quest für eure Gemeinde anfragen" ausfüllen: Gemeinde „Probe – bitte nicht
       bearbeiten", Kontakt mit einer eigenen Adresse des Betriebs,
       Wunschlizenz „Standard". Dann in der Support-Ansicht:
       - die Anfrage steht unter „Anfragen" und auf der Übersicht unter
