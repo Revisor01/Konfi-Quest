@@ -20,6 +20,7 @@ import WebKnopf from '../../web/WebKnopf';
 import WebMenue, { type WebMenueEintrag } from './WebMenue';
 import WebNachrichten from './WebNachrichten';
 import WebChatEingabe from './WebChatEingabe';
+import { useUntenBleiben } from './useUntenBleiben';
 import { listenMerker } from './chatListenMerker';
 import '../../../theme/web/chat.css';
 
@@ -63,6 +64,9 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
     openPollModal, openMembersModal, getDisplayRoomName,
     canLeaveChat, istLeitung, darfTeamChatLeeren, handleClearChat, handleExportChat, handleLeaveChat,
   } = chat;
+
+  // Laden Bilder nach, waehrend man unten liest oder nach unten springt, bleibt der Verlauf unten.
+  const untenBleiben = useUntenBleiben(contentRef);
 
   // Die Vorschau in der Raumliste folgt dem Verlauf: Wechselt die neueste
   // Nachricht (nach dem ersten Laden), meldet der Raum es der Liste.
@@ -181,7 +185,13 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
       >
         {/* "Nach unten": nur, wenn man weiter oben liest. */}
         <div slot="fixed" className={`web-chat-runter${showScrollDown ? ' web-chat-runter--sichtbar' : ''}`} aria-hidden={!showScrollDown}>
-          <button type="button" className="web-chat-runter__knopf" tabIndex={showScrollDown ? 0 : -1} aria-label="Zu den neuesten Nachrichten springen" onClick={handleScrollDownClick}>
+          <button
+            type="button"
+            className="web-chat-runter__knopf"
+            tabIndex={showScrollDown ? 0 : -1}
+            aria-label="Zu den neuesten Nachrichten springen"
+            onClick={() => { untenBleiben.sprungBeginnt(); handleScrollDownClick(); }}
+          >
             <IonIcon icon={ICON_AUFKLAPPEN_GEFUELLT} aria-hidden="true" />
           </button>
         </div>
@@ -205,6 +215,7 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
           aeltereFehlgeschlagen={aeltereFehlgeschlagen}
           anfangErreicht={anfangErreicht(messages, anfangBei)}
           onErneutLaden={() => { void ladeAeltere(true); }}
+          listeRef={untenBleiben.listeRef}
           ladendeDatei={ladendeDatei}
           uploadFortschritt={uploadFortschritt}
           kannTeilen={kannTeilen()}

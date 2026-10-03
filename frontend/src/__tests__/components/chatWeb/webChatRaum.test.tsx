@@ -114,7 +114,7 @@ vi.mock('../../../components/chat/web/WebNachricht', async (original) => {
 vi.mock('../../../components/chat/modals/PollModal', () => ({ default: () => null }));
 vi.mock('../../../components/chat/modals/MembersModal', () => ({ default: () => null }));
 
-import { socketNachbau } from './webChatAttrappe';
+import { socketNachbau, scrollAufrufe } from './webChatAttrappe';
 import WebChatRaum from '../../../components/chat/web/WebChatRaum';
 import MembersModal from '../../../components/chat/modals/MembersModal';
 import { entwuerfeZuruecksetzen } from '../../../components/chat/web/chatEntwuerfe';
@@ -840,5 +840,76 @@ describe('Raum (Web): Menue', () => {
     expect(document.activeElement).toBe(loeschen);
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'ArrowDown' });
     expect(document.activeElement).toBe(exportieren);
+  });
+});
+
+describe('Raum (Web): bleibt unten, wenn Bilder nachladen', () => {
+  // Der Beobachter der Groesse ist nachgebaut (jsdom hat keinen); die Massen des
+  // Verlaufs stellt der Test.
+  class Beobachter {
+    static alle: Beobachter[] = [];
+    beobachtet: Element[] = [];
+    constructor(public rueckruf: () => void) { Beobachter.alle.push(this); }
+    observe(el: Element) { this.beobachtet.push(el); }
+    unobserve() {}
+    disconnect() {}
+  }
+  const masse = { hoehe: 2000, oben: 1310, sichtbar: 690 };
+  const verlaufMessen = () => {
+    const el = screen.getByTestId('verlauf');
+    Object.defineProperty(el, 'scrollHeight', { configurable: true, get: () => masse.hoehe });
+    Object.defineProperty(el, 'scrollTop', { configurable: true, get: () => masse.oben });
+    Object.defineProperty(el, 'clientHeight', { configurable: true, get: () => masse.sichtbar });
+  };
+  const meldet = async (hoehe: number, oben?: number) => {
+    masse.hoehe = hoehe;
+    if (oben !== undefined) masse.oben = oben;
+    Beobachter.alle[Beobachter.alle.length - 1].rueckruf();
+    await act(async () => { await Promise.resolve(); await Promise.resolve(); });
+  };
+  const oeffnen = async () => {
+    IM_RAUM([m({ content: 'Erste' }), m({ content: 'Zweite' })]);
+    await zeigen();
+    verlaufMessen();
+    await meldet(2000, 1310); // Ausgangsgroesse: ganz unten
+    scrollAufrufe.zumEnde.mockClear();
+  };
+
+  beforeEach(() => {
+    Beobachter.alle = [];
+    Object.assign(masse, { hoehe: 2000, oben: 1310, sichtbar: 690 });
+    vi.stubGlobal('ResizeObserver', Beobachter);
+    scrollAufrufe.zumEnde.mockClear();
+  });
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('der Raum beobachtet die Liste der Nachrichten (das Element, das beim Nachladen waechst)', async () => {
+    IM_RAUM([m()]);
+    await zeigen();
+    expect(Beobachter.alle).toHaveLength(1);
+    expect(Beobachter.alle[0].beobachtet).toEqual([screen.getByRole('log', { name: 'Nachrichten' })]);
+  });
+
+  it('wer unten liest und dem ein Bild nachlaedt, wird wieder ganz nach unten gesetzt', async () => {
+    await oeffnen();
+    await meldet(2214);
+    expect(scrollAufrufe.zumEnde.mock.calls).toEqual([[0]]);
+  });
+
+  it('wer weiter oben liest, bleibt stehen', async () => {
+    await oeffnen();
+    await meldet(2214, 500);
+    expect(scrollAufrufe.zumEnde).not.toHaveBeenCalled();
+  });
+
+  it('der Knopf "Zu den neuesten Nachrichten springen": waechst auf dem Weg ein Bild, landet der Sprung trotzdem unten -- auch nach dem sanften Scrollen', async () => {
+    await oeffnen();
+    masse.oben = 600;
+    // Der Knopf ist erst sichtbar, wenn man weiter oben liest (aria-hidden); fuer den Klick genuegt das Element.
+    fireEvent.click(screen.getByRole('button', { name: 'Zu den neuesten Nachrichten springen', hidden: true }));
+    expect(scrollAufrufe.zumEnde.mock.calls).toEqual([[300]]);
+    await meldet(2214, 700);
+    expect(scrollAufrufe.zumEnde.mock.calls).toEqual([[300], [0]]);
+    await waitFor(() => expect(scrollAufrufe.zumEnde.mock.calls).toEqual([[300], [0], [0]]), { timeout: 2000 });
   });
 });

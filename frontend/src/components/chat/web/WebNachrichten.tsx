@@ -22,11 +22,13 @@ export interface WebNachrichtenProps extends Omit<WebNachrichtProps, 'message' |
   aeltereFehlgeschlagen: boolean;
   anfangErreicht: boolean;
   onErneutLaden: () => void;
+  /** Das Element, das beim Nachladen von Bildern waechst (useUntenBleiben). */
+  listeRef?: React.Ref<HTMLDivElement>;
 }
 
 const WebNachrichten: React.FC<WebNachrichtenProps> = ({
   messages, pickerNachrichtId, initialUnreadRef, newDividerAnchorRef, newDividerRef,
-  laedtAeltere, aeltereFehlgeschlagen, anfangErreicht, onErneutLaden, ...nachrichtProps
+  laedtAeltere, aeltereFehlgeschlagen, anfangErreicht, onErneutLaden, listeRef, ...nachrichtProps
 }) => {
   neuenTrennerVerankern(messages, nachrichtProps.room.id, initialUnreadRef, newDividerAnchorRef);
 
@@ -49,7 +51,7 @@ const WebNachrichten: React.FC<WebNachrichtenProps> = ({
 
   return (
     // role=log: Vorleseprogramme sagen neue Nachrichten an, ohne den Fokus zu bewegen.
-    <div className="web-chat-verlaufsliste" role="log" aria-label="Nachrichten">
+    <div className="web-chat-verlaufsliste" role="log" aria-label="Nachrichten" ref={listeRef}>
       {/* Die Zeile steht immer da und behaelt ihre Hoehe: Kaeme sie erst mit
           der Ladeanzeige dazu, schoebe sie die Nachrichten darunter nach unten. */}
       {messages.length > 0 && (
