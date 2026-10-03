@@ -101,10 +101,11 @@ Noch nicht mit Simon abgestimmt, abgeleitet aus den Punkten oben.
 
 Am Code geprüft am 02.10.2026.
 
-**Super-Admin** ist ein Merkmal am Konto (`users.is_super_admin`), keine
-eigene Rolle. `requireSuperAdmin` (`backend/middleware/rbac.js`) antwortet
-ohne das Merkmal mit 403. Die heutigen Super-Admin-Konten sind
-Gemeindeleitungen mit Merkmal in ihrer Stamm-Gemeinde.
+**Super-Admin** ist ein Merkmal am Konto (`users.is_super_admin`).
+`requireSuperAdmin` (`backend/middleware/rbac.js`) antwortet ohne das
+Merkmal mit 403. Die heutigen Super-Admin-Konten sind Gemeindeleitungen mit
+Merkmal in ihrer Stamm-Gemeinde; Support-Konten ohne Gemeinde tragen dazu die
+Systemrolle `super_admin` (unten, Konto ohne Gemeinde).
 
 Routen in `backend/routes/organizations.js` (eingehängt unter
 `/api/organizations`):
@@ -120,10 +121,44 @@ Routen in `backend/routes/organizations.js` (eingehängt unter
 | `GET /:id/members`, `POST /:id/members`, `DELETE /:id/members/:userId` | Super-Admin | Mitglieder und Zuweisungen über Gemeindegrenzen, mit Rolle |
 | `GET /:id/users`, `GET /:id/admins`, `POST /:id/admins` | Super-Admin oder Gemeindeleitung der eigenen Gemeinde | Konten der Gemeinde, Gemeindeleitungen anlegen |
 | `GET /current`, `GET /:id`, `GET /:id/stats` | Super-Admin oder Team der Gemeinde | Gemeinde lesen, Kennzahlen |
+| `GET /support-konten`, `POST /support-konten`, `PATCH /support-konten/:id`, `PUT /support-konten/:id/passwort`, `DELETE /support-konten/:id` | Super-Admin | Support-Konten ohne Gemeinde (seit 03.10.2026) |
 
 Dazu `GET /api/metrics`, `/api/metrics/history` und `/api/metrics/local`
 (nur Super-Admin, `backend/createApp.js`): Serverzeiten, Fehler,
 Lastverteilung je Replica.
+
+**Konto ohne Gemeinde** (gebaut am 03.10.2026, Entscheidungen 12 bis 15;
+Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
+
+- **Schema** (Migration 190): `users.organization_id` ist nullable, aber nur
+  für Super-Admins (`CHECK (organization_id IS NOT NULL OR is_super_admin
+  IS TRUE)`); dazu die gemeindefreie Systemrolle `super_admin` (eine Zeile in
+  `roles`, eindeutig über einen partiellen Index). Sie steht in keiner
+  Rollenliste einer Gemeinde und lässt sich dort nicht vergeben.
+- **Routen** `/api/organizations/support-konten` (nur Super-Admin): auflisten
+  mit Gast-Gemeinden, anlegen (Benutzername systemweit eindeutig, Passwortregeln
+  wie überall), sperren und entsperren (beendet alle Sitzungen), Passwort
+  setzen, löschen (gemeinsame Kontolöschung). Das letzte aktive
+  Super-Admin-Konto lässt sich weder sperren noch löschen, auch nicht über
+  die Selbstlöschung.
+- **Anmeldung nur im Browser:** Ein Konto ohne Gemeinde meldet sich nur an,
+  wenn der Client `kann_ohne_gemeinde: true` schickt — das tut allein die
+  Web-Version, bei Anmeldung und Refresh. Sonst 403 `user_inactive` mit
+  `grund: konto_ohne_gemeinde` und dem Hinweis auf konfi-quest.de. Die
+  Store-App 2.3.0 zeigt diesen Text; 1.5.3 bis 2.2.x zeigen bei jeder
+  Ablehnung „Keine Verbindung zum Server" (Fehler ihrer Anmeldeseite) und
+  sind trotzdem abgewiesen. Bedienkomfort, keine Sicherheitsgrenze — die
+  Rechte hält `rbac.js`.
+- **Als Gast in einer Gemeinde** über `POST /organizations/:id/members`
+  (Super-Admin, Rolle Gemeindeleitung): Die Gemeinde sieht das Konto in ihrer
+  Benutzerliste als Gemeindeleitung aus einer weiteren Gemeinde; bearbeiten
+  oder entfernen kann es dort nur ein Super-Admin. Gemeindewechsel und
+  Rückweg über `switch-org` und den Refresh wie bei jedem Konto.
+- **Behoben auf dem Weg:** die acht Stellen, die bei `organization_id` NULL
+  falsch rechneten (Benutzerliste, Detail, Hierarchieprüfung, Rückblick,
+  Passwort setzen, `POST /chat/rooms`, `is_primary`), und die Anmeldung
+  eines gesperrten Super-Admin-Kontos (Login 200, danach jede Anfrage 401).
+  Für bestehende Konten ändert sich keine Antwortform (Vertragstest).
 
 **Daten:** `organizations` kennt `kirchenkreis` als Freitext (Migration 086),
 dazu Ansprechperson, E-Mail, Telefon, Adresse, Website, Laufzeit
@@ -133,60 +168,18 @@ oder Support-Fälle gibt es im Schema nicht. Mails verschickt
 
 ## Offen
 
-- **Konto ohne Gemeinde — wie genau.** Entschieden ist, dass beides gehen
-  soll (Punkt 11). Am Code geprüft am 03.10.2026 (`main` 4cc24f0e):
-  - **Der Code ist halb darauf vorbereitet.** `rbac.js` und die Anmeldung
-    rechnen schon mit `organization_id` NULL (`LEFT JOIN`), und es gibt
-    einen gemeindefremden Navigationsbaum `super_admin` (`rollenBaeume.ts`),
-    seit 1.5.3 in allen ausgelieferten Apps.
-  - **NULL fällt fast überall sicher aus.** `req.user.organization_id` steht
-    519-mal in 30 Dateien, praktisch immer mit `=` verglichen: NULL trifft
-    nichts, das Ergebnis ist eine leere Liste oder 404. Die Rolle
-    `super_admin` steht in keiner Rollenliste von `requireAdmin`,
-    `requireTeamer`, `requireOrgAdmin` und bekommt dort 403. Keine Stelle
-    liefert bei NULL Daten fremder Gemeinden.
-  - **Rund acht Stellen rechnen falsch**, wo mit `<>` oder `= Spalte`
-    verglichen wird. Die wichtigsten: `PUT /users/:id/reset-password` meldet
-    Erfolg und ändert nichts (`WHERE … organization_id = $3`); ein Gast ohne
-    Gemeinde fehlt in der Benutzerliste der Gemeinde (`users.js`,
-    `u.organization_id <> $1`); `POST /chat/rooms` endet mit 500 (NOT NULL
-    in `chat_rooms`). Zu beheben mit `IS DISTINCT FROM`, `COALESCE` und einer
-    Prüfung von `rowCount`.
-  - **Das Frontend bekommt `organization_id` vom Server nie** (weder Login
-    noch `/auth/me`); seine 33 Lesestellen kommen schon heute mit
-    `undefined` aus.
-  - **Alte Apps (1.5.3 bis 2.3.0)** landeten mit einem solchen Konto in der
-    verkleinerten Ansicht „Gemeinden" — ohne Abmelden-Knopf. Sie zeigen aber
-    bei `error_code` `user_inactive` den Text des Servers wörtlich. Die
-    Anmeldung lässt sich dort also sauber abweisen: Konten ohne Gemeinde
-    melden sich nur an, wenn der Client ein neues Feld (`kann_ohne_gemeinde`)
-    schickt; sonst 403 mit Hinweis auf die Web-Version und einem neuen Feld
-    `grund`. Das ist Bedienkomfort, keine Sicherheitsgrenze — die Rechte
-    hält weiter `rbac.js`.
-  - **Variante „versteckte Betriebs-Gemeinde"** käme heute ohne Code aus,
-    müsste aber an mindestens neun Stellen ausgeblendet oder geschützt
-    werden (Gemeindeliste, Löschen — sonst würden Support-Konten gelöscht
-    oder in eine echte Gemeinde umgezogen —, Sperre und Testphase,
-    Umschalter, Einladungen, Seeds beim Start, Hintergrundläufe, Suche) und
-    in jeder künftigen Auswertung über alle Gemeinden. Die geplanten
-    Statistiken je Kirchenkreis und Landeskirche machen das zum
-    Dauerrisiko.
-
-  **Empfehlung:** `users.organization_id` nullable mit
-  `CHECK (organization_id IS NOT NULL OR is_super_admin)`, eine
-  gemeindefreie Systemrolle `super_admin` (eine Zeile in `roles`), die acht
-  Stellen beheben, alte Apps bei der Anmeldung abweisen. Für bestehende
-  Konten ändert sich keine Antwortform. Reihenfolge additiv: erst die
-  Stellen im Backend beheben (ohne Schemawechsel, einzeln auslieferbar),
-  dann die Migration, dann Routen zum Anlegen, Sperren und Löschen von
-  Support-Konten (heute gibt es dafür keinen Weg außer
-  `scripts/ersteinrichtung.js`), dann die Oberfläche (Abmelden im Baum
-  `super_admin`, Rückweg „ohne Gemeinde"). Vorher in Produktion lesend
-  messen, ob es schon globale Rollen oder Rollen `super_admin` gibt.
-
-  Nebenbei gefunden: Bei der Anmeldung überspringt ein Super-Admin die
-  Prüfung auf ein gesperrtes Konto, `rbac.js` aber nicht — ein gesperrtes
-  Super-Admin-Konto bekommt beim Login 200 und danach bei jeder Anfrage 401.
+- **Oberfläche für Konten ohne Gemeinde.** Das Backend steht (siehe „Was
+  es heute gibt", Konto ohne Gemeinde). Es fehlen: Support-Konten in der
+  Support-Ansicht anlegen, sperren, mit Passwort versehen und löschen
+  (bis dahin über die API, [betrieb/support-konto.md](../betrieb/support-konto.md));
+  Abmelden im Navigationsbaum `super_admin`; der Rückweg „ohne Gemeinde"
+  nach einem Gemeindewechsel (Refresh ohne Kopfzeile, der Server kann das
+  schon). In der Benutzerliste der Gemeinde steht der Support-Gast heute mit
+  „zuhause in einer anderen Gemeinde" und Bearbeiten-Knopf, obwohl der
+  Server das Bearbeiten mit 403 ablehnt (siehe
+  [offene-befunde.md](../offene-befunde.md), „Bearbeiten-Knopf bei
+  Super-Admin-Konten"); für eine eigene Kennzeichnung bräuchte `GET /users`
+  ein zusätzliches Feld.
 - **Datenmodell Kirchenkreis und Landeskirche.** Eigene Tabellen mit
   Zuordnung an der Gemeinde; der Freitext `kirchenkreis` bleibt, bis die
   Bestände übertragen sind (Migration additiv). Die bestehenden Gemeinden,

@@ -9,14 +9,18 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Hinzugefügt
+- Support-Konten ohne eigene Gemeinde lassen sich anlegen, sperren und
+  löschen; sie melden sich nur im Browser an (die Apps zeigen einen Hinweis)
+  und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
+- Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
+  löschen.
+
 ### Behoben
 - Ein gesperrtes Konto mit Super-Admin-Recht kann sich nicht mehr anmelden;
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 
 ### Sonstiges
-- Support-Konten ohne eigene Gemeinde melden sich nur in der Web-Version an;
-  in den Apps erscheint stattdessen ein Hinweis auf die Support-Ansicht im
-  Browser.
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
   Punkte stehen jeweils an einer Stelle.

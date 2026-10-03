@@ -30,6 +30,7 @@ const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
 const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
 const { refreshTokensBegrenzen } = require('../utils/refreshTokenGrenze');
+const { MELDUNG_LETZTER, bleibtEinSuperAdmin } = require('../utils/superAdminKonten');
 const router = express.Router();
 
 // Die beiden Reset-Grenzen entstehen erst in der Fabrik unten, weil ihr
@@ -736,6 +737,14 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       let ergebnis = null;
       try {
         await client.query('BEGIN');
+        // Das letzte aktive Super-Admin-Konto bleibt (03.10.2026,
+        // utils/superAdminKonten.js) -- sonst koennte niemand mehr Gemeinden
+        // und Support-Konten verwalten. Pruefung und Loeschung in derselben
+        // Transaktion unter der Sperre fuer Super-Admin-Aenderungen.
+        if (req.user.is_super_admin === true && !(await bleibtEinSuperAdmin(client, userId))) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: MELDUNG_LETZTER.loeschen });
+        }
         ergebnis = await kontoDatenLoeschen(client, userId);
         await client.query('COMMIT');
       } catch (txErr) {

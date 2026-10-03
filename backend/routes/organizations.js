@@ -149,6 +149,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     }
   });
 
+  // Support-Konten ohne Gemeinde (nur Super-Admins, routes/supportKonten.js).
+  // MUSS vor /:id stehen, sonst faengt /:id den Pfad.
+  router.use('/support-konten', require('./supportKonten')(db, rbacVerifier, { requireSuperAdmin }));
+
   // Get current organization details (muss VOR /:id stehen, sonst wird "current" als ID gefangen)
   // requireTeamer wie bei GET /:id: Die Route liefert o.* der eigenen
   // Organisation und damit dieselben Kontakt-, Lizenz- und Trial-Daten.

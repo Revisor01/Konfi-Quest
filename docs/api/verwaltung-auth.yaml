@@ -94,9 +94,13 @@
 #      organization_id ist nullable, aber nur fuer Super-Admins (CHECK
 #      users_gemeinde_oder_super_admin); ein solches Konto traegt die
 #      gemeindefreie Systemrolle super_admin (roles.organization_id NULL,
-#      eindeutig per uq_roles_name_ohne_gemeinde). Als Gast in einer
-#      Gemeinde ueber POST /organizations/{id}/members. Anmeldung nur aus der
-#      Web-Version (kann_ohne_gemeinde, siehe POST /auth/login).
+#      eindeutig per uq_roles_name_ohne_gemeinde). Angelegt, gesperrt, mit
+#      Passwort versehen und geloescht ueber /organizations/support-konten
+#      (nur Super-Admin); als Gast in einer Gemeinde ueber
+#      POST /organizations/{id}/members. Anmeldung nur aus der Web-Version
+#      (kann_ohne_gemeinde, siehe POST /auth/login). Das letzte aktive
+#      Super-Admin-Konto laesst sich weder sperren noch loeschen, auch nicht
+#      ueber POST /auth/delete-account (409).
 #    - super_admin (Rolle) hat KEINE Organisation und ist von Org-/Trial-
 #      Sperren beim Login/Refresh ausgenommen -- seit 03.10.2026 NICHT mehr
 #      von der Sperre des Kontos (is_active); von Jahrgangs-Daten bleibt er
@@ -228,7 +232,7 @@ tags:
   - name: "Doku-Zugang"
     description: "Anmeldung für die passwortgeschützte API-Dokumentation."
   - name: "Organisationen"
-    description: "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung)."
+    description: "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung); Support-Konten ohne Gemeinde (nur Super-Admin)."
   - name: "Passwörter & Einladungen"
     description: "Passwort vergessen und zurücksetzen, Einladungs-Codes, Konfi-Registrierung."
   - name: "System & Monitoring"
@@ -477,7 +481,7 @@ paths:
         "200": { description: "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026)" }
+        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)" }
         "500": { description: "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -1402,13 +1406,156 @@ paths:
       parameters:
         - { name: q, in: query, required: true, schema: { type: string, minLength: 2 }, description: "Suchbegriff" }
       responses:
-        "200": { description: "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle)" }
+        "200": { description: "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle). Support-Konten ohne Gemeinde stehen mit primary_organization_name null und primary_role_name super_admin darin -- so werden sie als Gast in eine Gemeinde aufgenommen (POST /organizations/{id}/members)" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "keine (org-uebergreifend, bewusst)"
+
+  /api/organizations/support-konten:
+    get:
+      tags: ["Organisationen"]
+      summary: Alle Support-Konten (Super-Admin ohne Gemeinde) mit ihren Gast-Gemeinden
+      description: >
+        NEU 03.10.2026 (Simon; docs/planung/web-version.md, Punkt 10 bis 15).
+        Ein Support-Konto hat keine Gemeinde (users.organization_id NULL),
+        traegt die Systemrolle super_admin und das Merkmal is_super_admin
+        (Migration 190) und hat dieselben Rechte wie jeder Super-Admin. Es
+        meldet sich nur in der Web-Version an (POST /api/auth/login,
+        kann_ohne_gemeinde). Diese Liste zeigt nur Konten ohne Gemeinde;
+        Super-Admins mit Gemeinde stehen in deren Benutzerliste. Geloeschte
+        (deleted_at) fehlen.
+      responses:
+        "200":
+          description: "Array, nach Anzeigename sortiert"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    username: { type: string }
+                    display_name: { type: string }
+                    email: { type: [string, "null"] }
+                    is_active: { type: boolean }
+                    last_login_at: { type: [string, "null"], format: date-time }
+                    created_at: { type: string, format: date-time }
+                    gemeinden:
+                      type: array
+                      description: "Gast-Mitgliedschaften (user_organizations): id, name, display_name, role_name"
+                      items: { type: object }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Kein Super-Admin (Rolle oder Merkmal)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL"
+        hinweis: "Eigene Datei backend/routes/supportKonten.js, eingehaengt in organizations.js vor /:id. Tests: backend/tests/routes/supportKonten.test.js"
+    post:
+      tags: ["Organisationen"]
+      summary: Support-Konto anlegen (ohne Gemeinde, Systemrolle super_admin, Merkmal is_super_admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, display_name, password]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$", description: "Systemweit frei, ohne Gross/klein -- geprueft unter derselben Sperre wie POST /users (utils/benutzernameSperre.js)" }
+                display_name: { type: string }
+                password: { type: string, description: "volle validatePassword-Policy" }
+                email: { type: string, description: "Optional; fuer 'Passwort vergessen'" }
+      responses:
+        "201": { description: "{ id, username, display_name, email, is_active, created_at, gemeinden: [] }" }
+        "400": { description: "Benutzername, Anzeigename, Passwort oder E-Mail ungueltig" }
+        "403": { description: "Kein Super-Admin" }
+        "409": { description: "Benutzername existiert bereits (muss systemweit eindeutig sein)" }
+        "500": { description: "u. a. 'Die Rolle für Support-Konten fehlt. Bitte den Migrationsstand prüfen.' -- die Systemrolle aus Migration 190 fehlt" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Rolle = Systemrolle super_admin (organization_id NULL); das neue Konto startet ohne Kontosperre nach Fehlversuchen"
+
+  /api/organizations/support-konten/{id}:
+    patch:
+      tags: ["Organisationen"]
+      summary: Support-Konto sperren oder entsperren
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties:
+                is_active: { type: boolean, description: "false sperrt, true entsperrt (nur echte Booleans)" }
+      responses:
+        "200": { description: "{ id, username, display_name, email, is_active }. Sperren beendet alle Sitzungen: token_invalidated_at, alle Refresh-Tokens widerrufen und sofort abgelaufen, Push-Tokens geloescht, Rechte-Cache geleert, Sockets getrennt. Danach Anmeldung und Refresh 403 user_inactive" }
+        "400": { description: "is_active fehlt oder ist kein Boolean" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "Kein Support-Konto (Konto mit Gemeinde, geloescht oder unbekannt) -- dann aendert sich nichts" }
+        "409": { description: "'Das letzte aktive Super-Admin-Konto lässt sich nicht sperren. Lege zuerst ein weiteres an.' -- gezaehlt werden alle aktiven, nicht geloeschten Konten mit Rolle super_admin oder Merkmal, mit oder ohne Gemeinde (utils/superAdminKonten.js, unter einer Sperre gegen gleichzeitiges Sperren)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL; das eigene Konto ist erlaubt, solange ein weiteres aktives Super-Admin-Konto bleibt"
+    delete:
+      tags: ["Organisationen"]
+      summary: Support-Konto loeschen (gemeinsame Kontoloeschung)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
+      responses:
+        "200": { description: "{ message: 'Support-Konto gelöscht' } -- utils/kontoLoeschen.js wie bei jeder Kontoloeschung: Gast-Mitgliedschaften, Chats, Mitteilungen, alles der Person; Dateien nach dem COMMIT" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "Kein Support-Konto -- ein Konto mit Gemeinde bleibt" }
+        "409": { description: "'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL; Schutz des letzten aktiven Super-Admin-Kontos"
+
+  /api/organizations/support-konten/{id}/passwort:
+    put:
+      tags: ["Organisationen"]
+      summary: Passwort eines Support-Kontos setzen
+      description: >
+        Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen und hebt
+        eine Kontosperre nach Fehlversuchen auf. ANDERS: keine Bestaetigungsmail
+        -- deren Vorlage spricht von "der Leitung deiner Gemeinde".
+        PUT /api/users/{id}/reset-password geht fuer Support-Konten ebenfalls
+        (Super-Admin, seit 03.10.2026 korrekt) und schickt diese Mail.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: "volle validatePassword-Policy" }
+      responses:
+        "200": { description: "{ message: 'Passwort gesetzt' }" }
+        "400": { description: "Policy verletzt" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "Kein Support-Konto -- ein Konto mit Gemeinde bleibt unveraendert" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL"
 
   /api/organizations/current:
     get:
