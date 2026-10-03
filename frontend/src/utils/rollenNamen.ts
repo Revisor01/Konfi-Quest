@@ -84,3 +84,108 @@ export const rollenTextFarbeVar = (name?: string | null, rueckfall?: RollenFarbe
   const farbe = rollenFarbe(name, rueckfall);
   return farbe === 'neutral' ? 'var(--app-text-system)' : `var(--app-text-${farbe})`;
 };
+
+/**
+ * Wie eine PERSON in einer Liste aussieht -- Strich links, Symbolkreis,
+ * Eck-Marke und Schrift aus EINER Stelle (02.10.2026, Paket 2.4.0, Punkt 6).
+ *
+ * Simon, 02.10.2026: "wir haben die farbe für leitung von der für teamer
+ * getrennt, das muss aber in alle listen und überall berücksichtigt werden.
+ * aktuell ist es in der chat mitglieder liste nur im corner badge, nicht vorne
+ * beim strich und kreis". Bis dahin faerbte rollenFarbeVar dort nur die
+ * Eck-Marke; Strich und Kreis trugen app-list-item--team /
+ * app-icon-circle--team -- die allgemeine Team-Farbe (Beere) auch fuer jede
+ * Leitung.
+ *
+ * Die Werte sind CSS-Klassen (theme/variables.css), keine Farbwerte: Die
+ * Klassen lesen die Tokens --app-color-<farbe> (Flaeche) und
+ * --app-text-<farbe> (Schrift, im Dunkeln aufgehellt). Die Auswahl bekommt
+ * ihren zarten Grund ueber `app-list-item--selected` zusammen mit `strich`.
+ */
+export interface RollenDarstellung {
+  /** Die Rollenfarbe (Token-Name ohne Praefix). */
+  farbe: RollenFarbe;
+  /** Strich links an der Karte (`app-list-item--…`). */
+  strich: string;
+  /** Symbolkreis (`app-icon-circle--…`). */
+  kreis: string;
+  /** Eck-Marke (`app-corner-badge--…`). */
+  marke: string;
+  /** Schrift und kleine Symbole auf der Karte (`app-rollen-schrift--…`). */
+  schrift: string;
+}
+
+const DARSTELLUNG: Readonly<Record<RollenFarbe, Omit<RollenDarstellung, 'farbe'>>> = {
+  users: {
+    strich: 'app-list-item--users',
+    kreis: 'app-icon-circle--users',
+    marke: 'app-corner-badge--users',
+    schrift: 'app-rollen-schrift--users',
+  },
+  leitung: {
+    strich: 'app-list-item--leitung',
+    kreis: 'app-icon-circle--leitung',
+    marke: 'app-corner-badge--leitung',
+    schrift: 'app-rollen-schrift--leitung',
+  },
+  teamer: {
+    strich: 'app-list-item--teamer',
+    kreis: 'app-icon-circle--teamer',
+    marke: 'app-corner-badge--teamer',
+    schrift: 'app-rollen-schrift--teamer',
+  },
+  // Die Konfi-Klassen heissen seit jeher --konfi (Einzahl); Farbe wie bisher.
+  konfis: {
+    strich: 'app-list-item--konfi',
+    kreis: 'app-icon-circle--konfi',
+    marke: 'app-corner-badge--konfi',
+    schrift: 'app-rollen-schrift--konfis',
+  },
+  neutral: {
+    strich: 'app-list-item--neutral',
+    kreis: 'app-icon-circle--neutral',
+    marke: 'app-corner-badge--neutral',
+    schrift: 'app-rollen-schrift--neutral',
+  },
+};
+
+/** Was eine Liste ueber eine Person weiss. */
+export interface PersonMitRolle {
+  /** Rolle in der aktiven Gemeinde -- die eigentliche Quelle. */
+  role_name?: string | null;
+  /** Typ im Chat (chat_participants.user_type). */
+  user_type?: string | null;
+  /** Typ in den Auswahllisten des Chats (ChatUser.type). */
+  type?: string | null;
+}
+
+/**
+ * Rueckfall NUR fuer Antworten ohne Rolle: der Typ. `admin` steht im Chat
+ * fuer Leitung UND Gemeindeleitung; ohne Rolle laesst sich das nicht trennen,
+ * die Leitung ist die haeufigere. Die Beere fuer jede Leitung (der Rueckfall
+ * bis 02.10.2026) war in jedem Fall falsch.
+ */
+const FARBE_NACH_TYP: Readonly<Record<string, RollenFarbe>> = {
+  konfi: 'konfis',
+  teamer: 'teamer',
+  admin: 'leitung',
+};
+
+/** Die Rollenfarbe einer Person: nach der Rolle, ohne Rolle nach dem Typ. */
+export const personFarbe = (person: PersonMitRolle): RollenFarbe => {
+  if (person.role_name) return rollenFarbe(person.role_name);
+  const typ = person.user_type ?? person.type;
+  return (typ && FARBE_NACH_TYP[typ]) || 'neutral';
+};
+
+/**
+ * Strich, Kreis, Eck-Marke und Schrift fuer eine Person -- oder direkt fuer
+ * einen Rollennamen (Listen, die nur eine Rolle zeigen, etwa die
+ * Gemeindeleitung einer Gemeinde).
+ */
+export const rollenDarstellung = (person: PersonMitRolle | string | null | undefined): RollenDarstellung => {
+  const farbe = person == null || typeof person === 'string'
+    ? rollenFarbe(person)
+    : personFarbe(person);
+  return { farbe, ...DARSTELLUNG[farbe] };
+};

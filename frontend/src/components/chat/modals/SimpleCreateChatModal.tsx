@@ -44,7 +44,7 @@ import api from '../../../services/api';
 import { ChatUser } from '../../../types/user';
 import { EigenerJahrgang, KonfiEintrag, TeamKontakt, VerfuegbarerPartner } from '../../../types/chat';
 import { istTeamTyp } from '../../../utils/chatRoles';
-import { rollenFarbeVar, rollenTextFarbeVar } from '../../../utils/rollenNamen';
+import { rollenDarstellung } from '../../../utils/rollenNamen';
 import { tastaturKlick } from '../../../utils/tastatur';
 
 interface SimpleCreateChatModalProps {
@@ -134,6 +134,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
           // wie Konfis dargestellt.
           type: u.type,
           jahrgang_name: u.jahrgang_name ?? undefined,
+          // Die Rolle in dieser Gemeinde (02.10.2026): Sie fiel hier weg, die
+          // Eck-Marke jeder Leitung stand deshalb in der Teamer-Farbe.
+          role_name: u.role_name,
           // Funktionsbeschreibung vom Backend (bereits mit Fallback)
           role_description: u.role_description
         }));
@@ -201,6 +204,9 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
             name: member.display_name,
             display_name: member.display_name,
             type: (member.role_name === 'teamer' ? 'teamer' : 'admin') as 'admin' | 'teamer',
+            // Rolle in dieser Gemeinde fuer die Rollenfarbe (02.10.2026) --
+            // fiel hier bis dahin weg, jede Leitung stand in Beere.
+            role_name: member.role_name,
             role_description: member.role_description
           }));
         } catch (err) {
@@ -524,11 +530,15 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                       // Teamer:innen gehören zum Team, nicht zu den Konfis —
                       // sonst Konfi-Farbe und keine Funktionsbezeichnung.
                       const isAdmin = istTeamTyp(targetUser.type);
+                      // Strich, Kreis, Eck-Marke und Schrift in der Farbe der
+                      // Rolle, aus EINER Stelle (utils/rollenNamen:
+                      // rollenDarstellung, 02.10.2026). Konfis wie bisher.
+                      const rolle = rollenDarstellung(isAdmin ? targetUser : 'konfi');
 
                       return (
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={participantId}
-                          className={`app-list-item ${isAdmin ? 'app-list-item--team' : 'app-list-item--konfi'}`}
+                          className={`app-list-item ${rolle.strich}${isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => {
                             if (!creating) {
                               if (chatType === 'direct') {
@@ -542,17 +552,16 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                             cursor: creating ? 'default' : 'pointer',
                             opacity: creating ? 0.6 : 1,
                             position: 'relative',
-                            overflow: 'hidden',
-                            background: isSelected ? (isAdmin ? 'rgba(var(--app-color-teamer-rgb), 0.08)' : 'rgba(var(--app-color-konfis-rgb), 0.08)') : undefined
+                            overflow: 'hidden'
                           }}
                         >
                           {/* Eselsohr mit Rolle als Icon, im Team in der Farbe
-                              der Rolle (utils/rollenNamen, 29.09.2026):
-                              Org-Leitung Indigo, Leitung Petrol, Teamer:in Beere. */}
+                              der Rolle: Gemeindeleitung Indigo, Leitung Petrol,
+                              Teamer:in Beere. */}
                           <div className="app-corner-badges">
                             <div
-                              className="app-corner-badge"
-                              style={{ backgroundColor: isAdmin ? rollenFarbeVar(targetUser.role_name, 'teamer') : 'var(--app-color-konfis)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
+                              className={`app-corner-badge ${rolle.marke}`}
+                              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--app-abstand-mini) var(--app-abstand-eng)' }}
                               title={isAdmin ? (targetUser.role_description || 'Leitung') : 'Konfi'}
                               role="img"
                               aria-label={isAdmin ? (targetUser.role_description || 'Leitung') : 'Konfi'}
@@ -563,7 +572,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
 
                           <div className="app-list-item__row" style={chatType === 'group' ? { paddingRight: 'var(--app-abstand-eng)' } : undefined}>
                             <div className="app-list-item__main">
-                              <div className={`app-icon-circle app-icon-circle--lg ${isAdmin ? 'app-icon-circle--team' : 'app-icon-circle--konfi'}`}>
+                              <div className={`app-icon-circle app-icon-circle--lg ${rolle.kreis}`}>
                                 <IonIcon icon={ICON_PERSON_GEFUELLT} />
                               </div>
                               <div className="app-list-item__content">
@@ -573,7 +582,7 @@ const SimpleCreateChatModal: React.FC<SimpleCreateChatModalProps> = ({ onClose, 
                                 {isAdmin && targetUser.role_description && (
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_GRUPPE} style={{ color: rollenTextFarbeVar(targetUser.role_name, 'teamer') }} />
+                                      <IonIcon icon={ICON_GRUPPE} className={rolle.schrift} />
                                       {targetUser.role_description}
                                     </span>
                                   </div>

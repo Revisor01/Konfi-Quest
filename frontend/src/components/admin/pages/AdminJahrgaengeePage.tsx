@@ -61,7 +61,7 @@ import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -451,10 +451,14 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   {zuweisbare.map((person, index) => {
                     const istGewaehlt = ausgewaehlt[person.id] || false;
+                    // Strich, Auswahl-Grund und Rollenwort in der Farbe der
+                    // Rolle (utils/rollenNamen: rollenDarstellung, 02.10.2026)
+                    // statt Jahrgangsfarbe und pauschalem Indigo.
+                    const rolle = rollenDarstellung(person.role_name);
                     return (
                       <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                         key={person.id}
-                        className="app-list-item app-list-item--jahrgang"
+                        className={`app-list-item ${rolle.strich}${istGewaehlt ? ' app-list-item--selected' : ''}`}
                         onClick={() => !loading && setAusgewaehlt(prev => ({ ...prev, [person.id]: !istGewaehlt }))}
                         style={{
                           cursor: loading ? 'default' : 'pointer',
@@ -462,13 +466,12 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          marginBottom: index < zuweisbare.length - 1 ? 'var(--app-abstand-eng)' : '0',
-                          background: istGewaehlt ? 'rgba(var(--app-color-users-rgb), 0.08)' : undefined
+                          marginBottom: index < zuweisbare.length - 1 ? 'var(--app-abstand-eng)' : '0'
                         }}
                       >
                         <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{person.display_name}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
-                          <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)' }}>
+                          <span className={rolle.schrift} style={{ fontSize: 'var(--app-text-klein)' }}>
                             {rollenName(person.role_name)}
                           </span>
                           {istGewaehlt && <IonIcon icon={ICON_ZUSAGE_GEFUELLT} style={{ color: 'var(--app-color-success)' }} />}

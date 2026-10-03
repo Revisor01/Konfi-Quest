@@ -9,10 +9,24 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Geändert
+- Gemeindeleitung (Indigo), Leitung (Petrol) und Teamer:innen (Beere) stehen
+  in jeder Personenliste in ihrer eigenen Farbe — am Strich links, am Kreis,
+  an der Marke in der Ecke und an den kleinen Symbolen: bei den
+  Chat-Mitgliedern, beim Hinzufügen von Mitgliedern, beim Anlegen eines Chats,
+  in der Benutzerliste, in den offenen Einladungen, beim Zuordnen von Team und
+  Leitung zu einem Event und beim Zugriff auf einen neuen Jahrgang.
+
 ### Behoben
 - In der Mitgliederliste eines Chats trug die Marke in der Ecke die Farbe der
   Rolle aus der Stamm-Gemeinde; Personen, die eine Gemeinde zusätzlich
   betreuen, erscheinen dort jetzt mit ihrer Rolle in dieser Gemeinde.
+- Beim Anlegen eines Chats stand jede Leitung und Gemeindeleitung in der Farbe
+  der Teamer:innen.
+- Die Gemeindeleitung einer Gemeinde stand beim Bearbeiten der Gemeinde in der
+  Farbe der Teamer:innen.
+- Beim Zuordnen der Leitung zu einem Event heißt die Gemeindeleitung jetzt
+  „Gemeindeleitung" statt „Leitung".
 
 ### Sonstiges
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und

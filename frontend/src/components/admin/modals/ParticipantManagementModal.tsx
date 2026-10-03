@@ -39,6 +39,7 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import { uhrzeit } from '../../../utils/dateUtils';
 import { fehlerText } from '../../../utils/fehler';
 import { eintragenMitRueckfrage, type UeberbuchenFrage } from '../../../utils/ueberbuchen';
+import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 
 interface Konfi {
   id: number;
@@ -486,11 +487,17 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                     {filteredKonfis.map((konfi) => {
                       const isSelected = selectedKonfis.includes(konfi.id);
+                      // Team und Leitung in der Farbe ihrer Rolle (utils/
+                      // rollenNamen: rollenDarstellung, 02.10.2026) -- bis
+                      // dahin trug jede Person die Termin-Farbe. Konfis bleiben
+                      // in der Termin-Farbe wie bisher.
+                      const imTeam = konfi.role_name !== 'konfi';
+                      const rolle = imTeam ? rollenDarstellung(konfi.role_name) : null;
 
                       return (
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={konfi.id}
-                          className="app-list-item app-list-item--events"
+                          className={`app-list-item ${rolle ? rolle.strich : 'app-list-item--events'}${rolle && isSelected ? ' app-list-item--selected' : ''}`}
                           onClick={() => handleKonfiSelection(konfi.id)}
                           style={{
                             cursor: 'pointer',
@@ -498,20 +505,23 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             marginBottom: '0',
-                            background: isSelected ? 'rgba(var(--app-color-events-rgb), 0.08)' : undefined
+                            background: !rolle && isSelected ? 'rgba(var(--app-color-events-rgb), 0.08)' : undefined
                           }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)', flex: 1, minWidth: 0 }}>
-                            <div className="app-icon-circle app-icon-circle--events">
+                            <div className={`app-icon-circle ${rolle ? rolle.kreis : 'app-icon-circle--events'}`}>
                               <IonIcon icon={ICON_PERSON_GEFUELLT} />
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div className="app-list-item__title">{konfi.name}</div>
                               <div className="app-list-item__subtitle">
+                                {/* Das Wort nach der Rolle (utils/rollenNamen):
+                                    Gemeindeleitung und Leitung hiessen hier
+                                    beide "Leitung". */}
                                 {konfi.role_name === 'teamer'
-                                  ? `Teamer:in${konfi.jahrgang_name ? ` \u00B7 ${konfi.jahrgang_name}` : ''}`
+                                  ? `${rollenName('teamer')}${konfi.jahrgang_name ? ` \u00B7 ${konfi.jahrgang_name}` : ''}`
                                   : (konfi.role_name === 'admin' || konfi.role_name === 'org_admin')
-                                    ? 'Leitung'
+                                    ? rollenName(konfi.role_name)
                                     : (konfi.jahrgang_name || '')}
                               </div>
                             </div>

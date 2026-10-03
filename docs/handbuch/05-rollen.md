@@ -159,9 +159,18 @@ Schild für die Leitung, eine Person für Teamer:innen. Wer mit dem Finger darau
 bleibt, liest das Wort.
 
 Jede Rolle hat dazu ihre eigene Farbe: **Indigo** für die Gemeindeleitung,
-**Petrol** für die Leitung, **Beere** für Teamer:innen. So stehen die Karten
-in der Benutzerliste, die Rollen beim Anlegen und Einladen, die offenen
-Einladungen und die Marke in der Ecke bei den Mitgliedern eines Chats.
+**Petrol** für die Leitung, **Beere** für Teamer:innen; Konfis behalten ihr
+Lila. Die Farbe trägt jede Karte einer Person an allen Stellen zugleich — am
+Strich links, am Kreis, an der Marke in der Ecke und an den kleinen Symbolen
+bei der Rolle. So stehen die Personen in der Benutzerliste, in den offenen
+Einladungen, bei den Mitgliedern eines Chats, beim Hinzufügen von Mitgliedern
+und beim Anlegen eines Chats, in der Gemeindeleitung einer Gemeinde, beim
+Zuordnen von Team und Leitung zu einem Event und beim Zugriff auf einen neuen
+Jahrgang; die Rollen beim Anlegen und Einladen ebenso. Maßgeblich ist die Rolle
+in der Gemeinde, in der du gerade arbeitest.
+
+In der Teilnehmerliste eines Events zeigen Strich, Kreis und Marke dagegen den
+Stand der Teilnahme (gebucht, anwesend, abwesend, abgemeldet), nicht die Rolle.
 
 Wie Konten angelegt werden und wie jede Rolle zu einem Passwort kommt, steht im
 Kapitel [Passwörter und Zugänge](35-passwoerter.md).

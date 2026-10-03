@@ -67,7 +67,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { generateStrongPassword } from '../../../utils/passwortVorschlag';
 import { tageBis } from '../../shared/eventFormatting';
 import { datumKurz } from '../../../utils/dateUtils';
-import { rollenName } from '../../../utils/rollenNamen';
+import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
 
 interface Organization {
@@ -122,6 +122,10 @@ interface MemberSearchResult {
   primary_organization_name?: string;
   primary_role_name?: string;
 }
+
+// GET /organizations/:id/admins liefert nur die Gemeindeleitung (org_admin);
+// ihre Farbe aus derselben Stelle wie jede Personenliste (02.10.2026).
+const GEMEINDELEITUNG = rollenDarstellung('org_admin');
 
 const MEMBER_ROLE_OPTIONS = ['org_admin', 'admin', 'teamer'].map((value) => ({
   value, label: rollenName(value)
@@ -1009,6 +1013,8 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                 {/* Bestehende Admins */}
                 {orgAdmins.length > 0 ? (
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    {/* Die Gemeindeleitung in IHRER Farbe (Indigo) -- bis
+                        02.10.2026 stand sie hier in der Teamer-Farbe. */}
                     {orgAdmins.map((admin) => (
                       <div key={admin.id} style={{ marginBottom: 'var(--app-abstand-eng)' }}>
                         <IonItem
@@ -1027,13 +1033,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                           }}
                         >
                           <div
-                            className="app-list-item app-list-item--teamer"
+                            className={`app-list-item ${GEMEINDELEITUNG.strich}`}
                             style={{ width: '100%', position: 'relative', overflow: 'hidden' }}
                           >
                             <div className="app-list-item__row">
                               <div className="app-list-item__main">
                                 <div
-                                  className="app-icon-circle app-icon-circle--lg app-icon-circle--teamer"
+                                  className={`app-icon-circle app-icon-circle--lg ${GEMEINDELEITUNG.kreis}`}
                                   style={{ color: 'white', fontWeight: 'var(--app-schrift-halbfett)' }}
                                 >
                                   {getInitials(admin.display_name)}
@@ -1042,12 +1048,12 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                                   <div className="app-list-item__title">{admin.display_name}</div>
                                   <div className="app-list-item__meta">
                                     <span className="app-list-item__meta-item">
-                                      <IonIcon icon={ICON_PERSON} style={{ color: 'var(--app-text-teamer)' }} />
+                                      <IonIcon icon={ICON_PERSON} className={GEMEINDELEITUNG.schrift} />
                                       {admin.username}
                                     </span>
                                     {admin.email && (
                                       <span className="app-list-item__meta-item">
-                                        <IonIcon icon={ICON_MAIL} style={{ color: 'var(--app-text-teamer)' }} />
+                                        <IonIcon icon={ICON_MAIL} className={GEMEINDELEITUNG.schrift} />
                                         {admin.email}
                                       </span>
                                     )}
