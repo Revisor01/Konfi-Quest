@@ -20,6 +20,9 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import type { AnzeigeBadge, ApiBadge, BadgeUebersicht } from '../../../types/dashboard';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import { WebLaden } from '../../web/WebZustaende';
 
 /**
  * Nur die Punktefelder aus GET /konfi/profile, die diese Seite braucht —
@@ -36,6 +39,8 @@ const KonfiBadgesPage: React.FC = () => {
   const { refreshAllCounts } = useBadge();
   const { pageRef } = useModalPage('konfi-badges');
   const [selectedFilter, setSelectedFilter] = useState('alle');
+  // Browser ab 992 px: die Web-Fassung (BadgesView -> web/WebBadgesRaster).
+  const breit = useBreitesLayout();
 
   // --- useOfflineQuery: Badges ---
   const { data: badgeData, loading: badgesLoading, refresh: refreshBadges, refreshLive: refreshBadgesLive } = useOfflineQuery<BadgeUebersicht>(
@@ -180,6 +185,23 @@ const KonfiBadgesPage: React.FC = () => {
       };
     });
   })();
+
+  if (breit) {
+    return (
+      <WebSeite bereich="Badges" titel="Deine Badges" untertitel="Sammle alle Erfolge!" pageRef={pageRef}>
+        {loading ? (
+          <WebLaden kacheln={4} karten={2} text="Badges werden geladen." />
+        ) : (
+          <BadgesView
+            badges={processedBadges}
+            badgeStats={badgeStats}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+          />
+        )}
+      </WebSeite>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner message="Badges werden geladen..." />;

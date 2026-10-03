@@ -41,6 +41,8 @@ import {
 import { getIconFromString } from '../../../utils/badgeIcons';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import { FARBEN } from '../../../theme/colors';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebBadgesRaster from '../web/WebBadgesRaster';
 
 
 
@@ -64,11 +66,14 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 }) => {
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null, showProgress: true });
   const [searchText, setSearchText] = useState('');
+  // Browser ab 992 px: die Web-Fassung (web/WebBadgesRaster) mit eigenen Filtern.
+  const breit = useBreitesLayout();
 
-  // Badges nach Kategorien gruppieren
-  const getBadgeCategories = () => {
+  // Badges nach Kategorien gruppieren. Ohne Angaben gelten Filter und Suche der
+  // App-Ansicht; die Web-Fassung fragt ungefiltert und filtert selbst.
+  const getBadgeCategories = (filter: string = selectedFilter, suche: string = searchText) => {
     let filtered: Badge[];
-    switch (selectedFilter) {
+    switch (filter) {
       case 'nicht_erhalten':
         filtered = badges.filter(badge => !badge.is_earned);
         break;
@@ -80,8 +85,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
     }
 
     // Suchtext-Filter
-    if (searchText.trim()) {
-      const query = searchText.trim().toLowerCase();
+    if (suche.trim()) {
+      const query = suche.trim().toLowerCase();
       filtered = filtered.filter(badge =>
         badge.name.toLowerCase().includes(query) ||
         (badge.description && badge.description.toLowerCase().includes(query))
@@ -146,6 +151,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       cssClass: 'badge-detail-popover badge-popover-auto-width'
     });
   };
+
+  if (breit) {
+    return <WebBadgesRaster kategorien={getBadgeCategories('alle', '')} badgeStats={badgeStats} />;
+  }
 
   return (
     <div>

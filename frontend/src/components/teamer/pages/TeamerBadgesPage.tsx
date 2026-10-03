@@ -19,6 +19,9 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import { WebLaden } from '../../web/WebZustaende';
 
 interface TeamerBadgeAPI {
   id: number;
@@ -49,6 +52,8 @@ interface TeamerBadgeResponse {
 const TeamerBadgesPage: React.FC = () => {
   const { user } = useApp();
   const [selectedFilter, setSelectedFilter] = useState('alle');
+  // Browser ab 992 px: die Web-Fassung (BadgesView -> konfi/web/WebBadgesRaster).
+  const breit = useBreitesLayout();
 
   // Abzeichen-Generation v2 (31.08.2026): GET /teamer/badges/v2 liefert
   // dieselbe Huelle wie die Konfi-Route — { available, earned, stats } — und
@@ -136,6 +141,28 @@ const TeamerBadgesPage: React.FC = () => {
   // Direkt aus der Antwort statt selbst gezaehlt: Der Server kennt auch die
   // zurueckgehaltenen (unverdienten geheimen) Abzeichen.
   const badgeStats = badgesData?.stats || { totalVisible: 0, totalSecret: 0 };
+
+  if (breit) {
+    return (
+      <WebSeite
+        bereich="Profil"
+        titel="Teamer-Badges"
+        untertitel="Was du gesammelt hast"
+        zurueck={{ href: '/teamer/profile', text: 'Profil' }}
+      >
+        {loading ? (
+          <WebLaden kacheln={4} karten={2} text="Badges werden geladen." />
+        ) : (
+          <BadgesView
+            badges={processedBadges}
+            badgeStats={badgeStats}
+            selectedFilter={selectedFilter}
+            onFilterChange={setSelectedFilter}
+          />
+        )}
+      </WebSeite>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner message="Badges werden geladen..." />;
