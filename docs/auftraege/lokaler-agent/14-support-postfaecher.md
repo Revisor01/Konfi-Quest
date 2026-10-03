@@ -33,9 +33,12 @@ bleibt das aus; die Support-Ansicht sagt dann „noch nicht eingerichtet".
 - [ ] **3. Stack-Variablen in Portainer setzen** (Stack 249):
       `MAIL_IMAP_HOST`, `MAIL_IMAP_PORT` (nur wenn nicht 993),
       `MAIL_MOIN_USER`, `MAIL_MOIN_PASS`, `MAIL_SUPPORT_USER`,
-      `MAIL_SUPPORT_PASS`. Verschickt der Mailserver für diese Postfächer
-      über einen anderen SMTP-Host als `SMTP_HOST`, zusätzlich
-      `MAIL_SMTP_HOST` (und `MAIL_SMTP_PORT`).
+      `MAIL_SUPPORT_PASS`. SMTP braucht nichts Eigenes: Antworten gehen über
+      `SMTP_HOST`/`SMTP_PORT`, angemeldet mit Benutzer und Passwort des
+      jeweiligen Postfachs — so kommt die Mail wirklich von moin@ bzw.
+      support@. Nur wenn der Anbieter für diese Postfächer einen anderen
+      SMTP-Server oder Port nennt, zusätzlich `MAIL_SMTP_HOST` und
+      `MAIL_SMTP_PORT`. Ins Ergebnis: ob das nötig war (ja/nein).
 
 - [ ] **4. Stack-Datei ergänzen.** In der Stack-Datei in Portainer im Block
       `environment: &backend_env` dieselben Zeilen eintragen wie in der
