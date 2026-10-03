@@ -426,12 +426,23 @@ describe('Gestaltung nur aus Tokens', () => {
   });
 });
 
-describe('Lange Namen', () => {
+describe('Lange Namen und niedrige Fenster', () => {
   const css = lies('src/components/layout/Seitenleiste.css');
 
   it('der Name steht auf bis zu zwei Zeilen -- „Kirchengemeinde Musterdorf" endet nicht als „Kirchengemeinde …"', () => {
     expect(css).toMatch(/\.app-leistengemeinde__name\s*\{[^}]*-webkit-line-clamp:\s*2;[^}]*line-clamp:\s*2;/);
     // Die Rolle bleibt eine Zeile mit Ellipse.
     expect(css).toMatch(/\.app-leistengemeinde__rolle\s*\{[^}]*text-overflow:\s*ellipsis;[^}]*white-space:\s*nowrap;/);
+  });
+
+  it('der scrollende Mittelteil der Leiste zeigt mit zarten Schatten, dass dahinter etwas steht -- nur Tokens', () => {
+    // Mit den Support-Gruppen reicht ein Laptop-Fenster nicht fuer alle Eintraege.
+    const regel = css.match(/\.app-seitenleiste__liste\s*\{([^}]*)\}/)![1];
+    expect(regel).toMatch(/overflow-y:\s*auto;/);
+    // Zwei Deckflaechen, die mitscrollen (local), zwei feste Schatten (scroll).
+    expect(regel.match(/no-repeat local/g)).toHaveLength(2);
+    expect(regel.match(/no-repeat scroll/g)).toHaveLength(2);
+    expect(regel).toContain('rgb(var(--app-glasleiste-rgb))');
+    expect(regel).toContain('rgba(var(--app-text-system-rgb), 0.28)');
   });
 });

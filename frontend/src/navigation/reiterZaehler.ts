@@ -23,7 +23,8 @@ import { supportMailZahl, useSupportMailZaehler } from './supportMailZaehler';
  *
  * Die zwei Zahlen der Support-Ansicht (03.10.2026) kommen aus
  * navigation/supportMailZaehler.ts. Abgerufen werden sie nur, wo die Leiste
- * sie zeigt (`supportMailLaden`, Seitenleiste im Baum super_admin) -- die
+ * sie zeigt (`supportMailLaden`, Seitenleiste im Baum super_admin und in
+ * Simons Konto, dem die Leiste die Support-Gruppen anhaengt) -- die
  * Reiterleiste der Apps fragt nie.
  */
 export const useReiterZaehler = ({ supportMailLaden = false }: { supportMailLaden?: boolean } = {}): Record<BadgeKey, number> => {

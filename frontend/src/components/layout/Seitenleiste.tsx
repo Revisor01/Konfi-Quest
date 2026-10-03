@@ -7,6 +7,8 @@ import type { MenueEintrag } from '../../navigation/routes';
 import { useReiterZaehler, zaehlerText } from '../../navigation/reiterZaehler';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import { rolleVonUser } from '../../navigation/useSeitenBereit';
+import { SUPPORT_MENUE, SUPPORT_START } from '../../navigation/supportMenue';
+import { istSuperAdmin } from '../../utils/superAdmin';
 import LeistenGemeinde from './LeistenGemeinde';
 import { ICON_ABMELDEN, ICON_ZURUECK } from '../shared/icons';
 import './Seitenleiste.css';
@@ -23,6 +25,13 @@ import './Seitenleiste.css';
 // eigene Flaeche -- in der Kopfzeile steht er im breiten Fenster nicht mehr),
 // Profil und Abmelden. Die Zahlen an den Eintraegen rechnet dieselbe Funktion
 // wie die Reiterleiste (navigation/reiterZaehler.ts).
+//
+// Simons Konto (Gemeindeleitung mit Super-Admin-Merkmal, 03.10.2026: „Ich will
+// in meinem Account, also in einer geteilten Gemeinde und Support, auch die
+// Seitennavigation wie nur Support zusätzlich zu meiner") bekommt unter den
+// eigenen Eintraegen die Gruppen der Support-Ansicht angehaengt -- dieselben
+// Eintraege und Zahlen wie im reinen Support-Konto. Der Baum der Leitung
+// selbst bleibt unveraendert (andere Leitungen sehen dort nichts davon).
 //
 // Echte Links (<a href>) statt Knoepfe: Mittelklick und Strg-Klick oeffnen
 // einen neuen Tab, Rechtsklick kopiert die Adresse, die Statuszeile zeigt
@@ -62,19 +71,28 @@ const Seitenleiste: React.FC = () => {
   // Leiste die Eintraege einer anderen Rolle als das Outlet daneben.
   const rolle = rolleVonUser(user, user?.role_name === 'super_admin');
   const baum = BAEUME[rolle];
+  // Die Support-Gruppen kommen zu den eigenen Eintraegen dazu, wenn das Konto
+  // Super-Admin-Recht hat UND eine Gemeinde (Baum nicht super_admin, dort
+  // stehen sie schon) UND der Baum die Seiten der Support-Ansicht traegt --
+  // sonst fuehrte der Klick ins Leere. Wer kein Merkmal hat (Gemeindeleitung,
+  // Leitung, Team, Konfi), sieht nichts davon; der Server haelt ohnehin 403.
+  const mitSupport = rolle !== 'super_admin'
+    && istSuperAdmin(user)
+    && baum.routes.some((r) => r.path === SUPPORT_START);
+  const menue: MenueEintrag[] = mitSupport ? [...(baum.menue ?? []), ...SUPPORT_MENUE] : (baum.menue ?? []);
   // Die Zahlen der Support-Mail holt die Leiste nur, wenn sie sie zeigt
-  // (Baum super_admin, Anfragen und Posteingang).
+  // (Anfragen und Posteingang: Baum super_admin und Simons Konto).
   const zaehler = useReiterZaehler({
-    supportMailLaden: (baum.menue ?? []).some((e) => e.badge !== undefined && SUPPORT_MAIL_ZAEHLER.includes(e.badge)),
+    supportMailLaden: menue.some((e) => e.badge !== undefined && SUPPORT_MAIL_ZAEHLER.includes(e.badge)),
   });
 
   const oben: MenueEintrag[] = [
     ...baum.tabs.map(({ href, label, icon, badge }) => ({ path: href, label, icon, badge })),
-    ...(baum.menue ?? []).filter((e) => !e.gruppe),
+    ...menue.filter((e) => !e.gruppe),
   ];
   // Gruppen in der Reihenfolge ihres ersten Auftretens in `menue`.
   const gruppen: Array<{ name: string; eintraege: MenueEintrag[] }> = [];
-  for (const e of baum.menue ?? []) {
+  for (const e of menue) {
     if (!e.gruppe) continue;
     let gruppe = gruppen.find((g) => g.name === e.gruppe);
     if (!gruppe) {

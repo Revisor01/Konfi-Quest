@@ -14,7 +14,8 @@ import type { MenueEintrag } from './routes';
 // "Verwaltung und Support-Dashboard sind eine Ansicht").
 //
 // EINE Liste fuer zwei Stellen: die Seitenleiste der Web-Version (Feld
-// `menue` im Baum super_admin, rollenBaeume.ts) und die Uebersichtsseite
+// `menue` im Baum super_admin, rollenBaeume.ts, und in Simons Konto
+// angehaengt an seine eigenen Eintraege) und die Uebersichtsseite
 // /admin/support, die auf schmalen Bildschirmen und in einem Konto mit
 // Gemeinde (Simons Konto, Weg ueber "Mehr") denselben Weg zu allen Bereichen
 // bietet. Eine neue Seite der Support-Ansicht kommt hier dazu und steht damit
@@ -49,3 +50,15 @@ export const SUPPORT_BEREICHE: SupportBereich[] = [
   { path: '/admin/metrics', label: 'Betrieb', icon: ICON_PULS, gruppe: 'Betrieb',
     beschreibung: 'Antwortzeiten, Fehler und Last des Servers' },
 ];
+
+/**
+ * Die Bereiche als Eintraege der Seitenleiste (ohne die Beschreibung, die nur
+ * die Uebersichtsseite braucht). EINE Rechnung fuer beide Leisten, die sie
+ * zeigen: den Baum super_admin (Support-Konto ohne Gemeinde, rollenBaeume.ts)
+ * und die Leiste in Simons Konto -- Gemeindeleitung mit Super-Admin-Merkmal --,
+ * die sie nach den eigenen Eintraegen anhaengt (components/layout/
+ * Seitenleiste.tsx, 03.10.2026).
+ */
+export const SUPPORT_MENUE: MenueEintrag[] = SUPPORT_BEREICHE.map(({ path, label, icon, gruppe, badge }) => ({
+  path, label, icon, gruppe, badge,
+}));

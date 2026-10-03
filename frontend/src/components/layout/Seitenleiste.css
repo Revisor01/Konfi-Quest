@@ -122,12 +122,22 @@
 }
 
 /* Mittelteil: Reiter, `menue`, Gruppen -- scrollt, wenn das Fenster
-   niedrig ist; Kopf und Fuss bleiben stehen. */
+   niedrig ist; Kopf und Fuss bleiben stehen. In Simons Konto kommen die
+   Gruppen der Support-Ansicht dazu, dann reicht ein Laptop-Fenster nicht
+   mehr fuer alles: Ein zarter Schatten am Rand zeigt, dass dahinter noch
+   etwas steht (Scroll-Schatten: die ersten beiden Verlaeufe decken die
+   Schatten ab, solange der Rand erreicht ist -- sie scrollen mit, die
+   Schatten stehen fest). Nur Tokens. */
 .app-seitenleiste__liste {
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;
   padding: var(--app-abstand-mini) var(--app-abstand-eng);
+  background:
+    linear-gradient(rgb(var(--app-glasleiste-rgb)) 30%, rgba(var(--app-glasleiste-rgb), 0)) top / 100% var(--app-abstand-gross) no-repeat local,
+    linear-gradient(rgba(var(--app-glasleiste-rgb), 0), rgb(var(--app-glasleiste-rgb)) 70%) bottom / 100% var(--app-abstand-gross) no-repeat local,
+    linear-gradient(rgba(var(--app-text-system-rgb), 0.28), rgba(var(--app-text-system-rgb), 0)) top / 100% var(--app-abstand-schmal) no-repeat scroll,
+    linear-gradient(rgba(var(--app-text-system-rgb), 0), rgba(var(--app-text-system-rgb), 0.28)) bottom / 100% var(--app-abstand-schmal) no-repeat scroll;
 }
 
 .app-seitenleiste__gruppe {

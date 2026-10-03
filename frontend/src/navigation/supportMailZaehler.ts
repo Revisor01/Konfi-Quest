@@ -15,9 +15,11 @@ import { zaehlerLesen } from '../utils/supportMail';
 //
 // Abgerufen wird GET /support/mail/zaehler nur, solange eine Stelle die Zahl
 // wirklich zeigt (`useSupportMailZaehler(true)`) und das Konto
-// Super-Admin-Recht hat. Die Reiterleiste der Apps fragt nie: Simons Konto
-// (Gemeindeleitung mit Merkmal) traegt dort keinen Support-Eintrag, und ein
-// Abruf alle zwei Minuten auf dem Handy waere Last ohne Anzeige.
+// Super-Admin-Recht hat. Die Reiterleiste der Apps fragt nie: Dort steht kein
+// Support-Eintrag, auch nicht in Simons Konto (Gemeindeleitung mit Merkmal),
+// und ein Abruf alle zwei Minuten auf dem Handy waere Last ohne Anzeige. In der
+// Leiste der Web-Version fragt Simons Konto dagegen mit: Sie haengt ihm die
+// Gruppen der Support-Ansicht an (03.10.2026).
 
 /** Nachladen, solange die Zahl zu sehen ist: alle zwei Minuten, wie das Abholen der Postfaecher. */
 export const ZAEHLER_TAKT_MS = 2 * 60 * 1000;
