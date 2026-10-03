@@ -17,7 +17,7 @@ import {
   ICON_WARNHINWEIS,
   ICON_WEITER_GEFUELLT,
 } from '../shared/icons';
-import { Message, Reaction, ChatRoomBase } from '../../types/chat';
+import { Message, ChatRoomBase } from '../../types/chat';
 import { REACTION_EMOJIS } from './constants';
 import { formatFileSize } from '../../utils/helpers';
 import VideoPreview from './VideoPreview';
@@ -25,54 +25,16 @@ import LazyImage from './LazyImage';
 import FortschrittsBalken from '../shared/FortschrittsBalken';
 import { ladeText, sendeText } from '../../utils/fortschritt';
 import { tastaturKlick } from '../../utils/tastatur';
-import { datumUhrzeit, uhrzeit } from '../../utils/dateUtils';
 import { rollenName } from '../../utils/rollenNamen';
-import { mimeAusDateiname } from '../../utils/dateiTypen';
-import { linkOeffnen } from '../../services/systemDialoge';
 import { sendeFehlerText } from './sendeFehler';
-
-// Endung -> Typ kommt aus der einen Tabelle der App (utils/dateiTypen.ts).
-// Bis zum 29.09.2026 stand hier eine eigene, kuerzere: .doc, .pptx, .txt und
-// .csv gingen als application/octet-stream an den Betrachter.
-const getMimeFromFileName = (fileName: string): string => mimeAusDateiname(fileName);
-
-// Wandelt URLs (http/https und www.) in klickbare Links um. Gibt ein Array aus
-// Text-Fragmenten und <a>-Elementen zurück, das direkt in JSX gerendert werden kann.
-// Links oeffnen extern (window.open _blank) und stoppen die Klick-Propagation,
-// damit nicht gleichzeitig die Nachricht selektiert/das Reaktionsmenue getriggert wird.
-const URL_REGEX = /((?:https?:\/\/|www\.)[^\s<]+[^\s<.,;:!?)\]}'"])/gi;
-
-const linkifyText = (text: string): React.ReactNode => {
-  if (!text) return text;
-  const parts = text.split(URL_REGEX);
-  return parts.map((part, i) => {
-    if (i % 2 === 1) {
-      // NUR http/https ins href. Die Regex oben laesst ohnehin nichts
-      // anderes durch -- aber sie und diese Zeile stehen getrennt, und wer
-      // die Regex einmal erweitert, soll hier nicht versehentlich ein
-      // `javascript:`-Ziel oeffnen. CodeQL (js/xss-through-dom) hat die
-      // Stelle gemeldet, weil es dem Wert nicht bis zur Regex folgt; der
-      // Schutz gehoert trotzdem dorthin, wo der Link entsteht.
-      const roh = part.startsWith('www.') ? `https://${part}` : part;
-      const href = /^https?:\/\//i.test(roh) ? roh : `https://${roh}`;
-      return (
-        <a
-          key={i}
-          href={href}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            linkOeffnen(href);
-          }}
-          style={{ color: 'inherit', textDecoration: 'underline', wordBreak: 'break-all' }}
-        >
-          {part}
-        </a>
-      );
-    }
-    return <React.Fragment key={i}>{part}</React.Fragment>;
-  });
-};
+import {
+  getMimeFromFileName,
+  linkifyText,
+  nachrichtZeit,
+  reaktionenGruppieren,
+  umfrageAblauf,
+  umfrageOptionen,
+} from './chatNachricht';
 
 interface MessageBubbleUser {
   id: number;
@@ -108,18 +70,6 @@ interface MessageBubbleProps {
   textareaRef: React.RefObject<HTMLIonTextareaElement | null>;
   onRetry?: (message: Message) => void;
 }
-
-const formatMessageTime = (dateString: string) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-
-  if (isToday) {
-    return uhrzeit(date);
-  } else {
-    return datumUhrzeit(date, { ohneJahr: true });
-  }
-};
 
 const MessageBubble: React.FC<MessageBubbleProps> = ({
   message,
@@ -438,13 +388,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             </div>
 
             {/* Ablaufdatum */}
-            {message.expires_at && (() => {
-              const expiresDate = new Date(message.expires_at);
-              const now = new Date();
-              const isExpired = expiresDate < now;
-              const timeRemaining = expiresDate.getTime() - now.getTime();
-              const hoursRemaining = Math.floor(timeRemaining / (1000 * 60 * 60));
-              const minutesRemaining = Math.floor((timeRemaining % (1000 * 60 * 60)) / (1000 * 60));
+            {(() => {
+              const ablauf = umfrageAblauf(message.expires_at);
+              if (!ablauf) return null;
+              const isExpired = ablauf.beendet;
 
               return (
                 <div style={{
@@ -460,50 +407,35 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 }}>
                   <IonIcon icon={ICON_UHRZEIT_GEFUELLT} style={{ fontSize: 'var(--app-text-basis)' }} />
                   {isExpired ? (
-                    <span style={{ fontWeight: 'var(--app-schrift-mittel)' }}>Beendet</span>
+                    <span style={{ fontWeight: 'var(--app-schrift-mittel)' }}>{ablauf.text}</span>
                   ) : (
-                    <span>
-                      Endet: {datumUhrzeit(expiresDate, { ohneJahr: true })}
-                      {hoursRemaining < 24 && ` (${hoursRemaining > 0 ? `${hoursRemaining}h ` : ''}${minutesRemaining}min)`}
-                    </span>
+                    <span>{ablauf.text}</span>
                   )}
                 </div>
               );
             })()}
 
             {/* Optionen */}
-            {message.options.map((option, index) => {
-              const optionVotes = message.votes?.filter(vote => vote.option_index === index) || [];
-              const totalVotes = message.votes?.length || 0;
-              const percentage = totalVotes > 0 ? (optionVotes.length / totalVotes) * 100 : 0;
-              const userVoted = message.votes?.some(vote =>
-                vote.user_id === user?.id && vote.user_type === user?.type && vote.option_index === index
-              );
+            {umfrageOptionen(message, user).map((opt) => {
               const isExclusive = !!message.exclusive_options;
-              const showNames = message.anonymous === false;
-              // Exklusiv: Option ist vergeben, wenn jemand sie gewählt hat — und
-              // für alle außer dem Waehler selbst gesperrt.
-              const takenByOther = isExclusive && optionVotes.length > 0 && !userVoted;
-              // Namen der Waehlenden (nur wenn nicht-anonym + Namen vorhanden).
-              const voterNames = optionVotes.map(v => v.user_name).filter(Boolean) as string[];
 
               return (
-                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={userVoted} aria-disabled={takenByOther}
-                  key={index}
-                  onClick={() => { if (!takenByOther) onVoteInPoll(message.id, index); }}
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={opt.gewaehlt} aria-disabled={opt.vergebenAnAndere}
+                  key={opt.index}
+                  onClick={() => { if (!opt.vergebenAnAndere) onVoteInPoll(message.id, opt.index); }}
                   style={{
                     // Flaechen und Rahmen aus Tokens (27.09.2026): 'white' mit
                     // Schrift aus --app-text-emphasis war im Dunkeln Weiss auf
                     // Weiss; Schwarz mit Deckkraft (vergeben, Rahmen)
                     // verschwindet auf dunklem Grund. Hell tragen die Tokens
                     // dieselben Toene wie vorher (#fff, #f5f5f5, #eee).
-                    background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : takenByOther ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',
-                    border: userVoted ? '2px solid var(--app-color-chat)' : '1px solid var(--app-border-soft)',
+                    background: opt.gewaehlt ? 'rgba(var(--app-color-chat-rgb), 0.12)' : opt.vergebenAnAndere ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',
+                    border: opt.gewaehlt ? '2px solid var(--app-color-chat)' : '1px solid var(--app-border-soft)',
                     borderRadius: 'var(--app-radius-knopf)',
                     padding: 'var(--app-abstand-mittel)',
                     marginBottom: 'var(--app-abstand-eng)',
-                    cursor: takenByOther ? 'not-allowed' : 'pointer',
-                    opacity: takenByOther ? 0.7 : 1,
+                    cursor: opt.vergebenAnAndere ? 'not-allowed' : 'pointer',
+                    opacity: opt.vergebenAnAndere ? 0.7 : 1,
                     position: 'relative',
                     overflow: 'hidden',
                     transition: 'all 0.2s ease'
@@ -516,8 +448,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       left: 0,
                       top: 0,
                       height: '100%',
-                      width: `${percentage}%`,
-                      background: userVoted ? 'rgba(var(--app-color-chat-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.06)',
+                      width: `${opt.prozent}%`,
+                      background: opt.gewaehlt ? 'rgba(var(--app-color-chat-rgb), 0.12)' : 'rgba(var(--app-color-chat-rgb), 0.06)',
                       transition: 'width 0.4s ease',
                       borderRadius: 'var(--app-radius-klein)'
                     }} />
@@ -531,7 +463,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     alignItems: 'center'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', minWidth: 0 }}>
-                      {userVoted && (
+                      {opt.gewaehlt && (
                         <div style={{
                           width: '18px',
                           height: '18px',
@@ -546,18 +478,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                         </div>
                       )}
                       <span style={{
-                        fontWeight: userVoted ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
+                        fontWeight: opt.gewaehlt ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
                         color: 'var(--app-text-emphasis)',
                         fontSize: 'var(--app-text-basis)'
                       }}>
-                        {option}
+                        {opt.text}
                       </span>
                     </div>
 
                     <div style={{
                       fontSize: 'var(--app-text-hinweis)',
                       fontWeight: 'var(--app-schrift-halbfett)',
-                      color: takenByOther ? 'var(--app-text-system)' : 'var(--app-text-chat)',
+                      color: opt.vergebenAnAndere ? 'var(--app-text-system)' : 'var(--app-text-chat)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 'var(--app-abstand-mini)',
@@ -565,18 +497,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     }}>
                       {isExclusive ? (
                         // Exklusiv: Status statt Prozent
-                        <span>{optionVotes.length > 0 ? (userVoted ? 'Deine Wahl' : 'Vergeben') : 'Frei'}</span>
+                        <span>{opt.stimmen > 0 ? (opt.gewaehlt ? 'Deine Wahl' : 'Vergeben') : 'Frei'}</span>
                       ) : (
                         <>
-                          <span>{optionVotes.length}</span>
-                          <span style={{ opacity: 0.7 }}>({percentage.toFixed(0)}%)</span>
+                          <span>{opt.stimmen}</span>
+                          <span style={{ opacity: 0.7 }}>({opt.prozent.toFixed(0)}%)</span>
                         </>
                       )}
                     </div>
                   </div>
 
                   {/* Namen der Waehlenden (nicht-anonyme Umfrage) */}
-                  {showNames && voterNames.length > 0 && (
+                  {opt.namen.length > 0 && (
                     <div style={{
                       position: 'relative',
                       zIndex: 1,
@@ -585,7 +517,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       color: 'var(--app-color-neutral)',
                       lineHeight: 1.4
                     }}>
-                      {voterNames.join(', ')}
+                      {opt.namen.join(', ')}
                     </div>
                   )}
                 </div>
@@ -710,7 +642,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
           marginTop: 'var(--app-abstand-mini)',
           textAlign: 'right'
         }}>
-          {formatMessageTime(message.created_at)}
+          {nachrichtZeit(message.created_at)}
           {message.queueStatus === 'pending' && !sendetGerade && (
             <IonIcon icon={ICON_UHRZEIT} style={{ fontSize: 'var(--app-text-klein)', marginLeft: 'var(--app-abstand-mini)', verticalAlign: 'middle' }} />
           )}
@@ -772,13 +704,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             gap: 'var(--app-abstand-mini)',
             marginTop: 'var(--app-abstand-kompakt)'
           }}>
-            {Object.entries(
-              message.reactions.reduce((acc, r) => {
-                if (!acc[r.emoji]) acc[r.emoji] = [];
-                acc[r.emoji].push(r);
-                return acc;
-              }, {} as { [key: string]: Reaction[] })
-            ).map(([emoji, reactions]) => {
+            {reaktionenGruppieren(message.reactions).map(([emoji, reactions]) => {
               const emojiData = REACTION_EMOJIS[emoji];
               const userHasReacted = reactions.some(
                 r => r.user_id === user?.id && r.user_type === user?.type

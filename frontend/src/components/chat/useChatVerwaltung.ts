@@ -147,5 +147,9 @@ export function useChatVerwaltung({
     darfTeamChatLeeren,
     handleChatOptions,
     handleClearChat,
+    // Einzeln, fuer die Web-Fassung: dort stehen Export und Verlassen als
+    // eigene Eintraege im Menue des Raums statt hinter einem Optionen-Blatt.
+    handleExportChat,
+    handleLeaveChat,
   };
 }

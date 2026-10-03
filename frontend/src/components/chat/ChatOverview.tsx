@@ -1,5 +1,4 @@
-import { fehlerText } from '../../utils/fehler';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import {
   IonPage,
@@ -21,15 +20,11 @@ import {
   IonLabel,
   IonSegment,
   IonSegmentButton,
-  useIonModal,
-  useIonAlert,
-  useIonViewWillEnter
 } from '@ionic/react';
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import {
   ICON_CHATS,
   ICON_CHATS_GEFUELLT,
-  ICON_EINSTELLUNGEN_GEFUELLT,
   ICON_FILTER,
   ICON_GRUPPE_GEFUELLT,
   ICON_HINZUFUEGEN_GEFUELLT,
@@ -40,24 +35,15 @@ import {
   ICON_UHRZEIT_GEFUELLT,
 } from '../shared/icons';
 
-import { useApp } from '../../contexts/AppContext';
-import { offlineBlockiert } from '../../utils/offlineAktion';
-import { useBadge } from '../../contexts/BadgeContext';
 import ZaehlerKugel from '../shared/ZaehlerKugel';
 import { SectionHeader, EmptyState } from '../shared';
 import { useModalPage } from '../../contexts/ModalContext';
-import { useOfflineQuery } from '../../hooks/useOfflineQuery';
-import { CACHE_TTL } from '../../services/offlineCache';
-import api from '../../services/api';
-import { onReconnect, initializeWebSocket } from '../../services/websocket';
-import { getToken } from '../../services/tokenStore';
-import { useLiveUpdate } from '../../contexts/LiveUpdateContext';
 import LoadingSpinner from '../common/LoadingSpinner';
-import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import { ChatRoomOverview } from '../../types/chat';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
-import { istTeamTyp } from '../../utils/chatRoles';
+import { raumAnzeigeName, raumArt, raumFarbe, raumSymbol, zeitKurz } from './chatRaeume';
+import { useChatUebersicht } from './useChatUebersicht';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
@@ -70,52 +56,24 @@ interface ChatOverviewRef {
 }
 
 const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onSelectRoom, selectedRoomId }, ref) => {
-  const { user, setError, isOnline } = useApp();
-  const [presentAlert] = useIonAlert();
-  const { chatUnreadByRoom } = useBadge();
-  // socketEpoch: nach Reconnect-mit-neuem-Token ist getSocket() ein anderes
-  // Objekt -> Listener am frischen Socket neu binden (gleiches Muster wie im
-  // BadgeContext).
-  const { socketEpoch } = useLiveUpdate();
-  const [searchText, setSearchText] = useState('');
-  const [filterType, setFilterType] = useState<string>('alle');
-
-  // Loeschrecht: nur Leitung/Admins (so prüft es auch das Backend,
-  // DELETE /chat/rooms/:roomId verlangt type === 'admin').
-  const isAdmin = user?.type === 'admin';
-  // Reiter "Team": alle, die selbst zum Team gehören — also auch Teamer:innen.
-  // Sie sind in Produktion in 4 Team-Chats, sahen den Reiter aber nicht, weil
-  // hier auf 'admin' geprüft wurde (gleiche Verwechslung wie in chatRoles).
-  const gehoertZumTeam = istTeamTyp(user?.type);
-
-  // Zentrale Logik: Ist das ein Team-Chat (= pink, gehört in den Team-Tab)?
-  // - Direktchat: Partner gehört zum Team (partner_user_type 'admin' ODER 'teamer')
-  // - type='admin': ausdrueckliche Team-Gruppe
-  // - type='group': reiner Team-Gruppenchat (alle Teilnehmer Teamer:innen)
-  // Konfi-Direktchats + gemischte/Konfi-Gruppen sind KEINE Team-Chats.
-  //
-  // chat_participants.user_type speichert 'teamer' als eigenen Wert (nicht als
-  // 'admin'). Die Prüfung nur auf 'admin' sortierte Direktchats mit
-  // Teamer:innen deshalb in den falschen Reiter.
-  const isTeamChat = (room: ChatRoomOverview): boolean => {
-    if (room.event_id) return false;
-    if (room.type === 'admin') return true;
-    if (room.type === 'direct') return istTeamTyp(room.partner_user_type);
-    if (room.type === 'group') return room.is_team_only === true;
-    return false;
-  };
-
-  const getRoomColorClass = (room: ChatRoomOverview): string => {
-    if (room.event_id) return 'events';
-    if (room.type === 'jahrgang') return 'chat-jahrgang';
-    // Team-Chats (Team-Gruppe / Team-DM / reine Team-group) -> pink
-    if (isTeamChat(room)) return 'team';
-    switch (room.type) {
-      case 'group': return 'group';     // gemischte/Konfi-Gruppe -> orange
-      case 'direct': return 'konfi';    // Konfi-DM -> lila
-      default: return 'konfi';
-    }
-  };
+  // Laden, Live-Updates, Suche, Reiter, Neuer Chat und Loeschen liegen in
+  // useChatUebersicht -- dieselbe Quelle wie die Raumliste der Web-Fassung.
+  const {
+    rooms,
+    loading,
+    refresh,
+    chatUnreadByRoom,
+    searchText,
+    setSearchText,
+    filterType,
+    setFilterType,
+    isAdmin,
+    gehoertZumTeam,
+    filteredRooms,
+    user,
+    neuenChatStarten,
+    deleteRoom,
+  } = useChatUebersicht({ onSelectRoom });
 
   // Nutze den useModalPage Hook, um die Seite zu registrieren
   const location = useAppLocation();
@@ -123,117 +81,8 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
   const tabId = location.pathname.startsWith('/admin') ? 'admin-chat' : 'chat';
   const { pageRef } = useModalPage(tabId);
 
-  // --- useOfflineQuery: Chat Rooms ---
-  // Defensiver select-Transform (Incident 13.06.2026): gecachte rooms-Responses
-  // können kaputt/unplausibel sein (z.B. nach der Teilnehmer-Explosion oder bei
-  // einem korrupten Cache-Eintrag). Statt beim Rendern zu crashen normalisieren
-  // wir hier: kein Array -> [], jeder Eintrag bekommt garantiert name/type/
-  // participant_count in sinnvoller Form. So kann kein einzelner Datensatz die
-  // ganze Chat-Liste (und damit per ErrorBoundary die ganze App) lahmlegen.
-  const sanitizeRooms = (raw: ChatRoomOverview[]): ChatRoomOverview[] => {
-    if (!Array.isArray(raw)) return [];
-    return raw
-      .filter(room => room && typeof room === 'object' && room.id != null)
-      .map(room => ({
-        ...room,
-        name: typeof room.name === 'string' ? room.name : '',
-        // participant_count defensiv: nur plausible Zahlen, sonst 0.
-        // Verhindert dass eine absurd grosse Zahl (Explosion) durchschlaegt.
-        participant_count:
-          typeof room.participant_count === 'number' && room.participant_count >= 0
-            ? room.participant_count
-            : 0,
-        // participants-Array bleibt nur wenn es wirklich ein Array ist
-        participants: Array.isArray(room.participants) ? room.participants : [],
-      }));
-  };
-
-  const { data: rooms, loading, refresh } = useOfflineQuery<ChatRoomOverview[]>(
-    'chat:rooms:' + user?.id,
-    () => api.get('/chat/rooms').then(r => r.data),
-    { ttl: CACHE_TTL.CHAT_ROOMS, select: sanitizeRooms }
-  );
-
-  // Live-Update der Chat-Räume wenn Badge Count sich ändert.
-  // Das ist der EINZIGE newMessage-getriebene Refresh-Trigger der Overview:
-  // BadgeContext haelt einen eigenen (socketEpoch-rebindenden) 'newMessage'-
-  // Listener, der refreshAllCounts() ruft -> chatUnreadByRoom ändert sich ->
-  // dieser Effect feuert refresh(). Ein zusaetzlicher eigener socket.on(
-  // 'newMessage')-Handler wäre redundant (3x /chat/rooms pro Nachricht) und
-  // hätte zudem KEIN socketEpoch-Rebind nach Reconnect -- deshalb bewusst
-  // entfernt (Audit Achse 4, Fund 2).
-  useEffect(() => {
-    if (rooms && rooms.length > 0) { // Nur wenn bereits Räume geladen sind
-      refresh(); // Silent reload via useOfflineQuery
-    }
-  }, [chatUnreadByRoom]);
-
-  // Bei Socket-Reconnect Raumliste neu laden
-  useEffect(() => {
-    const unsubReconnect = onReconnect(() => {
-      refresh(); // Silent reload bei Reconnect
-    });
-    return () => { unsubReconnect(); };
-  }, [refresh]);
-
-  // Live-Update der Raumliste bei Raum-Änderungen (Raum erstellt/gelöscht,
-  // Teilnehmer hinzugefuegt/entfernt/verlassen). Der Server sendet 'roomsChanged'
-  // an die persoenlichen User-Räume der betroffenen Nutzer (Audit Achse 2,
-  // Luecke 14). socketEpoch in den Deps -> Rebind am frischen Socket nach
-  // Reconnect-mit-neuem-Token (gleiche Disziplin wie der BadgeContext-Listener).
-  useEffect(() => {
-    const token = getToken();
-    if (!token || !user) return;
-
-    const socket = initializeWebSocket(token);
-    const handleRoomsChanged = () => {
-      refresh();
-    };
-    socket.on('roomsChanged', handleRoomsChanged);
-
-    return () => {
-      socket.off('roomsChanged', handleRoomsChanged);
-    };
-  }, [refresh, user, socketEpoch]);
-
-  // Bei Rückkehr zur View (z.B. nach ChatRoom) Raumliste aktualisieren.
-  // NICHT beim allerersten Betreten direkt nach dem Mount: Da lädt
-  // useOfflineQuery bereits — ionViewWillEnter feuert bei der Tab-Transition
-  // erst ~450 ms nach dem Mount (gemessen 24.08.2026), also NACH Abschluss
-  // des Mount-Fetches, und löste so in allen drei Rollen einen zweiten,
-  // identischen GET /chat/rooms aus.
-  const mountedAtRef = React.useRef(Date.now());
-  useIonViewWillEnter(() => {
-    if (Date.now() - mountedAtRef.current > 2000) {
-      refresh();
-    }
-  });
-
-  // Modal mit useIonModal Hook
-  const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
-    onClose: () => dismissChatModalHook(),
-    onSuccess: async (roomId?: number) => {
-      dismissChatModalHook();
-      await refresh(); // Chatliste neu laden
-      // Direkt in den neu erstellten/gefundenen Chat springen statt auf der Liste
-      // zu bleiben. Raum frisch von der API holen (refresh-State ist evtl. noch
-      // nicht durchgereicht).
-      if (roomId) {
-        try {
-          const freshRooms: ChatRoomOverview[] = (await api.get('/chat/rooms')).data;
-          const target = freshRooms.find(r => r.id === roomId);
-          if (target) onSelectRoom(target);
-        } catch (err) {
-          console.error('Konnte neuen Chat nicht oeffnen:', err);
-        }
-      }
-    }
-  });
-
   const handleCreateNewChat = () => {
-    presentChatModalHook({
-      presentingElement: pageRef.current || undefined
-    });
+    neuenChatStarten(pageRef.current || undefined);
   };
 
   // Expose refresh to parent component (backward-compatible as loadChatRooms)
@@ -241,157 +90,11 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
     loadChatRooms: () => refresh()
   }));
 
-  const deleteRoom = (room: ChatRoomOverview) => {
-    if (offlineBlockiert(isOnline, setError)) return;
-    presentAlert({
-      header: 'Chat löschen?',
-      message: `"${room.name}" wird für alle Teilnehmer:innen gelöscht. Alle Nachrichten und Dateien gehen unwiderruflich verloren.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Löschen',
-          role: 'destructive',
-          handler: () => {
-            // Direkt löschen
-            api.delete(`/chat/rooms/${room.id}`)
-              .then(() => {
-                refresh();
-              })
-              .catch((error: unknown) => {
-                const data = typeof error === 'object' && error !== null
-                  ? (error as { response?: { data?: { canForceDelete?: boolean; error?: string } } }).response?.data
-                  : undefined;
-                if (data?.canForceDelete) {
-                  // Hat Nachrichten - Force Delete nötig
-                  setTimeout(() => {
-                    presentAlert({
-                      header: 'Chat hat Nachrichten',
-                      message: `${data.error}\n\nTrotzdem löschen?`,
-                      buttons: [
-                        { text: 'Abbrechen', role: 'cancel' },
-                        {
-                          text: 'Trotzdem löschen',
-                          role: 'destructive',
-                          handler: () => {
-                            api.delete(`/chat/rooms/${room.id}?force=true`)
-                              .then(() => {
-                                refresh();
-                              })
-                              .catch(() => setError('Fehler beim Löschen'));
-                          }
-                        }
-                      ]
-                    });
-                  }, 300);
-                } else {
-                  setError(fehlerText(error, 'Fehler beim Löschen'));
-                }
-              });
-          }
-        }
-      ]
-    });
-  };
-
-  const filteredRooms = (rooms || [])
-    .filter(room => {
-      // Suchfilter (room.name ist durch sanitizeRooms garantiert ein String)
-      const matchesSearch = (room.name || '').toLowerCase().includes(searchText.toLowerCase());
-      if (!matchesSearch) return false;
-
-      // Typ-Filter
-      if (filterType === 'alle') return true;
-      // Ungelesen statt Direkt: Nach Chat-ART zu filtern hilft beim Wiederfinden
-      // kaum — man weiß ohnehin, wen man sucht, und dafuer gibt es die Suche.
-      // Die eigentliche Frage beim Oeffnen der Übersicht ist "wo muss ich
-      // ran?". Genau das beantwortet dieser Filter.
-      if (filterType === 'ungelesen') return (chatUnreadByRoom[room.id] || 0) > 0;
-      // Konfis-Tab: Jahrgangs-/Gruppenchats mit Konfis, KEINE reinen Team-Gruppen.
-      if (filterType === 'konfis') return (room.type === 'jahrgang' || room.type === 'group') && !isTeamChat(room);
-      // Team-Tab: Team-Gruppen + reine Team-group + Direktchats mit Teamer:innen.
-      if (filterType === 'team') return isTeamChat(room);
-      return true;
-    })
-    .sort((a, b) => {
-      // Immer der aktuellste Chat oben (nach letzter Nachricht), dynamisch nach
-      // unten durchgereicht — KEINE Gruppierung nach Team/Konfis. Die Team/Konfi-
-      // Filter-Tabs uebernehmen die Trennung, wenn man sie braucht.
-      const aTime = a.last_message?.created_at ? new Date(a.last_message.created_at).getTime() : 0;
-      const bTime = b.last_message?.created_at ? new Date(b.last_message.created_at).getTime() : 0;
-      return bTime - aTime; // Newest first
-    });
-
-  const formatLastMessageTime = (dateString: string) => {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    const now = new Date();
-    
-    // Prüfe auf gültiges Datum
-    if (isNaN(date.getTime())) return '';
-    
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-      return diffInMinutes < 1 ? 'Jetzt' : `${diffInMinutes}m`;
-    } else if (diffInHours < 24) {
-      return `${diffInHours}h`;
-    } else {
-      const diffInDays = Math.floor(diffInHours / 24);
-      return `${diffInDays}d`;
-    }
-  };
-
-  const getDisplayRoomName = (room: ChatRoomOverview) => {
-    // Für Direktchats: Zeige den Namen des Chat-Partners, nicht des eigenen Users
-    if (room.type === 'direct') {
-      // Finde den Chat-Partner (nicht der aktuelle User) — robust per user_id
-      // statt per user_type. chat_participants.user_type kennt drei Werte
-      // ('admin', 'teamer', 'konfi'); ein Vergleich darauf ginge fehl.
-      const otherParticipant = room.participants?.find(p => p.user_id !== user?.id);
-      
-      if (otherParticipant) {
-        return otherParticipant.display_name || otherParticipant.name || 'Unbekannt';
-      }
-      
-      // Fallback: verwende room.name wenn keine Participants geladen
-      return room.name || 'Direktchat';
-    }
-    
-    // Event-Chats mit Prefix
-    if (room.event_id) {
-      const name = room.name?.replace(/ - Chat$/, '') || 'Event';
-      return `Event: ${name}`;
-    }
-
-    // Für alle anderen Chat-Typen: normaler Name
-    return room.name || 'Chat';
-  };
-
-  const getRoomIcon = (room: ChatRoomOverview) => {
-    if (room.event_id) return ICON_TERMIN_GEFUELLT;
-    switch (room.type) {
-      case 'admin':
-        return ICON_EINSTELLUNGEN_GEFUELLT;
-      case 'jahrgang':
-        return ICON_GRUPPE_GEFUELLT;
-      case 'group':
-        return ICON_CHATS_GEFUELLT;
-      case 'direct':
-        return ICON_PERSON_GEFUELLT;
-      default:
-        return ICON_CHATS_GEFUELLT;
-    }
-  };
-
-  const getRoomSubtitle = (room: ChatRoomOverview) => {
-    if (room.event_id) return 'Event';
-    if (room.type === 'jahrgang') return 'Jahrgang';
-    if (room.type === 'admin' || room.type === 'group') return 'Gruppe';
-    if (room.type === 'direct') return 'Direkt';
-    return '';
-  };
+  const getRoomColorClass = raumFarbe;
+  const formatLastMessageTime = (dateString: string) => zeitKurz(dateString);
+  const getDisplayRoomName = (room: ChatRoomOverview) => raumAnzeigeName(room, user?.id);
+  const getRoomIcon = raumSymbol;
+  const getRoomSubtitle = raumArt;
 
   const getRoomTypeIcon = (room: ChatRoomOverview) => {
     if (room.event_id) return ICON_TERMIN_GEFUELLT;

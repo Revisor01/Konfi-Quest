@@ -57,6 +57,17 @@ export function useChatSocket({
   // Setup WebSocket for real-time updates (initial load via useOfflineQuery)
   useEffect(() => {
     if (!roomId) return;
+    // Die eigenen Horcher dieses Raums: beim Verlassen wird genau dieses Paar
+    // aus Ereignis und Funktion entfernt -- nie ein Ereignis als Ganzes.
+    // socket.off('newMessage') ohne Funktion nahm auch den Horcher des
+    // BadgeContext (rote Zahlen) und das 'connect' aus services/websocket.ts
+    // mit; in der Web-Fassung, wo die Raumliste neben dem Raum stehen bleibt,
+    // kam danach keine rote Zahl mehr live an (chatSocketFremdeHorcher.test).
+    const eigeneHorcher: Array<[string, (...args: unknown[]) => void]> = [];
+    const horche = <F extends (...args: never[]) => void>(ereignis: string, fn: F): F => {
+      eigeneHorcher.push([ereignis, fn as unknown as (...args: unknown[]) => void]);
+      return fn;
+    };
     // Ungelesen-Anzahl einfrieren, BEVOR markRoomAsRead sie auf 0 setzt.
     // Fallback auf room.unread_count (vom Server am room-Objekt), falls der
     // Badge-Context beim Oeffnen noch nicht aktualisiert hat -> sonst wäre die
@@ -80,10 +91,10 @@ export function useChatSocket({
       if (socket.connected) {
         joinRoom(roomId);
       }
-      socket.on('connect', handleConnect);
+      socket.on('connect', horche('connect', handleConnect));
 
       // Listen for new messages
-      socket.on('newMessage', (data: { roomId: number; message: Message }) => {
+      socket.on('newMessage', horche('newMessage', (data: { roomId: number; message: Message }) => {
         if (data.roomId === roomId) {
           if (data.message?.client_id) {
             pendingSendsRef.current.delete(data.message.client_id);
@@ -107,39 +118,39 @@ export function useChatSocket({
             return [...prev, data.message];
           });
         }
-      });
+      }));
 
       // Listen for deleted messages. Die Blase zeigt den Platzhalter anhand
       // von is_deleted (wie vom Server geliefert) — deleted_at allein wertet
       // sie nicht aus; ohne alsGeloescht blieb die Nachricht bis zum
       // naechsten Laden mit Inhalt stehen (28.09.2026).
-      socket.on('messageDeleted', (data: { roomId: number; messageId: number }) => {
+      socket.on('messageDeleted', horche('messageDeleted', (data: { roomId: number; messageId: number }) => {
         if (data.roomId === roomId) {
           setMessages(prev => prev.map(m =>
             m.id === data.messageId ? { ...alsGeloescht(m), deleted_at: new Date().toISOString() } : m
           ));
         }
-      });
+      }));
 
       // Team-Chat wurde von der Leitung geleert: alle Nachrichten sind weg,
       // der Raum bleibt. Auch die Cache-Kopie auffrischen, sonst kommen die
       // geleerten Nachrichten beim naechsten Oeffnen aus dem Cache zurueck.
-      socket.on('chatCleared', (data: { roomId: number }) => {
+      socket.on('chatCleared', horche('chatCleared', (data: { roomId: number }) => {
         if (data.roomId === roomId) {
           setMessages([]);
           refreshMessagesCache();
         }
-      });
+      }));
 
       // Listen for typing indicators
-      socket.on('userTyping', (data: { roomId: number; userId: number; userName: string }) => {
+      socket.on('userTyping', horche('userTyping', (data: { roomId: number; userId: number; userName: string }) => {
         if (data.roomId === roomId && data.userId !== userId) {
           // Could show typing indicator here
         }
-      });
+      }));
 
       // Listen for reaction added
-      socket.on('reactionAdded', (data: { roomId: number; messageId: number; reaction: Reaction }) => {
+      socket.on('reactionAdded', horche('reactionAdded', (data: { roomId: number; messageId: number; reaction: Reaction }) => {
         if (data.roomId === roomId) {
           setMessages(prev => prev.map(m => {
             if (m.id !== data.messageId) return m;
@@ -149,10 +160,10 @@ export function useChatSocket({
             return { ...m, reactions: [...reactions, data.reaction] };
           }));
         }
-      });
+      }));
 
       // Listen for reaction removed
-      socket.on('reactionRemoved', (data: { roomId: number; messageId: number; userId: number; userType: string; emoji: string }) => {
+      socket.on('reactionRemoved', horche('reactionRemoved', (data: { roomId: number; messageId: number; userId: number; userType: string; emoji: string }) => {
         if (data.roomId === roomId) {
           setMessages(prev => prev.map(m => {
             if (m.id !== data.messageId) return m;
@@ -164,14 +175,14 @@ export function useChatSocket({
             };
           }));
         }
-      });
+      }));
 
       // Listen for poll updates (live votes). Der Server liefert den kompletten,
       // aktuellen Poll-Stand -> Server gewinnt immer. Das ist die sichere
       // Variante: stammt das Event vom eigenen Vote, ist die eigene Stimme
       // serverseitig ohnehin schon enthalten. Wir ersetzen nur den Poll-Teil der
       // betroffenen Nachricht, nicht die ganze Nachricht (Audit Achse 2, 10b).
-      socket.on('pollUpdated', (data: { roomId: number; messageId: number; poll: PollStand | null }) => {
+      socket.on('pollUpdated', horche('pollUpdated', (data: { roomId: number; messageId: number; poll: PollStand | null }) => {
         const poll = data.poll;
         if (data.roomId !== roomId || !poll) return;
         setMessages(prev => prev.map(m => {
@@ -188,7 +199,7 @@ export function useChatSocket({
             votes: poll.votes ?? m.votes,
           };
         }));
-      });
+      }));
     }
 
     // Fallback: 30s-Poll als Backup für den Fall, dass der Socket still
@@ -232,14 +243,7 @@ export function useChatSocket({
       }
       const socket = getSocket();
       if (socket) {
-        socket.off('connect');
-        socket.off('newMessage');
-        socket.off('messageDeleted');
-        socket.off('chatCleared');
-        socket.off('userTyping');
-        socket.off('reactionAdded');
-        socket.off('reactionRemoved');
-        socket.off('pollUpdated');
+        for (const [ereignis, fn] of eigeneHorcher) socket.off(ereignis, fn);
       }
     };
   }, [roomId]);

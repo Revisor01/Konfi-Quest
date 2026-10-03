@@ -9,7 +9,9 @@ import { resolve } from 'path';
 const lies = (pfad: string) =>
   readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
-const raum = lies('src/components/chat/ChatRoom.tsx');
+// Die Logik des Raums liegt seit der Web-Fassung in useChatRaum (die App-Fassung
+// ChatRoom und die Web-Fassung zeichnen nur); gelesen wird beides.
+const raum = lies('src/components/chat/ChatRoom.tsx') + lies('src/components/chat/useChatRaum.ts');
 const sektionen = lies('src/components/chat/ChatRoomSections.tsx');
 const dateien = lies('src/components/chat/useChatDateien.ts');
 

@@ -189,8 +189,12 @@ describe('Sichtbarkeit und Touch-Verhalten (Quelltext)', () => {
   });
 
   it('ChatRoom schließt beim Abwählen auch den Reaktions-Picker', () => {
+    // Die Abwahl liegt seit der Web-Fassung in useChatRaum (auswahlAufheben);
+    // ChatRoom reicht sie an die Blasen weiter.
     const raumQuelle = lies('src/components/chat/ChatRoom.tsx');
-    const m = raumQuelle.match(/onDeselectMessage=\{([\s\S]*?)\}\n/);
+    expect(raumQuelle).toMatch(/onDeselectMessage=\{auswahlAufheben\}/);
+    const hook = lies('src/components/chat/useChatRaum.ts');
+    const m = hook.match(/const auswahlAufheben = \(\) => \{([\s\S]*?)\};\n/);
     expect(m).not.toBeNull();
     expect(m![1]).toMatch(/setSelectedMessage\(null\)/);
     expect(m![1]).toMatch(/setShowReactionPicker\(false\)/);
