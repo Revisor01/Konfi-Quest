@@ -22,6 +22,8 @@ import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
+import WebKonfis from '../web/leitung/WebKonfis';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
 import UserManagementModal from '../modals/UserManagementModal';
@@ -80,6 +82,9 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   const { setSuccess, setError, user, isOnline } = useApp();
   const router = useIonRouter();
   const { pageRef, presentingElement } = useModalPage('admin-konfis');
+  // Im Browser ab 992 px eine eigene Web-Fassung (web/leitung/WebKonfis.tsx);
+  // Daten, Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
   // Onboarding-Tour einmal pro Admin-Account (beim ersten Betreten der Konfis-Seite,
   // der Landing-Page für Admins/Org-Admins) — bzw. für Bestandsnutzer die
   // Änderungsanzeige nach einem Update. Nie beides gleichzeitig, dafür sorgt
@@ -364,6 +369,70 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     }
   };
 
+  // Tour, Aenderungsanzeige und Erklaerung: Vollbild-Ueberlagerungen, in der
+  // App wie in der Web-Fassung dieselben.
+  const ueberlagerungen = (
+    <>
+      {showOnboarding && (
+        <AdminOnboardingModal
+          onClose={closeOnboarding}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {/* Änderungsanzeige nach einem Update — meldet sich VON SELBST, genau
+          einmal je Minor-Version (useOnboardingWithUpdateOnce). Sie und die
+          Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
+          Karte bleibt weg, solange sie offen ist. */}
+      {showNeuerungen && (
+        <AdminUpdate230WalkthroughModal onClose={schliesseNeuerungen} />
+      )}
+
+      {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
+      {showUpdateWalkthrough && (
+        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="admin"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
+      )}
+    </>
+  );
+
+  if (breit) {
+    return (
+      <WebKonfis
+        konfis={konfis || []}
+        jahrgaenge={jahrgaenge || []}
+        laedt={loading}
+        ohneJahrgang={ohneJahrgang}
+        pageRef={pageRef}
+        presentingElement={presentingElement}
+        onNeuLaden={refreshKonfis}
+        onKonfiAnlegen={presentKonfiModal}
+        onTeamAnlegen={() => presentTeamerModalHook({ presentingElement: presentingElement })}
+        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement })}
+        onKonfiLoeschen={handleDeleteKonfi}
+        onTeamerLoeschen={handleDeleteTeamer}
+        banner={(
+          <NeuerungenBanner
+            style={{ margin: 0 }}
+            updateSichtbar={showUpdateHinweis}
+            mitmachenSichtbar={showMitmachenHinweis}
+            onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+            onUpdateAusblenden={markUpdateHinweisGesehen}
+            onMitmachenOeffnen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+            onMitmachenAusblenden={markMitmachenHinweisGesehen}
+          />
+        )}
+        overlays={ueberlagerungen}
+      />
+    );
+  }
+
   return (
     <IonPage ref={pageRef}>
       {/* Der Gemeinde-Umschalter stand bis 25.09.2026 NUR hier; jetzt bringt
@@ -425,32 +494,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         )}
       </IonContent>
 
-      {showOnboarding && (
-        <AdminOnboardingModal
-          onClose={closeOnboarding}
-          displayName={(user?.display_name || '').split(' ')[0]}
-        />
-      )}
-
-      {/* Änderungsanzeige nach einem Update — meldet sich VON SELBST, genau
-          einmal je Minor-Version (useOnboardingWithUpdateOnce). Sie und die
-          Onboarding-Tour schließen sich gegenseitig aus; die Neuigkeiten-
-          Karte bleibt weg, solange sie offen ist. */}
-      {showNeuerungen && (
-        <AdminUpdate230WalkthroughModal onClose={schliesseNeuerungen} />
-      )}
-
-      {/* Derselbe Walkthrough — hier über die Neuigkeiten-Karte geöffnet. */}
-      {showUpdateWalkthrough && (
-        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
-      )}
-
-      {showMitmachenErklaerung && (
-        <MitmachenErklaerungModal
-          rolle="admin"
-          onClose={() => setShowMitmachenErklaerung(false)}
-        />
-      )}
+      {ueberlagerungen}
     </IonPage>
   );
 };

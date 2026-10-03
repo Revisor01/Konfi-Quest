@@ -1,0 +1,267 @@
+/* ===================================================================
+   Web-Fassung der Leitungs- und Verwaltungsseiten (03.10.2026,
+   docs/planung/web-alle-bereiche.md, Entscheidung 6)
+
+   Konfis, Konfi-Detail, Benutzer:innen, "Mehr" und die Verwaltungsseiten
+   (Kategorien, Jahrgaenge, Level, Einladungen, Zertifikate, Startseite,
+   Material, Rueckblick, Betrieb) im Browser ab 992 px. Eingebunden von den
+   Web-Komponenten unter components/admin/web/leitung/ und
+   components/teamer/web/material/. Dieselben Regeln wie web-ansicht.css:
+   Klassen mit Praefix web-, nur Tokens, Dunkelmodus ueber die Tokens, keine
+   Bewegung, kein Eingriff in Ionic, sichtbarer Fokus an allem Bedienbaren.
+   =================================================================== */
+
+/* --- Kreis mit Initialen --- */
+.web-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-konfis);
+  color: var(--app-weiss);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1;
+}
+
+.web-avatar--gross {
+  width: 56px;
+  height: 56px;
+  font-size: var(--app-text-gross);
+}
+
+.web-avatar--erreicht {
+  background: var(--app-color-success-strong);
+}
+
+.web-avatar--teamer {
+  background: var(--app-color-teamer);
+}
+
+.web-avatar--users {
+  background: var(--app-color-users);
+}
+
+.web-avatar--leitung {
+  background: var(--app-color-leitung);
+}
+
+.web-avatar--neutral {
+  background: var(--app-color-neutral);
+}
+
+.web-person-zelle {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-person-zelle__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* --- Fortschritt: "7 / 10" mit schmalem Balken --- */
+.web-fortschritt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  min-width: 88px;
+}
+
+.web-fortschritt__text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  font-size: var(--app-text-hinweis);
+  font-variant-numeric: tabular-nums;
+  color: var(--web-text);
+  white-space: nowrap;
+}
+
+.web-fortschritt__prozent {
+  color: var(--app-color-success-tief);
+  font-size: var(--app-text-klein);
+}
+
+.web-fortschritt__spur {
+  display: block;
+  height: 6px;
+  /* Ein Prozentwert (--app-radius-kreis) machte aus dem flachen Balken eine Ellipse. */
+  border-radius: var(--app-radius-gross);
+  background: var(--app-surface-dim);
+  overflow: hidden;
+}
+
+.web-fortschritt__fuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--app-radius-gross);
+  background: var(--app-color-konfis);
+}
+
+.web-fortschritt--gottesdienst .web-fortschritt__fuellung {
+  background: var(--app-color-gottesdienst);
+}
+
+.web-fortschritt--gemeinde .web-fortschritt__fuellung {
+  background: var(--app-color-gemeinde);
+}
+
+.web-fortschritt--erreicht .web-fortschritt__fuellung {
+  background: var(--app-color-success-strong);
+}
+
+/* --- Werkzeugleiste: Auswahl neben der Suche --- */
+.web-filterauswahl {
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+
+.web-werkzeuge__zahl {
+  margin-left: auto;
+  font-size: var(--app-text-hinweis);
+}
+
+/* --- Kopf einer sortierbaren Spalte --- */
+.web-sortkopf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-sortkopf:hover {
+  color: var(--web-text);
+}
+
+.web-sortkopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--app-radius-fein);
+}
+
+.web-sortkopf__pfeil {
+  font-size: var(--app-text-klein);
+  opacity: 0.35;
+}
+
+.web-sortkopf__pfeil--aktiv {
+  opacity: 1;
+  color: var(--ion-color-primary);
+}
+
+/* --- Zeile, die per Knopf ein Fenster oeffnet: das Netz spannt sich ueber die Zeile --- */
+.web-zeilenknopf {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  font-weight: var(--app-schrift-halbfett);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-zeilenknopf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.web-zeilenknopf:focus-visible {
+  outline: none;
+}
+
+.web-zeilenknopf:focus-visible::after {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+  border-radius: var(--app-radius-fein);
+}
+
+/* --- Kleinkram in Zellen --- */
+.web-zahl-mit-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  color: var(--web-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-zahl-mit-symbol__symbol {
+  color: var(--web-text-leise);
+}
+
+.web-spalte-aktionen-breit {
+  width: 172px;
+}
+
+.web-spalte-aktionen-schmal {
+  width: 72px;
+}
+
+.web-extern-symbol {
+  font-size: var(--app-text-gross);
+  color: var(--web-text-leise);
+}
+
+/* --- Auswahl im Dialog: zwei grosse Wege --- */
+.web-wahlkarten {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-wahlkarte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  width: 100%;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-wahlkarte:hover {
+  background: var(--web-hover);
+}
+
+.web-wahlkarte:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-wahlkarte__titel {
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-wahlkarte__text {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
