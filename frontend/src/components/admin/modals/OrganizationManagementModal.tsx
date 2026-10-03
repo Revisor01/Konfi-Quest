@@ -142,6 +142,13 @@ const MEMBER_ROLE_OPTIONS = ['org_admin', 'admin', 'teamer'].map((value) => ({
 
 interface OrganizationManagementModalProps {
   organizationId?: number | null;
+  /**
+   * Eine bestehende Gemeinde gleich im Formular oeffnen statt in der
+   * Ansicht (Web-Fassung der Support-Ansicht: "Bearbeiten" in der Tabelle
+   * fuehrt direkt ins Formular -- Simon, 03.10.2026: "nicht erst nach Klick
+   * und Details und wieder Klick"). Ohne Angabe wie bisher: erst die Ansicht.
+   */
+  direktBearbeiten?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -161,6 +168,7 @@ const ZEITRAUM_OPTIONEN: { label: string; days: number }[] = [
 
 const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = ({
   organizationId,
+  direktBearbeiten = false,
   onClose,
   onSuccess
 }) => {
@@ -317,7 +325,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
 
   // View/Edit-Modus: bestehende Org startet als read-only Übersicht ('view'),
   // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
-  const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
+  const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId && !direktBearbeiten ? 'view' : 'edit');
 
   // Neue Org: Default 30-Tage-Testphase mit ihrem Konfi-Limit vorbelegen
   // (super_admin kann beides ändern)

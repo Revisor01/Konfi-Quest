@@ -1,7 +1,6 @@
 import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import {
   IonPage,
   IonContent,
@@ -9,12 +8,8 @@ import {
   IonRefresherContent,
   IonButton,
   IonIcon,
-  useIonModal,
-  useIonAlert
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
-import { offlineBlockiert } from '../../../utils/offlineAktion';
-import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -22,9 +17,11 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import OrganizationView from '../OrganizationView';
 import WartungsHinweis from '../../shared/WartungsHinweis';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import OrganizationManagementModal from '../modals/OrganizationManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { useAppLocation } from '../../../navigation/useAppLocation';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import { istSuperAdmin } from '../../../utils/superAdmin';
+import WebGemeinden from '../../support/web/WebGemeinden';
+import { useGemeindeAktionen } from './useGemeindeAktionen';
 
 interface Organization {
   id: number;
@@ -49,26 +46,8 @@ interface Organization {
   badge_count: number;
 }
 
-/** Antwort von DELETE /organizations/:id; die Zahlen seit dem 29.09.2026. */
-interface GemeindeGeloeschtAntwort {
-  konten_geloescht?: number;
-  konten_umgezogen?: number;
-}
-
-const konten = (anzahl: number) => `${anzahl} ${anzahl === 1 ? 'Konto' : 'Konten'}`;
-
-/** Die Meldung nach dem Löschen: mit den Zahlen der Konten, wenn der Server sie schickt. */
-const gemeindeGeloeschtMeldung = (name: string, antwort?: GemeindeGeloeschtAntwort | null): string => {
-  const geloescht = antwort?.konten_geloescht;
-  const umgezogen = antwort?.konten_umgezogen;
-  if (typeof geloescht !== 'number' || typeof umgezogen !== 'number') return `Gemeinde "${name}" gelöscht`;
-  return `Gemeinde "${name}" gelöscht: ${konten(geloescht)} gelöscht, ${konten(umgezogen)} in eine andere Gemeinde umgezogen`;
-};
-
-const AdminOrganizationsPage: React.FC = () => {
-  const { setError, setSuccess, isOnline, refreshUser } = useApp();
-  const { pageRef, presentingElement } = useModalPage('admin-organizations');
-  
+// Die Darstellung der App und des schmalen Fensters: Liste mit Wischaktionen.
+const GemeindenApp: React.FC = () => {
   // SWR-Cache für Organisationen
   const { data: organizationsData, loading, refresh: loadOrganizations } = useOfflineQuery<Organization[]>(
     'super-admin-organizations',
@@ -80,91 +59,12 @@ const AdminOrganizationsPage: React.FC = () => {
   );
   const organizations = organizationsData ?? [];
 
-  // Modal state
-  const [modalOrganizationId, setModalOrganizationId] = useState<number | null>(null);
-
-  // Alert Hook für Bestätigungsdialoge
-  const [presentAlert] = useIonAlert();
-  // Modal mit useIonModal Hook
-  const [presentOrganizationModalHook, dismissOrganizationModalHook] = useIonModal(OrganizationManagementModal, {
-    organizationId: modalOrganizationId,
-    onClose: () => {
-      dismissOrganizationModalHook();
-      setModalOrganizationId(null);
-    },
-    onSuccess: () => {
-      dismissOrganizationModalHook();
-      // User-State neu laden -> Trial-Banner erscheint/verschwindet sofort
-      // (ohne Logout/Neustart). Bedingungslos: ein /me-Call ist guenstig, und
-      // der Vergleich auf die eigene Org war fehleranfaellig (modalOrganizationId
-      // wurde teils schon zurückgesetzt). super_admin ohne Org schadet es nicht.
-      refreshUser();
-      setModalOrganizationId(null);
-      loadOrganizations();
-    }
-  });
+  // Formular "Gemeinde", direkter Sprung (?gemeinde=<id>) und Loeschen --
+  // dieselben Aktionen wie in der Web-Fassung (useGemeindeAktionen).
+  const { pageRef, bearbeiten, neu, loeschen } = useGemeindeAktionen(loadOrganizations);
 
   // Subscribe to live updates for organizations
   useLiveRefresh('organizations', loadOrganizations);
-
-  // Seit dem 29.09.2026 loescht DELETE /organizations/:id nur die Konten, die
-  // allein zu dieser Gemeinde gehoeren; wer auch in einer anderen Mitglied
-  // ist, zieht dorthin um bzw. bleibt dort (backend/routes/organizations.js).
-  // Abfrage und Meldung sagen das -- die Zahlen kommen aus der Antwort
-  // (konten_geloescht, konten_umgezogen; ein aelterer Server schickt sie nicht).
-  const handleDeleteOrganization = async (organization: Organization) => {
-    if (offlineBlockiert(isOnline, setError)) return;
-    presentAlert({
-      header: 'Gemeinde löschen',
-      message: `Gemeinde "${organization.display_name}" (${organization.name}) wirklich löschen?\n\n`
-        + 'Alle Daten der Gemeinde werden gelöscht, dazu jedes Konto, das nur zu ihr gehört. '
-        + 'Wer auch zu einer anderen Gemeinde gehört, behält sein Konto und bleibt dort.\n\n'
-        + 'Das lässt sich nicht rückgängig machen.',
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Löschen',
-          role: 'destructive',
-          handler: async () => {
-            try {
-              const res = await api.delete(`/organizations/${organization.id}`);
-              setSuccess(gemeindeGeloeschtMeldung(organization.display_name, res?.data));
-              await loadOrganizations();
-            } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Löschen der Gemeinde'));
-            }
-          }
-        }
-      ]
-    });
-  };
-
-  const handleSelectOrganization = (organization: Organization) => {
-    setModalOrganizationId(organization.id);
-    presentOrganizationModalHook({
-      presentingElement: presentingElement
-    });
-  };
-
-  // Direkt in eine Gemeinde: /admin/organizations?gemeinde=<id> oeffnet sie
-  // (aus der Support-Ansicht -- Kennzahlen je Gemeinde, "Gemeinde oeffnen"
-  // nach dem Anlegen aus einer Anfrage). Nur beim Aufruf mit dieser Adresse,
-  // nicht bei jedem neuen Modal-Haken -- deshalb haengt der Effekt allein an
-  // der Abfrage.
-  const { search } = useAppLocation();
-  useEffect(() => {
-    const id = Number(new URLSearchParams(search).get('gemeinde'));
-    if (!Number.isInteger(id) || id <= 0) return;
-    setModalOrganizationId(id);
-    presentOrganizationModalHook({ presentingElement: presentingElement });
-  }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const presentOrganizationModal = () => {
-    setModalOrganizationId(null);
-    presentOrganizationModalHook({
-      presentingElement: presentingElement
-    });
-  };
 
   return (
     <IonPage ref={pageRef}>
@@ -174,7 +74,7 @@ const AdminOrganizationsPage: React.FC = () => {
         onZurueck={() => window.history.back()}
         gemeindeUmschalter={false}
         rechts={(
-          <IonButton aria-label="Neue Gemeinde anlegen" onClick={presentOrganizationModal}>
+          <IonButton aria-label="Neue Gemeinde anlegen" onClick={neu}>
             <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} />
           </IonButton>
         )}
@@ -199,8 +99,8 @@ const AdminOrganizationsPage: React.FC = () => {
             <OrganizationView
               organizations={organizations}
               onUpdate={loadOrganizations}
-              onSelectOrganization={handleSelectOrganization}
-              onDeleteOrganization={handleDeleteOrganization}
+              onSelectOrganization={(organization) => bearbeiten(organization.id)}
+              onDeleteOrganization={loeschen}
             />
 
             <div style={{ height: '32px' }} />
@@ -209,6 +109,16 @@ const AdminOrganizationsPage: React.FC = () => {
       </IonContent>
     </IonPage>
   );
+};
+
+// Zwei Gesichter, eine Seite (docs/planung/support-web.md, Entscheidung 1):
+// im breiten Browserfenster fuer Konten mit Super-Admin-Recht die Tabelle der
+// Support-Ansicht (GET /support/gemeinden, nur Super-Admin), sonst die
+// Darstellung der App -- unveraendert.
+const AdminOrganizationsPage: React.FC = () => {
+  const breit = useBreitesLayout();
+  const { user } = useApp();
+  return breit && istSuperAdmin(user) ? <WebGemeinden /> : <GemeindenApp />;
 };
 
 export default AdminOrganizationsPage;
