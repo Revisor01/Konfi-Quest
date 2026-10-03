@@ -115,6 +115,83 @@ async function mailZerlegen(quelle, { ersatzId, eingang = null }) {
   };
 }
 
+/** Groesse in MB mit einer Nachkommastelle und deutschem Komma ("40,0"). */
+const megabyte = (bytes) => (bytes / (1024 * 1024)).toFixed(1).replace('.', ',');
+
+/** Hinweis statt des Textes einer Mail, die zu gross fuer die Uebernahme ist. */
+function zuGrossText(bytes) {
+  return Number.isFinite(bytes)
+    ? `Diese Mail ist zu groß für die Übernahme (${megabyte(bytes)} MB). Bitte im Mailprogramm ansehen.`
+    : 'Diese Mail ist zu groß für die Übernahme. Bitte im Mailprogramm ansehen.';
+}
+
+/**
+ * Anhaenge aus dem Aufbau der Mail (IMAP BODYSTRUCTURE, wie imapflow ihn
+ * liefert): jeder Teil mit Dateinamen oder "attachment", eine eingebettete
+ * Mail (message/rfc822) als ein Anhang. Die Groesse meldet der Server
+ * kodiert; bei base64 ist der Inhalt rund drei Viertel davon (geschaetzt).
+ */
+function anhaengeAusAufbau(knoten, ergebnis = []) {
+  if (!knoten || ergebnis.length >= ANHAENGE_MAX) return ergebnis;
+  const typ = String(knoten.type || '').toLowerCase();
+  const name = (knoten.dispositionParameters && knoten.dispositionParameters.filename)
+    || (knoten.parameters && knoten.parameters.name) || null;
+  const istAnhang = typ === 'message/rfc822' || knoten.disposition === 'attachment' || Boolean(name);
+  if (Array.isArray(knoten.childNodes) && knoten.childNodes.length > 0 && !istAnhang) {
+    for (const kind of knoten.childNodes) anhaengeAusAufbau(kind, ergebnis);
+    return ergebnis;
+  }
+  if (istAnhang) {
+    const roh = Number.isFinite(knoten.size) ? knoten.size : null;
+    const base64 = String(knoten.encoding || '').toLowerCase() === 'base64';
+    ergebnis.push({
+      name: name ? kuerzen(name, 255) : null,
+      groesse: roh === null ? null : (base64 ? Math.floor((roh * 3) / 4) : roh),
+      typ: typ ? kuerzen(typ, 255) : null,
+    });
+  }
+  return ergebnis;
+}
+
+/**
+ * Eintrag fuer eine Mail, deren Quelltext zu gross ist -- nur aus dem, was
+ * der Server ohne Quelltext liefert (services/mailAbholung.js): Umschlag
+ * (Absender, Empfaenger, Betreff, Message-ID, In-Reply-To; References gibt
+ * es dort nicht) und Aufbau (Anhaenge). Der Text ist ein Hinweis mit der
+ * Groesse.
+ *
+ * @param {{size?: number, envelope?: object, bodyStructure?: object}} kopf
+ * @param {{ersatzId: string, eingang?: Date|null}} opt
+ */
+function mailAusKopf(kopf, { ersatzId, eingang = null }) {
+  const u = kopf.envelope || {};
+  const [messageId] = messageIds(u.messageId);
+  const [inReplyTo] = messageIds(u.inReplyTo);
+  const adressen = (liste) => (Array.isArray(liste) ? liste : []).filter((a) => a && a.address);
+  const [von] = adressen(u.from);
+  const an = [...adressen(u.to), ...adressen(u.cc)]
+    .map((a) => adresseSpeichern(a.address))
+    .filter(Boolean)
+    .slice(0, ADRESSEN_MAX);
+  const alsDatum = (wert) => {
+    if (!wert) return null;
+    const d = wert instanceof Date ? wert : new Date(wert);
+    return Number.isNaN(d.getTime()) ? null : d;
+  };
+  return {
+    messageId: messageId || ersatzId,
+    inReplyTo: inReplyTo || null,
+    referenzen: [],
+    vonAdresse: von ? adresseSpeichern(von.address) : null,
+    vonName: von && von.name ? kuerzen(String(von.name).trim(), NAME_MAX) : null,
+    anAdressen: an,
+    betreff: kuerzen(String(u.subject || '').trim(), BETREFF_MAX),
+    text: zuGrossText(kopf.size),
+    anhaenge: anhaengeAusAufbau(kopf.bodyStructure),
+    gesendetAm: alsDatum(u.date) || alsDatum(eingang) || new Date(),
+  };
+}
+
 /**
  * Kurzer Auszug fuer Listen: ohne zitierte Zeilen ("> ..."), Leerraum
  * zusammengefasst, hoechstens AUSZUG_MAX Zeichen (dann mit "…").
@@ -188,6 +265,9 @@ module.exports = {
   REFERENZEN_MAX,
   messageIds,
   mailZerlegen,
+  mailAusKopf,
+  anhaengeAusAufbau,
+  zuGrossText,
   auszug,
   kuerzen,
   NACHRICHT_SPALTEN,

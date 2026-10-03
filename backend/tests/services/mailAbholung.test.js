@@ -14,7 +14,7 @@
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed } = require('../helpers/seed');
 const { imapAttrappe, rohmail } = require('../helpers/imapAttrappe');
-const { postfachAbholen, alleAbholen, fehlerText } = require('../../services/mailAbholung');
+const { postfachAbholen, alleAbholen, fehlerText, MAX_MAIL_GROESSE } = require('../../services/mailAbholung');
 const { postfachKonfig } = require('../../utils/mailPostfaecher');
 
 const ENV = Object.freeze({
@@ -60,7 +60,7 @@ describe('Mail-Abholung', () => {
       const attrappe = imapAttrappe({ uidValidity: 4242n });
       for (const uid of [3, 8, 15]) attrappe.einwerfen(uid, await rohmail({ messageId: `<alt-${uid}@x.example>` }));
       const ergebnis = await abholen(attrappe);
-      expect(ergebnis).toEqual({ postfach: 'moin', erstlauf: true, neu: 0, doppelt: 0, eigene: 0, unlesbar: 0, fehler: null });
+      expect(ergebnis).toEqual({ postfach: 'moin', erstlauf: true, neu: 0, doppelt: 0, eigene: 0, unlesbar: 0, zuGross: 0, fehler: null });
       expect(await mails()).toEqual([]);
       expect(await stand()).toMatchObject({ uidvalidity: 4242, letzte_uid: 15, fehler: null, fehler_am: null });
       // Kein Quelltext geholt.
@@ -92,7 +92,7 @@ describe('Mail-Abholung', () => {
       }), new Date('2026-10-02T09:31:00Z'));
 
       const ergebnis = await abholen(attrappe);
-      expect(ergebnis).toEqual({ postfach: 'moin', erstlauf: false, neu: 1, doppelt: 0, eigene: 0, unlesbar: 0, fehler: null });
+      expect(ergebnis).toEqual({ postfach: 'moin', erstlauf: false, neu: 1, doppelt: 0, eigene: 0, unlesbar: 0, zuGross: 0, fehler: null });
       const [m] = await mails();
       expect(m).toEqual({
         postfach: 'moin',
@@ -115,14 +115,17 @@ describe('Mail-Abholung', () => {
       expect(await stand()).toMatchObject({ uidvalidity: 7, letzte_uid: 4, fehler: null });
     });
 
-    it('holt nur UIDs über dem Stand (Bereich ab letzte_uid + 1)', async () => {
+    it('holt nur UIDs über dem Stand (Bereich ab letzte_uid + 1): erst die Kopfdaten, dann je UID den Quelltext', async () => {
       const attrappe = await eingerichtet();
       attrappe.einwerfen(5, await rohmail({ messageId: '<n5@x.example>' }));
       await abholen(attrappe);
       const fetch = attrappe.aufrufe.filter((a) => a[0] === 'fetch').pop();
       expect(fetch[1]).toBe('4:5');
-      expect(fetch[2]).toEqual({ uid: true, source: true, internalDate: true });
+      expect(fetch[2]).toEqual({ uid: true, size: true, internalDate: true, envelope: true, bodyStructure: true });
       expect(fetch[3]).toEqual({ uid: true });
+      expect(attrappe.aufrufe.filter((a) => a[0] === 'fetchOne'))
+        .toEqual([['fetchOne', '5', { uid: true, source: true }, { uid: true }]]);
+      expect(attrappe.quelltextFuer).toEqual([5]);
       expect((await mails()).map((m) => m.message_id)).toEqual(['<n5@x.example>']);
     });
 
@@ -240,6 +243,124 @@ describe('Mail-Abholung', () => {
     });
   });
 
+  describe('große Mails (über MAX_MAIL_GROESSE): ohne Quelltext', () => {
+    const MB = 1024 * 1024;
+    const umschlag = (f = {}) => ({
+      date: new Date('2026-10-02T07:15:00Z'),
+      subject: 'Fotos vom Konfi-Tag',
+      messageId: '<gross-1@gemeinde.example>',
+      inReplyTo: undefined,
+      from: [{ name: 'Erika Probe', address: 'Erika.Probe@Gemeinde.example' }],
+      to: [{ name: '', address: 'moin@konfi-quest.de' }],
+      cc: [{ name: 'Team', address: 'team@gemeinde.example' }],
+      ...f,
+    });
+    const aufbau = {
+      type: 'multipart/mixed',
+      childNodes: [
+        { part: '1', type: 'text/plain', parameters: { charset: 'utf-8' }, size: 120, encoding: 'quoted-printable' },
+        {
+          part: '2', type: 'application/pdf', encoding: 'base64', size: 40000000,
+          disposition: 'attachment', dispositionParameters: { filename: 'Konfi-Tag.pdf' },
+        },
+        { part: '3', type: 'image/jpeg', encoding: 'base64', size: 400, parameters: { name: 'bild.jpg' } },
+      ],
+    };
+
+    it('die Grenze ist 10 MB', () => {
+      expect(MAX_MAIL_GROESSE).toBe(10 * MB);
+    });
+
+    it('Eintrag aus Umschlag und Aufbau, Hinweis statt Text -- der Quelltext wird für diese UID nie angefordert', async () => {
+      const attrappe = await eingerichtet();
+      // Eine kleine Mail davor und danach: sie kommen wie bisher mit Quelltext.
+      attrappe.einwerfen(4, await rohmail({ messageId: '<klein-4@x.example>' }));
+      attrappe.einwerfen(5, await rohmail({ messageId: '<sollte-nie-gelesen-werden@x.example>', text: 'Geheimer Inhalt' }),
+        new Date('2026-10-02T07:16:00Z'), { size: 41943040, envelope: umschlag(), bodyStructure: aufbau });
+      attrappe.einwerfen(6, await rohmail({ messageId: '<klein-6@x.example>' }));
+
+      expect(await abholen(attrappe)).toMatchObject({ neu: 3, zuGross: 1, fehler: null });
+      expect(attrappe.quelltextFuer).toEqual([4, 6]);
+      const gross = (await mails()).find((m) => m.imap_uid === 5);
+      expect(gross).toEqual({
+        postfach: 'moin',
+        richtung: 'ein',
+        anfrage_id: null,
+        organization_id: null,
+        message_id: '<gross-1@gemeinde.example>',
+        in_reply_to: null,
+        referenzen: [],
+        von_adresse: 'erika.probe@gemeinde.example',
+        von_name: 'Erika Probe',
+        an_adressen: ['moin@konfi-quest.de', 'team@gemeinde.example'],
+        betreff: 'Fotos vom Konfi-Tag',
+        text: 'Diese Mail ist zu groß für die Übernahme (40,0 MB). Bitte im Mailprogramm ansehen.',
+        anhaenge: [
+          { name: 'Konfi-Tag.pdf', groesse: 30000000, typ: 'application/pdf' },
+          { name: 'bild.jpg', groesse: 300, typ: 'image/jpeg' },
+        ],
+        gesendet_am: new Date('2026-10-02T07:15:00Z'),
+        gelesen_am: null,
+        imap_uid: 5,
+      });
+      expect((await stand()).letzte_uid).toBe(6);
+    });
+
+    it('genau an der Grenze noch mit Quelltext, ein Byte darüber ohne', async () => {
+      const attrappe = await eingerichtet();
+      attrappe.einwerfen(4, await rohmail({ messageId: '<grenze@x.example>', text: 'An der Grenze' }), new Date(), { size: 10 * MB });
+      attrappe.einwerfen(5, await rohmail({ messageId: '<drueber-quelle@x.example>' }), new Date(),
+        { size: 10 * MB + 1, envelope: umschlag({ messageId: '<drueber@x.example>' }) });
+      await abholen(attrappe);
+      expect(attrappe.quelltextFuer).toEqual([4]);
+      expect((await mails()).map((m) => [m.message_id, m.text])).toEqual([
+        ['<grenze@x.example>', 'An der Grenze\n'],
+        ['<drueber@x.example>', 'Diese Mail ist zu groß für die Übernahme (10,0 MB). Bitte im Mailprogramm ansehen.'],
+      ]);
+    });
+
+    it('Zuordnung über In-Reply-To aus dem Umschlag (Regel 1) und über die Adresse (Regel 3)', async () => {
+      const { rows: [{ id: a1 }] } = await db.query(
+        `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am)
+         VALUES ('A', 'K', 'andere@x.example', NOW()) RETURNING id`);
+      const { rows: [{ id: a2 }] } = await db.query(
+        `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am)
+         VALUES ('B', 'K', 'erika.probe@gemeinde.example', NOW()) RETURNING id`);
+      await db.query(
+        "INSERT INTO mail_nachrichten (postfach, richtung, anfrage_id, message_id) VALUES ('moin', 'aus', $1, '<kq-antwort@konfi-quest.de>')", [a1]);
+      const attrappe = await eingerichtet();
+      attrappe.einwerfen(4, '', new Date(), {
+        size: 25 * MB, envelope: umschlag({ messageId: '<g4@x.example>', inReplyTo: '<kq-antwort@konfi-quest.de>' }),
+      });
+      attrappe.einwerfen(5, '', new Date(), { size: 25 * MB, envelope: umschlag({ messageId: '<g5@x.example>' }) });
+      await abholen(attrappe);
+      expect(attrappe.quelltextFuer).toEqual([]);
+      const zeilen = (await mails()).filter((m) => m.richtung === 'ein');
+      expect(zeilen.map((m) => [m.message_id, m.in_reply_to, m.anfrage_id])).toEqual([
+        ['<g4@x.example>', '<kq-antwort@konfi-quest.de>', a1],
+        ['<g5@x.example>', null, a2],
+      ]);
+    });
+
+    it('eigene große Mails werden übersprungen, Dubletten nicht doppelt gespeichert, ohne Message-ID die Ersatz-ID', async () => {
+      const attrappe = await eingerichtet(77n);
+      attrappe.einwerfen(4, '', new Date(), { size: 20 * MB, envelope: umschlag({ from: [{ address: 'MOIN@konfi-quest.de' }] }) });
+      attrappe.einwerfen(5, '', new Date(), { size: 20 * MB, envelope: umschlag({ messageId: '<dop@x.example>' }) });
+      attrappe.einwerfen(6, '', new Date(), { size: 20 * MB, envelope: umschlag({ messageId: '<dop@x.example>' }) });
+      attrappe.einwerfen(7, '', new Date(), { size: 20 * MB, envelope: umschlag({ messageId: undefined }) });
+      expect(await abholen(attrappe)).toMatchObject({ neu: 2, doppelt: 1, eigene: 1, zuGross: 4 });
+      expect((await mails()).map((m) => m.message_id)).toEqual(['<dop@x.example>', '<kq-ersatz-moin-77-7@konfi-quest.de>']);
+      expect(attrappe.quelltextFuer).toEqual([]);
+    });
+
+    it('ohne Datum im Umschlag gilt der Eingang im Postfach', async () => {
+      const attrappe = await eingerichtet();
+      attrappe.einwerfen(4, '', new Date('2026-10-03T06:00:00Z'), { size: 11 * MB, envelope: umschlag({ date: undefined }) });
+      await abholen(attrappe);
+      expect((await mails())[0].gesendet_am).toEqual(new Date('2026-10-03T06:00:00Z'));
+    });
+  });
+
   describe('UIDVALIDITY wechselt', () => {
     it('setzt den Stand neu und übernimmt nichts', async () => {
       const attrappe = await eingerichtet(7n);
@@ -309,7 +430,7 @@ describe('Mail-Abholung', () => {
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       try {
         await abholen(attrappe);
-        expect(log.mock.calls).toEqual([['Mail-Abholung (moin): 1 neu, 0 schon vorhanden, 0 eigene, 0 nicht lesbar']]);
+        expect(log.mock.calls).toEqual([['Mail-Abholung (moin): 1 neu, 0 schon vorhanden, 0 eigene, 0 nicht lesbar, 0 zu gross (ohne Text)']]);
       } finally {
         log.mockRestore();
       }
