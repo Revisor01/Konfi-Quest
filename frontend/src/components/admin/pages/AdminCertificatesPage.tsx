@@ -54,6 +54,8 @@ import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { ICON_CHOICES, getIconFromString, type IconChoice } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebZertifikate from '../web/leitung/WebZertifikate';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -277,6 +279,9 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 const AdminCertificatesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-certificates');
   const { user, setError, isOnline } = useApp();
+  // Im Browser ab 992 px ein Raster (web/leitung/WebZertifikate.tsx); Daten,
+  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   // Offline-Query: Certificate Types
   const { data: certificateTypes, loading, refresh: refreshCertificateTypes } = useOfflineQuery<CertificateType[]>(
@@ -342,6 +347,20 @@ const AdminCertificatesPage: React.FC = () => {
   };
 
   const isAdmin = ['org_admin', 'admin'].includes(user?.role_name || '');
+
+  if (breit) {
+    return (
+      <WebZertifikate
+        zertifikate={certificateTypes || []}
+        laedt={loading}
+        darfVerwalten={isAdmin}
+        pageRef={pageRef}
+        onAnlegen={openCreateModal}
+        onBearbeiten={openEditModal}
+        onLoeschen={handleDelete}
+      />
+    );
+  }
 
   if (loading) {
     return (

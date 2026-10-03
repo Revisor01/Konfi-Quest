@@ -6,7 +6,8 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_AUFKLAPPEN, ICON_EXTERN_OEFFNEN } from '../../../shared/icons';
+import { ICON_AUFKLAPPEN, ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_LOESCHEN } from '../../../shared/icons';
+import WebKnopf from '../../../web/WebKnopf';
 import { linkOeffnen } from '../../../../services/systemDialoge';
 import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
 import '../../../../theme/web/leitung.css';
@@ -129,3 +130,56 @@ export const WebExternLink: React.FC<{ href: string; children: React.ReactNode; 
 
 /** Das Symbol "oeffnet ausserhalb" als kleiner Zusatz hinter einem Namen. */
 export const WebExternSymbol: React.FC = () => <IonIcon icon={ICON_EXTERN_OEFFNEN} className="web-extern-symbol" aria-hidden="true" />;
+
+// --- Aktionen am Ende einer Zeile ---------------------------------------------------
+
+/**
+ * "Bearbeiten" und "Loeschen" am Ende einer Zeile. Der Name der Zeile steht in
+ * den Beschriftungen fuer Vorleseprogramme ("Sport bearbeiten"): Ohne ihn
+ * hiessen alle Knoepfe der Tabelle gleich. Was die Person nicht darf, fehlt.
+ */
+export const WebZeilenAktionen: React.FC<{
+  name: string;
+  onBearbeiten?: () => void;
+  onLoeschen?: () => void;
+  /** Das Wort hinter dem Namen im Namen des Loesch-Knopfs (Vorgabe "löschen"). */
+  loeschenWort?: string;
+  loeschenTitel?: string;
+}> = ({ name, onBearbeiten, onLoeschen, loeschenWort = 'löschen', loeschenTitel = 'Löschen' }) => {
+  if (!onBearbeiten && !onLoeschen) return null;
+  return (
+    <div className="web-zeilenaktionen">
+      {onBearbeiten && (
+        <WebKnopf klein vorn onClick={onBearbeiten} aria-label={`${name} bearbeiten`}>
+          <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
+          <span className="web-knopf__text">Bearbeiten</span>
+        </WebKnopf>
+      )}
+      {onLoeschen && (
+        <WebKnopf klein vorn art="gefahr" symbol onClick={onLoeschen} aria-label={`${name} ${loeschenWort}`} title={loeschenTitel}>
+          <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+        </WebKnopf>
+      )}
+    </div>
+  );
+};
+
+// --- Symbol im farbigen Kreis ------------------------------------------------------------
+
+export type SymbolTon = 'categories' | 'level' | 'jahrgang' | 'teamer' | 'material' | 'wrapped' | 'users' | 'erfolg' | 'neutral';
+
+/**
+ * Das Symbol einer Zeile im farbigen Kreis (wie der Kreis der Liste in der App).
+ * Die Farbe ist ein Ton der App; nur wo sie aus den Daten kommt (die Farbe eines
+ * Levels), steht sie als CSS-Wert in `farbe`. Das Symbol ist Zierde: Der Name
+ * steht immer daneben.
+ */
+export const WebSymbol: React.FC<{ icon: string; ton?: SymbolTon; farbe?: string; gross?: boolean }> = ({ icon, ton = 'neutral', farbe, gross = false }) => (
+  <span
+    className={`web-symbol web-symbol--${ton}${gross ? ' web-symbol--gross' : ''}`}
+    style={farbe ? { background: farbe } : undefined}
+    aria-hidden="true"
+  >
+    <IonIcon icon={icon} />
+  </span>
+);

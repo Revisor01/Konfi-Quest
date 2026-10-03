@@ -311,6 +311,7 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
   it('Konfirmation: Termin, Spruch und Pflicht-Events; "Anwesenheit ansehen" oeffnet die Matrix fuer den Jahrgang', async () => {
     await oeffnen();
     const k = within(karte('Konfirmation'));
+    expect(k.getByText('Konfirmationstermin')).toBeInTheDocument();
     expect(k.getByText(/Sonntag, 16\. Mai 2027 · 11:30 Uhr · Beispielkirche/)).toBeInTheDocument();
     expect(k.getByText('Psalm 23,1')).toBeInTheDocument();
     expect(k.getByText('Der Herr ist mein Hirte.')).toBeInTheDocument();

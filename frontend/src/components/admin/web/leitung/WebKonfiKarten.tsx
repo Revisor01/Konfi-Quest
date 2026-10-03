@@ -409,7 +409,7 @@ export const KonfirmationKarte: React.FC<{
       <WebAngaben
         angaben={[
           {
-            label: 'Termin',
+            label: 'Konfirmationstermin',
             wert: konfi.confirmation_date
               ? `${datumLang(konfi.confirmation_date)} · ${uhrzeit(konfi.confirmation_date)} Uhr${konfi.confirmation_location ? ` · ${konfi.confirmation_location}` : ''}`
               : <span className="web-gedaempft">Noch kein Termin festgelegt</span>,

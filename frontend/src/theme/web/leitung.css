@@ -680,3 +680,61 @@
   flex-direction: column;
   min-width: 0;
 }
+
+/* --- Symbol im farbigen Kreis (Kategorie, Level, Jahrgang, Zertifikat ...) --- */
+.web-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-neutral);
+  color: var(--app-weiss);
+  font-size: var(--app-text-gross);
+}
+
+.web-symbol--gross {
+  width: 48px;
+  height: 48px;
+  font-size: var(--app-text-ueberschrift-gross);
+}
+
+.web-symbol--categories { background: var(--app-color-categories); }
+.web-symbol--level { background: var(--app-color-level); }
+.web-symbol--jahrgang { background: var(--app-color-jahrgang); }
+.web-symbol--teamer { background: var(--app-color-teamer); }
+.web-symbol--material { background: var(--app-color-material); }
+.web-symbol--wrapped { background: var(--app-color-wrapped); }
+.web-symbol--users { background: var(--app-color-users); }
+.web-symbol--erfolg { background: var(--app-color-success-strong); }
+
+/* --- Kacheln in einer Karte (Zertifikate) --- */
+.web-kachelliste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-kachelliste__eintrag {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-basis);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+}
+
+.web-kachelliste__name {
+  min-width: 0;
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
+  overflow-wrap: anywhere;
+}
