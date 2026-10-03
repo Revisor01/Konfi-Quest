@@ -28,8 +28,9 @@ import {
 } from '../../../shared/icons';
 import { istSuperAdmin, type KontoMitRecht } from '../../../../utils/superAdmin';
 
-/** Das Support-Formular der Homepage (die genaue Adresse legt die Support-Seite fest). */
-export const SUPPORT_FORMULAR_URL = 'https://konfi-quest.de/#support';
+// Das Support-Formular der Homepage: eine Adresse fuer App-Liste und Kachel.
+import { SUPPORT_FORMULAR_URL } from '../../../../utils/supportFormular';
+export { SUPPORT_FORMULAR_URL };
 
 export type MehrFarbe =
   | 'users' | 'activities' | 'badges' | 'jahrgang' | 'categories' | 'level' | 'material' | 'wrapped'

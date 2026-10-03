@@ -993,11 +993,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const waitlistHint = waitlistCount > 0
       ? ` Die Warteliste (${waitlistCount}) bleibt unberührt.`
       : '';
-    const wen = rolle === 'teamer' ? 'Team' : 'Teilnehmer:in(nen)';
+    const wen = rolle === 'teamer' ? 'Teamer:in(nen)' : 'Teilnehmer:in(nen)';
     // Punkte gibt es nur bei Konfis -- das gehoert in die Rueckfrage, sonst
     // erwartet die Leitung bei Teamer:innen eine Punktevergabe, die ausbleibt.
+    // Beim Team ein eigener Satz (bis 03.10.2026 stand er ohne Punkt davor
+    // und mit doppeltem Punkt dahinter im Satz).
     const punkteHinweis = rolle === 'teamer'
-      ? ' Das Team bekommt dabei keine Punkte.'
+      ? '. Das Team bekommt dabei keine Punkte'
       : ' (inkl. Punktevergabe)';
     // ALERT, kein Modal: reine Ja/Nein-Rueckfrage ohne Eingabe. Die Linie
     // steht beim Abmeldungs-Modal weiter oben.

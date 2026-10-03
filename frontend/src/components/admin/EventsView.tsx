@@ -306,6 +306,10 @@ const EventsView: React.FC<EventsViewProps> = ({
                 if (status === 'open' && event.max_participants > 0 && event.registered_count >= event.max_participants) return 'Ausgebucht';
                 if (status === 'open') return 'Offen';
                 if (status === 'upcoming') return 'Bald';
+                // Ein kommendes Pflicht-Event (registration_status 'mandatory') stand
+                // hier gruen als "Geschlossen" da -- die Farbe kannte den Status, der
+                // Text nicht (Befund 03.10.2026 beim Bau der Web-Fassung).
+                if (status === 'mandatory' && !isPastEvent) return 'Pflicht';
                 return 'Geschlossen';
               })();
 

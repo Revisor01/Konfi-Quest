@@ -737,8 +737,11 @@ a.web-kachel:focus-visible {
   background: color-mix(in srgb, var(--ion-color-primary) 9%, var(--web-karte));
 }
 
+/* Ohne Innenabstand: Ein Treffer mitten im Wort („Sonntag|sgottesdienst")
+   riss das Wort sonst sichtbar auseinander. Der Rahmen sitzt als Schatten
+   aussen und braucht keinen Platz. */
 mark.web-treffer {
-  padding: 0 var(--app-abstand-winzig);
+  padding: 0;
   border-radius: var(--app-radius-fein);
   background: var(--app-flaeche-warnung);
   box-shadow: 0 0 0 1px var(--app-rand-warnung);

@@ -186,9 +186,9 @@ describe('Konfis: Anwesenheit', () => {
     await oeffne();
     fireEvent.click(within(karte('Team (1)')).getByRole('button', { name: 'Alle bestätigen (1)' }));
     const frage = letzteRueckfrage();
-    expect(frage.message).toContain('1 angemeldete Team werden als anwesend verbucht');
-    expect(frage.message).toContain('Das Team bekommt dabei keine Punkte.');
-    expect(frage.message).not.toContain('Punktevergabe');
+    // Bis 03.10.2026: "1 angemeldete Team werden als anwesend verbucht Das Team
+    // bekommt dabei keine Punkte.. Bereits ..." (Satzzeichen und Wort falsch).
+    expect(frage.message).toBe('1 angemeldete Teamer:in(nen) werden als anwesend verbucht. Das Team bekommt dabei keine Punkte. Bereits Verbuchte bleiben unverändert.');
     await act(async () => { await knopfIn(frage, 'Alle bestätigen')!.handler!(); });
     expect(api.put).toHaveBeenCalledWith('/events/7/participants/attendance-all', { rolle: 'teamer' });
   });

@@ -175,7 +175,7 @@ describe('Leitung: die Tabelle der Web-Fassung rechnet wie die Liste der App', (
     return alle;
   };
 
-  it('Marke, Farbe, Ausgrauen und Zahlen stimmen für jedes Event -- bis auf das eine bekannte Wort für kommende Pflicht-Events', () => {
+  it('Marke, Farbe, Ausgrauen und Zahlen stimmen für jedes Event', () => {
     const alle = leitungsFaelle();
     const abweichungen: string[] = [];
     let karten = 0;
@@ -188,9 +188,9 @@ describe('Leitung: die Tabelle der Web-Fassung rechnet wie die Liste der App', (
         const name = karte.querySelector('.app-list-item__title')!.textContent!.trim();
         const event = paket.find((e) => name.startsWith(e.name))!;
         const web = leitungListeStatus(event);
-        // Die App kennt für ein Pflicht-Event, das noch bevorsteht, kein eigenes Wort: Sie sagt "Geschlossen"
-        // (registration_status 'mandatory' fehlt in ihrer Kette). Die Web-Fassung sagt "Pflicht".
-        const wortDerApp = web.text === 'Pflicht' ? 'Geschlossen' : web.text;
+        // Bis 03.10.2026 sagte die App bei einem kommenden Pflicht-Event "Geschlossen" (registration_status
+        // 'mandatory' fehlte in ihrer Textkette, die Farbe kannte ihn). Jetzt sagen beide "Pflicht".
+        const wortDerApp = web.text;
         const app = statusAnKarte(karte);
         const gedaempft = (karte as HTMLElement).style.opacity === '0.6';
         if (JSON.stringify(app) !== JSON.stringify({ text: wortDerApp, farbe: web.farbe }) || gedaempft !== web.gedaempft) {
@@ -205,7 +205,7 @@ describe('Leitung: die Tabelle der Web-Fassung rechnet wie die Liste der App', (
     expect(abweichungen).toEqual([]);
   });
 
-  it('die Ausnahme ist wirklich eine: nur kommende Pflicht-Events heißen im Web "Pflicht"', () => {
+  it('nur kommende Pflicht-Events heißen "Pflicht" -- in App und Web', () => {
     const texte = leitungsFaelle().filter((e) => leitungListeStatus(e).text === 'Pflicht');
     expect(texte.length).toBeGreaterThan(0);
     for (const e of texte) {

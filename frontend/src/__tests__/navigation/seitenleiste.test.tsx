@@ -386,6 +386,33 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
     expect(aktiv[0].classList.contains('app-seitenleiste__link--aktiv')).toBe(true);
   });
 
+  // Seiten, die ueber „Mehr" erreicht werden, haben keinen eigenen Eintrag
+  // in der Leiste; ohne Zuordnung war dort gar nichts markiert (Befund beim
+  // Bau der Web-Fassung, 03.10.2026). Aktivitaeten gehoeren zu Mitmachen
+  // (Reiter dort, docs/planung/web-alle-bereiche.md).
+  it.each([
+    ['/admin/users', '/admin/settings'],
+    ['/admin/badges', '/admin/settings'],
+    ['/admin/material', '/admin/settings'],
+    ['/admin/wrapped', '/admin/settings'],
+    ['/admin/settings/jahrgaenge', '/admin/settings'],
+    ['/admin/activities', '/admin/events'],
+  ])('Leitung auf %s: markiert ist %s', (pfad, erwartet) => {
+    zustand.konto = KONTEN.leitung;
+    zeigeLeiste(pfad);
+    const aktiv = leiste()!.querySelectorAll('[aria-current="page"]');
+    expect(aktiv).toHaveLength(1);
+    expect(aktiv[0].getAttribute('href')).toBe(erwartet);
+  });
+
+  it('Simons Konto: Gemeinden und Betrieb markieren ihren Support-Eintrag, nicht „Mehr"', () => {
+    zustand.konto = KONTEN.simon;
+    zeigeLeiste('/admin/organizations');
+    const aktiv = leiste()!.querySelectorAll('[aria-current="page"]');
+    expect(aktiv).toHaveLength(1);
+    expect(aktiv[0].getAttribute('href')).toBe('/admin/organizations');
+  });
+
   it('auf einer Detailseite ist ihr Bereich aktiv; auf einer Seite ohne Eintrag keiner', () => {
     expect(aktiverPfad('/admin/konfis/42', ['/admin/konfis', '/admin/chat'])).toBe('/admin/konfis');
     expect(aktiverPfad('/teamer/profile/badges', ['/teamer/profile/material', '/teamer/profile'])).toBe('/teamer/profile');

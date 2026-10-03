@@ -16,10 +16,8 @@
 // Fassung fuer eine Matrix aus Zustaenden und vergleichen Status, Zahlen und
 // Angaben.
 //
-// EINE BEWUSSTE ABWEICHUNG: Ein bevorstehender Pflicht-Event steht in der
-// Listenzeile der Leitung in der App als "Geschlossen" da (der Text prueft nur
-// registration_status === 'open', die Farbe aber auch 'mandatory'). Das ist ein
-// Versehen der App; die Web-Fassung sagt dort "Pflicht" (siehe leitungListeStatus).
+// Ein bevorstehender Pflicht-Event heisst in App und Web "Pflicht" (bis
+// 03.10.2026 sagte die App dort faelschlich "Geschlossen").
 
 import type { Event, EventMaterial, Participant } from '../types/event';
 import {
@@ -129,7 +127,7 @@ export function leitungListeStatus(event: Event, jetzt: Date = new Date()): Leit
   if (abgesagt) text = 'Abgesagt';
   else if (zuVerbuchen) text = 'Verbuchen';
   else if (verbucht) text = 'Verbucht';
-  // Das Versehen der App (siehe oben): Pflicht-Event, noch nicht vorbei.
+  // Pflicht-Event, noch nicht vorbei (siehe oben).
   else if (reg === 'mandatory' && !vorbei) text = 'Pflicht';
   else if (reg === 'open' && voll && event.waitlist_enabled) text = 'Warteliste';
   else if (reg === 'open' && voll) text = 'Ausgebucht';

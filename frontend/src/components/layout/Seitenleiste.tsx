@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { IonBadge, IonIcon, useIonAlert, useIonRouter } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import { BAEUME } from '../../navigation/rollenBaeume';
-import { SUPPORT_MAIL_ZAEHLER, aktiverPfad } from '../../navigation/routes';
+import { SUPPORT_MAIL_ZAEHLER, markierterPfad } from '../../navigation/routes';
 import type { MenueEintrag } from '../../navigation/routes';
 import { useReiterZaehler, zaehlerText } from '../../navigation/reiterZaehler';
 import { useAppLocation } from '../../navigation/useAppLocation';
@@ -103,7 +103,9 @@ const Seitenleiste: React.FC = () => {
   }
 
   const alle = [...oben, ...gruppen.flatMap((g) => g.eintraege), ...(baum.profil ? [baum.profil] : [])];
-  const aktiv = aktiverPfad(location.pathname, alle.map((e) => e.path));
+  // Seiten ohne eigenen Eintrag (etwa alles unter „Mehr") markieren ihren
+  // Bereich ueber die Zuordnung im Baum.
+  const aktiv = markierterPfad(location.pathname, alle.map((e) => e.path), baum.zugehoerig);
 
   const umschalten = () => {
     const neu = !eingeklappt;
