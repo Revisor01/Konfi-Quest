@@ -9,6 +9,10 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Behoben
+- Ein gesperrtes Konto mit Super-Admin-Recht kann sich nicht mehr anmelden;
+  bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
+
 ### Sonstiges
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene

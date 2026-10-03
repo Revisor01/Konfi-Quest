@@ -434,7 +434,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(401).json({ error: 'Ungültige Anmeldedaten' });
       }
 
-      // Zugriffs-Sperren — super_admin (ohne Org) ist ausgenommen.
+      // Zugriffs-Sperren der GEMEINDE — super_admin ist davon ausgenommen
+      // (er verwaltet auch gesperrte Gemeinden; ein Konto ohne Gemeinde hat
+      // keine). Die Sperre des KONTOS gilt fuer jede Rolle, siehe unten.
       const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
 
       // Soft-geloescht (deleted_at; der Auto-Loeschlauf setzt es 60 Tage
@@ -449,12 +451,18 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return sperrAntwort(res, 'user_inactive');
       }
 
+      // Konto deaktiviert -- AUCH bei Super-Admins (03.10.2026). Bis dahin lag
+      // die Pruefung im Block darunter und entfiel fuer sie: Ein gesperrtes
+      // Super-Admin-Konto bekam hier 200 samt Tokens, rbac.js wies danach
+      // jede Anfrage mit 401 ab (die Middleware kennt keine Ausnahme). Die
+      // Sperre muss fuer Support-Konten wirken -- sie ist der Weg, ein
+      // solches Konto stillzulegen.
+      if (user.user_active === false) {
+        console.warn(`Login blockiert: Konto ${user.id} ist deaktiviert`);
+        return sperrAntwort(res, 'user_inactive');
+      }
+
       if (!isSuperAdmin) {
-        // User deaktiviert
-        if (user.user_active === false) {
-          console.warn(`Login blockiert: Konto ${user.id} ist deaktiviert`);
-          return sperrAntwort(res, 'user_inactive');
-        }
         // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
         const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
         // Organisation gesperrt (inaktiv oder Trial abgelaufen)
@@ -1763,7 +1771,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       return res.status(401).json({ error: 'Benutzer nicht gefunden' });
     }
 
-    // Zugriffs-Sperre beim Refresh — super_admin ausgenommen.
+    // Zugriffs-Sperre beim Refresh — von der Sperre der GEMEINDE ist
+    // super_admin ausgenommen, von der des KONTOS nicht (wie bei der
+    // Anmeldung, 03.10.2026).
     //
     // Soft-geloeschte Konten (deleted_at) zaehlen hier wie deaktivierte und
     // bekommen dieselbe Antwort (Audit 26.09.2026, Sicherheit BF-07) -- der
@@ -1771,7 +1781,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // nicht kannte und einem ausgeblendeten Konto 90 Tage lang frische
     // Access-Tokens ausstellte. Die Loeschung gilt fuer jede Rolle.
     const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
-    const kontoGesperrt = Boolean(user.deleted_at) || (!isSuperAdmin && user.user_active === false);
+    const kontoGesperrt = Boolean(user.deleted_at) || user.user_active === false;
     const trialExpired = !isSuperAdmin && user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
     const orgGesperrt = !isSuperAdmin && (user.organization_active === false || trialExpired);
     // Reihenfolge wie bei der Anmeldung: erst das Konto, dann die Gemeinde.

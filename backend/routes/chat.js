@@ -623,6 +623,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         return res.status(400).json({ error: 'Ungültiger Chat-Typ' });
       }
 
+      // OHNE AKTIVE GEMEINDE KEIN RAUM (03.10.2026). Ein Support-Konto ohne
+      // Gemeinde (organization_id NULL) kam bis hierher durch -- ein Raum
+      // gehoert aber immer einer Gemeinde (chat_rooms.organization_id NOT
+      // NULL), und das Anlegen endete mit 500. Als Gast in einer Gemeinde
+      // (X-Active-Organization) geht es wie fuer ihre Leitung.
+      if (!organizationId) {
+        return res.status(403).json({
+          error: 'Chats gibt es nur in einer Gemeinde. Wechsle zuerst in eine Gemeinde.',
+          error_code: 'keine_aktive_gemeinde'
+        });
+      }
+
       // ZWEIERGESPRAECH HEISST GENAU ZWEI PERSONEN (Audit 26.09.2026, Chat
       // BF-01, HOCH). Der Typ 'direct' ist ueberall sonst das Signal "privat,
       // auch vor der Leitung" (darfRaumOeffnen, Export, Loeschen, Umfragen).

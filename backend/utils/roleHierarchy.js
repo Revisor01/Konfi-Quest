@@ -123,9 +123,12 @@ const checkUserHierarchy = (operation = 'manage') => {
           JOIN users u ON u.id = uo.user_id
           JOIN roles r ON r.id = uo.role_id
           WHERE uo.user_id = $1 AND uo.organization_id = $2
-            AND u.organization_id <> $2
+            AND u.organization_id IS DISTINCT FROM $2
           LIMIT 1
         `;
+        // IS DISTINCT FROM (03.10.2026): Ein Konto ohne Gemeinde
+        // (organization_id NULL, Support als Gast) fiel mit `<>` heraus --
+        // die Leitung bekam 404 statt der Ablehnung unten.
         const { rows: [targetUser] } = await req.db.query(query, [targetUserId, req.user.organization_id]);
 
         if (!targetUser) {

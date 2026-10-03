@@ -114,6 +114,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // die Zahl, keine Namen: Welche Gemeinden das sind, geht diese Gemeinde
     // nichts an. Gezaehlt werden auch gesperrte Gemeinden -- DELETE zieht im
     // Notfall auch dorthin um, der Dialog muss dasselbe sagen.
+    //
+    // KONTO OHNE GEMEINDE (Support als Gast, 03.10.2026): users.organization_id
+    // ist dort NULL, und `NULL <> $1` ist nicht wahr, sondern NULL -- der Gast
+    // fehlte in der Liste, obwohl er fuer die Gemeinde sichtbar sein soll
+    // (docs/planung/web-version.md, Punkt 14). Deshalb IS DISTINCT FROM; eine
+    // fehlende Stamm-Gemeinde zaehlt in weitere_gemeinden nicht mit.
     const query = `
       WITH mitglieder AS (
         SELECT u.id, u.role_id, 'stamm'::text AS mitgliedschaft
@@ -123,7 +129,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         SELECT uo.user_id AS id, uo.role_id, 'weitere'::text AS mitgliedschaft
           FROM user_organizations uo
           JOIN users u ON u.id = uo.user_id
-         WHERE uo.organization_id = $1 AND u.organization_id <> $1
+         WHERE uo.organization_id = $1 AND u.organization_id IS DISTINCT FROM $1
       )
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
@@ -135,7 +141,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
                 FROM user_organizations uw
                WHERE uw.user_id = u.id
                  AND uw.organization_id <> $1
-                 AND uw.organization_id <> u.organization_id)
+                 AND uw.organization_id IS DISTINCT FROM u.organization_id)
              + CASE WHEN u.organization_id <> $1 THEN 1 ELSE 0 END AS weitere_gemeinden
       FROM mitglieder m
       JOIN users u ON u.id = m.id
@@ -173,7 +179,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // verwaltbar, aber nicht anzeigbar -- die Oberflaeche laedt diese Route,
     // bevor sie Jahrgaenge zuweisen laesst. Die Rolle wird dabei fuer DIESE
     // Gemeinde aufgeloest (uo.role_id), damit die Anzeige nicht die Rolle der
-    // Stamm-Gemeinde behauptet.
+    // Stamm-Gemeinde behauptet. IS DISTINCT FROM: ein Konto ohne Gemeinde
+    // (organization_id NULL) ist hier Gast, kein 404.
     const userQuery = `
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
@@ -183,7 +190,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       FROM users u
       LEFT JOIN user_organizations uo
              ON uo.user_id = u.id AND uo.organization_id = $2
-                AND u.organization_id <> $2
+                AND u.organization_id IS DISTINCT FROM $2
       LEFT JOIN roles r ON r.id = COALESCE(uo.role_id, u.role_id)
       WHERE u.id = $1 AND (u.organization_id = $2 OR uo.organization_id = $2)
     `;
@@ -359,7 +366,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // geaendert werden darf.
       const { rows: [user] } = await db.query(
         `SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
-                (u.organization_id = $2) AS stamm
+                COALESCE(u.organization_id = $2, false) AS stamm
            FROM users u
           WHERE u.id = $1
             AND (u.organization_id = $2
@@ -1226,10 +1233,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // blieb drin, waehrend alle glaubten, das Problem sei geloest.
       // Dieselbe Behandlung wie in der Selbstbedienungs-Route
       // (auth.js, PUT /auth/change-password), die es seit jeher richtig macht.
-      await db.query(
-        'UPDATE users SET password_hash = $1, updated_at = NOW(), token_invalidated_at = NOW() WHERE id = $2 AND organization_id = $3',
+      //
+      // IS NOT DISTINCT FROM und rowCount (03.10.2026): Bei einem Konto ohne
+      // Gemeinde (organization_id NULL) traf `organization_id = $3` keine
+      // Zeile -- die Route meldete trotzdem "erfolgreich", widerrief die
+      // Sitzungen und verschickte die Mail, das Passwort blieb das alte.
+      // Trifft die Aenderung nichts (das Konto hat inzwischen die Gemeinde
+      // gewechselt oder ist geloescht), endet sie jetzt mit 404, bevor
+      // irgendetwas anderes geschieht.
+      const { rowCount: geaendert } = await db.query(
+        'UPDATE users SET password_hash = $1, updated_at = NOW(), token_invalidated_at = NOW() WHERE id = $2 AND organization_id IS NOT DISTINCT FROM $3',
         [hashedPassword, id, targetUser.organization_id]
       );
+      if (geaendert === 0) {
+        return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+      }
       // Neues Passwort: Eine Sperre nach Fehlversuchen endet damit (BF-04).
       await kontoSperreAufheben(db, id);
 
