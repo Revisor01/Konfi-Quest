@@ -58,6 +58,7 @@ const zustand = vi.hoisted(() => ({
   },
 }));
 const signOut = vi.fn(async () => undefined);
+const switchOrg = vi.fn(async () => ({ ok: true }));
 const push = vi.fn();
 
 vi.mock('../../contexts/AppContext', () => ({
@@ -66,7 +67,7 @@ vi.mock('../../contexts/AppContext', () => ({
     signOut,
     organizations: zustand.organizations,
     activeOrgId: null,
-    switchOrg: vi.fn(),
+    switchOrg,
   }),
 }));
 
@@ -144,6 +145,7 @@ beforeEach(() => {
   apiGet.mockResolvedValue({ data: {} });
   supportMailZaehlerZuruecksetzen();
   signOut.mockClear();
+  switchOrg.mockClear();
   push.mockClear();
   localStorage.clear();
   window.matchMedia = vi.fn((abfrage: string) => ({
@@ -573,18 +575,51 @@ describe('Abmelden ist in jedem Baum erreichbar', () => {
 });
 
 describe('Gemeinde-Umschalter in der Leiste', () => {
-  it('erscheint bei mehreren Gemeinden (derselbe Knopf wie in der Kopfzeile)', () => {
-    zustand.organizations = [
-      { id: 1, name: 'Kirchspiel West', slug: 'kirchspiel-west', role_name: 'org_admin' },
-      { id: 2, name: 'Kirchengemeinde Heide', slug: 'kirchengemeinde-heide', role_name: 'admin' },
-    ];
+  const MEHRERE = [
+    { id: 1, name: 'Kirchspiel West', slug: 'kirchspiel-west', role_name: 'org_admin' },
+    { id: 2, name: 'Kirchengemeinde Heide', slug: 'kirchengemeinde-heide', role_name: 'admin' },
+  ];
+
+  it('erscheint bei mehreren Gemeinden als eigene Flaeche -- nicht mehr als Knopf der Kopfzeile', () => {
+    zustand.organizations = MEHRERE;
     zeigeLeiste('/admin/konfis');
-    expect(leiste()!.querySelector('.app-org-switcher-btn')).not.toBeNull();
+    expect(leiste()!.querySelector('.app-leistengemeinde__knopf')).not.toBeNull();
+    expect(leiste()!.querySelector('.app-org-switcher-btn')).toBeNull();
+    expect(leiste()!.querySelector('ion-button')).toBeNull();
+  });
+
+  it('steht unten im Fuss, vor Profil und Abmelden', () => {
+    zustand.organizations = MEHRERE;
+    zeigeLeiste('/admin/konfis');
+    const fuss = leiste()!.querySelector('.app-seitenleiste__fuss') as HTMLElement;
+    const reihenfolge = [...fuss.querySelectorAll('.app-leistengemeinde__knopf, a, button')]
+      .map((el) => (el.classList.contains('app-leistengemeinde__knopf') ? 'Gemeinde' : el.textContent));
+    expect(reihenfolge).toEqual(['Gemeinde', 'Profil', 'Abmelden']);
   });
 
   it('fehlt bei nur einer Gemeinde', () => {
     zustand.organizations = [{ id: 1, name: 'Kirchspiel West', slug: 'kirchspiel-west' }];
     zeigeLeiste('/admin/konfis');
-    expect(leiste()!.querySelector('.app-org-switcher-btn')).toBeNull();
+    expect(leiste()!.querySelector('.app-leistengemeinde')).toBeNull();
+  });
+
+  it('eingeklappt bleibt die Flaeche: Name als Tooltip, Liste oeffnet sich weiter', () => {
+    zustand.organizations = MEHRERE;
+    localStorage.setItem(SCHLUESSEL_EINGEKLAPPT, '1');
+    zeigeLeiste('/admin/konfis');
+    const knopf = leiste()!.querySelector('.app-leistengemeinde__knopf') as HTMLElement;
+    expect(leiste()!.classList.contains('app-seitenleiste--eingeklappt')).toBe(true);
+    expect(knopf.getAttribute('title')).toBe('Kirchspiel West');
+    fireEvent.click(knopf);
+    expect(screen.getAllByRole('menuitemradio')).toHaveLength(2);
+  });
+
+  it('Wechsel ueber die Leiste: Gemeinde wechseln, dann Startseite der Rolle dort, Stapel leeren', async () => {
+    zustand.organizations = MEHRERE;
+    zeigeLeiste('/admin/konfis');
+    fireEvent.click(leiste()!.querySelector('.app-leistengemeinde__knopf')!);
+    await act(async () => { fireEvent.click(screen.getByRole('menuitemradio', { name: /Kirchengemeinde Heide/ })); });
+    expect(switchOrg).toHaveBeenCalledWith(2);
+    expect(push).toHaveBeenCalledWith('/admin/konfis', 'root', 'replace');
   });
 });

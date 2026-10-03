@@ -50,7 +50,9 @@ Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
 zeigt dieselben Bereiche in derselben Reihenfolge und mit denselben roten
 Zahlen wie die Reiterleiste. Unten in der Leiste stehen dein **Profil** und
 **Abmelden**; wer mehreren Gemeinden angehört, wechselt dort auch die
-Gemeinde (siehe [In mehreren Gemeinden mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)).
+Gemeinde — über eine Fläche mit dem Namen der Gemeinde und deiner Rolle dort,
+deren Liste nach oben aufklappt. In der Kopfzeile steht der Umschalter dann
+nicht (siehe [Die Gemeinde wechseln](05-rollen.md#die-gemeinde-wechseln)).
 Der Inhalt steht daneben, auf breiten Bildschirmen mittig.
 
 - **Einklappen:** Der Pfeil oben in der Leiste klappt sie ein. Dann stehen
@@ -185,8 +187,9 @@ Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
 Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
 auch tut. Was in den anderen Gemeinden noch offen ist, zeigt der
-Gemeinde-Umschalter oben links an jedem Eintrag (siehe [Sehen, wo etwas offen
-ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
+Gemeinde-Umschalter an jedem Eintrag seiner Liste — in der App oben links in
+der Kopfzeile, im Browser mit der Leiste links unten in der Leiste (siehe
+[Sehen, wo etwas offen ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
 
 ### Ungelesene Mitteilungen an der Glocke erkennen
 

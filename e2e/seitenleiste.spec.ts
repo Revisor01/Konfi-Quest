@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { loginAs } from './helpers/auth';
 
 // Web-Version mit der Leiste links (Simon, 02.10.2026; planung/web-version.md,
@@ -96,5 +96,82 @@ test.describe('Web-Version: Reiterleiste unter 992 px', () => {
     await expect(page.getByRole('navigation', LEISTE)).toBeVisible();
     await expect(page.locator('ion-tab-bar')).toHaveCount(0);
     await expect(page.locator('ion-content:visible').first()).toBeVisible();
+  });
+});
+
+// Gemeinde-Umschalter (Simon, 03.10.2026): „In der Webansicht ist der Switcher
+// für die Org unten in der Navi, das finde ich gut, aber auch aktuell noch im
+// Header, das finde ich doof." Im breiten Fenster steht er nur unten in der
+// Leiste, in der App und im schmalen Fenster weiter in der Kopfzeile.
+//
+// Die Testkonten gehoeren je einer Gemeinde an, der Umschalter erscheint erst
+// ab zwei. Deshalb meldet der Test die zweite Gemeinde selbst -- die Antwort
+// auf GET /auth/my-organizations wird VOR dem Anmelden ersetzt; der Rest
+// laeuft gegen den echten Server. Gewechselt wird hier nicht.
+test.describe('Web-Version: Gemeinde-Umschalter bei mehreren Gemeinden', () => {
+  const zweiGemeinden = async (page: Page) => {
+    await page.route('**/api/auth/my-organizations', (route) => route.fulfill({
+      json: [
+        { id: 1, name: 'Test-Gemeinde', display_name: 'Kirchengemeinde Musterdorf', slug: 'musterdorf', role_name: 'admin', is_active: true },
+        { id: 2, name: 'Zweite Gemeinde', display_name: 'Kirchspiel Beispielstadt', slug: 'beispielstadt', role_name: 'teamer', is_active: true },
+      ],
+    }));
+  };
+
+  test('1280 px: Umschalter unten in der Leiste, nicht in der Kopfzeile; die Liste klappt nach oben', async ({ page }) => {
+    await zweiGemeinden(page);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await loginAs(page, 'admin1');
+
+    const leiste = page.getByRole('navigation', LEISTE);
+    const knopf = leiste.getByRole('button', { name: /^Gemeinde wechseln/ });
+    await expect(knopf).toBeVisible();
+    await expect(knopf).toContainText('Kirchengemeinde Musterdorf');
+    await expect(knopf).toContainText('Leitung');
+    // Kein Knopf mehr in der Kopfzeile, auf keiner Seite.
+    await expect(page.locator('ion-header .app-org-switcher-btn')).toHaveCount(0);
+
+    await knopf.click();
+    const liste = page.getByRole('menu', { name: 'Gemeinde wechseln' });
+    await expect(liste).toBeVisible();
+    await expect(liste.getByRole('menuitemradio')).toHaveCount(2);
+    // Die Liste steht ueber dem Knopf, nicht darunter.
+    const knopfKasten = (await knopf.boundingBox())!;
+    const listenKasten = (await liste.boundingBox())!;
+    expect(Math.round(listenKasten.y + listenKasten.height)).toBeLessThanOrEqual(Math.round(knopfKasten.y));
+
+    // Escape schliesst und gibt den Fokus zurueck.
+    await page.keyboard.press('Escape');
+    await expect(liste).toHaveCount(0);
+    await expect(knopf).toBeFocused();
+  });
+
+  test('eingeklappte Leiste: nur das Symbol, die Liste oeffnet sich daneben', async ({ page }) => {
+    await zweiGemeinden(page);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await loginAs(page, 'admin1');
+    const leiste = page.getByRole('navigation', LEISTE);
+    await leiste.getByRole('button', { name: 'Leiste einklappen' }).click();
+    const knopf = leiste.getByRole('button', { name: /^Gemeinde wechseln/ });
+    await expect(knopf).toBeVisible();
+    await expect(knopf).toHaveAttribute('title', 'Kirchengemeinde Musterdorf');
+    await expect(knopf.locator('.app-leistengemeinde__texte')).toBeHidden();
+
+    await knopf.click();
+    const liste = page.getByRole('menu', { name: 'Gemeinde wechseln' });
+    await expect(liste).toBeVisible();
+    // Rechts neben der Leiste, nicht von ihr abgeschnitten.
+    const leistenKasten = (await leiste.boundingBox())!;
+    const listenKasten = (await liste.boundingBox())!;
+    expect(Math.round(listenKasten.x)).toBeGreaterThanOrEqual(Math.round(leistenKasten.x + leistenKasten.width));
+  });
+
+  test('390 px: Umschalter wie in der App in der Kopfzeile, keine Leiste', async ({ page }) => {
+    await zweiGemeinden(page);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await loginAs(page, 'admin1');
+    await expect(page.locator('ion-header .app-org-switcher-btn').first()).toBeVisible();
+    await expect(page.getByRole('navigation', LEISTE)).toHaveCount(0);
+    await expect(page.locator('.app-leistengemeinde')).toHaveCount(0);
   });
 });

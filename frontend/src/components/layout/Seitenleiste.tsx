@@ -7,7 +7,7 @@ import type { MenueEintrag } from '../../navigation/routes';
 import { useReiterZaehler, zaehlerText } from '../../navigation/reiterZaehler';
 import { useAppLocation } from '../../navigation/useAppLocation';
 import { rolleVonUser } from '../../navigation/useSeitenBereit';
-import OrgSwitcherButton from '../shared/OrgSwitcherButton';
+import LeistenGemeinde from './LeistenGemeinde';
 import { ICON_ABMELDEN, ICON_ZURUECK } from '../shared/icons';
 import './Seitenleiste.css';
 
@@ -19,9 +19,10 @@ import './Seitenleiste.css';
 // Sie erscheint nur im Browser ab 992 px Breite (navigation/breitesLayout.ts)
 // und ersetzt dort die Reiterleiste unten. Ihr Inhalt kommt aus derselben
 // Tabelle wie die Reiter (navigation/rollenBaeume.ts): erst die Reiter, dann
-// die Eintraege `menue`, unten Gemeinde-Umschalter, Profil und Abmelden. Die
-// Zahlen an den Eintraegen rechnet dieselbe Funktion wie die Reiterleiste
-// (navigation/reiterZaehler.ts).
+// die Eintraege `menue`, unten Gemeinde-Umschalter (LeistenGemeinde, eine
+// eigene Flaeche -- in der Kopfzeile steht er im breiten Fenster nicht mehr),
+// Profil und Abmelden. Die Zahlen an den Eintraegen rechnet dieselbe Funktion
+// wie die Reiterleiste (navigation/reiterZaehler.ts).
 //
 // Echte Links (<a href>) statt Knoepfe: Mittelklick und Strg-Klick oeffnen
 // einen neuen Tab, Rechtsklick kopiert die Adresse, die Statuszeile zeigt
@@ -183,9 +184,9 @@ const Seitenleiste: React.FC = () => {
 
       <div className="app-seitenleiste__fuss">
         {/* Blendet sich selbst aus, wenn das Konto nur einer Gemeinde
-            angehoert (wie in der Kopfzeile jeder Seite). */}
+            angehoert. Eingeklappt steht nur das Symbol da. */}
         <div className="app-seitenleiste__gemeinde">
-          <OrgSwitcherButton />
+          <LeistenGemeinde eingeklappt={eingeklappt} />
         </div>
         <ul>
           {baum.profil && link(baum.profil)}
