@@ -16,11 +16,11 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
 
 ## Was zu tun ist
 
-- [ ] **1. Deploy prüfen.** `GET /api/status`: Version und Commit wie der
+- [x] **1. Deploy prüfen.** `GET /api/status`: Version und Commit wie der
       Merge, Migrationen ohne Fehler, `194_…` unter den neuen. Ins Ergebnis:
       Commit, Zahl der neuen Migrationen.
 
-- [ ] **2. Die drei Gemeinden nur lesend ermitteln.**
+- [x] **2. Die drei Gemeinden nur lesend ermitteln.**
 
           SELECT id, name, display_name, is_active, intern
             FROM organizations
@@ -31,7 +31,7 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
       weniger als drei: **anhalten und Simon fragen**. Ins Ergebnis: die drei
       Kennungen.
 
-- [ ] **3. Als intern markieren.** Vorher die Tabelle sichern
+- [x] **3. Als intern markieren.** Vorher die Tabelle sichern
       (`pg_dump --table=organizations --data-only`), dann in einer
       Transaktion:
 
@@ -44,17 +44,17 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
       bleiben, wie sie sind — die Store-Prüfungen brauchen sie). Ins
       Ergebnis: `UPDATE 3` ja/nein.
 
-- [ ] **4. Ausblenden prüfen.** In der Support-Ansicht (eigenes
+- [x] **4. Ausblenden prüfen.** In der Support-Ansicht (eigenes
       Super-Admin-Konto) unter „Gemeinden" und auf der Übersicht: Die drei
       stehen nicht mehr da, die Zahl „Gemeinden gesamt" ist um drei kleiner
       als vor Schritt 3. Ins Ergebnis: Zahl vorher/nachher.
 
-- [ ] **5. Posteingang eingerichtet** (Auftrag 14, Schritt 6): Unter
+- [x] **5. Posteingang eingerichtet** (Auftrag 14, Schritt 6): Unter
       „Posteingang" zeigen beide Postfächer „eingerichtet", „zuletzt
       abgeholt" innerhalb der letzten fünf Minuten, kein Fehler. Ins
       Ergebnis: je Postfach Ja/Nein, ein Fehlertext ohne Adressen.
 
-- [ ] **6. Probe-Anfrage an moin@.** Auf der Homepage das Formular
+- [x] **6. Probe-Anfrage an moin@.** Auf der Homepage das Formular
       „Konfi Quest für eure Gemeinde anfragen" ausfüllen: Gemeinde „Probe – bitte nicht
       bearbeiten", Kontakt mit einer eigenen Adresse des Betriebs,
       Wunschlizenz „Standard". Dann in der Support-Ansicht:
@@ -86,4 +86,36 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
 
 ## Ergebnis
 
-(offen)
+03.10.2026 (lokaler Agent):
+
+1. Commit `2a28296` (Merge #220), Version 2.4.0, 1 neue Migration
+   (`194_organisation_intern.sql`), keine fehlgeschlagen.
+2. Die Namen weichen ab: 0 Treffer auf die Abfrage. In Produktion heißen sie
+   „Test: Konfi-Sicht" (14), „Test: Teamer-Sicht" (15) und „Test & Demo
+   (App-Review)" (4); eine „Admin Review Sicht" gibt es nicht. Simon hat 4,
+   14 und 15 bestätigt.
+3. Tabelle vorher gesichert (8 Zeilen), `UPDATE 3` ja. Sonst nichts geändert,
+   alle drei bleiben aktiv.
+4. Gemeinden gesamt vorher 8 (in der Datenbank mit derselben Bedingung
+   gezählt), nachher 5 (`GET /support/uebersicht`); `GET /support/gemeinden`
+   liefert 1, 2, 3, 5, 6.
+5. moin@ ja, support@ ja — beide eingerichtet, zuletzt vor unter zwei Minuten
+   abgeholt, kein Fehler.
+6. Anfrage **1**. Kontaktadresse ist ein eigens angelegtes Postfach des
+   Betriebs (wird nach Schritt 8 gelöscht). Formular ja (Dank-Meldung,
+   Bestätigung kam an); steht unter „Anfragen" ja (offen: 1); Antwort mit
+   Baustein 1 ja, kam an ja, `[Anfrage 1]` im Betreff ja, Fußzeile ja, bei
+   moin@ unter „Sent" ja; Antwort aus dem Mailprogramm an der Anfrage ja
+   (Zähler `je_anfrage` 1: 1), unter „Alle" mit Zuordnung ja — **1,6 Minuten**
+   bis zur Zuordnung. Simon hat zur Anfrage selbst schon eine Antwort
+   geschickt (Mail 2).
+7. Probe-Mails an support@:
+   - **7a offen.** Kein Gemeindeleitungs-Konto, das genau einer Gemeinde
+     angehört, hat eine Adresse, die der Betrieb bedienen kann: Simons Konto
+     (41) gehört mehreren Gemeinden an, die übrigen Adressen gehören echten
+     Personen. Braucht Simons Entscheidung (etwa ein Testkonto in einer
+     internen Gemeinde mit der Adresse des Probe-Postfachs).
+   - 7b: Mail ohne Konto stand unter „Nicht zugeordnet" (Zähler `eingang` 1),
+     von dort der Gemeinde 4 zugeordnet; jetzt dort im Schriftwechsel
+     (Zähler `je_gemeinde` 4: 1) und unter „Alle".
+8. Liegt bis zu Simons Blick.

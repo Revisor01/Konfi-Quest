@@ -225,8 +225,8 @@ man ihn wegdrückt. Regeln und API stehen in [support-konto.md](support-konto.md
 ## Mails beantworten und zuordnen
 
 Grundlage: Simons Entscheidungen vom 03.10.2026
-([planung/support-mail.md](../planung/support-mail.md)); eingerichtet mit
-[Auftrag 14](../auftraege/lokaler-agent/14-support-postfaecher.md).
+([planung/support-mail.md](../planung/support-mail.md)); eingerichtet am 03.10.2026 mit
+Auftrag 14 (Ergebnis in der Git-Historie).
 
 **Zwei Postfächer, zwei Rollen.** `moin@konfi-quest.de` ist für Anfragen und
 Erstkontakt — über dieses Postfach gehen auch schon die Systemmails (dieselbe
