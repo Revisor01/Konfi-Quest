@@ -111,6 +111,8 @@ export function ionicAttrappe(optionen: {
     useIonAlert: () => [optionen.presentAlert ?? (() => {}), () => {}],
     useIonRouter: () => optionen.router ?? { push: () => {}, goBack: () => {}, canGoBack: () => false },
     useIonModal: () => [() => {}, () => {}],
+    // Rueckkehr auf eine Seite (stilles Neuladen) spielt in diesen Tests keine Rolle.
+    useIonViewWillEnter: () => {},
   };
 }
 

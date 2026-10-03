@@ -72,7 +72,10 @@ vi.mock('../../contexts/AppContext', () => ({
 
 vi.mock('../../contexts/BadgeContext', () => ({ useBadge: () => zustand.zahlen }));
 vi.mock('../../services/analytics', () => ({ bereichAusPfad: () => null, trackBereich: vi.fn() }));
-vi.mock('../../services/api', () => ({ default: { get: vi.fn(async () => ({ data: {} })) } }));
+// GET /support/mail/zaehler fuer die roten Zahlen der Support-Ansicht;
+// alles andere antwortet leer.
+const apiGet = vi.hoisted(() => vi.fn());
+vi.mock('../../services/api', () => ({ default: { get: apiGet } }));
 
 interface AlertKnopf { text: string; role?: string; handler?: () => unknown }
 let offenerAlert: { header?: string; buttons: AlertKnopf[] } | null = null;
@@ -121,6 +124,7 @@ import Seitenleiste, { SCHLUESSEL_EINGEKLAPPT } from '../../components/layout/Se
 import { aktiverPfad } from '../../navigation/routes';
 import MainTabs from '../../components/layout/MainTabs';
 import { BREITE_SEITENLEISTE, useBreitesLayout } from '../../navigation/breitesLayout';
+import { supportMailZaehlerZuruecksetzen } from '../../navigation/supportMailZaehler';
 
 const ROLLEN = Object.keys(BAEUME) as Rolle[];
 
@@ -136,6 +140,9 @@ beforeEach(() => {
   };
   offenerAlert = null;
   splitPaneProps = null;
+  apiGet.mockReset();
+  apiGet.mockResolvedValue({ data: {} });
+  supportMailZaehlerZuruecksetzen();
   signOut.mockClear();
   push.mockClear();
   localStorage.clear();
@@ -335,10 +342,13 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
 
   it('super_admin (ohne Reiter): die Bereiche der Support-Ansicht, kein Profil', () => {
     // Nach dem Zusammenfuehren mit der Support-Ansicht (Paket C, 03.10.2026)
-    // traegt der Baum super_admin die sechs Bereiche aus supportMenue.ts.
+    // traegt der Baum super_admin die Bereiche aus supportMenue.ts -- seit
+    // der Support-Mail (03.10.2026) acht, mit Posteingang und Textbausteinen.
     zustand.konto = KONTEN.super_admin;
     zeigeLeiste('/admin/support');
-    expect(linkNamen(leiste()!)).toEqual(['Übersicht', 'Anfragen', 'Gemeinden', 'Struktur', 'Support-Konten', 'Betrieb']);
+    expect(linkNamen(leiste()!)).toEqual([
+      'Übersicht', 'Anfragen', 'Posteingang', 'Gemeinden', 'Struktur', 'Support-Konten', 'Textbausteine', 'Betrieb',
+    ]);
   });
 
   it('Eintraege mit Gruppe stehen unter ihrer Ueberschrift, ohne Gruppe direkt unter den Reitern', () => {
@@ -469,6 +479,42 @@ describe('Zahlen an den Eintraegen: dieselbe Quelle wie die Reiterleiste', () =>
   it('ohne offene Vorgaenge keine rote Zahl', () => {
     zeigeLeiste('/admin/konfis');
     expect(leiste()!.querySelectorAll('ion-badge')).toHaveLength(0);
+  });
+});
+
+// Support-Mail (03.10.2026, docs/planung/support-mail.md, Entscheidung 5):
+// rote Zahl in der Support-Ansicht, kein Push. Anfragen zaehlt die
+// ungelesenen Mails zu Anfragen, Posteingang die nicht zugeordneten und die
+// der Gemeinden (deren Schriftwechsel erreicht man ueber den Posteingang).
+describe('Zahlen der Support-Mail in der Leiste', () => {
+  const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 } };
+
+  it('super_admin: Anfragen und Posteingang tragen die Zahl aus GET /support/mail/zaehler', async () => {
+    apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? ZAEHLER : {} }));
+    zustand.konto = KONTEN.super_admin;
+    zeigeLeiste('/admin/support');
+    const posteingang = await screen.findByRole('link', { name: 'Posteingang, 4 offen' });
+    expect(posteingang.getAttribute('href')).toBe('/admin/support/post');
+    expect(screen.getByRole('link', { name: 'Anfragen, 2 offen' })).not.toBeNull();
+    // Nur diese beiden Eintraege tragen eine Zahl.
+    expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['2', '4']);
+    expect(apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it('ab zehn „9+", wie an den Reitern', async () => {
+    apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? { ...ZAEHLER, eingang: 12 } : {} }));
+    zustand.konto = KONTEN.super_admin;
+    zeigeLeiste('/admin/support');
+    await screen.findByRole('link', { name: 'Posteingang, 13 offen' });
+    expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['2', '9+']);
+  });
+
+  it('Leitung, auch mit Super-Admin-Merkmal: kein Abruf -- ihre Leiste traegt keinen Support-Eintrag', async () => {
+    halter.breit = true;
+    zustand.konto = { ...KONTEN.admin, is_super_admin: true } as typeof KONTEN.admin;
+    await zeigeApp('/admin/konfis');
+    expect(leiste()).not.toBeNull();
+    expect(apiGet).not.toHaveBeenCalledWith('/support/mail/zaehler');
   });
 });
 

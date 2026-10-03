@@ -1,5 +1,6 @@
 import { useBadge } from '../contexts/BadgeContext';
 import type { BadgeKey } from './routes';
+import { supportMailZahl, useSupportMailZaehler } from './supportMailZaehler';
 
 /**
  * Die Zahlen an den Reitern, je Zaehler-Schluessel aus rollenBaeume.ts.
@@ -19,9 +20,15 @@ import type { BadgeKey } from './routes';
  * Genau daran krankte der Konfi-Zaehler seit dem 03.07.2026 unbemerkt
  * (Befund B1): mark-seen setzte 'seen', aber niemand stiess eine
  * Aktualisierung an, und die rote Zahl blieb die ganze Sitzung stehen.
+ *
+ * Die zwei Zahlen der Support-Ansicht (03.10.2026) kommen aus
+ * navigation/supportMailZaehler.ts. Abgerufen werden sie nur, wo die Leiste
+ * sie zeigt (`supportMailLaden`, Seitenleiste im Baum super_admin) -- die
+ * Reiterleiste der Apps fragt nie.
  */
-export const useReiterZaehler = (): Record<BadgeKey, number> => {
+export const useReiterZaehler = ({ supportMailLaden = false }: { supportMailLaden?: boolean } = {}): Record<BadgeKey, number> => {
   const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, challengeUpdatesTotal, newBadgesCount } = useBadge();
+  const mail = useSupportMailZaehler(supportMailLaden);
   return {
     chat: chatUnreadTotal,
     events: pendingEventsCount + pendingRequestsCount,
@@ -31,6 +38,10 @@ export const useReiterZaehler = (): Record<BadgeKey, number> => {
     // ist also nie eine Mischung.
     challenges: pendingChallengesCount + challengeUpdatesTotal,
     badges: newBadgesCount,
+    // Ungelesene Mails der Support-Ansicht; die Rechnung steht in
+    // supportMailZahl, damit Leiste und Uebersicht dieselbe Zahl zeigen.
+    supportAnfragen: supportMailZahl(mail, 'supportAnfragen'),
+    supportPost: supportMailZahl(mail, 'supportPost'),
   };
 };
 

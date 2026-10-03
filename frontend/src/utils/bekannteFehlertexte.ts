@@ -40,14 +40,18 @@
  */
 
 export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
+  'Absender und Fußzeile konnten nicht gespeichert werden',
   'Aktivität konnte nicht gespeichert werden',
   'Aktivität nicht gefunden',
   'Alle Felder der Gemeindeleitung sind erforderlich',
   'Alle Felder sind erforderlich',
   'Anfrage konnte nicht gespeichert werden',
   'Anmeldung fehlgeschlagen',
+  'Antwort konnte nicht gesendet werden',
   'Anzeigename und Rolle sind erforderlich',
   'Aufnahme konnte nicht gestartet werden',
+  'Baustein konnte nicht gelöscht werden',
+  'Baustein konnte nicht gespeichert werden',
   'Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten — keine Leerzeichen oder Umlaute',
   'Benutzername ist erforderlich',
   'Benutzername muss mindestens 3 Zeichen lang sein',
@@ -229,6 +233,7 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Kirchenkreis konnte nicht angelegt werden',
   'Löschen fehlgeschlagen',
   'Löschen nicht möglich — du bist offline',
+  'Mail konnte nicht zugeordnet werden',
   'Mitglied konnte nicht entfernt werden',
   'Mitglied konnte nicht hinzugefügt werden',
   'Name der Gemeinde ist erforderlich',

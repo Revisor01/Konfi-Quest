@@ -228,3 +228,45 @@ describe('9c Anfrageformular: der Text folgt dem Code', () => {
     expect(text).toContain('bleibt sie gespeichert, solange die Gemeinde besteht, und wird mit ihr gelöscht');
   });
 });
+
+describe('9d E-Mails an moin@ und support@: der Text folgt dem Code', () => {
+  /*
+   * Support-Mail (03.10.2026, docs/planung/support-mail.md): Konfi Quest legt
+   * Mails an moin@ und support@ in der Support-Ansicht ab. Wer an Feldern,
+   * Anhaengen, Fristen oder dem Zugriff etwas aendert, muss 9d mitziehen.
+   */
+  const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
+
+  it('von Anhängen nur Name, Typ und Größe -- keine Inhalte', () => {
+    const umwandeln = backend('utils/mailNachrichten.js');
+    const start = umwandeln.indexOf('anhaenge: (p.attachments');
+    const block = umwandeln.slice(umwandeln.indexOf('=> ({', start), umwandeln.indexOf('gesendetAm: datum'));
+    const felder = [...block.matchAll(/^\s*([a-z]+):/gm)].map((m) => m[1]);
+    expect(felder).toEqual(['name', 'groesse', 'typ']);
+    expect(block).not.toMatch(/content\b|\.content[^T]/);
+    expect(text).toContain('Namen, Typ und Größe von Anhängen — die Anhänge selbst übernehmen wir nicht');
+  });
+
+  it('nennt die Frist für nicht zugeordnete Mails aus dem Code', () => {
+    const tage = Number(backend('services/backgroundService.js').match(/const NICHT_ZUGEORDNETE_MAILS_TAGE = (\d+);/)?.[1]);
+    expect(tage).toBe(180);
+    expect(text).toContain(`löschen wir ${tage} Tage nach Eingang automatisch aus Konfi Quest`);
+  });
+
+  it('zugeordnete Mails gehen mit Anfrage und Gemeinde (ON DELETE CASCADE)', () => {
+    const sql = backend('migrations/193_support_mail.sql');
+    expect(sql).toContain('anfrage_id BIGINT REFERENCES gemeinde_anfragen(id) ON DELETE CASCADE');
+    expect(sql).toContain('organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE');
+    expect(text).toContain('bleibt so lange gespeichert wie diese und wird mit ihr gelöscht');
+  });
+
+  it('sehen können sie nur die Konten des Support-Teams', () => {
+    // Die Mail-Routen haengen in routes/support.js HINTER der Pruefung auf Super-Admin.
+    const support = backend('routes/support.js');
+    const pruefung = support.indexOf('router.use(rbacVerifier, requireSuperAdmin);');
+    const einhaengen = support.indexOf("router.use(require('./supportMail')(db));");
+    expect(pruefung).toBeGreaterThan(-1);
+    expect(einhaengen).toBeGreaterThan(pruefung);
+    expect(text).toContain('Sehen können diese E-Mails nur die Konten des Support-Teams von Konfi Quest; Ihre Gemeinde sieht sie nicht.');
+  });
+});

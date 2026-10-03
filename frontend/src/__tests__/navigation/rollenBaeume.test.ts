@@ -71,8 +71,13 @@ describe('Detail-Routen und ihre Listen', () => {
       if (!r.param) continue;
       const basis = r.path.replace(/\/:[^/]+$/, '');
       // Chat-Raeume haengen an /chat, nicht an /chat/room — dort ist die
-      // "Liste" die Uebersicht eine Ebene hoeher.
-      const erwartet = basis.endsWith('/room') ? basis.replace(/\/room$/, '') : basis;
+      // "Liste" die Uebersicht eine Ebene hoeher. Ebenso der Schriftwechsel
+      // einer Gemeinde: /admin/support/post/gemeinde/:id haengt am
+      // Posteingang /admin/support/post (Pfad aus dem Vertrag
+      // docs/planung/support-mail.md); /post/gemeinde selbst leitet dorthin um.
+      const erwartet = basis.endsWith('/room')
+        ? basis.replace(/\/room$/, '')
+        : basis.endsWith('/support/post/gemeinde') ? basis.replace(/\/gemeinde$/, '') : basis;
       expect(pfade, `${rolle}: ${r.path} ohne ${erwartet}`).toContain(erwartet);
     }
   });
@@ -213,15 +218,18 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
   // 22 seit dem 03.09.2026: AdminWrappedPage ist dazugekommen (Verwaltung
   // der Rueckblick-Ausgaben, ersetzt den Schalter im Jahrgang); 23 seit
   // 2.4.0 mit der Seite einer Challenge; 28 mit den fuenf Seiten der
-  // Support-Ansicht (03.10.2026) -- Simons Konto erreicht sie ueber "Mehr".
-  it('admin: ladeRolleVor laedt alle 28 Seiten-Module', async () => {
-    await expect(ladeRolleVor('admin')).resolves.toBe(28);
+  // Support-Ansicht (03.10.2026) -- Simons Konto erreicht sie ueber "Mehr";
+  // 32 mit den vier Seiten der Support-Mail (Posteingang, eine Mail,
+  // Schriftwechsel einer Gemeinde, Textbausteine; 03.10.2026).
+  it('admin: ladeRolleVor laedt alle 32 Seiten-Module', async () => {
+    await expect(ladeRolleVor('admin')).resolves.toBe(32);
   }, LADE_GRENZE);
 
   // Support-Konto ohne Gemeinde: die fuenf Seiten der Support-Ansicht
-  // (Uebersicht, Anfragen, eine Anfrage, Struktur, Support-Konten) plus
-  // Gemeinden und Betrieb (bis 03.10.2026 nur diese beiden).
-  it('super_admin: ladeRolleVor laedt alle 7 Seiten-Module', async () => {
-    await expect(ladeRolleVor('super_admin')).resolves.toBe(7);
+  // (Uebersicht, Anfragen, eine Anfrage, Struktur, Support-Konten), die vier
+  // der Support-Mail plus Gemeinden und Betrieb (bis 03.10.2026 nur diese
+  // beiden).
+  it('super_admin: ladeRolleVor laedt alle 11 Seiten-Module', async () => {
+    await expect(ladeRolleVor('super_admin')).resolves.toBe(11);
   }, LADE_GRENZE);
 });
