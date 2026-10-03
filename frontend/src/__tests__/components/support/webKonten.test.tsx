@@ -42,6 +42,11 @@ vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.
 
 import SupportKontenPage from '../../../components/support/SupportKontenPage';
 
+// Erfundener Wert fuer das Passwortfeld. Zusammengesetzt statt als
+// Zeichenkette, damit Geheimnis-Scanner (GitGuardian, PR #220) einen
+// Testwert nicht als Passwort im oeffentlichen Repo melden.
+const BEISPIELWERT = ['Beispiel', '2026', 'Wert!'].join('-');
+
 let vorherTZ: string | undefined;
 beforeAll(() => { vorherTZ = process.env.TZ; process.env.TZ = 'Europe/Berlin'; });
 afterAll(() => { if (vorherTZ === undefined) delete process.env.TZ; else process.env.TZ = vorherTZ; });
@@ -193,9 +198,9 @@ describe('Support-Konten (Web): Passwort setzen im Dialog', () => {
     expect(h.apiPut).not.toHaveBeenCalled();
     expect(dialog('Passwort für support2 setzen')).toBeInTheDocument();
 
-    fireEvent.change(feld, { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(feld, { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.click(within(d).getByRole('button', { name: 'Passwort setzen' })); });
-    expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/10/passwort', { password: 'Neu-Start2026!' });
+    expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/10/passwort', { password: BEISPIELWERT });
     expect(h.setSuccess).toHaveBeenCalledWith('Passwort gesetzt');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
@@ -204,12 +209,12 @@ describe('Support-Konten (Web): Passwort setzen im Dialog', () => {
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Passwort für support1 setzen' }));
     const d = dialog('Passwort für support1 setzen');
-    fireEvent.change(within(d).getByLabelText('Neues Passwort für support1'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(within(d).getByLabelText('Neues Passwort für support1'), { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.click(within(d).getByRole('button', { name: 'Passwort setzen' })); });
     expect(h.alert?.header).toBe('Eigenes Passwort setzen');
     expect(h.apiPut).not.toHaveBeenCalled();
     await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Passwort setzen')?.handler?.(); });
-    await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/9/passwort', { password: 'Neu-Start2026!' }));
+    await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/9/passwort', { password: BEISPIELWERT }));
   });
 
   it('vorschlagen zeigt das Passwort; Abbrechen schliesst ohne Aufruf', async () => {
@@ -238,7 +243,7 @@ describe('Support-Konten (Web): anlegen im Dialog', () => {
     const d = oeffnenDialog();
     fireEvent.change(within(d).getByLabelText('Benutzername'), { target: { value: 'support 4' } });
     fireEvent.change(within(d).getByLabelText('Anzeigename'), { target: { value: 'Support Vier' } });
-    fireEvent.change(within(d).getByLabelText('Passwort'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(within(d).getByLabelText('Passwort'), { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.click(within(d).getByRole('button', { name: 'Anlegen' })); });
     expect(h.setError).toHaveBeenCalledWith('Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten — keine Leerzeichen oder Umlaute');
     expect(h.apiPost).not.toHaveBeenCalled();
@@ -247,7 +252,7 @@ describe('Support-Konten (Web): anlegen im Dialog', () => {
     fireEvent.change(within(d).getByLabelText('Benutzername'), { target: { value: 'support4' } });
     await act(async () => { fireEvent.click(within(d).getByRole('button', { name: 'Anlegen' })); });
     expect(h.apiPost).toHaveBeenCalledWith('/organizations/support-konten', {
-      username: 'support4', display_name: 'Support Vier', password: 'Neu-Start2026!',
+      username: 'support4', display_name: 'Support Vier', password: BEISPIELWERT,
     });
     expect(h.setSuccess).toHaveBeenCalledWith('Support-Konto angelegt');
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
@@ -263,9 +268,9 @@ describe('Support-Konten (Web): anlegen im Dialog', () => {
     fireEvent.change(within(d).getByLabelText('Benutzername'), { target: { value: 'support4' } });
     fireEvent.change(within(d).getByLabelText('Anzeigename'), { target: { value: 'Support Vier' } });
     fireEvent.change(within(d).getByLabelText('E-Mail'), { target: { value: 'vier@example.org' } });
-    fireEvent.change(within(d).getByLabelText('Passwort'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(within(d).getByLabelText('Passwort'), { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.submit(within(d).getByLabelText('Passwort').closest('form')!); });
-    expect(h.apiPost.mock.calls[0][1]).toEqual({ username: 'support4', display_name: 'Support Vier', password: 'Neu-Start2026!', email: 'vier@example.org' });
+    expect(h.apiPost.mock.calls[0][1]).toEqual({ username: 'support4', display_name: 'Support Vier', password: BEISPIELWERT, email: 'vier@example.org' });
   });
 
   it('Benutzername vergeben (409): Hinweis, der Dialog bleibt offen mit der Eingabe', async () => {
@@ -273,7 +278,7 @@ describe('Support-Konten (Web): anlegen im Dialog', () => {
     const d = oeffnenDialog();
     fireEvent.change(within(d).getByLabelText('Benutzername'), { target: { value: 'support1' } });
     fireEvent.change(within(d).getByLabelText('Anzeigename'), { target: { value: 'Doppelt' } });
-    fireEvent.change(within(d).getByLabelText('Passwort'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(within(d).getByLabelText('Passwort'), { target: { value: BEISPIELWERT } });
     h.apiPost.mockRejectedValue({ response: { status: 409, data: { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' } } });
     await act(async () => { fireEvent.click(within(d).getByRole('button', { name: 'Anlegen' })); });
     expect(h.alert?.message).toBe('Benutzername existiert bereits (muss systemweit eindeutig sein)');

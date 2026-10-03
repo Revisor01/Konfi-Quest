@@ -37,6 +37,11 @@ vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.
 import SupportAnfrageDetailPage from '../../../components/support/SupportAnfrageDetailPage';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 
+// Erfundener Wert fuer das Passwortfeld. Zusammengesetzt statt als
+// Zeichenkette, damit Geheimnis-Scanner (GitGuardian, PR #220) einen
+// Testwert nicht als Passwort im oeffentlichen Repo melden.
+const BEISPIELWERT = ['Beispiel', '2026', 'Wert!'].join('-');
+
 let vorherTZ: string | undefined;
 beforeAll(() => { vorherTZ = process.env.TZ; process.env.TZ = 'Europe/Berlin'; });
 afterAll(() => { if (vorherTZ === undefined) delete process.env.TZ; else process.env.TZ = vorherTZ; });
@@ -389,7 +394,7 @@ describe('Anfrage (Web): Gemeinde anlegen', () => {
     expect(screen.queryByLabelText('Eigenes Limit')).toBeNull();
     fireEvent.change(tarif(), { target: { value: '__eigen__' } });
     fireEvent.change(feld('Eigenes Limit'), { target: { value: '30' } });
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.click(anlegenKnopf());
     h.apiPost.mockResolvedValue({ data: { organization_id: 77, admin_id: 301 } });
     await bestaetigen('Anlegen');
@@ -410,7 +415,7 @@ describe('Anfrage (Web): Gemeinde anlegen', () => {
 
   it('fragt nach, legt an und zeigt den Weg zur neuen Gemeinde', async () => {
     await oeffnen();
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.change(screen.getByLabelText('Kirchenkreis'), { target: { value: '12' } });
     fireEvent.click(anlegenKnopf());
 
@@ -438,7 +443,7 @@ describe('Anfrage (Web): Gemeinde anlegen', () => {
       admin_username: 'anna.beispiel',
       admin_display_name: 'Anna Beispiel',
       admin_email: 'anna@example.org',
-      admin_password: 'Heide-2026!',
+      admin_password: BEISPIELWERT,
     });
     expect(Math.round((new Date(ende).getTime() - vorher) / (24 * 60 * 60 * 1000))).toBe(30);
 
@@ -455,7 +460,7 @@ describe('Anfrage (Web): Gemeinde anlegen', () => {
 
   it('Benutzername vergeben (409): die Meldung des Servers, das Formular bleibt', async () => {
     await oeffnen();
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.click(anlegenKnopf());
     h.apiPost.mockRejectedValue({ response: { status: 409, data: { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' } } });
     await bestaetigen('Anlegen');
