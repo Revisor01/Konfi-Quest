@@ -5,6 +5,7 @@ dabei entsteht und was die Gemeinde danach tut. Was die Gemeinde selbst lesen
 soll, steht im Handbuch unter
 [Eine neue Gemeinde einrichten](../handbuch/30-leitung.md#eine-neue-gemeinde-einrichten).
 Belegt am Code (`backend/routes/organizations.js`, `POST /organizations`;
+die Anlage selbst mit allen Vorlagen in `backend/utils/gemeindeAnlegen.js`;
 `frontend/src/components/admin/modals/OrganizationManagementModal.tsx`) und
 am 29.09.2026 gegen eine lokale Instanz nachgespielt.
 
