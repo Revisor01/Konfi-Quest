@@ -121,12 +121,59 @@ oder Support-Fälle gibt es im Schema nicht. Mails verschickt
 ## Offen
 
 - **Konto ohne Gemeinde — wie genau.** Entschieden ist, dass beides gehen
-  soll (Punkt 11). `users.organization_id` ist `NOT NULL`. Möglich sind eine
-  nullable Spalte — dann jede Stelle, die die Gemeinde des Kontos liest
-  (Token, `rbac.js`, Umschalter, Zähler, Cron-Jobs), absichern — oder eine
-  versteckte technische Gemeinde. Die Prüfung am Code läuft (02.10.2026);
-  ihr Ergebnis kommt hierher. Ausgelieferte Apps dürfen daran nicht brechen
-  (CLAUDE.md).
+  soll (Punkt 11). Am Code geprüft am 03.10.2026 (`main` 4cc24f0e):
+  - **Der Code ist halb darauf vorbereitet.** `rbac.js` und die Anmeldung
+    rechnen schon mit `organization_id` NULL (`LEFT JOIN`), und es gibt
+    einen gemeindefremden Navigationsbaum `super_admin` (`rollenBaeume.ts`),
+    seit 1.5.3 in allen ausgelieferten Apps.
+  - **NULL fällt fast überall sicher aus.** `req.user.organization_id` steht
+    519-mal in 30 Dateien, praktisch immer mit `=` verglichen: NULL trifft
+    nichts, das Ergebnis ist eine leere Liste oder 404. Die Rolle
+    `super_admin` steht in keiner Rollenliste von `requireAdmin`,
+    `requireTeamer`, `requireOrgAdmin` und bekommt dort 403. Keine Stelle
+    liefert bei NULL Daten fremder Gemeinden.
+  - **Rund acht Stellen rechnen falsch**, wo mit `<>` oder `= Spalte`
+    verglichen wird. Die wichtigsten: `PUT /users/:id/reset-password` meldet
+    Erfolg und ändert nichts (`WHERE … organization_id = $3`); ein Gast ohne
+    Gemeinde fehlt in der Benutzerliste der Gemeinde (`users.js`,
+    `u.organization_id <> $1`); `POST /chat/rooms` endet mit 500 (NOT NULL
+    in `chat_rooms`). Zu beheben mit `IS DISTINCT FROM`, `COALESCE` und einer
+    Prüfung von `rowCount`.
+  - **Das Frontend bekommt `organization_id` vom Server nie** (weder Login
+    noch `/auth/me`); seine 33 Lesestellen kommen schon heute mit
+    `undefined` aus.
+  - **Alte Apps (1.5.3 bis 2.3.0)** landeten mit einem solchen Konto in der
+    verkleinerten Ansicht „Gemeinden" — ohne Abmelden-Knopf. Sie zeigen aber
+    bei `error_code` `user_inactive` den Text des Servers wörtlich. Die
+    Anmeldung lässt sich dort also sauber abweisen: Konten ohne Gemeinde
+    melden sich nur an, wenn der Client ein neues Feld (`kann_ohne_gemeinde`)
+    schickt; sonst 403 mit Hinweis auf die Web-Version und einem neuen Feld
+    `grund`. Das ist Bedienkomfort, keine Sicherheitsgrenze — die Rechte
+    hält weiter `rbac.js`.
+  - **Variante „versteckte Betriebs-Gemeinde"** käme heute ohne Code aus,
+    müsste aber an mindestens neun Stellen ausgeblendet oder geschützt
+    werden (Gemeindeliste, Löschen — sonst würden Support-Konten gelöscht
+    oder in eine echte Gemeinde umgezogen —, Sperre und Testphase,
+    Umschalter, Einladungen, Seeds beim Start, Hintergrundläufe, Suche) und
+    in jeder künftigen Auswertung über alle Gemeinden. Die geplanten
+    Statistiken je Kirchenkreis und Landeskirche machen das zum
+    Dauerrisiko.
+
+  **Empfehlung:** `users.organization_id` nullable mit
+  `CHECK (organization_id IS NOT NULL OR is_super_admin)`, eine
+  gemeindefreie Systemrolle `super_admin` (eine Zeile in `roles`), die acht
+  Stellen beheben, alte Apps bei der Anmeldung abweisen. Für bestehende
+  Konten ändert sich keine Antwortform. Reihenfolge additiv: erst die
+  Stellen im Backend beheben (ohne Schemawechsel, einzeln auslieferbar),
+  dann die Migration, dann Routen zum Anlegen, Sperren und Löschen von
+  Support-Konten (heute gibt es dafür keinen Weg außer
+  `scripts/ersteinrichtung.js`), dann die Oberfläche (Abmelden im Baum
+  `super_admin`, Rückweg „ohne Gemeinde"). Vorher in Produktion lesend
+  messen, ob es schon globale Rollen oder Rollen `super_admin` gibt.
+
+  Nebenbei gefunden: Bei der Anmeldung überspringt ein Super-Admin die
+  Prüfung auf ein gesperrtes Konto, `rbac.js` aber nicht — ein gesperrtes
+  Super-Admin-Konto bekommt beim Login 200 und danach bei jeder Anfrage 401.
 - **Datenmodell Kirchenkreis und Landeskirche.** Eigene Tabellen mit
   Zuordnung an der Gemeinde; der Freitext `kirchenkreis` bleibt, bis die
   Bestände übertragen sind (Migration additiv). Die bestehenden Gemeinden,
