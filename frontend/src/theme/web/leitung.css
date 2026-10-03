@@ -738,3 +738,99 @@
   font-weight: var(--app-schrift-halbfett);
   overflow-wrap: anywhere;
 }
+
+/* --- Dashboard einrichten: Bereiche mit Schalter und zwei Pfeilen --- */
+.web-reihenfolge {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-reihenfolge__zeile {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-reihenfolge__zeile:last-child {
+  border-bottom: 0;
+}
+
+.web-reihenfolge__nr {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.web-reihenfolge__pfeile {
+  display: inline-flex;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Formular mit zwei Feldern nebeneinander --- */
+.web-formular__felder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--app-abstand-mittel);
+}
+
+/* --- Einladungscode: Schrift mit gleicher Breite, damit sich Zeichen lesen lassen --- */
+.web-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--app-text-hinweis);
+  letter-spacing: 0.08em;
+  color: var(--web-text);
+}
+
+.web-code--gross {
+  font-size: var(--app-text-ueberschrift);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.14em;
+  color: var(--web-text);
+}
+
+.web-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  text-align: center;
+}
+
+/* Der QR-Code steht auf hellem Grund, auch im Dunkeln: Scanner brauchen den Kontrast. */
+.web-qr__bild {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-schwebend);
+}
+
+.web-qr__code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  width: 100%;
+  padding: var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  background: var(--app-surface-muted);
+}
+
+.web-qr__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--app-abstand-eng);
+}
+
+/* Die Zeile, deren Code gerade im QR-Feld steht. */
+.web-tabelle tbody tr.web-zeile--gewaehlt td {
+  background: var(--web-hover);
+}

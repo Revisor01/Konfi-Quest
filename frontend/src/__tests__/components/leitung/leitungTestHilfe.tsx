@@ -44,6 +44,10 @@ export async function ionicFuerLeitung(stand: LeitungTestStand) {
     },
     // Die schmale Darstellung der App (Badges-Abschnitt) oeffnet Popover.
     useIonPopover: () => [vi.fn(), vi.fn()],
+    // Die Seiten der App ordnen mit Ziehen (Dashboard) und setzen Text in IonText (Einladung).
+    IonReorderGroup: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
+    IonReorder: () => null,
+    IonText: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
   };
 }
 

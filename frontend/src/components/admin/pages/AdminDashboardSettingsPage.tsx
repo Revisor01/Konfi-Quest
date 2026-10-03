@@ -30,6 +30,8 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebDashboardEinstellungen from '../web/leitung/WebDashboardEinstellungen';
 import {
   mergeSectionOrder,
   DEFAULT_KONFI_SECTION_ORDER,
@@ -106,6 +108,10 @@ const DEFAULT_TEAMER_ORDER = DEFAULT_TEAMER_SECTION_ORDER;
 
 const AdminDashboardSettingsPage: React.FC = () => {
   const { user, setError } = useApp();
+  // Im Browser ab 992 px zwei Karten mit Schaltern und Pfeilen
+  // (web/leitung/WebDashboardEinstellungen.tsx); Zustand und Speichern dieser
+  // Seite bleiben dieselben.
+  const breit = useBreitesLayout();
   const [dashboardSegment, setDashboardSegment] = useState<'konfi' | 'teamer'>('konfi');
 
   const [dashboardConfig, setDashboardConfig] = useState<DashboardConfig>({
@@ -236,6 +242,36 @@ const AdminDashboardSettingsPage: React.FC = () => {
       setError('Fehler beim Speichern');
     }
   };
+
+  if (breit) {
+    return (
+      <WebDashboardEinstellungen
+        laedt={loading}
+        konfi={konfiOrder.map((key) => ({
+          schluessel: key,
+          label: KONFI_LABELS[key] ?? key,
+          an: dashboardConfig[`show_${key}` as keyof DashboardConfig] ?? true,
+        }))}
+        team={teamerOrder.map((key) => ({
+          schluessel: key,
+          label: TEAMER_LABELS[key] ?? key,
+          an: teamerDashboardConfig[`show_${key}` as keyof TeamerDashboardConfig] ?? true,
+        }))}
+        onSchalten={(zielgruppe, key, an) => (zielgruppe === 'konfi'
+          ? handleDashboardToggle(`show_${key}` as keyof DashboardConfig, an)
+          : handleTeamerDashboardToggle(`show_${key}` as keyof TeamerDashboardConfig, an))}
+        onVerschieben={(zielgruppe, reihenfolge) => {
+          if (zielgruppe === 'konfi') {
+            setKonfiOrder(reihenfolge);
+            handleSaveOrder('dashboard_section_order', JSON.stringify(reihenfolge));
+          } else {
+            setTeamerOrder(reihenfolge);
+            handleSaveOrder('teamer_dashboard_section_order', JSON.stringify(reihenfolge));
+          }
+        }}
+      />
+    );
+  }
 
   if (loading) {
     return (

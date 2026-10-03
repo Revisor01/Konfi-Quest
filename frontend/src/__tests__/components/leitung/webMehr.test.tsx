@@ -56,12 +56,12 @@ describe('Mehr (Web): Kacheln je Rolle', () => {
     expect(gruppen()).toEqual(['Punkte und Inhalte', 'Gemeinde', 'Konto und Hilfe']);
     expect(kachelTitel()).toEqual([
       'Aktivitäten', 'Punkte und Level', 'Kategorien', 'Badges', 'Material', 'Jahresrückblick',
-      'Benutzer:innen', 'Jahrgänge', 'Einladungen', 'Startseite', 'Zertifikate',
+      'Benutzer:innen', 'Jahrgänge', 'Einladungen', 'Dashboard', 'Zertifikate',
       'Profil', 'App-Tour', 'Was ist neu?', 'Events und Aktivitäten', 'Hilfe und Support',
     ]);
   });
 
-  it('Leitung (Admin): die Inhalte, Jahrgaenge und Zertifikate -- aber weder Benutzer:innen noch Einladungen noch Startseite', () => {
+  it('Leitung (Admin): die Inhalte, Jahrgaenge und Zertifikate -- aber weder Benutzer:innen noch Einladungen noch Dashboard', () => {
     h.user = titel('admin');
     render(<AdminSettingsPage />);
     expect(gruppen()).toEqual(['Punkte und Inhalte', 'Gemeinde', 'Konto und Hilfe']);
@@ -69,7 +69,7 @@ describe('Mehr (Web): Kacheln je Rolle', () => {
     expect(titelListe).toContain('Jahrgänge');
     expect(titelListe).toContain('Zertifikate');
     expect(titelListe).toContain('Hilfe und Support');
-    for (const verboten of ['Benutzer:innen', 'Einladungen', 'Startseite', 'Support-Ansicht', 'Betrieb']) {
+    for (const verboten of ['Benutzer:innen', 'Einladungen', 'Dashboard', 'Support-Ansicht', 'Betrieb']) {
       expect(titelListe, verboten).not.toContain(verboten);
     }
   });
@@ -107,7 +107,7 @@ describe('Mehr (Web): Links', () => {
     expect(ziel(/^Benutzer:innen/)).toBe('/admin/users');
     expect(ziel(/^Jahrgänge/)).toBe('/admin/settings/jahrgaenge');
     expect(ziel(/^Einladungen/)).toBe('/admin/settings/invite');
-    expect(ziel(/^Startseite/)).toBe('/admin/settings/dashboard');
+    expect(ziel(/^Dashboard/)).toBe('/admin/settings/dashboard');
     expect(ziel(/^Zertifikate/)).toBe('/admin/settings/certificates');
     expect(ziel(/^Profil/)).toBe('/admin/profile');
   });
@@ -159,10 +159,10 @@ describe('Mehr (Web): Erklaerungen und Fenster', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('die Kachel "Startseite" erklaert sich mit dem Text des Dashboards', () => {
+  it('die Kachel "Dashboard" erklaert sich mit dem Text des Dashboards', () => {
     render(<AdminSettingsPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'Info zu Startseite' }));
-    expect(within(screen.getByRole('dialog', { name: 'Startseite' })).getByText(/Lege fest, welche Bereiche auf den Startseiten von Konfis und Team angezeigt werden/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Info zu Dashboard' }));
+    expect(within(screen.getByRole('dialog', { name: 'Dashboard' })).getByText(/Lege fest, welche Bereiche auf den Startseiten von Konfis und Team angezeigt werden/)).toBeInTheDocument();
   });
 
   it('App-Tour, Neuerungen und Erklaerung der Mitmachen-Seite oeffnen die Fenster der Seite', () => {
