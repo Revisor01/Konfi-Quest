@@ -1322,108 +1322,164 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
     }
   });
 
+  // Eintraege der Leitungsliste: fuer GET /admin alle, die die Person
+  // sieht, fuer GET /admin/:id genau einer (2.4.0, eigene Challenge-Seite).
+  //
+  // EINE Abfrage und EINE Aufbereitung fuer beide Routen: Die Einzelroute
+  // liefert damit Feld fuer Feld denselben Eintrag wie die Liste, und sie
+  // liefert ihn genau dann, wenn die Liste ihn fuehrt -- dieselbe Regel
+  // (utils/challengeLeitungSicht.js, 27.09.2026): 'nur_team' fuer das ganze
+  // Team, sonst ueber einen zugewiesenen Jahrgang; org_admin alles. Eine
+  // zweite Abfrage fuer das Detail waere eine zweite Stelle, an der die
+  // Sichtbarkeit auseinanderlaufen koennte (CLAUDE.md "Mitteilung =
+  // Sichtbarkeit").
+  //
+  // $1 = Organisation, $2 = eigene User-ID (für die Teilnahme-Felder,
+  // deshalb IMMER belegt), $3/$4 = Rolle und Jahrgangs-Liste (nur bei
+  // admin/teamer), danach optional die Challenge-ID.
+  async function leitungsChallenges(req, nurChallengeId = null) {
+    const viewable = viewableJahrgangIds(req);
+    const params = [req.user.organization_id, req.user.id];
+    let filter = '';
+    if (viewable !== null) {
+      params.push(req.user.role_name, viewable);
+      filter = `AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$4::int[]' })}`;
+    }
+    if (nurChallengeId !== null) {
+      params.push(nurChallengeId);
+      filter += ` AND c.id = $${params.length}`;
+    }
+
+    const { rows } = await db.query(
+      `SELECT c.*,
+              COALESCE(au.display_name, c.author_freetext) AS author_name,
+              au.display_name AS author_display_name,
+              (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id) AS submission_count,
+              (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id AND s.moderation_status = 'pending') AS pending_count,
+              -- Eigene Teilnahme: Seit der Zusammenlegung von "Verwalten" und
+              -- "Mitmachen" (11.08.) zeigt EINE Liste beides. Deshalb liefert
+              -- dieser Endpunkt zusaetzlich, was GET /challenges/konfi für
+              -- die Teilnehmer-Sicht liefert — sonst müsste das Frontend
+              -- zwei Listen mischen.
+              EXISTS (
+                SELECT 1 FROM challenge_submissions s
+                WHERE s.challenge_id = c.id AND s.user_id = $2
+                  AND s.moderation_status = 'approved'
+              ) AS has_badge,
+              -- Wann der eigene Stempel verdient wurde. ADDITIV (16.09.2026)
+              -- und wortgleich zur Konfi-Liste oben: Ohne dieses Feld konnte
+              -- das Stempel-Popover in der Leitungs- und Teamer-Ansicht kein
+              -- Datum zeigen -- dieselbe Kachel nannte bei Konfis den Tag und
+              -- hier nichts. Ausgelieferte Apps ignorieren das neue Feld.
+              (
+                SELECT MIN(COALESCE(s3.approved_at, s3.created_at))
+                FROM challenge_submissions s3
+                WHERE s3.challenge_id = c.id AND s3.user_id = $2
+                  AND s3.moderation_status = 'approved'
+              ) AS earned_at,
+              (SELECT COUNT(*) FROM challenge_submissions s
+                WHERE s.challenge_id = c.id AND s.user_id = $2) AS own_submission_count,
+              COALESCE(
+                (SELECT json_agg(json_build_object('id', j.id, 'name', j.name) ORDER BY j.name)
+                 FROM challenge_jahrgang_assignments cja
+                 JOIN jahrgaenge j ON cja.jahrgang_id = j.id
+                 WHERE cja.challenge_id = c.id),
+                '[]'::json
+              ) AS jahrgaenge
+       FROM challenges c
+       LEFT JOIN users au ON c.author_user_id = au.id
+       WHERE c.organization_id = $1
+       ${filter}
+       ORDER BY c.starts_at DESC, c.id DESC`,
+      params
+    );
+
+    const now = new Date();
+    return rows.map(row => ({
+      ...row,
+      allowed_media: parseAllowedMedia(row.allowed_media),
+      submission_count: parseInt(row.submission_count, 10) || 0,
+      pending_count: parseInt(row.pending_count, 10) || 0,
+      // COUNT kommt vom Treiber als String — ohne Parsen liefe '1' ins
+      // Frontend, obwohl der Typ (AdminChallenge) eine Zahl verspricht.
+      own_submission_count: parseInt(row.own_submission_count, 10) || 0,
+      status: deriveStatus(row, now),
+      locked: hasStarted(row, now)
+    }));
+  }
+
   // GET /admin — alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern.
   // Teamer sehen nur Challenges ihrer zugewiesenen Jahrgänge.
   router.get('/admin', rbacVerifier, requireTeamer, async (req, res) => {
     try {
       const viewable = viewableJahrgangIds(req);
-      // $1 = Organisation, $2 = eigene User-ID (für die Teilnahme-Felder,
-      // deshalb IMMER belegt), $3 = optionale Jahrgangs-Liste.
-      const params = [req.user.organization_id, req.user.id];
-      let jahrgangFilter = '';
-      if (viewable !== null) {
-        if (viewable.length === 0) {
-          // Leere Liste ohne Grund sah nach kaputter App aus (Befund
-          // 31.08.2026): Ein Admin ohne Jahrgangs-Zuweisung bekam hier
-          // dieselbe leere Liste wie eine Gemeinde ohne Challenges. Der Fall
-          // ist GUELTIG (Simons Entscheidung 31.08.: ein Admin braucht nicht
-          // zwingend einen Jahrgang) -- nur der Grund muss sichtbar werden.
-          // Als Header gemeldet, damit die Antwort ein Array bleibt und kein
-          // Aufrufer bricht -- dasselbe Muster wie GET /admin/konfis
-          // (konfi-management.js).
-          //
-          // NICHT fuer super_admin: viewableJahrgangIds gibt auch fuer ihn
-          // [] zurueck, aber aus einem anderen Grund -- er hat keinen Zugriff
-          // auf Jahrgangsdaten, nicht "keine Zuweisung". Heute weist ihn
-          // schon requireTeamer mit 403 ab (rbac.js), der Guard hier ist die
-          // Absicherung, falls sich das einmal aendert -- der Hinweis waere
-          // fuer ihn in jedem Fall falsch.
-          if (req.user.role_name === 'super_admin') {
-            return res.json([]);
-          }
-          res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
-          // KEIN early-return mehr (Widerspruch behoben, 01.09.2026): Die
-          // org-weiten Team-Challenges haengen an der Rolle, nicht am
-          // Jahrgang -- ohne Zuweisung bleibt genau dieser Anteil uebrig.
+      if (viewable !== null && viewable.length === 0) {
+        // Leere Liste ohne Grund sah nach kaputter App aus (Befund
+        // 31.08.2026): Ein Admin ohne Jahrgangs-Zuweisung bekam hier
+        // dieselbe leere Liste wie eine Gemeinde ohne Challenges. Der Fall
+        // ist GUELTIG (Simons Entscheidung 31.08.: ein Admin braucht nicht
+        // zwingend einen Jahrgang) -- nur der Grund muss sichtbar werden.
+        // Als Header gemeldet, damit die Antwort ein Array bleibt und kein
+        // Aufrufer bricht -- dasselbe Muster wie GET /admin/konfis
+        // (konfi-management.js).
+        //
+        // NICHT fuer super_admin: viewableJahrgangIds gibt auch fuer ihn
+        // [] zurueck, aber aus einem anderen Grund -- er hat keinen Zugriff
+        // auf Jahrgangsdaten, nicht "keine Zuweisung". Heute weist ihn
+        // schon requireTeamer mit 403 ab (rbac.js), der Guard hier ist die
+        // Absicherung, falls sich das einmal aendert -- der Hinweis waere
+        // fuer ihn in jedem Fall falsch.
+        if (req.user.role_name === 'super_admin') {
+          return res.json([]);
         }
-        // Eine Regel fuer Liste, Sichtpruefung, Zaehler und Mitteilungen
-        // (utils/challengeLeitungSicht.js, 27.09.2026): 'nur_team' fuer das
-        // ganze Team, sonst ueber einen zugewiesenen Jahrgang.
-        params.push(req.user.role_name, viewable);
-        jahrgangFilter = `AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$4::int[]' })}`;
+        res.set('X-Kein-Jahrgang-Zugewiesen', 'true');
+        // KEIN early-return mehr (Widerspruch behoben, 01.09.2026): Die
+        // org-weiten Team-Challenges haengen an der Rolle, nicht am
+        // Jahrgang -- ohne Zuweisung bleibt genau dieser Anteil uebrig.
       }
 
-      const { rows } = await db.query(
-        `SELECT c.*,
-                COALESCE(au.display_name, c.author_freetext) AS author_name,
-                au.display_name AS author_display_name,
-                (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id) AS submission_count,
-                (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id AND s.moderation_status = 'pending') AS pending_count,
-                -- Eigene Teilnahme: Seit der Zusammenlegung von "Verwalten" und
-                -- "Mitmachen" (11.08.) zeigt EINE Liste beides. Deshalb liefert
-                -- dieser Endpunkt zusaetzlich, was GET /challenges/konfi für
-                -- die Teilnehmer-Sicht liefert — sonst müsste das Frontend
-                -- zwei Listen mischen.
-                EXISTS (
-                  SELECT 1 FROM challenge_submissions s
-                  WHERE s.challenge_id = c.id AND s.user_id = $2
-                    AND s.moderation_status = 'approved'
-                ) AS has_badge,
-                -- Wann der eigene Stempel verdient wurde. ADDITIV (16.09.2026)
-                -- und wortgleich zur Konfi-Liste oben: Ohne dieses Feld konnte
-                -- das Stempel-Popover in der Leitungs- und Teamer-Ansicht kein
-                -- Datum zeigen -- dieselbe Kachel nannte bei Konfis den Tag und
-                -- hier nichts. Ausgelieferte Apps ignorieren das neue Feld.
-                (
-                  SELECT MIN(COALESCE(s3.approved_at, s3.created_at))
-                  FROM challenge_submissions s3
-                  WHERE s3.challenge_id = c.id AND s3.user_id = $2
-                    AND s3.moderation_status = 'approved'
-                ) AS earned_at,
-                (SELECT COUNT(*) FROM challenge_submissions s
-                  WHERE s.challenge_id = c.id AND s.user_id = $2) AS own_submission_count,
-                COALESCE(
-                  (SELECT json_agg(json_build_object('id', j.id, 'name', j.name) ORDER BY j.name)
-                   FROM challenge_jahrgang_assignments cja
-                   JOIN jahrgaenge j ON cja.jahrgang_id = j.id
-                   WHERE cja.challenge_id = c.id),
-                  '[]'::json
-                ) AS jahrgaenge
-         FROM challenges c
-         LEFT JOIN users au ON c.author_user_id = au.id
-         WHERE c.organization_id = $1
-         ${jahrgangFilter}
-         ORDER BY c.starts_at DESC, c.id DESC`,
-        params
-      );
-
-      const now = new Date();
-      res.json(rows.map(row => ({
-        ...row,
-        allowed_media: parseAllowedMedia(row.allowed_media),
-        submission_count: parseInt(row.submission_count, 10) || 0,
-        pending_count: parseInt(row.pending_count, 10) || 0,
-        // COUNT kommt vom Treiber als String — ohne Parsen liefe '1' ins
-        // Frontend, obwohl der Typ (AdminChallenge) eine Zahl verspricht.
-        own_submission_count: parseInt(row.own_submission_count, 10) || 0,
-        status: deriveStatus(row, now),
-        locked: hasStarted(row, now)
-      })));
+      res.json(await leitungsChallenges(req));
     } catch (err) {
       console.error('Database error in GET /challenges/admin:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });
+
+  // GET /admin/:id — EINE Challenge fuer die Leitungsseite (2.4.0, Simon
+  // 02.10.2026: "challenge nicht in modal öffnen, sondern in unterseite,
+  // damit man direkt auf die challenge linken kann aus einem push").
+  // ADDITIV: Die Antwort ist genau ein Eintrag aus GET /admin (gleiche
+  // Abfrage, siehe leitungsChallenges); Liste und Beitraege bleiben, wie sie
+  // sind. Fremde Gemeinde oder unbekannt: 404 wie GET /admin/:id/submissions.
+  // In der Gemeinde, aber nicht fuer diese Person sichtbar: 403 mit
+  // error_code, damit die Seite den Grund nennen kann (wie beim
+  // Termin-Detail, routes/events/lesen.js).
+  router.get('/admin/:id',
+    rbacVerifier,
+    requireTeamer,
+    param('id').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    handleValidationErrors,
+    async (req, res) => {
+      try {
+        const challengeId = parseInt(req.params.id, 10);
+        const challenge = await loadChallenge(challengeId, req.user.organization_id);
+        if (!challenge) {
+          return res.status(404).json({ error: 'Challenge nicht gefunden' });
+        }
+        const [eintrag] = await leitungsChallenges(req, challengeId);
+        if (!eintrag) {
+          return res.status(403).json({
+            error: 'Kein Zugriff auf diese Challenge',
+            error_code: 'jahrgang_nicht_zugewiesen'
+          });
+        }
+        res.json(eintrag);
+      } catch (err) {
+        console.error('Database error in GET /challenges/admin/:id:', err);
+        res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
+  );
 
   // POST /admin — Challenge anlegen (Entwurf oder direkt geplant).
   router.post('/admin', rbacVerifier, requireTeamer, validateCreate, async (req, res) => {
