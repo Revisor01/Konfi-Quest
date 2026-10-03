@@ -22,6 +22,10 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
   (02.10.2026): Versions-Tag `2.3.0` setzen, Deploy prüfen, Android-Lauf
   verfolgen, iOS-Build 240 in App Store Connect einreichen, beide Prüfungen
   verfolgen, alte Branches löschen.
+- **[14-support-postfaecher.md](14-support-postfaecher.md)** — jetzt
+  (03.10.2026): Postfächer moin@ und support@ prüfen, Stack-Variablen und
+  Stack-Datei für die Support-Mail ergänzen, Anmeldung nur lesend prüfen,
+  nach dem Deploy den Posteingang ablesen.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 
