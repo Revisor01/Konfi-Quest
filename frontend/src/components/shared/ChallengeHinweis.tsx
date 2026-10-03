@@ -3,7 +3,12 @@ import { IonButton, IonContent } from '@ionic/react';
 import AppKopfzeile from './AppKopfzeile';
 import EmptyState from './EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { ICON_CHALLENGE, ICON_JAHRGANG, ICON_OFFLINE, ICON_WARNUNG } from './icons';
+import { HINWEIS_TEXTE as TEXTE, type ChallengeHinweisArt } from './challengeHinweisTexte';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebChallengeHinweis from './web/challenges/WebChallengeHinweis';
+import WebChallengeRahmen from './web/challenges/WebChallengeRahmen';
+
+export type { ChallengeHinweisArt };
 
 /**
  * Was die Seite einer Challenge zeigt, solange sie keine Challenge zeigen
@@ -23,50 +28,6 @@ import { ICON_CHALLENGE, ICON_JAHRGANG, ICON_OFFLINE, ICON_WARNUNG } from './ico
  * Tausch der IonPage bemerkt der IonRouterOutlet nicht, die neue Seite
  * bliebe weiss (MainTabs.tsx, SeiteMitChunk; Test keinTauschImOutlet).
  */
-export type ChallengeHinweisArt =
-  /** Laedt noch. */
-  | 'laedt'
-  /** 404: geloescht, fremde Gemeinde, (fuer Konfis) noch nicht gestartet. */
-  | 'weg'
-  /** 403 bei Konfis: gehoert zu einem anderen Jahrgang. */
-  | 'nichtFuerDich'
-  /** 403 bei Team und Leitung: kein zugewiesener Jahrgang der Challenge. */
-  | 'jahrgang'
-  /** Ohne Netz und ohne gespeicherten Stand. */
-  | 'offline'
-  /** Unerwarteter Serverfehler. */
-  | 'fehler';
-
-const TEXTE: Record<Exclude<ChallengeHinweisArt, 'laedt'>, { icon: string; titel: string; text: string }> = {
-  weg: {
-    icon: ICON_CHALLENGE,
-    titel: 'Diese Challenge gibt es nicht mehr',
-    text: 'Sie wurde wohl gelöscht. Alle übrigen Challenges findest du in der Liste.',
-  },
-  nichtFuerDich: {
-    icon: ICON_JAHRGANG,
-    titel: 'Diese Challenge ist nicht für dich',
-    text: 'Sie gehört zu einem anderen Jahrgang. Deine Challenges findest du in der Liste.',
-  },
-  // Wortgleich mit dem Termin (admin/views/EventDetailView, jahrgangFehlt):
-  // derselbe Grund, dieselben Worte.
-  jahrgang: {
-    icon: ICON_JAHRGANG,
-    titel: 'Nicht deinem Jahrgang zugeordnet',
-    text: 'Diese Challenge gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.',
-  },
-  offline: {
-    icon: ICON_OFFLINE,
-    titel: 'Keine Verbindung',
-    text: 'Diese Challenge wurde noch nicht geladen — dafür brauchst du eine Verbindung.',
-  },
-  fehler: {
-    icon: ICON_WARNUNG,
-    titel: 'Die Challenge ließ sich nicht laden',
-    text: 'Versuch es gleich noch einmal.',
-  },
-};
-
 interface ChallengeHinweisProps {
   art: ChallengeHinweisArt;
   /** Zurueck zur Liste -- mit Verlauf zurueck, ohne (nach einem Push) auf die Liste. */
@@ -75,34 +36,46 @@ interface ChallengeHinweisProps {
   onNochmal?: () => void;
 }
 
-const ChallengeHinweis: React.FC<ChallengeHinweisProps> = ({ art, onBack, onNochmal }) => (
-  <>
-    <AppKopfzeile titel="Challenge" onZurueck={onBack} gemeindeUmschalter={false} />
-    <IonContent className="app-gradient-background" fullscreen>
-      {art === 'laedt' ? (
-        <LoadingSpinner message="Challenge wird geladen..." />
-      ) : (
-        <>
-          <EmptyState
-            icon={TEXTE[art].icon}
-            title={TEXTE[art].titel}
-            message={TEXTE[art].text}
-            iconColor="var(--app-color-challenges)"
-          />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)', padding: '0 var(--app-abstand-basis)' }}>
-            {onNochmal && (art === 'offline' || art === 'fehler') && (
-              <IonButton expand="block" fill="outline" onClick={onNochmal}>
-                Erneut versuchen
+const ChallengeHinweis: React.FC<ChallengeHinweisProps> = ({ art, onBack, onNochmal }) => {
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md): im breiten
+  // Browserfenster die Web-Fassung, sonst die Darstellung der App.
+  const breit = useBreitesLayout();
+  if (breit) {
+    return (
+      <WebChallengeRahmen titel="Challenge">
+        <WebChallengeHinweis art={art} onBack={onBack} onNochmal={onNochmal} />
+      </WebChallengeRahmen>
+    );
+  }
+  return (
+    <>
+      <AppKopfzeile titel="Challenge" onZurueck={onBack} gemeindeUmschalter={false} />
+      <IonContent className="app-gradient-background" fullscreen>
+        {art === 'laedt' ? (
+          <LoadingSpinner message="Challenge wird geladen..." />
+        ) : (
+          <>
+            <EmptyState
+              icon={TEXTE[art].icon}
+              title={TEXTE[art].titel}
+              message={TEXTE[art].text}
+              iconColor="var(--app-color-challenges)"
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)', padding: '0 var(--app-abstand-basis)' }}>
+              {onNochmal && (art === 'offline' || art === 'fehler') && (
+                <IonButton expand="block" fill="outline" onClick={onNochmal}>
+                  Erneut versuchen
+                </IonButton>
+              )}
+              <IonButton expand="block" onClick={onBack}>
+                Zu den Challenges
               </IonButton>
-            )}
-            <IonButton expand="block" onClick={onBack}>
-              Zu den Challenges
-            </IonButton>
-          </div>
-        </>
-      )}
-    </IonContent>
-  </>
-);
+            </div>
+          </>
+        )}
+      </IonContent>
+    </>
+  );
+};
 
 export default ChallengeHinweis;

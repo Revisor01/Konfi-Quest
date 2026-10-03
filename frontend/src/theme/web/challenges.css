@@ -1,0 +1,518 @@
+/* ===================================================================
+   Challenges in der Web-Fassung (Browser ab 992 px,
+   docs/planung/web-alle-bereiche.md, Entscheidung 6)
+
+   Karten im Raster, Filter, zweispaltige Seite einer Challenge, Beitraege
+   als Raster, Stempel. Eingebunden von den Web-Komponenten unter
+   components/shared/web/challenges/ und components/konfi/web/challenges/.
+   Dieselben Regeln wie theme/web-ansicht.css: Praefix web-, nur Tokens
+   (der Dunkelmodus kommt dadurch von selbst), keine Bewegung, kein
+   Eingriff in Ionic, sichtbarer Fokus an allem Bedienbaren.
+
+   Die Verlaeufe der Karten bauen auf den Challenge-Farben der App auf
+   (--app-color-challenges, --app-color-challenges-dunkel) und tragen den
+   Zustand: laufend Indigo, geplant Blau-Indigo, Entwurf und beendet grau.
+   =================================================================== */
+
+/* --- Raster der Karten --- */
+.web-challenge-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--app-abstand-basis);
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-challenge-raster__eintrag {
+  display: flex;
+  min-width: 0;
+}
+
+/* --- Karte einer Challenge --- */
+.web-challenge-karte {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+  color: var(--web-text);
+}
+
+.web-challenge-karte:hover {
+  background: var(--web-hover);
+}
+
+.web-challenge-karte--aktiv {
+  --web-challenge-verlauf: linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-dunkel) 100%);
+}
+
+.web-challenge-karte--geplant {
+  --web-challenge-verlauf: linear-gradient(135deg, var(--app-color-info) 0%, var(--app-color-challenges-dunkel) 100%);
+}
+
+.web-challenge-karte--entwurf,
+.web-challenge-karte--beendet {
+  --web-challenge-verlauf: linear-gradient(135deg, var(--app-color-neutral-hell) 0%, var(--app-color-neutral) 100%);
+}
+
+/* Das Bild der Karte: der Stempel der Challenge gross auf dem Verlauf. */
+.web-challenge-karte__bild {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittelweit);
+  min-height: 88px;
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  background: var(--web-challenge-verlauf);
+  color: var(--app-weiss);
+}
+
+.web-challenge-symbol {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid color-mix(in srgb, var(--app-weiss) 45%, transparent);
+  border-radius: var(--app-radius-kreis);
+  background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel-gross);
+}
+
+/* Die rote Zahl: neue Beitraege seit dem letzten Oeffnen, wie in der App. */
+.web-challenge-kugel {
+  position: absolute;
+  top: calc(-1 * var(--app-abstand-kompakt));
+  right: calc(-1 * var(--app-abstand-kompakt));
+  box-sizing: border-box;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--app-abstand-kompakt);
+  border: 2px solid var(--app-weiss);
+  border-radius: var(--app-radius-gross);
+  background: var(--app-color-danger);
+  color: var(--app-weiss);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-fett);
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.web-challenge-karte__stempel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-challenge-karte__stempel-label {
+  font-size: var(--app-text-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.web-challenge-karte__stempel-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-challenge-karte__inhalt {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-gross) var(--app-abstand-basis);
+}
+
+.web-challenge-karte__marken {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-challenge-karte__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.web-challenge-karte--beendet .web-challenge-karte__titel {
+  color: var(--web-text-leise);
+}
+
+.web-challenge-karte__text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  margin: 0;
+  overflow: hidden;
+  color: var(--web-text-leise);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-challenge-karte__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  margin: auto 0 0;
+  padding: var(--app-abstand-eng) 0 0;
+  list-style: none;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-challenge-karte__meta-eintrag {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+}
+
+/* Das Symbol vor einer Angabe (ein IonIcon mit dieser Klasse). */
+.web-challenge-icon {
+  flex: 0 0 auto;
+  color: var(--app-text-challenges);
+}
+
+.web-challenge-karte__meta-eintrag .web-challenge-icon {
+  margin-top: var(--app-abstand-winzig);
+}
+
+.web-challenge-karte__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-challenge-karte:focus-within {
+  border-color: var(--ion-color-primary);
+}
+
+/* --- Filter: Chips, Zielgruppe, Jahrgang, Suche --- */
+.web-challenge-filter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-challenge-filter__zeile {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-mittel) var(--app-abstand-basis);
+}
+
+/* Zielgruppe und Jahrgang: Beschriftung ueber dem Feld, beide auf einer Linie unten. */
+.web-challenge-filter__zeile--unten {
+  align-items: flex-end;
+}
+
+.web-challenge-filter__auswahl {
+  min-width: 200px;
+}
+
+/* Die orange Zahl: so viele Beitraege warten auf Freigabe (wie am Reiter der App). */
+.web-chip__zahl--orange {
+  background: var(--app-color-warning);
+  color: var(--app-weiss);
+}
+
+/* --- Stempel --- */
+.web-stempel-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr));
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-stempel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+}
+
+.web-stempel:hover {
+  background: var(--web-hover);
+}
+
+.web-stempel__symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-kreis);
+  background: linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-dunkel) 100%);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-stempel--offen .web-stempel__symbol {
+  background: var(--app-gradient-badge-gesperrt);
+  color: var(--app-text-muted);
+}
+
+.web-stempel__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-stempel__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-stempel--offen .web-stempel__name {
+  color: var(--web-text-leise);
+}
+
+.web-stempel .web-stempel__titel,
+.web-stempel .web-stempel__zusatz {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-stempel .web-stempel__zusatz {
+  font-size: var(--app-text-klein);
+}
+
+/* --- Seite einer Challenge: Aufgabe --- */
+.web-challenge-aufgabe {
+  margin: 0;
+  color: var(--web-text);
+  font-size: var(--app-text-basis);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-challenge-aufgabe__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng) var(--app-abstand-weit);
+  margin: var(--app-abstand-mittelweit) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-challenge-aufgabe__meta > li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Seite einer Challenge: Beitraege als Raster --- */
+.web-beitraege {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--app-abstand-basis);
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-beitraege__eintrag {
+  min-width: 0;
+}
+
+.web-beitrag {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-mittelweit);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+}
+
+.web-beitrag:hover {
+  background: var(--web-hover);
+}
+
+/* Der eigene Beitrag: ein Hauch der Challenge-Farbe, wie in der App. */
+.web-beitrag--eigen {
+  border-color: var(--app-color-challenges);
+  background: color-mix(in srgb, var(--app-color-challenges) 6%, var(--web-karte));
+}
+
+.web-beitrag--eigen:hover {
+  background: color-mix(in srgb, var(--app-color-challenges) 10%, var(--web-karte));
+}
+
+.web-beitrag--ausgeblendet {
+  opacity: 0.8;
+}
+
+.web-beitrag__kopf {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-beitrag__symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-challenges);
+  color: var(--app-weiss);
+  font-size: var(--app-text-gross);
+}
+
+.web-beitrag__wer {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.web-beitrag__name {
+  font-weight: var(--app-schrift-halbfett);
+  overflow-wrap: anywhere;
+}
+
+.web-beitrag__eigen {
+  color: var(--app-text-challenges);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.web-beitrag__wann {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-beitrag__marken {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-beitrag__text {
+  margin: 0;
+  font-size: var(--app-text-basis);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-beitrag__medium {
+  min-width: 0;
+}
+
+.web-beitrag__grund {
+  margin: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--app-rand-fehler);
+  border-radius: var(--app-radius-klein);
+  background: var(--app-flaeche-fehler);
+  color: var(--app-text-fehler);
+  font-size: var(--app-text-hinweis);
+  overflow-wrap: anywhere;
+}
+
+.web-beitrag__grund-label {
+  display: block;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-beitrag__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+  padding-top: var(--app-abstand-mittel);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+/* --- Seite einer Challenge: Abschnitt mit Ueberschrift und Chips --- */
+.web-challenge-abschnitt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittelweit);
+  min-width: 0;
+}
+
+.web-challenge-abschnitt__kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel) var(--app-abstand-basis);
+}
+
+/* --- Seite einer Challenge: Aktionen rechts --- */
+.web-challenge-aktionen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-challenge-aktionen .web-knopf {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+.web-challenge-hinweistext {
+  margin: 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-challenge-stempelinfo {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittelweit);
+}
+
+/* --- Frage vor dem Ausblenden (Dialog) --- */
+.web-challenge-frage {
+  margin: 0;
+  color: var(--web-text-leise);
+}

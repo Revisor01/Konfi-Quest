@@ -54,7 +54,9 @@ describe('Alle Rollen-Beschriftungen lesen rollenName', () => {
     'src/components/admin/modals/OrganizationManagementModal.tsx',
     'src/components/chat/modals/MembersModal.tsx',
     'src/components/shared/EinladungenKarte.tsx',
-    'src/components/konfi/pages/KonfiChallengeDetailPage.tsx',
+    // Die Beschriftung der Galerie steht seit der Web-Fassung der Challenges
+    // (03.10.2026) im Hook, den die Ansicht der App und die Web-Fassung teilen.
+    'src/components/konfi/pages/useKonfiChallengeAnsicht.ts',
   ];
 
   for (const pfad of ansichten) {

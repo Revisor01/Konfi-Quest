@@ -24,6 +24,8 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import type { AdminChallenge, ChallengeMark } from '../../types/challenges';
 import { mitBewahrtenStempeln } from '../../utils/bewahrteStempel';
 import { useApp } from '../../contexts/AppContext';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebChallengesLeitung from './web/challenges/WebChallengesLeitung';
 
 // Befund N7 (27.08.2026): Diese Seite lag zweimal im Baum —
 // AdminChallengesPage und TeamerChallengesPage wichen in 24 von rund 197
@@ -204,6 +206,34 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId, 
   };
 
   const { handleDelete } = useChallengeDelete({ onDeleted: refreshChallenges });
+
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md, Entscheidung
+  // 1): im breiten Browserfenster (ab 992 px) die Web-Fassung -- Karten im
+  // Raster mit Filtern --, sonst die Darstellung der App, unveraendert. Beide
+  // lesen dieselben Daten, Zaehler und Aktionen von hier.
+  const breit = useBreitesLayout();
+  if (breit) {
+    return (
+      <WebChallengesLeitung
+        challenges={Array.isArray(challenges) ? challenges : []}
+        loading={loading}
+        ohneJahrgang={ohneJahrgang}
+        marks={marks}
+        offeneStempel={offeneStempel}
+        stand={{
+          offeneFreigaben: pendingChallengesByChallenge,
+          neuigkeiten: challengeUpdatesByChallenge,
+          neueBeitraege: challengeNeueBeitraegeByChallenge ?? undefined,
+          neueWartend: challengeNeueWartendByChallenge,
+        }}
+        listenPfad={listenPfad}
+        onNeu={openCreate}
+        onBearbeiten={openEdit}
+        onLoeschen={handleDelete}
+        pageRef={pageRef}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

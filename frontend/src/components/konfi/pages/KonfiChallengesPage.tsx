@@ -18,6 +18,8 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import ChallengesView from '../views/ChallengesView';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { konfiChallengeListe } from '../../../utils/challengeListen';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebKonfiChallenges from '../web/challenges/WebKonfiChallenges';
 import type { KonfiChallenge, KonfiChallengesResponse } from '../../../types/challenges';
 
 const EMPTY_RESPONSE: KonfiChallengesResponse = { active: [], archive: [], marks: [], offene_stempel: [] };
@@ -58,6 +60,24 @@ const KonfiChallengesPage: React.FC = () => {
   const handleSelectChallenge = useCallback((challenge: KonfiChallenge) => {
     router.push(`/konfi/challenges/${challenge.id}`);
   }, [router]);
+
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md, Entscheidung
+  // 1): im breiten Browserfenster (ab 992 px) die Web-Fassung -- Karten im
+  // Raster mit Filtern --, sonst die Darstellung der App, unveraendert.
+  const breit = useBreitesLayout();
+  if (breit) {
+    return (
+      <WebKonfiChallenges
+        active={active}
+        archive={archive}
+        marks={marks}
+        offeneStempel={offeneStempel}
+        neuigkeiten={challengeUpdatesByChallenge}
+        loading={loading && !data}
+        pageRef={pageRef}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

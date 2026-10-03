@@ -1,5 +1,5 @@
 import { fehlerStatus, fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   IonPage,
   IonContent,
@@ -18,29 +18,18 @@ import {
   useIonModal
 } from '@ionic/react';
 import {
-  ICON_BILD,
-  ICON_ENTFERNEN,
   ICON_GRUPPE,
   ICON_HAKEN,
   ICON_HINZUFUEGEN,
-  ICON_LINK,
-  ICON_MIKROFON,
   ICON_PERSON,
   ICON_SICHTBAR,
   ICON_VERBORGEN,
-  ICON_SPERRE,
   ICON_TEXTDOKUMENT,
   ICON_UHRZEIT,
-  ICON_VIDEO,
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import { useBadge } from '../../../contexts/BadgeContext';
 import { useLiveRefresh, useLiveUpdate } from '../../../contexts/LiveUpdateContext';
-import { useJetztMitGrenzen } from '../../../hooks/useJetztMitGrenzen';
-import { datumUhrzeit } from '../../../utils/dateUtils';
-
-/** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
-type KonfiReiter = 'feed' | 'meins';
 import api from '../../../services/api';
 import { netzZuerstLaden } from '../../../services/netzZuerst';
 import { CACHE_TTL, offlineCache } from '../../../services/offlineCache';
@@ -50,20 +39,27 @@ import AppKopfzeile from '../../shared/AppKopfzeile';
 import ChallengeHinweis, { type ChallengeHinweisArt } from '../../shared/ChallengeHinweis';
 import ChallengeSubmitModal from '../modals/ChallengeSubmitModal';
 import { konfiChallengeListe } from '../../../utils/challengeListen';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebKonfiChallengeDetail from '../web/challenges/WebKonfiChallengeDetail';
 import ChallengeMedium from '../../shared/ChallengeMedium';
-import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { istWebLink } from '../../../utils/linkDisplay';
-import { ROLLEN_NAMEN, rollenName } from '../../../utils/rollenNamen';
 import MusikLink from '../../shared/MusikLink';
-import { getChallengeBadgeIcon, getAuthorLabel, formatRemaining } from '../views/ChallengesView';
+import { getChallengeBadgeIcon, formatRemaining } from '../views/ChallengesView';
+import {
+  MEDIA_ICON,
+  buildGalleryAuthorLabel,
+  formatDateTime,
+  getOwnStatus,
+  useKonfiChallengeAnsicht,
+  type KonfiReiter
+} from './useKonfiChallengeAnsicht';
 import type {
   KonfiChallenge,
   KonfiChallengesResponse,
   KonfiChallengeDetail,
   ChallengeSubmission,
-  ChallengeGalerieZeile,
-  ChallengeMediaType
+  ChallengeGalerieZeile
 } from '../../../types/challenges';
 
 // Eine Challenge für Konfis als eigene Seite (/konfi/challenges/:id):
@@ -78,78 +74,6 @@ import type {
 // Challenge deshalb selbst ueber ihre Kennung -- ein Push kann hierher
 // fuehren, ohne dass die Liste je geladen war, auch zu einer Challenge, die
 // es nicht mehr gibt (ChallengeHinweis statt leerer Seite).
-
-const MEDIA_ICON: Record<ChallengeMediaType, string> = {
-  text: ICON_TEXTDOKUMENT,
-  photo: ICON_BILD,
-  audio: ICON_MIKROFON,
-  video: ICON_VIDEO,
-  link: ICON_LINK
-};
-
-/**
- * Status als Icon-Corner-Badge für eigene Beitraege (Muster wie das
- * Warteliste-Badge bei Events: kompaktes, farbiges Icon-only-Badge statt
- * Text). Ausgeblendet schlägt alles; danach entscheidet die Sichtbarkeit
- * der Challenge bzw. die eigene Einwilligung. Label dient nur als Titel
- * (Tooltip/Barrierefreiheit), nicht als sichtbarer Text.
- */
-const getOwnStatus = (
-  submission: ChallengeSubmission,
-  challenge: KonfiChallenge
-): { label: string; icon: string; color: string } => {
-  if (submission.moderation_status === 'hidden') {
-    return { label: 'Ausgeblendet', icon: ICON_ENTFERNEN, color: 'var(--app-color-danger)' };
-  }
-  if (submission.moderation_status === 'pending') {
-    return { label: 'Wartet auf Freigabe', icon: ICON_UHRZEIT, color: 'var(--app-color-warning)' };
-  }
-  // approved
-  if (challenge.visibility === 'private') {
-    return { label: 'Nur Leitung', icon: ICON_SPERRE, color: 'var(--app-color-neutral)' };
-  }
-  // Anonym VOR der Sichtbarkeits-Unterscheidung: Die Leitung kann seit
-  // 24.08.2026 auch Beitraege in public-Challenges nachtraeglich anonym
-  // stellen — der Konsens allein entscheidet dann ueber die Namens-Anzeige.
-  if (submission.konfi_consent === 'anonymous') {
-    return { label: 'Anonym', icon: ICON_VERBORGEN, color: 'var(--app-color-wrapped)' };
-  }
-  if (challenge.visibility === 'public') {
-    // Dunkleres Grün wie bei den aktiven Challenges — das helle Success-Grün
-    // war hier zu grell (Nutzerentscheid 24.08.2026).
-    return { label: 'Veröffentlicht', icon: ICON_HAKEN, color: 'var(--app-color-success-strong)' };
-  }
-  // konfi_choice -> eigene Entscheidung entscheidet
-  if (submission.konfi_consent === 'publish') {
-    return { label: 'Veröffentlicht', icon: ICON_HAKEN, color: 'var(--app-color-success-strong)' };
-  }
-  return { label: 'Nur Leitung', icon: ICON_SPERRE, color: 'var(--app-color-neutral)' };
-};
-
-const formatDateTime = (value?: string): string => {
-  if (!value) return '';
-  const d = new Date(value);
-  if (isNaN(d.getTime())) return '';
-  return datumUhrzeit(d);
-};
-
-// Rollen-Kennzeichnung in der Galerie: Beitraege von Pastor:innen/Teamer:innen
-// sollen als solche erkennbar sein, ohne sie hervorzuheben (gleichgewichtet).
-// Die Woerter aus utils/rollenNamen; Konfis bekommen keins (dort steht der
-// Jahrgang).
-const galerieRolle = (roleName?: string | null): string | null =>
-  roleName && ROLLEN_NAMEN[roleName] ? rollenName(roleName) : null;
-
-// "Name · Teamer:in" bzw. "Name · Jahrgang 2026". Der Jahrgang hilft, wenn eine
-// Challenge mehrere Jahrgänge umfasst (User-Entscheid 08.08.). Anonyme
-// Beitraege liefert das Backend ohne Name/Rolle/Jahrgang -> nur "Anonym".
-const buildGalleryAuthorLabel = (submission: ChallengeSubmission): string => {
-  const name = submission.konfi_name?.trim();
-  if (!name) return 'Anonym';
-  const roleLabel = galerieRolle(submission.role_name);
-  const suffix = roleLabel || submission.jahrgang_name?.trim();
-  return suffix ? `${name} · ${suffix}` : name;
-};
 
 /** Eine Beitragskarte — in der Galerie ohne, bei eigenen Beitraegen mit Status. */
 const SubmissionCard: React.FC<{
@@ -280,6 +204,10 @@ const KonfiChallengeDetailInhalt: React.FC<KonfiChallengeDetailInhaltProps> = ({
   pageRef
 }) => {
   const { user, setError } = useApp();
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md): im breiten
+  // Browserfenster die Web-Fassung, sonst die Ansicht der App. Laden, Hinweise
+  // und das Gelesen-Melden hier gelten fuer beide.
+  const breit = useBreitesLayout();
   const { markChallengeAsRead } = useBadge();
   const { triggerRefresh } = useLiveUpdate();
   const [detail, setDetail] = useState<KonfiChallengeDetail | null>(null);
@@ -386,6 +314,25 @@ const KonfiChallengeDetailInhalt: React.FC<KonfiChallengeDetailInhaltProps> = ({
     }
   });
 
+  const einreichen = () => presentSubmitModal({ presentingElement: pageRef.current || undefined });
+
+  if (breit) {
+    // Eine Komponente fuer alle Zustaende, mit einem Rahmen: laedt, Hinweis,
+    // Challenge (WebKonfiChallengeDetail).
+    return (
+      <WebKonfiChallengeDetail
+        current={current}
+        hinweisArt={hinweis ?? 'laedt'}
+        onBack={onBack}
+        onNochmal={() => { setHinweis('laedt'); void loadDetail(); }}
+        detail={detail}
+        loading={loading}
+        offlineOhneStand={offlineOhneStand}
+        onSubmit={einreichen}
+      />
+    );
+  }
+
   if (!current) {
     return (
       <ChallengeHinweis
@@ -404,7 +351,7 @@ const KonfiChallengeDetailInhalt: React.FC<KonfiChallengeDetailInhaltProps> = ({
       offlineOhneStand={offlineOhneStand}
       onBack={onBack}
       onRefresh={loadDetail}
-      onSubmit={() => presentSubmitModal({ presentingElement: pageRef.current || undefined })}
+      onSubmit={einreichen}
     />
   );
 };
@@ -429,61 +376,19 @@ const KonfiChallengeDetailAnsicht: React.FC<KonfiChallengeDetailAnsichtProps> = 
   onRefresh,
   onSubmit
 }) => {
-  const author = getAuthorLabel(current);
-  // „Läuft" folgt der Uhr, nicht nur den Daten: Beginn und Ende stellen einen
-  // Wecker, der die Ansicht genau dann neu zeichnet. Bis 29.09.2026 hing der
-  // Wert per useMemo an `current` — endete die Challenge bei offenem Detail,
-  // blieb sie „laufend" samt Plus zum Einreichen (Release-Audit Toolchain
-  // BF-12, Test challengeEndetBeiOffenemDetail).
-  const startMs = new Date(current.starts_at).getTime();
-  const endeMs = new Date(current.ends_at).getTime();
-  const jetzt = useJetztMitGrenzen([startMs, endeMs + 1]);
-  const isActive = !current.is_draft && jetzt >= startMs && jetzt <= endeMs;
-
-  const [reiter, setReiter] = useState<KonfiReiter>('feed');
-  const gallery = detail?.gallery || [];
-  const ownSubmissions = detail?.own_submissions || [];
-
-  const canSubmitMore = isActive && (current.allow_multiple || ownSubmissions.length === 0);
-
-  // Bei "nur Leitung" gibt es keine Gruppen-Galerie — dann steht immer der
-  // eigene Reiter, unabhaengig davon, was zuletzt gewaehlt war.
-  const effektiverReiter: KonfiReiter = current.visibility === 'private' ? 'meins' : reiter;
-  const sichtbareBeitraege = effektiverReiter === 'meins' ? ownSubmissions : gallery;
-
-  // Ein Foto öffnen wie eine Chat-Datei: nativ mit Teilen und Sichern, sonst
-  // im Betrachter, in dem sich durch die Fotos dieses Reiters wischen lässt.
-  // Nur was die Liste gerade führt — ein ausgeblendeter oder gelöschter
-  // Beitrag steht nicht darin und ist so auch nicht zu erreichen.
-  const { dateiOeffnen } = useDateiOeffnen({
-    quelle: 'challenges',
-    fehlerOrt: 'challenge-datei',
-    kontext: () => sichtbareBeitraege
-      .filter((b) => b.media_type === 'photo' && b.file_path)
-      .map((b) => ({ pfad: b.file_path!, name: b.file_name })),
-  });
-
-  // Kurzform der Sichtbarkeit für den Kopf: EIN knapper Halbsatz neben der
-  // Laufzeit, damit beim Mitmachen sofort klar ist, wer den Beitrag zu sehen
-  // bekommt (User-Hinweis 10.08.). Dieselbe Angabe steht zusätzlich in der
-  // Meta-Zeile unter "Worum geht es".
-  // Rollenneutral formulieren: Diese Ansicht gehört seit der Zusammenlegung
-  // (11.08.) allein den Konfis — Teamer und Leitung nutzen
-  // admin/views/ChallengeLeitungView. Der Text bleibt trotzdem neutral, weil hier früher
-  // faelschlich "Nur für euch in der Leitung" stand (Audit 10.08.).
-  const visibilityShort = useMemo(() => {
-    if (current.visibility === 'private') return 'Nur das Leitungsteam sieht die Beiträge';
-    if (current.visibility === 'public') return 'Für die Gruppe sichtbar';
-    return 'Du entscheidest je Beitrag';
-  }, [current.visibility]);
-
-  // Der Modus steht seit 24.08.2026 direkt unter "Worum geht es" in der
-  // Meta-Zeile (Sichtbarkeit plus sofort/Freigabe) — der frühere eigene
-  // "Hinweis"-Kasten ist dafür entfallen (Nutzerentscheid).
-  const moderationShort = useMemo(() => {
-    if (current.visibility === 'private') return null; // sagt visibilityShort schon alles
-    return current.moderated ? 'Sichtbar nach Freigabe' : 'Sofort sichtbar';
-  }, [current.visibility, current.moderated]);
+  const {
+    author,
+    isActive,
+    reiter,
+    setReiter,
+    ownSubmissions,
+    canSubmitMore,
+    effektiverReiter,
+    sichtbareBeitraege,
+    dateiOeffnen,
+    visibilityShort,
+    moderationShort,
+  } = useKonfiChallengeAnsicht(current, detail);
 
   // KEINE EIGENE IonPage: Kopfzeile und Inhalt stehen in der IonPage der
   // Seite (KonfiChallengeDetailPage unten), die je Route genau einmal

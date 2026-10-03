@@ -37,6 +37,7 @@ import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } f
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { anzahlBeitraege, kugelTextAmEintrag, kugelTextNeueBeitraege, wartenAufFreigabe, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
 import { datumKurz } from '../../../utils/dateUtils';
+import { darfChallengesLoeschen } from '../../../utils/challengeRechte';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -249,7 +250,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Das Backend weist es seit demselben Tag mit 403 ab; ohne diese Pruefung
   // stuende der Wisch-Knopf da und liefe ins Leere.
   const { user } = useApp();
-  const darfLoeschen = user?.type === 'admin';
+  const darfLoeschen = darfChallengesLoeschen(user);
 
   const marks: ChallengeMark[] = Array.isArray(marksRaw) ? marksRaw : [];
   const offeneStempel: OffenerStempel[] = Array.isArray(offeneStempelRaw) ? offeneStempelRaw : [];
@@ -685,4 +686,4 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
 };
 
 export default ChallengesManageView;
-export { STATUS_LABEL, STATUS_COLOR, STATUS_ICON, VISIBILITY_LABEL };
+export { STATUS_LABEL, STATUS_COLOR, STATUS_ICON, VISIBILITY_LABEL, AUDIENCE_LABEL };
