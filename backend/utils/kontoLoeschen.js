@@ -133,6 +133,7 @@ const LOESCHREGELN = Object.freeze({
   'events.cancelled_by': 'nullen',
   'events.cancelled_reason_set_by': 'nullen',
   'events.created_by': 'nullen',
+  'gemeinde_anfragen.bearbeitet_von': 'nullen',     // Anfrage bleibt, nur "zuletzt bearbeitet von" faellt
   'invite_codes.created_by': 'nullen',              // seit Migration 173 ohne NOT NULL
   'konfi_historie.erstellt_von': 'nullen',
   'levels.created_by': 'nullen',

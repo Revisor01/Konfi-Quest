@@ -276,6 +276,12 @@ async function legeVollePersonAn(db, P, { weitereGemeinde = true } = {}) {
      VALUES ($1, 'teamer', 'Team-Rückblick', '2026-01-01', '2026-09-01', NOW(), $2::int, $2::int) RETURNING id`, [ORG, P]);
   merke('wrapped_ausgaben.erstellt_von', ausgabe.id);
   merke('wrapped_ausgaben.freigegeben_von', ausgabe.id);
+  // Eine Anfrage vom Formular, die die Person (als Support) zuletzt
+  // bearbeitet hat (Migration 191).
+  merke('gemeinde_anfragen.bearbeitet_von', (await eins(
+    `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am, status, bearbeitet_von)
+     VALUES ('Kirchengemeinde Probe', 'Pastorin Probe', 'probe@example.test', NOW(), 'in_arbeit', $1) RETURNING id`,
+    [P])).id);
 
   // ---------------- ohne Fremdschluessel ----------------
   // Zaehler der Anmeldesperre (utils/kontoSperre.js): Hash ueber den Namen.
