@@ -56,7 +56,7 @@ async function ladeUebersicht(): Promise<UebersichtDaten> {
   const [roh, statistik] = await Promise.allSettled([api.get('/support/uebersicht'), api.get('/support/statistik')]);
   if (roh.status !== 'fulfilled') throw roh.reason;
   const uebersicht = uebersichtLesen(roh.value.data);
-  if (!uebersicht) throw new Error('Die Uebersicht kam in einer unbekannten Form');
+  if (!uebersicht) throw new Error('Die Übersicht kam in einer unbekannten Form');
   const gemeinden = statistik.status === 'fulfilled' && Array.isArray(statistik.value.data?.gemeinden) ? statistik.value.data.gemeinden : null;
   return {
     uebersicht,
