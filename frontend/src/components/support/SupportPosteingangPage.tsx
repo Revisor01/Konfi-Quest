@@ -50,6 +50,8 @@ import { useSupportMailZaehler } from '../../navigation/supportMailZaehler';
 import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { Hinweis } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebPosteingang from './web/WebPosteingang';
 
 type Filter = Postfach | 'alle';
 
@@ -341,8 +343,12 @@ const Posteingang: React.FC = () => {
   );
 };
 
-const SupportPosteingangPage: React.FC = () => (
-  <NurSupport titel="Posteingang"><Posteingang /></NurSupport>
-);
+// Zwei Gesichter, eine Seite (docs/planung/support-web.md, Entscheidung 1):
+// im breiten Browserfenster der Posteingang wie ein Mailprogramm, sonst die
+// Darstellung der App -- unveraendert.
+const SupportPosteingangPage: React.FC = () => {
+  const breit = useBreitesLayout();
+  return <NurSupport titel="Posteingang">{breit ? <WebPosteingang /> : <Posteingang />}</NurSupport>;
+};
 
 export default SupportPosteingangPage;

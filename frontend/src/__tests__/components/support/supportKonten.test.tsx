@@ -34,6 +34,11 @@ vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 
 import SupportKontenPage from '../../../components/support/SupportKontenPage';
 
+// Erfundener Wert fuer das Passwortfeld. Zusammengesetzt statt als
+// Zeichenkette, damit Geheimnis-Scanner (GitGuardian, PR #220) einen
+// Testwert nicht als Passwort im oeffentlichen Repo melden.
+const BEISPIELWERT = ['Beispiel', '2026', 'Wert!'].join('-');
+
 const KONTEN = [
   { id: 9, username: 'support1', display_name: 'Support Eins', email: 'support@example.org', is_active: true,
     last_login_at: '2026-10-03T07:00:00Z', created_at: '2026-10-01T07:00:00Z', gemeinden: [] },
@@ -146,21 +151,21 @@ describe('Support-Konten: Passwort setzen', () => {
     expect(h.setError).toHaveBeenCalledWith('Das Passwort muss mindestens 8 Zeichen lang sein');
     expect(h.apiPut).not.toHaveBeenCalled();
 
-    fireEvent.change(feld, { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(feld, { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.click(within(zeile('Support Zwei')).getByRole('button', { name: 'Passwort setzen' })); });
-    expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/10/passwort', { password: 'Neu-Start2026!' });
+    expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/10/passwort', { password: BEISPIELWERT });
     expect(h.setSuccess).toHaveBeenCalledWith('Passwort gesetzt');
   });
 
   it('beim eigenen Konto erst die Rueckfrage (alle Sitzungen enden, auch diese)', async () => {
     await oeffnen();
     fireEvent.click(within(zeile('Support Eins')).getByRole('button', { name: 'Passwort setzen' }));
-    fireEvent.change(screen.getByLabelText('Neues Passwort für support1'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(screen.getByLabelText('Neues Passwort für support1'), { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.click(within(zeile('Support Eins')).getByRole('button', { name: 'Passwort setzen' })); });
     expect(h.alert?.header).toBe('Eigenes Passwort setzen');
     expect(h.apiPut).not.toHaveBeenCalled();
     await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Passwort setzen')?.handler?.(); });
-    await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/9/passwort', { password: 'Neu-Start2026!' }));
+    await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/organizations/support-konten/9/passwort', { password: BEISPIELWERT }));
   });
 });
 
@@ -170,7 +175,7 @@ describe('Support-Konten: anlegen', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Support-Konto anlegen' }));
     fireEvent.change(screen.getByLabelText('Benutzername'), { target: { value: 'support 4' } });
     fireEvent.change(screen.getByLabelText('Anzeigename'), { target: { value: 'Support Vier' } });
-    fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: BEISPIELWERT } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anlegen' })); });
     expect(h.setError).toHaveBeenCalledWith('Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten — keine Leerzeichen oder Umlaute');
     expect(h.apiPost).not.toHaveBeenCalled();
@@ -178,7 +183,7 @@ describe('Support-Konten: anlegen', () => {
     fireEvent.change(screen.getByLabelText('Benutzername'), { target: { value: 'support4' } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anlegen' })); });
     expect(h.apiPost).toHaveBeenCalledWith('/organizations/support-konten', {
-      username: 'support4', display_name: 'Support Vier', password: 'Neu-Start2026!',
+      username: 'support4', display_name: 'Support Vier', password: BEISPIELWERT,
     });
     expect(h.setSuccess).toHaveBeenCalledWith('Support-Konto angelegt');
     expect(screen.queryByLabelText('Anzeigename')).toBeNull();
@@ -190,10 +195,10 @@ describe('Support-Konten: anlegen', () => {
     fireEvent.change(screen.getByLabelText('Benutzername'), { target: { value: 'support1' } });
     fireEvent.change(screen.getByLabelText('Anzeigename'), { target: { value: 'Doppelt' } });
     fireEvent.change(screen.getByLabelText('E-Mail'), { target: { value: 'doppelt@example.org' } });
-    fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: 'Neu-Start2026!' } });
+    fireEvent.change(screen.getByLabelText('Passwort'), { target: { value: BEISPIELWERT } });
     h.apiPost.mockRejectedValue({ response: { status: 409, data: { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' } } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anlegen' })); });
-    expect(h.apiPost.mock.calls[0][1]).toEqual({ username: 'support1', display_name: 'Doppelt', password: 'Neu-Start2026!', email: 'doppelt@example.org' });
+    expect(h.apiPost.mock.calls[0][1]).toEqual({ username: 'support1', display_name: 'Doppelt', password: BEISPIELWERT, email: 'doppelt@example.org' });
     expect(h.alert?.message).toBe('Benutzername existiert bereits (muss systemweit eindeutig sein)');
     expect(screen.getByLabelText('Anzeigename')).toBeInTheDocument();
   });

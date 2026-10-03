@@ -40,6 +40,8 @@ import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 import { lizenzFinden } from '../../utils/lizenzen';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebAnfragen from './web/WebAnfragen';
 
 type Filter = AnfrageStatus | 'alle' | 'ungelesen';
 
@@ -200,8 +202,12 @@ const Anfragen: React.FC = () => {
   );
 };
 
-const SupportAnfragenPage: React.FC = () => (
-  <NurSupport titel="Anfragen"><Anfragen /></NurSupport>
-);
+// Zwei Gesichter, eine Seite (docs/planung/support-web.md, Entscheidung 1):
+// im breiten Browserfenster die Tabelle der Web-Fassung, sonst die
+// Darstellung der App -- unveraendert.
+const SupportAnfragenPage: React.FC = () => {
+  const breit = useBreitesLayout();
+  return <NurSupport titel="Anfragen">{breit ? <WebAnfragen /> : <Anfragen />}</NurSupport>;
+};
 
 export default SupportAnfragenPage;

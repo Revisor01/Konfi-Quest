@@ -12,7 +12,7 @@
 // Beim Oeffnen werden die ungelesenen eingehenden Mails des Fadens als
 // gelesen gemeldet; sie tragen auf dieser Seite noch die Marke „Neu".
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import {
   IonButton,
   IonContent,
@@ -29,25 +29,16 @@ import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import EmptyState from '../shared/EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { ICON_ANTWORTEN, ICON_ARCHIV, ICON_CHATS, ICON_MAIL, ICON_ORGANISATION, ICON_WECHSEL } from '../shared/icons';
-import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import type { GemeindeAnfrage, GemeindeKurz, MailAntwortDaten, MailNachricht, MailVerlauf } from '../../types/support';
+import type { MailAntwortDaten } from '../../types/support';
 import { ANFRAGE_STATUS } from '../../utils/supportAnfragen';
-import {
-  POSTFACH_INFO,
-  anfragenZumZuordnen,
-  fadenAus,
-  gemeindeName,
-  gemeindenSortiert,
-  standardBetreff,
-  ungeleseneIds,
-} from '../../utils/supportMail';
-import { fehlerStatus, fehlerText } from '../../utils/fehler';
-import { offlineBlockiert } from '../../utils/offlineAktion';
-import { mailsAlsGelesen, supportMailZaehlerAuffrischen } from '../../navigation/supportMailZaehler';
+import { POSTFACH_INFO, gemeindeName } from '../../utils/supportMail';
 import { Abschnitt, Ladefehler, NurSupport } from './SupportBausteine';
 import { AntwortFormular, Hinweis, MailListe } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebPostDetail from './web/WebPostDetail';
+import { usePostDetail } from './usePostDetail';
 
 interface Props {
   nachrichtId: number;
@@ -56,99 +47,13 @@ interface Props {
 }
 
 const PostDetail: React.FC<Props> = ({ nachrichtId }) => {
-  const { setError, setSuccess, isOnline } = useApp();
   const router = useIonRouter();
   const zurueck = useSupportZurueck('/admin/support/post');
-
-  const [mail, setMail] = useState<MailVerlauf | null>(null);
-  const [faden, setFaden] = useState<MailNachricht[]>([]);
-  const [neu, setNeu] = useState<ReadonlySet<number>>(new Set());
-  const [laedt, setLaedt] = useState(true);
-  const [fehler, setFehler] = useState(false);
-  const [nichtGefunden, setNichtGefunden] = useState(false);
-
-  const [anfragen, setAnfragen] = useState<GemeindeAnfrage[]>([]);
-  const [gemeinden, setGemeinden] = useState<GemeindeKurz[]>([]);
-  const [auswahlFehlt, setAuswahlFehlt] = useState(false);
-  const [anfrageWahl, setAnfrageWahl] = useState('');
-  const [gemeindeWahl, setGemeindeWahl] = useState('');
-  const [ordnetZu, setOrdnetZu] = useState(false);
-
-  // Erst warten, dann Zustand setzen (der erste Abruf laeuft im Effekt).
-  const holen = useCallback(async (ersterAbruf: boolean) => {
-    if (!Number.isInteger(nachrichtId) || nachrichtId <= 0) {
-      setNichtGefunden(true);
-      setLaedt(false);
-      return;
-    }
-    try {
-      const antwort = await api.get(`/support/mail/nachrichten/${nachrichtId}`);
-      const daten = antwort.data && typeof antwort.data === 'object' ? antwort.data as MailVerlauf : null;
-      if (!daten || typeof daten.id !== 'number') {
-        setMail(null);
-        setNichtGefunden(true);
-        return;
-      }
-      const liste = fadenAus(daten);
-      const ungelesen = ungeleseneIds(liste);
-      setMail(daten);
-      setFaden(liste);
-      // „Neu" bleibt fuer diesen Besuch an den Mails, die beim Oeffnen
-      // ungelesen waren -- auch nachdem sie als gelesen gemeldet sind.
-      if (ersterAbruf) setNeu(new Set(ungelesen));
-      setNichtGefunden(false);
-      setFehler(false);
-      void mailsAlsGelesen(ungelesen);
-    } catch (err) {
-      setMail(null);
-      if (fehlerStatus(err) === 404) setNichtGefunden(true);
-      else setFehler(true);
-    } finally {
-      setLaedt(false);
-    }
-  }, [nachrichtId]);
-
-  const auswahlHolen = useCallback(async () => {
-    const [a, g] = await Promise.allSettled([api.get('/support/anfragen'), api.get('/organizations')]);
-    setAnfragen(a.status === 'fulfilled' && Array.isArray(a.value.data) ? anfragenZumZuordnen(a.value.data) : []);
-    setGemeinden(g.status === 'fulfilled' && Array.isArray(g.value.data) ? gemeindenSortiert(g.value.data) : []);
-    setAuswahlFehlt(a.status !== 'fulfilled' || g.status !== 'fulfilled');
-  }, []);
-
-  useEffect(() => {
-    void holen(true);
-    void auswahlHolen();
-  }, [holen, auswahlHolen]);
-
-  const laden = () => {
-    setLaedt(true);
-    setFehler(false);
-    return holen(true);
-  };
-
-  const zuordnen = async (koerper: { anfrage_id: number } | { organization_id: number } | Record<string, never>, meldung: string) => {
-    if (!mail || offlineBlockiert(isOnline, setError)) return;
-    setOrdnetZu(true);
-    try {
-      await api.post(`/support/mail/nachrichten/${mail.id}/zuordnen`, koerper);
-      setSuccess(meldung);
-      setAnfrageWahl('');
-      setGemeindeWahl('');
-      supportMailZaehlerAuffrischen();
-      await holen(false);
-    } catch (err) {
-      setError(fehlerText(err, 'Mail konnte nicht zugeordnet werden'));
-    } finally {
-      setOrdnetZu(false);
-    }
-  };
-
-  // Antwort an den Absender der letzten eingehenden Mail des Fadens.
-  const letzteEingehende = useMemo(
-    () => [...faden].reverse().find((m) => m.richtung === 'ein') ?? mail,
-    [faden, mail]
-  );
-  const betreffVorschlag = standardBetreff(faden[faden.length - 1]?.betreff ?? mail?.betreff);
+  const {
+    isOnline, mail, faden, neu, laedt, fehler, nichtGefunden, anfragen, gemeinden, auswahlFehlt, anfrageWahl, setAnfrageWahl,
+    gemeindeWahl, setGemeindeWahl, ordnetZu, holen, laden, zuordnen, letzteEingehende, betreffVorschlag, anfrageDerMail,
+    gemeindeDerMail, zugeordnet, gewaehlteAnfrage, gewaehlteGemeinde,
+  } = usePostDetail(nachrichtId);
 
   const kopf = <AppKopfzeile titel="Mail" onZurueck={zurueck} gemeindeUmschalter={false} />;
 
@@ -179,12 +84,6 @@ const PostDetail: React.FC<Props> = ({ nachrichtId }) => {
       </IonPage>
     );
   }
-
-  const anfrageDerMail = mail.anfrage_id ? anfragen.find((a) => a.id === mail.anfrage_id) : undefined;
-  const gemeindeDerMail = mail.organization_id ? gemeinden.find((g) => g.id === mail.organization_id) : undefined;
-  const zugeordnet = mail.anfrage_id !== null || mail.organization_id !== null;
-  const gewaehlteAnfrage = anfragen.find((a) => String(a.id) === anfrageWahl);
-  const gewaehlteGemeinde = gemeinden.find((g) => String(g.id) === gemeindeWahl);
 
   return (
     <IonPage>
@@ -315,8 +214,15 @@ const PostDetail: React.FC<Props> = ({ nachrichtId }) => {
   );
 };
 
-const SupportPostDetailPage: React.FC<Props> = (props) => (
-  <NurSupport titel="Mail"><PostDetail {...props} /></NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster die Web-Fassung (wie
+// ein Mailprogramm), sonst die Darstellung der App. Beide nutzen usePostDetail.
+const SupportPostDetailPage: React.FC<Props> = (props) => {
+  const breit = useBreitesLayout();
+  return (
+    <NurSupport titel="Mail">
+      {breit ? <WebPostDetail nachrichtId={props.nachrichtId} /> : <PostDetail {...props} />}
+    </NurSupport>
+  );
+};
 
 export default SupportPostDetailPage;

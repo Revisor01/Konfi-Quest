@@ -31,6 +31,11 @@ vi.mock('../../../contexts/AppContext', () => ({
 
 import SupportAnfrageDetailPage from '../../../components/support/SupportAnfrageDetailPage';
 
+// Erfundener Wert fuer das Passwortfeld. Zusammengesetzt statt als
+// Zeichenkette, damit Geheimnis-Scanner (GitGuardian, PR #220) einen
+// Testwert nicht als Passwort im oeffentlichen Repo melden.
+const BEISPIELWERT = ['Beispiel', '2026', 'Wert!'].join('-');
+
 const ANFRAGE = {
   id: 4, gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche',
   kontakt_name: 'Anna Beispiel', funktion: 'Pastorin', email: 'anna@example.org', mobil: '0170 1234567',
@@ -158,7 +163,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
 
   it('fragt nach, legt an und zeigt den Weg zur neuen Gemeinde', async () => {
     await oeffnen();
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.change(screen.getByLabelText('Kirchenkreis'), { target: { value: '12' } });
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
 
@@ -186,7 +191,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
       admin_username: 'anna.beispiel',
       admin_display_name: 'Anna Beispiel',
       admin_email: 'anna@example.org',
-      admin_password: 'Heide-2026!',
+      admin_password: BEISPIELWERT,
     });
     const tage = (new Date(ende).getTime() - vorher) / (24 * 60 * 60 * 1000);
     expect(Math.round(tage)).toBe(30);
@@ -201,7 +206,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
 
   it('ohne Testphase und ohne Limit: unbegrenzt, keine Testphase', async () => {
     await oeffnen();
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
     fireEvent.change(tarif(), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
@@ -256,7 +261,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
 
   it('Unbegrenzt auch in der Testphase: geht als null an den Server', async () => {
     await oeffnen();
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.change(tarif(), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
     h.apiPost.mockResolvedValue({ data: { organization_id: 77, admin_id: 301 } });
@@ -270,7 +275,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
     expect(screen.queryByLabelText('Eigenes Limit')).toBeNull();
     fireEvent.change(tarif(), { target: { value: '__eigen__' } });
     fireEvent.change(feld('Eigenes Limit'), { target: { value: '30' } });
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
     h.apiPost.mockResolvedValue({ data: { organization_id: 77, admin_id: 301 } });
     await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Anlegen')?.handler?.(); });
@@ -280,7 +285,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
 
   it('Benutzername vergeben (409): die Meldung des Servers, das Formular bleibt', async () => {
     await oeffnen();
-    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(feld('Passwort'), { target: { value: BEISPIELWERT } });
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
     h.apiPost.mockRejectedValue({ response: { status: 409, data: { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' } } });
     await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Anlegen')?.handler?.(); });

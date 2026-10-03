@@ -154,8 +154,59 @@ je Mail die zusätzlichen Felder `anfrage_id`, `organization_id`,
 `gemeinde_name` (Gemeinde der Zuordnung bzw. Gemeindename der Anfrage).
 Ohne Parameter bleibt die Antwort, wie sie ist.
 
+## Gebaut (03.10.2026)
+
+Alle Entscheidungen oben sind umgesetzt; Betrieb:
+[betrieb/support-ansicht.md](../betrieb/support-ansicht.md). Festgelegt beim
+Bauen, wo der Vertrag offen war:
+
+- **Kennzahl Gemeinden:** Gesperrte zählen nur unter „gesperrt", die übrigen
+  unter Testphase (Testphase mit Enddatum), Lizenz (keine Testphase, mit
+  Enddatum) oder unbegrenzt (ohne Enddatum) — die vier ergeben die Summe.
+- **Konten** zählen wie in `GET /support/statistik`: nicht gelöscht, nicht
+  gesperrt, ohne Support-Konten ohne Gemeinde; in der Entwicklung zählt jedes
+  Konto einmal (Team, sobald es irgendwo Teamer:in, Leitung oder
+  Gemeindeleitung ist). „Aktiv in 30 Tagen" je Konto einmal über alle
+  Gemeinden — die Statistik je Gemeinde zählt ein Konto in jeder seiner
+  Gemeinden.
+- **Aktivität:** Anträge aus `activity_requests` (`created_at`), Buchungen
+  aus `event_bookings` (`booking_date`, auch die automatischen bei
+  Pflichtterminen), Nachrichten aus `chat_messages` über die Gemeinde des
+  Chatraums.
+- **Testphase endet:** nur laufende Testphasen nicht gesperrter Gemeinden;
+  Lizenzen mit Ablaufdatum nicht.
+- **Gemeindeliste:** `konfi_count` nach der Limit-Regel (auch gesperrte
+  Konfis), `leitung` auch mit gesperrten Leitungen (`is_active` zeigt es).
+- **Schnell genug:** Die Übersicht läuft in einer lesenden Transaktion ohne
+  JIT — auf 150 Gemeinden, 6.000 Konten und 300.000 Nachrichten 1.070 ms →
+  188 ms (Median aus acht Aufrufen); Gemeindeliste 30 ms.
+- **Umschalter in der Leiste:** Symbol mit Anfangsbuchstaben des Orts in der
+  Farbe der Rolle dort, Name auf bis zu zwei Zeilen, Liste nach oben mit
+  Tastaturbedienung; der Wechsel führt auf die Startseite der neuen Rolle.
+  Mit den Support-Gruppen scrollt die Leiste bei etwa 900 px Fensterhöhe; ein
+  zarter Schatten zeigt das an.
+- **Anfragen** starten im Browser mit dem Filter „Alle"; die Kachel „Offene
+  Anfragen" führt auf „Offen" (neu und in Arbeit, `?filter=offen`), die Kachel
+  „Ungelesene Mails" auf den Posteingang mit „Ungelesen" (`?filter=ungelesen`).
+- **Detailseiten** (Anfrage, Mail, Schriftwechsel, Textbausteine, Struktur,
+  Konten): zwei Spalten nach der Breite der Seite (ab 960 px), Dialoge nur für
+  Formulare, Bestätigungen wie in der App. In der Anfrage stehen „Bearbeiten"
+  (Status, Notiz) und „Gemeinde anlegen" (Tarif, Testphase, erste
+  Gemeindeleitung) als zwei Karten. Die Logik jeder Seite liegt in einem Hook,
+  den App- und Web-Fassung teilen.
+- **Schriftwechsel einer Gemeinde** liest Name und Angaben aus
+  `GET /organizations/:id` (auch interne Gemeinden), die Leitung aus
+  `GET /support/gemeinden`.
+
 ## Offen
 
 - Weitere Kennzahlen (Speicher, Medien) und eine Auswahl des Zeitraums.
+- Der Posteingang lädt höchstens die neuesten `EINGANG_MAX` Mails und filtert
+  im Browser; bei vielen Mails braucht er Seiten.
+- In einer Mail, die einer internen Gemeinde zugeordnet ist, steht
+  „Gemeinde 7" statt des Namens (die Auswahl dort liest die Liste ohne
+  interne Gemeinden).
+- Ein Konto mit Super-Admin-Recht steht in der Gemeindeleitung jeder
+  Gemeinde, in der es Gemeindeleitung ist — wie jedes andere Konto.
 - Interne Gemeinden in einer eigenen, versteckten Liste anzeigen, falls das
   Verwalten „direkt im Backend" zu umständlich wird.

@@ -51,8 +51,10 @@ import { tastaturKlick } from '../../utils/tastatur';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_BEREICHE, SUPPORT_START } from '../../navigation/supportMenue';
 import { supportMailZahl, useSupportMailZaehler } from '../../navigation/supportMailZaehler';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
 import { Abschnitt, Kennzahl, KennzahlReihe, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
+import WebUebersicht from './web/WebUebersicht';
 
 /** Aufklappbare Zeile im Kennzahlen-Baum. */
 const BaumZeile: React.FC<{
@@ -314,8 +316,12 @@ const Uebersicht: React.FC = () => {
   );
 };
 
-const SupportUebersichtPage: React.FC = () => (
-  <NurSupport titel="Support"><Uebersicht /></NurSupport>
-);
+// Zwei Gesichter, eine Seite (docs/planung/support-web.md, Entscheidung 1):
+// im breiten Browserfenster das Dashboard der Web-Fassung, sonst die
+// Darstellung der App -- unveraendert.
+const SupportUebersichtPage: React.FC = () => {
+  const breit = useBreitesLayout();
+  return <NurSupport titel="Support">{breit ? <WebUebersicht /> : <Uebersicht />}</NurSupport>;
+};
 
 export default SupportUebersichtPage;

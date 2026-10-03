@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import {
   IonBadge,
   IonButtons,
@@ -11,11 +11,9 @@ import {
   IonItem,
   IonLabel
 } from '@ionic/react';
-import { useIonRouter } from '@ionic/react';
 import { ICON_ORGANISATION, ICON_WECHSEL } from './icons';
-import { useApp } from '../../contexts/AppContext';
 import { UserOrganization } from '../../contexts/AppContext';
-import api from '../../services/api';
+import { useGemeindeWechsel, useOffenJeGemeinde } from '../../hooks/useGemeindeWechsel';
 import { offenJeOrgAusAntwort } from '../../utils/offenJeGemeinde';
 
 // Kurzname für die Header-Anzeige (Platz neben dem Seitentitel ist knapp).
@@ -47,8 +45,17 @@ export { offenJeOrgAusAntwort };
 
 /**
  * Org-Switcher oben links im Header. Erscheint NUR, wenn der eingeloggte User in
- * mehreren Organisationen Mitglied ist (Multi-Org). Der Button zeigt das Wechsel-
- * Symbol UND den Namen der aktuell aktiven Org (so weiß man immer, wo man ist).
+ * mehreren Organisationen Mitglied ist (Multi-Org).
+ *
+ * Im breiten Fenster der Web-Version (ab 992 px, navigation/breitesLayout.ts)
+ * steht er NICHT in der Kopfzeile (AppKopfzeile blendet ihn dort aus), sondern
+ * als gestaltete Flaeche unten in der Leiste links: components/layout/
+ * LeistenGemeinde.tsx (Simon, 03.10.2026). In den Apps und im schmalen
+ * Fenster bleibt es bei diesem Knopf. Der Wechsel selbst steht fuer beide in
+ * hooks/useGemeindeWechsel.ts.
+ *
+ * Der Button zeigt das Wechsel-Symbol UND den Namen der aktuell aktiven Org
+ * (so weiß man immer, wo man ist).
  * Tippen oeffnet ein Popover mit allen Orgs; die aktive steht fett und leicht
  * hinterlegt -- dasselbe Muster wie app-list-item--selected in jeder anderen
  * Auswahl der App. Simon (25.09.2026, am Geraet): "der gruene Haken passt null
@@ -56,7 +63,8 @@ export { offenJeOrgAusAntwort };
  * kleiner sein, das nimmt viel Platz weg" -- deshalb kein Haken mehr und der
  * Name am Knopf eine Stufe kleiner mit gedeckelter Breite.
  * Bei Auswahl wird über den AppContext gewechselt (neues Token, Cache-Reset,
- * org:switched-Event + Root-Navigation -> alle Views laden frisch in der neuen Org).
+ * org:switched-Event + Root-Navigation -> alle Views laden frisch in der neuen Org;
+ * der Ablauf steht in hooks/useGemeindeWechsel.ts).
  *
  * Das Icon hat KEINE Farbklasse -> Standard-Toolbar-Farbe, genau wie die
  * Action-Buttons rechts im selben Header.
@@ -75,52 +83,32 @@ export { offenJeOrgAusAntwort };
  * 27.09.2026): Server und BadgeContext rechnen sie aus derselben Aufteilung.
  */
 const OrgSwitcherButton: React.FC = () => {
-  const { organizations, activeOrgId, user, switchOrg } = useApp();
-  const router = useIonRouter();
+  // Wechseln, Startseite der Rolle und Stapel leeren, dazu die Zahlen je
+  // Gemeinde: dieselben Hooks wie in der Leiste der Web-Version
+  // (hooks/useGemeindeWechsel.ts) -- der Wechsel steht nur dort.
+  const { gemeinden, aktiveId, aktive, mehrere, wechseln } = useGemeindeWechsel();
+  const { offenJeOrg, laden } = useOffenJeGemeinde();
   const [popoverEvent, setPopoverEvent] = useState<MouseEvent | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(false);
-  const [offenJeOrg, setOffenJeOrg] = useState<Record<number, number>>({});
-
-  const ladeOffenJeOrg = useCallback(async () => {
-    try {
-      const { data } = await api.get('/notifications/badge-counts/je-organisation');
-      setOffenJeOrg(offenJeOrgAusAntwort(data));
-    } catch {
-      // Ohne Zahl bleibt die Liste, wie sie war -- kein Hinweis, kein Fehler.
-    }
-  }, []);
 
   // Nur bei echtem Multi-Org-User anzeigen
-  if (!organizations || organizations.length <= 1) {
+  if (!mehrere) {
     return null;
   }
 
-  // Aktuell aktive Org: explizit gesetzte aktive Org, sonst Primaer-Org.
-  const currentId = activeOrgId ?? user?.organization_id ?? null;
-  const currentOrg = organizations.find(o => o.id === currentId);
+  const currentId = aktiveId;
+  const currentOrg = aktive;
   const currentShort = shortOrgName(currentOrg);
 
   const open = (e: React.MouseEvent) => {
     setPopoverEvent(e.nativeEvent);
     setIsOpen(true);
-    void ladeOffenJeOrg();
+    void laden();
   };
 
   const handleSelect = async (orgId: number) => {
     setIsOpen(false);
-    if (orgId === currentId) return;
-
-    const target = organizations.find(o => o.id === orgId);
-    await switchOrg(orgId);
-
-    // Auf die Startseite der (neuen) Rolle navigieren und dabei den Page-Stack
-    // der alten Org leeren (Ionic: direction 'root'). Das stellt sicher, dass im
-    // nativen WebView nicht eine gecachte Page der alten Org sichtbar bleibt.
-    const role = target?.role_name;
-    const home = role === 'konfi' ? '/konfi/dashboard'
-      : role === 'teamer' ? '/teamer/dashboard'
-      : '/admin/konfis';
-    router.push(home, 'root', 'replace');
+    await wechseln(orgId);
   };
 
   return (
@@ -152,7 +140,7 @@ const OrgSwitcherButton: React.FC = () => {
             <IonListHeader>
               <IonLabel>Gemeinde wechseln</IonLabel>
             </IonListHeader>
-            {organizations.map((org) => {
+            {gemeinden.map((org) => {
               const offen = offenJeOrg[org.id] || 0;
               const aktiv = org.id === currentId;
               return (

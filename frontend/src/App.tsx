@@ -79,6 +79,11 @@ import './theme/variables.css';
 /* Fokusringe, nackte Knöpfe und Links der Anmeldeseiten -- muss NACH
    variables.css kommen, siehe Kopf der Datei. */
 import './theme/barrierefreiheit.css';
+/* Web-Fassungen der Seiten (Browser ab 992 px, Klassen web-…): Tabellen,
+   Kennzahl-Kacheln, Diagramme. Wirkt nur, wo eine Seite diese Klassen
+   setzt -- die App rendert ohne sie. Nach variables.css, weil sie dessen
+   Tokens liest. */
+import './theme/web-ansicht.css';
 import { bewegungReduziert } from './utils/bewegung';
 import { anmeldeHinweisMerken } from './utils/anmeldeHinweis';
 

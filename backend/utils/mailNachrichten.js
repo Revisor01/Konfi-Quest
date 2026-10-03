@@ -214,6 +214,23 @@ const NACHRICHT_SPALTEN = `m.id, m.postfach, m.richtung, m.anfrage_id, m.organiz
 
 const NACHRICHT_FROM = 'mail_nachrichten m LEFT JOIN users vu ON vu.id = m.verfasst_von';
 
+// Wohin eine Mail gehoert, fuer die Listen der Support-Ansicht (Posteingang,
+// Uebersicht; 03.10.2026): anfrage_id und organization_id wie gespeichert,
+// dazu gemeinde_name -- bei Zuordnung zu einer Gemeinde deren Anzeigename
+// (display_name, sonst name), bei Zuordnung zu einer Anfrage der Gemeindename
+// aus der Anfrage, sonst null. Hinter FROM mail_nachrichten m einsetzen:
+// `SELECT ${ZUORDNUNG_SPALTEN} FROM mail_nachrichten m ${ZUORDNUNG_JOINS}`.
+// Nach `intern` wird nicht gefiltert: Mails zu internen Gemeinden bleiben da.
+const ZUORDNUNG_SPALTEN = `m.anfrage_id, m.organization_id,
+  COALESCE(NULLIF(btrim(zg.display_name), ''), zg.name, za.gemeinde) AS gemeinde_name`;
+const ZUORDNUNG_JOINS = `LEFT JOIN organizations zg ON zg.id = m.organization_id
+  LEFT JOIN gemeinde_anfragen za ON za.id = m.anfrage_id`;
+
+// Ungelesene eingehende Mails einer Anfrage -- Feld `ungelesen` an der
+// Anfrage. Gehoert in eine Abfrage mit gemeinde_anfragen unter dem Namen `a`.
+const UNGELESEN_JE_ANFRAGE_SQL = `(SELECT COUNT(*)::int FROM mail_nachrichten um
+    WHERE um.anfrage_id = a.id AND um.richtung = 'ein' AND um.gelesen_am IS NULL)`;
+
 /**
  * Kennungen aller Mails im Faden der Mail `id` (sie selbst eingeschlossen),
  * aufsteigend. Leer, wenn es die Mail nicht gibt.
@@ -272,6 +289,9 @@ module.exports = {
   kuerzen,
   NACHRICHT_SPALTEN,
   NACHRICHT_FROM,
+  ZUORDNUNG_SPALTEN,
+  ZUORDNUNG_JOINS,
+  UNGELESEN_JE_ANFRAGE_SQL,
   fadenIds,
   nachrichtLaden,
   nachrichtenLaden,

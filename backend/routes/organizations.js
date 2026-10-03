@@ -89,6 +89,13 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
   ];
 
   // Get all organizations - NUR super_admin
+  //
+  // INTERNE GEMEINDEN (organizations.intern, Migration 194, 03.10.2026): Die
+  // Review- und Test-Gemeinden fuer die Stores stehen nicht in dieser Liste --
+  // sie ist die Gemeinde-Auswahl der Support-Ansicht und der Verwaltung. Die
+  // Antwortform bleibt GLEICH (nur weniger Eintraege; das Feld intern, das
+  // organizations.* mitbringt, wird entfernt -- hier immer false). Zugriff
+  // ueber die Kennung (GET und PUT /:id) bleibt moeglich.
   router.get('/', rbacVerifier, requireSuperAdmin, async (req, res) => {
     try {
       // user_count (Team) zählt BEIDE Quellen: Primaer-User (users.organization_id)
@@ -123,11 +130,15 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         FROM organizations o
         LEFT JOIN konfi_profiles kp ON o.id = kp.organization_id
         LEFT JOIN events e ON o.id = e.organization_id
+        WHERE NOT o.intern
         GROUP BY o.id
         ORDER BY o.created_at DESC
       `;
 
       const { rows: organizations } = await db.query(query);
+      // Die Form bleibt, wie sie war: intern ist hier immer false und sagt
+      // nichts; das Feld steht nur in GET /:id.
+      for (const o of organizations) delete o.intern;
       res.json(organizations);
     } catch (err) {
  console.error('Database error in GET /organizations:', err);

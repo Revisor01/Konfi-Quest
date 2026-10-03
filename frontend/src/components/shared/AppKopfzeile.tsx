@@ -3,6 +3,7 @@ import { IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon } from 
 import { ICON_ZURUECK } from './icons';
 import OrgSwitcherButton from './OrgSwitcherButton';
 import PostfachGlocke from './PostfachGlocke';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
 
 /**
  * Die gemeinsame Kopfzeile der App.
@@ -31,6 +32,14 @@ import PostfachGlocke from './PostfachGlocke';
  * Beides laesst sich pro Seite abschalten (glocke={false},
  * gemeindeUmschalter={false}), etwa in einer Detailansicht, in der links
  * schon ein Zurueck-Knopf steht und rechts der Platz knapp ist.
+ *
+ * Im breiten Fenster der Web-Version (useBreitesLayout(): Browser, ab 992 px)
+ * steht der Gemeinde-Umschalter nicht in der Kopfzeile, sondern nur unten in
+ * der Leiste links (components/layout/LeistenGemeinde.tsx). Simon, 03.10.2026:
+ * "In der Webansicht ist der Switcher fuer die Org unten in der Navi, das
+ * finde ich gut, aber auch aktuell noch im Header, das finde ich doof." In
+ * den Apps und im schmalen Fenster gibt es keine Leiste, dort bleibt er in
+ * der Kopfzeile, und `gemeindeUmschalter` behaelt seine Bedeutung.
  *
  * Seit dem 25.09.2026 tragen alle drei Rollen diese Kopfzeile auf jeder
  * Seite. Der fruehere schwebende Warteschlangen-Knopf links unten ist damit
@@ -70,30 +79,35 @@ const AppKopfzeile: React.FC<AppKopfzeileProps> = ({
   gemeindeUmschalter = true,
   glocke = true,
   translucent = true,
-}) => (
-  <IonHeader translucent={translucent}>
-    <IonToolbar>
-      {(onZurueck || links) && (
-        <IonButtons slot="start">
-          {onZurueck && (
-            <IonButton aria-label="Zurück" onClick={onZurueck}>
-              <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
-            </IonButton>
-          )}
-          {links}
-        </IonButtons>
-      )}
-      {gemeindeUmschalter && <OrgSwitcherButton />}
-      <IonTitle>{titel}</IonTitle>
-      {(rechts || glocke) && (
-        <IonButtons slot="end">
-          {rechts}
-          {glocke && <PostfachGlocke />}
-        </IonButtons>
-      )}
-    </IonToolbar>
-  </IonHeader>
-);
+}) => {
+  // Dieselbe Frage wie beim Rahmen der Leiste: Steht sie links, wohnt der
+  // Umschalter dort und nicht mehr hier.
+  const leisteLinks = useBreitesLayout();
+  return (
+    <IonHeader translucent={translucent}>
+      <IonToolbar>
+        {(onZurueck || links) && (
+          <IonButtons slot="start">
+            {onZurueck && (
+              <IonButton aria-label="Zurück" onClick={onZurueck}>
+                <IonIcon icon={ICON_ZURUECK} slot="icon-only" />
+              </IonButton>
+            )}
+            {links}
+          </IonButtons>
+        )}
+        {gemeindeUmschalter && !leisteLinks && <OrgSwitcherButton />}
+        <IonTitle>{titel}</IonTitle>
+        {(rechts || glocke) && (
+          <IonButtons slot="end">
+            {rechts}
+            {glocke && <PostfachGlocke />}
+          </IonButtons>
+        )}
+      </IonToolbar>
+    </IonHeader>
+  );
+};
 
 /**
  * Die eingeklappte Zweitzeile mit grossem Titel (iOS-Muster: beim

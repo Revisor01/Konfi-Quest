@@ -290,11 +290,13 @@ Benutzernamen oder dieser E-Mail-Adresse" — genau wie bei einer Kennung, die
 es nicht gibt. So lässt sich über die Einladung nicht herausfinden, ob ein Kind
 irgendwo ein Konto hat.
 
-Oben links in der Kopfzeile steht dann der Name der Gemeinde, in der man
-gerade arbeitet — auf jeder Seite, die du über die Leiste unten erreichst:
-bei der Leitung Konfis, Chat, Mitmachen, Challenges und „Mehr", im Team
-Start, Chat, Challenges, Mitmachen und Material, bei Konfis Start, Chat,
-Challenges, Mitmachen und Badges.
+### Die Gemeinde wechseln
+
+Wer in mehreren Gemeinden mitarbeitet, sieht in der App oben links in der
+Kopfzeile den Namen der Gemeinde, in der er gerade arbeitet — auf jeder Seite,
+die du über die Leiste unten erreichst: bei der Leitung Konfis, Chat,
+Mitmachen, Challenges und „Mehr", im Team Start, Chat, Challenges, Mitmachen
+und Material, bei Konfis Start, Chat, Challenges, Mitmachen und Badges.
 
 Alles, was von diesen Seiten aus geöffnet wird, trägt ihn nicht.
 **Detailansichten** — ein Event, ein Material, eine Konfi, ein Chatraum —
@@ -308,6 +310,34 @@ Ein Tippen auf den Namen öffnet die Liste aller eigenen Gemeinden mit ihren
 vollen Namen; die aktive steht **fett** und leicht hinterlegt. Nach dem
 Wechsel laden alle Ansichten frisch in der gewählten Gemeinde. Wer nur einer
 Gemeinde angehört, sieht den Namen nicht.
+
+**Im Browser mit der Leiste links** (ab einer Fensterbreite von 992 Pixeln,
+siehe [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten))
+steht der Umschalter nicht in der Kopfzeile, sondern **unten in der Leiste**,
+über Profil und Abmelden:
+
+- **Die Fläche** zeigt den vollen Namen der Gemeinde, in der du arbeitest,
+  darunter klein deine Rolle dort — Gemeindeleitung, Leitung, Teamer:in oder
+  Konfi — und rechts einen Pfeil. Das Symbol links trägt den Anfangsbuchstaben
+  der Gemeinde in der Farbe deiner Rolle dort. Ein sehr langer Name wird nach
+  zwei Zeilen gekürzt; mit der Maus darauf steht er ganz da.
+- **Die Liste** klappt auf einen Klick nach oben auf und zeigt alle deine
+  Gemeinden mit Namen und Rolle; die aktive steht **fett** und hinterlegt, und
+  jede Gemeinde trägt ihre [rote Zahl](#sehen-wo-etwas-offen-ist). Ein Klick
+  auf eine andere Gemeinde wechselt dorthin und öffnet die Startseite deiner
+  Rolle dort.
+- **Mit der Tastatur:** Eingabetaste oder Pfeil öffnet die Liste. Mit den
+  Pfeiltasten gehst du durch die Gemeinden, mit der Eingabetaste wechselst
+  du, mit Esc schließt du die Liste und bist wieder am Knopf. Ein Klick
+  daneben schließt sie ebenfalls.
+- **Eingeklappte Leiste:** Dann steht nur das Symbol da; der Name erscheint,
+  wenn du mit der Maus darauf zeigst, und die Liste öffnet sich neben der
+  Leiste.
+
+Die Leiste steht auf jeder Seite, der Umschalter also auch — in
+Detailansichten und auf Unterseiten ebenso. Ein Wechsel führt immer auf die
+Startseite deiner Rolle in der gewählten Gemeinde, nie auf einen Eintrag der
+alten. Wer nur einer Gemeinde angehört, sieht die Fläche nicht.
 
 Auch die **roten Zahlen an den Reitern** gehören zur Gemeinde, in der man
 gerade arbeitet: Beim Wechsel verschwinden sie und kommen mit den Zahlen der
@@ -338,11 +368,13 @@ vom Startbildschirm ab, ob dort diese Zahl, die Zahl der Mitteilungen oder
 nur ein Punkt steht (siehe
 [Die Zahl am App-Symbol auf Android lesen](03-bedienung.md#die-zahl-am-app-symbol-auf-android-lesen)).
 
-Der Umschalter steht auf den Seiten, die du über die Leiste unten erreichst.
-Auf Unterseiten und in Detailansichten fehlt er mit Absicht: Was dort steht,
-gehört zu genau einer Gemeinde, und ein Wechsel mitten darin führte auf
-fremde Einträge. Einen Rückweg gibt es trotzdem immer — ein angetippter Push
-oder eine Mitteilung aus dem
+In der App steht der Umschalter auf den Seiten, die du über die Leiste unten
+erreichst. Auf Unterseiten und in Detailansichten fehlt er dort mit Absicht:
+Was dort steht, gehört zu genau einer Gemeinde, und ein Wechsel mitten darin
+führte auf fremde Einträge. Im Browser mit der Leiste links ist er dagegen
+immer da (siehe [Die Gemeinde wechseln](#die-gemeinde-wechseln)). Einen
+Rückweg gibt es trotzdem immer — ein angetippter Push oder eine Mitteilung aus
+dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen) wechselt in die
 Gemeinde, aus der sie stammt, und dort steht der Umschalter wieder.
 

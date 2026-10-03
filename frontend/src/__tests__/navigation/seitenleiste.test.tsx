@@ -41,12 +41,16 @@ const setzeBreite = (breit: boolean) => {
 
 // --- Konto, Zahlen, Alert, Navigation ---------------------------------------
 
-type Konto = { id: number; type: string; role_name: string; organization_id: number | null };
+type Konto = { id: number; type: string; role_name: string; organization_id: number | null; is_super_admin?: boolean };
 const KONTEN: Record<string, Konto> = {
   admin: { id: 4, type: 'admin', role_name: 'org_admin', organization_id: 1 },
+  // Leitung (Rolle admin), keine Gemeindeleitung.
+  leitung: { id: 5, type: 'admin', role_name: 'admin', organization_id: 1 },
   teamer: { id: 3, type: 'teamer', role_name: 'teamer', organization_id: 1 },
   konfi: { id: 7, type: 'konfi', role_name: 'konfi', organization_id: 1 },
   super_admin: { id: 99, type: 'admin', role_name: 'super_admin', organization_id: null },
+  // Simons Konto: Gemeindeleitung mit Super-Admin-Merkmal, hat eine Gemeinde.
+  simon: { id: 1, type: 'admin', role_name: 'org_admin', organization_id: 1, is_super_admin: true },
 };
 
 const zustand = vi.hoisted(() => ({
@@ -58,6 +62,7 @@ const zustand = vi.hoisted(() => ({
   },
 }));
 const signOut = vi.fn(async () => undefined);
+const switchOrg = vi.fn(async () => ({ ok: true }));
 const push = vi.fn();
 
 vi.mock('../../contexts/AppContext', () => ({
@@ -66,7 +71,7 @@ vi.mock('../../contexts/AppContext', () => ({
     signOut,
     organizations: zustand.organizations,
     activeOrgId: null,
-    switchOrg: vi.fn(),
+    switchOrg,
   }),
 }));
 
@@ -118,6 +123,7 @@ vi.mock('../../navigation/rollenBaeume', async (importOriginal) => {
 });
 
 import { BAEUME } from '../../navigation/rollenBaeume';
+import { SUPPORT_BEREICHE } from '../../navigation/supportMenue';
 import type { Rolle } from '../../navigation/routes';
 import SeitenleistenRahmen, { INHALT_ID } from '../../components/layout/SeitenleistenRahmen';
 import Seitenleiste, { SCHLUESSEL_EINGEKLAPPT } from '../../components/layout/Seitenleiste';
@@ -144,6 +150,7 @@ beforeEach(() => {
   apiGet.mockResolvedValue({ data: {} });
   supportMailZaehlerZuruecksetzen();
   signOut.mockClear();
+  switchOrg.mockClear();
   push.mockClear();
   localStorage.clear();
   window.matchMedia = vi.fn((abfrage: string) => ({
@@ -509,9 +516,19 @@ describe('Zahlen der Support-Mail in der Leiste', () => {
     expect([...leiste()!.querySelectorAll('ion-badge')].map((b) => b.textContent)).toEqual(['2', '9+']);
   });
 
-  it('Leitung, auch mit Super-Admin-Merkmal: kein Abruf -- ihre Leiste traegt keinen Support-Eintrag', async () => {
+  it('Gemeindeleitung mit Super-Admin-Merkmal (Simons Konto): Abruf -- ihre Leiste traegt die Support-Eintraege', async () => {
+    apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? ZAEHLER : {} }));
     halter.breit = true;
-    zustand.konto = { ...KONTEN.admin, is_super_admin: true } as typeof KONTEN.admin;
+    zustand.konto = KONTEN.simon;
+    await zeigeApp('/admin/konfis');
+    expect(leiste()).not.toBeNull();
+    await screen.findByRole('link', { name: 'Posteingang, 4 offen' });
+    expect(apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it('Gemeindeleitung ohne Merkmal: kein Abruf -- ihre Leiste traegt keinen Support-Eintrag', async () => {
+    halter.breit = true;
+    zustand.konto = { ...KONTEN.admin, is_super_admin: false };
     await zeigeApp('/admin/konfis');
     expect(leiste()).not.toBeNull();
     expect(apiGet).not.toHaveBeenCalledWith('/support/mail/zaehler');
@@ -573,18 +590,204 @@ describe('Abmelden ist in jedem Baum erreichbar', () => {
 });
 
 describe('Gemeinde-Umschalter in der Leiste', () => {
-  it('erscheint bei mehreren Gemeinden (derselbe Knopf wie in der Kopfzeile)', () => {
-    zustand.organizations = [
-      { id: 1, name: 'Kirchspiel West', slug: 'kirchspiel-west', role_name: 'org_admin' },
-      { id: 2, name: 'Kirchengemeinde Heide', slug: 'kirchengemeinde-heide', role_name: 'admin' },
-    ];
+  const MEHRERE = [
+    { id: 1, name: 'Kirchspiel West', slug: 'kirchspiel-west', role_name: 'org_admin' },
+    { id: 2, name: 'Kirchengemeinde Heide', slug: 'kirchengemeinde-heide', role_name: 'admin' },
+  ];
+
+  it('erscheint bei mehreren Gemeinden als eigene Flaeche -- nicht mehr als Knopf der Kopfzeile', () => {
+    zustand.organizations = MEHRERE;
     zeigeLeiste('/admin/konfis');
-    expect(leiste()!.querySelector('.app-org-switcher-btn')).not.toBeNull();
+    expect(leiste()!.querySelector('.app-leistengemeinde__knopf')).not.toBeNull();
+    expect(leiste()!.querySelector('.app-org-switcher-btn')).toBeNull();
+    expect(leiste()!.querySelector('ion-button')).toBeNull();
+  });
+
+  it('steht unten im Fuss, vor Profil und Abmelden', () => {
+    zustand.organizations = MEHRERE;
+    zeigeLeiste('/admin/konfis');
+    const fuss = leiste()!.querySelector('.app-seitenleiste__fuss') as HTMLElement;
+    const reihenfolge = [...fuss.querySelectorAll('.app-leistengemeinde__knopf, a, button')]
+      .map((el) => (el.classList.contains('app-leistengemeinde__knopf') ? 'Gemeinde' : el.textContent));
+    expect(reihenfolge).toEqual(['Gemeinde', 'Profil', 'Abmelden']);
   });
 
   it('fehlt bei nur einer Gemeinde', () => {
     zustand.organizations = [{ id: 1, name: 'Kirchspiel West', slug: 'kirchspiel-west' }];
     zeigeLeiste('/admin/konfis');
-    expect(leiste()!.querySelector('.app-org-switcher-btn')).toBeNull();
+    expect(leiste()!.querySelector('.app-leistengemeinde')).toBeNull();
+  });
+
+  it('eingeklappt bleibt die Flaeche: Name als Tooltip, Liste oeffnet sich weiter', () => {
+    zustand.organizations = MEHRERE;
+    localStorage.setItem(SCHLUESSEL_EINGEKLAPPT, '1');
+    zeigeLeiste('/admin/konfis');
+    const knopf = leiste()!.querySelector('.app-leistengemeinde__knopf') as HTMLElement;
+    expect(leiste()!.classList.contains('app-seitenleiste--eingeklappt')).toBe(true);
+    expect(knopf.getAttribute('title')).toBe('Kirchspiel West');
+    fireEvent.click(knopf);
+    expect(screen.getAllByRole('menuitemradio')).toHaveLength(2);
+  });
+
+  it('Wechsel ueber die Leiste: Gemeinde wechseln, dann Startseite der Rolle dort, Stapel leeren', async () => {
+    zustand.organizations = MEHRERE;
+    zeigeLeiste('/admin/konfis');
+    fireEvent.click(leiste()!.querySelector('.app-leistengemeinde__knopf')!);
+    await act(async () => { fireEvent.click(screen.getByRole('menuitemradio', { name: /Kirchengemeinde Heide/ })); });
+    expect(switchOrg).toHaveBeenCalledWith(2);
+    expect(push).toHaveBeenCalledWith('/admin/konfis', 'root', 'replace');
+  });
+});
+
+// Simon, 03.10.2026: „Ich will in meinem Account, also in einer geteilten
+// Gemeinde und Support, auch die Seitennavigation wie nur Support zusaetzlich
+// zu meiner." Gemeindeleitung mit Super-Admin-Merkmal und eine Gemeinde:
+// unter den eigenen Eintraegen stehen die Gruppen der Support-Ansicht. Alle
+// anderen Konten sehen nichts davon (verbotener UND erlaubter Fall).
+describe('Support-Gruppen in Simons Leiste', () => {
+  const SUPPORT = SUPPORT_BEREICHE.map((b) => b.label);
+  const EIGENE = ['Konfis', 'Chat', 'Mitmachen', 'Challenges', 'Mehr'];
+  const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 } };
+  const ueberschriften = () => within(leiste()!).queryAllByRole('heading').map((h) => h.textContent);
+
+  /** Beschriftung -> Zahl, wie sie an den Eintraegen der Leiste steht. */
+  const zahlenDerLeiste = (nav: HTMLElement) =>
+    Object.fromEntries([...nav.querySelectorAll('a')]
+      .filter((a) => a.querySelector('ion-badge'))
+      .map((a) => [a.querySelector('.app-seitenleiste__text')?.textContent, a.querySelector('ion-badge')?.textContent]));
+
+  beforeEach(() => {
+    apiGet.mockImplementation(async (pfad: string) => ({ data: pfad === '/support/mail/zaehler' ? ZAEHLER : {} }));
+  });
+
+  it('erlaubt: erst die eigenen Eintraege, dann Support, Verwaltung und Betrieb, zuletzt das Profil', async () => {
+    zustand.konto = KONTEN.simon;
+    zeigeLeiste('/admin/konfis');
+    expect(linkNamen(leiste()!)).toEqual([...EIGENE, ...SUPPORT, 'Profil']);
+    // Dieselben Ziele wie im reinen Support-Konto, in derselben Reihenfolge.
+    const ziele = [...leiste()!.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    expect(ziele).toEqual([
+      ...BAEUME.admin.tabs.map((t) => t.href),
+      ...SUPPORT_BEREICHE.map((b) => b.path),
+      BAEUME.admin.profil!.path,
+    ]);
+    // Dieselben Gruppennamen wie dort.
+    expect(ueberschriften()).toEqual(['Support', 'Verwaltung', 'Betrieb']);
+    await act(async () => {});
+  });
+
+  it('dieselben roten Zahlen wie im reinen Support-Konto', async () => {
+    zustand.konto = KONTEN.super_admin;
+    const rein = zeigeLeiste('/admin/support');
+    await screen.findByRole('link', { name: 'Posteingang, 4 offen' });
+    const zahlenRein = zahlenDerLeiste(leiste()!);
+    rein.unmount();
+    supportMailZaehlerZuruecksetzen();
+
+    zustand.konto = KONTEN.simon;
+    zeigeLeiste('/admin/konfis');
+    await screen.findByRole('link', { name: 'Posteingang, 4 offen' });
+    expect(zahlenRein).toEqual({ Anfragen: '2', Posteingang: '4' });
+    expect(zahlenDerLeiste(leiste()!)).toEqual(zahlenRein);
+    expect(apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it.each([
+    ['Gemeindeleitung ohne Merkmal', { ...KONTEN.admin }, EIGENE],
+    ['Gemeindeleitung, Merkmal ausdruecklich aus', { ...KONTEN.admin, is_super_admin: false }, EIGENE],
+    ['Leitung', KONTEN.leitung, EIGENE],
+    ['Teamer:in', KONTEN.teamer, ['Start', 'Chat', 'Challenges', 'Mitmachen', 'Material']],
+    ['Konfi', KONTEN.konfi, ['Start', 'Chat', 'Challenges', 'Mitmachen', 'Badges']],
+  ])('verboten: %s -- keine Support-Eintraege, keine Gruppenueberschrift, kein Abruf', async (_name, konto, eigene) => {
+    zustand.konto = konto;
+    zeigeLeiste(BAEUME[konto.type === 'konfi' ? 'konfi' : konto.type === 'teamer' ? 'teamer' : 'admin'].home);
+    await act(async () => {});
+    expect(linkNamen(leiste()!)).toEqual([...eigene, 'Profil']);
+    expect(ueberschriften()).toEqual([]);
+    expect(leiste()!.querySelectorAll('a[href^="/admin/support"]')).toHaveLength(0);
+    expect(apiGet).not.toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it('verboten auch mit Merkmal, wenn der Baum die Seiten nicht traegt (Team mit gesetztem Merkmal)', async () => {
+    zustand.konto = { ...KONTEN.teamer, is_super_admin: true };
+    zeigeLeiste('/teamer/dashboard');
+    await act(async () => {});
+    expect(ueberschriften()).toEqual([]);
+    expect(leiste()!.querySelectorAll('a[href^="/admin/support"]')).toHaveLength(0);
+    expect(apiGet).not.toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it('reines Support-Konto: unveraendert, jeder Eintrag genau einmal', () => {
+    zustand.konto = KONTEN.super_admin;
+    zeigeLeiste('/admin/support');
+    expect(linkNamen(leiste()!)).toEqual(SUPPORT);
+    expect(ueberschriften()).toEqual(['Support', 'Verwaltung', 'Betrieb']);
+  });
+
+  it('der Baum der Leitung bleibt ohne Menue-Eintraege -- die Gruppen haengt die Leiste an', () => {
+    expect(BAEUME.admin.menue ?? []).toEqual([]);
+  });
+
+  describe('der aktive Eintrag stimmt fuer die Support-Pfade', () => {
+    const aktiveLinks = () =>
+      [...leiste()!.querySelectorAll('[aria-current="page"]')].map((a) => a.getAttribute('href'));
+
+    it.each([
+      ['/admin/support', '/admin/support'],
+      ['/admin/support/anfragen', '/admin/support/anfragen'],
+      ['/admin/support/anfragen/12', '/admin/support/anfragen'],
+      ['/admin/support/post', '/admin/support/post'],
+      ['/admin/support/post/gemeinde/7', '/admin/support/post'],
+      ['/admin/support/post/9', '/admin/support/post'],
+      ['/admin/support/struktur', '/admin/support/struktur'],
+      ['/admin/support/konten', '/admin/support/konten'],
+      ['/admin/support/bausteine', '/admin/support/bausteine'],
+      ['/admin/organizations', '/admin/organizations'],
+      ['/admin/metrics', '/admin/metrics'],
+    ])('%s -> genau ein aktiver Eintrag: %s', (pfad, erwartet) => {
+      zustand.konto = KONTEN.simon;
+      zeigeLeiste(pfad);
+      expect(aktiveLinks()).toEqual([erwartet]);
+    });
+
+    it.each([
+      ['/admin/konfis/5', '/admin/konfis'],
+      ['/admin/settings', '/admin/settings'],
+      ['/admin/settings/jahrgaenge', '/admin/settings'],
+      ['/admin/profile', '/admin/profile'],
+    ])('eigene Seite %s bleibt bei den eigenen Eintraegen: %s', (pfad, erwartet) => {
+      zustand.konto = KONTEN.simon;
+      zeigeLeiste(pfad);
+      expect(aktiveLinks()).toEqual([erwartet]);
+    });
+  });
+});
+
+// Die App bleibt, wie sie ist (Simon, 03.10.2026: „ohne die App-View zu
+// zerstoeren, und die Support-Sachen auch in der App fuer mich zu lassen"):
+// Ohne breites Layout gibt es weder die Leiste noch die Support-Gruppen noch
+// den Abruf der roten Zahlen. Simons Weg dorthin bleibt "Mehr" -> Support
+// (components/support/supportAnsichtRechte.test.tsx) und die Bereichsliste auf
+// der Uebersichtsseite.
+describe('Simons Konto in der App und im schmalen Fenster', () => {
+  it('schmales Fenster: Reiterleiste unten wie bei jeder Leitung, keine Leiste, kein Abruf', async () => {
+    zustand.konto = KONTEN.simon;
+    const { container } = await zeigeApp('/admin/konfis');
+    expect([...container.querySelectorAll('ion-tab-button')].map((b) => b.getAttribute('tab')))
+      .toEqual(BAEUME.admin.tabs.map((t) => t.tab));
+    expect(leiste()).toBeNull();
+    expect(container.querySelectorAll('a[href^="/admin/support"]')).toHaveLength(0);
+    expect(apiGet).not.toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it('App auf dem Geraet, auch breit: Reiterleiste, keine Leiste, kein Abruf', async () => {
+    halter.nativ = true;
+    halter.breit = true;
+    zustand.konto = KONTEN.simon;
+    const { container } = await zeigeApp('/admin/konfis');
+    expect([...container.querySelectorAll('ion-tab-button')].map((b) => b.getAttribute('tab')))
+      .toEqual(BAEUME.admin.tabs.map((t) => t.tab));
+    expect(leiste()).toBeNull();
+    expect(apiGet).not.toHaveBeenCalledWith('/support/mail/zaehler');
   });
 });

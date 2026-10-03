@@ -103,6 +103,9 @@ describe('Antwortformen bestehender Konten bleiben, wie sie sind', () => {
       expect(form(eintrag)).toEqual({
         id: 'number', name: 'string', slug: 'string', display_name: 'string',
         role_name: 'string', role_display_name: 'string', is_active: 'boolean',
+        // Hinzugefuegt am 03.10.2026 (Stamm-Gemeinde fuer den Umschalter);
+        // ein neues Feld ist erlaubt, die alten bleiben.
+        is_primary: 'boolean',
       });
     }
   });

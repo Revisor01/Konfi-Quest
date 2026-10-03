@@ -56,6 +56,21 @@ const BEKANNTE_PLATZHALTER = new Set<string>(PLATZHALTER.map((p) => p.schluessel
 /** "{{name}}" -- so steht ein Platzhalter im Baustein. */
 export const platzhalterMarke = (schluessel: string): string => `{{${schluessel}}}`;
 
+/**
+ * Beispielwerte fuer die Vorschau eines Bausteins in der Web-Fassung --
+ * erfunden und nur zur Ansicht; gesendet wird immer mit den Werten der
+ * Anfrage bzw. Gemeinde. Der Absender fehlt hier: Er kommt aus den
+ * Einstellungen daneben.
+ */
+export const PLATZHALTER_BEISPIEL: Platzhalter = {
+  name: 'Anna Beispiel',
+  gemeinde: 'Kirchengemeinde Musterdorf',
+  lizenz: 'Standard',
+  testphase_bis: '2026-11-02',
+  benutzername: 'anna.beispiel',
+  absender: null,
+};
+
 /** Ein Datum aus dem Server (ISO) als 14.09.2026; alles andere bleibt, wie es ist. */
 function datumWennIso(wert: string): string {
   return /^\d{4}-\d{2}-\d{2}/.test(wert) ? datumKurz(wert) || wert : wert;
@@ -269,6 +284,26 @@ export function sendeProblem(status: number | undefined, serverText?: string | n
   }
   if (status === 502) return { art: 'versand_gescheitert' };
   return null;
+}
+
+/** Beispieltext fuer die Vorschau der Fusszeile (Textbausteine). */
+export const VORSCHAU_BEISPIEL = 'Hallo,\n\nhier steht der Text der Antwort.';
+
+/** Der Hinweis zu einem Sendeproblem: Titel und Satz -- fuer App und Web gleich. */
+export function sendeHinweisText(problem: SendeProblem, postfach: Postfach): { titel: string; text: string } {
+  if (problem.art === 'nicht_eingerichtet') {
+    return {
+      titel: 'Postfach noch nicht eingerichtet',
+      text: `Für ${POSTFACH_INFO[postfach].kurz} fehlen auf dem Server noch die Zugangsdaten. Die Antwort wurde nicht gesendet; dein Text bleibt hier stehen.`,
+    };
+  }
+  if (problem.art === 'server_aus') {
+    return { titel: 'Nicht gesendet', text: `${problem.text} Dein Text bleibt hier stehen.` };
+  }
+  return {
+    titel: 'Versand gescheitert',
+    text: 'Der Mailserver hat die Antwort nicht angenommen; gespeichert wurde nichts. Dein Text bleibt hier stehen — bitte später noch einmal senden.',
+  };
 }
 
 /** Hinweis, wenn dieser Server ein Postfach nicht bedient (auf_diesem_server: false). */

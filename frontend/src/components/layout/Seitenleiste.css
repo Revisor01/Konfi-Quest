@@ -8,7 +8,8 @@
    Farben ausschliesslich ueber vorhandene Tokens: Flaeche wie die
    Kopfzeile (--app-glasleiste-rgb, im Dunkeln dunkel), Schrift wie die
    Reiterleiste, der aktive Eintrag in der Farbe des aktiven Reiters.
-   Dunkelmodus kommt damit von selbst.
+   Dunkelmodus kommt damit von selbst. Der Gemeinde-Umschalter unten
+   (LeistenGemeinde) hat seinen Abschnitt weiter unten.
    =================================================================== */
 
 .app-seitenleisten-rahmen {
@@ -121,12 +122,22 @@
 }
 
 /* Mittelteil: Reiter, `menue`, Gruppen -- scrollt, wenn das Fenster
-   niedrig ist; Kopf und Fuss bleiben stehen. */
+   niedrig ist; Kopf und Fuss bleiben stehen. In Simons Konto kommen die
+   Gruppen der Support-Ansicht dazu, dann reicht ein Laptop-Fenster nicht
+   mehr fuer alles: Ein zarter Schatten am Rand zeigt, dass dahinter noch
+   etwas steht (Scroll-Schatten: die ersten beiden Verlaeufe decken die
+   Schatten ab, solange der Rand erreicht ist -- sie scrollen mit, die
+   Schatten stehen fest). Nur Tokens. */
 .app-seitenleiste__liste {
   flex: 1 1 auto;
   overflow-x: hidden;
   overflow-y: auto;
   padding: var(--app-abstand-mini) var(--app-abstand-eng);
+  background:
+    linear-gradient(rgb(var(--app-glasleiste-rgb)) 30%, rgba(var(--app-glasleiste-rgb), 0)) top / 100% var(--app-abstand-gross) no-repeat local,
+    linear-gradient(rgba(var(--app-glasleiste-rgb), 0), rgb(var(--app-glasleiste-rgb)) 70%) bottom / 100% var(--app-abstand-gross) no-repeat local,
+    linear-gradient(rgba(var(--app-text-system-rgb), 0.28), rgba(var(--app-text-system-rgb), 0)) top / 100% var(--app-abstand-schmal) no-repeat scroll,
+    linear-gradient(rgba(var(--app-text-system-rgb), 0), rgba(var(--app-text-system-rgb), 0.28)) bottom / 100% var(--app-abstand-schmal) no-repeat scroll;
 }
 
 .app-seitenleiste__gruppe {
@@ -151,13 +162,8 @@
   padding-bottom: calc(var(--app-abstand-eng) + var(--ion-safe-area-bottom, 0px));
 }
 
-.app-seitenleiste__gemeinde ion-buttons {
-  display: flex;
-}
-
-.app-seitenleiste__gemeinde .app-org-switcher-btn {
-  flex: 1 1 auto;
-  min-height: 44px;
+.app-seitenleiste__gemeinde {
+  margin-bottom: var(--app-abstand-mini);
 }
 
 /* --- Ein Eintrag (Link oder Knopf) --- */
@@ -273,8 +279,227 @@
   background: rgba(var(--app-text-system-rgb), 0.2);
 }
 
-.app-seitenleiste.app-seitenleiste--eingeklappt .app-org-switcher-btn .app-org-switcher-btn__name {
+/* Gemeinde-Umschalter eingeklappt: nur das Symbol. Der Name steht als
+   Tooltip (title) und im aria-label des Knopfes. */
+.app-seitenleiste--eingeklappt .app-leistengemeinde__knopf {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+  border-color: transparent;
+  background: transparent;
+}
+
+.app-seitenleiste--eingeklappt .app-leistengemeinde__knopf:hover {
+  border-color: var(--app-border);
+  background: var(--app-surface-card);
+}
+
+.app-seitenleiste--eingeklappt .app-leistengemeinde__knopf .app-leistengemeinde__texte,
+.app-seitenleiste--eingeklappt .app-leistengemeinde__knopf .app-leistengemeinde__pfeil {
   display: none;
+}
+
+/* ===================================================================
+   Gemeinde-Umschalter unten in der Leiste (LeistenGemeinde.tsx,
+   03.10.2026, planung/support-web.md, Entscheidung 8): eine Flaeche ueber
+   die volle Breite der Leiste -- Symbol, voller Name, die Rolle dort,
+   rechts ein Pfeil -- und eine Liste, die nach oben aufklappt. Nur
+   Tokens; Hell und Dunkel kommen ueber die Flaechen- und Rahmen-Tokens.
+   Der Knopf der Kopfzeile (.app-org-switcher-btn, variables.css) bleibt
+   der Umschalter der Apps und des schmalen Fensters.
+   =================================================================== */
+.app-leistengemeinde {
+  position: relative;
+}
+
+.app-leistengemeinde__knopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  min-height: 50px;
+  box-sizing: border-box;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel) var(--app-abstand-eng) var(--app-abstand-eng);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-surface-card);
+  color: var(--ion-text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.app-leistengemeinde__knopf:hover {
+  border-color: var(--app-border-strong);
+  background: var(--app-surface-muted);
+}
+
+/* Geoeffnet: der Rahmen in der Primaerfarbe, wie der Fokus. */
+.app-leistengemeinde__knopf[aria-expanded='true'] {
+  border-color: var(--ion-color-primary);
+}
+
+.app-leistengemeinde__knopf:focus-visible,
+.app-leistengemeinde__eintrag:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.app-leistengemeinde__eintrag:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Das Symbol: abgerundetes Quadrat mit dem Buchstaben der Gemeinde, in der
+   Farbe der Rolle dort (utils/rollenNamen). Weisse Schrift auf der
+   Rollenfarbe, die in beiden Modi dieselbe bleibt. */
+.app-leistengemeinde__symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-leistengemeinde-farbe, var(--app-color-neutral));
+  color: var(--app-weiss);
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1;
+}
+
+.app-leistengemeinde__symbol--klein {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--app-radius-klein);
+  font-size: var(--app-text-basis);
+}
+
+.app-leistengemeinde__texte {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Voller Name: auf bis zu zwei Zeilen -- „Kirchengemeinde Musterdorf" soll
+   nicht als „Kirchengemeinde …" enden --, erst danach Ellipse; der ganze Name
+   steht im title. Die Rolle bleibt eine Zeile. */
+.app-leistengemeinde__name,
+.app-leistengemeinde__rolle {
+  overflow: hidden;
+  line-height: 1.3;
+}
+
+.app-leistengemeinde__name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: anywhere;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.app-leistengemeinde__rolle {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-secondary);
+}
+
+/* Der Pfeil zeigt nach oben, wohin die Liste aufklappt; geoeffnet nach unten. */
+.app-leistengemeinde__pfeil {
+  flex: 0 0 auto;
+  font-size: var(--app-text-gross);
+  color: var(--app-text-system);
+  transition: transform 0.2s ease;
+}
+
+.app-leistengemeinde__knopf[aria-expanded='true'] .app-leistengemeinde__pfeil {
+  transform: rotate(180deg);
+}
+
+/* Die Liste: fest gesetzt (Lage misst LeistenGemeinde.tsx), damit sie nicht
+   von der Leiste abgeschnitten wird -- ausgeklappt ueber dem Knopf, eingeklappt
+   daneben. Breiter als der Knopf, wenn die Namen es brauchen. */
+.app-leistengemeinde__liste {
+  position: fixed;
+  z-index: 20;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(22rem, calc(100vw - 2 * var(--app-abstand-basis)));
+  max-height: min(70vh, 32rem);
+  overflow-y: auto;
+  padding: var(--app-abstand-eng);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-surface-card);
+  box-shadow: var(--app-schatten-hoch);
+  color: var(--ion-text-color);
+}
+
+.app-leistengemeinde__listenkopf {
+  padding: var(--app-abstand-mini) var(--app-abstand-mittel) var(--app-abstand-eng);
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--app-text-system);
+}
+
+.app-leistengemeinde__eintrag {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel) var(--app-abstand-eng) var(--app-abstand-eng);
+  border: 0;
+  border-radius: var(--app-radius-knopf);
+  background: transparent;
+  color: var(--ion-text-color);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.app-leistengemeinde__eintrag + .app-leistengemeinde__eintrag {
+  margin-top: var(--app-abstand-winzig);
+}
+
+.app-leistengemeinde__eintrag:hover {
+  background: rgba(var(--app-text-system-rgb), 0.12);
+}
+
+/* Die aktive Gemeinde: fett und hinterlegt, wie der aktive Eintrag der
+   Leiste -- kein Haken. */
+.app-leistengemeinde__eintrag--aktiv,
+.app-leistengemeinde__eintrag--aktiv:hover {
+  background: rgba(var(--ion-color-primary-rgb), 0.12);
+}
+
+.app-leistengemeinde__eintrag--aktiv .app-leistengemeinde__name {
+  font-weight: var(--app-schrift-fett);
+}
+
+/* Die rote Zahl je Gemeinde, wie am Reiter und an der Leiste. */
+.app-leistengemeinde__offen {
+  flex: 0 0 auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--app-abstand-kompakt);
+  border-radius: var(--app-radius-klein);
+  box-sizing: border-box;
+  font-size: var(--app-text-klein);
+  line-height: 20px;
+  text-align: center;
 }
 
 /* Beim Drucken (QR-Code, Urkunden) nur der Inhalt. */

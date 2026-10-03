@@ -53,7 +53,9 @@ beforeEach(() => {
   h.user = { id: 9, role_name: 'super_admin', is_super_admin: true };
   supportMailZaehlerZuruecksetzen();
   antworten = {
-    '/organizations': [{ id: 7, name: 'heide', display_name: 'Kirchengemeinde Heide' }],
+    // Die Liste kennt Gemeinde 7 nicht (interne Gemeinden fehlen dort, Migration 194): Name und Angaben kommen aus /organizations/:id.
+    '/organizations': [{ id: 1, name: 'andere', display_name: 'Andere Gemeinde' }],
+    '/organizations/7': { id: 7, name: 'heide', display_name: 'Kirchengemeinde Heide', wunsch_lizenz: 'standard' },
     '/support/gemeinden/7/verlauf': [
       mail(22, { richtung: 'aus', von_adresse: 'support@konfi-quest.de', von_name: 'Support', gesendet_am: '2026-10-02T10:00:00Z', gelesen_am: '2026-10-02T10:00:00Z', betreff: 'Re: Jahrgang anlegen [Gemeinde 7]', text: 'Unter Mehr.' }),
       mail(21),
@@ -99,6 +101,27 @@ describe('Schriftwechsel: Verlauf', () => {
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledWith('/support/mail/gelesen', { ids: [21, 23] }));
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde öffnen' }));
     expect(h.push).toHaveBeenCalledWith('/admin/organizations?gemeinde=7');
+  });
+
+  it('der Name kommt aus /organizations/:id -- auch fuer eine Gemeinde, die nicht in der Liste steht', async () => {
+    await oeffnen();
+    expect(h.apiGet).toHaveBeenCalledWith('/organizations/7');
+    expect(h.apiGet).not.toHaveBeenCalledWith('/organizations');
+    expect(screen.queryByText('Andere Gemeinde')).toBeNull();
+  });
+
+  it('ohne lesbare Gemeinde steht ihre Kennung da, der Schriftwechsel geht trotzdem', async () => {
+    antworten['/organizations/7'] = new Error('nicht da');
+    render(<SupportGemeindePostPage organizationId={7} />);
+    expect(await screen.findByText('Gemeinde 7')).toBeInTheDocument();
+    expect((await screen.findAllByRole('article')).length).toBe(3);
+  });
+
+  it('eine Antwort mit fremder Kennung gilt nicht als diese Gemeinde', async () => {
+    antworten['/organizations/7'] = { id: 8, name: 'fremd', display_name: 'Fremde Gemeinde' };
+    render(<SupportGemeindePostPage organizationId={7} />);
+    expect(await screen.findByText('Gemeinde 7')).toBeInTheDocument();
+    expect(screen.queryByText('Fremde Gemeinde')).toBeNull();
   });
 
   it('Verlauf nicht ladbar: Hinweis mit neuem Versuch', async () => {

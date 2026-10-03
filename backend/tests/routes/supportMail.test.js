@@ -231,11 +231,14 @@ describe('/api/support -- Support-Mail', () => {
       const res = await als(SUPER()).get('/api/support/mail/eingang');
       expect(res.status).toBe(200);
       expect(res.body.map((m) => m.id)).toEqual([neu, alt]);
+      // Die ersten neun Felder wie immer; dazu seit 03.10.2026 (additiv) die Zuordnung -- hier immer leer.
       expect(Object.keys(res.body[0]).sort()).toEqual(
-        ['id', 'postfach', 'von_adresse', 'von_name', 'betreff', 'auszug', 'gesendet_am', 'gelesen_am', 'anhaenge'].sort());
+        ['id', 'postfach', 'von_adresse', 'von_name', 'betreff', 'auszug', 'gesendet_am', 'gelesen_am', 'anhaenge',
+          'anfrage_id', 'organization_id', 'gemeinde_name'].sort());
       expect(res.body[1]).toMatchObject({
         postfach: 'moin', von_adresse: 'absender@gemeinde.example', von_name: 'Erika', betreff: 'Alt',
         auszug: 'Erste Zeile Zweite Zeile', gelesen_am: null, anhaenge: [],
+        anfrage_id: null, organization_id: null, gemeinde_name: null,
       });
       expect(res.body[0].anhaenge).toEqual([{ name: 'a.pdf', groesse: 10, typ: 'application/pdf' }]);
     });
@@ -245,6 +248,73 @@ describe('/api/support -- Support-Mail', () => {
       await mail({ postfach: 'support', betreff: 'S' });
       expect((await als(SUPER()).get('/api/support/mail/eingang?postfach=support')).body.map((m) => m.betreff)).toEqual(['S']);
       expect((await als(SUPER()).get('/api/support/mail/eingang?postfach=team')).status).toBe(400);
+    });
+
+    // ----- zuordnung: offen (Vorgabe) oder alle (Posteingang der Web-Ansicht) -----
+    describe('?zuordnung', () => {
+      /** Je eine eingehende Mail: offen, zu einer Anfrage, zu einer Gemeinde; dazu eine ausgehende. */
+      const mails = async () => {
+        const anfrageId = await anfrageAnlegen({ gemeinde: 'Kirchengemeinde Büsum' });
+        await db.query("INSERT INTO organizations (id, name, slug, display_name) VALUES (3, 'g3', 'g3', 'Gemeinde Drei')");
+        await db.query("INSERT INTO organizations (id, name, slug, display_name) VALUES (4, 'g4-systemname', 'g4', '')");
+        const offen = await mail({ betreff: 'Offen', postfach: 'moin' });
+        const zurAnfrage = await mail({ betreff: 'Zur Anfrage', anfrage_id: anfrageId, postfach: 'moin' });
+        const zurGemeinde = await mail({ betreff: 'Zur Gemeinde', organization_id: 3, postfach: 'support' });
+        const zuGemeinde4 = await mail({ betreff: 'Zur Gemeinde ohne Anzeigenamen', organization_id: 4, postfach: 'support' });
+        await mail({ betreff: 'Ausgehend', richtung: 'aus', anfrage_id: anfrageId });
+        return { anfrageId, offen, zurAnfrage, zurGemeinde, zuGemeinde4 };
+      };
+
+      it('ohne Parameter und mit zuordnung=offen: nur die nicht zugeordneten, wie bisher', async () => {
+        const m = await mails();
+        const ohne = (await als(SUPER()).get('/api/support/mail/eingang')).body;
+        const offen = (await als(SUPER()).get('/api/support/mail/eingang?zuordnung=offen')).body;
+        expect(ohne.map((x) => x.id)).toEqual([m.offen]);
+        expect(offen).toEqual(ohne);
+      });
+
+      it('zuordnung=alle: alle EINGEHENDEN Mails, neueste zuerst, mit Anfrage, Gemeinde und Gemeindename der Zuordnung', async () => {
+        const m = await mails();
+        const res = await als(SUPER()).get('/api/support/mail/eingang?zuordnung=alle');
+        expect(res.status).toBe(200);
+        expect(res.body.map((x) => [x.id, x.anfrage_id, x.organization_id, x.gemeinde_name])).toEqual([
+          [m.zuGemeinde4, null, 4, 'g4-systemname'], // ohne Anzeigenamen: der Name
+          [m.zurGemeinde, null, 3, 'Gemeinde Drei'], // Anzeigename der Gemeinde
+          [m.zurAnfrage, m.anfrageId, null, 'Kirchengemeinde Büsum'], // Gemeindename aus der Anfrage
+          [m.offen, null, null, null],
+        ]);
+        // sonst dieselben Felder wie im Posteingang
+        expect(Object.keys(res.body[0]).sort()).toEqual(
+          ['id', 'postfach', 'von_adresse', 'von_name', 'betreff', 'auszug', 'gesendet_am', 'gelesen_am', 'anhaenge',
+            'anfrage_id', 'organization_id', 'gemeinde_name'].sort());
+      });
+
+      it('zuordnung=alle und postfach lassen sich verbinden', async () => {
+        const m = await mails();
+        const support = (await als(SUPER()).get('/api/support/mail/eingang?zuordnung=alle&postfach=support')).body;
+        expect(support.map((x) => x.id)).toEqual([m.zuGemeinde4, m.zurGemeinde]);
+        const moin = (await als(SUPER()).get('/api/support/mail/eingang?postfach=moin&zuordnung=alle')).body;
+        expect(moin.map((x) => x.id)).toEqual([m.zurAnfrage, m.offen]);
+        // Vorgabe offen mit Postfach: nur die nicht zugeordnete moin-Mail
+        expect((await als(SUPER()).get('/api/support/mail/eingang?postfach=moin')).body.map((x) => x.id)).toEqual([m.offen]);
+      });
+
+      it.each(['alles', 'Alle', 'ja', ''])('ein anderer Wert (%j) ist 400', async (wert) => {
+        await mails();
+        const res = await als(SUPER()).get(`/api/support/mail/eingang?zuordnung=${wert}`);
+        expect(res.status).toBe(400);
+        expect(res.body).toEqual({
+          error: 'Validierungsfehler', details: [{ field: 'zuordnung', message: 'zuordnung: offen, alle' }],
+        });
+      });
+
+      it('verboten: ohne Super-Admin-Recht 403, ohne Anmeldung 401 -- auch mit zuordnung=alle', async () => {
+        await mails();
+        for (const wer of ['orgAdmin1', 'admin1', 'teamer1', 'konfi1']) {
+          expect([wer, (await als(generateToken(wer)).get('/api/support/mail/eingang?zuordnung=alle')).status]).toEqual([wer, 403]);
+        }
+        expect((await request(app).get('/api/support/mail/eingang?zuordnung=alle')).status).toBe(401);
+      });
     });
 
     it('der Auszug ist höchstens 200 Zeichen lang', async () => {

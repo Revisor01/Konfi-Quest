@@ -12,7 +12,7 @@ import {
   ICON_TERMIN_GEFUELLT,
 } from '../components/shared/icons';
 import type { Rolle, RollenBaum } from './routes';
-import { SUPPORT_BEREICHE } from './supportMenue';
+import { SUPPORT_MENUE } from './supportMenue';
 
 // Code-Splitting entlang der Rollen (30.08.2026): Jede Seite wird per
 // React.lazy erst geladen, wenn ihre Route erstmals rendert. Ein Konfi laedt
@@ -375,6 +375,6 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     ],
     redirects: [{ from: '/admin', to: '/admin/support' }, ...SUPPORT_UMLEITUNGEN],
     tabs: [],
-    menue: SUPPORT_BEREICHE.map(({ path, label, icon, gruppe, badge }) => ({ path, label, icon, gruppe, badge })),
+    menue: [...SUPPORT_MENUE],
   },
 };
