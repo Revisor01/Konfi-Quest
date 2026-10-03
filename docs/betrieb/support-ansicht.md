@@ -1,8 +1,9 @@
 # Die Support-Ansicht benutzen
 
 Für den Betrieb von Konfi Quest: wer die Support-Ansicht sieht, wie man
-hinkommt und wie man darin Anfragen bearbeitet, Gemeinden anlegt, die Struktur
-aus Landeskirchen und Kirchenkreisen pflegt und Support-Konten verwaltet.
+hinkommt und wie man darin Anfragen bearbeitet und beantwortet, Mails
+zuordnet, Gemeinden anlegt, die Struktur aus Landeskirchen und Kirchenkreisen
+pflegt und Support-Konten verwaltet.
 Grundlage sind Simons Entscheidungen vom 02. und 03.10.2026
 ([planung/web-version.md](../planung/web-version.md), Punkt 2 bis 7 und 10
 bis 15). Belegt am Code (`frontend/src/components/support/`,
@@ -192,9 +193,63 @@ Das **letzte aktive Super-Admin-Konto** lässt sich weder sperren noch löschen;
 dann bleibt ein Hinweis „Nicht möglich" mit dem Satz des Servers stehen, bis
 man ihn wegdrückt. Regeln und API stehen in [support-konto.md](support-konto.md).
 
+## Mails beantworten und zuordnen
+
+Grundlage: Simons Entscheidungen vom 03.10.2026
+([planung/support-mail.md](../planung/support-mail.md)); eingerichtet mit
+[Auftrag 14](../auftraege/lokaler-agent/14-support-postfaecher.md).
+
+**Zwei Postfächer, zwei Rollen.** `moin@konfi-quest.de` ist für Anfragen und
+Erstkontakt — über dieses Postfach gehen auch schon die Systemmails (dieselbe
+Anmeldung wie `SMTP_USER`). `support@konfi-quest.de` ist für Hilfe an
+bestehende Gemeinden. Antworten auf eine Anfrage gehen von moin@, Antworten an
+eine Gemeinde von support@.
+
+**Abholen.** Der Cron-Leader liest beide Postfächer alle zwei Minuten — nur
+lesend: Er löscht nichts, verschiebt nichts und markiert nichts als gelesen.
+Im Mailprogramm bleibt alles, wie es war. Übernommen wird ab Einrichtung,
+nicht der Altbestand. Auf backend-test (`RUN_BACKGROUND_JOBS=false`) wird
+weder abgeholt noch versendet. Den Zustand zeigt der Bereich **Posteingang**
+oben: eingerichtet, zuletzt abgeholt, letzter Fehler.
+
+**Zuordnen.** Eine neue Mail kommt, in dieser Reihenfolge,
+
+1. in den Verlauf der Mail, auf die sie antwortet (Kopfzeilen
+   `In-Reply-To`/`References`),
+2. zu `[Anfrage 12]` bzw. `[Gemeinde 7]`, wenn das im Betreff steht,
+3. bei moin@ zur jüngsten nicht abgelehnten Anfrage mit derselben
+   Absenderadresse — so landen auch Antworten auf die Bestätigungsmail
+   einer Anfrage richtig,
+4. bei support@ zur Gemeinde, wenn genau ein aktives Konto (nicht Konfi) mit
+   Gemeinde diese Adresse hat,
+5. sonst in den **Posteingang** („nicht zugeordnet"). Dort ordnet man sie mit
+   einem Schritt einer Anfrage oder Gemeinde zu — der ganze Faden geht mit —
+   oder antwortet direkt.
+
+Neue, noch nicht angesehene Mails stehen als rote Zahl am Bereich
+**Anfragen** (je Anfrage) und am **Posteingang**. Eine Mail zu einer Anfrage
+zählt als Bewegung: Die 365-Tage-Frist beginnt neu.
+
+**Antworten.** In der Anfrage (Abschnitt „Antworten"), im Schriftwechsel
+einer Gemeinde oder im Posteingang: Baustein wählen (füllt die Platzhalter),
+Betreff und Text prüfen, senden. Der Server setzt die Fußzeile darunter,
+`[Anfrage 12]` bzw. `[Gemeinde 7]` in den Betreff, die Antwort-Kopfzeilen auf
+die letzte Mail des Verlaufs und legt die Antwort in den Ordner „Gesendet"
+des Postfachs (fehlt er, legt er „Sent" an). Eine Antwort auf eine neue
+Anfrage setzt sie auf „In Arbeit". Scheitert der Versand, wird nichts
+gespeichert; der Entwurf bleibt stehen.
+
+**Textbausteine und Fußzeile** (Bereich **Textbausteine**): Bausteine für
+moin@, support@ oder beide, mit den Platzhaltern `{{name}}`, `{{gemeinde}}`,
+`{{lizenz}}`, `{{testphase_bis}}`, `{{benutzername}}`, `{{absender}}`. Was
+ein Platzhalter nicht kennt, bleibt sichtbar stehen. Darunter Fußzeile und
+Absendername — dort und nicht im Code stehen Namen, weil das Repo öffentlich
+ist. Passwörter gehören nie in eine Mail: „Zugangsdaten unterwegs" nennt den
+Benutzernamen, das Passwort geht auf anderem Weg.
+
 ## Aufbewahrung
 
-Festgehalten in der Datenschutzerklärung, Abschnitt 9c
+Festgehalten in der Datenschutzerklärung, Abschnitte 9c und 9d
 (`frontend/public/datenschutz.html`); `datenschutzGegenCode.test.ts` hält
 Text und Code zusammen.
 
@@ -203,6 +258,8 @@ Text und Code zusammen.
 | neu, in Arbeit | bis zur Entscheidung; bleibt eine Anfrage **365 Tage ohne Änderung** (Status oder Notiz), löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupUnbewegteAnfragen`, gezählt ab `updated_at`) |
 | abgelehnt | **180 Tage nach der Ablehnung**, dann löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupAbgelehnteAnfragen`, gezählt ab `status_seit`, nicht ab dem Eingang) |
 | angelegt | solange die Gemeinde besteht; mit der Gemeinde wird die Anfrage gelöscht |
+| Mails zu einer Anfrage oder Gemeinde | wie die Anfrage bzw. Gemeinde; sie gehen mit ihr |
+| Mails im Posteingang (nicht zugeordnet) | **180 Tage nach Eingang**, dann löscht sie der nächtliche Lauf aus Konfi Quest; im Postfach selbst bleiben sie |
 
 Möchte jemand die Löschung vorher, wird die Anfrage abgelehnt und — bis es
 dafür einen Knopf gibt — in der Datenbank gelöscht

@@ -36,6 +36,10 @@ Versionsüberschrift.
   Änderung.
 - Gemeinden lassen sich einem Kirchenkreis und darüber einer Landeskirche
   zuordnen; die bisher eingetragenen Kirchenkreise werden dabei übernommen.
+- Der Support beantwortet Anfragen und Mails direkt in der Support-Ansicht:
+  Antworten von Gemeinden landen in der richtigen Anfrage oder bei der
+  richtigen Gemeinde, was sich nicht zuordnen lässt, im Posteingang. Dazu
+  gibt es Textbausteine mit Platzhaltern und eine gemeinsame Fußzeile.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
   Ausdrucken bereit.
 
@@ -45,8 +49,9 @@ Versionsüberschrift.
   Preis; die Tarife 15, 50, 75 und 100 und „Unbegrenzt" bleiben wählbar.
 - Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
   die Support-Ansicht statt direkt zu den Gemeinden.
-- Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,
-  wozu und wie lange.
+- Die Datenschutzerklärung beschreibt das Anfrageformular und den
+  Schriftwechsel per Mail mit dem Support: welche Angaben, wozu und wie
+  lange.
 - Die Gemeindeleitung kann ein Konto des Supports, das als Gast in ihrer
   Gemeinde ist, selbst wieder herausnehmen; das Konto des Supports bleibt.
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
