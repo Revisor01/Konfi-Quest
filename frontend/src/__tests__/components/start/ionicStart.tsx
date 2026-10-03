@@ -20,6 +20,15 @@ export interface IonicStartZustand {
   push: (pfad: string, richtung?: string, art?: string) => void;
   modale: ModalAufruf[];
   alerts: AlertOptionen[];
+  /**
+   * Optional: die Eigenschaften, mit denen useIonModal im LETZTEN Render
+   * gerufen wurde, je Modal-Name. Ein Aufruf haelt immer die Eigenschaften des
+   * Renders, in dem er entstand -- setzt die Seite erst einen Zustand und oeffnet
+   * dann (badgeId), sind sie dort noch die alten. Echtes Ionic baut die
+   * Komponente erst nach dem Oeffnen und mit den Eigenschaften des dann
+   * neuesten Renders (useOverlay); diese Ablage bildet das nach.
+   */
+  zuletzt?: Record<string, Record<string, unknown>>;
 }
 
 /** Eine Attrappe fuer ein Modal: leer, aber mit Namen, damit der Test sie erkennt. */
@@ -38,10 +47,14 @@ export function ionicStart(z: IonicStartZustand) {
     ...basis,
     IonProgressBar: () => null,
     IonPage: ({ children }: { children?: React.ReactNode }) => <div>{children}</div>,
-    useIonModal: (komponente: { displayName?: string; name?: string }, props: Record<string, unknown>) => [
-      (optionen?: Record<string, unknown>) => { z.modale.push({ name: komponente.displayName ?? komponente.name ?? '?', props, optionen }); },
-      () => undefined,
-    ],
+    useIonModal: (komponente: { displayName?: string; name?: string }, props: Record<string, unknown>) => {
+      const name = komponente.displayName ?? komponente.name ?? '?';
+      if (z.zuletzt) z.zuletzt[name] = props;
+      return [
+        (optionen?: Record<string, unknown>) => { z.modale.push({ name, props, optionen }); },
+        () => undefined,
+      ];
+    },
     useIonPopover: () => [() => undefined, () => undefined],
   };
 }
