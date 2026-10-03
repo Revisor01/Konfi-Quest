@@ -870,6 +870,9 @@ describe('Raum (Web): bleibt unten, wenn Bilder nachladen', () => {
   const oeffnen = async () => {
     IM_RAUM([m({ content: 'Erste' }), m({ content: 'Zweite' })]);
     await zeigen();
+    // Erst das Scrollen beim Oeffnen abwarten (useChatScroll, zwei Bilder spaeter):
+    // Ein spaeter Aufruf liefe sonst in die Zaehlung der Tests.
+    await waitFor(() => expect(scrollAufrufe.zumEnde).toHaveBeenCalledWith(0));
     verlaufMessen();
     await meldet(2000, 1310); // Ausgangsgroesse: ganz unten
     scrollAufrufe.zumEnde.mockClear();
