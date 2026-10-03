@@ -179,9 +179,9 @@ describe('Uebersicht (Web): Kennzahl-Kacheln', () => {
     expect(screen.getByRole('group', { name: 'Aktiv in 30 Tagen: 912' })).toHaveTextContent('61 % von 1.501 Konten');
 
     const offen = screen.getByRole('link', { name: 'Offene Anfragen: 5' });
-    expect(offen).toHaveAttribute('href', '/admin/support/anfragen');
+    expect(offen).toHaveAttribute('href', '/admin/support/anfragen?filter=offen');
     const mails = screen.getByRole('link', { name: 'Ungelesene Mails: 3' });
-    expect(mails).toHaveAttribute('href', '/admin/support/post');
+    expect(mails).toHaveAttribute('href', '/admin/support/post?filter=ungelesen');
   });
 
   it('keine Liste der Bereiche und kein Abmelden im breiten Fenster -- die Leiste steht links', async () => {

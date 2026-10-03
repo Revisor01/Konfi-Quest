@@ -17,8 +17,10 @@ import { lizenzFinden } from '../../../utils/lizenzen';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
 import {
+  ANFRAGEN_FILTER,
   ANFRAGE_TON,
   anfragenFiltern,
+  anfragenSortieren,
   anfragenZaehlen,
   suchbegriff,
   ungelesenVonAnfrage,
@@ -34,6 +36,7 @@ import WebTabelle, { type WebSpalte } from './WebTabelle';
 import WebTreffer from './WebTreffer';
 import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
 import { useWebDaten } from './useWebDaten';
+import { useFilterAusAdresse } from './useFilterAusAdresse';
 
 async function ladeAnfragen(): Promise<GemeindeAnfrage[]> {
   const antwort = await api.get('/support/anfragen');
@@ -42,6 +45,7 @@ async function ladeAnfragen(): Promise<GemeindeAnfrage[]> {
 }
 
 const LEER_TEXT: Record<AnfragenFilter, string> = {
+  offen: 'Keine Anfrage wartet auf Bearbeitung.',
   neu: 'Keine neuen Anfragen.',
   in_arbeit: 'Keine Anfragen in Arbeit.',
   angelegt: 'Noch keine Anfrage wurde zur Gemeinde.',
@@ -52,12 +56,13 @@ const LEER_TEXT: Record<AnfragenFilter, string> = {
 
 const WebAnfragen: React.FC = () => {
   const { daten, laedt, neuLaden } = useWebDaten(ladeAnfragen);
-  const [filter, setFilter] = useState<AnfragenFilter>('alle');
+  const [filter, setFilter] = useFilterAusAdresse<AnfragenFilter>('/admin/support/anfragen', ANFRAGEN_FILTER, 'alle');
   const [suche, setSuche] = useState('');
 
   const anfragen = useMemo(() => daten ?? [], [daten]);
   const zaehlen = useMemo(() => anfragenZaehlen(anfragen), [anfragen]);
-  const sichtbar = useMemo(() => anfragenFiltern(anfragen, filter, suche), [anfragen, filter, suche]);
+  // Neueste zuerst, unabhaengig von der Reihenfolge des Servers.
+  const sichtbar = useMemo(() => anfragenSortieren(anfragenFiltern(anfragen, filter, suche)), [anfragen, filter, suche]);
   const sucht = suchbegriff(suche) !== '';
 
   const spalten: Array<WebSpalte<GemeindeAnfrage>> = [
@@ -157,6 +162,7 @@ const WebAnfragen: React.FC = () => {
             onWert={setFilter}
             chips={[
               { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
+              { wert: 'offen', label: 'Offen', zahl: zaehlen.offen, zahlText: 'neu oder in Arbeit' },
               { wert: 'neu', label: 'Neu', zahl: zaehlen.neu },
               { wert: 'in_arbeit', label: 'In Arbeit', zahl: zaehlen.in_arbeit },
               { wert: 'angelegt', label: 'Angelegt', zahl: zaehlen.angelegt },

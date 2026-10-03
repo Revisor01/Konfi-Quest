@@ -11,6 +11,7 @@ const h = vi.hoisted(() => ({
   push: vi.fn(),
   breit: true,
   user: { id: 9, display_name: 'Support Eins', role_name: 'super_admin', is_super_admin: true } as Record<string, unknown>,
+  standort: { pathname: '/admin/support/anfragen', search: '', state: null } as { pathname: string; search: string; state: null },
 }));
 
 vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttrappe({
@@ -25,6 +26,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
+vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.standort }));
 
 import SupportAnfragenPage from '../../../components/support/SupportAnfragenPage';
 
@@ -68,6 +70,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.apiGet.mockReset();
   h.breit = true;
+  h.standort = { pathname: '/admin/support/anfragen', search: '', state: null };
   h.user = { id: 9, display_name: 'Support Eins', role_name: 'super_admin', is_super_admin: true };
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-10-03T08:30:00Z'));
@@ -75,7 +78,7 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); });
 
 describe('Anfragen (Web): Tabelle', () => {
-  it('holt alle Anfragen einmal (ohne Status) und zeigt je Anfrage eine Zeile in der Reihenfolge des Servers', async () => {
+  it('holt alle Anfragen einmal (ohne Status) und zeigt je Anfrage eine Zeile, neueste zuerst', async () => {
     antworten();
     await zeigen();
     expect(h.apiGet).toHaveBeenCalledWith('/support/anfragen');
@@ -137,8 +140,8 @@ describe('Anfragen (Web): Chips und Suche', () => {
     antworten();
     await zeigen();
     expect(chip(/^Alle/)).toHaveAttribute('aria-pressed', 'true');
-    const zahlen = ['Alle', 'Neu', 'In Arbeit', 'Angelegt', 'Abgelehnt', 'Ungelesen'].map((n) => chip(new RegExp(`^${n}`)).textContent);
-    expect(zahlen).toEqual(['Alle5', 'Neu2', 'In Arbeit1', 'Angelegt1', 'Abgelehnt1', 'Ungelesen1 mit ungelesenen Mails']);
+    const zahlen = ['Alle', 'Offen', 'Neu', 'In Arbeit', 'Angelegt', 'Abgelehnt', 'Ungelesen'].map((n) => chip(new RegExp(`^${n}`)).textContent);
+    expect(zahlen).toEqual(['Alle5', 'Offen3 neu oder in Arbeit', 'Neu2', 'In Arbeit1', 'Angelegt1', 'Abgelehnt1', 'Ungelesen1 mit ungelesenen Mails']);
     expect((chip(/^Ungelesen/).querySelector('.web-chip__zahl') as HTMLElement).className).toContain('web-chip__zahl--rot');
     expect((chip(/^Neu/).querySelector('.web-chip__zahl') as HTMLElement).className).not.toContain('web-chip__zahl--rot');
   });
@@ -157,6 +160,22 @@ describe('Anfragen (Web): Chips und Suche', () => {
     fireEvent.click(chip(/^Alle/));
     expect(zeilen()).toHaveLength(5);
     expect(h.apiGet.mock.calls.filter(([p]) => p === '/support/anfragen')).toHaveLength(1);
+  });
+
+  it('Offen zeigt Neu und In Arbeit zusammen, nicht Angelegt und Abgelehnt', async () => {
+    antworten();
+    await zeigen();
+    fireEvent.click(chip(/^Offen/));
+    expect(chip(/^Offen/)).toHaveAttribute('aria-pressed', 'true');
+    expect(zeilen().map((z) => spalte(z, 5).textContent)).toEqual(['Neu', 'Neu', 'In Arbeit']);
+    expect(screen.getByText('5 Anfragen aus dem Formular auf der Startseite · 3 in dieser Auswahl')).toBeInTheDocument();
+  });
+
+  it('Offen ohne wartende Anfragen: eigener Hinweis', async () => {
+    antworten(ANFRAGEN.filter((a) => a.status === 'angelegt' || a.status === 'abgelehnt'));
+    await zeigen();
+    fireEvent.click(chip(/^Offen/));
+    expect(screen.getByText('Keine Anfrage wartet auf Bearbeitung.')).toBeInTheDocument();
   });
 
   it('die Suche findet nach Gemeinde, Kontakt, E-Mail und Kirchenkreis, mit Umlauten, und hebt Treffer hervor', async () => {
@@ -192,6 +211,88 @@ describe('Anfragen (Web): Chips und Suche', () => {
     await zeigen();
     fireEvent.click(chip(/^Abgelehnt/));
     expect(screen.getByText('Keine abgelehnten Anfragen.')).toBeInTheDocument();
+  });
+});
+
+describe('Anfragen (Web): Reihenfolge', () => {
+  const ids = () => zeilen().map((z) => within(spalte(z, 1)).getByRole('link').getAttribute('href')!.split('/').pop());
+
+  it('neueste zuerst, auch wenn der Server sie durcheinander liefert', async () => {
+    antworten([ANFRAGEN[3], ANFRAGEN[0], ANFRAGEN[4], ANFRAGEN[2], ANFRAGEN[1]]);
+    await zeigen();
+    expect(ids()).toEqual(['41', '40', '39', '36', '34']);
+  });
+
+  it('die Reihenfolge gilt auch in einem Filter', async () => {
+    antworten([ANFRAGEN[2], ANFRAGEN[1], ANFRAGEN[0]]);
+    await zeigen();
+    fireEvent.click(chip(/^Offen/));
+    expect(ids()).toEqual(['41', '40', '39']);
+  });
+
+  it('bei gleichem Eingang entscheidet die hoehere Kennung', async () => {
+    antworten([
+      anfrage(20, 'Gemeinde A', 'neu', '2026-10-01T08:30:00Z'),
+      anfrage(22, 'Gemeinde C', 'neu', '2026-10-01T08:30:00Z'),
+      anfrage(21, 'Gemeinde B', 'neu', '2026-10-01T08:30:00Z'),
+    ]);
+    await zeigen();
+    expect(ids()).toEqual(['22', '21', '20']);
+  });
+});
+
+describe('Anfragen (Web): Filter aus der Adresse', () => {
+  const eingestellt = () => ['Alle', 'Offen', 'Neu', 'In Arbeit', 'Angelegt', 'Abgelehnt', 'Ungelesen']
+    .filter((n) => chip(new RegExp(`^${n}`)).getAttribute('aria-pressed') === 'true');
+
+  it('?filter=offen stellt Offen ein -- so fuehrt die Kachel der Uebersicht auf die offenen Anfragen', async () => {
+    h.standort = { pathname: '/admin/support/anfragen', search: '?filter=offen', state: null };
+    antworten();
+    await zeigen();
+    expect(eingestellt()).toEqual(['Offen']);
+    expect(zeilen()).toHaveLength(3);
+  });
+
+  it('jeder Filter ist ueber die Adresse einstellbar', async () => {
+    for (const [wert, name, zeilenZahl] of [['neu', 'Neu', 2], ['in_arbeit', 'In Arbeit', 1], ['angelegt', 'Angelegt', 1], ['abgelehnt', 'Abgelehnt', 1], ['ungelesen', 'Ungelesen', 1], ['alle', 'Alle', 5]] as const) {
+      h.standort = { pathname: '/admin/support/anfragen', search: `?filter=${wert}`, state: null };
+      antworten();
+      const { unmount } = render(<SupportAnfragenPage />);
+      await screen.findByRole('table', { name: 'Anfragen' });
+      expect(eingestellt()).toEqual([name]);
+      expect(zeilen()).toHaveLength(zeilenZahl);
+      unmount();
+    }
+  });
+
+  it('ein unbekannter Wert oder keiner: Alle', async () => {
+    h.standort = { pathname: '/admin/support/anfragen', search: '?filter=blau', state: null };
+    antworten();
+    await zeigen();
+    expect(eingestellt()).toEqual(['Alle']);
+  });
+
+  it('eine neue Adresse bei offener Seite stellt den Filter um; ein Chip danach gilt', async () => {
+    antworten();
+    const { rerender } = render(<SupportAnfragenPage />);
+    await screen.findByRole('table', { name: 'Anfragen' });
+    expect(eingestellt()).toEqual(['Alle']);
+    h.standort = { pathname: '/admin/support/anfragen', search: '?filter=offen', state: null };
+    rerender(<SupportAnfragenPage />);
+    expect(eingestellt()).toEqual(['Offen']);
+    fireEvent.click(chip(/^Neu/));
+    expect(eingestellt()).toEqual(['Neu']);
+    rerender(<SupportAnfragenPage />);
+    expect(eingestellt()).toEqual(['Neu']);
+  });
+
+  it('auf einer anderen Seite (Ionic haelt die Anfragen noch kurz) ruehrt die Adresse den Filter nicht an', async () => {
+    antworten();
+    const { rerender } = render(<SupportAnfragenPage />);
+    await screen.findByRole('table', { name: 'Anfragen' });
+    h.standort = { pathname: '/admin/support/post', search: '?filter=offen', state: null };
+    rerender(<SupportAnfragenPage />);
+    expect(eingestellt()).toEqual(['Alle']);
   });
 });
 

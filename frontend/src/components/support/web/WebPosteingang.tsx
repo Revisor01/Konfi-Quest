@@ -12,7 +12,7 @@
 // (navigation/supportMailZaehler.ts). Mails mit Zuordnung zaehlen schon an
 // der Anfrage bzw. Gemeinde.
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_ANHANG, ICON_MAIL } from '../../shared/icons';
 import api from '../../../services/api';
@@ -22,8 +22,10 @@ import { datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
 import { useSupportMailZaehler } from '../../../navigation/supportMailZaehler';
 import {
+  EINGANG_FILTER,
   eingangFiltern,
   eingangLesen,
+  eingangSortieren,
   eingangZaehlen,
   istNichtZugeordnet,
   zuordnungZiel,
@@ -38,6 +40,7 @@ import WebChips from './WebChips';
 import WebTabelle, { type WebSpalte } from './WebTabelle';
 import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
 import { useWebDaten } from './useWebDaten';
+import { useFilterAusAdresse } from './useFilterAusAdresse';
 
 interface PosteingangDaten {
   mails: MailEingangWeb[];
@@ -62,6 +65,7 @@ async function ladeEingang(): Promise<PosteingangDaten> {
 
 const LEER_TEXT: Record<EingangFilter, string> = {
   alle: 'Mails an moin@ und support@ erscheinen hier, sobald die Postfächer abgeholt sind.',
+  ungelesen: 'Alle Mails sind gelesen.',
   offen: 'Jede Mail ist einer Anfrage oder Gemeinde zugeordnet.',
   moin: `Keine Mails an ${POSTFACH_INFO.moin.kurz}.`,
   support: `Keine Mails an ${POSTFACH_INFO.support.kurz}.`,
@@ -69,6 +73,7 @@ const LEER_TEXT: Record<EingangFilter, string> = {
 
 const LEER_TITEL: Record<EingangFilter, string> = {
   alle: 'Noch keine Mails',
+  ungelesen: 'Nichts Ungelesenes',
   offen: 'Nichts zuzuordnen',
   moin: 'Keine Mails',
   support: 'Keine Mails',
@@ -104,11 +109,12 @@ const PostfachStatus: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
 const WebPosteingang: React.FC = () => {
   const { daten, laedt, neuLaden } = useWebDaten(ladeEingang);
   const zaehler = useSupportMailZaehler(true);
-  const [filter, setFilter] = useState<EingangFilter>('alle');
+  const [filter, setFilter] = useFilterAusAdresse<EingangFilter>('/admin/support/post', EINGANG_FILTER, 'alle');
 
   const mails = useMemo(() => daten?.mails ?? [], [daten]);
   const zaehlen = useMemo(() => eingangZaehlen(mails), [mails]);
-  const sichtbar = useMemo(() => eingangFiltern(mails, filter), [mails, filter]);
+  // Neueste zuerst, unabhaengig von der Reihenfolge des Servers.
+  const sichtbar = useMemo(() => eingangSortieren(eingangFiltern(mails, filter)), [mails, filter]);
   // Die rote Zahl: ungelesen und nicht zugeordnet -- aus dem Zaehler der Leiste, solange er da ist.
   const ungelesenOffen = zaehler ? zaehler.eingang : mails.filter((m) => istNichtZugeordnet(m) && !m.gelesen_am).length;
 
@@ -213,6 +219,7 @@ const WebPosteingang: React.FC = () => {
           onWert={setFilter}
           chips={[
             { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
+            { wert: 'ungelesen', label: 'Ungelesen', zahl: zaehlen.ungelesen, rot: true },
             { wert: 'offen', label: 'Nicht zugeordnet', zahl: ungelesenOffen > 0 ? ungelesenOffen : undefined, rot: true, zahlText: 'ungelesen' },
             { wert: 'moin', label: POSTFACH_INFO.moin.kurz, zahl: zaehlen.moin },
             { wert: 'support', label: POSTFACH_INFO.support.kurz, zahl: zaehlen.support },

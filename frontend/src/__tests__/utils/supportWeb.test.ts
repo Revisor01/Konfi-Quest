@@ -6,11 +6,16 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import type { GemeindeAnfrage } from '../../types/support';
 import {
+  ANFRAGEN_FILTER,
+  EINGANG_FILTER,
   anfragenFiltern,
+  anfragenSortieren,
   anfragenZaehlen,
   eingangFiltern,
   eingangLesen,
+  eingangSortieren,
   eingangZaehlen,
+  filterAusAdresse,
   gemeindePasst,
   gemeindenGruppieren,
   gemeindenLesen,
@@ -141,12 +146,35 @@ describe('Mails mit Zuordnung', () => {
   });
   const mails = [mail(1, 'moin', { anfrage_id: 4 }), mail(2, 'support', { organization_id: 3 }), mail(3, 'support'), mail(4, 'moin')];
 
-  it('Zaehler und Filter: Alle, Nicht zugeordnet, moin@, support@', () => {
-    expect(eingangZaehlen(mails)).toEqual({ alle: 4, offen: 2, moin: 2, support: 2 });
+  it('Zaehler und Filter: Alle, Ungelesen, Nicht zugeordnet, moin@, support@', () => {
+    expect(eingangZaehlen(mails)).toEqual({ alle: 4, ungelesen: 4, offen: 2, moin: 2, support: 2 });
     expect(eingangFiltern(mails, 'alle').map((m) => m.id)).toEqual([1, 2, 3, 4]);
     expect(eingangFiltern(mails, 'offen').map((m) => m.id)).toEqual([3, 4]);
     expect(eingangFiltern(mails, 'moin').map((m) => m.id)).toEqual([1, 4]);
     expect(eingangFiltern(mails, 'support').map((m) => m.id)).toEqual([2, 3]);
+  });
+
+  it('Ungelesen zaehlt jede Mail ohne Lesezeit, zugeordnet oder nicht', () => {
+    const gemischt = [mail(1, 'moin', { anfrage_id: 4 }), mail(2, 'support', { organization_id: 3, gelesen_am: '2026-10-03T08:00:00Z' }), mail(3, 'support'), mail(4, 'moin', { gelesen_am: '2026-10-03T08:00:00Z' })];
+    expect(eingangZaehlen(gemischt).ungelesen).toBe(2);
+    expect(eingangFiltern(gemischt, 'ungelesen').map((m) => m.id)).toEqual([1, 3]);
+    expect(eingangZaehlen([]).ungelesen).toBe(0);
+  });
+
+  it('eingangSortieren: neueste Sendezeit zuerst, bei gleicher Zeit die hoehere Kennung; die Eingabe bleibt unberuehrt', () => {
+    const wirr = [
+      mail(5, 'moin', { gesendet_am: '2026-09-28T10:00:00Z' }),
+      mail(2, 'moin', { gesendet_am: '2026-10-03T08:00:00Z' }),
+      mail(9, 'support', { gesendet_am: '2026-10-03T08:00:00Z' }),
+      mail(7, 'moin', { gesendet_am: '2026-10-02T08:00:00Z' }),
+    ];
+    expect(eingangSortieren(wirr).map((m) => m.id)).toEqual([9, 2, 7, 5]);
+    expect(wirr.map((m) => m.id)).toEqual([5, 2, 9, 7]);
+  });
+
+  it('eingangSortieren: eine Mail ohne lesbare Zeit steht ganz unten, statt die Reihenfolge zu stoeren', () => {
+    const wirr = [mail(1, 'moin', { gesendet_am: 'kaputt' }), mail(2, 'moin', { gesendet_am: '2026-09-01T08:00:00Z' })];
+    expect(eingangSortieren(wirr).map((m) => m.id)).toEqual([2, 1]);
   });
 });
 
@@ -312,9 +340,32 @@ describe('Anfragen: Zaehler und Filter', () => {
     anfrage(5, 'abgelehnt', 'Verein'),
   ];
 
-  it('Zahl je Status, alle und ungelesen', () => {
-    expect(anfragenZaehlen(liste)).toEqual({ neu: 2, in_arbeit: 1, angelegt: 1, abgelehnt: 1, alle: 5, ungelesen: 1 });
-    expect(anfragenZaehlen([])).toEqual({ neu: 0, in_arbeit: 0, angelegt: 0, abgelehnt: 0, alle: 0, ungelesen: 0 });
+  it('Zahl je Status, offen (neu und in Arbeit), alle und ungelesen', () => {
+    expect(anfragenZaehlen(liste)).toEqual({ neu: 2, in_arbeit: 1, angelegt: 1, abgelehnt: 1, alle: 5, offen: 3, ungelesen: 1 });
+    expect(anfragenZaehlen([])).toEqual({ neu: 0, in_arbeit: 0, angelegt: 0, abgelehnt: 0, alle: 0, offen: 0, ungelesen: 0 });
+  });
+
+  it('Offen zeigt neu und in Arbeit, aber weder angelegt noch abgelehnt', () => {
+    expect(anfragenFiltern(liste, 'offen', '').map((a) => a.id)).toEqual([1, 2, 3]);
+    expect(anfragenFiltern(liste, 'offen', 'büsum').map((a) => a.id)).toEqual([3]);
+    expect(anfragenFiltern(liste, 'offen', 'verein')).toEqual([]);
+  });
+
+  it('anfragenSortieren: neueste zuerst, bei gleichem Eingang die hoehere Kennung; die Eingabe bleibt unberuehrt', () => {
+    const wirr = [
+      anfrage(34, 'abgelehnt', 'A', { created_at: '2026-09-03T08:30:00Z' }),
+      anfrage(36, 'angelegt', 'B', { created_at: '2026-09-14T08:30:00Z' }),
+      anfrage(40, 'neu', 'C', { created_at: '2026-10-02T12:30:00Z' }),
+      anfrage(41, 'neu', 'D', { created_at: '2026-10-02T12:30:00Z' }),
+      anfrage(35, 'neu', 'E', { created_at: '2026-09-11T08:30:00Z' }),
+    ];
+    expect(anfragenSortieren(wirr).map((a) => a.id)).toEqual([41, 40, 36, 35, 34]);
+    expect(wirr.map((a) => a.id)).toEqual([34, 36, 40, 41, 35]);
+  });
+
+  it('anfragenSortieren: ein unlesbarer Eingang steht ganz unten', () => {
+    const wirr = [anfrage(1, 'neu', 'A', { created_at: '' }), anfrage(2, 'neu', 'B', { created_at: '2026-09-03T08:30:00Z' })];
+    expect(anfragenSortieren(wirr).map((a) => a.id)).toEqual([2, 1]);
   });
 
   it('Filter nach Status, ungelesen und Suche (auch Umlaute und Kontakt)', () => {
@@ -326,5 +377,22 @@ describe('Anfragen: Zaehler und Filter', () => {
     expect(anfragenFiltern(liste, 'alle', 'KONTAKT2@').map((a) => a.id)).toEqual([2]);
     expect(anfragenFiltern(liste, 'neu', 'küstenland')).toEqual([]);
     expect(anfragenFiltern(liste, 'in_arbeit', 'küstenland').map((a) => a.id)).toEqual([3]);
+  });
+});
+
+describe('filterAusAdresse', () => {
+  it('liest ?filter= und kennt nur erlaubte Werte', () => {
+    expect(filterAusAdresse('?filter=offen', ANFRAGEN_FILTER)).toBe('offen');
+    expect(filterAusAdresse('?foo=1&filter=in_arbeit', ANFRAGEN_FILTER)).toBe('in_arbeit');
+    expect(filterAusAdresse('?filter=ungelesen', EINGANG_FILTER)).toBe('ungelesen');
+  });
+
+  it('Unbekanntes, Leeres und Fehlendes ergibt null -- auch ein Wert, der nur in der anderen Liste steht', () => {
+    expect(filterAusAdresse('?filter=blau', ANFRAGEN_FILTER)).toBeNull();
+    expect(filterAusAdresse('?filter=', ANFRAGEN_FILTER)).toBeNull();
+    expect(filterAusAdresse('', ANFRAGEN_FILTER)).toBeNull();
+    expect(filterAusAdresse('?gemeinde=3', EINGANG_FILTER)).toBeNull();
+    expect(filterAusAdresse('?filter=neu', EINGANG_FILTER)).toBeNull();
+    expect(filterAusAdresse('?filter=moin', ANFRAGEN_FILTER)).toBeNull();
   });
 });

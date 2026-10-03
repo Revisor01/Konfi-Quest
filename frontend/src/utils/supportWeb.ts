@@ -521,7 +521,20 @@ export const ANFRAGE_TON: Record<AnfrageStatus, PillTon> = {
 
 // --- Anfragen: Zaehler, Suche, Filter ---------------------------------------------------
 
-export type AnfragenFilter = AnfrageStatus | 'alle' | 'ungelesen';
+/** "offen" = neu und in Arbeit zusammen (Aufgaben), "ungelesen" = mit ungelesenen Mails, gleich in welchem Status. */
+export type AnfragenFilter = AnfrageStatus | 'alle' | 'offen' | 'ungelesen';
+
+/** Alle Filter der Anfragen -- die Werte, die `?filter=` in der Adresse annimmt. */
+export const ANFRAGEN_FILTER: readonly AnfragenFilter[] = ['alle', 'offen', 'neu', 'in_arbeit', 'angelegt', 'abgelehnt', 'ungelesen'];
+
+/**
+ * Ein Filter aus der Adresse (`?filter=offen`). Unbekanntes und Fehlendes
+ * ergibt null -- dann gilt die Voreinstellung der Seite.
+ */
+export function filterAusAdresse<T extends string>(search: string, erlaubt: readonly T[]): T | null {
+  const wert = new URLSearchParams(search).get('filter');
+  return wert !== null && (erlaubt as readonly string[]).includes(wert) ? (wert as T) : null;
+}
 
 /** Ungelesene Mails einer Anfrage; aeltere Server liefern das Feld nicht (dann 0). */
 export const ungelesenVonAnfrage = (a: Pick<GemeindeAnfrage, 'ungelesen'>): number =>
@@ -529,9 +542,10 @@ export const ungelesenVonAnfrage = (a: Pick<GemeindeAnfrage, 'ungelesen'>): numb
 
 /** Zahl je Filter: je Status, alle und mit ungelesenen Mails. */
 export function anfragenZaehlen(anfragen: readonly GemeindeAnfrage[]): Record<AnfragenFilter, number> {
-  const z: Record<AnfragenFilter, number> = { neu: 0, in_arbeit: 0, angelegt: 0, abgelehnt: 0, alle: anfragen.length, ungelesen: 0 };
+  const z: Record<AnfragenFilter, number> = { neu: 0, in_arbeit: 0, angelegt: 0, abgelehnt: 0, alle: anfragen.length, offen: 0, ungelesen: 0 };
   for (const a of anfragen) {
     if (a.status in z) z[a.status] += 1;
+    if (a.status === 'neu' || a.status === 'in_arbeit') z.offen += 1;
     if (ungelesenVonAnfrage(a) > 0) z.ungelesen += 1;
   }
   return z;
@@ -545,14 +559,41 @@ export const anfrageSuchtexte = (a: GemeindeAnfrage): string[] =>
 export function anfragenFiltern(anfragen: readonly GemeindeAnfrage[], filter: AnfragenFilter, eingabe: string): GemeindeAnfrage[] {
   const s = suchbegriff(eingabe);
   return anfragen.filter((a) => {
-    if (filter === 'ungelesen' ? ungelesenVonAnfrage(a) === 0 : filter !== 'alle' && a.status !== filter) return false;
+    if (!passtZumFilter(a, filter)) return false;
     return !s || anfrageSuchtexte(a).some((t) => falten(t).includes(s));
   });
 }
 
+const passtZumFilter = (a: GemeindeAnfrage, filter: AnfragenFilter): boolean => {
+  switch (filter) {
+    case 'alle': return true;
+    case 'offen': return a.status === 'neu' || a.status === 'in_arbeit';
+    case 'ungelesen': return ungelesenVonAnfrage(a) > 0;
+    default: return a.status === filter;
+  }
+};
+
+const zeitpunkt = (iso: string | null | undefined): number => {
+  const t = new Date(iso ?? '').getTime();
+  return Number.isNaN(t) ? 0 : t;
+};
+
+/**
+ * Die Anfragen nach Eingang, die neueste zuerst; bei gleicher Zeit die mit der
+ * hoeheren Kennung. Die Tabelle verlaesst sich nicht auf die Reihenfolge des
+ * Servers.
+ */
+export function anfragenSortieren<T extends Pick<GemeindeAnfrage, 'id' | 'created_at'>>(anfragen: readonly T[]): T[] {
+  return [...anfragen].sort((a, b) => zeitpunkt(b.created_at) - zeitpunkt(a.created_at) || b.id - a.id);
+}
+
 // --- Posteingang: Filter ---------------------------------------------------------------
 
-export type EingangFilter = 'alle' | 'offen' | 'moin' | 'support';
+/** "offen" = nicht zugeordnet; "ungelesen" = alle ungelesenen, auch zugeordnete. */
+export type EingangFilter = 'alle' | 'ungelesen' | 'offen' | 'moin' | 'support';
+
+/** Alle Filter des Posteingangs -- die Werte, die `?filter=` in der Adresse annimmt. */
+export const EINGANG_FILTER: readonly EingangFilter[] = ['alle', 'ungelesen', 'offen', 'moin', 'support'];
 
 /** Ist die Mail keiner Anfrage und keiner Gemeinde zugeordnet? */
 export const istNichtZugeordnet = (m: Pick<MailEingangWeb, 'anfrage_id' | 'organization_id'>): boolean =>
@@ -562,6 +603,7 @@ export const istNichtZugeordnet = (m: Pick<MailEingangWeb, 'anfrage_id' | 'organ
 export function eingangZaehlen(mails: readonly MailEingangWeb[]): Record<EingangFilter, number> {
   return {
     alle: mails.length,
+    ungelesen: mails.filter((m) => !m.gelesen_am).length,
     offen: mails.filter(istNichtZugeordnet).length,
     moin: mails.filter((m) => m.postfach === 'moin').length,
     support: mails.filter((m) => m.postfach === 'support').length,
@@ -570,11 +612,17 @@ export function eingangZaehlen(mails: readonly MailEingangWeb[]): Record<Eingang
 
 export function eingangFiltern(mails: readonly MailEingangWeb[], filter: EingangFilter): MailEingangWeb[] {
   switch (filter) {
+    case 'ungelesen': return mails.filter((m) => !m.gelesen_am);
     case 'offen': return mails.filter(istNichtZugeordnet);
     case 'moin': return mails.filter((m) => m.postfach === 'moin');
     case 'support': return mails.filter((m) => m.postfach === 'support');
     default: return [...mails];
   }
+}
+
+/** Die Mails nach Sendezeit, die neueste zuerst; bei gleicher Zeit die mit der hoeheren Kennung. */
+export function eingangSortieren<T extends Pick<MailEingangWeb, 'id' | 'gesendet_am'>>(mails: readonly T[]): T[] {
+  return [...mails].sort((a, b) => zeitpunkt(b.gesendet_am) - zeitpunkt(a.gesendet_am) || b.id - a.id);
 }
 
 /**

@@ -164,14 +164,14 @@ const Uebersicht: React.FC = () => {
           <WebKachel
             label="Offene Anfragen"
             wert={zahl(k.anfragen_offen)}
-            href="/admin/support/anfragen"
+            href="/admin/support/anfragen?filter=offen"
             achtung={k.anfragen_offen > 0}
             zusatz={['Neu oder in Arbeit']}
           />
           <WebKachel
             label="Ungelesene Mails"
             wert={zahl(k.mails_ungelesen)}
-            href="/admin/support/post"
+            href="/admin/support/post?filter=ungelesen"
             achtung={k.mails_ungelesen > 0}
             zusatz={['An moin@ und support@']}
           />

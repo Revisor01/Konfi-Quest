@@ -1,7 +1,7 @@
 // Posteingang in der Web-Fassung, gerendert (docs/planung/support-web.md,
 // Entscheidung 10): wie ein Mailprogramm -- ALLE eingehenden Mails
-// (?zuordnung=alle), Filter Alle, Nicht zugeordnet (mit roter Zahl), moin@ und
-// support@, Spalte "Zugeordnet" mit Link zur Anfrage bzw. zum Schriftwechsel,
+// (?zuordnung=alle), Filter Alle, Ungelesen, Nicht zugeordnet (mit roter Zahl),
+// moin@ und support@, Spalte "Zugeordnet" mit Link zur Anfrage bzw. zum Schriftwechsel,
 // oben der Zustand der Postfaecher. Im schmalen Fenster bleibt der
 // Posteingang der App.
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
@@ -13,6 +13,7 @@ const h = vi.hoisted(() => ({
   push: vi.fn(),
   breit: true,
   user: { id: 9, display_name: 'Support Eins', role_name: 'super_admin', is_super_admin: true } as Record<string, unknown>,
+  standort: { pathname: '/admin/support/post', search: '', state: null } as { pathname: string; search: string; state: null },
 }));
 
 vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttrappe({
@@ -27,6 +28,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
+vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.standort }));
 
 import SupportPosteingangPage from '../../../components/support/SupportPosteingangPage';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
@@ -81,6 +83,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   h.apiGet.mockReset();
   h.breit = true;
+  h.standort = { pathname: '/admin/support/post', search: '', state: null };
   h.user = { id: 9, display_name: 'Support Eins', role_name: 'super_admin', is_super_admin: true };
   supportMailZaehlerZuruecksetzen();
   vi.useFakeTimers({ toFake: ['Date'] });
@@ -203,6 +206,27 @@ describe('Posteingang (Web): Filter-Chips', () => {
     expect(dataZeilen()).toHaveLength(5);
   });
 
+  it('Ungelesen zaehlt alle ungelesenen Mails -- auch die zugeordneten -- und zeigt genau diese', async () => {
+    antworten();
+    await zeigen();
+    expect(chip(/^Ungelesen/)).toHaveTextContent('3');
+    expect((chip(/^Ungelesen/).querySelector('.web-chip__zahl') as HTMLElement).className).toContain('web-chip__zahl--rot');
+    fireEvent.click(chip(/^Ungelesen/));
+    expect(chip(/^Ungelesen/)).toHaveAttribute('aria-pressed', 'true');
+    // 301 (Anfrage 41), 302 (Gemeinde 1) und 303 (nicht zugeordnet): der Filter fragt nur nach "gelesen", nicht nach der Zuordnung.
+    expect(dataZeilen().map((z) => within(z).getAllByRole('cell')[3].textContent)).toEqual([
+      expect.stringContaining('Re: Eure Anfrage'), expect.stringContaining('Frage zu den Jahrgängen'), expect.stringContaining('Passwort vergessen?'),
+    ]);
+  });
+
+  it('Ungelesen ohne ungelesene Mails: eigener Hinweis', async () => {
+    antworten({ eingang: EINGANG.filter((m) => m.gelesen_am) });
+    await zeigen();
+    fireEvent.click(chip(/^Ungelesen/));
+    expect(screen.getByText('Nichts Ungelesenes')).toBeInTheDocument();
+    expect(screen.getByText('Alle Mails sind gelesen.')).toBeInTheDocument();
+  });
+
   it('ein Filter ohne Mails: eigener Hinweis', async () => {
     antworten({ eingang: EINGANG.filter((m) => m.anfrage_id || m.organization_id) });
     await zeigen();
@@ -210,6 +234,77 @@ describe('Posteingang (Web): Filter-Chips', () => {
     expect(screen.getByText('Nichts zuzuordnen')).toBeInTheDocument();
     expect(screen.getByText('Jede Mail ist einer Anfrage oder Gemeinde zugeordnet.')).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: 'Eingehende Mails' })).toBeNull();
+  });
+});
+
+describe('Posteingang (Web): Reihenfolge', () => {
+  it('neueste zuerst, auch wenn der Server sie durcheinander liefert', async () => {
+    antworten({ eingang: [EINGANG[4], EINGANG[1], EINGANG[3], EINGANG[0], EINGANG[2]] });
+    await zeigen();
+    expect(dataZeilen().map((z) => within(within(z).getAllByRole('cell')[3]).getByRole('link').textContent)).toEqual([
+      'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]', 'Frage zu den Jahrgängen', 'Passwort vergessen?', 'Rückfrage zur Lizenz', 'Pressemitteilung',
+    ]);
+  });
+
+  it('bei gleicher Sendezeit entscheidet die hoehere Kennung', async () => {
+    const zeit = '2026-10-03T08:00:00Z';
+    antworten({ eingang: [
+      mail(10, 'moin', 'A', 'a@example.org', 'Erste', '', zeit, true),
+      mail(12, 'moin', 'C', 'c@example.org', 'Dritte', '', zeit, true),
+      mail(11, 'moin', 'B', 'b@example.org', 'Zweite', '', zeit, true),
+    ] });
+    await zeigen();
+    expect(dataZeilen().map((z) => within(z).getAllByRole('cell')[3].textContent)).toEqual(['Dritte', 'Zweite', 'Erste']);
+  });
+});
+
+describe('Posteingang (Web): Filter aus der Adresse', () => {
+  const eingestellt = () => ['Alle', 'Ungelesen', 'Nicht zugeordnet', 'moin@', 'support@']
+    .filter((n) => chip(new RegExp(`^${n}`)).getAttribute('aria-pressed') === 'true');
+
+  it('?filter=ungelesen stellt Ungelesen ein -- so fuehrt die Kachel der Uebersicht auf die ungelesenen Mails', async () => {
+    h.standort = { pathname: '/admin/support/post', search: '?filter=ungelesen', state: null };
+    antworten();
+    await zeigen();
+    expect(eingestellt()).toEqual(['Ungelesen']);
+    expect(dataZeilen()).toHaveLength(3);
+  });
+
+  it('jeder Filter ist ueber die Adresse einstellbar', async () => {
+    for (const [wert, name, zeilenZahl] of [['offen', 'Nicht zugeordnet', 2], ['moin', 'moin@', 3], ['support', 'support@', 2], ['alle', 'Alle', 5]] as const) {
+      h.standort = { pathname: '/admin/support/post', search: `?filter=${wert}`, state: null };
+      antworten();
+      const { unmount } = render(<SupportPosteingangPage />);
+      await screen.findByRole('table', { name: 'Eingehende Mails' });
+      expect(eingestellt()).toEqual([name]);
+      expect(dataZeilen()).toHaveLength(zeilenZahl);
+      unmount();
+    }
+  });
+
+  it('ein unbekannter Wert: Alle', async () => {
+    h.standort = { pathname: '/admin/support/post', search: '?filter=blau', state: null };
+    antworten();
+    await zeigen();
+    expect(eingestellt()).toEqual(['Alle']);
+  });
+
+  it('eine neue Adresse bei offener Seite stellt den Filter um', async () => {
+    antworten();
+    const { rerender } = render(<SupportPosteingangPage />);
+    await screen.findByRole('table', { name: 'Eingehende Mails' });
+    h.standort = { pathname: '/admin/support/post', search: '?filter=ungelesen', state: null };
+    rerender(<SupportPosteingangPage />);
+    expect(eingestellt()).toEqual(['Ungelesen']);
+  });
+
+  it('auf einer anderen Seite ruehrt die Adresse den Filter nicht an', async () => {
+    antworten();
+    const { rerender } = render(<SupportPosteingangPage />);
+    await screen.findByRole('table', { name: 'Eingehende Mails' });
+    h.standort = { pathname: '/admin/support/anfragen', search: '?filter=offen', state: null };
+    rerender(<SupportPosteingangPage />);
+    expect(eingestellt()).toEqual(['Alle']);
   });
 });
 
