@@ -44,7 +44,7 @@ const WebAuswahlSuche: React.FC<WebAuswahlSucheProps> = ({ label, eintraege, wer
 
   return (
     <fieldset className="web-wahl" disabled={deaktiviert}>
-      <legend className="web-feld__label">{label}</legend>
+      <legend className="web-feld__label web-wahl__legende">{label}</legend>
       <div className="web-suche web-wahl__suche">
         <IonIcon icon={ICON_SUCHE} className="web-suche__symbol" aria-hidden="true" />
         <input

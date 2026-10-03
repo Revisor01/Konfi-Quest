@@ -129,7 +129,7 @@ const WebStruktur: React.FC = () => {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
       kopfVersteckt: true,
-      breite: '200px',
+      breite: '264px',
       zelle: (kk) => (
         <div className="web-zeilenaktionen">
           <WebKnopf klein onClick={() => setKkBearbeiten({ id: kk.id, name: kk.name, landeskircheId: kk.landeskirche_id })} aria-label={`${kk.name} bearbeiten`}>

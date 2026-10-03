@@ -75,7 +75,7 @@ const WebKonten: React.FC = () => {
     {
       schluessel: 'name',
       kopf: 'Name',
-      breite: '22%',
+      breite: '17%',
       zelle: (k) => (
         <>
           <span className="web-zelle-titel">{k.display_name}{k.id === userId ? ' (du)' : ''}</span>
@@ -88,13 +88,13 @@ const WebKonten: React.FC = () => {
     {
       schluessel: 'benutzername',
       kopf: 'Benutzername',
-      breite: '16%',
+      breite: '140px',
       zelle: (k) => <span className="web-einzeilig">{k.username}</span>,
     },
     {
       schluessel: 'email',
       kopf: 'E-Mail',
-      breite: '22%',
+      breite: '16%',
       optional: true,
       zelle: (k) => (k.email
         ? <a className="web-link web-einzeilig" href={`mailto:${k.email}`}>{k.email}</a>
@@ -103,13 +103,13 @@ const WebKonten: React.FC = () => {
     {
       schluessel: 'status',
       kopf: 'Status',
-      breite: '104px',
+      breite: '100px',
       zelle: (k) => <WebPill ton={k.is_active ? 'erfolg' : 'neutral'} punkt>{k.is_active ? 'Aktiv' : 'Gesperrt'}</WebPill>,
     },
     {
       schluessel: 'angemeldet',
       kopf: 'Zuletzt angemeldet',
-      breite: '150px',
+      breite: '128px',
       zelle: (k) => (k.last_login_at
         ? <span title={datumUhrzeit(k.last_login_at)}>{zeitpunktText(k.last_login_at)}</span>
         : <span className="web-gedaempft">noch nie</span>),
@@ -118,7 +118,7 @@ const WebKonten: React.FC = () => {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
       kopfVersteckt: true,
-      breite: '292px',
+      breite: '372px',
       zelle: (k) => (
         <div className="web-zeilenaktionen">
           <WebKnopf klein onClick={() => setPasswortFuer({ id: k.id, password: '', zeigen: false })} aria-label={`Passwort für ${k.username} setzen`}>

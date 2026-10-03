@@ -1592,6 +1592,12 @@ mark.web-treffer {
   border: 0;
 }
 
+/* Eine Legende liegt ausserhalb des Flex-Layouts ihres Fieldsets: der Abstand zum Suchfeld ist ihr eigener. */
+.web-wahl__legende {
+  margin-bottom: var(--app-abstand-eng);
+  padding: 0;
+}
+
 .web-wahl__suche {
   flex: 0 0 auto;
   max-width: none;
