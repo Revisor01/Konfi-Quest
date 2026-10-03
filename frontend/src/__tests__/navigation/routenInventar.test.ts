@@ -33,6 +33,9 @@ const ROUTEN = {
     '/admin/settings/invite', '/admin/settings/certificates', '/admin/settings/dashboard',
     '/admin/settings', '/admin/badges', '/admin/challenges', '/admin/challenges/:id', '/admin/users',
     '/admin/organizations', '/admin/material', '/admin/profile', '/admin/metrics',
+    // Support-Ansicht (03.10.2026), auch im Baum super_admin
+    '/admin/support', '/admin/support/anfragen', '/admin/support/anfragen/:id',
+    '/admin/support/struktur', '/admin/support/konten',
   ],
   teamer: [
     '/teamer/dashboard', '/teamer/chat', '/teamer/chat/room/:roomId', '/teamer/events',

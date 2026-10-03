@@ -11,6 +11,7 @@ import {
   ICON_TERMIN_GEFUELLT,
 } from '../components/shared/icons';
 import type { Rolle, RollenBaum } from './routes';
+import { SUPPORT_BEREICHE } from './supportMenue';
 
 // Code-Splitting entlang der Rollen (30.08.2026): Jede Seite wird per
 // React.lazy erst geladen, wenn ihre Route erstmals rendert. Ein Konfi laedt
@@ -178,6 +179,29 @@ const TeamerProfilePage = faul(() => import('../components/teamer/pages/TeamerPr
 const TeamerBadgesPage = faul(() => import('../components/teamer/pages/TeamerBadgesPage'));
 const TeamerKonfiStatsPage = faul(() => import('../components/teamer/pages/TeamerKonfiStatsPage'));
 const TeamerChallengesPage = faul(() => import('../components/teamer/pages/TeamerChallengesPage'));
+// Support-Ansicht der Web-Version (03.10.2026, docs/planung/web-version.md):
+// Uebersicht, Anfragen, eine Anfrage, Struktur, Support-Konten. Dazu gehoeren
+// die vorhandenen Seiten Gemeinden und Betrieb. Die Seiten zeigen sich nur
+// Konten mit Super-Admin-Recht (components/support/SupportBausteine.tsx).
+const SupportUebersichtPage = faul(() => import('../components/support/SupportUebersichtPage'));
+const SupportAnfragenPage = faul(() => import('../components/support/SupportAnfragenPage'));
+const SupportAnfrageDetailPage = faul(() => import('../components/support/SupportAnfrageDetailPage'));
+const SupportStrukturPage = faul(() => import('../components/support/SupportStrukturPage'));
+const SupportKontenPage = faul(() => import('../components/support/SupportKontenPage'));
+
+// Die Routen der Support-Ansicht, in zwei Baeumen gleich: im Baum super_admin
+// (Support-Konto ohne Gemeinde) und im Baum der Leitung, weil Simons Konto --
+// Gemeindeleitung mit Super-Admin-Merkmal -- dort lebt und die Ansicht ueber
+// "Mehr" erreicht (AdminSettingsPage). Andere Leitungen sehen keinen Weg
+// dorthin; wer die Adresse eintippt, bekommt den Hinweis "Nur fuer den
+// Support", und der Server antwortet ohnehin 403 (requireSuperAdmin).
+const SUPPORT_ROUTEN: RollenBaum['routes'] = [
+  { path: '/admin/support', page: SupportUebersichtPage },
+  { path: '/admin/support/anfragen/:id', page: SupportAnfrageDetailPage, param: 'id', propName: 'anfrageId' },
+  { path: '/admin/support/anfragen', page: SupportAnfragenPage },
+  { path: '/admin/support/struktur', page: SupportStrukturPage },
+  { path: '/admin/support/konten', page: SupportKontenPage },
+];
 
 // Die drei Rollenbäume als Tabelle. Reihenfolge der Routen ist bedeutsam:
 // spezifischere Pfade (/admin/events/:id) müssen VOR den allgemeineren
@@ -217,6 +241,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       // role_name=org_admin (is_super_admin=true). Die Seite prüft die
       // Berechtigung serverseitig (403 für nicht-super-admins).
       { path: '/admin/metrics', page: AdminMetricsPage },
+      ...SUPPORT_ROUTEN,
     ],
     redirects: [
       { from: '/admin', to: '/admin/konfis' },
@@ -311,14 +336,20 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     ],
   },
 
-  // Super-Admins bekommen nur die Organisations-Verwaltung, ohne Tab-Leiste.
+  // Support-Konto ohne Gemeinde (Systemrolle super_admin): die
+  // Support-Ansicht, ohne Reiterleiste. Startseite ist die Uebersicht -- sie
+  // traegt auf schmalen Bildschirmen den Weg zu allen Bereichen und das
+  // Abmelden; breit zeigt die Seitenleiste der Web-Version dieselben Bereiche
+  // (`menue`, eine Liste mit der Uebersicht: navigation/supportMenue.ts).
   super_admin: {
-    home: '/admin/organizations',
+    home: '/admin/support',
     routes: [
+      ...SUPPORT_ROUTEN,
       { path: '/admin/organizations', page: AdminOrganizationsPage },
       { path: '/admin/metrics', page: AdminMetricsPage },
     ],
-    redirects: [{ from: '/admin', to: '/admin/organizations' }],
+    redirects: [{ from: '/admin', to: '/admin/support' }],
     tabs: [],
+    menue: SUPPORT_BEREICHE.map(({ path, label, icon, gruppe }) => ({ path, label, icon, gruppe })),
   },
 };

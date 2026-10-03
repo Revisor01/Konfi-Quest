@@ -27,12 +27,12 @@ import {
   ICON_JAHRGANG_GEFUELLT,
   ICON_KATEGORIE_GEFUELLT,
   ICON_KOMPASS,
-  ICON_ORGANISATION_GEFUELLT,
   ICON_PERSON_GEFUELLT,
   ICON_POKAL_GEFUELLT,
   ICON_PULS,
   ICON_QRCODE_GEFUELLT,
   ICON_SCHILD_GEFUELLT,
+  ICON_SUPPORT,
 } from '../../shared/icons';
 import InfoModal from '../../shared/InfoModal';
 import AdminOnboardingModal from '../modals/AdminOnboardingModal';
@@ -51,6 +51,7 @@ import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { istSuperAdmin } from '../../../utils/superAdmin';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
@@ -203,10 +204,16 @@ const AdminSettingsPage: React.FC = () => {
     <IonPage ref={pageRef}>
       <AppKopfzeile
         titel="Mehr"
-        rechts={user?.is_super_admin ? (
+        rechts={istSuperAdmin(user) ? (
           <>
-            <IonButton onClick={() => router.push('/admin/organizations')} title="Gemeinden" aria-label="Gemeinden verwalten">
-              <IonIcon slot="icon-only" icon={ICON_ORGANISATION_GEFUELLT} />
+            {/* Support-Ansicht der Web-Version (03.10.2026): Gemeinden,
+                Anfragen, Struktur, Support-Konten und Betrieb an einer Stelle.
+                Stand bis dahin als Gebaeude-Symbol direkt auf "Gemeinden";
+                die Gemeinden sind jetzt ein Bereich der Ansicht. Nur fuer
+                Konten mit Super-Admin-Recht -- alle anderen sehen den Knopf
+                nicht (Test supportAnsichtRechte). */}
+            <IonButton onClick={() => router.push('/admin/support')} title="Support" aria-label="Support-Ansicht öffnen">
+              <IonIcon slot="icon-only" icon={ICON_SUPPORT} />
             </IonButton>
             <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
               <IonIcon slot="icon-only" icon={ICON_PULS} />

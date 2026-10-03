@@ -58,7 +58,7 @@ export type RouteDef =
       /** Name des Parameters in der URL. */
       param: 'id' | 'roomId';
       /** Unter welchem Prop-Namen die Seite den Wert erwartet (als Zahl). */
-      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId';
+      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId';
     };
 
 export interface RedirectDef {
@@ -74,12 +74,27 @@ export interface TabDef {
   badge?: BadgeKey;
 }
 
+/**
+ * Ein zusaetzlicher Eintrag der Seitenleiste in der Web-Version (neben den
+ * Reitern `tabs`), Vertrag der Web-Version vom 03.10.2026. `icon` ist wie bei
+ * den Reitern eine Konstante aus components/shared/icons.ts; `gruppe` fasst
+ * Eintraege unter einer Ueberschrift zusammen.
+ */
+export interface MenueEintrag {
+  path: string;
+  label: string;
+  icon: string;
+  gruppe?: string;
+}
+
 export interface RollenBaum {
   /** Wohin nach dem Anmelden und von "/" bzw. "/login". */
   home: string;
   routes: RouteDef[];
   redirects: RedirectDef[];
   tabs: TabDef[];
+  /** Weitere Eintraege der Seitenleiste (Web-Version, breite Bildschirme). */
+  menue?: MenueEintrag[];
 }
 
 /**

@@ -40,6 +40,7 @@ import {
   ICON_HINZUFUEGEN_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
   ICON_MAIL,
+  ICON_NETZWERK,
   ICON_OFFLINE,
   ICON_ORGANISATION,
   ICON_ORT,
@@ -69,6 +70,8 @@ import { tageBis } from '../../shared/eventFormatting';
 import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
+import { kirchenkreisFinden } from '../../../utils/supportAnfragen';
+import type { Kirchenkreis } from '../../../types/support';
 
 interface Organization {
   id: number;
@@ -82,6 +85,8 @@ interface Organization {
   address?: string;
   website_url?: string;
   kirchenkreis?: string;
+  /** Zuordnung aus der Struktur der Support-Ansicht (GET /organizations/:id liefert die Spalte mit). */
+  kirchenkreis_id?: number | null;
   trial_ends_at?: string | null;
   is_trial?: boolean;
   is_active: boolean;
@@ -215,6 +220,41 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   }, [formData]);
 
   const [organization, setOrganization] = useState<Organization | null>(null);
+
+  // Kirchenkreis als Auswahl aus der Struktur (Support-Ansicht, Web-Version,
+  // 03.10.2026) -- nur fuer Super-Admins, die die Struktur pflegen. Laedt die
+  // Liste nicht (aelterer Server, Fehler), bleibt das Freitextfeld wie
+  // bisher. Gespeichert wird beides: kirchenkreis_id und der Name in der
+  // alten Textspalte, die aeltere Apps weiter lesen.
+  const [kirchenkreise, setKirchenkreise] = useState<Kirchenkreis[] | null>(null);
+  const [kirchenkreisId, setKirchenkreisId] = useState<number | null>(null);
+  // Hat jemand die Auswahl angefasst? Sonst bleibt ein Freitext, zu dem es
+  // (noch) keinen Kirchenkreis gibt, beim Speichern stehen.
+  const [kirchenkreisBeruehrt, setKirchenkreisBeruehrt] = useState(false);
+  const mitStruktur = isSuperAdmin && kirchenkreise !== null;
+  // Ohne gespeicherte Zuordnung den Freitext in der Struktur suchen (Gemeinden
+  // von vor der Struktur) -- ein Vorschlag, der gilt, bis jemand waehlt.
+  const kirchenkreisVorschlag = organization && kirchenkreise && organization.kirchenkreis_id == null
+    ? kirchenkreisFinden(organization.kirchenkreis, null, kirchenkreise)
+    : null;
+  const wirksamerKreisId = kirchenkreisBeruehrt ? kirchenkreisId : (kirchenkreisId ?? kirchenkreisVorschlag?.id ?? null);
+  const gewaehlterKreis = kirchenkreise?.find((k) => k.id === wirksamerKreisId) ?? null;
+
+  const handleKirchenkreisChange = (id: number | null) => {
+    setKirchenkreisId(id);
+    setKirchenkreisBeruehrt(true);
+    if (initializedRef.current) setIsDirty(true);
+  };
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let abgebrochen = false;
+    api.get('/support/kirchenkreise')
+      .then((antwort) => { if (!abgebrochen) setKirchenkreise(Array.isArray(antwort.data) ? antwort.data : null); })
+      .catch(() => { if (!abgebrochen) setKirchenkreise(null); });
+    return () => { abgebrochen = true; };
+  }, [isSuperAdmin]);
+
   // Konfi-Limit (nur für super_admin sichtbar/setzbar). Leeres Feld = unbegrenzt (NULL).
   // Wird zusammen mit dem Modal gespeichert (kein separater Button).
   const [maxKonfis, setMaxKonfis] = useState<string>('');
@@ -319,6 +359,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       const orgData = response.data;
 
       setOrganization(orgData);
+      setKirchenkreisId(typeof orgData.kirchenkreis_id === 'number' ? orgData.kirchenkreis_id : null);
       const loadedLimit = orgData.max_konfis !== null && orgData.max_konfis !== undefined ? String(orgData.max_konfis) : '';
       setMaxKonfis(loadedLimit);
       // Wenn der geladene Wert keinem Tarif entspricht (und nicht leer/unbegrenzt ist), ist es ein eigenes Limit
@@ -442,6 +483,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           address: string | null;
           website_url: string | null;
           kirchenkreis: string | null;
+          kirchenkreis_id?: number | null;
           is_active: boolean;
           trial_ends_at?: string | null;
           is_trial?: boolean;
@@ -462,6 +504,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
           kirchenkreis: formData.kirchenkreis.trim() || null,
           is_active: formData.is_active
         };
+
+        // Kirchenkreis aus der Struktur: die Kennung plus derselbe Name in der
+        // Textspalte, damit beide Staende zusammenpassen.
+        if (mitStruktur && (kirchenkreisBeruehrt || wirksamerKreisId !== null)) {
+          orgData.kirchenkreis_id = wirksamerKreisId;
+          orgData.kirchenkreis = gewaehlterKreis ? gewaehlterKreis.name : null;
+        }
 
         // Zeitraum + Trial-Kennzeichnung nur super_admin.
         // Kein Datum -> unbegrenzt, dann ist es auch keine Testphase (is_trial=false).
@@ -685,6 +734,26 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     </div>
                   )}
 
+                  {(gewaehlterKreis || organization.kirchenkreis) && (
+                    <div className="app-info-row">
+                      <IonIcon icon={ICON_NETZWERK} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Kirchenkreis</div>
+                        <div className="app-info-row__value">{gewaehlterKreis ? gewaehlterKreis.name : organization.kirchenkreis}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {gewaehlterKreis?.landeskirche && (
+                    <div className="app-info-row">
+                      <IonIcon icon={ICON_NETZWERK} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
+                      <div>
+                        <div className="app-info-row__label">Landeskirche</div>
+                        <div className="app-info-row__value">{gewaehlterKreis.landeskirche}</div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="app-info-row">
                     <IonIcon icon={ICON_GRUPPE_GEFUELLT} className="app-info-row__icon" style={{ color: 'var(--app-text-users)' }} />
                     <div>
@@ -834,15 +903,41 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                   />
                 </IonItem>
 
-                <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
-                  <IonInput aria-label="Kirchenkreis (optional)"
-                    value={formData.kirchenkreis}
-                    onIonInput={(e) => setFormData({ ...formData, kirchenkreis: e.detail.value! })}
-                    placeholder="z.B. Kirchenkreis Dithmarschen"
-                    disabled={isSubmitting}
-                  />
-                </IonItem>
+                {mitStruktur ? (
+                  <>
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
+                    <IonSelect aria-label="Kirchenkreis (optional)"
+                      interface="popover"
+                      value={wirksamerKreisId ?? 'ohne'}
+                      onIonChange={(e) => handleKirchenkreisChange(e.detail.value === 'ohne' ? null : Number(e.detail.value))}
+                      disabled={isSubmitting}
+                    >
+                      <IonSelectOption value="ohne">Ohne Kirchenkreis</IonSelectOption>
+                      {(kirchenkreise ?? []).map((k) => (
+                        <IonSelectOption key={k.id} value={k.id}>
+                          {k.landeskirche ? `${k.name} (${k.landeskirche})` : k.name}
+                        </IonSelectOption>
+                      ))}
+                    </IonSelect>
+                  </IonItem>
+                  <IonNote style={{ display: 'block', padding: '0 var(--app-abstand-basis)', fontSize: 'var(--app-text-meta)' }}>
+                    {gewaehlterKreis
+                      ? `Landeskirche: ${gewaehlterKreis.landeskirche || 'noch keine zugeordnet'}`
+                      : 'Neue Kirchenkreise und Landeskirchen unter Support › Struktur.'}
+                  </IonNote>
+                  </>
+                ) : (
+                  <IonItem lines="none" style={{ '--background': 'transparent' }}>
+                    <IonLabel position="stacked">Kirchenkreis (optional)</IonLabel>
+                    <IonInput aria-label="Kirchenkreis (optional)"
+                      value={formData.kirchenkreis}
+                      onIonInput={(e) => setFormData({ ...formData, kirchenkreis: e.detail.value! })}
+                      placeholder="z.B. Kirchenkreis Dithmarschen"
+                      disabled={isSubmitting}
+                    />
+                  </IonItem>
+                )}
               </IonList>
             </IonCardContent>
           </IonCard>

@@ -18,13 +18,20 @@ Versionsüberschrift.
   und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
 - Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
   löschen.
+- Eine Support-Ansicht im Browser bündelt für den Betrieb Kennzahlen je
+  Landeskirche, Kirchenkreis und Gemeinde, die Anfragen von Gemeinden, die
+  Zuordnung zu Kirchenkreisen und Landeskirchen und die Support-Konten.
 - Auf konfi-quest.de fragt eine Gemeinde Konfi Quest mit einem Formular an;
   der Support macht daraus mit wenigen Schritten die Gemeinde samt erster
   Gemeindeleitung.
+- Gemeinden lassen sich einem Kirchenkreis und darüber einer Landeskirche
+  zuordnen.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
   Ausdrucken bereit.
 
 ### Geändert
+- Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
+  die Support-Ansicht statt direkt zu den Gemeinden.
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
   Liste — für Konfis, Team und Leitung; der Pfeil oben führt zurück in die
   Liste.
@@ -56,6 +63,8 @@ Versionsüberschrift.
   „Gemeindeleitung" statt „Leitung".
 - Ein gesperrtes Konto mit Super-Admin-Recht kann sich nicht mehr anmelden;
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
+- Ein Support-Konto ohne Gemeinde kann sich im Browser abmelden; bisher gab es
+  dort keinen Weg hinaus.
 
 ### Sonstiges
 - Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von

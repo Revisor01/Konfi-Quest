@@ -172,12 +172,16 @@ describe('Code-Splitting: Seiten sind faul und vorladbar', () => {
 
   // 22 seit dem 03.09.2026: AdminWrappedPage ist dazugekommen (Verwaltung
   // der Rueckblick-Ausgaben, ersetzt den Schalter im Jahrgang); 23 seit
-  // 2.4.0 mit der Seite einer Challenge.
-  it('admin: ladeRolleVor laedt alle 23 Seiten-Module', async () => {
-    await expect(ladeRolleVor('admin')).resolves.toBe(23);
+  // 2.4.0 mit der Seite einer Challenge; 28 mit den fuenf Seiten der
+  // Support-Ansicht (03.10.2026) -- Simons Konto erreicht sie ueber "Mehr".
+  it('admin: ladeRolleVor laedt alle 28 Seiten-Module', async () => {
+    await expect(ladeRolleVor('admin')).resolves.toBe(28);
   }, LADE_GRENZE);
 
-  it('super_admin: ladeRolleVor laedt alle 2 Seiten-Module', async () => {
-    await expect(ladeRolleVor('super_admin')).resolves.toBe(2);
+  // Support-Konto ohne Gemeinde: die fuenf Seiten der Support-Ansicht
+  // (Uebersicht, Anfragen, eine Anfrage, Struktur, Support-Konten) plus
+  // Gemeinden und Betrieb (bis 03.10.2026 nur diese beiden).
+  it('super_admin: ladeRolleVor laedt alle 7 Seiten-Module', async () => {
+    await expect(ladeRolleVor('super_admin')).resolves.toBe(7);
   }, LADE_GRENZE);
 });
