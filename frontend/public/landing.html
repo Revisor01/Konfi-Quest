@@ -158,7 +158,7 @@
         {
           "@type": "Question",
           "name": "Wie steht es um den Datenschutz?",
-          "acceptedAnswer": { "@type": "Answer", "text": "Konfi Quest ist nach dem Datenschutzgesetz der EKD (DSG-EKD) entwickelt. Die Server stehen in Deutschland, jede Gemeinde ist streng getrennt. Es gibt keine Werbung, kein Tracking in der App und keinen Datenverkauf. Diese Website zählt Aufrufe anonym und cookiefrei mit selbst betriebener Software. Der Beitritt erfolgt ausschließlich über den Einladungslink der Gemeinde." }
+          "acceptedAnswer": { "@type": "Answer", "text": "Konfi Quest ist nach dem Datenschutzgesetz der EKD (DSG-EKD) entwickelt. Die Server stehen in Deutschland, jede Gemeinde ist streng getrennt. Es gibt keine Werbung, kein Tracking in der App und keinen Datenverkauf. Diese Website zählt Aufrufe anonym und cookiefrei mit selbst betriebener Software. Der Beitritt erfolgt ausschließlich über den Einladungslink der Gemeinde. Für die Einwilligung der Eltern gibt es eine Vorlage zum Ausdrucken." }
         }
       ]
     }
@@ -456,6 +456,45 @@ section.block{padding:6rem 0}
 .final-h{font-family:var(--display);font-weight:800;font-size:clamp(2rem,4vw,3rem);letter-spacing:-.02em;margin-bottom:1rem;position:relative;z-index:1}
 .final p{font-size:1.2rem;color:rgba(255,255,255,.86);max-width:52ch;margin:0 auto 2.2rem;position:relative;z-index:1}
 .final .btn-light{position:relative;z-index:1}
+
+/* ANFRAGE (Formular "Konfi Quest fuer eure Gemeinde anfragen", 03.10.2026).
+   Weisse Karte auf dem violetten Schlussabschnitt; Felder zweispaltig ab
+   640px. Fehler stehen am Feld (aria-describedby) und gesammelt oben im
+   Formular (role=alert), damit Vorleseprogramme sie ansagen. */
+.anfrage{position:relative;z-index:1;max-width:780px;margin:0 auto;background:#fff;color:var(--ink);border-radius:24px;padding:2.2rem;text-align:left;box-shadow:0 30px 70px rgba(15,23,42,.3)}
+.anfrage h3{font-family:var(--display);font-size:1.45rem;font-weight:800;margin-bottom:.4rem}
+.final .anfrage .anfrage-intro{color:var(--ink-soft);font-size:1rem;margin:0 0 1.4rem;max-width:none}
+.anfrage fieldset{border:0;margin:0 0 1.1rem;padding:0;min-width:0}
+.anfrage legend{font-weight:700;font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--purple);margin-bottom:.6rem}
+.anfrage-felder{display:grid;grid-template-columns:1fr 1fr;gap:.9rem 1rem}
+.anfrage-feld{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+.anfrage-feld.breit{grid-column:1/-1}
+.anfrage label{font-weight:600;font-size:.92rem;color:var(--ink)}
+.anfrage .pflicht{color:#b91c1c}
+.anfrage input[type=text],.anfrage input[type=email],.anfrage input[type=tel],.anfrage input[type=number],.anfrage textarea{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:#fff;border:1.5px solid #cbd5e1;border-radius:12px;padding:.7rem .85rem;transition:border-color .2s,box-shadow .2s}
+.anfrage textarea{min-height:7rem;resize:vertical}
+.anfrage input:focus,.anfrage textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 3px rgba(124,58,237,.22)}
+.anfrage [aria-invalid=true]{border-color:#b91c1c}
+.final .anfrage .feld-fehler{color:#b91c1c;font-size:.86rem;font-weight:600;margin:0;max-width:none}
+.final .anfrage .feld-hinweis{color:var(--ink-soft);font-size:.84rem;margin:0;max-width:none}
+.anfrage-einwilligung{display:flex;gap:.7rem;align-items:flex-start;margin:.4rem 0 .3rem}
+.anfrage-einwilligung input{width:1.25rem;height:1.25rem;margin-top:.2rem;flex-shrink:0;accent-color:var(--purple)}
+.anfrage-einwilligung label{font-weight:400;font-size:.94rem;color:var(--ink-soft)}
+.anfrage-einwilligung a,.anfrage-alt a,.anfrage-danke a{color:var(--purple);font-weight:600;text-decoration:underline}
+.anfrage-honig{position:absolute;left:-10000px;top:auto;width:1px;height:1px;overflow:hidden}
+.final .anfrage .anfrage-meldung{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;padding:.8rem 1rem;font-weight:600;font-size:1rem;margin:0 0 1rem;max-width:none}
+.anfrage-senden{display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-top:1.2rem}
+.anfrage-senden button{background:var(--grad);color:#fff;border:0;border-radius:999px;padding:.95rem 1.8rem;font:inherit;font-weight:700;font-size:1rem;cursor:pointer;transition:transform .2s,box-shadow .2s}
+.anfrage-senden button:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(91,33,182,.32)}
+.anfrage-senden button:disabled{opacity:.65;cursor:wait;transform:none;box-shadow:none}
+.anfrage-senden button:focus-visible,.anfrage a:focus-visible{outline:3px solid var(--violet);outline-offset:3px}
+.final .anfrage .anfrage-alt{color:var(--ink-soft);font-size:.92rem;margin:0;max-width:none}
+.anfrage-danke{text-align:center;padding:1rem 0}
+.anfrage-danke h3{margin-bottom:.6rem}
+.final .anfrage .anfrage-danke p{color:var(--ink-soft);margin:0 auto .8rem;max-width:52ch;font-size:1rem}
+.anfrage-danke:focus{outline:none}
+@media(max-width:640px){.anfrage{padding:1.5rem 1.2rem}.anfrage-felder{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.anfrage-senden button{transition:none}}
 
 /* FOOTER */
 footer{background:#0b1220;color:#fff;padding:4rem 0 2rem}
@@ -1019,7 +1058,7 @@ footer a:hover{color:#fff}
 
    <details style="background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:16px;padding:.4rem .4rem;box-shadow:0 4px 18px rgba(15,23,42,.04)">
     <summary style="cursor:pointer;list-style:none;padding:1rem 1.2rem;font-weight:600;color:var(--ink);font-size:1.05rem">Wie steht es um den Datenschutz?</summary>
-    <p style="padding:0 1.2rem 1.1rem;color:var(--ink-soft);line-height:1.65;margin:0">Konfi Quest ist nach dem Datenschutzgesetz der EKD (DSG-EKD) entwickelt. Die Server stehen in Deutschland, jede Gemeinde ist streng getrennt. Es gibt keine Werbung, kein Tracking in der App und keinen Datenverkauf. Diese Website zählt Aufrufe anonym und cookiefrei mit selbst betriebener Software. Der Beitritt erfolgt ausschließlich über den Einladungslink der Gemeinde.</p>
+    <p style="padding:0 1.2rem 1.1rem;color:var(--ink-soft);line-height:1.65;margin:0">Konfi Quest ist nach dem Datenschutzgesetz der EKD (DSG-EKD) entwickelt. Die Server stehen in Deutschland, jede Gemeinde ist streng getrennt. Es gibt keine Werbung, kein Tracking in der App und keinen Datenverkauf. Diese Website zählt Aufrufe anonym und cookiefrei mit selbst betriebener Software. Der Beitritt erfolgt ausschließlich über den Einladungslink der Gemeinde. Für die Einwilligung der Eltern gibt es eine <a href="/einwilligung" style="color:var(--purple);font-weight:600">Vorlage zum Ausdrucken</a>.</p>
    </details>
 
    <details style="background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:16px;padding:.4rem .4rem;box-shadow:0 4px 18px rgba(15,23,42,.04)">
@@ -1075,7 +1114,7 @@ footer a:hover{color:#fff}
   <h2 class="sec-h reveal d1">So einfach geht's los</h2>
   <p class="sec-p reveal d2">Von der Anfrage bis zum ersten Punkt – ohne IT-Abteilung.</p>
   <div class="steps">
-   <div class="step reveal d1"><div class="num">1</div><h4>Kontakt aufnehmen</h4><p>Schreibt uns – wir richten eure Gemeinde ein.</p></div>
+   <div class="step reveal d1"><div class="num">1</div><h4>Anfrage senden</h4><p>Formular ausfüllen – wir richten eure Gemeinde ein.</p></div>
    <div class="step reveal d2"><div class="num">2</div><h4>Team einladen</h4><p>Teamer:innen und Leitung einladen, Jahrgänge anlegen.</p></div>
    <div class="step reveal d3"><div class="num">3</div><h4>Konfis einladen</h4><p>Pro Jahrgang ein Einladungslink – Konfis treten bei.</p></div>
    <div class="step reveal d4"><div class="num">4</div><h4>Loslegen</h4><p>Events planen, Punkte vergeben – das Abenteuer beginnt.</p></div>
@@ -1089,7 +1128,109 @@ footer a:hover{color:#fff}
  <div class="wrap">
   <h2 class="final-h reveal">Bereit für moderne Konfi-Arbeit?</h2>
   <p class="reveal d1">Probiert Konfi Quest mit eurem nächsten Jahrgang. Ihr werdet sehen, wie anders Konfis reagieren, wenn sich ihre Konfi-Zeit anfühlt wie etwas, das ihnen gehört.</p>
-  <a href="mailto:moin@konfi-quest.de?subject=Konfi%20Quest%20f%C3%BCr%20unsere%20Gemeinde" class="btn btn-light reveal d2">Jetzt kostenlos starten</a>
+
+  <!-- Anfrageformular (Web-Version, Entscheidung 4, 03.10.2026): Die Anfrage
+       landet in der Support-Ansicht und wird dort mit wenigen Schritten zur
+       Gemeinde samt erster Gemeindeleitung. Gesendet an POST /api/anfragen;
+       das Skript steht am Seitenende (id="anfrage-skript"). Das Feld
+       "website" ist ein Honigtopf fuer Programme: unsichtbar, nicht
+       erreichbar, muss leer bleiben. -->
+  <div class="anfrage reveal d2">
+   <form id="anfrage-formular" novalidate aria-labelledby="anfrage-titel" aria-describedby="anfrage-intro">
+    <h3 id="anfrage-titel">Konfi Quest für eure Gemeinde anfragen</h3>
+    <p class="anfrage-intro" id="anfrage-intro">Tragt ein, was wir zum Einrichten brauchen. Wir legen eure Gemeinde an und schicken euch die Zugangsdaten für die erste Gemeindeleitung – die 30 Tage zum Testen beginnen erst dann. Pflichtfelder sind mit * markiert.</p>
+    <p class="anfrage-meldung" id="anfrage-meldung" role="alert" hidden></p>
+
+    <fieldset>
+     <legend>Eure Gemeinde</legend>
+     <div class="anfrage-felder">
+      <div class="anfrage-feld breit">
+       <label for="anfrage-gemeinde">Gemeinde <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="text" id="anfrage-gemeinde" name="gemeinde" required aria-required="true" maxlength="200" autocomplete="organization" aria-describedby="anfrage-fehler-gemeinde">
+       <p class="feld-fehler" id="anfrage-fehler-gemeinde" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anfrage-kirchenkreis">Kirchenkreis</label>
+       <input type="text" id="anfrage-kirchenkreis" name="kirchenkreis" maxlength="200" autocomplete="off">
+      </div>
+      <div class="anfrage-feld">
+       <label for="anfrage-landeskirche">Landeskirche</label>
+       <input type="text" id="anfrage-landeskirche" name="landeskirche" maxlength="200" autocomplete="off">
+      </div>
+     </div>
+    </fieldset>
+
+    <fieldset>
+     <legend>Verantwortliche Person</legend>
+     <div class="anfrage-felder">
+      <div class="anfrage-feld">
+       <label for="anfrage-name">Name <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="text" id="anfrage-name" name="kontakt_name" required aria-required="true" maxlength="200" autocomplete="name" aria-describedby="anfrage-fehler-kontakt_name">
+       <p class="feld-fehler" id="anfrage-fehler-kontakt_name" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anfrage-funktion">Funktion</label>
+       <input type="text" id="anfrage-funktion" name="funktion" maxlength="200" autocomplete="organization-title" aria-describedby="anfrage-hinweis-funktion">
+       <p class="feld-hinweis" id="anfrage-hinweis-funktion">z.&nbsp;B. Pastorin, Diakon, Gemeindepädagogin</p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anfrage-email">E-Mail <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="email" id="anfrage-email" name="email" required aria-required="true" maxlength="254" autocomplete="email" aria-describedby="anfrage-fehler-email">
+       <p class="feld-fehler" id="anfrage-fehler-email" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anfrage-mobil">Mobilnummer</label>
+       <input type="tel" id="anfrage-mobil" name="mobil" maxlength="40" autocomplete="tel" aria-describedby="anfrage-fehler-mobil">
+       <p class="feld-fehler" id="anfrage-fehler-mobil" hidden></p>
+      </div>
+     </div>
+    </fieldset>
+
+    <fieldset>
+     <legend>Ungefähre Größe</legend>
+     <div class="anfrage-felder">
+      <div class="anfrage-feld">
+       <label for="anfrage-konfis">Konfis (ungefähr)</label>
+       <input type="number" id="anfrage-konfis" name="anzahl_konfis" min="0" max="100000" step="1" inputmode="numeric" aria-describedby="anfrage-fehler-anzahl_konfis">
+       <p class="feld-fehler" id="anfrage-fehler-anzahl_konfis" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anfrage-teamer">Teamer:innen (ungefähr)</label>
+       <input type="number" id="anfrage-teamer" name="anzahl_teamer" min="0" max="100000" step="1" inputmode="numeric" aria-describedby="anfrage-fehler-anzahl_teamer">
+       <p class="feld-fehler" id="anfrage-fehler-anzahl_teamer" hidden></p>
+      </div>
+      <div class="anfrage-feld breit">
+       <label for="anfrage-nachricht">Nachricht</label>
+       <textarea id="anfrage-nachricht" name="nachricht" maxlength="5000" rows="4" aria-describedby="anfrage-hinweis-nachricht anfrage-fehler-nachricht"></textarea>
+       <p class="feld-hinweis" id="anfrage-hinweis-nachricht">Was sollen wir wissen? Etwa wann ihr starten wollt oder wie viele Jahrgänge ihr habt.</p>
+       <p class="feld-fehler" id="anfrage-fehler-nachricht" hidden></p>
+      </div>
+     </div>
+    </fieldset>
+
+    <div class="anfrage-honig" aria-hidden="true">
+     <label for="anfrage-website">Website (bitte leer lassen)</label>
+     <input type="text" id="anfrage-website" name="website" tabindex="-1" autocomplete="off" value="">
+    </div>
+
+    <div class="anfrage-einwilligung">
+     <input type="checkbox" id="anfrage-einwilligung" name="einwilligung" required aria-required="true" aria-describedby="anfrage-fehler-einwilligung">
+     <label for="anfrage-einwilligung">Ich bin einverstanden, dass Konfi Quest meine Angaben speichert, um die Anfrage zu bearbeiten und mich dazu zu kontaktieren. Mehr dazu in der <a href="/datenschutz">Datenschutzerklärung</a>. <span class="pflicht" aria-hidden="true">*</span></label>
+    </div>
+    <p class="feld-fehler" id="anfrage-fehler-einwilligung" hidden></p>
+
+    <div class="anfrage-senden">
+     <button type="submit">Anfrage senden</button>
+     <p class="anfrage-alt">Lieber per Mail? <a href="mailto:moin@konfi-quest.de?subject=Konfi%20Quest%20f%C3%BCr%20unsere%20Gemeinde">moin@konfi-quest.de</a></p>
+    </div>
+   </form>
+
+   <div class="anfrage-danke" id="anfrage-danke" role="status" tabindex="-1" hidden>
+    <h3>Danke, eure Anfrage ist angekommen.</h3>
+    <p>Eine Bestätigung ist an die angegebene E-Mail-Adresse unterwegs. Wir richten eure Gemeinde ein und melden uns mit den Zugangsdaten.</p>
+    <p>Für die Einwilligung der Eltern gibt es eine <a href="/einwilligung">Vorlage zum Ausdrucken</a>.</p>
+   </div>
+  </div>
  </div>
 </section>
 
@@ -1104,7 +1245,7 @@ footer a:hover{color:#fff}
    <div><h4>Produkt</h4><a href="#problem">Warum</a><a href="#challenges">Challenges</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#preise">Preise</a><a href="/docs">Handbuch</a><a href="/login">Zur App</a></div>
    <div><h4>Kontakt</h4><p class="foot-note">Pastor Simon Luthe<br>Marktstraße 2<br>25764 Wesselburen<br><a href="mailto:moin@konfi-quest.de" style="display:inline">moin@konfi-quest.de</a></p>
     <p class="foot-note" style="margin-top:.7rem">Entwickelt von <a href="https://simonluthe.de" rel="me" style="display:inline">Simon Luthe</a></p></div>
-   <div><h4>Rechtliches</h4><a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a><a href="/konto-loeschen">Konto löschen</a></div>
+   <div><h4>Rechtliches</h4><a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a><a href="/einwilligung">Vorlage Einwilligung</a><a href="/konto-loeschen">Konto löschen</a></div>
   </div>
   <div class="foot-bottom">
    <p>&copy; 2026 Konfi Quest</p>
@@ -1153,6 +1294,192 @@ document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 // Count-up
 const cio=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){const el=e.target,to=+el.dataset.count;let n=0;const t=setInterval(()=>{n++;el.textContent=n;if(n>=to)clearInterval(t);},180);cio.unobserve(el);}});},{threshold:.5});
 document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+</script>
+
+<!-- ===================================================================
+     Anfrageformular "Konfi Quest fuer eure Gemeinde anfragen" (03.10.2026)
+     -------------------------------------------------------------------
+     Prueft die Pflichtfelder im Browser, schickt die Anfrage per fetch an
+     POST /api/anfragen (dieselbe Adresse, ohne Anmeldung) und sagt, was
+     herauskam: 201 -> Dank; 400 -> die Felder, die der Server nennt; 429 ->
+     zu viele Anfragen von diesem Anschluss; sonst -> spaeter noch einmal oder
+     per Mail. Fehler stehen am Feld (aria-invalid, aria-describedby) und
+     gesammelt in einer role=alert-Zeile; der Fokus springt auf das erste
+     falsche Feld.
+
+     Nichts davon geht an die Reichweitenmessung: Der Absende-Knopf ist kein
+     Link, das Klick-Tracking unten zaehlt ihn nicht, und kein Feldinhalt
+     verlaesst die Seite ausser in der Anfrage selbst.
+
+     Getestet in frontend/src/__tests__/betrieb/anfrageFormular.test.ts --
+     der Test fuehrt GENAU dieses Skript gegen die ausgelieferte Seite aus.
+     =================================================================== -->
+<script id="anfrage-skript">
+(function(){
+  'use strict';
+  var formular = document.getElementById('anfrage-formular');
+  if(!formular) return;
+  var meldung = document.getElementById('anfrage-meldung');
+  var danke = document.getElementById('anfrage-danke');
+  var knopf = formular.querySelector('button[type="submit"]');
+  var KNOPF_TEXT = knopf ? knopf.textContent : '';
+
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var MAIL_HINWEIS = ' Oder schreibt uns an moin@konfi-quest.de.';
+  var TEXTE = {
+    gemeinde: 'Bitte nennt eure Gemeinde.',
+    kontakt_name: 'Bitte nennt euren Namen.',
+    email: 'Bitte gebt eine gültige E-Mail-Adresse an.',
+    anzahl: 'Bitte eine ganze Zahl von 0 bis 100.000 – oder leer lassen.',
+    mobil: 'Bitte nur Ziffern, Leerzeichen und + ( ) / -.',
+    einwilligung: 'Bitte stimmt zu, damit wir eure Anfrage bearbeiten dürfen.',
+    zuViele: 'Von diesem Anschluss kamen gerade zu viele Anfragen. Bitte versucht es in einer Stunde noch einmal.' + MAIL_HINWEIS,
+    pruefen: 'Bitte prüft eure Angaben.',
+    allgemein: 'Die Anfrage ließ sich gerade nicht senden. Bitte versucht es später noch einmal.' + MAIL_HINWEIS
+  };
+  // Felder mit eigener Fehlerzeile; auch die, die der Server benennen kann
+  // (400, details[].field).
+  var FELDER = ['gemeinde', 'kontakt_name', 'email', 'mobil', 'anzahl_konfis', 'anzahl_teamer', 'nachricht', 'einwilligung'];
+  var MOBIL = /^[0-9+()\/ -]+$/;
+  var OPTIONAL = ['kirchenkreis', 'landeskirche', 'funktion', 'mobil', 'nachricht'];
+
+  function feld(name){ return formular.elements.namedItem(name); }
+  function wert(name){
+    var el = feld(name);
+    return el && typeof el.value === 'string' ? el.value.trim() : '';
+  }
+  // undefined = leer, NaN = keine gueltige Zahl
+  function anzahl(name){
+    var w = wert(name);
+    if(w === '') return undefined;
+    var n = Number(w);
+    return Number.isInteger(n) && n >= 0 && n <= 100000 ? n : NaN;
+  }
+
+  function fehlerSetzen(name, text){
+    var el = feld(name);
+    var zeile = document.getElementById('anfrage-fehler-' + name);
+    if(!el || !zeile) return;
+    if(text){
+      el.setAttribute('aria-invalid', 'true');
+      zeile.textContent = text;
+      zeile.hidden = false;
+    } else {
+      el.removeAttribute('aria-invalid');
+      zeile.textContent = '';
+      zeile.hidden = true;
+    }
+  }
+
+  function meldungZeigen(text){
+    meldung.textContent = text || '';
+    meldung.hidden = !text;
+  }
+
+  // Liefert die Namen der falschen Felder, in Reihenfolge der Seite.
+  function pruefen(){
+    var fehler = {
+      gemeinde: wert('gemeinde') ? '' : TEXTE.gemeinde,
+      kontakt_name: wert('kontakt_name') ? '' : TEXTE.kontakt_name,
+      email: EMAIL.test(wert('email')) ? '' : TEXTE.email,
+      mobil: !wert('mobil') || MOBIL.test(wert('mobil')) ? '' : TEXTE.mobil,
+      anzahl_konfis: Number.isNaN(anzahl('anzahl_konfis')) ? TEXTE.anzahl : '',
+      anzahl_teamer: Number.isNaN(anzahl('anzahl_teamer')) ? TEXTE.anzahl : '',
+      nachricht: '',
+      einwilligung: feld('einwilligung').checked ? '' : TEXTE.einwilligung
+    };
+    var falsch = [];
+    FELDER.forEach(function(name){
+      fehlerSetzen(name, fehler[name]);
+      if(fehler[name]) falsch.push(name);
+    });
+    return falsch;
+  }
+
+  function koerper(){
+    var k = {
+      gemeinde: wert('gemeinde'),
+      kontakt_name: wert('kontakt_name'),
+      email: wert('email'),
+      einwilligung: true,
+      // Honigtopf: unveraendert mitschicken, der Server entscheidet.
+      website: feld('website') ? feld('website').value : ''
+    };
+    OPTIONAL.forEach(function(name){ var w = wert(name); if(w) k[name] = w; });
+    ['anzahl_konfis', 'anzahl_teamer'].forEach(function(name){
+      var n = anzahl(name);
+      if(n !== undefined) k[name] = n;
+    });
+    return k;
+  }
+
+  function sendend(ja){
+    if(knopf){
+      knopf.disabled = ja;
+      knopf.textContent = ja ? 'Wird gesendet …' : KNOPF_TEXT;
+    }
+    if(ja) formular.setAttribute('aria-busy', 'true'); else formular.removeAttribute('aria-busy');
+  }
+
+  function fokusAuf(name){
+    var el = feld(name);
+    if(el && typeof el.focus === 'function') el.focus();
+  }
+
+  formular.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    meldungZeigen('');
+    var falsch = pruefen();
+    if(falsch.length){
+      meldungZeigen(falsch.length === 1 ? 'Bitte prüft das markierte Feld.' : 'Bitte prüft die ' + falsch.length + ' markierten Felder.');
+      fokusAuf(falsch[0]);
+      return;
+    }
+    sendend(true);
+    return fetch('/api/anfragen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(koerper())
+    }).then(function(antwort){
+      if(antwort.ok){
+        formular.hidden = true;
+        danke.hidden = false;
+        danke.focus();
+        return;
+      }
+      return antwort.json().catch(function(){ return null; }).then(function(daten){
+        if(antwort.status === 429){ meldungZeigen(TEXTE.zuViele); return; }
+        if(antwort.status === 400){
+          var erster = null;
+          var details = daten && Array.isArray(daten.details) ? daten.details : [];
+          details.forEach(function(d){
+            if(d && FELDER.indexOf(d.field) !== -1 && typeof d.message === 'string'){
+              fehlerSetzen(d.field, d.message);
+              if(!erster) erster = d.field;
+            }
+          });
+          var text = daten && typeof daten.error === 'string' && daten.error !== 'Validierungsfehler' ? daten.error : TEXTE.pruefen;
+          meldungZeigen(text);
+          if(erster) fokusAuf(erster);
+          return;
+        }
+        meldungZeigen(TEXTE.allgemein);
+      });
+    }).catch(function(){
+      meldungZeigen(TEXTE.allgemein);
+    }).then(function(){
+      sendend(false);
+    });
+  });
+
+  // Ein korrigiertes Feld verliert seinen Fehler sofort.
+  function aufraeumen(ev){
+    var name = ev.target && ev.target.name;
+    if(name && FELDER.indexOf(name) !== -1) fehlerSetzen(name, '');
+  }
+  formular.addEventListener('input', aufraeumen);
+  formular.addEventListener('change', aufraeumen);
+})();
 </script>
 
 <!-- ===================================================================

@@ -18,6 +18,11 @@ Versionsüberschrift.
   und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
 - Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
   löschen.
+- Auf konfi-quest.de fragt eine Gemeinde Konfi Quest mit einem Formular an;
+  der Support macht daraus mit wenigen Schritten die Gemeinde samt erster
+  Gemeindeleitung.
+- Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
+  Ausdrucken bereit.
 
 ### Geändert
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der

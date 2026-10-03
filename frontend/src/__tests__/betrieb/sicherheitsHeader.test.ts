@@ -42,9 +42,10 @@ describe('nginx: Sicherheits-Header in jeder Dokument-location', () => {
   const doks = locations().filter((l) => istDokument(l.kopf));
 
   it('die Dokument-locations werden gefunden', () => {
+    // /einwilligung seit 03.10.2026: Vorlage zur Einwilligung der Eltern.
     expect(doks.map((l) => l.kopf)).toEqual([
-      '= /', '= /datenschutz', '= /impressum', '= /konto-loeschen', '= /account-deletion',
-      '~ ^/(landing|datenschutz|impressum|konto-loeschen)\\.html$', '^~ /docs/', '/',
+      '= /', '= /datenschutz', '= /impressum', '= /konto-loeschen', '= /account-deletion', '= /einwilligung',
+      '~ ^/(landing|datenschutz|impressum|konto-loeschen|einwilligung)\\.html$', '^~ /docs/', '/',
     ]);
   });
 

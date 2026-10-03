@@ -992,6 +992,8 @@ ${karten}
       { pfad: '/impressum', freq: 'yearly', prio: '0.3' },
       { pfad: '/datenschutz', freq: 'yearly', prio: '0.3' },
       { pfad: '/konto-loeschen', freq: 'yearly', prio: '0.2' },
+      // Vorlage zur Einwilligung der Eltern (03.10.2026), statisch wie die Rechtstexte.
+      { pfad: '/einwilligung', freq: 'yearly', prio: '0.3' },
     ];
     const alt = readFileSync(sitemapDatei, 'utf8');
     // Ohne Regex: Der Pfad wurde vorher nur an Schraegstrichen maskiert, andere
