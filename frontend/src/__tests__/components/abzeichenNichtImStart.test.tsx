@@ -289,14 +289,19 @@ describe('Offline: der Cache traegt die Abzeichen weiterhin', () => {
 describe('Der Zaehler an der Reiterleiste haengt nicht an /konfi/badges', () => {
   it('MainTabs bezieht ihn aus dem BadgeContext, nicht aus der Abzeichen-Route', () => {
     const mainTabs = lies('src/components/layout/MainTabs.tsx');
+    // Seit dem 03.10.2026 rechnet navigation/reiterZaehler.ts die Zahlen der
+    // Reiter (auch fuer die Seitenleiste der Web-Version); MainTabs ruft sie.
+    const reiterZaehler = lies('src/navigation/reiterZaehler.ts');
     const badgeContext = lies('src/contexts/BadgeContext.tsx');
 
     // Der Zaehler kommt aus dem Context ...
-    expect(mainTabs).toContain('newBadgesCount } = useBadge()');
+    expect(reiterZaehler).toContain('newBadgesCount } = useBadge()');
+    expect(mainTabs).toContain('const zaehler = useReiterZaehler();');
     // ... und der Context holt ihn aus dem leichten Zaehler-Endpunkt.
     expect(badgeContext).toContain('/notifications/badge-counts');
     // Weder MainTabs noch der Context rufen die schwere Abzeichen-Route.
     expect(mainTabs).not.toContain("api.get('/konfi/badges");
+    expect(reiterZaehler).not.toContain("api.get('/konfi/badges");
     expect(badgeContext).not.toContain("api.get('/konfi/badges");
   });
 });

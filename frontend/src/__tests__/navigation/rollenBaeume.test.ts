@@ -107,6 +107,46 @@ describe('Tab-Leisten', () => {
   });
 });
 
+describe('Seitenleiste der Web-Version: menue und profil (03.10.2026)', () => {
+  // Die Leiste links zeigt Reiter, `menue` und unten `profil`. Ein Eintrag,
+  // dessen Ziel keine Route seines Baums ist, landete im Catch-all auf der
+  // Startseite -- ein Link, der still woanders hinfuehrt.
+  it.each(ROLLEN)('%s: jedes Ziel in menue und profil ist eine Route desselben Baums', (rolle) => {
+    const baum = BAEUME[rolle];
+    const pfade = baum.routes.map(r => r.path);
+    for (const e of [...(baum.menue ?? []), ...(baum.profil ? [baum.profil] : [])]) {
+      expect(pfade, `${rolle}: ${e.label} -> ${e.path}`).toContain(e.path);
+    }
+  });
+
+  it.each(ROLLEN)('%s: jeder Eintrag hat Symbol und Beschriftung, keine Beschriftung doppelt', (rolle) => {
+    const baum = BAEUME[rolle];
+    const eintraege = [
+      ...baum.tabs.map(t => ({ label: t.label, icon: t.icon })),
+      ...(baum.menue ?? []),
+      ...(baum.profil ? [baum.profil] : []),
+    ];
+    expect(eintraege.length, `${rolle}: Leiste waere leer`).toBeGreaterThan(0);
+    for (const e of eintraege) {
+      expect(e.icon, `${rolle}: ${e.label}`).toBeTruthy();
+      expect(e.label.length, rolle).toBeGreaterThan(0);
+    }
+    const namen = eintraege.map(e => e.label);
+    expect(new Set(namen).size, `${rolle}: ${namen.join(', ')}`).toBe(namen.length);
+  });
+
+  it('super_admin hat keine Reiter, aber Gemeinden und Betrieb in der Leiste', () => {
+    expect(BAEUME.super_admin.tabs).toHaveLength(0);
+    expect(BAEUME.super_admin.menue?.map(m => [m.label, m.path])).toEqual(
+      expect.arrayContaining([['Gemeinden', '/admin/organizations'], ['Betrieb', '/admin/metrics']])
+    );
+  });
+
+  it.each(['admin', 'teamer', 'konfi'] as const)('%s: das Profil steht unten in der Leiste', (rolle) => {
+    expect(BAEUME[rolle].profil?.path).toBe(`/${rolle}/profile`);
+  });
+});
+
 describe('Alte Push-Ziele bleiben erhalten', () => {
   // Diese Umleitungen existieren nur wegen bereits verschickter
   // Push-Nachrichten. Bricht eine, laufen die ins Leere — nicht zurueckrufbar.

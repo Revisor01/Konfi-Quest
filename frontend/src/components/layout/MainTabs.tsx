@@ -17,9 +17,10 @@ import { useIonRouter, isPlatform } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import { BAEUME } from '../../navigation/rollenBaeume';
 import { istTabLeisteVersteckt } from '../../navigation/routes';
-import type { Rolle, BadgeKey } from '../../navigation/routes';
+import type { Rolle } from '../../navigation/routes';
 import { useAppLocation } from '../../navigation/useAppLocation';
-import { useBadge } from '../../contexts/BadgeContext';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import { useReiterZaehler, zaehlerText } from '../../navigation/reiterZaehler';
 import { bereichAusPfad, trackBereich } from '../../services/analytics';
 import { ModalProvider } from '../../contexts/ModalContext'; // Behalten
 // Statisch (29.09.2026, Toolchain-Audit BF-11): Das Theme laden App.tsx und
@@ -134,17 +135,13 @@ export const ParamSeite: React.FC<{
 
 const MainTabs: React.FC = () => {
   const { user } = useApp();
-  // Alle fuenf Zahlen an den Reitern kommen aus EINER Quelle: dem BadgeContext,
-  // gespeist aus GET /notifications/badge-counts. Aktualisiert werden sie
-  // gemeinsam mit refreshAllCounts().
-  //
-  // Bis 27.08.2026 war newBadgesCount die Ausnahme: eigener State, eigener
-  // Abruf, nur ueber useLiveRefresh('badges') aktualisierbar. Wer nach einer
-  // Aktion refreshAllCounts() rief -- das Naheliegende --, bewirkte nichts.
-  // Genau daran krankte der Konfi-Zaehler seit dem 03.07.2026 unbemerkt
-  // (Befund B1): mark-seen setzte 'seen', aber niemand stiess eine
-  // Aktualisierung an, und die rote Zahl blieb die ganze Sitzung stehen.
-  const { chatUnreadTotal, pendingRequestsCount, pendingEventsCount, pendingChallengesCount, challengeUpdatesTotal, newBadgesCount } = useBadge();
+  // Die Zahlen an den Reitern -- dieselbe Funktion liest die Leiste links der
+  // Web-Version (navigation/reiterZaehler.ts, dort auch die Herleitung).
+  const zaehler = useReiterZaehler();
+  // Web-Version im breiten Fenster: Die Leiste links (SeitenleistenRahmen in
+  // App.tsx) ersetzt die Reiterleiste unten. Dieselbe Quelle wie der Rahmen,
+  // damit nie beide oder keine stehen. In den Apps immer false.
+  const breit = useBreitesLayout();
   // super_admin bekommt eine eigene, reduzierte Navigation
   const isSuperAdmin = user?.role_name === 'super_admin';
   const location = useAppLocation();
@@ -280,18 +277,9 @@ const MainTabs: React.FC = () => {
   // Aenderung zwangslaeufig fuer alle drei, und der Test in
   // __tests__/navigation/ iteriert ueber dieselbe Tabelle.
   const baum = BAEUME[rolle];
-  const tabLeisteZeigen = baum.tabs.length > 0 && !istTabLeisteVersteckt(location.pathname);
-
-  const zaehler: Record<BadgeKey, number> = {
-    chat: chatUnreadTotal,
-    events: pendingEventsCount + pendingRequestsCount,
-    // Ein Reiter, eine Bedeutung je Rolle: Team und Leitung zaehlen offene
-    // Freigaben, Konfis ihre Challenge-Neuigkeiten (24.09.2026). Der Server
-    // liefert je Rolle nur den einen Anteil, der andere ist 0 -- die Summe
-    // ist also nie eine Mischung.
-    challenges: pendingChallengesCount + challengeUpdatesTotal,
-    badges: newBadgesCount,
-  };
+  // Die Reiterleiste bleibt ein bedingtes Kind von IonTabs, wie schon in den
+  // Chat-Raeumen -- das Outlet daneben wird dabei nie getauscht.
+  const tabLeisteZeigen = baum.tabs.length > 0 && !breit && !istTabLeisteVersteckt(location.pathname);
 
   // Die Routen des Baums plus die Einstiege von "/" und "/login".
   const outlet = (
@@ -355,7 +343,7 @@ const MainTabs: React.FC = () => {
                 <IonTabButton key={tab} tab={tab} href={href}>
                   <IonIcon icon={icon} />
                   <IonLabel>{label}</IonLabel>
-                  {n > 0 && <IonBadge color="danger">{n > 9 ? '9+' : n}</IonBadge>}
+                  {n > 0 && <IonBadge color="danger">{zaehlerText(n)}</IonBadge>}
                 </IonTabButton>
               );
             })}

@@ -17,6 +17,7 @@ const lies = (pfad: string) =>
   readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
 const mainTabs = lies('src/components/layout/MainTabs.tsx');
+const reiterZaehler = lies('src/navigation/reiterZaehler.ts');
 const teamerBadges = lies('src/components/teamer/pages/TeamerBadgesPage.tsx');
 const konfiBadges = lies('src/components/konfi/pages/KonfiBadgesPage.tsx');
 const badgeContext = lies('src/contexts/BadgeContext.tsx');
@@ -26,7 +27,10 @@ describe('Abzeichen-Zaehler gilt auch fuer Teamer:innen', () => {
     it('holt den Zaehler aus dem BadgeContext statt selbst zu laden', () => {
       // Seit der Konsolidierung (27.08.2026) kommen ALLE fuenf Zahlen aus einer
       // Quelle. Vorher war newBadgesCount die Ausnahme mit eigenem Abruf.
-      expect(mainTabs).toContain('newBadgesCount } = useBadge()');
+      // Seit dem 03.10.2026 rechnet navigation/reiterZaehler.ts die Zahlen
+      // fuer Reiterleiste und Seitenleiste der Web-Version; MainTabs ruft sie.
+      expect(reiterZaehler).toContain('newBadgesCount } = useBadge()');
+      expect(mainTabs).toContain('const zaehler = useReiterZaehler();');
       expect(mainTabs).not.toContain("api.get('/teamer/badges/unseen')");
       expect(mainTabs).not.toContain("api.get('/konfi/badges')");
     });

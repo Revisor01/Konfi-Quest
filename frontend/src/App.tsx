@@ -17,6 +17,7 @@ import KonfiRegisterPage from './components/auth/KonfiRegisterPage';
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage';
 import ResetPasswordPage from './components/auth/ResetPasswordPage';
 import MainTabs from './components/layout/MainTabs';
+import SeitenleistenRahmen from './components/layout/SeitenleistenRahmen';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import GlobalToasts from './components/common/GlobalToasts';
 import PostfachModal from './components/common/PostfachModal';
@@ -276,10 +277,16 @@ const AppContent: React.FC = () => {
               kommen auch App-Links an (Einladung, Passwort-Reset), und die
               zielen auf Seiten VOR der Anmeldung. */}
           <PushZielNavigation />
-          <IonRouterOutlet>
-            {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
-            <Route path="/*" element={<MainTabs />} />
-          </IonRouterOutlet>
+          {/* Web-Version: Leiste links ab 992 px Breite (03.10.2026). In den
+              Apps gibt der Rahmen das Outlet unveraendert zurueck; im
+              Browser steht er immer, damit das Outlet beim Ziehen des
+              Fensters nie neu montiert wird (Begruendung im Rahmen). */}
+          <SeitenleistenRahmen>
+            <IonRouterOutlet>
+              {/* Anstatt die Tabs hier inline zu rendern, rendern wir nur noch eine Route auf MainTabs */}
+              <Route path="/*" element={<MainTabs />} />
+            </IonRouterOutlet>
+          </SeitenleistenRahmen>
         </IonReactRouter>
         <GlobalToasts />
         {/* Das Postfach (Mitteilungen + Warteschlange) haengt EINMAL hier und

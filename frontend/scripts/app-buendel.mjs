@@ -92,7 +92,8 @@ export const APP_DATEIEN_AUS_PUBLIC = [
   'apple-touch-icon.png',
   'assets/icon/favicon-16x16.png',
   'assets/icon/favicon-32x32.png',
-  // Lutherrose auf Anmeldung, Ladebildschirm, Sperre, Fehlerseite, Tour.
+  // Lutherrose auf Anmeldung, Ladebildschirm, Sperre, Fehlerseite, Tour und
+  // im Kopf der Seitenleiste der Web-Version.
   'assets/icon/logo-mark.png',
   // Absender-Symbol auf der Teilen-Karte des Rückblicks (ShareCard).
   'assets/icon/icon-192x192.png',
