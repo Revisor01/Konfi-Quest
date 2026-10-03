@@ -19,6 +19,21 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Code
 
+- **Bearbeiten-Knopf bei Super-Admin-Konten.** `GET /users` setzt `can_edit`
+  allein nach der Rolle (`filterUsersByHierarchy`); bei einem Konto mit
+  Super-Admin-Recht — Simons Konto in seiner Gemeinde, ein Support-Gast —
+  steht `can_edit: true`, Bearbeiten, Entfernen und Passwort enden aber mit
+  403 „Super-Admin-Konten kann nur ein Super-Admin bearbeiten." (Schutz seit
+  26.09.2026, Sicherheit BF-01). Die App bietet also Knöpfe an, die nicht
+  gehen. Fix: `can_edit` zusätzlich nach `istSuperAdminKonto`
+  (`utils/roleHierarchy.js`), dafür `is_super_admin` in die Abfrage.
+  Gefunden 03.10.2026.
+- **Mail nach „Passwort setzen" für Support-Konten.** `PUT
+  /users/:id/reset-password` schickt einem Support-Konto „die Leitung deiner
+  Gemeinde hat ein neues Passwort gesetzt"; `PUT
+  /organizations/support-konten/:id/passwort` schickt deshalb gar keine Mail.
+  Eine passende Vorlage fehlt. Gefunden 03.10.2026.
+
 - **Challenge-Urheber:innen nur aus der Stamm-Gemeinde.** `GET
   /challenges/admin/authors` und die Urheber-Prüfung beim Anlegen und Ändern
   lesen nur `users.organization_id`; wer als Teamer:in in einer weiteren
@@ -219,6 +234,18 @@ Stand: 02.10.2026, gegen den Code geprüft.
   entfernen und den Anmeldeweg ab Dezember 2026 abbauen (wer dann noch
   daran hängt, gibt einmal das Passwort ein)? Empfehlung: entfernen, die
   App-Sperre deckt „Face ID beim Öffnen" ab. Gefunden 02.10.2026.
+- **Support-Gast aus der Gemeinde nehmen.** Einen Support-Gast (Punkt 14 in
+  [planung/web-version.md](planung/web-version.md)) kann nur ein Super-Admin
+  wieder aus einer Gemeinde nehmen; die Gemeindeleitung bekommt 403, wie bei
+  jedem Super-Admin-Konto. Soll sie ihn selbst entfernen dürfen (es endete nur
+  die Mitgliedschaft, das Konto bliebe)? Empfehlung: ja — wer den Gast sieht,
+  sollte auch „danke, fertig" sagen können. Gefunden 03.10.2026.
+- **Ersteinrichtung mit Support-Konto.** `scripts/ersteinrichtung.js` legt auf
+  einer neuen Instanz eine Gemeinde „Betrieb" und eine Gemeindeleitung mit
+  Super-Admin-Merkmal an. Seit Migration 190 ginge ein Support-Konto ohne
+  Gemeinde. Umstellen? Empfehlung: ja, sonst steht die Betriebs-Gemeinde in
+  jeder Gemeindeliste und Statistik. Gefunden 03.10.2026.
+
 - **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
   `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
   der Produktionsdatenbank, an denselben Uploads und am selben `JWT_SECRET`

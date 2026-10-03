@@ -1,6 +1,7 @@
 import axios, { type AxiosResponse } from 'axios';
 import { API_BASE_URL } from './apiBasis';
 import { geraeteKennung } from './geraeteKennung';
+import { ohneGemeindeZusage } from './ohneGemeinde';
 
 /**
  * Der Tausch Refresh-Token -> neues Token-Paar, mit Zeitlimit.
@@ -27,6 +28,11 @@ import { geraeteKennung } from './geraeteKennung';
  * Server gibt ein an das Geraet gebundenes Token nur mit derselben Kennung
  * heraus und bindet ein ungebundenes (Sitzung von vor dem Update) an sie.
  * Ohne ermittelbare Kennung geht der Koerper wie bisher hinaus.
+ *
+ * KONTO OHNE GEMEINDE (03.10.2026): Die Web-Version schickt auch hier
+ * `kann_ohne_gemeinde: true` mit (ohneGemeinde.ts) -- sonst endete die
+ * Sitzung eines Support-Kontos beim ersten Refresh nach 15 Minuten. Die Apps
+ * schicken es nie.
  */
 export const REFRESH_ZEITLIMIT_MS = 20000;
 
@@ -49,7 +55,8 @@ export async function refreshAnfordern(
 
   const anfrage = (async () => {
     const kennung = await geraeteKennung();
-    return axios.post(`${API_BASE_URL}/auth/refresh`, kennung ? { ...koerper, device_id: kennung } : koerper, {
+    const daten = { ...koerper, ...(kennung ? { device_id: kennung } : {}), ...ohneGemeindeZusage() };
+    return axios.post(`${API_BASE_URL}/auth/refresh`, daten, {
       timeout: REFRESH_ZEITLIMIT_MS,
       signal: abbruch.signal,
       ...(headers ? { headers } : {}),

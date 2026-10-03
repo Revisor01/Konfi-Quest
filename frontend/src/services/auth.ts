@@ -1,6 +1,7 @@
 import api from './api';
 import { refreshAnfordern } from './refreshAnfrage';
 import { geraeteKennung } from './geraeteKennung';
+import { ohneGemeindeZusage } from './ohneGemeinde';
 import { Device } from '@capacitor/device';
 import { Capacitor } from '@capacitor/core';
 import { setToken, setUser, setRefreshToken, getRefreshToken, clearAuth, getDeviceId, setLoggingOut } from './tokenStore';
@@ -53,7 +54,14 @@ export const loginWithAutoDetection = async (username: string, password: string)
     // dieses Geraet (Audit Sicherheit BF-08, geraeteKennung.ts). Ohne
     // ermittelbare Kennung wie bisher ohne -- das Token bleibt dann ungebunden.
     const kennung = await geraeteKennung();
-    const response = await api.post('/auth/login', kennung ? { username, password, device_id: kennung } : { username, password });
+    // In der Web-Version zusaetzlich die Zusage fuer Konten ohne Gemeinde
+    // (Support-Konten, ohneGemeinde.ts); die Apps schicken sie nie.
+    const response = await api.post('/auth/login', {
+      username,
+      password,
+      ...(kennung ? { device_id: kennung } : {}),
+      ...ohneGemeindeZusage(),
+    });
     return await sitzungUebernehmen(response.data);
   } catch (error: unknown) {
     const err = error as {

@@ -13,6 +13,11 @@ Versionsüberschrift.
 - Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
   dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
   den Challenges.
+- Support-Konten ohne eigene Gemeinde lassen sich anlegen, sperren und
+  löschen; sie melden sich nur im Browser an (die Apps zeigen einen Hinweis)
+  und kommen nur als sichtbare Gemeindeleitung in eine Gemeinde.
+- Das letzte aktive Konto mit Super-Admin-Recht lässt sich weder sperren noch
+  löschen.
 
 ### Geändert
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
@@ -44,6 +49,8 @@ Versionsüberschrift.
   Farbe der Teamer:innen.
 - Beim Zuordnen der Leitung zu einem Event heißt die Gemeindeleitung jetzt
   „Gemeindeleitung" statt „Leitung".
+- Ein gesperrtes Konto mit Super-Admin-Recht kann sich nicht mehr anmelden;
+  bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 
 ### Sonstiges
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und

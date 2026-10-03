@@ -137,6 +137,12 @@ async function seed(db) {
   }
 
   // 2. Rollen (FK: organizations)
+  // Auf einer frisch aufgebauten Datenbank (E2E-Stack, Wiederherstellungstest)
+  // hat Migration 190 schon die Systemrolle super_admin ohne Gemeinde angelegt
+  // -- mit der ersten freien ID, also einer der festen IDs unten. Sie bleibt
+  // (wie in Produktion) und rueckt nur aus dem Weg. Nach truncateAll gibt es
+  // sie nicht; dann aendert die Zeile nichts.
+  await db.query("UPDATE roles SET id = 1000 WHERE organization_id IS NULL AND name = 'super_admin' AND id < 1000");
   for (const role of Object.values(ROLES)) {
     await db.query(
       `INSERT INTO roles (id, name, display_name, organization_id) VALUES ($1, $2, $3, $4)`,

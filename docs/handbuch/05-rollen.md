@@ -190,6 +190,16 @@ gehört, wird nirgends Konfi. Die App lehnt solche Einladungen, Zusagen und
 Rollenwechsel mit einer Erklärung ab. Aus einer Konfi wird Team über die
 [Beförderung](#eine-rolle-aendern).
 
+### Den Support in der Benutzerliste erkennen
+
+Hilft der Support von Konfi Quest in eurer Gemeinde, steht sein Konto für
+diese Zeit unter **Mehr › Benutzer:innen** — als Gemeindeleitung aus einer
+weiteren Gemeinde. Es kommt nur auf ausdrücklichen Schritt des Supports
+hinein und steht dann sichtbar in dieser Liste. Bearbeiten oder aus der
+Gemeinde nehmen kann es nur der Support selbst; wie bei jedem Konto mit
+Super-Admin-Rechten ist das für die Gemeindeleitung gesperrt ([Passwörter
+und Zugänge](35-passwoerter.md)).
+
 ### Jemanden in die eigene Gemeinde einladen
 
 Die Gemeindeleitung lädt selbst ein: **Mehr › Benutzer:innen**, oben rechts der

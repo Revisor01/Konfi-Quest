@@ -2317,5 +2317,5 @@ paths:
         "200": { description: "Array (id, wrapped_type, year, data, computed_at)" }
         "400": { description: Ungueltige userId }
         "401": { $ref: '#/components/responses/Unauthorized' }
-        "403": { description: Weder eigene Daten noch admin/org_admin derselben Organisation }
+        "403": { description: "Weder eigene Daten noch admin/org_admin derselben Organisation. Seit 03.10.2026 zaehlt auch ein Gast ohne Gemeinde (Support-Konto, organization_id NULL) zur Gemeinde, in der er Mitglied ist -- vorher 403" }
         "500": { $ref: '#/components/responses/ServerError' }

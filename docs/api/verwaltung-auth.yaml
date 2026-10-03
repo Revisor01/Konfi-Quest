@@ -90,8 +90,20 @@
 #      is_trial im Org-Update, systemweite User-Suche (/search-users),
 #      Multi-Org-Mitglieder verwalten (/:id/members), Passwort-Reset
 #      org-uebergreifend (PUT /users/:id/reset-password).
+#    - KONTEN OHNE GEMEINDE (seit 03.10.2026, Migration 190): users.
+#      organization_id ist nullable, aber nur fuer Super-Admins (CHECK
+#      users_gemeinde_oder_super_admin); ein solches Konto traegt die
+#      gemeindefreie Systemrolle super_admin (roles.organization_id NULL,
+#      eindeutig per uq_roles_name_ohne_gemeinde). Angelegt, gesperrt, mit
+#      Passwort versehen und geloescht ueber /organizations/support-konten
+#      (nur Super-Admin); als Gast in einer Gemeinde ueber
+#      POST /organizations/{id}/members. Anmeldung nur aus der Web-Version
+#      (kann_ohne_gemeinde, siehe POST /auth/login). Das letzte aktive
+#      Super-Admin-Konto laesst sich weder sperren noch loeschen, auch nicht
+#      ueber POST /auth/delete-account (409).
 #    - super_admin (Rolle) hat KEINE Organisation und ist von Org-/Trial-
-#      Sperren beim Login/Refresh ausgenommen; von Jahrgangs-Daten bleibt er
+#      Sperren beim Login/Refresh ausgenommen -- seit 03.10.2026 NICHT mehr
+#      von der Sperre des Kontos (is_active); von Jahrgangs-Daten bleibt er
 #      ausgesperrt (etablierte Regel; die frueheren rbac-Helfer
 #      checkJahrgangAccess/filterByJahrgangAccess waren nie eingehaengt und
 #      sind seit 01.09.2026 geloescht — die Regel setzt darfJahrgang in
@@ -220,7 +232,7 @@ tags:
   - name: "Doku-Zugang"
     description: "Anmeldung für die passwortgeschützte API-Dokumentation."
   - name: "Organisationen"
-    description: "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung)."
+    description: "Gemeinden anlegen und verwalten, Mitglieder und Limits (Super-Admin und Leitung); Support-Konten ohne Gemeinde (nur Super-Admin)."
   - name: "Passwörter & Einladungen"
     description: "Passwort vergessen und zurücksetzen, Einladungs-Codes, Konfi-Registrierung."
   - name: "System & Monitoring"
@@ -308,6 +320,21 @@ paths:
         abgelaufen". Antwortform unveraendert. Gemessen 01.10.2026: 1.281
         offene Tokens auf 133 Konten, das groesste mit 208; echte Konten
         hatten hoechstens fuenf Tokens aus den letzten sieben Tagen.
+
+
+        KONTO OHNE GEMEINDE seit 03.10.2026 (Simon; docs/planung/web-version.md,
+        Punkt 12 und 13): Ein Support-Konto (users.organization_id NULL,
+        Systemrolle super_admin, Merkmal is_super_admin) meldet sich nur an,
+        wenn die Anfrage kann_ohne_gemeinde: true traegt -- das schickt allein
+        die Web-Version, die Apps auf iPhone und Android nie. Ohne die Zusage
+        403 mit error_code user_inactive und grund konto_ohne_gemeinde (siehe
+        unten). Die Store-App 2.3.0 zeigt den Text; 1.5.3 bis 2.2.x zeigen bei
+        jeder Ablehnung "Keine Verbindung zum Server" (Fehler ihrer
+        Anmeldeseite) und sind trotzdem abgewiesen. Mit der Zusage: 200, im
+        User-Objekt organization null, role_name super_admin, is_super_admin
+        true. Fuer Konten mit Gemeinde aendert das Feld nichts. Bedienkomfort,
+        keine Sicherheitsgrenze -- die Rechte haelt verifyTokenRBAC.
+        Tests: backend/tests/routes/kontoOhneGemeindeAnmeldung.test.js.
       requestBody:
         required: true
         content:
@@ -319,11 +346,21 @@ paths:
                 username: { type: string }
                 password: { type: string }
                 device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung (iOS identifierForVendor, Android ANDROID_ID, im Browser eine einmal erzeugte Kennung). Bindet das Refresh-Token an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe." }
+                kann_ohne_gemeinde: { type: boolean, description: "Optional (seit 03.10.2026): Zusage der Web-Version, dass hier ein Konto ohne Gemeinde arbeiten darf. Nur das boolesche true zaehlt. Die Apps schicken es nie. Ohne das Feld weist der Server ein Konto ohne Gemeinde mit 403 grund konto_ohne_gemeinde ab; fuer alle anderen Konten ohne Wirkung." }
       responses:
         "200":
           description: "JWT (15 Min) + Refresh-Token (90 Tage, SHA-256-gehasht gespeichert) + User-Objekt (bei Konfi inkl. jahrgang und Punkten; bei `admin` seit 27.08.2026 zusaetzlich assigned_jahrgaenge[] fuer die Warnung beim Jahrgangswechsel)"
         "401": { description: "Ungueltige Anmeldedaten (User unbekannt oder Passwort falsch — gleiche Meldung)" }
-        "403": { description: "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung" }
+        "403":
+          description: "User deaktiviert ODER soft-geloescht (deleted_at; beides user_inactive, identische Antwort), Org gesperrt (org_inactive) oder Trial abgelaufen (org_trial_expired); super_admin (Rolle oder Merkmal) von Org- und Trial-Sperre ausgenommen, seit 03.10.2026 nicht mehr von der Deaktivierung, nie von der Loeschung. Seit 03.10.2026 auch: Konto ohne Gemeinde ohne kann_ohne_gemeinde (error_code user_inactive, grund konto_ohne_gemeinde, Text 'Dieses Konto gehört zu keiner Gemeinde und ist für die Support-Ansicht im Browser bestimmt. Bitte melde dich auf konfi-quest.de an.')"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error: { type: string }
+                  error_code: { type: string, enum: [user_inactive, org_inactive, org_trial_expired] }
+                  grund: { type: string, enum: [konto_ohne_gemeinde], description: "Nur wenn ein Konto ohne Gemeinde nicht aus der Web-Version kommt (seit 03.10.2026, additiv)" }
         "429":
           description: >
             Zwei Quellen, gleiche Form { error } (Vertrag mit den Apps; die
@@ -353,8 +390,15 @@ paths:
         rollen: [oeffentlich]
         middleware: [authLimiter, validateLogin, kontoSperre]
         org-scope: false
-        objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle"
+        objekt-pruefung: "Org-Aktiv- und Trial-Prüfung im Handler; super_admin (Rolle oder Flag) umgeht beide; is_active = false und deleted_at IS NOT NULL -> 403 user_inactive fuer jede Rolle"
         hinweis: "Offene Route; setzt last_login_at; setzt nach Erfolg den Zaehler der Kontosperre zurueck"
+        # BEHOBEN 03.10.2026 (Pruefung "Konto ohne Gemeinde"): Ein
+        # gesperrtes Super-Admin-Konto (is_active = false) bekam hier 200
+        # samt Tokens -- die Pruefung lag im Block, der fuer Super-Admins
+        # ganz entfiel; verifyTokenRBAC wies danach jede Anfrage mit 401 ab.
+        # Jetzt 403 user_inactive wie bei jedem Konto; die Gemeinde-Sperre
+        # entfaellt fuer Super-Admins weiter. Gilt ebenso beim Refresh.
+        # Tests: backend/tests/routes/superAdminKontoGesperrt.test.js.
         # BEHOBEN 27.09.2026 (Audit Sicherheit BF-04, HOCH): Kontosperre je
         # Konto. Vorher zaehlte nur der authLimiter je IP (1 200 Versuche je
         # Stunde und Adresse); die Einmalpasswoerter (30 772 Bibelstellen,
@@ -437,7 +481,7 @@ paths:
         "200": { description: "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026)" }
+        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)" }
         "500": { description: "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -1120,11 +1164,12 @@ paths:
               properties:
                 refresh_token: { type: string }
                 device_id: { type: string, maxLength: 255, description: "Optional (seit 28.09.2026): Geraete-Kennung. Pflicht fuer gebundene Tokens; bindet ein ungebundenes Token beim Rotieren an das Geraet. Kein Text, leer oder laenger als 255 Zeichen zaehlt wie keine Angabe." }
+                kann_ohne_gemeinde: { type: boolean, description: "Optional (seit 03.10.2026): wie bei POST /api/auth/login. Die Web-Version schickt es bei jedem Refresh mit; ohne das Feld endet der Refresh eines Kontos ohne Gemeinde mit 403 grund konto_ohne_gemeinde (das eingereichte Token ist dann rotiert und widerrufen, ein neues gibt es nicht). Fuer alle anderen Konten ohne Wirkung." }
       responses:
         "200": { description: "Neues Token-Paar; altes Refresh-Token revoziert und traegt ersetzt_durch. Es bleibt 5 Min im Grace-Window GENAU EINMAL nutzbar (gnade_genutzt_at) -- dabei wird der Nachfolger der ersten Rotation widerrufen und sofort ablaufen gelassen, so dass je Geraet genau ein Token offen bleibt. Das neue Token uebernimmt die Geraetebindung des alten; war das alte ungebunden und kam device_id mit, ist das neue daran gebunden" }
         "401": { description: "Refresh-Token unbekannt, abgelaufen, per Logout widerrufen oder ausserhalb des 5-Min-Fensters (kein Widerruf weiterer Tokens). ODER dritte Verwendung eines rotierten Tokens innerhalb des Fensters: Diebstahl-Signal, ALLE Refresh-Tokens des Kontos werden widerrufen (revoked_at + expires_at = NOW()), gleiche Fehlermeldung. ODER (seit 28.09.2026) gebundenes Token mit anderer oder fehlender device_id: nur DIESES Token wird widerrufen und sofort ablaufen gelassen (auch im Grace-Window, ohne dessen Gnade zu verbrauchen; der Nachfolger des echten Geraets bleibt), gleiche Fehlermeldung" }
         "429": { description: "{ error } -- mehr als 300 abgelehnte Tokens (401) je Viertelstunde von derselben Adresse (refreshLimiter, seit 29.09.2026). Erfolgreiche Erneuerungen, 403, 400 und 500 zaehlen nicht. ACHTUNG: Die App (2.2.x, 2.3.0) meldet sich bei jeder abgelehnten Erneuerung ab, auch bei 429 -- deshalb so weit wie die Fehlversuche beim Login; ein Geraet erzeugt hoechstens zwei 401, bevor die App den Token verwirft" }
-        "403": { description: "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org-/Trial-/Deaktivierungs-Sperre ausgenommen, nicht von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt" }
+        "403": { description: "{ error, error_code } -- User deaktiviert oder soft-geloescht (deleted_at, beides user_inactive; seit 26.09.2026, Audit Sicherheit BF-07) / Org gesperrt (org_inactive) / Trial abgelaufen (org_trial_expired); super_admin von Org- und Trial-Sperre ausgenommen, seit 03.10.2026 nicht mehr von der Deaktivierung, nie von der Loeschung. Code, Reihenfolge (erst Konto, dann Gemeinde) und Text sind seit 28.09.2026 dieselben wie bei POST /api/auth/login (eine Quelle, SPERR_MELDUNGEN); die App zeigt den Text nach einem abgelehnten Refresh auf der Anmeldeseite statt 'Sitzung abgelaufen'. Das eingereichte Refresh-Token ist dann bereits rotiert und widerrufen, ein neues wird nicht ausgestellt. Seit 03.10.2026 auch: Konto ohne Gemeinde ohne kann_ohne_gemeinde -> { error, error_code: user_inactive, grund: konto_ohne_gemeinde }, Text wie bei der Anmeldung" }
       x-berechtigung:
         rollen: [oeffentlich]
         middleware: [refreshLimiter]
@@ -1361,13 +1406,156 @@ paths:
       parameters:
         - { name: q, in: query, required: true, schema: { type: string, minLength: 2 }, description: "Suchbegriff" }
       responses:
-        "200": { description: "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle)" }
+        "200": { description: "Max. 20 aktive Nicht-Konfi-User (username, display_name, email, Primaer-Org, Rolle). Support-Konten ohne Gemeinde stehen mit primary_organization_name null und primary_role_name super_admin darin -- so werden sie als Gast in eine Gemeinde aufgenommen (POST /organizations/{id}/members)" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "keine (org-uebergreifend, bewusst)"
+
+  /api/organizations/support-konten:
+    get:
+      tags: ["Organisationen"]
+      summary: Alle Support-Konten (Super-Admin ohne Gemeinde) mit ihren Gast-Gemeinden
+      description: >
+        NEU 03.10.2026 (Simon; docs/planung/web-version.md, Punkt 10 bis 15).
+        Ein Support-Konto hat keine Gemeinde (users.organization_id NULL),
+        traegt die Systemrolle super_admin und das Merkmal is_super_admin
+        (Migration 190) und hat dieselben Rechte wie jeder Super-Admin. Es
+        meldet sich nur in der Web-Version an (POST /api/auth/login,
+        kann_ohne_gemeinde). Diese Liste zeigt nur Konten ohne Gemeinde;
+        Super-Admins mit Gemeinde stehen in deren Benutzerliste. Geloeschte
+        (deleted_at) fehlen.
+      responses:
+        "200":
+          description: "Array, nach Anzeigename sortiert"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    username: { type: string }
+                    display_name: { type: string }
+                    email: { type: [string, "null"] }
+                    is_active: { type: boolean }
+                    last_login_at: { type: [string, "null"], format: date-time }
+                    created_at: { type: string, format: date-time }
+                    gemeinden:
+                      type: array
+                      description: "Gast-Mitgliedschaften (user_organizations): id, name, display_name, role_name"
+                      items: { type: object }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { description: "Kein Super-Admin (Rolle oder Merkmal)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL"
+        hinweis: "Eigene Datei backend/routes/supportKonten.js, eingehaengt in organizations.js vor /:id. Tests: backend/tests/routes/supportKonten.test.js"
+    post:
+      tags: ["Organisationen"]
+      summary: Support-Konto anlegen (ohne Gemeinde, Systemrolle super_admin, Merkmal is_super_admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, display_name, password]
+              properties:
+                username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$", description: "Systemweit frei, ohne Gross/klein -- geprueft unter derselben Sperre wie POST /users (utils/benutzernameSperre.js)" }
+                display_name: { type: string }
+                password: { type: string, description: "volle validatePassword-Policy" }
+                email: { type: string, description: "Optional; fuer 'Passwort vergessen'" }
+      responses:
+        "201": { description: "{ id, username, display_name, email, is_active, created_at, gemeinden: [] }" }
+        "400": { description: "Benutzername, Anzeigename, Passwort oder E-Mail ungueltig" }
+        "403": { description: "Kein Super-Admin" }
+        "409": { description: "Benutzername existiert bereits (muss systemweit eindeutig sein)" }
+        "500": { description: "u. a. 'Die Rolle für Support-Konten fehlt. Bitte den Migrationsstand prüfen.' -- die Systemrolle aus Migration 190 fehlt" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Rolle = Systemrolle super_admin (organization_id NULL); das neue Konto startet ohne Kontosperre nach Fehlversuchen"
+
+  /api/organizations/support-konten/{id}:
+    patch:
+      tags: ["Organisationen"]
+      summary: Support-Konto sperren oder entsperren
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_active]
+              properties:
+                is_active: { type: boolean, description: "false sperrt, true entsperrt (nur echte Booleans)" }
+      responses:
+        "200": { description: "{ id, username, display_name, email, is_active }. Sperren beendet alle Sitzungen: token_invalidated_at, alle Refresh-Tokens widerrufen und sofort abgelaufen, Push-Tokens geloescht, Rechte-Cache geleert, Sockets getrennt. Danach Anmeldung und Refresh 403 user_inactive" }
+        "400": { description: "is_active fehlt oder ist kein Boolean" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "Kein Support-Konto (Konto mit Gemeinde, geloescht oder unbekannt) -- dann aendert sich nichts" }
+        "409": { description: "'Das letzte aktive Super-Admin-Konto lässt sich nicht sperren. Lege zuerst ein weiteres an.' -- gezaehlt werden alle aktiven, nicht geloeschten Konten mit Rolle super_admin oder Merkmal, mit oder ohne Gemeinde (utils/superAdminKonten.js, unter einer Sperre gegen gleichzeitiges Sperren)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL; das eigene Konto ist erlaubt, solange ein weiteres aktives Super-Admin-Konto bleibt"
+    delete:
+      tags: ["Organisationen"]
+      summary: Support-Konto loeschen (gemeinsame Kontoloeschung)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
+      responses:
+        "200": { description: "{ message: 'Support-Konto gelöscht' } -- utils/kontoLoeschen.js wie bei jeder Kontoloeschung: Gast-Mitgliedschaften, Chats, Mitteilungen, alles der Person; Dateien nach dem COMMIT" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "Kein Support-Konto -- ein Konto mit Gemeinde bleibt" }
+        "409": { description: "'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL; Schutz des letzten aktiven Super-Admin-Kontos"
+
+  /api/organizations/support-konten/{id}/passwort:
+    put:
+      tags: ["Organisationen"]
+      summary: Passwort eines Support-Kontos setzen
+      description: >
+        Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen und hebt
+        eine Kontosperre nach Fehlversuchen auf. ANDERS: keine Bestaetigungsmail
+        -- deren Vorlage spricht von "der Leitung deiner Gemeinde".
+        PUT /api/users/{id}/reset-password geht fuer Support-Konten ebenfalls
+        (Super-Admin, seit 03.10.2026 korrekt) und schickt diese Mail.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, description: "volle validatePassword-Policy" }
+      responses:
+        "200": { description: "{ message: 'Passwort gesetzt' }" }
+        "400": { description: "Policy verletzt" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "Kein Support-Konto -- ein Konto mit Gemeinde bleibt unveraendert" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "nur users.organization_id IS NULL"
 
   /api/organizations/current:
     get:
@@ -1574,7 +1762,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID der Organisation" }
       responses:
-        "200": { description: "Array mit is_primary-Kennzeichnung" }
+        "200": { description: "Array (id, username, display_name, email, role_name, role_display_name, is_primary, created_at); is_primary ist immer ein Boolean -- BEHOBEN 03.10.2026: bei einem Konto ohne Gemeinde (Support als Gast) stand dort null" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [super_admin]
@@ -1683,6 +1871,12 @@ paths:
         # BEHOBEN 26.09.2026 (Audit Leitung BF-01): Bis dahin nur die
         # Stamm-Gemeinde -- wer ueber eine Gemeinde-Einladung mitarbeitete,
         # fehlte in der Liste und bekam nie Rolle oder Jahrgaenge.
+        # BEHOBEN 03.10.2026 (Pruefung "Konto ohne Gemeinde"): Ein Konto ohne
+        # Gemeinde (users.organization_id NULL, Support-Konto als Gast ueber
+        # POST /organizations/{id}/members) fehlte, weil `NULL <> $1` nicht
+        # wahr ist; weitere_gemeinden zaehlte falsch. Jetzt steht es als
+        # 'weitere' mit seiner Rolle hier, weitere_gemeinden zaehlt nur echte
+        # Gemeinden. Antwortform unveraendert.
     post:
       tags: ["Benutzer & Rollen"]
       summary: Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)
@@ -1726,7 +1920,10 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('view')"]
         org-scope: true
-        objekt-pruefung: "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org)"
+        objekt-pruefung: "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); Super-Admin-Konten nur fuer Super-Admins (403)"
+        # BEHOBEN 03.10.2026: Ein Gast ohne Gemeinde (Support-Konto) bekam
+        # hier und in checkUserHierarchy 404 statt 200 bzw. 403 "Super-Admin-
+        # Konten kann nur ein Super-Admin bearbeiten." (Vergleich mit <>).
         hinweis: >
           GEAENDERT 26.09.2026: role_id, role_name und assigned_jahrgaenge
           gelten fuer die AKTIVE Organisation. Wer hier org_admin und in
@@ -2035,7 +2232,7 @@ paths:
         "200": { description: "Passwort gesetzt; aktive Sockets des Users getrennt und seit 14.09.2026 alle Sitzungen beendet" }
         "400": { description: "Policy verletzt" }
         "403": { $ref: "#/components/responses/Forbidden" }
-        "404": { $ref: "#/components/responses/NotFound" }
+        "404": { description: "Konto nicht gefunden -- seit 03.10.2026 auch, wenn die Aenderung keine Zeile trifft (dann werden weder Sitzungen beendet noch Mails verschickt)" }
       x-berechtigung:
         rollen: [super_admin, org_admin]
         middleware: [verifyTokenRBAC, validateResetPassword]
@@ -2055,6 +2252,13 @@ paths:
         # 90 Tage. Genau diese Route wird benutzt, wenn ein Konto uebernommen
         # wurde. Gleiche Behandlung wie in der Selbstbedienungs-Route
         # PUT /api/auth/change-password.
+        # BEHOBEN 03.10.2026 (Pruefung "Konto ohne Gemeinde"): Fuer ein Konto
+        # ohne Gemeinde (organization_id NULL) traf das UPDATE mit
+        # `organization_id = $3` keine Zeile -- die Route meldete 200
+        # "erfolgreich", widerrief die Sitzungen und schickte die Mail, das
+        # Passwort blieb das alte. Jetzt IS NOT DISTINCT FROM und Pruefung
+        # von rowCount (0 Zeilen -> 404, sonst nichts).
+        # Tests: backend/tests/routes/kontoOhneGemeinde.test.js.
 
   # ==========================================================================
   # ALIAS-MOUNT /api/admin/users (backend/createApp.js)

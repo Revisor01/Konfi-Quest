@@ -149,6 +149,10 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     }
   });
 
+  // Support-Konten ohne Gemeinde (nur Super-Admins, routes/supportKonten.js).
+  // MUSS vor /:id stehen, sonst faengt /:id den Pfad.
+  router.use('/support-konten', require('./supportKonten')(db, rbacVerifier, { requireSuperAdmin }));
+
   // Get current organization details (muss VOR /:id stehen, sonst wird "current" als ID gefangen)
   // requireTeamer wie bei GET /:id: Die Route liefert o.* der eigenen
   // Organisation und damit dieselben Kontakt-, Lizenz- und Trial-Daten.
@@ -1282,6 +1286,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
       // is_primary kennzeichnet die Primaer-Org (kann hier nicht entfernt werden).
       // Bei Doppelung (User primaer UND Mapping) gewinnt der Primaer-Eintrag
       // (is_primary=true) per DISTINCT ON + ORDER.
+      // COALESCE (03.10.2026): Bei einem Konto ohne Gemeinde ergab der
+      // Vergleich NULL statt false -- is_primary ist ein Boolean (Vertrag).
       const { rows } = await db.query(`
         SELECT DISTINCT ON (m.id)
                m.id, m.username, m.display_name, m.email,
@@ -1296,7 +1302,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
           UNION ALL
           SELECT u.id, u.username, u.display_name, u.email,
                  r.name as role_name, r.display_name as role_display_name,
-                 (u.organization_id = uo.organization_id) as is_primary, uo.created_at
+                 COALESCE(u.organization_id = uo.organization_id, false) as is_primary, uo.created_at
           FROM user_organizations uo
           JOIN users u ON uo.user_id = u.id AND u.is_active = true
           JOIN roles r ON uo.role_id = r.id

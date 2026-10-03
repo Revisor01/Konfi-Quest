@@ -1088,6 +1088,15 @@ paths:
           folgenlos, weil ein org_admin mit Flag ohnehin über role_name
           durchkommt. Die Rolle super_admin selbst hat keine
           organization_id, erhält hier also ein leeres Array.
+          SYSTEMROLLE (Migration 190, 03.10.2026): Die gemeindefreie Rolle
+          super_admin (organization_id NULL, eindeutig per
+          uq_roles_name_ohne_gemeinde) steht in keiner Liste einer Gemeinde
+          -- die Abfrage filtert auf r.organization_id -- und laesst sich dort
+          nicht vergeben: POST und PUT /users mit ihrer role_id enden in
+          checkUserHierarchy mit 403 (canCreateRole kennt super_admin fuer
+          niemanden als vergebbares Ziel), POST /organizations/{id}/members
+          lehnt role_name super_admin mit 400 ab
+          (backend/tests/routes/kontoOhneGemeinde.test.js).
     # Hinweis: Es gibt bewusst KEINE Schreib-Routen. Rollen sind 5 hardcodete
     # Systemrollen, die beim Anlegen einer Organisation erzeugt werden
     # (organizations.js POST /); Permissions sind statisch pro Rollenname.
