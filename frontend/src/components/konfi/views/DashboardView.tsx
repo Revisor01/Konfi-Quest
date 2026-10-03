@@ -33,6 +33,9 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { istVergangen } from '../../shared';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import { startEvent } from '../../../utils/webStart';
+import WebKonfiStart from '../web/WebKonfiStart';
 
 interface DashboardData {
   konfi: {
@@ -179,6 +182,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   sectionOrder
 }) => {
   const router = useIonRouter();
+  // Im breiten Browserfenster zeigt die Seite die Web-Fassung (web/WebKonfiStart);
+  // geladen und gerechnet wird hier wie in der App.
+  const breit = useBreitesLayout();
   const { setError } = useApp();
   const [actualDailyVerse, setActualDailyVerse] = useState<DailyVerse | null>(null);
   const [loadingVerse, setLoadingVerse] = useState(true);
@@ -379,6 +385,78 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       cssClass: 'badge-detail-popover'
     });
   };
+
+  // Web-Fassung (Browser ab 992 px): dieselben Daten und Handgriffe, ein Raster
+  // aus Karten statt der Farbverläufe. Alle Hooks sind oben schon gelaufen.
+  if (breit) {
+    const verse = actualDailyVerse;
+    const losungTexte = (() => {
+      if (!verse || loadingVerse || !(verse.losungstext || verse.lehrtext)) return null;
+      const hatLosung = verse.losungstext;
+      const hatLehrtext = verse.lehrtext;
+      if (hatLosung && hatLehrtext) {
+        return showLosung
+          ? { text: verse.losungstext, quelle: verse.losungsvers }
+          : { text: verse.lehrtext, quelle: verse.lehrtextvers };
+      }
+      return hatLosung
+        ? { text: verse.losungstext, quelle: verse.losungsvers }
+        : { text: verse.lehrtext || verse.text || '', quelle: verse.lehrtextvers || verse.reference || '' };
+    })();
+    return (
+      <WebKonfiStart
+        konfi={dashboardData.konfi}
+        punkte={{
+          gesamt: totalCurrentPoints,
+          gottesdienst: gottesdienstPoints,
+          gemeinde: gemeindePoints,
+          zielGottesdienst: targetGottesdienst,
+          zielGemeinde: targetGemeinde,
+          gottesdienstAktiv: gottesdienstEnabled,
+          gemeindeAktiv: gemeindeEnabled,
+        }}
+        levelInfo={dashboardData.level_info}
+        rang={{
+          platz: dashboardData.rank_in_jahrgang || 0,
+          gesamt: dashboardData.total_in_jahrgang || 0,
+          ranking: dashboardData.ranking || [],
+        }}
+        konfirmation={(dashboardData.days_to_confirmation !== null && dashboardData.days_to_confirmation !== undefined) || nextConfirmationEvent
+          ? {
+            tage: dashboardData.days_to_confirmation ?? null,
+            zeitBis: nextConfirmationEvent ? formatTimeUntil(nextConfirmationEvent.event_date || nextConfirmationEvent.date) : null,
+            beginn: nextConfirmationEvent ? (nextConfirmationEvent.event_date || nextConfirmationEvent.date || null) : null,
+            ort: dashboardData.konfi.confirmation_location || nextConfirmationEvent?.location || null,
+          }
+          : null}
+        events={myRegisteredEvents.filter((e) => !isKonfirmation(e)).slice(0, 5).map((e) => startEvent(e))}
+        challenges={activeChallenges}
+        konfispruch={dashboardData.konfspruch ?? null}
+        konfispruchSichtbar={dashboardData.konfspruch_visible === true}
+        losung={losungTexte ? { ...losungTexte, uebersetzung: getTranslationName(selectedTranslation) } : null}
+        alleBadges={[...allBadges.earned, ...allBadges.available.filter((b: ApiBadge) => !earnedIds.has(b.id))]}
+        erreichteIds={earnedIds}
+        neueIds={recentBadgeIds}
+        badgeZahlen={{
+          erreicht: badgeStats.totalEarned,
+          gesamt: badgeStats.totalAvailable,
+          geheimErreicht: badgeStats.secretEarned,
+          geheimGesamt: badgeStats.secretAvailable,
+        }}
+        config={{
+          show_konfirmation: dashboardConfig?.show_konfirmation !== false,
+          show_events: dashboardConfig?.show_events !== false,
+          show_losung: dashboardConfig?.show_losung !== false,
+          show_badges: dashboardConfig?.show_badges !== false,
+          show_ranking: dashboardConfig?.show_ranking !== false,
+          show_challenges: dashboardConfig?.show_challenges !== false,
+        }}
+        sectionOrder={sectionOrder || DEFAULT_KONFI_ORDER}
+        onUebersetzung={() => presentBibleModal()}
+        onKonfispruch={onOpenKonfispruch}
+      />
+    );
+  }
 
   return (
     <div style={{ padding: 'var(--app-abstand-basis)' }}>

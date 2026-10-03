@@ -35,6 +35,12 @@ import { TrialBanner, StoreUpdateBanner, istVergangen } from '../../shared';
 import WartungsHinweis from '../../shared/WartungsHinweis';
 import { track } from '../../../services/analytics';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import { getFirstName, getGreeting } from '../views/DashboardSections';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import { WebFehler, WebLaden } from '../../web/WebZustaende';
+import { WebRueckblickHinweis } from '../web/WebStartKarten';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -114,6 +120,8 @@ const KonfiDashboardPage: React.FC = () => {
   const { user } = useApp();
   const router = useIonRouter();
   const pageRef = useRef<HTMLElement>(null);
+  // Browser ab 992 px: die Web-Fassung (web/WebKonfiStart); sonst die App.
+  const breit = useBreitesLayout();
 
   // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
   // des Dashboards überhaupt? Je Sitzung wird jede Marke NUR EINMAL gemeldet
@@ -335,6 +343,16 @@ const KonfiDashboardPage: React.FC = () => {
   // Deshalb haelt die Seite ueber ALLE drei Zustaende (laedt / kein Ergebnis /
   // Daten da) EINE einzige IonPage. Die Leitungsseiten machen das schon immer
   // so -- deshalb war die Leitung als einzige Rolle nicht betroffen.
+  if (breit && (loading || !dashboardData)) {
+    return (
+      <WebSeite bereich="Start" titel="Konfi Quest" pageRef={pageRef} wartung>
+        {loading
+          ? <WebLaden kacheln={0} karten={4} text="Deine Startseite wird geladen." />
+          : <WebFehler text="Deine Startseite konnte nicht geladen werden." onErneut={() => { void refreshDashboard(); }} />}
+      </WebSeite>
+    );
+  }
+
   if (loading || !dashboardData) {
     return (
       <IonPage ref={pageRef}>
@@ -385,6 +403,67 @@ const KonfiDashboardPage: React.FC = () => {
     ...dashboardData,
     konfspruch: konfiProfile?.konfspruch ?? null
   };
+
+  if (breit) {
+    return (
+      <WebSeite
+        bereich="Start"
+        titel={getGreeting(getFirstName(dashboardData.konfi.display_name))}
+        untertitel={dashboardData.konfi.jahrgang_name}
+        aktionen={<WebKnopf onClick={openPointsHistory}>Punkte-Übersicht</WebKnopf>}
+        pageRef={pageRef}
+        wartung
+      >
+        {/* Hinweise: Testphase, Neuerungen, Rückblick -- dieselben Bausteine und Schalter wie in der App. */}
+        <div className="web-start-hinweise">
+          <TrialBanner style={{ margin: 0 }} />
+          <StoreUpdateBanner style={{ margin: 0 }} />
+          <NeuerungenBanner
+            style={{ margin: 0 }}
+            updateSichtbar={showUpdateHinweis}
+            mitmachenSichtbar={showMitmachenHinweis}
+            onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+            onUpdateAusblenden={markUpdateHinweisGesehen}
+            onMitmachenOeffnen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+            onMitmachenAusblenden={markMitmachenHinweisGesehen}
+          />
+          {dashboardData.has_wrapped && !wrappedHinweisWeg && (
+            <WebRueckblickHinweis
+              titel={dashboardData.wrapped_titel || 'Dein Jahresrückblick ist da!'}
+              text={dashboardData.wrapped_titel ? 'Dein Rückblick - bis jetzt!' : 'Schau ihn dir an'}
+              onOeffnen={openWrapped}
+              onAusblenden={wrappedHinweisAusblenden}
+            />
+          )}
+        </div>
+
+        <DashboardView
+          dashboardData={dashboardDataWithKonfspruch}
+          badgeStats={badgeStats}
+          allBadges={allBadges}
+          upcomingEvents={upcomingEvents || []}
+          targetGottesdienst={targetGottesdienst}
+          targetGemeinde={targetGemeinde}
+          gottesdienstEnabled={gottesdienstEnabled}
+          gemeindeEnabled={gemeindeEnabled}
+          onOpenPointsHistory={openPointsHistory}
+          onOpenKonfispruch={openKonfispruch}
+          dashboardConfig={dashboardConfig}
+          sectionOrder={sectionOrder}
+        />
+
+        {showOnboarding && (
+          <KonfiOnboardingModal
+            onClose={closeOnboarding}
+            displayName={(user?.display_name || '').split(' ')[0]}
+          />
+        )}
+        {showNeuerungen && <KonfiUpdate230WalkthroughModal onClose={schliesseNeuerungen} />}
+        {showUpdateWalkthrough && <KonfiUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
+        {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="konfi" onClose={() => setShowMitmachenErklaerung(false)} />}
+      </WebSeite>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

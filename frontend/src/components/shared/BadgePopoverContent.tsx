@@ -91,7 +91,7 @@ export const getBadgeColor = (badge: BadgePopoverBadge): string => {
  * Erklaert bei zeitbasierten Abzeichen und Serien, in welchem Zeitraum der
  * Fortschritt zaehlt — sonst wirkt es willkuerlich, dass er wieder sinkt.
  */
-const getTimeWindowHint = (badge: BadgePopoverBadge): string | null => {
+export const getTimeWindowHint = (badge: BadgePopoverBadge): string | null => {
   const fmt = (d: Date) => datumKurz(d, { ohneJahr: true });
 
   if (badge.criteria_type === 'time_based') {
