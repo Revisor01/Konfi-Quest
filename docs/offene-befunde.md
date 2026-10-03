@@ -59,14 +59,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   Gemeindeleitung betreut, fehlt im Abschnitt „Gemeindeleitung" — in
   Produktion hat Organisation 2 ihre ganze Leitung nur dort (gemessen
   25.09.2026). Gefunden 02.10.2026.
-- **Rollenfarbe auch in Termin-Teilnehmern, Chat-Nachrichten und
-  Chat-Übersicht?** Seit 02.10.2026 tragen alle Personenlisten die drei
-  Rollenfarben. Bewusst nicht umgestellt, weil die Farbe dort etwas anderes
-  sagt: die Teilnehmerliste eines Termins färbt nach Stand der Teilnahme
-  (`frontend/src/utils/teilnahmeStatus.ts`), Absenderkreis und Name in der
-  Nachricht tragen die Chat-Farbe, die Chat-Übersicht färbt nach Raumtyp
-  (Direktchat mit dem Team: Beere). Entscheidung bei Simon; Empfehlung:
-  so lassen, im Termin höchstens das Rollenwort in der Rollenfarbe.
 - **Punktart steht nicht am Beleg.** Seit Migration 163 speichert
   `user_activities` den Punktwert zum Zeitpunkt der Vergabe, die Art
   (Gottesdienst/Gemeinde) aber nicht. Ändert die Leitung die Art einer
@@ -200,51 +192,14 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Release
 
-- **Store-Release 2.3.0 freigeben lassen.** Eingereicht am 02.10.2026
-  (Merge-Commit `dac246eb`, Tag `2.3.0`): Android versionCode 134 in
-  Produktion gestaffelt mit 10 %, iOS-Build 240 in App Store Connect. Offen:
-  die Prüfung beider Stores abwarten, danach den Android-Anteil in der Play
-  Console auf 100 % heben. Beim lokalen Agenten:
-  [auftraege/lokaler-agent/13-store-freigabe-2.3.0.md](auftraege/lokaler-agent/13-store-freigabe-2.3.0.md);
-  Ablauf: [betrieb/release.md](betrieb/release.md).
+- **Store-Release 2.3.0: Freigabe bei Apple abwarten.** Android 2.3.0 (134)
+  steht seit 03.10.2026 in Produktion bei 100 %, Tag `2.3.0` liegt auf
+  `dac246eb`. iOS-Build 240 ist am 02.10.2026 eingereicht und wartet auf die
+  Prüfung; nach der Freigabe erscheint er automatisch (wie 2.2.0). Ergebnis
+  des lokalen Agenten:
+  [auftraege/lokaler-agent/13-store-freigabe-2.3.0.md](auftraege/lokaler-agent/13-store-freigabe-2.3.0.md).
 
 ## Bei Simon zu entscheiden
-
-- **Biometrie einschalten hat keinen Aufrufer mehr.** Am Code geprüft
-  03.10.2026. Was die App heute mit Face ID, Touch ID oder Fingerabdruck
-  anbietet, ist die App-Sperre: Profil → „Konto-Einstellungen" → „App
-  sperren" in allen drei Rollen (`AppSperreSchalter`), entsperrt wird per
-  `verifyIdentity` ohne jeden Token (`frontend/src/services/appSperre.ts`).
-  Die biometrische *Anmeldung* auf der Anmeldeseite lässt sich dagegen
-  nirgends einschalten: `biometrieAktivieren` und `biometrieAusschalten`
-  (`frontend/src/services/biometrics.ts`) ruft nur noch ein Test. Der
-  Schalter stand nur vom 26. bis 27.08.2026 in den Profilen (iOS-Build 148,
-  Android versionCode 80 — dort meldete er „nicht verfügbar"); die
-  Komponente ist mit #217 gelöscht. Wo er auf Build 148 eingeschaltet
-  wurde, liegt der Anmeldeschlüssel nur im Schlüsselbund des Geräts: Läuft
-  die kurze Anmeldung ab, landet man auf der Anmeldeseite und kommt über
-  „Mit Face ID anmelden" wieder hinein. Abschalten geht nur durch Abmelden;
-  90 Tage nach dem Einschalten verfällt die gespeicherte Anmeldung, die App
-  räumt sie selbst ab, einmal Passwort — wer gleich auf 2.1.0 (29.08.2026)
-  aktualisiert hat, ist Ende November 2026 durch. Wie viele Geräte das
-  betrifft, misst nichts. Das Handbuch nennt den Knopf auf der Anmeldeseite
-  und die Anmeldung mit Face ID (`docs/handbuch/35-passwoerter.md`), sagt
-  aber nicht, wie man sie einschaltet — es geht nicht. Schalter zurückholen
-  (dann zwei Face-ID-Einträge im Profil) oder Einschalten und Ausschalten
-  entfernen und den Anmeldeweg ab Dezember 2026 abbauen (wer dann noch
-  daran hängt, gibt einmal das Passwort ein)? Empfehlung: entfernen, die
-  App-Sperre deckt „Face ID beim Öffnen" ab. Gefunden 02.10.2026.
-- **Support-Gast aus der Gemeinde nehmen.** Einen Support-Gast (Punkt 14 in
-  [planung/web-version.md](planung/web-version.md)) kann nur ein Super-Admin
-  wieder aus einer Gemeinde nehmen; die Gemeindeleitung bekommt 403, wie bei
-  jedem Super-Admin-Konto. Soll sie ihn selbst entfernen dürfen (es endete nur
-  die Mitgliedschaft, das Konto bliebe)? Empfehlung: ja — wer den Gast sieht,
-  sollte auch „danke, fertig" sagen können. Gefunden 03.10.2026.
-- **Ersteinrichtung mit Support-Konto.** `scripts/ersteinrichtung.js` legt auf
-  einer neuen Instanz eine Gemeinde „Betrieb" und eine Gemeindeleitung mit
-  Super-Admin-Merkmal an. Seit Migration 190 ginge ein Support-Konto ohne
-  Gemeinde. Umstellen? Empfehlung: ja, sonst steht die Betriebs-Gemeinde in
-  jeder Gemeindeliste und Statistik. Gefunden 03.10.2026.
 
 - **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
   `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
@@ -296,6 +251,12 @@ Stand: 02.10.2026, gegen den Code geprüft.
 - **Version 2.4.0** — „darf freigeben",
   Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
+- **Support-Gast und Ersteinrichtung** (Simon, 03.10.2026: beides „ja") —
+  die Gemeindeleitung darf einen Support-Gast selbst aus ihrer Gemeinde
+  nehmen (es endet nur die Mitgliedschaft); `scripts/ersteinrichtung.js`
+  legt auf einer neuen Instanz ein Support-Konto ohne Gemeinde an statt der
+  Gemeinde „Betrieb" („wird aber nie vorkommen"). Kommt mit der
+  Web-Version.
 - **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
   Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
   Homepage, Gemeinde zuerst mit Zuordnung zu Kirchenkreis und Landeskirche:
