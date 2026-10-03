@@ -6,6 +6,7 @@
 // eine Ordnerliste. Jeder Aufruf wird mitgeschrieben; Methoden, die etwas
 // am Postfach aendern wuerden (Flags setzen, verschieben, loeschen), stehen
 // zusaetzlich in `aenderungen` -- die Tests verlangen dort eine leere Liste.
+// `quelltextFuer` nennt die UIDs, deren Quelltext angefordert wurde.
 //
 // Dazu rohmail(): eine echte Mail als Quelltext (nodemailer MailComposer),
 // wie sie aus dem Postfach kaeme.
@@ -41,6 +42,21 @@ function imapAttrappe(postfach = {}) {
   const aufrufe = [];
   const aenderungen = [];
   const optionen = [];
+  // UIDs, deren Quelltext angefordert wurde (fetch oder fetchOne mit source).
+  const quelltextFuer = [];
+
+  /** Antwort des Servers auf eine FETCH-Abfrage fuer eine Nachricht. */
+  const antwort = (n, query = {}) => {
+    if (query.source) quelltextFuer.push(n.uid);
+    return {
+      uid: n.uid,
+      ...(query.source ? { source: Buffer.from(n.source) } : {}),
+      ...(query.internalDate ? { internalDate: n.internalDate || new Date() } : {}),
+      ...(query.size ? { size: n.size ?? Buffer.byteLength(n.source) } : {}),
+      ...(query.envelope ? { envelope: n.envelope || {} } : {}),
+      ...(query.bodyStructure ? { bodyStructure: n.bodyStructure || { type: 'text/plain' } } : {}),
+    };
+  };
 
   const fabrik = (opt) => {
     optionen.push(opt);
@@ -73,13 +89,15 @@ function imapAttrappe(postfach = {}) {
         const sortiert = [...zustand.nachrichten].sort((x, y) => x.uid - y.uid);
         for (const n of sortiert) {
           if (opts && opts.uid ? imBereich(bereich, n.uid, hoechste) : (bereich === '*' && n.uid === hoechste)) {
-            yield {
-              uid: n.uid,
-              ...(query && query.source ? { source: Buffer.from(n.source) } : {}),
-              ...(query && query.internalDate ? { internalDate: n.internalDate || new Date() } : {}),
-            };
+            yield antwort(n, query);
           }
         }
+      },
+      async fetchOne(uid, query, opts) {
+        merke('fetchOne', uid, query, opts);
+        const n = zustand.nachrichten.find((x) => String(x.uid) === String(uid));
+        if (!n) return false;
+        return antwort(n, query);
       },
       async list() {
         merke('list');
@@ -118,9 +136,14 @@ function imapAttrappe(postfach = {}) {
     aenderungen,
     optionen,
     zustand,
-    /** Neue Mail ins Postfach legen. */
-    einwerfen(uid, source, internalDate = new Date()) {
-      zustand.nachrichten.push({ uid, source, internalDate });
+    quelltextFuer,
+    /**
+     * Neue Mail ins Postfach legen. `extra` setzt, was der Server ohne
+     * Quelltext meldet: size (sonst die Laenge des Quelltexts), envelope,
+     * bodyStructure.
+     */
+    einwerfen(uid, source, internalDate = new Date(), extra = {}) {
+      zustand.nachrichten.push({ uid, source, internalDate, ...extra });
     },
     /** Namen der Aufrufe, in der Reihenfolge. */
     namen: () => aufrufe.map((a) => a[0]),

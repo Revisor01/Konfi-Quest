@@ -7,6 +7,9 @@
 // BODY.PEEK[] geholt -- nichts wird geloescht, verschoben oder als gelesen
 // markiert. Das Mailprogramm bleibt, wie es ist.
 //
+// GROESSE: Je UID zuerst nur Groesse, Umschlag und Aufbau; den Quelltext nur
+// bis MAX_MAIL_GROESSE (10 MB), darueber ein Eintrag ohne Text (siehe unten).
+//
 // AB EINRICHTUNG: Der erste Lauf (und jeder Wechsel der UIDVALIDITY) setzt
 // nur den Stand auf die letzte vorhandene UID; der Altbestand bleibt im
 // Postfach. Danach kommt jede neue Mail dazu, hoechstens MAX_JE_LAUF je Lauf
@@ -30,12 +33,23 @@
 
 const { ImapFlow } = require('imapflow');
 const { allePostfaecher, imapOptionen } = require('../utils/mailPostfaecher');
-const { mailZerlegen } = require('../utils/mailNachrichten');
+const { mailZerlegen, mailAusKopf } = require('../utils/mailNachrichten');
 const { mailZuordnen } = require('../utils/mailZuordnung');
 const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 const MAX_JE_LAUF = 200;
 const FEHLER_MAX = 300;
+
+// GROSSE MAILS (Pruefung beim Zusammenfuehren, 03.10.2026): Die Backends
+// haben 512 MB Speicher. Der Quelltext einer Mail liegt beim Zerlegen ganz
+// im Speicher, mailparser haelt die Anhaenge dazu -- eine Mail mit 40-MB-PDF
+// gefaehrdet die Replica. Deshalb werden je UID zuerst nur Groesse, Umschlag
+// (ENVELOPE) und Aufbau (BODYSTRUCTURE) geholt; den Quelltext gibt es nur bis
+// zu dieser Grenze. Darueber entsteht der Eintrag aus Umschlag und Aufbau
+// (ohne References) mit einem Hinweis statt des Textes
+// (utils/mailNachrichten.js, mailAusKopf).
+const MAX_MAIL_GROESSE = 10 * 1024 * 1024;
+const KOPF_ABFRAGE = Object.freeze({ uid: true, size: true, internalDate: true, envelope: true, bodyStructure: true });
 
 /** Netzfehler, die ohne Meldungstext genug sagen. */
 const NETZ_CODES = new Set([
@@ -137,12 +151,16 @@ async function uidFortschreiben(db, postfach, uid) {
  * @param {(optionen: object) => object} [opt.imapFabrik]
  * @param {object} [opt.env]
  * @param {number} [opt.maxJeLauf]
+ * @param {number} [opt.maxMailGroesse]  Grenze fuer den Quelltext (Bytes)
  * @returns {Promise<{postfach: string, erstlauf: boolean, neu: number, doppelt: number,
- *   eigene: number, unlesbar: number, fehler: string|null}>}
+ *   eigene: number, unlesbar: number, zuGross: number, fehler: string|null}>}
+ *   zuGross: davon ohne Quelltext uebernommen (ueber maxMailGroesse)
  */
-async function postfachAbholen(db, konfig, { imapFabrik = standardImapFabrik, env = process.env, maxJeLauf = MAX_JE_LAUF } = {}) {
+async function postfachAbholen(db, konfig, {
+  imapFabrik = standardImapFabrik, env = process.env, maxJeLauf = MAX_JE_LAUF, maxMailGroesse = MAX_MAIL_GROESSE,
+} = {}) {
   const { postfach } = konfig;
-  const ergebnis = { postfach, erstlauf: false, neu: 0, doppelt: 0, eigene: 0, unlesbar: 0, fehler: null };
+  const ergebnis = { postfach, erstlauf: false, neu: 0, doppelt: 0, eigene: 0, unlesbar: 0, zuGross: 0, fehler: null };
   const { rows: [vorher] } = await db.query(
     'SELECT uidvalidity, letzte_uid, fehler FROM mail_abholstand WHERE postfach = $1', [postfach]);
 
@@ -190,16 +208,36 @@ async function postfachAbholen(db, konfig, { imapFabrik = standardImapFabrik, en
     }
     const bereich = `${von}:${bis === null ? '*' : bis}`;
 
-    for await (const msg of client.fetch(bereich, { uid: true, source: true, internalDate: true }, { uid: true })) {
+    // Erst nur die Kopfdaten des Fensters (Groesse, Umschlag, Aufbau) --
+    // kein Quelltext. Gesammelt, bevor weitere Befehle laufen: Waehrend
+    // fetch() liest, darf auf derselben Verbindung nichts anderes laufen.
+    const koepfe = [];
+    for await (const msg of client.fetch(bereich, KOPF_ABFRAGE, { uid: true })) {
       // "*" trifft die hoechste vorhandene UID, auch wenn sie alt ist.
       if (!Number.isInteger(msg.uid) || msg.uid <= letzte || (bis !== null && msg.uid > bis)) continue;
-      const uid = msg.uid;
+      koepfe.push(msg);
+    }
+    koepfe.sort((a, b) => a.uid - b.uid);
+
+    for (const kopf of koepfe) {
+      const uid = kopf.uid;
+      const ersatzId = `<kq-ersatz-${postfach}-${uidValidity}-${uid}@konfi-quest.de>`;
       let mail;
       try {
-        mail = await mailZerlegen(msg.source, {
-          ersatzId: `<kq-ersatz-${postfach}-${uidValidity}-${uid}@konfi-quest.de>`,
-          eingang: msg.internalDate || null,
-        });
+        if (Number.isFinite(kopf.size) && kopf.size <= maxMailGroesse) {
+          // Bis zur Grenze: der ganze Quelltext, zerlegt mit mailparser.
+          const voll = await client.fetchOne(String(uid), { uid: true, source: true }, { uid: true });
+          if (!voll || !voll.source) {
+            // Inzwischen im Postfach geloescht: nichts zu uebernehmen.
+            await uidFortschreiben(db, postfach, uid);
+            continue;
+          }
+          mail = await mailZerlegen(voll.source, { ersatzId, eingang: kopf.internalDate || null });
+        } else {
+          // Darueber: kein Quelltext (Speicher), nur Umschlag und Aufbau.
+          mail = mailAusKopf(kopf, { ersatzId, eingang: kopf.internalDate || null });
+          ergebnis.zuGross += 1;
+        }
       } catch (err) {
         ergebnis.unlesbar += 1;
         console.error(`Mail-Abholung (${postfach}): Mail UID ${uid} nicht lesbar, uebersprungen (${fehlerText(err)})`);
@@ -230,7 +268,7 @@ async function postfachAbholen(db, konfig, { imapFabrik = standardImapFabrik, en
         WHERE postfach = $1`, [postfach, bis]);
     if (ergebnis.neu + ergebnis.doppelt + ergebnis.eigene + ergebnis.unlesbar > 0) {
       console.log(`Mail-Abholung (${postfach}): ${ergebnis.neu} neu, ${ergebnis.doppelt} schon vorhanden, `
-        + `${ergebnis.eigene} eigene, ${ergebnis.unlesbar} nicht lesbar`);
+        + `${ergebnis.eigene} eigene, ${ergebnis.unlesbar} nicht lesbar, ${ergebnis.zuGross} zu gross (ohne Text)`);
     }
     return ergebnis;
   } catch (err) {
@@ -268,6 +306,8 @@ async function alleAbholen(db, { env = process.env, ...opt } = {}) {
 
 module.exports = {
   MAX_JE_LAUF,
+  MAX_MAIL_GROESSE,
+  KOPF_ABFRAGE,
   fehlerText,
   standardImapFabrik,
   abmelden,

@@ -18698,7 +18698,7 @@
           },
           "text": {
             "type": "string",
-            "description": "Klartext; bei ausgehenden samt Fusszeile, wie gesendet"
+            "description": "Klartext; bei ausgehenden samt Fusszeile, wie gesendet. Eingehende ueber 10 MB werden ohne Quelltext uebernommen (Speichergrenze der Backends): dann steht hier 'Diese Mail ist zu groß für die Übernahme (X MB). Bitte im Mailprogramm ansehen.', referenzen ist leer, Absender, Empfaenger, Betreff, Message-ID und In-Reply-To kommen aus dem IMAP-Umschlag"
           },
           "anhaenge": {
             "type": "array",
@@ -18715,7 +18715,8 @@
                   "type": [
                     "integer",
                     "null"
-                  ]
+                  ],
+                  "description": "Bytes; bei Mails ueber 10 MB aus dem IMAP-Aufbau geschaetzt (base64: drei Viertel der kodierten Groesse)"
                 },
                 "typ": {
                   "type": [
