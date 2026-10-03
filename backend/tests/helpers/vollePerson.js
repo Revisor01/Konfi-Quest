@@ -299,6 +299,11 @@ async function legeVollePersonAn(db, P, { weitereGemeinde = true } = {}) {
   merke('mail_bausteine.bearbeitet_von', (await eins(
     `INSERT INTO mail_bausteine (titel, text, bearbeitet_von) VALUES ('Probe', 'Hallo {{name}}', $1) RETURNING id`,
     [P])).id);
+  // Support-Vorgang (Migration 195), den die Person als Support-Konto angelegt
+  // hat: Er bleibt, nur erstellt_von faellt.
+  merke('support_vorgaenge.erstellt_von', (await eins(
+    `INSERT INTO support_vorgaenge (art, betreff, quelle, erstellt_von) VALUES ('frage', 'Probe', 'support', $1) RETURNING id`,
+    [P])).id);
   merke('mail_einstellungen.bearbeitet_von', (await eins(
     `INSERT INTO mail_einstellungen (schluessel, wert, bearbeitet_von) VALUES ('absendername', 'Probe', $1)
      ON CONFLICT (schluessel) DO UPDATE SET bearbeitet_von = EXCLUDED.bearbeitet_von

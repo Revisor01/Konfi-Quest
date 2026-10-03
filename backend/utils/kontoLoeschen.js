@@ -142,6 +142,7 @@ const LOESCHREGELN = Object.freeze({
   'mail_nachrichten.verfasst_von': 'nullen',        // gesendete Antwort bleibt im Verlauf
   'materials.created_by': 'nullen',
   'org_einladungen.eingeladen_von': 'nullen',
+  'support_vorgaenge.erstellt_von': 'nullen',       // Vorgang bleibt (Migration 195); nur das Support-Konto, das ihn angelegt hat, faellt weg
   'user_activities.admin_id': 'nullen',
   'user_certificates.admin_id': 'nullen',
   'user_jahrgang_assignments.assigned_by': 'nullen',

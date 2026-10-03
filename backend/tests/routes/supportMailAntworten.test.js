@@ -85,6 +85,10 @@ describe('Support-Mail: Antworten', () => {
         f.referenzen || [], f.von_adresse || 'erika@buesum.example', f.betreff || 'Frage', f.gesendet_am || new Date('2026-10-01T10:00:00Z')]);
     return Number(id);
   };
+  /** Der Vorgang einer Anfrage bzw. der juengste einer Gemeinde (die Kennung im Betreff). */
+  const vorgangDerAnfrage = async (a) => Number((await db.query('SELECT id FROM support_vorgaenge WHERE anfrage_id = $1', [a])).rows[0].id);
+  const vorgangDerGemeinde = async (o) => Number((await db.query(
+    'SELECT id FROM support_vorgaenge WHERE organization_id = $1 ORDER BY id DESC LIMIT 1', [o])).rows[0].id);
   const anzahlMails = async () => (await db.query('SELECT COUNT(*)::int AS n FROM mail_nachrichten')).rows[0].n;
 
   /** Die gesendete Mail (n-te), zerlegt, samt Umschlag. */
@@ -119,7 +123,10 @@ describe('Support-Mail: Antworten', () => {
       expect(m.von).toEqual({ address: 'moin@konfi-quest.de', name: 'Konfi Quest' });
       expect(m.an).toEqual(['erika@buesum.example']);
       expect(m.antwortAn).toEqual(['moin@konfi-quest.de']);
-      expect(m.betreff).toBe(`Eure Anfrage für Kirchengemeinde Büsum [Anfrage ${a}]`);
+      // Seit den Vorgaengen: [Vorgang N] statt [Anfrage N] -- der Vorgang der Anfrage entsteht mit der ersten Antwort,
+      // wenn die Anfrage (wie hier) ohne ihn eingetragen wurde.
+      const v = await vorgangDerAnfrage(a);
+      expect(m.betreff).toBe(`Eure Anfrage für Kirchengemeinde Büsum [Vorgang ${v}]`);
       expect(m.messageId).toMatch(MESSAGE_ID);
       expect([m.inReplyTo, m.references]).toEqual([null, null]);
       expect(m.text).toBe(`Hallo Erika,\n\nwir richten euch ein.${FUSS}`);
@@ -129,7 +136,7 @@ describe('Support-Mail: Antworten', () => {
       })]);
 
       expect(res.body.nachricht).toMatchObject({
-        postfach: 'moin', richtung: 'aus', anfrage_id: a, organization_id: null, message_id: m.messageId,
+        postfach: 'moin', richtung: 'aus', anfrage_id: a, organization_id: null, vorgang_id: v, message_id: m.messageId,
         in_reply_to: null, referenzen: [], von_adresse: 'moin@konfi-quest.de', von_name: 'Konfi Quest',
         an_adressen: ['erika@buesum.example'], betreff: m.betreff, text: `Hallo Erika,\n\nwir richten euch ein.${FUSS}`,
         anhaenge: [], verfasst_von: USERS.orgAdminSuper.id, verfasst_von_name: 'Test Org-Admin Super',
@@ -154,7 +161,8 @@ describe('Support-Mail: Antworten', () => {
       const res = await post(`/api/support/anfragen/${a}/antworten`, { text: 'Gern!' });
       expect(res.status).toBe(201);
       const m = await gesendet();
-      expect(m.betreff).toBe(`Re: Testphase [Anfrage ${a}]`);
+      // Die alte Kennung der Mail, auf die geantwortet wird, weicht [Vorgang N].
+      expect(m.betreff).toBe(`Re: Testphase [Vorgang ${await vorgangDerAnfrage(a)}]`);
       expect(m.inReplyTo).toBe('<letzte@buesum.example>');
       expect(m.references).toEqual(['<wurzel@x>', '<kq-1@konfi-quest.de>', '<letzte@buesum.example>']);
       expect(res.body.nachricht).toMatchObject({
@@ -164,12 +172,15 @@ describe('Support-Mail: Antworten', () => {
       expect((await anfrageLesen(a)).status).toBe('in_arbeit');
     });
 
-    it('eigener Betreff: die Kennung kommt dazu, wenn sie fehlt; Status „abgelehnt“ bleibt', async () => {
+    it('eigener Betreff: die Kennung kommt dazu, wenn sie fehlt; eine alte Kennung weicht ihr; Status „abgelehnt“ bleibt', async () => {
       const a = await anfrageAnlegen({ status: 'abgelehnt' });
       await post(`/api/support/anfragen/${a}/antworten`, { text: 'x', betreff: 'Eure Zugangsdaten' });
-      await post(`/api/support/anfragen/${a}/antworten`, { text: 'x', betreff: `Schon drin [anfrage ${a}]` });
-      expect((await gesendet(0)).betreff).toBe(`Eure Zugangsdaten [Anfrage ${a}]`);
-      expect((await gesendet(1)).betreff).toBe(`Schon drin [anfrage ${a}]`);
+      const v = await vorgangDerAnfrage(a);
+      await post(`/api/support/anfragen/${a}/antworten`, { text: 'x', betreff: `Schon drin [vorgang ${v}]` });
+      await post(`/api/support/anfragen/${a}/antworten`, { text: 'x', betreff: `Altes Thema [Anfrage ${a}]` });
+      expect((await gesendet(0)).betreff).toBe(`Eure Zugangsdaten [Vorgang ${v}]`);
+      expect((await gesendet(1)).betreff).toBe(`Schon drin [vorgang ${v}]`);
+      expect((await gesendet(2)).betreff).toBe(`Altes Thema [Vorgang ${v}]`);
       expect((await anfrageLesen(a)).status).toBe('abgelehnt');
     });
 
@@ -275,16 +286,22 @@ describe('Support-Mail: Antworten', () => {
       await db.query("UPDATE users SET email = 'Leitung@Andere.example' WHERE id = $1", [USERS.orgAdmin2.id]);
     });
 
-    it('vom Postfach support an eine Gemeindeleitung, Standardbetreff „Konfi Quest – <Gemeinde> [Gemeinde N]“; gespeichert bei der Gemeinde', async () => {
+    it('vom Postfach support an eine Gemeindeleitung, Standardbetreff „Konfi Quest – <Gemeinde> [Vorgang N]“; gespeichert bei der Gemeinde und ihrem Vorgang', async () => {
       const res = await post('/api/support/gemeinden/2/antworten', { an: 'LEITUNG@andere.example', text: 'Hallo' });
       expect(res.status).toBe(201);
       const m = await gesendet();
       expect(m.umschlag).toEqual({ from: 'support@konfi-quest.de', to: ['leitung@andere.example'] });
       expect(m.von).toEqual({ address: 'support@konfi-quest.de', name: 'Konfi Quest' });
       expect(m.antwortAn).toEqual(['support@konfi-quest.de']);
-      expect(m.betreff).toBe('Konfi Quest – Andere Gemeinde [Gemeinde 2]');
+      // Ohne offenen Vorgang der Gemeinde entsteht ein "Schriftwechsel".
+      const v = await vorgangDerGemeinde(2);
+      expect(m.betreff).toBe(`Konfi Quest – Andere Gemeinde [Vorgang ${v}]`);
       expect(transporte[0].auth).toEqual({ user: 'support-benutzer', pass: 'geheim-support' });
-      expect(res.body.nachricht).toMatchObject({ postfach: 'support', richtung: 'aus', anfrage_id: null, organization_id: 2, an_adressen: ['leitung@andere.example'] });
+      expect(res.body.nachricht).toMatchObject({
+        postfach: 'support', richtung: 'aus', anfrage_id: null, organization_id: 2, vorgang_id: v, an_adressen: ['leitung@andere.example'],
+      });
+      expect((await db.query('SELECT art, betreff, quelle, status, erstellt_von FROM support_vorgaenge WHERE id = $1', [v])).rows[0])
+        .toEqual({ art: 'sonstiges', betreff: 'Schriftwechsel', quelle: 'support', status: 'in_arbeit', erstellt_von: USERS.orgAdminSuper.id });
     });
 
     it('400, wenn die Adresse nicht unter den Empfängern steht -- nichts gesendet', async () => {
@@ -303,7 +320,7 @@ describe('Support-Mail: Antworten', () => {
       const res = await post('/api/support/gemeinden/2/antworten', { an: 'kuesterin@andere.example', text: 'Antwort' });
       expect(res.status).toBe(201);
       const m = await gesendet();
-      expect([m.betreff, m.inReplyTo]).toEqual(['Re: Frage zum Kalender [Gemeinde 2]', '<k1@andere.example>']);
+      expect([m.betreff, m.inReplyTo]).toEqual([`Re: Frage zum Kalender [Vorgang ${await vorgangDerGemeinde(2)}]`, '<k1@andere.example>']);
     });
 
     it('404 ohne Gemeinde', async () => {
@@ -332,7 +349,7 @@ describe('Support-Mail: Antworten', () => {
       const a = await anfrageAnlegen();
       const id = await mailEin({ anfrage_id: a, message_id: '<p2@x.example>', betreff: 'Frage' });
       const res = await post(`/api/support/mail/nachrichten/${id}/antworten`, { text: 'Danke' });
-      expect((await gesendet()).betreff).toBe(`Re: Frage [Anfrage ${a}]`);
+      expect((await gesendet()).betreff).toBe(`Re: Frage [Vorgang ${await vorgangDerAnfrage(a)}]`);
       expect(res.body.nachricht.anfrage_id).toBe(a);
       expect((await anfrageLesen(a)).status).toBe('in_arbeit');
     });

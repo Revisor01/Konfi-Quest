@@ -8,6 +8,14 @@
 // Merkmal, mit oder ohne Gemeinde); jede andere Rolle bekommt 403, ohne
 // Anmeldung 401.
 //
+// VORGAENGE (Migration 195, docs/planung/support-vorgaenge.md): Eine Mail
+// gehoert zu einem Vorgang (vorgang_id) oder liegt im Posteingang. Der
+// Posteingang kennt Archiv und Loeschen (nur dort; die Mails eines Vorgangs
+// gehen mit dem Vorgang) und das Einsortieren in einen bestehenden oder neuen
+// Vorgang. anfrage_id und organization_id an der Mail folgen dem Vorgang
+// (utils/supportVorgaenge.js); die alten Routen lesen sie weiter. Die Routen
+// der Vorgaenge selbst: routes/supportVorgaenge.js.
+//
 // Abholen: services/mailAbholung.js (Hintergrund, nur Cron-Leader).
 // Zuordnen eingehender Mails: utils/mailZuordnung.js (eine Stelle).
 // Versand: services/mailVersand.js.
@@ -28,6 +36,10 @@ const { lizenzText } = require('../utils/lizenzen');
 const { formatDatum } = require('../utils/zeitformat');
 const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 const { antwortSenden, VersandFehler, versandAufDiesemServer } = require('../services/mailVersand');
+const {
+  ARTEN, BEREICHE, DRINGLICHKEITEN, betreffAusMail, vorgangAnlegen, vorgangFuerAnfrage, vorgangFuerGemeinde,
+  mailsBinden,
+} = require('../utils/supportVorgaenge');
 
 const TEXT_MAX = 20000;
 const BETREFF_MAX = 300;
@@ -39,6 +51,8 @@ const GELESEN_MAX = 1000;
 // zugeordnete Mails bleiben 180 Tage; bei Werbung im Postfach "support"
 // koennen das viele werden.
 const EINGANG_MAX = 1000;
+// Sammelaktionen: so viele Mails auf einmal.
+const SAMMEL_MAX = 500;
 // Welche eingehenden Mails der Posteingang zeigt: nur die nicht zugeordneten
 // (Vorgabe, wie die App sie kennt) oder alle.
 const ZUORDNUNGEN = ['offen', 'alle'];
@@ -50,6 +64,11 @@ const MAIL_FEHLT = { error: 'Mail nicht gefunden' };
 const ANFRAGE_FEHLT = { error: 'Anfrage nicht gefunden' };
 const GEMEINDE_FEHLT = { error: 'Gemeinde nicht gefunden' };
 const BAUSTEIN_FEHLT = { error: 'Textbaustein nicht gefunden' };
+const VORGANG_FEHLT = { error: 'Vorgang nicht gefunden' };
+const NUR_POSTEINGANG = { error: 'Das geht nur für Mails im Posteingang. Mails eines Vorgangs gehen mit dem Vorgang.' };
+
+/** Eine Mail liegt im Posteingang: kein Vorgang, keine Anfrage, keine Gemeinde. */
+const IM_POSTEINGANG_SQL = 'm.vorgang_id IS NULL AND m.anfrage_id IS NULL AND m.organization_id IS NULL';
 
 const BAUSTEIN_SPALTEN = 'id, titel, betreff, text, postfach, sortierung, updated_at, bearbeitet_von';
 
@@ -182,24 +201,41 @@ module.exports = (db) => {
     }
   });
 
-  // GET /mail/zaehler -- ungelesene eingehende Mails.
+  // GET /mail/zaehler -- ungelesene eingehende Mails (nicht archivierte).
+  //   anfragen, gemeinden, je_anfrage, je_gemeinde: wie bisher, nach
+  //     anfrage_id bzw. organization_id der Mail (die alten Apps lesen sie);
+  //   eingang: im Posteingang -- ohne Vorgang, Anfrage und Gemeinde;
+  //   posteingang (Vorgaenge, additiv): dieselbe Zahl, die die Web-Ansicht
+  //     liest -- ungelesen, nicht einsortiert, nicht archiviert;
+  //   vorgaenge (additiv): nicht archivierte Vorgaenge mit Status "neu" oder
+  //     mit einer ungelesenen Mail. Interne Gemeinden zaehlen mit: Ihre
+  //     Vorgaenge stehen in der Liste, die Zahl muss zu ihr passen.
   router.get('/mail/zaehler', async (req, res) => {
     try {
-      const { rows } = await db.query(
-        `SELECT anfrage_id, organization_id, COUNT(*)::int AS n
-           FROM mail_nachrichten
-          WHERE richtung = 'ein' AND gelesen_am IS NULL
-          GROUP BY anfrage_id, organization_id`);
-      const ergebnis = { anfragen: 0, gemeinden: 0, eingang: 0, je_anfrage: {}, je_gemeinde: {} };
+      const [{ rows }, { rows: [vorgaenge] }] = await Promise.all([
+        db.query(
+          `SELECT anfrage_id, organization_id, (vorgang_id IS NOT NULL) AS im_vorgang, COUNT(*)::int AS n
+             FROM mail_nachrichten
+            WHERE richtung = 'ein' AND gelesen_am IS NULL AND archiviert_am IS NULL
+            GROUP BY anfrage_id, organization_id, (vorgang_id IS NOT NULL)`),
+        db.query(
+          `SELECT COUNT(*)::int AS n FROM support_vorgaenge v
+            WHERE v.archiviert_am IS NULL
+              AND (v.status = 'neu'
+                   OR EXISTS (SELECT 1 FROM mail_nachrichten m
+                               WHERE m.vorgang_id = v.id AND m.richtung = 'ein' AND m.gelesen_am IS NULL))`),
+      ]);
+      const ergebnis = { anfragen: 0, gemeinden: 0, eingang: 0, je_anfrage: {}, je_gemeinde: {}, vorgaenge: vorgaenge.n, posteingang: 0 };
       for (const r of rows) {
         if (r.anfrage_id !== null) {
           ergebnis.anfragen += r.n;
-          ergebnis.je_anfrage[r.anfrage_id] = r.n;
+          ergebnis.je_anfrage[r.anfrage_id] = (ergebnis.je_anfrage[r.anfrage_id] || 0) + r.n;
         } else if (r.organization_id !== null) {
           ergebnis.gemeinden += r.n;
-          ergebnis.je_gemeinde[r.organization_id] = r.n;
-        } else {
+          ergebnis.je_gemeinde[r.organization_id] = (ergebnis.je_gemeinde[r.organization_id] || 0) + r.n;
+        } else if (!r.im_vorgang) {
           ergebnis.eingang += r.n;
+          ergebnis.posteingang += r.n;
         }
       }
       res.json(ergebnis);
@@ -213,22 +249,25 @@ module.exports = (db) => {
   // POSTEINGANG UND MAILS
   // ==========================================================================
 
-  // GET /mail/eingang?postfach=&zuordnung= -- eingehende Mails, neueste
+  // GET /mail/eingang?postfach=&zuordnung=&archiv= -- eingehende Mails, neueste
   // zuerst (hoechstens EINGANG_MAX). zuordnung: `offen` (Vorgabe) nur die
-  // nicht zugeordneten -- der Posteingang der App --, `alle` auch die zu einer
-  // Anfrage oder Gemeinde (Posteingang der Web-Ansicht, 03.10.2026). Je Mail
-  // anfrage_id, organization_id und gemeinde_name (utils/mailNachrichten.js,
-  // ZUORDNUNG_SPALTEN). Nicht nach `intern` gefiltert.
+  // nicht zugeordneten -- der Posteingang: ohne Vorgang --, `alle` auch die zu
+  // einem Vorgang (Web-Ansicht). archiv=1: nur die archivierten (Archiv des
+  // Posteingangs); ohne: nur die nicht archivierten. Je Mail anfrage_id,
+  // organization_id, vorgang_id, archiviert_am und gemeinde_name
+  // (utils/mailNachrichten.js, ZUORDNUNG_SPALTEN). Nicht nach `intern`
+  // gefiltert.
   router.get('/mail/eingang', [
     query('postfach').optional().isIn(POSTFAECHER).withMessage(`postfach: ${POSTFAECHER.join(', ')}`),
     query('zuordnung').optional().isIn(ZUORDNUNGEN).withMessage(`zuordnung: ${ZUORDNUNGEN.join(', ')}`),
+    query('archiv').optional().isIn(['0', '1']).withMessage('archiv: 1 oder 0'),
     handleValidationErrors,
   ], async (req, res) => {
     try {
       const params = [EINGANG_MAX];
-      let filter = '';
+      let filter = req.query.archiv === '1' ? ' AND m.archiviert_am IS NOT NULL' : ' AND m.archiviert_am IS NULL';
       if (req.query.zuordnung !== 'alle') {
-        filter += ' AND m.anfrage_id IS NULL AND m.organization_id IS NULL';
+        filter += ` AND ${IM_POSTEINGANG_SQL}`;
       }
       if (req.query.postfach) {
         params.push(req.query.postfach);
@@ -236,7 +275,7 @@ module.exports = (db) => {
       }
       const { rows } = await db.query(
         `SELECT m.id, m.postfach, m.von_adresse, m.von_name, m.betreff, m.text, m.gesendet_am, m.gelesen_am, m.anhaenge,
-                ${ZUORDNUNG_SPALTEN}
+                m.vorgang_id, m.archiviert_am, ${ZUORDNUNG_SPALTEN}
            FROM mail_nachrichten m
            ${ZUORDNUNG_JOINS}
           WHERE m.richtung = 'ein'${filter}
@@ -255,6 +294,8 @@ module.exports = (db) => {
         anfrage_id: m.anfrage_id,
         organization_id: m.organization_id,
         gemeinde_name: m.gemeinde_name,
+        vorgang_id: m.vorgang_id,
+        archiviert_am: m.archiviert_am,
       })));
     } catch (err) {
       protokolliere('GET /support/mail/eingang', err);
@@ -297,8 +338,12 @@ module.exports = (db) => {
 
   // POST /mail/nachrichten/:id/zuordnen { anfrage_id } | { organization_id }
   // | {} -- der ganze Faden zur Anfrage, zur Gemeinde oder zurueck in den
-  // Posteingang. Zu einer Anfrage zaehlt das als Bewegung (updated_at).
-  // Antwort { anzahl, anfrage_id, organization_id, ids }.
+  // Posteingang (alte Route der Apps; die Web-Ansicht sortiert ueber
+  // /einsortieren in Vorgaenge). Seit den Vorgaengen: zu einer Anfrage in
+  // DEREN Vorgang, zu einer Gemeinde in den juengsten offenen Vorgang der
+  // Gemeinde (sonst ein neuer "Schriftwechsel"); anfrage_id und
+  // organization_id an der Mail bleiben gefuellt. Zu einer Anfrage zaehlt das
+  // als Bewegung. Antwort { anzahl, anfrage_id, organization_id, ids }.
   router.post('/mail/nachrichten/:id/zuordnen', [
     id,
     body('anfrage_id').optional({ values: 'null' }).isInt({ min: 1 }).withMessage('Ungültige Anfrage'),
@@ -318,12 +363,14 @@ module.exports = (db) => {
         await client.query('ROLLBACK');
         return res.status(404).json(MAIL_FEHLT);
       }
+      let vorgangId = null;
       if (anfrageId !== null) {
         const { rows } = await client.query('SELECT id FROM gemeinde_anfragen WHERE id = $1 FOR UPDATE', [anfrageId]);
         if (rows.length === 0) {
           await client.query('ROLLBACK');
           return res.status(404).json(ANFRAGE_FEHLT);
         }
+        vorgangId = await vorgangFuerAnfrage(client, anfrageId);
       }
       if (organizationId !== null) {
         const { rows } = await client.query('SELECT id FROM organizations WHERE id = $1', [organizationId]);
@@ -331,15 +378,11 @@ module.exports = (db) => {
           await client.query('ROLLBACK');
           return res.status(404).json(GEMEINDE_FEHLT);
         }
+        ({ id: vorgangId } = await vorgangFuerGemeinde(client, organizationId, { quelle: 'mail', erstelltVon: req.user.id }));
       }
-      const { rowCount } = await client.query(
-        'UPDATE mail_nachrichten SET anfrage_id = $2, organization_id = $3 WHERE id = ANY($1::bigint[])',
-        [ids, anfrageId, organizationId]);
-      if (anfrageId !== null) {
-        await client.query('UPDATE gemeinde_anfragen SET updated_at = NOW() WHERE id = $1', [anfrageId]);
-      }
+      const anzahl = await mailsBinden(client, ids, vorgangId);
       await client.query('COMMIT');
-      res.json({ anzahl: rowCount, anfrage_id: anfrageId, organization_id: organizationId, ids });
+      res.json({ anzahl, anfrage_id: anfrageId, organization_id: organizationId, ids });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       protokolliere('POST /support/mail/nachrichten/:id/zuordnen', err);
@@ -351,7 +394,9 @@ module.exports = (db) => {
 
   // POST /mail/nachrichten/:id/antworten { text, betreff? } -- Antwort auf
   // eine eingehende Mail an ihren Absender, vom selben Postfach. Die Antwort
-  // bekommt die Zuordnung der Mail (Posteingang bleibt Posteingang).
+  // bekommt die Zuordnung der Mail: Gehoert sie zu einem Vorgang, steht
+  // [Vorgang N] im Betreff und sie gehoert dazu; im Posteingang bleibt sie
+  // im Posteingang (ohne Kennung).
   router.post('/mail/nachrichten/:id/antworten', [id, textFeld, betreffFeld, handleValidationErrors], async (req, res) => {
     let gespeichert;
     try {
@@ -363,6 +408,13 @@ module.exports = (db) => {
       if (!mail.von_adresse) {
         return res.status(400).json({ error: 'Die Mail hat keinen Absender, an den die Antwort gehen könnte.' });
       }
+      // Eine Mail mit Anfrage oder Gemeinde, aber ohne Vorgang (ein aelterer
+      // Server-Stand legte sie noch so ab): ihr Vorgang wird nachgeholt.
+      let vorgangId = mail.vorgang_id === null ? null : Number(mail.vorgang_id);
+      if (vorgangId === null && mail.anfrage_id !== null) vorgangId = await vorgangFuerAnfrage(db, mail.anfrage_id);
+      if (vorgangId === null && mail.organization_id !== null) {
+        ({ id: vorgangId } = await vorgangFuerGemeinde(db, mail.organization_id, { quelle: 'mail' }));
+      }
       gespeichert = await antwortSenden(db, {
         postfach: mail.postfach,
         an: mail.von_adresse,
@@ -370,6 +422,7 @@ module.exports = (db) => {
         text: req.body.text,
         anfrageId: mail.anfrage_id,
         organizationId: mail.organization_id,
+        vorgangId,
         bezug: mail,
         standardBetreff: mail.betreff,
         verfasstVon: req.user.id,
@@ -378,6 +431,175 @@ module.exports = (db) => {
       return versandFehlerAntwort(res, 'POST /support/mail/nachrichten/:id/antworten', err);
     }
     res.status(201).json({ nachricht: gespeichert });
+  });
+
+  // ==========================================================================
+  // EINSORTIEREN, ARCHIVIEREN, LOESCHEN (Vorgaenge, Migration 195)
+  // ==========================================================================
+
+  // POST /mail/nachrichten/:id/einsortieren { vorgang_id } | { neu: { art,
+  // bereich?, dringlichkeit?, betreff?, organization_id? } }
+  //   -> { anzahl, vorgang_id, ids }
+  // Die Mail kommt in einen bestehenden Vorgang oder in einen neuen (Quelle
+  // 'mail', erstellt_von das Konto; Betreff: der der Mail ohne Re:/AW:).
+  // Liegt die Mail im Posteingang, geht ihr ganzer Faden mit -- soweit er noch
+  // im Posteingang liegt; eine Mail, die schon in einem Vorgang liegt, wird
+  // allein verschoben. Archiviert gewesene Mails sind danach nicht mehr
+  // archiviert. Der Vorgang gilt als bewegt.
+  router.post('/mail/nachrichten/:id/einsortieren', [
+    id,
+    body('vorgang_id').optional({ values: 'null' }).isInt({ min: 1 }).withMessage('Ungültiger Vorgang'),
+    body('neu').optional({ values: 'null' }).isObject().withMessage('neu: Objekt mit art'),
+    body('neu.art').if(body('neu').exists({ values: 'null' })).isIn(ARTEN).withMessage(`art: ${ARTEN.join(', ')}`),
+    body('neu.bereich').optional({ values: 'null' }).isIn(BEREICHE).withMessage(`bereich: ${BEREICHE.join(', ')} oder null`),
+    body('neu.dringlichkeit').optional().isIn(DRINGLICHKEITEN).withMessage(`dringlichkeit: ${DRINGLICHKEITEN.join(', ')}`),
+    body('neu.betreff').optional({ values: 'null' }).isString().withMessage('Text erwartet').bail()
+      .isLength({ max: 1000 }).withMessage('Höchstens 1000 Zeichen'),
+    body('neu.organization_id').optional({ values: 'null' }).isInt({ min: 1 }).withMessage('Ungültige Gemeinde'),
+    handleValidationErrors,
+  ], async (req, res) => {
+    const vorhanden = req.body.vorgang_id != null;
+    const neu = req.body.neu != null;
+    if (vorhanden === neu) {
+      return res.status(400).json({ error: 'Entweder vorgang_id oder neu angeben, nicht beides und nicht keins.' });
+    }
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+      const mail = await nachrichtLaden(client, Number(req.params.id));
+      if (!mail) {
+        await client.query('ROLLBACK');
+        return res.status(404).json(MAIL_FEHLT);
+      }
+      let vorgangId;
+      if (vorhanden) {
+        vorgangId = Number(req.body.vorgang_id);
+        const { rows } = await client.query('SELECT id FROM support_vorgaenge WHERE id = $1 FOR UPDATE', [vorgangId]);
+        if (rows.length === 0) {
+          await client.query('ROLLBACK');
+          return res.status(404).json(VORGANG_FEHLT);
+        }
+      } else {
+        const organizationId = req.body.neu.organization_id == null ? null : Number(req.body.neu.organization_id);
+        if (organizationId !== null) {
+          const { rows } = await client.query('SELECT id FROM organizations WHERE id = $1', [organizationId]);
+          if (rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json(GEMEINDE_FEHLT);
+          }
+        }
+        const gegeben = typeof req.body.neu.betreff === 'string' ? req.body.neu.betreff.replace(/\s+/g, ' ').trim() : '';
+        ({ id: vorgangId } = await vorgangAnlegen(client, {
+          art: req.body.neu.art,
+          bereich: req.body.neu.bereich ?? null,
+          dringlichkeit: req.body.neu.dringlichkeit || 'normal',
+          betreff: (gegeben || betreffAusMail(mail.betreff)).slice(0, 300),
+          quelle: 'mail',
+          organizationId,
+          erstelltVon: req.user.id,
+        }));
+      }
+      const imPosteingang = mail.vorgang_id === null && mail.anfrage_id === null && mail.organization_id === null;
+      let ids = [Number(mail.id)];
+      if (imPosteingang) {
+        const faden = await fadenIds(client, mail.id);
+        const { rows } = await client.query(
+          `SELECT m.id FROM mail_nachrichten m WHERE m.id = ANY($1::bigint[]) AND ${IM_POSTEINGANG_SQL} ORDER BY m.id`, [faden]);
+        ids = rows.map((r) => Number(r.id));
+      }
+      const anzahl = await mailsBinden(client, ids, vorgangId);
+      await client.query('COMMIT');
+      res.json({ anzahl, vorgang_id: vorgangId, ids });
+    } catch (err) {
+      await client.query('ROLLBACK').catch(() => {});
+      protokolliere('POST /support/mail/nachrichten/:id/einsortieren', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    } finally {
+      client.release();
+    }
+  });
+
+  /**
+   * Archiviert (oder stellt wieder her) Mails des Posteingangs. Andere Mails
+   * (in einem Vorgang) bleiben unberuehrt.
+   * @returns {Promise<number[]>} Kennungen der geaenderten Mails
+   */
+  const mailsArchivieren = async (ids, archivieren) => {
+    const { rows } = await db.query(
+      `UPDATE mail_nachrichten m SET archiviert_am = ${archivieren ? 'COALESCE(m.archiviert_am, NOW())' : 'NULL'}
+        WHERE m.id = ANY($1::bigint[]) AND m.richtung = 'ein' AND ${IM_POSTEINGANG_SQL}
+          AND ${archivieren ? 'TRUE' : 'm.archiviert_am IS NOT NULL'}
+        RETURNING m.id`, [ids]);
+    return rows.map((r) => Number(r.id)).sort((a, b) => a - b);
+  };
+
+  /** Loescht Mails des Posteingangs (nur aus Konfi Quest, nie aus dem Postfach). */
+  const mailsLoeschen = async (ids) => {
+    const { rows } = await db.query(
+      `DELETE FROM mail_nachrichten m WHERE m.id = ANY($1::bigint[]) AND ${IM_POSTEINGANG_SQL} RETURNING m.id`, [ids]);
+    return rows.map((r) => Number(r.id)).sort((a, b) => a - b);
+  };
+
+  // POST /mail/nachrichten/:id/archivieren und /wiederherstellen
+  //   -> { id, archiviert_am } -- nur Mails im Posteingang (sonst 409); eine
+  //   Mail, die es nicht gibt, 404. Wiederherstellen einer nicht archivierten
+  //   Mail aendert nichts.
+  const archivRoute = (pfad, archivieren) => router.post(`/mail/nachrichten/:id/${pfad}`, [id, handleValidationErrors], async (req, res) => {
+    try {
+      const mail = await nachrichtLaden(db, Number(req.params.id));
+      if (!mail) return res.status(404).json(MAIL_FEHLT);
+      if (mail.vorgang_id !== null || mail.anfrage_id !== null || mail.organization_id !== null) {
+        return res.status(409).json(NUR_POSTEINGANG);
+      }
+      await mailsArchivieren([mail.id], archivieren);
+      const { rows: [jetzt] } = await db.query('SELECT id, archiviert_am FROM mail_nachrichten WHERE id = $1', [mail.id]);
+      res.json(jetzt);
+    } catch (err) {
+      protokolliere(`POST /support/mail/nachrichten/:id/${pfad}`, err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+  archivRoute('archivieren', true);
+  archivRoute('wiederherstellen', false);
+
+  // DELETE /mail/nachrichten/:id -- eine Mail im Posteingang, nur aus Konfi
+  // Quest (im Postfach bleibt sie). Mails eines Vorgangs gehen mit dem
+  // Vorgang (409).
+  router.delete('/mail/nachrichten/:id', [id, handleValidationErrors], async (req, res) => {
+    try {
+      const mail = await nachrichtLaden(db, Number(req.params.id));
+      if (!mail) return res.status(404).json(MAIL_FEHLT);
+      if (mail.vorgang_id !== null || mail.anfrage_id !== null || mail.organization_id !== null) {
+        return res.status(409).json(NUR_POSTEINGANG);
+      }
+      await mailsLoeschen([mail.id]);
+      res.json({ message: 'Mail gelöscht' });
+    } catch (err) {
+      protokolliere('DELETE /support/mail/nachrichten/:id', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // POST /mail/sammel { ids: [..], aktion: archivieren | wiederherstellen | loeschen }
+  //   -> { aktion, anzahl, ids } -- die tatsaechlich betroffenen Mails des
+  //   Posteingangs, aufsteigend; andere und unbekannte Kennungen werden
+  //   uebergangen.
+  router.post('/mail/sammel', [
+    body('ids').isArray({ min: 1, max: SAMMEL_MAX }).withMessage(`ids: Liste mit 1 bis ${SAMMEL_MAX} Kennungen`),
+    body('ids.*').isInt({ min: 1 }).withMessage('Ungültige ID'),
+    body('aktion').isIn(['archivieren', 'wiederherstellen', 'loeschen']).withMessage('aktion: archivieren, wiederherstellen, loeschen'),
+    handleValidationErrors,
+  ], async (req, res) => {
+    try {
+      const ids = [...new Set(req.body.ids.map(Number))];
+      const betroffen = req.body.aktion === 'loeschen'
+        ? await mailsLoeschen(ids)
+        : await mailsArchivieren(ids, req.body.aktion === 'archivieren');
+      res.json({ aktion: req.body.aktion, anzahl: betroffen.length, ids: betroffen });
+    } catch (err) {
+      protokolliere('POST /support/mail/sammel', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
   });
 
   // ==========================================================================
@@ -406,11 +628,13 @@ module.exports = (db) => {
         'SELECT id, gemeinde, email FROM gemeinde_anfragen WHERE id = $1', [anfrageId]);
       if (!anfrage) return res.status(404).json(ANFRAGE_FEHLT);
       const verlauf = await verlaufLaden(db, { anfrageId });
+      // Die Antwort gehoert zum Vorgang der Anfrage ([Vorgang N] im Betreff).
       gespeichert = await antwortSenden(db, {
         postfach: 'moin',
         an: anfrage.email,
         betreff: req.body.betreff,
         text: req.body.text,
+        vorgangId: await vorgangFuerAnfrage(db, anfrageId),
         anfrageId,
         bezug: verlauf.length > 0 ? verlauf[verlauf.length - 1] : null,
         standardBetreff: `Eure Anfrage für ${anfrage.gemeinde}`,
@@ -477,16 +701,26 @@ module.exports = (db) => {
         return res.status(400).json({ error: 'Diese Adresse gehört nicht zu den Empfängern dieser Gemeinde.' });
       }
       const verlauf = await verlaufLaden(db, { organizationId });
-      gespeichert = await antwortSenden(db, {
-        postfach: 'support',
-        an,
-        betreff: req.body.betreff,
-        text: req.body.text,
-        organizationId,
-        bezug: verlauf.length > 0 ? verlauf[verlauf.length - 1] : null,
-        standardBetreff: `Konfi Quest – ${gemeinde.name}`,
-        verfasstVon: req.user.id,
-      }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Gemeinde)') });
+      // Die Antwort gehoert zum juengsten offenen Vorgang der Gemeinde, sonst
+      // zu einem neuen "Schriftwechsel" ([Vorgang N] im Betreff). Scheitert
+      // der Versand, geht ein dafuer angelegter Vorgang wieder.
+      const { id: vorgangId, angelegt } = await vorgangFuerGemeinde(db, organizationId, { quelle: 'support', erstelltVon: req.user.id });
+      try {
+        gespeichert = await antwortSenden(db, {
+          postfach: 'support',
+          an,
+          betreff: req.body.betreff,
+          text: req.body.text,
+          vorgangId,
+          organizationId,
+          bezug: verlauf.length > 0 ? verlauf[verlauf.length - 1] : null,
+          standardBetreff: `Konfi Quest – ${gemeinde.name}`,
+          verfasstVon: req.user.id,
+        }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Gemeinde)') });
+      } catch (err) {
+        if (angelegt) await db.query('DELETE FROM support_vorgaenge WHERE id = $1', [vorgangId]).catch(() => {});
+        throw err;
+      }
     } catch (err) {
       return versandFehlerAntwort(res, 'POST /support/gemeinden/:id/antworten', err);
     }

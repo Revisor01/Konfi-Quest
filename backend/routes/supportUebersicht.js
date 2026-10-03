@@ -151,11 +151,11 @@ module.exports = (db) => {
     return z;
   };
 
-  /** Offene Anfragen und ungelesene eingehende Mails (alle, auch zugeordnete). */
+  /** Offene Anfragen und ungelesene eingehende Mails (alle, auch zugeordnete; nicht die archivierten des Posteingangs). */
   const offenesZaehlen = async (c) => {
     const { rows: [z] } = await c.query(
       `SELECT (SELECT COUNT(*)::int FROM gemeinde_anfragen WHERE status IN ('neu', 'in_arbeit')) AS anfragen_offen,
-              (SELECT COUNT(*)::int FROM mail_nachrichten WHERE richtung = 'ein' AND gelesen_am IS NULL) AS mails_ungelesen`);
+              (SELECT COUNT(*)::int FROM mail_nachrichten WHERE richtung = 'ein' AND gelesen_am IS NULL AND archiviert_am IS NULL) AS mails_ungelesen`);
     return z;
   };
 
@@ -265,7 +265,7 @@ module.exports = (db) => {
               ${ZUORDNUNG_SPALTEN}
          FROM mail_nachrichten m
          ${ZUORDNUNG_JOINS}
-        WHERE m.richtung = 'ein'
+        WHERE m.richtung = 'ein' AND m.archiviert_am IS NULL
         ORDER BY m.gesendet_am DESC, m.id DESC
         LIMIT $1`, [NEUESTE]);
     return rows;

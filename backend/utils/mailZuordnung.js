@@ -1,43 +1,59 @@
 // Wohin gehoert eine eingehende Mail? -- EINE Stelle (docs/planung/
-// support-mail.md, Abschnitt "Zuordnen eingehender Mails"; Simon, 03.10.2026).
+// support-vorgaenge.md, Entscheidung 2; davor docs/planung/support-mail.md;
+// Simon, 03.10.2026). Eine Mail gehoert zu einem VORGANG oder liegt im
+// Posteingang.
 //
 // In dieser Reihenfolge; die erste Regel, die greift, gilt:
 //
 //   1. In-Reply-To oder References nennt die Message-ID einer gespeicherten
-//      Mail -> dieselbe Zuordnung wie diese Mail. Das gilt auch, wenn jene
-//      Mail im Posteingang liegt (keine Zuordnung): Der Faden bleibt
-//      beisammen, und "Zuordnen" nimmt ihn spaeter als Ganzes mit. Nennt die
-//      Mail mehrere gespeicherte, zaehlt In-Reply-To vor References und dort
-//      die juengste (die letzte in der Liste).
-//   2. Betreff enthaelt "[Anfrage 12]" und die Anfrage gibt es -> Anfrage 12;
-//      sonst "[Gemeinde 7]" und die Gemeinde gibt es -> Gemeinde 7.
+//      Mail -> derselbe Vorgang wie diese Mail. Das gilt auch, wenn jene
+//      Mail im Posteingang liegt (kein Vorgang): Der Faden bleibt beisammen,
+//      und "Einsortieren" nimmt ihn spaeter als Ganzes mit. Nennt die Mail
+//      mehrere gespeicherte, zaehlt In-Reply-To vor References und dort die
+//      juengste (die letzte in der Liste).
+//   2. Betreff enthaelt "[Vorgang 12]" und den Vorgang gibt es -> Vorgang 12.
+//      Sonst die alten Kennungen: "[Anfrage 12]" und die Anfrage gibt es ->
+//      der Vorgang der Anfrage; sonst "[Gemeinde 7]" und die Gemeinde gibt es
+//      -> der juengste offene Vorgang der Gemeinde, SONST POSTEINGANG (die
+//      Regeln danach gelten dann nicht mehr).
 //   3. Postfach "moin": Absender ist die E-Mail-Adresse einer Anfrage, die
-//      nicht abgelehnt ist -> die juengste solche Anfrage. So landen auch
-//      Antworten auf die Bestaetigungsmail des Formulars bei ihrer Anfrage
-//      (die Systemmails gehen von moin@ hinaus).
+//      nicht abgelehnt ist -> der Vorgang der juengsten solchen Anfrage. So
+//      landen auch Antworten auf die Bestaetigungsmail des Formulars bei
+//      ihrer Anfrage (die Systemmails gehen von moin@ hinaus).
 //   4. Postfach "support": Absender ist die E-Mail-Adresse GENAU EINES
-//      aktiven Kontos (nicht Konfi) mit Gemeinde -> diese Gemeinde. Beide
-//      Quellen der Zugehoerigkeit (users.organization_id und
+//      aktiven Kontos (nicht Konfi) mit Gemeinde -> NEUER VORGANG dieser
+//      Gemeinde (neuer_vorgang: true; ihn legt der Aufrufer zusammen mit der
+//      Mail an). Beide Quellen der Zugehoerigkeit (users.organization_id und
 //      user_organizations, utils/orgMitglieder.js), die Rolle je Gemeinde.
 //      Hat das eine Konto mehrere Gemeinden, ist die Zuordnung nicht
 //      eindeutig -> Regel 5.
-//   5. Sonst: Posteingang (nicht zugeordnet).
+//   5. Sonst: Posteingang (kein Vorgang).
+//
+// Ergebnis { vorgang_id, anfrage_id, organization_id, regel, neuer_vorgang }:
+// anfrage_id und organization_id folgen dem Vorgang, weil die alten Routen
+// sie an der Mail lesen (Vorgang einer Anfrage: anfrage_id; sonst die
+// Gemeinde des Vorgangs; nie beides). Regel 5 = Posteingang, alles null.
 //
 // Adressen werden ohne Unterschied zwischen Gross- und Kleinschreibung und
-// ohne Randleerzeichen verglichen. Die Funktion liest nur, sie schreibt
-// nichts -- Speichern und die "Bewegung" der Anfrage (updated_at) erledigt
-// der Aufrufer (services/mailAbholung.js).
+// ohne Randleerzeichen verglichen. Die Funktion legt hoechstens den Vorgang
+// einer Anfrage an, falls er fehlt (utils/supportVorgaenge.js,
+// vorgangFuerAnfrage; idempotent); Speichern, den neuen Vorgang der Regel 4
+// und die "Bewegung" erledigt der Aufrufer (services/mailAbholung.js).
 
+const {
+  vorgangFuerAnfrage, offenerVorgangDerGemeinde, vorgangFuerGemeinde, mailSpalten,
+} = require('./supportVorgaenge');
+
+const KENNUNG_VORGANG = /\[\s*Vorgang\s+(\d{1,15})\s*\]/i;
 const KENNUNG_ANFRAGE = /\[\s*Anfrage\s+(\d{1,15})\s*\]/i;
 const KENNUNG_GEMEINDE = /\[\s*Gemeinde\s+(\d{1,15})\s*\]/i;
 
-const KEINE = Object.freeze({ anfrage_id: null, organization_id: null });
+/** Posteingang: kein Vorgang. */
+const posteingang = () => ({ vorgang_id: null, anfrage_id: null, organization_id: null, regel: 5, neuer_vorgang: false });
 
-/** Ergebnis einer Regel. */
-const ergebnis = (regel, anfrageId, organizationId) => ({
-  anfrage_id: anfrageId === null || anfrageId === undefined ? null : Number(anfrageId),
-  organization_id: organizationId === null || organizationId === undefined ? null : Number(organizationId),
-  regel,
+/** Ergebnis einer Regel fuer einen Vorgang (Zeile mit id, anfrage_id, organization_id). */
+const imVorgang = (regel, vorgang) => ({
+  vorgang_id: Number(vorgang.id), ...mailSpalten(vorgang), regel, neuer_vorgang: false,
 });
 
 /** Adresse fuer den Vergleich: klein, ohne Rand; leer = null. */
@@ -45,6 +61,12 @@ function adresseNormal(adresse) {
   if (typeof adresse !== 'string') return null;
   const a = adresse.trim().toLowerCase();
   return a === '' ? null : a;
+}
+
+/** Zeile eines Vorgangs mit den Spalten, die die Mail erbt. */
+async function vorgangLesen(db, id) {
+  const { rows } = await db.query('SELECT id, anfrage_id, organization_id FROM support_vorgaenge WHERE id = $1', [id]);
+  return rows[0] || null;
 }
 
 /** Regel 1: Verweis auf eine gespeicherte Mail. */
@@ -57,26 +79,52 @@ async function regelFaden(db, inReplyTo, referenzen) {
   }
   if (kandidaten.length === 0) return null;
   const { rows } = await db.query(
-    'SELECT message_id, anfrage_id, organization_id FROM mail_nachrichten WHERE message_id = ANY($1::text[])',
+    'SELECT message_id, vorgang_id, anfrage_id, organization_id FROM mail_nachrichten WHERE message_id = ANY($1::text[])',
     [kandidaten]);
   if (rows.length === 0) return null;
   const jeId = new Map(rows.map((r) => [r.message_id, r]));
   const treffer = kandidaten.map((k) => jeId.get(k)).find(Boolean);
-  return ergebnis(1, treffer.anfrage_id, treffer.organization_id);
+
+  if (treffer.vorgang_id !== null) {
+    const vorgang = await vorgangLesen(db, treffer.vorgang_id);
+    if (vorgang) return imVorgang(1, vorgang);
+  }
+  // Eine Mail mit Anfrage oder Gemeinde, aber ohne Vorgang (ein aelterer
+  // Server-Stand legte sie waehrend eines Deploys noch so ab): Der Vorgang
+  // wird nachgeholt.
+  if (treffer.anfrage_id !== null) {
+    const vorgangId = await vorgangFuerAnfrage(db, treffer.anfrage_id);
+    if (vorgangId !== null) return imVorgang(1, await vorgangLesen(db, vorgangId));
+  }
+  if (treffer.organization_id !== null) {
+    const { id } = await vorgangFuerGemeinde(db, treffer.organization_id, { quelle: 'mail' });
+    return imVorgang(1, await vorgangLesen(db, id));
+  }
+  // Der Faden liegt im Posteingang und bleibt dort.
+  return { ...posteingang(), regel: 1 };
 }
 
 /** Regel 2: Kennung im Betreff. */
 async function regelKennung(db, betreff) {
   if (typeof betreff !== 'string' || betreff === '') return null;
+  const vorgang = betreff.match(KENNUNG_VORGANG);
+  if (vorgang) {
+    const v = await vorgangLesen(db, Number(vorgang[1]));
+    if (v) return imVorgang(2, v);
+  }
   const anfrage = betreff.match(KENNUNG_ANFRAGE);
   if (anfrage) {
-    const { rows } = await db.query('SELECT id FROM gemeinde_anfragen WHERE id = $1', [Number(anfrage[1])]);
-    if (rows.length > 0) return ergebnis(2, rows[0].id, null);
+    const vorgangId = await vorgangFuerAnfrage(db, Number(anfrage[1]));
+    if (vorgangId !== null) return imVorgang(2, await vorgangLesen(db, vorgangId));
   }
   const gemeinde = betreff.match(KENNUNG_GEMEINDE);
   if (gemeinde) {
     const { rows } = await db.query('SELECT id FROM organizations WHERE id = $1', [Number(gemeinde[1])]);
-    if (rows.length > 0) return ergebnis(2, null, rows[0].id);
+    if (rows.length > 0) {
+      // Der juengste offene Vorgang der Gemeinde, sonst Posteingang.
+      const offen = await offenerVorgangDerGemeinde(db, rows[0].id);
+      return offen !== null ? imVorgang(2, await vorgangLesen(db, offen)) : posteingang();
+    }
   }
   return null;
 }
@@ -88,11 +136,23 @@ async function regelAnfrageAdresse(db, adresse) {
       WHERE lower(btrim(email)) = $1 AND status <> 'abgelehnt'
       ORDER BY created_at DESC, id DESC
       LIMIT 1`, [adresse]);
-  return rows.length > 0 ? ergebnis(3, rows[0].id, null) : null;
+  if (rows.length === 0) return null;
+  const vorgangId = await vorgangFuerAnfrage(db, rows[0].id);
+  return vorgangId === null ? null : imVorgang(3, await vorgangLesen(db, vorgangId));
 }
 
-/** Regel 4 (support): Adresse genau eines aktiven Kontos (nicht Konfi) mit Gemeinde. */
-async function regelKontoAdresse(db, adresse) {
+/**
+ * Die Gemeinde, zu der eine Adresse gehoert: das EINE aktive Konto (nicht
+ * Konfi) mit Gemeinde -- sonst null. Beide Quellen der Zugehoerigkeit, die
+ * Rolle je Gemeinde; ein Konto in mehreren Gemeinden oder mehrere Konten mit
+ * derselben Adresse sind nicht eindeutig. Gebraucht fuer Regel 4 und fuer
+ * das Formular auf der Homepage (routes/anliegen.js).
+ *
+ * @returns {Promise<number|null>} Kennung der Gemeinde
+ */
+async function gemeindeDesKontos(db, adresse) {
+  const a = adresseNormal(adresse);
+  if (!a) return null;
   const { rows } = await db.query(
     `SELECT DISTINCT k.user_id, k.organization_id FROM (
        SELECT u.id AS user_id, u.organization_id
@@ -110,13 +170,18 @@ async function regelKontoAdresse(db, adresse) {
         WHERE lower(btrim(u.email)) = $1
           AND r.name <> 'konfi'
           AND u.is_active = true AND u.deleted_at IS NULL
-     ) k`, [adresse]);
+     ) k`, [a]);
   const konten = new Set(rows.map((r) => Number(r.user_id)));
   const gemeinden = new Set(rows.map((r) => Number(r.organization_id)));
-  if (konten.size === 1 && gemeinden.size === 1) {
-    return ergebnis(4, null, [...gemeinden][0]);
-  }
-  return null;
+  return konten.size === 1 && gemeinden.size === 1 ? [...gemeinden][0] : null;
+}
+
+/** Regel 4 (support): Adresse genau eines aktiven Kontos (nicht Konfi) mit Gemeinde -> neuer Vorgang. */
+async function regelKontoAdresse(db, adresse) {
+  const gemeinde = await gemeindeDesKontos(db, adresse);
+  return gemeinde === null
+    ? null
+    : { vorgang_id: null, anfrage_id: null, organization_id: gemeinde, regel: 4, neuer_vorgang: true };
 }
 
 /**
@@ -129,8 +194,10 @@ async function regelKontoAdresse(db, adresse) {
  * @param {string[]} [mail.referenzen]     References, aelteste zuerst
  * @param {string|null} [mail.betreff]
  * @param {string|null} [mail.vonAdresse]
- * @returns {Promise<{anfrage_id: number|null, organization_id: number|null, regel: number}>}
- *   regel 1 bis 4, oder 5 = Posteingang (beide null)
+ * @returns {Promise<{vorgang_id: number|null, anfrage_id: number|null, organization_id: number|null,
+ *   regel: number, neuer_vorgang: boolean}>}
+ *   regel 1 bis 4, oder 5 = Posteingang (alles null); neuer_vorgang: der
+ *   Aufrufer legt zusammen mit der Mail einen Vorgang fuer organization_id an
  */
 async function mailZuordnen(db, { postfach, inReplyTo = null, referenzen = [], betreff = null, vonAdresse = null }) {
   const faden = await regelFaden(db, inReplyTo, referenzen);
@@ -148,7 +215,9 @@ async function mailZuordnen(db, { postfach, inReplyTo = null, referenzen = [], b
     const konto = await regelKontoAdresse(db, adresse);
     if (konto) return konto;
   }
-  return { ...KEINE, regel: 5 };
+  return posteingang();
 }
 
-module.exports = { mailZuordnen, adresseNormal, KENNUNG_ANFRAGE, KENNUNG_GEMEINDE };
+module.exports = {
+  mailZuordnen, adresseNormal, gemeindeDesKontos, KENNUNG_VORGANG, KENNUNG_ANFRAGE, KENNUNG_GEMEINDE,
+};
