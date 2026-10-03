@@ -251,12 +251,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
 - **Version 2.4.0** — „darf freigeben",
   Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
-- **Support-Gast und Ersteinrichtung** (Simon, 03.10.2026: beides „ja") —
-  die Gemeindeleitung darf einen Support-Gast selbst aus ihrer Gemeinde
-  nehmen (es endet nur die Mitgliedschaft); `scripts/ersteinrichtung.js`
-  legt auf einer neuen Instanz ein Support-Konto ohne Gemeinde an statt der
-  Gemeinde „Betrieb" („wird aber nie vorkommen"). Kommt mit der
-  Web-Version.
 - **Web-Version mit Support-Ansicht** — Seitennavigation links, eine
   Support-Ansicht für Simon und eine Support-Person, Anfrageformular auf der
   Homepage, Gemeinde zuerst mit Zuordnung zu Kirchenkreis und Landeskirche:

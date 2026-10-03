@@ -161,6 +161,9 @@ Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
   Gemeindeleitung selbst (seit 03.10.2026, nur die Mitgliedschaft endet).
   Gemeindewechsel und Rückweg über `switch-org` und den Refresh wie bei
   jedem Konto.
+- **Erster Zugang einer neuen Instanz** (seit 03.10.2026):
+  `scripts/ersteinrichtung.js` legt ein Support-Konto ohne Gemeinde an statt
+  einer Gemeinde „Betrieb" ([init-scripts/README.md](../../init-scripts/README.md)).
 - **Behoben auf dem Weg:** die acht Stellen, die bei `organization_id` NULL
   falsch rechneten (Benutzerliste, Detail, Hierarchieprüfung, Rückblick,
   Passwort setzen, `POST /chat/rooms`, `is_primary`), und die Anmeldung

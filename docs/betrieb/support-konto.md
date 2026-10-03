@@ -69,6 +69,14 @@ Gemeinden, in denen sie Gast sind.
 Benutzername und Passwort auf einem sicheren Weg weitergeben — nicht beides in
 derselben Mail. Nach der ersten Anmeldung das Passwort ändern.
 
+**Auf einer neuen Instanz** gibt es noch kein Super-Admin-Konto, das ein
+anderes anlegen könnte. Dafür legt `scripts/ersteinrichtung.js` im
+Backend-Container das erste Support-Konto an — ohne Gemeinde, mit denselben
+Regeln für Benutzername und Passwort, nur auf einer leeren Datenbank. Aufruf
+und Ablauf: [init-scripts/README.md](../../init-scripts/README.md),
+„Ablauf bei einer Neuinstallation", Schritt 4. Danach im Browser anmelden und
+die Gemeinden anlegen.
+
 ## Anmelden — nur im Browser
 
 Ein Support-Konto meldet sich in der **Web-Version** an (konfi-quest.de).

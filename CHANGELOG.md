@@ -68,6 +68,8 @@ Versionsüberschrift.
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 
 ### Sonstiges
+- Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne
+  Gemeinde statt einer eigenen Gemeinde für den Betrieb.
 - Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von
   Mitteilungen mitbringt.
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
