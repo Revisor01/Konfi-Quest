@@ -312,6 +312,9 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 - **Auf Anfragen antworten, Antworten zuordnen** — gebaut (03.10.2026),
   eigener Plan mit Entscheidungen und dem, was offen bleibt:
   [support-mail.md](support-mail.md).
+- **Support-Ansicht als echte Web-Oberfläche** (Dashboard, Gemeinden nach
+  Landeskirche und Kirchenkreis, Tabellen statt Listen, Umschalter in der
+  Leiste) — eigener Plan: [support-web.md](support-web.md).
 - **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
   Jahrgänge je Gemeinde, nur für Super-Admins; jede Zahl steht ungefiltert da
   (Entscheidung 17). Offen: weitere Kennzahlen (Speicher, Termine).
