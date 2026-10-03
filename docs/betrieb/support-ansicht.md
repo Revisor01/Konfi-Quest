@@ -212,6 +212,13 @@ nicht der Altbestand. Auf backend-test (`RUN_BACKGROUND_JOBS=false`) wird
 weder abgeholt noch versendet. Den Zustand zeigt der Bereich **Posteingang**
 oben: eingerichtet, zuletzt abgeholt, letzter Fehler.
 
+Übernommen werden der Text und von Anhängen nur Name, Typ und Größe. Eine
+Mail über 10 MB (`MAX_MAIL_GROESSE` in `services/mailAbholung.js`) lädt der
+Server gar nicht herunter — die Backends haben 512 MB Speicher. In Konfi Quest
+stehen dann Absender, Betreff, die Anhänge mit geschätzter Größe und der
+Hinweis „Diese Mail ist zu groß für die Übernahme … Bitte im Mailprogramm
+ansehen."
+
 **Zuordnen.** Eine neue Mail kommt, in dieser Reihenfolge,
 
 1. in den Verlauf der Mail, auf die sie antwortet (Kopfzeilen

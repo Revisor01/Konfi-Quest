@@ -155,3 +155,24 @@ sie beim Einfügen; was sie nicht kennt, bleibt sichtbar stehen.
   antworten).
 - Die Fußzeile auch unter die automatischen Mails (Bestätigung, Passwort
   vergessen …) setzen.
+- Die Kontaktadresse der Gemeinde (`organizations.contact_email`) als
+  Empfänger anbieten; heute stehen nur Gemeindeleitung und Leitung mit
+  Adresse sowie Absender aus dem Verlauf zur Wahl.
+- Die Leiste liest die rote Zahl als „…, 4 offen" vor, auch bei Mails; ein
+  eigenes Wort („ungelesen") wäre genauer.
+
+## Gebaut (03.10.2026)
+
+Wie oben, mit diesen Festlegungen, wo der Vertrag schwieg:
+
+- Regel 1 gilt auch, wenn die Mail, auf die geantwortet wird, im Posteingang
+  liegt — der Faden bleibt zusammen. Ein Faden sind alle Mails, deren
+  Message-ID, In-Reply-To oder References sich überschneiden.
+- Regel 4 verlangt zusätzlich, dass das eine Konto zu genau einer Gemeinde
+  gehört.
+- Die rote Zahl am Posteingang zählt nicht zugeordnete und Mails von
+  Gemeinden.
+- Mails über 10 MB werden nicht heruntergeladen (Speichergrenze der
+  Backends); es bleiben Angaben und ein Hinweis.
+- Auf einem Server mit `RUN_BACKGROUND_JOBS=false` (backend-test) weder
+  Abholen noch Versand; die Ansicht sagt das (`auf_diesem_server`).
