@@ -38,7 +38,7 @@ describe('CI: Android-Unit-Tests', () => {
   it('legt vorher an, was Gradle zum Konfigurieren braucht -- in dieser Reihenfolge', () => {
     // node_modules (capacitor.settings.gradle), dist-app (verlangt cap sync),
     // capacitor-cordova-android-plugins/ (legt cap sync an),
-    // google-services.json (sonst fehlt der firebaseCrashlytics-Block).
+    // google-services.json (dieselbe Konfiguration wie der Release-Bau).
     const schritte = ['npm ci', 'npx vite build', 'npx cap sync android', './scripts/prepare-android.sh', './gradlew testDebugUnitTest'];
     const stellen = schritte.map((s) => job.indexOf(s));
     expect(stellen.every((s) => s >= 0), String(stellen)).toBe(true);

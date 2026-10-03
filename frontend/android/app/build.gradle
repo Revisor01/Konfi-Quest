@@ -123,11 +123,21 @@ try {
 //
 // Nur fuer release: Ein Debug-Bau wird nicht verschleiert und braucht es
 // nicht; der Upload kostet dort nur Bauzeit.
-android {
-    buildTypes {
-        release {
-            firebaseCrashlytics {
-                mappingFileUploadEnabled true
+//
+// NUR MIT DEM CRASHLYTICS-PLUGIN (03.10.2026): `firebaseCrashlytics` bringt
+// erst das Plugin mit. Ohne google-services.json (lokaler Bau, Fork) wird es
+// oben nicht angewendet, und der Block brach das Konfigurieren ab ("Could not
+// find method firebaseCrashlytics()"). withPlugin fuehrt ihn genau dann aus,
+// wenn das Plugin angewendet ist -- hier also sofort, mit Datei wie bisher.
+// Bewusst NACH dem try: Ein Fehler hier soll den Bau anhalten, nicht im catch
+// als logger.info verschwinden. Test androidOhneFirebaseDatei.test.ts.
+pluginManager.withPlugin('com.google.firebase.crashlytics') {
+    android {
+        buildTypes {
+            release {
+                firebaseCrashlytics {
+                    mappingFileUploadEnabled true
+                }
             }
         }
     }

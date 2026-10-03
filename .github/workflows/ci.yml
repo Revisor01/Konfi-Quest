@@ -392,10 +392,11 @@ jobs:
     #   - cap sync verlangt das Web-Verzeichnis dist-app/ (vite build; die
     #     Typpruefung davor laeuft schon in frontend-test);
     #   - app/google-services.json (prepare-android.sh kopiert die getrackte
-    #     Fassung aus frontend/config/). Ohne sie wendet app/build.gradle das
-    #     Crashlytics-Plugin nicht an, der firebaseCrashlytics-Block am
-    #     Dateiende bricht dann schon das Konfigurieren ab ("Could not find
-    #     method firebaseCrashlytics()", lokal nachgestellt am 02.10.2026).
+    #     Fassung aus frontend/config/), damit die Tests mit derselben
+    #     Konfiguration laufen wie der Release-Bau: mit google-services und
+    #     Crashlytics. Ohne die Datei konfiguriert Gradle seit dem 03.10.2026
+    #     auch, nur ohne beide Plugins (bis dahin brach der
+    #     firebaseCrashlytics-Block ab).
     # Also derselbe Weg wie in android-release.yml, nur ohne Keystore und
     # Upload. Das Android-SDK bringt der Runner mit (ANDROID_HOME).
     #

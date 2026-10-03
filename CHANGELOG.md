@@ -28,6 +28,8 @@ Versionsüberschrift.
   Web-Version trotzdem ausgeliefert wurde und nur die Store-Builds warten.
 - Verwaiste Upload-Dateien werden nur noch aufgelistet; gelöscht wird erst auf
   ausdrücklichen Wunsch und nur, was mindestens eine Woche alt ist.
+- Der Bau der Android-App bricht ohne die Zugangsdatei für Mitteilungen und
+  Absturzberichte nicht mehr gleich zu Beginn ab; er läuft dann ohne beides.
 
 ## [2.3.0] - 2026-10-02
 

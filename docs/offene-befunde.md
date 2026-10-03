@@ -112,12 +112,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   BF-07, Rest).
 - **`armv7` in der Info.plist.** `UIRequiredDeviceCapabilities` nennt noch
   `armv7`; beim nächsten Umbau mit Xcode entfernen (CI BF-15, Rest).
-- **Android-Build bricht ohne Firebase-Datei ab.** In
-  `frontend/android/app/build.gradle` steht der Block `firebaseCrashlytics`
-  außerhalb der Bedingung, die das Crashlytics-Plugin nur mit
-  `google-services.json` anwendet. Fehlt die Datei (lokaler Bau, Fork),
-  scheitert Gradle schon beim Konfigurieren statt ohne Push und
-  Absturzberichte zu bauen. Gefunden 02.10.2026.
 - **Text der CI-Meldung stimmt nicht bei rotem Android-Test.**
   `.github/scripts/ci-meldung.py` schreibt in das Issue bei rotem `main`, die
   CI „baut und deployt" dann nicht. Der Job `android-test` gehört aber nicht
