@@ -22,19 +22,21 @@ import { join, resolve } from 'node:path';
 const wurzel = resolve(__dirname, '../../../..');
 const nginx = readFileSync(join(wurzel, 'frontend/nginx.conf'), 'utf-8');
 
-/** location-Bloecke: Kopf und Rumpf. */
+/** location-Bloecke: Kopf und Rumpf. Ein Kopf mit `{` steht in Anfuehrungszeichen. */
 function locations(): Array<{ kopf: string; rumpf: string }> {
-  return [...nginx.matchAll(/^ {4}location ([^{]+)\{([\s\S]*?)^ {4}\}/gm)].map((m) => ({ kopf: m[1].trim(), rumpf: m[2] }));
+  return [...nginx.matchAll(/^ {4}location ((?:"[^"]*"|[^{"])+)\{([\s\S]*?)^ {4}\}/gm)].map((m) => ({ kopf: m[1].trim(), rumpf: m[2] }));
 }
 
 const cspApp = nginx.match(/set \$csp_app "([^"]+)";/)?.[1] ?? '';
 const direktive = (name: string): string[] =>
   (cspApp.split(';').map((d) => d.trim()).find((d) => d.startsWith(`${name} `)) ?? '').split(/\s+/).slice(1);
 
-// Dokumente, also alles, was HTML ausliefert. Nicht dazu: Assets (Regex auf
-// Dateiendungen), robots.txt, sitemap.xml, apple-app-site-association.
+// Dokumente, also alles, was HTML ausliefert. Nicht dazu: Assets (die beiden
+// Regex auf Dateiendungen, mit und ohne Pruefsumme im Namen), robots.txt,
+// sitemap.xml, apple-app-site-association.
+const istAsset = (kopf: string) => kopf.startsWith('~') && kopf.includes('\\.(js|css|');
 const istDokument = (kopf: string) =>
-  !kopf.startsWith('~*') && !['= /robots.txt', '= /sitemap.xml', '= /.well-known/apple-app-site-association'].includes(kopf);
+  !istAsset(kopf) && !['= /robots.txt', '= /sitemap.xml', '= /.well-known/apple-app-site-association'].includes(kopf);
 
 describe('nginx: Sicherheits-Header in jeder Dokument-location', () => {
   const doks = locations().filter((l) => istDokument(l.kopf));
@@ -42,8 +44,12 @@ describe('nginx: Sicherheits-Header in jeder Dokument-location', () => {
   it('die Dokument-locations werden gefunden', () => {
     expect(doks.map((l) => l.kopf)).toEqual([
       '= /', '= /datenschutz', '= /impressum', '= /konto-loeschen', '= /account-deletion',
-      '~ ^/(landing|datenschutz|impressum|konto-loeschen)\\.html$', '/docs/', '/',
+      '~ ^/(landing|datenschutz|impressum|konto-loeschen)\\.html$', '^~ /docs/', '/',
     ]);
+  });
+
+  it('die beiden Asset-locations werden als solche erkannt (sie tragen keine Permissions-Policy)', () => {
+    expect(locations().filter((l) => istAsset(l.kopf))).toHaveLength(2);
   });
 
   it.each([

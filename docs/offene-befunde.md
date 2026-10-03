@@ -80,12 +80,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   globaler Limiter hängen in `backend/createApp.js`, nicht an der Route);
   am 29.09.2026 begründet, in GitHub als „False positive" zu schließen —
   ob es geschehen ist, ist nicht vermerkt.
-- **Doku und Bilder ein Jahr im Zwischenspeicher.** In `frontend/nginx.conf`
-  gilt die Regel für Dateiendungen (`location ~* \.(js|css|png|…)$`, „expires
-  1y", `immutable`) auch unter `/docs/` — reguläre Ausdrücke gehen in nginx
-  vor `location /docs/`. Handbuch-Bilder, Swagger UI und Bilder der
-  Homepage tragen aber keine Prüfsumme im Namen: Nach einem Update sehen
-  Nutzer:innen weiter die alten. Gefunden 02.10.2026; vorgesehen für 2.4.0.
 - **Biometrie einschalten hat keinen Aufrufer mehr.** `biometrieAktivieren`
   und `biometrieAusschalten` (`frontend/src/services/biometrics.ts`) ruft nur
   `BiometrieSchalter.tsx`, und den bindet seit dem 27.08.2026 keine Seite
