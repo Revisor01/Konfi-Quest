@@ -42,6 +42,8 @@ export async function ionicFuerLeitung(stand: LeitungTestStand) {
         vi.fn(),
       ];
     },
+    // Die schmale Darstellung der App (Badges-Abschnitt) oeffnet Popover.
+    useIonPopover: () => [vi.fn(), vi.fn()],
   };
 }
 

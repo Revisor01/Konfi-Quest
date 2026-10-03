@@ -461,3 +461,222 @@
 .web-mehr-farbe--konfis { background: var(--app-color-konfis); }
 .web-mehr-farbe--events { background: var(--app-color-events); }
 .web-mehr-farbe--chat { background: var(--app-color-chat); }
+
+/* --- Detailseite einer Person --- */
+.web-person-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-weit);
+  padding: var(--app-abstand-weit);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-gradient-konfi);
+  color: var(--app-weiss);
+}
+
+.web-person-hero--teamer {
+  background: var(--app-gradient-teamer);
+}
+
+.web-person-hero .web-avatar {
+  background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+}
+
+.web-person-hero__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-basis);
+  min-width: 0;
+}
+
+.web-person-hero__text {
+  min-width: 0;
+}
+
+.web-person-hero__name {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1.2;
+  color: var(--app-weiss);
+}
+
+.web-person-hero__zeile {
+  margin: var(--app-abstand-winzig) 0 0;
+  font-size: var(--app-text-sekundaer);
+  color: color-mix(in srgb, var(--app-weiss) 82%, transparent);
+}
+
+.web-person-hero__zahlen {
+  display: flex;
+  gap: var(--app-abstand-weit);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-person-hero__zahlen li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.web-person-hero__zahlen strong {
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-zahl);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1.1;
+}
+
+.web-person-hero__zahlen span {
+  font-size: var(--app-text-klein);
+  color: color-mix(in srgb, var(--app-weiss) 82%, transparent);
+}
+
+.web-aktionsliste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-aktionsliste .web-knopf {
+  justify-content: flex-start;
+}
+
+.web-karte__fuss {
+  display: flex;
+  justify-content: center;
+  padding: var(--app-abstand-eng);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-karte__text {
+  margin: 0 0 var(--app-abstand-mittel);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-karte__leer--eng {
+  padding: 0;
+}
+
+.web-zelle-mit-knopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-zelle-symbol {
+  color: var(--app-text-teamer);
+  font-size: var(--app-text-gross);
+}
+
+/* Eine Zeile, deren Punkteart abgeschaltet ist, steht gedaempft da. */
+.web-tabelle tbody tr.web-zeile--leise td,
+.web-feed__zeile.web-zeile--leise {
+  color: var(--web-text-leise);
+}
+
+.web-feed__zeile.web-zeile--leise {
+  opacity: 0.7;
+}
+
+.web-pflicht {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-pflicht--gut {
+  color: var(--app-color-success-tief);
+}
+
+.web-pflicht--mittel {
+  color: var(--app-text-warnung);
+}
+
+.web-pflicht--schwach {
+  color: var(--app-text-fehler);
+}
+
+.web-badges-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  text-align: center;
+}
+
+.web-badge__symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-badges);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-badge__name {
+  font-size: var(--app-text-klein);
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}
+
+.web-stempel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-stempel__eintrag {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-stempel__symbol {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-challenges);
+  color: var(--app-weiss);
+  font-size: var(--app-text-gross);
+}
+
+.web-stempel__eintrag--offen .web-stempel__symbol {
+  background: var(--app-surface-dim);
+  color: var(--web-text-leise);
+}
+
+.web-stempel__eintrag--offen .web-zelle-titel {
+  color: var(--web-text-leise);
+}
+
+.web-stempel__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}

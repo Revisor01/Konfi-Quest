@@ -240,7 +240,8 @@ describe('Benutzer:innen (Web): Aktionen oeffnen die Fenster der App', () => {
     expect(h.refresh).toHaveBeenCalled();
     h.stand.alert = null;
     fireEvent.click(within(zeileVon('Gast Beispiel')).getByRole('button', { name: 'Gast Beispiel aus der Gemeinde entfernen' }));
-    expect(h.stand.alert?.header).toBe('Mitgliedschaft beenden');
+    // Nach dem Zuruecksetzen kennt TypeScript nur "null"; das Fenster setzt den Stand erneut.
+    expect((h.stand as LeitungTestStand).alert?.header).toBe('Mitgliedschaft beenden');
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 });

@@ -1,30 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { FARBEN } from '../../../theme/colors';
+import React, { useRef } from 'react';
 import { useIonPopover } from '@ionic/react';
 import { ICON_POKAL, ICON_POKAL_GEFUELLT } from '../../shared/icons';
-import api from '../../../services/api';
 import { ListSection } from '../../shared';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import KachelRaster from '../../shared/KachelRaster';
 import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopoverContent';
+import { FARBEN } from '../../../theme/colors';
+import { useKonfiBadges, type KonfiBadge as Badge } from './useKonfiBadges';
 
+// Das Laden steht in useKonfiBadges.ts -- dieselbe Logik traegt die Web-Fassung
+// (web/leitung/WebKonfiBadges.tsx), die auch die Farbe von hier nimmt.
 
-
-interface Badge {
-  id: number;
-  name: string;
-  description?: string;
-  icon: string;
-  criteria_type: string;
-  criteria_value: number;
-  criteria_extra?: string;
-  is_hidden: boolean;
-  color?: string;
-  earned?: boolean;
-  earned_at?: string;
-}
-
-const getBadgeColor = (badge: Badge): string => {
+/** Die Farbe eines Badges: die gepflegte, sonst nach Punktestufe, sonst die Standardfarbe. */
+export const getBadgeColor = (badge: Badge): string => {
   if (badge.color) return badge.color;
   if (badge.criteria_type === 'total_points') {
     if (badge.criteria_value <= 5) return FARBEN.bronze;
@@ -54,33 +42,12 @@ interface KonfiBadgesSectionProps {
 // jeweiligen eigenen BadgesView, aber kompakt für die Admin-Detailseite.
 // Klick auf ein Badge oeffnet ein Detail-Popover.
 const KonfiBadgesSection: React.FC<KonfiBadgesSectionProps> = ({ konfiId, role = 'konfi' }) => {
-  const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { erreicht: earnedBadges, laedt: loading } = useKonfiBadges(konfiId, role);
   const badgePopoverRef = useRef<BadgePopoverData | null>({ badge: null });
 
   const [presentBadgePopover] = useIonPopover(BadgePopoverContent, {
     dataRef: badgePopoverRef
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    const url = role === 'teamer'
-      ? `/teamer/${konfiId}/badges`
-      : `/admin/konfis/${konfiId}/badges`;
-    api.get(url)
-      .then((res) => {
-        if (cancelled) return;
-        setEarnedBadges(res.data?.earned || []);
-      })
-      .catch(() => {
-        if (!cancelled) setEarnedBadges([]);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
-  }, [konfiId, role]);
 
   const handleBadgeClick = (badge: Badge, e: React.MouseEvent) => {
     badgePopoverRef.current = { badge };

@@ -72,6 +72,8 @@ import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { tastaturKlick } from '../../../utils/tastatur';
+import WebKonfiDetail from '../web/leitung/WebKonfiDetail';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
 
 /**
  * Das Nachweisfoto eines Antrags auf ganzer Fläche. Steht außerhalb von
@@ -111,6 +113,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const { setSuccess, setError, isOnline, user } = useApp();
   const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
+  // Im Browser ab 992 px eine zweispaltige Seite (web/leitung/WebKonfiDetail.tsx);
+  // Daten, Fenster und Rueckfragen dieser Ansicht bleiben dieselben.
+  const breit = useBreitesLayout();
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
@@ -745,6 +750,56 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       ]
     });
   };
+
+  // Datum "Teamer:in seit" aus der Web-Fassung (die App waehlt es im Fenster der
+  // Abschnitts-Karte, KonfiDetailSections.tsx: TeamerSinceSection).
+  const handleTeamerSeit = async (datum: string) => {
+    try {
+      await api.put(`/admin/konfis/${konfiId}/teamer-since`, { teamer_since: datum });
+      setCurrentKonfi(prev => prev ? { ...prev, teamer_since: datum } : prev);
+    } catch {
+      setError('Fehler beim Aktualisieren');
+    }
+  };
+
+  if (breit) {
+    return (
+      <WebKonfiDetail
+        konfiId={konfiId}
+        laedt={loading}
+        istTeamer={isTeamer}
+        konfi={currentKonfi}
+        punkte={{ gottesdienst: getGottesdienstPoints(), gemeinde: getGemeindePoints(), gesamt: getTotalPoints(), bonus: getBonusPoints() }}
+        aktivitaeten={activities}
+        bonus={bonusEntries}
+        eventPunkte={eventPoints}
+        teamerEvents={teamerEvents}
+        zertifikate={certificates}
+        konfiHistorie={konfiHistory}
+        konfiZeit={konfiZeit}
+        anwesenheit={attendanceStats}
+        rueckblicke={wrappedListe}
+        stempel={mitBewahrtenStempeln(currentKonfi?.challengeMarks || [], bewahrteStempel)}
+        offeneStempel={currentKonfi?.offeneStempel || []}
+        isOnline={isOnline}
+        pageRef={pageRef}
+        onNeuLaden={() => { setLoading(true); void loadKonfiData(); }}
+        onBearbeiten={() => presentBearbeitenModal({ presentingElement: presentingElement || undefined })}
+        onAktivitaetEintragen={() => presentActivityModalHook({ presentingElement: presentingElement || undefined })}
+        onBonusVergeben={() => presentBonusModalHook({ presentingElement: presentingElement || undefined })}
+        onZertifikatZuweisen={handleAssignCertificate}
+        onPasswort={handlePasswordAction}
+        onBefoerdern={handlePromoteToTeamer}
+        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement ?? undefined })}
+        onAktivitaetLoeschen={handleDeleteActivity}
+        onBonusLoeschen={handleDeleteBonus}
+        onZertifikatEntfernen={handleDeleteCertificate}
+        onFoto={handlePhotoClick}
+        onRueckblick={setWrappedModalData}
+        onTeamerSeit={handleTeamerSeit}
+      />
+    );
+  }
 
   // Solange geladen wird, den Spinner zeigen statt Kacheln auf 0 und den
   // Platzhaltertitel - dasselbe Muster wie in der Event-Detailansicht.
