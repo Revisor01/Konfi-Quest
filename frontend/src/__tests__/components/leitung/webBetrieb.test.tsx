@@ -299,25 +299,27 @@ describe('Betrieb (Web): Fehler, Routen und Verlauf', () => {
   it('Routen: die langsamsten zuerst -- Median, Aufrufe, Durchschnitt, p95, Anteil und Hinweise', async () => {
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Routen' }));
-    expect(spaltenkoepfe('Routen')).toEqual(['Route', 'Median', 'Aufrufe', 'Durchschnitt', 'p95', 'Höchstens', 'Anteil Serverzeit', 'Hinweise']);
+    expect(spaltenkoepfe('Routen')).toEqual(['Route', 'Median', 'Aufrufe', 'Durchschnitt', 'p95', 'Anteil Serverzeit', 'Hinweise']);
     const z = zeilen('Routen');
     expect(z.map((r) => zelle(r, 0).textContent)).toEqual(['POST /api/upload', 'GET /api/konfis']);
     expect(zelle(z[0], 1)).toHaveTextContent('800 ms');
     expect(zelle(z[0], 2)).toHaveTextContent('12');
     expect(zelle(z[0], 3)).toHaveTextContent('900 ms');
     // Nur 12 Messwerte: der p95 ist hier der langsamste Einzelwert und steht auch so da.
-    expect(zelle(z[0], 4)).toHaveTextContent('langsamster 1500 ms (12 Messwerte)');
-    expect(zelle(z[0], 5)).toHaveTextContent('1500 ms');
-    expect(zelle(z[0], 6)).toHaveTextContent('21 %');
-    expect(zelle(z[0], 7)).toHaveTextContent('1 Fehler');
+    expect(zelle(z[0], 4)).toHaveTextContent('langsamster 1500 ms');
+    expect(zelle(z[0], 4)).toHaveTextContent('nur 12 Messwerte');
+    expect(zelle(z[0], 4)).not.toHaveTextContent('höchstens');
+    expect(zelle(z[0], 5)).toHaveTextContent('21 %');
+    expect(zelle(z[0], 6)).toHaveTextContent('1 Fehler');
     expect(zelle(z[1], 1)).toHaveTextContent('60 ms');
     expect(zelle(z[1], 2)).toHaveTextContent('500');
     expect(zelle(z[1], 4)).toHaveTextContent('200 ms');
+    expect(zelle(z[1], 4)).toHaveTextContent('höchstens 600 ms');
     expect(zelle(z[1], 4)).not.toHaveTextContent('langsamster');
-    expect(zelle(z[1], 6)).toHaveTextContent('79 %');
-    expect(zelle(z[1], 7)).toHaveTextContent('7× über 1 s (1.4 %)');
-    expect(zelle(z[1], 7)).toHaveTextContent('62 % aus dem Zwischenspeicher');
-    expect(zelle(z[1], 7)).toHaveTextContent('+ 40 ms Leitung');
+    expect(zelle(z[1], 5)).toHaveTextContent('79 %');
+    expect(zelle(z[1], 6)).toHaveTextContent('7× über 1 s (1.4 %)');
+    expect(zelle(z[1], 6)).toHaveTextContent('62 % aus dem Zwischenspeicher');
+    expect(zelle(z[1], 6)).toHaveTextContent('+ 40 ms Leitung');
   });
 
   it('Routen: "Haeufigste" sortiert nach der Zahl der Aufrufe', async () => {

@@ -51,12 +51,13 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
   }
 
   const konfis = jahrgaenge.reduce((summe, j) => summe + (j.konfi_count ?? 0), 0);
+  const mitRueckblick = jahrgaenge.filter((j) => !!j.wrapped_released_at).length;
 
   const spalten: Array<WebSpalte<JahrgangEintrag>> = [
     {
       schluessel: 'name',
       kopf: 'Jahrgang',
-      breite: '22%',
+      breite: '20%',
       zelle: (j) => (
         <span className="web-person-zelle">
           <WebSymbol icon={ICON_JAHRGANG_GEFUELLT} ton="jahrgang" />
@@ -81,7 +82,7 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
         const gemeinde = j.gemeinde_enabled !== false;
         if (!godi && !gemeinde) return <span className="web-gedaempft">Keine Punkte</span>;
         return (
-          <span className="web-pillreihe">
+          <span className="web-pillreihe web-pillreihe--eine-zeile">
             {godi && <WebPill>Gottesdienst {j.target_gottesdienst || 10}</WebPill>}
             {gemeinde && <WebPill>Gemeinde {j.target_gemeinde || 10}</WebPill>}
           </span>
@@ -139,6 +140,7 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       <div className="web-raster web-raster--kacheln">
         <WebKachel label="Jahrgänge" wert={String(jahrgaenge.length)} />
         <WebKachel label="Konfis" wert={String(konfis)} zusatz={['in diesen Jahrgängen']} />
+        <WebKachel label="Rückblick gestartet" wert={String(mitRueckblick)} zusatz={[`von ${mitEinheit(jahrgaenge.length, 'Jahrgang', 'Jahrgängen')}`]} />
       </div>
 
       <WebKarte titel="Jahrgänge" untertitel={mitEinheit(jahrgaenge.length, 'Jahrgang', 'Jahrgänge')} bund={jahrgaenge.length > 0}>

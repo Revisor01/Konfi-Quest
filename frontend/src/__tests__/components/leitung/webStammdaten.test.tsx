@@ -291,6 +291,8 @@ describe('Jahrgaenge (Web)', () => {
     render(<AdminJahrgaengeePage />);
     expect(screen.getByRole('group', { name: 'Konfis: 39' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Jahrgänge: 3' })).toBeInTheDocument();
+    // Nur der Jahrgang 2027 hat einen Rueckblick gestartet.
+    expect(screen.getByRole('group', { name: 'Rückblick gestartet: 1' })).toHaveTextContent('von 3 Jahrgängen');
     expect(spaltenkoepfe('Jahrgänge')).toEqual(['Jahrgang', 'Konfis', 'Punkteziele', 'Konfispruch', 'Rückblick', 'Aktionen']);
     const z = zeilen('Jahrgänge');
     expect(zelle(z[0], 0)).toHaveTextContent('Jahrgang 2027');

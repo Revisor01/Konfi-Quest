@@ -76,7 +76,7 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
     {
       schluessel: 'titel',
       kopf: 'Material',
-      breite: '38%',
+      breite: '32%',
       zelle: (m) => (
         <span className="web-person-zelle">
           <WebSymbol icon={m.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT} ton="material" />
@@ -90,7 +90,7 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
     {
       schluessel: 'sichtbar',
       kopf: 'Sichtbar für',
-      breite: '20%',
+      breite: '18%',
       optional: true,
       zelle: (m) => (m.ist_global
         ? <WebPill ton="info">Für alle</WebPill>
@@ -107,14 +107,14 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
           (m.event_count ?? 0) > 0 ? mitEinheit(m.event_count ?? 0, 'Event', 'Events') : null,
         ].filter(Boolean);
         return teile.length > 0
-          ? <span className="web-pillreihe">{teile.map((t) => <WebPill key={String(t)}>{t}</WebPill>)}</span>
+          ? <span className="web-pillreihe web-pillreihe--eine-zeile">{teile.map((t) => <WebPill key={String(t)}>{t}</WebPill>)}</span>
           : <span className="web-gedaempft">–</span>;
       },
     },
     {
       schluessel: 'ersteller',
       kopf: 'Erstellt von',
-      breite: '160px',
+      breite: '140px',
       optional: true,
       zelle: (m) => m.created_by_name || <span className="web-gedaempft">–</span>,
     },

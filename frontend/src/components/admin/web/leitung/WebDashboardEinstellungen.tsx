@@ -15,7 +15,6 @@ import { ICON_AUFKLAPPEN, ICON_ZUKLAPPEN } from '../../../shared/icons';
 import { mitEinheit } from '../../../../utils/supportStatistik';
 import WebSeite from '../../../web/WebSeite';
 import WebKarte from '../../../web/WebKarte';
-import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
 import WebSchalter from '../../../web/WebSchalter';
 import { WebLaden } from '../../../web/WebZustaende';
@@ -90,7 +89,7 @@ const WebDashboardEinstellungen: React.FC<WebDashboardEinstellungenProps> = ({ k
   if (laedt) {
     return (
       <WebSeite bereich="Verwaltung" titel="Dashboard" zurueck={zurueck}>
-        <WebLaden kacheln={2} karten={2} text="Die Einstellungen werden geladen." />
+        <WebLaden karten={2} text="Die Einstellungen werden geladen." />
       </WebSeite>
     );
   }
@@ -102,10 +101,6 @@ const WebDashboardEinstellungen: React.FC<WebDashboardEinstellungenProps> = ({ k
       untertitel="Welche Bereiche Konfis und Team sehen – und in welcher Reihenfolge"
       zurueck={zurueck}
     >
-      <div className="web-raster web-raster--kacheln">
-        <WebKachel label="Konfis" wert={String(konfi.filter((b) => b.an).length)} zusatz={[`von ${konfi.length} Bereichen sichtbar`]} />
-        <WebKachel label="Team" wert={String(team.filter((b) => b.an).length)} zusatz={[`von ${team.length} Bereichen sichtbar`]} />
-      </div>
       <div className="web-raster web-raster--zwei">
         <Liste zielgruppe="konfi" titel="Konfi-Dashboard" bereiche={konfi} onSchalten={onSchalten} onVerschieben={onVerschieben} />
         <Liste zielgruppe="teamer" titel="Team-Dashboard" bereiche={team} onSchalten={onSchalten} onVerschieben={onVerschieben} />

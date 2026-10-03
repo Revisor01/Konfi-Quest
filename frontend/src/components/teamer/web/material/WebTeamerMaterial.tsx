@@ -54,7 +54,7 @@ const inhaltZeile = (m: MaterialListeneintrag): React.ReactNode => {
     links > 0 ? (links === 1 ? '1 Link' : `${links} Links`) : null,
     (m.event_count ?? 0) > 0 ? mitEinheit(m.event_count ?? 0, 'Event', 'Events') : null,
   ].filter(Boolean);
-  return teile.length > 0 ? <span className="web-pillreihe">{teile.map((t) => <WebPill key={String(t)}>{t}</WebPill>)}</span> : <span className="web-gedaempft">–</span>;
+  return teile.length > 0 ? <span className="web-pillreihe web-pillreihe--eine-zeile">{teile.map((t) => <WebPill key={String(t)}>{t}</WebPill>)}</span> : <span className="web-gedaempft">–</span>;
 };
 
 const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {

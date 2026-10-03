@@ -1087,3 +1087,19 @@
   border-radius: var(--app-radius-fein);
   background: var(--app-color-chat);
 }
+
+/* --- Pillen und Werte in einer Zeile --- */
+.web-pillreihe--eine-zeile {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.web-nowrap {
+  white-space: nowrap;
+}
+
+.web-zweizeilig {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+}

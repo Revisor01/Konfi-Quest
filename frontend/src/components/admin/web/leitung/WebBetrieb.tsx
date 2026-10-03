@@ -153,23 +153,32 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
       schluessel: 'median',
       kopf: 'Median',
       zahl: true,
-      breite: '100px',
-      zelle: (r) => <span title="Median: die Hälfte aller Anfragen war schneller" style={{ color: msColor(r.mitteMs), fontWeight: 'var(--app-schrift-halbfett)' }}>{r.mitteMs} ms</span>,
+      breite: '95px',
+      zelle: (r) => <span className="web-nowrap" title="Median: die Hälfte aller Anfragen war schneller" style={{ color: msColor(r.mitteMs), fontWeight: 'var(--app-schrift-halbfett)' }}>{r.mitteMs} ms</span>,
     },
-    { schluessel: 'aufrufe', kopf: 'Aufrufe', zahl: true, breite: '100px', zelle: (r) => fmtZahl(r.count) },
-    { schluessel: 'schnitt', kopf: 'Durchschnitt', zahl: true, breite: '110px', optional: true, zelle: (r) => `${Math.round(r.schnittMs)} ms` },
+    { schluessel: 'aufrufe', kopf: 'Aufrufe', zahl: true, breite: '80px', zelle: (r) => fmtZahl(r.count) },
+    { schluessel: 'schnitt', kopf: 'Durchschnitt', zahl: true, breite: '100px', optional: true, zelle: (r) => `${Math.round(r.schnittMs)} ms` },
     {
       schluessel: 'p95',
       kopf: 'p95',
       zahl: true,
-      breite: '130px',
+      breite: '170px',
       optional: true,
-      zelle: (r) => (r.p95Duenn
-        ? <span className="web-gedaempft" title={`Nur ${r.stichproben} Messwerte — bei so wenigen ist der p95 der langsamste einzelne Aufruf, kein Merkmal der Route.`}>langsamster {r.p95} ms ({r.stichproben} Messwerte)</span>
-        : <span title="95 von 100 Anfragen waren schneller">{r.p95} ms</span>),
+      // Bei wenigen Messwerten IST der p95 der langsamste Einzelwert -- dann steht er so da
+      // und nennt die Zahl der Messwerte statt eines "hoechstens", das dasselbe sagte.
+      zelle: (r) => (r.p95Duenn ? (
+        <span className="web-zweizeilig" title={`Nur ${r.stichproben} Messwerte — bei so wenigen ist der p95 der langsamste einzelne Aufruf, kein Merkmal der Route.`}>
+          <span className="web-nowrap">langsamster {r.p95} ms</span>
+          <span className="web-zelle-leise web-nowrap">nur {r.stichproben} Messwerte</span>
+        </span>
+      ) : (
+        <span className="web-zweizeilig">
+          <span className="web-nowrap" title="95 von 100 Anfragen waren schneller">{r.p95} ms</span>
+          <span className="web-zelle-leise web-nowrap">höchstens {r.serverMaxMs ?? r.maxMs} ms</span>
+        </span>
+      )),
     },
-    { schluessel: 'hoechstens', kopf: 'Höchstens', zahl: true, breite: '110px', optional: true, zelle: (r) => `${r.serverMaxMs ?? r.maxMs} ms` },
-    { schluessel: 'anteil', kopf: 'Anteil Serverzeit', zahl: true, breite: '130px', zelle: (r) => <span title="Anteil an der gesamten Serverzeit aller Routen">{r.anteilProzent} %</span> },
+    { schluessel: 'anteil', kopf: 'Anteil Serverzeit', zahl: true, breite: '90px', zelle: (r) => <span title="Anteil an der gesamten Serverzeit aller Routen">{r.anteilProzent} %</span> },
     {
       schluessel: 'hinweise',
       kopf: 'Hinweise',

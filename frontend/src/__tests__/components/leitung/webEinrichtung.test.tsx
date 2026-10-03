@@ -125,15 +125,14 @@ describe('Dashboard einrichten (Web)', () => {
   const liste = (name: string) => within(screen.getByRole('list', { name }));
   const bereiche = (name: string) => [...screen.getByRole('list', { name }).querySelectorAll('li')].map((li) => li.querySelector('.web-schalter__text')!.textContent);
 
-  it('Titel, Weg zurueck nach "Mehr", Kennzahlen und die Bereiche in der gespeicherten Reihenfolge', () => {
+  it('Titel, Weg zurueck nach "Mehr" und die Bereiche in der gespeicherten Reihenfolge', () => {
     render(<AdminDashboardSettingsPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
-    expect(screen.getByRole('group', { name: 'Konfis: 5' })).toBeInTheDocument();
-    expect(screen.getByRole('group', { name: 'Team: 5' })).toBeInTheDocument();
     expect(bereiche('Konfi-Dashboard')).toEqual(['Events', 'Countdown', 'Challenges', 'Konfispruch', 'Tageslosung', 'Badges', 'Ranking']);
     expect(bereiche('Team-Dashboard')).toEqual(['Zertifikate', 'Challenges', 'Konfispruch', 'Events', 'Badges', 'Tageslosung']);
     expect(screen.getByText('5 von 7 Bereichen sichtbar')).toBeInTheDocument();
+    expect(screen.getByText('5 von 6 Bereichen sichtbar')).toBeInTheDocument();
   });
 
   it('die Schalter zeigen, was eingestellt ist: ausgeschaltet ist nur, was die Einstellungen ausschalten', () => {
