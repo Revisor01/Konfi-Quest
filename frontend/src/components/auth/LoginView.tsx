@@ -196,7 +196,7 @@ const LoginView: React.FC = () => {
       // Typisierte Sicht auf den axios-Fehler (rateLimitMessage setzt der
       // Response-Interceptor in services/api.ts bei 429ern).
       const fehler = (typeof err === 'object' && err !== null ? err : {}) as {
-        response?: { status?: number; data?: { error?: string; error_code?: string } };
+        response?: { status?: number; data?: { error?: string; error_code?: string; grund?: string } };
         message?: string;
         code?: string;
         rateLimitMessage?: string;
@@ -204,6 +204,10 @@ const LoginView: React.FC = () => {
       // Defensiv: errorMessage immer ein String, sonst werfen die .includes()-Checks unten
       const errorMessage: string = fehler.response?.data?.error || fehler.message || '';
       const errorCode: string = fehler.response?.data?.error_code || '';
+      // grund (seit 03.10.2026): warum der Server die Anmeldung abweist, etwa
+      // 'konto_ohne_gemeinde' -- ein Support-Konto, das nur in der
+      // Web-Version arbeitet. Der Text des Servers sagt, wohin.
+      const grund: string = fehler.response?.data?.grund || '';
       let displayError: string;
 
       // Rate-Limit (429) ZUERST prüfen — ein 429 ist KEINE fehlende Verbindung.
@@ -214,9 +218,9 @@ const LoginView: React.FC = () => {
         // Netzwerkfehler erkennen
         displayError = 'Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.';
         setIsNetworkError(true);
-      } else if (errorCode === 'org_trial_expired' || errorCode === 'org_inactive' || errorCode === 'user_inactive') {
-        // Zugangs-Sperre (Testphase abgelaufen / Org gesperrt / User deaktiviert):
-        // klare Server-Meldung direkt anzeigen.
+      } else if (grund || errorCode === 'org_trial_expired' || errorCode === 'org_inactive' || errorCode === 'user_inactive') {
+        // Zugangs-Sperre (Testphase abgelaufen / Org gesperrt / User deaktiviert)
+        // oder ein anderer genannter Grund: klare Server-Meldung direkt anzeigen.
         displayError = errorMessage || ZUGANG_GESPERRT_TEXT;
       } else if (errorMessage.includes('password') || errorMessage.includes('Passwort') || errorMessage.includes('Invalid credentials') || errorMessage.includes('Ungültige Anmeldedaten')) {
         displayError = 'Falsches Passwort. Bitte versuche es erneut.';

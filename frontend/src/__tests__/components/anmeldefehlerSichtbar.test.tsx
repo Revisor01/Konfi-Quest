@@ -110,7 +110,9 @@ async function anmeldenUndMeldungLesen() {
   fireEvent.change(passwort, { target: { value: 'Johannes7,47' } });
   fireEvent.keyDown(passwort, { key: 'Enter' });
   const alarm = await screen.findByRole('alert');
-  expect(mockPost).toHaveBeenCalledWith('/auth/login', { username: 'konfi1', password: 'Johannes7,47' });
+  // Web-Version (isNativePlatform false): mit der Zusage fuer Konten ohne
+  // Gemeinde (services/ohneGemeinde.ts).
+  expect(mockPost).toHaveBeenCalledWith('/auth/login', { username: 'konfi1', password: 'Johannes7,47', kann_ohne_gemeinde: true });
   return alarm.querySelector('.app-auth-error__detail')?.textContent;
 }
 
@@ -145,6 +147,18 @@ describe('Anmeldeseite: die Ablehnung des Servers kommt mit der passenden Meldun
   it('Zugang deaktiviert (403 user_inactive): die Meldung des Servers', async () => {
     const text = 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.';
     mockPost.mockRejectedValueOnce(serverFehler(403, { error: text, error_code: 'user_inactive' }));
+    expect(await anmeldenUndMeldungLesen()).toBe(text);
+  });
+
+  it('Konto ohne Gemeinde (403 mit grund): der Hinweis des Servers auf die Web-Version', async () => {
+    const text = 'Dieses Konto gehört zu keiner Gemeinde und ist für die Support-Ansicht im Browser bestimmt. Bitte melde dich auf konfi-quest.de an.';
+    mockPost.mockRejectedValueOnce(serverFehler(403, { error: text, error_code: 'user_inactive', grund: 'konto_ohne_gemeinde' }));
+    expect(await anmeldenUndMeldungLesen()).toBe(text);
+  });
+
+  it('ein genannter grund zeigt den Text des Servers auch ohne Sperr-Code', async () => {
+    const text = 'Dieses Konto gehört zu keiner Gemeinde und ist für die Support-Ansicht im Browser bestimmt. Bitte melde dich auf konfi-quest.de an.';
+    mockPost.mockRejectedValueOnce(serverFehler(403, { error: text, grund: 'konto_ohne_gemeinde' }));
     expect(await anmeldenUndMeldungLesen()).toBe(text);
   });
 

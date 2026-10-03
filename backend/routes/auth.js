@@ -213,6 +213,28 @@ const SPERR_MELDUNGEN = {
 };
 const sperrAntwort = (res, errorCode) =>
   res.status(403).json({ error: SPERR_MELDUNGEN[errorCode], error_code: errorCode });
+
+// KONTO OHNE GEMEINDE NUR IN DER WEB-VERSION (Simon, 03.10.2026;
+// docs/planung/web-version.md, Punkt 13). Ein Support-Konto
+// (users.organization_id NULL) arbeitet nur im Browser. Die Web-Version
+// schickt bei Anmeldung und Refresh `kann_ohne_gemeinde: true`; die Apps auf
+// iPhone und Android tun es nie, die ausgelieferten (1.5.3 bis 2.3.0) kennen
+// das Feld nicht. Ohne die Zusage weist der Server ein solches Konto ab --
+// mit error_code user_inactive, den jede ausgelieferte App als Sperre
+// behandelt: 2.3.0 zeigt den Text, 1.5.3 bis 2.2.x zeigen bei JEDER
+// Ablehnung "Keine Verbindung zum Server" (Fehler ihrer Anmeldeseite, siehe
+// frontend anmeldefehlerSichtbar.test.tsx) -- abgewiesen sind sie trotzdem.
+// `grund` ist neu und additiv; die Web-Version zeigt daran den Text.
+//
+// Bedienkomfort, keine Sicherheitsgrenze: Wer das Feld selbst setzt, bekommt
+// nur die Rechte, die rbac.js dem Konto ohnehin gibt.
+const OHNE_GEMEINDE_ANTWORT = Object.freeze({
+  error: 'Dieses Konto gehört zu keiner Gemeinde und ist für die Support-Ansicht im Browser bestimmt. Bitte melde dich auf konfi-quest.de an.',
+  error_code: 'user_inactive',
+  grund: 'konto_ohne_gemeinde',
+});
+// Nur das boolesche true zaehlt; "true", 1 oder ein fehlendes Feld nicht.
+const kannOhneGemeinde = (req) => req.body?.kann_ohne_gemeinde === true;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
@@ -462,6 +484,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return sperrAntwort(res, 'user_inactive');
       }
 
+      // Konto ohne Gemeinde: nur aus der Web-Version (OHNE_GEMEINDE_ANTWORT).
+      if (user.organization_id === null && !kannOhneGemeinde(req)) {
+        console.warn(`Login abgewiesen: Konto ${user.id} hat keine Gemeinde, Anmeldung nicht aus der Web-Version`);
+        return res.status(403).json(OHNE_GEMEINDE_ANTWORT);
+      }
+
       if (!isSuperAdmin) {
         // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
         const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
@@ -504,6 +532,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       );
       await grenzeDurchsetzen(db, user.id, neuesToken.id, loginGeraet);
 
+      // organization: der Name der Stamm-Gemeinde; bei einem Konto ohne
+      // Gemeinde null (nur diese neue Kontoart, Form fuer alle anderen
+      // unveraendert).
       const responseUser = {
         id: user.id,
         display_name: user.display_name,
@@ -1721,7 +1752,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
             [alt.ersetzt_durch]
           );
         }
-        return await issueRefreshedTokens(db, res, alt.user_id, activeOrgId, alt.id, alt.device_id || kennung);
+        return await issueRefreshedTokens(db, res, alt.user_id, activeOrgId, alt.id, alt.device_id || kennung, kannOhneGemeinde(req));
       }
 
       if (fremdesGeraet(existing.device_id)) {
@@ -1733,7 +1764,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Die Rotation uebernimmt die Bindung; ein ungebundenes Token wird an
       // die mitgeschickte Kennung gebunden (siehe oben).
-      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId, existing.id, existing.device_id || kennung);
+      return await issueRefreshedTokens(db, res, existing.user_id, activeOrgId, existing.id, existing.device_id || kennung, kannOhneGemeinde(req));
     } catch (err) {
       console.error('Database error in POST /api/auth/refresh:', err);
       res.status(500).json({ error: 'Fehler beim Token-Refresh' });
@@ -1751,7 +1782,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   // geraet (optional): Geraete-Kennung, an die das neue Token gebunden wird
   // (Migration 171) -- die des Vorgaengers oder, war der ungebunden, die
   // mitgeschickte.
-  async function issueRefreshedTokens(db, res, userId, activeOrgId = null, vorgaengerId = null, geraet = null) {
+  // ohneGemeindeErlaubt: die Anfrage kam mit kann_ohne_gemeinde: true (Web-
+  // Version). Ohne die Zusage endet ein Konto ohne Gemeinde hier wie bei der
+  // Anmeldung -- eine App kommt so auch nicht ueber ein Token, das anderswo
+  // ausgestellt wurde, in ein solches Konto.
+  async function issueRefreshedTokens(db, res, userId, activeOrgId = null, vorgaengerId = null, geraet = null, ohneGemeindeErlaubt = false) {
     const { rows: [user] } = await db.query(`
       SELECT u.id, u.username, u.display_name, u.organization_id, u.email, u.role_id,
              u.is_super_admin, u.is_active as user_active, u.deleted_at,
@@ -1787,6 +1822,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     // Reihenfolge wie bei der Anmeldung: erst das Konto, dann die Gemeinde.
     if (kontoGesperrt) {
       return sperrAntwort(res, 'user_inactive');
+    }
+    if (user.organization_id === null && !ohneGemeindeErlaubt) {
+      return res.status(403).json(OHNE_GEMEINDE_ANTWORT);
     }
     if (orgGesperrt) {
       return sperrAntwort(res, trialExpired ? 'org_trial_expired' : 'org_inactive');

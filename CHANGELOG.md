@@ -14,6 +14,9 @@ Versionsüberschrift.
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 
 ### Sonstiges
+- Support-Konten ohne eigene Gemeinde melden sich nur in der Web-Version an;
+  in den Apps erscheint stattdessen ein Hinweis auf die Support-Ansicht im
+  Browser.
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
   Punkte stehen jeweils an einer Stelle.

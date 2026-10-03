@@ -109,26 +109,32 @@ describe('geraeteKennung', () => {
   });
 });
 
+// Diese Faelle laufen als Web-Version (istNativ = false). Dort traegt jede
+// Anfrage zusaetzlich die Zusage fuer Konten ohne Gemeinde
+// (services/ohneGemeinde.ts, seit 03.10.2026; die Apps schicken sie nie,
+// siehe ohneGemeindeZusage.test.ts).
+const WEB = { kann_ohne_gemeinde: true };
+
 describe('die Kennung geht mit', () => {
   it('bei jedem Refresh', async () => {
     gespeichert = 'geraet-1';
     const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: {} });
     await refreshAnfordern({ refresh_token: 'refresh-1' });
-    expect(post.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1', device_id: 'geraet-1' });
+    expect(post.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1', device_id: 'geraet-1', ...WEB });
   });
 
   it('bei der Anmeldung per Biometrie', async () => {
     gespeichert = 'geraet-1';
     const post = vi.spyOn(axios, 'post').mockResolvedValue({ data: { token: 't', refresh_token: 'r' } });
     expect(await mitBiometrieAnmelden()).toMatchObject({ status: 'ok' });
-    expect(post.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-gesichert', device_id: 'geraet-1' });
+    expect(post.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-gesichert', device_id: 'geraet-1', ...WEB });
   });
 
   it('bei der Anmeldung mit Passwort', async () => {
     gespeichert = 'geraet-1';
     const post = vi.spyOn(api, 'post').mockResolvedValue({ data: { token: 't', refresh_token: 'r', user: { id: 1 } } });
     await loginWithAutoDetection('konfi1', 'Johannes7,47');
-    expect(post).toHaveBeenCalledWith('/auth/login', { username: 'konfi1', password: 'Johannes7,47', device_id: 'geraet-1' });
+    expect(post).toHaveBeenCalledWith('/auth/login', { username: 'konfi1', password: 'Johannes7,47', device_id: 'geraet-1', ...WEB });
   });
 
   it('ohne ermittelbare Kennung wie bisher ohne device_id (das Token bleibt ungebunden)', async () => {
@@ -139,8 +145,8 @@ describe('die Kennung geht mit', () => {
     await loginWithAutoDetection('konfi1', 'Johannes7,47');
     await refreshAnfordern({ refresh_token: 'refresh-1' });
 
-    expect(login).toHaveBeenCalledWith('/auth/login', { username: 'konfi1', password: 'Johannes7,47' });
-    expect(refresh.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1' });
+    expect(login).toHaveBeenCalledWith('/auth/login', { username: 'konfi1', password: 'Johannes7,47', ...WEB });
+    expect(refresh.mock.calls[0][1]).toEqual({ refresh_token: 'refresh-1', ...WEB });
   });
 
   // Bei der Registrierung mit Einladungscode: geprueft an der gerenderten
