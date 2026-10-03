@@ -166,15 +166,45 @@ dazu Ansprechperson, E-Mail, Telefon, Adresse, Website, Laufzeit
 oder Support-Fälle gibt es im Schema nicht. Mails verschickt
 `backend/services/emailService.js`; eingehende Mails verarbeitet nichts.
 
+**Support-Ansicht und Anfrageformular** (gebaut am 03.10.2026,
+Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
+[betrieb/support-ansicht.md](../betrieb/support-ansicht.md)):
+
+- **Seiten** unter `/admin/support` (`frontend/src/components/support/`):
+  Übersicht mit Kennzahlen gesamt, je Landeskirche, je Kirchenkreis und je
+  Gemeinde (aufklappbar, zusammengefasst in der Oberfläche,
+  `utils/supportStatistik.ts`), Zahl der neuen Anfragen, Weg zu allen
+  Bereichen und Abmelden; Anfragen mit Filter nach Status; eine Anfrage mit
+  Status, Notiz und „Gemeinde anlegen" (vorbelegt aus der Anfrage,
+  `utils/supportAnfragen.ts`); Struktur aus Landeskirchen und Kirchenkreisen;
+  Support-Konten. Gemeinden und Betrieb sind die vorhandenen Seiten; das
+  Formular „Gemeinde" wählt den Kirchenkreis aus der Struktur (Freitext, wenn
+  sie nicht lädt), die Liste zeigt Kirchenkreis und Landeskirche, und
+  `/admin/organizations?gemeinde=<id>` öffnet eine Gemeinde direkt.
+- **Navigation:** Der Baum `super_admin` startet auf `/admin/support` und
+  trägt die Bereiche als `menue` für die Seitenleiste
+  (`navigation/supportMenue.ts`, eine Liste für Leiste und Übersicht).
+  Dieselben Seiten liegen im Baum der Leitung; Simons Konto erreicht sie
+  über „Mehr" (Headset-Symbol, ersetzt „Gemeinden verwalten"). Alle Seiten
+  zeigen Konten ohne Super-Admin-Recht nur „Nur für den Support" und rufen
+  nichts ab.
+- **Homepage:** Formular „Konfi Quest für eure Gemeinde anfragen" im
+  Schlussabschnitt von `landing.html` (an `POST /api/anfragen`, Fehler am Feld
+  und gesammelt mit `role="alert"`, 400/429 verständlich, Honigtopf
+  `website`, Grenzen wie der Server); Vorlage zur Einwilligung der Eltern
+  als druckbare Seite `/einwilligung` (nginx, robots.txt, Sitemap), verlinkt
+  von Fußzeile, Datenschutz-Frage und Dank.
+- **Backend** dafür, mit Abschnitt 9c der Datenschutzerklärung und der
+  Aufbewahrung der Anfragen: Paket B desselben Tages (Routen unter
+  `/api/support` und `/api/anfragen`, Migration 191).
+
 ## Offen
 
-- **Oberfläche für Konten ohne Gemeinde.** Das Backend steht (siehe „Was
-  es heute gibt", Konto ohne Gemeinde). Es fehlen: Support-Konten in der
-  Support-Ansicht anlegen, sperren, mit Passwort versehen und löschen
-  (bis dahin über die API, [betrieb/support-konto.md](../betrieb/support-konto.md));
-  Abmelden im Navigationsbaum `super_admin`; der Rückweg „ohne Gemeinde"
-  nach einem Gemeindewechsel (Refresh ohne Kopfzeile, der Server kann das
-  schon). In der Benutzerliste der Gemeinde steht der Support-Gast heute mit
+- **Oberfläche für Konten ohne Gemeinde.** Support-Konten verwalten und
+  Abmelden gibt es in der Support-Ansicht (oben). Es fehlt der Rückweg „ohne
+  Gemeinde" nach einem Gemeindewechsel (Refresh ohne Kopfzeile, der Server
+  kann das schon) und ein Umschalter in der Support-Ansicht. In der
+  Benutzerliste der Gemeinde steht der Support-Gast heute mit
   „zuhause in einer anderen Gemeinde" und Bearbeiten-Knopf, obwohl der
   Server das Bearbeiten mit 403 ablehnt (siehe
   [offene-befunde.md](../offene-befunde.md), „Bearbeiten-Knopf bei
@@ -184,21 +214,19 @@ oder Support-Fälle gibt es im Schema nicht. Mails verschickt
   Zuordnung an der Gemeinde; der Freitext `kirchenkreis` bleibt, bis die
   Bestände übertragen sind (Migration additiv). Die bestehenden Gemeinden,
   auch der Dom Schwerin, werden eingeordnet.
-- **Anfragen.** Öffentlicher Endpunkt mit eigener Grenze gegen Missbrauch,
-  Bestätigungsmail, Datenschutzhinweis am Formular, Aufbewahrungsfrist
-  abgelehnter Anfragen.
+- **Anfragen.** Eine Route für eine einzelne Anfrage (die Seite einer
+  Anfrage holt heute die ganze Liste) und ein Knopf, eine Anfrage auf Wunsch
+  sofort zu löschen.
 - **Mails im Support.** Ob eingehende Mails (etwa an die Kontaktadresse) in
   der Ansicht landen sollen und auf welchem Weg.
-- **Statistik.** Welche Kennzahlen, und ab welcher Größe eine Zahl
+- **Statistik.** Gebaut sind Gemeinden, Konten je Rolle, aktive Konten (30
+  Tage) und Jahrgänge. Offen: Speicher, und ab welcher Größe eine Zahl
   ausgewiesen wird (kleine Gemeinden sind sonst personenbezogen, wie bei der
   Nutzungsmessung, [messung/umami.md](../messung/umami.md)).
 - **Einwilligung am Profil.** Ein Vermerk „Einwilligung liegt vor" am
   Konfi-Profil, den nur die Leitung sieht. Simons Gedanke: „kann ja mit in
-  das konfiprofil bzw. die anwesenheitsmatrix" (E-01). Dazu die Vorlage auf
-  der Homepage.
-- **Doku.** Das Handbuch richtet sich an Gemeinden; ein Betriebs-Kapitel gibt
-  es nicht (Simon, 27.09.2026). Die Support-Ansicht beschreibt deshalb
-  `docs/betrieb/`, neben [gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md).
+  das konfiprofil bzw. die anwesenheitsmatrix" (E-01). Die Vorlage auf der
+  Homepage steht (`/einwilligung`).
 
 ## Was beim Bauen gilt
 

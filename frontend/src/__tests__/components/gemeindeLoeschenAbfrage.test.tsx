@@ -45,6 +45,12 @@ vi.mock('../../contexts/LiveUpdateContext', () => ({
   useLiveRefresh: () => {},
 }));
 
+// Die Seite liest seit 03.10.2026 ?gemeinde=<id> aus der Adresse (direkt in
+// eine Gemeinde, Support-Ansicht); gerendert wird hier ohne Router.
+vi.mock('../../navigation/useAppLocation', () => ({
+  useAppLocation: () => ({ pathname: '/admin/organizations', search: '', state: null }),
+}));
+
 vi.mock('../../hooks/useOfflineQuery', () => ({
   useOfflineQuery: () => ({ data: [], loading: false, refresh: listeNeuLaden }),
 }));

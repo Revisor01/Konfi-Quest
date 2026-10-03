@@ -91,7 +91,9 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // Kopfzeile, die das Postfach oeffnet (Simon: "die Glocke drauf legen").
     // 26.09.2026: 188 -> 189. ICON_MOND kommt dazu: die Dunkelmodus-Folie
     // der Aenderungsanzeige 2.3.0 in allen drei Rollen.
-    expect(namen.length).toBe(189);
+    // 03.10.2026: 189 -> 190. ICON_SUPPORT kommt dazu: der Weg zur
+    // Support-Ansicht unter "Mehr" und der Kopf ihrer Uebersicht.
+    expect(namen.length).toBe(190);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {

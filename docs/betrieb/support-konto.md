@@ -46,9 +46,9 @@ Anmeldung findet dann nur eines der Konten.
 
 ## Anlegen
 
-Nur ein **Super-Admin**. Eine Oberfläche dafür gibt es noch nicht (sie kommt
-mit der Support-Ansicht); bis dahin über die API, mit dem Zugangs-Token eines
-Super-Admin-Kontos:
+Nur ein **Super-Admin**, in der Support-Ansicht unter **Support-Konten** ›
+oben rechts **Plus** ([support-ansicht.md](support-ansicht.md#support-konten-verwalten)).
+Über die API, mit dem Zugangs-Token eines Super-Admin-Kontos:
 
 ```
 POST /api/organizations/support-konten
@@ -82,7 +82,7 @@ Server". Abgewiesen sind beide.
 
 Nur auf ausdrücklichen Schritt und für die Gemeinde sichtbar: Ein Super-Admin
 trägt das Support-Konto als **Gemeindeleitung** in die Gemeinde ein — in der
-App unter „Gemeinden verwalten" › Gemeinde › „Mitglieder & Zuweisungen"
+Support-Ansicht unter Gemeinden › Gemeinde › „Mitglieder & Zuweisungen"
 (Suche nach dem Benutzernamen), über die API mit
 `POST /api/organizations/<id>/members` und `{ "user_id": …, "role_name":
 "org_admin" }`.
@@ -90,8 +90,7 @@ App unter „Gemeinden verwalten" › Gemeinde › „Mitglieder & Zuweisungen"
 Danach steht das Konto in der Benutzerliste der Gemeinde (Mehr ›
 Benutzer:innen) als Gemeindeleitung aus einer weiteren Gemeinde. Wechseln
 kann es dorthin über `POST /api/auth/switch-org`; einen Umschalter hat die
-Oberfläche eines Kontos ohne Gemeinde noch nicht (sie zeigt nur „Gemeinden
-verwalten" und den Betriebs-Überblick), er kommt mit der Support-Ansicht.
+Support-Ansicht noch nicht ([planung/web-version.md](../planung/web-version.md)).
 Bearbeiten oder entfernen kann
 es dort nur ein Super-Admin; Herausnehmen geht über denselben Abschnitt
 „Mitglieder & Zuweisungen" (`DELETE /api/organizations/<id>/members/<userId>`).
@@ -99,6 +98,10 @@ Wird die Gemeinde gelöscht, endet die Mitgliedschaft; das Support-Konto
 bleibt.
 
 ## Sperren, Passwort setzen, löschen
+
+In der Support-Ansicht unter **Support-Konten**, mit Knöpfen am Konto
+([support-ansicht.md](support-ansicht.md#support-konten-verwalten)); dahinter
+diese Routen:
 
 | Was | Route (nur Super-Admin) | Wirkung |
 |---|---|---|

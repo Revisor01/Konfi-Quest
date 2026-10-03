@@ -31,6 +31,7 @@ import { beiEnter } from '../../utils/tastatur';
 import { biometrieVerfuegbar, istBiometrieAktiv, BiometrieSinnbild } from '../../services/biometrics';
 import { BaseUser } from '../../types/user';
 import { anmeldeHinweisAbholen, ZUGANG_GESPERRT_TEXT } from '../../utils/anmeldeHinweis';
+import { rollenStart } from '../../navigation/routes';
 
 const LoginView: React.FC = () => {
   const { setUser } = useApp();
@@ -82,7 +83,9 @@ const LoginView: React.FC = () => {
     if (user.role_name === 'super_admin') {
       // Super-Admin Branch hat kein IonTabs-Wrapper -> router.push verliert die
       // Route im Capacitor WebView. Hartes Navigieren erzwingt sauberen Re-Render.
-      window.location.replace('/admin/organizations');
+      // Ziel ist die Startseite des Baums (seit 03.10.2026 die Support-Ansicht,
+      // vorher fest '/admin/organizations').
+      window.location.replace(rollenStart('super_admin'));
     } else if (user.type === 'admin') {
       router.push('/admin/konfis', 'root', 'replace');
     } else if (user.type === 'teamer') {

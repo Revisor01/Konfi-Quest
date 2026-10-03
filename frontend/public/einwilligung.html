@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vorlage: Einwilligung der Eltern - Konfi Quest</title>
+    <meta name="description" content="Vorlage zum Ausdrucken: Einwilligung der Erziehungsberechtigten zur Nutzung von Konfi Quest in der Konfi-Arbeit eurer Gemeinde.">
+    <link rel="canonical" href="https://konfi-quest.de/einwilligung">
+    <!-- Vorlage zur Einwilligung der Eltern (Web-Version, Entscheidung 8,
+         02.10.2026): "Einwilligung der Eltern bleibt in den Gemeinden ...
+         konfi-quest.de stellt eine Vorlage bereit." Die Gemeinde holt die
+         Einwilligung selbst ein -- analog oder mit ihrem Anmeldeformular.
+         Die Seite ist zum Ausdrucken gebaut (@media print); die Lücken
+         fuellt die Gemeinde aus. Keine Rechtsberatung. -->
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.55;
+            color: #1f2937;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 760px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        .hinweis {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px 20px;
+            margin: 0 0 28px;
+            border-radius: 0 8px 8px 0;
+            color: #374151;
+        }
+        .hinweis p { margin-bottom: 8px; }
+        .hinweis p:last-child { margin-bottom: 0; }
+        .knoepfe { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 22px;
+            border: 0;
+            border-radius: 50px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn:focus-visible, a:focus-visible { outline: 3px solid #4c1d95; outline-offset: 3px; }
+        h1 { color: #111827; font-size: 1.5rem; margin-bottom: 6px; }
+        .untertitel { color: #4b5563; margin-bottom: 24px; }
+        h2 { color: #111827; font-size: 1.05rem; margin: 22px 0 8px; }
+        p, li { margin-bottom: 8px; color: #1f2937; }
+        ul { margin-left: 22px; margin-bottom: 10px; }
+        .luecke {
+            display: inline-block;
+            min-width: 14em;
+            border-bottom: 1px solid #6b7280;
+            color: #6b7280;
+            font-size: 0.85em;
+            padding: 0 4px;
+        }
+        .luecke.breit { min-width: 22em; }
+        .ankreuzen { list-style: none; margin-left: 0; }
+        .ankreuzen li { padding-left: 1.8em; position: relative; }
+        .ankreuzen li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0.25em;
+            width: 1em;
+            height: 1em;
+            border: 1.5px solid #374151;
+            border-radius: 2px;
+        }
+        .unterschriften { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 36px; }
+        .unterschrift { border-top: 1px solid #374151; padding-top: 6px; font-size: 0.9rem; color: #374151; }
+        .unterschrift.ganz { grid-column: 1 / -1; }
+        a { color: #4c1d95; }
+        .back-link { display: inline-block; margin-top: 28px; }
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            .container { padding: 24px 18px; border-radius: 12px; }
+            .unterschriften { grid-template-columns: 1fr; }
+            .luecke, .luecke.breit { min-width: 10em; }
+        }
+        @media print {
+            @page { size: A4; margin: 18mm 16mm; }
+            body { background: none; padding: 0; color: #000; font-size: 11pt; }
+            .container { box-shadow: none; border-radius: 0; padding: 0; max-width: none; }
+            .nicht-drucken { display: none !important; }
+            h1 { font-size: 16pt; }
+            h2 { font-size: 12pt; break-after: avoid; }
+            .luecke { color: #000; }
+            .unterschriften { break-inside: avoid; }
+            a { color: #000; text-decoration: none; }
+        }
+    </style>
+
+<!-- Umami-Reichweitenmessung (self-hosted, cookiefrei, ohne personenbezogene Daten).
+     Nur Seitenaufrufe, wie bei den Rechtstexten. data-domains sperrt jede
+     fremde Domain aus (localhost, App-WebView). -->
+<script defer src="https://t.godsapp.de/script.js" data-website-id="dfd37276-5ad4-474d-8306-bf3ed9a3a5d3" data-domains="konfi-quest.de,www.konfi-quest.de"></script>
+</head>
+<body>
+    <main class="container">
+        <div class="hinweis nicht-drucken">
+            <p><strong>Eine Vorlage für eure Gemeinde.</strong> Die Einwilligung der Eltern holt die Gemeinde selbst ein – auf Papier oder mit ihrem eigenen Anmeldeformular. Dieser Text ist ein Vorschlag: Passt ihn an eure Konfi-Arbeit an, füllt die Lücken aus und stimmt ihn bei Bedarf mit der für euch zuständigen Datenschutzstelle ab. Eine Rechtsberatung ersetzt er nicht.</p>
+            <p>Wie Konfi Quest mit Daten umgeht, steht in der <a href="/datenschutz">Datenschutzerklärung</a>.</p>
+            <div class="knoepfe">
+                <button type="button" class="btn" id="drucken">Vorlage drucken</button>
+            </div>
+        </div>
+
+        <h1>Einwilligung zur Nutzung der App „Konfi Quest“</h1>
+        <p class="untertitel">in der Konfi-Arbeit der Gemeinde <span class="luecke breit">Name der Gemeinde</span></p>
+
+        <h2>Worum es geht</h2>
+        <p>In der Konfi-Zeit nutzen wir die App Konfi Quest. Konfis sehen dort Termine und melden sich an, sammeln Punkte für Gottesdienst und Gemeinde, machen bei Challenges mit und schreiben im Chat ihres Jahrgangs. Die App läuft auf dem Handy und im Browser.</p>
+
+        <h2>Welche Daten dabei entstehen</h2>
+        <ul>
+            <li>Name und Benutzername, der Jahrgang und das Passwort (verschlüsselt gespeichert)</li>
+            <li>Teilnahme an Terminen und Gottesdiensten, Punkte, Badges und Level</li>
+            <li>Nachrichten im Chat sowie Beiträge zu Challenges – Text, Foto, Sprachaufnahme, Video oder Link –, wenn die Konfis welche schreiben</li>
+            <li>auf Wunsch eine E-Mail-Adresse (für „Passwort vergessen“) und Push-Benachrichtigungen</li>
+        </ul>
+
+        <h2>Wer die Daten sieht</h2>
+        <p>Die Leitung und das Team, die den Jahrgang begleiten, sowie die anderen Konfis des Jahrgangs im gemeinsamen Chat. Bei Beiträgen zu Challenges entscheiden die Konfis selbst, ob der Jahrgang sie sieht, anonym oder nur die Leitung. Einzelchats zwischen zwei Konfis gibt es nicht. Die Daten liegen auf Servern in Deutschland; die Gemeinden sind voneinander getrennt.</p>
+
+        <h2>Wie lange</h2>
+        <p>Für die Dauer der Konfi-Zeit. Danach werden die Daten gelöscht, wie es die Datenschutzerklärung von Konfi Quest beschreibt. Eine frühere Löschung ist jederzeit möglich.</p>
+
+        <h2>Freiwillig und widerruflich</h2>
+        <p>Die Einwilligung ist freiwillig und kann jederzeit mit Wirkung für die Zukunft widerrufen werden – formlos bei: <span class="luecke breit">Ansprechperson und Kontakt der Gemeinde</span></p>
+        <p>Ohne Einwilligung gilt: <span class="luecke breit">von der Gemeinde auszufüllen, z. B. Teilnahme ohne App</span></p>
+
+        <h2>Erklärung</h2>
+        <p>Konfi: <span class="luecke breit">Vor- und Nachname</span> &nbsp; Jahrgang: <span class="luecke">Jahrgang</span></p>
+        <ul class="ankreuzen">
+            <li>Wir sind einverstanden, dass unser Kind in der Konfi-Zeit die App Konfi Quest nutzt und die oben genannten Daten dafür verarbeitet werden.</li>
+            <li>Wir sind einverstanden, dass Fotos, Sprachaufnahmen und Videos, die unser Kind selbst zu Challenges beiträgt, in der App gezeigt werden, wie oben beschrieben.</li>
+        </ul>
+
+        <div class="unterschriften">
+            <div class="unterschrift">Ort, Datum</div>
+            <div class="unterschrift">Unterschrift der Erziehungsberechtigten</div>
+            <div class="unterschrift ganz">Unterschrift Konfi (zur Kenntnis genommen)</div>
+        </div>
+
+        <a href="/" class="back-link nicht-drucken">&larr; Zurück zur Startseite</a>
+    </main>
+    <script>
+        // Drucken ueber den Knopf; Strg+P geht genauso.
+        document.getElementById('drucken').addEventListener('click', function () { window.print(); });
+    </script>
+</body>
+</html>

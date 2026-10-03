@@ -1,7 +1,7 @@
 import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   IonPage,
   IonContent,
@@ -24,6 +24,7 @@ import WartungsHinweis from '../../shared/WartungsHinweis';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import OrganizationManagementModal from '../modals/OrganizationManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { useAppLocation } from '../../../navigation/useAppLocation';
 
 interface Organization {
   id: number;
@@ -32,6 +33,12 @@ interface Organization {
   description?: string;
   contact_email?: string;
   website?: string;
+  kirchenkreis?: string | null;
+  // Zuordnung aus der Struktur der Support-Ansicht (GET /organizations
+  // liefert sie seit der Web-Version zusaetzlich; ein aelterer Server nicht).
+  kirchenkreis_id?: number | null;
+  landeskirche_id?: number | null;
+  landeskirche?: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -138,6 +145,19 @@ const AdminOrganizationsPage: React.FC = () => {
       presentingElement: presentingElement
     });
   };
+
+  // Direkt in eine Gemeinde: /admin/organizations?gemeinde=<id> oeffnet sie
+  // (aus der Support-Ansicht -- Kennzahlen je Gemeinde, "Gemeinde oeffnen"
+  // nach dem Anlegen aus einer Anfrage). Nur beim Aufruf mit dieser Adresse,
+  // nicht bei jedem neuen Modal-Haken -- deshalb haengt der Effekt allein an
+  // der Abfrage.
+  const { search } = useAppLocation();
+  useEffect(() => {
+    const id = Number(new URLSearchParams(search).get('gemeinde'));
+    if (!Number.isInteger(id) || id <= 0) return;
+    setModalOrganizationId(id);
+    presentOrganizationModalHook({ presentingElement: presentingElement });
+  }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const presentOrganizationModal = () => {
     setModalOrganizationId(null);

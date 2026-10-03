@@ -360,8 +360,11 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     expect(konfis).toContain('presentMatrixModal({ presentingElement: presentingElement })');
 
     const mehr = lies('src/components/admin/pages/AdminSettingsPage.tsx');
-    expect(mehr).toContain('rechts={user?.is_super_admin ? (');
-    expect(mehr).toContain('aria-label="Gemeinden verwalten"');
+    // Seit 03.10.2026 fuehrt der erste Knopf in die Support-Ansicht statt
+    // direkt zu den Gemeinden (gerendert geprueft in
+    // support/supportAnsichtRechte.test.tsx).
+    expect(mehr).toContain('rechts={istSuperAdmin(user) ? (');
+    expect(mehr).toContain('aria-label="Support-Ansicht öffnen"');
     expect(mehr).toContain('aria-label="Performance anzeigen"');
 
     const termine = lies('src/components/admin/pages/AdminEventsPage.tsx');

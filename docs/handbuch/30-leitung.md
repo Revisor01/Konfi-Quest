@@ -222,7 +222,9 @@ E-Mail-Adresse.
 
 ## Eine neue Gemeinde einrichten
 
-Eine Gemeinde legt der Betrieb von Konfi Quest an, nicht die Gemeinde selbst.
+Eine Gemeinde legt der Betrieb von Konfi Quest an, nicht die Gemeinde selbst —
+angefragt wird sie über das Formular auf der Startseite (siehe [Konfi Quest
+für eure Gemeinde anfragen](00-start.md#konfi-quest-fuer-eure-gemeinde-anfragen)).
 Dabei entsteht das erste Konto der **Gemeindeleitung**; Benutzername und
 Passwort bekommst du vom Betrieb. Melde dich damit an, ändere zuerst das
 Passwort (siehe [Selbst ändern, wenn man angemeldet
