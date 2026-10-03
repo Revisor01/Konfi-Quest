@@ -22,6 +22,11 @@ const SUPPORT_PFADE = [
   '/admin/support',
   '/admin/support/anfragen/:id',
   '/admin/support/anfragen',
+  // Support-Mail (03.10.2026, docs/planung/support-mail.md)
+  '/admin/support/post/gemeinde/:id',
+  '/admin/support/post/:id',
+  '/admin/support/post',
+  '/admin/support/bausteine',
   '/admin/support/struktur',
   '/admin/support/konten',
 ];
@@ -43,16 +48,35 @@ describe('Baum super_admin: Support-Ansicht', () => {
     expect(pfade).toEqual([...SUPPORT_PFADE, '/admin/organizations', '/admin/metrics']);
   });
 
-  it('menue: die sechs Bereiche in fester Reihenfolge, jeder mit Symbol und Ziel im Baum', () => {
+  it('menue: die acht Bereiche in fester Reihenfolge, jeder mit Symbol und Ziel im Baum', () => {
     const menue = BAEUME.super_admin.menue ?? [];
-    expect(menue.map((m) => m.label)).toEqual(['Übersicht', 'Anfragen', 'Gemeinden', 'Struktur', 'Support-Konten', 'Betrieb']);
+    expect(menue.map((m) => m.label)).toEqual([
+      'Übersicht', 'Anfragen', 'Posteingang', 'Gemeinden', 'Struktur', 'Support-Konten', 'Textbausteine', 'Betrieb',
+    ]);
     for (const m of menue) {
       expect(m.icon, m.label).toBeTruthy();
       expect(trifft('super_admin', m.path), `${m.label}: ${m.path} ist keine Route`).toBe(true);
     }
     // Dieselbe Liste wie auf der Uebersicht -- eine Quelle.
     expect(menue.map((m) => m.path)).toEqual(SUPPORT_BEREICHE.map((b) => b.path));
-    expect(menue.map((m) => m.gruppe)).toEqual(['Support', 'Support', 'Verwaltung', 'Verwaltung', 'Verwaltung', 'Betrieb']);
+    expect(menue.map((m) => m.gruppe)).toEqual([
+      'Support', 'Support', 'Support', 'Verwaltung', 'Verwaltung', 'Verwaltung', 'Verwaltung', 'Betrieb',
+    ]);
+  });
+
+  // Support-Mail, Entscheidung 5: „rote Zahl in der Support-Ansicht, kein Push".
+  it('menue: rote Zahl an Anfragen und Posteingang, sonst nirgends', () => {
+    const menue = BAEUME.super_admin.menue ?? [];
+    expect(menue.filter((m) => m.badge).map((m) => [m.label, m.badge])).toEqual([
+      ['Anfragen', 'supportAnfragen'],
+      ['Posteingang', 'supportPost'],
+    ]);
+  });
+
+  it('/admin/support/post/gemeinde ohne Kennung fuehrt in den Posteingang -- in beiden Baeumen', () => {
+    for (const rolle of ['super_admin', 'admin'] as const) {
+      expect(BAEUME[rolle].redirects, rolle).toContainEqual({ from: '/admin/support/post/gemeinde', to: '/admin/support/post' });
+    }
   });
 
   it('weiter keine Reiterleiste', () => {
@@ -103,5 +127,50 @@ describe('Eine Anfrage: Kennung als Zahl', () => {
   it('/admin/support/anfragen bleibt die Liste', () => {
     rendere('/admin/support/anfragen');
     expect(screen.getByTestId('liste')).toBeTruthy();
+  });
+});
+
+describe('Support-Mail: eine Mail und der Schriftwechsel einer Gemeinde, Kennung als Zahl', () => {
+  const Mail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => (
+    <span data-testid="mail">{`${typeof nachrichtId}:${nachrichtId}`}</span>
+  );
+  const Gemeinde: React.FC<{ organizationId: number }> = ({ organizationId }) => (
+    <span data-testid="gemeinde">{`${typeof organizationId}:${organizationId}`}</span>
+  );
+  const Posteingang: React.FC = () => <span data-testid="posteingang">Posteingang</span>;
+
+  // Wie das Outlet: Detailseiten bekommen ihre Kennung ueber ParamSeite.
+  const rendere = (start: string) => {
+    const routen = BAEUME.super_admin.routes.filter((r) => r.path.startsWith('/admin/support/post'));
+    return render(
+      <MemoryRouter initialEntries={[start]}>
+        <Routes>
+          {routen.map((r) => {
+            const Seite = r.propName === 'organizationId' ? Gemeinde : Mail;
+            return (
+              <Route key={r.path} path={r.path} element={r.param && r.propName
+                ? <ParamSeite Seite={Seite} prop={r.propName} param={r.param} zurueckZu={elternPfad(r.path)} />
+                : <Posteingang />} />
+            );
+          })}
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+
+  it('/admin/support/post/31 oeffnet die Mail mit nachrichtId 31', () => {
+    rendere('/admin/support/post/31');
+    expect(screen.getByTestId('mail').textContent).toBe('number:31');
+  });
+
+  it('/admin/support/post/gemeinde/7 oeffnet den Schriftwechsel mit organizationId 7 -- nicht eine Mail „gemeinde"', () => {
+    rendere('/admin/support/post/gemeinde/7');
+    expect(screen.getByTestId('gemeinde').textContent).toBe('number:7');
+    expect(screen.queryByTestId('mail')).toBeNull();
+  });
+
+  it('/admin/support/post bleibt der Posteingang', () => {
+    rendere('/admin/support/post');
+    expect(screen.getByTestId('posteingang')).toBeTruthy();
   });
 });

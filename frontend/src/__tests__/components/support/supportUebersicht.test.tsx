@@ -33,6 +33,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 
 import SupportUebersichtPage from '../../../components/support/SupportUebersichtPage';
+import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 
 const gemeinde = (id: number, name: string, kk: [number, string] | null, lk: [number, string] | null, konten: [number, number, number, number], aktiv = 0, jahrgaenge = 1, is_active = true) => ({
   id, name, is_active,
@@ -51,10 +52,11 @@ const STATISTIK = {
   ],
 };
 
-const antworten = (statistik: unknown, neue: unknown[] | Error = []) => {
+const antworten = (statistik: unknown, neue: unknown[] | Error = [], mailZaehler?: unknown) => {
   h.apiGet.mockImplementation((pfad: string) => {
     if (pfad === '/support/statistik') return statistik instanceof Error ? Promise.reject(statistik) : Promise.resolve({ data: statistik });
     if (pfad === '/support/anfragen') return neue instanceof Error ? Promise.reject(neue) : Promise.resolve({ data: neue });
+    if (pfad === '/support/mail/zaehler' && mailZaehler !== undefined) return Promise.resolve({ data: mailZaehler });
     return Promise.reject(new Error(`unerwartet: ${pfad}`));
   });
 };
@@ -64,6 +66,7 @@ beforeEach(() => {
   h.apiGet.mockReset();
   h.alert = null;
   h.user = { id: 9, display_name: 'Support Eins', username: 'support1', role_name: 'super_admin', is_super_admin: true };
+  supportMailZaehlerZuruecksetzen();
 });
 
 describe('Support-Uebersicht: Laden, Fehler, leer', () => {
@@ -146,9 +149,11 @@ describe('Support-Uebersicht: Bereiche, neue Anfragen und Abmelden', () => {
     await screen.findByRole('group', { name: 'Konfis: 62' });
     const ziele: Array<[string, string]> = [
       ['Anfragen', '/admin/support/anfragen'],
+      ['Posteingang', '/admin/support/post'],
       ['Gemeinden', '/admin/organizations'],
       ['Struktur', '/admin/support/struktur'],
       ['Support-Konten', '/admin/support/konten'],
+      ['Textbausteine', '/admin/support/bausteine'],
       ['Betrieb', '/admin/metrics'],
     ];
     for (const [label, pfad] of ziele) {
@@ -159,6 +164,26 @@ describe('Support-Uebersicht: Bereiche, neue Anfragen und Abmelden', () => {
     // Die Zahl der neuen Anfragen steht am Eintrag "Anfragen".
     const anfragen = screen.getByText('Anfragen', { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
     expect(within(anfragen).getByText('2 neu')).toBeInTheDocument();
+  });
+
+  // Support-Mail (03.10.2026): dieselbe Zahl wie in der Leiste
+  // (navigation/supportMailZaehler.ts, supportMailZahl).
+  it('ungelesene Mails als rote Kugel an Anfragen und Posteingang (dort nicht zugeordnete plus Gemeinden)', async () => {
+    antworten(STATISTIK, [], { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: {}, je_gemeinde: {} });
+    render(<SupportUebersichtPage />);
+    await screen.findByRole('group', { name: 'Konfis: 62' });
+    const eintrag = (label: string) => screen.getByText(label, { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
+    expect((await within(eintrag('Posteingang')).findByText('4')).className).toBe('app-zaehler-kugel');
+    expect(within(eintrag('Anfragen')).getByText('2').className).toBe('app-zaehler-kugel');
+    expect(eintrag('Gemeinden').querySelector('.app-zaehler-kugel')).toBeNull();
+    expect(h.apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
+  });
+
+  it('Zaehler nicht ladbar: keine Kugel, die Seite steht', async () => {
+    antworten(STATISTIK);
+    render(<SupportUebersichtPage />);
+    await screen.findByRole('group', { name: 'Konfis: 62' });
+    expect(document.querySelectorAll('.app-zaehler-kugel')).toHaveLength(0);
   });
 
   it('Abmelden: erst die Rueckfrage, dann signOut', async () => {

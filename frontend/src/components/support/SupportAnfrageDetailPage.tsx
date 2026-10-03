@@ -11,6 +11,13 @@
 //
 // Es gibt keine Route fuer eine einzelne Anfrage; die Seite holt die Liste
 // (GET /support/anfragen) und nimmt sich ihren Eintrag.
+//
+// Support-Mail (03.10.2026, docs/planung/support-mail.md): Der Verlauf zeigt
+// alle Mails zur Anfrage, aelteste zuerst, ein- und ausgehend
+// unterscheidbar, Zitate eingeklappt; ungelesene werden beim Anzeigen als
+// gelesen gemeldet. Darunter „Antworten" von moin@ mit Bausteinen, deren
+// Platzhalter GET /support/mail/platzhalter?anfrage_id= fuellt. Der Verlauf
+// laedt fuer sich -- scheitert er, bleibt die Anfrage bedienbar.
 
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -33,7 +40,10 @@ import { SectionHeader } from '../shared';
 import EmptyState from '../shared/EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
 import {
+  ICON_AKTUALISIEREN,
+  ICON_ANTWORTEN,
   ICON_BEARBEITEN,
+  ICON_CHATS,
   ICON_GRUPPE,
   ICON_HINZUFUEGEN,
   ICON_INFO,
@@ -51,7 +61,15 @@ import {
 } from '../shared/icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import type { AnfrageAngelegt, AnfrageStatus, GemeindeAnfrage, Kirchenkreis, Landeskirche } from '../../types/support';
+import type {
+  AnfrageAngelegt,
+  AnfrageStatus,
+  GemeindeAnfrage,
+  Kirchenkreis,
+  Landeskirche,
+  MailAntwortDaten,
+  MailNachricht,
+} from '../../types/support';
 import {
   ANFRAGE_STATUS,
   STATUS_VON_HAND,
@@ -70,7 +88,10 @@ import { offlineBlockiert } from '../../utils/offlineAktion';
 import { generateStrongPassword } from '../../utils/passwortVorschlag';
 import { datumUhrzeit } from '../../utils/dateUtils';
 import { EIGENES_LIMIT, TARIF_OPTIONEN, lizenzFinden, lizenzLimit, lizenzText } from '../../utils/lizenzen';
+import { ANFRAGE_BETREFF, chronologisch, standardBetreff, ungeleseneIds } from '../../utils/supportMail';
+import { mailsAlsGelesen } from '../../navigation/supportMailZaehler';
 import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
+import { AntwortFormular, MailListe } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
 
 interface Props {
@@ -120,6 +141,11 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
   const [legtAn, setLegtAn] = useState(false);
   const [angelegt, setAngelegt] = useState<(AnfrageAngelegt & { username: string }) | null>(null);
 
+  // Verlauf der Mails (Support-Mail)
+  const [verlauf, setVerlauf] = useState<MailNachricht[] | null>(null);
+  const [verlaufFehler, setVerlaufFehler] = useState(false);
+  const [neueMails, setNeueMails] = useState<ReadonlySet<number>>(new Set());
+
   const strukturLaden = useCallback(async (): Promise<Kirchenkreis[]> => {
     const [kk, lk] = await Promise.allSettled([
       api.get('/support/kirchenkreise'),
@@ -156,6 +182,35 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
   }, [anfrageId, strukturLaden]);
 
   useEffect(() => { void holen(); }, [holen]);
+
+  // Erst warten, dann Zustand setzen. „Neu" behalten die Mails, die beim
+  // ersten Anzeigen ungelesen waren -- auch nachdem sie gemeldet sind.
+  const verlaufHolen = useCallback(async (ersterAbruf: boolean) => {
+    try {
+      const antwort = await api.get(`/support/anfragen/${anfrageId}/verlauf`);
+      const liste = chronologisch(Array.isArray(antwort.data) ? antwort.data as MailNachricht[] : []);
+      const ungelesen = ungeleseneIds(liste);
+      setVerlauf(liste);
+      setVerlaufFehler(false);
+      if (ersterAbruf) setNeueMails(new Set(ungelesen));
+      void mailsAlsGelesen(ungelesen);
+    } catch {
+      setVerlaufFehler(true);
+    }
+  }, [anfrageId]);
+
+  useEffect(() => { void verlaufHolen(true); }, [verlaufHolen]);
+
+  // Nach dem Senden: Verlauf neu; eine neue Anfrage steht danach „in
+  // Arbeit" (das setzt der Server, Vertrag „Antworten"). Die Auswahl im
+  // Formular folgt nur, solange dort nichts anderes gewaehlt ist.
+  const nachDemSenden = () => {
+    void verlaufHolen(false);
+    if (anfrage?.status === 'neu') {
+      setAnfrage({ ...anfrage, status: 'in_arbeit' });
+      setStatus((s) => (s === 'neu' ? 'in_arbeit' : s));
+    }
+  };
 
   const laden = () => {
     setLaedt(true);
@@ -333,6 +388,33 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
             {datumUhrzeit(anfrage.created_at)}
             {anfrage.updated_at && anfrage.updated_at !== anfrage.created_at ? ` · zuletzt geändert ${datumUhrzeit(anfrage.updated_at)}` : ''}
           </Angabe>
+        </Abschnitt>
+
+        <Abschnitt icon={ICON_CHATS} titel="Verlauf" farbe="organizations">
+          {verlaufFehler && !verlauf ? (
+            <div role="status">
+              <p style={{ margin: '0 0 var(--app-abstand-eng)', color: 'var(--app-text-fehler)' }}>Der Verlauf konnte nicht geladen werden.</p>
+              <IonButton size="small" fill="outline" onClick={() => { void verlaufHolen(true); }}>
+                <IonIcon icon={ICON_AKTUALISIEREN} slot="start" />
+                Verlauf neu laden
+              </IonButton>
+            </div>
+          ) : verlauf ? (
+            <MailListe mails={verlauf} neu={neueMails} leer="Noch keine Mails zu dieser Anfrage." />
+          ) : (
+            <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Verlauf wird geladen...</p>
+          )}
+        </Abschnitt>
+
+        <Abschnitt icon={ICON_ANTWORTEN} titel="Antworten" farbe="organizations">
+          <AntwortFormular
+            postfach="moin"
+            platzhalterFuer={{ anfrage_id: anfrage.id }}
+            betreffVorschlag={standardBetreff(verlauf && verlauf.length > 0 ? verlauf[verlauf.length - 1].betreff : ANFRAGE_BETREFF)}
+            an={anfrage.email}
+            senden={(koerper: MailAntwortDaten) => api.post(`/support/anfragen/${anfrage.id}/antworten`, koerper)}
+            onGesendet={nachDemSenden}
+          />
         </Abschnitt>
 
         <Abschnitt icon={ICON_BEARBEITEN} titel="Bearbeitung" farbe="organizations" rechts={<Marke text={statusInfo.label} farbe={statusInfo.farbe} />}>
