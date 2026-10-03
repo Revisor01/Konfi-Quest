@@ -61,6 +61,40 @@ Versionsüberschrift.
   Browser zusätzlich die Bereiche der Support-Ansicht.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
   Ausdrucken bereit.
+- Im Browser hat jeder Bereich eine eigene Ansicht für breite Fenster; in
+  den Apps und im schmalen Fenster bleibt alles, wie es ist:
+  - Der Chat steht wie in einem Messenger: links die Chats mit Suche,
+    Reitern und roten Zahlen, rechts der geöffnete Chat. Enter sendet,
+    Umschalt+Enter beginnt eine neue Zeile, Dateien lassen sich auf den Chat
+    ziehen oder einfügen, Aktionen an einer Nachricht erscheinen beim
+    Darüberfahren, und ein angefangener Text bleibt je Chat stehen.
+  - Start, Badges und Profil von Konfis und Team zeigen Karten statt einer
+    langen Spalte, Badges mit Suche und Filtern; die Konfi-Historie des
+    Teams steht nebeneinander.
+  - Mitmachen zeigt der Leitung Events, Aktivitäten und Anträge als
+    Tabellen mit Filtern; ein Event steht zweispaltig da, mit Anwesend und
+    Abwesend je Zeile. Konfis und Team sehen die Events als Karten und
+    melden sich im zweispaltigen Event an und ab.
+  - Challenges stehen als Karten im Raster mit Filtern und roter Zahl;
+    eine Challenge zeigt Aufgabe und große Beiträge links, Aktionen, Angaben
+    und Stempel rechts; Beiträge lassen sich direkt am Beitrag freigeben,
+    ausblenden und anonym stellen.
+  - Die Leitung sieht Konfis und Team als Tabelle mit Suche, Jahrgang und
+    Sortierung, die Seite einer Konfi oder Teamer:in zweispaltig,
+    Benutzer:innen, Kategorien, Level, Zertifikate, Jahrgänge, Material,
+    Rückblick und Betrieb als Tabellen und „Mehr" als Kacheln; Badges werden
+    in einer Tabelle verwaltet.
+- Support-Ansicht: Jedes Anliegen ist ein Vorgang — Anfrage von der
+  Homepage, Support-Formular oder Mail — mit Art, Bereich, Dringlichkeit,
+  Stand und Gemeinde; im Browser als Tabelle mit Filtern, Suche und
+  Sammelaktionen, in der App als Liste. Vorgänge lassen sich selbst anlegen,
+  zum Beispiel um eine Gemeinde anzuschreiben.
+- Support-Ansicht: Mails im Posteingang lassen sich einem bestehenden oder
+  neuen Vorgang zuordnen, archivieren oder löschen, auch mehrere auf einmal;
+  Vorgänge lassen sich archivieren und löschen.
+- Auf konfi-quest.de gibt es ein Formular „Hilfe und Support" mit Art,
+  Bereich und Dringlichkeit zum Auswählen; unter „Mehr" führt „Hilfe und
+  Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
 - Im breiten Browserfenster steht der Gemeinde-Umschalter nur noch unten in
@@ -96,6 +130,12 @@ Versionsüberschrift.
   Chat-Mitgliedern, beim Hinzufügen von Mitgliedern, beim Anlegen eines Chats,
   in der Benutzerliste, in den offenen Einladungen, beim Zuordnen von Team und
   Leitung zu einem Event und beim Zugriff auf einen neuen Jahrgang.
+- Support-Ansicht: Anfragen von der Homepage sind Vorgänge der Art „Neue
+  Gemeinde"; erledigte Vorgänge liegen im Archiv und werden zwei Jahre nach
+  dem Archivieren gelöscht; eine neue Mail holt einen Vorgang zurück. Rote
+  Zahlen gibt es für Vorgänge und Posteingang.
+- Im Browser markiert die Leiste auch auf Seiten, die über „Mehr" erreicht
+  werden, den Eintrag „Mehr", bei den Aktivitäten „Mitmachen".
 
 ### Behoben
 - Direkt nach der Anmeldung zeigte der Gemeinde-Umschalter den Namen der
@@ -116,6 +156,14 @@ Versionsüberschrift.
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 - Ein Support-Konto ohne Gemeinde kann sich im Browser abmelden; bisher gab es
   dort keinen Weg hinaus.
+- Support-Ansicht: Listen, Zahlen und Übersicht zeigen nach einer Änderung
+  (Status gesetzt, Mail gelesen, einsortiert, archiviert) sofort den neuen
+  Stand.
+- Die roten Zahlen im Chat laufen nach dem Verlassen eines Chats live weiter.
+- Ein bevorstehendes Pflicht-Event heißt in der Liste der Leitung „Pflicht"
+  statt „Geschlossen".
+- Die Rückfrage „Alle bestätigen" für das Team ist wieder ein vollständiger
+  Satz.
 
 ### Sonstiges
 - Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne
@@ -137,6 +185,8 @@ Versionsüberschrift.
   ausdrücklichen Wunsch und nur, was mindestens eine Woche alt ist.
 - Der Bau der Android-App bricht ohne die Zugangsdatei für Mitteilungen und
   Absturzberichte nicht mehr gleich zu Beginn ab; er läuft dann ohne beides.
+- Die Logik der Seiten liegt in Hooks, die App und Browser gemeinsam
+  nutzen; die Bausteine der Web-Ansicht stehen an einer Stelle.
 
 ## [2.3.0] - 2026-10-02
 
