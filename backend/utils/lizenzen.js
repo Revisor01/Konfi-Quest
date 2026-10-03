@@ -28,4 +28,17 @@ const LIZENZEN = Object.freeze([
 
 const LIZENZ_SCHLUESSEL = Object.freeze(LIZENZEN.map((l) => l.schluessel));
 
-module.exports = { LIZENZEN, LIZENZ_SCHLUESSEL };
+/**
+ * Eine Lizenz als Satzteil fuer Mails, etwa der Platzhalter {{lizenz}} der
+ * Textbausteine (GET /api/support/mail/platzhalter): "Standard (bis 50
+ * Konfis, 99 € pro Jahr)", "Verbund (bis 4 Gemeinden, 390 € pro Jahr)".
+ * Ohne oder mit unbekanntem Schluessel ein leerer Text.
+ */
+function lizenzText(schluessel) {
+  const lizenz = LIZENZEN.find((l) => l.schluessel === schluessel);
+  if (!lizenz) return '';
+  const umfang = lizenz.konfis === null ? 'bis 4 Gemeinden' : `bis ${lizenz.konfis} Konfis`;
+  return `${lizenz.name} (${umfang}, ${lizenz.euro} € pro Jahr)`;
+}
+
+module.exports = { LIZENZEN, LIZENZ_SCHLUESSEL, lizenzText };

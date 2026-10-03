@@ -137,6 +137,9 @@ const LOESCHREGELN = Object.freeze({
   'invite_codes.created_by': 'nullen',              // seit Migration 173 ohne NOT NULL
   'konfi_historie.erstellt_von': 'nullen',
   'levels.created_by': 'nullen',
+  'mail_bausteine.bearbeitet_von': 'nullen',        // Textbaustein bleibt (Support-Mail, Migration 193)
+  'mail_einstellungen.bearbeitet_von': 'nullen',    // Fusszeile/Absendername bleiben
+  'mail_nachrichten.verfasst_von': 'nullen',        // gesendete Antwort bleibt im Verlauf
   'materials.created_by': 'nullen',
   'org_einladungen.eingeladen_von': 'nullen',
   'user_activities.admin_id': 'nullen',

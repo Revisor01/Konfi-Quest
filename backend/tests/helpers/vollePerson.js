@@ -23,6 +23,9 @@ const crypto = require('crypto');
 const { REQUESTS_DIR, CHALLENGES_DIR, CHAT_DIR } = require('../../utils/photoStorage');
 const { LOESCHREGELN, fremdschluesselAufUsers } = require('../../utils/kontoLoeschen');
 
+// Tabellen, deren Zeilen nicht ueber `id` gefunden werden.
+const SCHLUESSEL_SPALTE = Object.freeze({ mail_einstellungen: 'schluessel' });
+
 const ORG = 1;
 const ANDERE_ORG = 2;
 const JAHRGANG = 1;
@@ -64,7 +67,11 @@ async function legeVollePersonAn(db, P, { weitereGemeinde = true } = {}) {
 
   // Was stehen bleiben muss -- je Spalte die Kennungen der Zeilen.
   const bleibt = {};
-  const merke = (spalte, id) => { (bleibt[spalte] = bleibt[spalte] || []).push(Number(id)); };
+  // Kennung der Zeile: meist die Zahl in `id`; Tabellen mit anderem
+  // Schluessel (SCHLUESSEL_SPALTE) behalten ihren Wert als Text.
+  const merke = (spalte, id) => {
+    (bleibt[spalte] = bleibt[spalte] || []).push(typeof id === 'string' && Number.isNaN(Number(id)) ? id : Number(id));
+  };
   const dateien = { eigene: [], zweierraum: [], fremde: [] };
 
   // ---------------- Grundlagen ----------------
@@ -282,6 +289,21 @@ async function legeVollePersonAn(db, P, { weitereGemeinde = true } = {}) {
     `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am, status, bearbeitet_von)
      VALUES ('Kirchengemeinde Probe', 'Pastorin Probe', 'probe@example.test', NOW(), 'in_arbeit', $1) RETURNING id`,
     [P])).id);
+  // Support-Mail (Migration 193): eine Antwort, die die Person geschrieben
+  // hat, ein Textbaustein und eine Einstellung, die sie zuletzt geaendert
+  // hat. Alles bleibt; nur der Verweis faellt.
+  merke('mail_nachrichten.verfasst_von', (await eins(
+    `INSERT INTO mail_nachrichten (postfach, richtung, message_id, betreff, text, gelesen_am, verfasst_von)
+     VALUES ('moin', 'aus', $1, 'Re: Probe', 'Hallo', NOW(), $2) RETURNING id`,
+    [`<kq-voll-${P}@konfi-quest.de>`, P])).id);
+  merke('mail_bausteine.bearbeitet_von', (await eins(
+    `INSERT INTO mail_bausteine (titel, text, bearbeitet_von) VALUES ('Probe', 'Hallo {{name}}', $1) RETURNING id`,
+    [P])).id);
+  merke('mail_einstellungen.bearbeitet_von', (await eins(
+    `INSERT INTO mail_einstellungen (schluessel, wert, bearbeitet_von) VALUES ('absendername', 'Probe', $1)
+     ON CONFLICT (schluessel) DO UPDATE SET bearbeitet_von = EXCLUDED.bearbeitet_von
+     RETURNING schluessel AS id`,
+    [P])).id);
 
   // ---------------- ohne Fremdschluessel ----------------
   // Zaehler der Anmeldesperre (utils/kontoSperre.js): Hash ueber den Namen.
@@ -362,8 +384,9 @@ async function befundNachLoeschung(db, voll) {
   const nichtGenullt = [];
   for (const [spalte, ids] of Object.entries(voll.bleibt)) {
     const [tabelle, feld] = spalte.split('.');
+    const schluessel = SCHLUESSEL_SPALTE[tabelle] || 'id';
     for (const id of ids) {
-      const { rows } = await db.query(`SELECT ${feld} AS wert FROM ${tabelle} WHERE id = $1`, [id]);
+      const { rows } = await db.query(`SELECT ${feld} AS wert FROM ${tabelle} WHERE ${schluessel} = $1`, [id]);
       if (rows.length === 0) verschwunden.push(`${spalte}#${id}`);
       else if (rows[0].wert !== null) nichtGenullt.push(`${spalte}#${id}`);
     }
