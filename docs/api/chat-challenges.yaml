@@ -1005,6 +1005,15 @@ paths:
     get:
       tags: ["Chat"]
       summary: Teilnehmerliste eines Raums
+      description: >
+        role_name und role_display_name sind die Rolle in der Gemeinde des
+        Raums (der aktiven Gemeinde): in der Stamm-Gemeinde users.role_id,
+        auch wenn user_organizations sie noch einmal fuehrt, in jeder weiteren
+        user_organizations.role_id -- dieselbe Regel wie TEAM_MITGLIED_ROLLE
+        und utils/orgMitglieder.js (ladeRolleInGemeinde). Wer nicht (mehr)
+        Mitglied der Gemeinde ist, behaelt die Rolle am Konto. Die Oberflaeche
+        faerbt damit Strich, Kreis und Eck-Marke je Rolle (Gemeindeleitung,
+        Leitung, Teamer:in).
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       responses:
@@ -1022,8 +1031,8 @@ paths:
                     joined_at: { type: string, format: date-time }
                     name: { type: string }
                     role_title: { type: [string, "null"] }
-                    role_name: { type: string }
-                    role_display_name: { type: string }
+                    role_name: { type: string, description: "Rolle in der Gemeinde des Raums (seit 2026-10-02; vorher die Rolle der Stamm-Gemeinde)" }
+                    role_display_name: { type: string, description: "Datenbank-Anzeigename derselben Rolle" }
                     jahrgang_id: { type: [integer, "null"] }
                     jahrgang_name: { type: [string, "null"] }
         '403': { description: Raum darf nicht geoeffnet werden (darfRaumBetreten) }
@@ -1033,6 +1042,11 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: true
         objekt-pruefung: "darfRaumBetreten (utils/chatRoomAccess.js): Teilnehmer:in; ohne Teilnahme org_admin/super_admin jeder gemeinschaftliche Raum der Org, admin nur Jahrgangs-Chat eines zugewiesenen Jahrgangs, Termin-Chat eines Termins aus seiner Terminliste (darfTermin) und Raeume ohne Konfi; Direktchat nie ohne Teilnahme. BEHOBEN 27.09.2026 (BF-05): vorher sah jeder admin die Teilnehmerliste jedes gemeinschaftlichen Raums der Org"
+        # BEHOBEN 02.10.2026 (Rollenfarben, Paket 2.4.0): role_name kam aus
+        # users.role_id, also aus der Stamm-Gemeinde. Wer die Gemeinde ueber
+        # user_organizations betreut, stand in ihren Chats mit der Rolle seiner
+        # Heimat da (zuhause Teamer:in, hier Gemeindeleitung -> Eck-Marke in
+        # Beere statt Indigo). Antwortform unveraendert.
     post:
       tags: ["Chat"]
       summary: Teilnehmer zu Gruppenchat hinzufuegen (nur Admins)

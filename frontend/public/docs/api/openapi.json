@@ -8611,6 +8611,7 @@
           "Chat"
         ],
         "summary": "Teilnehmerliste eines Raums",
+        "description": "role_name und role_display_name sind die Rolle in der Gemeinde des Raums (der aktiven Gemeinde): in der Stamm-Gemeinde users.role_id, auch wenn user_organizations sie noch einmal fuehrt, in jeder weiteren user_organizations.role_id -- dieselbe Regel wie TEAM_MITGLIED_ROLLE und utils/orgMitglieder.js (ladeRolleInGemeinde). Wer nicht (mehr) Mitglied der Gemeinde ist, behaelt die Rolle am Konto. Die Oberflaeche faerbt damit Strich, Kreis und Eck-Marke je Rolle (Gemeindeleitung, Leitung, Teamer:in).\n",
         "parameters": [
           {
             "name": "roomId",
@@ -8652,10 +8653,12 @@
                         ]
                       },
                       "role_name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Rolle in der Gemeinde des Raums (seit 2026-10-02; vorher die Rolle der Stamm-Gemeinde)"
                       },
                       "role_display_name": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Datenbank-Anzeigename derselben Rolle"
                       },
                       "jahrgang_id": {
                         "type": [

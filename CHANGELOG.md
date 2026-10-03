@@ -9,6 +9,11 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Behoben
+- In der Mitgliederliste eines Chats trug die Marke in der Ecke die Farbe der
+  Rolle aus der Stamm-Gemeinde; Personen, die eine Gemeinde zusätzlich
+  betreuen, erscheinen dort jetzt mit ihrer Rolle in dieser Gemeinde.
+
 ### Sonstiges
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene
