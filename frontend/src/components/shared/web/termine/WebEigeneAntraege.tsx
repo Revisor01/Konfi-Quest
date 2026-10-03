@@ -90,7 +90,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
       breite: '128px',
       zelle: (a) => (
         <>
-          {datumKurz(a.requested_date)}
+          <span className="web-zelle-titel web-zelle-normal">{datumKurz(a.requested_date)}</span>
           {a.photo_filename && (
             <span className="web-zelle-leise web-mit-symbol">
               <IonIcon icon={ICON_KAMERA_GEFUELLT} className="app-icon-color--konfis" aria-hidden="true" />

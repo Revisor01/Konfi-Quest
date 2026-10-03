@@ -205,8 +205,14 @@
 }
 
 .web-filter .web-feld {
-  flex: 0 1 220px;
-  min-width: 180px;
+  flex: 0 1 200px;
+  min-width: 160px;
+}
+
+/* Die Suche rechts gibt nach, wenn "Filter zurücksetzen" dazukommt -- sonst rutscht sie in eine neue Zeile. */
+.web-filter .web-suche {
+  flex: 0 1 300px;
+  min-width: 220px;
 }
 
 /* Ein Knopf, der wie ein Link aussieht und eine Aktion ausfuehrt (Fenster oeffnen). */

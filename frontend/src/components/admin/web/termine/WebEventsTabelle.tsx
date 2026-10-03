@@ -276,10 +276,10 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
           />
         )}
         <WebAuswahl label="Art" wert={art} onWert={(w) => setArt(w as ArtFilter)} optionen={ART_OPTIONEN} />
-        {gefiltert && (
-          <WebKnopf art="text" klein onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf>
-        )}
         <div className="web-werkzeuge__rechts">
+          {gefiltert && (
+            <WebKnopf art="text" klein onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf>
+          )}
           <WebSuche beschriftung="Events durchsuchen" platzhalter="Name oder Ort suchen" wert={suche} onWert={setSuche} />
         </div>
       </div>
