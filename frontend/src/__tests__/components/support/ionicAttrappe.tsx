@@ -7,7 +7,7 @@
 // (`detail.value`, `detail.checked`). Alerts und Router reicht der Test
 // selbst herein, um festzuhalten, was Ionic anzeigen bzw. wohin es gehen
 // wuerde.
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useRef } from 'react';
 
 type Kinder = { children?: React.ReactNode };
 type Wert = { detail: { value?: unknown; checked?: boolean } };
@@ -21,6 +21,16 @@ export interface RouterAttrappe {
 }
 
 const durch = ({ children }: Kinder) => <>{children}</>;
+
+// Ionic ruft useIonViewWillEnter, wenn eine im Speicher gehaltene Seite wieder
+// betreten wird. Die Attrappe merkt sich die Rueckrufe; ein Test ruft
+// `seiteBetreten()` und spielt so das Zurueckkehren auf die Seite nach.
+const betretenHorcher = new Set<() => void>();
+
+/** Spielt „die Seite wird (wieder) betreten" nach: ruft alle Rueckrufe von useIonViewWillEnter. */
+export function seiteBetreten(): void {
+  for (const h of [...betretenHorcher]) h();
+}
 const Segment = createContext<{ wert: unknown; waehlen: (w: unknown) => void }>({ wert: undefined, waehlen: () => {} });
 
 export function ionicAttrappe(optionen: {
@@ -111,8 +121,16 @@ export function ionicAttrappe(optionen: {
     useIonAlert: () => [optionen.presentAlert ?? (() => {}), () => {}],
     useIonRouter: () => optionen.router ?? { push: () => {}, goBack: () => {}, canGoBack: () => false },
     useIonModal: () => [() => {}, () => {}],
-    // Rueckkehr auf eine Seite (stilles Neuladen) spielt in diesen Tests keine Rolle.
-    useIonViewWillEnter: () => {},
+    // Rueckkehr auf eine Seite: der Test loest sie mit seiteBetreten() aus.
+    useIonViewWillEnter: (rueckruf: () => void) => {
+      const neueste = useRef(rueckruf);
+      useEffect(() => { neueste.current = rueckruf; });
+      useEffect(() => {
+        const horcher = () => neueste.current();
+        betretenHorcher.add(horcher);
+        return () => { betretenHorcher.delete(horcher); };
+      }, []);
+    },
   };
 }
 
