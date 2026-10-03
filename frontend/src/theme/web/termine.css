@@ -1,0 +1,350 @@
+/* ===================================================================
+   Web-Fassung von Mitmachen / Events (03.10.2026,
+   docs/planung/web-alle-bereiche.md, Entscheidung 6)
+
+   Gilt fuer die Seiten der drei Rollen: Reiter oben, Karten im Raster
+   (Konfis und Team), Tabellen der Leitung, Angaben und Aktionen der
+   Detailseiten. Dieselben Regeln wie web-ansicht.css: Praefix web-, nur
+   Tokens (der Dunkelmodus kommt von selbst), keine Bewegung, kein Eingriff
+   in Ionic -- Symbole tragen deshalb eigene Klassen.
+   =================================================================== */
+
+/* --- Reiter oben: Events, Aktivitaeten, Antraege --- */
+.web-reiter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-mini);
+  border-bottom: 1px solid var(--web-linie);
+}
+
+.web-reiter__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin-bottom: -1px;
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border-bottom: 2px solid transparent;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-standard);
+  font-weight: var(--app-schrift-halbfett);
+  text-decoration: none;
+}
+
+.web-reiter__link:hover {
+  color: var(--web-text);
+  text-decoration: none;
+}
+
+.web-reiter__link--aktiv,
+.web-reiter__link--aktiv:hover {
+  color: var(--ion-color-primary);
+  border-bottom-color: var(--ion-color-primary);
+}
+
+.web-reiter__link:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+  border-radius: var(--app-radius-fein);
+}
+
+/* --- Zahlen und Merkmale mit kleinem Symbol --- */
+.web-fakten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng) var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--app-text-sekundaer);
+  color: var(--web-text);
+}
+
+.web-fakten--spalte {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: var(--app-abstand-mini);
+}
+
+.web-fakt {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+  line-height: 1.4;
+}
+
+.web-fakt__symbol {
+  flex: 0 0 auto;
+  margin-top: var(--app-abstand-winzig);
+}
+
+.web-mit-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Karten im Raster (Konfis und Team) --- */
+.web-termin-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--app-abstand-basis);
+  align-items: stretch;
+}
+
+.web-termin-karte {
+  /* Die Farbe des Status: die Seite setzt sie je Karte (var(--app-color-...)). */
+  --web-akzent: var(--web-linie);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-left: 4px solid var(--web-akzent);
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+}
+
+.web-termin-karte:hover {
+  background: var(--web-hover);
+}
+
+.web-termin-karte--gedaempft {
+  opacity: 0.75;
+}
+
+.web-termin-karte__kopf {
+  /* Platz fuer die Eck-Badges oben rechts. */
+  padding-right: var(--app-freiraum-aktion-l);
+  min-width: 0;
+}
+
+.web-termin-karte__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.3;
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}
+
+.web-termin-karte__untertitel {
+  margin: var(--app-abstand-mini) 0 0;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+/* Der Link spannt sich ueber die ganze Karte (Mittelklick, Rechtsklick). */
+.web-termin-karte__link {
+  color: inherit;
+}
+
+.web-termin-karte__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.web-termin-karte__link:focus-visible {
+  outline: none;
+}
+
+.web-termin-karte__link:focus-visible::after {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+  border-radius: var(--app-radius-karte);
+}
+
+.web-absage-zeile {
+  display: block;
+}
+
+/* --- Tabellen der Leitung --- */
+.web-termin-titel {
+  display: block;
+}
+
+.web-termin-aktionen {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-spalte-termin-aktionen {
+  text-align: right;
+}
+
+/* Die Aktionen einer Zeile bleiben auf einer Linie, solange Platz ist. */
+.web-spalte-termin-aktionen .web-termin-aktionen {
+  flex-wrap: nowrap;
+}
+
+/* Ein Wert in der Tabelle in normaler Staerke (nicht fett wie ein Titel). */
+.web-zelle-normal {
+  font-weight: var(--app-schrift-normal);
+}
+
+.web-zeile--gedaempft td,
+.web-zeile--gedaempft .web-zelle-titel {
+  color: var(--web-text-leise);
+}
+
+/* --- Filterzeile unter der Werkzeugleiste --- */
+.web-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--app-abstand-mittel) var(--app-abstand-basis);
+}
+
+.web-filter .web-feld {
+  flex: 0 1 220px;
+  min-width: 180px;
+}
+
+/* Ein Knopf, der wie ein Link aussieht und eine Aktion ausfuehrt (Fenster oeffnen). */
+.web-link--knopf {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* --- Angaben, Beschreibung, schlichte Listen --- */
+.web-angabe-zeile {
+  display: block;
+}
+
+.web-beschreibung {
+  margin: 0;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-absage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+}
+
+.web-liste-schlicht {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-liste-schlicht__zeile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-liste-schlicht__zeile:last-child {
+  border-bottom: 0;
+}
+
+.web-liste-schlicht__zeile > span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* --- Anwesenheit: zwei Knoepfe, einer davon gewaehlt --- */
+.web-umschalter {
+  display: inline-flex;
+}
+
+.web-umschalter__knopf {
+  border-radius: 0;
+}
+
+.web-umschalter__knopf:first-child {
+  border-top-left-radius: var(--app-radius-knopf);
+  border-bottom-left-radius: var(--app-radius-knopf);
+}
+
+.web-umschalter__knopf:last-child {
+  margin-left: -1px;
+  border-top-right-radius: var(--app-radius-knopf);
+  border-bottom-right-radius: var(--app-radius-knopf);
+}
+
+.web-umschalter__knopf[aria-pressed='true'] {
+  background: var(--ion-color-primary);
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+/* Das Menue im Fenster: Aktionen untereinander. */
+.web-menue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-menue .web-knopf {
+  justify-content: flex-start;
+}
+
+/* --- Anmelden, Abmelden: Knoepfe ueber die ganze Breite der Karte --- */
+.web-block-knoepfe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-block-knoepfe .web-knopf {
+  width: 100%;
+  min-height: 44px;
+}
+
+.web-block-knoepfe--reihe {
+  flex-direction: row;
+}
+
+.web-block-knoepfe--reihe .web-knopf {
+  flex: 1 1 0;
+}
+
+.web-knopf--erfolg {
+  border-color: var(--app-color-success);
+  color: var(--app-color-success-tief);
+}
+
+.web-knopf--erfolg:hover {
+  background: var(--app-flaeche-erfolg);
+}
+
+.web-knopf--erfolg[disabled] {
+  border-color: var(--web-linie);
+  color: var(--web-text-leise);
+}
+
+.web-knopf--warnung {
+  border-color: var(--app-color-bonus);
+  color: var(--app-text-warnung);
+}
+
+.web-knopf--warnung:hover {
+  background: var(--app-flaeche-warnung);
+}
+
+.web-knopf--warnung[disabled] {
+  border-color: var(--web-linie);
+  color: var(--web-text-leise);
+}

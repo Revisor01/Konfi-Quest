@@ -64,6 +64,8 @@ import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { trackHandlung } from '../../../services/analytics';
 import { datumLang } from '../../../utils/dateUtils';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebTerminDetailLeitung from '../web/termine/WebTerminDetailLeitung';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -92,6 +94,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
+  // Im Browser ab 992 px zeigt die Ansicht ihre Web-Fassung (siehe unten).
+  const breit = useBreitesLayout();
 
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [unregistrations, setUnregistrations] = useState<Unregistration[]>([]);
@@ -1352,6 +1356,57 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       </IonItemSliding>
     );
   };
+
+  // Zwei Gesichter, eine Ansicht (docs/planung/web-alle-bereiche.md,
+  // Entscheidung 1): im Browser ab 992 px die zweispaltige Web-Fassung --
+  // links die Angaben, rechts Teilnehmende als Tabellen --, sonst die
+  // Darstellung der App, unverändert. Daten, Rechte und Funktionen sind
+  // dieselben (Anwesenheit, Absagen, Teilnehmende verwalten ...); die
+  // Web-Fassung bekommt sie hereingereicht und ruft dieselben Rückfragen und
+  // Modale auf.
+  if (breit) {
+    const oeffneHinzufuegen = (wen: 'konfi' | 'team' | 'leitung') => {
+      const oeffnen = wen === 'konfi' ? presentKonfiModal : wen === 'team' ? presentTeamerModal : presentLeitungModal;
+      oeffnen({ presentingElement: presentingElement || undefined });
+    };
+    return (
+      <WebTerminDetailLeitung
+        pageRef={pageRef}
+        laedt={loading}
+        jahrgangFehlt={jahrgangFehlt}
+        eventData={eventData}
+        teilnehmende={participants}
+        abmeldungen={unregistrations}
+        materialien={eventMaterials}
+        isOnline={isOnline}
+        darfVerwalten={darfVerwalten}
+        darfEintragen={darfEintragen}
+        darfSichMelden={darfSichMelden}
+        eigeneZusage={eigeneZusage}
+        zusageLaeuft={zusageLaeuft}
+        aktionen={{
+          anwesenheit: (person, status) => { void handleAttendanceUpdate(person, status); },
+          abmeldung: showAbmeldungModal,
+          notiz: showNotizModal,
+          bestaetigen: (person) => { void handlePromoteParticipant(person); },
+          aufWarteliste: handleDemoteParticipant,
+          entfernen: handleRemoveParticipant,
+          alleBestaetigen: (anzahl, wartend, rolle) => { void handleConfirmAllAttendance(anzahl, wartend, rolle); },
+          hinzufuegen: oeffneHinzufuegen,
+          absagen: handleCancelEvent,
+          zuruecknehmen: handleAbsageZuruecknehmen,
+          bearbeiten: () => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false }),
+          kopieren: handleKopieren,
+          qr: () => presentQRDisplayModal({ presentingElement: presentingElement || undefined }),
+          chat: handleChatButtonClick,
+          material: handleMaterialClick,
+          eigeneZusage: (dabei) => { void setzeEigeneZusage(dabei); },
+          eigeneAbsage: oeffneEigeneAbsage,
+          neuLaden: () => { void loadEventData(); },
+        }}
+      />
+    );
+  }
 
   // Solange geladen wird, den Spinner zeigen statt ein leeres Geruest mit
   // Platzhaltertitel - so wie es die Konfi-Ansicht desselben Events macht.

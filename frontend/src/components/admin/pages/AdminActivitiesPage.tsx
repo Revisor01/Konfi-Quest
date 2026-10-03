@@ -14,12 +14,16 @@ import ActivitiesView from '../ActivitiesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useAktivitaetenVerwaltung } from '../useAktivitaetenVerwaltung';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebAktivitaetenSeite from '../web/termine/WebAktivitaetenSeite';
 
 const AdminActivitiesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-activities');
+  // Im Browser ab 992 px zeigt die Seite ihre Web-Fassung (siehe unten).
+  const breit = useBreitesLayout();
 
   // Laden, Anlegen/Ändern (Modal) und Löschen (Rückfrage) stehen in
-  // useAktivitaetenVerwaltung.
+  // useAktivitaetenVerwaltung -- dieselben für App und Web-Fassung.
   const verwaltung = useAktivitaetenVerwaltung(() => presentingElement || pageRef.current || undefined);
   const {
     aktivitaeten: activities,
@@ -39,6 +43,12 @@ const AdminActivitiesPage: React.FC = () => {
     setSelectedRole(role);
     // useOfflineQuery reagiert automatisch auf selectedRole-Änderung im cacheKey
   };
+
+  // Zwei Gesichter, eine Seite: im Browser ab 992 px dieselben Aktivitäten als
+  // Tabelle unter den Reitern von Mitmachen, sonst die Darstellung der App.
+  if (breit) {
+    return <WebAktivitaetenSeite pageRef={pageRef} verwaltung={verwaltung} />;
+  }
 
   return (
     <IonPage ref={pageRef}>

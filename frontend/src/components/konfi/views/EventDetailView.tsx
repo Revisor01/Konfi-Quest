@@ -65,6 +65,8 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { linkOeffnen } from '../../../services/systemDialoge';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebKonfiTerminDetail from '../web/termine/WebKonfiTerminDetail';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -96,6 +98,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
   const [presentActionSheet] = useIonActionSheet();
+  // Im Browser ab 992 px zeigt die Ansicht ihre Web-Fassung (siehe unten).
+  const breit = useBreitesLayout();
 
   // Event-Daten über useOfflineQuery mit 10min TTL Cache
   // DERSELBE Cache-Schluessel wie die Terminliste (KonfiEventsPage.tsx:92) —
@@ -553,6 +557,36 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     if (eventData.registration_status === 'upcoming') return 'Bald';
     return 'Geschlossen';
   };
+
+  // Zwei Gesichter, eine Ansicht (docs/planung/web-alle-bereiche.md,
+  // Entscheidung 1): im Browser ab 992 px die zweispaltige Web-Fassung --
+  // links Kennzahlen und Angaben, rechts die Anmeldung und wer dabei ist --,
+  // sonst die Darstellung der App, unverändert. Daten, Rechte und Funktionen
+  // (Anmelden mit Zeitfenster-Wahl, Abmelden mit Grund, Einchecken) sind
+  // dieselben; die Web-Fassung bekommt sie hereingereicht.
+  if (breit) {
+    return (
+      <WebKonfiTerminDetail
+        pageRef={pageRef}
+        laedt={loading}
+        eventData={eventData}
+        zeitfenster={timeslots}
+        teilnehmende={participants}
+        hatKonfirmationGebucht={hasExistingKonfirmation}
+        isOnline={isOnline}
+        anmeldungLaeuft={anmeldungLaeuft}
+        aktionen={{
+          anmelden: handleRegister,
+          abmelden: () => presentUnregisterModal({ presentingElement: pageRef.current || undefined }),
+          pflichtAbmelden: () => presentOptOutModal({ presentingElement: pageRef.current || undefined }),
+          pflichtWiederAnmelden: () => { void handleOptIn(); },
+          einchecken: () => presentScannerModal({ presentingElement: pageRef.current || undefined }),
+          chat: () => router.push(`/konfi/chat/room/${eventData?.chat_room_id}`, 'root'),
+          neuLaden: () => { void refreshEvents(); },
+        }}
+      />
+    );
+  }
 
   if (loading) {
     return (

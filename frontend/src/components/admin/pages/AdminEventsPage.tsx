@@ -30,6 +30,9 @@ import { aktuelleTermine, zuVerbuchendeTermine, vergangeneTermine, istAbgesagt }
 import { datumLang } from '../../../utils/dateUtils';
 import { useBadge } from '../../../contexts/BadgeContext';
 import SegmentZahl from '../../shared/SegmentZahl';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
+import { segmentAusAdresse } from '../web/termine/typen';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -85,6 +88,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
   const [presentAlert] = useIonAlert();
+  // Im Browser ab 992 px zeigt die Seite ihre Web-Fassung (siehe unten).
+  const breit = useBreitesLayout();
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
@@ -758,6 +763,41 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
     </>
   );
+
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md,
+  // Entscheidung 1): im Browser ab 992 px die Web-Fassung -- Reiter oben,
+  // Events und Anträge als Tabellen --, sonst die Darstellung der App,
+  // unverändert. Daten, Rechte und Funktionen (Absagen, Kopieren, Löschen,
+  // Antrag prüfen ...) sind dieselben; die Web-Fassung bekommt sie hereingereicht.
+  if (breit) {
+    return (
+      <WebMitmachenLeitung
+        pageRef={pageRef}
+        presentingElement={presentingElement}
+        segment={segmentAusAdresse(routerLocation.search)}
+        events={events}
+        abgesagte={cancelledEvents || []}
+        jahrgaenge={jahrgaenge || []}
+        eventsLaden={eventsLoading}
+        wartendVerbuchen={pendingEventsCount}
+        antraege={requests || []}
+        antraegeLaden={requestsLoading}
+        ohneJahrgang={ohneJahrgang}
+        wartendeAntraege={pendingRequestsCount}
+        darfVerwalten={canManageEvents}
+        terminAktionen={{
+          neu: handleAddEventClick,
+          kopieren: handleKopiereEvent,
+          absagen: handleCancelEvent,
+          zuruecknehmen: handleAbsageZuruecknehmen,
+          loeschen: handleDeleteEvent,
+        }}
+        antragAktionen={{ pruefen: handleSelectRequest, zuruecksetzen: handleResetRequest }}
+        neuLaden={async () => { await refreshEvents(); await refreshCancelled(); }}
+        antraegeNeuLaden={refreshRequests}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>
