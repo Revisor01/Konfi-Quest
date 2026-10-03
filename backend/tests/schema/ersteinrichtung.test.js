@@ -71,8 +71,12 @@ describe('Ersteinrichtung einer neuen Instanz', () => {
     expect(r.status).toBe(0);
     expect(r.stdout).toMatch(/^OK: Gemeinde \d+ \(betrieb\) und Konto \d+ mit Super-Admin-Recht angelegt\./);
 
-    const { rows: rollen } = await pool.query('SELECT name FROM roles ORDER BY name');
+    // Die vier Rollen der Gemeinde; dazu steht seit Migration 190 die
+    // gemeindefreie Systemrolle super_admin in jeder Instanz.
+    const { rows: rollen } = await pool.query('SELECT name FROM roles WHERE organization_id IS NOT NULL ORDER BY name');
     expect(rollen.map((x) => x.name)).toEqual(['admin', 'konfi', 'org_admin', 'teamer']);
+    const { rows: systemrollen } = await pool.query('SELECT name FROM roles WHERE organization_id IS NULL');
+    expect(systemrollen).toEqual([{ name: 'super_admin' }]);
     const { rows: [konto] } = await pool.query(
       `SELECT u.username, u.email, u.is_super_admin, r.name AS rolle, o.is_trial, o.trial_ends_at
        FROM users u JOIN roles r ON r.id = u.role_id JOIN organizations o ON o.id = u.organization_id`

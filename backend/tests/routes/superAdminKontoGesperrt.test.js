@@ -14,24 +14,16 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, PASSWORD } = require('../helpers/seed');
 const { invalidateUserCache } = require('../../middleware/rbac');
 const {
-  SUPPORT, PASSWORT_SUPPORT, kontoOhneGemeindeErmoeglichen, supportKontoAnlegen, refreshTokenAnlegen,
+  SUPPORT, PASSWORT_SUPPORT, supportKontoAnlegen, refreshTokenAnlegen,
 } = require('../helpers/kontoOhneGemeinde');
 
 const DEAKTIVIERT = 'Dein Zugang wurde deaktiviert. Bitte wende dich an deine Gemeinde.';
 
 describe('Gesperrtes Super-Admin-Konto: Anmeldung und Refresh', () => {
-  let app, db, wiederherstellen;
+  let app, db;
 
-  beforeAll(async () => {
-    db = getTestPool();
-    app = getTestApp(db);
-    wiederherstellen = await kontoOhneGemeindeErmoeglichen(db);
-  });
-  afterAll(async () => {
-    await truncateAll(db);
-    await wiederherstellen();
-    await closePool();
-  });
+  beforeAll(() => { db = getTestPool(); app = getTestApp(db); });
+  afterAll(async () => { await closePool(); });
 
   beforeEach(async () => {
     await truncateAll(db);

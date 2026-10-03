@@ -28,25 +28,17 @@ const { seed, USERS, ORGS, ROLES } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const { invalidateUserCache } = require('../../middleware/rbac');
 const {
-  SUPPORT, kontoOhneGemeindeErmoeglichen, supportKontoAnlegen, supportToken,
+  SUPPORT, SYSTEMROLLE_ID, supportKontoAnlegen, supportToken,
 } = require('../helpers/kontoOhneGemeinde');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-vitest';
 const SUPER_ADMIN_TEXT = 'Super-Admin-Konten kann nur ein Super-Admin bearbeiten.';
 
 describe('Konto ohne Gemeinde', () => {
-  let app, db, wiederherstellen;
+  let app, db;
 
-  beforeAll(async () => {
-    db = getTestPool();
-    app = getTestApp(db);
-    wiederherstellen = await kontoOhneGemeindeErmoeglichen(db);
-  });
-  afterAll(async () => {
-    await truncateAll(db);
-    await wiederherstellen();
-    await closePool();
-  });
+  beforeAll(() => { db = getTestPool(); app = getTestApp(db); });
+  afterAll(async () => { await closePool(); });
 
   beforeEach(async () => {
     await truncateAll(db);
@@ -240,6 +232,40 @@ describe('Konto ohne Gemeinde', () => {
       expect(res.status).toBe(403);
       const { rows: [konto] } = await db.query('SELECT password_hash FROM users WHERE id = $1', [SUPPORT.id]);
       expect(await bcrypt.compare('Neues-Passwort2!', konto.password_hash)).toBe(false);
+    });
+  });
+
+  describe('Systemrolle super_admin ohne Gemeinde (Migration 190)', () => {
+    it('GET /roles der Gemeinde listet sie nicht', async () => {
+      const res = await request(app).get('/api/roles').set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+      expect(res.status).toBe(200);
+      expect(res.body.map((r) => r.id)).not.toContain(SYSTEMROLLE_ID);
+      expect(res.body.map((r) => r.id)).toContain(ROLES.orgAdmin.id);
+    });
+
+    it.each(['orgAdmin1', 'orgAdminSuper'])('verboten: %s legt kein Konto mit der Systemrolle an (403)', async (wer) => {
+      const res = await request(app).post('/api/users')
+        .set('Authorization', `Bearer ${generateToken(wer)}`)
+        .send({ display_name: 'Neuer Support', username: 'neuer.support', password: 'Support-Passwort1!', role_id: SYSTEMROLLE_ID });
+      expect(res.status).toBe(403);
+      const { rows } = await db.query("SELECT 1 FROM users WHERE username = 'neuer.support'");
+      expect(rows).toHaveLength(0);
+    });
+
+    it.each(['orgAdmin1', 'orgAdminSuper'])('verboten: %s gibt einer Teamer:in die Systemrolle nicht (403)', async (wer) => {
+      const res = await request(app).put(`/api/users/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${generateToken(wer)}`)
+        .send({ role_id: SYSTEMROLLE_ID });
+      expect(res.status).toBe(403);
+      const { rows: [konto] } = await db.query('SELECT role_id FROM users WHERE id = $1', [USERS.teamer1.id]);
+      expect(konto.role_id).toBe(ROLES.teamer.id);
+    });
+
+    it('verboten: als Mitglieds-Rolle einer Gemeinde (POST /organizations/:id/members, 400)', async () => {
+      const res = await request(app).post(`/api/organizations/${ORGS.testGemeinde.id}/members`)
+        .set('Authorization', `Bearer ${generateToken('superAdmin')}`)
+        .send({ user_id: USERS.teamer2.id, role_name: 'super_admin' });
+      expect(res.status).toBe(400);
     });
   });
 

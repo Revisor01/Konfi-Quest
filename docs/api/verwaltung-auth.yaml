@@ -90,6 +90,13 @@
 #      is_trial im Org-Update, systemweite User-Suche (/search-users),
 #      Multi-Org-Mitglieder verwalten (/:id/members), Passwort-Reset
 #      org-uebergreifend (PUT /users/:id/reset-password).
+#    - KONTEN OHNE GEMEINDE (seit 03.10.2026, Migration 190): users.
+#      organization_id ist nullable, aber nur fuer Super-Admins (CHECK
+#      users_gemeinde_oder_super_admin); ein solches Konto traegt die
+#      gemeindefreie Systemrolle super_admin (roles.organization_id NULL,
+#      eindeutig per uq_roles_name_ohne_gemeinde). Als Gast in einer
+#      Gemeinde ueber POST /organizations/{id}/members. Anmeldung nur aus der
+#      Web-Version (kann_ohne_gemeinde, siehe POST /auth/login).
 #    - super_admin (Rolle) hat KEINE Organisation und ist von Org-/Trial-
 #      Sperren beim Login/Refresh ausgenommen -- seit 03.10.2026 NICHT mehr
 #      von der Sperre des Kontos (is_active); von Jahrgangs-Daten bleibt er
