@@ -2,7 +2,8 @@
 # Konfi Quest API — Block 3: Verwaltung & Auth
 # Dokumentiert: auth, docs-auth, health/status/app-version, metrics,
 # organizations, users (beide Mounts), einladungen, anfragen und support
-# (seit 03.10.2026) — 67 Operationen,
+# (seit 03.10.2026; Support-Mail seit 03.10.2026, routes/supportMail.js) —
+# 67 Operationen,
 # gezaehlt am 26.09.2026 (die Generatoren zaehlen bei jedem Lauf nach).
 # teamer, material und wrapped stehen in teamer-material.yaml; jahrgaenge,
 # badges, levels, categories, roles und settings in stammdaten.yaml.
@@ -249,7 +250,7 @@ tags:
   - name: "System & Monitoring"
     description: "Health-Check, Status und Metriken des Servers."
   - name: "Support"
-    description: "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik (nur Super-Admin)."
+    description: "Support-Ansicht der Web-Version: das öffentliche Anfrageformular (POST /api/anfragen) und unter /api/support Anfragen, Landeskirchen und Kirchenkreise, Statistik und die Support-Mail -- Posteingang, Verlauf, Antworten, Textbausteine, Fußzeile (nur Super-Admin)."
 components:
   securitySchemes:
     bearerAuth:
@@ -289,6 +290,66 @@ components:
           type: [string, "null"]
           enum: [klein, standard, plus, gross, verbund, null]
           description: "Wunschlizenz aus dem Formular (Migration 192, seit 03.10.2026); null = keine Angabe. Werte wie backend/utils/lizenzen.js."
+        ungelesen:
+          type: integer
+          description: "ungelesene eingehende Mails zu dieser Anfrage (Support-Mail, additiv seit 03.10.2026); GET /api/support/anfragen und PATCH /api/support/anfragen/{id}"
+    MailNachricht:
+      type: object
+      description: >
+        Eine Mail der Support-Mail (mail_nachrichten, Migration 193), ein-
+        oder ausgehend. Zugeordnet zu einer Anfrage ODER einer Gemeinde oder
+        keinem (= Posteingang). Nur Klartext (hoechstens 50.000 Zeichen);
+        von Anhaengen nur Name, Groesse und Typ.
+      properties:
+        id: { type: integer }
+        postfach: { type: string, enum: [moin, support] }
+        richtung: { type: string, enum: [ein, aus] }
+        anfrage_id: { type: [integer, "null"] }
+        organization_id: { type: [integer, "null"] }
+        message_id: { type: string, description: "in spitzen Klammern; eigene Antworten <kq-uuid@konfi-quest.de>, Mails ohne Message-ID <kq-ersatz-postfach-uidvalidity-uid@konfi-quest.de>" }
+        in_reply_to: { type: [string, "null"] }
+        referenzen: { type: array, items: { type: string }, description: "References, aelteste zuerst" }
+        von_adresse: { type: [string, "null"], description: "klein geschrieben" }
+        von_name: { type: [string, "null"] }
+        an_adressen: { type: array, items: { type: string } }
+        betreff: { type: string }
+        text: { type: string, description: "Klartext; bei ausgehenden samt Fusszeile, wie gesendet" }
+        anhaenge:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: [string, "null"] }
+              groesse: { type: [integer, "null"] }
+              typ: { type: [string, "null"] }
+        gesendet_am: { type: string, format: date-time }
+        gelesen_am: { type: [string, "null"], format: date-time, description: "eingehend: wann im Support gesehen; ausgehend: = gesendet_am" }
+        verfasst_von: { type: [integer, "null"], description: "Konto, das die Antwort geschrieben hat; faellt mit dem Konto weg" }
+        verfasst_von_name: { type: [string, "null"], description: "Anzeigename dazu (zusaetzlich zum Vertrag)" }
+        created_at: { type: string, format: date-time }
+    MailBaustein:
+      type: object
+      description: "Textbaustein (mail_bausteine). Platzhalter {{name}}, {{gemeinde}}, {{lizenz}}, {{testphase_bis}}, {{benutzername}}, {{absender}} fuellt die Oberflaeche (GET /api/support/mail/platzhalter)."
+      properties:
+        id: { type: integer }
+        titel: { type: string }
+        betreff: { type: [string, "null"] }
+        text: { type: string }
+        postfach: { type: [string, "null"], enum: [moin, support, null], description: "null = fuer beide" }
+        sortierung: { type: integer }
+        updated_at: { type: string, format: date-time }
+        bearbeitet_von: { type: [integer, "null"] }
+    MailEinstellungen:
+      type: object
+      properties:
+        fusszeile: { type: string, description: "unter jeder Antwort, nach dem Trenner '-- '; leer = keine" }
+        absendername: { type: string, description: "Name im From der Antworten und Platzhalter {{absender}}" }
+    MailAntwort:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string, maxLength: 20000, description: "getrimmt, nicht leer; die Fusszeile setzt der Server darunter" }
+        betreff: { type: [string, "null"], maxLength: 300, description: "leer = Standardbetreff; die Kennung [Anfrage N] / [Gemeinde N] kommt dazu, wenn sie fehlt" }
     Landeskirche:
       type: object
       properties:
@@ -2019,7 +2080,7 @@ paths:
         - { name: status, in: query, required: false, schema: { type: string, enum: [neu, in_arbeit, angelegt, abgelehnt] }, description: "filtert; ein anderer Wert 400" }
       responses:
         "200":
-          description: "Array, nach created_at absteigend"
+          description: "Array, nach created_at absteigend; je Anfrage ungelesen (additiv seit 03.10.2026, Support-Mail)"
           content:
             application/json:
               schema:
@@ -2372,6 +2433,560 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "keine (alle Gemeinden); keine Personennamen in der Antwort"
+
+  # --------------------------------------------------------------------------
+  # Support-Mail (backend/routes/supportMail.js, in routes/support.js HINTER
+  # verifyTokenRBAC + requireSuperAdmin eingehaengt; docs/planung/
+  # support-mail.md). Zwei Postfaecher: moin (Anfragen, Erstkontakt) und
+  # support (bestehende Gemeinden). Abholen per IMAP nur lesend auf dem
+  # Cron-Leader (services/mailAbholung.js), Zuordnen eingehender Mails an
+  # einer Stelle (utils/mailZuordnung.js), Versand services/mailVersand.js.
+  # Auf einem Server mit RUN_BACKGROUND_JOBS=false (backend-test) wird weder
+  # abgeholt noch gesendet. Protokoll ohne Inhalte und Adressen. Tests:
+  # backend/tests/routes/supportMail.test.js, supportMailAntworten.test.js,
+  # tests/services/mailAbholung.test.js, mailVersand.test.js,
+  # mailHintergrund.test.js, tests/utils/mailZuordnung.test.js,
+  # mailPostfaecher.test.js.
+  # --------------------------------------------------------------------------
+  /api/support/mail/status:
+    get:
+      tags: ["Support"]
+      summary: Zustand der Postfaecher moin und support
+      description: >
+        Beide Postfaecher in fester Reihenfolge. Eingerichtet ist ein
+        Postfach, wenn Benutzer, Passwort und IMAP-Host als
+        Umgebungsvariablen gesetzt sind (leer = nicht gesetzt). abgeholt_am,
+        fehler und fehler_am aus mail_abholstand (Fehler ohne Adressen).
+        auf_diesem_server (zusaetzlich zum Vertrag): false auf einem Server
+        mit RUN_BACKGROUND_JOBS=false -- dort wird weder abgeholt noch
+        gesendet.
+      responses:
+        "200":
+          description: "{ postfaecher }"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  postfaecher:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        postfach: { type: string, enum: [moin, support] }
+                        adresse: { type: string }
+                        eingerichtet: { type: boolean }
+                        abgeholt_am: { type: [string, "null"], format: date-time }
+                        fehler: { type: [string, "null"] }
+                        fehler_am: { type: [string, "null"], format: date-time }
+                        auf_diesem_server: { type: boolean }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine; keine Zugangsdaten in der Antwort"
+
+  /api/support/mail/zaehler:
+    get:
+      tags: ["Support"]
+      summary: Ungelesene eingehende Mails -- rote Zahlen der Support-Ansicht
+      responses:
+        "200":
+          description: "anfragen/gemeinden/eingang: Summen; je_anfrage und je_gemeinde: Kennung -> Anzahl (nur mit mindestens einer)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anfragen: { type: integer }
+                  gemeinden: { type: integer }
+                  eingang: { type: integer, description: "nicht zugeordnet" }
+                  je_anfrage: { type: object, additionalProperties: { type: integer } }
+                  je_gemeinde: { type: object, additionalProperties: { type: integer } }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine (alle Mails)"
+
+  /api/support/mail/eingang:
+    get:
+      tags: ["Support"]
+      summary: Posteingang -- nicht zugeordnete eingehende Mails, neueste zuerst
+      description: >
+        Nur eingehende Mails ohne Anfrage und Gemeinde, hoechstens 1.000 (die
+        neuesten). auszug: Text ohne zitierte Zeilen, Leerraum
+        zusammengefasst, hoechstens 200 Zeichen. Nicht zugeordnete Mails
+        loescht der naechtliche Lauf nach 180 Tagen (im Postfach bleiben sie).
+      parameters:
+        - { name: postfach, in: query, required: false, schema: { type: string, enum: [moin, support] }, description: "filtert; ein anderer Wert 400" }
+      responses:
+        "200":
+          description: "Array"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: { type: integer }
+                    postfach: { type: string, enum: [moin, support] }
+                    von_adresse: { type: [string, "null"] }
+                    von_name: { type: [string, "null"] }
+                    betreff: { type: string }
+                    auszug: { type: string }
+                    gesendet_am: { type: string, format: date-time }
+                    gelesen_am: { type: [string, "null"], format: date-time }
+                    anhaenge: { type: array, items: { type: object } }
+        "400": { description: "unbekanntes Postfach" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine (alle Mails)"
+
+  /api/support/mail/nachrichten/{id}:
+    get:
+      tags: ["Support"]
+      summary: Eine Mail mit ihrem Faden
+      description: >
+        Die Mail mit allen Feldern und verlauf: alle Mails desselben Fadens
+        (sie selbst eingeschlossen), aelteste zuerst. Ein Faden sind alle
+        Mails, deren Schluessel (Message-ID, In-Reply-To, References) sich
+        ueberschneiden -- auch ueber eine Mail, die Konfi Quest nicht
+        gespeichert hat. Liest nur; gelesen setzt POST /mail/gelesen.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: "MailNachricht + verlauf"
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - { $ref: "#/components/schemas/MailNachricht" }
+                  - type: object
+                    properties:
+                      verlauf: { type: array, items: { $ref: "#/components/schemas/MailNachricht" } }
+        "400": { description: "ungueltige Kennung" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Mail nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+
+  /api/support/mail/gelesen:
+    post:
+      tags: ["Support"]
+      summary: Mails als gelesen markieren (nur in Konfi Quest, nicht im Postfach)
+      description: >
+        Setzt gelesen_am = jetzt fuer die genannten EINGEHENDEN Mails ohne
+        Datum; ausgehende und schon gelesene bleiben, unbekannte Kennungen
+        zaehlen nicht. Am Postfach selbst aendert sich nichts.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids: { type: array, minItems: 1, maxItems: 1000, items: { type: integer, minimum: 1 } }
+      responses:
+        "200":
+          description: "{ gelesen: Anzahl der geaenderten Mails }"
+          content: { application/json: { schema: { type: object, properties: { gelesen: { type: integer } } } } }
+        "400": { description: "ids fehlt, leer, zu lang oder keine Zahlen" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine (alle Mails)"
+
+  /api/support/mail/nachrichten/{id}/zuordnen:
+    post:
+      tags: ["Support"]
+      summary: Eine Mail samt ganzem Faden einer Anfrage oder Gemeinde zuordnen -- oder zurueck in den Posteingang
+      description: >
+        { anfrage_id } oder { organization_id } oder {} (Posteingang); beides
+        zugleich 400. Der GANZE Faden (wie verlauf in GET
+        /mail/nachrichten/{id}) bekommt die neue Zuordnung, in einer
+        Transaktion. Zu einer Anfrage zaehlt das als Bewegung (updated_at,
+        365-Tage-Frist unbewegter Anfragen).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                anfrage_id: { type: [integer, "null"] }
+                organization_id: { type: [integer, "null"] }
+      responses:
+        "200":
+          description: "{ anzahl, anfrage_id, organization_id, ids } -- ids: alle Mails des Fadens (Form zusaetzlich zum Vertrag, der keine Antwort festlegt)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anzahl: { type: integer }
+                  anfrage_id: { type: [integer, "null"] }
+                  organization_id: { type: [integer, "null"] }
+                  ids: { type: array, items: { type: integer } }
+        "400": { description: "beides angegeben ('Entweder anfrage_id oder organization_id angeben, nicht beides.') oder keine Zahl" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "'Mail nicht gefunden', 'Anfrage nicht gefunden' oder 'Gemeinde nicht gefunden' -- dann aendert sich nichts" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz von Mail und Ziel (Anfrage FOR UPDATE)"
+
+  /api/support/mail/nachrichten/{id}/antworten:
+    post:
+      tags: ["Support"]
+      summary: Antwort auf eine eingehende Mail an ihren Absender, vom selben Postfach
+      description: >
+        Wie POST /anfragen/{id}/antworten, aber an von_adresse der Mail und
+        vom Postfach der Mail; In-Reply-To/References auf diese Mail;
+        Standardbetreff "Re: <Betreff>". Die Antwort bekommt die Zuordnung
+        der Mail (Posteingang bleibt Posteingang); ist die Mail einer Anfrage
+        oder Gemeinde zugeordnet, kommt deren Kennung in den Betreff, und eine
+        Anfrage im Status neu geht auf in_arbeit.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MailAntwort" } } }
+      responses:
+        "201": { description: "{ nachricht: MailNachricht }" }
+        "400": { description: "Validierungsfehler; 'Antworten geht nur auf eingehende Mails.'; Mail ohne Absender" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Mail nicht gefunden' }" }
+        "502": { description: "Versand gescheitert -- nichts gespeichert" }
+        "503": { description: "'Das Postfach … ist noch nicht eingerichtet.' oder 'Auf diesem Server ist der Versand aus.' (RUN_BACKGROUND_JOBS=false)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Mail existiert und ist eingehend; Empfaenger ist ihr Absender (keine freie Adresse)"
+
+  /api/support/anfragen/{id}/verlauf:
+    get:
+      tags: ["Support"]
+      summary: Mails einer Anfrage, aelteste zuerst
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Array", content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/MailNachricht" } } } } }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Anfrage nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz der Anfrage"
+
+  /api/support/anfragen/{id}/antworten:
+    post:
+      tags: ["Support"]
+      summary: Antwort auf eine Anfrage -- vom Postfach moin an die Adresse der Anfrage
+      description: >
+        Der Server setzt die Fusszeile unter den Text (Trenner "-- "), From
+        "<Absendername> <moin@...>", Reply-To das Postfach, eigene
+        Message-ID <kq-uuid@konfi-quest.de>, In-Reply-To/References auf die
+        letzte Mail des Verlaufs und die Kennung [Anfrage N] im Betreff, wenn
+        sie fehlt. Standardbetreff ohne Verlauf "Eure Anfrage für
+        <Gemeinde>", mit Verlauf "Re: <letzter Betreff>" (ohne doppeltes
+        Re:). Gesendet wird mit der Anmeldung des Postfachs (Zertifikat
+        geprueft wie beim bisherigen Versand). Danach gespeichert (richtung
+        aus, gelesen_am = gesendet_am, verfasst_von); die Anfrage gilt als
+        bewegt (updated_at), im Status neu geht sie auf in_arbeit. Nach der
+        Antwort wird dieselbe Mail per IMAP im Gesendet-Ordner abgelegt
+        (Markierung \Sent, sonst ein Ordner "Sent"/"Gesendet"/..., sonst wird
+        "Sent" angelegt); scheitert das, bleibt die Mail gesendet (nur
+        Protokoll).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: "#/components/schemas/MailAntwort" } } }
+      responses:
+        "201":
+          description: "{ nachricht }"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nachricht: { $ref: "#/components/schemas/MailNachricht" }
+        "400": { description: "Text fehlt/leer/ueber 20.000 Zeichen, Betreff ueber 300 Zeichen" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Anfrage nicht gefunden' }" }
+        "500": { description: "'Die Mail wurde gesendet, aber nicht gespeichert.' (Datenbankfehler nach dem Versand)" }
+        "502": { description: "{ error: 'Die Mail konnte nicht gesendet werden. Bitte versucht es später noch einmal.' } -- nichts gespeichert, Status unveraendert" }
+        "503": { description: "{ error: 'Das Postfach moin@konfi-quest.de ist noch nicht eingerichtet.' } oder { error: 'Auf diesem Server ist der Versand aus.' } (RUN_BACKGROUND_JOBS=false) -- nichts gesendet, nichts gespeichert" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz der Anfrage; Empfaenger ist ihre Adresse (keine freie Adresse)"
+
+  /api/support/gemeinden/{id}/verlauf:
+    get:
+      tags: ["Support"]
+      summary: Schriftwechsel einer Gemeinde, aelteste zuerst
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Array", content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/MailNachricht" } } } } }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Gemeinde nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz der Gemeinde"
+
+  /api/support/gemeinden/{id}/empfaenger:
+    get:
+      tags: ["Support"]
+      summary: Moegliche Empfaenger einer Mail an eine Gemeinde
+      description: >
+        herkunft 'leitung': aktive Konten mit der Rolle org_admin oder admin
+        IN DIESER Gemeinde und mit E-Mail-Adresse -- beide Quellen der
+        Zugehoerigkeit, Rolle je Gemeinde (utils/orgMitglieder.js,
+        ladeLeitungDerOrganisation), nach Name. herkunft 'verlauf': Absender
+        eingehender Mails dieser Gemeinde, die nicht schon als Leitung
+        dastehen (zuletzt geschrieben zuerst). Jede Adresse einmal, klein
+        geschrieben, ohne Unterschied Gross/klein verglichen; Leitung zuerst.
+        Form abgeglichen mit der Oberflaeche (03.10.2026).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200":
+          description: "Array"
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    adresse: { type: string }
+                    name: { type: [string, "null"] }
+                    herkunft: { type: string, enum: [leitung, verlauf] }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Gemeinde nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz der Gemeinde"
+
+  /api/support/gemeinden/{id}/antworten:
+    post:
+      tags: ["Support"]
+      summary: Mail an eine Gemeinde -- vom Postfach support
+      description: >
+        Wie POST /anfragen/{id}/antworten, aber vom Postfach support, an
+        `an` (muss unter GET /gemeinden/{id}/empfaenger stehen, ohne
+        Unterschied Gross/klein), Kennung [Gemeinde N], Standardbetreff ohne
+        Verlauf "Konfi Quest – <Gemeinde>". Gespeichert bei der Gemeinde.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - { $ref: "#/components/schemas/MailAntwort" }
+                - type: object
+                  required: [an]
+                  properties:
+                    an: { type: string, maxLength: 320 }
+      responses:
+        "201": { description: "{ nachricht: MailNachricht }" }
+        "400": { description: "Validierungsfehler; { error: 'Diese Adresse gehört nicht zu den Empfängern dieser Gemeinde.' } -- nichts gesendet" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Gemeinde nicht gefunden' }" }
+        "502": { description: "Versand gescheitert -- nichts gespeichert" }
+        "503": { description: "'Das Postfach support@konfi-quest.de ist noch nicht eingerichtet.' oder 'Auf diesem Server ist der Versand aus.'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz der Gemeinde; Empfaenger aus der Liste der Gemeinde (keine freie Adresse)"
+
+  /api/support/mail/platzhalter:
+    get:
+      tags: ["Support"]
+      summary: Werte fuer die Platzhalter der Textbausteine
+      description: >
+        Genau eines: anfrage_id oder organization_id. name = kontakt_name der
+        Anfrage bzw. Anzeigename der ersten Gemeindeleitung (aktiv, kein
+        Super-Admin; Stamm-Gemeinde vor weiterer, dann aelteste); gemeinde =
+        Gemeinde aus der Anfrage bzw. Anzeigename der Gemeinde; lizenz =
+        Wunschlizenz als Text ("Standard (bis 50 Konfis, 99 € pro Jahr)",
+        utils/lizenzen.js lizenzText; bei einer Gemeinde aus ihrer Anfrage);
+        testphase_bis = trial_ends_at der Gemeinde als TT.MM.JJJJ (Berliner
+        Zeit); benutzername = Benutzername der ersten Gemeindeleitung (bei
+        einer Anfrage: der aus ihr entstandenen Gemeinde); absender =
+        Absendername. Was es nicht gibt, ist ein leerer Text.
+      parameters:
+        - { name: anfrage_id, in: query, required: false, schema: { type: integer } }
+        - { name: organization_id, in: query, required: false, schema: { type: integer } }
+      responses:
+        "200":
+          description: "Platzhalter"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string }
+                  gemeinde: { type: string }
+                  lizenz: { type: string }
+                  testphase_bis: { type: string }
+                  benutzername: { type: string }
+                  absender: { type: string }
+        "400": { description: "keines oder beides angegeben, keine Zahl" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "'Anfrage nicht gefunden' bzw. 'Gemeinde nicht gefunden'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz; nie ein Passwort"
+
+  /api/support/mail/bausteine:
+    get:
+      tags: ["Support"]
+      summary: Textbausteine, nach sortierung
+      responses:
+        "200": { description: "Array", content: { application/json: { schema: { type: array, items: { $ref: "#/components/schemas/MailBaustein" } } } } }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine"
+    post:
+      tags: ["Support"]
+      summary: Textbaustein anlegen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titel, text]
+              properties:
+                titel: { type: string, maxLength: 200 }
+                text: { type: string, maxLength: 20000 }
+                betreff: { type: [string, "null"], maxLength: 300, description: "leer = null" }
+                postfach: { type: [string, "null"], enum: [moin, support, null] }
+                sortierung: { type: [integer, "null"], description: "fehlt sie, hinter den letzten (hoechste + 10)" }
+      responses:
+        "201": { description: "Der Baustein", content: { application/json: { schema: { $ref: "#/components/schemas/MailBaustein" } } } }
+        "400": { description: "Validierungsfehler" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine; bearbeitet_von = aufrufendes Konto"
+
+  /api/support/mail/bausteine/{id}:
+    put:
+      tags: ["Support"]
+      summary: Textbaustein aendern
+      description: "titel und text immer; betreff, postfach und sortierung nur, wenn mitgeschickt (null leert betreff und postfach)."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titel, text]
+              properties:
+                titel: { type: string, maxLength: 200 }
+                text: { type: string, maxLength: 20000 }
+                betreff: { type: [string, "null"], maxLength: 300 }
+                postfach: { type: [string, "null"], enum: [moin, support, null] }
+                sortierung: { type: [integer, "null"] }
+      responses:
+        "200": { description: "Der Baustein", content: { application/json: { schema: { $ref: "#/components/schemas/MailBaustein" } } } }
+        "400": { description: "Validierungsfehler" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Textbaustein nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+    delete:
+      tags: ["Support"]
+      summary: Textbaustein loeschen
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ message: 'Textbaustein gelöscht' }" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Textbaustein nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+
+  /api/support/mail/einstellungen:
+    get:
+      tags: ["Support"]
+      summary: Fusszeile und Absendername der Antworten
+      description: "Ohne gespeicherten Wert gilt der neutrale Vorschlag ohne Personennamen (utils/mailEinstellungen.js, Migration 193)."
+      responses:
+        "200": { description: "Einstellungen", content: { application/json: { schema: { $ref: "#/components/schemas/MailEinstellungen" } } } }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "keine"
+    put:
+      tags: ["Support"]
+      summary: Fusszeile und/oder Absendername setzen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fusszeile: { type: string, maxLength: 2000, description: "getrimmt; leer = keine Fusszeile" }
+                absendername: { type: string, maxLength: 100, description: "nicht leer, eine Zeile (steht im From)" }
+      responses:
+        "200": { description: "beide Werte", content: { application/json: { schema: { $ref: "#/components/schemas/MailEinstellungen" } } } }
+        "400": { description: "keines angegeben ('Nichts zu ändern: fusszeile oder absendername angeben'), leerer oder mehrzeiliger Absendername, zu lang" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine; bearbeitet_von = aufrufendes Konto"
 
   # ==========================================================================
   # USERS (backend/routes/users.js — 9 Routen, Mount /api/users UND

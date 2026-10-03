@@ -114,6 +114,7 @@ const TRUNCATE_SQL = `TRUNCATE
     invite_codes, refresh_tokens, notifications,
     user_organizations, org_einladungen,
     settings, daily_verses, apm_snapshots, socket_io_attachments, rate_limit_zaehler,
+    mail_nachrichten, mail_abholstand, mail_bausteine, mail_einstellungen,
     gemeinde_anfragen, kirchenkreise, landeskirchen,
     users, activities, custom_badges, events,
     jahrgaenge, categories, levels,

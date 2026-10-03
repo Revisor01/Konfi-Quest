@@ -19,6 +19,9 @@
 //     Zugehoerigkeit, utils/orgMitglieder.js), aktive Konten, Jahrgaenge.
 //     Ohne Namen von Personen; zusammengefasst je Kirchenkreis und
 //     Landeskirche wird in der Oberflaeche.
+//   - SUPPORT-MAIL (routes/supportMail.js, hier eingehaengt): Posteingang,
+//     Verlauf und Antworten zu Anfragen und Gemeinden, Textbausteine,
+//     Fusszeile (docs/planung/support-mail.md).
 //
 // NUR SUPER-ADMINS (requireSuperAdmin: Rolle oder Merkmal, mit oder ohne
 // Gemeinde). Jede andere Rolle bekommt 403, auch die Gemeindeleitung.
@@ -42,9 +45,13 @@ const { zaehleKontenJeGemeinde } = require('../utils/orgMitglieder');
 const STATUS = ['neu', 'in_arbeit', 'angelegt', 'abgelehnt'];
 
 // Die Felder einer Anfrage in der Antwort (Vertrag der Pakete, 03.10.2026).
+// ungelesen (seit 03.10.2026, Support-Mail, additiv): ungelesene eingehende
+// Mails zu dieser Anfrage (docs/planung/support-mail.md).
 const ANFRAGE = `a.id, a.gemeinde, a.kirchenkreis, a.landeskirche, a.kontakt_name, a.funktion,
   a.email, a.mobil, a.anzahl_konfis, a.anzahl_teamer, a.nachricht, a.status, a.notiz,
-  a.organization_id, a.created_at, a.updated_at, a.wunsch_lizenz`;
+  a.organization_id, a.created_at, a.updated_at, a.wunsch_lizenz,
+  (SELECT COUNT(*)::int FROM mail_nachrichten m
+    WHERE m.anfrage_id = a.id AND m.richtung = 'ein' AND m.gelesen_am IS NULL) AS ungelesen`;
 
 const NICHT_GEFUNDEN = { error: 'Anfrage nicht gefunden' };
 const MELDUNG_SCHON_ANGELEGT = 'Aus dieser Anfrage ist schon eine Gemeinde entstanden.';
@@ -73,6 +80,9 @@ function systemnameFuerAnlage(name, anzeigename, mitAnzeigename) {
 module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
   const router = express.Router();
   router.use(rbacVerifier, requireSuperAdmin);
+
+  // Support-Mail -- hinter derselben Pruefung (nur Super-Admin).
+  router.use(require('./supportMail')(db));
 
   const id = param('id').isInt({ min: 1 }).withMessage('Ungültige ID');
   const nameFeld = (feld = 'name') => body(feld)

@@ -15,6 +15,7 @@ const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuErledigtenEinladungen } = require('../utils/postfachAufraeumen');
 const { WOANDERS_MITGLIED_SQL } = require('../utils/konfiOderTeam');
+const mailAbholung = require('./mailAbholung');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -24,6 +25,16 @@ const LICENSE_REMINDER_DAYS = 14;
 // Datenschutzerklaerung nennt die Zahl (Abschnitt 9c; ein Test haelt beide
 // zusammen).
 const ABGELEHNTE_ANFRAGEN_TAGE = 180;
+
+// Nicht zugeordnete Mails der Support-Mail (Posteingang) bleiben so viele
+// Tage in Konfi Quest; im Postfach selbst bleibt alles. Zugeordnete gehen
+// mit ihrer Anfrage bzw. Gemeinde (Simon, 03.10.2026,
+// docs/planung/support-mail.md, Entscheidung 4).
+const NICHT_ZUGEORDNETE_MAILS_TAGE = 180;
+
+// Takt des Abholens aus den Postfaechern "moin" und "support"
+// (services/mailAbholung.js).
+const MAIL_ABHOL_TAKT_MS = 2 * 60 * 1000;
 
 // Anfragen, die "neu" oder "in Arbeit" sind und sich so viele Tage nicht
 // bewegt haben (gemeinde_anfragen.updated_at), gehen ebenfalls (Simon,
@@ -78,6 +89,12 @@ class BackgroundService {
   static trialExpiryCronTask = null;
   static apmSnapshotInterval = null;
   static challengeStartInterval = null;
+  static mailAbholInterval = null;
+  static mailAbholStart = null;
+  // Laeuft gerade ein Abholen? Dann faellt der naechste Takt aus, statt
+  // parallel ein zweites zu starten (ein Postfach mit Hunderten neuer Mails
+  // braucht laenger als zwei Minuten).
+  static mailAbholungLaeuft = false;
   static wrappedRouter = null;
   static badgeCheckInterval = null;
   // Zuletzt an das jeweilige Geraet gesendeter Zaehlerstand. Verhindert, dass
@@ -1433,6 +1450,13 @@ class BackgroundService {
       } catch (e) {
         console.error('Anfragen aufraeumen failed:', e.code || '', e.message);
       }
+      // Sechster Schritt (03.10.2026): nicht zugeordnete Mails der
+      // Support-Mail nach 180 Tagen.
+      try {
+        await this.cleanupNichtZugeordneteMails(db);
+      } catch (e) {
+        console.error('Mails aufraeumen failed:', e.code || '', e.message);
+      }
     }, {
       timezone: 'Europe/Berlin'
     });
@@ -1458,6 +1482,29 @@ class BackgroundService {
     );
     if (rowCount > 0) {
       console.log(`Anfragen aufraeumen: ${rowCount} abgelehnte Anfragen aelter als ${ABGELEHNTE_ANFRAGEN_TAGE} Tage geloescht`);
+    }
+    return rowCount;
+  }
+
+  /**
+   * Loescht nicht zugeordnete Mails der Support-Mail (Posteingang: weder
+   * Anfrage noch Gemeinde), die seit mehr als NICHT_ZUGEORDNETE_MAILS_TAGE
+   * (180) Tagen in Konfi Quest liegen (created_at), ein- und ausgehende. Im
+   * Postfach selbst bleibt alles. Zugeordnete gehen mit ihrer Anfrage bzw.
+   * Gemeinde (ON DELETE CASCADE). Gibt die Anzahl zurueck; das Protokoll
+   * nennt nur sie.
+   *
+   * Simon, 03.10.2026 (docs/planung/support-mail.md, Entscheidung 4).
+   */
+  static async cleanupNichtZugeordneteMails(db) {
+    const { rowCount } = await db.query(
+      `DELETE FROM mail_nachrichten
+        WHERE anfrage_id IS NULL AND organization_id IS NULL
+          AND created_at < NOW() - ($1::int * interval '1 day')`,
+      [NICHT_ZUGEORDNETE_MAILS_TAGE]
+    );
+    if (rowCount > 0) {
+      console.log(`Mails aufraeumen: ${rowCount} nicht zugeordnete Mails aelter als ${NICHT_ZUGEORDNETE_MAILS_TAGE} Tage geloescht`);
     }
     return rowCount;
   }
@@ -2063,6 +2110,48 @@ class BackgroundService {
     }
   }
 
+  /**
+   * Holt alle zwei Minuten die Postfaecher "moin" und "support" ab
+   * (services/mailAbholung.js). Nur ueber startAllServices -- also nur auf
+   * dem Cron-Leader (server.js, utils/cronLeader.js): backend und backend2
+   * holen nie gleichzeitig ab. Der erste Lauf 30 Sekunden nach dem Start
+   * (die Migrationen sind dann durch). Ein Takt, der auf ein noch laufendes
+   * Abholen trifft, faellt aus.
+   */
+  static startMailAbholService(db, { taktMs = MAIL_ABHOL_TAKT_MS, startVerzoegerungMs = 30 * 1000 } = {}) {
+    if (this.mailAbholInterval) return;
+    this.mailAbholStart = setTimeout(() => {
+      this.mailAbholStart = null;
+      this.mailAbholen(db);
+    }, startVerzoegerungMs);
+    this.mailAbholInterval = setInterval(() => this.mailAbholen(db), taktMs);
+  }
+
+  static stopMailAbholService() {
+    if (this.mailAbholStart) {
+      clearTimeout(this.mailAbholStart);
+      this.mailAbholStart = null;
+    }
+    if (this.mailAbholInterval) {
+      clearInterval(this.mailAbholInterval);
+      this.mailAbholInterval = null;
+    }
+  }
+
+  /** Ein Abholen, nie zwei gleichzeitig; Fehler nur ins Protokoll. */
+  static async mailAbholen(db) {
+    if (this.mailAbholungLaeuft) return null;
+    this.mailAbholungLaeuft = true;
+    try {
+      return await mailAbholung.alleAbholen(db);
+    } catch (error) {
+      console.error('Mail-Abholung failed:', error.code || '', error.message);
+      return null;
+    } finally {
+      this.mailAbholungLaeuft = false;
+    }
+  }
+
   static startAllServices(db, options = {}) {
     if (options.wrappedRouter) {
       this.wrappedRouter = options.wrappedRouter;
@@ -2077,6 +2166,7 @@ class BackgroundService {
     this.startTrialExpiryCron(db);
     this.startApmSnapshotService(db);
     this.startChallengeStartService(db);
+    this.startMailAbholService(db);
   }
 
   /**
@@ -2093,7 +2183,10 @@ class BackgroundService {
     this.stopTrialExpiryCron();
     this.stopApmSnapshotService();
     this.stopChallengeStartService();
+    this.stopMailAbholService();
   }
 }
 
 module.exports = BackgroundService;
+module.exports.NICHT_ZUGEORDNETE_MAILS_TAGE = NICHT_ZUGEORDNETE_MAILS_TAGE;
+module.exports.MAIL_ABHOL_TAKT_MS = MAIL_ABHOL_TAKT_MS;

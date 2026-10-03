@@ -18,7 +18,7 @@ const { SUPPORT, supportKontoAnlegen, supportToken, refreshTokenAnlegen } = requ
 const ANFRAGE_FELDER = [
   'id', 'gemeinde', 'kirchenkreis', 'landeskirche', 'kontakt_name', 'funktion', 'email', 'mobil',
   'anzahl_konfis', 'anzahl_teamer', 'nachricht', 'status', 'notiz', 'organization_id', 'created_at', 'updated_at',
-  'wunsch_lizenz',
+  'wunsch_lizenz', 'ungelesen',
 ];
 
 describe('/api/support', () => {
@@ -134,8 +134,26 @@ describe('/api/support', () => {
       expect(Object.keys(res.body[0]).sort()).toEqual([...ANFRAGE_FELDER].sort());
       expect(res.body[0]).toMatchObject({
         gemeinde: 'Neu', kontakt_name: 'Pastorin Probe', email: 'probe@buesum.example',
-        anzahl_konfis: 24, anzahl_teamer: 6, status: 'neu', notiz: null, organization_id: null,
+        anzahl_konfis: 24, anzahl_teamer: 6, status: 'neu', notiz: null, organization_id: null, ungelesen: 0,
       });
+    });
+
+    it('ungelesen (additiv, Support-Mail): nur ungelesene eingehende Mails DIESER Anfrage', async () => {
+      const a = await anfrageAnlegen({ gemeinde: 'A' });
+      const b = await anfrageAnlegen({ gemeinde: 'B' });
+      let n = 0;
+      const mail = (anfrageId, richtung, gelesen) => db.query(
+        `INSERT INTO mail_nachrichten (postfach, richtung, anfrage_id, message_id, gelesen_am)
+         VALUES ('moin', $1, $2, $3, CASE WHEN $4 THEN NOW() END)`,
+        [richtung, anfrageId, `<zaehler-${n++}@example.test>`, gelesen]);
+      await mail(a, 'ein', false);
+      await mail(a, 'ein', false);
+      await mail(a, 'ein', true);   // gelesen
+      await mail(a, 'aus', false);  // eigene Antwort: nie ungelesen, auch ohne gelesen_am
+      await mail(b, 'ein', false);
+      await mail(null, 'ein', false); // Posteingang
+      const res = await als(SUPER()).get('/api/support/anfragen');
+      expect(res.body.map((x) => [x.gemeinde, x.ungelesen])).toEqual([['B', 1], ['A', 2]]);
     });
 
     it('?status filtert; ein unbekannter Status 400', async () => {
