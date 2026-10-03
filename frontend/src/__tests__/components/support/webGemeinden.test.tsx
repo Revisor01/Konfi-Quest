@@ -289,6 +289,22 @@ describe('Gemeinden (Web): Aktionen direkt in der Zeile', () => {
     // Der Sprung aus der Uebersicht zeigt wie bisher erst die Ansicht der Gemeinde.
     expect(h.modalProps?.direktBearbeiten).toBe(false);
   });
+
+  it('?gemeinde=<id>&bearbeiten=1 (Link "Bearbeiten" im Schriftwechsel) oeffnet das Formular gleich im Bearbeiten-Modus', async () => {
+    h.suche = '?gemeinde=4&bearbeiten=1';
+    antworten();
+    await zeigen();
+    expect(h.present).toHaveBeenCalledTimes(1);
+    expect(h.modalProps?.organizationId).toBe(4);
+    expect(h.modalProps?.direktBearbeiten).toBe(true);
+  });
+
+  it('jeder andere Wert von bearbeiten bleibt bei der Ansicht', async () => {
+    h.suche = '?gemeinde=4&bearbeiten=0';
+    antworten();
+    await zeigen();
+    expect(h.modalProps?.direktBearbeiten).toBe(false);
+  });
 });
 
 describe('Gemeinden (Web): Live-Suche', () => {

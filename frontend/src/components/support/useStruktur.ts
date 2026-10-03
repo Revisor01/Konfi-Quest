@@ -76,42 +76,52 @@ export function useStruktur() {
     }
   };
 
-  const landeskircheAnlegen = async () => {
+  // Die vier Speichern-Funktionen sagen, ob es geklappt hat: Die Web-Fassung
+  // schliesst danach ihren Dialog (die App ignoriert den Rueckgabewert).
+  const landeskircheAnlegen = async (): Promise<boolean> => {
     const name = neueLk.trim();
-    if (!name) { setError('Bitte einen Namen eingeben'); return; }
+    if (!name) { setError('Bitte einen Namen eingeben'); return false; }
     if (await ausfuehren(() => api.post('/support/landeskirchen', { name }), 'Landeskirche angelegt', 'Landeskirche konnte nicht angelegt werden')) {
       setNeueLk('');
+      return true;
     }
+    return false;
   };
 
-  const kirchenkreisAnlegen = async () => {
+  const kirchenkreisAnlegen = async (): Promise<boolean> => {
     const name = neuerKk.trim();
-    if (!name) { setError('Bitte einen Namen eingeben'); return; }
+    if (!name) { setError('Bitte einen Namen eingeben'); return false; }
     if (await ausfuehren(() => api.post('/support/kirchenkreise', { name, landeskirche_id: neuerKkLk }), 'Kirchenkreis angelegt', 'Kirchenkreis konnte nicht angelegt werden')) {
       setNeuerKk('');
+      return true;
     }
+    return false;
   };
 
-  const landeskircheSpeichern = async () => {
-    if (!lkBearbeiten) return;
+  const landeskircheSpeichern = async (): Promise<boolean> => {
+    if (!lkBearbeiten) return false;
     const name = lkBearbeiten.name.trim();
-    if (!name) { setError('Bitte einen Namen eingeben'); return; }
+    if (!name) { setError('Bitte einen Namen eingeben'); return false; }
     if (await ausfuehren(() => api.put(`/support/landeskirchen/${lkBearbeiten.id}`, { name }), 'Landeskirche gespeichert', 'Landeskirche konnte nicht gespeichert werden')) {
       setLkBearbeiten(null);
+      return true;
     }
+    return false;
   };
 
-  const kirchenkreisSpeichern = async () => {
-    if (!kkBearbeiten) return;
+  const kirchenkreisSpeichern = async (): Promise<boolean> => {
+    if (!kkBearbeiten) return false;
     const name = kkBearbeiten.name.trim();
-    if (!name) { setError('Bitte einen Namen eingeben'); return; }
+    if (!name) { setError('Bitte einen Namen eingeben'); return false; }
     if (await ausfuehren(
       () => api.put(`/support/kirchenkreise/${kkBearbeiten.id}`, { name, landeskirche_id: kkBearbeiten.landeskircheId }),
       'Kirchenkreis gespeichert',
       'Kirchenkreis konnte nicht gespeichert werden'
     )) {
       setKkBearbeiten(null);
+      return true;
     }
+    return false;
   };
 
   const landeskircheLoeschen = (lk: Landeskirche, anzahlKreise: number) => {

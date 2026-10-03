@@ -75,6 +75,8 @@ import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBaustei
 import { useAnfrageDetail } from './useAnfrageDetail';
 import { AntwortFormular, MailListe } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebAnfrageDetail from './web/WebAnfrageDetail';
 
 interface Props {
   anfrageId: number;
@@ -391,8 +393,15 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
   );
 };
 
-const SupportAnfrageDetailPage: React.FC<Props> = (props) => (
-  <NurSupport titel="Anfrage"><AnfrageDetail {...props} /></NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster die zweispaltige
+// Web-Fassung, sonst die Darstellung der App. Beide nutzen useAnfrageDetail.
+const SupportAnfrageDetailPage: React.FC<Props> = (props) => {
+  const breit = useBreitesLayout();
+  return (
+    <NurSupport titel="Anfrage">
+      {breit ? <WebAnfrageDetail anfrageId={props.anfrageId} /> : <AnfrageDetail {...props} />}
+    </NurSupport>
+  );
+};
 
 export default SupportAnfrageDetailPage;

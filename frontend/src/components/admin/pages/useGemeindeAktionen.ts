@@ -112,15 +112,17 @@ export function useGemeindeAktionen(onAktualisiert: () => unknown) {
 
   // Direkt in eine Gemeinde: /admin/organizations?gemeinde=<id> oeffnet sie
   // (aus der Support-Ansicht -- Kennzahlen je Gemeinde, "Gemeinde oeffnen"
-  // nach dem Anlegen aus einer Anfrage). Nur beim Aufruf mit dieser Adresse,
-  // nicht bei jedem neuen Modal-Haken -- deshalb haengt der Effekt allein an
-  // der Abfrage.
+  // nach dem Anlegen aus einer Anfrage); mit &bearbeiten=1 gleich im Formular.
+  // Nur beim Aufruf mit dieser Adresse, nicht bei jedem neuen Modal-Haken --
+  // deshalb haengt der Effekt allein an der Abfrage.
   const { search } = useAppLocation();
   useEffect(() => {
-    const id = Number(new URLSearchParams(search).get('gemeinde'));
+    const abfrage = new URLSearchParams(search);
+    const id = Number(abfrage.get('gemeinde'));
     if (!Number.isInteger(id) || id <= 0) return;
     setModalOrganizationId(id);
-    setDirektBearbeiten(false);
+    // Mit &bearbeiten=1 (Link "Bearbeiten" im Schriftwechsel einer Gemeinde) gleich im Formular.
+    setDirektBearbeiten(abfrage.get('bearbeiten') === '1');
     presentOrganizationModalHook({ presentingElement });
   }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 

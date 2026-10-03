@@ -33,6 +33,8 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Feld, Ladefehler, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebStruktur from './web/WebStruktur';
 import { useStruktur } from './useStruktur';
 
 const OHNE = 'ohne';
@@ -205,8 +207,11 @@ const Struktur: React.FC = () => {
   );
 };
 
-const SupportStrukturPage: React.FC = () => (
-  <NurSupport titel="Struktur"><Struktur /></NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster Karten mit Tabellen
+// und Dialogen, sonst die Darstellung der App. Beide nutzen useStruktur.
+const SupportStrukturPage: React.FC = () => {
+  const breit = useBreitesLayout();
+  return <NurSupport titel="Struktur">{breit ? <WebStruktur /> : <Struktur />}</NurSupport>;
+};
 
 export default SupportStrukturPage;

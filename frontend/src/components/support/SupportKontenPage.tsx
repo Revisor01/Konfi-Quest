@@ -43,6 +43,8 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebKonten from './web/WebKonten';
 import { LEERES_KONTO, useSupportKonten } from './useSupportKonten';
 
 const Konten: React.FC = () => {
@@ -193,8 +195,11 @@ const Konten: React.FC = () => {
   );
 };
 
-const SupportKontenPage: React.FC = () => (
-  <NurSupport titel="Support-Konten"><Konten /></NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster eine Tabelle mit
+// Dialogen, sonst die Darstellung der App. Beide nutzen useSupportKonten.
+const SupportKontenPage: React.FC = () => {
+  const breit = useBreitesLayout();
+  return <NurSupport titel="Support-Konten">{breit ? <WebKonten /> : <Konten />}</NurSupport>;
+};
 
 export default SupportKontenPage;

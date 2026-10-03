@@ -36,6 +36,8 @@ import { POSTFACH_INFO, gemeindeName } from '../../utils/supportMail';
 import { Abschnitt, Ladefehler, NurSupport } from './SupportBausteine';
 import { AntwortFormular, Hinweis, MailListe } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebPostDetail from './web/WebPostDetail';
 import { usePostDetail } from './usePostDetail';
 
 interface Props {
@@ -212,8 +214,15 @@ const PostDetail: React.FC<Props> = ({ nachrichtId }) => {
   );
 };
 
-const SupportPostDetailPage: React.FC<Props> = (props) => (
-  <NurSupport titel="Mail"><PostDetail {...props} /></NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster die Web-Fassung (wie
+// ein Mailprogramm), sonst die Darstellung der App. Beide nutzen usePostDetail.
+const SupportPostDetailPage: React.FC<Props> = (props) => {
+  const breit = useBreitesLayout();
+  return (
+    <NurSupport titel="Mail">
+      {breit ? <WebPostDetail nachrichtId={props.nachrichtId} /> : <PostDetail {...props} />}
+    </NurSupport>
+  );
+};
 
 export default SupportPostDetailPage;

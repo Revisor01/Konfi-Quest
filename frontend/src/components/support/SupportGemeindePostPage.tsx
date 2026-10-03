@@ -22,6 +22,8 @@ import { POSTFACH_INFO } from '../../utils/supportMail';
 import { Abschnitt, Ladefehler, NurSupport } from './SupportBausteine';
 import { AntwortFormular, MailListe } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebGemeindePost, { WebKeineGemeinde } from './web/WebGemeindePost';
 import { useGemeindePost } from './useGemeindePost';
 
 interface Props {
@@ -102,10 +104,19 @@ const KeineGemeinde: React.FC = () => {
   );
 };
 
-const SupportGemeindePostPage: React.FC<Props> = (props) => (
-  <NurSupport titel="Schriftwechsel">
-    {Number.isInteger(props.organizationId) && props.organizationId > 0 ? <GemeindePost {...props} /> : <KeineGemeinde />}
-  </NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster die Web-Fassung mit
+// den Angaben der Gemeinde neben dem Schriftwechsel, sonst die Darstellung der
+// App. Beide nutzen useGemeindePost.
+const SupportGemeindePostPage: React.FC<Props> = (props) => {
+  const breit = useBreitesLayout();
+  const gueltig = Number.isInteger(props.organizationId) && props.organizationId > 0;
+  return (
+    <NurSupport titel="Schriftwechsel">
+      {breit
+        ? (gueltig ? <WebGemeindePost organizationId={props.organizationId} /> : <WebKeineGemeinde />)
+        : (gueltig ? <GemeindePost {...props} /> : <KeineGemeinde />)}
+    </NurSupport>
+  );
+};
 
 export default SupportGemeindePostPage;

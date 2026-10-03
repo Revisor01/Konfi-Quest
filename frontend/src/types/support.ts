@@ -75,6 +75,8 @@ export interface Kirchenkreis {
   name: string;
   landeskirche_id: number | null;
   landeskirche: string | null;
+  /** Zahl der Gemeinden im Kirchenkreis, interne nicht mitgezaehlt; aeltere Server liefern das Feld nicht. */
+  anzahl_gemeinden?: number;
 }
 
 /** Konten einer Gemeinde je Rolle (GET /support/statistik). */

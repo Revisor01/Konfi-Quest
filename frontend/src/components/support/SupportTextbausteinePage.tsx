@@ -48,6 +48,8 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebTextbausteine from './web/WebTextbausteine';
 import { useTextbausteine } from './useTextbausteine';
 
 const Textbausteine: React.FC = () => {
@@ -216,8 +218,11 @@ const Textbausteine: React.FC = () => {
   );
 };
 
-const SupportTextbausteinePage: React.FC = () => (
-  <NurSupport titel="Textbausteine"><Textbausteine /></NurSupport>
-);
+// Zwei Gesichter, eine Seite: im breiten Browserfenster Liste und Editor
+// nebeneinander, sonst die Darstellung der App. Beide nutzen useTextbausteine.
+const SupportTextbausteinePage: React.FC = () => {
+  const breit = useBreitesLayout();
+  return <NurSupport titel="Textbausteine">{breit ? <WebTextbausteine /> : <Textbausteine />}</NurSupport>;
+};
 
 export default SupportTextbausteinePage;
