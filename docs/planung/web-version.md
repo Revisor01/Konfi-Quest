@@ -157,8 +157,10 @@ Betrieb: [betrieb/support-konto.md](../betrieb/support-konto.md)):
 - **Als Gast in einer Gemeinde** über `POST /organizations/:id/members`
   (Super-Admin, Rolle Gemeindeleitung): Die Gemeinde sieht das Konto in ihrer
   Benutzerliste als Gemeindeleitung aus einer weiteren Gemeinde; bearbeiten
-  oder entfernen kann es dort nur ein Super-Admin. Gemeindewechsel und
-  Rückweg über `switch-org` und den Refresh wie bei jedem Konto.
+  kann es dort nur ein Super-Admin, aus der Gemeinde nehmen auch die
+  Gemeindeleitung selbst (seit 03.10.2026, nur die Mitgliedschaft endet).
+  Gemeindewechsel und Rückweg über `switch-org` und den Refresh wie bei
+  jedem Konto.
 - **Behoben auf dem Weg:** die acht Stellen, die bei `organization_id` NULL
   falsch rechneten (Benutzerliste, Detail, Hierarchieprüfung, Rückblick,
   Passwort setzen, `POST /chat/rooms`, `is_primary`), und die Anmeldung

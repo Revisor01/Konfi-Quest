@@ -21,7 +21,10 @@
 #      Reichweite regelt checkUserHierarchy pro Operation:
 #        * super_admin darf alle Rollen außer super_admin anlegen; ein
 #          super_admin-Konto (Rolle ODER Flag is_super_admin) bearbeitet,
-#          loescht oder setzt nur ein Super-Admin zurueck (seit 26.09.2026)
+#          loescht oder setzt nur ein Super-Admin zurueck (seit 26.09.2026);
+#          einzige Ausnahme seit 03.10.2026: Die Gemeindeleitung nimmt einen
+#          Support-Gast ohne Stamm-Gemeinde aus ihrer Gemeinde (DELETE
+#          /users/{id}, nur die Mitgliedschaft endet)
 #        * org_admin darf ALLE Rollen der eigenen Org verwalten,
 #          AUCH andere org_admins (explizite Regel im Code)
 #        * admin verwaltet teamer und konfi (seine eigenen Jahrgaenge),
@@ -2540,6 +2543,19 @@ paths:
         Datenbank lesen. Keine Namen fremder Gemeinden in der Antwort.
         (3) Die Person gehört nur dieser Gemeinde an: Hard-Delete wie folgt,
         `{ message: 'Benutzer erfolgreich gelöscht', konto_bleibt: false }`.
+
+        SUPPORT-GAST (seit 03.10.2026, Simon): Ein Super-Admin-Konto ist fuer
+        alle ausser Super-Admins gesperrt (403 "Super-Admin-Konten kann nur ein
+        Super-Admin bearbeiten.") -- mit EINER Ausnahme: Die Gemeindeleitung
+        (org_admin der aktiven Gemeinde) darf ein Support-Konto OHNE
+        Stamm-Gemeinde (users.organization_id NULL), das hier ueber
+        user_organizations Gast ist, aus ihrer Gemeinde nehmen. Das ist immer
+        Fall 1: nur die Mitgliedschaft endet, das Konto bleibt
+        (`konto_bleibt: true`). Weiter 403: Leitung und Team, ein
+        Super-Admin-Konto MIT Stamm-Gemeinde, und fuer die Gemeindeleitung
+        Bearbeiten, Passwort, Jahrgaenge und Detailansicht des Gasts. Fremde
+        Gemeinde: 404 wie bei jedem Konto. Regel: checkUserHierarchy
+        (utils/roleHierarchy.js); Tests: kontoOhneGemeinde.test.js.
 
         Hard-Delete (Fall 3):
         Anonymisiert die Urheberschaft (admin_id/created_by/approved_by ->

@@ -33,6 +33,8 @@ Versionsüberschrift.
 ### Geändert
 - Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,
   wozu und wie lange.
+- Die Gemeindeleitung kann ein Konto des Supports, das als Gast in ihrer
+  Gemeinde ist, selbst wieder herausnehmen; das Konto des Supports bleibt.
 - Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
   Liste — für Konfis, Team und Leitung; der Pfeil oben führt zurück in die
   Liste.

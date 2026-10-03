@@ -92,9 +92,13 @@ Benutzer:innen) als Gemeindeleitung aus einer weiteren Gemeinde. Wechseln
 kann es dorthin über `POST /api/auth/switch-org`; einen Umschalter hat die
 Oberfläche eines Kontos ohne Gemeinde noch nicht (sie zeigt nur „Gemeinden
 verwalten" und den Betriebs-Überblick), er kommt mit der Support-Ansicht.
-Bearbeiten oder entfernen kann
-es dort nur ein Super-Admin; Herausnehmen geht über denselben Abschnitt
-„Mitglieder & Zuweisungen" (`DELETE /api/organizations/<id>/members/<userId>`).
+Bearbeiten kann
+es dort nur ein Super-Admin. Herausnehmen geht über denselben Abschnitt
+„Mitglieder & Zuweisungen" (`DELETE /api/organizations/<id>/members/<userId>`)
+— oder die Gemeindeleitung tut es selbst unter Mehr › Benutzer:innen
+(„Mitgliedschaft beenden", `DELETE /api/users/<id>`; Simon, 03.10.2026). In
+beiden Fällen endet nur die Mitgliedschaft in dieser Gemeinde, das
+Support-Konto bleibt.
 Wird die Gemeinde gelöscht, endet die Mitgliedschaft; das Support-Konto
 bleibt.
 
