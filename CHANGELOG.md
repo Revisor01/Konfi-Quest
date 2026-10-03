@@ -53,6 +53,10 @@ Versionsüberschrift.
 - Der Posteingang zeigt im Browser alle eingehenden Mails an moin@ und
   support@, mit Filtern und der Angabe, zu welcher Anfrage oder Gemeinde eine
   Mail gehört.
+- Anfragen und Posteingang lassen sich im Browser nach offenen bzw.
+  ungelesenen filtern; die Kennzahlen der Übersicht führen direkt dorthin.
+- Der Schriftwechsel mit einer Gemeinde zeigt im Browser Gemeinde und
+  Gemeindeleitung neben den Mails und führt mit einem Klick ins Formular.
 - Ein Konto mit eigener Gemeinde und Super-Admin-Recht hat in der Leiste im
   Browser zusätzlich die Bereiche der Support-Ansicht.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum

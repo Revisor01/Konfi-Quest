@@ -186,13 +186,26 @@ Bauen, wo der Vertrag offen war:
   Mit den Support-Gruppen scrollt die Leiste bei etwa 900 px Fensterhöhe; ein
   zarter Schatten zeigt das an.
 - **Anfragen** starten im Browser mit dem Filter „Alle"; die Kachel „Offene
-  Anfragen" führt auf „Offen" (neu und in Arbeit).
+  Anfragen" führt auf „Offen" (neu und in Arbeit, `?filter=offen`), die Kachel
+  „Ungelesene Mails" auf den Posteingang mit „Ungelesen" (`?filter=ungelesen`).
+- **Detailseiten** (Anfrage, Mail, Schriftwechsel, Textbausteine, Struktur,
+  Konten): zwei Spalten nach der Breite der Seite (ab 960 px), Dialoge nur für
+  Formulare, Bestätigungen wie in der App. In der Anfrage stehen „Bearbeiten"
+  (Status, Notiz) und „Gemeinde anlegen" (Tarif, Testphase, erste
+  Gemeindeleitung) als zwei Karten. Die Logik jeder Seite liegt in einem Hook,
+  den App- und Web-Fassung teilen.
+- **Schriftwechsel einer Gemeinde** liest Name und Angaben aus
+  `GET /organizations/:id` (auch interne Gemeinden), die Leitung aus
+  `GET /support/gemeinden`.
 
 ## Offen
 
 - Weitere Kennzahlen (Speicher, Medien) und eine Auswahl des Zeitraums.
 - Der Posteingang lädt höchstens die neuesten `EINGANG_MAX` Mails und filtert
   im Browser; bei vielen Mails braucht er Seiten.
+- In einer Mail, die einer internen Gemeinde zugeordnet ist, steht
+  „Gemeinde 7" statt des Namens (die Auswahl dort liest die Liste ohne
+  interne Gemeinden).
 - Ein Konto mit Super-Admin-Recht steht in der Gemeindeleitung jeder
   Gemeinde, in der es Gemeindeleitung ist — wie jedes andere Konto.
 - Interne Gemeinden in einer eigenen, versteckten Liste anzeigen, falls das
