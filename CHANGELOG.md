@@ -40,10 +40,33 @@ Versionsüberschrift.
   Antworten von Gemeinden landen in der richtigen Anfrage oder bei der
   richtigen Gemeinde, was sich nicht zuordnen lässt, im Posteingang. Dazu
   gibt es Textbausteine mit Platzhaltern und eine gemeinsame Fußzeile.
+- Die Support-Ansicht hat im breiten Browserfenster eine eigene
+  Web-Oberfläche: Die Übersicht zeigt Kennzahlen, die Entwicklung von
+  Gemeinden, Konten und Anfragen über zwölf Monate, die Aktivität über zwölf
+  Wochen, die neuesten Anfragen und Mails und die Testphasen, die bald enden;
+  Anfragen, Posteingang, Schriftwechsel, Textbausteine, Struktur und
+  Support-Konten stehen als Tabellen und Karten statt als Listen.
+- Die Gemeinden stehen in der Support-Ansicht im Browser nach Landeskirche und
+  Kirchenkreis aufklappbar geordnet, mit einer Suche, die beim Tippen filtert
+  — auch nach der Gemeindeleitung. Die Gemeindeleitung steht mit
+  Benutzername, Mail und letzter Anmeldung direkt an jeder Gemeinde.
+- Der Posteingang zeigt im Browser alle eingehenden Mails an moin@ und
+  support@, mit Filtern und der Angabe, zu welcher Anfrage oder Gemeinde eine
+  Mail gehört.
+- Ein Konto mit eigener Gemeinde und Super-Admin-Recht hat in der Leiste im
+  Browser zusätzlich die Bereiche der Support-Ansicht.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
   Ausdrucken bereit.
 
 ### Geändert
+- Im breiten Browserfenster steht der Gemeinde-Umschalter nur noch unten in
+  der Leiste — mit dem Namen der Gemeinde, der eigenen Rolle dort und den
+  roten Zahlen je Gemeinde; in den Apps und im schmalen Fenster bleibt er oben
+  in der Kopfzeile.
+- Gemeinden, die nur dem Betrieb dienen (Test- und Review-Gemeinden für die
+  Stores), erscheinen in keiner Liste und keiner Zahl der Support-Ansicht.
+- „Bearbeiten" an einer Gemeinde öffnet in der Support-Ansicht im Browser
+  gleich das Formular.
 - Eine neue Gemeinde startet in der Testphase mit einem Limit von 5 Konfis;
   danach gilt die Lizenz, die sie gewählt hat. Die Tarif-Auswahl nennt den
   Preis; die Tarife 15, 50, 75 und 100 und „Unbegrenzt" bleiben wählbar.

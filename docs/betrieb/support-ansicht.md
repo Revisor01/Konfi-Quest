@@ -23,16 +23,45 @@ Support", und der Server antwortet ohnehin mit 403.
 | Konto | Weg |
 |---|---|
 | Support-Konto ohne Gemeinde ([support-konto.md](support-konto.md)) | Anmelden auf konfi-quest.de im Browser; die Startseite ist die **Übersicht** (`/admin/support`). Auf breiten Bildschirmen stehen die Bereiche in der Leiste links, auf schmalen führt die Übersicht zu allen Bereichen und trägt unten **Abmelden**. |
-| Gemeindeleitung mit Super-Admin-Merkmal (Simons Konto) | Reiter **„Mehr"** › oben rechts das **Headset-Symbol** („Support-Ansicht öffnen"). Daneben bleibt das Puls-Symbol zum Betrieb. |
+| Gemeindeleitung mit Super-Admin-Merkmal (Simons Konto) | Im Browser ab breitem Fenster stehen die Bereiche der Support-Ansicht in der Leiste links unter den eigenen (Gruppen Support, Verwaltung, Betrieb). In den Apps und im schmalen Fenster: Reiter **„Mehr"** › oben rechts das **Headset-Symbol** („Support-Ansicht öffnen"). Daneben bleibt das Puls-Symbol zum Betrieb. |
 
 Die Bereiche: **Übersicht**, **Anfragen**, **Gemeinden**, **Struktur**,
 **Support-Konten**, **Betrieb**. Gemeinden und Betrieb sind die bekannten
 Seiten; eine einzelne Gemeinde öffnet die Adresse
 `/admin/organizations?gemeinde=<id>` direkt.
 
-## Die Kennzahlen lesen
+## Zwei Gesichter: Browser und App
 
-Die Übersicht zeigt aus `GET /api/support/statistik`:
+Im Browser ab 992 px Breite (dieselbe Grenze wie die Leiste) zeigt jede Seite
+der Support-Ansicht eine eigene **Web-Fassung** mit Tabellen, Karten,
+Kennzahlen und Diagrammen; die Bereiche stehen links in der Leiste, eine
+eigene Liste der Bereiche gibt es dort nicht. In den Apps und im schmalen
+Fenster bleibt die Darstellung der App. Gestaltung und Bausteine:
+[planung/support-web.md](../planung/support-web.md).
+
+## Die Übersicht im Browser lesen
+
+Die Übersicht im Browser liest `GET /api/support/uebersicht`:
+
+- **Kennzahlen:** Gemeinden (Lizenz, Testphase, unbegrenzt, gesperrt — die
+  vier ergeben zusammen die Gesamtzahl), Konfis, Team, aktive Konten in 30
+  Tagen (je Konto einmal), offene Anfragen (neu oder in Arbeit) und
+  ungelesene Mails.
+- **Entwicklung über zwölf Monate:** neue Gemeinden, neue Konten (Konfi und
+  Team), Konten gesamt am Monatsende und neue Anfragen.
+- **Aktivität über zwölf Wochen:** eingereichte Anträge, Anmeldungen zu
+  Terminen (auch die automatischen bei Pflichtterminen) und Chat-Nachrichten.
+- **Neueste Anfragen und Mails** (je fünf), **Testphasen, die in den nächsten
+  14 Tagen enden**, und Gemeinden je Landeskirche.
+
+Monate und Wochen rechnen in deutscher Zeit. Konten zählen wie in der
+Statistik: nicht gelöscht, nicht gesperrt, Support-Konten ohne Gemeinde
+nicht.
+
+## Die Kennzahlen in der App lesen
+
+Die Übersicht in der App und im schmalen Fenster zeigt aus
+`GET /api/support/statistik`:
 
 - **Gesamt:** Gemeinden (davon aktiv und ohne Zuordnung), Konfis,
   Teamer:innen, Leitung (davon Gemeindeleitung), Konten mit Anmeldung in den
@@ -233,6 +262,12 @@ ansehen."
    einem Schritt einer Anfrage oder Gemeinde zu — der ganze Faden geht mit —
    oder antwortet direkt.
 
+Im Browser zeigt der **Posteingang** alle eingehenden Mails beider
+Postfächer, neueste zuerst, mit den Filtern „Alle", „Nicht zugeordnet",
+„moin@" und „support@" (`GET /api/support/mail/eingang?zuordnung=alle`). Die
+Spalte „Zugeordnet" führt zur Anfrage bzw. zum Schriftwechsel der Gemeinde.
+In der App und im schmalen Fenster stehen dort nur die nicht zugeordneten.
+
 Neue, noch nicht angesehene Mails stehen als rote Zahl am Bereich
 **Anfragen** (je Anfrage) und am **Posteingang** (nicht zugeordnete und solche
 von Gemeinden). Die Zahl holt die Leiste alle zwei Minuten, nur für
@@ -255,6 +290,17 @@ ein Platzhalter nicht kennt, bleibt sichtbar stehen. Darunter Fußzeile und
 Absendername — dort und nicht im Code stehen Namen, weil das Repo öffentlich
 ist. Passwörter gehören nie in eine Mail: „Zugangsdaten unterwegs" nennt den
 Benutzernamen, das Passwort geht auf anderem Weg.
+
+## Interne Gemeinden
+
+Gemeinden, die nur dem Betrieb dienen — die Test- und Review-Gemeinden für
+die Stores —, tragen `organizations.intern = true` (Migration 194). Sie
+erscheinen in keiner Liste und keiner Zahl der Support-Ansicht und nicht in
+`GET /api/organizations`; über ihre Kennung (`/admin/organizations?gemeinde=<id>`,
+`GET`/`PUT /api/organizations/:id`) bleiben sie erreichbar, ihre Konten
+melden sich an wie bisher. Einen Schalter dafür gibt es bewusst nicht:
+Gesetzt wird die Spalte nur direkt in der Datenbank, mit Sicherung vorher —
+das erste Mal mit [Auftrag 15](../auftraege/lokaler-agent/15-support-probelauf.md).
 
 ## Aufbewahrung
 
