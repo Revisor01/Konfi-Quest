@@ -3,7 +3,9 @@
 # Dokumentiert: auth, docs-auth, health/status/app-version, metrics,
 # organizations, users (beide Mounts), einladungen, anfragen und support
 # (seit 03.10.2026; Support-Mail seit 03.10.2026, routes/supportMail.js;
-# Uebersicht und Gemeindeliste seit 03.10.2026, routes/supportUebersicht.js) —
+# Uebersicht und Gemeindeliste seit 03.10.2026, routes/supportUebersicht.js;
+# Vorgaenge seit 03.10.2026, routes/supportVorgaenge.js, und das oeffentliche
+# Support-Formular POST /api/anliegen, routes/anliegen.js) —
 # 67 Operationen,
 # gezaehlt am 26.09.2026 (die Generatoren zaehlen bei jedem Lauf nach).
 # teamer, material und wrapped stehen in teamer-material.yaml; jahrgaenge,
@@ -82,6 +84,10 @@
 #                                     5 angenommene je Stunde und Client-IP,
 #                                     3 je Tag und E-Mail-Adresse, Honigtopf
 #                                     (Abschnitt SUPPORT unten)
+#      POST /api/anliegen             Support-Formular auf konfi-quest.de:
+#                                     dieselbe Grenze und derselbe Honigtopf
+#                                     (utils/oeffentlicheGrenzen.js), eigene
+#                                     Zaehler (Abschnitt SUPPORT unten)
 #    # LÜCKE (N3, teilweise BEHOBEN 29.09.2026): validate-invite,
 #    # reset-password und refresh haben keinen eigenen (strengeren)
 #    # Rate-Limiter — Invite-Code-Bruteforce (nur 8 Hex-Zeichen = 4 Byte
@@ -302,15 +308,18 @@ components:
       type: object
       description: >
         Eine Mail der Support-Mail (mail_nachrichten, Migration 193), ein-
-        oder ausgehend. Zugeordnet zu einer Anfrage ODER einer Gemeinde oder
-        keinem (= Posteingang). Nur Klartext (hoechstens 50.000 Zeichen);
-        von Anhaengen nur Name, Groesse und Typ.
+        oder ausgehend. Seit Migration 195 gehoert sie zu einem VORGANG
+        (vorgang_id) oder liegt im Posteingang; anfrage_id und organization_id
+        folgen dem Vorgang (Vorgang einer Anfrage: anfrage_id; sonst die Gemeinde
+        des Vorgangs; nie beides), die alten Routen lesen sie. Nur Klartext
+        (hoechstens 50.000 Zeichen); von Anhaengen nur Name, Groesse und Typ.
       properties:
         id: { type: integer }
         postfach: { type: string, enum: [moin, support] }
         richtung: { type: string, enum: [ein, aus] }
         anfrage_id: { type: [integer, "null"] }
         organization_id: { type: [integer, "null"] }
+        vorgang_id: { type: [integer, "null"], description: "der Vorgang der Mail; null = Posteingang (additiv seit 03.10.2026, Migration 195)" }
         message_id: { type: string, description: "in spitzen Klammern; eigene Antworten <kq-uuid@konfi-quest.de>, Mails ohne Message-ID <kq-ersatz-postfach-uidvalidity-uid@konfi-quest.de>" }
         in_reply_to: { type: [string, "null"] }
         referenzen: { type: array, items: { type: string }, description: "References, aelteste zuerst" }
@@ -329,6 +338,7 @@ components:
               typ: { type: [string, "null"] }
         gesendet_am: { type: string, format: date-time }
         gelesen_am: { type: [string, "null"], format: date-time, description: "eingehend: wann im Support gesehen; ausgehend: = gesendet_am" }
+        archiviert_am: { type: [string, "null"], format: date-time, description: "nur Mails im Posteingang: wann archiviert (additiv seit 03.10.2026, Migration 195)" }
         verfasst_von: { type: [integer, "null"], description: "Konto, das die Antwort geschrieben hat; faellt mit dem Konto weg" }
         verfasst_von_name: { type: [string, "null"], description: "Anzeigename dazu (zusaetzlich zum Vertrag)" }
         created_at: { type: string, format: date-time }
@@ -354,7 +364,7 @@ components:
       required: [text]
       properties:
         text: { type: string, maxLength: 20000, description: "getrimmt, nicht leer; die Fusszeile setzt der Server darunter" }
-        betreff: { type: [string, "null"], maxLength: 300, description: "leer = Standardbetreff; die Kennung [Anfrage N] / [Gemeinde N] kommt dazu, wenn sie fehlt" }
+        betreff: { type: [string, "null"], maxLength: 300, description: "leer = Standardbetreff; die Kennung [Vorgang N] kommt dazu, wenn sie fehlt (bis Migration 195 [Anfrage N] / [Gemeinde N]; eine alte Kennung weicht der neuen)" }
     Landeskirche:
       type: object
       properties:
@@ -383,6 +393,97 @@ components:
       type: array
       description: "genau 12 Werte, ein Wert je Woche aus aktivitaet.wochen, gleiche Reihenfolge (aelteste zuerst), Wochen ohne Eintraege als 0"
       items: { type: integer }
+    SupportVorgangListe:
+      type: object
+      description: >
+        Ein Eintrag der Liste GET /api/support/vorgaenge (support_vorgaenge, Migration 195;
+        docs/planung/support-vorgaenge.md). Genau diese Felder.
+      properties:
+        id: { type: integer, description: "die Nummer des Vorgangs; sie steht als [Vorgang N] im Betreff der Mails" }
+        art: { $ref: "#/components/schemas/SupportVorgangArt" }
+        bereich: { $ref: "#/components/schemas/SupportVorgangBereich" }
+        dringlichkeit: { type: string, enum: [normal, dringend] }
+        status: { type: string, enum: [neu, in_arbeit, wartet, erledigt], description: "erledigt ist immer archiviert (archiviert_am gesetzt)" }
+        betreff: { type: string }
+        quelle: { type: string, enum: [anfrage, formular, mail, support], description: "anfrage: Formular fuer Gemeinden (mit Anfrage); formular: Support-Formular auf konfi-quest.de; mail: aus einer Mail oder dem Posteingang; support: vom Support angelegt" }
+        organization_id: { type: [integer, "null"], description: "die Gemeinde, sobald bekannt (auch eine interne)" }
+        gemeinde_name: { type: [string, "null"], description: "Anzeigename der Gemeinde (display_name, sonst name); sonst der Gemeindename der Anfrage bzw. die Angabe aus dem Formular; sonst null" }
+        anfrage_id: { type: [integer, "null"], description: "die Anfrage, an der der Vorgang haengt (Art neue_gemeinde)" }
+        ungelesen: { type: integer, description: "ungelesene eingehende Mails des Vorgangs" }
+        letzte_aktivitaet: { type: string, format: date-time, description: "das Spaetere von letzter Aenderung (updated_at) und juengster Mail (gesendet_am)" }
+        created_at: { type: string, format: date-time }
+        archiviert_am: { type: [string, "null"], format: date-time }
+    SupportVorgangArt:
+      type: string
+      enum: [neue_gemeinde, frage, fehler, wunsch, zugang, lizenz, datenschutz, sonstiges]
+      description: "Neue Gemeinde, Frage zur Bedienung, Fehler melden, Wunsch oder Idee, Zugang und Konten, Lizenz und Abrechnung, Datenschutz, Sonstiges"
+    SupportVorgangBereich:
+      type: [string, "null"]
+      enum: [konfis, termine, punkte, challenges, chat, badges, material, konten, einstellungen, sonstiges, null]
+      description: "Konfis, Termine, Punkte und Antraege, Challenges, Chat, Badges, Material, Konten und Einladungen, Einstellungen, Sonstiges; Pflicht nur im Formular bei Frage, Fehler und Wunsch"
+    SupportVorgang:
+      description: >
+        Das Detail eines Vorgangs (GET, PATCH, POST .../archivieren und
+        .../wiederherstellen, POST /vorgaenge): alle Felder der Liste, dazu die Felder unten.
+      allOf:
+        - { $ref: "#/components/schemas/SupportVorgangListe" }
+        - type: object
+          properties:
+            status_seit: { type: string, format: date-time, description: "laeuft neu, wenn sich der Status aendert" }
+            updated_at: { type: string, format: date-time, description: "jede Aenderung, jede Mail; Grundlage der Aufbewahrung" }
+            notiz: { type: [string, "null"], description: "intern, nur Support; bei einem Anfrage-Vorgang dieselbe wie die der Anfrage" }
+            beschreibung: { type: [string, "null"], description: "Text aus dem Formular; bei einem Anfrage-Vorgang die Nachricht der Anfrage" }
+            kontakt_name: { type: [string, "null"], description: "aus dem Support-Formular" }
+            kontakt_email: { type: [string, "null"], description: "aus dem Support-Formular; dorthin geht die Antwort" }
+            kontakt_funktion: { type: [string, "null"], description: "aus dem Support-Formular" }
+            gemeinde_angabe: { type: [string, "null"], description: "Gemeindename, wie die Person ihn im Support-Formular eintrug" }
+            einwilligung_am: { type: [string, "null"], format: date-time }
+            erstellt_von: { type: [integer, "null"], description: "das Support-Konto, das ihn anlegte; faellt mit dem Konto weg" }
+            erstellt_von_name: { type: [string, "null"] }
+            verlauf: { type: array, items: { $ref: "#/components/schemas/MailNachricht" }, description: "alle Mails des Vorgangs, aelteste zuerst" }
+            anfrage: { oneOf: [{ $ref: "#/components/schemas/GemeindeAnfrage" }, { type: "null" }], description: "die Anfrage mit allen Feldern, bei Art neue_gemeinde" }
+            gemeinde:
+              type: [object, "null"]
+              description: "die Gemeinde, sobald bekannt (auch eine interne)"
+              properties:
+                id: { type: integer }
+                name: { type: string, description: "Systemname" }
+                display_name: { type: string }
+                is_active: { type: boolean }
+                is_trial: { type: boolean }
+                trial_ends_at: { type: [string, "null"], format: date-time }
+                max_konfis: { type: [integer, "null"] }
+                intern: { type: boolean }
+                kirchenkreis_id: { type: [integer, "null"] }
+                kirchenkreis: { type: [string, "null"] }
+                landeskirche_id: { type: [integer, "null"] }
+                landeskirche: { type: [string, "null"] }
+                wunsch_lizenz: { type: [string, "null"] }
+            leitung:
+              type: array
+              description: "Gemeindeleitung der Gemeinde (Rolle org_admin dort, beide Quellen der Zugehoerigkeit, auch gesperrte); leer ohne Gemeinde"
+              items:
+                type: object
+                properties:
+                  id: { type: integer }
+                  display_name: { type: string }
+                  username: { type: string }
+                  email: { type: [string, "null"] }
+                  is_active: { type: boolean }
+                  last_login_at: { type: [string, "null"], format: date-time }
+            empfaenger:
+              type: array
+              description: >
+                Adressen, an die eine Antwort gehen darf (zusaetzlich zum Vertrag), in Rangfolge: Absender
+                eingehender Mails des Vorgangs (zuletzt geschrieben zuerst), Kontaktadresse aus dem Formular,
+                Adresse der Anfrage, dann Leitung und Absender der Gemeinde wie GET /gemeinden/{id}/empfaenger.
+                Jede Adresse einmal, klein geschrieben. Ohne `an` geht die Antwort an die erste.
+              items:
+                type: object
+                properties:
+                  adresse: { type: string }
+                  name: { type: [string, "null"] }
+                  herkunft: { type: string, enum: [absender, kontakt, anfrage, leitung, verlauf] }
     SupportUebersicht:
       type: object
       description: "GET /api/support/uebersicht -- das Dashboard der Support-Ansicht. Interne Gemeinden (organizations.intern) zaehlen nirgends mit."
@@ -2161,6 +2262,11 @@ paths:
         Kennung, Gemeinde, Kirchenkreis und Landeskirche, ohne Kontaktdaten.
         Scheitert eine Mail, bleibt die Anfrage.
 
+        VORGANG (seit 03.10.2026, Migration 195): In DERSELBEN Transaktion
+        entsteht der Vorgang der Anfrage (Art neue_gemeinde, Quelle anfrage,
+        Betreff "Anfrage: <Gemeinde>", Status neu); scheitert er, gibt es auch
+        keine Anfrage (500). Die Antwort der Route bleibt { ok: true }.
+
         HONIGTOPF: Ist `website` nicht leer, antwortet die Route ebenfalls 201
         { ok: true } -- auch bei sonst ungueltigen Feldern --, speichert aber
         nichts und schickt nichts.
@@ -2180,8 +2286,8 @@ paths:
         der Ablehnung (BackgroundService.cleanupAbgelehnteAnfragen, gezaehlt ab
         status_seit); neue und in Arbeit befindliche nach 365 Tagen ohne
         Aenderung (cleanupUnbewegteAnfragen, gezaehlt ab updated_at); eine
-        angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}).
-        Datenschutzerklaerung Abschnitt 9c.
+        angelegte geht mit ihrer Gemeinde (DELETE /organizations/{id}); mit der
+        Anfrage geht ihr Vorgang samt Mails. Datenschutzerklaerung Abschnitt 9c.
       requestBody:
         required: true
         content:
@@ -2216,6 +2322,79 @@ paths:
         middleware: [ipGrenze, honigtopf, adressGrenze, express-validator]
         org-scope: false
         objekt-pruefung: "keine; Tests: backend/tests/routes/anfragen.test.js, tests/services/anfragenAufraeumen.test.js"
+
+  /api/anliegen:
+    post:
+      tags: ["Support"]
+      summary: Anliegen vom Support-Formular auf konfi-quest.de (OEFFENTLICH, ohne Anmeldung)
+      description: >
+        NEU 03.10.2026 (docs/planung/support-vorgaenge.md, Entscheidung 4;
+        backend/routes/anliegen.js). Jedes Anliegen wird ein Vorgang der Quelle
+        formular mit Status neu (support_vorgaenge, Migration 195; einwilligung_am
+        = jetzt) und antwortet 201 { ok: true } -- ohne Nummer und ohne Zuordnung.
+        Die Art "Neue Gemeinde" gibt es hier nie (dafuer POST /api/anfragen).
+
+        ZUORDNUNG: Gehoert `email` (ohne Gross/klein) zu GENAU EINEM aktiven Konto
+        (nicht Konfi) einer Gemeinde -- beide Quellen der Zugehoerigkeit,
+        users.organization_id und user_organizations, die Rolle je Gemeinde --,
+        bekommt der Vorgang diese organization_id; sonst bleibt sie leer, und der
+        Support ordnet sie zu. Die Angabe `gemeinde` bleibt in jedem Fall als
+        gemeinde_angabe am Vorgang.
+
+        BESTAETIGUNG: NACH der Antwort geht eine Mail mit FESTEM Text an `email`
+        (keine Eingabe aus dem Formular darin, nur die Nummer des Vorgangs --
+        sonst liesse sich ueber den Server beliebiger Text an fremde Adressen
+        schicken) vom Postfach support@ mit [Vorgang N] im Betreff, damit Antworten
+        im Vorgang landen. Sie steht im Verlauf des Vorgangs, der Status bleibt neu.
+        Auf einem Server mit RUN_BACKGROUND_JOBS=false (backend-test) geht nichts
+        hinaus; scheitert die Mail, bleibt das Anliegen.
+
+        HONIGTOPF, GRENZEN, PROTOKOLL wie POST /api/anfragen (utils/oeffentlicheGrenzen.js,
+        eigene Zaehler): Ist `website` nicht leer, 201 { ok: true } ohne Speichern
+        und ohne Mail; 5 angenommene Anliegen je Stunde und Client-IP, 3 je Tag und
+        E-Mail-Adresse (SHA-256-Pruefwert), danach 429; abgewiesene (400) zaehlen
+        nicht. Protokoll nur "Anliegen 12 eingegangen", keine Daten daraus; zum
+        Anliegen wird keine IP-Adresse gespeichert.
+
+        AUFBEWAHRUNG: Ein erledigter Vorgang ist archiviert; archivierte Vorgaenge
+        loescht der 02:00-Lauf 730 Tage nach dem Archivieren, wenn sie sich seitdem
+        nicht geaendert haben (BackgroundService.cleanupArchivierteVorgaenge).
+        Datenschutzerklaerung Abschnitt 9e.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gemeinde, name, email, art, betreff, beschreibung, einwilligung]
+              properties:
+                gemeinde: { type: string, maxLength: 200, description: "Freitext; getrimmt, nicht leer" }
+                name: { type: string, maxLength: 200, description: "getrimmt, nicht leer" }
+                email: { type: string, maxLength: 254, description: "gueltige Adresse; dorthin geht die Bestaetigung" }
+                funktion: { type: [string, "null"], maxLength: 200 }
+                art:
+                  type: string
+                  enum: [frage, fehler, wunsch, zugang, lizenz, datenschutz, sonstiges]
+                  description: "ohne neue_gemeinde; anderes -> 400 'Bitte eine Art aus der Liste wählen'"
+                bereich:
+                  type: [string, "null"]
+                  enum: [konfis, termine, punkte, challenges, chat, badges, material, konten, einstellungen, sonstiges, "", null]
+                  description: "Pflicht bei Art frage, fehler und wunsch ('Bitte einen Bereich wählen'); sonst leer erlaubt"
+                dringlichkeit: { type: string, enum: [normal, dringend], default: normal, description: "fehlt sie, gilt normal" }
+                betreff: { type: string, maxLength: 120, description: "einzeilig (Zeilenumbrueche werden Leerzeichen), nicht leer" }
+                beschreibung: { type: string, maxLength: 5000, description: "getrimmt, nicht leer" }
+                einwilligung: { type: boolean, const: true, description: "muss genau true sein (nicht \"true\", nicht 1)" }
+                website: { type: string, description: "Honigtopf: muss leer sein oder fehlen" }
+      responses:
+        "201": { description: "{ ok: true } -- gespeichert, oder Honigtopf gefuellt (dann nichts gespeichert)" }
+        "400": { description: "{ error: 'Validierungsfehler', details: [{ field, message }] } -- ohne die Eingaben; nichts gespeichert, keine Mail" }
+        "429": { description: "{ error } -- 'Zu viele Anliegen von dieser Verbindung. ...' (je Client-IP) oder 'Für diese E-Mail-Adresse sind heute schon mehrere Anliegen eingegangen. ...' (je Adresse)" }
+        "500": { description: "{ error: 'Das Anliegen konnte nicht gespeichert werden. Bitte versucht es später erneut.' }" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [ipGrenze, honigtopf, adressGrenze, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine; Tests: backend/tests/routes/anliegen.test.js"
 
   # --------------------------------------------------------------------------
   # /api/support (backend/routes/support.js, Mount /api/support): ALLE Routen
@@ -2259,6 +2438,12 @@ paths:
         behaelt den Status: ein anderer gibt 409; die Notiz bleibt aenderbar.
         "angelegt" laesst sich auch von Hand setzen (Gemeinde auf anderem Weg
         angelegt) -- dann ohne organization_id.
+
+        VORGANG (seit 03.10.2026): Der Vorgang der Anfrage folgt -- neu und in
+        Arbeit bleiben offen, angelegt und abgelehnt sind erledigt (und damit im
+        Archiv); ein Vorgang "wartet" bleibt "wartet", solange die Anfrage "in
+        Arbeit" ist; die Notiz ist dieselbe. Fehlt der Vorgang (Anfrage aus einem
+        aelteren Stand), entsteht er hier.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -2687,6 +2872,430 @@ paths:
   # mailHintergrund.test.js, tests/utils/mailZuordnung.test.js,
   # mailPostfaecher.test.js.
   # --------------------------------------------------------------------------
+  # --------------------------------------------------------------------------
+  # /api/support/vorgaenge (backend/routes/supportVorgaenge.js, Migration 195;
+  # docs/planung/support-vorgaenge.md): jede Anfrage, Mail und jedes Anliegen
+  # aus dem Formular ist ein Vorgang. Alle Routen hinter requireSuperAdmin.
+  # Tests: backend/tests/routes/supportVorgaenge.test.js,
+  # supportMailVorgaenge.test.js, anfragenVorgang.test.js, anliegen.test.js,
+  # tests/services/mailAbholungVorgaenge.test.js, vorgaengeAufraeumen.test.js,
+  # tests/schema/migration195SupportVorgaenge.test.js.
+  # --------------------------------------------------------------------------
+  /api/support/vorgaenge:
+    get:
+      tags: ["Support"]
+      summary: Vorgaenge -- die Liste des Supports, mit Filtern und Suche
+      description: >
+        Neueste Aktivitaet zuerst (letzte_aktivitaet, dann Nummer), hoechstens
+        1.000. filter: offen (Vorgabe: nicht archiviert, Status neu, in_arbeit
+        oder wartet), neu, in_arbeit, wartet (je nicht archiviert), erledigt
+        (Status erledigt), archiv (ALLE archivierten, auch die erledigten),
+        alle (nicht archiviert, jeder Status -- Zusatz). art und gemeinde
+        (Kennung) verbinden sich mit dem Filter. suche: Nummer ("12" oder "#12"),
+        Betreff, Beschreibung, Gemeinde (Name, Anfrage, Angabe im Formular),
+        Kontakt und Absender bzw. Betreff der Mails, ohne Unterschied Gross/klein;
+        % und _ im Suchtext sind Text. Vorgaenge interner Gemeinden
+        (organizations.intern) stehen hier wie jeder andere -- der Support
+        bearbeitet sie --; nur die Zahlen der Uebersicht lassen sie weg.
+      parameters:
+        - { name: filter, in: query, required: false, schema: { type: string, enum: [offen, neu, in_arbeit, wartet, erledigt, archiv, alle], default: offen } }
+        - { name: art, in: query, required: false, schema: { $ref: "#/components/schemas/SupportVorgangArt" } }
+        - { name: gemeinde, in: query, required: false, schema: { type: integer, minimum: 1 }, description: "Kennung der Gemeinde (organization_id)" }
+        - { name: suche, in: query, required: false, schema: { type: string, maxLength: 200 } }
+      responses:
+        "200":
+          description: "Array"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SupportVorgangListe" }
+        "400": { description: "unbekannter filter oder unbekannte art, ungueltige gemeinde, zu langer Suchtext" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine (alle Vorgaenge)"
+    post:
+      tags: ["Support"]
+      summary: Einen Vorgang anlegen -- auf Wunsch zugleich eine Mail an die Gemeinde
+      description: >
+        { art, bereich?, dringlichkeit?, betreff, organization_id?, text?, an? }.
+        Quelle support, Status neu, erstellt_von = aufrufendes Konto. Mit `text`
+        geht zugleich eine Mail vom Postfach support an `an` (muss unter den
+        Empfaengern der Gemeinde stehen, GET /gemeinden/{id}/empfaenger; ohne
+        Angabe der erste), mit [Vorgang N] im Betreff; der Vorgang geht auf
+        in_arbeit, die Mail steht im Verlauf. Dafuer ist organization_id
+        noetig (400). Scheitert der Versand (502, 503), entsteht kein Vorgang.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [art, betreff]
+              properties:
+                art: { $ref: "#/components/schemas/SupportVorgangArt" }
+                bereich: { $ref: "#/components/schemas/SupportVorgangBereich" }
+                dringlichkeit: { type: string, enum: [normal, dringend], default: normal }
+                betreff: { type: string, maxLength: 300, description: "einzeilig, nicht leer" }
+                organization_id: { type: [integer, "null"] }
+                text: { type: [string, "null"], maxLength: 20000, description: "Mail an die Gemeinde; leer = keine Mail" }
+                an: { type: [string, "null"], maxLength: 320 }
+      responses:
+        "201": { description: "Das Detail des neuen Vorgangs", content: { application/json: { schema: { $ref: "#/components/schemas/SupportVorgang" } } } }
+        "400": { description: "Validierungsfehler; Text ohne Gemeinde ('Für eine Mail braucht der Vorgang eine Gemeinde.'); Adresse nicht unter den Empfaengern; Gemeinde ohne bekannte Adresse -- dann entsteht nichts" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Gemeinde nicht gefunden' }" }
+        "502": { description: "Versand gescheitert -- nichts angelegt" }
+        "503": { description: "Postfach nicht eingerichtet oder 'Auf diesem Server ist der Versand aus.' (RUN_BACKGROUND_JOBS=false)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz der Gemeinde; Empfaenger aus den Empfaengern der Gemeinde"
+
+  /api/support/vorgaenge/{id}:
+    get:
+      tags: ["Support"]
+      summary: Ein Vorgang mit Verlauf, Anfrage, Gemeinde und Gemeindeleitung
+      description: >
+        Alle Felder der Liste, dazu notiz, beschreibung, kontakt_*, gemeinde_angabe,
+        einwilligung_am, erstellt_von(_name), verlauf (Mails, aelteste zuerst),
+        anfrage (bei Art neue_gemeinde), gemeinde, leitung und -- zusaetzlich
+        zum Vertrag -- empfaenger (Adressen, an die eine Antwort gehen darf).
+        Liest nur; gelesen setzt POST /mail/gelesen.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Das Detail", content: { application/json: { schema: { $ref: "#/components/schemas/SupportVorgang" } } } }
+        "400": { description: "ungueltige Kennung" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+    patch:
+      tags: ["Support"]
+      summary: Einordnen -- Art, Bereich, Dringlichkeit, Status, Betreff, Gemeinde, Notiz
+      description: >
+        Nur die genannten Felder aendern sich (mindestens eines, sonst 400).
+        STATUS: status_seit laeuft neu, wenn sich der Status aendert. "erledigt"
+        legt den Vorgang ins Archiv (archiviert_am); ein anderer Status holt
+        einen erledigten aus dem Archiv. GEMEINDE: organization_id setzen oder
+        mit null loesen; die Mails des Vorgangs folgen (organization_id an der
+        Mail, die alten Routen lesen sie; bei einem Anfrage-Vorgang bleibt
+        anfrage_id, nie beides). ANFRAGE: Bei einem Anfrage-Vorgang folgt die
+        Anfrage -- neu -> neu, in_arbeit und wartet -> in_arbeit, erledigt ->
+        abgelehnt, eine angelegte bleibt angelegt --, ihre Notiz ist die des
+        Vorgangs, und jede Aenderung zaehlt als Bewegung der Anfrage
+        (365-Tage-Frist). bearbeitet_von der Anfrage = aufrufendes Konto.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                art: { $ref: "#/components/schemas/SupportVorgangArt" }
+                bereich: { $ref: "#/components/schemas/SupportVorgangBereich" }
+                dringlichkeit: { type: string, enum: [normal, dringend] }
+                status: { type: string, enum: [neu, in_arbeit, wartet, erledigt] }
+                betreff: { type: string, maxLength: 300, description: "einzeilig, nicht leer" }
+                organization_id: { type: [integer, "null"] }
+                notiz: { type: [string, "null"], maxLength: 5000, description: "getrimmt; leer = null" }
+      responses:
+        "200": { description: "Das Detail", content: { application/json: { schema: { $ref: "#/components/schemas/SupportVorgang" } } } }
+        "400": { description: "kein Feld ('Nichts zu ändern: …'), unbekannter Wert, Betreff leer oder zu lang, Notiz zu lang" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Vorgang nicht gefunden' } oder { error: 'Gemeinde nicht gefunden' } -- dann aendert sich nichts" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz von Vorgang und Gemeinde, Zeile gesperrt (FOR UPDATE)"
+    delete:
+      tags: ["Support"]
+      summary: Einen Vorgang loeschen -- samt seinen Mails und einer daran haengenden Anfrage
+      description: >
+        Der Vorgang, seine Mails IN KONFI QUEST (im Postfach bleibt alles --
+        Konfi Quest liest die Postfaecher nur) und die Anfrage dahinter, falls
+        es eine gibt (eine daraus entstandene Gemeinde bleibt). Nicht
+        rueckgaengig.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ message: 'Vorgang gelöscht' }" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+
+  /api/support/vorgaenge/{id}/antworten:
+    post:
+      tags: ["Support"]
+      summary: Antwort im Vorgang -- Mail mit [Vorgang N] im Betreff
+      description: >
+        { betreff?, text, an? }. Vom Postfach moin (Vorgang einer Anfrage),
+        sonst support; Fusszeile, Message-ID, In-Reply-To/References auf die
+        letzte Mail des Vorgangs und Standardbetreff wie bei den alten
+        Antwort-Routen ("Re: <letzter Betreff>", ohne Verlauf der Betreff des
+        Vorgangs bzw. "Eure Anfrage für <Gemeinde>"); Kennung [Vorgang N], eine
+        alte Kennung [Anfrage N]/[Gemeinde N] im Betreff weicht ihr. `an` muss
+        unter `empfaenger` im Detail stehen (ohne Unterschied Gross/klein); ohne
+        Angabe geht die Mail an die erste. Die Mail gehoert zum Vorgang
+        (vorgang_id; anfrage_id/organization_id folgen ihm). Ein Vorgang im
+        Status neu geht auf in_arbeit, mit ihm die Anfrage dahinter; ein
+        Vorgang "wartet" oder "in Arbeit" bleibt. Scheitert der Versand,
+        wird nichts gespeichert.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                betreff: { type: [string, "null"], maxLength: 300 }
+                text: { type: string, maxLength: 20000 }
+                an: { type: [string, "null"], maxLength: 320 }
+      responses:
+        "201": { description: "{ nachricht: MailNachricht }" }
+        "400": { description: "Validierungsfehler; Adresse nicht unter den Empfaengern ('Diese Adresse gehört nicht zu den Empfängern dieses Vorgangs.'); kein Empfaenger bekannt" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
+        "502": { description: "Versand gescheitert -- nichts gespeichert" }
+        "503": { description: "Postfach nicht eingerichtet oder 'Auf diesem Server ist der Versand aus.' (RUN_BACKGROUND_JOBS=false)" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz; Empfaenger aus den Empfaengern des Vorgangs (keine freie Adresse)"
+
+  /api/support/vorgaenge/{id}/archivieren:
+    post:
+      tags: ["Support"]
+      summary: Einen Vorgang archivieren
+      description: >
+        Setzt archiviert_am (ein vorhandener Zeitpunkt bleibt); der Vorgang
+        verschwindet aus den offenen Listen, bleibt unter filter=archiv mit
+        Suche und behaelt seinen Status. Eine neue Mail im Vorgang holt ihn
+        zurueck (nicht mehr archiviert, Status in_arbeit, Mail ungelesen).
+        Archivierte Vorgaenge loescht der 02:00-Lauf 730 Tage nach dem
+        Archivieren, wenn sie sich seitdem nicht geaendert haben -- Vorgaenge
+        einer Anfrage folgen den Fristen der Anfrage.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Das Detail", content: { application/json: { schema: { $ref: "#/components/schemas/SupportVorgang" } } } }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+
+  /api/support/vorgaenge/{id}/wiederherstellen:
+    post:
+      tags: ["Support"]
+      summary: Einen archivierten Vorgang wiederherstellen
+      description: >
+        Loescht archiviert_am. Ein erledigter Vorgang geht dabei auf in_arbeit
+        (status_seit laeuft neu), jeder andere behaelt seinen Status; die
+        Anfrage dahinter folgt. Ein nicht archivierter Vorgang bleibt, wie er ist.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "Das Detail", content: { application/json: { schema: { $ref: "#/components/schemas/SupportVorgang" } } } }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Existenz"
+
+  /api/support/vorgaenge/sammel:
+    post:
+      tags: ["Support"]
+      summary: Sammelaktion fuer mehrere Vorgaenge -- archivieren, wiederherstellen, loeschen, Status setzen
+      description: >
+        { ids, aktion, status? } (1 bis 500 Kennungen). Wirkt wie die Einzel-Routen,
+        in einer Transaktion; unbekannte und doppelte Kennungen werden
+        uebergangen. aktion status verlangt `status`; "erledigt" archiviert, ein
+        anderer Status holt aus dem Archiv, Anfrage-Vorgaenge ziehen ihre Anfrage mit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids, aktion]
+              properties:
+                ids: { type: array, minItems: 1, maxItems: 500, items: { type: integer, minimum: 1 } }
+                aktion: { type: string, enum: [archivieren, wiederherstellen, loeschen, status] }
+                status: { type: string, enum: [neu, in_arbeit, wartet, erledigt], description: "nur bei aktion status, dort Pflicht" }
+      responses:
+        "200":
+          description: "{ aktion, anzahl, ids } -- ids: die tatsaechlich betroffenen Vorgaenge, aufsteigend"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  aktion: { type: string }
+                  anzahl: { type: integer }
+                  ids: { type: array, items: { type: integer } }
+        "400": { description: "ids fehlt, leer, zu lang oder keine Zahlen; unbekannte aktion; status fehlt oder unbekannt" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine (alle Vorgaenge)"
+
+  /api/support/mail/nachrichten/{id}/einsortieren:
+    post:
+      tags: ["Support"]
+      summary: Eine Mail in einen bestehenden oder neuen Vorgang einsortieren
+      description: >
+        { vorgang_id } oder { neu: { art, bereich?, dringlichkeit?, betreff?,
+        organization_id? } } -- genau eines. Neuer Vorgang: Quelle mail,
+        Status neu, erstellt_von = aufrufendes Konto, Betreff der Mail ohne
+        Re:/AW:, wenn keiner angegeben. Liegt die Mail im Posteingang, geht ihr
+        ganzer Faden mit -- soweit er noch im Posteingang liegt; eine Mail, die
+        schon in einem Vorgang liegt, wird allein verschoben. Eine archivierte
+        Mail ist danach nicht mehr archiviert. anfrage_id und organization_id an
+        der Mail folgen dem Vorgang. Der Vorgang gilt als bewegt.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                vorgang_id: { type: integer, minimum: 1 }
+                neu:
+                  type: object
+                  required: [art]
+                  properties:
+                    art: { $ref: "#/components/schemas/SupportVorgangArt" }
+                    bereich: { $ref: "#/components/schemas/SupportVorgangBereich" }
+                    dringlichkeit: { type: string, enum: [normal, dringend] }
+                    betreff: { type: [string, "null"], maxLength: 1000 }
+                    organization_id: { type: [integer, "null"] }
+      responses:
+        "200":
+          description: "{ anzahl, vorgang_id, ids }"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anzahl: { type: integer }
+                  vorgang_id: { type: integer }
+                  ids: { type: array, items: { type: integer } }
+        "400": { description: "weder vorgang_id noch neu, oder beides; ungueltige Werte" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "'Mail nicht gefunden', 'Vorgang nicht gefunden' oder 'Gemeinde nicht gefunden' -- dann aendert sich nichts" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "Existenz von Mail, Vorgang (FOR UPDATE) und Gemeinde"
+
+  /api/support/mail/nachrichten/{id}/archivieren:
+    post:
+      tags: ["Support"]
+      summary: Eine Mail im Posteingang archivieren
+      description: >
+        Setzt archiviert_am (ein vorhandener Zeitpunkt bleibt). Nur fuer Mails im
+        Posteingang -- ohne Vorgang, Anfrage und Gemeinde; sonst 409. Die Mail
+        verschwindet aus GET /mail/eingang und steht unter archiv=1. Archivierte
+        Mails loescht der 02:00-Lauf wie alle des Posteingangs 180 Tage nach dem
+        Eingang in Konfi Quest.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ id, archiviert_am }", content: { application/json: { schema: { type: object, properties: { id: { type: integer }, archiviert_am: { type: [string, "null"], format: date-time } } } } } }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Mail nicht gefunden' }" }
+        "409": { description: "'Das geht nur für Mails im Posteingang. Mails eines Vorgangs gehen mit dem Vorgang.'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Mail existiert und liegt im Posteingang"
+
+  /api/support/mail/nachrichten/{id}/wiederherstellen:
+    post:
+      tags: ["Support"]
+      summary: Eine archivierte Mail zurueck in den Eingang legen
+      description: "Loescht archiviert_am; eine nicht archivierte Mail bleibt, wie sie ist. Nur fuer Mails im Posteingang (409)."
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ id, archiviert_am: null }", content: { application/json: { schema: { type: object, properties: { id: { type: integer }, archiviert_am: { type: [string, "null"], format: date-time } } } } } }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Mail nicht gefunden' }" }
+        "409": { description: "'Das geht nur für Mails im Posteingang. …'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Mail existiert und liegt im Posteingang"
+
+  /api/support/mail/sammel:
+    post:
+      tags: ["Support"]
+      summary: Sammelaktion fuer Mails im Posteingang -- archivieren, wiederherstellen, loeschen
+      description: >
+        { ids, aktion } (1 bis 500 Kennungen). Wirkt wie die Einzel-Routen auf die
+        Mails des Posteingangs; Mails in Vorgaengen, ausgehende und unbekannte
+        Kennungen werden uebergangen. Geloescht wird nur in Konfi Quest, nie im
+        Postfach.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids, aktion]
+              properties:
+                ids: { type: array, minItems: 1, maxItems: 500, items: { type: integer, minimum: 1 } }
+                aktion: { type: string, enum: [archivieren, wiederherstellen, loeschen] }
+      responses:
+        "200":
+          description: "{ aktion, anzahl, ids } -- ids: die tatsaechlich betroffenen Mails, aufsteigend"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  aktion: { type: string }
+                  anzahl: { type: integer }
+                  ids: { type: array, items: { type: integer } }
+        "400": { description: "ids fehlt, leer, zu lang oder keine Zahlen; unbekannte aktion" }
+        "403": { description: "Kein Super-Admin" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
+        org-scope: false
+        objekt-pruefung: "keine (Mails des Posteingangs)"
+
   /api/support/mail/status:
     get:
       tags: ["Support"]
@@ -2729,18 +3338,30 @@ paths:
   /api/support/mail/zaehler:
     get:
       tags: ["Support"]
-      summary: Ungelesene eingehende Mails -- rote Zahlen der Support-Ansicht
+      summary: Ungelesene eingehende Mails und offene Vorgaenge -- rote Zahlen der Support-Ansicht
+      description: >
+        Ungelesen heisst: eingehend, gelesen_am leer, nicht archiviert.
+        anfragen, gemeinden, je_anfrage, je_gemeinde zaehlen nach anfrage_id bzw.
+        organization_id der Mail (die alten Apps lesen sie); eingang: im
+        Posteingang -- ohne Vorgang, Anfrage und Gemeinde. Seit 03.10.2026
+        (Migration 195, additiv): posteingang -- dieselbe Zahl, die die
+        Web-Ansicht liest: ungelesen, nicht einsortiert, nicht archiviert --
+        und vorgaenge: nicht archivierte Vorgaenge mit Status neu ODER mit
+        einer ungelesenen Mail. Interne Gemeinden zaehlen bei vorgaenge mit: Ihre
+        Vorgaenge stehen in der Liste, die Zahl muss zu ihr passen.
       responses:
         "200":
-          description: "anfragen/gemeinden/eingang: Summen; je_anfrage und je_gemeinde: Kennung -> Anzahl (nur mit mindestens einer)"
+          description: "anfragen/gemeinden/eingang: Summen; je_anfrage und je_gemeinde: Kennung -> Anzahl (nur mit mindestens einer); vorgaenge und posteingang (additiv)"
           content:
             application/json:
               schema:
                 type: object
                 properties:
+                  vorgaenge: { type: integer, description: "nicht archivierte Vorgaenge mit Status neu oder ungelesener Mail (additiv seit 03.10.2026)" }
+                  posteingang: { type: integer, description: "ungelesene, nicht einsortierte, nicht archivierte Mails (additiv seit 03.10.2026)" }
                   anfragen: { type: integer }
                   gemeinden: { type: integer }
-                  eingang: { type: integer, description: "nicht zugeordnet" }
+                  eingang: { type: integer, description: "nicht zugeordnet (kein Vorgang, keine Anfrage, keine Gemeinde)" }
                   je_anfrage: { type: object, additionalProperties: { type: integer } }
                   je_gemeinde: { type: object, additionalProperties: { type: integer } }
         "403": { description: "Kein Super-Admin" }
@@ -2756,10 +3377,12 @@ paths:
       summary: Posteingang -- eingehende Mails, nicht zugeordnete (Vorgabe) oder alle, neueste zuerst
       description: >
         Nur eingehende Mails, hoechstens 1.000 (die neuesten). zuordnung=offen
-        (Vorgabe, wie bisher) liefert nur die ohne Anfrage und Gemeinde --
-        den Posteingang der App; zuordnung=alle (seit 03.10.2026, additiv)
-        auch die zu einer Anfrage oder Gemeinde -- der Posteingang der
-        Web-Ansicht. Je Mail anfrage_id, organization_id und gemeinde_name
+        (Vorgabe, wie bisher) liefert nur die ohne Vorgang, Anfrage und
+        Gemeinde -- den Posteingang der App und der Web-Ansicht;
+        zuordnung=alle (seit 03.10.2026, additiv) auch die zu einem Vorgang,
+        einer Anfrage oder Gemeinde. archiv=1 (seit 03.10.2026, Migration 195,
+        additiv) liefert nur die archivierten Mails des Posteingangs (archiviert_am
+        gesetzt), ohne archiv oder mit archiv=0 nur die nicht archivierten. Je Mail anfrage_id, organization_id und gemeinde_name
         (seit 03.10.2026, additiv): bei Zuordnung zu einer Gemeinde deren
         Anzeigename (display_name, sonst name), bei Zuordnung zu einer Anfrage
         der Gemeindename aus der Anfrage, sonst null; ohne zuordnung bleiben
@@ -2767,11 +3390,12 @@ paths:
         nach organizations.intern gefiltert: auch Mails zu einer internen
         Gemeinde stehen da, mit deren Namen. auszug: Text ohne zitierte
         Zeilen, Leerraum zusammengefasst, hoechstens 200 Zeichen. Nicht
-        zugeordnete Mails loescht der naechtliche Lauf nach 180 Tagen (im
-        Postfach bleiben sie).
+        zugeordnete Mails -- auch archivierte -- loescht der naechtliche Lauf nach
+        180 Tagen (im Postfach bleiben sie).
       parameters:
         - { name: postfach, in: query, required: false, schema: { type: string, enum: [moin, support] }, description: "filtert; ein anderer Wert 400" }
         - { name: zuordnung, in: query, required: false, schema: { type: string, enum: [offen, alle], default: offen }, description: "offen = nur nicht zugeordnete (Vorgabe), alle = alle eingehenden; ein anderer Wert 400" }
+        - { name: archiv, in: query, required: false, schema: { type: string, enum: ["0", "1"], default: "0" }, description: "1 = nur die archivierten (seit 03.10.2026, additiv); ein anderer Wert 400" }
       responses:
         "200":
           description: "Array, neueste zuerst"
@@ -2794,7 +3418,9 @@ paths:
                     anfrage_id: { type: [integer, "null"], description: "zugeordnete Anfrage (seit 03.10.2026, additiv)" }
                     organization_id: { type: [integer, "null"], description: "zugeordnete Gemeinde, auch eine interne (seit 03.10.2026, additiv)" }
                     gemeinde_name: { type: [string, "null"], description: "Anzeigename der Gemeinde bzw. Gemeindename der Anfrage; null ohne Zuordnung (seit 03.10.2026, additiv)" }
-        "400": { description: "unbekanntes Postfach oder unbekannter Wert fuer zuordnung" }
+                    vorgang_id: { type: [integer, "null"], description: "der Vorgang der Mail; null im Posteingang (seit 03.10.2026, additiv)" }
+                    archiviert_am: { type: [string, "null"], format: date-time, description: "archivierte Mail des Posteingangs (seit 03.10.2026, additiv)" }
+        "400": { description: "unbekanntes Postfach oder unbekannter Wert fuer zuordnung oder archiv" }
         "403": { description: "Kein Super-Admin" }
       x-berechtigung:
         rollen: [super_admin]
@@ -2833,6 +3459,26 @@ paths:
         middleware: [verifyTokenRBAC, requireSuperAdmin]
         org-scope: false
         objekt-pruefung: "Existenz"
+    delete:
+      tags: ["Support"]
+      summary: Eine Mail im Posteingang loeschen (nur aus Konfi Quest)
+      description: >
+        Nur Mails im Posteingang -- ohne Vorgang, Anfrage und Gemeinde; die Mails
+        eines Vorgangs gehen mit dem Vorgang (409). Im Postfach selbst bleibt die
+        Mail: Konfi Quest liest die Postfaecher nur, es loescht, verschiebt und
+        markiert dort nichts.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer } }
+      responses:
+        "200": { description: "{ message: 'Mail gelöscht' }" }
+        "403": { description: "Kein Super-Admin" }
+        "404": { description: "{ error: 'Mail nicht gefunden' }" }
+        "409": { description: "'Das geht nur für Mails im Posteingang. Mails eines Vorgangs gehen mit dem Vorgang.'" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC, requireSuperAdmin]
+        org-scope: false
+        objekt-pruefung: "Mail existiert und liegt im Posteingang"
 
   /api/support/mail/gelesen:
     post:
@@ -2872,7 +3518,13 @@ paths:
         zugleich 400. Der GANZE Faden (wie verlauf in GET
         /mail/nachrichten/{id}) bekommt die neue Zuordnung, in einer
         Transaktion. Zu einer Anfrage zaehlt das als Bewegung (updated_at,
-        365-Tage-Frist unbewegter Anfragen).
+        365-Tage-Frist unbewegter Anfragen). Seit den Vorgaengen (Migration
+        195) geht die Zuordnung ueber den Vorgang: zu einer Anfrage in DEREN
+        Vorgang, zu einer Gemeinde in den juengsten offenen Vorgang der
+        Gemeinde (sonst ein neuer "Schriftwechsel"), {} loest vorgang_id,
+        anfrage_id und organization_id; anfrage_id und organization_id an der
+        Mail bleiben gefuellt. Die Web-Ansicht sortiert ueber POST
+        /mail/nachrichten/{id}/einsortieren.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -2913,9 +3565,9 @@ paths:
         Wie POST /anfragen/{id}/antworten, aber an von_adresse der Mail und
         vom Postfach der Mail; In-Reply-To/References auf diese Mail;
         Standardbetreff "Re: <Betreff>". Die Antwort bekommt die Zuordnung
-        der Mail (Posteingang bleibt Posteingang); ist die Mail einer Anfrage
-        oder Gemeinde zugeordnet, kommt deren Kennung in den Betreff, und eine
-        Anfrage im Status neu geht auf in_arbeit.
+        der Mail (Posteingang bleibt Posteingang); gehoert die Mail zu einem
+        Vorgang, kommt [Vorgang N] in den Betreff, die Antwort gehoert dazu, und
+        ein Vorgang im Status neu geht auf in_arbeit (mit ihm die Anfrage dahinter).
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -2958,13 +3610,16 @@ paths:
         Der Server setzt die Fusszeile unter den Text (Trenner "-- "), From
         "<Absendername> <moin@...>", Reply-To das Postfach, eigene
         Message-ID <kq-uuid@konfi-quest.de>, In-Reply-To/References auf die
-        letzte Mail des Verlaufs und die Kennung [Anfrage N] im Betreff, wenn
-        sie fehlt. Standardbetreff ohne Verlauf "Eure Anfrage für
+        letzte Mail des Verlaufs und die Kennung [Vorgang N] im Betreff, wenn
+        sie fehlt (der Vorgang der Anfrage; fehlt er, wird er angelegt -- seit
+        Migration 195 statt [Anfrage N]). Standardbetreff ohne Verlauf "Eure Anfrage für
         <Gemeinde>", mit Verlauf "Re: <letzter Betreff>" (ohne doppeltes
         Re:). Gesendet wird mit der Anmeldung des Postfachs (Zertifikat
         geprueft wie beim bisherigen Versand). Danach gespeichert (richtung
-        aus, gelesen_am = gesendet_am, verfasst_von); die Anfrage gilt als
-        bewegt (updated_at), im Status neu geht sie auf in_arbeit. Nach der
+        aus, gelesen_am = gesendet_am, verfasst_von); die Mail gehoert zum
+        Vorgang (vorgang_id; anfrage_id bleibt gefuellt), die Anfrage gilt als
+        bewegt (updated_at), im Status neu geht sie auf in_arbeit (und ihr
+        Vorgang mit ihr). Nach der
         Antwort wird dieselbe Mail per IMAP im Gesendet-Ordner abgelegt
         (Markierung \Sent, sonst ein Ordner "Sent"/"Gesendet"/..., sonst wird
         "Sent" angelegt); scheitert das, bleibt die Mail gesendet (nur
@@ -3054,8 +3709,11 @@ paths:
       description: >
         Wie POST /anfragen/{id}/antworten, aber vom Postfach support, an
         `an` (muss unter GET /gemeinden/{id}/empfaenger stehen, ohne
-        Unterschied Gross/klein), Kennung [Gemeinde N], Standardbetreff ohne
-        Verlauf "Konfi Quest – <Gemeinde>". Gespeichert bei der Gemeinde.
+        Unterschied Gross/klein), Kennung [Vorgang N], Standardbetreff ohne
+        Verlauf "Konfi Quest – <Gemeinde>". Gespeichert bei der Gemeinde und im
+        juengsten offenen Vorgang der Gemeinde, sonst in einem neuen
+        "Schriftwechsel" (seit Migration 195 statt [Gemeinde N]); scheitert der
+        Versand, geht ein dafuer angelegter Vorgang wieder.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:

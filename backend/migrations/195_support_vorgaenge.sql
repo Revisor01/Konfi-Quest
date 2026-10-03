@@ -33,7 +33,9 @@
 --     Anfrage, Notiz uebernommen). Status: neu -> neu, in_arbeit -> in_arbeit,
 --     angelegt und abgelehnt -> erledigt (und damit archiviert, seit dem
 --     Zeitpunkt der Entscheidung). Die Reihenfolge der Nummern folgt dem
---     Eingang der Anfragen.
+--     Eingang der Anfragen. Texte ueber 5.000 Zeichen (die Routen lassen sie
+--     nicht zu, die Tabelle der Anfragen kennt keine Grenze) werden gekuerzt,
+--     damit der CHECK der neuen Tabelle die Migration nie scheitern laesst.
 --   - Ihre Mails bekommen vorgang_id.
 --   - Mails einer Gemeinde ohne Anfrage kommen je Gemeinde in EINEN Vorgang
 --     "Schriftwechsel" (Art sonstiges, Quelle mail; Status neu, wenn eine
@@ -131,9 +133,9 @@ SELECT 'neue_gemeinde', 'normal',
        CASE a.status WHEN 'neu' THEN 'neu' WHEN 'in_arbeit' THEN 'in_arbeit' ELSE 'erledigt' END,
        a.status_seit,
        left('Anfrage: ' || a.gemeinde, 300),
-       a.nachricht,
+       left(a.nachricht, 5000),
        'anfrage', a.organization_id, a.id,
-       a.notiz,
+       left(a.notiz, 5000),
        CASE WHEN a.status IN ('angelegt', 'abgelehnt') THEN a.status_seit END,
        a.created_at, a.updated_at
   FROM gemeinde_anfragen a

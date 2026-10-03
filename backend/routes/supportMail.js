@@ -53,6 +53,7 @@ const GELESEN_MAX = 1000;
 const EINGANG_MAX = 1000;
 // Sammelaktionen: so viele Mails auf einmal.
 const SAMMEL_MAX = 500;
+const SAMMEL_AKTIONEN = ['archivieren', 'wiederherstellen', 'loeschen'];
 // Welche eingehenden Mails der Posteingang zeigt: nur die nicht zugeordneten
 // (Vorgabe, wie die App sie kennt) oder alle.
 const ZUORDNUNGEN = ['offen', 'alle'];
@@ -587,7 +588,7 @@ module.exports = (db) => {
   router.post('/mail/sammel', [
     body('ids').isArray({ min: 1, max: SAMMEL_MAX }).withMessage(`ids: Liste mit 1 bis ${SAMMEL_MAX} Kennungen`),
     body('ids.*').isInt({ min: 1 }).withMessage('Ungültige ID'),
-    body('aktion').isIn(['archivieren', 'wiederherstellen', 'loeschen']).withMessage('aktion: archivieren, wiederherstellen, loeschen'),
+    body('aktion').isIn(SAMMEL_AKTIONEN).withMessage(`aktion: ${SAMMEL_AKTIONEN.join(', ')}`),
     handleValidationErrors,
   ], async (req, res) => {
     try {

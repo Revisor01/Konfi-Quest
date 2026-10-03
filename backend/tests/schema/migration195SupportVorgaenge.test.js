@@ -281,3 +281,33 @@ describe('Migration 195 auf einem Bestand aus Anfragen und Mails', () => {
     ]);
   });
 });
+
+describe('Migration 195: Texte über der Grenze der neuen Tabelle', () => {
+  // Die Routen lassen höchstens 5.000 Zeichen zu, die Tabelle der Anfragen
+  // kennt keine Grenze. Ein von Hand eingetragener längerer Text darf die
+  // Migration nicht scheitern lassen (CHECK support_vorgaenge_text_laenge).
+  const DB_LANG = 'konfi_test_mig195_lang';
+  let pool;
+
+  beforeAll(async () => {
+    pool = await dbAnlegen(DB_LANG);
+    await produktionAufbauen(pool, { vor: MIGRATION });
+  }, 180000);
+  afterAll(async () => {
+    await dbWegraeumen(pool, DB_LANG);
+  }, 120000);
+
+  it('kürzt Nachricht und Notiz einer Anfrage auf 5.000 Zeichen; der Betreff bleibt innerhalb von 300', async () => {
+    await pool.query(
+      `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am, nachricht, notiz)
+       VALUES ($1, 'K', 'k@example.test', NOW(), $2, $3)`,
+      ['G'.repeat(500), 'n'.repeat(6000), 'o'.repeat(7000)]);
+    await pool.query(migrationLesen(MIGRATION));
+    const { rows: [v] } = await pool.query(
+      'SELECT char_length(betreff) AS betreff, char_length(beschreibung) AS beschreibung, char_length(notiz) AS notiz FROM support_vorgaenge');
+    expect(v).toEqual({ betreff: 300, beschreibung: 5000, notiz: 5000 });
+    // Die Anfrage selbst bleibt, wie sie war.
+    const { rows: [a] } = await pool.query('SELECT char_length(nachricht) AS nachricht, char_length(notiz) AS notiz FROM gemeinde_anfragen');
+    expect(a).toEqual({ nachricht: 6000, notiz: 7000 });
+  });
+});

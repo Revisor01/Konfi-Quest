@@ -204,9 +204,12 @@ describe('9c Anfrageformular: der Text folgt dem Code', () => {
   });
 
   it('nennt die Zähler gegen Missbrauch aus dem Code', () => {
-    expect(route).toContain('windowMs: 60 * 60 * 1000,');
-    expect(route).toContain('windowMs: 24 * 60 * 60 * 1000,');
-    expect(route).toMatch(/createHash\('sha256'\)/);
+    // Die Grenzen beider Formulare stehen in utils/oeffentlicheGrenzen.js (9e nutzt dieselben).
+    const grenzen = backend('utils/oeffentlicheGrenzen.js');
+    expect(route).toContain("prefix: 'anfragen'");
+    expect(grenzen).toContain('windowMs: 60 * 60 * 1000,');
+    expect(grenzen).toContain('windowMs: 24 * 60 * 60 * 1000,');
+    expect(grenzen).toMatch(/createHash\('sha256'\)/);
     expect(text).toContain('je IP-Adresse eine Stunde lang und je E-Mail-Adresse einen Tag lang; für die E-Mail-Adresse speichern wir dabei nur einen Prüfwert');
     // Abgelaufene Zaehler raeumt der Store eine Stunde nach Ablauf weg, alle zehn Minuten.
     const store = backend('utils/rateLimitStore.js');
@@ -247,6 +250,13 @@ describe('9d E-Mails an moin@ und support@: der Text folgt dem Code', () => {
     expect(text).toContain('Namen, Typ und Größe von Anhängen — die Anhänge selbst übernehmen wir nicht');
   });
 
+  it('nennt die Kennung im Betreff so, wie der Code sie schreibt und liest', () => {
+    // Ausgehende Mails tragen [Vorgang N] (mailVersand.js), eingehende werden daran erkannt (mailZuordnung.js).
+    expect(backend('services/mailVersand.js')).toContain('return `[Vorgang ${vorgangId}]`;');
+    expect(backend('utils/mailZuordnung.js')).toContain('const KENNUNG_VORGANG = /\\[\\s*Vorgang\\s+(\\d{1,15})\\s*\\]/i;');
+    expect(text).toContain('über eine Kennung im Betreff (etwa „[Vorgang 12]“)');
+  });
+
   it('nennt die Frist für nicht zugeordnete Mails aus dem Code', () => {
     const tage = Number(backend('services/backgroundService.js').match(/const NICHT_ZUGEORDNETE_MAILS_TAGE = (\d+);/)?.[1]);
     expect(tage).toBe(180);
@@ -268,5 +278,128 @@ describe('9d E-Mails an moin@ und support@: der Text folgt dem Code', () => {
     expect(pruefung).toBeGreaterThan(-1);
     expect(einhaengen).toBeGreaterThan(pruefung);
     expect(text).toContain('Sehen können diese E-Mails nur die Konten des Support-Teams von Konfi Quest; Ihre Gemeinde sieht sie nicht.');
+  });
+});
+
+describe('9e Support-Formular: der Text folgt dem Code', () => {
+  /*
+   * POST /api/anliegen (backend/routes/anliegen.js, 03.10.2026): Was das
+   * Support-Formular auf konfi-quest.de speichert, wie ein Anliegen einer
+   * Gemeinde zugeordnet wird, wer es sieht und wie lange es bleibt. Wer ein
+   * Feld, die Zuordnung, den Zugriff oder eine Frist aendert, muss Abschnitt
+   * 9e mitziehen -- und umgekehrt.
+   */
+  const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
+  const route = backend('routes/anliegen.js');
+  const vorgaenge = backend('utils/supportVorgaenge.js');
+  const migration = backend('migrations/195_support_vorgaenge.sql');
+  const dienst = backend('services/backgroundService.js');
+  // Abschnitt 9e allein, damit Treffer in 9c und 9d nichts vortaeuschen.
+  const abschnitt = text.slice(text.indexOf('9e. Support-Formular auf unserer Website'), text.indexOf('10. Wie lange werden Ihre Daten gespeichert?'));
+
+  // Je gespeichertem Feld die Worte, unter denen der Text es nennt.
+  const BEZEICHNUNG: Record<string, string> = {
+    gemeinde: 'den Namen Ihrer Gemeinde, wie Sie ihn eintragen',
+    name: 'Ihren Namen',
+    email: 'Ihre E-Mail-Adresse',
+    funktion: 'Ihre Funktion, wenn Sie sie angeben',
+    betreff: 'Betreff und Beschreibung Ihres Anliegens',
+    beschreibung: 'Betreff und Beschreibung Ihres Anliegens',
+  };
+
+  it('es gibt den Abschnitt', () => {
+    expect(abschnitt.length).toBeGreaterThan(500);
+  });
+
+  it('nennt jedes Feld, das die Route speichert -- und kein anderes', () => {
+    const block = route.match(/const FELDER = \{([\s\S]*?)\};/)?.[1] ?? '';
+    const felder = [...block.matchAll(/^\s*([a-z_]+):/gm)].map((m) => m[1]);
+    expect(felder).toEqual(Object.keys(BEZEICHNUNG));
+    for (const wort of Object.values(BEZEICHNUNG)) expect(abschnitt).toContain(wort);
+    // Dazu Art, Bereich und Dringlichkeit (Auswahl) und der Zeitpunkt der Einwilligung.
+    for (const feld of ['art:', 'bereich:', 'dringlichkeit:']) expect(route).toContain(`${feld} req.body.${feld.slice(0, -1)}`);
+    expect(route).toContain('einwilligungAm: new Date()');
+    expect(migration).toContain('einwilligung_am TIMESTAMPTZ');
+    expect(abschnitt).toContain('Art, Bereich und Dringlichkeit Ihres Anliegens, die Sie aus Listen wählen');
+    expect(abschnitt).toContain('den Zeitpunkt Ihrer Einwilligung');
+  });
+
+  it('nennt die Pflichtfelder aus dem Code', () => {
+    for (const pflicht of ["textFeld('gemeinde', true)", "textFeld('name', true)", "textFeld('beschreibung', true)"]) {
+      expect(route).toContain(pflicht);
+    }
+    expect(route).toMatch(/body\('email'\)\s*\.isString\(\)/);
+    expect(route).toMatch(/body\('betreff'\)\s*\.isString\(\)/);
+    expect(route).toContain('ARTEN_MIT_BEREICH.includes(req.body.art)');
+    expect(vorgaenge).toContain("const ARTEN_MIT_BEREICH = Object.freeze(['frage', 'fehler', 'wunsch']);");
+    expect(abschnitt).toContain('Pflicht sind Gemeinde, Name, E-Mail-Adresse, Art, Betreff und Beschreibung; bei einer Frage, einem Fehler oder einem Wunsch auch der Bereich');
+  });
+
+  it('die Bestätigung trägt keine Angaben aus dem Formular, nur die Nummer', () => {
+    // Der Text entsteht aus der Nummer und dem Absendernamen der Einstellungen -- sonst aus nichts.
+    expect(route).toContain('const bestaetigungText = (nummer, absendername) =>');
+    expect(route).toContain("postfach: 'support'");
+    expect(route).toContain('text: bestaetigungText(vorgangId, absendername)');
+    expect(abschnitt).toContain('eine Bestätigung mit festem Text — ohne Ihre Angaben — von support@konfi-quest.de; sie nennt die Nummer Ihres Anliegens');
+  });
+
+  it('die Zuordnung: genau ein aktives Konto, kein Konfi, beide Quellen der Zugehörigkeit', () => {
+    expect(route).toContain('const organizationId = await gemeindeDesKontos(db, email);');
+    const zuordnung = backend('utils/mailZuordnung.js');
+    const funktion = zuordnung.slice(zuordnung.indexOf('async function gemeindeDesKontos'), zuordnung.indexOf('/** Regel 4 (support)'));
+    expect(funktion).toContain("r.name <> 'konfi'");
+    expect(funktion).toContain('u.is_active = true AND u.deleted_at IS NULL');
+    expect(funktion).toContain('FROM users u');
+    expect(funktion).toContain('FROM user_organizations uo');
+    expect(funktion).toContain('konten.size === 1 && gemeinden.size === 1');
+    expect(abschnitt).toContain('Gehört Ihre E-Mail-Adresse zu genau einem aktiven Konto in Konfi Quest, das kein Konfi-Konto ist, ordnen wir das Anliegen der Gemeinde dieses Kontos zu');
+  });
+
+  it('sehen kann es nur das Support-Team: die Vorgänge hängen hinter der Prüfung auf Super-Admin, die öffentliche Route nur schreibt', () => {
+    const support = backend('routes/support.js');
+    const pruefung = support.indexOf('router.use(rbacVerifier, requireSuperAdmin);');
+    const einhaengen = support.indexOf("router.use(require('./supportVorgaenge')(db));");
+    expect(pruefung).toBeGreaterThan(-1);
+    expect(einhaengen).toBeGreaterThan(pruefung);
+    expect(route).not.toMatch(/router\.(get|put|patch|delete)\(/);
+    expect(abschnitt).toContain('Ein Anliegen sehen nur die Konten des Support-Teams von Konfi Quest; Ihre Gemeinde sieht es nicht.');
+  });
+
+  it('nennt die Zähler gegen Missbrauch aus dem Code; zum Anliegen wird keine IP-Adresse gespeichert', () => {
+    const grenzen = backend('utils/oeffentlicheGrenzen.js');
+    expect(grenzen).toContain('windowMs: 60 * 60 * 1000,');
+    expect(grenzen).toContain('windowMs: 24 * 60 * 60 * 1000,');
+    expect(grenzen).toMatch(/createHash\('sha256'\)/);
+    expect(route).toContain("prefix: 'anliegen'");
+    expect(route).not.toMatch(/req\.ip|clientIp\(/);
+    expect(migration).not.toMatch(/\bip_adresse\b|\bclient_ip\b/);
+    expect(abschnitt).toContain('je IP-Adresse eine Stunde lang und je E-Mail-Adresse einen Tag lang; für die E-Mail-Adresse speichern wir dabei nur einen Prüfwert');
+    expect(abschnitt).toContain('Zum Anliegen selbst speichern wir keine IP-Adresse');
+  });
+
+  it('nennt die Frist aus dem Code: 730 Tage nach dem Archivieren, ohne Änderung; Vorgänge einer Anfrage ausgenommen', () => {
+    const tage = Number(dienst.match(/const ARCHIVIERTE_VORGAENGE_TAGE = (\d+);/)?.[1]);
+    expect(tage).toBe(730);
+    const lauf = dienst.slice(dienst.indexOf('static async cleanupArchivierteVorgaenge'), dienst.indexOf('static async cleanupUnbewegteAnfragen'));
+    expect(lauf).toContain('archiviert_am IS NOT NULL AND anfrage_id IS NULL');
+    expect(lauf).toContain("archiviert_am < NOW() - ($1::int * interval '1 day')");
+    expect(lauf).toContain("updated_at < NOW() - ($1::int * interval '1 day')");
+    expect(abschnitt).toContain(`archivierte Anliegen löschen wir automatisch ${tage} Tage nach dem Archivieren, wenn sie sich seitdem nicht geändert haben`);
+  });
+
+  it('erledigt heißt Archiv; eine neue E-Mail holt ein Anliegen aus dem Archiv zurück', () => {
+    expect(migration).toContain('CONSTRAINT support_vorgaenge_erledigt_archiviert CHECK (status <> \'erledigt\' OR archiviert_am IS NOT NULL)');
+    const zurueck = vorgaenge.slice(vorgaenge.indexOf('async function mailImVorgang'), vorgaenge.indexOf('async function vorgaengeArchivieren'));
+    expect(zurueck).toContain("status = CASE WHEN archiviert_am IS NOT NULL THEN 'in_arbeit' ELSE status END");
+    expect(zurueck).toContain('archiviert_am = NULL');
+    expect(abschnitt).toContain('Ein erledigtes Anliegen kommt ins Archiv');
+    expect(abschnitt).toContain('Kommt zu einem archivierten Anliegen eine neue E-Mail, holen wir es aus dem Archiv zurück');
+  });
+
+  it('mit der Gemeinde gehen ihre Anliegen, mit dem Anliegen seine E-Mails (ON DELETE CASCADE)', () => {
+    expect(migration).toContain('organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE');
+    expect(migration).toContain('ADD COLUMN IF NOT EXISTS vorgang_id BIGINT REFERENCES support_vorgaenge(id) ON DELETE CASCADE');
+    expect(abschnitt).toContain('samt den zugehörigen E-Mails in Konfi Quest');
+    expect(abschnitt).toContain('Mit einer Gemeinde gehen ihre Anliegen');
   });
 });
