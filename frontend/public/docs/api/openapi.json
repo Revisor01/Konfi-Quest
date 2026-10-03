@@ -4901,7 +4901,7 @@
             }
           },
           "400": {
-            "description": "keines angegeben ('Nichts zu ändern: fusszeile oder absendername angeben'), leerer oder mehrzeiliger Absendername, zu lang"
+            "description": "keines angegeben ('Nichts zu ändern: Fußzeile oder Absendername angeben'), leerer oder mehrzeiliger Absendername, zu lang"
           },
           "403": {
             "description": "Kein Super-Admin"

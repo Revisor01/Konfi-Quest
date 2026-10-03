@@ -656,7 +656,7 @@ module.exports = (db) => {
       .filter((k) => Object.prototype.hasOwnProperty.call(req.body, k))
       .map((k) => [k, k === 'fusszeile' ? req.body[k].replace(/\r\n?/g, '\n').trim() : req.body[k]]);
     if (werte.length === 0) {
-      return res.status(400).json({ error: 'Nichts zu ändern: fusszeile oder absendername angeben' });
+      return res.status(400).json({ error: 'Nichts zu ändern: Fußzeile oder Absendername angeben' });
     }
     try {
       for (const [schluessel, wert] of werte) {
