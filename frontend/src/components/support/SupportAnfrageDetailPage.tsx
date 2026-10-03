@@ -62,6 +62,7 @@ import {
   anlegenVorbelegen,
   kirchenkreisFinden,
   landeskircheFinden,
+  testphaseUmschalten,
   type AnlegenFormular,
 } from '../../utils/supportAnfragen';
 import { fehlerText } from '../../utils/fehler';
@@ -413,13 +414,16 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
                 typ="number"
                 wert={formular.maxKonfis}
                 onWert={(w) => aendern({ maxKonfis: w })}
-                hinweis={`Leer = unbegrenzt. In der Testphase üblich: ${TESTPHASE_KONFIS}.`}
+                hinweis={`In der Testphase ${TESTPHASE_KONFIS}, ohne Testphase leer = unbegrenzt. Tarife wie 15, 50, 75 oder 100 gehen auch.`}
               />
               <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonToggle
                   aria-label={`Testphase (${TESTPHASE_TAGE} Tage)`}
                   checked={formular.testphase}
-                  onIonChange={(e) => aendern({ testphase: e.detail.checked })}
+                  onIonChange={(e) => {
+                    const an = e.detail.checked;
+                    setFormular((f) => (f ? testphaseUmschalten(f, an) : f));
+                  }}
                 >
                   Testphase ({TESTPHASE_TAGE} Tage)
                 </IonToggle>

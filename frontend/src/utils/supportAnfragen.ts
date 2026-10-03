@@ -10,6 +10,7 @@
 import type { AnfrageAnlegenDaten, AnfrageStatus, GemeindeAnfrage, Kirchenkreis } from '../types/support';
 import { systemnameAusAnzeigename, umlauteUmschreiben } from './gemeindeSystemname';
 import { USERNAME_MAX_LENGTH, isValidUsername } from './usernameValidation';
+import { TESTPHASE_KONFIS, limitNachUmschalten, limitVorgabe } from './konfiLimitVorgabe';
 
 export const ANFRAGE_STATUS: Record<AnfrageStatus, { label: string; farbe: string }> = {
   neu: { label: 'Neu', farbe: 'var(--app-color-warning)' },
@@ -37,11 +38,8 @@ export const STATUS_VON_HAND: AnfrageStatus[] = ['neu', 'in_arbeit', 'abgelehnt'
 /** Tage der Testphase beim Anlegen, wie im Formular "Gemeinde anlegen" (30 Tage). */
 export const TESTPHASE_TAGE = 30;
 
-/**
- * Konfi-Limit in der Testphase: 5, wie auf der Homepage zugesagt
- * ("30 Tage kostenlos mit 5 Konfis testen").
- */
-export const TESTPHASE_KONFIS = 5;
+/** Konfi-Limit in der Testphase -- die Regel steht in utils/konfiLimitVorgabe.ts. */
+export { TESTPHASE_KONFIS };
 
 /** Vergleichsform eines Namens: klein, Umlaute umgeschrieben, Leerraum vereinheitlicht. */
 function vergleichsform(text: string): string {
@@ -125,13 +123,21 @@ export function anlegenVorbelegen(anfrage: GemeindeAnfrage, kirchenkreise: Kirch
     kontaktName: anfrage.kontakt_name ?? '',
     kontaktEmail: anfrage.email ?? '',
     kontaktTelefon: anfrage.mobil ?? '',
-    maxKonfis: String(TESTPHASE_KONFIS),
+    maxKonfis: limitVorgabe(true),
     testphase: true,
     adminUsername: benutzernameVorschlag(anfrage.kontakt_name ?? ''),
     adminDisplayName: anfrage.kontakt_name ?? '',
     adminEmail: anfrage.email ?? '',
     adminPassword: '',
   };
+}
+
+/**
+ * Testphase an oder aus. Das Limit folgt der Vorgabe (Testphase 5, sonst
+ * unbegrenzt), solange es noch darauf steht; ein gewaehlter Tarif bleibt.
+ */
+export function testphaseUmschalten(f: AnlegenFormular, testphase: boolean): AnlegenFormular {
+  return { ...f, testphase, maxKonfis: limitNachUmschalten(f.maxKonfis, f.testphase, testphase) };
 }
 
 const EMAIL_MUSTER = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

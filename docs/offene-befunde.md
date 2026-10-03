@@ -261,7 +261,8 @@ Stand: 02.10.2026, gegen den Code geprüft.
   [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version: was nach der Support-Ansicht noch fehlt** — Leiste links,
   Support-Ansicht, Anfrageformular und Struktur sind gebaut (03.10.2026).
-  Offen: der Rückweg „ohne Gemeinde" nach einem Gemeindewechsel, Mails im
+  Offen: die Gruppe „Verwaltung" in der Leiste (als Nächstes), der Rückweg
+  „ohne Gemeinde" nach einem Gemeindewechsel, Mails im
   Support, eine Route für eine einzelne Anfrage und ein Löschknopf, weitere
   Kennzahlen, „Einwilligung liegt vor" am Konfi-Profil:
   [planung/web-version.md](planung/web-version.md), Abschnitt „Offen".

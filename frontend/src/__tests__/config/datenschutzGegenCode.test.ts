@@ -218,6 +218,10 @@ describe('9c Anfrageformular: der Text folgt dem Code', () => {
     const tage = Number(backend('services/backgroundService.js').match(/const ABGELEHNTE_ANFRAGEN_TAGE = (\d+);/)?.[1]);
     expect(tage).toBe(180);
     expect(text).toContain(`Eine abgelehnte Anfrage löschen wir automatisch ${tage} Tage nach der Ablehnung`);
+    // Unbewegte neue und in Arbeit befindliche Anfragen (cleanupUnbewegteAnfragen).
+    const unbewegt = Number(backend('services/backgroundService.js').match(/const UNBEWEGTE_ANFRAGEN_TAGE = (\d+);/)?.[1]);
+    expect(unbewegt).toBe(365);
+    expect(text).toContain(`bleibt sie ${unbewegt} Tage lang unbearbeitet, löschen wir sie automatisch`);
     // Mit der Gemeinde geht ihre Anfrage (DELETE /organizations/:id).
     expect(backend('routes/organizations.js')).toContain('DELETE FROM gemeinde_anfragen WHERE organization_id = $1');
     expect(text).toContain('bleibt sie gespeichert, solange die Gemeinde besteht, und wird mit ihr gelöscht');

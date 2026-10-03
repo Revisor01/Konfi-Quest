@@ -260,8 +260,10 @@ Weiter geht es in dieser Reihenfolge:
    eigene Gemeinde anpassen, die Beispiel-Challenges bearbeiten oder löschen.
 
 **Laufzeit und Konfi-Zahl** vereinbart die Gemeinde mit dem Betrieb. Ohne
-andere Absprache beginnt eine Gemeinde mit **30 Tagen Testphase**; solange
-steht auf den Startseiten „Testphase: noch … Tage". Danach kann sich in der
+andere Absprache beginnt eine Gemeinde mit **30 Tagen Testphase** und bis zu
+**5 Konfis**; solange steht auf den Startseiten „Testphase: noch … Tage". Mit
+der Lizenz entfällt die Grenze von 5, wenn nichts anderes vereinbart ist.
+Läuft die Testphase ohne Lizenz aus, kann sich in der
 Gemeinde niemand mehr anmelden, bis der Betrieb die Laufzeit verlängert (siehe
 [Die Meldung beim Anmelden einordnen](35-passwoerter.md#die-meldung-beim-anmelden-einordnen)).
 Ist eine Höchstzahl an Konfis vereinbart und erreicht, fragt die App beim

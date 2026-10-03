@@ -77,6 +77,30 @@ kommen per Mail.
     Gemeinde mit Super-Admin-Merkmal). Das Support-Konto ist ein zweites,
     eigenes Konto.
 
+### Antworten nach dem Bau (Simon, 03.10.2026)
+
+16. **Konfi-Limit: Testphase 5, danach unbegrenzt.** Wörtlich: „Testphase 5
+    danach unbegrenzt. Das andere als Optionen solange es noch nicht von der
+    EKD gekauft ist." Beide Formulare (Gemeinde anlegen, Anlage aus einer
+    Anfrage) belegen in der Testphase 5 vor und stellen beim Ausschalten auf
+    unbegrenzt; die Tarife 15/50/75/100 bleiben wählbar. Gebaut:
+    `frontend/src/utils/konfiLimitVorgabe.ts`, beschrieben in
+    [betrieb/gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md).
+17. **Kleine Zahlen in der Statistik** werden ungefiltert gezeigt; nur
+    Super-Admins sehen sie. Bleibt so.
+18. **Anfragen „neu" oder „in Arbeit" ohne Bewegung** gehen nach 365 Tagen
+    ohne Änderung (gebaut: `cleanupUnbewegteAnfragen`; Datenschutzerklärung
+    9c).
+19. **Grenze von 3 Anfragen pro Tag und E-Mail-Adresse** bleibt.
+20. **Gesperrte Konten** zählen in der Statistik nicht mit. Bleibt so.
+21. **Unter „Mehr"** führt das Symbol oben rechts in die Support-Ansicht.
+    Bleibt so.
+22. **Lesebreite 960 px** neben der Leiste. Bleibt so.
+23. **Unterseiten von „Mehr" als Gruppe „Verwaltung" in die Leiste** — ja,
+    als nächster Schritt (unten, „Offen").
+24. **Einwilligungsvorlage, Abschnitt 9c der Datenschutzerklärung und die
+    Anrede „ihr/euch" in der Bestätigungsmail:** „erstmal ok".
+
 ## Vorschlag
 
 Noch nicht mit Simon abgestimmt, abgeleitet aus den Punkten oben.
@@ -255,6 +279,9 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 
 ## Offen
 
+- **Gruppe „Verwaltung" in der Leiste** (Entscheidung 23): Die Unterseiten
+  von „Mehr" (Benutzer:innen, Badges, Material, Jahrgänge …) stehen im
+  breiten Fenster direkt in der Leiste, als eigene Gruppe.
 - **Oberfläche für Konten ohne Gemeinde.** Support-Konten verwalten und
   Abmelden gibt es in der Support-Ansicht (oben). Es fehlt der Rückweg „ohne
   Gemeinde" nach einem Gemeindewechsel (Refresh ohne Kopfzeile, der Server
@@ -276,11 +303,8 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 - **Mails im Support.** Ob eingehende Mails (etwa an die Kontaktadresse) in
   der Ansicht landen sollen und auf welchem Weg.
 - **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
-  Jahrgänge je Gemeinde, nur für Super-Admins. Offen: weitere Kennzahlen
-  (Speicher, Termine) und ob eine Zahl erst ab einer Mindestgröße
-  ausgewiesen wird (kleine Gemeinden sind sonst personenbezogen, wie bei der
-  Nutzungsmessung, [messung/umami.md](../messung/umami.md)) — heute steht
-  jede Zahl da.
+  Jahrgänge je Gemeinde, nur für Super-Admins; jede Zahl steht ungefiltert da
+  (Entscheidung 17). Offen: weitere Kennzahlen (Speicher, Termine).
 - **Einwilligung am Profil.** Ein Vermerk „Einwilligung liegt vor" am
   Konfi-Profil, den nur die Leitung sieht. Simons Gedanke: „kann ja mit in
   das konfiprofil bzw. die anwesenheitsmatrix" (E-01). Die Vorlage auf der

@@ -7,6 +7,7 @@ import {
   kirchenkreisFinden,
   landeskircheFinden,
   passwortRegelFehler,
+  testphaseUmschalten,
   type AnlegenFormular,
 } from '../../utils/supportAnfragen';
 import type { GemeindeAnfrage, Kirchenkreis } from '../../types/support';
@@ -88,6 +89,21 @@ describe('anlegenVorbelegen', () => {
       kontaktEmail: 'anna@example.org', kontaktTelefon: '', maxKonfis: '5', testphase: true,
       adminUsername: 'anna.beispiel', adminDisplayName: 'Anna Beispiel', adminEmail: 'anna@example.org', adminPassword: '',
     });
+  });
+});
+
+describe('testphaseUmschalten (Testphase 5, danach unbegrenzt)', () => {
+  it('Testphase aus: das vorbelegte Limit 5 wird unbegrenzt', () => {
+    expect(testphaseUmschalten(gueltig(), false)).toMatchObject({ testphase: false, maxKonfis: '' });
+  });
+
+  it('Testphase wieder an: unbegrenzt wird 5', () => {
+    const ohne = testphaseUmschalten(gueltig(), false);
+    expect(testphaseUmschalten(ohne, true)).toMatchObject({ testphase: true, maxKonfis: '5' });
+  });
+
+  it('ein gewählter Tarif bleibt beim Umschalten stehen', () => {
+    expect(testphaseUmschalten(gueltig({ maxKonfis: '50' }), false)).toMatchObject({ testphase: false, maxKonfis: '50' });
   });
 });
 

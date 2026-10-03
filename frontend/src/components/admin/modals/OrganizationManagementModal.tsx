@@ -71,6 +71,7 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
 import { kirchenkreisFinden } from '../../../utils/supportAnfragen';
+import { TESTPHASE_KONFIS, limitNachUmschalten, limitVorgabe } from '../../../utils/konfiLimitVorgabe';
 import type { Kirchenkreis } from '../../../types/support';
 
 interface Organization {
@@ -144,7 +145,10 @@ interface OrganizationManagementModalProps {
 
 // Tarif-Stufen wie auf der Website (landing.html / marketing-copy.md).
 // value als String für direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
+// Vorgabe: Testphase 5, danach unbegrenzt (utils/konfiLimitVorgabe.ts); die
+// Stufen dazwischen bleiben waehlbar.
 const KONFI_TARIFE: { label: string; value: string }[] = [
+  { label: 'Testphase', value: String(TESTPHASE_KONFIS) },
   { label: 'Klein', value: '15' },
   { label: 'Standard', value: '50' },
   { label: 'Plus', value: '75' },
@@ -267,12 +271,25 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // "Eigenes Datum"-Modus für den Zeitraum (Datepicker statt Schnellauswahl)
   const [isCustomTrialDate, setIsCustomTrialDate] = useState<boolean>(false);
 
+  // Testphase an oder aus (Datum UND Kennzeichnung, wie beim Speichern): Das
+  // Limit folgt der Vorgabe -- Testphase 5, danach unbegrenzt --, solange es
+  // noch darauf steht. Ein gewaehlter Tarif bleibt (utils/konfiLimitVorgabe.ts).
+  const limitFolgtTestphase = (warTestphase: boolean, istTestphase: boolean) => {
+    const neu = limitNachUmschalten(maxKonfis, warTestphase, istTestphase);
+    if (neu !== maxKonfis) {
+      setMaxKonfis(neu);
+      setIsCustomLimit(false);
+    }
+  };
+
   const handleTrialChange = (value: string) => {
+    limitFolgtTestphase(!!trialEndsAt.trim() && isTrial, !!value.trim() && isTrial);
     setTrialEndsAt(value);
     if (initializedRef.current) setIsDirty(true);
   };
 
   const handleIsTrialChange = (value: boolean) => {
+    limitFolgtTestphase(!!trialEndsAt.trim() && isTrial, !!trialEndsAt.trim() && value);
     setIsTrial(value);
     if (initializedRef.current) setIsDirty(true);
   };
@@ -307,12 +324,15 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   // neue Org direkt im Formular ('edit'). Bearbeiten-Button oben wechselt um.
   const [viewMode, setViewMode] = useState<'view' | 'edit'>(organizationId ? 'view' : 'edit');
 
-  // Neue Org: Default 30-Tage-Testphase vorbelegen (super_admin kann es ändern)
+  // Neue Org: Default 30-Tage-Testphase mit ihrem Konfi-Limit vorbelegen
+  // (super_admin kann beides ändern)
   useEffect(() => {
     if (!organizationId) {
       setTrialEndsAt(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
       setIsTrial(true);
       setIsCustomTrialDate(false);
+      setMaxKonfis(limitVorgabe(true));
+      setIsCustomLimit(false);
     }
   }, [organizationId]);
 

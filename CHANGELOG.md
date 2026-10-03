@@ -31,13 +31,17 @@ Versionsüberschrift.
   einen Hinweis ohne Kontaktdaten. Der Support macht daraus mit wenigen
   Schritten die Gemeinde samt erster Gemeindeleitung — mit denselben
   Vorlagen wie beim Anlegen einer Gemeinde. Abgelehnte Anfragen werden 180
-  Tage nach der Ablehnung gelöscht.
+  Tage nach der Ablehnung gelöscht, unbearbeitete nach 365 Tagen ohne
+  Änderung.
 - Gemeinden lassen sich einem Kirchenkreis und darüber einer Landeskirche
   zuordnen; die bisher eingetragenen Kirchenkreise werden dabei übernommen.
 - Auf konfi-quest.de steht eine Vorlage zur Einwilligung der Eltern zum
   Ausdrucken bereit.
 
 ### Geändert
+- Eine neue Gemeinde startet in der Testphase mit einem Limit von 5 Konfis;
+  endet die Testphase, steht das Limit auf unbegrenzt. Die Tarife 15, 50, 75
+  und 100 bleiben wählbar.
 - Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
   die Support-Ansicht statt direkt zu den Gemeinden.
 - Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,

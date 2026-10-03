@@ -104,7 +104,7 @@ Abschnitt 9c.
 | Name der Gemeinde | die Gemeinde aus der Anfrage; daraus entsteht der Systemname wie beim Anlegen unter Gemeinden ([gemeinde-anlegen.md](gemeinde-anlegen.md)) |
 | Kirchenkreis | gesucht in der Struktur, ohne Groß/klein und ohne vorangestelltes „Kirchenkreis" („Dithmarschen" findet „Kirchenkreis Dithmarschen"); gibt es den Namen in zwei Landeskirchen, entscheidet die Landeskirche der Anfrage. Steht er noch nicht in der Struktur, legt **„Als Kirchenkreis anlegen"** ihn an (mit der Landeskirche, wenn es sie gibt) und wählt ihn aus. |
 | Ansprechperson, E-Mail, Telefon | Name, E-Mail und Mobilnummer aus der Anfrage |
-| Konfi-Limit | 5, wie auf der Startseite für die Testphase zugesagt; leer = unbegrenzt |
+| Konfi-Limit | 5, wie auf der Startseite für die Testphase zugesagt. Schaltet man die Testphase aus, wird daraus unbegrenzt (leer) und beim Wiedereinschalten wieder 5 — ein selbst eingetragener Wert bleibt stehen. Regel wie unter Gemeinden: [gemeinde-anlegen.md](gemeinde-anlegen.md#konfi-limit-testphase-5-danach-unbegrenzt) |
 | Testphase (30 Tage) | an: Zugang 30 Tage ab heute mit Hinweis auf den Startseiten; aus: ohne Ablaufdatum |
 | Erste Gemeindeleitung | Benutzername als Vorschlag aus dem Namen („Anna Müller" → `anna.mueller`), Anzeigename und E-Mail aus der Anfrage; das Passwort trägt man ein oder lässt es vorschlagen |
 
@@ -190,7 +190,7 @@ Text und Code zusammen.
 
 | Stand der Anfrage | Wie lange |
 |---|---|
-| neu, in Arbeit | bis zur Entscheidung |
+| neu, in Arbeit | bis zur Entscheidung; bleibt eine Anfrage **365 Tage ohne Änderung** (Status oder Notiz), löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupUnbewegteAnfragen`, gezählt ab `updated_at`) |
 | abgelehnt | **180 Tage nach der Ablehnung**, dann löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupAbgelehnteAnfragen`, gezählt ab `status_seit`, nicht ab dem Eingang) |
 | angelegt | solange die Gemeinde besteht; mit der Gemeinde wird die Anfrage gelöscht |
 
