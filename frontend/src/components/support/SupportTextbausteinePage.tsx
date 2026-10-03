@@ -8,7 +8,7 @@
 // gehoeren nicht ins oeffentliche Repo -- deshalb stehen sie nur hier in der
 // Ansicht, nie im Code.
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import {
   IonButton,
   IonContent,
@@ -22,7 +22,6 @@ import {
   IonSelect,
   IonSelectOption,
   IonTextarea,
-  useIonAlert,
 } from '@ionic/react';
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import EmptyState from '../shared/EmptyState';
@@ -35,179 +34,29 @@ import {
   ICON_LOESCHEN,
   ICON_TEXTDOKUMENT,
 } from '../shared/icons';
-import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
-import type { MailBaustein, MailEinstellungen, Postfach } from '../../types/support';
+import type { Postfach } from '../../types/support';
 import {
-  LEERER_BAUSTEIN,
   PLATZHALTER,
   POSTFACH_AUSWAHL,
+  VORSCHAU_BEISPIEL,
   auszug,
-  bausteinFehler,
-  bausteinFormular,
-  bausteinKoerper,
   bausteinPostfachText,
-  bausteineSortiert,
   platzhalterMarke,
   vorschauText,
-  type BausteinFormular,
 } from '../../utils/supportMail';
-import { fehlerText } from '../../utils/fehler';
-import { offlineBlockiert } from '../../utils/offlineAktion';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
-
-/** Beispieltext fuer die Vorschau der Fusszeile. */
-const VORSCHAU_BEISPIEL = 'Hallo,\n\nhier steht der Text der Antwort.';
+import { useTextbausteine } from './useTextbausteine';
 
 const Textbausteine: React.FC = () => {
-  const { setError, setSuccess, isOnline } = useApp();
-  const [presentAlert] = useIonAlert();
   const zurueck = useSupportZurueck(SUPPORT_START);
-
-  const [bausteine, setBausteine] = useState<MailBaustein[] | null>(null);
-  const [laedt, setLaedt] = useState(true);
-  const [fehler, setFehler] = useState(false);
-  const [formular, setFormular] = useState<BausteinFormular>(LEERER_BAUSTEIN);
-  const [bearbeitet, setBearbeitet] = useState<MailBaustein | null>(null);
-  const [speichert, setSpeichert] = useState(false);
-
-  const [einstellungen, setEinstellungen] = useState<MailEinstellungen | null>(null);
-  const [einstellungenFehlen, setEinstellungenFehlen] = useState(false);
-  const [absendername, setAbsendername] = useState('');
-  const [fusszeile, setFusszeile] = useState('');
-  const [speichertEinstellungen, setSpeichertEinstellungen] = useState(false);
-
-  // Erst warten, dann Zustand setzen (der erste Abruf laeuft im Effekt).
-  const bausteineHolen = useCallback(async () => {
-    try {
-      const antwort = await api.get('/support/mail/bausteine');
-      setBausteine(Array.isArray(antwort.data) ? bausteineSortiert(antwort.data) : []);
-      setFehler(false);
-    } catch {
-      setBausteine(null);
-      setFehler(true);
-    } finally {
-      setLaedt(false);
-    }
-  }, []);
-
-  const einstellungenHolen = useCallback(async () => {
-    try {
-      const antwort = await api.get('/support/mail/einstellungen');
-      const daten = antwort.data && typeof antwort.data === 'object' ? antwort.data as Partial<MailEinstellungen> : {};
-      const werte = { fusszeile: daten.fusszeile ?? '', absendername: daten.absendername ?? '' };
-      setEinstellungen(werte);
-      setFusszeile(werte.fusszeile);
-      setAbsendername(werte.absendername);
-      setEinstellungenFehlen(false);
-    } catch {
-      setEinstellungenFehlen(true);
-    }
-  }, []);
-
-  useEffect(() => {
-    void bausteineHolen();
-    void einstellungenHolen();
-  }, [bausteineHolen, einstellungenHolen]);
-
-  const laden = () => {
-    setLaedt(true);
-    setFehler(false);
-    return Promise.all([bausteineHolen(), einstellungenHolen()]);
-  };
-
-  const aendern = (teil: Partial<BausteinFormular>) => setFormular((f) => ({ ...f, ...teil }));
-
-  const formularLeeren = () => {
-    setFormular(LEERER_BAUSTEIN);
-    setBearbeitet(null);
-  };
-
-  const bearbeiten = (b: MailBaustein) => {
-    setBearbeitet(b);
-    setFormular(bausteinFormular(b));
-  };
-
-  const speichern = async () => {
-    if (offlineBlockiert(isOnline, setError)) return;
-    const meldung = bausteinFehler(formular);
-    if (meldung) {
-      setError(meldung);
-      return;
-    }
-    setSpeichert(true);
-    const koerper = bausteinKoerper(formular);
-    try {
-      if (bearbeitet) {
-        await api.put(`/support/mail/bausteine/${bearbeitet.id}`, koerper);
-        setSuccess('Baustein gespeichert');
-      } else {
-        await api.post('/support/mail/bausteine', koerper);
-        setSuccess('Baustein angelegt');
-      }
-      formularLeeren();
-      await bausteineHolen();
-    } catch (err) {
-      setError(fehlerText(err, 'Baustein konnte nicht gespeichert werden'));
-    } finally {
-      setSpeichert(false);
-    }
-  };
-
-  const loeschen = (b: MailBaustein) => {
-    if (offlineBlockiert(isOnline, setError)) return;
-    presentAlert({
-      header: 'Baustein löschen',
-      message: `„${b.titel}“ löschen? Das lässt sich nicht rückgängig machen.`,
-      buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Löschen',
-          role: 'destructive',
-          handler: () => {
-            void (async () => {
-              try {
-                await api.delete(`/support/mail/bausteine/${b.id}`);
-                setSuccess('Baustein gelöscht');
-                if (bearbeitet?.id === b.id) formularLeeren();
-                await bausteineHolen();
-              } catch (err) {
-                setError(fehlerText(err, 'Baustein konnte nicht gelöscht werden'));
-              }
-            })();
-          },
-        },
-      ],
-    });
-  };
-
-  const platzhalterEinfuegen = (schluessel: string) => {
-    const marke = platzhalterMarke(schluessel);
-    setFormular((f) => ({ ...f, text: f.text && !/\s$/.test(f.text) ? `${f.text} ${marke}` : `${f.text}${marke}` }));
-  };
-
-  const einstellungenSpeichern = async () => {
-    if (offlineBlockiert(isOnline, setError)) return;
-    setSpeichertEinstellungen(true);
-    const koerper: MailEinstellungen = { fusszeile: fusszeile.replace(/\s+$/, ''), absendername: absendername.trim() };
-    try {
-      await api.put('/support/mail/einstellungen', koerper);
-      setEinstellungen(koerper);
-      setFusszeile(koerper.fusszeile);
-      setAbsendername(koerper.absendername);
-      setSuccess('Absender und Fußzeile gespeichert');
-    } catch (err) {
-      setError(fehlerText(err, 'Absender und Fußzeile konnten nicht gespeichert werden'));
-    } finally {
-      setSpeichertEinstellungen(false);
-    }
-  };
-
-  const einstellungenGeaendert = einstellungen !== null
-    && (fusszeile.replace(/\s+$/, '') !== einstellungen.fusszeile || absendername.trim() !== einstellungen.absendername);
+  const {
+    isOnline, bausteine, laedt, fehler, formular, bearbeitet, speichert, einstellungen, einstellungenFehlen, absendername,
+    setAbsendername, fusszeile, setFusszeile, speichertEinstellungen, laden, aendern, formularLeeren, bearbeiten, speichern,
+    loeschen, platzhalterEinfuegen, einstellungenSpeichern, einstellungenGeaendert,
+  } = useTextbausteine();
 
   return (
     <IonPage>

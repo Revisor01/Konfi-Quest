@@ -6,22 +6,23 @@
 // Empfaenger nennt (Gemeindeleitungen und Leitung mit Adresse, Absender aus
 // dem Verlauf). Bausteine fuer support@ und beide Postfaecher; ihre
 // Platzhalter fuellt GET /support/mail/platzhalter?organization_id=.
+// Die Gemeinde kommt aus GET /organizations/:id (hook), auch eine interne.
 // Erreichbar aus dem Posteingang (Gemeinden mit ungelesenen Mails, Auswahl
 // aller Gemeinden, eine der Gemeinde zugeordnete Mail).
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React from 'react';
 import { IonButton, IonContent, IonIcon, IonPage, useIonRouter } from '@ionic/react';
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import { SectionHeader } from '../shared';
 import EmptyState from '../shared/EmptyState';
 import { ICON_ANTWORTEN, ICON_CHATS, ICON_ORGANISATION } from '../shared/icons';
 import api from '../../services/api';
-import type { GemeindeKurz, MailAntwortDaten, MailEmpfaenger, MailNachricht } from '../../types/support';
-import { POSTFACH_INFO, chronologisch, empfaengerLesen, gemeindeName, standardBetreff, ungeleseneIds } from '../../utils/supportMail';
-import { mailsAlsGelesen } from '../../navigation/supportMailZaehler';
+import type { MailAntwortDaten } from '../../types/support';
+import { POSTFACH_INFO } from '../../utils/supportMail';
 import { Abschnitt, Ladefehler, NurSupport } from './SupportBausteine';
 import { AntwortFormular, MailListe } from './SupportMailTeile';
 import { useSupportZurueck } from './useSupportZurueck';
+import { useGemeindePost } from './useGemeindePost';
 
 interface Props {
   organizationId: number;
@@ -32,46 +33,7 @@ interface Props {
 const GemeindePost: React.FC<Props> = ({ organizationId }) => {
   const router = useIonRouter();
   const zurueck = useSupportZurueck('/admin/support/post');
-
-  const [gemeinde, setGemeinde] = useState<GemeindeKurz | null>(null);
-  const [verlauf, setVerlauf] = useState<MailNachricht[] | null>(null);
-  const [verlaufFehler, setVerlaufFehler] = useState(false);
-  const [neu, setNeu] = useState<ReadonlySet<number>>(new Set());
-  const [empfaenger, setEmpfaenger] = useState<MailEmpfaenger[]>([]);
-  const [empfaengerFehlt, setEmpfaengerFehlt] = useState(false);
-
-  const verlaufHolen = useCallback(async (ersterAbruf: boolean) => {
-    try {
-      const antwort = await api.get(`/support/gemeinden/${organizationId}/verlauf`);
-      const liste = chronologisch(Array.isArray(antwort.data) ? antwort.data as MailNachricht[] : []);
-      const ungelesen = ungeleseneIds(liste);
-      setVerlauf(liste);
-      setVerlaufFehler(false);
-      if (ersterAbruf) setNeu(new Set(ungelesen));
-      void mailsAlsGelesen(ungelesen);
-    } catch {
-      setVerlaufFehler(true);
-    }
-  }, [organizationId]);
-
-  const rahmenHolen = useCallback(async () => {
-    const [g, e] = await Promise.allSettled([
-      api.get('/organizations'),
-      api.get(`/support/gemeinden/${organizationId}/empfaenger`),
-    ]);
-    const liste = g.status === 'fulfilled' && Array.isArray(g.value.data) ? g.value.data as GemeindeKurz[] : [];
-    setGemeinde(liste.find((x) => x.id === organizationId) ?? null);
-    setEmpfaenger(e.status === 'fulfilled' ? empfaengerLesen(e.value.data) : []);
-    setEmpfaengerFehlt(e.status !== 'fulfilled');
-  }, [organizationId]);
-
-  useEffect(() => {
-    void verlaufHolen(true);
-    void rahmenHolen();
-  }, [verlaufHolen, rahmenHolen]);
-
-  const name = gemeinde ? gemeindeName(gemeinde) : `Gemeinde ${organizationId}`;
-  const letzte = verlauf && verlauf.length > 0 ? verlauf[verlauf.length - 1] : null;
+  const { name, verlauf, verlaufFehler, neu, empfaenger, empfaengerFehlt, letzte, betreffVorschlag, verlaufHolen } = useGemeindePost(organizationId);
   const ungelesenZahl = neu.size;
 
   return (
@@ -112,7 +74,7 @@ const GemeindePost: React.FC<Props> = ({ organizationId }) => {
           <AntwortFormular
             postfach="support"
             platzhalterFuer={{ organization_id: organizationId }}
-            betreffVorschlag={standardBetreff(letzte?.betreff)}
+            betreffVorschlag={betreffVorschlag}
             empfaenger={empfaenger}
             empfaengerFehlt={empfaengerFehlt}
             senden={(koerper: MailAntwortDaten) => api.post(`/support/gemeinden/${organizationId}/antworten`, koerper)}

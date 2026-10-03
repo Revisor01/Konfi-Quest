@@ -271,6 +271,26 @@ export function sendeProblem(status: number | undefined, serverText?: string | n
   return null;
 }
 
+/** Beispieltext fuer die Vorschau der Fusszeile (Textbausteine). */
+export const VORSCHAU_BEISPIEL = 'Hallo,\n\nhier steht der Text der Antwort.';
+
+/** Der Hinweis zu einem Sendeproblem: Titel und Satz -- fuer App und Web gleich. */
+export function sendeHinweisText(problem: SendeProblem, postfach: Postfach): { titel: string; text: string } {
+  if (problem.art === 'nicht_eingerichtet') {
+    return {
+      titel: 'Postfach noch nicht eingerichtet',
+      text: `Für ${POSTFACH_INFO[postfach].kurz} fehlen auf dem Server noch die Zugangsdaten. Die Antwort wurde nicht gesendet; dein Text bleibt hier stehen.`,
+    };
+  }
+  if (problem.art === 'server_aus') {
+    return { titel: 'Nicht gesendet', text: `${problem.text} Dein Text bleibt hier stehen.` };
+  }
+  return {
+    titel: 'Versand gescheitert',
+    text: 'Der Mailserver hat die Antwort nicht angenommen; gespeichert wurde nichts. Dein Text bleibt hier stehen — bitte später noch einmal senden.',
+  };
+}
+
 /** Hinweis, wenn dieser Server ein Postfach nicht bedient (auf_diesem_server: false). */
 export const SERVER_AUS_HINWEIS = 'Auf diesem Server aus – Versand und Abholen laufen auf dem Hauptserver';
 

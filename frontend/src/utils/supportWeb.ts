@@ -306,6 +306,44 @@ export function gemeindenLesen(daten: unknown): SupportGemeinde[] | null {
   return raus;
 }
 
+/**
+ * Eine Gemeinde, wie GET /organizations/:id sie liefert -- auch eine interne,
+ * die in der Liste fehlt (Migration 194). Nur die Felder, die der
+ * Schriftwechsel zeigt; alles Fehlende bekommt einen sicheren Wert.
+ */
+export interface GemeindeDetail {
+  id: number;
+  name: string;
+  display_name: string;
+  is_active: boolean;
+  is_trial: boolean;
+  trial_ends_at: string | null;
+  max_konfis: number | null;
+  konfi_count: number;
+  team_count: number;
+  wunsch_lizenz: LizenzSchluessel | null;
+}
+
+/** GET /organizations/:id lesen; kein Objekt oder ohne Kennung: null. */
+export function gemeindeDetailLesen(daten: unknown): GemeindeDetail | null {
+  if (!istObjekt(daten)) return null;
+  const id = idOderNull(daten.id);
+  if (id === null) return null;
+  const name = typeof daten.name === 'string' ? daten.name : '';
+  return {
+    id,
+    name,
+    display_name: textOderNull(daten.display_name) ?? name,
+    is_active: daten.is_active !== false,
+    is_trial: daten.is_trial === true,
+    trial_ends_at: textOderNull(daten.trial_ends_at),
+    max_konfis: typeof daten.max_konfis === 'number' && Number.isFinite(daten.max_konfis) ? daten.max_konfis : null,
+    konfi_count: zahlOderNull(daten.konfi_count),
+    team_count: zahlOderNull(daten.user_count),
+    wunsch_lizenz: textOderNull(daten.wunsch_lizenz) as LizenzSchluessel | null,
+  };
+}
+
 // --- Suche -----------------------------------------------------------------------
 
 /**
