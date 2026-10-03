@@ -454,6 +454,65 @@ describe('Chat (Web): /…/chat/room/:id -- dieselbe Ansicht mit dem Raum', () =
   });
 });
 
+describe('Chat (Web): wohin der Fokus nach der Wahl eines Raums geht', () => {
+  const echtesMatchMedia = window.matchMedia;
+  const zeiger = (fein: boolean) => {
+    window.matchMedia = ((abfrage: string) => ({
+      matches: fein && abfrage.includes('pointer: fine'),
+      addListener: () => {}, removeListener: () => {}, addEventListener: () => {}, removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+  };
+  afterEach(() => { window.matchMedia = echtesMatchMedia; });
+
+  it('per Tastatur gewaehlt (Enter, detail 0): auf der neuen Seite steht der Fokus wieder auf der Zeile -- die alte Seite samt Fokus ist abgebaut', async () => {
+    zeiger(true);
+    const erste = await zeigenListe();
+    fireEvent.click(zeilen()[1], { detail: 0 });
+    erste.unmount();
+    await zeigenRaum(3);
+    const zeile = within(liste()).getByRole('link', { name: /Freizeit Packliste.*geöffnet/ });
+    expect(document.activeElement).toBe(zeile);
+    // Der Merker gilt einmal: eine weitere Seite zieht den Fokus nicht noch einmal.
+    cleanup();
+    await zeigenRaum(3);
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('mit der Maus gewaehlt: der Fokus geht in die Eingabe des Raums', async () => {
+    zeiger(true);
+    const erste = await zeigenListe();
+    fireEvent.click(zeilen()[1], { detail: 1 });
+    erste.unmount();
+    await zeigenRaum(3);
+    await screen.findByText('Packliste steht');
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Nachricht schreiben' }));
+  });
+
+  it('ohne Maus (iPad, Touch) bleibt der Fokus weg von der Eingabe -- die Bildschirmtastatur soll nicht ueber den Verlauf springen', async () => {
+    zeiger(false);
+    const erste = await zeigenListe();
+    fireEvent.click(zeilen()[1], { detail: 1 });
+    erste.unmount();
+    await zeigenRaum(3);
+    await screen.findByText('Packliste steht');
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Nachricht schreiben' }));
+  });
+
+  it('Strg-Klick oeffnet einen neuen Tab: hier aendert sich nichts, auch spaeter nicht -- ein Merker, der nie greift, bleibt nicht stehen', async () => {
+    zeiger(true);
+    const erste = await zeigenListe();
+    fireEvent.click(zeilen()[1], { detail: 1, ctrlKey: true });
+    expect(listenMerker().fokus).toBeNull();
+    // Mit der Maus Raum 3 gewaehlt, dann aber Raum 2 geoeffnet (etwa per Zurueck-Taste):
+    fireEvent.click(zeilen()[1], { detail: 1 });
+    erste.unmount();
+    await zeigenRaum(2);
+    await screen.findByText('Willkommen im Jahrgang');
+    expect(document.activeElement).not.toBe(screen.getByRole('textbox', { name: 'Nachricht schreiben' }));
+    expect(listenMerker().fokus).toBeNull();
+  });
+});
+
 describe('Chat (Web): Neuer Chat', () => {
   it('beide Knoepfe (Liste und Hinweis) oeffnen das Fenster als breiten Dialog; ein neuer Chat wird sofort geoeffnet', async () => {
     await zeigenListe();

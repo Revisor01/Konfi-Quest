@@ -22,11 +22,18 @@ export interface ListenMerker {
   scroll: number;
   /** Die zuletzt geladenen Raeume: Die Liste steht damit sofort da. */
   raeume: ChatRoomOverview[] | null;
+  /**
+   * Wohin der Fokus nach dem naechsten Seitenwechsel soll: auf die Zeile des
+   * gewaehlten Raums (Wahl per Tastatur -- sonst ginge die Stelle in der Liste
+   * verloren, weil die alte Seite mitsamt dem Fokus abgebaut wird) oder in die
+   * Eingabe des Raums (Wahl per Maus). null: nichts tun.
+   */
+  fokus: { ziel: 'zeile' | 'eingabe'; raumId: number } | null;
   /** Wem das alles gehoert: Wer sich anders anmeldet, beginnt von vorn. */
   nutzerId: number | null;
 }
 
-const merker: ListenMerker = { suche: '', filter: 'alle', scroll: 0, raeume: null, nutzerId: null };
+const merker: ListenMerker = { suche: '', filter: 'alle', scroll: 0, raeume: null, fokus: null, nutzerId: null };
 
 /** Der aktuelle Stand (dasselbe Objekt, kein Abbild). */
 export const listenMerker = (): ListenMerker => merker;
@@ -37,6 +44,7 @@ export const listenMerkerZuruecksetzen = (): void => {
   merker.filter = 'alle';
   merker.scroll = 0;
   merker.raeume = null;
+  merker.fokus = null;
   merker.nutzerId = null;
   entwuerfeZuruecksetzen();
 };

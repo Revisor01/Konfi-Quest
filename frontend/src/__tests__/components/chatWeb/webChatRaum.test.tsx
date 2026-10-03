@@ -32,6 +32,7 @@ const h = vi.hoisted(() => ({
   exportieren: vi.fn(),
   datei: null as File | null,
   fehlgeschlagene: [] as unknown[],
+  gezeichnet: vi.fn(),
 }));
 
 vi.mock('@ionic/react', async () => (await import('./webChatAttrappe')).ionicAttrappe({
@@ -105,6 +106,11 @@ vi.mock('../../../components/chat/useChatDateien', () => ({
 }));
 vi.mock('../../../components/chat/LazyImage', () => ({ default: ({ fileName }: { fileName: string }) => <img alt={fileName} /> }));
 vi.mock('../../../components/chat/VideoPreview', () => ({ default: ({ fileName }: { fileName: string }) => <div>Video {fileName}</div> }));
+// Die Blase zaehlt mit, wie oft sie gezeichnet wird.
+vi.mock('../../../components/chat/web/WebNachricht', async (original) => {
+  const echt = (await original<typeof import('../../../components/chat/web/WebNachricht')>()).default;
+  return { default: (props: React.ComponentProps<typeof echt>) => { h.gezeichnet(props.message.id); return React.createElement(echt, props); } };
+});
 vi.mock('../../../components/chat/modals/PollModal', () => ({ default: () => null }));
 vi.mock('../../../components/chat/modals/MembersModal', () => ({ default: () => null }));
 
@@ -225,6 +231,8 @@ describe('Raum (Web): Verlauf', () => {
   it('eigene Nachrichten rechts ohne Namen, fremde mit Kreis und Namen -- im Direktchat ohne beides', async () => {
     IM_RAUM([m({ content: 'Von Lena' }), m({ content: 'Von mir', sender_id: 4, sender_type: 'admin', sender_name: 'Alex Beispiel' })]);
     await zeigen();
+    // Der Verlauf ist ein Protokoll: Vorleseprogramme sagen neue Nachrichten an.
+    expect(screen.getByRole('log', { name: 'Nachrichten' })).toContainElement(blase('Von Lena'));
     expect(blase('Von mir')).toHaveClass('web-chat-nachricht--eigene');
     expect(blase('Von Lena')).toHaveClass('web-chat-nachricht--fremde');
     expect(within(blase('Von Lena')).getByText('Lena Probe')).toBeInTheDocument();
@@ -339,6 +347,16 @@ describe('Raum (Web): Eingabe -- Enter sendet, Umschalt+Enter bringt eine neue Z
     expect(feld()).toHaveValue('');
     // Die Nachricht steht sofort im Verlauf (optimistisch), bis die Bestaetigung kommt.
     expect(blase('Bis Samstag!')).toHaveClass('web-chat-nachricht--wartet');
+  });
+
+  it('Tippen zeichnet den Verlauf nicht neu -- der Text steht im Feld, nicht im Raum (100 Nachrichten: 150 ms je Zeichen gemessen)', async () => {
+    IM_RAUM([m({ content: 'Eins' }), m({ content: 'Zwei' }), m({ content: 'Drei' })]);
+    await zeigen();
+    await act(async () => { await Promise.resolve(); });
+    h.gezeichnet.mockClear();
+    for (const text of ['H', 'Ha', 'Hal', 'Hall', 'Hallo']) tippen(text);
+    expect(feld()).toHaveValue('Hallo');
+    expect(h.gezeichnet).not.toHaveBeenCalled();
   });
 
   it('Umschalt+Enter sendet nicht -- der Browser setzt die neue Zeile, der Text bleibt', async () => {

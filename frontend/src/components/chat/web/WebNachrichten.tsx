@@ -48,7 +48,8 @@ const WebNachrichten: React.FC<WebNachrichtenProps> = ({
   });
 
   return (
-    <div className="web-chat-verlaufsliste">
+    // role=log: Vorleseprogramme sagen neue Nachrichten an, ohne den Fokus zu bewegen.
+    <div className="web-chat-verlaufsliste" role="log" aria-label="Nachrichten">
       {/* Die Zeile steht immer da und behaelt ihre Hoehe: Kaeme sie erst mit
           der Ladeanzeige dazu, schoebe sie die Nachrichten darunter nach unten. */}
       {messages.length > 0 && (

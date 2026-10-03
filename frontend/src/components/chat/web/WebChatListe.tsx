@@ -68,6 +68,27 @@ const WebChatListe: React.FC<WebChatListeProps> = ({ uebersicht, offenerRaumId, 
     flaeche.current.scrollTop = listenMerker().scroll;
   }, [raeume.length]);
 
+  // Nach einem Seitenwechsel per Tastatur steht der Fokus wieder auf der Zeile
+  // des gewaehlten Raums: Die alte Seite wird mitsamt dem Fokus abgebaut.
+  useLayoutEffect(() => {
+    const merker = listenMerker();
+    if (merker.fokus?.ziel !== 'zeile' || !flaeche.current || raeume.length === 0) return;
+    const zeile = flaeche.current.querySelector<HTMLAnchorElement>(`a[href$="/room/${merker.fokus.raumId}"]`);
+    zeile?.focus();
+    // Einmal versucht, dann vergessen: Ein Merker, der nie greift (der Raum ist
+    // weggefiltert), stuende sonst bei der naechsten Seite noch da.
+    merker.fokus = null;
+  }, [raeume.length]);
+
+  // Wie ein Raum gewaehlt wurde, entscheidet, wohin der Fokus danach geht:
+  // per Tastatur (Enter auf der Zeile, detail 0) zurueck auf die Zeile, per
+  // Maus in die Eingabe -- wer einen Chat anklickt, will meist schreiben.
+  const raumGewaehlt = (raumId: number, ereignis: React.MouseEvent) => {
+    // Strg-, Umschalt- und Mittelklick oeffnen einen neuen Tab: Hier wechselt nichts.
+    if (ereignis.button !== 0 || ereignis.ctrlKey || ereignis.metaKey || ereignis.shiftKey || ereignis.altKey) return;
+    listenMerker().fokus = { ziel: ereignis.detail === 0 ? 'zeile' : 'eingabe', raumId };
+  };
+
   // Pfeil hoch und runter wandern durch die Raeume (wie in einer Liste im Betriebssystem).
   const taste = (ereignis: React.KeyboardEvent<HTMLUListElement>) => {
     if (ereignis.key !== 'ArrowDown' && ereignis.key !== 'ArrowUp') return;
@@ -120,7 +141,7 @@ const WebChatListe: React.FC<WebChatListeProps> = ({ uebersicht, offenerRaumId, 
               const art = raumArtMessenger(room);
               const offen = room.id === offenerRaumId;
               return (
-                <li key={room.id}>
+                <li key={room.id} onClickCapture={(e) => raumGewaehlt(room.id, e)}>
                   <WebLink
                     href={adresseVon(room.id)}
                     className={`web-chat-zeile${offen ? ' web-chat-zeile--offen' : ''}${ungelesen > 0 ? ' web-chat-zeile--ungelesen' : ''}`}

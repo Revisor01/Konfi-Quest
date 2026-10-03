@@ -5,23 +5,31 @@
 // stehen als Streifen darueber; eine Datei laesst sich auch einfuegen
 // (Strg+V mit einem Bild in der Zwischenablage). Was gesendet wird, regelt
 // useChatRaum -- hier ist nur die Oberflaeche.
+//
+// Der Text steht im Feld selbst, nicht im Raum: Mit dem Text im Raum zeichnete
+// jeder Tastendruck den ganzen Verlauf neu. Auch der Entwurf (chatEntwuerfe.ts)
+// wird hier gefuehrt: Er beginnt mit dem Entwurf des Raums und wird bei jeder
+// Aenderung gemerkt.
 
-import React, { useId, useLayoutEffect } from 'react';
+import React, { useEffect, useId, useLayoutEffect, useState } from 'react';
 import { IonIcon, IonSpinner } from '@ionic/react';
 import { ICON_ANHANG, ICON_ANHANG_GEFUELLT, ICON_SCHLIESSEN, ICON_SENDEN_GEFUELLT } from '../../shared/icons';
 import type { Message } from '../../../types/chat';
 import { formatFileSize } from '../../../utils/helpers';
+import { autoCapitalize } from '../../../utils/chatGrossschreibung';
 import { antwortVorschau } from '../chatNachricht';
 import { getSafePreviewUrl } from '../ChatRoomSections';
 import WebKnopf from '../../web/WebKnopf';
+import { entwurfLesen, entwurfMerken } from './chatEntwuerfe';
 
 /** Hoechste Hoehe des Feldes in Pixeln (etwa acht Zeilen); darueber scrollt das Feld. */
 const MAX_HOEHE = 200;
 
 export interface WebChatEingabeProps {
-  text: string;
-  onText: (text: string) => void;
-  onSenden: () => void;
+  /** Der Raum, dem die Eingabe gehoert (fuer den Entwurf). */
+  raumId: number;
+  /** Sendet den Text (und eine gewaehlte Datei, ein gewaehlter Antwort-Bezug). */
+  onSenden: (text: string) => void;
   uploading: boolean;
   datei: File | null;
   dateiVorschau: string | null;
@@ -35,11 +43,15 @@ export interface WebChatEingabeProps {
 }
 
 const WebChatEingabe: React.FC<WebChatEingabeProps> = ({
-  text, onText, onSenden, uploading, datei, dateiVorschau, onDateiWaehlen, onDateiEntfernen,
+  raumId, onSenden, uploading, datei, dateiVorschau, onDateiWaehlen, onDateiEntfernen,
   onDateiUebernehmen, antwortAuf, onAntwortVerwerfen, feldRef,
 }) => {
+  const [text, setText] = useState(() => entwurfLesen(raumId));
   const kannSenden = (text.trim() !== '' || datei !== null) && !uploading;
   const hinweisId = useId();
+
+  // Entwurf: was getippt, aber nicht gesendet ist, bleibt beim Raumwechsel stehen.
+  useEffect(() => { entwurfMerken(raumId, text); }, [raumId, text]);
 
   // Hoehe = Inhalt, gedeckelt auf MAX_HOEHE; nach dem Senden (Text leer) wieder eine Zeile.
   useLayoutEffect(() => {
@@ -52,7 +64,8 @@ const WebChatEingabe: React.FC<WebChatEingabeProps> = ({
 
   const absenden = () => {
     if (!kannSenden) return;
-    onSenden();
+    onSenden(text);
+    setText('');
     feldRef.current?.focus();
   };
 
@@ -105,7 +118,8 @@ const WebChatEingabe: React.FC<WebChatEingabeProps> = ({
           rows={1}
           value={text}
           spellCheck
-          onChange={(e) => onText(e.target.value)}
+          // Grossschreibung am Satzanfang wie in der App (utils/chatGrossschreibung).
+          onChange={(e) => setText(autoCapitalize(e.target.value))}
           onKeyDown={(e) => {
             // Enter sendet, Umschalt+Enter bringt eine neue Zeile. Waehrend einer
             // IME-Komposition (z. B. japanische Tastatur) bestaetigt Enter nur

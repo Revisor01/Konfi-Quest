@@ -66,11 +66,9 @@ interface ChatRaumDeps {
   lesenNurSichtbar?: boolean;
   /** Klasse fuer die Fenster Mitglieder und Umfrage (die Web-Fassung macht sie breiter). */
   modalKlasse?: string;
-  /** Text, mit dem die Eingabe beginnt (Web: der Entwurf dieses Raums). */
-  anfangsText?: string;
 }
 
-export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false, modalKlasse, anfangsText = '' }: ChatRaumDeps) {
+export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false, modalKlasse }: ChatRaumDeps) {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
   // Anzahl ungelesener Nachrichten beim Oeffnen EINMAL einfrieren (bevor
@@ -175,7 +173,7 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     return () => { aktiv = false; };
   }, [room?.id]);
 
-  const [messageText, setMessageText] = useState(anfangsText);
+  const [messageText, setMessageText] = useState('');
   // Datei-Auswahl (Kamera, Galerie, Kompression, 10MB-Grenze) und das Oeffnen
   // empfangener Dateien liegen gebuendelt in useChatDateien.
   const {
@@ -511,8 +509,13 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     openReactionPicker,
   } = useUmfragenUndReaktionen({ setMessages, setShouldAutoScroll, loadMessages });
 
-  const sendMessage = async () => {
-    if (!messageText.trim() && !selectedFile) return;
+  // `eingabe`: der Text, wenn er nicht im Zustand dieses Hooks steht. Die Web-
+  // Fassung haelt ihn im Eingabefeld selbst -- sonst zeichnete jeder
+  // Tastendruck den ganzen Verlauf neu (gemessen: 100 Nachrichten, 150 ms je Zeichen).
+  const sendMessage = async (eingabe?: string) => {
+    // Als Ereignis-Rueckruf aufgerufen (onClick={sendMessage}) kaeme ein Klick-Ereignis statt eines Textes an.
+    const rohText = typeof eingabe === 'string' ? eingabe : messageText;
+    if (!rohText.trim() && !selectedFile) return;
     if (!room) return;
 
     const clientId = safeUUID();
@@ -525,7 +528,7 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     // naechsten Oeffnen wieder. Die Blasen aus Warteschlange und Merker
     // (chatOutbox) tragen schon immer beides gleich.
     const localId = clientId;
-    const content = messageText.trim();
+    const content = rohText.trim();
     const file = selectedFile;
     const currentReplyTo = replyToMessage;
     // Antwort auf eine noch NICHT serverseitig gespeicherte Nachricht (optimistisch:

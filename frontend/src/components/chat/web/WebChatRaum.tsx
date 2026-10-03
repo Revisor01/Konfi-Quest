@@ -20,7 +20,7 @@ import WebKnopf from '../../web/WebKnopf';
 import WebMenue, { type WebMenueEintrag } from './WebMenue';
 import WebNachrichten from './WebNachrichten';
 import WebChatEingabe from './WebChatEingabe';
-import { entwurfLesen, entwurfMerken } from './chatEntwuerfe';
+import { listenMerker } from './chatListenMerker';
 import '../../../theme/web/chat.css';
 
 export interface WebChatRaumProps {
@@ -48,14 +48,13 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
     onBack: onSchliessen,
     lesenNurSichtbar: true,
     modalKlasse: 'web-chat-modal',
-    anfangsText: entwurfLesen(room.id),
   });
   const {
     user, isOnline, setError, messages, nachrichtenGeladen,
     contentRef, showScrollDown, handleScroll, handleScrollDownClick,
     initialUnreadRef, newDividerAnchorRef, newDividerRef,
     anfangBei, laedtAeltere, aeltereFehlgeschlagen, ladeAeltere,
-    messageText, handleTextInputChange, sendMessage, uploading, uploadFortschritt,
+    sendMessage, uploading, uploadFortschritt,
     replyToMessage, setReplyToMessage, selectedFile, selectedFilePreview,
     dateiWaehlen, dateiUebernehmen, clearSelectedFile,
     showReactionPicker, reactionTargetMessage, auswahlAufheben,
@@ -78,11 +77,19 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
     }
   }, [nachrichtenGeladen, neuesteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Entwurf: was getippt, aber nicht gesendet ist, bleibt beim Raumwechsel stehen.
-  useEffect(() => { entwurfMerken(room.id, messageText); }, [room.id, messageText]);
-
   const feldRef = useRef<HTMLTextAreaElement>(null);
   const [ablage, setAblage] = useState(false);
+
+  // Mit der Maus gewaehlt: Der Fokus geht in die Eingabe. Nur, wo es eine Maus
+  // gibt -- auf dem iPad schoebe das die Bildschirmtastatur ueber den Verlauf.
+  useEffect(() => {
+    const merker = listenMerker();
+    const fokus = merker.fokus;
+    // Einmal gilt der Merker, dann ist er weg -- auch wenn er einem anderen Raum galt.
+    merker.fokus = null;
+    if (fokus?.ziel !== 'eingabe' || fokus.raumId !== room.id) return;
+    if (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: fine)').matches) feldRef.current?.focus();
+  }, [room.id]);
 
   // Die Zeile der Liste, ergaenzt um das, was nur der Raum selbst weiss: bei einem
   // Direktchat der Typ des Partners (Team-Chat ja oder nein).
@@ -217,9 +224,8 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
       </IonContent>
 
       <WebChatEingabe
-        text={messageText}
-        onText={handleTextInputChange}
-        onSenden={() => { void sendMessage(); }}
+        raumId={room.id}
+        onSenden={(text) => { void sendMessage(text); }}
         uploading={uploading}
         datei={selectedFile}
         dateiVorschau={selectedFilePreview}
