@@ -41,8 +41,8 @@ Versionsüberschrift.
 
 ### Geändert
 - Eine neue Gemeinde startet in der Testphase mit einem Limit von 5 Konfis;
-  danach gilt die Lizenz, die sie gewählt hat. Die Tarife 15, 50, 75 und 100
-  bleiben wählbar.
+  danach gilt die Lizenz, die sie gewählt hat. Die Tarif-Auswahl nennt den
+  Preis; die Tarife 15, 50, 75 und 100 und „Unbegrenzt" bleiben wählbar.
 - Unter „Mehr" führt das Symbol oben rechts Konten mit Super-Admin-Recht in
   die Support-Ansicht statt direkt zu den Gemeinden.
 - Die Datenschutzerklärung beschreibt das Anfrageformular: welche Angaben,

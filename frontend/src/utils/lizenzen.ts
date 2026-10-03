@@ -42,3 +42,37 @@ export function lizenzLimit(schluessel: string | null | undefined): string {
   const lizenz = lizenzFinden(schluessel);
   return lizenz && lizenz.konfis !== null ? String(lizenz.konfis) : '';
 }
+
+/** Eine Zeile der Tarif-Auswahl: Formularwert ('' = unbegrenzt) und Text mit Preis. */
+export interface TarifOption {
+  wert: string;
+  name: string;
+  text: string;
+}
+
+/** Wert der Auswahl fuer "Eigenes Limit …" (Zahlenfeld statt Tarif). */
+export const EIGENES_LIMIT = '__eigen__';
+
+/**
+ * Die Tarif-Auswahl beider Formulare (Gemeinde, Anlage aus einer Anfrage),
+ * mit Preis (Simon, 03.10.2026: "bei der Auswahl muss auch der Preis mit
+ * stehen"). Testphase 5 kostenlos, die Lizenzen mit fester Konfi-Zahl und
+ * Unbegrenzt -- das bleibt immer waehlbar ("Unbegrenzt will ich aber setzen
+ * koennen", etwa fuer die eigene Gemeinde). Der Verbund hat keine feste
+ * Zahl und steht deshalb nicht darin; sein Limit ist Unbegrenzt oder ein
+ * eigenes.
+ */
+export const TARIF_OPTIONEN: readonly TarifOption[] = [
+  { wert: '5', name: 'Testphase', text: 'Testphase — bis 5 Konfis · kostenlos, 30 Tage' },
+  ...LIZENZEN.filter((l) => l.konfis !== null).map((l) => ({
+    wert: String(l.konfis),
+    name: l.name,
+    text: `${l.name} — bis ${l.konfis} Konfis · ${l.euro} € pro Jahr`,
+  })),
+  { wert: '', name: 'Unbegrenzt', text: 'Unbegrenzt — ohne Konfi-Grenze' },
+];
+
+/** Steht ein Limit auf einem Tarif der Auswahl (sonst: eigenes Limit)? */
+export function istTarif(limit: string): boolean {
+  return TARIF_OPTIONEN.some((t) => t.wert === limit.trim());
+}

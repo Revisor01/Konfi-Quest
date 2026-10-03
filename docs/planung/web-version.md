@@ -90,7 +90,11 @@ kommen per Mail.
     Wunschlizenz, ohne Wunsch und beim Verbund auf unbegrenzt; die Tarife
     15/50/75/100 bleiben wählbar (`frontend/src/utils/konfiLimitVorgabe.ts`,
     [betrieb/gemeinde-anlegen.md](../betrieb/gemeinde-anlegen.md)).
-    „Unbegrenzt für alle" kommt erst, wenn die EKD zahlt.
+    „Unbegrenzt für alle" kommt erst, wenn die EKD zahlt. Nachgeschärft:
+    „Unbegrenzt will ich aber setzen können" (etwa für die eigene Gemeinde)
+    und „bei der Auswahl muss auch der Preis mit stehen" — beide Formulare
+    nutzen dieselbe Tarif-Auswahl mit Preis und Unbegrenzt
+    (`TARIF_OPTIONEN` in `frontend/src/utils/lizenzen.ts`).
 17. **Kleine Zahlen in der Statistik** werden ungefiltert gezeigt; nur
     Super-Admins sehen sie. Bleibt so.
 18. **Anfragen „neu" oder „in Arbeit" ohne Bewegung** gehen nach 365 Tagen
@@ -305,8 +309,23 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 - **Anfragen.** Eine Route für eine einzelne Anfrage (die Seite einer
   Anfrage holt heute die ganze Liste) und ein Knopf, eine Anfrage auf Wunsch
   sofort zu löschen.
-- **Mails im Support.** Ob eingehende Mails (etwa an die Kontaktadresse) in
-  der Ansicht landen sollen und auf welchem Weg.
+- **Auf Anfragen antworten, Antworten zuordnen** (Simon, 03.10.2026: „Ich
+  muss auch auf eine Anfrage reagieren können etc. Deren Antwort richtig
+  sortiert werden."). Vorschlag, als nächstes Paket:
+  - In der Anfrage ein Feld „Antworten"; der Server schickt die Mail an die
+    anfragende Adresse, mit der Kennung im Betreff („[Anfrage 12]") und
+    eigener Message-ID, und legt sie im Verlauf der Anfrage ab
+    (neue Tabelle, Migration).
+  - Antworten der Gemeinde holt der Server per IMAP aus dem Postfach, an das
+    die Antwort-Adresse geht, und ordnet sie über In-Reply-To/References oder
+    die Kennung im Betreff der Anfrage zu; was sich nicht zuordnen lässt,
+    landet in einem Eingang „Nicht zugeordnet".
+  - Der Verlauf steht in der Anfrage nach Zeit sortiert; neue Antworten
+    zählen am Bereich Anfragen als rote Zahl.
+  - Offen bei Simon: welches Postfach (etwa moin@konfi-quest.de) und ob der
+    Server es lesen darf; die Zugangsdaten setzt der lokale Agent als
+    Stack-Variablen. Die Datenschutzerklärung 9c nennt dann auch den
+    Schriftwechsel; er geht mit der Anfrage.
 - **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
   Jahrgänge je Gemeinde, nur für Super-Admins; jede Zahl steht ungefiltert da
   (Entscheidung 17). Offen: weitere Kennzahlen (Speicher, Termine).

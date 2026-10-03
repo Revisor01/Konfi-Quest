@@ -143,18 +143,18 @@ describe('Konfi-Limit: Testphase 5, danach unbegrenzt', () => {
     expect(screen.queryByTestId('wunschlizenz')).toBeNull();
   }, 30000);
 
-  it('die Tarife bleiben wählbar: Testphase, Klein, Standard, Plus, Groß, Unbegrenzt, eigenes Limit', async () => {
+  it('die Tarife bleiben wählbar, mit Preis; Unbegrenzt und eigenes Limit immer dabei', async () => {
     render(<OrganizationManagementModal organizationId={null} onClose={vi.fn()} onSuccess={vi.fn()} />);
     const tarif = await screen.findByLabelText('Tarif', undefined, { timeout: 15000 });
     const optionen = [...tarif.querySelectorAll('[data-option]')].map((o) => [o.getAttribute('data-option'), o.textContent]);
     expect(optionen).toEqual([
-      ['5', 'Testphase — bis 5 Konfis'],
-      ['15', 'Klein — bis 15 Konfis'],
-      ['50', 'Standard — bis 50 Konfis'],
-      ['75', 'Plus — bis 75 Konfis'],
-      ['100', 'Groß — bis 100 Konfis'],
-      ['', 'Unbegrenzt — unbegrenzt'],
-      ['__custom__', 'Eigenes Limit…'],
+      ['5', 'Testphase — bis 5 Konfis · kostenlos, 30 Tage'],
+      ['15', 'Klein — bis 15 Konfis · 49 € pro Jahr'],
+      ['50', 'Standard — bis 50 Konfis · 99 € pro Jahr'],
+      ['75', 'Plus — bis 75 Konfis · 139 € pro Jahr'],
+      ['100', 'Groß — bis 100 Konfis · 179 € pro Jahr'],
+      ['', 'Unbegrenzt — ohne Konfi-Grenze'],
+      ['__eigen__', 'Eigenes Limit…'],
     ]);
   }, 30000);
 

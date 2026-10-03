@@ -71,8 +71,8 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { systemnameZumSpeichern } from '../../../utils/gemeindeSystemname';
 import { kirchenkreisFinden } from '../../../utils/supportAnfragen';
-import { TESTPHASE_KONFIS, limitNachUmschalten, limitVorgabe } from '../../../utils/konfiLimitVorgabe';
-import { LIZENZEN, lizenzFinden, lizenzLimit, lizenzText } from '../../../utils/lizenzen';
+import { limitNachUmschalten, limitVorgabe } from '../../../utils/konfiLimitVorgabe';
+import { EIGENES_LIMIT, TARIF_OPTIONEN, istTarif, lizenzFinden, lizenzLimit, lizenzText } from '../../../utils/lizenzen';
 import type { Kirchenkreis } from '../../../types/support';
 
 interface Organization {
@@ -146,16 +146,10 @@ interface OrganizationManagementModalProps {
   onSuccess: () => void;
 }
 
-// Tarif-Stufen wie auf der Website (landing.html / marketing-copy.md).
-// value als String für direkten Vergleich mit dem maxKonfis-Feld; '' = unbegrenzt.
-// Vorgabe: Testphase 5, danach die Wunschlizenz aus der Anfrage, ohne sie
-// unbegrenzt (utils/konfiLimitVorgabe.ts). Die Stufen kommen aus der einen
-// Liste der Lizenzen (utils/lizenzen.ts); der Verbund hat keine feste Zahl.
-const KONFI_TARIFE: { label: string; value: string }[] = [
-  { label: 'Testphase', value: String(TESTPHASE_KONFIS) },
-  ...LIZENZEN.filter((l) => l.konfis !== null).map((l) => ({ label: l.name, value: String(l.konfis) })),
-  { label: 'Unbegrenzt', value: '' }
-];
+// Tarif-Auswahl mit Preisen aus der einen Liste (utils/lizenzen.ts,
+// TARIF_OPTIONEN): Testphase 5, Klein bis Groß, Unbegrenzt -- dazu
+// "Eigenes Limit". Vorgabe: Testphase 5, danach die Wunschlizenz aus der
+// Anfrage, ohne sie unbegrenzt (utils/konfiLimitVorgabe.ts).
 
 // Zeitraum-Schnellauswahl: Tage ab heute (0 = unbegrenzt, -1 = eigenes Datum)
 const ZEITRAUM_OPTIONEN: { label: string; days: number }[] = [
@@ -384,7 +378,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
       const loadedLimit = orgData.max_konfis !== null && orgData.max_konfis !== undefined ? String(orgData.max_konfis) : '';
       setMaxKonfis(loadedLimit);
       // Wenn der geladene Wert keinem Tarif entspricht (und nicht leer/unbegrenzt ist), ist es ein eigenes Limit
-      setIsCustomLimit(loadedLimit !== '' && !KONFI_TARIFE.some(t => t.value === loadedLimit));
+      setIsCustomLimit(!istTarif(loadedLimit));
       setTrialEndsAt(orgData.trial_ends_at || '');
       setIsTrial(orgData.is_trial === true);
       // Wenn ein Datum gesetzt ist, das keiner Schnellauswahl entspricht -> "eigenes Datum"
@@ -1398,13 +1392,13 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                     <IonLabel position="stacked">Tarif</IonLabel>
                     <IonSelect
                       aria-label="Tarif"
-                      value={isCustomLimit ? '__custom__' : maxKonfis.trim()}
+                      value={isCustomLimit ? EIGENES_LIMIT : maxKonfis.trim()}
                       interface="popover"
                       interfaceOptions={{ cssClass: 'app-select-popover--wide', arrow: false }}
                       placeholder="Tarif wählen"
                       onIonChange={(e) => {
                         const val = e.detail.value;
-                        if (val === '__custom__') {
+                        if (val === EIGENES_LIMIT) {
                           // Auf Eigenes Limit umschalten: Feld leeren falls es vorher ein Tarif war
                           setIsCustomLimit(true);
                         } else {
@@ -1413,12 +1407,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
                         }
                       }}
                     >
-                      {KONFI_TARIFE.map((tarif) => (
-                        <IonSelectOption key={tarif.label} value={tarif.value}>
-                          {tarif.label}{tarif.value ? ` — bis ${tarif.value} Konfis` : ' — unbegrenzt'}
-                        </IonSelectOption>
+                      {TARIF_OPTIONEN.map((tarif) => (
+                        <IonSelectOption key={tarif.name} value={tarif.wert}>{tarif.text}</IonSelectOption>
                       ))}
-                      <IonSelectOption value="__custom__">Eigenes Limit…</IonSelectOption>
+                      <IonSelectOption value={EIGENES_LIMIT}>Eigenes Limit…</IonSelectOption>
                     </IonSelect>
                   </IonItem>
 

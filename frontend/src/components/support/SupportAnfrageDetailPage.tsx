@@ -69,7 +69,7 @@ import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { generateStrongPassword } from '../../utils/passwortVorschlag';
 import { datumUhrzeit } from '../../utils/dateUtils';
-import { lizenzFinden, lizenzLimit, lizenzText } from '../../utils/lizenzen';
+import { EIGENES_LIMIT, TARIF_OPTIONEN, lizenzFinden, lizenzLimit, lizenzText } from '../../utils/lizenzen';
 import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 
@@ -114,6 +114,8 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
 
   // Gemeinde anlegen
   const [formular, setFormular] = useState<AnlegenFormular | null>(null);
+  // "Eigenes Limit …" gewaehlt: Zahlenfeld statt Tarif (wie unter Gemeinden).
+  const [eigenesLimit, setEigenesLimit] = useState(false);
   const [passwortZeigen, setPasswortZeigen] = useState(false);
   const [legtAn, setLegtAn] = useState(false);
   const [angelegt, setAngelegt] = useState<(AnfrageAngelegt & { username: string }) | null>(null);
@@ -414,15 +416,36 @@ const AnfrageDetail: React.FC<Props> = ({ anfrageId }) => {
               <Feld label="Ansprechperson" wert={formular.kontaktName} onWert={(w) => aendern({ kontaktName: w })} autocomplete="name" />
               <Feld label="E-Mail der Gemeinde" typ="email" wert={formular.kontaktEmail} onWert={(w) => aendern({ kontaktEmail: w })} autocomplete="email" />
               <Feld label="Telefon" typ="tel" wert={formular.kontaktTelefon} onWert={(w) => aendern({ kontaktTelefon: w })} autocomplete="tel" />
-              <Feld
-                label="Konfi-Limit"
-                typ="number"
-                wert={formular.maxKonfis}
-                onWert={(w) => aendern({ maxKonfis: w })}
-                hinweis={wunsch && wunsch.konfis !== null
-                  ? `In der Testphase ${TESTPHASE_KONFIS}, danach ${wunsch.konfis} (Wunschlizenz ${wunsch.name}). Leer = unbegrenzt.`
-                  : `In der Testphase ${TESTPHASE_KONFIS}, danach leer = unbegrenzt${wunsch ? ' (Verbund: Limit nach Absprache)' : ''}. Tarife 15, 50, 75 oder 100.`}
-              />
+              {/* Tarif mit Preis wie unter Gemeinden (utils/lizenzen.ts); Unbegrenzt
+                  und ein eigenes Limit gehen immer. */}
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Tarif</IonLabel>
+                <IonSelect
+                  aria-label="Tarif"
+                  interface="popover"
+                  value={eigenesLimit ? EIGENES_LIMIT : formular.maxKonfis.trim()}
+                  onIonChange={(e) => {
+                    const wert = String(e.detail.value ?? '');
+                    if (wert === EIGENES_LIMIT) { setEigenesLimit(true); return; }
+                    setEigenesLimit(false);
+                    aendern({ maxKonfis: wert });
+                  }}
+                >
+                  {TARIF_OPTIONEN.map((t) => (
+                    <IonSelectOption key={t.name} value={t.wert}>{t.text}</IonSelectOption>
+                  ))}
+                  <IonSelectOption value={EIGENES_LIMIT}>Eigenes Limit…</IonSelectOption>
+                </IonSelect>
+              </IonItem>
+              {eigenesLimit && (
+                <Feld label="Eigenes Limit" typ="number" wert={formular.maxKonfis} onWert={(w) => aendern({ maxKonfis: w })}
+                  hinweis="Zahl der Konfis; leer = unbegrenzt." />
+              )}
+              <p style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
+                {wunsch && wunsch.konfis !== null
+                  ? `In der Testphase ${TESTPHASE_KONFIS}, danach ${wunsch.konfis} (Wunschlizenz ${wunsch.name}).`
+                  : `In der Testphase ${TESTPHASE_KONFIS}, danach unbegrenzt${wunsch ? ' (Verbund: Limit nach Absprache)' : ''}.`}
+              </p>
               <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonToggle
                   aria-label={`Testphase (${TESTPHASE_TAGE} Tage)`}

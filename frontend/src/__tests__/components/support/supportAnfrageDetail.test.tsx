@@ -69,6 +69,7 @@ const oeffnen = async () => {
 };
 
 const feld = (name: string) => screen.getByLabelText(name) as HTMLInputElement;
+const tarif = () => screen.getByLabelText('Tarif') as HTMLSelectElement;
 
 describe('Anfrage: Angaben und Vorbelegung', () => {
   it('zeigt alle Angaben; Mail und Telefon sind Verweise', async () => {
@@ -88,7 +89,7 @@ describe('Anfrage: Angaben und Vorbelegung', () => {
     expect(feld('Ansprechperson').value).toBe('Anna Beispiel');
     expect(feld('E-Mail der Gemeinde').value).toBe('anna@example.org');
     expect(feld('Telefon').value).toBe('0170 1234567');
-    expect(feld('Konfi-Limit').value).toBe('5');
+    expect(tarif().value).toBe('5');
     expect((screen.getByLabelText('Testphase (30 Tage)') as HTMLInputElement).checked).toBe(true);
     expect(feld('Benutzername').value).toBe('anna.beispiel');
     expect(feld('Anzeigename').value).toBe('Anna Beispiel');
@@ -202,7 +203,7 @@ describe('Anfrage: Gemeinde anlegen', () => {
     await oeffnen();
     fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
     fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
-    fireEvent.change(feld('Konfi-Limit'), { target: { value: '' } });
+    fireEvent.change(tarif(), { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
     h.apiPost.mockResolvedValue({ data: { organization_id: 77, admin_id: 301 } });
     await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Anlegen')?.handler?.(); });
@@ -216,18 +217,18 @@ describe('Anfrage: Gemeinde anlegen', () => {
     anfragen = [{ ...ANFRAGE, wunsch_lizenz: 'standard' }];
     await oeffnen();
     expect(screen.getByText('Standard — bis 50 Konfis, 99 € pro Jahr')).toBeInTheDocument();
-    expect(feld('Konfi-Limit').value).toBe('5');
+    expect(tarif().value).toBe('5');
     fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
-    expect(feld('Konfi-Limit').value).toBe('50');
+    expect(tarif().value).toBe('50');
     fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
-    expect(feld('Konfi-Limit').value).toBe('5');
+    expect(tarif().value).toBe('5');
   });
 
   it('ohne Wunschlizenz: „Noch offen“; Testphase aus stellt das Limit auf unbegrenzt', async () => {
     await oeffnen();
     expect(screen.getByText('Noch offen')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
-    expect(feld('Konfi-Limit').value).toBe('');
+    expect(tarif().value).toBe('');
   });
 
   it('Verbund: keine feste Konfi-Zahl, Testphase aus stellt das Limit auf unbegrenzt', async () => {
@@ -235,7 +236,46 @@ describe('Anfrage: Gemeinde anlegen', () => {
     await oeffnen();
     expect(screen.getByText('Verbund — bis 4 Gemeinden, 390 € pro Jahr')).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText('Testphase (30 Tage)'));
-    expect(feld('Konfi-Limit').value).toBe('');
+    expect(tarif().value).toBe('');
+  });
+
+  // Simon, 03.10.2026: "Unbegrenzt will ich aber setzen können" und "bei
+  // der Auswahl muss auch der Preis mit stehen".
+  it('der Tarif ist eine Auswahl mit Preis; Unbegrenzt und eigenes Limit sind dabei', async () => {
+    await oeffnen();
+    expect([...tarif().options].map((o) => o.textContent)).toEqual([
+      'Testphase — bis 5 Konfis · kostenlos, 30 Tage',
+      'Klein — bis 15 Konfis · 49 € pro Jahr',
+      'Standard — bis 50 Konfis · 99 € pro Jahr',
+      'Plus — bis 75 Konfis · 139 € pro Jahr',
+      'Groß — bis 100 Konfis · 179 € pro Jahr',
+      'Unbegrenzt — ohne Konfi-Grenze',
+      'Eigenes Limit…',
+    ]);
+  });
+
+  it('Unbegrenzt auch in der Testphase: geht als null an den Server', async () => {
+    await oeffnen();
+    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.change(tarif(), { target: { value: '' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
+    h.apiPost.mockResolvedValue({ data: { organization_id: 77, admin_id: 301 } });
+    await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Anlegen')?.handler?.(); });
+    await waitFor(() => expect(h.apiPost).toHaveBeenCalledTimes(1));
+    expect(h.apiPost.mock.calls[0][1]).toMatchObject({ is_trial: true, max_konfis: null });
+  });
+
+  it('Eigenes Limit: ein Zahlenfeld, die Zahl geht an den Server', async () => {
+    await oeffnen();
+    expect(screen.queryByLabelText('Eigenes Limit')).toBeNull();
+    fireEvent.change(tarif(), { target: { value: '__eigen__' } });
+    fireEvent.change(feld('Eigenes Limit'), { target: { value: '30' } });
+    fireEvent.change(feld('Passwort'), { target: { value: 'Heide-2026!' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Gemeinde anlegen' }));
+    h.apiPost.mockResolvedValue({ data: { organization_id: 77, admin_id: 301 } });
+    await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Anlegen')?.handler?.(); });
+    await waitFor(() => expect(h.apiPost).toHaveBeenCalledTimes(1));
+    expect(h.apiPost.mock.calls[0][1]).toMatchObject({ max_konfis: 30 });
   });
 
   it('Benutzername vergeben (409): die Meldung des Servers, das Formular bleibt', async () => {
