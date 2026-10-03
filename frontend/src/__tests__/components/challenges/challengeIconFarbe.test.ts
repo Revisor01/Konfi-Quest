@@ -36,10 +36,10 @@ const ohneKommentare = (quelle: string): string =>
     .join('\n');
 
 const leitungModal = ohneKommentare(
-  lies('src/components/admin/modals/ChallengeLeitungModal.tsx')
+  lies('src/components/admin/views/ChallengeLeitungView.tsx')
 );
 const konfiModal = ohneKommentare(
-  lies('src/components/konfi/modals/ChallengeDetailModal.tsx')
+  lies('src/components/konfi/pages/KonfiChallengeDetailPage.tsx')
 );
 
 /** Alle Werte von iconColor= / emptyIconColor= in einer Quelldatei. */

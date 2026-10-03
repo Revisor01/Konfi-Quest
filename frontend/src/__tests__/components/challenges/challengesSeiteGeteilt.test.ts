@@ -23,6 +23,8 @@ const lies = (pfad: string) =>
 const adminSeite = lies('src/components/admin/pages/AdminChallengesPage.tsx');
 const teamerSeite = lies('src/components/teamer/pages/TeamerChallengesPage.tsx');
 const geteilteSeite = lies('src/components/shared/ChallengesPage.tsx');
+const formular = lies('src/hooks/useChallengeFormular.ts');
+const listen = lies('src/utils/challengeListen.ts');
 
 describe('Die Challenges-Seite steht nur noch einmal da (N7)', () => {
   it('beide Rollen-Seiten nutzen die geteilte Seite', () => {
@@ -44,11 +46,15 @@ describe('Die Challenges-Seite steht nur noch einmal da (N7)', () => {
       expect(quelle, name).not.toContain('useIonModal');
       expect(quelle, name).not.toContain('ChallengesManageView');
       expect(quelle, name).not.toContain('manageDirtyRef');
+      expect(quelle, name).not.toContain('useChallengeFormular');
     }
-    // Gegenprobe: In der geteilten Seite steht sie sehr wohl.
-    expect(geteilteSeite).toContain('useIonModal');
+    // Gegenprobe: In der geteilten Seite steht sie sehr wohl -- das Formular
+    // samt Rueckfrage seit 2.4.0 in einem Hook, den auch die Seite einer
+    // Challenge nutzt (shared/ChallengeLeitungPage).
     expect(geteilteSeite).toContain('ChallengesManageView');
-    expect(geteilteSeite).toContain('manageDirtyRef');
+    expect(geteilteSeite).toContain('useChallengeFormular');
+    expect(formular).toContain('useIonModal(ChallengeManageModal');
+    expect(formular).toContain('manageDirtyRef');
   });
 
   it('die Zwischenspeicher der Rollen bleiben getrennt', () => {
@@ -56,8 +62,17 @@ describe('Die Challenges-Seite steht nur noch einmal da (N7)', () => {
     // das Backend nach zugewiesenen Jahrgaengen filtert. Zwei Teamer:innen
     // derselben Organisation sehen NICHT dasselbe -- ein gemeinsamer
     // Org-Schluessel wuerde ihnen gegenseitig die Liste unterschieben.
-    expect(adminSeite).toContain("'admin:challenges:' + user?.organization_id");
-    expect(teamerSeite).toContain('`teamer:challenges:${user?.organization_id}:${user?.id}`');
+    // Seit 2.4.0 stehen die Schluessel in utils/challengeListen.ts, weil
+    // auch die Seite einer Challenge die Liste ohne Netz mitliest.
+    expect(adminSeite).toContain('cacheKey={leitungChallengeListe(user)}');
+    expect(teamerSeite).toContain('cacheKey={leitungChallengeListe(user)}');
+    expect(listen).toContain("'admin:challenges:' + user?.organization_id");
+    expect(listen).toContain('`teamer:challenges:${user?.organization_id}:${user?.id}`');
+  });
+
+  it('jede Rolle oeffnet die Challenge unter ihrem eigenen Pfad (2.4.0)', () => {
+    expect(adminSeite).toContain('listenPfad="/admin/challenges"');
+    expect(teamerSeite).toContain('listenPfad="/teamer/challenges"');
   });
 
   it('jede Rolle behaelt ihre eigene Modal-Seiten-ID', () => {

@@ -157,6 +157,9 @@ const AdminDashboardSettingsPage = faul(() => import('../components/admin/pages/
 const AdminLevelsPage = faul(() => import('../components/admin/pages/AdminLevelsPage'));
 const AdminInvitePage = faul(() => import('../components/admin/pages/AdminInvitePage'));
 const AdminChallengesPage = faul(() => import('../components/admin/pages/AdminChallengesPage'));
+// Eine Challenge als eigene Seite fuer Team und Leitung (2.4.0) -- dieselbe
+// Seite in beiden Baeumen, wie die Liste (shared/ChallengesPage).
+const ChallengeLeitungPage = faul(() => import('../components/shared/ChallengeLeitungPage'));
 const ChatOverviewPage = faul(() => import('../components/chat/pages/ChatOverviewPage'));
 const ChatRoomView = faul(() => import('../components/chat/views/ChatRoomView'));
 const KonfiDetailView = faul(() => import('../components/admin/views/KonfiDetailView'));
@@ -166,6 +169,7 @@ const KonfiEventsPage = faul(() => import('../components/konfi/pages/KonfiEvents
 const KonfiEventDetailPage = faul(() => import('../components/konfi/pages/KonfiEventDetailPage'));
 const KonfiBadgesPage = faul(() => import('../components/konfi/pages/KonfiBadgesPage'));
 const KonfiChallengesPage = faul(() => import('../components/konfi/pages/KonfiChallengesPage'));
+const KonfiChallengeDetailPage = faul(() => import('../components/konfi/pages/KonfiChallengeDetailPage'));
 const KonfiProfilePage = faul(() => import('../components/konfi/pages/KonfiProfilePage'));
 const TeamerDashboardPage = faul(() => import('../components/teamer/pages/TeamerDashboardPage'));
 const TeamerEventsPage = faul(() => import('../components/teamer/pages/TeamerEventsPage'));
@@ -198,6 +202,11 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { path: '/admin/settings/dashboard', page: AdminDashboardSettingsPage },
       { path: '/admin/settings', page: AdminSettingsPage },
       { path: '/admin/badges', page: AdminBadgesPage },
+      // Eine Challenge als eigene Seite statt im Dialog (2.4.0, Simon
+      // 02.10.2026: "damit man direkt auf die challenge linken kann aus
+      // einem push"). Wie /admin/events/:id: Kennung als challengeId, der
+      // Zurueck-Weg ohne Verlauf ist die Liste (MainTabs, elternPfad).
+      { path: '/admin/challenges/:id', page: ChallengeLeitungPage, param: 'id', propName: 'challengeId' },
       { path: '/admin/challenges', page: AdminChallengesPage },
       { path: '/admin/users', page: AdminUsersPage },
       { path: '/admin/organizations', page: AdminOrganizationsPage },
@@ -236,6 +245,10 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { path: '/teamer/events', page: TeamerEventsPage },
       { path: '/teamer/material', page: TeamerMaterialPage },
       { path: '/teamer/badges', page: TeamerBadgesPage },
+      // Eigene Seite auch fuers Team (Festlegung 02.10.2026) -- anders als
+      // beim Termin, dessen Teamer-Detail in der Liste lebt
+      // (/teamer/events/:id unten bei den Umleitungen).
+      { path: '/teamer/challenges/:id', page: ChallengeLeitungPage, param: 'id', propName: 'challengeId' },
       { path: '/teamer/challenges', page: TeamerChallengesPage },
       { path: '/teamer/profile/badges', page: TeamerBadgesPage },
       { path: '/teamer/profile/material', page: TeamerMaterialPage },
@@ -279,6 +292,7 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
         path: '/konfi/events/:id', page: KonfiEventDetailPage },
       { path: '/konfi/events', page: KonfiEventsPage },
       { path: '/konfi/badges', page: KonfiBadgesPage },
+      { path: '/konfi/challenges/:id', page: KonfiChallengeDetailPage, param: 'id', propName: 'challengeId' },
       { path: '/konfi/challenges', page: KonfiChallengesPage },
       { path: '/konfi/chat', page: ChatOverviewPage },
       { path: '/konfi/chat/room/:roomId', page: ChatRoomView, param: 'roomId', propName: 'roomId' },

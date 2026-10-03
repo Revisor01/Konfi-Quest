@@ -31,17 +31,17 @@ const ROUTEN = {
     '/admin/activities', '/admin/events', '/admin/events/:id',
     '/admin/settings/categories', '/admin/settings/jahrgaenge', '/admin/settings/levels',
     '/admin/settings/invite', '/admin/settings/certificates', '/admin/settings/dashboard',
-    '/admin/settings', '/admin/badges', '/admin/challenges', '/admin/users',
+    '/admin/settings', '/admin/badges', '/admin/challenges', '/admin/challenges/:id', '/admin/users',
     '/admin/organizations', '/admin/material', '/admin/profile', '/admin/metrics',
   ],
   teamer: [
     '/teamer/dashboard', '/teamer/chat', '/teamer/chat/room/:roomId', '/teamer/events',
-    '/teamer/material', '/teamer/badges', '/teamer/challenges', '/teamer/profile',
+    '/teamer/material', '/teamer/badges', '/teamer/challenges', '/teamer/challenges/:id', '/teamer/profile',
     '/teamer/profile/badges', '/teamer/profile/material', '/teamer/profile/konfi-stats',
   ],
   konfi: [
     '/konfi/dashboard', '/konfi/events', '/konfi/events/:id', '/konfi/badges',
-    '/konfi/challenges', '/konfi/chat', '/konfi/chat/room/:roomId', '/konfi/profile',
+    '/konfi/challenges', '/konfi/challenges/:id', '/konfi/chat', '/konfi/chat/room/:roomId', '/konfi/profile',
   ],
 } as const;
 

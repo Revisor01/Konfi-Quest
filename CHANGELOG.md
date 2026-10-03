@@ -9,6 +9,22 @@ Versionsüberschrift.
 
 ## [Unreleased] - 2.4.0
 
+### Hinzugefügt
+- Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
+  dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
+  den Challenges.
+
+### Geändert
+- Eine Challenge öffnet sich als eigene Seite statt in einem Fenster über der
+  Liste — für Konfis, Team und Leitung; der Pfeil oben führt zurück in die
+  Liste.
+- Mitteilungen zu einer Challenge — neue Challenge, neuer Beitrag, Stempel,
+  ausgeblendeter Beitrag — führen beim Antippen direkt in diese Challenge, auf
+  dem Gerät wie im Postfach. Liegt sie in einer anderen Gemeinde, wechselt die
+  App vorher dorthin.
+- Eine Challenge auf der Startseite öffnet beim Antippen gleich diese
+  Challenge statt der Liste.
+
 ### Sonstiges
 - Das Projekt ist aufgeräumt: Alte Analysen, abgeschlossene Prüfberichte und
   erledigte Aufträge sind aus dem Repo genommen. Planung, Betrieb und offene

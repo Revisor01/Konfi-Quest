@@ -1,12 +1,7 @@
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  IonHeader,
-  IonToolbar,
-  IonTitle,
   IonContent,
-  IonPage,
-  IonButtons,
   IonButton,
   IonIcon,
   IonSpinner,
@@ -39,7 +34,6 @@ import {
   ICON_LOESCHEN,
   ICON_MIKROFON,
   ICON_PERSON,
-  ICON_SCHLIESSEN,
   ICON_SICHTBAR,
   ICON_SPERRE,
   ICON_TEILEN,
@@ -55,6 +49,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { EmptyState, SectionHeader } from '../../shared';
+import AppKopfzeile from '../../shared/AppKopfzeile';
 import ChallengeMedium from '../../shared/ChallengeMedium';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { medienVergessen } from '../../../services/mediaCache';
@@ -66,7 +61,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
 import MusikLink from '../../shared/MusikLink';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
-import { getChallengeStatus } from '../views/ChallengesManageView';
+import { getChallengeStatus } from './ChallengesManageView';
 import { anzahlBeitraege, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
 import SegmentZahl from '../../shared/SegmentZahl';
 import { trackHandlung } from '../../../services/analytics';
@@ -97,12 +92,16 @@ const MODERATION_MESSWERT: Record<'approve' | 'hide' | 'unhide' | 'anonymize', s
 };
 
 // VEREINTES Challenge-Detail für Leitung und Teamer:innen (11.08.): Verwalten
-// UND Mitmachen in EINEM Modal, statt eines Segments, das die ganze Seite
+// UND Mitmachen in EINER Ansicht, statt eines Segments, das die ganze Seite
 // umschaltet. Enthaelt die Moderation aus ChallengeModerationModal und den
 // Abschnitt "Dein Beitrag" aus der Konfi-Detailansicht.
 //
-// Die beiden Ursprungs-Modals bleiben unverändert bestehen:
-// ChallengeDetailModal wird weiterhin von Konfis genutzt.
+// Seit 2.4.0 eine eigene Seite statt eines Dialogs (Simon, 02.10.2026:
+// "challenge nicht in modal öffnen, sondern in unterseite, damit man direkt
+// auf die challenge linken kann aus einem push"). Die Challenge holt
+// shared/ChallengeLeitungPage ueber ihre Adresse /admin/challenges/:id bzw.
+// /teamer/challenges/:id und reicht sie hier herein; diese Ansicht laedt die
+// Beitraege und traegt Moderation, eigenen Beitrag und Export.
 
 const MEDIA_ICON: Record<string, string> = {
   text: ICON_TEXTDOKUMENT,
@@ -178,17 +177,16 @@ const formatDateTime = (value?: string) => {
   return datumUhrzeit(d);
 };
 
-export interface ChallengeLeitungModalProps {
-  // NULL-SICHER: Die Seite dahinter fuehrt die Challenge als State und rendert
-  // dieses Modal über useIonModal auch während der Dismiss-Animation weiter.
-  // Wuerde der State dort auf null gesetzt (oder ein kaputter Cache ein
-  // undefined liefern), darf das hier NICHT werfen — ein Render-Fehler landet
-  // sonst in der ErrorBoundary, die Auth + Cache leert ("Rauswurf zur Anmeldung").
+export interface ChallengeLeitungViewProps {
+  // NULL-SICHER: Ein kaputter Cache-Eintrag kann ein undefined liefern. Das
+  // darf hier NICHT werfen — ein Render-Fehler landet sonst in der
+  // ErrorBoundary, die Auth + Cache leert ("Rauswurf zur Anmeldung").
   challenge?: AdminChallenge | null;
-  onClose: () => void;
+  /** Zurueck zur Liste (MainTabs: mit Verlauf zurueck, ohne auf die Liste). */
+  onBack: () => void;
   /**
    * Öffnet das Bearbeiten-Formular für diese Challenge. In der Liste liegt
-   * Bearbeiten bewusst nur auf dem Wisch (Tippen = Moderation) — wer die
+   * Bearbeiten bewusst nur auf dem Wisch (Tippen = Challenge öffnen) — wer die
    * Challenge schon geöffnet hat, soll dafür nicht zurück und wischen müssen
    * (Nutzerwunsch 24.08.2026). Der Knopf erscheint IMMER: auch nach dem Start
    * bleiben Titel, Beschreibung, Ende, Stempel und Jahrgänge änderbar; die
@@ -199,11 +197,12 @@ export interface ChallengeLeitungModalProps {
   // damit die Liste dahinter (Pending-Zähler) aktuell bleibt.
   onChanged?: () => void;
   /**
-   * Element für die Card-Optik des Einreichen-Modals. Ohne dieses schiebt die
-   * Ansicht darunter nicht nach hinten, das Sheet legt sich hart darueber
+   * Die IonPage der Seite drumherum (shared/ChallengeLeitungPage) -- fuer
+   * die Card-Optik des Einreichen-Modals. Ohne dieses schiebt die Seite
+   * darunter nicht nach hinten, das Sheet legt sich hart darueber
    * (User-Hinweis 11.08.).
    */
-  presentingElement?: HTMLElement | null;
+  seitenRef?: React.RefObject<HTMLElement | null>;
 }
 
 // Drei Filter reichen — und sie sind DISJUNKT (jeder Beitrag steht in genau
@@ -214,12 +213,12 @@ export interface ChallengeLeitungModalProps {
 // nicht mehr.
 type StatusFilter = 'feed' | 'pending' | 'hidden' | 'meins';
 
-const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
+const ChallengeLeitungView: React.FC<ChallengeLeitungViewProps> = ({
   challenge,
-  onClose,
+  onBack,
   onEdit,
   onChanged,
-  presentingElement
+  seitenRef
 }) => {
   const { user, setError, setSuccess } = useApp();
   const [presentAlert] = useIonAlert();
@@ -357,8 +356,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
       return { ...s, onClick: () => setStatusFilter(ziel), active: aktiverFilter === ziel };
     });
     // challenge?.visibility gehoert in die Abhaengigkeiten: Die Sichtbarkeit
-    // ist im OFFENEN Modal aenderbar (Bearbeiten-Knopf; die ChallengesPage
-    // spiegelt die frische Challenge zurueck). Ohne sie blieb die
+    // ist in der OFFENEN Challenge aenderbar (Bearbeiten-Knopf; die Seite
+    // drumherum, shared/ChallengeLeitungPage, laedt die Challenge danach neu). Ohne sie blieb die
     // "Abgelehnt"-Kachel nach dem Umstellen auf "nur Leitung" stehen,
     // solange sich counts und Filter nicht aenderten (Befund 30.08.2026).
   }, [challenge?.moderated, challenge?.visibility, counts, statusFilter]);
@@ -366,7 +365,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
   // Abgeleiteter Status — dieselbe Quelle wie die Liste. Vorher wurde hier nur
   // aktiv/inaktiv unterschieden, wodurch Entwürfe und Geplante fälschlich
   // als "Beendet" beschriftet waren; seit dem Bearbeiten-Knopf (24.08.2026)
-  // ist das Modal für Entwürfe ein normaler Arbeitsweg.
+  // ist diese Ansicht für Entwürfe ein normaler Arbeitsweg.
   const status = challenge ? getChallengeStatus(challenge) : 'draft';
   // Laeuft die Challenge gerade? Nur dann darf man selbst einreichen.
   const isActive = status === 'active';
@@ -675,17 +674,24 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
     return null;
   }
 
+  // KEINE EIGENE IonPage: Kopfzeile und Inhalt stehen in der IonPage der
+  // Seite (shared/ChallengeLeitungPage), die je Route genau einmal montiert
+  // wird -- auch waehrend sie noch laedt. Ein Tausch der IonPage bliebe dem
+  // IonRouterOutlet verborgen, die Seite weiss (MainTabs.tsx, SeiteMitChunk).
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonTitle>Challenge</IonTitle>
-          <IonButtons slot="start">
-            <IonButton onClick={onClose} className="app-modal-close-btn" aria-label="Schließen">
-              <IonIcon icon={ICON_SCHLIESSEN} />
-            </IonButton>
-          </IonButtons>
-          <IonButtons slot="end">
+    <>
+      {/* Die gemeinsame Kopfzeile wie auf jeder Seite, mit Zurueck statt des
+          frueheren Schliessen-Kreuzes. Rechts stehen drei Knoepfe; fuer
+          Gemeinde-Umschalter und Glocke ist daneben kein Platz -- beides
+          steht auf der Liste davor (AppKopfzeile: "in einer Detailansicht,
+          in der rechts der Platz knapp ist"). */}
+      <AppKopfzeile
+        titel="Challenge"
+        onZurueck={onBack}
+        gemeindeUmschalter={false}
+        glocke={false}
+        rechts={(
+          <>
             {/* Stammdaten bearbeiten — oben in der Leiste, weil der Wisch in
                 der Liste schwer zu entdecken ist (Nutzerwunsch 24.08.2026). */}
             {onEdit && (
@@ -700,7 +706,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             {/* Selbst mitmachen — nur solange die Challenge laeuft */}
             {canSubmitMore && (
               <IonButton
-                onClick={() => presentSubmitModal({ presentingElement: presentingElement || undefined })}
+                onClick={() => presentSubmitModal({ presentingElement: seitenRef?.current || undefined })}
                 title="Beitrag einreichen"
                 aria-label="Beitrag einreichen"
               >
@@ -710,11 +716,11 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
             <IonButton onClick={handleExport} title="Beiträge exportieren" aria-label="Beiträge exportieren">
               <IonIcon icon={ICON_TEILEN} slot="icon-only" />
             </IonButton>
-          </IonButtons>
-        </IonToolbar>
-      </IonHeader>
+          </>
+        )}
+      />
 
-      <IonContent className="app-gradient-background">
+      <IonContent className="app-gradient-background" fullscreen>
         <IonRefresher
           slot="fixed"
           onIonRefresh={async (e) => { await loadSubmissions(); e.detail.complete(); }}
@@ -735,7 +741,7 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
         {/* Aufgabentext als CARD wie in der Konfi-Sicht (User-Entscheid
             11.08.): der rote Infokasten war fuer den Haupttext zu laut, die
             Karte mit Meta-Zeile liest sich ruhiger. Aufbau bewusst identisch
-            zu ChallengeDetailModal. */}
+            zur Konfi-Seite (konfi/pages/KonfiChallengeDetailPage). */}
         {challenge.description && (
           <IonList inset={true} className="app-segment-wrapper">
             <IonListHeader>
@@ -1028,8 +1034,8 @@ const ChallengeLeitungModal: React.FC<ChallengeLeitungModalProps> = ({
 
         <div className="ion-padding-bottom" />
       </IonContent>
-    </IonPage>
+    </>
   );
 };
 
-export default ChallengeLeitungModal;
+export default ChallengeLeitungView;
