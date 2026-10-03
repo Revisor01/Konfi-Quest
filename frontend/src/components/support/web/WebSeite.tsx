@@ -8,9 +8,11 @@
 // Leiste ist der Eintrag derselbe Name wie die Ueberschrift.
 
 import React from 'react';
-import { IonContent, IonPage } from '@ionic/react';
+import { IonContent, IonIcon, IonPage } from '@ionic/react';
 import AppKopfzeile from '../../shared/AppKopfzeile';
 import WartungsHinweis from '../../shared/WartungsHinweis';
+import { ICON_ZURUECK } from '../../shared/icons';
+import WebLink from './WebLink';
 
 export interface WebSeiteProps {
   /** Name des Bereichs in der Kopfzeile ("Support", "Verwaltung"). */
@@ -24,14 +26,24 @@ export interface WebSeiteProps {
   pageRef?: React.Ref<HTMLElement>;
   /** Wartungshinweis des Betriebs ueber dem Seitenkopf. */
   wartung?: boolean;
+  /** Der Weg zurueck auf Detailseiten: ein Link zur Liste ("Alle Anfragen"). */
+  zurueck?: { href: string; text: string };
 }
 
-const WebSeite: React.FC<WebSeiteProps> = ({ bereich, titel, untertitel, aktionen, children, pageRef, wartung = false }) => (
+const WebSeite: React.FC<WebSeiteProps> = ({ bereich, titel, untertitel, aktionen, children, pageRef, wartung = false, zurueck }) => (
   <IonPage ref={pageRef}>
     <AppKopfzeile titel={bereich} gemeindeUmschalter={false} />
     <IonContent className="web-inhalt" fullscreen>
       <div className="web-seite">
         {wartung && <WartungsHinweis style={{ margin: 0 }} />}
+        {zurueck && (
+          <nav className="web-zurueck" aria-label="Zurück">
+            <WebLink href={zurueck.href}>
+              <IonIcon icon={ICON_ZURUECK} aria-hidden="true" />
+              {zurueck.text}
+            </WebLink>
+          </nav>
+        )}
         <header className="web-kopf">
           <div className="web-kopf__text">
             <h1 className="web-titel">{titel}</h1>

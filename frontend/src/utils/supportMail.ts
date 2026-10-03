@@ -56,6 +56,21 @@ const BEKANNTE_PLATZHALTER = new Set<string>(PLATZHALTER.map((p) => p.schluessel
 /** "{{name}}" -- so steht ein Platzhalter im Baustein. */
 export const platzhalterMarke = (schluessel: string): string => `{{${schluessel}}}`;
 
+/**
+ * Beispielwerte fuer die Vorschau eines Bausteins in der Web-Fassung --
+ * erfunden und nur zur Ansicht; gesendet wird immer mit den Werten der
+ * Anfrage bzw. Gemeinde. Der Absender fehlt hier: Er kommt aus den
+ * Einstellungen daneben.
+ */
+export const PLATZHALTER_BEISPIEL: Platzhalter = {
+  name: 'Anna Beispiel',
+  gemeinde: 'Kirchengemeinde Musterdorf',
+  lizenz: 'Standard',
+  testphase_bis: '2026-11-02',
+  benutzername: 'anna.beispiel',
+  absender: null,
+};
+
 /** Ein Datum aus dem Server (ISO) als 14.09.2026; alles andere bleibt, wie es ist. */
 function datumWennIso(wert: string): string {
   return /^\d{4}-\d{2}-\d{2}/.test(wert) ? datumKurz(wert) || wert : wert;

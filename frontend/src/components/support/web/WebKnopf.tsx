@@ -17,10 +17,12 @@ export interface WebKnopfProps {
   'aria-label'?: string;
   /** Liegt in einer Zeile ueber deren Link. */
   vorn?: boolean;
+  /** Schickt das Formular ab, in dem der Knopf steht (Enter im Feld ebenso). */
+  absenden?: boolean;
 }
 
 const WebKnopf: React.FC<WebKnopfProps> = ({
-  children, art = 'sekundaer', klein = false, symbol = false, href, onClick, disabled, title, 'aria-label': ariaLabel, vorn = false,
+  children, art = 'sekundaer', klein = false, symbol = false, href, onClick, disabled, title, 'aria-label': ariaLabel, vorn = false, absenden = false,
 }) => {
   const klassen = [
     'web-knopf',
@@ -35,7 +37,7 @@ const WebKnopf: React.FC<WebKnopfProps> = ({
   }
   return (
     <button
-      type="button"
+      type={absenden ? 'submit' : 'button'}
       className={`${klassen}${vorn ? ' web-vorn' : ''}`}
       onClick={onClick}
       disabled={disabled}
