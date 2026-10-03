@@ -260,9 +260,9 @@ Stand: 02.10.2026, gegen den Code geprüft.
   Mehrfach-Konten, Beginn der Web-Version und kleinere Punkte:
   [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version: was nach der Support-Ansicht noch fehlt** — Leiste links,
-  Support-Ansicht, Anfrageformular und Struktur sind gebaut (03.10.2026).
-  Offen: auf Anfragen antworten und die Antworten zuordnen (als Nächstes,
-  Postfach bei Simon), die Gruppe „Verwaltung" in der Leiste, der Rückweg
+  Support-Ansicht, Anfrageformular, Struktur und Support-Mail (Postfächer
+  lesen und zuordnen, Antworten, Bausteine) sind gebaut (03.10.2026).
+  Offen: die Gruppe „Verwaltung" in der Leiste, der Rückweg
   „ohne Gemeinde" nach einem Gemeindewechsel, eine Route für eine einzelne
   Anfrage und ein Löschknopf, weitere
   Kennzahlen, „Einwilligung liegt vor" am Konfi-Profil:

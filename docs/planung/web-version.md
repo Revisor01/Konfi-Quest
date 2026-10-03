@@ -309,23 +309,9 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 - **Anfragen.** Eine Route für eine einzelne Anfrage (die Seite einer
   Anfrage holt heute die ganze Liste) und ein Knopf, eine Anfrage auf Wunsch
   sofort zu löschen.
-- **Auf Anfragen antworten, Antworten zuordnen** (Simon, 03.10.2026: „Ich
-  muss auch auf eine Anfrage reagieren können etc. Deren Antwort richtig
-  sortiert werden."). Vorschlag, als nächstes Paket:
-  - In der Anfrage ein Feld „Antworten"; der Server schickt die Mail an die
-    anfragende Adresse, mit der Kennung im Betreff („[Anfrage 12]") und
-    eigener Message-ID, und legt sie im Verlauf der Anfrage ab
-    (neue Tabelle, Migration).
-  - Antworten der Gemeinde holt der Server per IMAP aus dem Postfach, an das
-    die Antwort-Adresse geht, und ordnet sie über In-Reply-To/References oder
-    die Kennung im Betreff der Anfrage zu; was sich nicht zuordnen lässt,
-    landet in einem Eingang „Nicht zugeordnet".
-  - Der Verlauf steht in der Anfrage nach Zeit sortiert; neue Antworten
-    zählen am Bereich Anfragen als rote Zahl.
-  - Offen bei Simon: welches Postfach (etwa moin@konfi-quest.de) und ob der
-    Server es lesen darf; die Zugangsdaten setzt der lokale Agent als
-    Stack-Variablen. Die Datenschutzerklärung 9c nennt dann auch den
-    Schriftwechsel; er geht mit der Anfrage.
+- **Auf Anfragen antworten, Antworten zuordnen** — gebaut (03.10.2026),
+  eigener Plan mit Entscheidungen und dem, was offen bleibt:
+  [support-mail.md](support-mail.md).
 - **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
   Jahrgänge je Gemeinde, nur für Super-Admins; jede Zahl steht ungefiltert da
   (Entscheidung 17). Offen: weitere Kennzahlen (Speicher, Termine).
