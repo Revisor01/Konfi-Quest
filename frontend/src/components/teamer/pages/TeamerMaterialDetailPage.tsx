@@ -43,6 +43,8 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { materialInhalt, trackHandlung } from '../../../services/analytics';
 import { linkOeffnen } from '../../../services/systemDialoge';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebMaterialFenster from '../web/material/WebMaterialFenster';
 
 interface MaterialFile {
   id: number;
@@ -79,6 +81,9 @@ interface TeamerMaterialDetailProps {
 
 const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materialId, onClose }) => {
   const { setError } = useApp();
+  // Im Browser ab 992 px dieselben Angaben in Karten (web/material/WebMaterialFenster.tsx);
+  // Laden, Dateien und Links dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
   const pageRef = useRef<HTMLElement>(null);
 
   // Anonyme Messung „Material angesehen" (Simon, 27.09.2026): EINMAL je
@@ -178,6 +183,20 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
     // Anonyme Messung: ein Link ist abgerufen — ohne seine Adresse.
     trackHandlung('material-abgerufen', { inhalt: 'link' });
   };
+
+  if (breit) {
+    return (
+      <WebMaterialFenster
+        material={material}
+        laedt={loading}
+        onSchliessen={onClose}
+        ladendeDatei={ladendeDatei}
+        onDatei={openFile}
+        onLink={openLink}
+        pageRef={pageRef}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

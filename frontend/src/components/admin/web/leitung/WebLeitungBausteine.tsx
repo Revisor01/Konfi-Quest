@@ -107,8 +107,16 @@ export const WebZeilenKnopf: React.FC<{ children: React.ReactNode; onClick: () =
  * verlangt das fuer jeden target="_blank". Der href bleibt fuer Mittelklick,
  * Rechtsklick und Vorleseprogramme.
  */
-export const WebExternLink: React.FC<{ href: string; children: React.ReactNode; className?: string; 'aria-label'?: string; title?: string }> = ({
-  href, children, className, 'aria-label': ariaLabel, title,
+export const WebExternLink: React.FC<{
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  'aria-label'?: string;
+  title?: string;
+  /** Statt linkOeffnen: die Seite oeffnet den Link selbst (Messung, Pruefung). */
+  onOeffnen?: (href: string) => void;
+}> = ({
+  href, children, className, 'aria-label': ariaLabel, title, onOeffnen,
 }) => (
   <a
     href={href}
@@ -121,7 +129,8 @@ export const WebExternLink: React.FC<{ href: string; children: React.ReactNode; 
       // Strg- und Umschalt-Klick, Mittelklick: der Browser macht es selbst.
       if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       e.preventDefault();
-      linkOeffnen(href);
+      if (onOeffnen) onOeffnen(href);
+      else linkOeffnen(href);
     }}
   >
     {children}

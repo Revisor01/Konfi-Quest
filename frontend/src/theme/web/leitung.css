@@ -834,3 +834,62 @@
 .web-tabelle tbody tr.web-zeile--gewaehlt td {
   background: var(--web-hover);
 }
+
+/* --- Material: Beschreibung, Links und Dateien --- */
+.web-zwei-zeilen {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.web-beschreibung {
+  margin: 0;
+  color: var(--web-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-material-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-material-eintrag {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.web-material-eintrag:hover {
+  background: var(--web-hover);
+}
+
+.web-material-eintrag:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-material-eintrag__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
