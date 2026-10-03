@@ -924,7 +924,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows } = await db.query(`
         SELECT DISTINCT ON (m.id)
                m.id, m.name, m.slug, m.display_name,
-               m.role_name, m.role_display_name, m.is_active
+               m.role_name, m.role_display_name, m.is_active, m.is_primary
         FROM (
           SELECT o.id, o.name, o.slug, o.display_name,
                  r.name as role_name, r.display_name as role_display_name,
@@ -946,6 +946,10 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         ) m
         ORDER BY m.id, m.is_primary DESC
       `, [userId]);
+      // is_primary (zusaetzlich seit 03.10.2026) kennzeichnet die Stamm-Gemeinde.
+      // Login und /me liefern deren Kennung nicht mit; ohne das Kennzeichen
+      // fand der Gemeinde-Umschalter nach dem Anmelden die aktive Gemeinde
+      // nicht und zeigte keinen Namen, bis einmal gewechselt war.
       // Sekundaer nach Anzeigename sortieren (DISTINCT ON erzwingt Sortierung nach m.id)
       rows.sort((a, b) => (a.display_name || '').localeCompare(b.display_name || '', 'de'));
       res.json(rows);

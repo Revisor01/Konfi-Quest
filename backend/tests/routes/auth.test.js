@@ -1038,6 +1038,36 @@ describe('Auth Routes', () => {
       expect(ids).toEqual([1, 2]);
     });
 
+    // Die App kennt nach dem Anmelden die Kennung ihrer Stamm-Gemeinde nicht:
+    // Login und /me liefern sie nicht mit, erst ein Wechsel setzt sie. Ohne
+    // Kennzeichen fand der Gemeinde-Umschalter die aktive Gemeinde nicht und
+    // zeigte keinen Namen (E2E Seitenleiste, 03.10.2026). is_primary ist ein
+    // zusaetzliches Feld -- alte Apps lesen es nicht.
+    it('GET /my-organizations kennzeichnet die Stamm-Gemeinde (is_primary)', async () => {
+      await makeMultiOrgAdmin();
+      const token = generateToken('admin1');
+      const res = await request(app)
+        .get('/api/auth/my-organizations')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      const kennzeichen = Object.fromEntries(res.body.map(o => [o.id, o.is_primary]));
+      expect(kennzeichen).toEqual({ 1: true, 2: false });
+    });
+
+    it('GET /my-organizations kennzeichnet die Stamm-Gemeinde auch ohne eigenes Mapping', async () => {
+      const { invalidateUserCache } = require('../../middleware/rbac');
+      await db.query(`INSERT INTO user_organizations (user_id, organization_id, role_id)
+        VALUES (8, 1, 3) ON CONFLICT DO NOTHING`);
+      invalidateUserCache(8);
+      const token = generateToken('admin2');
+      const res = await request(app)
+        .get('/api/auth/my-organizations')
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      const kennzeichen = Object.fromEntries(res.body.map(o => [o.id, o.is_primary]));
+      expect(kennzeichen).toEqual({ 1: false, 2: true });
+    });
+
     it('GET /my-organizations dedupliziert Primaer-Org mit eigenem Mapping', async () => {
       // admin2 Primaer Org 2 + zusaetzliches Mapping in Org 2 -> nur EIN Eintrag
       const { invalidateUserCache } = require('../../middleware/rbac');

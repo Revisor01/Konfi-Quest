@@ -1063,7 +1063,7 @@ paths:
       tags: ["Anmeldung & Konto"]
       summary: Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle
       responses:
-        "200": { description: "Array (id, name, slug, display_name, role_name, is_active); nur aktive Orgs, dedupliziert" }
+        "200": { description: "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber." }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]

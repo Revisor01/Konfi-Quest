@@ -112,8 +112,8 @@ test.describe('Web-Version: Gemeinde-Umschalter bei mehreren Gemeinden', () => {
   const zweiGemeinden = async (page: Page) => {
     await page.route('**/api/auth/my-organizations', (route) => route.fulfill({
       json: [
-        { id: 1, name: 'Test-Gemeinde', display_name: 'Kirchengemeinde Musterdorf', slug: 'musterdorf', role_name: 'admin', is_active: true },
-        { id: 2, name: 'Zweite Gemeinde', display_name: 'Kirchspiel Beispielstadt', slug: 'beispielstadt', role_name: 'teamer', is_active: true },
+        { id: 1, name: 'Test-Gemeinde', display_name: 'Kirchengemeinde Musterdorf', slug: 'musterdorf', role_name: 'admin', is_active: true, is_primary: true },
+        { id: 2, name: 'Zweite Gemeinde', display_name: 'Kirchspiel Beispielstadt', slug: 'beispielstadt', role_name: 'teamer', is_active: true, is_primary: false },
       ],
     }));
   };

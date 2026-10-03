@@ -321,6 +321,8 @@ export interface UserOrganization {
   role_name: string;
   role_display_name?: string;
   is_active?: boolean;
+  /** Die Stamm-Gemeinde des Kontos (GET /auth/my-organizations, seit 03.10.2026). */
+  is_primary?: boolean;
 }
 
 /**

@@ -13,7 +13,7 @@ const h = vi.hoisted(() => ({
   switchOrg: vi.fn(),
   apiGet: vi.fn(),
   app: {
-    organizations: [] as Array<{ id: number; name: string; role_name: string; display_name?: string }>,
+    organizations: [] as Array<{ id: number; name: string; role_name: string; display_name?: string; is_primary?: boolean }>,
     activeOrgId: null as number | null,
     user: { organization_id: 1 } as { organization_id?: number } | null,
   },
@@ -66,6 +66,31 @@ describe('useGemeindeWechsel', () => {
     const gesetzt = renderHook(() => useGemeindeWechsel());
     expect(gesetzt.result.current.aktiveId).toBe(3);
     expect(gesetzt.result.current.aktive?.name).toBe('Kirchengemeinde Musterdorf');
+  });
+
+  // Direkt nach dem Anmelden kennt die App die Kennung der Stamm-Gemeinde
+  // nicht (Login und /me liefern sie nicht mit, erst ein Wechsel setzt sie).
+  // Ohne Rueckgriff stand der Umschalter ohne Namen da -- in der Kopfzeile
+  // wie in der Leiste (E2E Seitenleiste, 03.10.2026).
+  it('ohne Kennung am Konto: die Stamm-Gemeinde aus der Liste (is_primary)', () => {
+    h.app.user = {};
+    h.app.organizations = h.app.organizations.map((o) => ({ ...o, is_primary: o.id === 2 }));
+    const ohne = renderHook(() => useGemeindeWechsel());
+    expect(ohne.result.current.aktiveId).toBe(2);
+    expect(ohne.result.current.aktive?.name).toBe('Kirchengemeinde Heide');
+
+    // Eine gewaehlte Gemeinde geht vor.
+    h.app.activeOrgId = 3;
+    const gesetzt = renderHook(() => useGemeindeWechsel());
+    expect(gesetzt.result.current.aktiveId).toBe(3);
+    expect(gesetzt.result.current.aktive?.name).toBe('Kirchengemeinde Musterdorf');
+  });
+
+  it('ohne Kennung und ohne Kennzeichen: keine aktive Gemeinde', () => {
+    h.app.user = {};
+    const r = renderHook(() => useGemeindeWechsel());
+    expect(r.result.current.aktiveId).toBeNull();
+    expect(r.result.current.aktive).toBeUndefined();
   });
 
   it('mehrere: nur ab zwei Gemeinden', () => {

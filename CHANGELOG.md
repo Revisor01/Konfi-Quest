@@ -94,6 +94,8 @@ Versionsüberschrift.
   Leitung zu einem Event und beim Zugriff auf einen neuen Jahrgang.
 
 ### Behoben
+- Direkt nach der Anmeldung zeigte der Gemeinde-Umschalter den Namen der
+  eigenen Gemeinde nicht, bis man einmal gewechselt hatte.
 - Nach einem Update zeigt die Web-Version sofort die neuen Bilder der
   Startseite, des Rückblicks und die neue Fassung der API-Referenz; bisher
   konnte der Browser bis zu ein Jahr lang die alten zeigen.

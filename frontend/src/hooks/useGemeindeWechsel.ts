@@ -50,7 +50,14 @@ export function useGemeindeWechsel(): GemeindeWechsel {
 
   const gemeinden = organizations ?? KEINE_GEMEINDEN;
   // Aktuell aktive Gemeinde: explizit gesetzte, sonst die Stamm-Gemeinde.
-  const aktiveId = activeOrgId ?? user?.organization_id ?? null;
+  // Deren Kennung kennt das Konto erst nach einem Wechsel -- Login und /me
+  // liefern sie nicht mit. Bis dahin sagt die Liste selbst, welche die
+  // Stamm-Gemeinde ist (is_primary); sonst stand der Umschalter nach dem
+  // Anmelden ohne Namen da (E2E Seitenleiste, 03.10.2026).
+  const aktiveId = activeOrgId
+    ?? user?.organization_id
+    ?? gemeinden.find((o) => o.is_primary === true)?.id
+    ?? null;
   const aktive = gemeinden.find((o) => o.id === aktiveId);
 
   const wechseln = useCallback(async (orgId: number): Promise<void> => {
