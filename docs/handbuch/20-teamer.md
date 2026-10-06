@@ -31,6 +31,28 @@ sagt „nichts los" statt „fällt aus". Events, für die Team gesucht wurde un
 die dann abgesagt wurden, verschwinden dagegen — dort hattest du nichts
 zugesagt.
 
+### Im Browser die Startseite als Karten lesen
+
+Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
+992 Pixeln, siehe
+[Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
+— begrüßt dich die Startseite mit deinem Vornamen, darunter steht deine
+Funktionsbeschreibung („Teamer:in", wenn du keine eigene hast). Oben stehen bis
+zu vier Kennzahlen: **Anstehende Events** mit dem nächsten, **Laufende
+Challenges** und **Badges erreicht** mit der Zahl der neuen — sie führen in den
+jeweiligen Bereich — und **Zertifikate gültig** mit dem Hinweis auf
+abgelaufene. Ist dein Jahresrückblick freigegeben, steht über den Karten ein
+farbiges Feld mit **Rückblick ansehen** und **Hinweis ausblenden**.
+
+Darunter folgen die Karten, die die Gemeindeleitung einschaltet, in ihrer
+Reihenfolge: **Deine Zertifikate**, **Laufende Challenges**, **Dein
+Konfispruch**, **Deine Events**, **Tageslosung** und **Deine Badges**. Sie
+sind dieselben Karten wie bei den Konfis, siehe
+[Im Browser die Startseite als Karten lesen](10-konfis.md#im-browser-die-startseite-als-karten-lesen);
+die Events öffnen sich in deiner Event-Liste. Anders als bei den Konfis steht
+die Karte **Laufende Challenges** auch dann da, wenn gerade keine läuft — als
+Weg zu den Challenges.
+
 ## Mit Team und Konfis schreiben
 
 ![Die Chat-Übersicht der Teamer:innen.](/docs/bilder/iphone/teamer-chat.png)
@@ -125,6 +147,32 @@ Nachweis. Der
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
 derselbe wie bei den Konfis.
 
+### Im Browser Events als Karten durchsuchen und zusagen
+
+Im Browser heißt die Seite **Events**; oben stehen die Reiter **Events** und
+**Aktivitäten**, rechts **Legende**, **Aktualisieren** und **QR-Code
+scannen**, bei den Aktivitäten **Aktivität melden**. Die Events stehen als
+Karten im Raster, jede ein Link auf das Event (Strg-Klick, am Mac ⌘-Klick:
+neuer Tab). Über der Liste wählst du **Alle**, **Meine** oder **Team** — zuerst
+steht **Meine** offen, die Zahl am Knopf zählt die Events darunter — und
+suchst nach Name oder Ort. Eine Karte nennt den Status als Marke, etwa
+**Dabei**, **Offen**, **Warteliste** oder **Abgesagt von dir**; ein reines
+Konfi-Event trägt **Nur Info**. Dazu stehen Datum, Uhrzeit und Ort, die
+Jahrgänge, die Plätze von Konfis und Team und, wenn es welche gibt, das
+Material auf der Karte.
+
+Das Event hat zwei Spalten. Links stehen die Zahlen — **Konfis**, **Team** und
+**Punkte**, bei einem Event nur fürs Team **Team** und **Warteliste** —, die
+Angaben, die Beschreibung und das Material; ein Klick auf ein Material öffnet
+es. Rechts steht **Bist du dabei?** mit **Dabei** und **Nicht dabei**, danach
+nur noch der Weg zurück: **Nicht mehr dabei** oder **Doch dabei**. Wie Zusage,
+Absage und Warteliste ablaufen, ist wie in der App, siehe
+[Zu Events zusagen und absagen](#zu-events-zusagen-und-absagen). Darunter
+stehen **Konfis** und **Team** als Tabellen — nur zum Nachsehen, mit Jahrgang,
+Stand der Teilnahme, dem Grund einer Abmeldung und Notizen. Oben rechts öffnen
+**Chat** (wenn es einen Event-Chat gibt) und **QR-Code** (zum Einchecken) ihre
+Fenster; **Alle Events** führt zurück in die Liste.
+
 ## Material öffnen
 
 Der Reiter **Material** zeigt die Dokumente und Links, die für dich freigegeben
@@ -141,6 +189,24 @@ einmal offen hattest, zeigt sich dann mit dem zuletzt geladenen Stand. Was die
 Leitung inzwischen gelöscht hat, verschwindet beim nächsten Öffnen mit Netz
 auch vom Gerät. Mehr dazu unter
 [Geladene Bilder und Dateien auf dem Gerät behalten](03-bedienung.md#geladene-bilder-und-dateien-auf-dem-geraet-behalten).
+
+### Im Browser Material in der Tabelle öffnen
+
+Im Browser heißt die Seite **Material fürs Team**. Oben stehen drei Kacheln —
+**Material**, **Dateien** und **Links** —, darunter die Suche in Titel und
+Beschreibung und, wenn es Jahrgänge gibt, die Auswahl **Jahrgang**; sind
+Suche oder Jahrgang gesetzt, nennt eine Zahl die Treffer. Material für alle
+Teamer:innen steht oben in der Tabelle **Für alle**, das übrige darunter in
+**Materialien**. Jede Zeile zeigt den Titel mit der Beschreibung, die
+Jahrgänge und was am Material hängt: Dateien, Links, Events.
+
+Ein Klick auf den Titel öffnet das Material anstelle der Liste, **Alle
+Materialien** führt zurück. Die Seite hat zwei Spalten: links die
+**Beschreibung** und die **Dateien**, rechts die **Details** — ob es fürs ganze
+Team gilt, an welchen Events und Jahrgängen es hängt, wann und von wem es
+angelegt wurde — und die **Links**. Eine Datei öffnet sich wie in der App; an
+ihrer Zeile steht beim Laden die Prozentzahl. Ein Link geht in einem neuen Tab
+auf.
 
 ## Dein Profil öffnen
 
@@ -177,3 +243,34 @@ auch vom Gerät. Mehr dazu unter
 
 Wie du dich in der App bewegst, steht im Kapitel
 [Die App bedienen](03-bedienung.md).
+
+### Im Browser das Profil in zwei Spalten nutzen
+
+Im Browser öffnest du das Profil über **Profil** unten in der Leiste. Die Seite
+heißt **Mein Profil** und hat zwei Spalten. Links stehen deine Angaben — Name
+mit Funktionsbeschreibung, Benutzername, E-Mail-Adresse, Gemeinde und „Dabei
+seit" —, die **Konto-Einstellungen** — Funktionsbeschreibung, E-Mail-Adresse,
+Passwort, Bibelübersetzung, App-Tour, Benachrichtigungen und Medien-Cache,
+jeweils mit einem Knopf, der dasselbe Fenster öffnet wie in der App — und das
+**Konto** mit **Abmelden** und **Konto löschen**.
+
+Rechts stehen, falls du in eine weitere Gemeinde eingeladen bist, die Einladung
+mit **Annehmen** und **Ablehnen**, die Karte **Inhalt** mit den Wegen zu
+**Badges** und, wenn du früher Konfi warst, zur **Konfi-Historie**, die Karte
+**Deine Konfi-Zeit** mit deinen Punkten und der Zahl deiner Badges und **Meine
+Rückblicke**. Die Badges haben dieselbe Seite wie bei den Konfis, siehe
+[Im Browser Badges filtern und ansehen](10-konfis.md#im-browser-badges-filtern-und-ansehen);
+sie heißt hier **Teamer-Badges**, und **Profil** oben links führt zurück.
+
+### Im Browser die Konfi-Historie ansehen
+
+Die Seite **Konfi-Historie** öffnest du über **Konfi-Historie öffnen** im
+Profil. Oben links führt **Profil** zurück, oben rechts öffnet
+**Punkte-Übersicht** dieselbe Aufstellung wie in der App; unter dem Titel steht
+dein damaliger Jahrgang. Vier Kacheln nennen **Punkte gesamt**,
+**Gottesdienst**, **Gemeinde** und **Badges** aus der Konfi-Zeit. Links steht der
+**Punkte-Verlauf** als Tabelle — beide Punktearten zählen hier immer —, darunter,
+wenn es sie gibt, die **Events der Konfi-Zeit** mit Datum, Stand und Punkten.
+Rechts stehen, wenn es ihn gibt, der **Konfi-Rückblick** mit **Rückblick
+ansehen** und die **Konfi-Badges** als Raster, das neueste zuerst; ein Klick auf
+ein Badge öffnet seine Einzelheiten in einem Fenster.

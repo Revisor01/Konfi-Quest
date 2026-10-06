@@ -65,6 +65,42 @@ Der Inhalt steht daneben, auf breiten Bildschirmen mittig.
 - **Tastatur:** Mit der Tab-Taste gehst du von Eintrag zu Eintrag, mit der
   Eingabetaste öffnest du ihn.
 
+Jeder Bereich hat im Browser eine eigene, breitere Ansicht: Listen stehen als
+Tabellen oder Karten da, mit Suche und Filtern darüber, Detailseiten in zwei
+Spalten. Was du darfst, was die Zahlen zählen und welche Fenster aufgehen, ist
+dasselbe wie in der App — nur die Darstellung nutzt die Breite. Was sich öffnen
+lässt — eine Person, ein Event, eine Challenge, eine Kachel —, ist ein
+gewöhnlicher Link: Mit Strg-Klick (am Mac ⌘-Klick) oder der mittleren
+Maustaste geht es in einem neuen Tab auf. Wie die Ansichten aufgebaut sind,
+steht bei den Bereichen:
+
+- **Konfis:** [Startseite](10-konfis.md#im-browser-die-startseite-als-karten-lesen),
+  [Events](10-konfis.md#im-browser-events-als-karten-durchsuchen),
+  [Badges](10-konfis.md#im-browser-badges-filtern-und-ansehen) und
+  [Profil](10-konfis.md#im-browser-das-profil-in-zwei-spalten-nutzen)
+- **Teamer:innen:** [Startseite](20-teamer.md#im-browser-die-startseite-als-karten-lesen),
+  [Events](20-teamer.md#im-browser-events-als-karten-durchsuchen-und-zusagen),
+  [Material](20-teamer.md#im-browser-material-in-der-tabelle-oeffnen),
+  [Profil](20-teamer.md#im-browser-das-profil-in-zwei-spalten-nutzen) und
+  [Konfi-Historie](20-teamer.md#im-browser-die-konfi-historie-ansehen)
+- **Leitung:** [Konfis und Team](30-leitung.md#im-browser-konfis-und-team-als-tabelle-verwalten),
+  [Detailseite einer Person](30-leitung.md#im-browser-die-detailseite-einer-person-in-zwei-spalten-nutzen),
+  [Mehr](30-leitung.md#im-browser-die-einstellungen-als-kacheln-finden),
+  [Verwaltungsseiten](30-leitung.md#im-browser-verwaltungsseiten-als-tabellen-nutzen) und
+  [Badges](30-leitung.md#im-browser-badges-in-der-tabelle-verwalten)
+- **Events** für alle Rollen:
+  [Tabellen, Karten und zwei Spalten](70-termine.md#im-browser-events-in-tabellen-und-karten-nutzen)
+- **Challenges:** [Karten und Filter](80-challenges.md#im-browser-mit-karten-und-filtern-arbeiten)
+- **Chat:** [Liste und Chat nebeneinander](90-chat.md#im-browser-liste-und-chat-nebeneinander-nutzen)
+
+Die Leiste markiert den Bereich, in dem du bist — auch auf Seiten ohne eigenen
+Eintrag. Bei der Leitung gehören die Seiten, die du über **Mehr** erreichst, zu
+**Mehr**: Benutzer:innen, Badges, Material, Jahresrückblick, Kategorien, Level,
+Jahrgänge, Zertifikate, Einladungen und Dashboard. Die Aktivitäten gehören zu
+**Mitmachen**, wo sie ein Reiter sind. Ein Event, eine Person oder eine
+Challenge markiert ihren Bereich — Mitmachen, Konfis, Challenges —, bei den
+Teamer:innen stehen Badges und Konfi-Historie unter **Profil**.
+
 Wird das Fenster schmaler, kehrt die Reiterleiste unten zurück. In den Apps
 auf Handy und Tablet bleibt es immer bei der Reiterleiste.
 

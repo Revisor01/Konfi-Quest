@@ -1306,6 +1306,124 @@ der Hinweis direkt bei den Eckdaten und ist klickbar: Bei einem einzelnen
 Material öffnet sich sofort dessen Ansicht, bei mehreren springt die Seite zur
 Materialliste weiter unten. Konfis sehen Material grundsätzlich nicht.
 
+## Im Browser Events in Tabellen und Karten nutzen
+
+Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von 992
+Pixeln, siehe
+[Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
+— sieht Mitmachen anders aus als in der App: Die Leitung arbeitet mit Tabellen,
+Konfis und Team mit Karten, und jedes Event hat zwei Spalten. Alles, was
+in diesem Kapitel steht, gilt unverändert; hier steht nur, wo du es im Browser
+findest. In der App und in einem schmalen Fenster bleibt es bei den Reitern und
+Listen.
+
+### Events der Leitung in der Tabelle durchsuchen
+
+Mitmachen hat bei der Leitung drei Reiter: **Events**, **Aktivitäten** und
+**Anträge**. Sie sind Links, und der Reiter steht in der Adresse. Die orange
+Zahl am Reiter **Events** zählt die Events, die auf Verbuchung warten, die am
+Reiter **Anträge** die Anträge, die auf eine Entscheidung warten — dieselben
+Zahlen wie in der App. Oben rechts stehen **Legende**, **Aktualisieren** und
+**Neues Event**.
+
+Die Tabelle **Events** zeigt je Zeile den Namen — ein Link auf das Event —,
+darunter die Jahrgänge und, bei einem abgesagten Event, den Grund; dann Datum
+und Uhrzeit, Ort und Kategorien, die Teilnahme mit Plätzen, Team und
+Warteliste, die Punkte und den Status samt Merkmalen wie Pflicht, Konfirmation,
+Nur Team, Team gesucht und Serie. Über der Tabelle wählst du den Zeitraum —
+**Aktuell**, **Verbuchen**, **Vergangen** oder **Abgesagt**, mit der Zahl der
+Events am Knopf —, grenzt mit **Jahrgang**, **Kategorie** und **Art** ein und
+suchst nach Name oder Ort; Umlaute darfst du umschreiben („buesum" findet
+„Büsum"). **Filter zurücksetzen** nimmt alles zurück. Vergangene Events, bei
+denen nichts mehr zu verbuchen ist, stehen blass da.
+
+Am Ende der Zeile ersetzen Knöpfe das Wischen der App: **Event kopieren**,
+**Event absagen** — an einem abgesagten Event **Absagegrund bearbeiten** und
+**Absage zurücknehmen** — und **Event löschen**. Sie öffnen dieselben Fenster
+und stellen dieselben Rückfragen wie dort, siehe
+[Ein Event kopieren](#ein-event-kopieren) und
+[Ein Event absagen oder löschen](#ein-event-absagen-oder-loeschen).
+
+### Aktivitäten und Anträge in Tabellen bearbeiten
+
+Der Reiter **Aktivitäten** ist der Katalog dessen, was gemeldet werden kann:
+eine Tabelle mit Aktivität und Beschreibung, Kategorien, Art — Gottesdienst
+oder Gemeinde — und Punkten. **Konfis** und **Team** wechseln die Liste, die
+Aktivitäten des Teams tragen keine Punkte; **Alle**, **Gemeinde** und
+**Gottesdienst** filtern nach der Art, die Suche liest Name und Beschreibung.
+**Neue Aktivität** legt eine an, Bearbeiten und Löschen stehen in der Zeile.
+Derselbe Katalog steht unter **Mehr**; die Leiste markiert dann Mitmachen.
+
+Die Meldungen, die in der App unter **Aktivitäten** stehen, heißen im Browser
+**Anträge**: eine Tabelle mit Eingang, Person und Jahrgang — bei Teamer:innen
+steht „Team" —, Aktivität mit Kommentar, Datum mit Hinweis auf das Foto, Punkten
+und Status, der neueste Antrag oben. **Offen**, **Verbucht**, **Abgelehnt** und
+**Alle** filtern, zuerst steht **Offen** da; die Suche findet Person und
+Aktivität. **Prüfen** öffnet das Fenster „Aktivität prüfen" mit Foto, Kommentar
+und Entscheidung; der
+[Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
+derselbe. Bei einem entschiedenen Antrag öffnet **Ansehen** dasselbe Fenster,
+und **Aktivität zurücksetzen** macht ihn nach einer Rückfrage wieder offen. Hat
+die Leitung keinen Jahrgang zugewiesen, steht über der Tabelle der Hinweis
+„Kein Jahrgang zugewiesen".
+
+### Ein Event in zwei Spalten verbuchen
+
+Ein Klick auf den Namen öffnet das Event in zwei Spalten; **Alle Events** führt
+zurück in die Liste. Unter dem Namen stehen Status und Zeitraum, rechts oben die
+Knöpfe **Chat**, **QR-Code**, **Kopieren**, **Bearbeiten** und **Event
+absagen** — an einem abgesagten Event **Absage zurücknehmen**. Die schmale
+Spalte links trägt die Angaben, die Beschreibung, die Zeitfenster als Tabelle
+mit Belegung (**Frei** oder **Voll**), bei einer Serie die weiteren Events, das
+Material und — wenn das Event Team sucht — **Bist du dabei?** für dich selbst
+([Selbst zu- oder absagen](#selbst-zu-oder-absagen)).
+
+Rechts steht, was zu tun ist: drei Kennzahlen — je nach Event etwa
+Teilnehmer:innen, Anwesende, Team, Punkte und Warteliste — und darunter die
+Tabellen **Konfis**, **Warteliste**, **Team** und **Abmeldungen**. Jede Zeile
+nennt den Namen mit dem Jahrgang, bei Events mit Zeitfenstern das gebuchte
+Fenster und den Stand mit Abmeldegrund, Notiz und dem, wer den Eintrag gemacht
+hat. Dazu trägt sie die Anwesenheit: **Anwesend** und **Abwesend** verbuchen mit
+einem Klick, ein zweiter Klick auf denselben Knopf nimmt den Eintrag zurück.
+Die drei Punkte am Zeilenende öffnen **Weitere Aktionen**:
+
+- **Abgemeldet eintragen** — hat die Person schon eine Abmeldung, steht dort
+  **Abmeldung bearbeiten**
+- **Notiz hinzufügen** oder **Notiz bearbeiten** und **Eintrag zurücksetzen** —
+  beide nur bei einer Person mit Eintrag
+- **Auf Warteliste setzen** bei bestätigten Konfis
+- **Teilnahme entfernen**
+
+Bei einem Pflicht-Event lassen sich Konfis weder entfernen noch auf die
+Warteliste setzen. In der Warteliste stehen statt der Anwesenheit **Bestätigen**
+und ein Knopf zum Entfernen. In der Kopfzeile der Tabellen stehen **Alle
+bestätigen (n)**, das nach einer Rückfrage die offenen Einträge der Tabelle als
+anwesend verbucht, sowie **Konfi hinzufügen**, **Team hinzufügen** und
+**Leitung hinzufügen**. Ohne Netz sind die Knöpfe gesperrt und sagen, warum.
+Was die Handgriffe bewirken, steht unter
+[Die Anwesenheit verbuchen](#die-anwesenheit-verbuchen),
+[Teilnehmende von Hand hinzufügen](#teilnehmende-von-hand-hinzufuegen) und
+[Teilnehmende austragen oder auf die Warteliste setzen](#teilnehmende-austragen-oder-auf-die-warteliste-setzen).
+
+### Sich im Browser zu einem Event an- und abmelden
+
+Konfis und Team sehen die Events als Karten im Raster. Filter und Suche
+stehen für Konfis unter
+[Im Browser Events als Karten durchsuchen](10-konfis.md#im-browser-events-als-karten-durchsuchen),
+für Teamer:innen unter
+[Im Browser Events als Karten durchsuchen und zusagen](20-teamer.md#im-browser-events-als-karten-durchsuchen-und-zusagen).
+Ein Klick auf eine Karte öffnet das Event in zwei Spalten; rechts steht die
+Karte **Bist du dabei?**.
+
+Konfis finden dort den einen Knopf, der gerade gilt: **Anmelden**, **Warteliste
+offen**, **Abmelden**, **Von der Warteliste abmelden** oder **Wieder anmelden**.
+Bis wann das geht, steht unter
+[Wissen, bis wann Konfis sich abmelden können](#wissen-bis-wann-konfis-sich-abmelden-koennen);
+geht keine Anmeldung, steht statt des Knopfes der Grund da. Teamer:innen finden
+**Dabei** und **Nicht dabei**, danach nur noch den Weg zurück, wie unter
+[Selbst zu- oder absagen](#selbst-zu-oder-absagen) beschrieben. An einem
+abgesagten Event steht statt der Knöpfe der Hinweis mit dem Grund.
+
 ## Häufige Stolpersteine nachschlagen
 
 > **„Ich habe Punkte eingetragen, aber es gibt keine."**
