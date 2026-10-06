@@ -1,26 +1,32 @@
-// Die Events der Konfis als Karten im Raster (Web-Fassung von Mitmachen,
-// 03.10.2026, docs/planung/web-alle-bereiche.md, Entscheidung 6).
+// Die Events der Konfis als Karten im Raster oder als Liste (Web-Fassung von
+// Mitmachen, 03.10.2026, docs/planung/web-alle-bereiche.md, Entscheidung 6).
+// Der Umschalter Liste | Kacheln steht als letztes Element rechts neben der
+// Suche; Konfis starten mit den Kacheln, der Browser merkt sich die Wahl
+// (useAnsicht, Simon, 06.10.2026). Filter und Suche gelten fuer beide gleich.
 //
 // Dieselben Events und dieselben Reiter wie die Liste der App -- Alle, Meine,
 // Konfirmation, in dieser Reihenfolge (shared/web/termine/terminFilter.ts).
 // Meine heisst: jede Person
 // mit einer Buchung an diesem Event, egal in welchem Zustand (angemeldet,
-// Warteliste, abgemeldet, abgesagt; zaehltAlsMeiner). Jede Karte ist ein Link
-// auf das Event; ihre Farbe und ihr Status folgen derselben Rechnung wie die
-// Karten der App (utils/termineWeb.ts, konfiListeStatus).
+// Warteliste, abgemeldet, abgesagt; zaehltAlsMeiner). Jede Karte und jede Zeile
+// ist ein Link auf das Event; ihre Farbe und ihr Status folgen derselben
+// Rechnung wie die Karten der App (utils/termineWeb.ts, konfiListeStatus).
 
 import React, { useMemo, useState } from 'react';
 import { ICON_TERMIN } from '../../../shared/icons';
+import { useApp } from '../../../../contexts/AppContext';
 import { istVergangen, zaehltAlsMeiner } from '../../../shared/eventFormatting';
 import { suchbegriff } from '../../../../utils/supportWeb';
 import { konfiFakten, konfiListeStatus, kommendeZuerst, terminSuchtTreffer } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
 import WebChips from '../../../web/WebChips';
 import WebSuche from '../../../web/WebSuche';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
+import { ansichtVorgabe, useAnsicht } from '../../../web/useAnsicht';
 import WebKnopf from '../../../web/WebKnopf';
 import { WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
-import WebTerminKarte from '../../../shared/web/termine/WebTerminKarte';
+import WebTerminAnsicht, { type WebTerminEintrag } from '../../../shared/web/termine/WebTerminAnsicht';
 import { KONFI_EVENT_FILTER, type KonfiEventFilter } from '../../../shared/web/termine/terminFilter';
 import '../../../../theme/web/termine.css';
 
@@ -33,6 +39,8 @@ const LEER: Record<KonfiEventFilter, { titel: string; text: string }> = {
 const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   const [filter, setFilter] = useFilterAusAdresse<KonfiEventFilter>('/konfi/events', KONFI_EVENT_FILTER, 'meine');
   const [suche, setSuche] = useState('');
+  const { user } = useApp();
+  const [ansicht, setAnsicht] = useAnsicht('events-mitglied', ansichtVorgabe(user?.role_name));
 
   // Hat die Konfi schon einen Konfirmationstermin gebucht? Dann sind die ANDEREN gesperrt.
   const hatKonfirmationGebucht = useMemo(
@@ -53,6 +61,20 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   );
   const sucht = suchbegriff(suche) !== '';
 
+  // Karte und Zeile rechnen aus denselben Eintraegen.
+  const eintraege: WebTerminEintrag[] = sichtbar.map((e) => {
+    const status = konfiListeStatus(e, hatKonfirmationGebucht);
+    return {
+      event: e,
+      href: `/konfi/events/${e.id}`,
+      status,
+      fakten: konfiFakten(e),
+      gedaempft: status.gedaempft,
+      gesperrt: status.gesperrt,
+      statusZeigen: status.zeigtStatus,
+    };
+  });
+
   return (
     <>
       <div className="web-werkzeuge">
@@ -68,29 +90,12 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Events durchsuchen" platzhalter="Name oder Ort suchen" wert={suche} onWert={setSuche} />
+          <WebAnsichtUmschalter wert={ansicht} onWert={setAnsicht} />
         </div>
       </div>
 
-      {sichtbar.length > 0 ? (
-        <div className="web-termin-raster">
-          {sichtbar.map((e) => {
-            const status = konfiListeStatus(e, hatKonfirmationGebucht);
-            return (
-              <WebTerminKarte
-                key={e.id}
-                event={e}
-                href={`/konfi/events/${e.id}`}
-                status={status}
-                fakten={konfiFakten(e)}
-                gedaempft={status.gedaempft}
-                gesperrt={status.gesperrt}
-                statusZeigen={status.zeigtStatus}
-                teamZeigen={false}
-                unterzeile={undefined}
-              />
-            );
-          })}
-        </div>
+      {eintraege.length > 0 ? (
+        <WebTerminAnsicht eintraege={eintraege} ansicht={ansicht} teamZeigen={false} />
       ) : (
         <div className="web-karte">
           <WebLeer

@@ -1,10 +1,11 @@
-// Ein Event bei der Leitung in der Web-Fassung, gerendert (03.10.2026):
-// zweispaltig -- links Angaben, Beschreibung, Zeitfenster und Material, rechts
-// Kennzahlen, Konfis, Warteliste und Team als Tabellen mit Anwesenheit und
-// Aktionen, die Abmeldungen. Anwesenheit, Menü, Alle bestätigen, Absagen,
-// Hinzufügen ... rufen dieselben Funktionen wie die Detailansicht der App --
-// mit denselben Rückfragen, Fenstern und Routen. Im schmalen Fenster bleibt
-// die App.
+// Ein Event bei der Leitung in der Web-Fassung, gerendert (03.10.2026). Aufbau
+// wie jede Detailseite (06.10.2026): im Kopf Titel, Kennzeichen und alle
+// Aktionen, darunter die Kennzahlen; links die Beschreibung und Konfis,
+// Warteliste und Team als Tabellen mit Anwesenheit, die Abmeldungen; rechts
+// die Angaben, Zeitfenster und Material. Anwesenheit, Menü, Alle bestätigen,
+// Absagen, Hinzufügen ... rufen dieselben Funktionen wie die Detailansicht der
+// App -- mit denselben Rückfragen, Fenstern und Routen. Im schmalen Fenster
+// bleibt die App.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import {
@@ -48,9 +49,74 @@ beforeEach(() => {
   zustand.detail = freizeit();
 });
 
+const kopf = () => screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement;
+/** Die Knöpfe im Kopf in der Reihenfolge der Seite (Aktionen sind Knöpfe oben rechts). */
+const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim());
+/** Was direkt unter dem Kopf steht, vor den Kennzahlen: Hinweise. */
+const ersterBlock = () => document.querySelector('.web-detail')!.firstElementChild as HTMLElement;
 const karte = (titel: string | RegExp) => screen.getByRole('region', { name: titel });
 const zeileVon = (name: string) => screen.getAllByText(name, { selector: '.web-zelle-titel' })[0].closest('tr') as HTMLElement;
 const umschalter = (name: string) => within(zeileVon(name)).getByRole('group', { name: `Anwesenheit von ${name}` });
+
+describe('Aufbau wie jede Detailseite', () => {
+  it('alle Aktionen im Kopf, die eigene Zusage als primärer Knopf ganz rechts -- keine Karte "Bist du dabei?"', async () => {
+    await oeffne();
+    expect(knoepfeImKopf()).toEqual(['Chat', 'QR-Code', 'Kopieren', 'Bearbeiten', 'Event absagen', 'Nicht dabei', 'Dabei']);
+    expect(within(kopf()).getByRole('button', { name: 'Dabei' })).toHaveClass('web-knopf--primaer');
+    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toHaveClass('web-knopf--gefahr');
+    expect(within(kopf()).getByRole('button', { name: 'Event absagen' })).toHaveClass('web-knopf--gefahr');
+    expect(screen.queryByRole('region', { name: 'Bist du dabei?' })).toBe(null);
+  });
+
+  it('die Kennzahlen stehen in einer Reihe unter dem Kopf, vor den Spalten', async () => {
+    await oeffne();
+    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
+    expect([...reihe.querySelectorAll('.web-kachel')].map((k) => k.getAttribute('aria-label')))
+      .toEqual(['Teilnehmer:innen: 2 / 20', 'Team: 1 / 4', 'Warteliste: 1']);
+    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('links der Inhalt (Beschreibung, Tabellen, Abmeldungen), rechts der Block "Angaben" mit Zeitfenstern und Material', async () => {
+    zustand.detail = freizeit({
+      has_timeslots: true,
+      timeslots: [{ id: 1, start_time: '2026-10-10T08:00:00Z', end_time: '2026-10-10T09:00:00Z', max_participants: 4, registered_count: 1 }],
+    });
+    api.get.mockImplementation((pfad: string) => {
+      if (pfad === '/events/7') return Promise.resolve({ data: zustand.detail });
+      if (pfad === '/material/by-event/7') return Promise.resolve({ data: [{ id: 11, title: 'Packliste', file_count: 2 }] });
+      return Promise.resolve({ data: [] });
+    });
+    await oeffne();
+    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
+    expect(seite.tagName).toBe('ASIDE');
+    expect(seite).toHaveAttribute('aria-label', 'Angaben');
+    for (const name of ['Beschreibung', 'Konfis (2)', 'Warteliste (1)', 'Team (1)', 'Abmeldungen (1)']) {
+      expect(within(haupt).getByRole('region', { name })).toBeInTheDocument();
+    }
+    for (const name of ['Angaben', 'Zeitfenster (1)', 'Material (1)']) {
+      expect(within(seite).getByRole('region', { name })).toBeInTheDocument();
+    }
+    expect(within(seite).queryByRole('region', { name: 'Beschreibung' })).toBe(null);
+    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBe(null);
+  });
+
+  it('Teamer:innen: im Kopf Chat und QR-Code und -- weil das Event Team sucht -- die eigene Zusage, nichts zum Verwalten', async () => {
+    zustand.rolle = 'teamer';
+    await oeffne();
+    expect(knoepfeImKopf()).toEqual(['Chat', 'QR-Code', 'Nicht dabei', 'Dabei']);
+  });
+
+  it('offline: die eigene Zusage ist gesperrt, der Satz dazu steht als Hinweis über den Kennzahlen', async () => {
+    zustand.online = false;
+    zustand.cache.set('admin:events:1', [freizeit()]);
+    await oeffne();
+    expect(within(kopf()).getByRole('button', { name: 'Dabei' })).toBeDisabled();
+    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toBeDisabled();
+    expect(ersterBlock()).toHaveTextContent('Ohne Netz nicht möglich — versuch es später nochmal.');
+    expect(ersterBlock()).toHaveClass('web-hinweis');
+  });
+});
 
 describe('Kopf und Angaben', () => {
   it('Titel, Zurück-Link zur Liste, Aktionen oben', async () => {
@@ -328,7 +394,8 @@ describe('Abgesagte Events', () => {
   it('Hinweis mit Grund, "Absage zurücknehmen" statt "Event absagen"; die Rücknahme fragt nach und ruft /reaktivieren', async () => {
     zustand.detail = freizeit({ registration_status: 'cancelled', cancelled: true, cancelled_reason: 'Sturmwarnung' });
     await oeffne();
-    expect(screen.getAllByRole('status').some((s) => s.textContent!.includes('Grund: Sturmwarnung'))).toBe(true);
+    expect(ersterBlock()).toHaveTextContent('Dieses Event ist abgesagt');
+    expect(ersterBlock()).toHaveTextContent('Grund: Sturmwarnung');
     expect(screen.queryByRole('button', { name: 'Event absagen' })).toBe(null);
     fireEvent.click(screen.getByRole('button', { name: 'Absage zurücknehmen' }));
     const frage = letzteRueckfrage();
@@ -412,13 +479,12 @@ describe('Rechte', () => {
     expect(screen.getByRole('button', { name: 'Event-Chat öffnen' })).toBeInTheDocument();
   });
 
-  it('Teamer:innen melden sich selbst: "Bist du dabei?" mit Zusage und Absage', async () => {
+  it('Teamer:innen melden sich selbst: Zusage und Absage im Kopf', async () => {
     zustand.rolle = 'teamer';
     await oeffne();
-    const zusage = karte('Bist du dabei?');
-    await act(async () => { fireEvent.click(within(zusage).getByRole('button', { name: 'Dabei' })); });
+    await act(async () => { fireEvent.click(within(kopf()).getByRole('button', { name: 'Dabei' })); });
     expect(api.post).toHaveBeenCalledWith('/teamer/events/7/zusage', { dabei: true });
-    fireEvent.click(within(karte('Bist du dabei?')).getByRole('button', { name: /Nicht/ }));
+    fireEvent.click(within(kopf()).getByRole('button', { name: /Nicht/ }));
     expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
   });
 });

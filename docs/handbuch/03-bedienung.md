@@ -66,8 +66,9 @@ Der Inhalt steht daneben, auf breiten Bildschirmen mittig.
   Eingabetaste öffnest du ihn.
 
 Jeder Bereich hat im Browser eine eigene, breitere Ansicht: Listen stehen als
-Tabellen oder Karten da, mit Suche und Filtern darüber, Detailseiten in zwei
-Spalten. Was du darfst, was die Zahlen zählen und welche Fenster aufgehen, ist
+Tabellen oder Karten da — bei Events, Challenges und Konfis nach deiner Wahl —,
+mit Suche und Filtern darüber; die Seiten der Events und Challenges sind alle
+gleich aufgebaut. Was du darfst, was die Zahlen zählen und welche Fenster aufgehen, ist
 dasselbe wie in der App — nur die Darstellung nutzt die Breite. Was sich öffnen
 lässt — eine Person, ein Event, eine Challenge, eine Kachel —, ist ein
 gewöhnlicher Link: Mit Strg-Klick (am Mac ⌘-Klick) oder der mittleren
@@ -75,22 +76,22 @@ Maustaste geht es in einem neuen Tab auf. Wie die Ansichten aufgebaut sind,
 steht bei den Bereichen:
 
 - **Konfis:** [Startseite](10-konfis.md#im-browser-die-startseite-als-karten-lesen),
-  [Events](10-konfis.md#im-browser-events-als-karten-durchsuchen),
+  [Events](10-konfis.md#im-browser-events-durchsuchen),
   [Badges](10-konfis.md#im-browser-badges-filtern-und-ansehen) und
   [Profil](10-konfis.md#im-browser-das-profil-in-zwei-spalten-nutzen)
 - **Teamer:innen:** [Startseite](20-teamer.md#im-browser-die-startseite-als-karten-lesen),
-  [Events](20-teamer.md#im-browser-events-als-karten-durchsuchen-und-zusagen),
+  [Events](20-teamer.md#im-browser-events-durchsuchen-und-zusagen),
   [Material](20-teamer.md#im-browser-material-in-der-tabelle-oeffnen),
   [Profil](20-teamer.md#im-browser-das-profil-in-zwei-spalten-nutzen) und
   [Konfi-Historie](20-teamer.md#im-browser-die-konfi-historie-ansehen)
-- **Leitung:** [Konfis und Team](30-leitung.md#im-browser-konfis-und-team-als-tabelle-verwalten),
-  [Detailseite einer Person](30-leitung.md#im-browser-die-detailseite-einer-person-in-zwei-spalten-nutzen),
+- **Leitung:** [Konfis und Team](30-leitung.md#im-browser-konfis-und-team-verwalten),
+  [Detailseite einer Person](30-leitung.md#im-browser-die-detailseite-einer-person-nutzen),
   [Mehr](30-leitung.md#im-browser-die-einstellungen-als-kacheln-finden),
   [Verwaltungsseiten](30-leitung.md#im-browser-verwaltungsseiten-als-tabellen-nutzen) und
   [Badges](30-leitung.md#im-browser-badges-in-der-tabelle-verwalten)
 - **Events** für alle Rollen:
-  [Tabellen, Karten und zwei Spalten](70-termine.md#im-browser-events-in-tabellen-und-karten-nutzen)
-- **Challenges:** [Karten und Filter](80-challenges.md#im-browser-mit-karten-und-filtern-arbeiten)
+  [Liste, Kacheln und die Seite eines Events](70-termine.md#im-browser-events-als-liste-oder-kacheln-nutzen)
+- **Challenges:** [Liste, Kacheln und Filter](80-challenges.md#im-browser-mit-liste-kacheln-und-filtern-arbeiten)
 - **Chat:** [Liste und Chat nebeneinander](90-chat.md#im-browser-liste-und-chat-nebeneinander-nutzen)
 
 Die Leiste markiert den Bereich, in dem du bist — auch auf Seiten ohne eigenen
@@ -103,6 +104,42 @@ unter **Profil**.
 
 Wird das Fenster schmaler, kehrt die Reiterleiste unten zurück. In den Apps
 auf Handy und Tablet bleibt es immer bei der Reiterleiste.
+
+### Im Browser zwischen Liste und Kacheln wählen
+
+Events, Challenges und die Konfis der Leitung lassen sich im Browser als
+**Liste** oder als **Kacheln** ansehen. Die Wahl steht in der Zeile mit Filtern
+und Suche ganz rechts, direkt neben der Suche. Die Liste ist eine Tabelle mit
+einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
+Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
+Klick auf eine Zeile oder Karte öffnet den Eintrag.
+
+Beim ersten Öffnen beginnt die Leitung mit der Liste, Konfis und Team mit den
+Kacheln. Der Browser merkt sich deine Wahl für jede Seite einzeln; in einem
+privaten Fenster gilt sie nur, bis du die Seite neu lädst. In der App gibt es
+die Wahl nicht.
+
+### Im Browser eine Detailseite lesen
+
+Jedes Event und jede Challenge hat im Browser eine eigene Seite, für die
+Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
+
+- **Oben** stehen der Weg zurück zur Liste, der Titel und darunter Status und
+  Zeit. Rechts daneben stehen **alle Aktionen** als Knöpfe; die wichtigste ist
+  farbig hinterlegt, etwa **Anmelden** oder **Beitrag einreichen**.
+- **Darunter** steht ein Hinweis, wenn einer gilt — das Event ist abgesagt, die
+  Abmeldefrist ist vorbei, ohne Netz geht es nicht —, und eine Reihe
+  **Kennzahlen**: bei Events etwa Plätze, Punkte und Warteliste, bei
+  Challenges Beiträge und Laufzeit, für Konfis auch der Stempel, bei einer
+  Person Punkte und Ziele oder Zertifikate, Events und Badges.
+- **Links, breit** steht das Eigentliche: bei Events die Beschreibung und die
+  Teilnehmenden, bei Challenges die Aufgabe und die Beiträge, bei einer Person
+  ihre Aktivitäten und Punkte.
+- **Rechts, schmal** stehen die **Angaben**, bei Events dazu Zeitfenster, Serie
+  und Material, bei Challenges der Stempel, bei einer Person Konfirmation,
+  Badges, Events und mehr.
+
+Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
 
 ### Den Umschalter finden, hinter dem etwas auf dich wartet
 

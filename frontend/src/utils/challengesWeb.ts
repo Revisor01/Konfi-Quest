@@ -72,6 +72,14 @@ export const MEDIEN_WORT: Record<ChallengeMediaType, string> = {
   link: 'Musik-Link',
 };
 
+/** Der Status als Klassenendung an Karte und Zeile (web-challenge-karte--aktiv): jeder Zustand traegt seine Farbe. */
+export const STATUS_MODIFIKATOR: Record<ChallengeStatus, string> = {
+  active: 'aktiv',
+  scheduled: 'geplant',
+  draft: 'entwurf',
+  ended: 'beendet',
+};
+
 /** Der Status als Marke: laufend gruen, geplant blau, Entwurf und beendet neutral. */
 export const STATUS_TON: Record<ChallengeStatus, PillTon> = {
   draft: 'neutral',
@@ -202,6 +210,13 @@ export function jahrgaengeDerChallenges(challenges: readonly ListenChallenge[]):
 }
 
 /**
+ * Die Jahrgaenge einer Challenge als kurzer Text fuer Karte und Zeile:
+ * bis zu zwei mit Namen, ab drei nur die Zahl ("3 Jahrgänge").
+ */
+export const jahrgangText = (jahrgaenge: readonly ChallengeJahrgang[] = []): string =>
+  jahrgaenge.length > 2 ? `${jahrgaenge.length} Jahrgänge` : jahrgaenge.map((j) => j.name).join(', ');
+
+/**
  * Die rote Zahl am Eintrag der Leitung und des Teams -- dieselbe Rechnung wie
  * in der Liste der App (ChallengesManageView): jeder fremde Beitrag seit dem
  * letzten Oeffnen, auch der wartende; ohne das Feld des Servers (aelterer
@@ -249,6 +264,26 @@ export function zeitraumText(c: Pick<ChallengeBase, 'starts_at' | 'ends_at'>, st
 export function restzeitText(restzeit: string): string {
   if (!restzeit) return '';
   return /^\d/.test(restzeit) ? `Noch ${restzeit}` : `${restzeit.charAt(0).toUpperCase()}${restzeit.slice(1)}`;
+}
+
+/**
+ * Die Kachel "Laufzeit" auf der Seite einer Challenge (Leitung, Team, Konfis):
+ * laufend wie lange noch ("Noch 9 Tage", "Endet gleich"), sonst der Zustand --
+ * Entwurf, Geplant mit Start, Beendet mit Ende. `restzeit` kommt aus
+ * formatRemaining der App-Liste (konfi/views/ChallengesView), damit die Zeit
+ * eine Stelle hat.
+ */
+export function laufzeitKachel(
+  c: Pick<ChallengeBase, 'starts_at' | 'ends_at'>,
+  status: ChallengeStatus,
+  restzeit: string,
+): { wert: string; zusatz: string[] } {
+  switch (status) {
+    case 'draft': return { wert: 'Entwurf', zusatz: ['Zeitraum noch offen'] };
+    case 'scheduled': return { wert: 'Geplant', zusatz: [`Beginnt am ${datumKurz(c.starts_at)}`] };
+    case 'active': return { wert: restzeitText(restzeit) || 'Läuft', zusatz: [`bis ${datumKurz(c.ends_at)}`] };
+    default: return { wert: 'Beendet', zusatz: [`am ${datumKurz(c.ends_at)}`] };
+  }
 }
 
 /**

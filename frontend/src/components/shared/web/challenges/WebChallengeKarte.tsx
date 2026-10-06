@@ -15,18 +15,20 @@ import {
   ICON_ALBEN,
   ICON_GRUPPE,
   ICON_PERSON,
-  ICON_SENDEN,
   ICON_TERMIN,
 } from '../../icons';
 import WebLink from '../../../web/WebLink';
 import WebPill from '../../../web/WebPill';
 import WebTreffer from '../../../web/WebTreffer';
+import { WebChallengeSymbol, WebEingereichtPill } from './WebChallengeBausteine';
 import { AUDIENCE_LABEL, VISIBILITY_LABEL } from '../../../admin/views/ChallengesManageView';
 import { formatRemaining, getAuthorLabel, getChallengeBadgeIcon } from '../../../konfi/views/ChallengesView';
 import { anzahlBeitraege, wartenAufFreigabe } from '../../../../utils/challengeTexte';
 import {
+  STATUS_MODIFIKATOR,
   STATUS_TON,
   STATUS_WORT,
+  jahrgangText,
   restzeitText,
   zeitraumText,
   type ListenChallenge,
@@ -53,13 +55,6 @@ export interface WebChallengeKarteProps {
   fuss?: React.ReactNode;
 }
 
-const MODIFIKATOR: Record<ChallengeStatus, string> = {
-  active: 'aktiv',
-  scheduled: 'geplant',
-  draft: 'entwurf',
-  ended: 'beendet',
-};
-
 const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
   challenge,
   status,
@@ -75,22 +70,13 @@ const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
   const autor = getAuthorLabel(challenge as Parameters<typeof getAuthorLabel>[0]) ?? challenge.author_name?.trim() ?? null;
   const zielgruppe = challenge.audience ? AUDIENCE_LABEL[challenge.audience] : undefined;
   const jahrgaenge = challenge.jahrgaenge ?? [];
-  const jahrgangText = jahrgaenge.length > 2 ? `${jahrgaenge.length} Jahrgänge` : jahrgaenge.map((j) => j.name).join(', ');
   const rest = status === 'active' ? restzeitText(formatRemaining(challenge.ends_at)) : '';
-  const anzahl = kugel?.anzahl ?? 0;
 
   return (
     <li className="web-challenge-raster__eintrag">
-      <article className={`web-zeile web-challenge-karte web-challenge-karte--${MODIFIKATOR[status]}`} aria-labelledby={titelId}>
+      <article className={`web-zeile web-challenge-karte web-challenge-karte--${STATUS_MODIFIKATOR[status]}`} aria-labelledby={titelId}>
         <div className="web-challenge-karte__bild">
-          <span className="web-challenge-symbol">
-            <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} aria-hidden="true" />
-            {anzahl > 0 && kugel && (
-              <span className="web-challenge-kugel" role="img" aria-label={`${anzahl} ${kugel.text}`}>
-                {anzahl > 9 ? '9+' : anzahl}
-              </span>
-            )}
-          </span>
+          <WebChallengeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} kugel={kugel} />
           <span className="web-challenge-karte__stempel">
             <span className="web-challenge-karte__stempel-label">Stempel</span>
             <span className="web-challenge-karte__stempel-name">{challenge.badge_name}</span>
@@ -101,12 +87,7 @@ const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
           <div className="web-challenge-karte__marken">
             <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
             {wartend > 0 && <WebPill ton="warnung" title={wartenAufFreigabe(wartend)}>{wartenAufFreigabe(wartend)}</WebPill>}
-            {eingereicht && (
-              <WebPill ton="info" title="Du hast bereits eingereicht">
-                <IonIcon icon={ICON_SENDEN} aria-hidden="true" />
-                Du hast eingereicht
-              </WebPill>
-            )}
+            {eingereicht && <WebEingereichtPill />}
           </div>
 
           <h3 id={titelId} className="web-challenge-karte__titel">
@@ -130,7 +111,7 @@ const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
             {(zielgruppe || jahrgaenge.length > 0) && (
               <li className="web-challenge-karte__meta-eintrag" title={jahrgaenge.map((j) => j.name).join(', ') || undefined}>
                 <IonIcon icon={ICON_GRUPPE} className="web-challenge-icon" aria-hidden="true" />
-                <span>{[zielgruppe, jahrgangText].filter(Boolean).join(' · ')}</span>
+                <span>{[zielgruppe, jahrgangText(jahrgaenge)].filter(Boolean).join(' · ')}</span>
               </li>
             )}
             {autor && (

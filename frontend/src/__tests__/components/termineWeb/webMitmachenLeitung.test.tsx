@@ -4,12 +4,15 @@
 // als Tabelle mit Zeitraum-Chips, Filtern und Suche. Kopieren, Absagen,
 // Löschen und Co. rufen dieselben Funktionen wie die Wischaktionen der App --
 // mit denselben Rückfragen und Modalen. Im schmalen Fenster bleibt die App.
+// Die Events gibt es als Liste (Vorgabe der Leitung) oder als Kacheln --
+// Umschalter neben der Suche, der Browser merkt sich die Wahl (Simon, 06.10.2026).
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent, within, act } from '@testing-library/react';
 import {
   h, api, setSuccess, setError, routerPush, geoeffnet, letzteRueckfrage, knopfIn,
   zuruecksetzen, richteEin, oeffne, termin, inTagen, JETZT,
 } from './geruestWeb';
+import { ansichtSchluessel } from '../../../components/web/useAnsicht';
 
 const JAHRGAENGE = [{ id: 1, name: 'Jahrgang 2026' }, { id: 2, name: 'Jahrgang 2027' }];
 
@@ -50,6 +53,8 @@ const DATEN = { 'admin:events-cancelled:': [FAHRRADTOUR], 'admin:jahrgaenge:': J
 
 beforeEach(() => {
   zuruecksetzen();
+  // Die Wahl der Ansicht bleibt im Browser: kein Test erbt sie vom vorigen.
+  window.localStorage.clear();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(JETZT);
 });
@@ -330,6 +335,282 @@ describe('Laden und Fehler', () => {
     await oeffne('leitung');
     expect(screen.getByText('Die Events werden geladen.')).toBeInTheDocument();
     expect(screen.queryByRole('table', { name: 'Events' })).toBe(null);
+  });
+});
+
+describe('Ansicht: Liste und Kacheln', () => {
+  const umschalter = () => screen.getByRole('group', { name: 'Ansicht' });
+  const waehle = (name: 'Liste' | 'Kacheln') => fireEvent.click(within(umschalter()).getByRole('button', { name }));
+  const gedrueckt = (name: 'Liste' | 'Kacheln') => within(umschalter()).getByRole('button', { name }).getAttribute('aria-pressed');
+  /** Die Namen der Karten, von oben links nach unten rechts. */
+  const kartenNamen = () => screen.queryAllByRole('article').map((a) => within(a).getByRole('heading', { level: 3 }).textContent);
+  const karte = (name: string) => screen.getByRole('link', { name }).closest('article') as HTMLElement;
+  const kachelnOeffnen = async (nutzer: 'leitung' | 'admin' | 'teamer' = 'leitung', suche = '', events = EVENTS) => {
+    window.localStorage.setItem(ansichtSchluessel('events-leitung'), 'kacheln');
+    return oeffneEvents(nutzer, suche, events);
+  };
+
+  it('Vorgabe der Leitung: die Liste -- Tabelle, keine Karten, der Umschalter zeigt "Liste"; gemerkt ist noch nichts', async () => {
+    await oeffneEvents();
+    expect(screen.getByRole('table', { name: 'Events' })).toBeInTheDocument();
+    expect(kartenNamen()).toEqual([]);
+    expect(gedrueckt('Liste')).toBe('true');
+    expect(gedrueckt('Kacheln')).toBe('false');
+    expect(window.localStorage.getItem(ansichtSchluessel('events-leitung'))).toBe(null);
+  });
+
+  it('der Umschalter steht als letztes Element rechts neben der Suche, in der Zeile der Filter', async () => {
+    await oeffneEvents();
+    const suche = screen.getByRole('search');
+    const rechts = suche.parentElement!;
+    expect(rechts).toHaveClass('web-werkzeuge__rechts');
+    expect(umschalter().previousElementSibling).toBe(suche);
+    expect(rechts.lastElementChild).toBe(umschalter());
+    // Dieselbe Zeile wie Jahrgang, Kategorie und Art.
+    expect(rechts.parentElement).toHaveClass('web-filter');
+    expect(within(rechts.parentElement!).getByLabelText('Jahrgang')).toBeInTheDocument();
+    // Auch mit "Filter zurücksetzen" bleibt er das letzte Element.
+    fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
+    expect(rechts.firstElementChild).toHaveTextContent('Filter zurücksetzen');
+    expect(rechts.lastElementChild).toBe(umschalter());
+  });
+
+  it('"Kacheln": Karten statt Tabelle, dieselben Events in derselben Reihenfolge; die Wahl steht im Browser', async () => {
+    await oeffneEvents();
+    const inListe = namenInTabelle();
+    expect(inListe).toEqual(['Sonntagsgottesdienst', 'Teamabend', 'Fahrradtour', 'Konfi-Tag']);
+    waehle('Kacheln');
+    expect(screen.queryByRole('table', { name: 'Events' })).toBe(null);
+    expect(kartenNamen()).toEqual(inListe);
+    expect(gedrueckt('Kacheln')).toBe('true');
+    expect(gedrueckt('Liste')).toBe('false');
+    expect(window.localStorage.getItem(ansichtSchluessel('events-leitung'))).toBe('kacheln');
+    // Und zurück: wieder die Tabelle mit denselben Zeilen.
+    waehle('Liste');
+    expect(kartenNamen()).toEqual([]);
+    expect(namenInTabelle()).toEqual(inListe);
+    expect(window.localStorage.getItem(ansichtSchluessel('events-leitung'))).toBe('liste');
+  });
+
+  it('die Wahl gilt beim nächsten Öffnen der Seite -- und nur für diese Seite', async () => {
+    const erste = await oeffneEvents();
+    waehle('Kacheln');
+    erste.unmount();
+    await oeffneEvents();
+    expect(kartenNamen()).toHaveLength(4);
+    expect(gedrueckt('Kacheln')).toBe('true');
+    // Die Events von Konfis und Team haben ihre eigene Wahl.
+    expect(window.localStorage.getItem(ansichtSchluessel('events-mitglied'))).toBe(null);
+  });
+
+  it('Zeitraum, Jahrgang, Art, Kategorie und Suche gelten in den Kacheln wie in der Liste', async () => {
+    await kachelnOeffnen();
+    expect(kartenNamen()).toEqual(['Sonntagsgottesdienst', 'Teamabend', 'Fahrradtour', 'Konfi-Tag']);
+    expect(chip(/^Aktuell/)).toHaveTextContent(/^Aktuell4$/);
+    expect(chip(/^Verbuchen/)).toHaveTextContent(/^Verbuchen1 zum Verbuchen$/);
+
+    fireEvent.click(chip(/^Verbuchen/));
+    expect(kartenNamen()).toEqual(['Gemeindefest']);
+    fireEvent.click(chip(/^Vergangen/));
+    expect(kartenNamen()).toEqual(['Erntedank-Gottesdienst']);
+    fireEvent.click(chip(/^Abgesagt/));
+    expect(kartenNamen()).toEqual(['Fahrradtour']);
+    fireEvent.click(chip(/^Aktuell/));
+
+    fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
+    expect(kartenNamen()).toEqual(['Konfi-Tag']);
+    fireEvent.click(screen.getByRole('button', { name: 'Filter zurücksetzen' }));
+    expect(kartenNamen()).toHaveLength(4);
+    fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'team' } });
+    expect(kartenNamen()).toEqual(['Teamabend']);
+    fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'alle' } });
+    fireEvent.change(screen.getByLabelText('Kategorie'), { target: { value: 'Gottesdienst' } });
+    expect(kartenNamen()).toEqual(['Sonntagsgottesdienst']);
+    fireEvent.change(screen.getByLabelText('Kategorie'), { target: { value: 'alle' } });
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Events durchsuchen' }), { target: { value: 'buesum' } });
+    expect(kartenNamen()).toEqual(['Konfi-Tag']);
+  });
+
+  it('beim Umschalten bleiben Zeitraum, Filter und Suche stehen', async () => {
+    await oeffneEvents();
+    fireEvent.click(chip(/^Vergangen/));
+    fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '1' } });
+    expect(namenInTabelle()).toEqual(['Erntedank-Gottesdienst']);
+    waehle('Kacheln');
+    expect(chip(/^Vergangen/)).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText('Jahrgang')).toHaveValue('1');
+    expect(kartenNamen()).toEqual(['Erntedank-Gottesdienst']);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Events durchsuchen' }), { target: { value: 'zzz' } });
+    waehle('Liste');
+    expect(screen.getByRole('searchbox', { name: 'Events durchsuchen' })).toHaveValue('zzz');
+    expect(screen.getByText('Keine Treffer')).toBeInTheDocument();
+  });
+
+  it('Karte: Name als Link, Jahrgang, Datum, Ort, Kategorie, Plätze, Punkte und Status wie in der Zeile', async () => {
+    await kachelnOeffnen();
+    const gottesdienst = karte('Sonntagsgottesdienst');
+    expect(within(gottesdienst).getByRole('link', { name: 'Sonntagsgottesdienst' })).toHaveAttribute('href', '/admin/events/201');
+    expect(gottesdienst).toHaveTextContent('Jahrgang 2026');
+    expect(gottesdienst).toHaveTextContent('Datum: 04.10.2026 · 10:00 Uhr');
+    expect(gottesdienst).toHaveTextContent('Ort: Kirche Musterdorf');
+    expect(gottesdienst).toHaveTextContent('Kategorien: Gottesdienst');
+    expect(gottesdienst).toHaveTextContent('Plätze: 3/20');
+    expect(gottesdienst).toHaveTextContent('Punkte: 1P');
+    expect(within(gottesdienst).getByText('Offen', { selector: '.web-pill' })).toBeInTheDocument();
+
+    expect(within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' })).toBeInTheDocument();
+    expect(karte('Konfi-Tag')).toHaveTextContent('Plätze: 12 Konfis');
+    // Nur Team: die Zahl des Teams statt der Plätze, dazu die Marke.
+    expect(within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' })).toBeInTheDocument();
+    expect(karte('Teamabend')).toHaveTextContent('Team: 4/8 Team');
+    expect(karte('Teamabend')).not.toHaveTextContent('Plätze');
+  });
+
+  it('der Link der Karte bleibt in der App (Router)', async () => {
+    await kachelnOeffnen();
+    fireEvent.click(screen.getByRole('link', { name: 'Konfi-Tag' }));
+    expect(routerPush).toHaveBeenCalledWith('/admin/events/202', 'none', 'push');
+  });
+
+  it('abgesagt: Marke und Grund auf der Karte, der Titel durchgestrichen -- in Liste und Kacheln', async () => {
+    await kachelnOeffnen();
+    fireEvent.click(chip(/^Abgesagt/));
+    const abgesagt = karte('Fahrradtour');
+    expect(within(abgesagt).getByText('Abgesagt', { selector: '.web-pill' })).toBeInTheDocument();
+    expect(abgesagt).toHaveTextContent('Abgesagt: Sturmwarnung');
+    expect(within(abgesagt).getByRole('heading', { level: 3 })).toHaveStyle({ textDecoration: 'line-through' });
+    waehle('Liste');
+    expect(zeileVon('Fahrradtour')).toHaveTextContent('Abgesagt: Sturmwarnung');
+    expect(within(zeileVon('Fahrradtour')).getByText('Fahrradtour')).toHaveStyle({ textDecoration: 'line-through' });
+  });
+
+  it('Vergangenes, das nichts mehr zu verbuchen hat, steht blass da -- Karte und Zeile; Offenes nicht', async () => {
+    await kachelnOeffnen();
+    fireEvent.click(chip(/^Vergangen/));
+    expect(karte('Erntedank-Gottesdienst')).toHaveClass('web-termin-karte--gedaempft');
+    fireEvent.click(chip(/^Verbuchen/));
+    expect(karte('Gemeindefest')).not.toHaveClass('web-termin-karte--gedaempft');
+    fireEvent.click(chip(/^Vergangen/));
+    waehle('Liste');
+    expect(zeileVon('Erntedank-Gottesdienst')).toHaveClass('web-zeile--gedaempft');
+    fireEvent.click(chip(/^Verbuchen/));
+    expect(zeileVon('Gemeindefest')).not.toHaveClass('web-zeile--gedaempft');
+  });
+
+  it('Treffer der Suche sind in Titel und Ort hervorgehoben, wie in der Zeile', async () => {
+    await kachelnOeffnen();
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Events durchsuchen' }), { target: { value: 'kirche' } });
+    const marken = [...karte('Sonntagsgottesdienst').querySelectorAll('mark')].map((m) => m.textContent);
+    expect(marken).toEqual(['Kirche']);
+  });
+
+  it('leer: derselbe Hinweis wie in der Liste; "Filter zurücksetzen" holt die Karten zurück', async () => {
+    await kachelnOeffnen('leitung', '', [GOTTESDIENST]);
+    fireEvent.click(chip(/^Vergangen/));
+    expect(kartenNamen()).toEqual([]);
+    expect(screen.getByText('Keine vergangenen Events')).toBeInTheDocument();
+    fireEvent.click(chip(/^Aktuell/));
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Events durchsuchen' }), { target: { value: 'zzz' } });
+    expect(screen.getByText('Keine Treffer')).toBeInTheDocument();
+    expect(screen.getByText('Zu diesen Filtern gibt es hier kein Event.')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: 'Filter zurücksetzen' }).at(-1)!);
+    // Das abgesagte Fahrradtour kommt aus GET /events/cancelled und steht unter "Aktuell" dabei.
+    expect(kartenNamen()).toEqual(['Sonntagsgottesdienst', 'Fahrradtour']);
+  });
+
+  it('solange die Events laden, steht der Platzhalter -- auch in der Ansicht Kacheln', async () => {
+    window.localStorage.setItem(ansichtSchluessel('events-leitung'), 'kacheln');
+    richteEin({ nutzer: 'leitung', pfad: '/admin/events', daten: DATEN });
+    h.laedt.add('admin:events:');
+    await oeffne('leitung');
+    expect(screen.getByText('Die Events werden geladen.')).toBeInTheDocument();
+    expect(screen.queryByRole('article')).toBe(null);
+  });
+
+  describe('Aktionen auf der Karte -- dieselben Funktionen wie in der Zeile', () => {
+    it('Kopieren öffnet das Fenster, legt aber nichts an', async () => {
+      await kachelnOeffnen();
+      fireEvent.click(within(karte('Sonntagsgottesdienst')).getByRole('button', { name: 'Event kopieren: Sonntagsgottesdienst' }));
+      await act(async () => { await Promise.resolve(); });
+      expect(geoeffnet('EventModal')).toHaveLength(1);
+      expect(api.post).not.toHaveBeenCalled();
+    });
+
+    it('Absagen öffnet das Absage-Fenster', async () => {
+      await kachelnOeffnen();
+      fireEvent.click(within(karte('Konfi-Tag')).getByRole('button', { name: 'Event absagen: Konfi-Tag' }));
+      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+    });
+
+    it('Löschen fragt erst nach und ruft erst nach "Löschen" DELETE auf das Event', async () => {
+      await kachelnOeffnen();
+      fireEvent.click(within(karte('Teamabend')).getByRole('button', { name: 'Event löschen: Teamabend' }));
+      const frage = letzteRueckfrage();
+      expect(frage.header).toBe('Event löschen');
+      expect(frage.message).toBe('Event "Teamabend" wirklich löschen?');
+      expect(api.delete).not.toHaveBeenCalled();
+      await act(async () => { await knopfIn(frage, 'Löschen')!.handler!(); });
+      expect(api.delete).toHaveBeenCalledWith('/events/203');
+      expect(h.neuGeladen).toEqual(['admin:events:1', 'admin:events-cancelled:1']);
+    });
+
+    it('am abgesagten Event: Grund bearbeiten und Absage zurücknehmen, nicht noch einmal absagen', async () => {
+      await kachelnOeffnen();
+      fireEvent.click(chip(/^Abgesagt/));
+      const abgesagt = karte('Fahrradtour');
+      expect(within(abgesagt).queryByRole('button', { name: /^Event absagen/ })).toBe(null);
+      fireEvent.click(within(abgesagt).getByRole('button', { name: 'Absagegrund bearbeiten: Fahrradtour' }));
+      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+      fireEvent.click(within(abgesagt).getByRole('button', { name: 'Absage zurücknehmen: Fahrradtour' }));
+      const frage = letzteRueckfrage();
+      expect(frage.header).toBe('Absage zurücknehmen?');
+      expect(api.put).not.toHaveBeenCalled();
+      await act(async () => { await knopfIn(frage, 'Zurücknehmen')!.handler!(); });
+      expect(api.put).toHaveBeenCalledWith('/events/206/reaktivieren');
+    });
+
+    it('die Knöpfe tragen ein Wort und stehen im Fuss der Karte', async () => {
+      await kachelnOeffnen();
+      const fuss = karte('Teamabend').querySelector('footer')!;
+      expect([...fuss.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Kopieren', 'Absagen', 'Löschen']);
+      fireEvent.click(chip(/^Abgesagt/));
+      const fussAbgesagt = karte('Fahrradtour').querySelector('footer')!;
+      expect([...fussAbgesagt.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Zurücknehmen', 'Kopieren', 'Grund bearbeiten', 'Löschen']);
+    });
+
+    it('offline: kein Fenster, keine Rückfrage, eine Meldung je Knopf', async () => {
+      h.online = false;
+      await kachelnOeffnen();
+      fireEvent.click(within(karte('Konfi-Tag')).getByRole('button', { name: 'Event absagen: Konfi-Tag' }));
+      fireEvent.click(within(karte('Konfi-Tag')).getByRole('button', { name: 'Event kopieren: Konfi-Tag' }));
+      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
+      expect(geoeffnet('EventModal')).toHaveLength(0);
+      expect(setError).toHaveBeenCalledTimes(2);
+      expect(setSuccess).not.toHaveBeenCalled();
+    });
+
+    it.each(['leitung', 'admin'] as const)('ERLAUBT: %s sieht an jeder Karte Kopieren, Absagen und Löschen', async (rolle) => {
+      await kachelnOeffnen(rolle);
+      expect(screen.getAllByRole('button', { name: /^Event kopieren: / })).toHaveLength(4);
+      expect(screen.getAllByRole('button', { name: /^Event absagen: / })).toHaveLength(3);
+      expect(screen.getAllByRole('button', { name: /^Event löschen: / })).toHaveLength(4);
+      expect(screen.getAllByRole('button', { name: /^Absagegrund bearbeiten: / })).toHaveLength(1);
+      expect(screen.getAllByRole('button', { name: /^Absage zurücknehmen: / })).toHaveLength(1);
+    });
+
+    it('VERBOTEN: Teamer:innen sehen die Karten, aber keinen Fuss und keine Aktion', async () => {
+      await kachelnOeffnen('teamer');
+      expect(kartenNamen()).toHaveLength(4);
+      expect(document.querySelector('.web-termin-karte__fuss')).toBe(null);
+      expect(screen.queryByRole('button', { name: /^Event (kopieren|absagen|löschen)/ })).toBe(null);
+      expect(screen.queryByRole('button', { name: /^Absage/ })).toBe(null);
+    });
+  });
+
+  it('im schmalen Fenster bleibt die App: kein Umschalter', async () => {
+    h.breit = false;
+    await oeffneEvents();
+    expect(screen.queryByRole('group', { name: 'Ansicht' })).toBe(null);
   });
 });
 

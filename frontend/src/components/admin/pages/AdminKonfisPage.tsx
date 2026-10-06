@@ -410,8 +410,6 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         laedt={loading}
         ohneJahrgang={ohneJahrgang}
         pageRef={pageRef}
-        presentingElement={presentingElement}
-        onNeuLaden={refreshKonfis}
         onKonfiAnlegen={presentKonfiModal}
         onTeamAnlegen={() => presentTeamerModalHook({ presentingElement: presentingElement })}
         onMatrix={() => presentMatrixModal({ presentingElement: presentingElement })}

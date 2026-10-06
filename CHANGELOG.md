@@ -140,8 +140,19 @@ Versionsüberschrift.
 - Im Browser stehen gewählte Filter in der Farbe der eigenen Rolle.
 - Im Browser heißen die Event-Filter der Konfis wie in der App: Alle, Meine,
   Konfirmation.
+- Im Browser lassen sich Events, Challenges und Konfis wahlweise als Liste oder
+  als Kacheln ansehen; die Leitung beginnt mit der Liste, Konfis und Team mit
+  Kacheln, und der Browser merkt sich die Wahl.
+- Im Browser sind die Seiten aller Events und Challenges und für die Leitung
+  die Seite jeder Konfi und Teamer:in gleich aufgebaut: alle Aktionen oben
+  rechts, darunter Kennzahlen, links das Eigentliche, rechts die Angaben.
+- In der Konfi-Liste der Leitung im Browser gibt es keinen Knopf „Punkte"
+  mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- In der Konfi-Liste der Leitung im Browser waren die Fortschrittsbalken nur
+  ein flacher Streifen mit abgeschnittener Zahl, und vor dem Namen klaffte eine
+  leere Fläche statt des Kreises mit den Initialen.
 - Direkt nach der Anmeldung zeigte der Gemeinde-Umschalter den Namen der
   eigenen Gemeinde nicht, bis man einmal gewechselt hatte.
 - Nach einem Update zeigt die Web-Version sofort die neuen Bilder der

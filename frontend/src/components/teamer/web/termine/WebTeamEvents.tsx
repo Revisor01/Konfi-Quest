@@ -1,24 +1,30 @@
-// Die Events des Teams als Karten im Raster (Web-Fassung von Mitmachen,
-// 03.10.2026, docs/planung/web-alle-bereiche.md, Entscheidung 6).
+// Die Events des Teams als Karten im Raster oder als Liste (Web-Fassung von
+// Mitmachen, 03.10.2026, docs/planung/web-alle-bereiche.md, Entscheidung 6).
+// Der Umschalter Liste | Kacheln steht als letztes Element rechts neben der
+// Suche; das Team startet mit den Kacheln, der Browser merkt sich die Wahl
+// (useAnsicht, Simon, 06.10.2026). Filter und Suche gelten fuer beide gleich.
 //
 // Dieselben Events und Reiter wie die Liste der App: Alle (alles, auch Events nur
 // fuer Konfis -- "Nur Info"), Meine (jede Buchung, egal in welchem Zustand) und
-// Team (Team gesucht oder nur fuers Team). Eine Karte oeffnet das Event:
+// Team (Team gesucht oder nur fuers Team). Karte und Zeile oeffnen das Event:
 // /teamer/events?eventId=<id> -- derselbe Weg wie die Links aus Dashboard und
 // Push, ein echter Link.
 
 import React, { useMemo, useState } from 'react';
 import { ICON_TERMIN } from '../../../shared/icons';
+import { useApp } from '../../../../contexts/AppContext';
 import { zaehltAlsMeiner } from '../../../shared/eventFormatting';
 import { suchbegriff } from '../../../../utils/supportWeb';
-import { kommendeZuerst, teamFakten, teamListeStatus, terminSuchtTreffer } from '../../../../utils/termineWeb';
+import { jahrgaengeZeile, kommendeZuerst, teamFakten, teamListeStatus, terminSuchtTreffer } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
 import WebChips from '../../../web/WebChips';
 import WebSuche from '../../../web/WebSuche';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
+import { ansichtVorgabe, useAnsicht } from '../../../web/useAnsicht';
 import WebKnopf from '../../../web/WebKnopf';
 import { WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
-import WebTerminKarte from '../../../shared/web/termine/WebTerminKarte';
+import WebTerminAnsicht, { type WebTerminEintrag } from '../../../shared/web/termine/WebTerminAnsicht';
 import { TEAM_EVENT_FILTER, type TeamEventFilter } from '../../../shared/web/termine/terminFilter';
 import '../../../../theme/web/termine.css';
 
@@ -31,6 +37,8 @@ const LEER: Record<TeamEventFilter, string> = {
 const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   const [filter, setFilter] = useFilterAusAdresse<TeamEventFilter>('/teamer/events', TEAM_EVENT_FILTER, 'meine');
   const [suche, setSuche] = useState('');
+  const { user } = useApp();
+  const [ansicht, setAnsicht] = useAnsicht('events-mitglied', ansichtVorgabe(user?.role_name));
 
   const listen = useMemo<Record<TeamEventFilter, Event[]>>(() => ({
     // "Alle" heisst alle -- auch reine Team-Events (User-Hinweis 25.08.2026).
@@ -44,6 +52,21 @@ const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
     [listen, filter, suche],
   );
   const sucht = suchbegriff(suche) !== '';
+
+  // Karte und Zeile rechnen aus denselben Eintraegen.
+  const eintraege: WebTerminEintrag[] = sichtbar.map((e) => {
+    const status = teamListeStatus(e);
+    return {
+      event: e,
+      href: `/teamer/events?eventId=${e.id}`,
+      status,
+      fakten: teamFakten(e),
+      gedaempft: status.gedaempft,
+      statusZeigen: status.zeigtStatus,
+      unterzeile: jahrgaengeZeile(e),
+      materialAnzahl: e.material_count || 0,
+    };
+  });
 
   return (
     <>
@@ -60,29 +83,12 @@ const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Events durchsuchen" platzhalter="Name oder Ort suchen" wert={suche} onWert={setSuche} />
+          <WebAnsichtUmschalter wert={ansicht} onWert={setAnsicht} />
         </div>
       </div>
 
-      {sichtbar.length > 0 ? (
-        <div className="web-termin-raster">
-          {sichtbar.map((e) => {
-            const status = teamListeStatus(e);
-            return (
-              <WebTerminKarte
-                key={e.id}
-                event={e}
-                href={`/teamer/events?eventId=${e.id}`}
-                status={status}
-                fakten={teamFakten(e)}
-                gedaempft={status.gedaempft}
-                statusZeigen={status.zeigtStatus}
-                teamZeigen
-                unterzeile={e.jahrgang_names ? e.jahrgang_names.split(',').map((n) => n.trim()).join(' · ') : undefined}
-                materialAnzahl={e.material_count || 0}
-              />
-            );
-          })}
-        </div>
+      {eintraege.length > 0 ? (
+        <WebTerminAnsicht eintraege={eintraege} ansicht={ansicht} teamZeigen />
       ) : (
         <div className="web-karte">
           <WebLeer

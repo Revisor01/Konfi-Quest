@@ -30,12 +30,17 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 03.10.2026: 118 (30.09.2026: 117, 29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung.
+/** Stand 06.10.2026: 119 (03.10.2026: 118, 30.09.2026: 117, 29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung.
  *  03.10.2026 +1: components/webAnsichtCss.test.ts -- Stil-Waechter fuer das
  *  eigene Stylesheet der Web-Fassungen (nur Tokens, keine Bewegung, Praefix
  *  web-); dort IST das Lesen des Stylesheets der Zweck, rendern prueft keine
- *  CSS-Regel. */
-const OBERGRENZE = 118;
+ *  CSS-Regel.
+ *  06.10.2026 +1: components/webCssKlassen.test.ts -- Stil-Waechter: eine Klasse
+ *  gehoert genau einer Stylesheet-Datei der Web-Fassungen. Die Doppelung gibt es
+ *  erst im gemeinsamen Buendel; ein gerenderter Test laedt nur die Dateien seiner
+ *  Seite und kann sie nicht sehen (so verschwanden Balken und Kreis der
+ *  Konfi-Liste). */
+const OBERGRENZE = 119;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -119,6 +124,7 @@ const BEKANNT: string[] = [
   '__tests__/components/umschalterInDetailansichten.test.ts',
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',
   '__tests__/components/webAnsichtCss.test.ts',
+  '__tests__/components/webCssKlassen.test.ts',
   '__tests__/components/wrappedBewegungReduzieren.test.ts',
   '__tests__/components/wrappedBildNichtVerdeckt.test.ts',
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',

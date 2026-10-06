@@ -150,3 +150,61 @@ describe('Registrierung: die Geräte-Kennung geht mit', () => {
     expect(registrierAufrufe()[0][1]).not.toHaveProperty('device_id');
   });
 });
+
+// Drei Zeitgeber der Seite liefen ueber das Schliessen hinaus: die
+// verzoegerte Pruefung des Benutzernamens (300 ms), das Ruetteln der Karte
+// nach einem Eingabefehler (600 ms) und der Sprung zum Dashboard nach der
+// Registrierung (1,5 s). Sie setzten danach Zustand an einer Seite, die es
+// nicht mehr gab -- in der CI (06.10.2026, PR 227) traf die Pruefung das
+// schon abgebaute Testfenster: alle Tests gruen, der Lauf rot. Der Sprung
+// haette nach einem schnellen Wechsel auf eine andere Seite noch umgeleitet.
+describe('Registrierung: kein Zeitgeber ueberlebt die Seite', () => {
+  const zeitgeber = () => {
+    const gestellt = vi.spyOn(globalThis, 'setTimeout');
+    const geloescht = vi.spyOn(globalThis, 'clearTimeout');
+    const mit = (ms: number) => {
+      const i = gestellt.mock.calls.map(([, d]) => d).lastIndexOf(ms);
+      expect(i).toBeGreaterThanOrEqual(0);
+      return gestellt.mock.results[i].value;
+    };
+    return { gestellt, geloescht, mit, aufraeumen: () => { gestellt.mockRestore(); geloescht.mockRestore(); } };
+  };
+
+  it('die verzoegerte Pruefung des Benutzernamens wird beim Schliessen geloescht', async () => {
+    const z = zeitgeber();
+    try {
+      render(<KonfiRegisterPage />);
+      await screen.findByRole('textbox', { name: 'Dein Name' });
+      tippe('Benutzername', 'mia.neu');
+      const pruefung = z.mit(300);
+      expect(z.geloescht).not.toHaveBeenCalledWith(pruefung);
+      cleanup();
+      expect(z.geloescht).toHaveBeenCalledWith(pruefung);
+    } finally { z.aufraeumen(); }
+  });
+
+  it('das Ruetteln nach einem Eingabefehler wird beim Schliessen geloescht', async () => {
+    const z = zeitgeber();
+    try {
+      render(<KonfiRegisterPage />);
+      await screen.findByRole('textbox', { name: 'Dein Name' });
+      // Der Knopf ist erst mit gueltigem Passwort frei; ohne Namen ruettelt die Karte.
+      tippePasswort('Passwort', 'Johannes7,47');
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Registrieren' })); });
+      expect(screen.getByText('Bitte gib deinen Namen ein')).toBeInTheDocument();
+      const ruetteln = z.mit(600);
+      cleanup();
+      expect(z.geloescht).toHaveBeenCalledWith(ruetteln);
+    } finally { z.aufraeumen(); }
+  });
+
+  it('der Sprung zum Dashboard nach der Registrierung wird beim Schliessen geloescht', async () => {
+    const z = zeitgeber();
+    try {
+      await registrieren();
+      const sprung = z.mit(1500);
+      cleanup();
+      expect(z.geloescht).toHaveBeenCalledWith(sprung);
+    } finally { z.aufraeumen(); }
+  });
+});

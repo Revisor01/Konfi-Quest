@@ -1326,6 +1326,58 @@ mark.web-treffer {
   gap: var(--app-abstand-mini);
 }
 
+/* --- Detailseite (WebDetailSeite): Hinweis, Kennzahlen, zwei Spalten --- */
+.web-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-basis);
+}
+
+/* --- Umschalter Liste | Kacheln (WebAnsichtUmschalter) ---
+   Zwei Knoepfe als ein Feld; der gewaehlte wie ein gewaehlter Filter in der
+   Rollenfarbe, die Schrift bleibt in der Textfarbe. */
+.web-ansicht-umschalter {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: var(--app-abstand-winzig);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-gross);
+  background: var(--web-karte);
+}
+
+.web-ansicht-umschalter__knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-height: 30px;
+  padding: 0 var(--app-abstand-mittel);
+  border: 0;
+  border-radius: var(--app-radius-gross);
+  background: transparent;
+  color: var(--web-text-leise);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+.web-ansicht-umschalter__knopf:hover {
+  background: var(--web-hover);
+}
+
+.web-ansicht-umschalter__knopf[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--web-rolle) 14%, var(--web-karte));
+  box-shadow: inset 0 0 0 1px var(--web-rolle);
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-ansicht-umschalter__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
 /* --- Zwei Spalten: Hauptinhalt und schmale Seite --- */
 .web-spalten {
   display: grid;

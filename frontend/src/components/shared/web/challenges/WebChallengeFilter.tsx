@@ -1,6 +1,7 @@
 // Die Werkzeugleiste der Challenge-Listen in der Web-Fassung: Chips mit
 // Zahl (laufend, geplant, beendet, alle -- fuer Team und Leitung dazu "Wartet
-// auf Freigabe"), die Suche, darunter Zielgruppe und Jahrgang. Die Chips
+// auf Freigabe"), die Suche und, als letztes rechts neben ihr, der Umschalter
+// Liste | Kacheln; darunter Zielgruppe und Jahrgang. Die Chips
 // tragen die Zahl dessen, was unter ihnen steht; die orange Zahl heisst wie
 // am Reiter der App: so viele Challenges haben Beitraege, die auf Freigabe
 // warten.
@@ -10,6 +11,8 @@
 
 import React, { useId } from 'react';
 import WebSuche from '../../../web/WebSuche';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
+import type { WebAnsicht } from '../../../web/useAnsicht';
 import WebChallengeChips from './WebChallengeChips';
 import WebAuswahl from '../../../web/WebAuswahl';
 import { AUDIENCE_LABEL } from '../../../admin/views/ChallengesManageView';
@@ -32,6 +35,9 @@ export interface WebChallengeFilterProps {
   onFilter: (filter: ListenFilter) => void;
   suche: string;
   onSuche: (suche: string) => void;
+  /** Liste oder Kacheln: der Umschalter steht als letztes rechts neben der Suche. */
+  ansicht?: WebAnsicht;
+  onAnsicht?: (ansicht: WebAnsicht) => void;
   /** Die Zielgruppen, die in der Liste vorkommen; unter zwei entfaellt die Reihe. */
   zielgruppen?: readonly ChallengeAudience[];
   zielgruppe?: ChallengeAudience | 'alle';
@@ -48,6 +54,8 @@ const WebChallengeFilter: React.FC<WebChallengeFilterProps> = ({
   onFilter,
   suche,
   onSuche,
+  ansicht,
+  onAnsicht,
   zielgruppen = [],
   zielgruppe = 'alle',
   onZielgruppe,
@@ -71,6 +79,7 @@ const WebChallengeFilter: React.FC<WebChallengeFilterProps> = ({
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Challenges durchsuchen" platzhalter="Challenges suchen" wert={suche} onWert={onSuche} />
+          {ansicht && onAnsicht && <WebAnsichtUmschalter wert={ansicht} onWert={onAnsicht} />}
         </div>
       </div>
 

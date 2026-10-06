@@ -4,12 +4,15 @@ import {
   KONFI_LISTEN_FILTER,
   LISTEN_FILTER,
   OHNE_AUSWAHL,
+  STATUS_MODIFIKATOR,
   challengeSuchtexte,
   challengesFiltern,
   challengesZaehlen,
   jahrgaengeDerChallenges,
+  jahrgangText,
   konfiEintraege,
   kugelAmEintrag,
+  laufzeitKachel,
   leitungEintraege,
   passtZumFilter,
   restzeitText,
@@ -215,6 +218,25 @@ describe('Zeitraum und Restzeit', () => {
   });
 });
 
+describe('Kachel "Laufzeit" auf der Seite einer Challenge', () => {
+  const zeit = { starts_at: '2026-10-03T08:30:00Z', ends_at: '2026-10-17T18:00:00Z' };
+
+  it('laufend: wie lange noch, dazu das Ende', () => {
+    expect(laufzeitKachel(zeit, 'active', '9 Tage')).toEqual({ wert: 'Noch 9 Tage', zusatz: ['bis 17.10.2026'] });
+    expect(laufzeitKachel(zeit, 'active', 'endet gleich')).toEqual({ wert: 'Endet gleich', zusatz: ['bis 17.10.2026'] });
+  });
+
+  it('laufend ohne lesbare Restzeit: "Läuft"', () => {
+    expect(laufzeitKachel(zeit, 'active', '')).toEqual({ wert: 'Läuft', zusatz: ['bis 17.10.2026'] });
+  });
+
+  it('sonst der Zustand: Entwurf ohne Datum, Geplant mit Beginn, Beendet mit Ende', () => {
+    expect(laufzeitKachel(zeit, 'draft', '9 Tage')).toEqual({ wert: 'Entwurf', zusatz: ['Zeitraum noch offen'] });
+    expect(laufzeitKachel(zeit, 'scheduled', '9 Tage')).toEqual({ wert: 'Geplant', zusatz: ['Beginnt am 03.10.2026'] });
+    expect(laufzeitKachel(zeit, 'ended', 'Zeit abgelaufen')).toEqual({ wert: 'Beendet', zusatz: ['am 17.10.2026'] });
+  });
+});
+
 describe('Marken aus den Farben der App-Zuordnung', () => {
   it('Wartendes orange, Freigegebenes gruen, Ausgeblendetes rot, "nur Leitung" grau, anonym blau', () => {
     expect(tonVonFarbe('var(--app-color-warning)')).toBe('warnung');
@@ -223,6 +245,22 @@ describe('Marken aus den Farben der App-Zuordnung', () => {
     expect(tonVonFarbe('var(--app-color-neutral)')).toBe('neutral');
     expect(tonVonFarbe('var(--app-color-wrapped)')).toBe('info');
     expect(tonVonFarbe('irgendwas')).toBe('neutral');
+  });
+});
+
+describe('Jahrgaenge als kurzer Text und Klassen der Zustaende (Karte und Zeile der Liste)', () => {
+  const jg = (id: number, name: string) => ({ id, name });
+
+  it('bis zu zwei Jahrgaenge mit Namen, ab drei nur die Zahl, ohne Jahrgang leer', () => {
+    expect(jahrgangText([])).toBe('');
+    expect(jahrgangText(undefined)).toBe('');
+    expect(jahrgangText([jg(1, '2026/2027')])).toBe('2026/2027');
+    expect(jahrgangText([jg(1, '2026/2027'), jg(2, '2025/2026')])).toBe('2026/2027, 2025/2026');
+    expect(jahrgangText([jg(1, 'A'), jg(2, 'B'), jg(3, 'C')])).toBe('3 Jahrgänge');
+  });
+
+  it('jeder Zustand hat seine Klassenendung -- Karte und Zeile faerben danach', () => {
+    expect(STATUS_MODIFIKATOR).toEqual({ active: 'aktiv', scheduled: 'geplant', draft: 'entwurf', ended: 'beendet' });
   });
 });
 

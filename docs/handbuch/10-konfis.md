@@ -162,7 +162,7 @@ die Meldung an dein Team, das sie
 Drei Reiter zeigen den Stand: **Offen**, **Angerechnet**, **Abgelehnt**. Wird
 etwas abgelehnt, steht der Grund dabei.
 
-### Im Browser Events als Karten durchsuchen
+### Im Browser Events durchsuchen
 
 Im Browser heißt die Seite **Events**; oben stehen zwei Reiter, **Events** und
 **Aktivitäten**. Beide sind Links, und der Reiter steht in der Adresse. Rechts
@@ -170,10 +170,14 @@ oben stehen **Aktualisieren** und, bei den Events, **Legende** — sie erklärt 
 Farben und Zeichen — und **QR-Code scannen**, bei den Aktivitäten **Aktivität
 melden**.
 
-Die Events stehen als **Karten im Raster**. Eine Karte nennt den Status als
-Marke — „Angemeldet", „Warteliste (2)", „Abgesagt" —, Datum, Uhrzeit und Ort,
-was du mitbringen sollst, die Plätze („12/30") und die Punkte; die ganze Karte
-ist ein Link auf das Event. Darüber wählst du wie in der App **Alle**, **Meine**
+Die Events stehen zuerst als **Kacheln im Raster**; rechts neben der Suche
+wechselst du zur **Liste**, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen).
+Eine Karte nennt den Status als Marke — „Angemeldet", „Warteliste (2)",
+„Abgesagt" —, Datum, Uhrzeit und Ort, was du mitbringen sollst, die Plätze
+(„12/30") und die Punkte; die ganze Karte ist ein Link auf das Event. In der
+Liste steht je Event eine Zeile mit Name, Zeit, Ort, Plätzen, Punkten und
+Status; der Name ist der Link. Darüber wählst du wie in der App **Alle**, **Meine**
 oder **Konfirmation** (in der App kurz „Konfi"); die Zahl am Knopf zählt die
 Events darunter, zuerst steht **Meine** offen. **Alle** sind die kommenden
 Events ohne die Konfirmation. **Meine** zeigt jedes
@@ -182,16 +186,17 @@ abgemeldete und abgesagte. Die Suche findet Name, Ort und Beschreibung; Umlaute
 darfst du umschreiben („fruehling" findet „Frühling"), die Escape-Taste leert
 das Feld.
 
-Das Event selbst hat zwei Spalten. Links stehen die Zahlen — **Frei**,
-**Punkte** und **Dabei** —, die Angaben, bei denen der Ort ein Link auf die
-Karte ist, und die Beschreibung. Rechts steht **Bist du dabei?** mit dem einen
-Knopf, der gerade gilt: **Anmelden**, **Warteliste offen**, **Abmelden**, **Von
-der Warteliste abmelden** oder **Wieder anmelden**. Wann welcher Knopf da ist,
-ist dasselbe wie in der App, siehe [Events](#events); geht keine Anmeldung,
-steht statt des Knopfes der Grund da. Darunter stehen **Einchecken** — es öffnet
-den QR-Scanner, solange du angemeldet und noch nicht verbucht bist — und die
-Namen der Teilnehmenden. Oben rechts öffnet **Chat** den Event-Chat, wenn es
-einen gibt; **Alle Events** führt zurück in die Liste.
+Die Seite eines Events ist aufgebaut wie jede andere, siehe
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
+Oben rechts steht der eine Knopf, der gerade gilt: **Anmelden**, **Warteliste
+offen**, **Abmelden**, **Von der Warteliste abmelden** oder **Wieder anmelden**.
+Wann welcher Knopf da ist, ist dasselbe wie in der App, siehe
+[Events](#events); geht es nicht, steht der Grund als Hinweis unter dem Kopf.
+Daneben öffnet **Einchecken** den QR-Scanner und **Chat** den Event-Chat, wenn
+es einen gibt. Die Kennzahlen zeigen **Frei**, **Punkte** und **Dabei**. Links
+stehen die Beschreibung und die Namen der Teilnehmenden, rechts die Angaben,
+bei denen der Ort ein Link auf die Karte ist. **Alle Events** führt zurück in
+die Liste.
 
 Unter **Aktivitäten** stehen deine gemeldeten Aktivitäten als Tabelle: die
 Aktivität mit deinem Kommentar, das Datum mit Hinweis auf das Foto, die Punkte,

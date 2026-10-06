@@ -7,7 +7,15 @@
 //     erreichen -- die Detailseite einer Teamer:in fuehrt dorthin zurueck);
 //   - Suche (Umlaute wie in der Support-Ansicht: "mueller" findet "Müller"),
 //     Jahrgang-Filter und Sortierung ueber die Spaltenkoepfe;
-//   - die Tabelle mit allen Zeilen als Links auf die Detailseite.
+//   - der Umschalter Liste | Kacheln als letztes Element der Werkzeugzeile
+//     (useAnsicht, eine Wahl fuer beide Reiter; die Leitung startet mit der
+//     Liste): die Liste ist die Tabelle mit allen Zeilen als Links auf die
+//     Detailseite, die Kacheln sind je eine Karte im Raster. Filter, Suche und
+//     Sortierung gelten fuer beide; die Kacheln haben keine Spaltenkoepfe und
+//     bekommen dafuer eine Auswahl "Sortieren", die dieselbe Sortierung setzt.
+//
+// Punkte (Aktivitaet, Bonus) vergibt man auf der Detailseite der Konfi, nicht
+// in der Liste (Simon, 06.10.2026).
 //
 // Daten, Rechte und Aktionen kommen von der Seite (AdminKonfisPage) und aus
 // denselben Hooks wie in der App: Die Liste ist die der App (der Server filtert
@@ -44,14 +52,16 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebKachel from '../../../web/WebKachel';
 import WebChips from '../../../web/WebChips';
 import WebSuche from '../../../web/WebSuche';
-import WebDialog from '../../../web/WebDialog';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
 import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
+import { ansichtVorgabe, useAnsicht } from '../../../web/useAnsicht';
 import type { WebSortierung } from './WebSortTabelle';
 import WebKonfiTabelle from './WebKonfiTabelle';
+import WebKonfiKacheln from './WebKonfiKacheln';
 import WebTeamTabelle from './WebTeamTabelle';
+import WebTeamKacheln from './WebTeamKacheln';
 import { WebFilterAuswahl } from './WebLeitungBausteine';
-import { usePunkteVergeben } from './usePunkteVergeben';
 
 export type KonfisAnsicht = 'konfis' | 'team';
 const ANSICHTEN: readonly KonfisAnsicht[] = ['konfis', 'team'];
@@ -64,9 +74,6 @@ export interface WebKonfisProps {
   ohneJahrgang: boolean;
   /** Fuer die Fenster, die auf dieser Seite aufklappen (useModalPage). */
   pageRef?: React.Ref<HTMLElement>;
-  presentingElement?: HTMLElement | null;
-  /** Nach dem Vergeben von Punkten: die Liste neu laden. */
-  onNeuLaden: () => void | Promise<void>;
   onKonfiAnlegen: () => void;
   onTeamAnlegen: () => void;
   onMatrix: () => void;
@@ -79,8 +86,36 @@ export interface WebKonfisProps {
 
 const zahl = (n: number): string => n.toLocaleString('de-DE');
 
+/**
+ * Die Sortierungen, die sich ueber die Spaltenkoepfe der Tabelle einstellen
+ * lassen -- als Auswahl fuer die Kacheln, die keine Spaltenkoepfe haben. Der
+ * Wert ist "schluessel:richtung"; jede Stellung der Koepfe steht hier, damit
+ * die Auswahl nach einem Wechsel zwischen Liste und Kacheln dasselbe zeigt.
+ */
+const KONFI_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 'ab'; label: string }> = [
+  { schluessel: 'name', richtung: 'auf', label: 'Name A–Z' },
+  { schluessel: 'name', richtung: 'ab', label: 'Name Z–A' },
+  { schluessel: 'punkte', richtung: 'ab', label: 'Meiste Punkte' },
+  { schluessel: 'punkte', richtung: 'auf', label: 'Wenigste Punkte' },
+  { schluessel: 'jahrgang', richtung: 'auf', label: 'Jahrgang A–Z' },
+  { schluessel: 'jahrgang', richtung: 'ab', label: 'Jahrgang Z–A' },
+  { schluessel: 'badges', richtung: 'ab', label: 'Meiste Badges' },
+  { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
+];
+
+const TEAM_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 'ab'; label: string }> = [
+  { schluessel: 'name', richtung: 'auf', label: 'Name A–Z' },
+  { schluessel: 'name', richtung: 'ab', label: 'Name Z–A' },
+  { schluessel: 'badges', richtung: 'ab', label: 'Meiste Badges' },
+  { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
+  { schluessel: 'zertifikate', richtung: 'ab', label: 'Meiste Zertifikate' },
+  { schluessel: 'zertifikate', richtung: 'auf', label: 'Wenigste Zertifikate' },
+];
+
+const sortierWert = (s: { schluessel: string; richtung: 'auf' | 'ab' }): string => `${s.schluessel}:${s.richtung}`;
+
 const WebKonfis: React.FC<WebKonfisProps> = ({
-  konfis, jahrgaenge, laedt, ohneJahrgang, pageRef, presentingElement, onNeuLaden,
+  konfis, jahrgaenge, laedt, ohneJahrgang, pageRef,
   onKonfiAnlegen, onTeamAnlegen, onMatrix, onKonfiLoeschen, onTeamerLoeschen, banner, overlays,
 }) => {
   const { user } = useApp();
@@ -97,10 +132,10 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   const [jahrgang, setJahrgang] = useState('alle');
   const [konfiSortierung, setKonfiSortierung] = useState<WebSortierung>({ schluessel: 'name', richtung: 'auf' });
   const [teamSortierung, setTeamSortierung] = useState<WebSortierung>({ schluessel: 'name', richtung: 'auf' });
-  const [punkteFuer, setPunkteFuer] = useState<KonfiListenEintrag | null>(null);
+  // Liste oder Kacheln: eine Wahl fuer beide Reiter, im Browser gemerkt; die Leitung beginnt mit der Liste.
+  const [darstellung, setDarstellung] = useAnsicht('konfis', ansichtVorgabe(rolle));
 
   const team = useTeamerListe(ansicht === 'team');
-  const punkte = usePunkteVergeben({ presentingElement, onGespeichert: onNeuLaden });
 
   // Die Jahrgaenge dieses Kontos: die Gemeindeleitung alle, eine Leitung ihre zugewiesenen.
   const meineJahrgaenge = useMemo(() => sichtbareJahrgaenge(jahrgaenge, user), [jahrgaenge, user]);
@@ -207,8 +242,10 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
     </>
   );
 
-  // --- Inhalt der Karte -------------------------------------------------------------
+  // --- Inhalt unter der Werkzeugzeile ------------------------------------------------
   let inhalt: React.ReactNode;
+  // Wahr, sobald Karten im Raster zu sehen sind (nicht Laden, Fehler oder Leerzustand).
+  let inhaltIstKacheln = false;
   if (istTeam) {
     if (team.laedt && team.teamers.length === 0) {
       inhalt = <WebLaden karten={1} text="Das Team wird geladen." />;
@@ -223,17 +260,21 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
         />
       );
     } else {
-      inhalt = (
+      const teamLoeschen = darfTeamLoeschen
+        ? async (t: TeamerListenEintrag) => { await onTeamerLoeschen(t); await team.laden(); }
+        : undefined;
+      inhalt = darstellung === 'kacheln' ? (
+        <WebTeamKacheln team={sichtbaresTeam} suche={suche} onLoeschen={teamLoeschen} />
+      ) : (
         <WebTeamTabelle
           team={sichtbaresTeam}
           suche={suche}
           sortierung={teamSortierung}
           onSortieren={sortiereTeamNach}
-          onLoeschen={darfTeamLoeschen
-            ? async (t) => { await onTeamerLoeschen(t); await team.laden(); }
-            : undefined}
+          onLoeschen={teamLoeschen}
         />
       );
+      inhaltIstKacheln = darstellung === 'kacheln';
     }
   } else if (sichtbareKonfis.length === 0) {
     const keinJahrgang = ohneJahrgang && !sucht;
@@ -253,16 +294,18 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
       />
     );
   } else {
-    inhalt = (
+    inhalt = darstellung === 'kacheln' ? (
+      <WebKonfiKacheln konfis={sichtbareKonfis} suche={suche} onLoeschen={darfVerwalten ? onKonfiLoeschen : undefined} />
+    ) : (
       <WebKonfiTabelle
         konfis={sichtbareKonfis}
         suche={suche}
         sortierung={konfiSortierung}
         onSortieren={sortiereKonfisNach}
-        onPunkte={darfVerwalten ? setPunkteFuer : undefined}
         onLoeschen={darfVerwalten ? onKonfiLoeschen : undefined}
       />
     );
+    inhaltIstKacheln = darstellung === 'kacheln';
   }
 
   const zaehlzeile = istTeam
@@ -276,8 +319,8 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
 
       <div className="web-raster web-raster--kacheln">{kacheln}</div>
 
-      <div className="web-werkzeuge">
-        <WebChips<KonfisAnsicht> beschriftung="Ansicht" chips={chips} wert={ansicht} onWert={(a) => { setAnsicht(a); setSuche(''); }} />
+      <div className={`web-werkzeuge${inhaltIstKacheln ? ' web-werkzeuge--kacheln' : ''}`}>
+        <WebChips<KonfisAnsicht> beschriftung="Konfis oder Team" chips={chips} wert={ansicht} onWert={(a) => { setAnsicht(a); setSuche(''); }} />
         <WebSuche
           beschriftung={istTeam ? 'Im Team suchen' : 'Konfi suchen'}
           platzhalter={istTeam ? 'Im Team suchen …' : 'Name oder Benutzername …'}
@@ -292,30 +335,25 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
             optionen={[{ wert: 'alle', label: 'Alle Jahrgänge' }, ...meineJahrgaenge.map((j) => ({ wert: j.name, label: j.name }))]}
           />
         )}
-        {zaehlzeile && <span className="web-gedaempft web-werkzeuge__zahl" role="status">{zaehlzeile}</span>}
+        <div className="web-werkzeuge__rechts">
+          {zaehlzeile && <span className="web-gedaempft web-werkzeuge__zahl" role="status">{zaehlzeile}</span>}
+          {inhaltIstKacheln && (
+            <WebFilterAuswahl
+              label="Sortieren"
+              wert={sortierWert(istTeam ? teamSortierung : konfiSortierung)}
+              onWert={(w) => {
+                const [schluessel, richtung] = w.split(':');
+                (istTeam ? setTeamSortierung : setKonfiSortierung)({ schluessel, richtung: richtung === 'ab' ? 'ab' : 'auf' });
+              }}
+              optionen={(istTeam ? TEAM_SORTIERUNGEN : KONFI_SORTIERUNGEN).map((s) => ({ wert: sortierWert(s), label: s.label }))}
+            />
+          )}
+          <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />
+        </div>
       </div>
 
-      <div className="web-karte">{inhalt}</div>
-
-      {punkteFuer && (
-        <WebDialog
-          titel={`Punkte an ${punkteFuer.name} vergeben`}
-          beschreibung="Eine Aktivität aus der Liste eintragen oder Bonuspunkte mit eigener Begründung geben."
-          onSchliessen={() => setPunkteFuer(null)}
-          aktionen={<WebKnopf onClick={() => setPunkteFuer(null)}>Abbrechen</WebKnopf>}
-        >
-          <div className="web-wahlkarten">
-            <button type="button" className="web-wahlkarte" onClick={() => { const k = punkteFuer; setPunkteFuer(null); punkte.oeffnen(k, 'aktivitaet'); }}>
-              <span className="web-wahlkarte__titel">Aktivität eintragen</span>
-              <span className="web-wahlkarte__text">Eine Aktivität mit festem Punktwert, zum Beispiel einen Gottesdienstbesuch.</span>
-            </button>
-            <button type="button" className="web-wahlkarte" onClick={() => { const k = punkteFuer; setPunkteFuer(null); punkte.oeffnen(k, 'bonus'); }}>
-              <span className="web-wahlkarte__titel">Bonuspunkte vergeben</span>
-              <span className="web-wahlkarte__text">Punkte mit eigener Begründung, unabhängig von den Aktivitäten.</span>
-            </button>
-          </div>
-        </WebDialog>
-      )}
+      {/* Die Kacheln stehen frei im Raster, die Tabelle und jeder Hinweis in einer Karte. */}
+      {inhaltIstKacheln ? inhalt : <div className="web-karte">{inhalt}</div>}
 
       {overlays}
     </WebSeite>

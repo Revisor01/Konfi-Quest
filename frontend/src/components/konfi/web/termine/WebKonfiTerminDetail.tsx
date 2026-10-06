@@ -1,7 +1,11 @@
 // Ein Event bei Konfis in der Web-Fassung (/konfi/events/:id, 03.10.2026,
-// docs/planung/web-alle-bereiche.md, Entscheidung 6): zweispaltig. Links die
-// Kennzahlen, die Angaben und die Beschreibung; rechts "Bist du dabei?" mit
-// Anmelden und Abmelden, das Einchecken per QR-Code und wer dabei ist.
+// docs/planung/web-alle-bereiche.md, Entscheidung 6) auf dem Geruest aller
+// Detailseiten (components/web/WebDetailSeite.tsx; Simon, 06.10.2026: „Inhalt
+// links, Angaben rechts"). Im Kopf Titel, Kennzeichen und ALLE Aktionen --
+// Anmelden oder Abmelden, Einchecken, Chat; was die Karte "Bist du dabei?"
+// erklaerte (Warteliste Platz 3, Abmeldefrist, Anwesend), steht als Hinweis
+// ueber den Kennzahlen. Links breit die Beschreibung und wer dabei ist, rechts
+// schmal die Angaben.
 //
 // Die Ansicht (konfi/views/EventDetailView) laedt, besitzt die Funktionen
 // (Anmelden mit Zeitfenster-Wahl und Konfirmations-Pruefung, Abmelden mit Grund,
@@ -23,13 +27,12 @@ import {
 } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
 import WebSeite from '../../../web/WebSeite';
-import WebSpalten from '../../../web/WebSpalten';
+import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
-import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
 import WebHinweis from '../../../web/WebHinweis';
 import { WebFehler, WebLaden } from '../../../web/WebZustaende';
-import { WebAbsage, WebAktionsKnopf, WebTerminAngaben, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
+import { WebAbsage, WebTerminAngaben, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
 import '../../../../theme/web/termine.css';
 
 export interface KonfiDetailAktionen {
@@ -95,58 +98,60 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
     hatKonfirmationGebucht: p.hatKonfirmationGebucht,
   });
   const angaben = terminAngaben(eventData, { rolle: 'konfi', zeitfenster: p.zeitfenster });
-  const kennzahlen = konfiKennzahlen(eventData);
   const einchecken = eventData.booking_status === 'confirmed' && !eventData.attendance_status;
 
-  const haupt = (
+  // Alle Aktionen im Kopf; die wichtigste -- Anmelden, auch Wieder anmelden und die
+  // Warteliste -- rechts und als primaerer Knopf, Abmelden als Gefahr.
+  const aktion = zustand.knopf;
+  const kopfAktionen = (
+    <>
+      {eventData.chat_room_id && (
+        <WebKnopf onClick={aktionen.chat} aria-label="Event-Chat öffnen">
+          <IonIcon icon={ICON_CHAT} aria-hidden="true" />
+          Chat
+        </WebKnopf>
+      )}
+      {einchecken && (
+        <WebKnopf onClick={aktionen.einchecken}>
+          <IonIcon icon={ICON_QRCODE} aria-hidden="true" />
+          Einchecken
+        </WebKnopf>
+      )}
+      {aktion && (
+        <WebKnopf
+          art={aktion.gefahr ? 'gefahr' : 'primaer'}
+          disabled={aktion.sperrt}
+          onClick={aktionen[AKTION_ZU_FUNKTION[aktion.aktion]]}
+        >
+          {aktion.text}
+        </WebKnopf>
+      )}
+    </>
+  );
+
+  // Ein abgesagtes Event sagt es schon in WebAbsage -- konfiAnmeldeZustand wiederholt dort nur
+  // "Dieses Event ist abgesagt". Was die Karte "Bist du dabei?" der App erklaert, steht hier als Hinweis:
+  // der Stand, die Erklaerung zum gesperrten Knopf ("Abmelden geht nur bis 2 Tage vorher"), Anwesend.
+  const zustandHinweis = abgesagt ? undefined : zustand.hinweis;
+  const hinweis = (abgesagt || zustandHinweis || zustand.gesperrt || eventData.attendance_status === 'present') ? (
     <>
       {abgesagt && <WebAbsage event={eventData} />}
+      {zustandHinweis && (
+        <WebHinweis art={zustandHinweis.art === 'info' ? 'hinweis' : zustandHinweis.art}>{zustandHinweis.text}</WebHinweis>
+      )}
+      {zustand.gesperrt && <WebHinweis art="hinweis">{zustand.gesperrt.text}</WebHinweis>}
+      {eventData.attendance_status === 'present' && <WebHinweis art="erfolg">Anwesend</WebHinweis>}
+    </>
+  ) : undefined;
 
-      <div className="web-raster web-raster--kacheln">
-        {kennzahlen.map((k) => <WebKachel key={k.label} label={k.label} wert={k.wert} />)}
-      </div>
-
-      <WebKarte titel="Angaben">
-        {eventData.has_timeslots && p.zeitfenster.length === 0 && !isOnline && (
-          <WebHinweis art="hinweis">Die Zeitfenster-Auswahl ist offline nicht verfügbar.</WebHinweis>
-        )}
-        <WebTerminAngaben angaben={angaben} />
-      </WebKarte>
-
+  // Links, breit: Beschreibung, dann wer dabei ist.
+  const haupt = (
+    <>
       {eventData.description && (
         <WebKarte titel="Beschreibung">
           <p className="web-beschreibung">{eventData.description}</p>
         </WebKarte>
       )}
-    </>
-  );
-
-  const seite = (
-    <>
-      <WebKarte titel="Bist du dabei?">
-        <div className="web-block-knoepfe">
-          {zustand.hinweis && (
-            <WebHinweis art={zustand.hinweis.art === 'info' ? 'hinweis' : zustand.hinweis.art}>{zustand.hinweis.text}</WebHinweis>
-          )}
-          {zustand.knopf && (
-            <WebAktionsKnopf
-              art={zustand.knopf.gefahr ? 'gefahr' : zustand.knopf.gruen ? 'erfolg' : 'warnung'}
-              disabled={zustand.knopf.sperrt}
-              onClick={aktionen[AKTION_ZU_FUNKTION[zustand.knopf.aktion]]}
-            >
-              {zustand.knopf.text}
-            </WebAktionsKnopf>
-          )}
-          {zustand.gesperrt && <WebAktionsKnopf art="neutral" disabled>{zustand.gesperrt.text}</WebAktionsKnopf>}
-          {eventData.attendance_status === 'present' && <WebHinweis art="erfolg">Anwesend</WebHinweis>}
-          {einchecken && (
-            <WebAktionsKnopf art="neutral" onClick={aktionen.einchecken}>
-              <IonIcon icon={ICON_QRCODE} aria-hidden="true" />
-              Einchecken
-            </WebAktionsKnopf>
-          )}
-        </div>
-      </WebKarte>
 
       {p.teilnehmende.length === 0 && !isOnline && (
         <WebHinweis art="hinweis">Die Teilnehmerliste ist offline nicht verfügbar.</WebHinweis>
@@ -163,27 +168,34 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
     </>
   );
 
+  // Rechts, schmal: die Angaben.
+  const seite = (
+    <WebKarte titel="Angaben">
+      {eventData.has_timeslots && p.zeitfenster.length === 0 && !isOnline && (
+        <WebHinweis art="hinweis">Die Zeitfenster-Auswahl ist offline nicht verfügbar.</WebHinweis>
+      )}
+      <WebTerminAngaben angaben={angaben} />
+    </WebKarte>
+  );
+
   return (
-    <WebSeite
+    <WebDetailSeite
       bereich="Mitmachen"
+      zurueck={ZURUECK}
       titel={eventData.name}
-      untertitel={(
+      kennzeichen={(
         <span className="web-pillreihe">
           <WebTerminMarken status={status} event={eventData} teamZeigen={false} />
           <span>{zeitraumText(eventData)}</span>
         </span>
       )}
-      aktionen={eventData.chat_room_id ? (
-        <WebKnopf onClick={aktionen.chat} aria-label="Event-Chat öffnen">
-          <IonIcon icon={ICON_CHAT} aria-hidden="true" />
-          Chat
-        </WebKnopf>
-      ) : undefined}
-      zurueck={ZURUECK}
+      aktionen={kopfAktionen}
+      hinweis={hinweis}
+      kennzahlen={konfiKennzahlen(eventData).map((k) => ({ label: k.label, wert: k.wert }))}
+      haupt={haupt}
+      seite={seite}
       pageRef={p.pageRef}
-    >
-      <WebSpalten haupt={haupt} seite={seite} seiteBeschriftung="Anmeldung und Teilnehmende" />
-    </WebSeite>
+    />
   );
 };
 

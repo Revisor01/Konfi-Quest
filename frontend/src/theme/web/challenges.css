@@ -487,18 +487,7 @@
   gap: var(--app-abstand-mittel) var(--app-abstand-basis);
 }
 
-/* --- Seite einer Challenge: Aktionen rechts --- */
-.web-challenge-aktionen {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-eng);
-}
-
-.web-challenge-aktionen .web-knopf {
-  justify-content: flex-start;
-  width: 100%;
-}
-
+/* --- Seite einer Challenge: Text neben dem Stempel --- */
 .web-challenge-hinweistext {
   margin: 0;
   color: var(--web-text-leise);
@@ -515,4 +504,86 @@
 .web-challenge-frage {
   margin: 0;
   color: var(--web-text-leise);
+}
+
+/* --- Ansicht Liste/Kacheln (Challenges) ---
+   Die Liste ist eine Tabelle (WebChallengesTabelle); die Kacheln sind das
+   Raster der Karten oben. Der Umschalter selbst steht in web-ansicht.css
+   (.web-ansicht-umschalter). Die Zeile traegt wie die Karte die Farbe ihres
+   Zustands am Stempel: laufend Indigo, geplant Blau-Indigo, Entwurf und
+   beendet grau. */
+.web-challenge-zeile--aktiv {
+  --web-challenge-verlauf: linear-gradient(135deg, var(--app-color-challenges) 0%, var(--app-color-challenges-dunkel) 100%);
+}
+
+.web-challenge-zeile--geplant {
+  --web-challenge-verlauf: linear-gradient(135deg, var(--app-color-info) 0%, var(--app-color-challenges-dunkel) 100%);
+}
+
+.web-challenge-zeile--entwurf,
+.web-challenge-zeile--beendet {
+  --web-challenge-verlauf: linear-gradient(135deg, var(--app-color-neutral-hell) 0%, var(--app-color-neutral) 100%);
+}
+
+/* Der Stempel in klein: derselbe Kreis mit derselben roten Zahl wie auf der
+   Karte, hier auf dem Verlauf des Zustands statt auf dem Bild. */
+.web-challenge-symbol--klein {
+  width: 36px;
+  height: 36px;
+  border-color: transparent;
+  background: var(--web-challenge-verlauf);
+  font-size: var(--app-text-gross);
+}
+
+/* Die rote Zahl sitzt weiter aussen, damit sie das Symbol nicht verdeckt. */
+.web-challenge-symbol--klein .web-challenge-kugel {
+  top: calc(-1 * var(--app-abstand-mini));
+  right: calc(-1 * var(--app-abstand-schmal));
+}
+
+/* Erste Spalte: Stempel, Titel (der Link der Zeile) und darunter der Stempel-Name. */
+.web-challenge-zelle {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-basis);
+  min-width: 0;
+}
+
+.web-challenge-zelle__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-challenge-zeile__titel {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.web-challenge-zeile--beendet .web-challenge-zeile__titel {
+  color: var(--web-text-leise);
+}
+
+/* Ein Wert in normaler Schrift, die zweite Zeile (web-zelle-leise) darunter. */
+.web-challenge-wert {
+  display: block;
+  color: var(--web-text);
+}
+
+.web-challenge-marken {
+  display: flex;
+}
+
+/* Die orange Zahl der wartenden Beitraege steht in der Zelle, nicht im Chip. */
+.web-challenge-wartet {
+  display: inline-block;
+}
+
+/* Am Zeilenende die Knoepfe der Karte als Symbole, auf einer Linie und rechts. */
+.web-challenge-spalte-aktionen {
+  text-align: right;
+}
+
+.web-challenge-zeile__aktionen {
+  flex-wrap: nowrap;
 }

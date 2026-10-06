@@ -1,5 +1,9 @@
-// Die Events der Leitung als Tabelle (Web-Fassung von Mitmachen, 03.10.2026,
-// docs/planung/web-alle-bereiche.md, Entscheidung 6).
+// Die Events der Leitung (Web-Fassung von Mitmachen, 03.10.2026,
+// docs/planung/web-alle-bereiche.md, Entscheidung 6) -- als Liste (Tabelle) oder
+// als Kacheln (WebEventsKacheln); der Umschalter steht als letztes Element rechts
+// neben der Suche, der Browser merkt sich die Wahl (useAnsicht, Simon, 06.10.2026).
+// Die Seite gehoert der Leitung und startet deshalb mit der Liste. Filter,
+// Suche, Leerzustaende und die Aktionen gelten fuer beide Ansichten gleich.
 //
 // Dieselben Listen wie die App (aktuelleTermine, zuVerbuchendeTermine,
 // vergangeneTermine aus shared/eventFormatting.ts): Aktuell, Verbuchen,
@@ -10,15 +14,7 @@
 // Rueckfragen und Modalen wie in der App.
 
 import React, { useMemo, useState } from 'react';
-import { IonIcon } from '@ionic/react';
-import {
-  ICON_BEARBEITEN,
-  ICON_GESPERRT,
-  ICON_KOPIEREN,
-  ICON_LOESCHEN,
-  ICON_RUECKGAENGIG,
-  ICON_TERMIN,
-} from '../../../shared/icons';
+import { ICON_TERMIN } from '../../../shared/icons';
 import {
   aktuelleTermine,
   istAbgesagt,
@@ -30,6 +26,7 @@ import {
 import { suchbegriff } from '../../../../utils/supportWeb';
 import {
   abgesagteTermine,
+  jahrgaengeZeile,
   kategorienNamen,
   leitungFakten,
   leitungListeStatus,
@@ -48,8 +45,12 @@ import WebLink from '../../../web/WebLink';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import WebTreffer from '../../../web/WebTreffer';
 import { WebLeer } from '../../../web/WebZustaende';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
+import { useAnsicht } from '../../../web/useAnsicht';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { WebAbsageZeile, WebFakten, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
+import WebEventAktionen from './WebEventAktionen';
+import WebEventsKacheln from './WebEventsKacheln';
 import { ZEIT_FILTER, type TerminAktionen, type ZeitFilter } from './typen';
 import '../../../../theme/web/termine.css';
 
@@ -84,6 +85,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
   const [jahrgang, setJahrgang] = useState('alle');
   const [kategorie, setKategorie] = useState('alle');
   const [art, setArt] = useState<ArtFilter>('alle');
+  const [ansicht, setAnsicht] = useAnsicht('events-leitung', 'liste');
 
   const kategorien = useMemo(() => {
     const namen = new Set<string>();
@@ -128,6 +130,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       breite: '25%',
       zelle: (e) => {
         const abgesagtes = istAbgesagt(e);
+        const jahrgaenge = jahrgaengeZeile(e);
         return (
           <>
             <WebLink
@@ -139,7 +142,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
               </span>
               {abgesagtes && <span className="web-nur-vorlesen">, abgesagt</span>}
             </WebLink>
-            {e.jahrgang_names && <span className="web-zelle-leise">{e.jahrgang_names.split(',').map((n) => n.trim()).join(' · ')}</span>}
+            {jahrgaenge && <span className="web-zelle-leise">{jahrgaenge}</span>}
             <WebAbsageZeile event={e} />
           </>
         );
@@ -211,34 +214,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       kopfVersteckt: true,
       breite: '176px',
       klasse: 'web-spalte-termin-aktionen',
-      zelle: (e) => {
-        const abgesagtes = istAbgesagt(e);
-        return (
-          <div className="web-termin-aktionen">
-            {abgesagtes && (
-              <WebKnopf klein symbol vorn aria-label="Absage zurücknehmen" title="Absage zurücknehmen" onClick={() => aktionen.zuruecknehmen(e)}>
-                <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-              </WebKnopf>
-            )}
-            <WebKnopf klein symbol vorn aria-label="Event kopieren" title="Event kopieren" onClick={() => aktionen.kopieren(e)}>
-              <IonIcon icon={ICON_KOPIEREN} aria-hidden="true" />
-            </WebKnopf>
-            <WebKnopf
-              klein
-              symbol
-              vorn
-              aria-label={abgesagtes ? 'Absagegrund bearbeiten' : 'Event absagen'}
-              title={abgesagtes ? 'Absagegrund bearbeiten' : 'Event absagen'}
-              onClick={() => aktionen.absagen(e)}
-            >
-              <IonIcon icon={abgesagtes ? ICON_BEARBEITEN : ICON_GESPERRT} aria-hidden="true" />
-            </WebKnopf>
-            <WebKnopf klein symbol vorn art="gefahr" aria-label="Event löschen" title="Event löschen" onClick={() => aktionen.loeschen(e)}>
-              <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-            </WebKnopf>
-          </div>
-        );
-      },
+      zelle: (e) => <WebEventAktionen event={e} aktionen={aktionen} />,
     });
   }
 
@@ -281,11 +257,23 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
             <WebKnopf art="text" klein onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf>
           )}
           <WebSuche beschriftung="Events durchsuchen" platzhalter="Name oder Ort suchen" wert={suche} onWert={setSuche} />
+          <WebAnsichtUmschalter wert={ansicht} onWert={setAnsicht} />
         </div>
       </div>
 
-      <div className="web-karte">
-        {sichtbar.length > 0 ? (
+      {sichtbar.length === 0 ? (
+        <div className="web-karte">
+          <WebLeer
+            icon={ICON_TERMIN}
+            titel={gefiltert ? 'Keine Treffer' : 'Keine Events gefunden'}
+            text={gefiltert ? 'Zu diesen Filtern gibt es hier kein Event.' : LEER_TEXT[zeit]}
+            aktion={gefiltert ? <WebKnopf onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf> : undefined}
+          />
+        </div>
+      ) : ansicht === 'kacheln' ? (
+        <WebEventsKacheln events={sichtbar} darfVerwalten={darfVerwalten} aktionen={aktionen} suche={suche} />
+      ) : (
+        <div className="web-karte">
           <WebTabelle
             beschriftung="Events"
             spalten={spalten}
@@ -294,15 +282,8 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
             zeileKlasse={(e) => (leitungListeStatus(e).gedaempft ? 'web-zeile--gedaempft' : undefined)}
             fest
           />
-        ) : (
-          <WebLeer
-            icon={ICON_TERMIN}
-            titel={gefiltert ? 'Keine Treffer' : 'Keine Events gefunden'}
-            text={gefiltert ? 'Zu diesen Filtern gibt es hier kein Event.' : LEER_TEXT[zeit]}
-            aktion={gefiltert ? <WebKnopf onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf> : undefined}
-          />
-        )}
-      </div>
+        </div>
+      )}
     </>
   );
 };

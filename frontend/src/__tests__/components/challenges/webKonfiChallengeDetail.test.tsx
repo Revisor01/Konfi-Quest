@@ -1,8 +1,9 @@
 // Die Seite einer Challenge fuer Konfis in der Web-Fassung, gerendert
-// (docs/planung/web-alle-bereiche.md, Entscheidung 6): zwei Spalten, links
-// Aufgabe und Beitraege als Raster (Feed der Gruppe, eigene Beitraege),
-// rechts "Mitmachen" mit dem Knopf zum Einreichen, Angaben und Stempel.
-// Alles ueber dieselbe Logik wie die Ansicht der App
+// (docs/planung/web-alle-bereiche.md, Entscheidung 6). Aufbau wie jede
+// Detailseite (06.10.2026): im Kopf Titel, Kennzeichen und die Aktion "Beitrag
+// einreichen", darunter der Hinweis dazu und die Kennzahlen; links Aufgabe und
+// Beitraege als Raster (Feed der Gruppe, eigene Beitraege), rechts die Angaben
+// und der Stempel. Alles ueber dieselbe Logik wie die Ansicht der App
 // (useKonfiChallengeAnsicht): wann die Challenge laeuft, wer einreichen darf,
 // was unter welchem Reiter steht. Im schmalen Fenster bleibt die App-Ansicht.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -104,6 +105,15 @@ const zeigen = async () => {
   return r;
 };
 const beitraege = () => [...screen.getByRole('list', { name: /Aus deiner Gruppe|Deine Beiträge|Dein Beitrag/ }).children] as HTMLElement[];
+const kopf = () => screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement;
+/** Die Knoepfe im Kopf in der Reihenfolge der Seite (Aktionen sind Knoepfe oben rechts). */
+const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim());
+/** Die Kachel-Beschriftungen der Kennzahlen-Reihe ("Laufzeit: Noch 6 Tage"). */
+const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
+/** Der Hinweis "Seit deinem letzten Besuch" -- neben ihm steht der Hinweis zum Einreichen. */
+const neuigkeiten = () => screen.getByText('Seit deinem letzten Besuch').closest('[role="status"]') as HTMLElement;
+/** Die Hinweise unter dem Kopf, vor den Kennzahlen. */
+const hinweise = () => [...document.querySelectorAll('.web-detail > .web-hinweis')].map((x) => x.textContent!.trim());
 const chip = (name: RegExp | string) => within(screen.getByRole('group', { name: 'Beiträge' })).getByRole('button', { name });
 
 beforeEach(() => {
@@ -118,13 +128,65 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
+describe('Challenge der Konfis (Web): Aufbau wie jede Detailseite', () => {
+  it('Aktionen im Kopf: "Beitrag einreichen" als primaerer Knopf -- keine eigene Karte "Mitmachen"', async () => {
+    await zeigen();
+    expect(knoepfeImKopf()).toEqual(['Beitrag einreichen']);
+    expect(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' })).toHaveClass('web-knopf--primaer');
+    expect(screen.queryByRole('region', { name: 'Mitmachen' })).toBeNull();
+  });
+
+  it('die Kennzahlen stehen in einer Reihe unter dem Kopf: Feed, Meine Beitraege, Laufzeit, Stempel', async () => {
+    antworten(CHALLENGE, GALERIE, EIGENE);
+    await zeigen();
+    expect(kennzahlen()).toEqual(['Beiträge im Feed: 3', 'Meine Beiträge: 3', 'Laufzeit: Noch 6 Tage', 'Stempel: Erhalten']);
+    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
+    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('links der Inhalt (Aufgabe, Beitraege), rechts der Block "Angaben" mit Angaben und Stempel', async () => {
+    await zeigen();
+    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
+    expect(seite.tagName).toBe('ASIDE');
+    expect(seite).toHaveAttribute('aria-label', 'Angaben');
+    expect(within(haupt).getByRole('region', { name: 'Worum geht es?' })).toBeInTheDocument();
+    expect(within(haupt).getByRole('list', { name: 'Aus deiner Gruppe' })).toBeInTheDocument();
+    expect(within(seite).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
+    expect(within(seite).getByRole('region', { name: 'Stempel' })).toBeInTheDocument();
+    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBeNull();
+  });
+
+  it('der Stempel in den Kennzahlen: offen, solange nichts freigegeben ist; nach Ablauf "Nicht erhalten"', async () => {
+    await zeigen();
+    expect(kennzahlen()).toEqual(['Beiträge im Feed: 3', 'Meine Beiträge: 0', 'Laufzeit: Noch 6 Tage', 'Stempel: Offen']);
+    cleanup();
+    antworten({ ...CHALLENGE, starts_at: tage(-30), ends_at: tage(-10) });
+    await zeigen();
+    expect(kennzahlen()).toEqual(['Beiträge im Feed: 3', 'Meine Beiträge: 0', 'Laufzeit: Beendet', 'Stempel: Nicht erhalten']);
+  });
+
+  it('"nur Leitung": keine Kachel fuer den Feed, den es nicht gibt', async () => {
+    antworten({ ...CHALLENGE, visibility: 'private' }, [], EIGENE);
+    oeffne();
+    await screen.findByRole('heading', { level: 2, name: 'Deine Beiträge' });
+    expect(kennzahlen()).toEqual(['Meine Beiträge: 3', 'Laufzeit: Noch 6 Tage', 'Stempel: Erhalten']);
+  });
+
+  it('die Laufzeit nennt Ende bzw. Beginn: Startet noch, Beendet mit Datum', async () => {
+    antworten({ ...CHALLENGE, starts_at: tage(-30), ends_at: tage(-10) });
+    await zeigen();
+    expect(screen.getByRole('group', { name: 'Laufzeit: Beendet' })).toHaveTextContent('am 23.09.2026');
+  });
+});
+
 describe('Challenge der Konfis (Web): Kopf, Aufgabe und Angaben', () => {
-  it('Titel, Weg zurueck als Link zur Liste, Zustand und Restzeit, Aufgabe mit Sichtbarkeit', async () => {
+  it('Titel, Weg zurueck als Link zur Liste, Zustand und Zeitraum, Aufgabe mit Sichtbarkeit', async () => {
     await zeigen();
     expect(screen.getByRole('link', { name: 'Alle Challenges' }).getAttribute('href')).toBe('/konfi/challenges');
-    const kopf = screen.getByRole('heading', { level: 1 }).closest('header')!;
-    expect(kopf).toHaveTextContent('Läuft');
-    expect(kopf).toHaveTextContent('Noch 6 Tage');
+    expect(kopf()).toHaveTextContent('Läuft');
+    expect(kopf()).toHaveTextContent('25.09. – 09.10.2026');
+    expect(screen.getByRole('group', { name: 'Laufzeit: Noch 6 Tage' })).toBeInTheDocument();
     const aufgabe = screen.getByRole('region', { name: 'Worum geht es?' });
     expect(aufgabe).toHaveTextContent('Fotografiert den Ort, an dem ihr euch am wohlsten fühlt.');
     expect(aufgabe).toHaveTextContent('Für die Gruppe sichtbar');
@@ -230,7 +292,7 @@ describe('Challenge der Konfis (Web): Beitraege als Raster', () => {
     expect(await screen.findByRole('heading', { level: 3, name: 'Noch keine geteilten Beiträge' })).toBeInTheDocument();
     fireEvent.click(chip(/^Meins/));
     expect(screen.getByRole('heading', { level: 3, name: 'Noch kein Beitrag von dir' })).toBeInTheDocument();
-    expect(screen.getByText('Reiche rechts unter „Mitmachen“ deinen Beitrag ein.')).toBeInTheDocument();
+    expect(screen.getByText('Reiche oben rechts über „Beitrag einreichen“ deinen Beitrag ein.')).toBeInTheDocument();
     cleanup();
     antworten({ ...CHALLENGE, starts_at: tage(-30), ends_at: tage(-10) }, [], []);
     oeffne();
@@ -246,37 +308,43 @@ describe('Challenge der Konfis (Web): Beitraege als Raster', () => {
     expect(await screen.findByText('Die Liste der Beiträge ist offline nicht verfügbar.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Mein Lieblingsplatz' })).toBeInTheDocument();
     expect(screen.queryByText('Noch keine geteilten Beiträge')).toBeNull();
+    // Ohne Beitraege keine falsche Null: ein Strich.
+    expect(kennzahlen()).toEqual(['Beiträge im Feed: –', 'Meine Beiträge: –', 'Laufzeit: Noch 6 Tage', 'Stempel: –']);
   });
 });
 
-describe('Challenge der Konfis (Web): Mitmachen', () => {
-  it('der Knopf oeffnet das Einreich-Formular der App; darunter, wer den Beitrag sieht', async () => {
+describe('Challenge der Konfis (Web): Beitrag einreichen', () => {
+  it('der Knopf im Kopf oeffnet das Einreich-Formular der App; der Hinweis darueber sagt, wer den Beitrag sieht', async () => {
     await zeigen();
-    const karte = screen.getByRole('region', { name: 'Mitmachen' });
-    expect(karte).toHaveTextContent('Für deine Gruppe sofort sichtbar');
-    fireEvent.click(within(karte).getByRole('button', { name: 'Beitrag einreichen' }));
+    expect(hinweise()).toEqual(['Für deine Gruppe sofort sichtbar']);
+    fireEvent.click(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' }));
     expect(h.presentModal).toHaveBeenCalledTimes(1);
   });
 
-  it('einmal pro Person: nach dem eigenen Beitrag kein Knopf, aber der Grund', async () => {
+  it('"selbst entscheiden" mit Freigabe: der Satz der App unveraendert', async () => {
+    antworten({ ...CHALLENGE, visibility: 'konfi_choice', moderated: true });
+    await zeigen();
+    expect(hinweise()).toEqual(['Du entscheidest unten, wer deinen Beitrag sieht — veröffentlicht wird nach Freigabe']);
+  });
+
+  it('einmal pro Person: nach dem eigenen Beitrag kein Knopf, aber der Grund als Hinweis', async () => {
     antworten({ ...CHALLENGE, allow_multiple: false }, GALERIE, [EIGENE[0]]);
     await zeigen();
-    const karte = screen.getByRole('region', { name: 'Mitmachen' });
-    expect(within(karte).queryByRole('button')).toBeNull();
-    expect(karte).toHaveTextContent('Du hast schon einen Beitrag eingereicht — bei dieser Challenge gibt es nur einen je Person.');
+    expect(knoepfeImKopf()).toEqual([]);
+    expect(hinweise()).toEqual(['Du hast schon einen Beitrag eingereicht — bei dieser Challenge gibt es nur einen je Person.']);
   });
 
   it('einmal pro Person, aber noch nichts eingereicht: der Knopf steht', async () => {
     antworten({ ...CHALLENGE, allow_multiple: false });
     await zeigen();
-    expect(screen.getByRole('button', { name: 'Beitrag einreichen' })).toBeInTheDocument();
+    expect(knoepfeImKopf()).toEqual(['Beitrag einreichen']);
   });
 
-  it('beendet: kein Knopf, der Grund steht da', async () => {
+  it('beendet: kein Knopf, der Grund steht als Hinweis da', async () => {
     antworten({ ...CHALLENGE, starts_at: tage(-30), ends_at: tage(-10) });
     await zeigen();
-    expect(screen.queryByRole('button', { name: 'Beitrag einreichen' })).toBeNull();
-    expect(screen.getByRole('region', { name: 'Mitmachen' })).toHaveTextContent('Diese Challenge ist beendet — Beiträge lassen sich nicht mehr einreichen.');
+    expect(knoepfeImKopf()).toEqual([]);
+    expect(hinweise()).toEqual(['Diese Challenge ist beendet — Beiträge lassen sich nicht mehr einreichen.']);
   });
 });
 
@@ -292,7 +360,8 @@ describe('Challenge der Konfis (Web): die Uhr', () => {
     expect(screen.getByRole('button', { name: 'Beitrag einreichen' })).toBeInTheDocument();
     await waitFor(() => expect(screen.getByRole('region', { name: 'Worum ging es?' })).toBeInTheDocument(), { timeout: 4000 });
     expect(screen.queryByRole('button', { name: 'Beitrag einreichen' })).toBeNull();
-    expect(screen.getByRole('region', { name: 'Mitmachen' })).toHaveTextContent('Diese Challenge ist beendet');
+    expect(hinweise()).toEqual(['Diese Challenge ist beendet — Beiträge lassen sich nicht mehr einreichen.']);
+    expect(screen.getByRole('group', { name: 'Laufzeit: Beendet' })).toBeInTheDocument();
     expect(h.apiGet).toHaveBeenCalledTimes(1);
   });
 });
@@ -307,15 +376,17 @@ describe('Challenge der Konfis (Web): Neuigkeiten und Gelesen-Melden', () => {
   it('der Hinweis nennt die Zahl, die beim Oeffnen noch rot an der Karte stand', async () => {
     h.neuigkeiten = { 7: 3 };
     await zeigen();
-    expect(screen.getByRole('status')).toHaveTextContent('Seit deinem letzten Besuch');
-    expect(screen.getByRole('status')).toHaveTextContent('3 Neuigkeiten');
+    expect(neuigkeiten()).toHaveTextContent('Seit deinem letzten Besuch');
+    expect(neuigkeiten()).toHaveTextContent('3 Neuigkeiten');
+    // Der Hinweis steht links bei den Beitraegen, nicht ueber den Kennzahlen.
+    expect(neuigkeiten().closest('.web-spalten__haupt')).not.toBeNull();
   });
 
   it('eine Neuigkeit in der Einzahl; nichts Neues: kein Hinweis', async () => {
     h.neuigkeiten = { 7: 1 };
     await zeigen();
-    expect(screen.getByRole('status')).toHaveTextContent('1 Neuigkeit');
-    expect(screen.getByRole('status')).not.toHaveTextContent('1 Neuigkeiten');
+    expect(neuigkeiten()).toHaveTextContent('1 Neuigkeit');
+    expect(neuigkeiten()).not.toHaveTextContent('1 Neuigkeiten');
     cleanup();
     h.neuigkeiten = {};
     await zeigen();

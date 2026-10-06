@@ -19,6 +19,18 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Code
 
+- **Gleiche CSS-Klassen in zwei Bereichs-Stylesheets der Web-Fassung.**
+  Alle Dateien unter `frontend/src/theme/web/` liegen im selben Bündel; setzen
+  zwei Bereiche dieselbe Klasse, mischen sich die Regeln auf beiden Seiten. So
+  waren die Fortschrittsbalken der Konfi-Liste nur ein flacher Streifen
+  (behoben 06.10.2026). Noch doppelt: `web-beschreibung` (leitung/termine),
+  `web-menue` (chat/termine), `web-rolle` und `web-rolle--leitung`
+  (leitung/start), `web-stempel` mit `__symbol` und `__text`
+  (challenges/leitung). Ob sie sichtbar falsch aussehen, ist nicht geprüft.
+  Fix: je Bereich umbenennen; der Wächter
+  `__tests__/components/webCssKlassen.test.ts` führt sie als bekannt und lässt
+  keine neuen zu — wer eine behebt, streicht sie dort. Gefunden 06.10.2026.
+
 - **Bearbeiten-Knopf bei Super-Admin-Konten.** `GET /users` setzt `can_edit`
   allein nach der Rolle (`filterUsersByHierarchy`); bei einem Konto mit
   Super-Admin-Recht — Simons Konto in seiner Gemeinde, ein Support-Gast —
@@ -122,6 +134,17 @@ Stand: 02.10.2026, gegen den Code geprüft.
   ob es geschehen ist, ist nicht vermerkt.
 
 ### Tests und CI
+
+- **Zeitgeber, die das Schließen einer Seite überleben.** Ein `setTimeout`,
+  das nach dem Schließen noch Zustand setzt, trifft in der CI das schon
+  abgebaute Testfenster: alle Tests grün, der Lauf rot („window is not
+  defined"). Zweimal am 06.10.2026 so aufgetreten und behoben (Anmeldeseite:
+  Rütteln; Registrierung: Benutzernamen-Prüfung, Rütteln, Sprung zum
+  Dashboard). Weitere Kandidaten ohne Aufräumen, nicht einzeln geprüft:
+  `KonfiDetailView.tsx` (Passwort nach 300 ms), `QRScannerModal.tsx`,
+  `WebNachricht.tsx` (Hervorhebung), `MessageBubble.tsx`. Fix je Stelle:
+  Zeitgeber in einem Ref halten und beim Abbau löschen, mit Test wie in
+  `konfiRegistrierung.test.tsx`.
 
 - **Dunkelmodus-Messung nicht in der CI.** `npm run dunkelmodus:messen`
   ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md)) läuft nur

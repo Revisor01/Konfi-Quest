@@ -1,8 +1,10 @@
 // Die Challenges der Konfis in der Web-Fassung, gerendert
 // (docs/planung/web-alle-bereiche.md, Entscheidung 6): Karten im Raster mit
 // Stempel als Bild, Status, Frist, Zielgruppe und roter Zahl der Neuigkeiten;
-// Filter (laufend, beendet, alle), Suche, die eigenen Stempel. Im schmalen
-// Fenster bleibt die Liste der App.
+// Filter (laufend, beendet, alle), Suche, die eigenen Stempel. Dazu die
+// Ansicht Liste | Kacheln (Simon, 06.10.2026): dieselben Challenges als
+// Tabelle mit dem eigenen Stand, Umschalter neben der Suche, Wahl im Browser
+// gemerkt. Im schmalen Fenster bleibt die Liste der App.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, cleanup } from '@testing-library/react';
@@ -34,6 +36,7 @@ vi.mock('../../../components/shared/AppKopfzeile', () => ({
 }));
 
 import KonfiChallengesPage from '../../../components/konfi/pages/KonfiChallengesPage';
+import { ansichtSchluessel } from '../../../components/web/useAnsicht';
 
 const JETZT = new Date('2026-10-03T08:30:00Z').getTime();
 const tage = (n: number) => new Date(JETZT + n * 24 * 3600 * 1000).toISOString();
@@ -85,10 +88,11 @@ beforeEach(() => {
   h.laedt = false;
   h.daten = ANTWORT;
   h.neuigkeiten = {};
+  window.localStorage.clear();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date(JETZT));
 });
-afterEach(() => { cleanup(); vi.useRealTimers(); });
+afterEach(() => { cleanup(); vi.useRealTimers(); window.localStorage.clear(); });
 
 describe('Challenges der Konfis (Web): Karten im Raster', () => {
   it('zeigt das Laufende, die knappste Frist zuerst, als Karten mit Link auf die Seite der Challenge', () => {
@@ -242,5 +246,180 @@ describe('Challenges der Konfis: zwei Gesichter, eine Seite', () => {
     const { container } = render(<KonfiChallengesPage />);
     expect(container.querySelector('.app-list-item')).toBeNull();
     expect(container.querySelector('ion-segment, ion-item, ion-card, ion-list')).toBeNull();
+  });
+});
+
+// Ansicht Liste | Kacheln (Simon, 06.10.2026): dieselben Challenges, einmal als
+// Karten im Raster, einmal als Tabelle mit dem eigenen Stand. Konfis starten
+// mit Kacheln; der Umschalter steht als letztes rechts neben der Suche.
+describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
+  const SCHLUESSEL = ansichtSchluessel('challenges-mitglied');
+  const umschalter = () => screen.getByRole('group', { name: 'Ansicht' });
+  const waehleAnsicht = (name: 'Liste' | 'Kacheln') => fireEvent.click(within(umschalter()).getByRole('button', { name }));
+  const gewaehlt = () => within(umschalter()).getAllByRole('button').filter((b) => b.getAttribute('aria-pressed') === 'true').map((b) => b.textContent);
+  const tabelle = () => screen.getByRole('table', { name: 'Challenges' });
+  const zeilen = () => within(tabelle()).getAllByRole('row').slice(1);
+  const zeilenTitel = () => zeilen().map((z) => within(z).getByRole('link').textContent);
+  const zeile = (name: string) => zeilen().find((z) => within(z).getByRole('link').textContent === name)!;
+  const zellen = (z: HTMLElement) => within(z).getAllByRole('cell');
+  const texte = (zelle: HTMLElement) => [...zelle.children].map((k) => k.textContent);
+
+  describe('Vorgabe und Merken', () => {
+    it('beim ersten Oeffnen sind es Kacheln, der Umschalter zeigt sie als gewaehlt', () => {
+      render(<KonfiChallengesPage />);
+      expect(gewaehlt()).toEqual(['Kacheln']);
+      expect(screen.getByRole('list', { name: 'Challenges' })).toBeInTheDocument();
+      expect(screen.queryByRole('table')).toBeNull();
+      expect(within(umschalter()).getAllByRole('button').map((b) => b.textContent)).toEqual(['Liste', 'Kacheln']);
+    });
+
+    it('die Wahl steht unter dem Schluessel der Seite im Browser und gilt beim naechsten Oeffnen', () => {
+      render(<KonfiChallengesPage />);
+      waehleAnsicht('Liste');
+      expect(window.localStorage.getItem(SCHLUESSEL)).toBe('liste');
+      expect(zeilenTitel()).toEqual(['Lied der Woche', 'Mein Lieblingsplatz', 'Fürbitten zum Erntedank']);
+      cleanup();
+      render(<KonfiChallengesPage />);
+      expect(gewaehlt()).toEqual(['Liste']);
+      expect(screen.queryByRole('list', { name: 'Challenges' })).toBeNull();
+      waehleAnsicht('Kacheln');
+      expect(window.localStorage.getItem(SCHLUESSEL)).toBe('kacheln');
+      cleanup();
+      render(<KonfiChallengesPage />);
+      expect(gewaehlt()).toEqual(['Kacheln']);
+    });
+
+    it('die Wahl der Challenges gilt nur dort: eine andere Seite hat ihren eigenen Schluessel', () => {
+      render(<KonfiChallengesPage />);
+      waehleAnsicht('Liste');
+      expect(window.localStorage.getItem(ansichtSchluessel('challenges-leitung'))).toBeNull();
+      expect(window.localStorage.getItem(ansichtSchluessel('events-mitglied'))).toBeNull();
+    });
+
+    it('der Umschalter steht als letztes Element rechts, direkt neben der Suche, in der Zeile mit den Filter-Chips', () => {
+      render(<KonfiChallengesPage />);
+      const rechts = screen.getByRole('searchbox', { name: 'Challenges durchsuchen' }).closest('.web-werkzeuge__rechts')!;
+      expect([...rechts.children].map((k) => k.getAttribute('role'))).toEqual(['search', 'group']);
+      expect(rechts.lastElementChild).toBe(umschalter());
+      expect(rechts.parentElement).toBe(screen.getByRole('group', { name: 'Challenges nach Zustand' }).parentElement);
+    });
+
+    it('ohne Challenges gibt es nichts umzuschalten', () => {
+      h.daten = { ...ANTWORT, active: [], archive: [] };
+      render(<KonfiChallengesPage />);
+      expect(screen.queryByRole('group', { name: 'Ansicht' })).toBeNull();
+    });
+
+    it('im schmalen Fenster bleibt die Liste der App, auch wenn "Liste" gemerkt ist', () => {
+      h.breit = false;
+      window.localStorage.setItem(SCHLUESSEL, 'liste');
+      const { container } = render(<KonfiChallengesPage />);
+      expect(container.querySelector('.web-ansicht-umschalter')).toBeNull();
+      expect(container.querySelector('table')).toBeNull();
+      expect(container.querySelector('.app-list-item--challenges')).not.toBeNull();
+    });
+  });
+
+  describe('Umschalten: dieselben Challenges in der anderen Ansicht', () => {
+    it('Liste und Kacheln zeigen dieselben Challenges in derselben Reihenfolge: knappste Frist zuerst', () => {
+      window.localStorage.setItem(SCHLUESSEL, 'liste');
+      render(<KonfiChallengesPage />);
+      expect(zeilenTitel()).toEqual(['Lied der Woche', 'Mein Lieblingsplatz', 'Fürbitten zum Erntedank']);
+      waehleAnsicht('Kacheln');
+      expect(titel()).toEqual(['Lied der Woche', 'Mein Lieblingsplatz', 'Fürbitten zum Erntedank']);
+    });
+
+    it('Filter und Suche gelten in beiden Ansichten gleich und bleiben beim Umschalten', () => {
+      window.localStorage.setItem(SCHLUESSEL, 'liste');
+      render(<KonfiChallengesPage />);
+      waehle(/^Beendet/);
+      expect(zeilenTitel()).toEqual(['Mein schönster Moment im Sommer', 'Segenswünsche']);
+      waehleAnsicht('Kacheln');
+      expect(chip(/^Beendet/)).toHaveAttribute('aria-pressed', 'true');
+      expect(titel()).toEqual(['Mein schönster Moment im Sommer', 'Segenswünsche']);
+      waehle(/^Alle/);
+      fireEvent.change(screen.getByRole('searchbox', { name: 'Challenges durchsuchen' }), { target: { value: 'playlist' } });
+      expect(titel()).toEqual(['Lied der Woche']);
+      waehleAnsicht('Liste');
+      expect(zeilenTitel()).toEqual(['Lied der Woche']);
+      expect(zeilen()[0].querySelector('.web-zelle-leise mark')).toHaveTextContent('Playlist');
+      expect(chip(/^Alle/)).toHaveTextContent('1');
+      expect(chip(/^Laufend/)).toHaveTextContent('1');
+      expect(chip(/^Beendet/)).toHaveTextContent('0');
+    });
+
+    it('Leerzustaende und "Deine Stempel" bleiben in der Liste, wie bei den Karten', () => {
+      window.localStorage.setItem(SCHLUESSEL, 'liste');
+      render(<KonfiChallengesPage />);
+      waehle(/^Alle/);
+      fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'gibtsnicht' } });
+      expect(screen.getByRole('heading', { level: 3, name: 'Keine Treffer' })).toBeInTheDocument();
+      expect(screen.queryByRole('table')).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Suche leeren' }));
+      expect(zeilen()).toHaveLength(5);
+      expect(screen.getByRole('region', { name: 'Deine Stempel' })).toHaveTextContent('1 erhalten · 2 noch zu holen');
+      cleanup();
+      h.daten = { ...ANTWORT, archive: [] };
+      render(<KonfiChallengesPage />);
+      waehle(/^Beendet/);
+      expect(screen.getByRole('heading', { level: 3, name: 'Noch nichts im Archiv' })).toBeInTheDocument();
+    });
+  });
+
+  describe('die Zeile', () => {
+    beforeEach(() => { window.localStorage.setItem(SCHLUESSEL, 'liste'); });
+
+    it('die Spalten: Challenge, Zeitraum, Status und der eigene Stand -- ohne Zahlen und Knoepfe der Leitung', () => {
+      render(<KonfiChallengesPage />);
+      expect(within(tabelle()).getAllByRole('columnheader').map((k) => k.textContent)).toEqual(['Challenge', 'Zeitraum', 'Status', 'Dein Stand']);
+      expect(within(tabelle()).queryByRole('button')).toBeNull();
+      expect(tabelle()).not.toHaveTextContent('Beiträge');
+      expect(screen.queryByRole('button', { name: 'Neue Challenge' })).toBeNull();
+    });
+
+    it('Titel mit Stempel-Name darunter, Zeitraum mit Rest, Status und eigener Stand', () => {
+      render(<KonfiChallengesPage />);
+      const z = zellen(zeile('Mein Lieblingsplatz'));
+      expect(texte(z[0].querySelector('.web-challenge-zelle__text') as HTMLElement)).toEqual(['Mein Lieblingsplatz', 'Stempel: Fotograf:in']);
+      expect(texte(z[1])).toEqual(['28.09. – 09.10.2026', 'Noch 6 Tage']);
+      expect(z[2]).toHaveTextContent(/^Läuft$/);
+      expect(z[3]).toHaveTextContent(/^Du hast eingereicht$/);
+    });
+
+    it('"Du hast eingereicht" nur bei der eigenen Einreichung, sonst steht dort ein Strich', () => {
+      render(<KonfiChallengesPage />);
+      expect(zellen(zeile('Lied der Woche'))[3]).toHaveTextContent(/^–$/);
+      expect(zellen(zeile('Fürbitten zum Erntedank'))[3]).toHaveTextContent(/^–$/);
+      expect(screen.getAllByText('Du hast eingereicht')).toHaveLength(1);
+      waehle(/^Beendet/);
+      expect(zellen(zeile('Mein schönster Moment im Sommer'))[3]).toHaveTextContent(/^Du hast eingereicht$/);
+      expect(zellen(zeile('Segenswünsche'))[3]).toHaveTextContent(/^–$/);
+    });
+
+    it('Beendetes mit Zeitraum statt Restzeit', () => {
+      render(<KonfiChallengesPage />);
+      waehle(/^Beendet/);
+      const z = zellen(zeile('Mein schönster Moment im Sommer'));
+      expect(texte(z[1])).toEqual(['20.07. – 14.08.2026']);
+      expect(z[2]).toHaveTextContent(/^Beendet$/);
+    });
+
+    it('die rote Zahl: Neuigkeiten je Challenge am Stempel der Zeile, ab 10 als 9+, sonst keine', () => {
+      h.neuigkeiten = { 13: 3, 11: 14 };
+      render(<KonfiChallengesPage />);
+      expect(within(zeile('Lied der Woche')).getByRole('img', { name: '3 Neuigkeiten' })).toHaveTextContent('3');
+      expect(within(zeile('Fürbitten zum Erntedank')).getByRole('img', { name: '14 Neuigkeiten' })).toHaveTextContent('9+');
+      expect(within(zeile('Mein Lieblingsplatz')).queryByRole('img')).toBeNull();
+    });
+
+    it('die Zeile ist ein Link auf die Challenge: /konfi/challenges/<id>, ein Klick bleibt in der App', () => {
+      render(<KonfiChallengesPage />);
+      const link = within(zeile('Lied der Woche')).getByRole('link');
+      expect(link.getAttribute('href')).toBe('/konfi/challenges/13');
+      expect(link).toHaveClass('web-link--zeile');
+      expect(zeile('Lied der Woche')).toHaveClass('web-zeile');
+      fireEvent.click(link);
+      expect(h.push).toHaveBeenCalledWith('/konfi/challenges/13', 'none', 'push');
+    });
   });
 });

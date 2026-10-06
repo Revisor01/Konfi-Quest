@@ -6,8 +6,13 @@
 // Farbe des Status wie die Balken der App. Die Merkmale (Team, Konfirmation,
 // Pflicht) stehen als Eck-Badges oben rechts -- dieselben Zeichen wie in der
 // App und in ihrer Legende (EventLegendModal) --, der Status als Marke mit Wort.
+//
+// Dieselbe Karte fuer Konfis, Team und Leitung (Ansicht "Kacheln", Simon,
+// 06.10.2026): Sie liest nur, was da ist. Die Leitung gibt ihre Knoepfe im Fuss
+// mit (`fuss`: Kopieren, Absagen, Loeschen) -- wie die Challenge-Karte; sie
+// liegen ueber dem Link der Karte.
 
-import React from 'react';
+import React, { useId } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_ANHANG,
@@ -18,6 +23,7 @@ import {
 } from '../../icons';
 import EventCornerBadges from '../../EventCornerBadges';
 import WebLink from '../../../web/WebLink';
+import WebTreffer from '../../../web/WebTreffer';
 import { kategorienText, titelDekoration } from '../../eventFormatting';
 import type { Fakt, TerminStatus } from '../../../../utils/termineWeb';
 import { terminDatumUhrzeit } from '../../../../utils/termineWeb';
@@ -43,11 +49,19 @@ export interface WebTerminKarteProps {
   unterzeile?: string;
   /** Anzahl des Materials am Event (nur Team). */
   materialAnzahl?: number;
+  /** Die Leitung sieht auch die Serie. */
+  serieZeigen?: boolean;
+  /** Suchbegriff, in Titel und Ort hervorgehoben. */
+  suche?: string;
+  /** Knoepfe im Fuss (Leitung: Kopieren, Absagen, Loeschen). */
+  fuss?: React.ReactNode;
 }
 
 const WebTerminKarte: React.FC<WebTerminKarteProps> = ({
   event, href, status, fakten, gedaempft = false, gesperrt = false, statusZeigen = true, teamZeigen, unterzeile, materialAnzahl = 0,
+  serieZeigen = false, suche = '', fuss,
 }) => {
+  const titelId = useId();
   const { datum, uhrzeit } = terminDatumUhrzeit(event);
   const kategorien = kategorienText(event);
   const leise = gedaempft || gesperrt;
@@ -55,7 +69,7 @@ const WebTerminKarte: React.FC<WebTerminKarteProps> = ({
   const symbol = leise ? 'app-icon-color--muted' : '';
 
   return (
-    <article className={klassen} style={{ '--web-akzent': status.farbe } as React.CSSProperties}>
+    <article className={klassen} style={{ '--web-akzent': status.farbe } as React.CSSProperties} aria-labelledby={titelId}>
       <EventCornerBadges
         event={event}
         statusText={status.text}
@@ -65,13 +79,13 @@ const WebTerminKarte: React.FC<WebTerminKarteProps> = ({
         hideTeam={!teamZeigen}
       />
       <header className="web-termin-karte__kopf">
-        <h3 className="web-termin-karte__titel" style={{ textDecoration: titelDekoration('kachel', event) }}>
-          <WebLink href={href} className="web-link--text web-termin-karte__link">{event.name}</WebLink>
+        <h3 id={titelId} className="web-termin-karte__titel" style={{ textDecoration: titelDekoration('kachel', event) }}>
+          <WebLink href={href} className="web-link--text web-termin-karte__link"><WebTreffer text={event.name} suche={suche} /></WebLink>
         </h3>
         {unterzeile && <p className="web-termin-karte__untertitel">{unterzeile}</p>}
       </header>
 
-      <WebTerminMarken status={status} event={event} teamZeigen={teamZeigen} statusZeigen={statusZeigen} />
+      <WebTerminMarken status={status} event={event} teamZeigen={teamZeigen} serieZeigen={serieZeigen} statusZeigen={statusZeigen} />
       <WebAbsageZeile event={event} />
 
       <ul className="web-fakten web-fakten--spalte">
@@ -82,7 +96,7 @@ const WebTerminKarte: React.FC<WebTerminKarteProps> = ({
         {event.location && (
           <li className="web-fakt">
             <IonIcon icon={ICON_ORT_GEFUELLT} className={`web-fakt__symbol ${symbol || 'app-icon-color--location'}`} aria-hidden="true" />
-            <span className="web-nur-vorlesen">Ort: </span>{event.location}
+            <span className="web-nur-vorlesen">Ort: </span><WebTreffer text={event.location} suche={suche} />
           </li>
         )}
         {kategorien && (
@@ -106,6 +120,8 @@ const WebTerminKarte: React.FC<WebTerminKarteProps> = ({
       </ul>
 
       <WebFakten fakten={fakten} gedaempft={leise} />
+
+      {fuss && <footer className="web-termin-karte__fuss">{fuss}</footer>}
     </article>
   );
 };

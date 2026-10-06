@@ -1,12 +1,15 @@
 // Die Seite einer Challenge fuer Team und Leitung in der Web-Fassung
-// (Browser ab 992 px), /admin/challenges/:id und /teamer/challenges/:id.
+// (Browser ab 992 px), /admin/challenges/:id und /teamer/challenges/:id, im
+// Aufbau aller Detailseiten (components/web/WebDetailSeite.tsx; Simon,
+// 06.10.2026: „Inhalt links, Angaben rechts").
 //
-// Zwei Spalten. Links die Aufgabe und die Beitraege als Raster -- Bilder und
-// Videos gross, Text, Musik-Link, darunter je Beitrag die Knoepfe der
-// Moderation (Freigeben, Anonym stellen, Ausblenden, Wieder einblenden,
-// Loeschen). Rechts die Aktionen (Bearbeiten, eigenen Beitrag einreichen,
-// Beitraege exportieren), die Angaben (Status, Zeitraum, Zielgruppe,
-// Sichtbarkeit) und der Stempel.
+// Im Kopf Titel, Kennzeichen und ALLE Aktionen (Bearbeiten, eigenen Beitrag
+// einreichen, Beitraege exportieren); darunter die Kennzahlen -- Beitraege,
+// Teilnehmende, Warten auf Freigabe, Laufzeit. Links breit die Aufgabe und die
+// Beitraege als Raster -- Bilder und Videos gross, Text, Musik-Link, darunter
+// je Beitrag die Knoepfe der Moderation (Freigeben, Anonym stellen,
+// Ausblenden, Wieder einblenden, Loeschen). Rechts schmal die Angaben
+// (Status, Zeitraum, Zielgruppe, Sichtbarkeit) und der Stempel.
 //
 // Alles ueber dieselbe Logik wie die Ansicht der App: useChallengeLeitung
 // laedt die Beitraege, haelt die Reiter, rechnet die Zahlen und sagt, welche
@@ -30,7 +33,8 @@ import WebChallengeHinweis from './WebChallengeHinweis';
 import WebChallengeChips, { type WebChallengeChip } from './WebChallengeChips';
 import WebBeitrag from './WebBeitrag';
 import WebKarte from '../../../web/WebKarte';
-import WebSpalten from '../../../web/WebSpalten';
+import { type WebKachelProps } from '../../../web/WebKachel';
+import { WebDetailInhalt } from '../../../web/WebDetailSeite';
 import WebAngaben from '../../../web/WebAngaben';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
@@ -55,6 +59,7 @@ import {
   STATUS_TON,
   STATUS_WORT,
   kugelAmEintrag,
+  laufzeitKachel,
   restzeitText,
   tonVonFarbe,
   zeitraumText,
@@ -94,6 +99,7 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
 }) => {
   const {
     user,
+    submissions,
     loading,
     offlineOhneStand,
     busyId,
@@ -163,9 +169,27 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
           ? 'Läuft gerade'
           : 'Beendet';
 
+    // Die Kennzahlen aus dem, was die Seite ohnehin laedt. Solange die Beitraege fehlen (laedt noch,
+    // offline ohne Stand), steht ein Strich statt einer falschen Null.
+    const beitraegeDa = !loading && !offlineOhneStand;
+    const teilnehmende = new Set(submissions.map((b) => b.user_id).filter((id): id is number => id != null)).size;
+    const laufzeit = laufzeitKachel(challenge, status, formatRemaining(challenge.ends_at));
+    const kennzahlen: WebKachelProps[] = [
+      { label: 'Beiträge', wert: beitraegeDa ? String(counts.total) : '–', zusatz: beitraegeDa ? [`${counts.approved} im Feed`] : [] },
+      { label: 'Teilnehmende', wert: beitraegeDa ? String(teilnehmende) : '–', zusatz: beitraegeDa ? ['mit mindestens einem Beitrag'] : [] },
+      ...(challenge.moderated
+        ? [{
+          label: 'Warten auf Freigabe',
+          wert: beitraegeDa ? String(counts.pending) : '–',
+          achtung: beitraegeDa && counts.pending > 0,
+        }]
+        : []),
+      { label: 'Laufzeit', wert: laufzeit.wert, zusatz: laufzeit.zusatz },
+    ];
+
     return (
-      <WebSpalten
-        seiteBeschriftung="Aktionen und Angaben"
+      <WebDetailInhalt
+        kennzahlen={kennzahlen}
         haupt={(
           <>
             <WebKarte titel={beendet ? 'Worum ging es?' : 'Worum geht es?'}>
@@ -263,27 +287,6 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
         )}
         seite={(
           <>
-            <WebKarte titel="Aktionen">
-              <div className="web-challenge-aktionen">
-                {onEdit && (
-                  <WebKnopf onClick={() => onEdit(challenge)}>
-                    <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
-                    Challenge bearbeiten
-                  </WebKnopf>
-                )}
-                {canSubmitMore && (
-                  <WebKnopf art="primaer" onClick={oeffneEinreichen}>
-                    <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
-                    Beitrag einreichen
-                  </WebKnopf>
-                )}
-                <WebKnopf onClick={() => { void handleExport(); }}>
-                  <IonIcon icon={ICON_TEILEN} aria-hidden="true" />
-                  Beiträge exportieren
-                </WebKnopf>
-              </div>
-            </WebKarte>
-
             <WebKarte titel="Angaben">
               <WebAngaben
                 angaben={[
@@ -330,9 +333,30 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
           </>
         )}
       />
-
     );
   };
+
+  // Alle Aktionen der Seite stehen im Kopf; die wichtigste -- der eigene Beitrag -- rechts und primaer.
+  const kopfAktionen = challenge ? (
+    <>
+      <WebKnopf onClick={() => { void handleExport(); }}>
+        <IonIcon icon={ICON_TEILEN} aria-hidden="true" />
+        Beiträge exportieren
+      </WebKnopf>
+      {onEdit && (
+        <WebKnopf onClick={() => onEdit(challenge)}>
+          <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
+          Challenge bearbeiten
+        </WebKnopf>
+      )}
+      {canSubmitMore && (
+        <WebKnopf art="primaer" onClick={oeffneEinreichen}>
+          <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
+          Beitrag einreichen
+        </WebKnopf>
+      )}
+    </>
+  ) : undefined;
 
   return (
     <WebChallengeRahmen
@@ -342,9 +366,10 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
         <span className="web-pillreihe">
           <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
           <WebPill>{AUDIENCE_LABEL[zielgruppeVon(challenge)]}</WebPill>
-          {counts.pending > 0 && <WebPill ton="warnung">{counts.pending} {wartenAufFreigabeKurz(counts.pending)}</WebPill>}
+          <span>{zeitraumText(challenge, status)}</span>
         </span>
       ) : undefined}
+      aktionen={kopfAktionen}
     >
       {challenge ? renderChallenge(challenge) : <WebChallengeHinweis art={hinweisArt} onBack={onBack} onNochmal={onNochmal} />}
 

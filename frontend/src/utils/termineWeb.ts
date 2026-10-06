@@ -1008,6 +1008,12 @@ export function kategorienNamen(event: Pick<Event, 'categories' | 'category_name
   return (event.category_names || '').split(',').map((n) => n.trim()).filter(Boolean);
 }
 
+/** Die Jahrgaenge eines Events als eine Zeile ("Jahrgang 2026 · Jahrgang 2027"); ohne Jahrgang nichts. */
+export function jahrgaengeZeile(event: Pick<Event, 'jahrgang_names'>): string | undefined {
+  const namen = (event.jahrgang_names || '').split(',').map((n) => n.trim()).filter(Boolean);
+  return namen.length > 0 ? namen.join(' · ') : undefined;
+}
+
 /** Gehoert das Event zu diesem Jahrgang? (jahrgang_ids ist eine Kommaliste.) */
 export function terminImJahrgang(event: Pick<Event, 'jahrgang_ids'>, jahrgangId: number): boolean {
   if (!event.jahrgang_ids) return false;

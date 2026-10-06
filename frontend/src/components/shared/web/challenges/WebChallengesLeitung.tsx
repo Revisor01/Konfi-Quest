@@ -1,10 +1,14 @@
 // Die Challenges von Team und Leitung in der Web-Fassung (Browser ab 992 px),
 // /admin/challenges und /teamer/challenges: Karten im Raster mit Stempel als
 // Bild, Status, Zeitraum, Zielgruppe, der roten Zahl der neuen Beitraege und
-// dem orangen Feld fuer Beitraege, die auf Freigabe warten. Filter (laufend,
-// geplant, beendet, wartet auf Freigabe), Zielgruppe, Jahrgang und eine
-// Live-Suche; "Neue Challenge" oeffnet das Formular der App
-// (useChallengeFormular -> ChallengeManageModal).
+// dem orangen Feld fuer Beitraege, die auf Freigabe warten -- oder dieselben
+// Challenges als Tabelle. Der Umschalter Liste | Kacheln steht rechts neben
+// der Suche; der Browser merkt sich die Wahl, beim ersten Oeffnen startet die
+// Leitung mit der Liste, das Team mit Kacheln (components/web/useAnsicht).
+// Filter (laufend, geplant, beendet, wartet auf Freigabe), Zielgruppe,
+// Jahrgang und eine Live-Suche gelten in beiden Ansichten gleich; "Neue
+// Challenge" oeffnet das Formular der App (useChallengeFormular ->
+// ChallengeManageModal).
 //
 // Dieselben Daten, dieselben Zaehler und dieselben Aktionen wie die Liste
 // der App (shared/ChallengesPage reicht sie herein); die Reihenfolge ist die
@@ -19,8 +23,10 @@ import WebKnopf from '../../../web/WebKnopf';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { useApp } from '../../../../contexts/AppContext';
 import { useJetztMitGrenzen } from '../../../../hooks/useJetztMitGrenzen';
+import { ansichtVorgabe, useAnsicht } from '../../../web/useAnsicht';
 import WebChallengeKarte from './WebChallengeKarte';
 import WebChallengeFilter from './WebChallengeFilter';
+import WebChallengesTabelle from './WebChallengesTabelle';
 import WebChallengeStempel from './WebChallengeStempel';
 import { wartenAufFreigabe } from '../../../../utils/challengeTexte';
 import { darfChallengesLoeschen } from '../../../../utils/challengeRechte';
@@ -94,6 +100,7 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
 }) => {
   const { user } = useApp();
   const darfLoeschen = darfChallengesLoeschen(user);
+  const [ansicht, setAnsicht] = useAnsicht('challenges-leitung', ansichtVorgabe(user?.role_name));
   const [auswahl, setAuswahl] = useState<ListenAuswahl>({ ...OHNE_AUSWAHL, filter: 'laufend' });
 
   // Defensive wie die Liste der App: kaputte oder gecachte Antworten als leer behandeln.
@@ -149,6 +156,8 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
             onFilter={(filter) => setAuswahl((a) => ({ ...a, filter }))}
             suche={auswahl.suche}
             onSuche={(suche) => setAuswahl((a) => ({ ...a, suche }))}
+            ansicht={ansicht}
+            onAnsicht={setAnsicht}
             zielgruppen={zielgruppen}
             zielgruppe={auswahl.zielgruppe}
             onZielgruppe={(zielgruppe) => setAuswahl((a) => ({ ...a, zielgruppe }))}
@@ -158,7 +167,42 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
           />
         )}
 
-        {sichtbar.length > 0 ? (
+        {sichtbar.length === 0 ? (
+          <div className="web-karte">
+            <WebLeer
+              icon={ICON_CHALLENGE_GEFUELLT}
+              titel={leer.titel}
+              text={leer.text}
+              aktion={filtertEin
+                ? <WebKnopf onClick={zuruecksetzen}>Auswahl zurücksetzen</WebKnopf>
+                : (liste.length === 0 && !ohneJahrgang ? <WebKnopf art="primaer" onClick={onNeu}>Neue Challenge</WebKnopf> : undefined)}
+            />
+          </div>
+        ) : ansicht === 'liste' ? (
+          <div className="web-karte">
+            <WebChallengesTabelle
+              eintraege={sichtbar}
+              suche={auswahl.suche}
+              fuer="leitung"
+              href={(c) => `${listenPfad}/${c.id}`}
+              kugel={(id) => kugelAmEintrag(id, stand)}
+              eingereicht={(c) => (c.own_submission_count ?? 0) > 0}
+              // Dieselben Funktionen und Rechte wie die Knoepfe der Karte.
+              aktionen={(c) => (
+                <>
+                  <WebKnopf klein symbol vorn aria-label={`Bearbeiten: ${c.title}`} title="Bearbeiten" onClick={() => onBearbeiten(c)}>
+                    <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
+                  </WebKnopf>
+                  {darfLoeschen && (
+                    <WebKnopf klein symbol vorn art="gefahr" aria-label={`Löschen: ${c.title}`} title="Löschen" onClick={() => onLoeschen(c)}>
+                      <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+                    </WebKnopf>
+                  )}
+                </>
+              )}
+            />
+          </div>
+        ) : (
           <ul className="web-challenge-raster" aria-label="Challenges">
             {sichtbar.map(({ challenge: c, status }) => {
               const kugel = kugelAmEintrag(c.id, stand);
@@ -192,17 +236,6 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
               );
             })}
           </ul>
-        ) : (
-          <div className="web-karte">
-            <WebLeer
-              icon={ICON_CHALLENGE_GEFUELLT}
-              titel={leer.titel}
-              text={leer.text}
-              aktion={filtertEin
-                ? <WebKnopf onClick={zuruecksetzen}>Auswahl zurücksetzen</WebKnopf>
-                : (liste.length === 0 && !ohneJahrgang ? <WebKnopf art="primaer" onClick={onNeu}>Neue Challenge</WebKnopf> : undefined)}
-            />
-          </div>
         )}
 
         <WebChallengeStempel

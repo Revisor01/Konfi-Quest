@@ -79,11 +79,13 @@ Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
 ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)). Wer wen anlegen darf, steht unter
 [Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
-### Im Browser Konfis und Team als Tabelle verwalten
+### Im Browser Konfis und Team verwalten
 
 Im Browser — ab einer Fensterbreite von 992 Pixeln, siehe
 [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
-— steht die zentrale Liste als **Tabelle**. Der Titel zeigt, ob **Konfis** oder
+— steht die zentrale Liste als **Tabelle** oder als **Kacheln**, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen);
+die Leitung beginnt mit der Tabelle. Der Titel zeigt, ob **Konfis** oder
 **Team** offen ist; darunter steht, wie viele Konfis in wie vielen Jahrgängen
 oder wie viele Personen im Team stehen. Oben rechts stehen **Anwesenheit** (die
 Anwesenheits-Matrix), **Konfi anlegen** beziehungsweise **Teamer:in anlegen**
@@ -92,50 +94,61 @@ Kacheln fassen zusammen: bei den Konfis die Zahl der Konfis und Jahrgänge, die
 Punkte gesamt und wie viele ihr Ziel erreicht haben; beim Team die Zahl der
 Personen, der Zertifikate und der Badges.
 
-Über der Tabelle wechselst du mit **Konfis** und **Team** die Ansicht — die Zahl
-am Knopf zählt die Personen —, suchst nach Name und Benutzername und grenzt
-die Konfis mit **Jahrgang** ein; als Leitung stehen dort nur deine Jahrgänge.
-Bei der Suche darfst du Umlaute umschreiben („mueller" findet „Müller"), die
-Escape-Taste leert das Feld. Ein Klick auf eine Spaltenüberschrift sortiert —
-bei den Konfis nach Name, Jahrgang, Gesamt oder Badges, beim Team nach Name,
-Badges oder Zertifikaten —, ein zweiter Klick kehrt die Richtung um. Namen
-beginnen bei A, Zahlen mit dem größten Wert.
+Darüber wechselst du mit **Konfis** und **Team** zwischen den beiden Gruppen —
+die Zahl am Knopf zählt die Personen —, suchst nach Name und Benutzername und
+grenzt die Konfis mit **Jahrgang** ein; als Leitung stehen dort nur deine
+Jahrgänge. Ganz rechts steht die Wahl zwischen Liste und Kacheln; sie gilt für
+beide Gruppen. Bei der Suche darfst du Umlaute umschreiben („mueller" findet
+„Müller"), die Escape-Taste leert das Feld. In der Liste sortiert ein Klick auf
+eine Spaltenüberschrift — bei den Konfis nach Name, Jahrgang, Gesamt oder
+Badges, beim Team nach Name, Badges oder Zertifikaten —, ein zweiter Klick
+kehrt die Richtung um. In den Kacheln sortiert die Auswahl **Sortieren** neben
+der Wahl; beide stellen dieselbe Sortierung ein.
 
-Eine Konfi-Zeile zeigt Name und Benutzername, Jahrgang, Fortschrittsbalken für
-Gottesdienst, Gemeinde und Gesamt — ein Strich steht dort, wo der Jahrgang die
-Punkteart abgeschaltet hat — und die Zahl der Badges. **Punkte** öffnet die
-Wahl zwischen **Aktivität eintragen** und **Bonuspunkte vergeben**, der Knopf
-daneben löscht die Konfi nach einer Rückfrage. Eine Team-Zeile zeigt Name,
-Jahrgänge, Badges, Zertifikate und das Jahr, seit dem die Person im Team ist;
-löschen kann sie nur die Gemeindeleitung. Der Name ist ein Link auf die
-Detailseite.
+Eine Konfi zeigt den Kreis mit ihren Initialen, Name und Benutzername,
+Jahrgang, je einen Balken für Gottesdienst, Gemeinde und Gesamt mit dem Stand
+darüber, etwa „7 / 10" — ein Haken zeigt das erreichte Ziel, ein Strich steht
+dort, wo der Jahrgang die Punkteart abgeschaltet hat — und die Zahl der Badges.
+Der kleine Knopf mit dem Papierkorb löscht die Konfi nach einer Rückfrage.
+Punkte vergibst du auf der Detailseite der Konfi, mit **Aktivität eintragen**
+und **Bonuspunkte vergeben**. Eine Teamer:in zeigt Name, Jahrgänge, Badges,
+Zertifikate und das Jahr, seit dem sie im Team ist; löschen kann sie nur die
+Gemeindeleitung. In der Liste ist der Name ein Link auf die Detailseite, in den
+Kacheln die ganze Karte.
 
-### Im Browser die Detailseite einer Person in zwei Spalten nutzen
+### Im Browser die Detailseite einer Person nutzen
 
-Die Detailseite hat den Namen als Titel, bei einer Konfi darunter die Punkte
-(„12 von 20 Punkten"); **Alle Konfis** beziehungsweise **Alle im Team** führt
-zurück in die Liste. Alles aus
+Die Detailseite ist aufgebaut wie jede andere, siehe
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
+Alles aus
 [Die Detailansicht einer Person nutzen](#die-detailansicht-einer-person-nutzen)
-gibt es auch hier, nur anders verteilt.
+gibt es auch hier, nur anders verteilt; **Alle Konfis** beziehungsweise **Alle
+im Team** führt zurück in die Liste.
 
-Links steht die Person: der Jahrgang, bei einer Konfi mit den Ringen für Punkte
-und Ziele, bei einer Teamer:in mit der Zahl der Zertifikate, Events und Badges.
-Darunter folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
+Unter dem Namen stehen der Jahrgang — bei einer Teamer:in „Teamer:in" und seit
+wann — und der Benutzername. Oben rechts stehen die Aktionen: **Passwort
+zurücksetzen**, **Konfi bearbeiten**, **Bonuspunkte vergeben** und als
+Hauptknopf **Aktivität eintragen**; bei einer Teamer:in **Zertifikat
+zuweisen** statt Bonuspunkten und Bearbeiten. Die Kennzahlen zeigen bei einer
+Konfi Gottesdienst, Gemeinde und Gesamt mit dem Ziel — eine Punkteart, die der
+Jahrgang abgeschaltet hat, steht dort als abgeschaltet — und die Badges, bei
+einer Teamer:in Zertifikate, Events und Badges.
+
+Links folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
 eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen — und, bei
 einer Konfi, **Bonuspunkte**; bei einer Teamer:in stattdessen **Zertifikate**,
 die **Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen
 über zehn hinaus, klappt **Alle … anzeigen** den Rest auf.
 
-Rechts stehen die **Aktionen** — **Aktivität eintragen**, **Bonuspunkte
-vergeben**, **Konfi bearbeiten** und **Passwort zurücksetzen**, bei einer
-Teamer:in **Zertifikat zuweisen** statt Bonuspunkten und Bearbeiten — und
+Rechts stehen die **Angaben** — Jahrgang, Benutzername und Bonuspunkte — und
 darunter die Karten **Konfirmation** (Datum, Konfispruch, besuchte
 Pflicht-Events), bei einer Teamer:in **Teamer:in seit** mit dem Datum zum
 Ändern, **Badges**, **Events**, **Offene Anträge** mit dem Link **Anträge
 bearbeiten →**, **Stempel**, **Jahresrückblick** und **Rolle ändern** mit **Zur
 Teamer:in befördern**. Offene Anträge, Stempel und Rückblick stehen nur da,
 wenn es etwas zu zeigen gibt. Ohne Netz gehen nur das Eintragen von
-Aktivitäten und Bonuspunkten; alles andere wartet auf die Verbindung.
+Aktivitäten und Bonuspunkten; ein Hinweis unter dem Kopf sagt das, alles andere
+wartet auf die Verbindung.
 
 ## Chats moderieren
 
@@ -209,9 +222,9 @@ die [Zu- und Absagen der Teamer:innen](70-termine.md#das-teamer-kontingent-verwa
 Fällt ein Event aus, hast du die Wahl zwischen
 [Absagen und Löschen](70-termine.md#ein-event-absagen-oder-loeschen).
 
-Im Browser stehen die Events als Tabelle, und ein Event hat zwei Spalten; wie
-das aussieht, steht unter
-[Im Browser Events in Tabellen und Karten nutzen](70-termine.md#im-browser-events-in-tabellen-und-karten-nutzen).
+Im Browser stehen die Events als Liste oder als Kacheln, und jedes Event hat
+eine eigene Seite; wie das aussieht, steht unter
+[Im Browser Events als Liste oder Kacheln nutzen](70-termine.md#im-browser-events-als-liste-oder-kacheln-nutzen).
 
 ### Aktivitäten
 

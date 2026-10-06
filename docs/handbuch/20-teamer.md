@@ -147,13 +147,16 @@ Nachweis. Der
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
 derselbe wie bei den Konfis.
 
-### Im Browser Events als Karten durchsuchen und zusagen
+### Im Browser Events durchsuchen und zusagen
 
 Im Browser heißt die Seite **Events**; oben stehen die Reiter **Events** und
 **Aktivitäten**, rechts **Legende**, **Aktualisieren** und **QR-Code
-scannen**, bei den Aktivitäten **Aktivität melden**. Die Events stehen als
-Karten im Raster, jede ein Link auf das Event (Strg-Klick, am Mac ⌘-Klick:
-neuer Tab). Über der Liste wählst du **Alle**, **Meine** oder **Team** — zuerst
+scannen**, bei den Aktivitäten **Aktivität melden**. Die Events stehen zuerst
+als Kacheln im Raster, jede ein Link auf das Event (Strg-Klick, am Mac
+⌘-Klick: neuer Tab); rechts neben der Suche wechselst du zur **Liste** mit
+einer Zeile je Event, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen).
+Darüber wählst du **Alle**, **Meine** oder **Team** — zuerst
 steht **Meine** offen, die Zahl am Knopf zählt die Events darunter — und
 suchst nach Name oder Ort. Eine Karte nennt den Status als Marke, etwa
 **Dabei**, **Offen**, **Warteliste** oder **Abgesagt von dir**; ein reines
@@ -161,17 +164,19 @@ Konfi-Event trägt **Nur Info**. Dazu stehen Datum, Uhrzeit und Ort, die
 Jahrgänge, die Plätze von Konfis und Team und, wenn es welche gibt, das
 Material auf der Karte.
 
-Das Event hat zwei Spalten. Links stehen die Zahlen — **Konfis**, **Team** und
-**Punkte**, bei einem Event nur fürs Team **Team** und **Warteliste** —, die
-Angaben, die Beschreibung und das Material; ein Klick auf ein Material öffnet
-es. Rechts steht **Bist du dabei?** mit **Dabei** und **Nicht dabei**, danach
-nur noch der Weg zurück: **Nicht mehr dabei** oder **Doch dabei**. Wie Zusage,
-Absage und Warteliste ablaufen, ist wie in der App, siehe
-[Zu Events zusagen und absagen](#zu-events-zusagen-und-absagen). Darunter
-stehen **Konfis** und **Team** als Tabellen — nur zum Nachsehen, mit Jahrgang,
-Stand der Teilnahme, dem Grund einer Abmeldung und Notizen. Oben rechts öffnen
-**Chat** (wenn es einen Event-Chat gibt) und **QR-Code** (zum Einchecken) ihre
-Fenster; **Alle Events** führt zurück in die Liste.
+Die Seite eines Events ist aufgebaut wie jede andere, siehe
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
+Oben rechts stehen **Dabei** und **Nicht dabei**, danach nur noch der Weg
+zurück: **Nicht mehr dabei** oder **Doch dabei**; daneben öffnen **Chat** (wenn
+es einen Event-Chat gibt) und **QR-Code** (zum Einchecken) ihre Fenster. Wie
+Zusage, Absage und Warteliste ablaufen, ist wie in der App, siehe
+[Zu Events zusagen und absagen](#zu-events-zusagen-und-absagen). Die
+Kennzahlen zeigen **Konfis**, **Team** und **Punkte**, bei einem Event nur fürs
+Team **Team** und **Warteliste**. Links stehen die Beschreibung und **Konfis**
+und **Team** als Tabellen — nur zum Nachsehen, mit Jahrgang, Stand der
+Teilnahme, dem Grund einer Abmeldung und Notizen —, rechts die Angaben und das
+Material; ein Klick auf ein Material öffnet es. **Alle Events** führt zurück in
+die Liste.
 
 ## Material öffnen
 

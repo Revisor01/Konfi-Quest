@@ -101,6 +101,7 @@ const WebTeamTabelle: React.FC<WebTeamTabelleProps> = ({ team, suche, sortierung
       zeilen={team}
       zeileSchluessel={(t) => t.id}
       mittig
+      fest
       sortierung={sortierung}
       onSortieren={onSortieren}
     />

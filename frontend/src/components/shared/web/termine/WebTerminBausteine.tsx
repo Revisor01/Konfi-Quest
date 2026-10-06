@@ -259,28 +259,3 @@ export const WebTeilnahmeHinweise: React.FC<{ person: Participant }> = ({ person
     </>
   );
 };
-
-// --- Grosse Aktionsknoepfe (Anmelden, Abmelden ...) -------------------------------
-
-/**
- * Ein Knopf der Anmelde-Karten: gruen zum Anmelden, rot zum Abmelden, orange
- * fuer die Warteliste. Immer nur Umriss -- "immer immer immer nur line buttons"
- * (Simon, 05.09.2026) --; die Farbe sagt, wohin der Klick fuehrt.
- */
-export const WebAktionsKnopf: React.FC<{
-  art: 'erfolg' | 'gefahr' | 'warnung' | 'neutral';
-  children: React.ReactNode;
-  onClick?: () => void;
-  disabled?: boolean;
-  title?: string;
-}> = ({ art, children, onClick, disabled, title }) => (
-  <button
-    type="button"
-    className={art === 'neutral' ? 'web-knopf' : `web-knopf web-knopf--${art}`}
-    onClick={onClick}
-    disabled={disabled}
-    title={title}
-  >
-    {children}
-  </button>
-);
