@@ -1,12 +1,12 @@
 // Kleine Bausteine der Web-Fassung der Leitungs- und Verwaltungsseiten
 // (docs/planung/web-alle-bereiche.md, Entscheidung 6): Kreis mit Initialen,
-// Fortschrittsbalken, Filter-Auswahl ohne sichtbare Beschriftung, Zeilen, die
-// sich per Knopf oeffnen, und der Weg nach draussen. Sie gehoeren zu diesem
-// Bereich, bis die Koordination sie nach components/web/ zieht.
+// Punktebalken, Filter-Auswahl ohne sichtbare Beschriftung, Zeilen, die sich per
+// Knopf oeffnen, und der Weg nach draussen. Sie gehoeren zu diesem Bereich, bis
+// die Koordination sie nach components/web/ zieht.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_AUFKLAPPEN, ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_LOESCHEN } from '../../../shared/icons';
+import { ICON_AUFKLAPPEN, ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_HAKEN_GEFUELLT, ICON_LOESCHEN } from '../../../shared/icons';
 import WebKnopf from '../../../web/WebKnopf';
 import { linkOeffnen } from '../../../../services/systemDialoge';
 import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
@@ -18,7 +18,7 @@ export type AvatarFarbe = 'konfis' | 'erreicht' | 'teamer' | 'users' | 'leitung'
 
 /** Kreis mit zwei Buchstaben vor einem Namen; die Farbe ist die der Rolle bzw. des Standes. */
 export const WebAvatar: React.FC<{ text: string; farbe?: AvatarFarbe; gross?: boolean }> = ({ text, farbe = 'konfis', gross = false }) => (
-  <span className={`web-avatar web-avatar--${farbe}${gross ? ' web-avatar--gross' : ''}`} aria-hidden="true">{text}</span>
+  <span className={`web-initialen web-initialen--${farbe}${gross ? ' web-initialen--gross' : ''}`} aria-hidden="true">{text}</span>
 );
 
 // --- Rolle als Marke ----------------------------------------------------------------
@@ -32,33 +32,69 @@ export const WebRolleMarke: React.FC<{ rolle?: string | null; text?: string }> =
   <span className={`web-rolle web-rolle--${rollenFarbe(rolle)}`}>{text ?? rollenName(rolle)}</span>
 );
 
-// --- Fortschritt -----------------------------------------------------------------
+// --- Punktebalken ------------------------------------------------------------------
 
 export interface WebFortschrittProps {
   wert: number;
   ziel: number;
   /** Die Farbe der Punkteart. */
   art: 'gottesdienst' | 'gemeinde' | 'gesamt';
-  /** Das Ziel ist erreicht: der Balken wird gruen. */
-  erreicht?: boolean;
-  /** Was gezaehlt wird, fuer Vorleseprogramme ("Punkte"). */
-  einheit?: string;
+  /** Name fuer Vorleseprogramme: "Gottesdienst-Punkte". */
+  name: string;
+  /** Sichtbar links ueber dem Balken (Karten); in der Tabelle steht sie im Spaltenkopf. */
+  beschriftung?: string;
   /** Prozent hinter der Zahl, wenn es mehr als das Ziel gibt. */
   prozent?: number;
+  /** Der Jahrgang zaehlt diese Punkteart nicht: Strich statt Balken. */
+  abgeschaltet?: boolean;
 }
 
-/** "7 / 10" mit schmalem Balken darunter. Der Balken ist Zierde, der Satz steht fuer Vorleseprogramme da. */
-export const WebFortschritt: React.FC<WebFortschrittProps> = ({ wert, ziel, art, erreicht = false, einheit = 'Punkte', prozent }) => {
-  const anteil = ziel > 0 ? Math.min(100, Math.round((wert / ziel) * 100)) : 0;
-  return (
-    <span className={`web-fortschritt web-fortschritt--${art}${erreicht ? ' web-fortschritt--erreicht' : ''}`}>
-      <span className="web-fortschritt__text" aria-hidden="true">
-        <span>{wert} / {ziel}</span>
-        {prozent !== undefined && prozent > 100 && <span className="web-fortschritt__prozent">{prozent} %</span>}
+/**
+ * "7 / 10" ueber einem Balken, dazu ein Haken, sobald das Ziel erreicht ist.
+ * Der Balken ist ein `progressbar` mit Name, Prozentwert und Text ("7 von 10");
+ * die Zahl darueber ist fuer Sehende und fuer Vorleseprogramme ueberfluessig.
+ * Die Farben der Punktarten sind die der Liste in der App.
+ */
+export const WebFortschritt: React.FC<WebFortschrittProps> = ({ wert, ziel, art, name, beschriftung, prozent, abgeschaltet = false }) => {
+  const klassen = ['web-punktebalken', `web-punktebalken--${art}`, beschriftung ? 'web-punktebalken--beschriftet' : ''];
+  if (abgeschaltet) {
+    return (
+      <span className={[...klassen, 'web-punktebalken--aus'].filter(Boolean).join(' ')}>
+        <span className="web-punktebalken__kopf" aria-hidden="true">
+          {beschriftung && <span className="web-punktebalken__name">{beschriftung}</span>}
+          <span className="web-punktebalken__wert" title="Für diesen Jahrgang abgeschaltet">–</span>
+        </span>
+        <span className="web-nur-vorlesen">{name}: für diesen Jahrgang abgeschaltet</span>
       </span>
-      <span className="web-nur-vorlesen">{wert} von {ziel} {einheit}</span>
-      <span className="web-fortschritt__spur" aria-hidden="true">
-        <span className="web-fortschritt__fuellung" style={{ width: `${anteil}%` }} />
+    );
+  }
+  const anteil = ziel > 0 ? Math.min(100, Math.round((wert / ziel) * 100)) : 0;
+  const erreicht = ziel > 0 && wert >= ziel;
+  if (erreicht) klassen.push('web-punktebalken--erreicht');
+  return (
+    <span className={klassen.filter(Boolean).join(' ')}>
+      <span className="web-punktebalken__kopf" aria-hidden="true">
+        {beschriftung && <span className="web-punktebalken__name">{beschriftung}</span>}
+        <span className="web-punktebalken__wert">
+          <span>{wert} / {ziel}</span>
+          {(erreicht || (prozent !== undefined && prozent > 100)) && (
+            <span className="web-punktebalken__zusatz">
+              {prozent !== undefined && prozent > 100 && <span className="web-punktebalken__prozent">{prozent} %</span>}
+              {erreicht && <span className="web-punktebalken__haken" aria-hidden="true"><IonIcon icon={ICON_HAKEN_GEFUELLT} /></span>}
+            </span>
+          )}
+        </span>
+      </span>
+      <span
+        className="web-punktebalken__spur"
+        role="progressbar"
+        aria-label={name}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={anteil}
+        aria-valuetext={`${wert} von ${ziel}${erreicht ? ', Ziel erreicht' : ''}`}
+      >
+        <span className="web-punktebalken__fuellung" style={{ width: `${anteil}%` }} />
       </span>
     </span>
   );

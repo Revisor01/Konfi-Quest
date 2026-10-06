@@ -4,6 +4,11 @@
 // Suche (Umlaute), Jahrgang-Filter, Sortierung ueber die Spaltenkoepfe, Reiter
 // Konfis/Team, Kennzahlen. Die Rechte sind die der App: Die Leitung sieht nur
 // ihre Jahrgaenge, Einladen und Teamer:innen loeschen nur die Gemeindeleitung.
+//
+// Die Balken zeigen ihren Wert (progressbar mit Prozent und "x von y"), die Zahl
+// steht ueber dem Balken, der Kreis vor dem Namen hat seine Initialen. Vorher
+// schluckte ein gleichnamiges Stylesheet der Konfi-Seite beides
+// (webCssKlassen.test.ts).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -109,8 +114,17 @@ describe('Konfis (Web): Tabelle', () => {
 
   it('wer das Ziel erreicht hat, traegt den gruenen Balken', () => {
     zeigen();
-    expect(zelle(zeileVon('Ben Schmidt'), 4).querySelector('.web-fortschritt--erreicht')).not.toBeNull();
-    expect(zelle(zeileVon('Anna Müller'), 4).querySelector('.web-fortschritt--erreicht')).toBeNull();
+    expect(zelle(zeileVon('Ben Schmidt'), 4).querySelector('.web-punktebalken--erreicht')).not.toBeNull();
+    expect(zelle(zeileVon('Anna Müller'), 4).querySelector('.web-punktebalken--erreicht')).toBeNull();
+  });
+
+  it('der Kreis vor dem Namen zeigt die Initialen, gruen wer das Ziel erreicht hat', () => {
+    zeigen();
+    const kreis = (name: string) => zelle(zeileVon(name), 0).querySelector('.web-initialen')!;
+    expect(kreis('Anna Müller').textContent).toBe('AM');
+    expect(kreis('Anna Müller').className).toBe('web-initialen web-initialen--konfis');
+    expect(kreis('Ben Schmidt').textContent).toBe('BS');
+    expect(kreis('Ben Schmidt').className).toBe('web-initialen web-initialen--erreicht');
   });
 
   it('Kennzahlen: Konfis, Punkte gesamt, Ziel erreicht, Jahrgaenge', () => {
@@ -141,6 +155,93 @@ describe('Konfis (Web): Tabelle', () => {
     expect(screen.getByText('Noch keine Konfis angelegt.')).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Konfi anlegen' })[1]);
     expect(aktionen.onKonfiAnlegen).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Der Balken ist ein progressbar mit Name, Prozentwert und Text; seine Breite ist
+// der Anteil in Prozent. Die Zahl steht daneben ("7 / 10"), nicht im Balken.
+const balken = (z: HTMLElement, name: string) => within(z).getByRole('progressbar', { name });
+const fuellung = (b: HTMLElement) => b.querySelector<HTMLElement>('.web-punktebalken__fuellung')!;
+
+describe('Konfis (Web): Balken der Punkte', () => {
+  it('jeder Balken traegt seinen Wert: Prozent als Wert und als Breite, "x von y" als Text', () => {
+    zeigen();
+    const anna = zeileVon('Anna Müller');
+    const godi = balken(zelle(anna, 2), 'Gottesdienst-Punkte');
+    expect(godi).toHaveAttribute('aria-valuenow', '70');
+    expect(godi).toHaveAttribute('aria-valuemin', '0');
+    expect(godi).toHaveAttribute('aria-valuemax', '100');
+    expect(godi).toHaveAttribute('aria-valuetext', '7 von 10');
+    expect(fuellung(godi).style.width).toBe('70%');
+    const gemeinde = balken(zelle(anna, 3), 'Gemeinde-Punkte');
+    expect(gemeinde).toHaveAttribute('aria-valuenow', '50');
+    expect(fuellung(gemeinde).style.width).toBe('50%');
+    const gesamt = balken(zelle(anna, 4), 'Punkte gesamt');
+    expect(gesamt).toHaveAttribute('aria-valuenow', '60');
+    expect(gesamt).toHaveAttribute('aria-valuetext', '12 von 20');
+    expect(fuellung(gesamt).style.width).toBe('60%');
+  });
+
+  it('1 von 10 sind 10 Prozent; ohne Punkte ist der Balken leer (0 Prozent), nicht verschwunden', () => {
+    zeigen();
+    const gemeinde = balken(zelle(zeileVon('Clara Beispiel'), 3), 'Gemeinde-Punkte');
+    expect(gemeinde).toHaveAttribute('aria-valuenow', '10');
+    expect(gemeinde).toHaveAttribute('aria-valuetext', '1 von 10');
+    expect(fuellung(gemeinde).style.width).toBe('10%');
+    const leer = balken(zelle(zeileVon('Emil Probe'), 4), 'Punkte gesamt');
+    expect(leer).toHaveAttribute('aria-valuenow', '0');
+    expect(fuellung(leer).style.width).toBe('0%');
+  });
+
+  it('die Zahl steht ueber dem Balken, nicht darin: Kopf mit "1 / 10", Spur und Fuellung ohne Text', () => {
+    zeigen();
+    const zelleGemeinde = zelle(zeileVon('Clara Beispiel'), 3);
+    expect(zelleGemeinde.querySelector('.web-punktebalken__kopf')).toHaveTextContent('1 / 10');
+    expect(zelleGemeinde.querySelector('.web-punktebalken__spur')!.textContent).toBe('');
+    // Der Balken liegt UNTER der Zahl (Reihenfolge im Baustein), nicht neben oder auf ihr.
+    const kinder = [...zelleGemeinde.querySelector('.web-punktebalken')!.children].map((c) => c.className);
+    expect(kinder).toEqual(['web-punktebalken__kopf', 'web-punktebalken__spur']);
+  });
+
+  it('Farben der Punktarten: Gottesdienst, Gemeinde und Gesamt tragen je ihre Klasse', () => {
+    zeigen();
+    const anna = zeileVon('Anna Müller');
+    expect(zelle(anna, 2).querySelector('.web-punktebalken--gottesdienst')).not.toBeNull();
+    expect(zelle(anna, 3).querySelector('.web-punktebalken--gemeinde')).not.toBeNull();
+    expect(zelle(anna, 4).querySelector('.web-punktebalken--gesamt')).not.toBeNull();
+  });
+
+  it('Ziel erreicht: Balken voll, Haken und der Satz "Ziel erreicht" fuer Vorleseprogramme; sonst keines von beiden', () => {
+    zeigen();
+    const ben = balken(zelle(zeileVon('Ben Schmidt'), 4), 'Punkte gesamt');
+    expect(ben).toHaveAttribute('aria-valuenow', '100');
+    expect(ben).toHaveAttribute('aria-valuetext', '20 von 20, Ziel erreicht');
+    expect(zelle(zeileVon('Ben Schmidt'), 4).querySelector('.web-punktebalken__haken')).not.toBeNull();
+    const anna = zelle(zeileVon('Anna Müller'), 4);
+    expect(balken(anna, 'Punkte gesamt')).toHaveAttribute('aria-valuetext', '12 von 20');
+    expect(anna.querySelector('.web-punktebalken__haken')).toBeNull();
+  });
+
+  it('mehr als das Ziel: der Balken bleibt bei 100 Prozent, die Zahl und "110 %" sagen es', () => {
+    zeigen({ konfis: [{ ...KONFIS[0], gottesdienst_points: 12, gemeinde_points: 10 }] });
+    const z = zelle(zeilen()[0], 4);
+    const b = balken(z, 'Punkte gesamt');
+    expect(b).toHaveAttribute('aria-valuenow', '100');
+    expect(fuellung(b).style.width).toBe('100%');
+    expect(b).toHaveAttribute('aria-valuetext', '22 von 20, Ziel erreicht');
+    expect(z.querySelector('.web-punktebalken__kopf')).toHaveTextContent('22 / 20');
+    expect(z.querySelector('.web-punktebalken__prozent')).toHaveTextContent('110 %');
+  });
+
+  it('eine abgeschaltete Punkteart hat keinen Balken: Strich, und der Satz dazu fuer Vorleseprogramme', () => {
+    zeigen();
+    const godi = zelle(zeileVon('Dora Test'), 2);
+    expect(within(godi).queryByRole('progressbar')).toBeNull();
+    expect(godi.querySelector('.web-punktebalken__wert')).toHaveTextContent('–');
+    expect(godi.querySelector('.web-punktebalken__wert')).toHaveAttribute('title', 'Für diesen Jahrgang abgeschaltet');
+    expect(godi).toHaveTextContent('Gottesdienst-Punkte: für diesen Jahrgang abgeschaltet');
+    // Das Gesamtziel zaehlt nur die aktive Art: 8 von 10 -> 80 Prozent.
+    expect(balken(zelle(zeileVon('Dora Test'), 4), 'Punkte gesamt')).toHaveAttribute('aria-valuenow', '80');
   });
 });
 

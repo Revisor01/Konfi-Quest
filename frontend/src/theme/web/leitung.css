@@ -11,8 +11,14 @@
    Bewegung, kein Eingriff in Ionic, sichtbarer Fokus an allem Bedienbaren.
    =================================================================== */
 
-/* --- Kreis mit Initialen --- */
-.web-avatar {
+/* --- Kreis mit Initialen ---
+   Heisst web-initialen und nicht web-avatar: theme/web/start.css setzt dafuer
+   eine eigene Regel fuer das Profil der Konfis (64 px, Grund --web-akzent-flaeche).
+   Beide Dateien liegen im selben Buendel; unter einem Namen schluckte der
+   Profil-Kreis den der Liste (zu gross und ohne Grund: eine leere Flaeche vor
+   dem Namen). Eine Klasse gehoert genau einer Stylesheet-Datei
+   (__tests__/components/webCssKlassen.test.ts). */
+.web-initialen {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -27,29 +33,29 @@
   line-height: 1;
 }
 
-.web-avatar--gross {
+.web-initialen--gross {
   width: 56px;
   height: 56px;
   font-size: var(--app-text-gross);
 }
 
-.web-avatar--erreicht {
+.web-initialen--erreicht {
   background: var(--app-color-success-strong);
 }
 
-.web-avatar--teamer {
+.web-initialen--teamer {
   background: var(--app-color-teamer);
 }
 
-.web-avatar--users {
+.web-initialen--users {
   background: var(--app-color-users);
 }
 
-.web-avatar--leitung {
+.web-initialen--leitung {
   background: var(--app-color-leitung);
 }
 
-.web-avatar--neutral {
+.web-initialen--neutral {
   background: var(--app-color-neutral);
 }
 
@@ -105,18 +111,24 @@
   color: var(--app-text-konfis);
 }
 
-/* --- Fortschritt: "7 / 10" mit schmalem Balken --- */
-.web-fortschritt {
+/* --- Punktebalken: Zahl (und Beschriftung) ueber dem Balken ---
+   Heisst web-punktebalken und nicht web-fortschritt: theme/web/start.css setzt
+   .web-fortschritt als den Balken allein (8 px hoch, overflow hidden, Grund).
+   Unter demselben Namen flachte diese Regel das ganze Bauteil auf einen
+   8-px-Streifen ab: Die Zahl lag darin und wurde abgeschnitten. Eine Klasse
+   gehoert genau einer Stylesheet-Datei (__tests__/components/webCssKlassen.test.ts). */
+.web-punktebalken {
   display: flex;
   flex-direction: column;
-  gap: var(--app-abstand-mini);
-  min-width: 88px;
+  gap: var(--app-abstand-kompakt);
+  min-width: 112px;
 }
 
-.web-fortschritt__text {
+.web-punktebalken__kopf {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  /* Gleich hoch mit und ohne Haken: Die Zeilen der Karten stehen auf einer Linie. */
+  min-height: 20px;
   gap: var(--app-abstand-eng);
   font-size: var(--app-text-hinweis);
   font-variant-numeric: tabular-nums;
@@ -124,37 +136,90 @@
   white-space: nowrap;
 }
 
-.web-fortschritt__prozent {
+.web-punktebalken__name {
+  font-weight: var(--app-schrift-halbfett);
+}
+
+/* Zahl, Prozent und Haken: ohne Beschriftung links bei der Zahl, mit Beschriftung rechts daneben. */
+.web-punktebalken__wert {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+}
+
+.web-punktebalken--beschriftet .web-punktebalken__wert {
+  justify-content: flex-end;
+}
+
+/* Prozent und Haken stehen rechts neben der Zahl. */
+.web-punktebalken__zusatz {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-punktebalken__prozent {
   color: var(--app-color-success-tief);
   font-size: var(--app-text-klein);
 }
 
-.web-fortschritt__spur {
+/* Ziel erreicht: der Haken steht neben der Zahl, die Farbe ist nicht allein der Traeger. */
+.web-punktebalken__haken {
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: var(--app-text-standard);
+  color: var(--app-color-success-tief);
+}
+
+.web-punktebalken__spur {
   display: block;
-  height: 6px;
+  height: 8px;
   /* Ein Prozentwert (--app-radius-kreis) machte aus dem flachen Balken eine Ellipse. */
   border-radius: var(--app-radius-gross);
-  background: var(--app-surface-dim);
+  background: color-mix(in srgb, var(--app-text-konfis) 14%, var(--web-karte));
   overflow: hidden;
 }
 
-.web-fortschritt__fuellung {
+.web-punktebalken__fuellung {
   display: block;
   height: 100%;
   border-radius: var(--app-radius-gross);
-  background: var(--app-color-konfis);
+  background: var(--app-text-konfis);
 }
 
-.web-fortschritt--gottesdienst .web-fortschritt__fuellung {
-  background: var(--app-color-gottesdienst);
+/* Farben der Punktarten wie in der Liste der App: Gottesdienst blau, Gemeinde gruen,
+   Gesamt in der Farbe der Konfis -- und gruen, sobald das Ziel erreicht ist. Es sind
+   die Text-Tokens der Farben: Hell gleich den Bereichsfarben, im Dunkeln aufgehellt,
+   damit der Balken auf der Karte sichtbar bleibt (wie bei den Diagrammen, --web-reihe-*). */
+.web-punktebalken--gottesdienst .web-punktebalken__spur {
+  background: color-mix(in srgb, var(--app-text-gottesdienst) 16%, var(--web-karte));
 }
 
-.web-fortschritt--gemeinde .web-fortschritt__fuellung {
-  background: var(--app-color-gemeinde);
+.web-punktebalken--gottesdienst .web-punktebalken__fuellung {
+  background: var(--app-text-gottesdienst);
 }
 
-.web-fortschritt--erreicht .web-fortschritt__fuellung {
+.web-punktebalken--gemeinde .web-punktebalken__spur {
+  background: color-mix(in srgb, var(--app-text-gemeinde) 16%, var(--web-karte));
+}
+
+.web-punktebalken--gemeinde .web-punktebalken__fuellung {
+  background: var(--app-text-gemeinde);
+}
+
+.web-punktebalken--gesamt.web-punktebalken--erreicht .web-punktebalken__spur {
+  background: color-mix(in srgb, var(--app-color-success-strong) 16%, var(--web-karte));
+}
+
+.web-punktebalken--gesamt.web-punktebalken--erreicht .web-punktebalken__fuellung {
   background: var(--app-color-success-strong);
+}
+
+/* Eine Punkteart, die der Jahrgang abgeschaltet hat: Beschriftung und Strich. */
+.web-punktebalken--aus .web-punktebalken__kopf {
+  color: var(--web-text-leise);
 }
 
 /* --- Werkzeugleiste: Auswahl neben der Suche --- */
@@ -479,7 +544,7 @@
   background: var(--app-gradient-teamer);
 }
 
-.web-person-hero .web-avatar {
+.web-person-hero .web-initialen {
   background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
 }
 

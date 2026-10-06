@@ -58,35 +58,31 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
     {
       schluessel: 'gottesdienst',
       kopf: 'Gottesdienst',
-      breite: '128px',
+      breite: '160px',
       optional: true,
       zelle: (k) => {
         const p = konfiPunkte(k);
-        return p.gottesdienstAn
-          ? <WebFortschritt wert={p.gottesdienst} ziel={p.zielGottesdienst} art="gottesdienst" einheit="Gottesdienst-Punkten" />
-          : <span className="web-gedaempft" title="Für diesen Jahrgang abgeschaltet">–</span>;
+        return <WebFortschritt wert={p.gottesdienst} ziel={p.zielGottesdienst} art="gottesdienst" name="Gottesdienst-Punkte" abgeschaltet={!p.gottesdienstAn} />;
       },
     },
     {
       schluessel: 'gemeinde',
       kopf: 'Gemeinde',
-      breite: '128px',
+      breite: '160px',
       optional: true,
       zelle: (k) => {
         const p = konfiPunkte(k);
-        return p.gemeindeAn
-          ? <WebFortschritt wert={p.gemeinde} ziel={p.zielGemeinde} art="gemeinde" einheit="Gemeinde-Punkten" />
-          : <span className="web-gedaempft" title="Für diesen Jahrgang abgeschaltet">–</span>;
+        return <WebFortschritt wert={p.gemeinde} ziel={p.zielGemeinde} art="gemeinde" name="Gemeinde-Punkte" abgeschaltet={!p.gemeindeAn} />;
       },
     },
     {
       schluessel: 'punkte',
       kopf: 'Gesamt',
       sortierbar: true,
-      breite: '148px',
+      breite: '184px',
       zelle: (k) => {
         const p = konfiPunkte(k);
-        return <WebFortschritt wert={p.gesamt} ziel={p.zielGesamt} art="gesamt" erreicht={p.erreicht} prozent={p.prozentGesamt} einheit="Punkten gesamt" />;
+        return <WebFortschritt wert={p.gesamt} ziel={p.zielGesamt} art="gesamt" name="Punkte gesamt" prozent={p.prozentGesamt} />;
       },
     },
     {
@@ -140,6 +136,7 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
       zeilen={konfis}
       zeileSchluessel={(k) => k.id}
       mittig
+      fest
       sortierung={sortierung}
       onSortieren={onSortieren}
     />
