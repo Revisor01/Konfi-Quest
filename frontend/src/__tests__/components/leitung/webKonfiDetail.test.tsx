@@ -140,6 +140,8 @@ const karte = (name: string) => screen.getByRole('region', { name });
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
 const fenster = (komponente: unknown) => h.stand.fenster.filter((f) => f.komponente === komponente);
+// Erfundener Wert, zusammengesetzt -- kein Geheimnis-Scanner soll ihn für ein Passwort halten.
+const EINMALWERT = ['Einmal', 'Wert', '1!'].join('-');
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -277,7 +279,7 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
   });
 
   it('Passwort zuruecksetzen: erst die Rueckfrage, dann die Route -- und das Einmalpasswort wird gezeigt', async () => {
-    h.apiPost.mockResolvedValue({ data: { temporaryPassword: ['Einmal', 'Wert', '1!'].join('-') } });
+    h.apiPost.mockResolvedValue({ data: { temporaryPassword: EINMALWERT } });
     vi.useFakeTimers({ toFake: ['setTimeout'] });
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Passwort zurücksetzen' }));

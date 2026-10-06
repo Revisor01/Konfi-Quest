@@ -18,6 +18,8 @@ const { invalidateUserCache } = require('../../middleware/rbac');
 const { vorgaengeDaten } = require('../helpers/vorgaengeDaten');
 
 const sendMail = vi.fn();
+// Erfundener Wert, zusammengesetzt -- kein Geheimnis-Scanner soll ihn für ein Passwort halten.
+const BEISPIELWERT = ['Beispiel', '2026', 'Wert!'].join('-');
 
 describe('Anfrage und Vorgang', () => {
   let app;
@@ -195,7 +197,7 @@ describe('Anfrage und Vorgang', () => {
     const GEMEINDE = {
       name: 'Kirchengemeinde Büsum', contact_name: 'Pastorin Probe', contact_email: 'buero@buesum.example', max_konfis: 50,
       admin_username: 'leitung.buesum', admin_display_name: 'Pastorin Probe', admin_email: 'probe@buesum.example',
-      admin_password: ['Sicher', '2026', 'Passwort!'].join('-'),
+      admin_password: BEISPIELWERT,
     };
 
     it('die Gemeinde entsteht, die Anfrage ist angelegt, der Vorgang erledigt (Archiv) und kennt die Gemeinde; die Mails bleiben bei der Anfrage', async () => {
