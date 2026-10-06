@@ -135,6 +135,17 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Tests und CI
 
+- **Zeitgeber, die das Schließen einer Seite überleben.** Ein `setTimeout`,
+  das nach dem Schließen noch Zustand setzt, trifft in der CI das schon
+  abgebaute Testfenster: alle Tests grün, der Lauf rot („window is not
+  defined"). Zweimal am 06.10.2026 so aufgetreten und behoben (Anmeldeseite:
+  Rütteln; Registrierung: Benutzernamen-Prüfung, Rütteln, Sprung zum
+  Dashboard). Weitere Kandidaten ohne Aufräumen, nicht einzeln geprüft:
+  `KonfiDetailView.tsx` (Passwort nach 300 ms), `QRScannerModal.tsx`,
+  `WebNachricht.tsx` (Hervorhebung), `MessageBubble.tsx`. Fix je Stelle:
+  Zeitgeber in einem Ref halten und beim Abbau löschen, mit Test wie in
+  `konfiRegistrierung.test.tsx`.
+
 - **Dunkelmodus-Messung nicht in der CI.** `npm run dunkelmodus:messen`
   ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md)) läuft nur
   von Hand gegen eine lokale Vorschau; die CI prüft das Stylesheet als Text.

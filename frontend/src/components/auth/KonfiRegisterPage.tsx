@@ -89,9 +89,25 @@ const KonfiRegisterPage: React.FC = () => {
     hasSpecial: false
   });
 
+  // Die Zeitgeber der Seite enden mit ihr: Liefen sie ueber das Schliessen
+  // hinaus, setzten sie Zustand an einer Seite, die es nicht mehr gab (in der
+  // CI am schon abgebauten Testfenster, 06.10.2026), und der Sprung zum
+  // Dashboard haette nach einem schnellen Seitenwechsel noch umgeleitet.
+  const ruettelZeitgeber = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sprungZeitgeber = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    for (const z of [ruettelZeitgeber, sprungZeitgeber, usernameCheckTimer]) {
+      if (z.current) clearTimeout(z.current);
+    }
+  }, []);
+
   const triggerShake = () => {
     setShakeError(true);
-    setTimeout(() => setShakeError(false), 600);
+    if (ruettelZeitgeber.current) clearTimeout(ruettelZeitgeber.current);
+    ruettelZeitgeber.current = setTimeout(() => {
+      ruettelZeitgeber.current = null;
+      setShakeError(false);
+    }, 600);
   };
 
   const checkUsername = async (name: string) => {
@@ -263,7 +279,7 @@ const KonfiRegisterPage: React.FC = () => {
         setUser(user);
         setAppSuccess('Willkommen bei Konfi Quest!');
         // Kurz warten für visuelles Feedback, dann zum Dashboard
-        setTimeout(() => {
+        sprungZeitgeber.current = setTimeout(() => {
           router.push('/konfi/dashboard', 'root', 'replace');
         }, 1500);
       }
