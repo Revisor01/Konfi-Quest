@@ -158,8 +158,11 @@ describe('Support-Formular: Aufbau und Barrierefreiheit', () => {
     expect(within(label).getByRole('link', { name: 'Datenschutzerklärung' })).toHaveAttribute('href', '/datenschutz');
   });
 
-  it('Längen wie der Server: Gemeinde, Name, Funktion und Betreff 200, E-Mail 254, Beschreibung 5000', () => {
-    for (const label of ['Gemeinde', 'Name', 'Funktion', 'Betreff']) expect(feld(label).maxLength, label).toBe(200);
+  it('Längen wie der Server: Gemeinde, Name und Funktion 200, Betreff 120, E-Mail 254, Beschreibung 5000', () => {
+    // Die Grenzen stehen in FELDER (backend/routes/anliegen.js). Ein längeres
+    // Feld hier endete erst beim Absenden mit „Höchstens … Zeichen“.
+    for (const label of ['Gemeinde', 'Name', 'Funktion']) expect(feld(label).maxLength, label).toBe(200);
+    expect(feld('Betreff').maxLength).toBe(120);
     expect(feld('E-Mail').maxLength).toBe(254);
     expect((feld('Beschreibung') as unknown as HTMLTextAreaElement).maxLength).toBe(5000);
   });

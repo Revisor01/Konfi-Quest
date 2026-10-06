@@ -170,6 +170,9 @@ module.exports = (db) => {
       v.organization_id === null ? null : c.query(
         `SELECT o.id, o.name, COALESCE(NULLIF(btrim(o.display_name), ''), o.name) AS display_name,
                 COALESCE(o.is_active, true) AS is_active, o.is_trial, o.trial_ends_at, o.max_konfis, o.intern,
+                -- wie GET /gemeinden (routes/supportUebersicht.js): Konfis, die aufs Limit zaehlen
+                (SELECT COUNT(*)::int FROM users u JOIN roles r ON r.id = u.role_id
+                  WHERE r.name = 'konfi' AND u.organization_id = o.id AND u.deleted_at IS NULL) AS konfi_count,
                 o.kirchenkreis_id, k.name AS kirchenkreis, k.landeskirche_id, l.name AS landeskirche,
                 (SELECT x.wunsch_lizenz FROM gemeinde_anfragen x WHERE x.organization_id = o.id
                   ORDER BY x.status_seit DESC, x.id DESC LIMIT 1) AS wunsch_lizenz

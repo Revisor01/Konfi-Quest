@@ -453,6 +453,7 @@ components:
                 is_trial: { type: boolean }
                 trial_ends_at: { type: [string, "null"], format: date-time }
                 max_konfis: { type: [integer, "null"] }
+                konfi_count: { type: integer, description: "Konfis, die auf das Konfi-Limit zaehlen -- wie GET /api/support/gemeinden" }
                 intern: { type: boolean }
                 kirchenkreis_id: { type: [integer, "null"] }
                 kirchenkreis: { type: [string, "null"] }

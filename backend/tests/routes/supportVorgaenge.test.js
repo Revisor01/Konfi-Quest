@@ -264,6 +264,8 @@ describe('/api/support/vorgaenge', () => {
       expect(res.body.verlauf[0]).toMatchObject({ richtung: 'aus', vorgang_id: v, archiviert_am: null });
       expect(res.body.gemeinde).toMatchObject({
         id: 2, name: 'Andere Gemeinde', display_name: 'Andere Gemeinde', is_active: true, intern: false, kirchenkreis: null, landeskirche: null,
+        // Wie GET /support/gemeinden: Konfis, die auf das Limit zählen (seed: konfi3)
+        konfi_count: 1,
       });
       expect(res.body.leitung).toMatchObject([{ id: USERS.orgAdmin2.id, display_name: 'Test Org-Admin 2', email: 'Leitung@Andere.example' }]);
       // Empfänger: Absender der eingehenden Mails zuerst, dann die Kontaktadresse (schon dabei), dann die Leitung
