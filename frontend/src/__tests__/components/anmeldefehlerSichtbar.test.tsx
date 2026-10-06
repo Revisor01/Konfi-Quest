@@ -167,3 +167,28 @@ describe('Anmeldeseite: die Ablehnung des Servers kommt mit der passenden Meldun
     expect(await anmeldenUndMeldungLesen()).toBe(KEINE_VERBINDUNG);
   });
 });
+
+// Nach jeder Ablehnung ruettelt die Karte 600 ms lang. Der Zeitgeber, der das
+// Ruetteln beendet, lief ueber das Schliessen der Seite hinaus: Er setzte
+// danach noch Zustand an einer Seite, die es nicht mehr gab. In der CI
+// (06.10.2026, PR 226) traf er das schon abgebaute Testfenster -- „window is
+// not defined" aus LoginView.tsx, alle Tests gruen, der Lauf trotzdem rot.
+describe('Anmeldeseite: das Ruetteln endet mit der Seite', () => {
+  it('beim Schliessen der Seite wird der Zeitgeber des Ruettelns geloescht', async () => {
+    const gestellt = vi.spyOn(globalThis, 'setTimeout');
+    const geloescht = vi.spyOn(globalThis, 'clearTimeout');
+    try {
+      mockPost.mockRejectedValueOnce(serverFehler(401, { error: 'Ungültige Anmeldedaten' }));
+      await anmeldenUndMeldungLesen();
+      const index = gestellt.mock.calls.findIndex(([, ms]) => ms === 600);
+      expect(index).toBeGreaterThanOrEqual(0);
+      const zeitgeber = gestellt.mock.results[index].value;
+      expect(geloescht).not.toHaveBeenCalledWith(zeitgeber);
+      cleanup();
+      expect(geloescht).toHaveBeenCalledWith(zeitgeber);
+    } finally {
+      gestellt.mockRestore();
+      geloescht.mockRestore();
+    }
+  });
+});

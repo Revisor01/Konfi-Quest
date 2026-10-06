@@ -71,9 +71,21 @@ const LoginView: React.FC = () => {
     fehlerVorhanden.current = loginError !== null;
   }, [loginError]);
 
+  // Der Zeitgeber, der das Ruetteln beendet, endet mit der Seite: Lief er
+  // ueber das Schliessen hinaus, setzte er Zustand an einer Seite, die es
+  // nicht mehr gab (in der CI am schon abgebauten Testfenster, 06.10.2026).
+  const ruettelZeitgeber = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => {
+    if (ruettelZeitgeber.current) clearTimeout(ruettelZeitgeber.current);
+  }, []);
+
   const triggerShake = () => {
     setShakeError(true);
-    setTimeout(() => setShakeError(false), 600);
+    if (ruettelZeitgeber.current) clearTimeout(ruettelZeitgeber.current);
+    ruettelZeitgeber.current = setTimeout(() => {
+      ruettelZeitgeber.current = null;
+      setShakeError(false);
+    }, 600);
   };
 
   // Weiterleitung nach erfolgreicher Anmeldung — von der Passwort- UND der
