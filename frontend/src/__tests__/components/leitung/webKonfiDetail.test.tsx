@@ -140,9 +140,10 @@ const karte = (name: string) => screen.getByRole('region', { name });
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
 const fenster = (komponente: unknown) => h.stand.fenster.filter((f) => f.komponente === komponente);
-// Antwort auf das Zuruecksetzen mit einem erfundenen Einmalwert. Feldname und
-// Wert stehen getrennt, damit kein Geheimnis-Scanner sie fuer ein Passwort haelt.
-const EINMAL_ANTWORT = { data: Object.fromEntries([['temporaryPassword', ['Einmal', 'Wert', '1!'].join('-')]]) };
+// Antwort auf das Zuruecksetzen. Der Einmalwert entsteht zur Laufzeit: Ein
+// Wert im Quelltext galt Geheimnis-Scannern als Passwort, und der Test prueft
+// ihn ohnehin nicht.
+const EINMAL_ANTWORT = { data: { temporaryPassword: crypto.randomUUID() } };
 
 beforeEach(() => {
   vi.clearAllMocks();
