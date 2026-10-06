@@ -1,9 +1,13 @@
-# 15. Support-Ansicht: Test-Gemeinden ausblenden, Probe-Anfrage und Probe-Mails
+# 15. Support-Ansicht: Test-Gemeinden ausblenden, Probe-Anfrage, Probe-Anliegen und Probe-Mails
 
-Stand 03.10.2026. Plan und Entscheidungen:
+Stand 06.10.2026. Plan und Entscheidungen:
 [docs/planung/support-web.md](../../planung/support-web.md) (Entscheidungen 5
-und 7). Erst **nach dem Deploy** des PRs „Support-Mail und Web-Ansicht" —
-vorher gibt es die Spalte `organizations.intern` nicht (Migration 194).
+und 7) und [docs/planung/support-vorgaenge.md](../../planung/support-vorgaenge.md).
+Erst **nach dem Deploy** des PRs „Web-Ansicht aller Bereiche und
+Support-Vorgänge" — vorher gibt es die Vorgänge nicht (Migration 195). Wie
+die Ansicht arbeitet: [docs/betrieb/support-ansicht.md](../../betrieb/support-ansicht.md).
+Sind die Schritte 2 bis 4 schon erledigt (Spalte `intern` steht bei den drei
+Gemeinden auf `true`), sie überspringen und das im Ergebnis sagen.
 
 Simon (03.10.2026): „Gut wäre, wenn wir die Gemeinden Test Teamer Sicht, Test
 Konfi Sicht und Admin Review Sicht nicht auf der offiziellen Liste anzeigen.
@@ -17,8 +21,15 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
 ## Was zu tun ist
 
 - [ ] **1. Deploy prüfen.** `GET /api/status`: Version und Commit wie der
-      Merge, Migrationen ohne Fehler, `194_…` unter den neuen. Ins Ergebnis:
-      Commit, Zahl der neuen Migrationen.
+      Merge, Migrationen ohne Fehler, `195_support_vorgaenge` unter den
+      angewendeten. Dann nur lesend:
+
+          SELECT quelle, status, COUNT(*) FROM support_vorgaenge GROUP BY 1, 2 ORDER BY 1, 2;
+          SELECT COUNT(*) FROM gemeinde_anfragen a
+           WHERE NOT EXISTS (SELECT 1 FROM support_vorgaenge v WHERE v.anfrage_id = a.id);
+          -- erwartet: 0 (jede Anfrage hat ihren Vorgang)
+
+      Ins Ergebnis: Commit, Zahl der neuen Migrationen, die Zählung.
 
 - [ ] **2. Die drei Gemeinden nur lesend ermitteln.**
 
@@ -58,31 +69,48 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
       „Konfi Quest für eure Gemeinde anfragen" ausfüllen: Gemeinde „Probe – bitte nicht
       bearbeiten", Kontakt mit einer eigenen Adresse des Betriebs,
       Wunschlizenz „Standard". Dann in der Support-Ansicht:
-      - die Anfrage steht unter „Anfragen" und auf der Übersicht unter
-        „Neueste Anfragen";
-      - aus der Anfrage mit dem Baustein „Eingang bestätigt / Rückfrage"
-        antworten; die Mail kommt an, trägt `[Anfrage N]` im Betreff und die
+      - die Anfrage steht unter „Vorgänge" mit der Art „Neue Gemeinde" und
+        auf der Übersicht unter „Neueste Vorgänge";
+      - aus dem Vorgang mit dem Baustein „Eingang bestätigt / Rückfrage"
+        antworten; die Mail kommt an, trägt `[Vorgang N]` im Betreff und die
         Fußzeile; sie liegt bei moin@ unter „Sent";
       - im Mailprogramm auf diese Mail antworten; nach höchstens fünf Minuten
-        steht die Antwort an der Anfrage (rote Zahl) und im Posteingang unter
-        „Alle" mit Zuordnung zur Anfrage.
+        steht die Antwort im Verlauf des Vorgangs, mit roter Zahl an
+        „Vorgänge".
 
-      Ins Ergebnis: Kennung der Anfrage, je Teilschritt Ja/Nein, Minuten bis
+      Ins Ergebnis: Nummer des Vorgangs, je Teilschritt Ja/Nein, Minuten bis
       zur Zuordnung.
+
+- [ ] **6a. Probe-Anliegen über das Support-Formular.** Auf der Homepage unter
+      „Hilfe und Support" (`#support`) ausfüllen: Gemeinde „Probe – bitte
+      nicht bearbeiten", eine eigene Adresse des Betriebs, Art „Frage zur
+      Bedienung", Bereich „Chat", Betreff „Probe". Dann:
+      - die Seite dankt; die Bestätigung kommt von support@ mit
+        `[Vorgang N]` im Betreff und nennt nur die Nummer;
+      - der Vorgang steht unter „Vorgänge" mit Art, Bereich und Status „Neu";
+      - auf die Bestätigung antworten; die Antwort steht nach höchstens fünf
+        Minuten im Verlauf dieses Vorgangs.
+
+      Ins Ergebnis: Nummer, je Teilschritt Ja/Nein.
 
 - [ ] **7. Probe-Mails an support@.**
       - Eine Mail von der Adresse eines Gemeindeleitungs-Kontos, das genau
-        einer Gemeinde angehört (nicht `review-*`/`google-test-*`): Sie steht
-        im Schriftwechsel dieser Gemeinde und im Posteingang unter „Alle".
+        einer Gemeinde angehört (nicht `review-*`/`google-test-*`): Sie
+        eröffnet einen **neuen Vorgang** dieser Gemeinde (Quelle Mail).
       - Eine Mail von einer Adresse, die zu keinem Konto gehört: Sie steht
-        unter „Nicht zugeordnet" mit roter Zahl; von dort der Gemeinde der
-        Probe-Anfrage oder einer anderen Gemeinde zuordnen.
+        im **Posteingang** mit roter Zahl. Von dort **Einsortieren** in den
+        Vorgang aus Schritt 6a; danach ist sie aus dem Posteingang weg und
+        steht im Verlauf des Vorgangs.
+      - Eine zweite Mail von einer unbekannten Adresse **archivieren**: Sie
+        steht unter dem Filter „Archiv" und nicht mehr im Eingang.
 
       Ins Ergebnis: je Mail, wo sie gelandet ist.
 
-- [ ] **8. Liegen lassen.** Probe-Anfrage und Probe-Mails bleiben stehen,
-      bis Simon sie angesehen hat. Danach die Anfrage ablehnen (sie wird
-      nach 180 Tagen gelöscht) — löschen nur auf Simons Wort.
+- [ ] **8. Liegen lassen.** Probe-Vorgänge und Probe-Mails bleiben stehen,
+      bis Simon sie angesehen hat. Danach auf „Erledigt" setzen (sie kommen
+      ins Archiv; der Vorgang der Probe-Anfrage gilt dann als abgelehnt und
+      geht nach 180 Tagen, die anderen nach 730) — löschen nur auf Simons
+      Wort.
 
 ## Ergebnis
 

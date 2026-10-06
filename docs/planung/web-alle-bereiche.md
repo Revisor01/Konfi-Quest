@@ -63,6 +63,16 @@ und der Web-Fassung der Support-Ansicht ([support-web.md](support-web.md)) auf.
    Web-Fassung Daten, die es nicht gibt, steht das im Bericht und wird
    additiv nachgezogen.
 
+## Gebaut (06.10.2026)
+
+Web-Fassungen für Chat, Start, Badges und Profil (Konfi, Team, Leitung),
+Mitmachen (Events, Aktivitäten, Anträge), Challenges und die Leitung (Konfis,
+Team, Verwaltungsseiten, „Mehr" als Kacheln, Material), im PR „Web-Ansicht
+aller Bereiche und Support-Vorgänge". Bausteine in `components/web/`,
+Bereichsteile in `components/<bereich>/web/`, Stil in `theme/web/<bereich>.css`;
+der Wächter `webAnsichtCss.test.ts` prüft beides. Beschrieben im Handbuch je
+Kapitel unter „Im Browser …".
+
 ## Offen
 
 - Konfi-Detail und Termin-Detail sind die größten Seiten; was dort an

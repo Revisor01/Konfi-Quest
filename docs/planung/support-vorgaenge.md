@@ -182,6 +182,19 @@ Route); die Nummer steht in der Bestätigungsmail.
 
 `POST /api/anfragen` legt den Vorgang der Anfrage in derselben Transaktion an.
 
+## Gebaut (06.10.2026)
+
+Alle Entscheidungen oben, im PR „Web-Ansicht aller Bereiche und
+Support-Vorgänge": Migration 195 mit Übernahme der Anfragen und Mails,
+die Routen unter `/api/support/vorgaenge` und `/api/support/mail/…`
+(Einsortieren, Archivieren, Löschen, Sammelaktionen), `POST /api/anliegen`
+mit dem Formular „Hilfe und Support" auf der Homepage, die Zuordnung der
+Mails (`backend/utils/mailZuordnung.js`), die Frist von 730 Tagen
+(`cleanupArchivierteVorgaenge`), Datenschutzerklärung 9e, die Seiten
+Vorgänge, Vorgang und Posteingang in App und Browser und das Aktualisieren
+nach jeder Aktion. Wie man damit arbeitet:
+[betrieb/support-ansicht.md](../betrieb/support-ansicht.md).
+
 ## Offen
 
 - Zuweisung an einzelne Support-Konten, sobald es mehr als eine Person im

@@ -27,9 +27,10 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
   Stack-Datei für die Support-Mail ergänzen, Anmeldung nur lesend prüfen,
   nach dem Deploy den Posteingang ablesen.
 - **[15-support-probelauf.md](15-support-probelauf.md)** — nach dem Deploy
-  des PRs „Support-Mail und Web-Ansicht" (03.10.2026): die drei Test- und
-  Review-Gemeinden als intern markieren, Probe-Anfrage an moin@ und
-  Probe-Mails an support@ durchspielen.
+  des PRs „Web-Ansicht aller Bereiche und Support-Vorgänge" (06.10.2026): die
+  drei Test- und Review-Gemeinden als intern markieren (falls noch nicht
+  geschehen), Probe-Anfrage an moin@, Probe-Anliegen über das
+  Support-Formular und Probe-Mails an support@ durchspielen.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 
