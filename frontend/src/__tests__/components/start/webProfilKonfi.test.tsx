@@ -230,10 +230,9 @@ describe('Profil der Konfis (Web): Kopf und Person', () => {
 });
 
 describe('Profil der Konfis (Web): Punkte', () => {
-  it('die Kacheln nennen Punkte, Platz, Badges, Challenges, Events und Aktivitaeten', async () => {
+  it('die Kacheln nennen Punkte, Badges, Challenges, Events und Aktivitaeten', async () => {
     await zeige();
     expect(screen.getByRole('group', { name: 'Punkte gesamt: 19' })).toHaveTextContent('Gottesdienst 8Gemeinde 11');
-    expect(screen.getByRole('group', { name: 'Platz im Jahrgang: 5' })).toHaveTextContent('von 24');
     expect(screen.getByRole('link', { name: 'Badges: 5' })).toHaveAttribute('href', '/konfi/badges');
     // Die Zahl der Challenges kommt aus den eigenen Stempeln.
     expect(screen.getByRole('link', { name: 'Challenges: 3' })).toHaveAttribute('href', '/konfi/challenges');
@@ -253,10 +252,13 @@ describe('Profil der Konfis (Web): Punkte', () => {
     expect(screen.getByRole('link', { name: 'Aktivitäten: 9' })).toHaveTextContent('Keine Anträge offen');
   });
 
-  it('ohne Rangliste fehlt die Kachel „Platz im Jahrgang"', async () => {
-    h.profil = { ...PROFIL, rank_in_jahrgang: undefined, total_in_jahrgang: undefined };
+  it('der Platz im Jahrgang steht nicht im Profil -- wie in der App, auch wenn der Server ihn schickt', async () => {
+    // Die Gemeindeleitung kann das Ranking ausschalten; das Profil kennt diese
+    // Einstellung nicht. Den Platz zeigt allein die Rangliste der Startseite.
+    expect(PROFIL.rank_in_jahrgang).toBe(5);
     await zeige();
     expect(screen.queryByRole('group', { name: /Platz im Jahrgang/ })).toBeNull();
+    expect(screen.queryByText(/Platz \d+ von \d+/)).toBeNull();
   });
 
   it('die Aufteilung zeigt Gottesdienst und Gemeinde samt Bonus; „Punkte-Uebersicht" oeffnet das Modal der App', async () => {

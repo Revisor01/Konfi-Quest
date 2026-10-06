@@ -745,7 +745,11 @@ Nicht angefasst werden dabei:
 | Bereits verbuchte (anwesend, fehlend oder abgemeldet) | nein, bleiben wie sie sind |
 | Wartelisten-Einträge | **nein** |
 | Abgemeldete (Pflicht-Event) | nein |
-| Teamer:innen | **nein — die verbuchst du einzeln** |
+| Teamer:innen | **nein — dafür hat die Tabelle des Teams ihren eigenen Knopf** |
+
+Die Tabelle der Teamer:innen hat ein eigenes **„Alle bestätigen"**: Es setzt
+alle bestätigt angemeldeten Teamer:innen ohne Status auf „anwesend", nach
+denselben Regeln, nur ohne Punkte — das Team bekommt für Events keine.
 
 Sind alle verbucht, wechselt der Status auf **„Verbucht"**.
 

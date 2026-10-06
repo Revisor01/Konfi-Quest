@@ -273,6 +273,17 @@ describe('Konfi-Start (Web): Karten', () => {
     await waitFor(() => expect(ueberschriften()).toEqual(['Deine Punkte', 'Deine Badges', 'Laufende Challenges', 'Tageslosung', 'Deine Konfirmation']));
   });
 
+  it('hat die Gemeindeleitung das Ranking ausgeschaltet, nennt „Deine Punkte" keinen Platz -- wie die App', async () => {
+    // Der Server schickt rank_in_jahrgang trotzdem mit; die App zeigt den
+    // Platz nur in der Rangliste, und die fehlt dann.
+    dashboard = { ...DASHBOARD, dashboard_config: { ...DASHBOARD.dashboard_config, show_ranking: false } };
+    await zeige();
+    const punkte = karte('Deine Punkte');
+    expect(within(punkte).getByRole('img', { name: 'Gesamt 19 Punkte von 22, Gottesdienst 8 von 10, Gemeinde 11 von 12' })).toBeInTheDocument();
+    expect(screen.queryByText(/Platz \d+ von \d+/)).toBeNull();
+    expect(screen.queryByRole('heading', { name: /Rangliste/ })).toBeNull();
+  });
+
   it('Konfirmation: die Tage des Servers, das Datum und der Ort', async () => {
     await zeige();
     const k = karte('Deine Konfirmation');

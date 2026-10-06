@@ -255,8 +255,11 @@ Der fünfte Reiter sammelt alles, was du seltener anfasst, in drei Abschnitten.
 
 **Profil** (Passwort und E-Mail ändern), **Benachrichtigungen** (welche
 Mitteilungen aufs Handy kommen, siehe [Auswählen, welche Mitteilungen aufs
-Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen))
-und **App-Tour ansehen**.
+Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)),
+**App-Tour ansehen** und **Hilfe und Support** — das Formular auf
+konfi-quest.de, über das ihr dem Support eine Frage, einen Fehler oder einen
+Wunsch schickt; ihr bekommt eine Bestätigung mit der Nummer eures
+Anliegens.
 
 ### Verwaltung (nur Gemeindeleitung)
 

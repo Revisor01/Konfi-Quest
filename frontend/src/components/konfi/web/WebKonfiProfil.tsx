@@ -93,7 +93,6 @@ const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
   const gd = gottesdienst ? (p.gottesdienst_points || 0) : 0;
   const gem = gemeinde ? (p.gemeinde_points || 0) : 0;
   const summe = gd + gem;
-  const platz = p.rank_in_jahrgang && p.total_in_jahrgang ? `Platz ${p.rank_in_jahrgang} von ${p.total_in_jahrgang}` : null;
 
   const links = (
     <>
@@ -170,7 +169,8 @@ const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
           wert={String(p.total_points || 0)}
           zusatz={[gottesdienst ? `Gottesdienst ${gd}` : null, gemeinde ? `Gemeinde ${gem}` : null]}
         />
-        {platz && <WebKachel label="Platz im Jahrgang" wert={String(p.rank_in_jahrgang)} zusatz={[`von ${p.total_in_jahrgang}`]} />}
+        {/* Kein Platz im Jahrgang: Das Profil kennt nicht, ob die Gemeindeleitung
+            das Ranking zeigt; den Platz nennt allein die Startseite (wie in der App). */}
         <WebKachel label="Badges" wert={String(p.badge_count || 0)} zusatz={['Alle ansehen']} href="/konfi/badges" />
         <WebKachel label="Challenges" wert={String(props.challengeAnzahl)} zusatz={['Stempel gesammelt']} href="/konfi/challenges" />
         <WebKachel label="Events" wert={String(p.event_count || 0)} zusatz={['gebucht']} href="/konfi/events" />

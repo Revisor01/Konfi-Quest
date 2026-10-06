@@ -103,8 +103,12 @@ export interface WebKonfiStartProps {
   onKonfispruch?: () => void;
 }
 
-/** Die Karte „Deine Punkte": Ringe, Balken gegen die Ziele, Level mit Stufen. */
-const PunkteKarte: React.FC<Pick<WebKonfiStartProps, 'punkte' | 'levelInfo' | 'rang'>> = ({ punkte, levelInfo, rang }) => {
+/**
+ * Die Karte „Deine Punkte": Ringe, Balken gegen die Ziele, Level mit Stufen.
+ * Den Platz im Jahrgang nennt sie nur, wenn die Gemeindeleitung das Ranking
+ * zeigt -- wie die App, die ihn allein in der Rangliste hat.
+ */
+const PunkteKarte: React.FC<Pick<WebKonfiStartProps, 'punkte' | 'levelInfo' | 'rang'> & { mitPlatz: boolean }> = ({ punkte, levelInfo, rang, mitPlatz }) => {
   const p = punkte;
   const ziel = (z: number) => (z > 0 ? z : 10);
   const gesamtZiel = ziel(p.zielGottesdienst) + ziel(p.zielGemeinde);
@@ -119,7 +123,7 @@ const PunkteKarte: React.FC<Pick<WebKonfiStartProps, 'punkte' | 'levelInfo' | 'r
   if (p.gemeindeAktiv) zeilen.push({ art: 'gemeinde', name: 'Gemeinde', wert: p.gemeinde, ziel: ziel(p.zielGemeinde) });
 
   return (
-    <WebKarte titel="Deine Punkte" untertitel={rang.platz > 0 && rang.gesamt > 0 ? `Platz ${rang.platz} von ${rang.gesamt} im Jahrgang` : undefined}>
+    <WebKarte titel="Deine Punkte" untertitel={mitPlatz && rang.platz > 0 && rang.gesamt > 0 ? `Platz ${rang.platz} von ${rang.gesamt} im Jahrgang` : undefined}>
       <div className={level ? 'web-punkte' : 'web-punkte web-punkte--ohne-level'}>
         <div className="web-punkte__ringe">
           <WebPunkteRinge
@@ -342,7 +346,7 @@ const WebKonfiStart: React.FC<WebKonfiStartProps> = (props) => {
 
   return (
     <div className="web-start web-rolle">
-      <PunkteKarte punkte={punkte} levelInfo={levelInfo} rang={rang} />
+      <PunkteKarte punkte={punkte} levelInfo={levelInfo} rang={rang} mitPlatz={config.show_ranking} />
       {sichtbar.length > 0 && <div className="web-start-raster">{sichtbar}</div>}
       {gewaehlt && (
         <WebBadgeDialog
