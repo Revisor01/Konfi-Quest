@@ -1,8 +1,12 @@
 // Die Challenges der Konfis in der Web-Fassung (Browser ab 992 px),
 // /konfi/challenges: Karten im Raster mit dem Stempel als Bild, Status, Frist,
-// Zielgruppe und der roten Zahl der Neuigkeiten -- wie am Eintrag der App.
-// Filter (laufend, beendet, alle) und eine Live-Suche; darunter die eigenen
-// Stempel, erhaltene und noch zu holende.
+// Zielgruppe und der roten Zahl der Neuigkeiten -- wie am Eintrag der App --
+// oder dieselben Challenges als Tabelle mit dem eigenen Stand. Der Umschalter
+// Liste | Kacheln steht rechts neben der Suche; der Browser merkt sich die
+// Wahl, beim ersten Oeffnen sind es Kacheln (components/web/useAnsicht).
+// Filter (laufend, beendet, alle) und eine Live-Suche gelten in beiden
+// Ansichten gleich; darunter die eigenen Stempel, erhaltene und noch zu
+// holende.
 //
 // Bewusst OHNE Zaehler, Fortschritt und Rangliste -- der Kern der Challenges
 // ist die eigene Deutung, nicht die Menge (konfi/views/ChallengesView). Die
@@ -17,8 +21,11 @@ import WebKnopf from '../../../web/WebKnopf';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import WebChallengeKarte from '../../../shared/web/challenges/WebChallengeKarte';
 import WebChallengeChips from '../../../shared/web/challenges/WebChallengeChips';
+import WebChallengesTabelle from '../../../shared/web/challenges/WebChallengesTabelle';
 import WebChallengeStempel from '../../../shared/web/challenges/WebChallengeStempel';
 import WebSuche from '../../../web/WebSuche';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
+import { useAnsicht } from '../../../web/useAnsicht';
 import {
   FILTER_TEXT,
   KONFI_LISTEN_FILTER,
@@ -56,6 +63,7 @@ export interface WebKonfiChallengesProps {
 }
 
 const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive, marks, offeneStempel, neuigkeiten, loading, pageRef }) => {
+  const [ansicht, setAnsicht] = useAnsicht('challenges-mitglied', 'kacheln');
   const [auswahl, setAuswahl] = useState<ListenAuswahl>({ ...OHNE_AUSWAHL, filter: 'laufend' });
 
   // Defensive wie die Liste der App: kaputte oder gecachte Antworten als leer behandeln.
@@ -89,12 +97,33 @@ const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive
                   wert={auswahl.suche}
                   onWert={(suche) => setAuswahl((a) => ({ ...a, suche }))}
                 />
+                <WebAnsichtUmschalter wert={ansicht} onWert={setAnsicht} />
               </div>
             </div>
           </div>
         )}
 
-        {sichtbar.length > 0 ? (
+        {sichtbar.length === 0 ? (
+          <div className="web-karte">
+            <WebLeer
+              icon={ICON_CHALLENGE}
+              titel={sucht ? 'Keine Treffer' : (LEER[auswahl.filter] ?? LEER.alle).titel}
+              text={sucht ? 'In dieser Auswahl gibt es keine Challenge. Ändere den Filter oder die Suche.' : (LEER[auswahl.filter] ?? LEER.alle).text}
+              aktion={sucht ? <WebKnopf onClick={() => setAuswahl((a) => ({ ...a, suche: '' }))}>Suche leeren</WebKnopf> : undefined}
+            />
+          </div>
+        ) : ansicht === 'liste' ? (
+          <div className="web-karte">
+            <WebChallengesTabelle
+              eintraege={sichtbar}
+              suche={auswahl.suche}
+              fuer="konfi"
+              href={(c) => `${LISTEN_PFAD}/${c.id}`}
+              kugel={(id) => ({ anzahl: neuigkeiten?.[id] ?? 0, text: 'Neuigkeiten' })}
+              eingereicht={(c) => !!c.has_submission}
+            />
+          </div>
+        ) : (
           <ul className="web-challenge-raster" aria-label="Challenges">
             {sichtbar.map(({ challenge: c, status }) => (
               <WebChallengeKarte
@@ -108,15 +137,6 @@ const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive
               />
             ))}
           </ul>
-        ) : (
-          <div className="web-karte">
-            <WebLeer
-              icon={ICON_CHALLENGE}
-              titel={sucht ? 'Keine Treffer' : (LEER[auswahl.filter] ?? LEER.alle).titel}
-              text={sucht ? 'In dieser Auswahl gibt es keine Challenge. Ändere den Filter oder die Suche.' : (LEER[auswahl.filter] ?? LEER.alle).text}
-              aktion={sucht ? <WebKnopf onClick={() => setAuswahl((a) => ({ ...a, suche: '' }))}>Suche leeren</WebKnopf> : undefined}
-            />
-          </div>
         )}
 
         <WebChallengeStempel

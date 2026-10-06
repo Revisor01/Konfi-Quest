@@ -4,10 +4,12 @@ import {
   KONFI_LISTEN_FILTER,
   LISTEN_FILTER,
   OHNE_AUSWAHL,
+  STATUS_MODIFIKATOR,
   challengeSuchtexte,
   challengesFiltern,
   challengesZaehlen,
   jahrgaengeDerChallenges,
+  jahrgangText,
   konfiEintraege,
   kugelAmEintrag,
   laufzeitKachel,
@@ -243,6 +245,22 @@ describe('Marken aus den Farben der App-Zuordnung', () => {
     expect(tonVonFarbe('var(--app-color-neutral)')).toBe('neutral');
     expect(tonVonFarbe('var(--app-color-wrapped)')).toBe('info');
     expect(tonVonFarbe('irgendwas')).toBe('neutral');
+  });
+});
+
+describe('Jahrgaenge als kurzer Text und Klassen der Zustaende (Karte und Zeile der Liste)', () => {
+  const jg = (id: number, name: string) => ({ id, name });
+
+  it('bis zu zwei Jahrgaenge mit Namen, ab drei nur die Zahl, ohne Jahrgang leer', () => {
+    expect(jahrgangText([])).toBe('');
+    expect(jahrgangText(undefined)).toBe('');
+    expect(jahrgangText([jg(1, '2026/2027')])).toBe('2026/2027');
+    expect(jahrgangText([jg(1, '2026/2027'), jg(2, '2025/2026')])).toBe('2026/2027, 2025/2026');
+    expect(jahrgangText([jg(1, 'A'), jg(2, 'B'), jg(3, 'C')])).toBe('3 Jahrgänge');
+  });
+
+  it('jeder Zustand hat seine Klassenendung -- Karte und Zeile faerben danach', () => {
+    expect(STATUS_MODIFIKATOR).toEqual({ active: 'aktiv', scheduled: 'geplant', draft: 'entwurf', ended: 'beendet' });
   });
 });
 

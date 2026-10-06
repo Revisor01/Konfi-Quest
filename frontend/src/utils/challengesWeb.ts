@@ -72,6 +72,14 @@ export const MEDIEN_WORT: Record<ChallengeMediaType, string> = {
   link: 'Musik-Link',
 };
 
+/** Der Status als Klassenendung an Karte und Zeile (web-challenge-karte--aktiv): jeder Zustand traegt seine Farbe. */
+export const STATUS_MODIFIKATOR: Record<ChallengeStatus, string> = {
+  active: 'aktiv',
+  scheduled: 'geplant',
+  draft: 'entwurf',
+  ended: 'beendet',
+};
+
 /** Der Status als Marke: laufend gruen, geplant blau, Entwurf und beendet neutral. */
 export const STATUS_TON: Record<ChallengeStatus, PillTon> = {
   draft: 'neutral',
@@ -200,6 +208,13 @@ export function jahrgaengeDerChallenges(challenges: readonly ListenChallenge[]):
   for (const c of challenges) for (const j of c.jahrgaenge ?? []) nachId.set(j.id, j);
   return [...nachId.values()].sort((a, b) => a.name.localeCompare(b.name, 'de', { numeric: true }));
 }
+
+/**
+ * Die Jahrgaenge einer Challenge als kurzer Text fuer Karte und Zeile:
+ * bis zu zwei mit Namen, ab drei nur die Zahl ("3 Jahrgänge").
+ */
+export const jahrgangText = (jahrgaenge: readonly ChallengeJahrgang[] = []): string =>
+  jahrgaenge.length > 2 ? `${jahrgaenge.length} Jahrgänge` : jahrgaenge.map((j) => j.name).join(', ');
 
 /**
  * Die rote Zahl am Eintrag der Leitung und des Teams -- dieselbe Rechnung wie
