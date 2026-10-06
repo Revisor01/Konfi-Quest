@@ -137,6 +137,8 @@ Versionsüberschrift.
 - Im Browser markiert die Leiste auch auf Seiten, die über „Mehr" erreicht
   werden, den Eintrag „Mehr", bei den Aktivitäten „Mitmachen".
 - Im Browser stehen gewählte Filter in der Farbe der eigenen Rolle.
+- Im Browser heißen die Event-Filter der Konfis wie in der App: Alle, Meine,
+  Konfirmation.
 
 ### Behoben
 - Direkt nach der Anmeldung zeigte der Gemeinde-Umschalter den Namen der
