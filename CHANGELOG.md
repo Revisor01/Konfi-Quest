@@ -159,6 +159,8 @@ Versionsüberschrift.
   bisher kam die Anmeldung durch, und erst jede weitere Anfrage scheiterte.
 - Ein Support-Konto ohne Gemeinde kann sich im Browser abmelden; bisher gab es
   dort keinen Weg hinaus.
+- Die Leitung wählt im Browser im Profil aus, welche Benachrichtigungen aufs
+  Handy kommen; der Eintrag fehlte dort.
 - Support-Ansicht: Listen, Zahlen und Übersicht zeigen nach einer Änderung
   (Status gesetzt, Mail gelesen, einsortiert, archiviert) sofort den neuen
   Stand.

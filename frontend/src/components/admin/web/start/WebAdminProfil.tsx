@@ -16,6 +16,7 @@ import {
   WebEinstellungenKarte,
   WebKontoKarte,
   WebPersonKarte,
+  WebPushZeile,
 } from '../../../konfi/web/WebProfilBausteine';
 import '../../../../theme/web/start.css';
 
@@ -37,6 +38,8 @@ export interface WebAdminProfilProps {
   onPasswort: () => void;
   onCache: () => void;
   onLoeschen: () => void;
+  /** Die Seite, über der die Auswahl der Benachrichtigungen erscheint. */
+  presentingElement?: () => HTMLElement | null | undefined;
 }
 
 const WebAdminProfil: React.FC<WebAdminProfilProps> = (props) => {
@@ -74,6 +77,9 @@ const WebAdminProfil: React.FC<WebAdminProfilProps> = (props) => {
           onClick={props.onEmail}
         />
         <WebEinstellung icon={ICON_SCHLUESSEL} titel="Passwort" wert="Sicherheitseinstellungen" knopf="Ändern" onClick={props.onPasswort} />
+        {/* Wie bei Konfis und Team (in der App unter Mehr › Konto). Simon,
+            06.10.2026: dass sie der Leitung im Browser fehlte, war nicht gewollt. */}
+        <WebPushZeile variante="users" presentingElement={props.presentingElement} />
         <WebEinstellung icon={ICON_GALERIE} titel="Medien-Cache" wert={props.cacheLabel} knopf="Leeren" onClick={props.onCache} />
       </WebEinstellungenKarte>
 

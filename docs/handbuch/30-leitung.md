@@ -319,7 +319,9 @@ Betrieb**.
 **Profil** öffnet eine Seite mit zwei Spalten: links die Person mit
 Benutzername, E-Mail-Adresse, Rolle und Gemeinde, rechts die offenen
 Einladungen in eine weitere Gemeinde, die Einstellungen — Funktionsbeschreibung,
-E-Mail-Adresse, Passwort und Medien-Cache — und **Konto löschen**. **Abmelden**
+E-Mail-Adresse, Passwort, **Benachrichtigungen** und Medien-Cache — und **Konto
+löschen**. **Benachrichtigungen** öffnet dieselbe Auswahl wie in der App unter
+Mehr › Konto, siehe [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen). **Abmelden**
 steht nicht im Profil, sondern unten in der Leiste.
 
 ### Im Browser Verwaltungsseiten als Tabellen nutzen

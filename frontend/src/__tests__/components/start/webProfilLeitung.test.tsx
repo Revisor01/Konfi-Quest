@@ -45,6 +45,8 @@ vi.mock('../../../contexts/AppContext', () => ({
     setSuccess: vi.fn(),
     signOut: vi.fn(),
     isOnline: true,
+    pushNotificationsPermission: 'granted',
+    requestPushPermissions: vi.fn(),
   }),
 }));
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
@@ -145,11 +147,27 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     expect(h.cacheLeeren).toHaveBeenCalledTimes(1);
   });
 
-  it('wie in der App: kein Abmelden im Profil und keine Benachrichtigungs-Zeile', async () => {
+  it('wie in der App: kein Abmelden im Profil', async () => {
     await zeige();
     expect(screen.queryByRole('button', { name: 'Abmelden' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /Benachrichtigungen/ })).toBeNull();
     expect(screen.getByRole('button', { name: 'Konto löschen' })).toBeInTheDocument();
+  });
+
+  it('Benachrichtigungen wie bei Konfis und Team: die Auswahl der App in der Farbe der Leitung (Simon, 06.10.2026)', async () => {
+    // In der App steht die Zeile unter Mehr › Konto; im Browser fehlte sie der
+    // Leitung ganz -- „nicht gewollt".
+    h.antworten['/notifications/preferences'] = {
+      push_enabled: true, stumm: [],
+      gruppen: [
+        { id: 'chat', name: 'Chat', beschreibung: '', aktiv: true },
+        { id: 'antraege', name: 'Anträge', beschreibung: '', aktiv: false },
+      ],
+    };
+    await zeige();
+    expect(await screen.findByText('1 von 2 Gruppen aufs Handy')).toBeInTheDocument();
+    fireEvent.click(knopfInZeile('Benachrichtigungen', 'Auswählen'));
+    expect(modal('PushAuswahlModal')?.props.variante).toBe('users');
+    expect(modal('PushAuswahlModal')?.optionen?.presentingElement).toBe(h.seite);
   });
 
   it('Einladungen stehen nur da, wenn eine offen ist', async () => {
