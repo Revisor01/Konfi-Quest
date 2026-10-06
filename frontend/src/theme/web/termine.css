@@ -354,3 +354,19 @@
   border-color: var(--web-linie);
   color: var(--web-text-leise);
 }
+
+/* --- Ansicht Liste/Kacheln (Events) ---
+   Der Umschalter steht in der Werkzeugzeile (web-werkzeuge__rechts), die
+   Regeln dazu in web-ansicht.css. Hier nur, was die Karte der Events dazu
+   braucht: den Fuss mit den Knoepfen der Leitung (Kopieren, Absagen,
+   Loeschen), wie der Fuss der Challenge-Karte. Er reicht bis an die Kanten der
+   Karte und rutscht in einem Raster mit unterschiedlich hohen Karten ans
+   untere Ende; die Knoepfe liegen ueber dem Link der Karte (web-vorn). */
+.web-termin-karte__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+  margin: auto calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-basis));
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-top: 1px solid var(--web-linie-leise);
+}
