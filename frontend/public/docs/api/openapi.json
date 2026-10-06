@@ -20502,6 +20502,10 @@
                       "null"
                     ]
                   },
+                  "konfi_count": {
+                    "type": "integer",
+                    "description": "Konfis, die auf das Konfi-Limit zaehlen -- wie GET /api/support/gemeinden"
+                  },
                   "intern": {
                     "type": "boolean"
                   },
