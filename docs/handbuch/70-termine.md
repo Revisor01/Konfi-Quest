@@ -1310,18 +1310,21 @@ der Hinweis direkt bei den Eckdaten und ist klickbar: Bei einem einzelnen
 Material öffnet sich sofort dessen Ansicht, bei mehreren springt die Seite zur
 Materialliste weiter unten. Konfis sehen Material grundsätzlich nicht.
 
-## Im Browser Events in Tabellen und Karten nutzen
+## Im Browser Events als Liste oder Kacheln nutzen
 
 Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von 992
 Pixeln, siehe
 [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
-— sieht Mitmachen anders aus als in der App: Die Leitung arbeitet mit Tabellen,
-Konfis und Team mit Karten, und jedes Event hat zwei Spalten. Alles, was
-in diesem Kapitel steht, gilt unverändert; hier steht nur, wo du es im Browser
-findest. In der App und in einem schmalen Fenster bleibt es bei den Reitern und
+— sieht Mitmachen anders aus als in der App: Die Events stehen als Liste oder
+als Kacheln, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen),
+und jedes Event hat eine eigene Seite im gemeinsamen Aufbau, siehe
+[Im Browser die Seite eines Events oder einer Challenge lesen](03-bedienung.md#im-browser-die-seite-eines-events-oder-einer-challenge-lesen).
+Alles, was in diesem Kapitel steht, gilt unverändert; hier steht nur, wo du es
+im Browser findest. In der App und in einem schmalen Fenster bleibt es bei den Reitern und
 Listen.
 
-### Events der Leitung in der Tabelle durchsuchen
+### Events der Leitung durchsuchen
 
 Mitmachen hat bei der Leitung wie in der App zwei Reiter: **Events** und
 **Aktivitäten**. Sie sind Links, und der Reiter steht in der Adresse. Die orange
@@ -1330,18 +1333,20 @@ Reiter **Aktivitäten** die gemeldeten Aktivitäten, die auf eine Entscheidung
 warten — dieselben Zahlen wie in der App. Oben rechts stehen **Legende**, **Aktualisieren** und
 **Neues Event**.
 
-Die Tabelle **Events** zeigt je Zeile den Namen — ein Link auf das Event —,
-darunter die Jahrgänge und, bei einem abgesagten Event, den Grund; dann Datum
-und Uhrzeit, Ort und Kategorien, die Teilnahme mit Plätzen, Team und
-Warteliste, die Punkte und den Status samt Merkmalen wie Pflicht, Konfirmation,
-Nur Team, Team gesucht und Serie. Über der Tabelle wählst du den Zeitraum —
+Die Leitung beginnt mit der **Liste**: Jede Zeile zeigt den Namen — ein Link
+auf das Event —, darunter die Jahrgänge und, bei einem abgesagten Event, den
+Grund; dann Datum und Uhrzeit, Ort und Kategorien, die Teilnahme mit Plätzen,
+Team und Warteliste, die Punkte und den Status samt Merkmalen wie Pflicht,
+Konfirmation, Nur Team, Team gesucht und Serie. In den **Kacheln** trägt jedes
+Event dieselben Angaben auf einer Karte. Darüber wählst du den Zeitraum —
 **Aktuell**, **Verbuchen**, **Vergangen** oder **Abgesagt**, mit der Zahl der
 Events am Knopf —, grenzt mit **Jahrgang**, **Kategorie** und **Art** ein und
 suchst nach Name oder Ort; Umlaute darfst du umschreiben („buesum" findet
 „Büsum"). **Filter zurücksetzen** nimmt alles zurück. Vergangene Events, bei
 denen nichts mehr zu verbuchen ist, stehen blass da.
 
-Am Ende der Zeile ersetzen Knöpfe das Wischen der App: **Event kopieren**,
+Am Ende der Zeile, in den Kacheln unten auf der Karte, ersetzen Knöpfe das
+Wischen der App: **Event kopieren**,
 **Event absagen** — an einem abgesagten Event **Absagegrund bearbeiten** und
 **Absage zurücknehmen** — und **Event löschen**. Sie öffnen dieselben Fenster
 und stellen dieselben Rückfragen wie dort, siehe
@@ -1367,20 +1372,21 @@ Den Katalog dessen, was gemeldet werden kann, pflegst du wie in der App unter
 **Mehr** › **Aktivitäten**, siehe
 [Im Browser Verwaltungsseiten als Tabellen nutzen](30-leitung.md#im-browser-verwaltungsseiten-als-tabellen-nutzen).
 
-### Ein Event in zwei Spalten verbuchen
+### Ein Event auf seiner Seite verbuchen
 
-Ein Klick auf den Namen öffnet das Event in zwei Spalten; **Alle Events** führt
+Ein Klick auf den Namen öffnet die Seite des Events; **Alle Events** führt
 zurück in die Liste. Unter dem Namen stehen Status und Zeitraum, rechts oben die
 Knöpfe **Chat**, **QR-Code**, **Kopieren**, **Bearbeiten** und **Event
-absagen** — an einem abgesagten Event **Absage zurücknehmen**. Die schmale
-Spalte links trägt die Angaben, die Beschreibung, die Zeitfenster als Tabelle
-mit Belegung (**Frei** oder **Voll**), bei einer Serie die weiteren Events, das
-Material und — wenn das Event Team sucht — **Bist du dabei?** für dich selbst
-([Selbst zu- oder absagen](#selbst-zu-oder-absagen)).
+absagen** — an einem abgesagten Event **Absage zurücknehmen**. Sucht das Event
+Team, stehen dort auch deine eigene Zusage und Absage
+([Selbst zu- oder absagen](#selbst-zu-oder-absagen)). Darunter folgen der Grund
+einer Absage und die Kennzahlen — je nach Event Teilnehmer:innen, Team, Punkte
+oder Abgemeldete und Warteliste.
 
-Rechts steht, was zu tun ist: drei Kennzahlen — je nach Event etwa
-Teilnehmer:innen, Anwesende, Team, Punkte und Warteliste — und darunter die
-Tabellen **Konfis**, **Warteliste**, **Team** und **Abmeldungen**. Jede Zeile
+Links steht, was zu tun ist: die Beschreibung und die Tabellen **Konfis**,
+**Warteliste**, **Team** und **Abmeldungen**. Rechts stehen die Angaben, die
+Zeitfenster als Tabelle mit Belegung (**Frei** oder **Voll**), bei einer Serie
+die weiteren Events und das Material. Jede Zeile
 nennt den Namen mit dem Jahrgang, bei Events mit Zeitfenstern das gebuchte
 Fenster und den Stand mit Abmeldegrund, Notiz und dem, wer den Eintrag gemacht
 hat. Dazu trägt sie die Anwesenheit: **Anwesend** und **Abwesend** verbuchen mit
@@ -1407,19 +1413,19 @@ Was die Handgriffe bewirken, steht unter
 
 ### Sich im Browser zu einem Event an- und abmelden
 
-Konfis und Team sehen die Events als Karten im Raster. Filter und Suche
-stehen für Konfis unter
-[Im Browser Events als Karten durchsuchen](10-konfis.md#im-browser-events-als-karten-durchsuchen),
+Konfis und Team sehen die Events zuerst als Kacheln, auf Wunsch als Liste.
+Filter und Suche stehen für Konfis unter
+[Im Browser Events durchsuchen](10-konfis.md#im-browser-events-durchsuchen),
 für Teamer:innen unter
-[Im Browser Events als Karten durchsuchen und zusagen](20-teamer.md#im-browser-events-als-karten-durchsuchen-und-zusagen).
-Ein Klick auf eine Karte öffnet das Event in zwei Spalten; rechts steht die
-Karte **Bist du dabei?**.
+[Im Browser Events durchsuchen und zusagen](20-teamer.md#im-browser-events-durchsuchen-und-zusagen).
+Ein Klick auf eine Karte oder Zeile öffnet die Seite des Events; die Knöpfe
+stehen oben rechts.
 
 Konfis finden dort den einen Knopf, der gerade gilt: **Anmelden**, **Warteliste
 offen**, **Abmelden**, **Von der Warteliste abmelden** oder **Wieder anmelden**.
 Bis wann das geht, steht unter
 [Wissen, bis wann Konfis sich abmelden können](#wissen-bis-wann-konfis-sich-abmelden-koennen);
-geht keine Anmeldung, steht statt des Knopfes der Grund da. Teamer:innen finden
+geht es nicht, steht der Grund als Hinweis unter dem Kopf. Teamer:innen finden
 **Dabei** und **Nicht dabei**, danach nur noch den Weg zurück, wie unter
 [Selbst zu- oder absagen](#selbst-zu-oder-absagen) beschrieben. An einem
 abgesagten Event steht statt der Knöpfe der Hinweis mit dem Grund.

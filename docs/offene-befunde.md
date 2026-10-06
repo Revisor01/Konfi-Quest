@@ -19,6 +19,18 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Code
 
+- **Gleiche CSS-Klassen in zwei Bereichs-Stylesheets der Web-Fassung.**
+  Alle Dateien unter `frontend/src/theme/web/` liegen im selben Bündel; setzen
+  zwei Bereiche dieselbe Klasse, mischen sich die Regeln auf beiden Seiten. So
+  waren die Fortschrittsbalken der Konfi-Liste nur ein flacher Streifen
+  (behoben 06.10.2026). Noch doppelt: `web-beschreibung` (leitung/termine),
+  `web-menue` (chat/termine), `web-rolle` und `web-rolle--leitung`
+  (leitung/start), `web-stempel` mit `__symbol` und `__text`
+  (challenges/leitung). Ob sie sichtbar falsch aussehen, ist nicht geprüft.
+  Fix: je Bereich umbenennen; der Wächter
+  `__tests__/components/webCssKlassen.test.ts` führt sie als bekannt und lässt
+  keine neuen zu — wer eine behebt, streicht sie dort. Gefunden 06.10.2026.
+
 - **Bearbeiten-Knopf bei Super-Admin-Konten.** `GET /users` setzt `can_edit`
   allein nach der Rolle (`filterUsersByHierarchy`); bei einem Konto mit
   Super-Admin-Recht — Simons Konto in seiner Gemeinde, ein Support-Gast —

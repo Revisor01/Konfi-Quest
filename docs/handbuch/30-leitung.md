@@ -79,11 +79,13 @@ Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
 ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)). Wer wen anlegen darf, steht unter
 [Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
-### Im Browser Konfis und Team als Tabelle verwalten
+### Im Browser Konfis und Team verwalten
 
 Im Browser — ab einer Fensterbreite von 992 Pixeln, siehe
 [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
-— steht die zentrale Liste als **Tabelle**. Der Titel zeigt, ob **Konfis** oder
+— steht die zentrale Liste als **Tabelle** oder als **Kacheln**, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen);
+die Leitung beginnt mit der Tabelle. Der Titel zeigt, ob **Konfis** oder
 **Team** offen ist; darunter steht, wie viele Konfis in wie vielen Jahrgängen
 oder wie viele Personen im Team stehen. Oben rechts stehen **Anwesenheit** (die
 Anwesenheits-Matrix), **Konfi anlegen** beziehungsweise **Teamer:in anlegen**
@@ -92,23 +94,27 @@ Kacheln fassen zusammen: bei den Konfis die Zahl der Konfis und Jahrgänge, die
 Punkte gesamt und wie viele ihr Ziel erreicht haben; beim Team die Zahl der
 Personen, der Zertifikate und der Badges.
 
-Über der Tabelle wechselst du mit **Konfis** und **Team** die Ansicht — die Zahl
-am Knopf zählt die Personen —, suchst nach Name und Benutzername und grenzt
-die Konfis mit **Jahrgang** ein; als Leitung stehen dort nur deine Jahrgänge.
-Bei der Suche darfst du Umlaute umschreiben („mueller" findet „Müller"), die
-Escape-Taste leert das Feld. Ein Klick auf eine Spaltenüberschrift sortiert —
-bei den Konfis nach Name, Jahrgang, Gesamt oder Badges, beim Team nach Name,
-Badges oder Zertifikaten —, ein zweiter Klick kehrt die Richtung um. Namen
-beginnen bei A, Zahlen mit dem größten Wert.
+Darüber wechselst du mit **Konfis** und **Team** zwischen den beiden Gruppen —
+die Zahl am Knopf zählt die Personen —, suchst nach Name und Benutzername und
+grenzt die Konfis mit **Jahrgang** ein; als Leitung stehen dort nur deine
+Jahrgänge. Ganz rechts steht die Wahl zwischen Liste und Kacheln; sie gilt für
+beide Gruppen. Bei der Suche darfst du Umlaute umschreiben („mueller" findet
+„Müller"), die Escape-Taste leert das Feld. In der Liste sortiert ein Klick auf
+eine Spaltenüberschrift — bei den Konfis nach Name, Jahrgang, Gesamt oder
+Badges, beim Team nach Name, Badges oder Zertifikaten —, ein zweiter Klick
+kehrt die Richtung um. In den Kacheln sortiert die Auswahl **Sortieren** neben
+der Wahl; beide stellen dieselbe Sortierung ein.
 
-Eine Konfi-Zeile zeigt Name und Benutzername, Jahrgang, Fortschrittsbalken für
-Gottesdienst, Gemeinde und Gesamt — ein Strich steht dort, wo der Jahrgang die
-Punkteart abgeschaltet hat — und die Zahl der Badges. **Punkte** öffnet die
-Wahl zwischen **Aktivität eintragen** und **Bonuspunkte vergeben**, der Knopf
-daneben löscht die Konfi nach einer Rückfrage. Eine Team-Zeile zeigt Name,
-Jahrgänge, Badges, Zertifikate und das Jahr, seit dem die Person im Team ist;
-löschen kann sie nur die Gemeindeleitung. Der Name ist ein Link auf die
-Detailseite.
+Eine Konfi zeigt den Kreis mit ihren Initialen, Name und Benutzername,
+Jahrgang, je einen Balken für Gottesdienst, Gemeinde und Gesamt mit dem Stand
+darüber, etwa „7 / 10" — ein Haken zeigt das erreichte Ziel, ein Strich steht
+dort, wo der Jahrgang die Punkteart abgeschaltet hat — und die Zahl der Badges.
+Der kleine Knopf mit dem Papierkorb löscht die Konfi nach einer Rückfrage.
+Punkte vergibst du auf der Detailseite der Konfi, mit **Aktivität eintragen**
+und **Bonuspunkte vergeben**. Eine Teamer:in zeigt Name, Jahrgänge, Badges,
+Zertifikate und das Jahr, seit dem sie im Team ist; löschen kann sie nur die
+Gemeindeleitung. In der Liste ist der Name ein Link auf die Detailseite, in den
+Kacheln die ganze Karte.
 
 ### Im Browser die Detailseite einer Person in zwei Spalten nutzen
 
@@ -209,9 +215,9 @@ die [Zu- und Absagen der Teamer:innen](70-termine.md#das-teamer-kontingent-verwa
 Fällt ein Event aus, hast du die Wahl zwischen
 [Absagen und Löschen](70-termine.md#ein-event-absagen-oder-loeschen).
 
-Im Browser stehen die Events als Tabelle, und ein Event hat zwei Spalten; wie
-das aussieht, steht unter
-[Im Browser Events in Tabellen und Karten nutzen](70-termine.md#im-browser-events-in-tabellen-und-karten-nutzen).
+Im Browser stehen die Events als Liste oder als Kacheln, und jedes Event hat
+eine eigene Seite; wie das aussieht, steht unter
+[Im Browser Events als Liste oder Kacheln nutzen](70-termine.md#im-browser-events-als-liste-oder-kacheln-nutzen).
 
 ### Aktivitäten
 

@@ -239,16 +239,18 @@ finden — und das sind dieselben, die ihre Mitteilungen bekommen (siehe
 öffnen ihre Challenges auf dieselbe Weise, siehe
 [Bei einer Challenge mitmachen](10-konfis.md#bei-einer-challenge-mitmachen).
 
-### Im Browser mit Karten und Filtern arbeiten
+### Im Browser mit Liste, Kacheln und Filtern arbeiten
 
 Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
 992 Pixeln, siehe
 [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
-— stehen die Challenges als **Karten im Raster** da statt als Liste. Zahlen,
+— stehen die Challenges als **Liste** oder als **Kacheln** im Raster da, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen);
+die Leitung beginnt mit der Liste, Team und Konfis mit den Kacheln. Zahlen,
 Rechte und Aktionen sind dieselben wie in der App; nur die Darstellung nutzt
 die Breite.
 
-Jede Karte zeigt oben den **Stempel** der Challenge, darauf die rote Zahl der
+In den Kacheln zeigt jede Karte oben den **Stempel** der Challenge, darauf die rote Zahl der
 neuen Beiträge (siehe
 [Neue Beiträge und offene Freigaben erkennen](#neue-beitraege-und-offene-freigaben-erkennen)).
 Darunter stehen der Zustand — **Läuft**, **Geplant**, **Entwurf** oder
@@ -261,7 +263,13 @@ Maustaste öffnet die Challenge in einem neuen Tab. **Bearbeiten** und
 **Löschen** stehen unten auf der Karte; Löschen gibt es nur für die
 Gemeindeleitung und die Leitung, nicht für Teamer:innen.
 
-Oben über den Karten filterst du und suchst:
+In der **Liste** steht je Challenge eine Zeile: der Stempel mit der roten
+Zahl, Titel und Name des Stempels, der Zeitraum mit Restzeit, der Zustand, die
+Zahl der Beiträge mit der Sichtbarkeit, unter **Freigabe** die orange Zahl der
+wartenden Beiträge und die Zielgruppe mit den Jahrgängen. Der Titel ist der
+Link; **Bearbeiten** und **Löschen** stehen als Symbole am Zeilenende.
+
+Darüber filterst du und suchst:
 
 - **Laufend**, **Geplant** (mit den Entwürfen), **Beendet** und **Alle**. Jeder
   Knopf trägt die Zahl der Challenges, die darunter stehen.
@@ -277,20 +285,26 @@ Oben über den Karten filterst du und suchst:
 **Neue Challenge** oben rechts öffnet dasselbe Formular wie das Plus in der
 App (siehe [Eine Challenge anlegen](#eine-challenge-anlegen)).
 
-Die Seite einer Challenge hat zwei Spalten. Links stehen die Aufgabe und die
-Beiträge als Raster; Fotos und Videos stehen groß da, und die Knöpfe der
+Die Seite einer Challenge ist aufgebaut wie jede andere, siehe
+[Im Browser die Seite eines Events oder einer Challenge lesen](03-bedienung.md#im-browser-die-seite-eines-events-oder-einer-challenge-lesen).
+Oben rechts stehen **Beiträge exportieren**, **Challenge bearbeiten** und
+**Beitrag einreichen**. Die Kennzahlen zeigen die Beiträge, die Teilnehmenden,
+bei Freigabe-Pflicht die wartenden Beiträge und die Laufzeit. Links stehen die
+Aufgabe und die Beiträge als Raster; Fotos und Videos stehen groß da, und die Knöpfe der
 [Moderation](#beitraege-freigeben-ausblenden-loeschen) — **Freigeben**,
 **Anonym stellen**, **Ausblenden**, **Wieder einblenden**, **Endgültig
 löschen** — sitzen direkt am Beitrag. **Ausblenden** fragt in einem Fenster
 nach der Begründung. Über den Beiträgen steht, wie viele neue Beiträge seit
-deinem letzten Besuch dazugekommen sind. Rechts stehen die **Aktionen**
-(Bearbeiten, Beitrag einreichen, Beiträge exportieren), die **Angaben** und
-der **Stempel**.
+deinem letzten Besuch dazugekommen sind. Rechts stehen die **Angaben** und der
+**Stempel**.
 
-Konfis sehen im Browser dieselbe Aufteilung: Karten mit **Laufend**,
-**Beendet** und **Alle**, darunter ihre Stempel; auf der Seite einer Challenge
-links die Aufgabe und den Feed ihrer Gruppe oder ihre eigenen Beiträge,
-rechts **Mitmachen** mit dem Knopf zum Einreichen.
+Konfis sehen im Browser dieselbe Aufteilung: Kacheln oder Liste mit
+**Laufend**, **Beendet** und **Alle** — die Liste mit ihrem eigenen Stand —,
+darunter ihre Stempel. Auf der Seite einer Challenge steht oben rechts
+**Beitrag einreichen**; die Kennzahlen zeigen die Beiträge im Feed, die eigenen
+Beiträge, die Laufzeit und ob der Stempel schon da ist. Links stehen die
+Aufgabe und der Feed ihrer Gruppe oder ihre eigenen Beiträge, rechts Angaben
+und Stempel.
 
 ---
 
