@@ -1,10 +1,11 @@
 // Ein Event beim Team in der Web-Fassung, gerendert (03.10.2026): die Adresse
-// /teamer/events?eventId=<id> trägt, welches Event offen ist; zweispaltig --
-// links Kennzahlen, Angaben, Beschreibung, Material; rechts "Bist du dabei?"
-// mit Zusage und Absage und, nur lesend, wer kommt. Zusage und Absage laufen
-// über dieselben Funktionen wie in der App (POST /teamer/events/:id/zusage,
-// Absage-Fenster mit Grund). Verbucht wird bei der Leitung -- die Tabellen
-// haben keine Knöpfe.
+// /teamer/events?eventId=<id> trägt, welches Event offen ist. Aufbau wie jede
+// Detailseite (06.10.2026): im Kopf Titel, Kennzeichen und alle Aktionen --
+// Chat, QR-Code, Zusage und Absage --, darunter die Kennzahlen; links die
+// Beschreibung und, nur lesend, wer kommt; rechts die Angaben und das
+// Material. Zusage und Absage laufen über dieselben Funktionen wie in der App
+// (POST /teamer/events/:id/zusage, Absage-Fenster mit Grund). Verbucht wird
+// bei der Leitung -- die Tabellen haben keine Knöpfe.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent, within, act } from '@testing-library/react';
 import {
@@ -72,6 +73,11 @@ const oeffneEvent = async (eventId: number, opt: { teilnehmende?: unknown[]; mat
 };
 
 const karte = (titel: string | RegExp) => screen.getByRole('region', { name: titel });
+const kopf = () => screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement;
+/** Die Knöpfe im Kopf in der Reihenfolge der Seite (Aktionen sind Knöpfe oben rechts). */
+const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim());
+/** Was direkt unter dem Kopf steht, vor den Kennzahlen: Hinweise. */
+const ersterBlock = () => document.querySelector('.web-detail')!.firstElementChild as HTMLElement;
 const angabe = (label: string) => screen.getByText(label, { selector: 'dt' }).closest('div')!.querySelector('dd')!.textContent;
 
 describe('Kopf: Titel, Zurück, Aktionen', () => {
@@ -102,7 +108,44 @@ describe('Kopf: Titel, Zurück, Aktionen', () => {
   });
 });
 
-describe('Links: Kennzahlen, Angaben, Beschreibung, Material', () => {
+describe('Aufbau wie jede Detailseite', () => {
+  it('Aktionen im Kopf: Chat, QR-Code und die Zusage -- keine eigene Karte "Bist du dabei?"', async () => {
+    await oeffneEvent(401);
+    expect(knoepfeImKopf()).toEqual(['QR-Code', 'Nicht dabei', 'Dabei']);
+    expect(within(kopf()).getByRole('button', { name: 'Dabei' })).toHaveClass('web-knopf--primaer');
+    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toHaveClass('web-knopf--gefahr');
+    expect(screen.queryByRole('region', { name: 'Bist du dabei?' })).toBe(null);
+  });
+
+  it('mit Chat-Raum und Zusage steht der Chat vorn und nur der Weg zur Absage am Ende', async () => {
+    await oeffneEvent(402);
+    expect(knoepfeImKopf()).toEqual(['Chat', 'QR-Code', 'Nicht mehr dabei']);
+  });
+
+  it('die Kennzahlen stehen in einer Reihe unter dem Kopf, vor den Spalten', async () => {
+    await oeffneEvent(402);
+    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
+    expect([...reihe.querySelectorAll('.web-kachel')].map((k) => k.getAttribute('aria-label'))).toEqual(['Konfis: 18', 'Team: 3', 'Punkte: 3']);
+    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('links der Inhalt (Beschreibung, wer kommt), rechts der Block "Angaben" mit Angaben und Material', async () => {
+    await oeffneEvent(402, { teilnehmende: TEILNEHMENDE, material: MATERIAL });
+    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
+    expect(seite.tagName).toBe('ASIDE');
+    expect(seite).toHaveAttribute('aria-label', 'Angaben');
+    expect(within(haupt).getByRole('region', { name: 'Beschreibung' })).toBeInTheDocument();
+    expect(within(haupt).getByRole('region', { name: 'Konfis (2)' })).toBeInTheDocument();
+    expect(within(haupt).getByRole('region', { name: 'Team (1)' })).toBeInTheDocument();
+    expect(within(seite).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
+    expect(within(seite).getByRole('region', { name: 'Material (2)' })).toBeInTheDocument();
+    expect(within(seite).queryByRole('region', { name: 'Beschreibung' })).toBe(null);
+    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBe(null);
+  });
+});
+
+describe('Kennzahlen, Beschreibung, Angaben, Material', () => {
   it('Kennzahlen: Konfis, Team und Punkte', async () => {
     await oeffneEvent(402);
     expect(screen.getByRole('group', { name: 'Konfis: 18' })).toBeInTheDocument();
@@ -140,22 +183,20 @@ describe('Links: Kennzahlen, Angaben, Beschreibung, Material', () => {
   });
 });
 
-describe('Rechts: "Bist du dabei?"', () => {
+describe('Kopf: Zusage und Absage', () => {
   it('zugesagt: nur der rote Weg zurück -- "Nicht mehr dabei" öffnet das Absage-Fenster, sendet noch nichts', async () => {
     await oeffneEvent(402);
-    const zusage = karte('Bist du dabei?');
-    expect(within(zusage).queryByRole('button', { name: 'Dabei' })).toBe(null);
-    fireEvent.click(within(zusage).getByRole('button', { name: 'Nicht mehr dabei' }));
+    expect(within(kopf()).queryByRole('button', { name: 'Dabei' })).toBe(null);
+    fireEvent.click(within(kopf()).getByRole('button', { name: 'Nicht mehr dabei' }));
     expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
     expect(api.post).not.toHaveBeenCalled();
   });
 
   it('noch nichts gesagt: beide Knöpfe; "Dabei" sendet die Zusage und lädt das Event neu', async () => {
     await oeffneEvent(401);
-    const zusage = karte('Bist du dabei?');
-    expect(within(zusage).getByRole('button', { name: 'Nicht dabei' })).toBeInTheDocument();
+    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toBeInTheDocument();
     h.api.get.mockClear();
-    await act(async () => { fireEvent.click(within(zusage).getByRole('button', { name: 'Dabei' })); });
+    await act(async () => { fireEvent.click(within(kopf()).getByRole('button', { name: 'Dabei' })); });
     expect(api.post).toHaveBeenCalledWith('/teamer/events/401/zusage', { dabei: true });
     expect(setSuccess).toHaveBeenCalledWith('Du bist dabei');
     expect(h.api.get).toHaveBeenCalledWith('/events/401');
@@ -163,7 +204,7 @@ describe('Rechts: "Bist du dabei?"', () => {
 
   it('"Nicht dabei" öffnet das Absage-Fenster (der Grund ist dort freiwillig)', async () => {
     await oeffneEvent(401);
-    fireEvent.click(within(karte('Bist du dabei?')).getByRole('button', { name: 'Nicht dabei' }));
+    fireEvent.click(within(kopf()).getByRole('button', { name: 'Nicht dabei' }));
     expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
     expect(api.post).not.toHaveBeenCalled();
   });
@@ -171,59 +212,60 @@ describe('Rechts: "Bist du dabei?"', () => {
   it('eine Absage von dir: nur der grüne Weg zurück "Doch dabei"', async () => {
     const abgesagt = termin(401, 'Teamabend', { ...TEAMABEND, booking_status: 'opted_out' });
     await oeffneEvent(401, { events: [abgesagt, ...EVENTS.filter((e) => e.id !== 401)] });
-    const zusage = karte('Bist du dabei?');
-    expect(within(zusage).getByRole('button', { name: 'Doch dabei' })).toBeInTheDocument();
-    expect(within(zusage).queryByRole('button', { name: 'Nicht dabei' })).toBe(null);
+    expect(knoepfeImKopf()).toEqual(['QR-Code', 'Doch dabei']);
+    expect(within(kopf()).getByRole('button', { name: 'Doch dabei' })).toHaveClass('web-knopf--primaer');
   });
 
   it('offline: die Zusage ist gesperrt ("Du bist offline"), der Weg zur Absage bleibt', async () => {
     h.online = false;
     await oeffneEvent(401);
-    const zusage = karte('Bist du dabei?');
-    expect(within(zusage).getByRole('button', { name: 'Du bist offline' })).toBeDisabled();
-    expect(within(zusage).getByRole('button', { name: 'Nicht dabei' })).toBeEnabled();
+    expect(within(kopf()).getByRole('button', { name: 'Du bist offline' })).toBeDisabled();
+    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toBeEnabled();
   });
 
   it('Fehler beim Senden: die Meldung des Servers, kein "Du bist dabei"', async () => {
     h.api.post.mockRejectedValue(Object.assign(new Error('x'), { response: { status: 400, data: { error: 'Kein Platz mehr' } } }));
     await oeffneEvent(401);
-    await act(async () => { fireEvent.click(within(karte('Bist du dabei?')).getByRole('button', { name: 'Dabei' })); });
+    await act(async () => { fireEvent.click(within(kopf()).getByRole('button', { name: 'Dabei' })); });
     expect(setError).toHaveBeenCalledWith('Kein Platz mehr');
     expect(setSuccess).not.toHaveBeenCalled();
   });
 
-  it('reines Konfi-Event: "Nur zur Info - keine Anmeldung", keine Knöpfe', async () => {
+  it('reines Konfi-Event: "Nur zur Info - keine Anmeldung" als Hinweis, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(403);
-    const zusage = karte('Bist du dabei?');
-    expect(zusage).toHaveTextContent('Nur zur Info - keine Anmeldung');
-    expect(within(zusage).queryByRole('button')).toBe(null);
+    expect(ersterBlock()).toHaveTextContent('Nur zur Info - keine Anmeldung');
+    expect(ersterBlock()).toHaveClass('web-hinweis--hinweis');
+    expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
-  it('abgesagtes Event: Hinweis mit Grund, keine Knöpfe', async () => {
+  it('abgesagtes Event: der Hinweis mit Grund steht einmal, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(405);
-    expect(karte('Bist du dabei?')).toHaveTextContent('Dieses Event ist abgesagt');
-    expect(within(karte('Bist du dabei?')).queryByRole('button')).toBe(null);
-    expect(screen.getAllByRole('status').some((s) => s.textContent!.includes('Grund: Sturmwarnung'))).toBe(true);
+    expect(ersterBlock()).toHaveTextContent('Dieses Event ist abgesagt');
+    expect(ersterBlock()).toHaveTextContent('Grund: Sturmwarnung');
+    expect(screen.getAllByText('Dieses Event ist abgesagt')).toHaveLength(1);
+    expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
-  it('vergangen und angemeldet: "Anwesend" als Auskunft, keine Knöpfe', async () => {
+  it('vergangen und angemeldet: "Anwesend" als Auskunft, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(406);
-    expect(karte('Bist du dabei?')).toHaveTextContent('Anwesend');
-    expect(within(karte('Bist du dabei?')).queryByRole('button')).toBe(null);
+    expect(ersterBlock()).toHaveTextContent('Anwesend');
+    expect(ersterBlock()).toHaveClass('web-hinweis--erfolg');
+    expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
-  it('vergangen ohne Teilnahme: die ganze Karte entfällt', async () => {
+  it('vergangen ohne Teilnahme: weder Hinweis noch Knöpfe zur Zusage', async () => {
     const vergangen = termin(407, 'Gemeindefest', { event_date: inTagen(-2), teamer_needed: true });
     antworten({ eventId: 407 });
     richteEin({ nutzer: 'teamer', pfad: '/teamer/events', suche: '?eventId=407', daten: { 'teamer:events:': [vergangen], 'teamer:requests:': [] } });
     await oeffne('team');
     for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
     expect(screen.getByRole('heading', { level: 1, name: 'Gemeindefest' })).toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Bist du dabei?' })).toBe(null);
+    expect(ersterBlock()).toHaveClass('web-detail__kennzahlen');
+    expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 });
 
-describe('Rechts: wer kommt -- nur lesend', () => {
+describe('Links: wer kommt -- nur lesend', () => {
   it('Konfis und Team getrennt, mit Status und Hinweisen; ohne Knöpfe zum Verbuchen', async () => {
     await oeffneEvent(402, { teilnehmende: TEILNEHMENDE });
     const konfis = karte('Konfis (2)');

@@ -12,7 +12,7 @@ vi.mock('@ionic/react', async () => (await import('../support/ionicAttrappe')).i
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('../support/ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
 
-import WebDetailSeite from '../../../components/web/WebDetailSeite';
+import WebDetailSeite, { WebDetailInhalt } from '../../../components/web/WebDetailSeite';
 import WebAnsichtUmschalter from '../../../components/web/WebAnsichtUmschalter';
 import { ansichtSchluessel, ansichtVorgabe, useAnsicht } from '../../../components/web/useAnsicht';
 
@@ -66,6 +66,26 @@ describe('WebDetailSeite', () => {
       <WebDetailSeite bereich="Challenges" zurueck={{ href: '/x', text: 'Alle' }} titel="T" haupt={<p>a</p>} seite={<p>b</p>} />,
     );
     expect(container.querySelector('.web-detail__kennzahlen')).toBeNull();
+  });
+});
+
+describe('WebDetailInhalt: derselbe Inhalt ohne eigene Seite (Challenges halten eine IonPage fuer alle Zustaende)', () => {
+  it('Hinweis, Kennzahlen, links der Inhalt, rechts "Angaben" -- ohne Kopf, den setzt der Rahmen der Seite', () => {
+    const { container } = render(
+      <WebDetailInhalt
+        hinweis={<p>Seit deinem letzten Besuch</p>}
+        kennzahlen={[{ label: 'Beiträge', wert: '3' }]}
+        haupt={<section>Beiträge-Raster</section>}
+        seite={<section>Angaben-Liste</section>}
+      />,
+    );
+    expect(screen.queryByRole('heading', { level: 1 })).toBeNull();
+    expect(container.querySelector('header')).toBeNull();
+    const detail = container.querySelector('.web-detail')!;
+    expect([...detail.children].map((k) => k.className)).toEqual(['', 'web-raster web-raster--kacheln web-detail__kennzahlen', 'web-spalten']);
+    expect(screen.getByRole('group', { name: 'Beiträge: 3' })).toBeTruthy();
+    expect(container.querySelector('.web-spalten')!.children[0].textContent).toBe('Beiträge-Raster');
+    expect(screen.getByRole('complementary', { name: 'Angaben' }).textContent).toBe('Angaben-Liste');
   });
 });
 

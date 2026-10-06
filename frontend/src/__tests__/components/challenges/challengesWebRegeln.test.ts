@@ -10,6 +10,7 @@ import {
   jahrgaengeDerChallenges,
   konfiEintraege,
   kugelAmEintrag,
+  laufzeitKachel,
   leitungEintraege,
   passtZumFilter,
   restzeitText,
@@ -212,6 +213,25 @@ describe('Zeitraum und Restzeit', () => {
     expect(restzeitText('1 Stunde')).toBe('Noch 1 Stunde');
     expect(restzeitText('endet gleich')).toBe('Endet gleich');
     expect(restzeitText('')).toBe('');
+  });
+});
+
+describe('Kachel "Laufzeit" auf der Seite einer Challenge', () => {
+  const zeit = { starts_at: '2026-10-03T08:30:00Z', ends_at: '2026-10-17T18:00:00Z' };
+
+  it('laufend: wie lange noch, dazu das Ende', () => {
+    expect(laufzeitKachel(zeit, 'active', '9 Tage')).toEqual({ wert: 'Noch 9 Tage', zusatz: ['bis 17.10.2026'] });
+    expect(laufzeitKachel(zeit, 'active', 'endet gleich')).toEqual({ wert: 'Endet gleich', zusatz: ['bis 17.10.2026'] });
+  });
+
+  it('laufend ohne lesbare Restzeit: "Läuft"', () => {
+    expect(laufzeitKachel(zeit, 'active', '')).toEqual({ wert: 'Läuft', zusatz: ['bis 17.10.2026'] });
+  });
+
+  it('sonst der Zustand: Entwurf ohne Datum, Geplant mit Beginn, Beendet mit Ende', () => {
+    expect(laufzeitKachel(zeit, 'draft', '9 Tage')).toEqual({ wert: 'Entwurf', zusatz: ['Zeitraum noch offen'] });
+    expect(laufzeitKachel(zeit, 'scheduled', '9 Tage')).toEqual({ wert: 'Geplant', zusatz: ['Beginnt am 03.10.2026'] });
+    expect(laufzeitKachel(zeit, 'ended', 'Zeit abgelaufen')).toEqual({ wert: 'Beendet', zusatz: ['am 17.10.2026'] });
   });
 });
 

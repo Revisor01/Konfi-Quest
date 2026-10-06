@@ -252,6 +252,26 @@ export function restzeitText(restzeit: string): string {
 }
 
 /**
+ * Die Kachel "Laufzeit" auf der Seite einer Challenge (Leitung, Team, Konfis):
+ * laufend wie lange noch ("Noch 9 Tage", "Endet gleich"), sonst der Zustand --
+ * Entwurf, Geplant mit Start, Beendet mit Ende. `restzeit` kommt aus
+ * formatRemaining der App-Liste (konfi/views/ChallengesView), damit die Zeit
+ * eine Stelle hat.
+ */
+export function laufzeitKachel(
+  c: Pick<ChallengeBase, 'starts_at' | 'ends_at'>,
+  status: ChallengeStatus,
+  restzeit: string,
+): { wert: string; zusatz: string[] } {
+  switch (status) {
+    case 'draft': return { wert: 'Entwurf', zusatz: ['Zeitraum noch offen'] };
+    case 'scheduled': return { wert: 'Geplant', zusatz: [`Beginnt am ${datumKurz(c.starts_at)}`] };
+    case 'active': return { wert: restzeitText(restzeit) || 'Läuft', zusatz: [`bis ${datumKurz(c.ends_at)}`] };
+    default: return { wert: 'Beendet', zusatz: [`am ${datumKurz(c.ends_at)}`] };
+  }
+}
+
+/**
  * Die Marke zu einer Farbe der App-Zuordnung (Status und Einwilligung eines
  * Beitrags, useChallengeLeitung: STATUS_BADGE, CONSENT_BADGE): Wartendes
  * orange, Freigegebenes gruen, Ausgeblendetes rot, "nur Leitung" grau, anonym

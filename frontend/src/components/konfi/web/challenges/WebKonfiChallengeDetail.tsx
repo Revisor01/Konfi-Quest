@@ -1,12 +1,17 @@
 // Die Seite einer Challenge fuer Konfis in der Web-Fassung (Browser ab
-// 992 px), /konfi/challenges/:id.
+// 992 px), /konfi/challenges/:id, im Aufbau aller Detailseiten
+// (components/web/WebDetailSeite.tsx; Simon, 06.10.2026: „Inhalt links,
+// Angaben rechts").
 //
-// Zwei Spalten. Links die Aufgabe und die Beitraege als Raster -- der Feed der
-// Gruppe oder die eigenen Beitraege, Bilder und Videos gross, anonyme
-// Beitraege ohne Namen (der Server liefert dort gar keinen mit). Rechts
-// "Mitmachen" mit dem Knopf zum Einreichen (das Einreich-Formular der App,
-// ChallengeSubmitModal), die Angaben (Status, Zeitraum, Sichtbarkeit) und
-// der Stempel.
+// Im Kopf Titel, Kennzeichen und die Aktion "Beitrag einreichen" (das
+// Einreich-Formular der App, ChallengeSubmitModal); was bisher unter
+// "Mitmachen" stand -- wer den Beitrag sieht, warum es keinen Knopf gibt --,
+// steht als Hinweis ueber den Kennzahlen. Darunter die Kennzahlen (Beitraege
+// im Feed, eigene Beitraege, Laufzeit, Stempel). Links breit die Aufgabe und
+// die Beitraege als Raster -- der Feed der Gruppe oder die eigenen Beitraege,
+// Bilder und Videos gross, anonyme Beitraege ohne Namen (der Server liefert
+// dort gar keinen mit). Rechts schmal die Angaben (Status, Zeitraum,
+// Sichtbarkeit) und der Stempel.
 //
 // Alles ueber dieselbe Logik wie die Ansicht der App
 // (useKonfiChallengeAnsicht): wann die Challenge laeuft -- sie folgt der Uhr,
@@ -29,7 +34,8 @@ import type { ChallengeHinweisArt } from '../../../shared/challengeHinweisTexte'
 import WebChallengeChips, { type WebChallengeChip } from '../../../shared/web/challenges/WebChallengeChips';
 import WebBeitrag from '../../../shared/web/challenges/WebBeitrag';
 import WebKarte from '../../../web/WebKarte';
-import WebSpalten from '../../../web/WebSpalten';
+import type { WebKachelProps } from '../../../web/WebKachel';
+import { WebDetailInhalt } from '../../../web/WebDetailSeite';
 import WebAngaben from '../../../web/WebAngaben';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
@@ -50,6 +56,7 @@ import { getVisibilityInfo } from '../../../../utils/challengeTexte';
 import {
   STATUS_TON,
   STATUS_WORT,
+  laufzeitKachel,
   restzeitText,
   tonVonFarbe,
   zeitraumText,
@@ -129,9 +136,22 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
         ? 'Du hast schon einen Beitrag eingereicht — bei dieser Challenge gibt es nur einen je Person.'
         : 'Diese Challenge ist beendet — Beiträge lassen sich nicht mehr einreichen.';
 
+    // Die Kennzahlen aus dem, was die Seite ohnehin laedt. Solange die Beitraege fehlen (laedt noch,
+    // offline ohne Stand), steht ein Strich statt einer falschen Null. Bei "nur Leitung" gibt es keine
+    // Gruppen-Galerie -- dann auch keine Kachel dafuer.
+    const beitraegeDa = !loading && !offlineOhneStand;
+    const laufzeit = laufzeitKachel(current, status, formatRemaining(current.ends_at));
+    const kennzahlen: WebKachelProps[] = [
+      ...(privat ? [] : [{ label: 'Beiträge im Feed', wert: beitraegeDa ? String(gallery.length) : '–' }]),
+      { label: 'Meine Beiträge', wert: beitraegeDa ? String(ownSubmissions.length) : '–' },
+      { label: 'Laufzeit', wert: laufzeit.wert, zusatz: laufzeit.zusatz },
+      { label: 'Stempel', wert: !beitraegeDa ? '–' : hatStempel ? 'Erhalten' : isActive ? 'Offen' : 'Nicht erhalten', zusatz: [current.badge_name] },
+    ];
+
     return (
-      <WebSpalten
-        seiteBeschriftung="Mitmachen und Angaben"
+      <WebDetailInhalt
+        hinweis={<WebHinweis art="hinweis">{einreichenHinweis}</WebHinweis>}
+        kennzahlen={kennzahlen}
         haupt={(
           <>
             <WebKarte titel={isActive ? 'Worum geht es?' : 'Worum ging es?'}>
@@ -170,7 +190,7 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
                     <WebLeer
                       icon={ICON_TEXTDOKUMENT}
                       titel="Noch kein Beitrag von dir"
-                      text={isActive ? 'Reiche rechts unter „Mitmachen“ deinen Beitrag ein.' : 'Diese Challenge ist beendet — du hattest nichts eingereicht.'}
+                      text={isActive ? 'Reiche oben rechts über „Beitrag einreichen“ deinen Beitrag ein.' : 'Diese Challenge ist beendet — du hattest nichts eingereicht.'}
                     />
                   ) : (
                     <WebLeer
@@ -212,18 +232,6 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
         )}
         seite={(
           <>
-            <WebKarte titel="Mitmachen">
-              <div className="web-challenge-aktionen">
-                {canSubmitMore && (
-                  <WebKnopf art="primaer" onClick={onSubmit}>
-                    <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
-                    Beitrag einreichen
-                  </WebKnopf>
-                )}
-                <p className="web-challenge-hinweistext">{einreichenHinweis}</p>
-              </div>
-            </WebKarte>
-
             <WebKarte titel="Angaben">
               <WebAngaben
                 angaben={[
@@ -269,8 +277,14 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
       untertitel={current ? (
         <span className="web-pillreihe">
           <WebPill ton={STATUS_TON[isActive ? 'active' : 'ended']} punkt>{STATUS_WORT[isActive ? 'active' : 'ended']}</WebPill>
-          {isActive && <WebPill>{restzeitText(formatRemaining(current.ends_at))}</WebPill>}
+          <span>{zeitraumText(current, isActive ? 'active' : 'ended')}</span>
         </span>
+      ) : undefined}
+      aktionen={current && canSubmitMore ? (
+        <WebKnopf art="primaer" onClick={onSubmit}>
+          <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
+          Beitrag einreichen
+        </WebKnopf>
       ) : undefined}
     >
       {current ? renderChallenge(current) : <WebChallengeHinweis art={hinweisArt} onBack={onBack} onNochmal={onNochmal} />}

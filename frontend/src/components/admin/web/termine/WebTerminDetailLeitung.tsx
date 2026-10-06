@@ -1,8 +1,10 @@
 // Ein Event bei der Leitung in der Web-Fassung (/admin/events/:id, 03.10.2026,
-// docs/planung/web-alle-bereiche.md, Entscheidung 6): zweispaltig. Links die
-// Angaben, die Beschreibung, die Zeitfenster, Serie und Material; rechts, was
-// zu tun ist -- die Kennzahlen, Konfis, Team und Warteliste als Tabellen mit
-// Anwesenheit, die Abmeldungen.
+// docs/planung/web-alle-bereiche.md, Entscheidung 6) auf dem Geruest aller
+// Detailseiten (components/web/WebDetailSeite.tsx; Simon, 06.10.2026: „Inhalt
+// links, Angaben rechts"). Im Kopf Titel, Kennzeichen und ALLE Aktionen --
+// auch die eigene Zusage und Absage; darunter die Kennzahlen. Links breit die
+// Beschreibung, Konfis, Warteliste und Team als Tabellen mit Anwesenheit und
+// die Abmeldungen; rechts schmal die Angaben, Zeitfenster, Serie und Material.
 //
 // Die Seite (admin/views/EventDetailView) laedt die Daten und besitzt alle
 // Funktionen (Anwesenheit verbuchen, Absagen, Teilnehmende verwalten ...); sie
@@ -30,9 +32,8 @@ import { datumKurz, datumUhrzeit } from '../../../../utils/dateUtils';
 import { kennzahlAnzeige, leitungDetailStatus, leitungKennzahlen, terminAngaben } from '../../../../utils/termineWeb';
 import type { Event, EventMaterial, Participant, Unregistration } from '../../../../types/event';
 import WebSeite from '../../../web/WebSeite';
-import WebSpalten from '../../../web/WebSpalten';
+import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
-import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
 import WebHinweis from '../../../web/WebHinweis';
 import WebLink from '../../../web/WebLink';
@@ -187,6 +188,8 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
 
   const serie = eventData.is_series && eventData.series_events ? eventData.series_events : [];
 
+  // Alle Aktionen der Seite stehen im Kopf (Simon, 06.10.2026) -- die wichtigste
+  // rechts: die eigene Zusage, wenn das Event Team sucht und die Leitung sich meldet.
   const kopfAktionen = (
     <>
       {/* Einen bestehenden Chat oeffnet auch das Team; ihn anzulegen ist Leitungssache (requireAdmin). */}
@@ -224,106 +227,44 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
           Event absagen
         </WebKnopf>
       ))}
+      {/* Eigene An- und Abmeldung: Auch Leitung meldet sich selbst, wenn das Event Team sucht (Simon, 03.09.2026). */}
+      {p.darfSichMelden && welcheKnoepfe(p.eigeneZusage) !== 'zusage' && (
+        <WebKnopf art="gefahr" disabled={p.zusageLaeuft || !isOnline} onClick={aktionen.eigeneAbsage}>
+          <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
+          {absageBeschriftung(p.eigeneZusage)}
+        </WebKnopf>
+      )}
+      {p.darfSichMelden && welcheKnoepfe(p.eigeneZusage) !== 'absage' && (
+        <WebKnopf art="primaer" disabled={p.zusageLaeuft || !isOnline} onClick={() => aktionen.eigeneZusage(true)}>
+          <IonIcon icon={ICON_ZUSAGE_GEFUELLT} aria-hidden="true" />
+          {zusageBeschriftung(p.eigeneZusage)}
+        </WebKnopf>
+      )}
     </>
   );
 
-  const links = (
+  const hinweis = (abgesagt || (p.darfSichMelden && !isOnline)) ? (
     <>
-      <WebKarte titel="Angaben">
-        <WebTerminAngaben angaben={angaben} onMaterial={materialHinweis} />
-      </WebKarte>
+      {abgesagt && <WebAbsage event={event} />}
+      {p.darfSichMelden && !isOnline && (
+        <WebHinweis art="hinweis">Ohne Netz nicht möglich — versuch es später nochmal.</WebHinweis>
+      )}
+    </>
+  ) : undefined;
 
+  const kennzahlen = leitungKennzahlen(event, teilnehmende).map((k) => {
+    const z = kennzahlAnzeige(k);
+    return { label: z.label, wert: z.wert };
+  });
+
+  // Links, breit: Beschreibung, dann wer kommt -- Tabellen mit Anwesenheit.
+  const haupt = (
+    <>
       {eventData.description && (
         <WebKarte titel="Beschreibung">
           <p className="web-beschreibung">{eventData.description}</p>
         </WebKarte>
       )}
-
-      {zeitfenster.length > 0 && (
-        <WebKarte titel={`Zeitfenster (${zeitfenster.length})`} bund>
-          <WebTabelle
-            beschriftung="Zeitfenster"
-            spalten={zeitfensterSpalten}
-            zeilen={zeitfenster}
-            zeileSchluessel={(s) => s.id}
-            mittig
-          />
-        </WebKarte>
-      )}
-
-      {serie.length > 0 && (
-        <WebKarte titel="Weitere Events dieser Serie" bund>
-          <ul className="web-liste-schlicht">
-            {serie.map((s) => {
-              const unbegrenzt = (s.max_participants || 0) === 0;
-              const voll = !unbegrenzt && (s.registered_count || 0) >= s.max_participants;
-              return (
-                <li key={s.id} className="web-liste-schlicht__zeile">
-                  <span>
-                    <WebLink href={`/admin/events/${s.id}`} className="web-link--text">{s.name}</WebLink>
-                    <span className="web-zelle-leise">
-                      {datumKurz(s.event_date)}, {formatEventTime(s.event_date)} · {s.registered_count || 0}/{unbegrenzt ? '∞' : s.max_participants} TN
-                    </span>
-                  </span>
-                  <WebPill ton={voll ? 'fehler' : 'erfolg'}>{voll ? 'Voll' : 'Frei'}</WebPill>
-                </li>
-              );
-            })}
-          </ul>
-        </WebKarte>
-      )}
-
-      {p.materialien.length > 0 && (
-        <section id="web-event-material" aria-label="Material">
-          <WebKarte titel={`Material (${p.materialien.length})`} bund>
-            <ul className="web-liste-schlicht">
-              {p.materialien.map((m) => (
-                <li key={m.id} className="web-liste-schlicht__zeile">
-                  <button type="button" className="web-link web-link--text web-link--knopf" onClick={() => aktionen.material(m.id)}>
-                    {m.title}
-                  </button>
-                  <span className="web-zelle-leise">
-                    {m.link_url ? 'Link' : `${m.file_count || 0} ${(m.file_count || 0) === 1 ? 'Datei' : 'Dateien'}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </WebKarte>
-        </section>
-      )}
-
-      {/* Eigene An- und Abmeldung: Auch Leitung meldet sich selbst, wenn das Event Team sucht (Simon, 03.09.2026). */}
-      {p.darfSichMelden && (
-        <WebKarte titel="Bist du dabei?">
-          <div className="web-formular__aktionen">
-            {welcheKnoepfe(p.eigeneZusage) !== 'absage' && (
-              <WebKnopf disabled={p.zusageLaeuft || !isOnline} onClick={() => aktionen.eigeneZusage(true)}>
-                <IonIcon icon={ICON_ZUSAGE_GEFUELLT} aria-hidden="true" />
-                {zusageBeschriftung(p.eigeneZusage)}
-              </WebKnopf>
-            )}
-            {welcheKnoepfe(p.eigeneZusage) !== 'zusage' && (
-              <WebKnopf art="gefahr" disabled={p.zusageLaeuft || !isOnline} onClick={aktionen.eigeneAbsage}>
-                <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
-                {absageBeschriftung(p.eigeneZusage)}
-              </WebKnopf>
-            )}
-          </div>
-          {!isOnline && <p className="web-feld__hinweis">Ohne Netz nicht möglich — versuch es später nochmal.</p>}
-        </WebKarte>
-      )}
-    </>
-  );
-
-  const kennzahlen = leitungKennzahlen(event, teilnehmende);
-
-  const rechts = (
-    <>
-      {abgesagt && <WebAbsage event={event} />}
-
-      <div className="web-raster web-raster--kacheln">
-        {kennzahlen.map((k) => { const z = kennzahlAnzeige(k); return <WebKachel key={z.label} label={z.label} wert={z.wert} />; })}
-      </div>
 
       {teilnehmende.length === 0 && !isOnline && (
         <WebHinweis art="hinweis">Die Teilnehmerliste ist offline nicht verfügbar.</WebHinweis>
@@ -385,22 +326,86 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
     </>
   );
 
+  // Rechts, schmal: die Angaben und was zu ihnen gehoert -- Zeitfenster, Serie, Material.
+  const seite = (
+    <>
+      <WebKarte titel="Angaben">
+        <WebTerminAngaben angaben={angaben} onMaterial={materialHinweis} />
+      </WebKarte>
+
+      {zeitfenster.length > 0 && (
+        <WebKarte titel={`Zeitfenster (${zeitfenster.length})`} bund>
+          <WebTabelle
+            beschriftung="Zeitfenster"
+            spalten={zeitfensterSpalten}
+            zeilen={zeitfenster}
+            zeileSchluessel={(s) => s.id}
+            mittig
+          />
+        </WebKarte>
+      )}
+
+      {serie.length > 0 && (
+        <WebKarte titel="Weitere Events dieser Serie" bund>
+          <ul className="web-liste-schlicht">
+            {serie.map((s) => {
+              const unbegrenzt = (s.max_participants || 0) === 0;
+              const voll = !unbegrenzt && (s.registered_count || 0) >= s.max_participants;
+              return (
+                <li key={s.id} className="web-liste-schlicht__zeile">
+                  <span>
+                    <WebLink href={`/admin/events/${s.id}`} className="web-link--text">{s.name}</WebLink>
+                    <span className="web-zelle-leise">
+                      {datumKurz(s.event_date)}, {formatEventTime(s.event_date)} · {s.registered_count || 0}/{unbegrenzt ? '∞' : s.max_participants} TN
+                    </span>
+                  </span>
+                  <WebPill ton={voll ? 'fehler' : 'erfolg'}>{voll ? 'Voll' : 'Frei'}</WebPill>
+                </li>
+              );
+            })}
+          </ul>
+        </WebKarte>
+      )}
+
+      {p.materialien.length > 0 && (
+        <section id="web-event-material" aria-label="Material">
+          <WebKarte titel={`Material (${p.materialien.length})`} bund>
+            <ul className="web-liste-schlicht">
+              {p.materialien.map((m) => (
+                <li key={m.id} className="web-liste-schlicht__zeile">
+                  <button type="button" className="web-link web-link--text web-link--knopf" onClick={() => aktionen.material(m.id)}>
+                    {m.title}
+                  </button>
+                  <span className="web-zelle-leise">
+                    {m.link_url ? 'Link' : `${m.file_count || 0} ${(m.file_count || 0) === 1 ? 'Datei' : 'Dateien'}`}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </WebKarte>
+        </section>
+      )}
+    </>
+  );
+
   return (
-    <WebSeite
+    <WebDetailSeite
       bereich="Mitmachen"
+      zurueck={ZURUECK}
       titel={eventData.name}
-      untertitel={(
+      kennzeichen={(
         <span className="web-pillreihe">
           <WebTerminMarken status={status} event={event} teamZeigen serieZeigen />
           <span>{zeitraumText(event)}</span>
         </span>
       )}
       aktionen={kopfAktionen}
-      zurueck={ZURUECK}
+      hinweis={hinweis}
+      kennzahlen={kennzahlen}
+      haupt={haupt}
+      seite={seite}
       pageRef={p.pageRef}
-    >
-      <WebSpalten seiteLinks seiteBeschriftung="Angaben, Zeitfenster und Material" seite={links} haupt={rechts} />
-    </WebSeite>
+    />
   );
 };
 

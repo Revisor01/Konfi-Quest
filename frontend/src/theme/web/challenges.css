@@ -487,18 +487,7 @@
   gap: var(--app-abstand-mittel) var(--app-abstand-basis);
 }
 
-/* --- Seite einer Challenge: Aktionen rechts --- */
-.web-challenge-aktionen {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-eng);
-}
-
-.web-challenge-aktionen .web-knopf {
-  justify-content: flex-start;
-  width: 100%;
-}
-
+/* --- Seite einer Challenge: Text neben dem Stempel --- */
 .web-challenge-hinweistext {
   margin: 0;
   color: var(--web-text-leise);

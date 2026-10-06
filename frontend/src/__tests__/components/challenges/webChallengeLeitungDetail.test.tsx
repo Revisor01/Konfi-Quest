@@ -1,9 +1,10 @@
 // Die Seite einer Challenge fuer Team und Leitung in der Web-Fassung,
-// gerendert (docs/planung/web-alle-bereiche.md, Entscheidung 6): zwei Spalten,
-// links Aufgabe und Beitraege als Raster mit den Knoepfen der Moderation,
-// rechts Aktionen, Angaben und Stempel. Alles ueber dieselbe Logik wie die
-// Ansicht der App (useChallengeLeitung): Rechte, Zaehler, Aktionen. Gelesen
-// wird beim Aufgehen und Verlassen wie dort.
+// gerendert (docs/planung/web-alle-bereiche.md, Entscheidung 6). Aufbau wie
+// jede Detailseite (06.10.2026): im Kopf Titel, Kennzeichen und alle Aktionen,
+// darunter die Kennzahlen; links Aufgabe und Beitraege als Raster mit den
+// Knoepfen der Moderation, rechts die Angaben und der Stempel. Alles ueber
+// dieselbe Logik wie die Ansicht der App (useChallengeLeitung): Rechte,
+// Zaehler, Aktionen. Gelesen wird beim Aufgehen und Verlassen wie dort.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within, cleanup } from '@testing-library/react';
@@ -122,6 +123,11 @@ const zeigen = async (onBack = vi.fn()) => {
 };
 const beitraege = () => [...screen.getByRole('list', { name: 'Beiträge' }).children] as HTMLElement[];
 const namen = () => beitraege().map((b) => within(b).getByText(/^(Lena|Jonas|Mara|Ole|Noah|Alex) /).textContent);
+const kopf = () => screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement;
+/** Die Knoepfe im Kopf in der Reihenfolge der Seite (Aktionen sind Knoepfe oben rechts). */
+const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim());
+/** Die Kachel-Beschriftungen der Kennzahlen-Reihe ("Laufzeit: Noch 9 Tage"). */
+const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
 const chip = (name: RegExp | string) => within(screen.getByRole('group', { name: 'Beiträge nach Zustand' })).getByRole('button', { name });
 const waehle = (name: RegExp | string) => fireEvent.click(chip(name));
 
@@ -147,6 +153,78 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
+describe('Challenge fuer Team und Leitung (Web): Aufbau wie jede Detailseite', () => {
+  it('alle Aktionen im Kopf, "Beitrag einreichen" als primaerer Knopf ganz rechts -- keine Karte "Aktionen"', async () => {
+    await zeigen();
+    expect(knoepfeImKopf()).toEqual(['Beiträge exportieren', 'Challenge bearbeiten', 'Beitrag einreichen']);
+    expect(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' })).toHaveClass('web-knopf--primaer');
+    expect(within(kopf()).getByRole('button', { name: 'Challenge bearbeiten' })).not.toHaveClass('web-knopf--primaer');
+    expect(screen.queryByRole('region', { name: 'Aktionen' })).toBeNull();
+  });
+
+  it('Kennzahlen unter dem Kopf: Beitraege, Teilnehmende, Warten auf Freigabe, Laufzeit', async () => {
+    await zeigen();
+    expect(kennzahlen()).toEqual(['Beiträge: 6', 'Teilnehmende: 6', 'Warten auf Freigabe: 2', 'Laufzeit: Noch 9 Tage']);
+    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
+    expect(reihe.querySelector('[aria-label="Beiträge: 6"]')).toHaveTextContent('3 im Feed');
+    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('Teilnehmende zaehlen Personen, nicht Beitraege; die Kachel wartender Freigaben hebt sich nur mit Wartendem hervor', async () => {
+    antworten(LAUFEND, [beitrag(1, 31, 'Lena Beispiel'), beitrag(2, 31, 'Lena Beispiel'), beitrag(3, 33, 'Mara Probe', { moderation_status: 'pending' })]);
+    await zeigen();
+    expect(kennzahlen()).toEqual(['Beiträge: 3', 'Teilnehmende: 2', 'Warten auf Freigabe: 1', 'Laufzeit: Noch 9 Tage']);
+    expect(screen.getByRole('group', { name: 'Warten auf Freigabe: 1' })).toHaveClass('web-kachel--achtung');
+    cleanup();
+    antworten(LAUFEND, [beitrag(1, 31, 'Lena Beispiel')]);
+    await zeigen();
+    expect(screen.getByRole('group', { name: 'Warten auf Freigabe: 0' })).not.toHaveClass('web-kachel--achtung');
+  });
+
+  it('ohne Freigabe-Pflicht keine Kachel fuer wartende Beitraege', async () => {
+    antworten({ ...LAUFEND, moderated: false });
+    await zeigen();
+    expect(kennzahlen()).toEqual(['Beiträge: 6', 'Teilnehmende: 6', 'Laufzeit: Noch 9 Tage']);
+  });
+
+  it('die Laufzeit nennt den Zustand: Entwurf, Geplant mit Beginn, Beendet mit Datum', async () => {
+    antworten({ ...LAUFEND, is_draft: true });
+    await zeigen();
+    expect(screen.getByRole('group', { name: 'Laufzeit: Entwurf' })).toHaveTextContent('Zeitraum noch offen');
+    cleanup();
+    antworten({ ...LAUFEND, starts_at: tage(3), ends_at: tage(10) });
+    await zeigen();
+    expect(screen.getByRole('group', { name: 'Laufzeit: Geplant' })).toHaveTextContent('Beginnt am 06.10.2026');
+    cleanup();
+    antworten({ ...LAUFEND, starts_at: tage(-30), ends_at: tage(-10) });
+    await zeigen();
+    expect(screen.getByRole('group', { name: 'Laufzeit: Beendet' })).toHaveTextContent('am 23.09.2026');
+  });
+
+  it('ohne Beitraege (offline, kein Stand): Striche statt falscher Nullen', async () => {
+    h.apiGet.mockImplementation(async (route: string) => {
+      if (route === '/challenges/admin/7') return { data: LAUFEND };
+      throw netzWeg;
+    });
+    oeffne();
+    await screen.findByText('Die Liste der Beiträge ist offline nicht verfügbar.');
+    expect(kennzahlen()).toEqual(['Beiträge: –', 'Teilnehmende: –', 'Warten auf Freigabe: –', 'Laufzeit: Noch 9 Tage']);
+  });
+
+  it('links der Inhalt (Aufgabe, Beitraege), rechts der Block "Angaben" mit Angaben und Stempel', async () => {
+    await zeigen();
+    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
+    expect(seite.tagName).toBe('ASIDE');
+    expect(seite).toHaveAttribute('aria-label', 'Angaben');
+    expect(within(haupt).getByRole('region', { name: 'Worum geht es?' })).toBeInTheDocument();
+    expect(within(haupt).getByRole('list', { name: 'Beiträge' })).toBeInTheDocument();
+    expect(within(seite).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
+    expect(within(seite).getByRole('region', { name: 'Stempel' })).toBeInTheDocument();
+    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBeNull();
+  });
+});
+
 describe('Challenge fuer Team und Leitung (Web): Kopf, Aufgabe und Angaben', () => {
   it('Titel, Weg zurueck als Link zur Liste, Marken und Aufgabe', async () => {
     await zeigen();
@@ -154,6 +232,7 @@ describe('Challenge fuer Team und Leitung (Web): Kopf, Aufgabe und Angaben', () 
     const kopf = screen.getByRole('heading', { level: 1 }).closest('header')!;
     expect(kopf).toHaveTextContent('Läuft');
     expect(kopf).toHaveTextContent('Konfis und Team');
+    expect(kopf).toHaveTextContent('28.09. – 12.10.2026');
     expect(screen.getByRole('region', { name: 'Worum geht es?' })).toHaveTextContent('Schreibt eine Bitte in einem Satz.');
     expect(screen.getByRole('region', { name: 'Worum geht es?' })).toHaveTextContent('Gestellt von Pastorin Beispiel');
     // Der Weg zurueck fuehrt ueber die Router-Navigation, nicht ueber einen Seitenwechsel des Browsers.
@@ -374,13 +453,13 @@ describe('Challenge fuer Team und Leitung (Web): Moderation ueber dieselben Funk
 describe('Challenge fuer Team und Leitung (Web): Aktionen', () => {
   it('Bearbeiten oeffnet das Formular der App mit dieser Challenge', async () => {
     await zeigen();
-    fireEvent.click(screen.getByRole('button', { name: 'Challenge bearbeiten' }));
+    fireEvent.click(within(kopf()).getByRole('button', { name: 'Challenge bearbeiten' }));
     expect(h.bearbeiten).toHaveBeenCalledWith(expect.objectContaining({ id: 7, title: 'Fürbitten zum Erntedank' }));
   });
 
   it('Beitrag einreichen oeffnet das Einreich-Formular der App, solange die Challenge laeuft', async () => {
     await zeigen();
-    fireEvent.click(screen.getByRole('button', { name: 'Beitrag einreichen' }));
+    fireEvent.click(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' }));
     expect(h.presentModal).toHaveBeenCalledTimes(1);
   });
 
@@ -406,7 +485,7 @@ describe('Challenge fuer Team und Leitung (Web): Aktionen', () => {
       throw new Error(`unerwartet: ${route}`);
     });
     await zeigen();
-    fireEvent.click(screen.getByRole('button', { name: 'Beiträge exportieren' }));
+    fireEvent.click(within(kopf()).getByRole('button', { name: 'Beiträge exportieren' }));
     await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/challenges/admin/7/export', { responseType: 'text' }));
     // Ohne Texte sagt die Seite es, statt eine leere Datei zu laden.
     await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Es gibt noch keine Texte oder Links zum Exportieren.'));

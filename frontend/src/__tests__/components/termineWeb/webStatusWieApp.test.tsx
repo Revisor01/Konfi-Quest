@@ -6,7 +6,7 @@
 // Konfirmation und Absage und vergleicht, was die App zeigt (Status-Marke,
 // Farbe, Ausgrauen), mit dem, was die Web-Fassung rechnet.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
+import { render, fireEvent, cleanup, act } from '@testing-library/react';
 import { h, zuruecksetzen, richteEin, oeffne, termin, inTagen, JETZT } from './geruestWeb';
 import KonfiEventsView from '../../../components/konfi/views/EventsView';
 import AdminEventsView from '../../../components/admin/EventsView';
@@ -339,12 +339,18 @@ describe('Team-Detail: die Web-Fassung zeigt, was die Detailansicht der App zeig
     }
     return stuecke.filter(Boolean).sort();
   };
+  // Die Web-Fassung hat keine Karte "Bist du dabei?" mehr: Zusage und Absage stehen als Knöpfe im Kopf
+  // (neben Chat und QR-Code), die Auskunft als Hinweis über den Kennzahlen. Der Hinweis auf ein
+  // abgesagtes Event hat Titel und Grund -- der Titel ist der Satz der App.
   const karteWeb = () => {
-    const region = screen.queryByRole('region', { name: 'Bist du dabei?' });
-    if (!region) return null;
-    const stuecke = [...region.querySelectorAll('button')].map((k) => norm(k.textContent));
-    for (const hinweis of region.querySelectorAll('.web-hinweis__text')) stuecke.push(norm(hinweis.textContent));
-    return stuecke.filter(Boolean).sort();
+    const kopfKnoepfe = [...document.querySelectorAll('.web-kopf__aktionen button')]
+      .map((k) => norm(k.textContent))
+      .filter((text) => text !== 'Chat' && text !== 'QR-Code');
+    const stuecke = [...kopfKnoepfe];
+    for (const hinweis of document.querySelectorAll('.web-detail > .web-hinweis')) {
+      stuecke.push(norm((hinweis.querySelector('.web-hinweis__titel') ?? hinweis.querySelector('.web-hinweis__text'))!.textContent));
+    }
+    return stuecke.length > 0 ? stuecke.filter(Boolean).sort() : null;
   };
 
   const oeffneDetail = async (event: Event, breit: boolean) => {
