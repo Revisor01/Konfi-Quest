@@ -116,32 +116,39 @@ Zertifikate und das Jahr, seit dem sie im Team ist; löschen kann sie nur die
 Gemeindeleitung. In der Liste ist der Name ein Link auf die Detailseite, in den
 Kacheln die ganze Karte.
 
-### Im Browser die Detailseite einer Person in zwei Spalten nutzen
+### Im Browser die Detailseite einer Person nutzen
 
-Die Detailseite hat den Namen als Titel, bei einer Konfi darunter die Punkte
-(„12 von 20 Punkten"); **Alle Konfis** beziehungsweise **Alle im Team** führt
-zurück in die Liste. Alles aus
+Die Detailseite ist aufgebaut wie jede andere, siehe
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
+Alles aus
 [Die Detailansicht einer Person nutzen](#die-detailansicht-einer-person-nutzen)
-gibt es auch hier, nur anders verteilt.
+gibt es auch hier, nur anders verteilt; **Alle Konfis** beziehungsweise **Alle
+im Team** führt zurück in die Liste.
 
-Links steht die Person: der Jahrgang, bei einer Konfi mit den Ringen für Punkte
-und Ziele, bei einer Teamer:in mit der Zahl der Zertifikate, Events und Badges.
-Darunter folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
+Unter dem Namen stehen der Jahrgang — bei einer Teamer:in „Teamer:in" und seit
+wann — und der Benutzername. Oben rechts stehen die Aktionen: **Passwort
+zurücksetzen**, **Konfi bearbeiten**, **Bonuspunkte vergeben** und als
+Hauptknopf **Aktivität eintragen**; bei einer Teamer:in **Zertifikat
+zuweisen** statt Bonuspunkten und Bearbeiten. Die Kennzahlen zeigen bei einer
+Konfi Gottesdienst, Gemeinde und Gesamt mit dem Ziel — eine Punkteart, die der
+Jahrgang abgeschaltet hat, steht dort als abgeschaltet — und die Badges, bei
+einer Teamer:in Zertifikate, Events und Badges.
+
+Links folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
 eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen — und, bei
 einer Konfi, **Bonuspunkte**; bei einer Teamer:in stattdessen **Zertifikate**,
 die **Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen
 über zehn hinaus, klappt **Alle … anzeigen** den Rest auf.
 
-Rechts stehen die **Aktionen** — **Aktivität eintragen**, **Bonuspunkte
-vergeben**, **Konfi bearbeiten** und **Passwort zurücksetzen**, bei einer
-Teamer:in **Zertifikat zuweisen** statt Bonuspunkten und Bearbeiten — und
+Rechts stehen die **Angaben** — Jahrgang, Benutzername und Bonuspunkte — und
 darunter die Karten **Konfirmation** (Datum, Konfispruch, besuchte
 Pflicht-Events), bei einer Teamer:in **Teamer:in seit** mit dem Datum zum
 Ändern, **Badges**, **Events**, **Offene Anträge** mit dem Link **Anträge
 bearbeiten →**, **Stempel**, **Jahresrückblick** und **Rolle ändern** mit **Zur
 Teamer:in befördern**. Offene Anträge, Stempel und Rückblick stehen nur da,
 wenn es etwas zu zeigen gibt. Ohne Netz gehen nur das Eintragen von
-Aktivitäten und Bonuspunkten; alles andere wartet auf die Verbindung.
+Aktivitäten und Bonuspunkten; ein Hinweis unter dem Kopf sagt das, alles andere
+wartet auf die Verbindung.
 
 ## Chats moderieren
 

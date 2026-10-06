@@ -165,7 +165,7 @@ Jahrgänge, die Plätze von Konfis und Team und, wenn es welche gibt, das
 Material auf der Karte.
 
 Die Seite eines Events ist aufgebaut wie jede andere, siehe
-[Im Browser die Seite eines Events oder einer Challenge lesen](03-bedienung.md#im-browser-die-seite-eines-events-oder-einer-challenge-lesen).
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
 Oben rechts stehen **Dabei** und **Nicht dabei**, danach nur noch der Weg
 zurück: **Nicht mehr dabei** oder **Doch dabei**; daneben öffnen **Chat** (wenn
 es einen Event-Chat gibt) und **QR-Code** (zum Einchecken) ihre Fenster. Wie

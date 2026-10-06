@@ -1319,7 +1319,7 @@ Pixeln, siehe
 als Kacheln, siehe
 [Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen),
 und jedes Event hat eine eigene Seite im gemeinsamen Aufbau, siehe
-[Im Browser die Seite eines Events oder einer Challenge lesen](03-bedienung.md#im-browser-die-seite-eines-events-oder-einer-challenge-lesen).
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
 Alles, was in diesem Kapitel steht, gilt unverändert; hier steht nur, wo du es
 im Browser findest. In der App und in einem schmalen Fenster bleibt es bei den Reitern und
 Listen.

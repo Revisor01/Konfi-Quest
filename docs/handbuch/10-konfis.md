@@ -187,7 +187,7 @@ darfst du umschreiben („fruehling" findet „Frühling"), die Escape-Taste lee
 das Feld.
 
 Die Seite eines Events ist aufgebaut wie jede andere, siehe
-[Im Browser die Seite eines Events oder einer Challenge lesen](03-bedienung.md#im-browser-die-seite-eines-events-oder-einer-challenge-lesen).
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
 Oben rechts steht der eine Knopf, der gerade gilt: **Anmelden**, **Warteliste
 offen**, **Abmelden**, **Von der Warteliste abmelden** oder **Wieder anmelden**.
 Wann welcher Knopf da ist, ist dasselbe wie in der App, siehe

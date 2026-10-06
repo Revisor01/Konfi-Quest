@@ -1,12 +1,15 @@
 // Detailseite einer Konfi bzw. Teamer:in in der Web-Fassung, /admin/konfis/:id
-// (Browser ab 992 px; docs/planung/web-alle-bereiche.md, Entscheidung 6):
-// zweispaltig.
+// (Browser ab 992 px). Aufbau wie jede Detailseite (WebDetailSeite; Simon,
+// 06.10.2026: „Person gleich auch noch erledigen"):
 //
-//   links   Person mit den Ringen (Punkte, Ziele), Aktivitaeten, Bonuspunkte --
-//           bei einer Teamer:in Zertifikate, Konfi-Historie und die Events der
-//           Konfi-Zeit;
-//   rechts  Aktionen, Konfirmation, Badges, Events, offene Antraege, Stempel,
-//           Rueckblick und "Rolle aendern".
+//   Kopf      Name, darunter Jahrgang bzw. "Teamer:in" und Benutzername;
+//             alle Aktionen als Knoepfe oben rechts
+//   Kennzahl  Gottesdienst, Gemeinde, Gesamt, Badges -- bei einer Teamer:in
+//             Zertifikate, Events, Badges
+//   links     Aktivitaeten, Bonuspunkte -- bei einer Teamer:in Zertifikate,
+//             Konfi-Historie und die Events der Konfi-Zeit;
+//   rechts    Angaben, Konfirmation, Badges, Events, offene Antraege, Stempel,
+//             Rueckblick und "Rolle aendern".
 //
 // Daten und Aktionen kommen von der Seite (KonfiDetailView): Sie laedt, haelt
 // den Zustand und oeffnet dieselben Fenster und Rueckfragen wie in der App
@@ -22,16 +25,16 @@ import {
   ICON_SCHLUESSEL,
 } from '../../../shared/icons';
 import { datumKurz } from '../../../../utils/dateUtils';
-import { initialen, konfiPunkte } from '../../../../utils/konfiListe';
+import { konfiPunkte } from '../../../../utils/konfiListe';
 import { mitEinheit } from '../../../../utils/supportStatistik';
 import WebSeite from '../../../web/WebSeite';
+import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
-import WebSpalten from '../../../web/WebSpalten';
+import WebAngaben from '../../../web/WebAngaben';
 import WebHinweis from '../../../web/WebHinweis';
+import type { WebKachelProps } from '../../../web/WebKachel';
 import { WebFehler, WebLaden } from '../../../web/WebZustaende';
-import ActivityRings from '../../views/ActivityRings';
-import { WebAvatar } from './WebLeitungBausteine';
 import WebKonfiBadges from './WebKonfiBadges';
 import {
   AktivitaetenKarte,
@@ -80,81 +83,90 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
   const mitKonfirmation = (!istTeamer && konfi.role_name === 'konfi') || (istTeamer && !!(konfi.konfspruch || konfi.confirmation_date));
   const gesamt = konfiPunkte(konfi);
 
-  const hero = (
-    <section className={`web-person-hero${istTeamer ? ' web-person-hero--teamer' : ''}`} aria-label="Person">
-      <div className="web-person-hero__kopf">
-        <WebAvatar text={initialen(name) || '??'} farbe={istTeamer ? 'teamer' : 'konfis'} gross />
-        <div className="web-person-hero__text">
-          <h2 className="web-person-hero__name">{istTeamer ? 'Teamer:in' : (jahrgang || 'Kein Jahrgang')}</h2>
-          {konfi.username && <p className="web-person-hero__zeile">@{konfi.username}</p>}
-          {istTeamer && konfi.teamer_since && <p className="web-person-hero__zeile">seit {datumKurz(konfi.teamer_since)}</p>}
-          {!istTeamer && <p className="web-person-hero__zeile">{mitEinheit(konfi.badgeCount || 0, 'Badge', 'Badges')}</p>}
-        </div>
-      </div>
-      {istTeamer ? (
-        <ul className="web-person-hero__zahlen">
-          {[
-            { wert: p.zertifikate.length, label: 'Zertifikate' },
-            { wert: p.teamerEvents.length, label: 'Events' },
-            { wert: konfi.badgeCount || 0, label: 'Badges' },
-          ].map((z) => (
-            <li key={z.label}>
-              <strong>{z.wert}</strong>
-              <span>{z.label}</span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <div className="web-person-hero__ringe">
-          <ActivityRings
-            totalPoints={p.punkte.gesamt}
-            gottesdienstPoints={p.punkte.gottesdienst}
-            gemeindePoints={p.punkte.gemeinde}
-            gottesdienstGoal={konfi.target_gottesdienst || 10}
-            gemeindeGoal={konfi.target_gemeinde || 10}
-            gottesdienstEnabled={konfi.gottesdienst_enabled}
-            gemeindeEnabled={konfi.gemeinde_enabled}
-            size={168}
-          />
-        </div>
-      )}
-    </section>
+  // Eine abgeschaltete Punkteart zaehlt nicht mit; die Kachel sagt das, statt
+  // eine Null zu zeigen.
+  const punkteKachel = (label: string, wert: number, ziel: number, an: boolean): WebKachelProps => (an
+    ? { label, wert: `${wert} / ${ziel}`, zusatz: [wert >= ziel ? 'Ziel erreicht' : `noch ${ziel - wert}`] }
+    : { label, wert: '–', zusatz: ['im Jahrgang abgeschaltet'], 'aria-label': `${label}: im Jahrgang abgeschaltet` });
+
+  const kennzahlen: WebKachelProps[] = istTeamer
+    ? [
+      { label: 'Zertifikate', wert: String(p.zertifikate.length) },
+      { label: 'Events', wert: String(p.teamerEvents.length) },
+      { label: 'Badges', wert: String(konfi.badgeCount || 0) },
+    ]
+    : [
+      punkteKachel('Gottesdienst', gesamt.gottesdienst, gesamt.zielGottesdienst, gesamt.gottesdienstAn),
+      punkteKachel('Gemeinde', gesamt.gemeinde, gesamt.zielGemeinde, gesamt.gemeindeAn),
+      {
+        label: 'Gesamt',
+        wert: `${gesamt.gesamt} / ${gesamt.zielGesamt}`,
+        zusatz: [gesamt.erreicht ? 'Ziel erreicht' : `${gesamt.prozentGesamt} %`],
+        achtung: gesamt.erreicht,
+      },
+      { label: 'Badges', wert: String(konfi.badgeCount || 0) },
+    ];
+
+  const kennzeichen = (
+    <>
+      <span>{istTeamer ? 'Teamer:in' : (jahrgang || 'Kein Jahrgang')}</span>
+      {konfi.username && <span> · @{konfi.username}</span>}
+      {istTeamer && konfi.teamer_since && <span> · seit {datumKurz(konfi.teamer_since)}</span>}
+    </>
+  );
+
+  const angaben = (
+    <WebKarte titel="Angaben">
+      <WebAngaben
+        angaben={istTeamer
+          ? [
+            { label: 'Benutzername', wert: konfi.username ? `@${konfi.username}` : null },
+            { label: 'Rolle', wert: 'Teamer:in' },
+          ]
+          : [
+            { label: 'Jahrgang', wert: jahrgang || null },
+            { label: 'Benutzername', wert: konfi.username ? `@${konfi.username}` : null },
+            { label: 'Bonuspunkte', wert: mitEinheit(p.punkte.bonus, 'Punkt', 'Punkte') },
+          ]}
+      />
+    </WebKarte>
   );
 
   const aktionen = (
-    <WebKarte titel="Aktionen">
-      <div className="web-aktionsliste">
-        <WebKnopf art="primaer" onClick={p.onAktivitaetEintragen}>
-          <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
-          Aktivität eintragen
+    <>
+      {istTeamer && (
+        <WebKnopf disabled={!isOnline} onClick={p.onZertifikatZuweisen}>
+          <IonIcon icon={ICON_ABZEICHEN} aria-hidden="true" />
+          Zertifikat zuweisen
         </WebKnopf>
-        {!istTeamer && (
-          <WebKnopf onClick={p.onBonusVergeben}>
-            <IonIcon icon={ICON_BONUS} aria-hidden="true" />
-            Bonuspunkte vergeben
-          </WebKnopf>
-        )}
-        {/* Bearbeiten nur bei Konfis: Teamer:innen haben keinen einzelnen Jahrgang, ihre Stammdaten liegen in der Benutzerverwaltung. */}
-        {!istTeamer && (
-          <WebKnopf disabled={!isOnline} onClick={p.onBearbeiten}>
-            <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
-            Konfi bearbeiten
-          </WebKnopf>
-        )}
-        {istTeamer && (
-          <WebKnopf disabled={!isOnline} onClick={p.onZertifikatZuweisen}>
-            <IonIcon icon={ICON_ABZEICHEN} aria-hidden="true" />
-            Zertifikat zuweisen
-          </WebKnopf>
-        )}
-        <WebKnopf disabled={!isOnline} onClick={p.onPasswort}>
-          <IonIcon icon={ICON_SCHLUESSEL} aria-hidden="true" />
-          Passwort zurücksetzen
+      )}
+      <WebKnopf disabled={!isOnline} onClick={p.onPasswort}>
+        <IonIcon icon={ICON_SCHLUESSEL} aria-hidden="true" />
+        Passwort zurücksetzen
+      </WebKnopf>
+      {/* Bearbeiten nur bei Konfis: Teamer:innen haben keinen einzelnen Jahrgang, ihre Stammdaten liegen in der Benutzerverwaltung. */}
+      {!istTeamer && (
+        <WebKnopf disabled={!isOnline} onClick={p.onBearbeiten}>
+          <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
+          Konfi bearbeiten
         </WebKnopf>
-      </div>
-      {!isOnline && <p className="web-karte__text">Ohne Verbindung geht nur das Eintragen von Aktivitäten und Bonuspunkten; alles andere wartet auf das Netz.</p>}
-    </WebKarte>
+      )}
+      {!istTeamer && (
+        <WebKnopf onClick={p.onBonusVergeben}>
+          <IonIcon icon={ICON_BONUS} aria-hidden="true" />
+          Bonuspunkte vergeben
+        </WebKnopf>
+      )}
+      <WebKnopf art="primaer" onClick={p.onAktivitaetEintragen}>
+        <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
+        Aktivität eintragen
+      </WebKnopf>
+    </>
   );
+
+  const hinweis = !isOnline ? (
+    <WebHinweis art="hinweis">Ohne Verbindung geht nur das Eintragen von Aktivitäten und Bonuspunkten; alles andere wartet auf das Netz.</WebHinweis>
+  ) : null;
 
   const teamerSeit = istTeamer ? (
     <WebKarte titel="Teamer:in seit">
@@ -174,7 +186,6 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
 
   const haupt = (
     <>
-      {hero}
       {!isOnline && aktivitaetenAnzeige.length === 0 && (
         // Punkte-Historie, Aktivitaeten und Anwesenheit haengen an GET /admin/konfis/:id und fehlen offline.
         <WebHinweis art="hinweis">Die Aktivitäten- und Punkte-Historie ist offline nicht verfügbar.</WebHinweis>
@@ -200,7 +211,7 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
 
   const seite = (
     <>
-      {aktionen}
+      {angaben}
       {mitKonfirmation && <KonfirmationKarte konfi={konfi} anwesenheit={p.anwesenheit} onMatrix={p.onMatrix} />}
       {teamerSeit}
       <WebKonfiBadges konfiId={p.konfiId} rolle={istTeamer ? 'teamer' : 'konfi'} />
@@ -213,15 +224,18 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
   );
 
   return (
-    <WebSeite
+    <WebDetailSeite
       bereich="Verwaltung"
-      titel={name}
-      untertitel={istTeamer ? undefined : `${gesamt.gesamt} von ${gesamt.zielGesamt} ${gesamt.zielGesamt === 1 ? 'Punkt' : 'Punkten'}`}
       zurueck={zurueck}
+      titel={name}
+      kennzeichen={kennzeichen}
+      aktionen={aktionen}
+      hinweis={hinweis}
+      kennzahlen={kennzahlen}
+      haupt={haupt}
+      seite={seite}
       pageRef={p.pageRef}
-    >
-      <WebSpalten haupt={haupt} seite={seite} seiteBeschriftung="Aktionen und weitere Angaben" />
-    </WebSeite>
+    />
   );
 };
 

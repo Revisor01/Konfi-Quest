@@ -1,7 +1,9 @@
 // Detailseite einer Konfi bzw. Teamer:in in der Web-Fassung (/admin/konfis/:id),
-// gerendert (docs/planung/web-alle-bereiche.md, Entscheidung 6): zweispaltig --
-// links Person mit Ringen, Aktivitaeten und Bonuspunkte, rechts Aktionen,
-// Konfirmation, Badges, Events, Antraege, Stempel, Rueckblick. Die Seite
+// gerendert. Aufbau wie jede Detailseite (WebDetailSeite; Simon, 06.10.2026:
+// „Person gleich auch noch erledigen"): Kopf mit Jahrgang und Benutzername und
+// allen Aktionen, Kennzahlen (Punkte und Ziele, Badges), links Aktivitaeten
+// und Bonuspunkte, rechts Angaben, Konfirmation, Badges, Events, Antraege,
+// Stempel, Rueckblick. Die Seite
 // (KonfiDetailView) haelt Daten und Aktionen und oeffnet dieselben Fenster und
 // Rueckfragen wie in der App; geprueft wird, dass die Web-Fassung genau diese
 // ruft -- mit den richtigen Werten --, und dass die App-Darstellung bleibt.
@@ -137,6 +139,10 @@ const oeffnen = async () => {
 };
 
 const karte = (name: string) => screen.getByRole('region', { name });
+/** Der Kopf der Detailseite: Titel, Kennzeichen und alle Aktionen. */
+const kopf = () => within(screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement);
+/** Die Kennzahl-Kacheln unter dem Kopf, als "Etikett: Wert" (WebKachel). */
+const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
 const fenster = (komponente: unknown) => h.stand.fenster.filter((f) => f.komponente === komponente);
@@ -165,20 +171,31 @@ beforeEach(() => {
 });
 
 describe('Konfi-Detail (Web): Person und Punkte', () => {
-  it('Titel, Weg zurueck, Person und Ringe mit den Punkten und Zielen', async () => {
+  it('Titel, Weg zurueck, Jahrgang und Benutzername im Kopf, Punkte und Ziele als Kennzahlen', async () => {
     await oeffnen();
     expect(screen.getByRole('heading', { level: 1, name: 'Anna Müller' })).toBeInTheDocument();
-    expect(screen.getByText('12 von 20 Punkten')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Alle Konfis' })).toHaveAttribute('href', '/admin/konfis');
-    const person = screen.getByRole('region', { name: 'Person' });
-    expect(within(person).getByText('Jahrgang 2026')).toBeInTheDocument();
-    expect(within(person).getByText('@anna.mueller')).toBeInTheDocument();
-    expect(within(person).getByText('2 Badges')).toBeInTheDocument();
-    const ringe = within(person).getByTestId('ringe');
-    expect(ringe).toHaveAttribute('data-gesamt', '12');
-    expect(ringe).toHaveAttribute('data-godi', '7');
-    expect(ringe).toHaveAttribute('data-gemeinde', '5');
-    expect(ringe).toHaveAttribute('data-ziel-godi', '10');
+    expect(kopf().getByText('Jahrgang 2026')).toBeInTheDocument();
+    expect(kopf().getByText(/@anna\.mueller/)).toBeInTheDocument();
+    expect(kennzahlen()).toEqual(['Gottesdienst: 7 / 10', 'Gemeinde: 5 / 10', 'Gesamt: 12 / 20', 'Badges: 2']);
+    // Die Ringe der App stehen im Browser nicht doppelt neben den Kennzahlen.
+    expect(screen.queryByTestId('ringe')).toBeNull();
+  });
+
+  it('gleicher Aufbau wie jede Detailseite: links Aktivitaeten und Bonus, rechts die Angaben', async () => {
+    const { container } = await oeffnen();
+    const spalten = container.querySelector('.web-spalten') as HTMLElement;
+    expect(spalten.classList.contains('web-spalten--links')).toBe(false);
+    const [links, rechts] = [...spalten.children] as HTMLElement[];
+    expect(within(links).getByRole('region', { name: 'Aktivitäten' })).toBeInTheDocument();
+    expect(within(links).getByRole('region', { name: 'Bonuspunkte' })).toBeInTheDocument();
+    expect(rechts.tagName).toBe('ASIDE');
+    expect(rechts.getAttribute('aria-label')).toBe('Angaben');
+    const angaben = within(within(rechts).getByRole('region', { name: 'Angaben' }));
+    expect(angaben.getByText('Jahrgang').nextElementSibling).toHaveTextContent('Jahrgang 2026');
+    expect(angaben.getByText('Benutzername').nextElementSibling).toHaveTextContent('@anna.mueller');
+    // Keine eigene Karte "Aktionen" mehr: die Knoepfe stehen im Kopf.
+    expect(screen.queryByRole('region', { name: 'Aktionen' })).toBeNull();
   });
 
   it('solange geladen wird: Platzhalter statt Ringen auf null; ein Fehler: Meldung mit erneutem Versuch', async () => {
@@ -188,10 +205,10 @@ describe('Konfi-Detail (Web): Person und Punkte', () => {
     ));
     const { unmount } = await oeffnen();
     expect(screen.getByRole('status')).toHaveTextContent('Die Konfi wird geladen.');
-    expect(screen.queryByTestId('ringe')).toBeNull();
+    expect(kennzahlen()).toEqual([]);
     await act(async () => { antwort({ data: KONFI }); });
     for (let i = 0; i < 8; i += 1) await act(async () => { await Promise.resolve(); });
-    expect(screen.getByTestId('ringe')).toBeInTheDocument();
+    expect(kennzahlen()).toContain('Gesamt: 12 / 20');
     unmount();
 
     h.apiGet.mockImplementation(async (pfad: string) => {
@@ -246,7 +263,8 @@ describe('Konfi-Detail (Web): Person und Punkte', () => {
     await oeffnen();
     expect(zelle(zeilen('Aktivitäten')[1], 0)).toHaveTextContent('deaktiviert');
     expect(zelle(zeilen('Aktivitäten')[0], 0)).not.toHaveTextContent('deaktiviert');
-    expect(screen.getByTestId('ringe')).toBeInTheDocument();
+    // Die abgeschaltete Art zaehlt nicht mit: kein "5 / 10", Gesamt nur aus Gottesdienst.
+    expect(kennzahlen()).toEqual(['Gottesdienst: 7 / 10', 'Gemeinde: im Jahrgang abgeschaltet', 'Gesamt: 7 / 10', 'Badges: 2']);
   });
 });
 
@@ -254,7 +272,11 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
   it('Aktivitaet eintragen und Bonuspunkte vergeben: dieselben Fenster, vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, gottesdienst_enabled: false });
     await oeffnen();
-    const aktionen = within(karte('Aktionen'));
+    const aktionen = kopf();
+    // Alle Aktionen stehen im Kopf, die wichtigste als Hauptknopf.
+    expect(aktionen.getAllByRole('button').map((b) => b.textContent))
+      .toEqual(['Passwort zurücksetzen', 'Konfi bearbeiten', 'Bonuspunkte vergeben', 'Aktivität eintragen']);
+    expect(aktionen.getByRole('button', { name: 'Aktivität eintragen' }).classList.contains('web-knopf--primaer')).toBe(true);
     fireEvent.click(aktionen.getByRole('button', { name: 'Aktivität eintragen' }));
     expect(fenster(ActivityModal)).toHaveLength(1);
     expect(fenster(ActivityModal)[0].props).toEqual(expect.objectContaining({
@@ -386,12 +408,11 @@ describe('Teamer-Detail (Web)', () => {
   it('Weg zurueck ins Team, Kopf mit Zertifikaten, Events und Badges; keine Ringe, kein Bonus, kein Bearbeiten', async () => {
     await oeffnen();
     expect(screen.getByRole('link', { name: 'Alle im Team' })).toHaveAttribute('href', '/admin/konfis?filter=team');
-    const person = within(screen.getByRole('region', { name: 'Person' }));
-    expect(person.getByText('Teamer:in')).toBeInTheDocument();
-    expect(person.getByText('seit 01.09.2024')).toBeInTheDocument();
-    expect(person.getByText('Zertifikate').previousElementSibling).toHaveTextContent('2');
-    expect(person.getByText('Events').previousElementSibling).toHaveTextContent('2');
-    expect(person.getByText('Badges').previousElementSibling).toHaveTextContent('4');
+    expect(kopf().getByText('Teamer:in')).toBeInTheDocument();
+    expect(kopf().getByText(/seit 01\.09\.2024/)).toBeInTheDocument();
+    expect(kennzahlen()).toEqual(['Zertifikate: 2', 'Events: 2', 'Badges: 4']);
+    expect(kopf().getAllByRole('button').map((b) => b.textContent))
+      .toEqual(['Zertifikat zuweisen', 'Passwort zurücksetzen', 'Aktivität eintragen']);
     expect(screen.queryByTestId('ringe')).toBeNull();
     expect(screen.queryByRole('region', { name: 'Bonuspunkte' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Konfi bearbeiten' })).toBeNull();
@@ -418,7 +439,7 @@ describe('Teamer-Detail (Web)', () => {
 
   it('Zertifikat zuweisen: nur die noch nicht zugewiesenen Typen im Fenster', async () => {
     await oeffnen();
-    fireEvent.click(within(karte('Aktionen')).getByRole('button', { name: 'Zertifikat zuweisen' }));
+    fireEvent.click(kopf().getByRole('button', { name: 'Zertifikat zuweisen' }));
     const f = fenster(CertificateAssignModal)[0];
     expect(f.props.konfiId).toBe(ID);
     // JuLeiCa (Typ 1) hat sie schon, die Erste-Hilfe-Karte (Typ 2) ist kein aktiver Typ: bleibt Ersthelfer:in.
@@ -455,7 +476,7 @@ describe('Konfi-Detail: schmal bleibt die Darstellung der App', () => {
     h.breit = false;
     const { container } = await oeffnen();
     expect(container.querySelector('.web-seite')).toBeNull();
-    expect(screen.queryByRole('region', { name: 'Aktionen' })).toBeNull();
+    expect(container.querySelector('.web-detail')).toBeNull();
     expect(screen.getByTestId('kopfzeile').getAttribute('data-titel')).toBe('Anna Müller');
   });
 });

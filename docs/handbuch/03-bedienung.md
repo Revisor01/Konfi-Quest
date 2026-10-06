@@ -85,7 +85,7 @@ steht bei den Bereichen:
   [Profil](20-teamer.md#im-browser-das-profil-in-zwei-spalten-nutzen) und
   [Konfi-Historie](20-teamer.md#im-browser-die-konfi-historie-ansehen)
 - **Leitung:** [Konfis und Team](30-leitung.md#im-browser-konfis-und-team-verwalten),
-  [Detailseite einer Person](30-leitung.md#im-browser-die-detailseite-einer-person-in-zwei-spalten-nutzen),
+  [Detailseite einer Person](30-leitung.md#im-browser-die-detailseite-einer-person-nutzen),
   [Mehr](30-leitung.md#im-browser-die-einstellungen-als-kacheln-finden),
   [Verwaltungsseiten](30-leitung.md#im-browser-verwaltungsseiten-als-tabellen-nutzen) und
   [Badges](30-leitung.md#im-browser-badges-in-der-tabelle-verwalten)
@@ -119,10 +119,10 @@ Kacheln. Der Browser merkt sich deine Wahl für jede Seite einzeln; in einem
 privaten Fenster gilt sie nur, bis du die Seite neu lädst. In der App gibt es
 die Wahl nicht.
 
-### Im Browser die Seite eines Events oder einer Challenge lesen
+### Im Browser eine Detailseite lesen
 
-Jedes Event und jede Challenge hat im Browser eine eigene Seite, und alle sind
-gleich aufgebaut — für Leitung, Team und Konfis:
+Jedes Event und jede Challenge hat im Browser eine eigene Seite, für die
+Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
 
 - **Oben** stehen der Weg zurück zur Liste, der Titel und darunter Status und
   Zeit. Rechts daneben stehen **alle Aktionen** als Knöpfe; die wichtigste ist
@@ -130,11 +130,14 @@ gleich aufgebaut — für Leitung, Team und Konfis:
 - **Darunter** steht ein Hinweis, wenn einer gilt — das Event ist abgesagt, die
   Abmeldefrist ist vorbei, ohne Netz geht es nicht —, und eine Reihe
   **Kennzahlen**: bei Events etwa Plätze, Punkte und Warteliste, bei
-  Challenges Beiträge und Laufzeit, für Konfis auch der Stempel.
+  Challenges Beiträge und Laufzeit, für Konfis auch der Stempel, bei einer
+  Person Punkte und Ziele oder Zertifikate, Events und Badges.
 - **Links, breit** steht das Eigentliche: bei Events die Beschreibung und die
-  Teilnehmenden, bei Challenges die Aufgabe und die Beiträge.
+  Teilnehmenden, bei Challenges die Aufgabe und die Beiträge, bei einer Person
+  ihre Aktivitäten und Punkte.
 - **Rechts, schmal** stehen die **Angaben**, bei Events dazu Zeitfenster, Serie
-  und Material, bei Challenges der Stempel.
+  und Material, bei Challenges der Stempel, bei einer Person Konfirmation,
+  Badges, Events und mehr.
 
 Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
 

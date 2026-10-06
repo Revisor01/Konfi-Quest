@@ -143,9 +143,9 @@ Versionsüberschrift.
 - Im Browser lassen sich Events, Challenges und Konfis wahlweise als Liste oder
   als Kacheln ansehen; die Leitung beginnt mit der Liste, Konfis und Team mit
   Kacheln, und der Browser merkt sich die Wahl.
-- Im Browser sind die Seiten aller Events und Challenges gleich aufgebaut: alle
-  Aktionen oben rechts, darunter Kennzahlen, links das Eigentliche, rechts die
-  Angaben.
+- Im Browser sind die Seiten aller Events und Challenges und für die Leitung
+  die Seite jeder Konfi und Teamer:in gleich aufgebaut: alle Aktionen oben
+  rechts, darunter Kennzahlen, links das Eigentliche, rechts die Angaben.
 - In der Konfi-Liste der Leitung im Browser gibt es keinen Knopf „Punkte"
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 

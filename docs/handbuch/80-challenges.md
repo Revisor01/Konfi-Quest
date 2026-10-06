@@ -286,7 +286,7 @@ Darüber filterst du und suchst:
 App (siehe [Eine Challenge anlegen](#eine-challenge-anlegen)).
 
 Die Seite einer Challenge ist aufgebaut wie jede andere, siehe
-[Im Browser die Seite eines Events oder einer Challenge lesen](03-bedienung.md#im-browser-die-seite-eines-events-oder-einer-challenge-lesen).
+[Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
 Oben rechts stehen **Beiträge exportieren**, **Challenge bearbeiten** und
 **Beitrag einreichen**. Die Kennzahlen zeigen die Beiträge, die Teilnehmenden,
 bei Freigabe-Pflicht die wartenden Beiträge und die Laufzeit. Links stehen die
