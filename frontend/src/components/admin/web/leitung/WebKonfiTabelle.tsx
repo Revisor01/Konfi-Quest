@@ -1,11 +1,12 @@
-// Die Konfi-Tabelle der Web-Fassung (/admin/konfis): Name, Jahrgang, Punkte je
-// Art und gesamt mit Fortschritt, Badges, letzte Aktivitaet (sobald die Liste
-// sie liefert) und die Aktionen der Zeile. Der Name ist ein echter Link auf die
-// Detailseite -- sein Netz spannt sich ueber die ganze Zeile.
+// Die Konfi-Tabelle der Web-Fassung (/admin/konfis, Ansicht "Liste"): Name,
+// Jahrgang, Punkte je Art und gesamt mit Balken, Badges, letzte Aktivitaet
+// (sobald die Liste sie liefert) und Loeschen. Der Name ist ein echter Link auf
+// die Detailseite -- sein Netz spannt sich ueber die ganze Zeile. Punkte
+// (Aktivitaet, Bonus) vergibt man auf der Detailseite, nicht hier.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ABZEICHEN, ICON_BONUS, ICON_LOESCHEN } from '../../../shared/icons';
+import { ICON_ABZEICHEN, ICON_LOESCHEN } from '../../../shared/icons';
 import WebLink from '../../../web/WebLink';
 import WebKnopf from '../../../web/WebKnopf';
 import WebTreffer from '../../../web/WebTreffer';
@@ -19,14 +20,12 @@ export interface WebKonfiTabelleProps {
   suche: string;
   sortierung: WebSortierung;
   onSortieren: (schluessel: string) => void;
-  /** Aktionen der Zeile; fehlt eine, steht der Knopf nicht da. */
-  onPunkte?: (konfi: KonfiListenEintrag) => void;
+  /** Loeschen in der Zeile; fehlt es, steht der Knopf nicht da. */
   onLoeschen?: (konfi: KonfiListenEintrag) => void;
 }
 
-const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortierung, onSortieren, onPunkte, onLoeschen }) => {
+const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortierung, onSortieren, onLoeschen }) => {
   const mitAktivitaet = konfis.some((k) => !!k.letzte_aktivitaet);
-  const mitAktionen = !!onPunkte || !!onLoeschen;
 
   const spalten: Array<WebSortSpalte<KonfiListenEintrag>> = [
     {
@@ -106,24 +105,16 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
       optional: true,
       zelle: (k: KonfiListenEintrag) => (k.letzte_aktivitaet ? datumKurz(k.letzte_aktivitaet) : <span className="web-gedaempft">–</span>),
     }] : []),
-    ...(mitAktionen ? [{
+    ...(onLoeschen ? [{
       schluessel: 'aktionen',
       kopf: 'Aktionen',
       kopfVersteckt: true,
-      klasse: 'web-spalte-aktionen-breit',
+      klasse: 'web-spalte-aktionen-schmal',
       zelle: (k: KonfiListenEintrag) => (
         <div className="web-zeilenaktionen">
-          {onPunkte && (
-            <WebKnopf klein vorn onClick={() => onPunkte(k)} aria-label={`Punkte an ${k.name} vergeben`}>
-              <IonIcon icon={ICON_BONUS} aria-hidden="true" />
-              <span className="web-knopf__text">Punkte</span>
-            </WebKnopf>
-          )}
-          {onLoeschen && (
-            <WebKnopf klein vorn art="gefahr" symbol onClick={() => onLoeschen(k)} aria-label={`${k.name} löschen`} title="Konfi löschen">
-              <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-            </WebKnopf>
-          )}
+          <WebKnopf klein vorn art="gefahr" symbol onClick={() => onLoeschen(k)} aria-label={`${k.name} löschen`} title="Konfi löschen">
+            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+          </WebKnopf>
         </div>
       ),
     }] : []),

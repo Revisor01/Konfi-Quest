@@ -1,13 +1,15 @@
 // Kleine Bausteine der Web-Fassung der Leitungs- und Verwaltungsseiten
 // (docs/planung/web-alle-bereiche.md, Entscheidung 6): Kreis mit Initialen,
-// Punktebalken, Filter-Auswahl ohne sichtbare Beschriftung, Zeilen, die sich per
-// Knopf oeffnen, und der Weg nach draussen. Sie gehoeren zu diesem Bereich, bis
-// die Koordination sie nach components/web/ zieht.
+// Punktebalken, Karte einer Person im Raster, Filter-Auswahl ohne sichtbare
+// Beschriftung, Zeilen, die sich per Knopf oeffnen, und der Weg nach draussen.
+// Sie gehoeren zu diesem Bereich, bis die Koordination sie nach components/web/
+// zieht.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AUFKLAPPEN, ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_HAKEN_GEFUELLT, ICON_LOESCHEN } from '../../../shared/icons';
 import WebKnopf from '../../../web/WebKnopf';
+import WebLink from '../../../web/WebLink';
 import { linkOeffnen } from '../../../../services/systemDialoge';
 import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
 import '../../../../theme/web/leitung.css';
@@ -227,4 +229,35 @@ export const WebSymbol: React.FC<{ icon: string; ton?: SymbolTon; farbe?: string
   >
     <IonIcon icon={icon} />
   </span>
+);
+
+// --- Karte einer Person im Raster ------------------------------------------------------
+
+/**
+ * Eine Person als Karte im Raster (Ansicht "Kacheln" der Konfi- und Team-Seite):
+ * Kreis mit Initialen, Name als Link auf die Detailseite -- sein Netz spannt
+ * sich ueber die ganze Karte --, darunter, was die Seite zeigt. Der Knopf
+ * (Loeschen) liegt ueber dem Netz. Gehoert in eine <ul class="web-personenkacheln">.
+ */
+export const WebPersonenKachel: React.FC<{
+  avatar: React.ReactNode;
+  name: React.ReactNode;
+  href: string;
+  /** Unter dem Namen: Benutzername. */
+  untertitel?: React.ReactNode;
+  /** Oben rechts: Aktionen der Karte. */
+  aktion?: React.ReactNode;
+  children?: React.ReactNode;
+}> = ({ avatar, name, href, untertitel, aktion, children }) => (
+  <li className="web-karte web-personenkachel web-zeile">
+    <div className="web-personenkachel__kopf">
+      {avatar}
+      <span className="web-personenkachel__titel">
+        <WebLink href={href} className="web-link--zeile web-link--text web-einzeilig">{name}</WebLink>
+        {untertitel}
+      </span>
+      {aktion}
+    </div>
+    {children}
+  </li>
 );

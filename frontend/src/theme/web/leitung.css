@@ -233,6 +233,18 @@
   font-size: var(--app-text-hinweis);
 }
 
+/* Mit der Auswahl "Sortieren" neben dem Umschalter (Ansicht "Kacheln") braucht die
+   Zeile mehr Platz: Suche und Auswahlen beginnen schmaler und wachsen in die Breite,
+   die ein grosses Fenster uebrig laesst. */
+.web-werkzeuge--kacheln .web-suche {
+  flex-basis: 260px;
+  min-width: 220px;
+}
+
+.web-werkzeuge--kacheln .web-filterauswahl {
+  min-width: 190px;
+}
+
 /* --- Kopf einer sortierbaren Spalte --- */
 .web-sortkopf {
   display: inline-flex;
@@ -333,44 +345,70 @@
   color: var(--web-text-leise);
 }
 
-/* --- Auswahl im Dialog: zwei grosse Wege --- */
-.web-wahlkarten {
+/* --- Karte einer Person im Raster (Ansicht "Kacheln" der Konfi- und Team-Seite) ---
+   Die ganze Karte ist ein Link auf die Detailseite (web-link--zeile); der
+   Loeschen-Knopf liegt als web-vorn darueber. */
+.web-personenkacheln {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-personenkachel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-basis);
+}
+
+.web-personenkachel:hover {
+  background: var(--web-hover);
+}
+
+.web-personenkachel .web-initialen {
+  width: 44px;
+  height: 44px;
+  font-size: var(--app-text-standard);
+}
+
+.web-personenkachel__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-personenkachel__titel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-personenkachel__meta {
+  margin: 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-personenkachel__balken {
   display: flex;
   flex-direction: column;
   gap: var(--app-abstand-mittel);
 }
 
-.web-wahlkarte {
+/* Der Fuss steht unten, auch wenn die Nachbarkarte in der Reihe hoeher ist. */
+.web-personenkachel__fuss {
   display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-mini);
-  width: 100%;
-  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
-  border: 1px solid var(--web-linie);
-  border-radius: var(--app-radius-karte);
-  background: var(--web-karte);
-  color: var(--web-text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.web-wahlkarte:hover {
-  background: var(--web-hover);
-}
-
-.web-wahlkarte:focus-visible {
-  outline: 2px solid var(--ion-color-primary);
-  outline-offset: 2px;
-}
-
-.web-wahlkarte__titel {
-  font-weight: var(--app-schrift-halbfett);
-}
-
-.web-wahlkarte__text {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng) var(--app-abstand-basis);
+  margin-top: auto;
+  padding-top: var(--app-abstand-mittel);
+  border-top: 1px solid var(--web-linie-leise);
   color: var(--web-text-leise);
   font-size: var(--app-text-hinweis);
 }
