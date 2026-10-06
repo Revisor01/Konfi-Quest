@@ -1,13 +1,9 @@
-# 15. Support-Ansicht: Test-Gemeinden ausblenden, Probe-Anfrage, Probe-Anliegen und Probe-Mails
+# 15. Support-Ansicht: Test-Gemeinden ausblenden, Probe-Anfrage und Probe-Mails
 
-Stand 06.10.2026. Plan und Entscheidungen:
+Stand 03.10.2026. Plan und Entscheidungen:
 [docs/planung/support-web.md](../../planung/support-web.md) (Entscheidungen 5
-und 7) und [docs/planung/support-vorgaenge.md](../../planung/support-vorgaenge.md).
-Erst **nach dem Deploy** des PRs „Web-Ansicht aller Bereiche und
-Support-Vorgänge" — vorher gibt es die Vorgänge nicht (Migration 195). Wie
-die Ansicht arbeitet: [docs/betrieb/support-ansicht.md](../../betrieb/support-ansicht.md).
-Sind die Schritte 2 bis 4 schon erledigt (Spalte `intern` steht bei den drei
-Gemeinden auf `true`), sie überspringen und das im Ergebnis sagen.
+und 7). Erst **nach dem Deploy** des PRs „Support-Mail und Web-Ansicht" —
+vorher gibt es die Spalte `organizations.intern` nicht (Migration 194).
 
 Simon (03.10.2026): „Gut wäre, wenn wir die Gemeinden Test Teamer Sicht, Test
 Konfi Sicht und Admin Review Sicht nicht auf der offiziellen Liste anzeigen.
@@ -20,18 +16,11 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
 
 ## Was zu tun ist
 
-- [ ] **1. Deploy prüfen.** `GET /api/status`: Version und Commit wie der
-      Merge, Migrationen ohne Fehler, `195_support_vorgaenge` unter den
-      angewendeten. Dann nur lesend:
+- [x] **1. Deploy prüfen.** `GET /api/status`: Version und Commit wie der
+      Merge, Migrationen ohne Fehler, `194_…` unter den neuen. Ins Ergebnis:
+      Commit, Zahl der neuen Migrationen.
 
-          SELECT quelle, status, COUNT(*) FROM support_vorgaenge GROUP BY 1, 2 ORDER BY 1, 2;
-          SELECT COUNT(*) FROM gemeinde_anfragen a
-           WHERE NOT EXISTS (SELECT 1 FROM support_vorgaenge v WHERE v.anfrage_id = a.id);
-          -- erwartet: 0 (jede Anfrage hat ihren Vorgang)
-
-      Ins Ergebnis: Commit, Zahl der neuen Migrationen, die Zählung.
-
-- [ ] **2. Die drei Gemeinden nur lesend ermitteln.**
+- [x] **2. Die drei Gemeinden nur lesend ermitteln.**
 
           SELECT id, name, display_name, is_active, intern
             FROM organizations
@@ -42,7 +31,7 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
       weniger als drei: **anhalten und Simon fragen**. Ins Ergebnis: die drei
       Kennungen.
 
-- [ ] **3. Als intern markieren.** Vorher die Tabelle sichern
+- [x] **3. Als intern markieren.** Vorher die Tabelle sichern
       (`pg_dump --table=organizations --data-only`), dann in einer
       Transaktion:
 
@@ -55,63 +44,78 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
       bleiben, wie sie sind — die Store-Prüfungen brauchen sie). Ins
       Ergebnis: `UPDATE 3` ja/nein.
 
-- [ ] **4. Ausblenden prüfen.** In der Support-Ansicht (eigenes
+- [x] **4. Ausblenden prüfen.** In der Support-Ansicht (eigenes
       Super-Admin-Konto) unter „Gemeinden" und auf der Übersicht: Die drei
       stehen nicht mehr da, die Zahl „Gemeinden gesamt" ist um drei kleiner
       als vor Schritt 3. Ins Ergebnis: Zahl vorher/nachher.
 
-- [ ] **5. Posteingang eingerichtet** (Auftrag 14, Schritt 6): Unter
+- [x] **5. Posteingang eingerichtet** (Auftrag 14, Schritt 6): Unter
       „Posteingang" zeigen beide Postfächer „eingerichtet", „zuletzt
       abgeholt" innerhalb der letzten fünf Minuten, kein Fehler. Ins
       Ergebnis: je Postfach Ja/Nein, ein Fehlertext ohne Adressen.
 
-- [ ] **6. Probe-Anfrage an moin@.** Auf der Homepage das Formular
+- [x] **6. Probe-Anfrage an moin@.** Auf der Homepage das Formular
       „Konfi Quest für eure Gemeinde anfragen" ausfüllen: Gemeinde „Probe – bitte nicht
       bearbeiten", Kontakt mit einer eigenen Adresse des Betriebs,
       Wunschlizenz „Standard". Dann in der Support-Ansicht:
-      - die Anfrage steht unter „Vorgänge" mit der Art „Neue Gemeinde" und
-        auf der Übersicht unter „Neueste Vorgänge";
-      - aus dem Vorgang mit dem Baustein „Eingang bestätigt / Rückfrage"
-        antworten; die Mail kommt an, trägt `[Vorgang N]` im Betreff und die
+      - die Anfrage steht unter „Anfragen" und auf der Übersicht unter
+        „Neueste Anfragen";
+      - aus der Anfrage mit dem Baustein „Eingang bestätigt / Rückfrage"
+        antworten; die Mail kommt an, trägt `[Anfrage N]` im Betreff und die
         Fußzeile; sie liegt bei moin@ unter „Sent";
       - im Mailprogramm auf diese Mail antworten; nach höchstens fünf Minuten
-        steht die Antwort im Verlauf des Vorgangs, mit roter Zahl an
-        „Vorgänge".
+        steht die Antwort an der Anfrage (rote Zahl) und im Posteingang unter
+        „Alle" mit Zuordnung zur Anfrage.
 
-      Ins Ergebnis: Nummer des Vorgangs, je Teilschritt Ja/Nein, Minuten bis
+      Ins Ergebnis: Kennung der Anfrage, je Teilschritt Ja/Nein, Minuten bis
       zur Zuordnung.
-
-- [ ] **6a. Probe-Anliegen über das Support-Formular.** Auf der Homepage unter
-      „Hilfe und Support" (`#support`) ausfüllen: Gemeinde „Probe – bitte
-      nicht bearbeiten", eine eigene Adresse des Betriebs, Art „Frage zur
-      Bedienung", Bereich „Chat", Betreff „Probe". Dann:
-      - die Seite dankt; die Bestätigung kommt von support@ mit
-        `[Vorgang N]` im Betreff und nennt nur die Nummer;
-      - der Vorgang steht unter „Vorgänge" mit Art, Bereich und Status „Neu";
-      - auf die Bestätigung antworten; die Antwort steht nach höchstens fünf
-        Minuten im Verlauf dieses Vorgangs.
-
-      Ins Ergebnis: Nummer, je Teilschritt Ja/Nein.
 
 - [ ] **7. Probe-Mails an support@.**
       - Eine Mail von der Adresse eines Gemeindeleitungs-Kontos, das genau
-        einer Gemeinde angehört (nicht `review-*`/`google-test-*`): Sie
-        eröffnet einen **neuen Vorgang** dieser Gemeinde (Quelle Mail).
+        einer Gemeinde angehört (nicht `review-*`/`google-test-*`): Sie steht
+        im Schriftwechsel dieser Gemeinde und im Posteingang unter „Alle".
       - Eine Mail von einer Adresse, die zu keinem Konto gehört: Sie steht
-        im **Posteingang** mit roter Zahl. Von dort **Einsortieren** in den
-        Vorgang aus Schritt 6a; danach ist sie aus dem Posteingang weg und
-        steht im Verlauf des Vorgangs.
-      - Eine zweite Mail von einer unbekannten Adresse **archivieren**: Sie
-        steht unter dem Filter „Archiv" und nicht mehr im Eingang.
+        unter „Nicht zugeordnet" mit roter Zahl; von dort der Gemeinde der
+        Probe-Anfrage oder einer anderen Gemeinde zuordnen.
 
       Ins Ergebnis: je Mail, wo sie gelandet ist.
 
-- [ ] **8. Liegen lassen.** Probe-Vorgänge und Probe-Mails bleiben stehen,
-      bis Simon sie angesehen hat. Danach auf „Erledigt" setzen (sie kommen
-      ins Archiv; der Vorgang der Probe-Anfrage gilt dann als abgelehnt und
-      geht nach 180 Tagen, die anderen nach 730) — löschen nur auf Simons
-      Wort.
+- [ ] **8. Liegen lassen.** Probe-Anfrage und Probe-Mails bleiben stehen,
+      bis Simon sie angesehen hat. Danach die Anfrage ablehnen (sie wird
+      nach 180 Tagen gelöscht) — löschen nur auf Simons Wort.
 
 ## Ergebnis
 
-(offen)
+03.10.2026 (lokaler Agent):
+
+1. Commit `2a28296` (Merge #220), Version 2.4.0, 1 neue Migration
+   (`194_organisation_intern.sql`), keine fehlgeschlagen.
+2. Die Namen weichen ab: 0 Treffer auf die Abfrage. In Produktion heißen sie
+   „Test: Konfi-Sicht" (14), „Test: Teamer-Sicht" (15) und „Test & Demo
+   (App-Review)" (4); eine „Admin Review Sicht" gibt es nicht. Simon hat 4,
+   14 und 15 bestätigt.
+3. Tabelle vorher gesichert (8 Zeilen), `UPDATE 3` ja. Sonst nichts geändert,
+   alle drei bleiben aktiv.
+4. Gemeinden gesamt vorher 8 (in der Datenbank mit derselben Bedingung
+   gezählt), nachher 5 (`GET /support/uebersicht`); `GET /support/gemeinden`
+   liefert 1, 2, 3, 5, 6.
+5. moin@ ja, support@ ja — beide eingerichtet, zuletzt vor unter zwei Minuten
+   abgeholt, kein Fehler.
+6. Anfrage **1**. Kontaktadresse ist ein eigens angelegtes Postfach des
+   Betriebs (wird nach Schritt 8 gelöscht). Formular ja (Dank-Meldung,
+   Bestätigung kam an); steht unter „Anfragen" ja (offen: 1); Antwort mit
+   Baustein 1 ja, kam an ja, `[Anfrage 1]` im Betreff ja, Fußzeile ja, bei
+   moin@ unter „Sent" ja; Antwort aus dem Mailprogramm an der Anfrage ja
+   (Zähler `je_anfrage` 1: 1), unter „Alle" mit Zuordnung ja — **1,6 Minuten**
+   bis zur Zuordnung. Simon hat zur Anfrage selbst schon eine Antwort
+   geschickt (Mail 2).
+7. Probe-Mails an support@:
+   - **7a offen.** Kein Gemeindeleitungs-Konto, das genau einer Gemeinde
+     angehört, hat eine Adresse, die der Betrieb bedienen kann: Simons Konto
+     (41) gehört mehreren Gemeinden an, die übrigen Adressen gehören echten
+     Personen. Braucht Simons Entscheidung (etwa ein Testkonto in einer
+     internen Gemeinde mit der Adresse des Probe-Postfachs).
+   - 7b: Mail ohne Konto stand unter „Nicht zugeordnet" (Zähler `eingang` 1),
+     von dort der Gemeinde 4 zugeordnet; jetzt dort im Schriftwechsel
+     (Zähler `je_gemeinde` 4: 1) und unter „Alle".
+8. Liegt bis zu Simons Blick.

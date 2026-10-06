@@ -22,15 +22,15 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
   (02.10.2026): Versions-Tag `2.3.0` setzen, Deploy prüfen, Android-Lauf
   verfolgen, iOS-Build 240 in App Store Connect einreichen, beide Prüfungen
   verfolgen, alte Branches löschen.
-- **[14-support-postfaecher.md](14-support-postfaecher.md)** — jetzt
-  (03.10.2026): Postfächer moin@ und support@ prüfen, Stack-Variablen und
-  Stack-Datei für die Support-Mail ergänzen, Anmeldung nur lesend prüfen,
-  nach dem Deploy den Posteingang ablesen.
-- **[15-support-probelauf.md](15-support-probelauf.md)** — nach dem Deploy
-  des PRs „Web-Ansicht aller Bereiche und Support-Vorgänge" (06.10.2026): die
-  drei Test- und Review-Gemeinden als intern markieren (falls noch nicht
-  geschehen), Probe-Anfrage an moin@, Probe-Anliegen über das
-  Support-Formular und Probe-Mails an support@ durchspielen.
+- **[15-support-probelauf.md](15-support-probelauf.md)** — bis auf 7a
+  erledigt (03.10.2026): Gemeinden 4, 14 und 15 intern, Probe-Anfrage 1 und
+  Probe-Mails liegen zur Ansicht. Offen: Simons Blick, dann ablehnen; 7a
+  braucht ein Konto mit bedienbarer Adresse.
+- **[16-support-vorgaenge-probelauf.md](16-support-vorgaenge-probelauf.md)** —
+  nach dem Deploy des PRs „Web-Ansicht aller Bereiche und Support-Vorgänge"
+  (06.10.2026): Übernahme in Vorgänge prüfen, Probe-Anfrage als Vorgang,
+  Probe-Anliegen über das Support-Formular, Posteingang mit Einsortieren und
+  Archiv.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 
@@ -42,7 +42,7 @@ Rückspielprobe, Prüfung nach dem Deploy, Notfall-Deploy — steht in
 [docs/betrieb/routinen.md](../../betrieb/routinen.md), der Release-Ablauf in
 [docs/betrieb/release.md](../../betrieb/release.md).
 
-Die erledigten Aufträge 00–12 (27.09.–02.10.2026) liegen mit allen Messwerten
+Die erledigten Aufträge 00–12 und 14 (27.09.–03.10.2026) liegen mit allen Messwerten
 in der Git-Historie ([docs/README.md](../../README.md#erledigte-aufträge-und-frühere-listen)).
 
 ## Rückmeldung
