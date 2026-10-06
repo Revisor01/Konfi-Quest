@@ -115,6 +115,8 @@ eine Beispielanfrage an Support und an moin, damit ich das mal sehe."
      (41) gehört mehreren Gemeinden an, die übrigen Adressen gehören echten
      Personen. Braucht Simons Entscheidung (etwa ein Testkonto in einer
      internen Gemeinde mit der Adresse des Probe-Postfachs).
+     **Entschieden 06.10.2026:** ein Konto in der Gemeinde 4 — nachgeholt in
+     [Auftrag 16, Schritt 5](16-support-vorgaenge-probelauf.md).
    - 7b: Mail ohne Konto stand unter „Nicht zugeordnet" (Zähler `eingang` 1),
      von dort der Gemeinde 4 zugeordnet; jetzt dort im Schriftwechsel
      (Zähler `je_gemeinde` 4: 1) und unter „Alle".

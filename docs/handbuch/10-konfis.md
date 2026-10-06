@@ -173,10 +173,10 @@ melden**.
 Die Events stehen als **Karten im Raster**. Eine Karte nennt den Status als
 Marke — „Angemeldet", „Warteliste (2)", „Abgesagt" —, Datum, Uhrzeit und Ort,
 was du mitbringen sollst, die Plätze („12/30") und die Punkte; die ganze Karte
-ist ein Link auf das Event. Darüber wählst du **Anstehend**, **Meine**,
-**Konfirmation** oder **Pflicht**; die Zahl am Knopf zählt die Events darunter,
-zuerst steht **Meine** offen. **Anstehend** ist die Liste, die in der App
-**Alle** heißt: kommende Events ohne die Konfirmation. **Meine** zeigt jedes
+ist ein Link auf das Event. Darüber wählst du wie in der App **Alle**, **Meine**
+oder **Konfirmation** (in der App kurz „Konfi"); die Zahl am Knopf zählt die
+Events darunter, zuerst steht **Meine** offen. **Alle** sind die kommenden
+Events ohne die Konfirmation. **Meine** zeigt jedes
 Event, zu dem du dich gemeldet hast — auch von der Warteliste, selbst
 abgemeldete und abgesagte. Die Suche findet Name, Ort und Beschreibung; Umlaute
 darfst du umschreiben („fruehling" findet „Frühling"), die Escape-Taste leert

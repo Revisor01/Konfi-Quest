@@ -219,9 +219,10 @@ Die Meldungen der Konfis und Teamer:innen: **Offen**, **Verbucht**,
 **Abgelehnt**. Du siehst das Nachweis-Foto und entscheidest; beim Ablehnen
 gibst du einen Grund an, den die Person zu sehen bekommt. Der ganze
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) steht
-im Punkte-Kapitel. Im Browser heißt dieser Bereich **Anträge**; **Aktivitäten**
-ist dort der Katalog dessen, was gemeldet werden kann
-([Aktivitäten und Anträge in Tabellen bearbeiten](70-termine.md#aktivitaeten-und-antraege-in-tabellen-bearbeiten)).
+im Punkte-Kapitel. Im Browser stehen die Meldungen als Tabelle, siehe
+[Gemeldete Aktivitäten in der Tabelle entscheiden](70-termine.md#gemeldete-aktivitaeten-in-der-tabelle-entscheiden).
+Den Katalog dessen, was gemeldet werden kann, pflegst du unter **Mehr** ›
+**Aktivitäten**.
 
 ## Challenges stellen und begleiten
 
@@ -319,7 +320,9 @@ Betrieb**.
 **Profil** öffnet eine Seite mit zwei Spalten: links die Person mit
 Benutzername, E-Mail-Adresse, Rolle und Gemeinde, rechts die offenen
 Einladungen in eine weitere Gemeinde, die Einstellungen — Funktionsbeschreibung,
-E-Mail-Adresse, Passwort und Medien-Cache — und **Konto löschen**. **Abmelden**
+E-Mail-Adresse, Passwort, **Benachrichtigungen** und Medien-Cache — und **Konto
+löschen**. **Benachrichtigungen** öffnet dieselbe Auswahl wie in der App unter
+Mehr › Konto, siehe [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen). **Abmelden**
 steht nicht im Profil, sondern unten in der Leiste.
 
 ### Im Browser Verwaltungsseiten als Tabellen nutzen
@@ -343,8 +346,14 @@ Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
 | **Einladungen** | aktive Codes mit Jahrgang, Verwendungen und Gültigkeit | Formular für einen neuen Code; rechts der QR-Code mit **Link kopieren** und **Teilen** |
 | **Betrieb** | Zustand, Fehler, Routen und Verlauf des Servers | nur für Konten mit Super-Admin-Recht |
 
-Die Aktivitäten haben im Browser zwei Wege: die Kachel **Aktivitäten** und den
-Reiter bei Mitmachen; beide zeigen denselben Katalog.
+**Aktivitäten** ist der Katalog dessen, was gemeldet werden kann: eine Tabelle
+mit Aktivität und Beschreibung, Kategorien, Art — Gottesdienst oder Gemeinde —
+und Punkten. **Konfis** und **Team** wechseln die Liste, die Aktivitäten des
+Teams tragen keine Punkte; **Alle**, **Gemeinde** und **Gottesdienst** filtern
+nach der Art, die Suche liest Name und Beschreibung. **Neue Aktivität** legt
+eine an, Bearbeiten und Löschen stehen in der Zeile. Die gemeldeten Aktivitäten
+stehen dagegen unter Mitmachen, siehe
+[Gemeldete Aktivitäten in der Tabelle entscheiden](70-termine.md#gemeldete-aktivitaeten-in-der-tabelle-entscheiden).
 
 ### Im Browser Badges in der Tabelle verwalten
 

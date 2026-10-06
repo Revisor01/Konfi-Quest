@@ -1,6 +1,6 @@
 // Mitmachen der Leitung in der Web-Fassung, gerendert (03.10.2026,
 // docs/planung/web-alle-bereiche.md, Entscheidung 6): im breiten Fenster
-// Reiter oben (Events, Aktivitäten, Anträge über ?segment=) und die Events
+// Reiter oben wie in der App (Events, Aktivitäten über ?segment=) und die Events
 // als Tabelle mit Zeitraum-Chips, Filtern und Suche. Kopieren, Absagen,
 // Löschen und Co. rufen dieselben Funktionen wie die Wischaktionen der App --
 // mit denselben Rückfragen und Modalen. Im schmalen Fenster bleibt die App.
@@ -69,13 +69,22 @@ const zeileVon = (name: string) => screen.getByRole('link', { name: new RegExp(`
 const chip = (name: RegExp) => screen.getByRole('button', { name });
 
 describe('Kopf und Reiter', () => {
-  it('Titel "Events", drei Reiter als echte Links, "Events" ist der aktuelle', async () => {
+  it('Titel "Events", zwei Reiter wie in der App (Events, Aktivitäten) als echte Links, "Events" ist der aktuelle', async () => {
+    // Simon, 06.10.2026: Der Reiter mit den gemeldeten Aktivitäten heißt
+    // überall „Aktivitäten" (bis dahin im Browser „Anträge", daneben ein
+    // Reiter „Aktivitäten" für den Katalog -- der steht wie in der App unter Mehr).
     await oeffneEvents();
     expect(screen.getByRole('heading', { level: 1, name: 'Events' })).toBeInTheDocument();
     const reiter = within(screen.getByRole('navigation', { name: 'Bereiche von Mitmachen' })).getAllByRole('link');
-    expect(reiter.map((a) => a.textContent)).toEqual(['Events', 'Aktivitäten', 'Anträge']);
-    expect(reiter.map((a) => a.getAttribute('href'))).toEqual(['/admin/events', '/admin/events?segment=aktivitaeten', '/admin/events?segment=antraege']);
-    expect(reiter.map((a) => a.getAttribute('aria-current'))).toEqual(['page', null, null]);
+    expect(reiter.map((a) => a.textContent)).toEqual(['Events', 'Aktivitäten']);
+    expect(reiter.map((a) => a.getAttribute('href'))).toEqual(['/admin/events', '/admin/events?segment=antraege']);
+    expect(reiter.map((a) => a.getAttribute('aria-current'))).toEqual(['page', null]);
+  });
+
+  it('die alte Adresse des Katalogs (?segment=aktivitaeten) führt auf seine Seite unter Mehr', async () => {
+    richteEin({ nutzer: 'leitung', pfad: '/admin/events', suche: '?segment=aktivitaeten', daten: DATEN });
+    await oeffne('leitung');
+    expect(routerPush).toHaveBeenCalledWith('/admin/activities', 'none', 'replace');
   });
 
   it('orange Zahlen: Events zum Verbuchen und offene Anträge, mit ganzem Satz zum Vorlesen', async () => {
@@ -88,7 +97,7 @@ describe('Kopf und Reiter', () => {
 
   it('ein Klick auf einen Reiter bleibt in der App (Router) und lädt nichts neu', async () => {
     await oeffneEvents();
-    fireEvent.click(screen.getByRole('link', { name: 'Anträge' }));
+    fireEvent.click(screen.getByRole('link', { name: 'Aktivitäten' }));
     expect(routerPush).toHaveBeenCalledWith('/admin/events?segment=antraege', 'none', 'push');
   });
 

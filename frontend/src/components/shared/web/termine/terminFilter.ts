@@ -5,9 +5,15 @@
 export type EigenerAntragFilter = 'offen' | 'angerechnet' | 'abgelehnt' | 'alle';
 export const EIGENER_ANTRAG_FILTER: readonly EigenerAntragFilter[] = ['offen', 'angerechnet', 'abgelehnt', 'alle'];
 
-/** Events der Konfis: Anstehend (fuer alle), Meine, Konfirmation, Pflicht. */
-export type KonfiEventFilter = 'anstehend' | 'meine' | 'konfirmation' | 'pflicht';
-export const KONFI_EVENT_FILTER: readonly KonfiEventFilter[] = ['anstehend', 'meine', 'konfirmation', 'pflicht'];
+/**
+ * Events der Konfis: Alle, Meine, Konfirmation -- wie die Reiter der App
+ * (konfi/views/EventsView.tsx), in derselben Reihenfolge. Simon, 06.10.2026:
+ * „angleichen" (bis dahin „Anstehend" statt „Alle" und ein Filter „Pflicht",
+ * den die App nicht hat). Alte Adressen mit ?filter=anstehend|pflicht fuehren
+ * zur Vorgabe „Meine".
+ */
+export type KonfiEventFilter = 'alle' | 'meine' | 'konfirmation';
+export const KONFI_EVENT_FILTER: readonly KonfiEventFilter[] = ['alle', 'meine', 'konfirmation'];
 
 /** Events des Teams: Alle, Meine, Team (sucht oder nur fuers Team). */
 export type TeamEventFilter = 'alle' | 'meine' | 'team';

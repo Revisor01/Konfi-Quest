@@ -1,7 +1,7 @@
-// Die drei Reiter oben auf Mitmachen der Leitung -- Events, Aktivitaeten,
-// Antraege --, ueber die Adresse gewaehlt (`?segment=`, wie die Deep-Links der
-// App). Sie stehen auf der Seite der Events und auf der Seite der
-// Aktivitaeten (/admin/activities); die orange Zahl zaehlt, was wartet.
+// Die Reiter oben auf Mitmachen der Leitung -- Events und Aktivitaeten, wie in
+// der App --, ueber die Adresse gewaehlt (`?segment=`, wie die Deep-Links der
+// App); die orange Zahl zaehlt, was wartet. Der Katalog der Aktivitaeten steht
+// wie in der App unter Mehr (Simon, 06.10.2026).
 
 import React from 'react';
 import { WebReiter } from '../../../shared/web/termine/WebTerminBausteine';
@@ -25,10 +25,9 @@ const WebLeitungReiter: React.FC<{
         zahl: wartendVerbuchen,
         zahlText: wartendVerbuchen === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung',
       },
-      { schluessel: 'aktivitaeten', label: 'Aktivitäten', href: '/admin/events?segment=aktivitaeten', aktiv: segment === 'aktivitaeten' },
       {
         schluessel: 'antraege',
-        label: 'Anträge',
+        label: 'Aktivitäten',
         href: '/admin/events?segment=antraege',
         aktiv: segment === 'antraege',
         zahl: wartendeAntraege,

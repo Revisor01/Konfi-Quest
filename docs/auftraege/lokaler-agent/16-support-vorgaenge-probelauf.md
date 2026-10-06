@@ -63,16 +63,40 @@ Probe-Mails von dort liegen noch und werden jetzt zu Vorgängen.
 
       Ins Ergebnis: je Mail, wo sie gelandet ist.
 
-- [ ] **5. (Nur mit Simons Konto-Entscheidung aus Auftrag 15, 7a.)** Eine
-      Mail von der Adresse eines Leitungskontos, das genau einer Gemeinde
-      angehört: Sie eröffnet einen **neuen Vorgang** dieser Gemeinde (Quelle
-      Mail). Ohne ein solches Konto: auslassen und im Ergebnis sagen.
+- [ ] **5. Mail von der Adresse eines Leitungskontos.** Simon, 06.10.2026,
+      zu Auftrag 15, 7a: „leg es an oder besser nutze Review org". In der
+      Gemeinde 4 („Test & Demo (App-Review)", intern) ein Konto anlegen:
+      - Rolle **Leitung**, ohne Jahrgang, Name „Support-Probe";
+      - E-Mail-Adresse: das Probe-Postfach des Betriebs aus Auftrag 15
+        (Schritt 6);
+      - es gehört **nur** der Gemeinde 4, keiner weiteren;
+      - das Passwort zufällig und nirgends notiert, das Konto meldet sich nie
+        an.
 
-- [ ] **6. Liegen lassen.** Die Probe-Vorgänge und Probe-Mails bleiben stehen,
-      bis Simon sie angesehen hat. Danach auf „Erledigt" setzen: Sie kommen
-      ins Archiv; der Vorgang der Probe-Anfrage gilt dann als abgelehnt und
-      geht nach 180 Tagen, die anderen nach 730 Tagen. Löschen nur auf Simons
-      Wort.
+      Kein `review-*`- oder `google-test-*`-Konto dafür umwidmen. Vorher und
+      nachher nur lesend prüfen, dass genau dieses eine aktive Konto die
+      Adresse trägt — sonst ist die Zuordnung nicht eindeutig und die Mail
+      landet im Posteingang:
+
+          SELECT COUNT(*) FROM users
+           WHERE lower(btrim(email)) = lower(btrim('<Probe-Postfach>'))
+             AND deleted_at IS NULL;
+          -- erwartet: 0 vorher, 1 nachher
+
+      Dann vom Probe-Postfach eine **neue** Mail (keine Antwort) an support@:
+      Sie eröffnet nach höchstens fünf Minuten einen **neuen Vorgang** der
+      Gemeinde 4 mit Quelle „Mail" und roter Zahl an „Vorgänge" und steht
+      nicht im Posteingang.
+
+      Ins Ergebnis: Kennung des Kontos, Nummer des Vorgangs, je Teilschritt
+      Ja/Nein.
+
+- [ ] **6. Liegen lassen.** Die Probe-Vorgänge, Probe-Mails und das Konto
+      aus Schritt 5 bleiben stehen, bis Simon sie angesehen hat. Danach die
+      Vorgänge auf „Erledigt" setzen: Sie kommen ins Archiv; der Vorgang der
+      Probe-Anfrage gilt dann als abgelehnt und geht nach 180 Tagen, die
+      anderen nach 730 Tagen. Löschen nur auf Simons Wort; das Konto aus
+      Schritt 5 geht mit dem Probe-Postfach.
 
 ## Ergebnis
 

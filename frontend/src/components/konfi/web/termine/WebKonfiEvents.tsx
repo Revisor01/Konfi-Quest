@@ -1,8 +1,9 @@
 // Die Events der Konfis als Karten im Raster (Web-Fassung von Mitmachen,
 // 03.10.2026, docs/planung/web-alle-bereiche.md, Entscheidung 6).
 //
-// Dieselben Events und dieselben Reiter wie die Liste der App -- Meine, Alle
-// (hier "Anstehend"), Konfirmation -- dazu "Pflicht". Meine heisst: jede Person
+// Dieselben Events und dieselben Reiter wie die Liste der App -- Alle, Meine,
+// Konfirmation, in dieser Reihenfolge (shared/web/termine/terminFilter.ts).
+// Meine heisst: jede Person
 // mit einer Buchung an diesem Event, egal in welchem Zustand (angemeldet,
 // Warteliste, abgemeldet, abgesagt; zaehltAlsMeiner). Jede Karte ist ein Link
 // auf das Event; ihre Farbe und ihr Status folgen derselben Rechnung wie die
@@ -24,10 +25,9 @@ import { KONFI_EVENT_FILTER, type KonfiEventFilter } from '../../../shared/web/t
 import '../../../../theme/web/termine.css';
 
 const LEER: Record<KonfiEventFilter, { titel: string; text: string }> = {
+  alle: { titel: 'Keine Events gefunden', text: 'Keine anstehenden Events' },
   meine: { titel: 'Keine Events gefunden', text: 'Du bist noch für keine Events angemeldet' },
-  anstehend: { titel: 'Keine Events gefunden', text: 'Keine anstehenden Events' },
   konfirmation: { titel: 'Keine Events gefunden', text: 'Keine Konfirmationstermine verfügbar' },
-  pflicht: { titel: 'Keine Events gefunden', text: 'Keine Pflicht-Events' },
 };
 
 const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
@@ -41,11 +41,10 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   );
 
   const listen = useMemo<Record<KonfiEventFilter, Event[]>>(() => ({
-    // Anstehend: nicht vorbei, keine Konfirmation (die hat ihren eigenen Reiter).
-    anstehend: events.filter((e) => !e.is_konfirmation && !istVergangen(e)),
+    // Alle: wie in der App nur, was noch kommt, ohne Konfirmation (die hat ihren eigenen Reiter).
+    alle: events.filter((e) => !e.is_konfirmation && !istVergangen(e)),
     meine: events.filter(zaehltAlsMeiner),
     konfirmation: events.filter((e) => e.is_konfirmation),
-    pflicht: events.filter((e) => e.mandatory),
   }), [events]);
 
   const sichtbar = useMemo(
@@ -62,10 +61,9 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
           wert={filter}
           onWert={setFilter}
           chips={[
-            { wert: 'anstehend', label: 'Anstehend', zahl: listen.anstehend.length },
+            { wert: 'alle', label: 'Alle', zahl: listen.alle.length },
             { wert: 'meine', label: 'Meine', zahl: listen.meine.length },
             { wert: 'konfirmation', label: 'Konfirmation', zahl: listen.konfirmation.length },
-            { wert: 'pflicht', label: 'Pflicht', zahl: listen.pflicht.length },
           ]}
         />
         <div className="web-werkzeuge__rechts">
@@ -101,8 +99,8 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
             text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl kein Event.` : LEER[filter].text}
             aktion={sucht
               ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf>
-              : filter === 'meine' && listen.anstehend.length > 0
-                ? <WebKnopf onClick={() => setFilter('anstehend')}>Anstehende Events ansehen</WebKnopf>
+              : filter === 'meine' && listen.alle.length > 0
+                ? <WebKnopf onClick={() => setFilter('alle')}>Alle Events ansehen</WebKnopf>
                 : undefined}
           />
         </div>

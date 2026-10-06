@@ -24,8 +24,13 @@ export interface AntragZeile {
   updated_at: string;
 }
 
-/** Die Reiter oben: Events, Aktivitaeten (die Vorlagen der Punkte), Antraege (was Konfis melden). */
-export type LeitungSegment = 'events' | 'aktivitaeten' | 'antraege';
+/**
+ * Die Reiter oben, wie in der App: Events und Aktivitaeten -- die gemeldeten
+ * (Schluessel `antraege`, wie die Deep-Links `?segment=antraege`). Der Katalog
+ * der Aktivitaeten steht wie in der App unter Mehr (/admin/activities); Simon,
+ * 06.10.2026: der Reiter heisst ueberall „Aktivitaeten".
+ */
+export type LeitungSegment = 'events' | 'antraege';
 
 /** Was die Leitung an Events tun kann -- die Funktionen kommen aus AdminEventsPage, dieselben wie in der App. */
 export interface TerminAktionen {
@@ -43,10 +48,10 @@ export interface AntragAktionen {
   zuruecksetzen: (antrag: AntragZeile) => void;
 }
 
-/** Der Reiter aus der Adresse: `?segment=antraege` oder `aktivitaeten`, sonst Events. */
+/** Der Reiter aus der Adresse: `?segment=antraege`, sonst Events (`aktivitaeten` leitet AdminEventsPage unter Mehr um). */
 export function segmentAusAdresse(search: string): LeitungSegment {
   const wert = new URLSearchParams(search).get('segment');
-  return wert === 'antraege' || wert === 'aktivitaeten' ? wert : 'events';
+  return wert === 'antraege' ? wert : 'events';
 }
 
 /** Die Zeitraeume der Event-Tabelle -- auch als `?filter=` in der Adresse. */

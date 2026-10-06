@@ -278,6 +278,33 @@ describe('Die Leiste erscheint nur in der Web-Version im breiten Fenster', () =>
   });
 });
 
+describe('Rollenfarbe der gewählten Filter (Simon, 06.10.2026)', () => {
+  afterEach(() => { delete document.documentElement.dataset.rolle; });
+
+  it.each([
+    ['konfi', 'konfis'], ['teamer', 'teamer'], ['leitung', 'leitung'], ['admin', 'users'],
+  ] as const)('Web: der Rahmen schreibt für %s data-rolle="%s" an <html>', (konto, farbe) => {
+    zustand.konto = KONTEN[konto];
+    halter.breit = true;
+    zeigeRahmen();
+    expect(document.documentElement.dataset.rolle).toBe(farbe);
+  });
+
+  it('auch im schmalen Fenster der Web-Version -- die Filter stehen dort nicht, die Farbe schadet nicht', () => {
+    zustand.konto = KONTEN.teamer;
+    halter.breit = false;
+    zeigeRahmen();
+    expect(document.documentElement.dataset.rolle).toBe('teamer');
+  });
+
+  it('in den Apps setzt der Rahmen nichts -- dort gibt es keine Web-Filter', () => {
+    zustand.konto = KONTEN.konfi;
+    halter.nativ = true;
+    zeigeRahmen();
+    expect(document.documentElement.dataset.rolle).toBeUndefined();
+  });
+});
+
 describe('Reiterleiste oder Leiste -- nie beide, nie keine (Aufbau wie App.tsx)', () => {
   const reiterleiste = (container: HTMLElement) => container.querySelector('ion-tab-bar');
 
@@ -388,15 +415,17 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
 
   // Seiten, die ueber „Mehr" erreicht werden, haben keinen eigenen Eintrag
   // in der Leiste; ohne Zuordnung war dort gar nichts markiert (Befund beim
-  // Bau der Web-Fassung, 03.10.2026). Aktivitaeten gehoeren zu Mitmachen
-  // (Reiter dort, docs/planung/web-alle-bereiche.md).
+  // Bau der Web-Fassung, 03.10.2026). Der Katalog der Aktivitaeten steht wie
+  // in der App unter „Mehr"; der Reiter „Aktivitaeten" unter Mitmachen zeigt
+  // die gemeldeten (Simon, 06.10.2026: „er soll Aktivitäten heißen überall").
   it.each([
     ['/admin/users', '/admin/settings'],
     ['/admin/badges', '/admin/settings'],
     ['/admin/material', '/admin/settings'],
     ['/admin/wrapped', '/admin/settings'],
     ['/admin/settings/jahrgaenge', '/admin/settings'],
-    ['/admin/activities', '/admin/events'],
+    ['/admin/activities', '/admin/settings'],
+    ['/admin/events', '/admin/events'],
   ])('Leitung auf %s: markiert ist %s', (pfad, erwartet) => {
     zustand.konto = KONTEN.leitung;
     zeigeLeiste(pfad);

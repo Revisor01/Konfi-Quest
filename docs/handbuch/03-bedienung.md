@@ -95,11 +95,11 @@ steht bei den Bereichen:
 
 Die Leiste markiert den Bereich, in dem du bist — auch auf Seiten ohne eigenen
 Eintrag. Bei der Leitung gehören die Seiten, die du über **Mehr** erreichst, zu
-**Mehr**: Benutzer:innen, Badges, Material, Jahresrückblick, Kategorien, Level,
-Jahrgänge, Zertifikate, Einladungen und Dashboard. Die Aktivitäten gehören zu
-**Mitmachen**, wo sie ein Reiter sind. Ein Event, eine Person oder eine
-Challenge markiert ihren Bereich — Mitmachen, Konfis, Challenges —, bei den
-Teamer:innen stehen Badges und Konfi-Historie unter **Profil**.
+**Mehr**: Aktivitäten, Benutzer:innen, Badges, Material, Jahresrückblick,
+Kategorien, Level, Jahrgänge, Zertifikate, Einladungen und Dashboard. Ein
+Event, eine Person oder eine Challenge markiert ihren Bereich — Mitmachen,
+Konfis, Challenges —, bei den Teamer:innen stehen Badges und Konfi-Historie
+unter **Profil**.
 
 Wird das Fenster schmaler, kehrt die Reiterleiste unten zurück. In den Apps
 auf Handy und Tablet bleibt es immer bei der Reiterleiste.

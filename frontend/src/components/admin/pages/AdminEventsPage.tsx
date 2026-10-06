@@ -105,6 +105,15 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     }
   }, [routerLocation.search]);
 
+  // Im Browser stand der Katalog der Aktivitaeten bis 06.10.2026 als Reiter
+  // unter Mitmachen (?segment=aktivitaeten). Er steht jetzt wie in der App
+  // unter Mehr (/admin/activities); eine alte Adresse fuehrt dorthin.
+  useEffect(() => {
+    if (breit && new URLSearchParams(routerLocation.search).get('segment') === 'aktivitaeten') {
+      router.push('/admin/activities', 'none', 'replace');
+    }
+  }, [breit, routerLocation.search, router]);
+
   // Offline-Query: Events
   const { data: allEventsRaw, loading: eventsLoading, refresh: refreshEvents, refreshLive: refreshEventsLive } = useOfflineQuery<Event[]>(
     'admin:events:' + user?.organization_id,

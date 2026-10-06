@@ -1,5 +1,5 @@
 // Die Aktivitaeten der Leitung -- die Vorlagen, fuer die es Punkte gibt -- als
-// Tabelle (Web-Fassung von Mitmachen, 03.10.2026). Reiter Konfis und Team
+// Tabelle (Web-Fassung, 03.10.2026; Seite unter Mehr: WebAktivitaetenSeite). Reiter Konfis und Team
 // (die Team-Aktivitaeten tragen keine Punkte), Filter nach Art, Suche.
 // Anlegen und Aendern im vorhandenen Fenster (ActivityManagementModal),
 // Loeschen nach Rueckfrage -- die Logik steht in useAktivitaetenVerwaltung,
@@ -20,8 +20,8 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import WebTreffer from '../../../web/WebTreffer';
-import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
-import { useAktivitaetenVerwaltung, type Aktivitaet, type AktivitaetenRolle } from '../../useAktivitaetenVerwaltung';
+import { WebLeer } from '../../../web/WebZustaende';
+import type { Aktivitaet, AktivitaetenRolle } from '../../useAktivitaetenVerwaltung';
 import '../../../../theme/web/termine.css';
 
 type ArtFilter = 'alle' | 'gemeinde' | 'gottesdienst';
@@ -199,27 +199,3 @@ export const WebAktivitaetenTabelle: React.FC<WebAktivitaetenTabelleProps> = ({
     </>
   );
 };
-
-/** Laedt die Aktivitaeten und zeigt die Tabelle -- fuer den Reiter unter Mitmachen. */
-const WebAktivitaeten: React.FC<{ presentingElement?: HTMLElement | null }> = ({ presentingElement }) => {
-  const v = useAktivitaetenVerwaltung(() => presentingElement || undefined);
-  if (v.loading) return <WebLaden karten={1} text="Die Aktivitäten werden geladen." />;
-  if (!v.aktivitaeten) {
-    return <WebFehler text="Die Aktivitäten konnten nicht geladen werden." onErneut={() => { void v.refresh(); }} />;
-  }
-  return (
-    <WebAktivitaetenTabelle
-      aktivitaeten={v.aktivitaeten}
-      rolle={v.rolle}
-      onRolle={v.setRolle}
-      darfAnlegen={v.darfAnlegen}
-      darfBearbeiten={v.darfBearbeiten}
-      darfLoeschen={v.darfLoeschen}
-      onAnlegen={v.anlegen}
-      onBearbeiten={v.bearbeiten}
-      onLoeschen={(a) => { void v.loeschen(a); }}
-    />
-  );
-};
-
-export default WebAktivitaeten;

@@ -147,6 +147,7 @@ const AdminProfilePage: React.FC = () => {
           onPasswort={handleOpenPasswordModal}
           onCache={handleClearMediaCache}
           onLoeschen={handleOpenDeleteAccount}
+          presentingElement={() => presentingElement}
         />
       </WebSeite>
     );

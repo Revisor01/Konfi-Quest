@@ -51,7 +51,18 @@
   --web-reihe-buchungen: var(--app-text-jahrgang);
   --web-reihe-nachrichten: var(--app-text-bonus);
   --web-reihe-gesamt: var(--app-text-users);
+  /* Rollenfarbe der angemeldeten Person fuer Auswahl-Zustaende (gewaehlte
+     Filter). Simon, 06.10.2026: nicht die Grundfarbe, sondern die Rolle.
+     navigation/rollenfarbeImDokument.ts setzt data-rolle an <html>; ohne
+     Rolle (Support-Konto) bleibt die Grundfarbe. Text-Tokens, weil die im
+     Dunkeln aufgehellt sind. */
+  --web-rolle: var(--ion-color-primary);
 }
+
+:root[data-rolle='konfis'] { --web-rolle: var(--app-text-konfis); }
+:root[data-rolle='teamer'] { --web-rolle: var(--app-text-teamer); }
+:root[data-rolle='leitung'] { --web-rolle: var(--app-text-leitung); }
+:root[data-rolle='users'] { --web-rolle: var(--app-text-users); }
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -461,10 +472,15 @@ a.web-kachel:focus-visible {
   background: var(--web-hover);
 }
 
+/* Gewaehlt: Rand und zarter Grund in der Rollenfarbe, die Schrift bleibt in
+   der Textfarbe -- weisse Schrift auf dem Indigo der Gemeindeleitung haette
+   nur 3,7:1. */
 .web-chip[aria-pressed='true'] {
-  background: var(--ion-color-primary);
-  border-color: var(--ion-color-primary);
-  color: var(--ion-color-primary-contrast);
+  background: color-mix(in srgb, var(--web-rolle) 14%, var(--web-karte));
+  border-color: var(--web-rolle);
+  box-shadow: inset 0 0 0 1px var(--web-rolle);
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
 }
 
 .web-chip__zahl {

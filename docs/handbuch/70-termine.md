@@ -1323,11 +1323,11 @@ Listen.
 
 ### Events der Leitung in der Tabelle durchsuchen
 
-Mitmachen hat bei der Leitung drei Reiter: **Events**, **Aktivitäten** und
-**Anträge**. Sie sind Links, und der Reiter steht in der Adresse. Die orange
+Mitmachen hat bei der Leitung wie in der App zwei Reiter: **Events** und
+**Aktivitäten**. Sie sind Links, und der Reiter steht in der Adresse. Die orange
 Zahl am Reiter **Events** zählt die Events, die auf Verbuchung warten, die am
-Reiter **Anträge** die Anträge, die auf eine Entscheidung warten — dieselben
-Zahlen wie in der App. Oben rechts stehen **Legende**, **Aktualisieren** und
+Reiter **Aktivitäten** die gemeldeten Aktivitäten, die auf eine Entscheidung
+warten — dieselben Zahlen wie in der App. Oben rechts stehen **Legende**, **Aktualisieren** und
 **Neues Event**.
 
 Die Tabelle **Events** zeigt je Zeile den Namen — ein Link auf das Event —,
@@ -1348,28 +1348,24 @@ und stellen dieselben Rückfragen wie dort, siehe
 [Ein Event kopieren](#ein-event-kopieren) und
 [Ein Event absagen oder löschen](#ein-event-absagen-oder-loeschen).
 
-### Aktivitäten und Anträge in Tabellen bearbeiten
+### Gemeldete Aktivitäten in der Tabelle entscheiden
 
-Der Reiter **Aktivitäten** ist der Katalog dessen, was gemeldet werden kann:
-eine Tabelle mit Aktivität und Beschreibung, Kategorien, Art — Gottesdienst
-oder Gemeinde — und Punkten. **Konfis** und **Team** wechseln die Liste, die
-Aktivitäten des Teams tragen keine Punkte; **Alle**, **Gemeinde** und
-**Gottesdienst** filtern nach der Art, die Suche liest Name und Beschreibung.
-**Neue Aktivität** legt eine an, Bearbeiten und Löschen stehen in der Zeile.
-Derselbe Katalog steht unter **Mehr**; die Leiste markiert dann Mitmachen.
-
-Die Meldungen, die in der App unter **Aktivitäten** stehen, heißen im Browser
-**Anträge**: eine Tabelle mit Eingang, Person und Jahrgang — bei Teamer:innen
-steht „Team" —, Aktivität mit Kommentar, Datum mit Hinweis auf das Foto, Punkten
-und Status, der neueste Antrag oben. **Offen**, **Verbucht**, **Abgelehnt** und
-**Alle** filtern, zuerst steht **Offen** da; die Suche findet Person und
-Aktivität. **Prüfen** öffnet das Fenster „Aktivität prüfen" mit Foto, Kommentar
-und Entscheidung; der
+Der Reiter **Aktivitäten** zeigt, was Konfis und Team gemeldet haben: eine
+Tabelle mit Eingang, Person und Jahrgang — bei Teamer:innen steht „Team" —,
+Aktivität mit Kommentar, Datum mit Hinweis auf das Foto, Punkten und Status, die
+neueste Meldung oben. **Offen**, **Verbucht**, **Abgelehnt** und **Alle**
+filtern, zuerst steht **Offen** da; die Suche findet Person und Aktivität.
+**Prüfen** öffnet das Fenster „Aktivität prüfen" mit Foto, Kommentar und
+Entscheidung; der
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
-derselbe. Bei einem entschiedenen Antrag öffnet **Ansehen** dasselbe Fenster,
-und **Aktivität zurücksetzen** macht ihn nach einer Rückfrage wieder offen. Hat
+derselbe. Bei einer entschiedenen Meldung öffnet **Ansehen** dasselbe Fenster,
+und **Aktivität zurücksetzen** macht sie nach einer Rückfrage wieder offen. Hat
 die Leitung keinen Jahrgang zugewiesen, steht über der Tabelle der Hinweis
 „Kein Jahrgang zugewiesen".
+
+Den Katalog dessen, was gemeldet werden kann, pflegst du wie in der App unter
+**Mehr** › **Aktivitäten**, siehe
+[Im Browser Verwaltungsseiten als Tabellen nutzen](30-leitung.md#im-browser-verwaltungsseiten-als-tabellen-nutzen).
 
 ### Ein Event in zwei Spalten verbuchen
 

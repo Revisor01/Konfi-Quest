@@ -1,9 +1,10 @@
-// Anträge und Aktivitäten der Leitung in der Web-Fassung, gerendert
-// (03.10.2026): Reiter "Anträge" (was Konfis und Team gemeldet haben) als
-// Tabelle mit Status-Chips, Reiter "Aktivitäten" (die Vorlagen für Punkte)
-// als Tabelle mit Rollen-Chips, Art-Filter und Suche; dazu /admin/activities,
-// dieselbe Tabelle unter denselben Reitern. Geprüft, angelegt, gelöscht wird
-// mit denselben Fenstern und Rückfragen wie in der App.
+// Die gemeldeten Aktivitäten und der Katalog der Aktivitäten der Leitung in
+// der Web-Fassung, gerendert (03.10.2026; 06.10.2026 wie in der App geordnet):
+// der Reiter "Aktivitäten" unter Mitmachen (?segment=antraege; was Konfis und
+// Team gemeldet haben) als Tabelle mit Status-Chips, der Katalog (die Vorlagen
+// für Punkte) als eigene Seite unter Mehr (/admin/activities) mit Rollen-Chips,
+// Art-Filter und Suche. Geprüft, angelegt, gelöscht wird mit denselben
+// Fenstern und Rückfragen wie in der App.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import {
@@ -49,7 +50,12 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); });
 
+/** 'antraege': der Reiter „Aktivitäten" unter Mitmachen; 'aktivitaeten': der Katalog unter Mehr. */
 const oeffneReiter = (segment: 'antraege' | 'aktivitaeten', nutzer: 'leitung' | 'admin' | 'teamer' = 'leitung', filter = '') => {
+  if (segment === 'aktivitaeten') {
+    richteEin({ nutzer, pfad: '/admin/activities', daten: DATEN });
+    return oeffne('aktivitaeten');
+  }
   richteEin({ nutzer, pfad: '/admin/events', suche: `?segment=${segment}${filter}`, daten: DATEN });
   return oeffne('leitung');
 };
@@ -63,12 +69,12 @@ const spalte = (name: string, nr: number) => within(tabelle(name)).getAllByRole(
   .map((z) => within(z).getAllByRole('cell')[nr].querySelector('.web-zelle-titel')!.textContent);
 
 describe('Anträge: Reiter und Tabelle', () => {
-  it('?segment=antraege: Titel "Anträge", Reiter "Anträge" ist der aktuelle, die Zahl am Reiter kommt aus dem Badge', async () => {
+  it('?segment=antraege: Titel und Reiter heißen "Aktivitäten" wie in der App; die Zahl am Reiter kommt aus dem Badge', async () => {
     h.badge = { pendingEventsCount: 0, pendingRequestsCount: 2 };
     await oeffneReiter('antraege');
-    expect(screen.getByRole('heading', { level: 1, name: 'Anträge' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Aktivitäten' })).toBeInTheDocument();
     const nav = screen.getByRole('navigation', { name: 'Bereiche von Mitmachen' });
-    expect(within(nav).getByRole('link', { name: /^Anträge/ })).toHaveAttribute('aria-current', 'page');
+    expect(within(nav).getByRole('link', { name: /^Aktivitäten/ })).toHaveAttribute('aria-current', 'page');
     expect(within(nav).getByRole('link', { name: /^Events/ })).not.toHaveAttribute('aria-current');
     expect(within(nav).getByRole('img', { name: '2 Anträge warten auf Entscheidung' })).toBeInTheDocument();
   });
@@ -203,10 +209,9 @@ describe('Anträge: Hinweis ohne Jahrgang', () => {
 });
 
 describe('Aktivitäten: Tabelle', () => {
-  it('?segment=aktivitaeten: nach Name sortiert, mit Art und Punkten; die Chips zählen die Arten', async () => {
+  it('der Katalog unter Mehr: nach Name sortiert, mit Art und Punkten; die Chips zählen die Arten', async () => {
     await oeffneReiter('aktivitaeten');
     expect(screen.getByRole('heading', { level: 1, name: 'Aktivitäten' })).toBeInTheDocument();
-    expect(within(screen.getByRole('navigation', { name: 'Bereiche von Mitmachen' })).getByRole('link', { name: 'Aktivitäten' })).toHaveAttribute('aria-current', 'page');
     const namen = within(tabelle('Aktivitäten')).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[0].textContent);
     expect(namen).toEqual(['Adventsmarkt', 'Gemeindefest helfenAuf- und Abbau', 'Sonntagsgottesdienst']);
     expect(artChip(/^Alle/)).toHaveTextContent(/^Alle3$/);
@@ -288,21 +293,21 @@ describe('ERLAUBT: Admin bei den Aktivitäten', () => {
 });
 
 describe('/admin/activities (die Adresse aus "Mehr")', () => {
-  it('zeigt dieselbe Tabelle unter denselben Reitern; "Aktivitäten" ist der aktuelle', async () => {
+  it('eine Seite unter Mehr wie die anderen: Weg zurück zu Mehr, keine Reiter von Mitmachen', async () => {
     richteEin({ nutzer: 'leitung', pfad: '/admin/activities', daten: DATEN });
     await oeffne('aktivitaeten');
     expect(screen.getByRole('heading', { level: 1, name: 'Aktivitäten' })).toBeInTheDocument();
-    const nav = screen.getByRole('navigation', { name: 'Bereiche von Mitmachen' });
-    expect(within(nav).getAllByRole('link').map((a) => a.getAttribute('aria-current'))).toEqual([null, 'page', null]);
+    expect(screen.queryByRole('navigation', { name: 'Bereiche von Mitmachen' })).toBe(null);
+    expect(within(screen.getByRole('navigation', { name: 'Zurück' })).getByRole('link', { name: /Mehr/ })).toHaveAttribute('href', '/admin/settings');
     expect(within(tabelle('Aktivitäten')).getAllByRole('row')).toHaveLength(4);
     expect(h.abfragen.filter((k) => k.startsWith('admin:activities:'))[0]).toBe('admin:activities:1:konfi');
   });
 
-  it('ein Klick auf den Reiter "Events" geht auf die Events', async () => {
+  it('ein Klick auf "Mehr" geht zurück zu Mehr', async () => {
     richteEin({ nutzer: 'leitung', pfad: '/admin/activities', daten: DATEN });
     await oeffne('aktivitaeten');
-    fireEvent.click(screen.getByRole('link', { name: 'Events' }));
-    expect(routerPush).toHaveBeenCalledWith('/admin/events', 'none', 'push');
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Zurück' })).getByRole('link', { name: /Mehr/ }));
+    expect(routerPush).toHaveBeenCalledWith('/admin/settings', 'none', 'push');
   });
 
   it('schmal: die Liste der App, keine Tabelle', async () => {

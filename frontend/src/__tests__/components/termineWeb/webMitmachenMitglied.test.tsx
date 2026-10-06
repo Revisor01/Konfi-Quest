@@ -1,6 +1,6 @@
 // Mitmachen bei Konfis und Team in der Web-Fassung, gerendert (03.10.2026):
-// die Events als Karten im Raster mit Chips (Konfis: Anstehend, Meine,
-// Konfirmation, Pflicht; Team: Alle, Meine, Team) und Suche, jede Karte ein
+// die Events als Karten im Raster mit Chips wie die Reiter der App (Konfis:
+// Alle, Meine, Konfirmation; Team: Alle, Meine, Team) und Suche, jede Karte ein
 // echter Link auf das Event; die eigenen Aktivitäten als Tabelle mit
 // Status-Chips. QR-Code scannen, Aktivität melden, ansehen und löschen rufen
 // dieselben Funktionen wie die Seiten der App. Im schmalen Fenster bleibt die App.
@@ -74,12 +74,10 @@ describe('Konfis: Kopf, Reiter und Chips', () => {
     expect(reiter.map((a) => a.getAttribute('aria-current'))).toEqual(['page', null]);
   });
 
-  it('die Chips zählen: Anstehend 5, Meine 4, Konfirmation 1, Pflicht 2', async () => {
+  it('die Chips wie die Reiter der App -- Alle, Meine, Konfirmation, in dieser Reihenfolge, „Meine" vorgewählt (Simon, 06.10.2026: angleichen)', async () => {
     await oeffneKonfi();
-    expect(chip(/^Anstehend/)).toHaveTextContent(/^Anstehend5$/);
-    expect(chip(/^Meine/)).toHaveTextContent(/^Meine4$/);
-    expect(chip(/^Konfirmation/)).toHaveTextContent(/^Konfirmation1$/);
-    expect(chip(/^Pflicht/)).toHaveTextContent(/^Pflicht2$/);
+    const chips = within(screen.getByRole('group', { name: 'Events anzeigen' })).getAllByRole('button');
+    expect(chips.map((c) => c.textContent)).toEqual(['Alle5', 'Meine4', 'Konfirmation1']);
     expect(chip(/^Meine/)).toHaveAttribute('aria-pressed', 'true');
   });
 });
@@ -90,24 +88,28 @@ describe('Konfis: Karten', () => {
     expect(karten()).toEqual(['Konfi-Tag', 'Gemeindefest', 'Fahrradtour', 'Erntedank-Gottesdienst']);
   });
 
-  it('Anstehend: ohne Konfirmation und ohne Vergangenes, nach Datum', async () => {
+  it('Alle: ohne Konfirmation und ohne Vergangenes, nach Datum -- wie „Alle" in der App', async () => {
     await oeffneKonfi();
-    fireEvent.click(chip(/^Anstehend/));
+    fireEvent.click(chip(/^Alle/));
     expect(karten()).toEqual(['Sonntagsgottesdienst', 'Konfi-Tag', 'Gemeindefest', 'Fahrradtour', 'Konfi-Wochenende']);
   });
 
-  it('Konfirmation und Pflicht', async () => {
+  it('Konfirmation', async () => {
     await oeffneKonfi();
     fireEvent.click(chip(/^Konfirmation/));
     expect(karten()).toEqual(['Konfirmation Frühling']);
-    fireEvent.click(chip(/^Pflicht/));
-    expect(karten()).toEqual(['Konfi-Tag', 'Konfi-Wochenende']);
   });
 
-  it('?filter=anstehend in der Adresse wählt den Chip vor', async () => {
-    await oeffneKonfi('?filter=anstehend');
-    expect(chip(/^Anstehend/)).toHaveAttribute('aria-pressed', 'true');
+  it('?filter=alle in der Adresse wählt den Chip vor; die alten Werte anstehend und pflicht führen zu „Meine"', async () => {
+    const { unmount } = await oeffneKonfi('?filter=alle');
+    expect(chip(/^Alle/)).toHaveAttribute('aria-pressed', 'true');
     expect(karten()).toHaveLength(5);
+    unmount();
+    for (const alt of ['anstehend', 'pflicht']) {
+      const ansicht = await oeffneKonfi(`?filter=${alt}`);
+      expect(chip(/^Meine/)).toHaveAttribute('aria-pressed', 'true');
+      ansicht.unmount();
+    }
   });
 
   it('der Status steht als Marke mit Wort auf der Karte', async () => {
@@ -133,7 +135,7 @@ describe('Konfis: Karten', () => {
 
   it('Konfis sehen "Team gesucht" nicht', async () => {
     await oeffneKonfi();
-    fireEvent.click(chip(/^Pflicht/));
+    fireEvent.click(chip(/^Alle/));
     expect(karte('Konfi-Wochenende')).toBeInTheDocument();
     expect(within(karte('Konfi-Wochenende')).queryByText('Team gesucht')).toBe(null);
   });
@@ -156,7 +158,7 @@ describe('Konfis: Karten', () => {
   });
 
   it('Suche nach Name, Ort und Beschreibung; "fruehling" findet "Frühling"', async () => {
-    await oeffneKonfi('?filter=anstehend');
+    await oeffneKonfi('?filter=alle');
     const feld = screen.getByRole('searchbox', { name: 'Events durchsuchen' });
     fireEvent.change(feld, { target: { value: 'kirche' } });
     expect(karten()).toEqual(['Sonntagsgottesdienst']);
@@ -173,10 +175,10 @@ describe('Konfis: Karten', () => {
     expect(karten()).toHaveLength(4);
   });
 
-  it('keine Buchung: Hinweis mit Weg zu den anstehenden Events', async () => {
+  it('keine Buchung: Hinweis mit Weg zu allen Events', async () => {
     await oeffneKonfi('', [KONFI_EVENTS[1], KONFI_EVENTS[3]]);
     expect(screen.getByText('Du bist noch für keine Events angemeldet')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Anstehende Events ansehen' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Alle Events ansehen' }));
     expect(karten()).toEqual(['Sonntagsgottesdienst']);
   });
 });
