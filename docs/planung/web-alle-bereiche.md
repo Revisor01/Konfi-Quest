@@ -66,7 +66,8 @@ und der Web-Fassung der Support-Ansicht ([support-web.md](support-web.md)) auf.
 ## Gebaut (06.10.2026)
 
 Web-Fassungen für Chat, Start, Badges und Profil (Konfi, Team, Leitung),
-Mitmachen (Events, Aktivitäten, Anträge), Challenges und die Leitung (Konfis,
+Mitmachen (Events und gemeldete Aktivitäten; der Katalog der Aktivitäten unter
+„Mehr" wie in der App, Simon 06.10.2026), Challenges und die Leitung (Konfis,
 Team, Verwaltungsseiten, „Mehr" als Kacheln, Material), im PR „Web-Ansicht
 aller Bereiche und Support-Vorgänge". Bausteine in `components/web/`,
 Bereichsteile in `components/<bereich>/web/`, Stil in `theme/web/<bereich>.css`;

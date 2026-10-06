@@ -71,8 +71,9 @@ Versionsüberschrift.
   - Start, Badges und Profil von Konfis und Team zeigen Karten statt einer
     langen Spalte, Badges mit Suche und Filtern; die Konfi-Historie des
     Teams steht nebeneinander.
-  - Mitmachen zeigt der Leitung Events, Aktivitäten und Anträge als
-    Tabellen mit Filtern; ein Event steht zweispaltig da, mit Anwesend und
+  - Mitmachen zeigt der Leitung Events und gemeldete Aktivitäten als
+    Tabellen mit Filtern, den Katalog der Aktivitäten wie in der App unter
+    „Mehr"; ein Event steht zweispaltig da, mit Anwesend und
     Abwesend je Zeile. Konfis und Team sehen die Events als Karten und
     melden sich im zweispaltigen Event an und ab.
   - Challenges stehen als Karten im Raster mit Filtern und roter Zahl;
@@ -135,7 +136,7 @@ Versionsüberschrift.
   dem Archivieren gelöscht; eine neue Mail holt einen Vorgang zurück. Rote
   Zahlen gibt es für Vorgänge und Posteingang.
 - Im Browser markiert die Leiste auch auf Seiten, die über „Mehr" erreicht
-  werden, den Eintrag „Mehr", bei den Aktivitäten „Mitmachen".
+  werden, den Eintrag „Mehr".
 - Im Browser stehen gewählte Filter in der Farbe der eigenen Rolle.
 - Im Browser heißen die Event-Filter der Konfis wie in der App: Alle, Meine,
   Konfirmation.

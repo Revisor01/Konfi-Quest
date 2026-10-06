@@ -290,12 +290,13 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     ],
     // Unten in der Seitenleiste der Web-Version, ueber „Abmelden".
     profil: { path: '/admin/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
-    // Seiten ohne eigenen Eintrag in der Leiste: Aktivitaeten sind ein Reiter
-    // von Mitmachen, der Rest wird ueber „Mehr" erreicht. Gemeinden und
-    // Betrieb haben im Konto mit Super-Admin-Recht eigene Eintraege (die
-    // gehen vor).
+    // Seiten ohne eigenen Eintrag in der Leiste werden ueber „Mehr" erreicht,
+    // auch der Katalog der Aktivitaeten (wie in der App; der Reiter
+    // „Aktivitaeten" unter Mitmachen zeigt die gemeldeten, Simon 06.10.2026).
+    // Gemeinden und Betrieb haben im Konto mit Super-Admin-Recht eigene
+    // Eintraege (die gehen vor).
     zugehoerig: [
-      { von: '/admin/activities', zu: '/admin/events' },
+      { von: '/admin/activities', zu: '/admin/settings' },
       { von: '/admin/users', zu: '/admin/settings' },
       { von: '/admin/badges', zu: '/admin/settings' },
       { von: '/admin/material', zu: '/admin/settings' },

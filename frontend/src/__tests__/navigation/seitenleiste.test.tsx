@@ -415,15 +415,17 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
 
   // Seiten, die ueber „Mehr" erreicht werden, haben keinen eigenen Eintrag
   // in der Leiste; ohne Zuordnung war dort gar nichts markiert (Befund beim
-  // Bau der Web-Fassung, 03.10.2026). Aktivitaeten gehoeren zu Mitmachen
-  // (Reiter dort, docs/planung/web-alle-bereiche.md).
+  // Bau der Web-Fassung, 03.10.2026). Der Katalog der Aktivitaeten steht wie
+  // in der App unter „Mehr"; der Reiter „Aktivitaeten" unter Mitmachen zeigt
+  // die gemeldeten (Simon, 06.10.2026: „er soll Aktivitäten heißen überall").
   it.each([
     ['/admin/users', '/admin/settings'],
     ['/admin/badges', '/admin/settings'],
     ['/admin/material', '/admin/settings'],
     ['/admin/wrapped', '/admin/settings'],
     ['/admin/settings/jahrgaenge', '/admin/settings'],
-    ['/admin/activities', '/admin/events'],
+    ['/admin/activities', '/admin/settings'],
+    ['/admin/events', '/admin/events'],
   ])('Leitung auf %s: markiert ist %s', (pfad, erwartet) => {
     zustand.konto = KONTEN.leitung;
     zeigeLeiste(pfad);

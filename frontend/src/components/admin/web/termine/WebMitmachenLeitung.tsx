@@ -1,7 +1,9 @@
 // Mitmachen der Leitung in der Web-Fassung (/admin/events, 03.10.2026,
-// docs/planung/web-alle-bereiche.md, Entscheidung 6): drei Reiter oben --
-// Events, Aktivitaeten, Antraege --, ueber die Adresse gewaehlt (`?segment=`,
-// wie die Deep-Links der App), darunter die Tabelle des Reiters.
+// docs/planung/web-alle-bereiche.md, Entscheidung 6): zwei Reiter oben --
+// Events und Aktivitaeten (die gemeldeten, wie in der App; Simon, 06.10.2026:
+// „er soll Aktivitäten heißen überall") --, ueber die Adresse gewaehlt
+// (`?segment=`, wie die Deep-Links der App), darunter die Tabelle des Reiters.
+// Der Katalog der Aktivitaeten steht wie in der App unter Mehr.
 //
 // Die Seite (AdminEventsPage) laedt die Daten und besitzt die Funktionen
 // (Absagen, Kopieren, Loeschen, Antrag pruefen ...) -- sie reicht beides
@@ -17,7 +19,6 @@ import WebLegendeKnopf from '../../../shared/web/termine/WebLegendeKnopf';
 import type { Event } from '../../../../types/event';
 import WebEventsTabelle from './WebEventsTabelle';
 import WebAntraege from './WebAntraege';
-import WebAktivitaeten from './WebAktivitaeten';
 import WebLeitungReiter from './WebLeitungReiter';
 import type { AntragAktionen, AntragZeile, LeitungSegment, TerminAktionen } from './typen';
 import '../../../../theme/web/termine.css';
@@ -55,19 +56,16 @@ const WebMitmachenLeitung: React.FC<WebMitmachenLeitungProps> = (p) => {
 
   const kopf = {
     events: { titel: 'Events', untertitel: 'Gottesdienste, Konfi-Tage und Fahrten' },
-    aktivitaeten: { titel: 'Aktivitäten', untertitel: 'Hier legst du fest, wofür es Punkte gibt' },
-    antraege: { titel: 'Anträge', untertitel: 'Gemeldete Aktivitäten verwalten' },
+    antraege: { titel: 'Aktivitäten', untertitel: 'Gemeldete Aktivitäten verwalten' },
   }[segment];
 
   const aktionen = (
     <>
       {segment === 'events' && <WebLegendeKnopf variante="admin" presentingElement={p.presentingElement} />}
-      {segment !== 'aktivitaeten' && (
-        <WebKnopf onClick={() => { void (segment === 'antraege' ? p.antraegeNeuLaden() : p.neuLaden()); }}>
-          <IonIcon icon={ICON_AKTUALISIEREN} aria-hidden="true" />
-          Aktualisieren
-        </WebKnopf>
-      )}
+      <WebKnopf onClick={() => { void (segment === 'antraege' ? p.antraegeNeuLaden() : p.neuLaden()); }}>
+        <IonIcon icon={ICON_AKTUALISIEREN} aria-hidden="true" />
+        Aktualisieren
+      </WebKnopf>
       {segment === 'events' && p.darfVerwalten && (
         <WebKnopf art="primaer" onClick={p.terminAktionen.neu} aria-label="Neues Event anlegen">
           <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
@@ -78,9 +76,7 @@ const WebMitmachenLeitung: React.FC<WebMitmachenLeitungProps> = (p) => {
   );
 
   let inhalt: React.ReactNode;
-  if (segment === 'aktivitaeten') {
-    inhalt = <WebAktivitaeten presentingElement={p.presentingElement} />;
-  } else if (segment === 'antraege') {
+  if (segment === 'antraege') {
     inhalt = p.antraegeLaden
       ? <WebLaden karten={1} text="Die Aktivitäten werden geladen." />
       : <WebAntraege antraege={p.antraege} ohneJahrgang={p.ohneJahrgang} aktionen={p.antragAktionen} />;

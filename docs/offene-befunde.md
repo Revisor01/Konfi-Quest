@@ -250,18 +250,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
   Serverregel dagegen gibt es nicht. So lassen? (30.09.2026)
 - **Meldungen der Sicherheitsregeln (CSP).** Ein Endpunkt, an den der Browser
   Verstöße meldet, existiert nicht; gewünscht? (29.09.2026)
-- **Stempel vergeben als eigene Aktion?** Den Stempel einer Challenge gibt
-  es beim Einreichen oder, mit Freigabe-Pflicht, mit der Freigabe des
-  Beitrags (Handbuch „Den Stempel vergeben“); einen eigenen Knopf dafür gibt
-  es nicht, auch nicht im Browser. Eigener Knopf „Stempel vergeben“ oder
-  bleibt es dabei? (06.10.2026)
-- **„Aktivitäten“ oder „Anträge“?** Der Reiter der Leitung unter Mitmachen
-  heißt „Aktivitäten“ und zeigt dort auch die Anträge; im Browser stehen
-  Aktivitäten und Anträge als zwei Tabellen. Soll der Reiter in der App
-  „Anträge“ heißen? (06.10.2026)
-- **Farbe gewählter Filter im Browser.** Gewählte Filter-Knöpfe stehen in der
-  Grundfarbe, nicht in der Rollenfarbe wie die Reiter der App. So lassen
-  oder Rollenfarbe? (06.10.2026)
 - **Nutzungsmessung.** Die Vorschläge S1–S17 in
   [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
   auf Simons Entscheidung.
