@@ -85,8 +85,12 @@ function kennung({ vorgangId = null, anfrageId = null, organizationId = null }) 
 }
 
 // Die alten Kennungen vor den Vorgaengen. Mit [Vorgang N] im Betreff werden
-// sie entfernt: Eine Antwort auf eine alte Mail soll nicht beide tragen.
-const ALTE_KENNUNG = /\s*\[\s*(?:Anfrage|Gemeinde)\s+\d{1,15}\s*\]/gi;
+// sie entfernt: Eine Antwort auf eine alte Mail soll nicht beide tragen. Der
+// Betreff ist hier schon einzeilig (jeder Leerraum ein einzelnes Leerzeichen),
+// deshalb genuegen feste Leerzeichen -- ohne \s* davor bleibt der Ausdruck
+// linear (CodeQL js/polynomial-redos); das doppelte Leerzeichen, das beim
+// Entfernen stehen bleibt, raeumt einzeilig() danach weg.
+const ALTE_KENNUNG = /\[ ?(?:Anfrage|Gemeinde) \d{1,15} ?\]/gi;
 
 /** Betreff mit Kennung (angehaengt, wenn sie fehlt), einzeilig und begrenzt. */
 function betreffMitKennung(betreff, zuordnung) {
