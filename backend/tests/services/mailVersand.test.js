@@ -93,6 +93,19 @@ describe('Betreff, Fußzeile, Bezug', () => {
     expect(lang.endsWith(' [Anfrage 12]')).toBe(true);
   });
 
+  it('betreffMitKennung mit Vorgang: alte Kennungen weichen, gleich wie sie geschrieben sind', () => {
+    expect(betreffMitKennung('Re: X [Anfrage 12]', { vorgangId: 5 })).toBe('Re: X [Vorgang 5]');
+    expect(betreffMitKennung('Re: X [ anfrage   12 ] Y', { vorgangId: 5 })).toBe('Re: X Y [Vorgang 5]');
+    expect(betreffMitKennung('[Gemeinde\t7]\nRe: X [Anfrage 3]', { vorgangId: 5 })).toBe('Re: X [Vorgang 5]');
+    // Keine Kennung: ein Wort ohne Nummer oder eine andere Klammer bleibt stehen.
+    expect(betreffMitKennung('[Anfrage] und [Gemeindefest 7]', { vorgangId: 5 })).toBe('[Anfrage] und [Gemeindefest 7] [Vorgang 5]');
+    // Viele Leerzeichen und offene Klammern laufen linear durch (CodeQL js/polynomial-redos).
+    const zaeh = `${' ['.repeat(20000)}Anfrage ${' '.repeat(20000)}`;
+    const start = Date.now();
+    expect(betreffMitKennung(zaeh, { vorgangId: 5 }).endsWith('[Vorgang 5]')).toBe(true);
+    expect(Date.now() - start).toBeLessThan(500);
+  });
+
   it('textMitFusszeile: Trenner „-- “ auf eigener Zeile; ohne Fußzeile kein Trenner; Zeilenenden einheitlich', () => {
     expect(textMitFusszeile('Hallo\r\n\r\nGruß  \n\n', 'Konfi Quest\nkonfi-quest.de'))
       .toBe('Hallo\n\nGruß\n\n-- \nKonfi Quest\nkonfi-quest.de\n');

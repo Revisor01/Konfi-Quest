@@ -70,6 +70,11 @@ import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { selbstbezeichnung } from '../../../utils/rollenNamen';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import { WebFehler, WebLaden } from '../../web/WebZustaende';
+import WebTeamerProfil from '../web/WebTeamerProfil';
 
 interface TeamerProfile {
   user: {
@@ -104,6 +109,8 @@ const TeamerProfilePage: React.FC = () => {
   const [presentAlert] = useIonAlert();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const router = useIonRouter();
+  // Browser ab 992 px: die Web-Fassung (web/WebTeamerProfil), zweispaltig.
+  const breit = useBreitesLayout();
 
   // Offline-Query: Profil
   const { data: profile, loading, refresh, refreshLive } = useOfflineQuery<TeamerProfile>(
@@ -271,6 +278,51 @@ const TeamerProfilePage: React.FC = () => {
       ]
     });
   };
+
+  // Web-Fassung: dieselben Handgriffe (Modale, Abmelden, Rückblicke), anders gezeigt.
+  if (breit) {
+    const seite = () => pageRef.current ?? null;
+    const ueber = () => pageRef.current ?? undefined;
+    return (
+      <WebSeite bereich="Profil" titel="Mein Profil" untertitel="Konto und Einstellungen" pageRef={pageRef}>
+        {loading && <WebLaden kacheln={3} karten={2} text="Das Profil wird geladen." />}
+        {!loading && !profile && (
+          <>
+            <WebFehler text="Das Profil konnte nicht geladen werden." onErneut={() => { void refresh(); }} />
+            <div><WebKnopf onClick={handleLogout}>Abmelden</WebKnopf></div>
+          </>
+        )}
+        {!loading && profile && (
+          <WebTeamerProfil
+            profil={profile}
+            uebersetzung={getTranslationName(selectedTranslation)}
+            cacheLabel={cacheLabel}
+            rueckblicke={wrappedHistory}
+            presentingElement={seite}
+            onRueckblick={setWrappedModalData}
+            onFunktion={() => presentRoleTitleModal({ presentingElement: ueber() })}
+            onEmail={() => presentEmailModal({ presentingElement: ueber() })}
+            onPasswort={() => presentPasswordModal({ presentingElement: ueber() })}
+            onUebersetzung={() => presentBibleModal({ presentingElement: ueber() })}
+            onTour={() => setShowOnboarding(true)}
+            onCache={handleClearMediaCache}
+            onAbmelden={handleLogout}
+            onLoeschen={() => presentDeleteAccount({ presentingElement: ueber() })}
+            onNeuerungen={() => setShowUpdateWalkthrough(true)}
+            onMitmachen={() => setShowMitmachenErklaerung(true)}
+          />
+        )}
+        {showOnboarding && (
+          <TeamerOnboardingModal
+            onClose={() => setShowOnboarding(false)}
+            displayName={(user?.display_name || '').split(' ')[0]}
+          />
+        )}
+        {showUpdateWalkthrough && <TeamerUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
+        {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="teamer" onClose={() => setShowMitmachenErklaerung(false)} />}
+      </WebSeite>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner message="Profil wird geladen..." />;

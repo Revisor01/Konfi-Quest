@@ -21,6 +21,7 @@ import {
 } from '../../utils/supportMail';
 import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
+import { meldeSupportGeaendert, useSupportGeaendert } from '../../utils/supportAktualisieren';
 
 export function useTextbausteine() {
   const { setError, setSuccess, isOnline } = useApp();
@@ -71,6 +72,9 @@ export function useTextbausteine() {
     void bausteineHolen();
     void einstellungenHolen();
   }, [bausteineHolen, einstellungenHolen]);
+  // Nur die Liste der Bausteine: Die Felder Absender und Fußzeile können ein
+  // ungespeicherter Entwurf sein und bleiben, wie sie sind.
+  useSupportGeaendert(bausteineHolen);
 
   const laden = () => {
     setLaedt(true);
@@ -108,7 +112,8 @@ export function useTextbausteine() {
         setSuccess('Baustein angelegt');
       }
       formularLeeren();
-      await bausteineHolen();
+      // Auch ein offener Antwort-Editor holt die Bausteine neu.
+      meldeSupportGeaendert();
     } catch (err) {
       setError(fehlerText(err, 'Baustein konnte nicht gespeichert werden'));
     } finally {
@@ -132,7 +137,7 @@ export function useTextbausteine() {
                 await api.delete(`/support/mail/bausteine/${b.id}`);
                 setSuccess('Baustein gelöscht');
                 if (bearbeitet?.id === b.id) formularLeeren();
-                await bausteineHolen();
+                meldeSupportGeaendert();
               } catch (err) {
                 setError(fehlerText(err, 'Baustein konnte nicht gelöscht werden'));
               }
@@ -158,6 +163,7 @@ export function useTextbausteine() {
       setFusszeile(koerper.fusszeile);
       setAbsendername(koerper.absendername);
       setSuccess('Absender und Fußzeile gespeichert');
+      meldeSupportGeaendert();
     } catch (err) {
       setError(fehlerText(err, 'Absender und Fußzeile konnten nicht gespeichert werden'));
     } finally {

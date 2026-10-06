@@ -50,6 +50,8 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { tageBis } from '../../shared/eventFormatting';
 import { teilenImBrowser } from '../../../services/systemDialoge';
 import { datumKurz } from '../../../utils/dateUtils';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebEinladung from '../web/leitung/WebEinladung';
 import {
   GUELTIGKEIT_TAGE,
   STANDARD_TAGE,
@@ -82,6 +84,10 @@ interface AdminInviteModalProps {
 const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) => {
   const { user, setSuccess, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
+  // Als Seite (/admin/settings/invite) zeigt der Browser ab 992 px zwei Spalten
+  // (web/leitung/WebEinladung.tsx); als Fenster aus "Mehr" (dismiss gesetzt)
+  // bleibt es bei der Darstellung der App. Zustand und Aktionen bleiben dieselben.
+  const breit = useBreitesLayout();
   const handleClose = () => {
     if (dismiss) {
       dismiss();
@@ -317,6 +323,36 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
       copyInviteLink();
     }
   };
+
+  if (breit && !dismiss) {
+    return (
+      <WebEinladung
+        jahrgaenge={jahrgaenge || []}
+        codes={existingInvites || []}
+        laedt={loading}
+        isOnline={isOnline}
+        jahrgangId={selectedJahrgang}
+        onJahrgang={(id) => {
+          setSelectedJahrgang(id);
+          setInviteCode(null);
+          setQrCodeDataUrl(null);
+        }}
+        gueltigTage={gueltigTage}
+        onGueltigTage={setGueltigTage}
+        erzeugt={generatingCode}
+        onErzeugen={generateInviteCode}
+        inviteCode={inviteCode}
+        qrUrl={qrCodeDataUrl}
+        verlaengertId={extendingInvite}
+        onQrZeigen={showExistingInviteQR}
+        onVerlaengern={waehleVerlaengerung}
+        onLoeschen={deleteInvite}
+        onKopieren={copyInviteLink}
+        onTeilen={shareInvite}
+        ablaufSatz={formatExpiryDate}
+      />
+    );
+  }
 
   return (
     <IonPage>

@@ -38,7 +38,9 @@ const STELLEN: Array<{
     vorher: '/bonus-points`, body)'
   },
   {
-    datei: 'src/components/admin/views/ChallengeLeitungView.tsx',
+    // Die Moderation steht seit der Web-Fassung der Challenges (03.10.2026)
+    // im Hook, den die Ansicht der App und die Web-Fassung gemeinsam nutzen.
+    datei: 'src/components/admin/views/useChallengeLeitung.ts',
     handlung: 'beitrag-moderiert',
     vorher: '/moderate`'
   },

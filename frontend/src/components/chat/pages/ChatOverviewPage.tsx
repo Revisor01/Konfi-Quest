@@ -3,6 +3,8 @@ import { useIonRouter } from '@ionic/react';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 import { useApp } from '../../../contexts/AppContext';
 import ChatOverview from '../ChatOverview';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebChat from '../web/WebChat';
 
 interface ChatOverviewRef {
   loadChatRooms: () => void;
@@ -26,6 +28,9 @@ const ChatOverviewPage: React.FC<ChatOverviewPageProps> = ({ onSelectRoom, selec
   const { user } = useApp();
   const router = useIonRouter();
   const overviewRef = useRef<ChatOverviewRef>(null);
+  // Browser ab 992 px: der Messenger mit Liste links und leerem Raum rechts.
+  // In den Apps und im schmalen Fenster bleibt die Uebersicht wie sie ist.
+  const breit = useBreitesLayout();
 
   const handleSelectRoom = (room: ChatRoomData) => {
     if (onSelectRoom) {
@@ -36,6 +41,8 @@ const ChatOverviewPage: React.FC<ChatOverviewPageProps> = ({ onSelectRoom, selec
       router.push(`${basePath}/chat/room/${room.id}`);
     }
   };
+
+  if (breit) return <WebChat roomId={null} />;
 
   return (
     <ChatOverview

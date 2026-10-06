@@ -71,13 +71,18 @@ describe('Detail-Routen und ihre Listen', () => {
       if (!r.param) continue;
       const basis = r.path.replace(/\/:[^/]+$/, '');
       // Chat-Raeume haengen an /chat, nicht an /chat/room — dort ist die
-      // "Liste" die Uebersicht eine Ebene hoeher. Ebenso der Schriftwechsel
-      // einer Gemeinde: /admin/support/post/gemeinde/:id haengt am
-      // Posteingang /admin/support/post (Pfad aus dem Vertrag
-      // docs/planung/support-mail.md); /post/gemeinde selbst leitet dorthin um.
-      const erwartet = basis.endsWith('/room')
-        ? basis.replace(/\/room$/, '')
-        : basis.endsWith('/support/post/gemeinde') ? basis.replace(/\/gemeinde$/, '') : basis;
+      // "Liste" die Uebersicht eine Ebene hoeher.
+      const erwartet = basis.endsWith('/room') ? basis.replace(/\/room$/, '') : basis;
+      // Die alte Adresse einer Anfrage (/admin/support/anfragen/:id) fuehrt zu
+      // ihrem Vorgang; ihre Liste ist keine Seite mehr, sondern eine Umleitung
+      // auf die Vorgaenge der Art „Neue Gemeinde" (docs/planung/support-vorgaenge.md,
+      // Entscheidung 7).
+      if (erwartet === '/admin/support/anfragen') {
+        expect(BAEUME[rolle].redirects, `${rolle}: ${erwartet} ohne Umleitung`).toContainEqual(
+          { from: '/admin/support/anfragen', to: '/admin/support/vorgaenge?art=neue_gemeinde' },
+        );
+        continue;
+      }
       expect(pfade, `${rolle}: ${r.path} ohne ${erwartet}`).toContain(erwartet);
     }
   });

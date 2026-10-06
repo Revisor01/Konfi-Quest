@@ -96,11 +96,11 @@ describe('Konto löschen (utils/kontoLoeschen.js)', () => {
   describe('Wächter: jede Fremdschlüssel-Spalte auf users hat eine Löschregel', () => {
     it('information_schema und LOESCHREGELN decken sich in beide Richtungen', async () => {
       expect(await pruefeLoeschregeln(db)).toEqual({ fehlend: [], veraltet: [] });
-      // Jede Fremdschluessel-Spalte ist geregelt (55 im Schema der Produktion samt Migration 191
-      // und 193; wrapped.test.js nimmt einer davon zeitweise den Fremdschluessel).
+      // Jede Fremdschluessel-Spalte ist geregelt (56 im Schema der Produktion samt Migration 191,
+      // 193 und 195; wrapped.test.js nimmt einer davon zeitweise den Fremdschluessel).
       const regeln = Object.keys(LOESCHREGELN);
       expect((await fremdschluesselAufUsers(db)).every((s) => regeln.includes(s))).toBe(true);
-      expect(regeln.length).toBe(55);
+      expect(regeln.length).toBe(56);
     });
 
     it('eine Regel für eine Spalte, die es nicht mehr gibt, fällt auf', async () => {

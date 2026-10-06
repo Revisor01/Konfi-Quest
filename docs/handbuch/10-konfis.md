@@ -39,6 +39,37 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
   Gemeindeleitung kann das Ranking unter
   [Mehr › Dashboard](30-leitung.md#verwaltung-nur-gemeindeleitung) ausschalten.
 
+### Im Browser die Startseite als Karten lesen
+
+Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
+992 Pixeln, siehe
+[Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
+— begrüßt dich die Startseite mit deinem Vornamen; darunter steht dein
+Jahrgang. Oben rechts öffnet **Punkte-Übersicht** dieselbe Aufstellung wie das
+Antippen der Ringe in der App. Ist dein Jahresrückblick freigegeben, steht über
+den Karten ein farbiges Feld mit **Rückblick ansehen** und **Hinweis
+ausblenden**.
+
+Die Karte **Deine Punkte** steht immer ganz oben: die Ringe, daneben je
+Punkteart ein Balken mit „8 von 10" und dem Abstand zum Ziel — „Noch 2 Punkte
+bis zum Ziel", dann „Ziel erreicht", darüber hinaus die Prozent und die Punkte
+darüber. Darunter stehen dein Level mit allen Stufen und der Weg zum nächsten.
+Ist eine Punkteart für deinen Jahrgang abgeschaltet, fehlen ihr Ring und ihr
+Balken.
+
+Darunter folgen die Karten, die deine Gemeinde einschaltet, in ihrer
+Reihenfolge: **Deine Konfirmation**, **Laufende Challenges**, **Dein
+Konfispruch**, **Deine Events**, **Tageslosung**, **Deine Badges** und **Deine
+Rangliste**. Die Rangliste zeigt dieselben Plätze wie die Karte in der App.
+Gibt es zu einer Karte nichts zu zeigen, entfällt sie — etwa die Challenges,
+wenn gerade keine läuft. Die Titel der Events und Challenges sind Links;
+**Alle Events →**, **Alle Challenges →** und **Alle Badges →** führen in den
+jeweiligen Bereich. Bei den Events steht rechts, wie nah das Event ist („in 2
+Tagen"), oder **Warteliste** mit deinem Platz; fällt ein Event aus, steht es als
+**Abgesagt** mit dem Grund da. Ein Klick auf ein Badge zeigt seine Einzelheiten
+in einem Fenster, das die Escape-Taste schließt. **Konfispruch ändern** und
+**Übersetzung ändern** öffnen dieselben Fenster wie in der App.
+
 ## Mit deinem Team schreiben
 
 ![Die Chat-Übersicht mit dem Chat des Jahrgangs und den Chats zu Events.](/docs/bilder/iphone/konfi-chat.png)
@@ -131,6 +162,46 @@ die Meldung an dein Team, das sie
 Drei Reiter zeigen den Stand: **Offen**, **Angerechnet**, **Abgelehnt**. Wird
 etwas abgelehnt, steht der Grund dabei.
 
+### Im Browser Events als Karten durchsuchen
+
+Im Browser heißt die Seite **Events**; oben stehen zwei Reiter, **Events** und
+**Aktivitäten**. Beide sind Links, und der Reiter steht in der Adresse. Rechts
+oben stehen **Aktualisieren** und, bei den Events, **Legende** — sie erklärt die
+Farben und Zeichen — und **QR-Code scannen**, bei den Aktivitäten **Aktivität
+melden**.
+
+Die Events stehen als **Karten im Raster**. Eine Karte nennt den Status als
+Marke — „Angemeldet", „Warteliste (2)", „Abgesagt" —, Datum, Uhrzeit und Ort,
+was du mitbringen sollst, die Plätze („12/30") und die Punkte; die ganze Karte
+ist ein Link auf das Event. Darüber wählst du **Anstehend**, **Meine**,
+**Konfirmation** oder **Pflicht**; die Zahl am Knopf zählt die Events darunter,
+zuerst steht **Meine** offen. **Anstehend** ist die Liste, die in der App
+**Alle** heißt: kommende Events ohne die Konfirmation. **Meine** zeigt jedes
+Event, zu dem du dich gemeldet hast — auch von der Warteliste, selbst
+abgemeldete und abgesagte. Die Suche findet Name, Ort und Beschreibung; Umlaute
+darfst du umschreiben („fruehling" findet „Frühling"), die Escape-Taste leert
+das Feld.
+
+Das Event selbst hat zwei Spalten. Links stehen die Zahlen — **Frei**,
+**Punkte** und **Dabei** —, die Angaben, bei denen der Ort ein Link auf die
+Karte ist, und die Beschreibung. Rechts steht **Bist du dabei?** mit dem einen
+Knopf, der gerade gilt: **Anmelden**, **Warteliste offen**, **Abmelden**, **Von
+der Warteliste abmelden** oder **Wieder anmelden**. Wann welcher Knopf da ist,
+ist dasselbe wie in der App, siehe [Events](#events); geht keine Anmeldung,
+steht statt des Knopfes der Grund da. Darunter stehen **Einchecken** — es öffnet
+den QR-Scanner, solange du angemeldet und noch nicht verbucht bist — und die
+Namen der Teilnehmenden. Oben rechts öffnet **Chat** den Event-Chat, wenn es
+einen gibt; **Alle Events** führt zurück in die Liste.
+
+Unter **Aktivitäten** stehen deine gemeldeten Aktivitäten als Tabelle: die
+Aktivität mit deinem Kommentar, das Datum mit Hinweis auf das Foto, die Punkte,
+der Status und rechts **Ansehen**. **Offen**, **Angerechnet**, **Abgelehnt** und
+**Alle** filtern nach dem Stand, zuerst steht **Offen** da; bei einer
+abgelehnten Aktivität steht der Grund in der Zeile. **Ansehen** öffnet dasselbe
+Fenster wie in der App. Löschen lässt sich nur eine offene Meldung, nach einer
+Rückfrage. Was ohne Netz noch in der Warteschlange liegt, steht über der
+Tabelle.
+
 ## Deine Badges ansehen
 
 ![Die Badges-Seite: oben, wie viele erreicht sind, darunter die Gruppen; erreichte Badges tragen einen grünen Haken, offene bleiben blass.](/docs/bilder/iphone/konfi-abzeichen.png)
@@ -138,6 +209,21 @@ etwas abgelehnt, steht der Grund dabei.
 Erreichte Badges tragen einen grünen Haken, offene bleiben blass. Geheime
 Badges siehst du erst, wenn du sie hast. Welche Bedingungen es gibt, steht
 im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
+
+### Im Browser Badges filtern und ansehen
+
+Im Browser zeigen vier Kacheln oben, wo du stehst: **Erreicht** (von den
+sichtbaren Badges), **Geheim** (nur, wenn es geheime Badges gibt), **In Arbeit**
+und **Geschafft** in Prozent. Darunter suchst du in Name und Beschreibung und
+filterst mit **Alle**, **Erhalten**, **Offen** und **In Arbeit** — die Zahl am
+Knopf zählt die Badges — oder wählst eine **Kategorie**. Die Badges stehen je
+Kategorie in einer Karte mit Fortschrittsbalken („2 von 3 erreicht").
+
+Jedes Badge nennt seinen Stand: **Erreicht am** mit dem Datum, bei einem
+begonnenen Badge den Fortschritt („19 / 30") oder **Noch nicht erreicht**.
+Erreichte geheime Badges sind gekennzeichnet. Ein Klick öffnet die
+Einzelheiten in einem Fenster — Beschreibung, Stand, Datum und, wo ein Zeitraum
+zählt, welcher —, das die Escape-Taste schließt.
 
 ## Dein Profil öffnen
 
@@ -164,3 +250,28 @@ im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
 Ganz unten kannst du dich abmelden oder dein Konto löschen; was dabei alles
 verschwindet, steht unter [Ein Konto löschen](05-rollen.md#ein-konto-loeschen).
 Wie du dich in der App bewegst, steht im Kapitel [Die App bedienen](03-bedienung.md).
+
+### Im Browser das Profil in zwei Spalten nutzen
+
+Im Browser öffnest du das Profil über **Profil** unten in der Leiste. Die Seite
+heißt **Mein Profil** und hat zwei Spalten. Links stehen deine Angaben — Name,
+Jahrgang, Benutzername, E-Mail-Adresse und „Dabei seit" —, deine Konfirmation
+mit Datum, Uhrzeit und Ort, sobald das Datum feststeht (der Ort ist ein Link auf
+die Karte), die **Konto-Einstellungen** und das **Konto**. Die Einstellungen sind
+Zeilen mit je einem Knopf: App-Tour, E-Mail-Adresse, Passwort,
+Bibelübersetzung, Benachrichtigungen und Medien-Cache; jeder Knopf öffnet
+dasselbe Fenster wie in der App. **Abmelden** und **Konto löschen** stehen im
+Kasten **Konto**; was beim Löschen passiert, steht unter
+[Ein Konto löschen](05-rollen.md#ein-konto-loeschen).
+
+Rechts stehen, falls du in eine weitere Gemeinde eingeladen bist, die Einladung
+mit **Annehmen** und **Ablehnen**, dann Kacheln für **Punkte gesamt** (mit
+Gottesdienst und Gemeinde), **Badges**, **Challenges** (gesammelte Stempel),
+**Events** und **Aktivitäten** — die Kacheln ab **Badges** sind Links in den
+jeweiligen Bereich —, die Karte **So setzen sich deine Punkte zusammen** mit dem
+Anteil von Gottesdienst und Gemeinde und, wenn es welche gibt, dem Bonus, und
+der **Punkte-Verlauf**. Er ist die Punkte-Übersicht als Tabelle mit Datum,
+„Wofür", Art und Punkten, zuerst die neuesten acht; **Alle … Einträge
+anzeigen** klappt den Rest auf, der Knopf **Punkte-Übersicht** öffnet dasselbe
+Fenster wie in der App. Darunter stehen, wenn es welche gibt, **Meine
+Rückblicke**, jeder mit **Ansehen**.

@@ -564,6 +564,12 @@ function createApp(db, options = {}) {
   // (routes/anfragen.js). Bearbeitet werden die Anfragen unter /api/support.
   app.use('/api/anfragen', require('./routes/anfragen')(db));
 
+  // Support-Formular auf konfi-quest.de (Simon, 03.10.2026) -- ebenfalls
+  // OEFFENTLICH, ohne Anmeldung, gebaut wie das Anfrageformular: Honigtopf,
+  // Grenzen je Client-Adresse und je E-Mail-Adresse, Einwilligung
+  // (routes/anliegen.js). Jedes Anliegen wird ein Vorgang unter /api/support.
+  app.use('/api/anliegen', require('./routes/anliegen')(db));
+
   app.use('/api/auth', require('./routes/auth')(db, verifyToken, transporterOrDummy, smtpConfig, {
     authLimiter: rateLimiters.authLimiter,
     registerLimiter: rateLimiters.registerLimiter,

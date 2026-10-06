@@ -10,12 +10,12 @@ import { IonIcon } from '@ionic/react';
 import { ICON_SENDEN_GEFUELLT } from '../../shared/icons';
 import { POSTFACH_INFO, SERVER_AUS_HINWEIS, empfaengerText, sendeHinweisText } from '../../../utils/supportMail';
 import { useAntwortEditor, type AntwortFormularProps } from '../useAntwortEditor';
-import WebAuswahl from './WebAuswahl';
-import WebFeld from './WebFeld';
-import WebHinweis from './WebHinweis';
-import WebKnopf from './WebKnopf';
-import WebPill from './WebPill';
-import WebTextfeld from './WebTextfeld';
+import WebAuswahl from '../../web/WebAuswahl';
+import WebFeld from '../../web/WebFeld';
+import WebHinweis from '../../web/WebHinweis';
+import WebKnopf from '../../web/WebKnopf';
+import WebPill from '../../web/WebPill';
+import WebTextfeld from '../../web/WebTextfeld';
 
 const WebAntwortEditor: React.FC<AntwortFormularProps> = (props) => {
   const {

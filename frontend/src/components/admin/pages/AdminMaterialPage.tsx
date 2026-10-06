@@ -52,6 +52,8 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { darfMaterialBearbeiten } from '../../../utils/materialRechte';
 import { materialStats } from '../../../utils/materialStats';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebMaterialVerwaltung from '../web/leitung/WebMaterialVerwaltung';
 
 
 interface Material {
@@ -84,6 +86,9 @@ const AdminMaterialPage: React.FC = () => {
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebMaterialVerwaltung.tsx);
+  // Daten, Filter, Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   const [search, setSearch] = useState('');
   // Der Jahrgangs-Filter kennt drei Zustaende: alle, ein Jahrgang, oder
@@ -206,6 +211,29 @@ const AdminMaterialPage: React.FC = () => {
     }
   };
 
+  if (breit) {
+    return (
+      <WebMaterialVerwaltung
+        alle={materials || []}
+        angezeigt={filteredMaterials}
+        jahrgaenge={jahrgaenge || []}
+        laedt={loading}
+        ohneJahrgang={ohneJahrgang}
+        suche={search}
+        onSuche={setSearch}
+        filter={nurGlobal ? 'global' : (activeJahrgangId === undefined ? 'alle' : String(activeJahrgangId))}
+        onFilter={(wert) => {
+          setNurGlobal(wert === 'global');
+          setActiveJahrgangId(wert === 'alle' || wert === 'global' ? undefined : Number(wert));
+        }}
+        darfBearbeiten={(material) => darfMaterialBearbeiten(user, material)}
+        onAnlegen={openCreateModal}
+        onOeffnen={openEditModal}
+        onLoeschen={handleDelete}
+        pageRef={pageRef}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

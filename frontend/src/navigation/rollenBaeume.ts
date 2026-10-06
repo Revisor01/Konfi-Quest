@@ -181,20 +181,24 @@ const TeamerBadgesPage = faul(() => import('../components/teamer/pages/TeamerBad
 const TeamerKonfiStatsPage = faul(() => import('../components/teamer/pages/TeamerKonfiStatsPage'));
 const TeamerChallengesPage = faul(() => import('../components/teamer/pages/TeamerChallengesPage'));
 // Support-Ansicht der Web-Version (03.10.2026, docs/planung/web-version.md):
-// Uebersicht, Anfragen, eine Anfrage, Struktur, Support-Konten. Dazu gehoeren
-// die vorhandenen Seiten Gemeinden und Betrieb. Die Seiten zeigen sich nur
-// Konten mit Super-Admin-Recht (components/support/SupportBausteine.tsx).
+// Uebersicht, Struktur, Support-Konten. Dazu gehoeren die vorhandenen Seiten
+// Gemeinden und Betrieb. Die Seiten zeigen sich nur Konten mit Super-Admin-Recht
+// (components/support/SupportBausteine.tsx).
 const SupportUebersichtPage = faul(() => import('../components/support/SupportUebersichtPage'));
-const SupportAnfragenPage = faul(() => import('../components/support/SupportAnfragenPage'));
-const SupportAnfrageDetailPage = faul(() => import('../components/support/SupportAnfrageDetailPage'));
 const SupportStrukturPage = faul(() => import('../components/support/SupportStrukturPage'));
 const SupportKontenPage = faul(() => import('../components/support/SupportKontenPage'));
 // Support-Mail (03.10.2026, docs/planung/support-mail.md): Posteingang, eine
-// Mail, Schriftwechsel einer Gemeinde, Textbausteine.
+// Mail, Textbausteine.
 const SupportPosteingangPage = faul(() => import('../components/support/SupportPosteingangPage'));
 const SupportPostDetailPage = faul(() => import('../components/support/SupportPostDetailPage'));
-const SupportGemeindePostPage = faul(() => import('../components/support/SupportGemeindePostPage'));
 const SupportTextbausteinePage = faul(() => import('../components/support/SupportTextbausteinePage'));
+// Vorgaenge (03.10.2026, docs/planung/support-vorgaenge.md): jedes Anliegen --
+// Anfrage, Formular, Mail, vom Support angelegt -- ist ein Vorgang. Die
+// Anfrage und der Schriftwechsel einer Gemeinde haben keine eigenen Seiten
+// mehr; ihre alten Adressen fuehren in die Vorgaenge (unten).
+const SupportVorgaengePage = faul(() => import('../components/support/SupportVorgaengePage'));
+const SupportVorgangDetailPage = faul(() => import('../components/support/SupportVorgangDetailPage'));
+const SupportAnfrageWeiterleitungPage = faul(() => import('../components/support/SupportAnfrageWeiterleitungPage'));
 
 // Die Routen der Support-Ansicht, in zwei Baeumen gleich: im Baum super_admin
 // (Support-Konto ohne Gemeinde) und im Baum der Leitung, weil Simons Konto --
@@ -202,20 +206,24 @@ const SupportTextbausteinePage = faul(() => import('../components/support/Suppor
 // "Mehr" erreicht (AdminSettingsPage). Andere Leitungen sehen keinen Weg
 // dorthin; wer die Adresse eintippt, bekommt den Hinweis "Nur fuer den
 // Support", und der Server antwortet ohnehin 403 (requireSuperAdmin).
-// Der Schriftwechsel einer Gemeinde haengt am Posteingang
-// (/admin/support/post/gemeinde/:id, Pfad aus docs/planung/support-mail.md);
-// ohne Kennung fuehrt die Adresse dorthin statt auf eine Mail „gemeinde".
+// Alte Adressen (docs/planung/support-vorgaenge.md, Entscheidung 7): Die Liste
+// der Anfragen ist ein Filter der Vorgaenge (Art „Neue Gemeinde"), der
+// Schriftwechsel einer Gemeinde die Liste ihrer Vorgaenge -- mit „Schreiben".
+// Eine einzelne Anfrage (/admin/support/anfragen/:id) ist eine Seite unter
+// SUPPORT_ROUTEN: Sie sucht den Vorgang der Anfrage und ersetzt sich durch ihn.
+// /post/gemeinde ohne Kennung fuehrt in den Posteingang statt auf eine Mail
+// „gemeinde".
 const SUPPORT_UMLEITUNGEN: RollenBaum['redirects'] = [
+  { from: '/admin/support/anfragen', to: '/admin/support/vorgaenge?art=neue_gemeinde' },
+  { from: '/admin/support/post/gemeinde/:id', to: '/admin/support/vorgaenge?gemeinde=:id' },
   { from: '/admin/support/post/gemeinde', to: '/admin/support/post' },
 ];
 
 const SUPPORT_ROUTEN: RollenBaum['routes'] = [
   { path: '/admin/support', page: SupportUebersichtPage },
-  { path: '/admin/support/anfragen/:id', page: SupportAnfrageDetailPage, param: 'id', propName: 'anfrageId' },
-  { path: '/admin/support/anfragen', page: SupportAnfragenPage },
-  // /post/gemeinde/:id vor /post/:id -- sonst laese die Mail-Seite
-  // "gemeinde" als Kennung.
-  { path: '/admin/support/post/gemeinde/:id', page: SupportGemeindePostPage, param: 'id', propName: 'organizationId' },
+  { path: '/admin/support/vorgaenge/:id', page: SupportVorgangDetailPage, param: 'id', propName: 'vorgangId' },
+  { path: '/admin/support/vorgaenge', page: SupportVorgaengePage },
+  { path: '/admin/support/anfragen/:id', page: SupportAnfrageWeiterleitungPage, param: 'id', propName: 'anfrageId' },
   { path: '/admin/support/post/:id', page: SupportPostDetailPage, param: 'id', propName: 'nachrichtId' },
   { path: '/admin/support/post', page: SupportPosteingangPage },
   { path: '/admin/support/bausteine', page: SupportTextbausteinePage },
@@ -282,6 +290,19 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
     ],
     // Unten in der Seitenleiste der Web-Version, ueber „Abmelden".
     profil: { path: '/admin/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
+    // Seiten ohne eigenen Eintrag in der Leiste: Aktivitaeten sind ein Reiter
+    // von Mitmachen, der Rest wird ueber „Mehr" erreicht. Gemeinden und
+    // Betrieb haben im Konto mit Super-Admin-Recht eigene Eintraege (die
+    // gehen vor).
+    zugehoerig: [
+      { von: '/admin/activities', zu: '/admin/events' },
+      { von: '/admin/users', zu: '/admin/settings' },
+      { von: '/admin/badges', zu: '/admin/settings' },
+      { von: '/admin/material', zu: '/admin/settings' },
+      { von: '/admin/wrapped', zu: '/admin/settings' },
+      { von: '/admin/metrics', zu: '/admin/settings' },
+      { von: '/admin/organizations', zu: '/admin/settings' },
+    ],
   },
 
   teamer: {

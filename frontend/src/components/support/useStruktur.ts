@@ -16,6 +16,7 @@ import api from '../../services/api';
 import type { Kirchenkreis, Landeskirche } from '../../types/support';
 import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
+import { meldeSupportGeaendert, useSupportGeaendert } from '../../utils/supportAktualisieren';
 
 export function useStruktur() {
   const { setError, setSuccess, isOnline } = useApp();
@@ -52,6 +53,8 @@ export function useStruktur() {
   }, []);
 
   useEffect(() => { void holen(); }, [holen]);
+  // Auch von anderer Stelle (Kirchenkreis aus einer Anfrage angelegt, Fenster wieder da).
+  useSupportGeaendert(holen);
 
   const laden = useCallback(() => {
     setLaedt(true);
@@ -66,7 +69,8 @@ export function useStruktur() {
     try {
       await aktion();
       setSuccess(erfolg);
-      await holen();
+      // Uebersicht und Gemeinden zeigen die Struktur mit: sie laden mit.
+      meldeSupportGeaendert();
       return true;
     } catch (err) {
       setError(fehlerText(err, ersatz));

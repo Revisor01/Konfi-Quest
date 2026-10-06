@@ -22,6 +22,12 @@
 //   - SUPPORT-MAIL (routes/supportMail.js, hier eingehaengt): Posteingang,
 //     Verlauf und Antworten zu Anfragen und Gemeinden, Textbausteine,
 //     Fusszeile (docs/planung/support-mail.md).
+//   - VORGAENGE (routes/supportVorgaenge.js, hier eingehaengt): jede Anfrage,
+//     Mail und jedes Anliegen aus dem Formular der Homepage ist ein Vorgang
+//     mit Art, Bereich, Dringlichkeit, Status, Gemeinde und Verlauf; Liste,
+//     Detail, Einordnen, Antworten, Archivieren, Loeschen, Sammelaktionen
+//     (docs/planung/support-vorgaenge.md). Die Routen der Anfragen oben
+//     bleiben; ihr Status und der Status des Vorgangs gehen gemeinsam.
 //   - UEBERSICHT und GEMEINDEN (routes/supportUebersicht.js, hier
 //     eingehaengt): das Dashboard der Web-Ansicht und die Liste der Gemeinden
 //     mit ihrer Gemeindeleitung (docs/planung/support-web.md).
@@ -50,17 +56,13 @@ const {
 } = require('../utils/gemeindeSystemname');
 const { kirchenkreisIdGueltig } = require('../utils/kirchenkreisZuordnung');
 const { zaehleKontenJeGemeinde } = require('../utils/orgMitglieder');
-const { UNGELESEN_JE_ANFRAGE_SQL } = require('../utils/mailNachrichten');
+const { ANFRAGE_SPALTEN } = require('../utils/mailNachrichten');
+const { vorgangFolgtAnfrage } = require('../utils/supportVorgaenge');
 
 const STATUS = ['neu', 'in_arbeit', 'angelegt', 'abgelehnt'];
 
-// Die Felder einer Anfrage in der Antwort (Vertrag der Pakete, 03.10.2026).
-// ungelesen (seit 03.10.2026, Support-Mail, additiv): ungelesene eingehende
-// Mails zu dieser Anfrage (docs/planung/support-mail.md).
-const ANFRAGE = `a.id, a.gemeinde, a.kirchenkreis, a.landeskirche, a.kontakt_name, a.funktion,
-  a.email, a.mobil, a.anzahl_konfis, a.anzahl_teamer, a.nachricht, a.status, a.notiz,
-  a.organization_id, a.created_at, a.updated_at, a.wunsch_lizenz,
-  ${UNGELESEN_JE_ANFRAGE_SQL} AS ungelesen`;
+// Die Felder einer Anfrage in der Antwort: utils/mailNachrichten.js, ANFRAGE_SPALTEN.
+const ANFRAGE = ANFRAGE_SPALTEN;
 
 const NICHT_GEFUNDEN = { error: 'Anfrage nicht gefunden' };
 const MELDUNG_SCHON_ANGELEGT = 'Aus dieser Anfrage ist schon eine Gemeinde entstanden.';
@@ -95,6 +97,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
   // Uebersicht und Gemeindeliste -- ebenso (nur Super-Admin).
   router.use(require('./supportUebersicht')(db));
+
+  // Vorgaenge (docs/planung/support-vorgaenge.md) -- ebenso (nur Super-Admin).
+  router.use(require('./supportVorgaenge')(db));
 
   const id = param('id').isInt({ min: 1 }).withMessage('Ungültige ID');
   const nameFeld = (feld = 'name') => body(feld)
@@ -172,6 +177,9 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
          RETURNING ${ANFRAGE}`,
         [anfrageId, hat('status'), hat('status') ? req.body.status : 'neu', hat('notiz'), notiz, req.user.id]
       );
+      // Der Vorgang der Anfrage folgt: neu/in Arbeit bleiben offen, angelegt
+      // und abgelehnt sind erledigt (Archiv); die Notiz folgt ebenfalls.
+      await vorgangFolgtAnfrage(client, anfrageId);
       await client.query('COMMIT');
       res.json(anfrage);
     } catch (err) {
@@ -282,6 +290,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
          WHERE id = $1`,
         [anfrageId, ergebnis.organizationId, req.user.id]
       );
+      // Der Vorgang der Anfrage ist erledigt (Archiv) und kennt die Gemeinde.
+      await vorgangFolgtAnfrage(client, anfrageId);
       await client.query('COMMIT');
       antwort = { organization_id: ergebnis.organizationId, admin_id: ergebnis.adminId };
     } catch (err) {

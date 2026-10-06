@@ -36,6 +36,8 @@ import { getIconFromString } from '../../utils/badgeIcons';
 import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteria';
 import type { BadgeKriteriumExtra } from '../../utils/badgeCriteria';
 import { punkteText } from '../../utils/punkteText';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebAdminBadges, { type WebBadgeFilter } from './web/start/WebAdminBadges';
 
 
 
@@ -71,6 +73,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
+  // Browser ab 992 px: die Web-Fassung (web/start/WebAdminBadges) als Tabelle.
+  const breit = useBreitesLayout();
 
   // Aktivitaetsnamen zum Aufloesen der IDs aus criteria_extra: ohne sie stand
   // in der Liste "Aktivität #58", und mehrere solche Badges sahen identisch
@@ -234,6 +238,25 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   };
 
 
+
+  if (breit) {
+    return (
+      <WebAdminBadges
+        badges={badges}
+        gefiltert={filteredAndSortedBadges}
+        suche={searchTerm}
+        onSuche={setSearchTerm}
+        filter={selectedFilter as WebBadgeFilter}
+        onFilter={setSelectedFilter}
+        gruppe={targetRole}
+        onGruppe={onRoleChange}
+        kriteriumText={getCriteriaTypeText}
+        kriteriumDetail={getCriteriaDetail}
+        onBearbeiten={onSelectBadge}
+        onLoeschen={onDeleteBadge}
+      />
+    );
+  }
 
   return (
     <>

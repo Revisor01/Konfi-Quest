@@ -1,18 +1,20 @@
 # Die Support-Ansicht benutzen
 
 Für den Betrieb von Konfi Quest: wer die Support-Ansicht sieht, wie man
-hinkommt und wie man darin Anfragen bearbeitet und beantwortet, Mails
-zuordnet, Gemeinden anlegt, die Struktur aus Landeskirchen und Kirchenkreisen
-pflegt und Support-Konten verwaltet.
+hinkommt und wie man darin Vorgänge bearbeitet und beantwortet, Mails
+einsortiert, archiviert und löscht, Gemeinden anlegt, die Struktur aus
+Landeskirchen und Kirchenkreisen pflegt und Support-Konten verwaltet.
 Grundlage sind Simons Entscheidungen vom 02. und 03.10.2026
 ([planung/web-version.md](../planung/web-version.md), Punkt 2 bis 7 und 10
-bis 15). Belegt am Code (`frontend/src/components/support/`,
-`frontend/src/navigation/rollenBaeume.ts` und `supportMenue.ts`, das Formular in
-`frontend/public/landing.html`) und an den Tests unter
+bis 15; [planung/support-vorgaenge.md](../planung/support-vorgaenge.md)).
+Belegt am Code (`frontend/src/components/support/`,
+`frontend/src/navigation/rollenBaeume.ts` und `supportMenue.ts`, die Formulare in
+`frontend/public/landing.html`, `backend/routes/supportVorgaenge.js`,
+`backend/utils/mailZuordnung.js`) und an den Tests unter
 `frontend/src/__tests__/components/support/`,
-`frontend/src/__tests__/navigation/supportBaum.test.tsx` und
-`frontend/src/__tests__/betrieb/anfrageFormular.test.ts`. Die Routen dahinter
-stehen in der API-Doku.
+`frontend/src/__tests__/navigation/supportBaum.test.tsx`,
+`frontend/src/__tests__/betrieb/anfrageFormular.test.ts` und
+`anliegenFormular.test.ts`. Die Routen dahinter stehen in der API-Doku.
 
 ## Wer sie sieht und wie man hinkommt
 
@@ -25,10 +27,11 @@ Support", und der Server antwortet ohnehin mit 403.
 | Support-Konto ohne Gemeinde ([support-konto.md](support-konto.md)) | Anmelden auf konfi-quest.de im Browser; die Startseite ist die **Übersicht** (`/admin/support`). Auf breiten Bildschirmen stehen die Bereiche in der Leiste links, auf schmalen führt die Übersicht zu allen Bereichen und trägt unten **Abmelden**. |
 | Gemeindeleitung mit Super-Admin-Merkmal (Simons Konto) | Im Browser ab breitem Fenster stehen die Bereiche der Support-Ansicht in der Leiste links unter den eigenen (Gruppen Support, Verwaltung, Betrieb). In den Apps und im schmalen Fenster: Reiter **„Mehr"** › oben rechts das **Headset-Symbol** („Support-Ansicht öffnen"). Daneben bleibt das Puls-Symbol zum Betrieb. |
 
-Die Bereiche: **Übersicht**, **Anfragen**, **Gemeinden**, **Struktur**,
-**Support-Konten**, **Betrieb**. Gemeinden und Betrieb sind die bekannten
-Seiten; eine einzelne Gemeinde öffnet die Adresse
-`/admin/organizations?gemeinde=<id>` direkt.
+Die Bereiche: **Übersicht**, **Vorgänge**, **Posteingang**, **Gemeinden**,
+**Struktur**, **Support-Konten**, **Textbausteine**, **Betrieb**. Gemeinden und
+Betrieb sind die bekannten Seiten; eine einzelne Gemeinde öffnet die Adresse
+`/admin/organizations?gemeinde=<id>` direkt. Alte Adressen der Anfragen
+(`/admin/support/anfragen/<id>`) führen zum Vorgang der Anfrage.
 
 ## Zwei Gesichter: Browser und App
 
@@ -45,14 +48,14 @@ Die Übersicht im Browser liest `GET /api/support/uebersicht`:
 
 - **Kennzahlen:** Gemeinden (Lizenz, Testphase, unbegrenzt, gesperrt — die
   vier ergeben zusammen die Gesamtzahl), Konfis, Team, aktive Konten in 30
-  Tagen (je Konto einmal), offene Anfragen (neu oder in Arbeit) und
-  ungelesene Mails.
+  Tagen (je Konto einmal), offene Vorgänge und der Posteingang (dieselbe
+  Zahl wie an der Leiste).
 - **Entwicklung über zwölf Monate:** neue Gemeinden, neue Konten (Konfi und
   Team), Konten gesamt am Monatsende und neue Anfragen.
 - **Aktivität über zwölf Wochen:** eingereichte Anträge, Anmeldungen zu
   Terminen (auch die automatischen bei Pflichtterminen) und Chat-Nachrichten.
-- **Neueste Anfragen und Mails** (je fünf), **Testphasen, die in den nächsten
-  14 Tagen enden**, und Gemeinden je Landeskirche.
+- **Neueste offene Vorgänge und Mails** (je fünf), **Testphasen, die in den
+  nächsten 14 Tagen enden**, und Gemeinden je Landeskirche.
 
 Monate und Wochen rechnen in deutscher Zeit. Konten zählen wie in der
 Statistik: nicht gelöscht, nicht gesperrt, Support-Konten ohne Gemeinde
@@ -75,15 +78,99 @@ Gezählt werden Konten je Gemeinde und Rolle, ohne Namen. Wer in zwei Gemeinden
 mitarbeitet, zählt in beiden — die Summe ist die Zahl der Mitgliedschaften,
 nicht der Personen. Der Stand steht unter dem Baum.
 
+## Mit Vorgängen arbeiten
+
+Jedes Anliegen ist ein **Vorgang** mit Nummer: eine Anfrage einer neuen
+Gemeinde, ein Anliegen aus dem Support-Formular, eine Mail, die einen neuen
+Vorgang eröffnet, oder ein Vorgang, den der Support selbst anlegt (Spalte
+`quelle`: `anfrage`, `formular`, `mail`, `support`). Jeder Vorgang trägt:
+
+| Feld | Werte |
+|---|---|
+| Art | Neue Gemeinde, Frage zur Bedienung, Fehler, Wunsch oder Idee, Zugang und Konten, Lizenz und Abrechnung, Datenschutz, Sonstiges |
+| Bereich | Konfis, Events, Punkte und Anträge, Challenges, Chat, Badges, Material, Konten und Einladungen, Einstellungen, Sonstiges — oder keiner |
+| Dringlichkeit | Normal, Dringend |
+| Status | Neu, In Arbeit, Wartet, Erledigt |
+| Gemeinde | sobald bekannt; sonst „Nicht zugeordnet“ mit der Angabe aus dem Formular |
+
+Die Listen stehen einmal im Server (`backend/utils/supportVorgaenge.js`) und
+einmal in der Oberfläche (`frontend/src/utils/supportVorgaenge.ts`); ein
+CHECK in Migration 195 hält die Datenbank dazu.
+
+**Liste** (Bereich **Vorgänge**): im Browser eine Tabelle mit Nummer, Betreff,
+Art, Gemeinde, Status, Dringlichkeit, letzter Aktivität und ungelesenen
+Mails; in der App eine Liste. Filter **Offen** (Neu, In Arbeit, Wartet),
+**Neu**, **In Arbeit**, **Wartet** und **Archiv** (darin die erledigten),
+dazu Art, Gemeinde und eine Suche über Betreff, Beschreibung, Kontakt,
+Gemeinde und die Mails des Vorgangs; „#12“ findet Vorgang 12. Im Browser
+lassen sich mehrere Zeilen wählen und gemeinsam archivieren,
+wiederherstellen, löschen oder auf einen Status setzen. **Neuer Vorgang**
+legt einen an — mit Text geht zugleich eine Mail von support@ hinaus, an eine
+der Adressen der Gemeinde (Gemeindeleitung und Leitung, wie im Schriftwechsel
+der Gemeinde; ohne Wahl die erste); scheitert der Versand, entsteht kein
+Vorgang. Antworten gehen nur an Adressen, die zum Vorgang gehören:
+Absender seiner Mails, Kontakt aus dem Formular, Adresse der Anfrage und die
+Adressen der Gemeinde.
+
+**Ein Vorgang** zeigt links den Verlauf (Text aus dem Formular, die Mails,
+die Antwort mit Textbausteinen), rechts **Einordnen** (Art, Bereich,
+Dringlichkeit, Status, Gemeinde — sofort gespeichert), den Kontakt, die
+Gemeinde mit ihrer Gemeindeleitung, bei einer Anfrage deren Angaben und
+**Gemeinde anlegen** und die interne Notiz. Wechselt die Gemeinde, gehen die
+Mails des Vorgangs mit.
+
+**Archivieren und löschen.** Der Status **Erledigt** archiviert den Vorgang;
+er verschwindet aus „Offen“ und steht unter „Archiv“. **Archivieren** legt
+einen Vorgang auch ohne Erledigt ins Archiv; er behält seinen Status.
+**Wiederherstellen** holt ihn zurück, einen erledigten mit dem Status In
+Arbeit. Kommt zu einem archivierten Vorgang eine neue Mail, holt der Server
+ihn ebenso mit In Arbeit zurück. **Löschen** (mit Rückfrage)
+entfernt den Vorgang samt seinen Mails aus Konfi Quest; im Postfach bleiben
+sie. Ein Vorgang einer Anfrage geht mit der Anfrage.
+
+**Rote Zahlen:** am Bereich **Vorgänge** die nicht archivierten Vorgänge, die
+neu sind oder eine ungelesene Mail haben; am **Posteingang** die ungelesenen
+Mails, die keinem Vorgang zugeordnet sind (`GET /api/support/mail/zaehler`,
+Felder `vorgaenge` und `posteingang`). Die Leiste holt sie alle zwei Minuten.
+
+**Aktualisieren.** Jede Aktion — Status, Einordnen, Lesen, Einsortieren,
+Archivieren, Löschen — meldet sich bei allen offenen Listen, Zahlen und der
+Übersicht, die dann neu laden; ebenso beim Zurückkehren auf eine Seite und in
+den Tab (`frontend/src/utils/supportAktualisieren.ts`).
+
+## Ein Anliegen über das Support-Formular
+
+Auf konfi-quest.de steht unter **„Hilfe und Support“** (`#support`) das
+Formular für Gemeinden, die Konfi Quest schon nutzen; unter „Mehr“ führt
+„Hilfe und Support“ für Gemeindeleitung und Leitung dorthin. Pflicht sind
+**Gemeinde, Name, E-Mail-Adresse, Art, Betreff, Beschreibung** und die
+Einwilligung; bei Frage, Fehler und Wunsch auch der **Bereich**. Funktion ist
+freiwillig, die Dringlichkeit steht auf Normal. Die Art „Neue Gemeinde“ gibt
+es hier nicht — dafür ist das Anfrageformular daneben.
+
+Der Server (`POST /api/anliegen`, ohne Anmeldung) legt einen Vorgang mit
+Quelle `formular` und Status **Neu** an und antwortet `201 { ok: true }` —
+ohne Nummer. Gehört die Adresse zu genau einem aktiven Konto (nicht Konfi)
+mit Gemeinde, ist der Vorgang gleich dieser Gemeinde zugeordnet, sonst ordnet
+der Support von Hand zu. Danach geht von support@ eine Bestätigung mit festem
+Text hinaus, die nur die Nummer nennt, mit `[Vorgang N]` im Betreff; eine
+Antwort darauf landet im Vorgang. Grenzen gegen Missbrauch und das
+unsichtbare Feld `website` wie beim Anfrageformular (unten). Was gespeichert
+wird und wie lange, steht in der Datenschutzerklärung, Abschnitt 9e.
+
 ## Eine Anfrage kommt an
 
-Die verantwortliche Person einer Gemeinde füllt das Formular auf
+Die verantwortliche Person einer neuen Gemeinde füllt das Anfrageformular auf
 konfi-quest.de aus. Pflicht sind **Gemeinde, Name und E-Mail-Adresse** und
 das Häkchen zur Einwilligung; dazu können Kirchenkreis, Landeskirche,
 Funktion, Mobilnummer, die ungefähre Zahl der Konfis und der Teamer:innen, die
 **gewünschte Lizenz** und eine Nachricht kommen. Der Server (`POST /api/anfragen`, ohne Anmeldung)
 speichert die Anfrage mit dem Status **neu** und dem Zeitpunkt der
-Einwilligung.
+Einwilligung und legt dazu einen Vorgang der Art **Neue Gemeinde** an.
+Anfrage und Vorgang teilen Notiz und Status: Neu und In Arbeit gelten für
+beide, Wartet ist für die Anfrage In Arbeit; Erledigt ist für eine noch nicht
+angelegte Anfrage **Abgelehnt** (dann gilt deren Frist von 180 Tagen,
+unten). Angelegt und Abgelehnt der Anfrage sind für den Vorgang Erledigt.
 
 Danach gehen zwei Mails hinaus:
 
@@ -119,9 +206,8 @@ gegen Missbrauch, unsichtbares Feld gegen Programme) und wie lange eine
 Anfrage bleibt, steht in der API-Doku und in der Datenschutzerklärung,
 Abschnitt 9c.
 
-**Liste** (Bereich Anfragen): Filter **Neu**, **In Arbeit**, **Angelegt**,
-**Abgelehnt**, **Alle**; neueste zuerst; die Wunschlizenz steht am Eintrag.
-Ein Eintrag öffnet die Anfrage.
+**Liste:** Anfragen stehen unter **Vorgänge** mit der Art „Neue Gemeinde“
+(Filter Art). Ein Eintrag öffnet den Vorgang mit den Angaben der Anfrage.
 
 **Die Wunschlizenz** (Simon, 03.10.2026: „die Leute wählen ihre
 Wunschlizenz"): Im Formular wählt die Gemeinde Klein (bis 15 Konfis),
@@ -132,7 +218,8 @@ unbegrenzt ([gemeinde-anlegen.md](gemeinde-anlegen.md#konfi-limit-testphase-5-da
 Die Werte stehen einmal in `backend/utils/lizenzen.js`; Migration 192 hält sie
 mit einem CHECK fest.
 
-**Eine Anfrage** zeigt alle Angaben (E-Mail und Telefon als Verweis), darunter:
+**Der Vorgang einer Anfrage** zeigt alle Angaben (E-Mail und Telefon als
+Verweis), darunter:
 
 - **Bearbeitung:** Status von Hand auf Neu, In Arbeit oder Abgelehnt setzen und
   eine Notiz nur für den Support hinterlegen, dann **Speichern**. „Angelegt"
@@ -222,7 +309,7 @@ Das **letzte aktive Super-Admin-Konto** lässt sich weder sperren noch löschen;
 dann bleibt ein Hinweis „Nicht möglich" mit dem Satz des Servers stehen, bis
 man ihn wegdrückt. Regeln und API stehen in [support-konto.md](support-konto.md).
 
-## Mails beantworten und zuordnen
+## Mails beantworten und einsortieren
 
 Grundlage: Simons Entscheidungen vom 03.10.2026
 ([planung/support-mail.md](../planung/support-mail.md)); eingerichtet am 03.10.2026 mit
@@ -250,38 +337,44 @@ ansehen."
 
 **Zuordnen.** Eine neue Mail kommt, in dieser Reihenfolge,
 
-1. in den Verlauf der Mail, auf die sie antwortet (Kopfzeilen
+1. in den Vorgang der Mail, auf die sie antwortet (Kopfzeilen
    `In-Reply-To`/`References`),
-2. zu `[Anfrage 12]` bzw. `[Gemeinde 7]`, wenn das im Betreff steht,
-3. bei moin@ zur jüngsten nicht abgelehnten Anfrage mit derselben
+2. zu `[Vorgang 12]`, wenn das im Betreff steht; die alten Kennungen
+   `[Anfrage 12]` und `[Gemeinde 7]` führen zum Vorgang der Anfrage bzw. zum
+   jüngsten offenen Vorgang der Gemeinde,
+3. bei moin@ zum Vorgang der jüngsten nicht abgelehnten Anfrage mit derselben
    Absenderadresse — so landen auch Antworten auf die Bestätigungsmail
    einer Anfrage richtig,
-4. bei support@ zur Gemeinde, wenn genau ein aktives Konto (nicht Konfi) mit
-   Gemeinde diese Adresse hat,
-5. sonst in den **Posteingang** („nicht zugeordnet"). Dort ordnet man sie mit
-   einem Schritt einer Anfrage oder Gemeinde zu — der ganze Faden geht mit —
-   oder antwortet direkt.
+4. bei support@ in einen **neuen Vorgang** der Gemeinde, wenn genau ein
+   aktives Konto (nicht Konfi) mit genau einer Gemeinde diese Adresse hat,
+5. sonst in den **Posteingang**.
 
-Im Browser zeigt der **Posteingang** alle eingehenden Mails beider
-Postfächer, neueste zuerst, mit den Filtern „Alle", „Nicht zugeordnet",
-„moin@" und „support@" (`GET /api/support/mail/eingang?zuordnung=alle`). Die
-Spalte „Zugeordnet" führt zur Anfrage bzw. zum Schriftwechsel der Gemeinde.
-In der App und im schmalen Fenster stehen dort nur die nicht zugeordneten.
+Ein archivierter Vorgang, zu dem eine Mail kommt, kehrt mit dem Status In
+Arbeit zurück.
 
-Neue, noch nicht angesehene Mails stehen als rote Zahl am Bereich
-**Anfragen** (je Anfrage) und am **Posteingang** (nicht zugeordnete und solche
-von Gemeinden). Die Zahl holt die Leiste alle zwei Minuten, nur für
-Super-Admins und nicht im verborgenen Tab. Eine Mail zu einer Anfrage
-zählt als Bewegung: Die 365-Tage-Frist beginnt neu.
+Der **Posteingang** zeigt nur die eingehenden Mails beider Postfächer, die
+keinem Vorgang zugeordnet und nicht archiviert sind; Filter „Alle“,
+„Ungelesen“, „moin@“, „support@“ und „Archiv“. Je Mail:
 
-**Antworten.** In der Anfrage (Abschnitt „Antworten"), im Schriftwechsel
-einer Gemeinde oder im Posteingang: Baustein wählen (füllt die Platzhalter),
-Betreff und Text prüfen, senden. Der Server setzt die Fußzeile darunter,
-`[Anfrage 12]` bzw. `[Gemeinde 7]` in den Betreff, die Antwort-Kopfzeilen auf
-die letzte Mail des Verlaufs und legt die Antwort in den Ordner „Gesendet"
-des Postfachs (fehlt er, legt er „Sent" an). Eine Antwort auf eine neue
-Anfrage setzt sie auf „In Arbeit". Scheitert der Versand, wird nichts
-gespeichert; der Entwurf bleibt stehen.
+- **Einsortieren** in einen bestehenden Vorgang (mit Suche) oder in einen
+  neuen mit Art, Bereich, Dringlichkeit, Betreff und Gemeinde — der ganze
+  Faden geht mit, soweit er noch im Posteingang liegt,
+- **Archivieren** (aus dem Eingang ins Archiv, wiederherstellbar) und
+  **Löschen** (mit Rückfrage; nur aus Konfi Quest, im Postfach bleibt sie),
+- **Antworten** direkt.
+
+Im Browser lassen sich mehrere Mails wählen und gemeinsam archivieren,
+wiederherstellen oder löschen (`POST /api/support/mail/sammel`). Eine Mail
+zu einer Anfrage zählt als Bewegung: Die 365-Tage-Frist beginnt neu.
+
+**Antworten.** Im Vorgang (Verlauf, unten) oder im Posteingang: Baustein
+wählen (füllt die Platzhalter), Betreff und Text prüfen, senden. Der Server
+setzt die Fußzeile darunter, `[Vorgang 12]` in den Betreff, die
+Antwort-Kopfzeilen auf die letzte Mail des Verlaufs und legt die Antwort in
+den Ordner „Gesendet" des Postfachs (fehlt er, legt er „Sent" an). Eine
+Anfrage antwortet von moin@, alles andere von support@. Eine Antwort auf
+einen neuen Vorgang setzt ihn auf „In Arbeit". Scheitert der Versand, wird
+nichts gespeichert; der Entwurf bleibt stehen.
 
 **Textbausteine und Fußzeile** (Bereich **Textbausteine**): Bausteine für
 moin@, support@ oder beide, mit den Platzhaltern `{{name}}`, `{{gemeinde}}`,
@@ -295,8 +388,9 @@ Benutzernamen, das Passwort geht auf anderem Weg.
 
 Gemeinden, die nur dem Betrieb dienen — die Test- und Review-Gemeinden für
 die Stores —, tragen `organizations.intern = true` (Migration 194). Sie
-erscheinen in keiner Liste und keiner Zahl der Support-Ansicht und nicht in
-`GET /api/organizations`; über ihre Kennung (`/admin/organizations?gemeinde=<id>`,
+erscheinen in keiner Liste der Gemeinden und keiner Zahl der Support-Ansicht
+und nicht in `GET /api/organizations`; ihre Vorgänge stehen wie alle anderen
+unter Vorgänge, weil der Support sie bearbeitet; über ihre Kennung (`/admin/organizations?gemeinde=<id>`,
 `GET`/`PUT /api/organizations/:id`) bleiben sie erreichbar, ihre Konten
 melden sich an wie bisher. Einen Schalter dafür gibt es bewusst nicht:
 Gesetzt wird die Spalte nur direkt in der Datenbank, mit Sicherung vorher —
@@ -304,20 +398,26 @@ das erste Mal mit [Auftrag 15](../auftraege/lokaler-agent/15-support-probelauf.m
 
 ## Aufbewahrung
 
-Festgehalten in der Datenschutzerklärung, Abschnitte 9c und 9d
+Festgehalten in der Datenschutzerklärung, Abschnitte 9c, 9d und 9e
 (`frontend/public/datenschutz.html`); `datenschutzGegenCode.test.ts` hält
 Text und Code zusammen.
 
-| Stand der Anfrage | Wie lange |
+| Stand | Wie lange |
 |---|---|
 | neu, in Arbeit | bis zur Entscheidung; bleibt eine Anfrage **365 Tage ohne Änderung** (Status oder Notiz), löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupUnbewegteAnfragen`, gezählt ab `updated_at`) |
 | abgelehnt | **180 Tage nach der Ablehnung**, dann löscht sie der nächtliche Lauf um 02:00 Uhr (`cleanupAbgelehnteAnfragen`, gezählt ab `status_seit`, nicht ab dem Eingang) |
 | angelegt | solange die Gemeinde besteht; mit der Gemeinde wird die Anfrage gelöscht |
-| Mails zu einer Anfrage oder Gemeinde | wie die Anfrage bzw. Gemeinde; sie gehen mit ihr |
-| Mails im Posteingang (nicht zugeordnet) | **180 Tage nach Eingang**, dann löscht sie der nächtliche Lauf aus Konfi Quest; im Postfach selbst bleiben sie |
+| Vorgang ohne Anfrage, offen | bis er erledigt ist |
+| Vorgang ohne Anfrage, archiviert (auch erledigt) | **730 Tage nach dem Archivieren**, wenn er sich seitdem nicht geändert hat (`cleanupArchivierteVorgaenge`, gezählt ab `archiviert_am` und `updated_at`); eine neue Mail holt ihn vorher zurück |
+| Vorgang einer Anfrage | wie die Anfrage; er geht mit ihr |
+| Mails zu einem Vorgang, einer Anfrage oder Gemeinde | wie diese; sie gehen mit ihr |
+| Mails im Posteingang (keinem Vorgang zugeordnet, auch archivierte) | **180 Tage nach Eingang**, dann löscht sie der nächtliche Lauf aus Konfi Quest; im Postfach selbst bleiben sie |
 
-Möchte jemand die Löschung vorher, wird die Anfrage abgelehnt und — bis es
-dafür einen Knopf gibt — in der Datenbank gelöscht
-(`DELETE FROM gemeinde_anfragen WHERE id = …`). Den Zähler gegen Missbrauch
+Vorgänge und Mails lassen sich außerdem jederzeit in der Support-Ansicht
+löschen.
+
+Möchte jemand die Löschung vorher, löscht man den Vorgang in der
+Support-Ansicht; eine Anfrage wird abgelehnt und — bis es dafür einen Knopf
+gibt — in der Datenbank gelöscht (`DELETE FROM gemeinde_anfragen WHERE id = …`). Den Zähler gegen Missbrauch
 hält der Server je IP-Adresse eine Stunde, je E-Mail-Adresse einen Tag (als
 Prüfwert, nicht die Adresse) und löscht ihn danach binnen gut einer Stunde.

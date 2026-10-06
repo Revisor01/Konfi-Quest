@@ -28,6 +28,8 @@ const NACHRICHT_FELDER = [
   'id', 'postfach', 'richtung', 'anfrage_id', 'organization_id', 'message_id', 'in_reply_to', 'referenzen',
   'von_adresse', 'von_name', 'an_adressen', 'betreff', 'text', 'anhaenge', 'gesendet_am', 'gelesen_am',
   'verfasst_von', 'verfasst_von_name', 'created_at',
+  // seit Migration 195 (additiv): der Vorgang der Mail und das Archiv des Posteingangs
+  'vorgang_id', 'archiviert_am',
 ].sort();
 
 describe('/api/support -- Support-Mail', () => {
@@ -209,12 +211,14 @@ describe('/api/support -- Support-Mail', () => {
         anfragen: 3, gemeinden: 1, eingang: 3,
         je_anfrage: { [a]: 2, [b]: 1 },
         je_gemeinde: { [ORGS.andereGemeinde.id]: 1 },
+        // seit Migration 195 (additiv): hier gibt es keinen Vorgang; der Posteingang ist die alte Zahl
+        vorgaenge: 0, posteingang: 3,
       });
     });
 
     it('ohne Mails: alles null', async () => {
       expect((await als(SUPER()).get('/api/support/mail/zaehler')).body)
-        .toEqual({ anfragen: 0, gemeinden: 0, eingang: 0, je_anfrage: {}, je_gemeinde: {} });
+        .toEqual({ anfragen: 0, gemeinden: 0, eingang: 0, je_anfrage: {}, je_gemeinde: {}, vorgaenge: 0, posteingang: 0 });
     });
   });
 
@@ -231,10 +235,11 @@ describe('/api/support -- Support-Mail', () => {
       const res = await als(SUPER()).get('/api/support/mail/eingang');
       expect(res.status).toBe(200);
       expect(res.body.map((m) => m.id)).toEqual([neu, alt]);
-      // Die ersten neun Felder wie immer; dazu seit 03.10.2026 (additiv) die Zuordnung -- hier immer leer.
+      // Die ersten neun Felder wie immer; dazu seit 03.10.2026 (additiv) die Zuordnung -- hier immer leer --
+      // und seit Migration 195 vorgang_id und archiviert_am.
       expect(Object.keys(res.body[0]).sort()).toEqual(
         ['id', 'postfach', 'von_adresse', 'von_name', 'betreff', 'auszug', 'gesendet_am', 'gelesen_am', 'anhaenge',
-          'anfrage_id', 'organization_id', 'gemeinde_name'].sort());
+          'anfrage_id', 'organization_id', 'gemeinde_name', 'vorgang_id', 'archiviert_am'].sort());
       expect(res.body[1]).toMatchObject({
         postfach: 'moin', von_adresse: 'absender@gemeinde.example', von_name: 'Erika', betreff: 'Alt',
         auszug: 'Erste Zeile Zweite Zeile', gelesen_am: null, anhaenge: [],
@@ -286,7 +291,7 @@ describe('/api/support -- Support-Mail', () => {
         // sonst dieselben Felder wie im Posteingang
         expect(Object.keys(res.body[0]).sort()).toEqual(
           ['id', 'postfach', 'von_adresse', 'von_name', 'betreff', 'auszug', 'gesendet_am', 'gelesen_am', 'anhaenge',
-            'anfrage_id', 'organization_id', 'gemeinde_name'].sort());
+            'anfrage_id', 'organization_id', 'gemeinde_name', 'vorgang_id', 'archiviert_am'].sort());
       });
 
       it('zuordnung=alle und postfach lassen sich verbinden', async () => {

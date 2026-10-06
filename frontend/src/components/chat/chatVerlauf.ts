@@ -1,5 +1,6 @@
 import { Message } from '../../types/chat';
 import { mergeMitLokalen } from './chatOutbox';
+import { datumKurz } from '../../utils/dateUtils';
 
 /**
  * Blaettern im Chatverlauf (Audit 26.09.2026, app-screens-konfi-teamer BF-04;
@@ -117,4 +118,57 @@ export function alsGeloescht(m: Message): Message {
 export function anfangErreicht(nachrichten: Message[], anfangBei: number | null): boolean {
   if (anfangBei === null) return false;
   return aeltesteServerId(nachrichten) === anfangBei;
+}
+
+/**
+ * Tages-Trenner-Label (wie WhatsApp): Heute / Gestern / TT.MM.JJJJ.
+ */
+export const tagesTrennerText = (d: Date, jetzt: Date = new Date()): string => {
+  const gestern = new Date(jetzt);
+  gestern.setDate(jetzt.getDate() - 1);
+  if (d.toDateString() === jetzt.toDateString()) return 'Heute';
+  if (d.toDateString() === gestern.toDateString()) return 'Gestern';
+  return datumKurz(d);
+};
+
+// Pro Raum: Message-ID, an der der "Neue Nachrichten"-Trenner bereits gezeigt
+// wurde (Modul-Scope, ueberlebt Re-Mounts). Der Trenner ist ein EINMALIGER
+// Einstiegs-Indikator: Nach Verlassen+Wiederbetreten darf derselbe (evtl. aus
+// stale unread_count rekonstruierte) Anker nicht erneut erscheinen -- nur ein
+// NEUER Anker (= wirklich neue Nachrichten seit dem letzten Besuch) zaehlt.
+const gezeigteTrennerAnker = new Map<number, number>();
+
+/** Nur fuer Tests: die gemerkten Anker vergessen. */
+export const gezeigteTrennerAnkerLeeren = (): void => gezeigteTrennerAnker.clear();
+
+/**
+ * Die erste ungelesene Nachricht (= letzte N Nachrichten, N = beim Oeffnen
+ * eingefrorene Ungelesen-Anzahl) EINMAL per Message-ID verankern. Danach
+ * bleibt der Trenner an dieser Nachricht kleben -- neu ankommende/eigene
+ * Nachrichten verschieben ihn nicht mehr. Die App-Liste (ChatMessagesList)
+ * und die der Web-Fassung (web/WebNachrichten) rufen beim Rendern dieselbe
+ * Funktion; sie setzt `newDividerAnchorRef` bzw. nimmt `initialUnreadRef` zurueck.
+ */
+export function neuenTrennerVerankern(
+  nachrichten: Message[],
+  raumId: number | undefined,
+  initialUnreadRef: { current: number | null },
+  newDividerAnchorRef: { current: number | null },
+): void {
+  const unread = initialUnreadRef.current ?? 0;
+  if (newDividerAnchorRef.current === null && unread > 0 && unread <= nachrichten.length) {
+    const anchor = nachrichten[nachrichten.length - unread];
+    // Nur echte Server-Nachrichten ankern (optimistische haben id < 0).
+    // Und: derselbe Anker wird pro Raum nur EINMAL gezeigt -- nach
+    // Verlassen+Wiederbetreten erscheint der Trenner nur, wenn seither
+    // wirklich neue Nachrichten dazugekommen sind (neuer Anker).
+    if (anchor && anchor.id > 0) {
+      if (raumId && gezeigteTrennerAnker.get(raumId) === anchor.id) {
+        initialUnreadRef.current = 0; // bereits gezeigt -> unterdruecken
+      } else {
+        newDividerAnchorRef.current = anchor.id;
+        if (raumId) gezeigteTrennerAnker.set(raumId, anchor.id);
+      }
+    }
+  }
 }

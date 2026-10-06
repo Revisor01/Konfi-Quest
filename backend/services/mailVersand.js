@@ -7,14 +7,19 @@
 //      Zugangsdaten) -> 503. Ist das Postfach eingerichtet? Sonst 503.
 //   2. Text + Fusszeile (Trenner "-- " nach der Signaturkonvention), eigene
 //      Message-ID <kq-uuid@konfi-quest.de>, In-Reply-To/References auf die
-//      letzte Mail des Verlaufs, die Kennung [Anfrage N] / [Gemeinde N] im
-//      Betreff, wenn sie fehlt. From "<Absendername> <Postfach>", Reply-To
-//      das Postfach.
+//      letzte Mail des Verlaufs, die Kennung im Betreff, wenn sie fehlt:
+//      [Vorgang N] (seit Migration 195, Vorgabe vorgangId), sonst die alten
+//      Kennungen [Anfrage N] / [Gemeinde N] (ohne Vorgang, nur noch
+//      Antworten im Posteingang). From "<Absendername> <Postfach>",
+//      Reply-To das Postfach.
 //   3. Senden ueber SMTP mit der Anmeldung des Postfachs. Scheitert das ->
 //      502, und es wird NICHTS gespeichert.
-//   4. Speichern (richtung 'aus', gelesen_am = gesendet_am). Eine Antwort auf
-//      eine Anfrage ist eine Bewegung (updated_at); steht sie auf "neu",
-//      geht sie auf "in Arbeit".
+//   4. Speichern (richtung 'aus', gelesen_am = gesendet_am). Die Mail gehoert
+//      zum Vorgang (vorgang_id; anfrage_id und organization_id folgen ihm,
+//      utils/supportVorgaenge.js). Eine Antwort ist eine Bewegung des
+//      Vorgangs (updated_at); steht er auf "neu", geht er auf "in Arbeit" --
+//      ausser bei statusFolgen: false (die Bestaetigung des Formulars) -- und
+//      mit ihm die Anfrage dahinter.
 //   5. Danach, ohne dass die Antwort darauf wartet: dieselbe Mail per IMAP
 //      in den Gesendet-Ordner des Postfachs legen. Gesucht wird der Ordner
 //      mit der Markierung \Sent, sonst einer mit dem Namen "Sent" (oder
@@ -32,6 +37,7 @@ const MailComposer = require('nodemailer/lib/mail-composer');
 const { postfachKonfig, smtpOptionen, imapOptionen, nichtEingerichtetMeldung } = require('../utils/mailPostfaecher');
 const { einstellungenLesen } = require('../utils/mailEinstellungen');
 const mailAbholung = require('./mailAbholung');
+const { mailSpalten, statusSetzen, vorgangBewegt } = require('../utils/supportVorgaenge');
 
 const { abmelden, fehlerText } = mailAbholung;
 
@@ -70,16 +76,28 @@ function antwortBetreff(betreff) {
   return ohne ? `Re: ${ohne}` : 'Re:';
 }
 
-/** Kennung "[Anfrage 12]" / "[Gemeinde 7]" -- oder null ohne Zuordnung. */
-function kennung({ anfrageId = null, organizationId = null }) {
+/** Kennung "[Vorgang 5]", sonst die alten "[Anfrage 12]" / "[Gemeinde 7]" -- oder null ohne Zuordnung. */
+function kennung({ vorgangId = null, anfrageId = null, organizationId = null }) {
+  if (vorgangId !== null && vorgangId !== undefined) return `[Vorgang ${vorgangId}]`;
   if (anfrageId !== null && anfrageId !== undefined) return `[Anfrage ${anfrageId}]`;
   if (organizationId !== null && organizationId !== undefined) return `[Gemeinde ${organizationId}]`;
   return null;
 }
 
+// Die alten Kennungen vor den Vorgaengen. Mit [Vorgang N] im Betreff werden
+// sie entfernt: Eine Antwort auf eine alte Mail soll nicht beide tragen. Der
+// Betreff ist hier schon einzeilig (jeder Leerraum ein einzelnes Leerzeichen),
+// deshalb genuegen feste Leerzeichen -- ohne \s* davor bleibt der Ausdruck
+// linear (CodeQL js/polynomial-redos); das doppelte Leerzeichen, das beim
+// Entfernen stehen bleibt, raeumt einzeilig() danach weg.
+const ALTE_KENNUNG = /\[ ?(?:Anfrage|Gemeinde) \d{1,15} ?\]/gi;
+
 /** Betreff mit Kennung (angehaengt, wenn sie fehlt), einzeilig und begrenzt. */
 function betreffMitKennung(betreff, zuordnung) {
   let ergebnis = einzeilig(betreff);
+  if (zuordnung.vorgangId !== null && zuordnung.vorgangId !== undefined) {
+    ergebnis = einzeilig(ergebnis.replace(ALTE_KENNUNG, ''));
+  }
   const k = kennung(zuordnung);
   if (k && !ergebnis.toLowerCase().includes(k.toLowerCase())) {
     const platz = BETREFF_MAX - k.length - 1;
@@ -146,6 +164,10 @@ async function inGesendetAblegen(client, quelltext, datum) {
  * @param {string} a.an               Empfaenger (eine Adresse)
  * @param {string|null} [a.betreff]   leer = Standardbetreff
  * @param {string} a.text
+ * @param {number|null} [a.vorgangId]     der Vorgang der Mail; anfrageId und
+ *   organizationId folgen ihm (die Angaben dazu werden ueberschrieben)
+ * @param {boolean} [a.statusFolgen]  false: ein Vorgang "neu" bleibt "neu"
+ *   (Bestaetigung des Formulars); sonst geht er mit der Antwort auf "in Arbeit"
  * @param {number|null} [a.anfrageId]
  * @param {number|null} [a.organizationId]
  * @param {object|null} [a.bezug]     letzte Mail des Verlaufs (Zeile aus mail_nachrichten)
@@ -165,7 +187,16 @@ async function antwortSenden(db, a, { env = process.env, imapFabrik = standardIm
   const konfig = postfachKonfig(a.postfach, env);
   if (!konfig.versandBereit) throw new VersandFehler(503, nichtEingerichtetMeldung(konfig));
 
-  const zuordnung = { anfrageId: a.anfrageId ?? null, organizationId: a.organizationId ?? null };
+  const vorgangId = a.vorgangId ?? null;
+  const zuordnung = { vorgangId, anfrageId: a.anfrageId ?? null, organizationId: a.organizationId ?? null };
+  if (vorgangId !== null) {
+    const { rows: [vorgang] } = await db.query(
+      'SELECT anfrage_id, organization_id FROM support_vorgaenge WHERE id = $1', [vorgangId]);
+    if (!vorgang) throw new VersandFehler(404, 'Vorgang nicht gefunden');
+    const spalten = mailSpalten(vorgang);
+    zuordnung.anfrageId = spalten.anfrage_id;
+    zuordnung.organizationId = spalten.organization_id;
+  }
   const { fusszeile, absendername } = await einstellungenLesen(db);
   const gewuenscht = einzeilig(a.betreff);
   const grund = gewuenscht || (a.bezug ? antwortBetreff(a.bezug.betreff) : einzeilig(a.standardBetreff));
@@ -203,14 +234,21 @@ async function antwortSenden(db, a, { env = process.env, imapFabrik = standardIm
     await client.query('BEGIN');
     const { rows: [neu] } = await client.query(
       `INSERT INTO mail_nachrichten
-         (postfach, richtung, anfrage_id, organization_id, message_id, in_reply_to, referenzen,
+         (postfach, richtung, anfrage_id, organization_id, vorgang_id, message_id, in_reply_to, referenzen,
           von_adresse, von_name, an_adressen, betreff, text, anhaenge, gesendet_am, gelesen_am, verfasst_von)
-       VALUES ($1, 'aus', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, '[]'::jsonb, $12, $12, $13)
+       VALUES ($1, 'aus', $2, $3, $14, $4, $5, $6, $7, $8, $9, $10, $11, '[]'::jsonb, $12, $12, $13)
        RETURNING id`,
       [a.postfach, zuordnung.anfrageId, zuordnung.organizationId, messageId, inReplyTo, referenzen,
-        konfig.adresse, name, [an], betreff, text, gesendetAm, a.verfasstVon ?? null]);
+        konfig.adresse, name, [an], betreff, text, gesendetAm, a.verfasstVon ?? null, vorgangId]);
     id = neu.id;
-    if (zuordnung.anfrageId !== null) {
+    if (vorgangId !== null) {
+      // Der Vorgang (und mit ihm die Anfrage dahinter) folgt der Antwort.
+      if (a.statusFolgen !== false) {
+        const { rows: [v] } = await client.query('SELECT status FROM support_vorgaenge WHERE id = $1 FOR UPDATE', [vorgangId]);
+        if (v && v.status === 'neu') await statusSetzen(client, vorgangId, 'in_arbeit', { userId: a.verfasstVon ?? null });
+      }
+      await vorgangBewegt(client, vorgangId, { bearbeitetVon: a.verfasstVon ?? null });
+    } else if (zuordnung.anfrageId !== null) {
       await client.query(
         `UPDATE gemeinde_anfragen SET
            status = CASE WHEN status = 'neu' THEN 'in_arbeit' ELSE status END,

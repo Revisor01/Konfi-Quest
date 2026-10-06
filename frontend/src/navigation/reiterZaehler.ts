@@ -41,8 +41,8 @@ export const useReiterZaehler = ({ supportMailLaden = false }: { supportMailLade
     badges: newBadgesCount,
     // Ungelesene Mails der Support-Ansicht; die Rechnung steht in
     // supportMailZahl, damit Leiste und Uebersicht dieselbe Zahl zeigen.
-    supportAnfragen: supportMailZahl(mail, 'supportAnfragen'),
-    supportPost: supportMailZahl(mail, 'supportPost'),
+    supportVorgaenge: supportMailZahl(mail, 'supportVorgaenge'),
+    supportPosteingang: supportMailZahl(mail, 'supportPosteingang'),
   };
 };
 

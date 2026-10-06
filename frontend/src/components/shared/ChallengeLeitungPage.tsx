@@ -3,6 +3,7 @@ import { IonPage } from '@ionic/react';
 import ChallengeLeitungView from '../admin/views/ChallengeLeitungView';
 import { getChallengeStatus } from '../admin/views/ChallengesManageView';
 import ChallengeHinweis, { type ChallengeHinweisArt } from './ChallengeHinweis';
+import WebChallengeLeitungDetail from './web/challenges/WebChallengeLeitungDetail';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useLiveRefresh, useLiveUpdate } from '../../contexts/LiveUpdateContext';
@@ -12,6 +13,8 @@ import { netzZuerstLaden } from '../../services/netzZuerst';
 import { CACHE_TTL, offlineCache } from '../../services/offlineCache';
 import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import { leitungChallengeListe } from '../../utils/challengeListen';
+import { challengeListenPfad } from '../../utils/challengeRechte';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
 import type { AdminChallenge } from '../../types/challenges';
 
 /**
@@ -53,6 +56,10 @@ interface ChallengeLeitungInhaltProps extends ChallengeLeitungPageProps {
 
 const ChallengeLeitungInhalt: React.FC<ChallengeLeitungInhaltProps> = ({ challengeId, onBack, seitenRef }) => {
   const { user, setError } = useApp();
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md): im breiten
+  // Browserfenster die Web-Fassung, sonst die Ansicht der App. Laden, Hinweise
+  // und das Gelesen-Melden unten gelten fuer beide.
+  const breit = useBreitesLayout();
   const { markChallengeAsRead, refreshAllCounts } = useBadge();
   const { triggerRefresh } = useLiveUpdate();
 
@@ -173,6 +180,23 @@ const ChallengeLeitungInhalt: React.FC<ChallengeLeitungInhaltProps> = ({ challen
     // Das Live-Ereignis laedt Liste und diese Seite neu (useLiveRefresh oben).
     onGespeichert: () => { triggerRefresh('challenges'); }
   });
+
+  if (breit) {
+    // Eine Komponente fuer alle Zustaende, mit einem Rahmen: laedt, Hinweis,
+    // Challenge (WebChallengeLeitungDetail).
+    return (
+      <WebChallengeLeitungDetail
+        challenge={challenge}
+        hinweisArt={hinweis ?? 'laedt'}
+        onBack={onBack}
+        onNochmal={() => { setHinweis('laedt'); void laden(); }}
+        onEdit={bearbeiten}
+        onChanged={geaendert}
+        seitenRef={seitenRef}
+        listenPfad={challengeListenPfad(user)}
+      />
+    );
+  }
 
   if (!challenge) {
     return (

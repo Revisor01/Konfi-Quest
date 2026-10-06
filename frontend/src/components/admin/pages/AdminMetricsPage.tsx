@@ -40,6 +40,9 @@ import {
   type RoutenZeile,
 } from '../../../utils/betriebsKennzahlen';
 import { datumUhrzeit, uhrzeit } from '../../../utils/dateUtils';
+import { fmtDauer, fmtSeit, fmtUptime, fmtZahl, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../utils/betriebsFormat';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebBetrieb from '../web/leitung/WebBetrieb';
 
 interface RouteRow {
   route: string;
@@ -102,36 +105,8 @@ interface HistorySnap {
   worst_route: string | null;
 }
 
-const fmtUptime = (s: number) => {
-  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d} T ${h} Std`;
-  if (h > 0) return `${h} Std ${m} Min`;
-  return `${m} Min`;
-};
 const fmtTime = (iso: string) => uhrzeit(iso);
 const fmtDateTime = (iso: string) => datumUhrzeit(iso, { ohneJahr: true });
-const fmtZahl = (n: number) => n.toLocaleString('de-DE');
-
-// Millisekunden lesbar: unter einer Sekunde in ms, darueber in s/min.
-const fmtDauer = (ms: number) => {
-  if (ms < 1000) return `${Math.round(ms)} ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
-  return `${Math.round(ms / 60000)} Min`;
-};
-
-// "vor 3 Std" statt einer nackten Uhrzeit — bei der Frage "seit wann geht
-// das so" ist die Spanne die Antwort, nicht der Zeitpunkt.
-const fmtSeit = (iso: string) => {
-  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return 'gerade eben';
-  if (min < 60) return `vor ${min} Min`;
-  const std = Math.round(min / 60);
-  if (std < 24) return `vor ${std} Std`;
-  return `vor ${Math.round(std / 24)} T`;
-};
-
-const msColor = (ms: number) => ms >= 1000 ? METRIK_AMPEL.kritisch : ms >= 500 ? METRIK_AMPEL.erhoeht : ms >= 200 ? METRIK_AMPEL.maessig : METRIK_AMPEL.gut;
-const statusColor = (s: number) => s >= 500 ? METRIK_AMPEL.kritisch : s >= 400 ? METRIK_AMPEL.erhoeht : METRIK_AMPEL.gut;
 
 // Kleines KPI-Kaestchen
 const Kpi: React.FC<{ icon: string; label: string; value: string; color: string; sub?: string }> = ({ icon, label, value, color, sub }) => (
@@ -281,6 +256,9 @@ const RoutenListe: React.FC<{ zeilen: RoutenZeile[] }> = ({ zeilen }) => (
 );
 
 const AdminMetricsPage: React.FC = () => {
+  // Im Browser ab 992 px Kennzahlen, Tabellen und Reiter (web/leitung/WebBetrieb.tsx);
+  // Laden, Aktualisieren und alle Urteile dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [history, setHistory] = useState<HistorySnap[]>([]);
   const [loading, setLoading] = useState(true);
@@ -372,6 +350,29 @@ const AdminMetricsPage: React.FC = () => {
   const zustand = snap ? gesamtzustand(snap) : null;
   const zustandsFarbe = zustand?.stufe === 'gut' ? METRIK_AMPEL.gut : zustand?.stufe === 'auffaellig' ? METRIK_AMPEL.maessig : METRIK_AMPEL.kritisch;
   const apdexInfo = apdexStufe(snap?.apdex?.wert);
+
+  if (breit) {
+    return (
+      <WebBetrieb
+        snap={snap}
+        laedt={loading && !snap}
+        fehler={error}
+        tab={tab}
+        onTab={setTab}
+        autoAktualisieren={autoRefresh}
+        onAutoAktualisieren={setAutoRefresh}
+        routenSicht={routenSicht}
+        onRoutenSicht={setRoutenSicht}
+        zustand={zustand}
+        apdexInfo={apdexInfo}
+        veraenderung={veraenderung}
+        routenZeilen={routenZeilen}
+        tage={tage}
+        schritte={historyDeltas}
+        onNeuLaden={() => load(true)}
+      />
+    );
+  }
 
   return (
     <IonPage>
@@ -592,13 +593,8 @@ const AdminMetricsPage: React.FC = () => {
 
 // Eine Zeile "heute gegen sonst" mit Richtungspfeil.
 const Vergleich: React.FC<{ name: string; jetzt: string; vorher: string; delta: number | null; bewertung: 'neutral' | 'wenigerIstBesser' }> = ({ name, jetzt, vorher, delta, bewertung }) => {
-  // Unter 10 % Abweichung ist es Rauschen und bekommt keine Farbe — sonst
-  // leuchtet jeden Morgen irgendetwas rot, ohne dass etwas passiert waere.
-  const merklich = delta !== null && Math.abs(delta) >= 10;
-  const farbe = !merklich || bewertung === 'neutral'
-    ? 'var(--app-text-system)'
-    : delta! > 0 ? METRIK_AMPEL.erhoeht : METRIK_AMPEL.gut;
-  const pfeil = delta === null ? '' : delta > 0 ? '▲' : delta < 0 ? '▼' : '=';
+  // Pfeil und Farbe (unter 10 % Abweichung keine) kommen aus utils/betriebsFormat.ts.
+  const { merklich, farbe, pfeil } = vergleichAnzeige(delta, bewertung);
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--app-abstand-eng)' }}>
       <div style={{ minWidth: 0 }}>
@@ -626,7 +622,6 @@ const FehlerListe: React.FC<{ gruppen: FehlerGruppe[]; letzte: ErrorRow[] }> = (
       </div>
     );
   }
-  const bezeichnung = (s: number) => s >= 500 ? 'Serverfehler' : s === 404 ? 'nicht gefunden' : s === 403 ? 'abgelehnt' : s === 401 ? 'nicht angemeldet' : 'abgewiesen';
   return (
     <>
       <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)' }}>
@@ -642,7 +637,7 @@ const FehlerListe: React.FC<{ gruppen: FehlerGruppe[]; letzte: ErrorRow[] }> = (
               <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', color: statusColor(g.status), flexShrink: 0 }}>{fmtZahl(g.anzahl)}×</span>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-mini)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
-              <span style={{ color: statusColor(g.status), fontWeight: 'var(--app-schrift-halbfett)' }}>{g.status} · {bezeichnung(g.status)}</span>
+              <span style={{ color: statusColor(g.status), fontWeight: 'var(--app-schrift-halbfett)' }}>{g.status} · {statusBezeichnung(g.status)}</span>
               <span>erstmals {fmtSeit(g.seit)}</span>
               <span>zuletzt {fmtSeit(g.zuletzt)}</span>
             </div>

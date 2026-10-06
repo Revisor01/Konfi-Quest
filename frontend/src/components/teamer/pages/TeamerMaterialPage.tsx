@@ -57,6 +57,8 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { materialInhalt, trackHandlung } from '../../../services/analytics';
 import { linkOeffnen } from '../../../services/systemDialoge';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebTeamerMaterial from '../web/material/WebTeamerMaterial';
 
 interface Material {
   id: number;
@@ -104,6 +106,10 @@ interface MaterialDetail {
 const TeamerMaterialPage: React.FC = () => {
   const { user, setError } = useApp();
   useModalPage('teamer-material');
+  // Im Browser ab 992 px Tabellen mit dem Material daneben
+  // (web/material/WebTeamerMaterial.tsx); Daten, Filter, Auswahl und das Oeffnen
+  // von Dateien und Links dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   // Die Seite haengt an ZWEI Routen: '/teamer/profile/material' ist seit dem
   // 04.09.2026 ein eigener Tab, '/teamer/material' die Altroute (Deep-Links
@@ -698,6 +704,28 @@ const TeamerMaterialPage: React.FC = () => {
       </IonContent>
     </IonPage>
   );
+
+  if (breit) {
+    return (
+      <WebTeamerMaterial
+        fuerAlle={globaleMaterials}
+        uebrige={uebrigeMaterials}
+        jahrgaenge={jahrgaenge}
+        jahrgangId={activeJahrgangId}
+        onJahrgang={setActiveJahrgangId}
+        suche={search}
+        onSuche={setSearch}
+        laedt={loading}
+        material={selectedMaterial}
+        materialLaedt={detailLoading}
+        onOeffnen={openDetail}
+        onSchliessen={() => setSelectedMaterial(null)}
+        ladendeDatei={ladendeDatei}
+        onDatei={openFile}
+        onLink={openLink}
+      />
+    );
+  }
 
   // Detail ersetzt die Liste (selectedMaterial-State steuert die Ansicht).
   return selectedMaterial ? renderDetail() : renderList();

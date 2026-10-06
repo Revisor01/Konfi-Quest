@@ -1,8 +1,12 @@
 // Uebersicht der Support-Ansicht in der Web-Fassung, gerendert
 // (docs/planung/support-web.md, Entscheidung 3): im breiten Fenster ein
 // Dashboard aus GET /support/uebersicht -- Kennzahl-Kacheln, neueste
-// Anfragen und Mails, Diagramme in eigenem SVG, Testphasen, Gemeinden je
-// Landeskirche. Im schmalen Fenster bleibt die Liste der Bereiche der App.
+// Vorgänge und Mails, Diagramme in eigenem SVG, Testphasen, Gemeinden je
+// Landeskirche. Seit den Vorgängen (docs/planung/support-vorgaenge.md,
+// Entscheidung 7) zählt die Kachel „Offene Vorgänge“ und die Liste zeigt die
+// neuesten offenen Vorgänge; die Kachel „Posteingang“ trägt dieselbe Zahl wie
+// die rote Zahl der Leiste. Im schmalen Fenster bleibt die Liste der Bereiche
+// der App.
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, within } from '@testing-library/react';
@@ -69,7 +73,7 @@ const UEBERSICHT = {
     { id: 37, gemeinde: 'Kirchengemeinde Seeblick', kontakt_name: 'Vera Beispielfrau', status: 'neu', wunsch_lizenz: null, created_at: '2026-09-27T08:30:00Z', ungelesen: 0 },
   ],
   neueste_mails: [
-    { id: 301, postfach: 'moin', von_name: 'Pastorin Lena Probe', von_adresse: 'lena.probe@example.org', betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]', gesendet_am: '2026-10-03T08:18:00Z', gelesen_am: null, anfrage_id: 41, organization_id: null, gemeinde_name: 'Kirchengemeinde Musterdorf-Süd' },
+    { id: 301, postfach: 'moin', von_name: 'Pastorin Lena Probe', von_adresse: 'lena.probe@example.org', betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]', gesendet_am: '2026-10-03T08:18:00Z', gelesen_am: null, anfrage_id: 41, vorgang_id: 41, organization_id: null, gemeinde_name: 'Kirchengemeinde Musterdorf-Süd' },
     { id: 302, postfach: 'support', von_name: 'Sam Muster', von_adresse: 'sam@example.org', betreff: 'Frage zu den Jahrgängen', gesendet_am: '2026-10-03T07:35:00Z', gelesen_am: null, anfrage_id: null, organization_id: 1, gemeinde_name: 'Kirchengemeinde Musterdorf' },
     { id: 303, postfach: 'support', von_name: null, von_adresse: 'info@beispiel-verein.example', betreff: 'Passwort vergessen?', gesendet_am: '2026-10-03T03:30:00Z', gelesen_am: null, anfrage_id: null, organization_id: null, gemeinde_name: null },
     { id: 304, postfach: 'moin', von_name: 'Jan Vorlage', von_adresse: 'jan.vorlage@example.org', betreff: 'Rückfrage zur Lizenz', gesendet_am: '2026-10-02T10:30:00Z', gelesen_am: '2026-10-02T11:00:00Z', anfrage_id: 40, organization_id: null, gemeinde_name: 'Kirchengemeinde Wiesengrund' },
@@ -80,6 +84,22 @@ const UEBERSICHT = {
     { id: 5, display_name: 'Kirchengemeinde Neustadt am Deich', trial_ends_at: '2026-10-12T00:00:00Z' },
   ],
 };
+
+const vorgangEintrag = (id: number, extra: Record<string, unknown> = {}) => ({
+  id, art: 'frage', bereich: null, dringlichkeit: 'normal', status: 'neu', betreff: `Vorgang ${id}`, quelle: 'formular', organization_id: null, gemeinde_name: null,
+  anfrage_id: null, ungelesen: 0, letzte_aktivitaet: '2026-10-03T06:00:00Z', created_at: '2026-10-03T06:00:00Z', archiviert_am: null, ...extra,
+});
+
+// Sieben offene Vorgänge (drei neu, drei in Arbeit, einer wartet); gezeigt werden die sechs neuesten.
+const VORGAENGE = [
+  vorgangEintrag(35, { status: 'in_arbeit', betreff: 'Alter Vorgang', art: 'sonstiges', created_at: '2026-09-20T08:30:00Z' }),
+  vorgangEintrag(41, { status: 'neu', betreff: 'Anfrage Kirchengemeinde Musterdorf-Süd', art: 'neue_gemeinde', quelle: 'anfrage', anfrage_id: 41, ungelesen: 1, created_at: '2026-10-03T06:55:00Z' }),
+  vorgangEintrag(40, { status: 'neu', betreff: 'Anfrage Kirchengemeinde Wiesengrund', art: 'neue_gemeinde', quelle: 'anfrage', anfrage_id: 40, created_at: '2026-10-02T12:30:00Z' }),
+  vorgangEintrag(39, { status: 'in_arbeit', betreff: 'Anfrage Kirchengemeinde Steinbach', art: 'neue_gemeinde', quelle: 'anfrage', anfrage_id: 39, created_at: '2026-10-01T08:30:00Z' }),
+  vorgangEintrag(38, { status: 'in_arbeit', betreff: 'Chat zeigt nichts Neues', art: 'fehler', bereich: 'chat', organization_id: 1, gemeinde_name: 'Kirchengemeinde Musterdorf', created_at: '2026-09-29T08:30:00Z' }),
+  vorgangEintrag(37, { status: 'wartet', betreff: 'Termin-Export als Kalender?', art: 'wunsch', bereich: 'termine', created_at: '2026-09-27T08:30:00Z' }),
+  vorgangEintrag(36, { status: 'neu', betreff: 'Passwort vergessen', art: 'zugang', created_at: '2026-09-25T08:30:00Z' }),
+];
 
 const kennzahl = (id: number, name: string, lk: [number, string] | null, kk: [number, string] | null) => ({
   id, name, is_active: true,
@@ -98,11 +118,15 @@ const STATISTIK = {
   ],
 };
 
-const antworten = (uebersicht: unknown = UEBERSICHT, statistik: unknown = STATISTIK) => {
-  h.apiGet.mockImplementation((pfad: string) => {
+const antworten = (uebersicht: unknown = UEBERSICHT, statistik: unknown = STATISTIK, vorgaenge: unknown = VORGAENGE) => {
+  h.apiGet.mockImplementation((pfad: string, optionen?: { params?: { filter?: string } }) => {
+    if (pfad === '/support/vorgaenge') {
+      if (optionen?.params?.filter !== 'offen') return Promise.reject(new Error('unerwartet: nur die offenen'));
+      return vorgaenge instanceof Error ? Promise.reject(vorgaenge) : Promise.resolve({ data: vorgaenge });
+    }
     if (pfad === '/support/uebersicht') return uebersicht instanceof Error ? Promise.reject(uebersicht) : Promise.resolve({ data: uebersicht });
     if (pfad === '/support/statistik') return statistik instanceof Error ? Promise.reject(statistik) : Promise.resolve({ data: statistik });
-    if (pfad === '/support/mail/zaehler') return Promise.resolve({ data: { anfragen: 1, gemeinden: 1, eingang: 1, je_anfrage: {}, je_gemeinde: {} } });
+    if (pfad === '/support/mail/zaehler') return Promise.resolve({ data: { anfragen: 1, gemeinden: 1, eingang: 1, je_anfrage: {}, je_gemeinde: {}, vorgaenge: 7, posteingang: 4 } });
     if (pfad === '/support/anfragen') return Promise.resolve({ data: [] });
     return Promise.reject(new Error(`unerwartet: ${pfad}`));
   });
@@ -130,6 +154,7 @@ describe('Uebersicht (Web): Laden und Fehler', () => {
     expect(await screen.findByRole('group', { name: 'Konfis: 1.265' })).toBeInTheDocument();
     expect(h.apiGet).toHaveBeenCalledWith('/support/uebersicht');
     expect(h.apiGet).toHaveBeenCalledWith('/support/statistik');
+    expect(h.apiGet).toHaveBeenCalledWith('/support/vorgaenge', { params: { filter: 'offen' } });
     expect(screen.getByRole('heading', { level: 1, name: 'Übersicht' })).toBeInTheDocument();
   });
 
@@ -154,7 +179,17 @@ describe('Uebersicht (Web): Laden und Fehler', () => {
     render(<SupportUebersichtPage />);
     expect(await screen.findByRole('group', { name: 'Konfis: 1.265' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Gemeinden je Landeskirche' })).toBeNull();
-    expect(screen.getByRole('heading', { name: 'Neueste Anfragen' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Neueste Vorgänge' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('kommen die Vorgänge nicht, sagt die Karte das -- die Kachel zählt dann nach den Kennzahlen, der Rest steht da', async () => {
+    antworten(UEBERSICHT, STATISTIK, new Error('Vorgänge kaputt'));
+    render(<SupportUebersichtPage />);
+    await screen.findByRole('group', { name: 'Konfis: 1.265' });
+    expect(screen.getByText('Vorgänge nicht geladen')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Offene Vorgänge: 5' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Neueste Mails' })).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
@@ -178,10 +213,23 @@ describe('Uebersicht (Web): Kennzahl-Kacheln', () => {
     expect(team).toHaveTextContent('14 neu im Oktober');
     expect(screen.getByRole('group', { name: 'Aktiv in 30 Tagen: 912' })).toHaveTextContent('61 % von 1.501 Konten');
 
-    const offen = screen.getByRole('link', { name: 'Offene Anfragen: 5' });
-    expect(offen).toHaveAttribute('href', '/admin/support/anfragen?filter=offen');
-    const mails = screen.getByRole('link', { name: 'Ungelesene Mails: 3' });
+    // Die offenen Vorgänge aus der Liste: 7, davon drei neu, drei in Arbeit, einer wartet.
+    const offen = screen.getByRole('link', { name: 'Offene Vorgänge: 7' });
+    expect(offen).toHaveAttribute('href', '/admin/support/vorgaenge?filter=offen');
+    expect(offen).toHaveTextContent('3 neu · 3 in Arbeit · 1 wartet');
+    // Der Posteingang: dieselbe Zahl wie die rote Zahl der Leiste (4), nicht die aus den Kennzahlen (3).
+    const mails = await screen.findByRole('link', { name: 'Posteingang: 4' });
     expect(mails).toHaveAttribute('href', '/admin/support/post?filter=ungelesen');
+    expect(mails).toHaveTextContent('Ungelesen, noch nicht einsortiert');
+    expect(screen.queryByText('Offene Anfragen')).toBeNull();
+  });
+
+  it('kommt der Zähler nicht, zählt der Posteingang nach den Kennzahlen der Übersicht (3)', async () => {
+    antworten();
+    const vorher = h.apiGet.getMockImplementation()!;
+    h.apiGet.mockImplementation((pfad: string, o?: unknown) => (pfad === '/support/mail/zaehler' ? Promise.reject(new Error('Netz weg')) : vorher(pfad, o as never)));
+    render(<SupportUebersichtPage />);
+    expect(await screen.findByRole('link', { name: 'Posteingang: 3' })).toBeInTheDocument();
   });
 
   it('keine Liste der Bereiche und kein Abmelden im breiten Fenster -- die Leiste steht links', async () => {
@@ -194,30 +242,34 @@ describe('Uebersicht (Web): Kennzahl-Kacheln', () => {
   });
 });
 
-describe('Uebersicht (Web): neueste Anfragen und Mails', () => {
-  it('fuenf Anfragen, neueste zuerst, mit Status, Wunschlizenz und Datum relativ', async () => {
+describe('Uebersicht (Web): neueste Vorgänge und Mails', () => {
+  it('die sechs neuesten offenen Vorgänge, neueste zuerst, mit Art, Gemeinde, Stand und Datum relativ -- der siebte fehlt', async () => {
     antworten();
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 1.265' });
     // Jede Karte ist ein Bereich, benannt nach ihrer Ueberschrift.
-    expect(screen.getByRole('region', { name: 'Neueste Anfragen' })).toBe(karte('Neueste Anfragen'));
-    const zeilen = within(karte('Neueste Anfragen')).getAllByRole('listitem');
-    expect(zeilen).toHaveLength(5);
+    expect(screen.getByRole('region', { name: 'Neueste Vorgänge' })).toBe(karte('Neueste Vorgänge'));
+    const zeilen = within(karte('Neueste Vorgänge')).getAllByRole('listitem');
+    expect(zeilen).toHaveLength(6);
     expect(zeilen.map((z) => within(z).getAllByRole('link')[0].getAttribute('href'))).toEqual([
-      '/admin/support/anfragen/41', '/admin/support/anfragen/40', '/admin/support/anfragen/39', '/admin/support/anfragen/38', '/admin/support/anfragen/37',
+      '/admin/support/vorgaenge/41', '/admin/support/vorgaenge/40', '/admin/support/vorgaenge/39', '/admin/support/vorgaenge/38',
+      '/admin/support/vorgaenge/37', '/admin/support/vorgaenge/36',
     ]);
-    expect(zeilen[0]).toHaveTextContent('Kirchengemeinde Musterdorf-Süd');
-    expect(zeilen[0]).toHaveTextContent('Pastorin Lena Probe');
-    expect(zeilen[0]).toHaveTextContent('Wunschlizenz Standard');
+    expect(within(karte('Neueste Vorgänge')).queryByText('Alter Vorgang')).toBeNull();
+    expect(zeilen[0]).toHaveTextContent('Anfrage Kirchengemeinde Musterdorf-Süd');
+    expect(zeilen[0]).toHaveTextContent('Neue Gemeinde');
+    expect(zeilen[0]).toHaveTextContent('Nicht zugeordnet');
     expect(zeilen[0]).toHaveTextContent('Neu');
     expect(zeilen[0]).toHaveTextContent('vor 1 Std.');
-    expect(zeilen[2]).toHaveTextContent('In Arbeit');
-    expect(zeilen[2]).not.toHaveTextContent('Wunschlizenz');
-    expect(zeilen[3]).toHaveTextContent('Wunschlizenz Groß');
-    // Genau die erste Anfrage hat ungelesene Mails: ein Punkt.
-    expect(within(karte('Neueste Anfragen')).getAllByRole('img', { name: 'ungelesen' })).toHaveLength(1);
+    expect(zeilen[3]).toHaveTextContent('Kirchengemeinde Musterdorf');
+    expect(zeilen[3]).toHaveTextContent('Fehler');
+    expect(zeilen[3]).toHaveTextContent('In Arbeit');
+    expect(zeilen[4]).toHaveTextContent('Wartet');
+    // Neu oder ungelesen: ein Punkt -- 41 (neu, ungelesen), 40 (neu) und 36 (neu); die in Arbeit nicht.
+    expect(within(karte('Neueste Vorgänge')).getAllByRole('img', { name: 'ungelesen' })).toHaveLength(3);
     expect(within(zeilen[0]).getByRole('img', { name: 'ungelesen' })).toBeInTheDocument();
-    expect(within(karte('Neueste Anfragen')).getByRole('link', { name: 'Alle Anfragen →' })).toHaveAttribute('href', '/admin/support/anfragen');
+    expect(within(zeilen[2]).queryByRole('img', { name: 'ungelesen' })).toBeNull();
+    expect(within(karte('Neueste Vorgänge')).getByRole('link', { name: 'Alle Vorgänge →' })).toHaveAttribute('href', '/admin/support/vorgaenge');
   });
 
   it('fuenf Mails mit Postfach, Absender, Betreff und Zuordnung als Link', async () => {
@@ -229,10 +281,12 @@ describe('Uebersicht (Web): neueste Anfragen und Mails', () => {
     expect(zeilen).toHaveLength(5);
     expect(zeilen[0]).toHaveTextContent('moin@');
     expect(zeilen[0]).toHaveTextContent('Pastorin Lena Probe');
-    expect(within(zeilen[0]).getByRole('link', { name: /Musterdorf-Süd/ })).toHaveAttribute('href', '/admin/support/anfragen/41');
-    expect(within(zeilen[1]).getByRole('link', { name: /Kirchengemeinde Musterdorf$/ })).toHaveAttribute('href', '/admin/support/post/gemeinde/1');
-    // Nicht zugeordnet: Marke statt Link; ohne Namen steht die Adresse.
-    expect(zeilen[2]).toHaveTextContent('Nicht zugeordnet');
+    // Mit Vorgang: zum Vorgang; älterer Server ohne Vorgang: eine Anfrage führt zu ihrem Vorgang, eine Gemeinde zu ihren Vorgängen.
+    expect(within(zeilen[0]).getByRole('link', { name: /Musterdorf-Süd/ })).toHaveAttribute('href', '/admin/support/vorgaenge/41');
+    expect(within(zeilen[1]).getByRole('link', { name: /Kirchengemeinde Musterdorf$/ })).toHaveAttribute('href', '/admin/support/vorgaenge?gemeinde=1');
+    expect(within(zeilen[3]).getByRole('link', { name: /Wiesengrund/ })).toHaveAttribute('href', '/admin/support/anfragen/40');
+    // Nicht einsortiert: Marke statt Link; ohne Namen steht die Adresse.
+    expect(zeilen[2]).toHaveTextContent('Nicht einsortiert');
     expect(zeilen[2]).toHaveTextContent('info@beispiel-verein.example');
     expect(within(zeilen[2]).getAllByRole('link')).toHaveLength(1);
     // Ungelesen: die ersten drei.
@@ -245,15 +299,15 @@ describe('Uebersicht (Web): neueste Anfragen und Mails', () => {
     antworten();
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 1.265' });
-    const link = within(karte('Neueste Anfragen')).getAllByRole('link')[1];
-    expect(link).toHaveAttribute('href', '/admin/support/anfragen/41');
+    const link = within(karte('Neueste Vorgänge')).getAllByRole('link')[1];
+    expect(link).toHaveAttribute('href', '/admin/support/vorgaenge/41');
     // Was der Browser danach taete, ohne dass jsdom "navigieren" will: der Stand von defaultPrevented am Dokument.
     const verhindert: boolean[] = [];
     const horcher = (e: Event) => { verhindert.push(e.defaultPrevented); e.preventDefault(); };
     document.addEventListener('click', horcher);
     try {
       fireEvent.click(link);
-      expect(h.push).toHaveBeenCalledWith('/admin/support/anfragen/41', 'none', 'push');
+      expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/41', 'none', 'push');
       h.push.mockClear();
       fireEvent.click(link, { ctrlKey: true });
       fireEvent.click(link, { button: 1 });
@@ -268,10 +322,11 @@ describe('Uebersicht (Web): neueste Anfragen und Mails', () => {
   });
 
   it('leere Listen: Hinweise statt leerer Karten', async () => {
-    antworten({ ...UEBERSICHT, neueste_anfragen: [], neueste_mails: [], testphase_endet: [] });
+    antworten({ ...UEBERSICHT, neueste_anfragen: [], neueste_mails: [], testphase_endet: [] }, STATISTIK, []);
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 1.265' });
-    expect(screen.getByText('Noch keine Anfragen')).toBeInTheDocument();
+    expect(screen.getByText('Nichts offen')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Offene Vorgänge: 0' })).toBeInTheDocument();
     expect(screen.getByText('Noch keine Mails')).toBeInTheDocument();
     expect(screen.getByText('Keine Testphase läuft aus')).toBeInTheDocument();
   });

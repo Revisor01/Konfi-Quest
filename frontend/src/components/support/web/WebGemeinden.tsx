@@ -45,15 +45,15 @@ import {
   type SupportGemeinde,
 } from '../../../utils/supportWeb';
 import { useGemeindeAktionen } from '../../admin/pages/useGemeindeAktionen';
-import WebSeite from './WebSeite';
-import WebKnopf from './WebKnopf';
-import WebPill from './WebPill';
-import WebSuche from './WebSuche';
-import WebAkkordeon from './WebAkkordeon';
-import WebTabelle, { type WebSpalte } from './WebTabelle';
-import WebTreffer from './WebTreffer';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
-import { useWebDaten } from './useWebDaten';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import WebPill from '../../web/WebPill';
+import WebSuche from '../../web/WebSuche';
+import WebAkkordeon from '../../web/WebAkkordeon';
+import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import WebTreffer from '../../web/WebTreffer';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import { useSupportDaten } from '../useSupportDaten';
 
 /** Wo sich der Browser merkt, welche Gruppen zugeklappt sind (Liste der Schluessel). */
 export const SCHLUESSEL_GEMEINDEN_ZU = 'konfiquest.support.gemeinden.zu';
@@ -209,7 +209,7 @@ const Tabelle: React.FC<{
 };
 
 const WebGemeinden: React.FC = () => {
-  const { daten, laedt, neuLaden } = useWebDaten(ladeGemeinden);
+  const { daten, laedt, neuLaden } = useSupportDaten(ladeGemeinden);
   const aktionen = useGemeindeAktionen(neuLaden);
   useLiveRefresh('organizations', neuLaden);
 

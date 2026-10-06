@@ -46,6 +46,10 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import type { ActivityRequest } from '../modals/RequestDetailModal';
 import { datumKurz } from '../../../utils/dateUtils';
 import { trackMitmachenAnsicht } from '../../../services/analytics';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
+import { mitgliedSegmentAusAdresse } from '../../shared/web/termine/terminFilter';
+import WebKonfiEvents from '../web/termine/WebKonfiEvents';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
 // Tab in dieses Segment gewandert.
@@ -65,6 +69,8 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   const router = useIonRouter();
   const routerLocation = useAppLocation();
   const [presentAlert] = useIonAlert();
+  // Im Browser ab 992 px zeigt die Seite ihre Web-Fassung (siehe unten).
+  const breit = useBreitesLayout();
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
@@ -321,6 +327,37 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
 
     </>
   );
+
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md,
+  // Entscheidung 1): im Browser ab 992 px die Web-Fassung -- Events als Karten
+  // im Raster, die eigenen Aktivitäten als Tabelle --, sonst die Darstellung
+  // der App, unverändert. Daten, Rechte und Funktionen (QR-Code scannen,
+  // Aktivität melden, ansehen, löschen) sind dieselben.
+  if (breit) {
+    return (
+      <WebMitmachenMitglied
+        rolle="konfi"
+        basisPfad="/konfi/events"
+        segment={mitgliedSegmentAusAdresse(routerLocation.search)}
+        pageRef={pageRef}
+        presentingElement={presentingElement}
+        eventsInhalt={<WebKonfiEvents events={events || []} />}
+        eventsLaden={loading}
+        antraege={requests || []}
+        antraegeLaden={requestsLoading}
+        standardFilterAntraege="offen"
+        wartend={wartend}
+        gescheitert={gescheitert}
+        onVergessen={(id) => { void vergessen(id); }}
+        onScannen={() => presentScannerModal()}
+        onNeueAktivitaet={handleAddRequest}
+        onAntragOeffnen={handleSelectRequest}
+        onAntragLoeschen={handleDeleteRequest}
+        neuLaden={refresh}
+        antraegeNeuLaden={refreshRequests}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

@@ -57,6 +57,12 @@ import BadgePopoverContent, { BadgePopoverData, getBadgeColor } from '../../shar
 import { formatTimeUntil, kalendertag } from '../../shared/eventFormatting';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import { istNeu, startEvent } from '../../../utils/webStart';
+import WebSeite from '../../web/WebSeite';
+import { WebFehler, WebLaden } from '../../web/WebZustaende';
+import { WebRueckblickHinweis } from '../../konfi/web/WebStartKarten';
+import WebTeamerStart from '../web/WebTeamerStart';
 
 
 
@@ -219,6 +225,8 @@ const CertPopoverContent: React.FC<{
 
 const TeamerDashboardPage: React.FC = () => {
   const router = useIonRouter();
+  // Browser ab 992 px: die Web-Fassung (web/WebTeamerStart); sonst die App.
+  const breit = useBreitesLayout();
   const { user, setError } = useApp();
   const [showLosung] = useState(() => Math.random() > 0.5);
   // „Moin" statt Tageszeit in rund jedem fünften Aufruf — EINMAL beim Öffnen
@@ -476,6 +484,94 @@ const TeamerDashboardPage: React.FC = () => {
 
   const recentVisibleCount = visibleBadges.filter((b) => earnedIds.has(b.id) && isRecent(b)).length;
   const recentSecretCount = secretEarned.filter((b) => isRecent(b)).length;
+
+  // Web-Fassung (Browser ab 992 px): dieselben Daten und Handgriffe, ein Raster
+  // aus Karten statt der Farbverläufe. Die Wurzel ist in jedem Zustand dieselbe
+  // Seite (WebSeite), damit sie sich beim Laden nicht austauscht.
+  if (breit) {
+    const verse = dailyVerse;
+    const losungTexte = (() => {
+      if (!verse || loadingVerse || !(verse.losungstext || verse.lehrtext)) return null;
+      if (verse.losungstext && verse.lehrtext) {
+        return showLosung
+          ? { text: verse.losungstext, quelle: verse.losungsvers }
+          : { text: verse.lehrtext, quelle: verse.lehrtextvers };
+      }
+      return verse.losungstext
+        ? { text: verse.losungstext, quelle: verse.losungsvers }
+        : { text: verse.lehrtext, quelle: verse.lehrtextvers };
+    })();
+    const neueIds = new Set(earnedBadges.filter((b) => istNeu(b.earned_at)).map((b) => b.id));
+    return (
+      <WebSeite
+        bereich="Start"
+        titel={dashboardData ? getGreeting(dashboardData.greeting.display_name) : 'Konfi Quest'}
+        untertitel={dashboardData ? selbstbezeichnung(dashboardData.greeting.role_title, 'Teamer:in') : undefined}
+        wartung
+      >
+        {loading && <WebLaden kacheln={4} karten={4} text="Das Dashboard wird geladen." />}
+        {!loading && !dashboardData && (
+          <WebFehler text="Das Dashboard konnte nicht geladen werden." onErneut={() => { void refreshDashboard(); }} />
+        )}
+        {!loading && dashboardData && (
+          <>
+            <div className="web-start-hinweise">
+              <TrialBanner style={{ margin: 0 }} />
+              <StoreUpdateBanner style={{ margin: 0 }} />
+              <NeuerungenBanner
+                style={{ margin: 0 }}
+                updateSichtbar={showUpdateHinweis}
+                mitmachenSichtbar={showMitmachenHinweis}
+                onUpdateOeffnen={() => { markUpdateHinweisGesehen(); setShowUpdateWalkthrough(true); }}
+                onUpdateAusblenden={markUpdateHinweisGesehen}
+                onMitmachenOeffnen={() => { markMitmachenHinweisGesehen(); setShowMitmachenErklaerung(true); }}
+                onMitmachenAusblenden={markMitmachenHinweisGesehen}
+              />
+              {dashboardData.has_wrapped && !wrappedHinweisWeg && (
+                <WebRueckblickHinweis
+                  titel="Dein Team-Jahresrückblick ist da!"
+                  text="Schau dir deinen Jahresrückblick an"
+                  onOeffnen={openWrapped}
+                  onAusblenden={wrappedHinweisAusblenden}
+                />
+              )}
+            </div>
+            <WebTeamerStart
+              zertifikate={(dashboardData.certificates ?? []).filter((c) => c.status !== 'not_earned')}
+              challenges={activeChallenges}
+              konfispruch={dashboardData.konfspruch ?? null}
+              events={dashboardData.events.map((e) => startEvent(e))}
+              losung={losungTexte ? { ...losungTexte, uebersetzung: getTranslationName(selectedTranslation) } : null}
+              alleBadges={[...earnedBadges, ...(badgeData?.available || [])]}
+              neueIds={neueIds}
+              badgeZahlen={{ erreicht: visibleEarned, gesamt: visibleTotal, geheimErreicht: secretEarned.length, geheimGesamt: secretTotal }}
+              config={{
+                show_zertifikate: config?.show_zertifikate !== false,
+                show_challenges: config?.show_challenges !== false,
+                show_konfispruch: config?.show_konfispruch !== false,
+                show_events: config?.show_events !== false,
+                show_badges: config?.show_badges !== false,
+                show_losung: config?.show_losung !== false,
+              }}
+              sectionOrder={mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER)}
+              onUebersetzung={() => presentBibleModal()}
+              onKonfispruch={openKonfispruch}
+              symbolFuer={getIconFromString}
+            />
+          </>
+        )}
+        {showOnboarding && (
+          <TeamerOnboardingModal
+            onClose={closeOnboarding}
+            displayName={(user?.display_name || '').split(' ')[0]}
+          />
+        )}
+        {showNeuerungen && <TeamerUpdate230WalkthroughModal onClose={schliesseNeuerungen} />}
+        {showUpdateWalkthrough && <TeamerUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
+        {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="teamer" onClose={() => setShowMitmachenErklaerung(false)} />}
+      </WebSeite>
+    );
+  }
 
   // DIE STARTSEITE TAUSCHT IHRE IonPage NICHT AUS (16.09.2026, Simons Befund
   // "app startet bei teamer und konfi auf weiss").

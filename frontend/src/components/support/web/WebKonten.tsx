@@ -32,14 +32,14 @@ import { mitEinheit } from '../../../utils/supportStatistik';
 import { zeitpunktText } from '../../../utils/postfach';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { LEERES_KONTO, useSupportKonten } from '../useSupportKonten';
-import WebSeite from './WebSeite';
-import WebKnopf from './WebKnopf';
-import WebPill from './WebPill';
-import WebHinweis from './WebHinweis';
-import WebDialog from './WebDialog';
-import WebFeld from './WebFeld';
-import WebTabelle, { type WebSpalte } from './WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import WebPill from '../../web/WebPill';
+import WebHinweis from '../../web/WebHinweis';
+import WebDialog from '../../web/WebDialog';
+import WebFeld from '../../web/WebFeld';
+import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 
 const WebKonten: React.FC = () => {
   const {

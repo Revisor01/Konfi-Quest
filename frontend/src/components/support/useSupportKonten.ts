@@ -18,6 +18,7 @@ import api from '../../services/api';
 import type { SupportKonto } from '../../types/support';
 import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
+import { meldeSupportGeaendert, useSupportGeaendert } from '../../utils/supportAktualisieren';
 import { isValidUsername } from '../../utils/usernameValidation';
 import { istEmail, passwortRegelFehler } from '../../utils/supportAnfragen';
 
@@ -64,6 +65,7 @@ export function useSupportKonten() {
   }, []);
 
   useEffect(() => { void holen(); }, [holen]);
+  useSupportGeaendert(holen);
 
   const laden = useCallback(() => {
     setLaedt(true);
@@ -90,7 +92,7 @@ export function useSupportKonten() {
     try {
       await aktion();
       setSuccess(erfolg);
-      await holen();
+      meldeSupportGeaendert();
       return true;
     } catch (err) {
       fehlerZeigen(err, ersatz);

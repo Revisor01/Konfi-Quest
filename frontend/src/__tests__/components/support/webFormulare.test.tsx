@@ -12,16 +12,16 @@ vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttra
   router: { push: h.push, goBack: vi.fn(), canGoBack: () => false },
 }));
 
-import WebFeld from '../../../components/support/web/WebFeld';
-import WebTextfeld from '../../../components/support/web/WebTextfeld';
-import WebAuswahl from '../../../components/support/web/WebAuswahl';
-import WebAuswahlSuche from '../../../components/support/web/WebAuswahlSuche';
-import WebSchalter from '../../../components/support/web/WebSchalter';
-import WebHinweis from '../../../components/support/web/WebHinweis';
-import WebAngaben from '../../../components/support/web/WebAngaben';
-import WebDialog from '../../../components/support/web/WebDialog';
-import WebSpalten from '../../../components/support/web/WebSpalten';
-import WebKnopf from '../../../components/support/web/WebKnopf';
+import WebFeld from '../../../components/web/WebFeld';
+import WebTextfeld from '../../../components/web/WebTextfeld';
+import WebAuswahl from '../../../components/web/WebAuswahl';
+import WebAuswahlSuche from '../../../components/web/WebAuswahlSuche';
+import WebSchalter from '../../../components/web/WebSchalter';
+import WebHinweis from '../../../components/web/WebHinweis';
+import WebAngaben from '../../../components/web/WebAngaben';
+import WebDialog from '../../../components/web/WebDialog';
+import WebSpalten from '../../../components/web/WebSpalten';
+import WebKnopf from '../../../components/web/WebKnopf';
 import { WebMailEintrag, WebMailVerlauf } from '../../../components/support/web/WebMailVerlauf';
 import type { MailNachricht } from '../../../types/support';
 

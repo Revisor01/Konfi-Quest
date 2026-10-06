@@ -1,0 +1,1258 @@
+/* ===================================================================
+   Start, Badges und Profil in der Web-Fassung (03.10.2026,
+   docs/planung/web-alle-bereiche.md, Entscheidung 6)
+
+   Simon: "Alle anderen Bereiche sollen im Web auch auf eine bessere Ansicht
+   umgebaut werden ... native iOS- und native Web-Experience. Dashboard,
+   Chat etc. Mach das ein großer Wurf."
+
+   Diese Datei gilt nur für die Web-Komponenten dieses Bereichs
+   (components/konfi/web, components/teamer/web, components/admin/web/start);
+   sie wird von ihnen eingebunden. Die Regeln sind die von web-ansicht.css:
+   Präfix web-, nur Tokens, keine Bewegung, kein Eingriff in Ionic. Karten,
+   Kacheln, Tabellen, Chips, Dialoge und Felder kommen aus web-ansicht.css.
+   =================================================================== */
+
+/* --- Rollenfarbe: Konfi violett, Team rosa, Leitung petrol, Gemeindeleitung indigo ---
+   Die Textform (--app-text-*) wird im Dunkeln aufgehellt und hält auf der
+   Karte 4,5:1; die Flächenform (--app-color-*) trägt weißen Text. */
+.web-rolle {
+  --web-akzent: var(--app-text-konfis);
+  --web-akzent-flaeche: var(--app-color-konfis);
+}
+
+.web-rolle--team {
+  --web-akzent: var(--app-text-teamer);
+  --web-akzent-flaeche: var(--app-color-teamer);
+}
+
+.web-rolle--leitung {
+  --web-akzent: var(--app-text-leitung);
+  --web-akzent-flaeche: var(--app-color-leitung);
+}
+
+.web-rolle--gemeindeleitung {
+  --web-akzent: var(--app-text-users);
+  --web-akzent-flaeche: var(--app-color-users);
+}
+
+/* Inhalt einer Startseite: Karten untereinander wie die Seite selbst. */
+.web-start {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-weit);
+  min-width: 0;
+}
+
+/* Das Raster der Karten: zwei Spalten, jede Karte so hoch wie ihr Inhalt. */
+.web-start-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
+  gap: var(--app-abstand-basis);
+  align-items: start;
+}
+
+/* --- Hinweise über dem Raster (Testphase, Neuerungen, Rückblick) --- */
+.web-start-hinweise {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-start-hinweise:empty {
+  display: none;
+}
+
+/* --- Kleine Bausteine der Karten --- */
+.web-start-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+.web-start-notiz {
+  margin: var(--app-abstand-mini) 0 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-start-durchgestrichen {
+  text-decoration: line-through;
+}
+
+.web-start-symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--web-akzent-flaeche, var(--app-color-konfis));
+  color: var(--app-weiss);
+  font-size: var(--app-text-untertitel);
+}
+
+.web-start-symbol--challenges {
+  background: var(--app-color-challenges);
+}
+
+.web-start-symbol--erfolg {
+  background: var(--app-color-success-strong);
+}
+
+.web-start-symbol--fehler {
+  background: var(--app-color-danger);
+}
+
+/* Datumsblock vor einem Event: Wochentag, Tag, Monat. */
+.web-start-event {
+  align-items: center;
+}
+
+.web-datumsblock {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+  padding: var(--app-abstand-kompakt) 0;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-hover);
+  line-height: 1.15;
+}
+
+.web-datumsblock__tag,
+.web-datumsblock__monat {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-meta);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.web-datumsblock__zahl {
+  color: var(--web-text);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-fett);
+}
+
+/* --- Deine Punkte: Ringe, Ziele, Level --- */
+.web-punkte {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--app-abstand-weit) var(--app-abstand-extraweit);
+}
+
+.web-punkte__ringe {
+  display: flex;
+  justify-content: center;
+}
+
+@container (min-width: 960px) {
+  .web-punkte {
+    grid-template-columns: auto minmax(0, 1.15fr) minmax(0, 1fr);
+  }
+
+  .web-punkte .web-level {
+    grid-column: auto;
+    padding-top: 0;
+    padding-left: var(--app-abstand-weit);
+    border-top: 0;
+    border-left: 1px solid var(--web-linie-leise);
+  }
+}
+
+.web-punkte--ohne-level {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.web-ring {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.web-ring__svg {
+  display: block;
+}
+
+.web-ring__spur {
+  stroke: var(--app-surface-dim);
+}
+
+.web-ring__bogen--gesamt {
+  stroke: var(--app-color-badges);
+}
+
+.web-ring__bogen--gottesdienst {
+  stroke: var(--app-color-gottesdienst);
+}
+
+.web-ring__bogen--gemeinde {
+  stroke: var(--app-color-gemeinde);
+}
+
+.web-ring__mitte {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.web-ring__zahl {
+  color: var(--web-text);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-gross);
+  font-weight: var(--app-schrift-schwer);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.web-ring__einheit {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-punkte__ziele {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-basis);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-ziel__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-kompakt);
+}
+
+.web-ziel__marke {
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-info);
+}
+
+.web-ziel__marke--gesamt {
+  background: var(--app-color-badges);
+}
+
+.web-ziel__marke--gottesdienst {
+  background: var(--app-color-gottesdienst);
+}
+
+.web-ziel__marke--gemeinde {
+  background: var(--app-color-gemeinde);
+}
+
+.web-ziel__name {
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-ziel__wert {
+  margin-left: auto;
+  color: var(--web-text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-ziel__wert strong {
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+}
+
+.web-ziel__fuss {
+  margin: var(--app-abstand-kompakt) 0 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+/* Fortschrittsbalken */
+.web-fortschritt {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--app-radius-gross);
+  background: var(--app-surface-dim);
+}
+
+.web-fortschritt__fuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--app-radius-gross);
+  background: var(--app-color-info);
+}
+
+.web-fortschritt__fuellung--gesamt {
+  background: var(--app-color-badges);
+}
+
+.web-fortschritt__fuellung--gottesdienst {
+  background: var(--app-color-gottesdienst);
+}
+
+.web-fortschritt__fuellung--gemeinde {
+  background: var(--app-color-gemeinde);
+}
+
+.web-fortschritt__fuellung--level {
+  background: var(--web-akzent, var(--app-text-konfis));
+}
+
+/* Level */
+.web-level {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding-top: var(--app-abstand-basis);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-level__kopf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  margin: 0;
+}
+
+.web-level__etikett {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-mittel);
+}
+
+.web-level__titel {
+  color: var(--web-text);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: -0.01em;
+}
+
+.web-level__stufen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-stufe__symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px dashed var(--app-border-strong);
+  border-radius: var(--app-radius-kreis);
+  color: var(--app-text-muted);
+  font-size: var(--app-text-untertitel);
+}
+
+.web-stufe--erreicht .web-stufe__symbol {
+  border: 2px solid transparent;
+  background: var(--app-color-konfis);
+  color: var(--app-weiss);
+}
+
+.web-stufe--aktuell .web-stufe__symbol {
+  box-shadow: 0 0 0 2px var(--web-karte), 0 0 0 4px var(--web-akzent);
+}
+
+.web-level__weiter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-level__naechstes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--app-abstand-mini) var(--app-abstand-mittel);
+  margin: 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-sekundaer);
+}
+
+.web-level__naechstes strong {
+  color: var(--web-text);
+}
+
+/* --- Konfirmation --- */
+.web-konfirmation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-konfirmation__zahl {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  color: var(--web-akzent);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-hero);
+  font-weight: var(--app-schrift-schwer);
+  line-height: 1;
+}
+
+.web-konfirmation__einheit {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-konfirmation__text {
+  margin: 0;
+  color: var(--web-text);
+  font-size: var(--app-text-betont);
+}
+
+/* --- Zitate: Tageslosung und Konfispruch --- */
+.web-zitat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+}
+
+.web-zitat__symbol {
+  color: var(--web-akzent);
+  font-size: var(--app-anzeige-basis);
+}
+
+.web-zitat__text {
+  margin: 0;
+  padding-left: var(--app-abstand-basis);
+  border-left: 3px solid var(--web-akzent);
+  color: var(--web-text);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-untertitel);
+  line-height: 1.45;
+}
+
+.web-zitat__quelle {
+  padding-left: var(--app-abstand-basis);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-zitat__fussnote {
+  margin: 0;
+  padding-left: var(--app-abstand-basis);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-zitat__aktion {
+  padding-left: var(--app-abstand-basis);
+}
+
+.web-zitat--leer .web-zitat__text {
+  border-left: 0;
+  padding-left: 0;
+  color: var(--web-text-leise);
+  font-family: inherit;
+  font-size: var(--app-text-standard);
+}
+
+.web-zitat--leer .web-zitat__aktion {
+  padding-left: 0;
+}
+
+/* --- Badges: Symbol, Knopf in der Reihe, Kopf der Karte, Dialog --- */
+.web-abzeichen-symbol {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-badges);
+  color: var(--app-weiss);
+}
+
+.web-abzeichen-symbol--klein {
+  width: 36px;
+  height: 36px;
+  font-size: var(--app-text-gross);
+}
+
+.web-abzeichen-symbol--mittel {
+  width: 52px;
+  height: 52px;
+  font-size: var(--app-text-titel);
+}
+
+.web-abzeichen-symbol--gross {
+  width: 80px;
+  height: 80px;
+  font-size: var(--app-anzeige-zahl);
+}
+
+.web-abzeichen-symbol--offen {
+  border: 2px dashed var(--app-border-strong);
+  background: var(--app-surface-muted);
+  color: var(--app-text-muted);
+}
+
+.web-abzeichen-symbol--neu {
+  box-shadow: 0 0 0 3px var(--app-color-success-fresh);
+}
+
+.web-abzeichen-symbol__ring {
+  position: absolute;
+  inset: -7px;
+  width: calc(100% + 14px);
+  height: calc(100% + 14px);
+}
+
+.web-abzeichen-symbol__spur {
+  stroke: var(--app-border);
+}
+
+.web-abzeichen-symbol__bogen {
+  stroke: var(--app-color-users);
+}
+
+.web-abzeichen-symbol__punkt {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--web-karte);
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-success-fresh);
+  color: var(--app-weiss);
+  font-size: var(--app-text-mini);
+  font-weight: var(--app-schrift-extrafett);
+}
+
+.web-abzeichen-reihe {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: var(--app-abstand-basis) var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-abzeichen-knopf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  width: 100%;
+  padding: var(--app-abstand-eng) var(--app-abstand-mini);
+  border: 0;
+  border-radius: var(--app-radius-klein);
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-abzeichen-knopf:hover {
+  background: var(--web-hover);
+}
+
+.web-abzeichen-knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-abzeichen-knopf__name {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.25;
+  overflow-wrap: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.web-abzeichen-knopf__datum {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-meta);
+}
+
+.web-start-badgekopf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-basis);
+}
+
+.web-start-badgezahl {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  color: var(--web-text-leise);
+}
+
+.web-start-badgezahl strong {
+  color: var(--web-text);
+  font-size: var(--app-text-titel);
+}
+
+.web-abzeichen-detail {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-basis);
+}
+
+.web-abzeichen-detail__text {
+  margin: 0;
+  color: var(--web-text);
+  line-height: 1.5;
+}
+
+.web-abzeichen-detail__fortschritt {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-width: 180px;
+}
+
+.web-abzeichen-detail__fortschritt .web-fortschritt {
+  flex: 1 1 auto;
+}
+
+/* --- Rangliste --- */
+.web-rang-kopf {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mittel);
+}
+
+.web-rang-kopf__platz {
+  color: var(--web-akzent);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-gross);
+  font-weight: var(--app-schrift-schwer);
+  line-height: 1;
+}
+
+.web-rang-kopf__von {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-ueberschrift);
+}
+
+.web-rang-kopf__pokal {
+  align-self: center;
+  margin-left: auto;
+  color: var(--app-color-badges);
+  font-size: var(--app-anzeige-basis);
+}
+
+.web-rang {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-rang__zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-klein);
+}
+
+.web-rang__zeile--eigen {
+  border-color: var(--web-akzent);
+  background: var(--web-hover);
+}
+
+.web-rang__zeile--nachbar {
+  color: var(--web-text-leise);
+}
+
+.web-rang__platz {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-surface-dim);
+  color: var(--web-text);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-rang__platz--1 {
+  background: var(--app-color-gold);
+  color: var(--app-schwarz);
+}
+
+.web-rang__platz--2 {
+  background: var(--app-color-silber);
+  color: var(--app-schwarz);
+}
+
+.web-rang__platz--3 {
+  background: var(--app-color-bronze);
+  color: var(--app-schwarz);
+}
+
+.web-rang__initialen {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-surface-muted);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-rang__name {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-rang__punkte {
+  color: var(--web-text-leise);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.web-rang__trenner {
+  color: var(--web-text-leise);
+  text-align: center;
+}
+
+/* --- Hinweis auf den Rückblick --- */
+.web-rueckblick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-basis) var(--app-abstand-gross);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-gradient-wrapped);
+  color: var(--app-weiss);
+}
+
+.web-rueckblick__symbol {
+  font-size: var(--app-anzeige-zahl);
+}
+
+.web-rueckblick__text {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.web-rueckblick__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-rueckblick__beschreibung {
+  margin: var(--app-abstand-mini) 0 0;
+  font-size: var(--app-text-sekundaer);
+}
+
+.web-rueckblick__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+}
+
+.web-rueckblick__knopf {
+  min-height: 36px;
+  padding: 0 var(--app-abstand-mittelweit);
+  border: 1px solid color-mix(in srgb, var(--app-weiss) 55%, transparent);
+  border-radius: var(--app-radius-knopf);
+  background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+  color: var(--app-weiss);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-rueckblick__knopf:hover {
+  background: color-mix(in srgb, var(--app-weiss) 32%, transparent);
+}
+
+.web-rueckblick__knopf--leise {
+  border-color: transparent;
+  background: transparent;
+}
+
+.web-rueckblick__knopf:focus-visible {
+  outline: 2px solid var(--app-weiss);
+  outline-offset: 2px;
+}
+
+/* --- Zertifikate (Team) --- */
+.web-zertifikate {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-zertifikat {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-zertifikat__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-zertifikat__name {
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-zertifikat__meta {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+/* --- Badge-Seite: Werkzeuge, Kategorien, Karten --- */
+.web-badges-werkzeuge {
+  align-items: flex-end;
+}
+
+.web-badges-werkzeuge .web-suche {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+.web-badges-kategorie {
+  min-width: 200px;
+}
+
+.web-kategorie__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-kategorie__symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-knopf);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-kategorie__fortschritt {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  width: 200px;
+}
+
+.web-kategorie__fortschritt .web-fortschritt {
+  flex: 1 1 auto;
+}
+
+.web-kategorie__prozent {
+  min-width: 4ch;
+  color: var(--web-text-leise);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.web-abzeichen-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-abzeichen-karte {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittelweit);
+  width: 100%;
+  height: 100%;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-abzeichen-karte:hover {
+  border-color: var(--web-linie);
+  background: var(--web-hover);
+}
+
+.web-abzeichen-karte:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-abzeichen-karte__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  min-width: 0;
+}
+
+.web-abzeichen-karte__name {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-abzeichen-karte__geheim {
+  display: inline-flex;
+  color: var(--web-text-leise);
+}
+
+.web-abzeichen-karte__beschreibung {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.web-abzeichen-karte__stand {
+  display: flex;
+  align-items: center;
+  margin-top: var(--app-abstand-kompakt);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-abzeichen-karte__fortschritt {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  color: var(--web-text-leise);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.web-abzeichen-karte__fortschritt .web-fortschritt {
+  flex: 1 1 auto;
+}
+
+/* --- Profil: Person, Einstellungen, Konto, Verlauf --- */
+.web-avatar {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--web-akzent-flaeche);
+  color: var(--app-weiss);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-zahl);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-profil-person__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-basis);
+  padding: var(--app-abstand-gross) var(--app-abstand-gross) var(--app-abstand-mittel);
+}
+
+.web-profil-person__text {
+  min-width: 0;
+}
+
+.web-profil-person__name {
+  margin: 0;
+  color: var(--web-text);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-untertitel);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.web-profil-person__untertitel {
+  margin: var(--app-abstand-winzig) 0 0;
+  color: var(--web-akzent);
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+/* Einstellungen: Zeilen mit Symbol, Titel und Knopf */
+.web-einstellungen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-einstellung {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-einstellung:hover {
+  background: var(--web-hover);
+}
+
+.web-einstellung:last-child {
+  border-radius: 0 0 var(--app-radius-karte) var(--app-radius-karte);
+}
+
+.web-einstellung__symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: color-mix(in srgb, var(--web-akzent) 14%, transparent);
+  color: var(--web-akzent);
+  font-size: var(--app-text-gross);
+}
+
+.web-einstellung__text {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-einstellung__titel {
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-einstellung__wert {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  overflow-wrap: anywhere;
+}
+
+.web-einstellung__knoepfe {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--app-abstand-eng);
+}
+
+.web-konto-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+}
+
+.web-verlauf-mehr {
+  display: flex;
+  justify-content: center;
+  padding: var(--app-abstand-mittel);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+/* Kennzahlen des Profils: drei in der Reihe, so viele Reihen wie nötig */
+.web-profil-kacheln {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--app-abstand-basis);
+}
+
+/* Punkte-Aufteilung: ein geteilter Balken und seine Legende */
+.web-aufteilung {
+  display: flex;
+  height: 12px;
+  overflow: hidden;
+  border-radius: var(--app-radius-gross);
+  background: var(--app-surface-dim);
+}
+
+.web-aufteilung__teil {
+  display: block;
+  height: 100%;
+}
+
+.web-aufteilung__teil--gottesdienst {
+  background: var(--app-color-gottesdienst);
+}
+
+.web-aufteilung__teil--gemeinde {
+  background: var(--app-color-gemeinde);
+}
+
+.web-aufteilung__legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng) var(--app-abstand-gross);
+  margin: var(--app-abstand-mittel) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--web-text-leise);
+}
+
+.web-aufteilung__legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-aufteilung__legende strong {
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+}
+
+/* Hinweise im Profil (Neuerungen) */
+.web-profil-hinweise {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-profil-hinweise:empty {
+  display: none;
+}
+
+.web-konfirmation-karte__ort {
+  color: var(--ion-color-primary);
+}
+
+/* Konfi-Historie: schmale Badge-Reihe in der Seitenspalte */
+.web-abzeichen-reihe--eng {
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+}
+
+.web-konfi-historie__aktion {
+  margin-top: var(--app-abstand-mittel);
+}
+
+/* --- Badges verwalten (Leitung): Tabelle --- */
+.web-badge-zelle {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-badge-zelle__text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.web-badge-zelle__name {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  font-weight: var(--app-schrift-halbfett);
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-badge-zelle__name:hover {
+  color: var(--ion-color-primary);
+  text-decoration: underline;
+}
+
+.web-badge-zelle__name:focus-visible {
+  border-radius: var(--app-radius-fein);
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-badge-zelle__text .web-einzeilig {
+  max-width: 360px;
+}
+
+.web-badge-kriterium {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+}
+
+.web-badge-kriterium__symbol {
+  flex: 0 0 auto;
+  margin-top: var(--app-abstand-winzig);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-standard);
+}
+
+.web-badge-aktionen {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-abstand-eng);
+}

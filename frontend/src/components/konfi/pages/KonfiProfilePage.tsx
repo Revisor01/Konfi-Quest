@@ -15,6 +15,9 @@ import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import ProfileView from '../views/ProfileView';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import { WebFehler, WebLaden } from '../../web/WebZustaende';
 
 interface KonfiProfile {
   id: number;
@@ -54,6 +57,8 @@ interface ProgressOverview {
 const KonfiProfilePage: React.FC = () => {
   const { user } = useApp();
   const { pageRef, presentingElement } = useModalPage('profile');
+  // Browser ab 992 px: die Web-Fassung (ProfileView -> web/WebKonfiProfil).
+  const breit = useBreitesLayout();
 
   // --- useOfflineQuery: Profile ---
   const { data: profile, loading, refresh, refreshLive } = useOfflineQuery<KonfiProfile>(
@@ -67,6 +72,18 @@ const KonfiProfilePage: React.FC = () => {
   // Aktivitäten melden 'dashboard', nicht 'points' — ohne das blieb das Profil
   // bei genau diesen Vergabewegen stehen (Audit 22.08.2026).
   useLiveRefresh(['points', 'dashboard', 'badges'], refreshLive);
+
+  if (breit) {
+    return (
+      <WebSeite bereich="Profil" titel="Mein Profil" untertitel="Konto, Punkte und Einstellungen" pageRef={pageRef}>
+        {loading && <WebLaden kacheln={3} karten={2} text="Das Profil wird geladen." />}
+        {!loading && !profile && <WebFehler text="Das Profil konnte nicht geladen werden." onErneut={() => { void refresh(); }} />}
+        {!loading && profile && (
+          <ProfileView profile={profile} onReload={refresh} presentingElement={presentingElement || null} pageRef={pageRef} />
+        )}
+      </WebSeite>
+    );
+  }
 
   if (loading) {
     return <LoadingSpinner message="Profil wird geladen..." />;

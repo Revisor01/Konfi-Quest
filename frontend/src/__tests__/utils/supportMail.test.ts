@@ -6,7 +6,6 @@ import {
   ANFRAGE_BETREFF,
   PLATZHALTER,
   absenderText,
-  anfragenZumZuordnen,
   antwortFehler,
   antwortKoerper,
   aufDiesemServer,
@@ -31,7 +30,7 @@ import {
   zaehlerLesen,
   zitateTrennen,
 } from '../../utils/supportMail';
-import type { GemeindeAnfrage, MailBaustein, MailNachricht } from '../../types/support';
+import type { MailBaustein, MailNachricht } from '../../types/support';
 
 const mail = (id: number, extra: Partial<MailNachricht> = {}): MailNachricht => ({
   id, postfach: 'moin', richtung: 'ein', anfrage_id: null, organization_id: null,
@@ -278,17 +277,6 @@ describe('Faden und Liste', () => {
     expect(fadenAus({ ...selbst }).map((m) => m.id)).toEqual([5]);
   });
 
-  it('Anfragen zum Zuordnen: offene (neu, in Arbeit) zuerst, darin die neuesten vorn', () => {
-    const a = (id: number, status: GemeindeAnfrage['status'], created_at: string) => ({ id, status, created_at } as GemeindeAnfrage);
-    const liste = [
-      a(1, 'angelegt', '2026-10-03T08:00:00Z'),
-      a(2, 'neu', '2026-10-01T08:00:00Z'),
-      a(3, 'abgelehnt', '2026-09-01T08:00:00Z'),
-      a(4, 'in_arbeit', '2026-10-02T08:00:00Z'),
-    ];
-    expect(anfragenZumZuordnen(liste).map((x) => x.id)).toEqual([4, 2, 1, 3]);
-  });
-
   it('Gemeinden nach Anzeigename', () => {
     expect(gemeindenSortiert([
       { id: 1, name: 'zz', display_name: 'Wesselburen' },
@@ -301,11 +289,18 @@ describe('Faden und Liste', () => {
 describe('Antworten des Servers lesen', () => {
   it('Zaehler: Zahlen uebernommen, fehlende und falsche als 0, Tabellen nur mit Zahlen ueber 0', () => {
     expect(zaehlerLesen({ anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2, 5: 0, 6: 'x' }, je_gemeinde: { 7: 1 } })).toEqual({
-      anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 },
+      anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 }, vorgaenge: 0, posteingang: 0,
     });
-    expect(zaehlerLesen({ eingang: '3' })).toEqual({ anfragen: 0, gemeinden: 0, eingang: 0, je_anfrage: {}, je_gemeinde: {} });
+    expect(zaehlerLesen({ eingang: '3' })).toEqual({ anfragen: 0, gemeinden: 0, eingang: 0, je_anfrage: {}, je_gemeinde: {}, vorgaenge: 0, posteingang: 0 });
     expect(zaehlerLesen([])).toBeNull();
     expect(zaehlerLesen(null)).toBeNull();
+  });
+
+  it('Zaehler: die zwei roten Zahlen der Vorgaenge (vorgaenge, posteingang) kommen mit; falsche Werte zaehlen 0', () => {
+    expect(zaehlerLesen({ vorgaenge: 5, posteingang: 2 })).toMatchObject({ vorgaenge: 5, posteingang: 2 });
+    expect(zaehlerLesen({ vorgaenge: -1, posteingang: 'viele' })).toMatchObject({ vorgaenge: 0, posteingang: 0 });
+    // Ein aelterer Server kennt die Felder nicht: nichts bricht, die Zahlen stehen auf 0.
+    expect(zaehlerLesen({ anfragen: 4, gemeinden: 1, eingang: 2, je_anfrage: {}, je_gemeinde: {} })).toMatchObject({ vorgaenge: 0, posteingang: 0 });
   });
 
   it('Empfaenger: Zeichenketten und Objekte (adresse/email, name/display_name, herkunft/quelle/rolle), ohne Dubletten und ohne Ungueltiges', () => {

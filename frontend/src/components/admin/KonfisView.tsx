@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton ,
   IonSpinner} from '@ionic/react';
 import {
@@ -19,10 +19,11 @@ import { SectionHeader, ListSection, TrialBanner, StoreUpdateBanner } from '../s
 import WartungsHinweis from '../shared/WartungsHinweis';
 import WeitereEintraege from '../shared/WeitereEintraege';
 import { useSchrittweiseListe } from '../../hooks/useSchrittweiseListe';
-import api from '../../services/api';
 import { useApp } from '../../contexts/AppContext';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import type { TeamerListenEintrag } from '../../types/user';
+import { konfiPunkte, initialen } from '../../utils/konfiListe';
+import { useTeamerListe } from './useTeamerListe';
 
 interface Konfi {
   id: number;
@@ -85,58 +86,27 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   onViewModeChange,
   initialViewMode = 'konfis'
 }) => {
-  const { user, setError } = useApp();
+  const { user } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
-  const [teamers, setTeamers] = useState<TeamerListenEintrag[]>([]);
-  const [teamerLoading, setTeamerLoading] = useState(false);
+  // Die Team-Liste laedt erst, wenn das Segment "Team" gewaehlt ist (Hook
+  // geteilt mit der Web-Fassung, useTeamerListe.ts).
+  const { teamers, laedt: teamerLoading, laden: loadTeamers } = useTeamerListe(viewMode === 'teamer');
   // Hier lud bis 28.09.2026 jeder Mount GET /organizations/:id (samt sechs
   // Zaehlabfragen im Server) fuer eine "X von Y Konfis"-Anzeige, die es nie
   // gab -- der Wert wurde gesetzt, aber nie gelesen (Audit Screens Leitung
   // BF-07). Die Tarif-Grenze meldet der Server beim Anlegen (limit_grace,
   // limit_exceeded, AdminKonfisPage).
 
-  // Teamer laden (wiederverwendbar: Segment-Wechsel + Reload nach Löschen)
-  const loadTeamers = useCallback(async () => {
-    setTeamerLoading(true);
-    try {
-      const response = await api.get('/admin/konfis/teamer');
-      setTeamers(response.data || []);
-    } catch (err) {
-      // Fehler NICHT als Leerzustand ausgeben — eine leere Liste sieht aus,
-      // als gaebe es keine Teamer:innen (Audit 10.08.).
-      console.error('Error loading teamers:', err);
-      setTeamers([]);
-      setError('Das Team konnte nicht geladen werden');
-    } finally {
-      setTeamerLoading(false);
-    }
-  }, []);
+  // Die Rechenregeln der Punkte (abgeschaltete Art, Ziel 10) stehen in
+  // utils/konfiListe.ts -- dieselben wie in der Web-Fassung.
+  const getTotalPoints = (konfi: Konfi) => konfiPunkte(konfi).gesamt;
 
-  // Teamer laden wenn Teamer-Segment aktiv
-  useEffect(() => {
-    if (viewMode === 'teamer') {
-      loadTeamers();
-    }
-  }, [viewMode, loadTeamers]);
+  const getGottesdienstPoints = (konfi: Konfi) => konfiPunkte(konfi).gottesdienst;
 
-  const getTotalPoints = (konfi: Konfi) => {
-    const godiEnabled = konfi.gottesdienst_enabled !== false;
-    const gemEnabled = konfi.gemeinde_enabled !== false;
-    const gottesdienst = godiEnabled ? (konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0) : 0;
-    const gemeinde = gemEnabled ? (konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0) : 0;
-    return gottesdienst + gemeinde;
-  };
-
-  const getGottesdienstPoints = (konfi: Konfi) => {
-    return konfi.gottesdienst_points ?? konfi.points?.gottesdienst ?? 0;
-  };
-
-  const getGemeindePoints = (konfi: Konfi) => {
-    return konfi.gemeinde_points ?? konfi.points?.gemeinde ?? 0;
-  };
+  const getGemeindePoints = (konfi: Konfi) => konfiPunkte(konfi).gemeinde;
 
   const filteredAndSortedKonfis = (() => {
     let result = konfis;
@@ -165,22 +135,18 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const { sichtbar: sichtbareKonfis, weitere: weitereKonfis, mehrZeigen: mehrKonfis } =
     useSchrittweiseListe(filteredAndSortedKonfis, `${searchTerm}|${selectedJahrgang}|${sortBy}`);
 
-  const getInitials = (name: string) => {
-    const words = name.trim().split(/\s+/);
-    if (words.length === 1) {
-      return words[0].substring(0, 2).toUpperCase();
-    }
-    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-  };
+  const getInitials = (name: string) => initialen(name);
 
   // Pro-Konfi Targets aus Jahrgang-Config
   const getKonfiTargets = (konfi: Konfi) => {
-    const godiEnabled = konfi.gottesdienst_enabled !== false;
-    const gemEnabled = konfi.gemeinde_enabled !== false;
-    const targetGodi = konfi.target_gottesdienst || 10;
-    const targetGem = konfi.target_gemeinde || 10;
-    const targetTotal = (godiEnabled ? targetGodi : 0) + (gemEnabled ? targetGem : 0);
-    return { godiEnabled, gemEnabled, targetGodi, targetGem, targetTotal };
+    const p = konfiPunkte(konfi);
+    return {
+      godiEnabled: p.gottesdienstAn,
+      gemEnabled: p.gemeindeAn,
+      targetGodi: p.zielGottesdienst,
+      targetGem: p.zielGemeinde,
+      targetTotal: p.zielGesamt,
+    };
   };
 
   // Farbe: Lila für alle auf dem Weg, Grün für fertige

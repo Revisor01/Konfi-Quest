@@ -35,6 +35,9 @@ const { ImapFlow } = require('imapflow');
 const { allePostfaecher, imapOptionen } = require('../utils/mailPostfaecher');
 const { mailZerlegen, mailAusKopf } = require('../utils/mailNachrichten');
 const { mailZuordnen } = require('../utils/mailZuordnung');
+const {
+  vorgangAnlegen, mailImVorgang, betreffAusMail, verwaisteMailsNachziehen,
+} = require('../utils/supportVorgaenge');
 const { adresseFuersProtokoll } = require('../utils/protokoll');
 
 const MAX_JE_LAUF = 200;
@@ -104,27 +107,41 @@ async function standSetzen(db, postfach, uidValidity, letzteUid) {
     [postfach, uidValidity, letzteUid]);
 }
 
-/** Eine Mail speichern und den Stand fortschreiben -- in einer Transaktion. */
+/**
+ * Eine Mail speichern und den Stand fortschreiben -- in einer Transaktion.
+ *
+ * Die Zuordnung (utils/mailZuordnung.js) nennt den Vorgang; bei
+ * neuer_vorgang (Absender ist das Konto genau einer Gemeinde) legt diese
+ * Funktion den Vorgang an, aber nur, wenn die Mail wirklich neu ist. Eine
+ * neue Mail in einem Vorgang ist eine Bewegung: Die Anfrage dahinter zaehlt
+ * es als Bewegung (365-Tage-Frist), und ein archivierter Vorgang kommt
+ * zurueck (utils/supportVorgaenge.js, mailImVorgang).
+ */
 async function mailSpeichern(db, { postfach, uid, mail, zuordnung }) {
   const client = await db.getClient();
   try {
     await client.query('BEGIN');
     const { rows } = await client.query(
       `INSERT INTO mail_nachrichten
-         (postfach, richtung, anfrage_id, organization_id, message_id, in_reply_to, referenzen,
+         (postfach, richtung, vorgang_id, anfrage_id, organization_id, message_id, in_reply_to, referenzen,
           von_adresse, von_name, an_adressen, betreff, text, anhaenge, gesendet_am, imap_uid)
-       VALUES ($1, 'ein', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb, $13, $14)
+       VALUES ($1, 'ein', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::jsonb, $14, $15)
        ON CONFLICT (message_id) DO NOTHING
        RETURNING id`,
-      [postfach, zuordnung.anfrage_id, zuordnung.organization_id, mail.messageId, mail.inReplyTo,
+      [postfach, zuordnung.vorgang_id ?? null, zuordnung.anfrage_id, zuordnung.neuer_vorgang ? null : zuordnung.organization_id,
+        mail.messageId, mail.inReplyTo,
         mail.referenzen, mail.vonAdresse, mail.vonName, mail.anAdressen, mail.betreff, mail.text,
         JSON.stringify(mail.anhaenge), mail.gesendetAm, uid]);
     const gespeichert = rows.length > 0;
-    // Eine eingehende Mail zu einer Anfrage ist eine Bewegung: Die
-    // 365-Tage-Frist unbewegter Anfragen beginnt neu
-    // (BackgroundService.cleanupUnbewegteAnfragen).
-    if (gespeichert && zuordnung.anfrage_id !== null) {
-      await client.query('UPDATE gemeinde_anfragen SET updated_at = NOW() WHERE id = $1', [zuordnung.anfrage_id]);
+    if (gespeichert && zuordnung.neuer_vorgang) {
+      const { id: vorgangId } = await vorgangAnlegen(client, {
+        art: 'sonstiges', betreff: betreffAusMail(mail.betreff), quelle: 'mail', organizationId: zuordnung.organization_id,
+      });
+      await client.query(
+        'UPDATE mail_nachrichten SET vorgang_id = $2, organization_id = $3 WHERE id = $1',
+        [rows[0].id, vorgangId, zuordnung.organization_id]);
+    } else if (gespeichert && zuordnung.vorgang_id) {
+      await mailImVorgang(client, zuordnung.vorgang_id);
     }
     await client.query('UPDATE mail_abholstand SET letzte_uid = GREATEST(letzte_uid, $2) WHERE postfach = $1', [postfach, uid]);
     await client.query('COMMIT');
@@ -296,6 +313,13 @@ async function postfachAbholen(db, konfig, {
  */
 async function alleAbholen(db, { env = process.env, ...opt } = {}) {
   if (env.RUN_BACKGROUND_JOBS === 'false') return [];
+  // Mails, die ein Server-Stand vor Migration 195 ohne Vorgang abgelegt hat
+  // (Deploy mit zwei Replicas), vor dem Abholen an ihren Vorgang binden.
+  try {
+    await verwaisteMailsNachziehen(db);
+  } catch (err) {
+    console.error('Mail-Abholung: Mails ohne Vorgang nicht nachgezogen (%s %s)', err.code || '', err.message);
+  }
   const ergebnisse = [];
   for (const konfig of allePostfaecher(env)) {
     if (!konfig.eingerichtet) continue;

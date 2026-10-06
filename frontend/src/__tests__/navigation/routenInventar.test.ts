@@ -34,7 +34,9 @@ const ROUTEN = {
     '/admin/settings', '/admin/badges', '/admin/challenges', '/admin/challenges/:id', '/admin/users',
     '/admin/organizations', '/admin/material', '/admin/profile', '/admin/metrics',
     // Support-Ansicht (03.10.2026), auch im Baum super_admin
-    '/admin/support', '/admin/support/anfragen', '/admin/support/anfragen/:id',
+    '/admin/support', '/admin/support/vorgaenge', '/admin/support/vorgaenge/:id',
+    // Die alte Adresse einer Anfrage fuehrt zu ihrem Vorgang (Weiterleitung).
+    '/admin/support/anfragen/:id',
     '/admin/support/struktur', '/admin/support/konten',
   ],
   teamer: [

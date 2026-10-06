@@ -25,10 +25,10 @@ export type Rolle = 'admin' | 'teamer' | 'konfi' | 'super_admin';
  * die zwei der Support-Ansicht aus GET /support/mail/zaehler
  * (navigation/supportMailZaehler.ts) -- beide über navigation/reiterZaehler.ts.
  */
-export type BadgeKey = 'chat' | 'events' | 'challenges' | 'badges' | 'supportAnfragen' | 'supportPost';
+export type BadgeKey = 'chat' | 'events' | 'challenges' | 'badges' | 'supportVorgaenge' | 'supportPosteingang';
 
 /** Die Zähler der Support-Mail (rote Zahl in der Support-Ansicht, kein Push). */
-export const SUPPORT_MAIL_ZAEHLER: readonly BadgeKey[] = ['supportAnfragen', 'supportPost'];
+export const SUPPORT_MAIL_ZAEHLER: readonly BadgeKey[] = ['supportVorgaenge', 'supportPosteingang'];
 
 /**
  * Eine Route. Entweder ohne Parameter, oder mit — dann gehören `param` (wie
@@ -65,7 +65,7 @@ export type RouteDef =
       /** Name des Parameters in der URL. */
       param: 'id' | 'roomId';
       /** Unter welchem Prop-Namen die Seite den Wert erwartet (als Zahl). */
-      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId' | 'nachrichtId' | 'organizationId';
+      propName: 'konfiId' | 'eventId' | 'roomId' | 'challengeId' | 'anfrageId' | 'vorgangId' | 'nachrichtId' | 'organizationId';
     };
 
 export interface RedirectDef {
@@ -114,6 +114,12 @@ export interface RollenBaum {
    * hat keine Profilseite).
    */
   profil?: MenueEintrag;
+  /**
+   * Seiten ohne eigenen Eintrag in der Seitenleiste und der Eintrag, der dort
+   * fuer sie markiert wird (z. B. alles, was ueber „Mehr" erreicht wird).
+   * Greift nur, wenn kein Eintrag direkt passt (aktiverPfad).
+   */
+  zugehoerig?: Array<{ von: string; zu: string }>;
 }
 
 /**
@@ -137,6 +143,22 @@ export const aktiverPfad = (pathname: string, pfade: readonly string[]): string 
     if (passt && (bester === null || pfad.length > bester.length)) bester = pfad;
   }
   return bester;
+};
+
+/**
+ * Der markierte Eintrag der Seitenleiste: der direkt passende, sonst der aus
+ * der Zuordnung des Baums (gleiche Pfadregel wie aktiverPfad).
+ */
+export const markierterPfad = (
+  pathname: string,
+  pfade: readonly string[],
+  zugehoerig: RollenBaum['zugehoerig'] = [],
+): string | null => {
+  const direkt = aktiverPfad(pathname, pfade);
+  if (direkt) return direkt;
+  const von = aktiverPfad(pathname, zugehoerig.map((z) => z.von));
+  const ziel = von ? zugehoerig.find((z) => z.von === von)!.zu : null;
+  return ziel && pfade.includes(ziel) ? ziel : null;
 };
 
 /** Tab-Leiste verstecken: in Chat-Räumen aller Rollen. */

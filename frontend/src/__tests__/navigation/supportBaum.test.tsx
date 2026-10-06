@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { BAEUME } from '../../navigation/rollenBaeume';
 import { rollenStart } from '../../navigation/routes';
 import { SUPPORT_BEREICHE } from '../../navigation/supportMenue';
-import { ParamSeite, elternPfad } from '../../components/layout/MainTabs';
+import { ParamSeite, Umleitung, elternPfad } from '../../components/layout/MainTabs';
 
 // Die Support-Ansicht im Navigationsbaum (Web-Version, 03.10.2026).
 //
@@ -17,13 +17,19 @@ import { ParamSeite, elternPfad } from '../../components/layout/MainTabs';
 // Gemeindeleitung mit Merkmal -- erreicht dieselben Seiten im Baum der
 // Leitung ueber "Mehr", ohne dass sie fuer andere Leitungen in einer
 // Navigation stehen.
+//
+// Vorgaenge (03.10.2026, docs/planung/support-vorgaenge.md): „Anfragen" ist kein
+// eigener Bereich mehr, sondern ein Filter der Vorgaenge (Art „Neue Gemeinde").
+// Die alten Adressen bleiben als Umleitung bzw. als Seite, die zum Vorgang fuehrt.
 
 const SUPPORT_PFADE = [
   '/admin/support',
+  // Vorgaenge (03.10.2026, docs/planung/support-vorgaenge.md)
+  '/admin/support/vorgaenge/:id',
+  '/admin/support/vorgaenge',
+  // Die alte Adresse einer Anfrage fuehrt zu ihrem Vorgang.
   '/admin/support/anfragen/:id',
-  '/admin/support/anfragen',
   // Support-Mail (03.10.2026, docs/planung/support-mail.md)
-  '/admin/support/post/gemeinde/:id',
   '/admin/support/post/:id',
   '/admin/support/post',
   '/admin/support/bausteine',
@@ -48,10 +54,10 @@ describe('Baum super_admin: Support-Ansicht', () => {
     expect(pfade).toEqual([...SUPPORT_PFADE, '/admin/organizations', '/admin/metrics']);
   });
 
-  it('menue: die acht Bereiche in fester Reihenfolge, jeder mit Symbol und Ziel im Baum', () => {
+  it('menue: die acht Bereiche in fester Reihenfolge -- „Vorgänge“ statt „Anfragen“ --, jeder mit Symbol und Ziel im Baum', () => {
     const menue = BAEUME.super_admin.menue ?? [];
     expect(menue.map((m) => m.label)).toEqual([
-      'Übersicht', 'Anfragen', 'Posteingang', 'Gemeinden', 'Struktur', 'Support-Konten', 'Textbausteine', 'Betrieb',
+      'Übersicht', 'Vorgänge', 'Posteingang', 'Gemeinden', 'Struktur', 'Support-Konten', 'Textbausteine', 'Betrieb',
     ]);
     for (const m of menue) {
       expect(m.icon, m.label).toBeTruthy();
@@ -65,17 +71,27 @@ describe('Baum super_admin: Support-Ansicht', () => {
   });
 
   // Support-Mail, Entscheidung 5: „rote Zahl in der Support-Ansicht, kein Push".
-  it('menue: rote Zahl an Anfragen und Posteingang, sonst nirgends', () => {
+  it('menue: rote Zahl an Vorgängen und Posteingang, sonst nirgends', () => {
     const menue = BAEUME.super_admin.menue ?? [];
     expect(menue.filter((m) => m.badge).map((m) => [m.label, m.badge])).toEqual([
-      ['Anfragen', 'supportAnfragen'],
-      ['Posteingang', 'supportPost'],
+      ['Vorgänge', 'supportVorgaenge'],
+      ['Posteingang', 'supportPosteingang'],
     ]);
   });
 
-  it('/admin/support/post/gemeinde ohne Kennung fuehrt in den Posteingang -- in beiden Baeumen', () => {
+  it('die alten Adressen leiten um -- in beiden Baeumen: die Anfragen auf die Vorgaenge der Art „Neue Gemeinde“, der Schriftwechsel einer Gemeinde auf ihre Vorgaenge', () => {
     for (const rolle of ['super_admin', 'admin'] as const) {
+      expect(BAEUME[rolle].redirects, rolle).toContainEqual({ from: '/admin/support/anfragen', to: '/admin/support/vorgaenge?art=neue_gemeinde' });
+      expect(BAEUME[rolle].redirects, rolle).toContainEqual({ from: '/admin/support/post/gemeinde/:id', to: '/admin/support/vorgaenge?gemeinde=:id' });
       expect(BAEUME[rolle].redirects, rolle).toContainEqual({ from: '/admin/support/post/gemeinde', to: '/admin/support/post' });
+    }
+  });
+
+  it('die alten Adressen sind keine Seiten mehr -- sonst stuende eine Seite vor der Umleitung', () => {
+    for (const pfad of ['/admin/support/anfragen', '/admin/support/post/gemeinde/7', '/admin/support/post/gemeinde']) {
+      // „post/gemeinde" wuerde als Mail mit der Kennung „gemeinde" gelesen -- die Umleitung muss davor greifen.
+      if (pfad === '/admin/support/post/gemeinde') continue;
+      expect(trifft('super_admin', pfad), pfad).toBe(false);
     }
   });
 
@@ -98,44 +114,87 @@ describe('Baum der Leitung: Support-Seiten fuer Simons Konto, ohne Navigation fu
   });
 });
 
-describe('Eine Anfrage: Kennung als Zahl', () => {
-  const Detail: React.FC<{ anfrageId: number }> = ({ anfrageId }) => (
-    <span data-testid="detail">{`${typeof anfrageId}:${anfrageId}`}</span>
+describe('Ein Vorgang und die alte Adresse einer Anfrage: Kennung als Zahl', () => {
+  const Vorgang: React.FC<{ vorgangId: number }> = ({ vorgangId }) => (
+    <span data-testid="vorgang">{`${typeof vorgangId}:${vorgangId}`}</span>
+  );
+  const Anfrage: React.FC<{ anfrageId: number }> = ({ anfrageId }) => (
+    <span data-testid="anfrage">{`${typeof anfrageId}:${anfrageId}`}</span>
   );
   const Liste: React.FC = () => <span data-testid="liste">Liste</span>;
 
   const rendere = (start: string) => {
-    const routen = BAEUME.super_admin.routes.filter((r) => r.path.startsWith('/admin/support/anfragen'));
+    const routen = BAEUME.super_admin.routes.filter((r) => r.path.startsWith('/admin/support/vorgaenge') || r.path.startsWith('/admin/support/anfragen'));
     return render(
       <MemoryRouter initialEntries={[start]}>
         <Routes>
-          {routen.map((r) => (
-            <Route key={r.path} path={r.path} element={r.param && r.propName
-              ? <ParamSeite Seite={Detail} prop={r.propName} param={r.param} zurueckZu={elternPfad(r.path)} />
-              : <Liste />} />
-          ))}
+          {routen.map((r) => {
+            const Seite = r.propName === 'anfrageId' ? Anfrage : Vorgang;
+            return (
+              <Route key={r.path} path={r.path} element={r.param && r.propName
+                ? <ParamSeite Seite={Seite} prop={r.propName} param={r.param} zurueckZu={elternPfad(r.path)} />
+                : <Liste />} />
+            );
+          })}
         </Routes>
       </MemoryRouter>
     );
   };
 
-  it('/admin/support/anfragen/12 oeffnet die Anfrage mit anfrageId 12', () => {
-    rendere('/admin/support/anfragen/12');
-    expect(screen.getByTestId('detail').textContent).toBe('number:12');
+  it('/admin/support/vorgaenge/12 oeffnet den Vorgang mit vorgangId 12', () => {
+    rendere('/admin/support/vorgaenge/12');
+    expect(screen.getByTestId('vorgang').textContent).toBe('number:12');
   });
 
-  it('/admin/support/anfragen bleibt die Liste', () => {
-    rendere('/admin/support/anfragen');
+  it('/admin/support/vorgaenge bleibt die Liste -- nicht ein Vorgang', () => {
+    rendere('/admin/support/vorgaenge');
     expect(screen.getByTestId('liste')).toBeTruthy();
+    expect(screen.queryByTestId('vorgang')).toBeNull();
+  });
+
+  it('/admin/support/anfragen/12 oeffnet die Seite, die zum Vorgang der Anfrage 12 fuehrt (anfrageId)', () => {
+    rendere('/admin/support/anfragen/12');
+    expect(screen.getByTestId('anfrage').textContent).toBe('number:12');
   });
 });
 
-describe('Support-Mail: eine Mail und der Schriftwechsel einer Gemeinde, Kennung als Zahl', () => {
+describe('Alte Adressen im Router: die Umleitung fuellt den Platzhalter', () => {
+  const Standort: React.FC = () => {
+    const loc = useLocation();
+    return <span data-testid="standort">{loc.pathname + loc.search}</span>;
+  };
+  const rendere = (start: string) => {
+    const umleitungen = BAEUME.super_admin.redirects.filter((r) => r.from.startsWith('/admin/support'));
+    return render(
+      <MemoryRouter initialEntries={[start]}>
+        <Routes>
+          {umleitungen.map((r) => <Route key={r.from} path={r.from} element={<Umleitung to={r.to} />} />)}
+          <Route path="/admin/support/vorgaenge" element={<Standort />} />
+          <Route path="/admin/support/post" element={<Standort />} />
+        </Routes>
+      </MemoryRouter>
+    );
+  };
+
+  it('/admin/support/anfragen landet auf den Vorgaengen der Art „Neue Gemeinde“', () => {
+    rendere('/admin/support/anfragen');
+    expect(screen.getByTestId('standort').textContent).toBe('/admin/support/vorgaenge?art=neue_gemeinde');
+  });
+
+  it('/admin/support/post/gemeinde/7 landet auf den Vorgaengen der Gemeinde 7 -- nicht auf ":id"', () => {
+    rendere('/admin/support/post/gemeinde/7');
+    expect(screen.getByTestId('standort').textContent).toBe('/admin/support/vorgaenge?gemeinde=7');
+  });
+
+  it('/admin/support/post/gemeinde ohne Kennung landet im Posteingang', () => {
+    rendere('/admin/support/post/gemeinde');
+    expect(screen.getByTestId('standort').textContent).toBe('/admin/support/post');
+  });
+});
+
+describe('Support-Mail: eine Mail, Kennung als Zahl', () => {
   const Mail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => (
     <span data-testid="mail">{`${typeof nachrichtId}:${nachrichtId}`}</span>
-  );
-  const Gemeinde: React.FC<{ organizationId: number }> = ({ organizationId }) => (
-    <span data-testid="gemeinde">{`${typeof organizationId}:${organizationId}`}</span>
   );
   const Posteingang: React.FC = () => <span data-testid="posteingang">Posteingang</span>;
 
@@ -146,10 +205,9 @@ describe('Support-Mail: eine Mail und der Schriftwechsel einer Gemeinde, Kennung
       <MemoryRouter initialEntries={[start]}>
         <Routes>
           {routen.map((r) => {
-            const Seite = r.propName === 'organizationId' ? Gemeinde : Mail;
             return (
               <Route key={r.path} path={r.path} element={r.param && r.propName
-                ? <ParamSeite Seite={Seite} prop={r.propName} param={r.param} zurueckZu={elternPfad(r.path)} />
+                ? <ParamSeite Seite={Mail} prop={r.propName} param={r.param} zurueckZu={elternPfad(r.path)} />
                 : <Posteingang />} />
             );
           })}
@@ -161,12 +219,6 @@ describe('Support-Mail: eine Mail und der Schriftwechsel einer Gemeinde, Kennung
   it('/admin/support/post/31 oeffnet die Mail mit nachrichtId 31', () => {
     rendere('/admin/support/post/31');
     expect(screen.getByTestId('mail').textContent).toBe('number:31');
-  });
-
-  it('/admin/support/post/gemeinde/7 oeffnet den Schriftwechsel mit organizationId 7 -- nicht eine Mail „gemeinde"', () => {
-    rendere('/admin/support/post/gemeinde/7');
-    expect(screen.getByTestId('gemeinde').textContent).toBe('number:7');
-    expect(screen.queryByTestId('mail')).toBeNull();
   });
 
   it('/admin/support/post bleibt der Posteingang', () => {

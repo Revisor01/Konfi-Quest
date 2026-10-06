@@ -112,7 +112,10 @@ describe('Start: Ionic-Hilfsklassen', () => {
   it('float-elements.css ist nicht eingebunden, und keine Stelle nutzt ion-float-*', () => {
     const app = readFileSync(join(FRONTEND, 'src/App.tsx'), 'utf8');
     expect(app).not.toMatch(/^import '@ionic\/react\/css\/float-elements\.css';$/m);
-    const css = readdirSync(join(FRONTEND, 'src/theme')).map((d) => join(FRONTEND, 'src/theme', d));
+    // Auch die Unterordner (theme/web/ fuer die Stylesheets der Bereiche).
+    const css = (readdirSync(join(FRONTEND, 'src/theme'), { recursive: true }) as string[])
+      .map((d) => join(FRONTEND, 'src/theme', d))
+      .filter((d) => /\.(css|ts)$/.test(d));
     const nutzer = [...quelldateien(), ...css].filter((d) => /\bion-float-/.test(readFileSync(d, 'utf8')));
     expect(nutzer).toEqual([]);
   });

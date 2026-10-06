@@ -1,82 +1,57 @@
 // Posteingang in der Web-Fassung der Support-Ansicht, /admin/support/post
-// (docs/planung/support-web.md, Entscheidung 10).
+// (docs/planung/support-vorgaenge.md, Entscheidung 7).
 //
-// Simon, 03.10.2026: "Und auch Support-Anfragen etc. kommen ins Postfach,
-// oder?" -- Der Posteingang ist hier wie ein Mailprogramm: ALLE eingehenden
-// Mails beider Postfaecher (GET /support/mail/eingang?zuordnung=alle), mit den
-// Filtern Alle, Nicht zugeordnet, moin@ und support@ und einer Spalte, wohin
-// die Mail gehoert (Link zur Anfrage bzw. zum Schriftwechsel der Gemeinde).
+// Simon, 03.10.2026: „… und dann gibt es immer noch die Mail, und die kann
+// zusortiert werden." Hier liegen nur die eingehenden Mails an moin@ und
+// support@, die der Server keinem Vorgang zuordnen konnte und die nicht
+// archiviert sind. Je Mail „Einsortieren" (bestehender Vorgang mit Suche oder
+// neuer Vorgang mit Art, Bereich, Gemeinde), Archivieren und Löschen; mehrere
+// Mails lassen sich auswählen. Filter: Alle, Ungelesen, moin@, support@ und
+// Archiv. Alles andere -- Anfragen, Formulare, Schriftwechsel -- steht in den
+// Vorgängen.
 //
-// Die rote Zahl am Filter "Nicht zugeordnet" ist dieselbe wie die der Leiste:
-// ungelesene Mails ohne Zuordnung, aus GET /support/mail/zaehler
-// (navigation/supportMailZaehler.ts). Mails mit Zuordnung zaehlen schon an
-// der Anfrage bzw. Gemeinde.
+// Die rote Zahl am Filter „Ungelesen" ist dieselbe wie die der Leiste
+// (navigation/supportMailZaehler.ts). Die Logik steht in
+// components/support/usePosteingang.ts und useMailAktionen.ts, dieselbe wie in
+// der App.
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_AKTUALISIEREN, ICON_ANHANG, ICON_MAIL } from '../../shared/icons';
-import api from '../../../services/api';
+import { ICON_AKTUALISIEREN, ICON_ANHANG, ICON_ARCHIV, ICON_LOESCHEN, ICON_MAIL, ICON_RUECKGAENGIG } from '../../shared/icons';
 import type { MailPostfachStatus } from '../../../types/support';
 import { POSTFACH_INFO, SERVER_AUS_HINWEIS, aufDiesemServer } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
+import { mailsText } from '../../../utils/supportVorgaenge';
+import { EINGANG_FILTER, type EingangFilter, type MailEingangWeb } from '../../../utils/supportWeb';
 import { useSupportMailZaehler } from '../../../navigation/supportMailZaehler';
-import {
-  EINGANG_FILTER,
-  eingangFiltern,
-  eingangLesen,
-  eingangSortieren,
-  eingangZaehlen,
-  istNichtZugeordnet,
-  zuordnungZiel,
-  type EingangFilter,
-  type MailEingangWeb,
-} from '../../../utils/supportWeb';
-import WebSeite from './WebSeite';
-import WebKnopf from './WebKnopf';
-import WebLink from './WebLink';
-import WebPill from './WebPill';
-import WebChips from './WebChips';
-import WebTabelle, { type WebSpalte } from './WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
-import { useWebDaten } from './useWebDaten';
-import { useFilterAusAdresse } from './useFilterAusAdresse';
-
-interface PosteingangDaten {
-  mails: MailEingangWeb[];
-  /** Zustand der Postfaecher; null, wenn er nicht kam (die Zeile sagt das). */
-  status: MailPostfachStatus[] | null;
-}
-
-async function ladeEingang(): Promise<PosteingangDaten> {
-  // Alle eingehenden Mails, nicht nur die nicht zugeordneten (Vorgabe des Servers).
-  const [mails, status] = await Promise.allSettled([
-    api.get('/support/mail/eingang', { params: { zuordnung: 'alle' } }),
-    api.get('/support/mail/status'),
-  ]);
-  if (mails.status !== 'fulfilled') throw mails.reason;
-  const liste = eingangLesen(mails.value.data);
-  if (!liste) throw new Error('Der Posteingang kam in einer unbekannten Form');
-  return {
-    mails: liste,
-    status: status.status === 'fulfilled' && Array.isArray(status.value.data?.postfaecher) ? status.value.data.postfaecher : null,
-  };
-}
+import { usePosteingang } from '../usePosteingang';
+import { useMailAktionen } from '../useMailAktionen';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import WebLink from '../../web/WebLink';
+import WebPill from '../../web/WebPill';
+import WebChips from '../../web/WebChips';
+import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import { useFilterAusAdresse } from '../../web/useFilterAusAdresse';
+import WebEinsortieren from './WebEinsortieren';
+import '../../../theme/web/support.css';
 
 const LEER_TEXT: Record<EingangFilter, string> = {
-  alle: 'Mails an moin@ und support@ erscheinen hier, sobald die Postfächer abgeholt sind.',
+  alle: 'Alles ist einsortiert. Neue Mails, die zu keinem Vorgang passen, erscheinen hier.',
   ungelesen: 'Alle Mails sind gelesen.',
-  offen: 'Jede Mail ist einer Anfrage oder Gemeinde zugeordnet.',
-  moin: `Keine Mails an ${POSTFACH_INFO.moin.kurz}.`,
-  support: `Keine Mails an ${POSTFACH_INFO.support.kurz}.`,
+  moin: `Keine Mails an ${POSTFACH_INFO.moin.kurz}, die noch einsortiert werden müssen.`,
+  support: `Keine Mails an ${POSTFACH_INFO.support.kurz}, die noch einsortiert werden müssen.`,
+  archiv: 'Archivierte Mails liegen hier und werden nach 180 Tagen gelöscht.',
 };
 
 const LEER_TITEL: Record<EingangFilter, string> = {
-  alle: 'Noch keine Mails',
+  alle: 'Nichts einzusortieren',
   ungelesen: 'Nichts Ungelesenes',
-  offen: 'Nichts zuzuordnen',
   moin: 'Keine Mails',
   support: 'Keine Mails',
+  archiv: 'Das Archiv ist leer',
 };
 
 /** Der Zustand eines Postfachs: eingerichtet, zuletzt abgeholt, Fehler, "auf diesem Server aus". */
@@ -107,29 +82,67 @@ const PostfachStatus: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
 };
 
 const WebPosteingang: React.FC = () => {
-  const { daten, laedt, neuLaden } = useWebDaten(ladeEingang);
   const zaehler = useSupportMailZaehler(true);
   const [filter, setFilter] = useFilterAusAdresse<EingangFilter>('/admin/support/post', EINGANG_FILTER, 'alle');
+  const eingang = usePosteingang(filter);
+  const aktionen = useMailAktionen();
+  const { zaehlen, sichtbar, laedt, fehler, status, neuLaden } = eingang;
+  const [einsortieren, setEinsortieren] = useState<MailEingangWeb | null>(null);
+  const [ausgewaehlt, setAusgewaehlt] = useState<ReadonlySet<number>>(new Set());
 
-  const mails = useMemo(() => daten?.mails ?? [], [daten]);
-  const zaehlen = useMemo(() => eingangZaehlen(mails), [mails]);
-  // Neueste zuerst, unabhaengig von der Reihenfolge des Servers.
-  const sichtbar = useMemo(() => eingangSortieren(eingangFiltern(mails, filter)), [mails, filter]);
-  // Die rote Zahl: ungelesen und nicht zugeordnet -- aus dem Zaehler der Leiste, solange er da ist.
-  const ungelesenOffen = zaehler ? zaehler.eingang : mails.filter((m) => istNichtZugeordnet(m) && !m.gelesen_am).length;
+  const archiv = filter === 'archiv';
+  // Die rote Zahl: ungelesen im Posteingang -- aus dem Zaehler der Leiste, solange er da ist.
+  const ungelesenZahl = zaehler ? zaehler.posteingang : zaehlen.ungelesen;
+
+  // Was nicht mehr in der Liste steht (einsortiert, archiviert, geloescht), bleibt nicht ausgewaehlt.
+  const sichtbareIds = useMemo(() => new Set(sichtbar.map((m) => m.id)), [sichtbar]);
+  useEffect(() => {
+    setAusgewaehlt((alt) => {
+      const rest = [...alt].filter((id) => sichtbareIds.has(id));
+      return rest.length === alt.size ? alt : new Set(rest);
+    });
+  }, [sichtbareIds]);
+
+  const alleAn = ausgewaehlt.size > 0 && ausgewaehlt.size === sichtbar.length;
+  const alleKasten = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (alleKasten.current) alleKasten.current.indeterminate = ausgewaehlt.size > 0 && !alleAn;
+  }, [ausgewaehlt, alleAn]);
+  const umschalten = (id: number) => setAusgewaehlt((alt) => {
+    const neu = new Set(alt);
+    if (neu.has(id)) neu.delete(id); else neu.add(id);
+    return neu;
+  });
+  const ids = [...ausgewaehlt];
+  const nachAktion = (ok: boolean) => { if (ok) setAusgewaehlt(new Set()); };
 
   const spalten: Array<WebSpalte<MailEingangWeb>> = [
+    {
+      schluessel: 'auswahl',
+      kopf: 'Auswählen',
+      kopfVersteckt: true,
+      breite: '44px',
+      zelle: (m) => (
+        <input
+          type="checkbox"
+          className="web-kontrollkasten web-vorn"
+          aria-label={`Mail auswählen: ${m.betreff?.trim() || '(ohne Betreff)'}`}
+          checked={ausgewaehlt.has(m.id)}
+          onChange={() => umschalten(m.id)}
+        />
+      ),
+    },
     {
       schluessel: 'punkt',
       kopf: 'Ungelesen',
       kopfVersteckt: true,
-      breite: '36px',
+      breite: '28px',
       zelle: (m) => (m.gelesen_am ? null : <span className="app-ungelesen-punkt web-punkt-zeile" role="img" aria-label="ungelesen" />),
     },
     {
       schluessel: 'postfach',
       kopf: 'Postfach',
-      breite: '96px',
+      breite: '92px',
       zelle: (m) => <WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill>,
     },
     {
@@ -174,41 +187,56 @@ const WebPosteingang: React.FC = () => {
       },
     },
     {
-      schluessel: 'zuordnung',
-      kopf: 'Zugeordnet',
-      breite: '22%',
-      zelle: (m) => {
-        const ziel = zuordnungZiel(m);
-        return ziel ? (
-          <WebLink href={ziel.pfad} vorn className="web-einzeilig" title={ziel.art === 'anfrage' ? 'Zur Anfrage' : 'Zum Schriftwechsel der Gemeinde'}>
-            {ziel.text}
-          </WebLink>
-        ) : (
-          <span className="web-gedaempft">—</span>
-        );
-      },
-    },
-    {
       schluessel: 'datum',
       kopf: 'Datum',
-      breite: '112px',
+      breite: '104px',
       zahl: true,
       zelle: (m) => <span title={datumUhrzeit(m.gesendet_am)}>{zeitpunktText(m.gesendet_am)}</span>,
+    },
+    {
+      schluessel: 'aktionen',
+      kopf: 'Aktionen',
+      kopfVersteckt: true,
+      breite: '232px',
+      klasse: 'web-spalte-aktionen',
+      zelle: (m) => {
+        const titel = m.betreff?.trim() || '(ohne Betreff)';
+        return (
+          <span className="web-zeilenaktionen">
+            {archiv ? (
+              <WebKnopf klein vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen([m.id]); }} aria-label={`Wiederherstellen: ${titel}`}>
+                <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+                Wiederherstellen
+              </WebKnopf>
+            ) : (
+              <>
+                <WebKnopf klein art="primaer" vorn onClick={() => setEinsortieren(m)} aria-label={`Einsortieren: ${titel}`}>Einsortieren</WebKnopf>
+                <WebKnopf klein symbol vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren([m.id]); }} aria-label={`Archivieren: ${titel}`} title="Archivieren">
+                  <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+                </WebKnopf>
+              </>
+            )}
+            <WebKnopf klein symbol art="gefahr" vorn disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen([m.id])} aria-label={`Löschen: ${titel}`} title="Löschen">
+              <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+            </WebKnopf>
+          </span>
+        );
+      },
     },
   ];
 
   let inhalt: React.ReactNode;
   if (laedt) {
     inhalt = <WebLaden karten={2} text="Der Posteingang wird geladen." />;
-  } else if (!daten) {
+  } else if (fehler) {
     inhalt = <WebFehler text="Der Posteingang konnte nicht geladen werden." onErneut={() => { void neuLaden(); }} />;
   } else {
     inhalt = (
       <>
         <div className="web-statuszeile">
-          {daten.status
-            ? (daten.status.length > 0
-              ? daten.status.map((p) => <PostfachStatus key={p.postfach} p={p} />)
+          {status
+            ? (status.length > 0
+              ? status.map((p) => <PostfachStatus key={p.postfach} p={p} />)
               : <div className="web-status">Der Server meldet keine Postfächer.</div>)
             : <div className="web-status web-status--fehler" role="status">Der Zustand der Postfächer konnte nicht geladen werden.</div>}
         </div>
@@ -219,17 +247,51 @@ const WebPosteingang: React.FC = () => {
           onWert={setFilter}
           chips={[
             { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
-            { wert: 'ungelesen', label: 'Ungelesen', zahl: zaehlen.ungelesen, rot: true },
-            { wert: 'offen', label: 'Nicht zugeordnet', zahl: ungelesenOffen > 0 ? ungelesenOffen : undefined, rot: true, zahlText: 'ungelesen' },
+            { wert: 'ungelesen', label: 'Ungelesen', zahl: ungelesenZahl, rot: true, zahlText: 'ungelesen' },
             { wert: 'moin', label: POSTFACH_INFO.moin.kurz, zahl: zaehlen.moin },
             { wert: 'support', label: POSTFACH_INFO.support.kurz, zahl: zaehlen.support },
+            { wert: 'archiv', label: 'Archiv', zahl: eingang.archivAnzahl ?? undefined },
           ]}
         />
+
+        {sichtbar.length > 0 && (
+          <div className="web-sammelleiste" role="group" aria-label="Auswahl">
+            <label className="web-sammelleiste__alle">
+              <input
+                ref={alleKasten}
+                type="checkbox"
+                className="web-kontrollkasten"
+                checked={alleAn}
+                onChange={() => setAusgewaehlt(alleAn ? new Set() : new Set(sichtbar.map((m) => m.id)))}
+              />
+              {ausgewaehlt.size > 0 ? `${mailsText(ausgewaehlt.size)} ausgewählt` : 'Alle auswählen'}
+            </label>
+            {ausgewaehlt.size > 0 && (
+              <div className="web-sammelleiste__aktionen">
+                {archiv ? (
+                  <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen(ids).then(nachAktion); }}>
+                    <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+                    Wiederherstellen
+                  </WebKnopf>
+                ) : (
+                  <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren(ids).then(nachAktion); }}>
+                    <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+                    Archivieren
+                  </WebKnopf>
+                )}
+                <WebKnopf klein art="gefahr" disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
+                  <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+                  Löschen
+                </WebKnopf>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="web-karte">
           {sichtbar.length > 0 ? (
             <WebTabelle
-              beschriftung="Eingehende Mails"
+              beschriftung={archiv ? 'Archivierte Mails' : 'Mails im Posteingang'}
               spalten={spalten}
               zeilen={sichtbar}
               zeileSchluessel={(m) => m.id}
@@ -245,7 +307,9 @@ const WebPosteingang: React.FC = () => {
     );
   }
 
-  const untertitel = daten ? `${zaehlen.alle} ${zaehlen.alle === 1 ? 'Mail' : 'Mails'} an moin@ und support@, neueste zuerst` : 'Alle eingehenden Mails an moin@ und support@';
+  const untertitel = archiv
+    ? 'Archivierte Mails, die zu keinem Vorgang gehören'
+    : `${mailsText(zaehlen.alle)} ${zaehlen.alle === 1 ? 'wartet' : 'warten'} darauf, einem Vorgang zugeordnet zu werden`;
 
   return (
     <WebSeite
@@ -260,6 +324,9 @@ const WebPosteingang: React.FC = () => {
       )}
     >
       {inhalt}
+      {einsortieren && (
+        <WebEinsortieren mail={{ id: einsortieren.id, betreff: einsortieren.betreff }} onSchliessen={() => setEinsortieren(null)} />
+      )}
     </WebSeite>
   );
 };

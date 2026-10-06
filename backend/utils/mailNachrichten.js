@@ -208,9 +208,11 @@ function auszug(text) {
 
 // Die Felder einer Mail in den Antworten (alle Spalten ausser imap_uid, dazu
 // der Name des Kontos, das eine Antwort geschrieben hat).
-const NACHRICHT_SPALTEN = `m.id, m.postfach, m.richtung, m.anfrage_id, m.organization_id, m.message_id,
+// vorgang_id und archiviert_am (Migration 195, additiv): der Vorgang der Mail
+// und -- nur im Posteingang -- wann sie archiviert wurde.
+const NACHRICHT_SPALTEN = `m.id, m.postfach, m.richtung, m.anfrage_id, m.organization_id, m.vorgang_id, m.message_id,
   m.in_reply_to, m.referenzen, m.von_adresse, m.von_name, m.an_adressen, m.betreff, m.text, m.anhaenge,
-  m.gesendet_am, m.gelesen_am, m.verfasst_von, vu.display_name AS verfasst_von_name, m.created_at`;
+  m.gesendet_am, m.gelesen_am, m.archiviert_am, m.verfasst_von, vu.display_name AS verfasst_von_name, m.created_at`;
 
 const NACHRICHT_FROM = 'mail_nachrichten m LEFT JOIN users vu ON vu.id = m.verfasst_von';
 
@@ -230,6 +232,16 @@ const ZUORDNUNG_JOINS = `LEFT JOIN organizations zg ON zg.id = m.organization_id
 // Anfrage. Gehoert in eine Abfrage mit gemeinde_anfragen unter dem Namen `a`.
 const UNGELESEN_JE_ANFRAGE_SQL = `(SELECT COUNT(*)::int FROM mail_nachrichten um
     WHERE um.anfrage_id = a.id AND um.richtung = 'ein' AND um.gelesen_am IS NULL)`;
+
+// Die Felder einer Anfrage in der Antwort (Vertrag der Pakete, 03.10.2026) --
+// GET /support/anfragen und der Vorgang einer Anfrage (GET /support/vorgaenge/:id).
+// ungelesen (seit 03.10.2026, Support-Mail, additiv): ungelesene eingehende
+// Mails zu dieser Anfrage (docs/planung/support-mail.md). Gehoert in eine
+// Abfrage mit gemeinde_anfragen unter dem Namen `a`.
+const ANFRAGE_SPALTEN = `a.id, a.gemeinde, a.kirchenkreis, a.landeskirche, a.kontakt_name, a.funktion,
+  a.email, a.mobil, a.anzahl_konfis, a.anzahl_teamer, a.nachricht, a.status, a.notiz,
+  a.organization_id, a.created_at, a.updated_at, a.wunsch_lizenz,
+  ${UNGELESEN_JE_ANFRAGE_SQL} AS ungelesen`;
 
 /**
  * Kennungen aller Mails im Faden der Mail `id` (sie selbst eingeschlossen),
@@ -292,6 +304,7 @@ module.exports = {
   ZUORDNUNG_SPALTEN,
   ZUORDNUNG_JOINS,
   UNGELESEN_JE_ANFRAGE_SQL,
+  ANFRAGE_SPALTEN,
   fadenIds,
   nachrichtLaden,
   nachrichtenLaden,

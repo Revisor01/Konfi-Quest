@@ -28,16 +28,16 @@ import {
   vorschauText,
 } from '../../../utils/supportMail';
 import { useTextbausteine } from '../useTextbausteine';
-import WebSeite from './WebSeite';
-import WebSpalten from './WebSpalten';
-import WebKarte from './WebKarte';
-import WebKnopf from './WebKnopf';
-import WebPill from './WebPill';
-import WebHinweis from './WebHinweis';
-import WebFeld from './WebFeld';
-import WebTextfeld from './WebTextfeld';
-import WebAuswahl from './WebAuswahl';
-import { WebFehler, WebLaden, WebLeer } from './WebZustaende';
+import WebSeite from '../../web/WebSeite';
+import WebSpalten from '../../web/WebSpalten';
+import WebKarte from '../../web/WebKarte';
+import WebKnopf from '../../web/WebKnopf';
+import WebPill from '../../web/WebPill';
+import WebHinweis from '../../web/WebHinweis';
+import WebFeld from '../../web/WebFeld';
+import WebTextfeld from '../../web/WebTextfeld';
+import WebAuswahl from '../../web/WebAuswahl';
+import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 
 const WebTextbausteine: React.FC = () => {
   const {

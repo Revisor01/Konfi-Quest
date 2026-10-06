@@ -39,14 +39,23 @@ test.describe('Web-Version: Leiste links ab 992 px', () => {
     await loginAs(page, 'admin1');
     const leiste = page.getByRole('navigation', LEISTE);
 
-    for (const [name, pfad] of [['Chat', '/admin/chat'], ['Mitmachen', '/admin/events'], ['Konfis', '/admin/konfis']] as const) {
+    // Je Eintrag die Ueberschrift, die nur auf der Zielseite steht.
+    const ziele = [
+      ['Chat', '/admin/chat', 'Chats'],
+      ['Mitmachen', '/admin/events', 'Events'],
+      ['Konfis', '/admin/konfis', 'Konfis'],
+    ] as const;
+    for (const [name, pfad, ueberschrift] of ziele) {
       const link = leiste.getByRole('link', { name: new RegExp(`^${name}`) });
       await link.click();
       // Pfad als Text, nicht als Muster: alle Sonderzeichen maskiert (CodeQL).
       await expect(page).toHaveURL(new RegExp(pfad.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')));
       await expect(link).toHaveAttribute('aria-current', 'page');
-      // Nicht nur die Adresse: die Seite ist sichtbar (keine weisse Seite).
-      await expect(page.locator('ion-content:visible').first()).toBeVisible({ timeout: 10_000 });
+      // Nicht nur die Adresse: der Inhalt der Seite ist sichtbar (keine weisse
+      // Seite). Bis 06.10.2026 stand hier ion-content -- die Web-Fassung des
+      // Chats hat keines (Liste und Verlauf scrollen fuer sich), deshalb die
+      // Ueberschrift der Zielseite selbst.
+      await expect(page.getByRole('heading', { name: ueberschrift, exact: true }).first()).toBeVisible({ timeout: 10_000 });
     }
   });
 

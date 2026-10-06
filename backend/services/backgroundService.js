@@ -36,6 +36,15 @@ const NICHT_ZUGEORDNETE_MAILS_TAGE = 180;
 // (services/mailAbholung.js).
 const MAIL_ABHOL_TAKT_MS = 2 * 60 * 1000;
 
+// Archivierte Vorgaenge des Supports (erledigte sind archiviert) gehen so
+// viele Tage nach dem Archivieren (support_vorgaenge.archiviert_am), wenn sie
+// sich seitdem nicht geaendert haben (updated_at). Vorgaenge einer Anfrage
+// sind ausgenommen: Sie folgen den Fristen der Anfrage (abgelehnt 180,
+// unbewegt 365 Tage). Simon, 03.10.2026 (docs/planung/support-vorgaenge.md,
+// Entscheidung 6); die Datenschutzerklaerung nennt die Zahl (Abschnitt 9e, ein
+// Test haelt beide zusammen).
+const ARCHIVIERTE_VORGAENGE_TAGE = 730;
+
 // Anfragen, die "neu" oder "in Arbeit" sind und sich so viele Tage nicht
 // bewegt haben (gemeinde_anfragen.updated_at), gehen ebenfalls (Simon,
 // 03.10.2026). Auch diese Zahl nennt die Datenschutzerklaerung (9c).
@@ -1457,6 +1466,13 @@ class BackgroundService {
       } catch (e) {
         console.error('Mails aufraeumen failed:', e.code || '', e.message);
       }
+      // Siebter Schritt (03.10.2026): archivierte Support-Vorgaenge 730 Tage
+      // nach dem Archivieren.
+      try {
+        await this.cleanupArchivierteVorgaenge(db);
+      } catch (e) {
+        console.error('Vorgaenge aufraeumen failed:', e.code || '', e.message);
+      }
     }, {
       timezone: 'Europe/Berlin'
     });
@@ -1488,23 +1504,51 @@ class BackgroundService {
 
   /**
    * Loescht nicht zugeordnete Mails der Support-Mail (Posteingang: weder
-   * Anfrage noch Gemeinde), die seit mehr als NICHT_ZUGEORDNETE_MAILS_TAGE
-   * (180) Tagen in Konfi Quest liegen (created_at), ein- und ausgehende. Im
-   * Postfach selbst bleibt alles. Zugeordnete gehen mit ihrer Anfrage bzw.
-   * Gemeinde (ON DELETE CASCADE). Gibt die Anzahl zurueck; das Protokoll
-   * nennt nur sie.
+   * Vorgang noch Anfrage noch Gemeinde), die seit mehr als
+   * NICHT_ZUGEORDNETE_MAILS_TAGE (180) Tagen in Konfi Quest liegen
+   * (created_at), ein- und ausgehende, auch die archivierten. Im Postfach
+   * selbst bleibt alles. Mails eines Vorgangs gehen mit ihm (ON DELETE
+   * CASCADE). Gibt die Anzahl zurueck; das Protokoll nennt nur sie.
    *
-   * Simon, 03.10.2026 (docs/planung/support-mail.md, Entscheidung 4).
+   * Simon, 03.10.2026 (docs/planung/support-mail.md, Entscheidung 4;
+   * docs/planung/support-vorgaenge.md, Entscheidung 6).
    */
   static async cleanupNichtZugeordneteMails(db) {
     const { rowCount } = await db.query(
       `DELETE FROM mail_nachrichten
-        WHERE anfrage_id IS NULL AND organization_id IS NULL
+        WHERE vorgang_id IS NULL AND anfrage_id IS NULL AND organization_id IS NULL
           AND created_at < NOW() - ($1::int * interval '1 day')`,
       [NICHT_ZUGEORDNETE_MAILS_TAGE]
     );
     if (rowCount > 0) {
       console.log(`Mails aufraeumen: ${rowCount} nicht zugeordnete Mails aelter als ${NICHT_ZUGEORDNETE_MAILS_TAGE} Tage geloescht`);
+    }
+    return rowCount;
+  }
+
+  /**
+   * Loescht archivierte Support-Vorgaenge (erledigte sind archiviert), die seit
+   * mehr als ARCHIVIERTE_VORGAENGE_TAGE (730) Tagen archiviert sind
+   * (archiviert_am) und sich seitdem nicht geaendert haben (updated_at: jede
+   * Mail, jede Notiz, jede Aenderung am Vorgang zaehlt). Mit dem Vorgang
+   * gehen seine Mails in Konfi Quest (ON DELETE CASCADE); im Postfach bleibt
+   * alles. Vorgaenge einer Anfrage (anfrage_id) bleiben: Sie folgen den
+   * Fristen der Anfrage (cleanupAbgelehnteAnfragen, cleanupUnbewegteAnfragen)
+   * und gehen mit ihr. Gibt die Anzahl zurueck; das Protokoll nennt nur sie.
+   *
+   * Simon, 03.10.2026 (docs/planung/support-vorgaenge.md, Entscheidung 6;
+   * Datenschutzerklaerung 9e).
+   */
+  static async cleanupArchivierteVorgaenge(db) {
+    const { rowCount } = await db.query(
+      `DELETE FROM support_vorgaenge
+        WHERE archiviert_am IS NOT NULL AND anfrage_id IS NULL
+          AND archiviert_am < NOW() - ($1::int * interval '1 day')
+          AND updated_at < NOW() - ($1::int * interval '1 day')`,
+      [ARCHIVIERTE_VORGAENGE_TAGE]
+    );
+    if (rowCount > 0) {
+      console.log(`Vorgaenge aufraeumen: ${rowCount} archivierte Vorgaenge aelter als ${ARCHIVIERTE_VORGAENGE_TAGE} Tage geloescht`);
     }
     return rowCount;
   }
@@ -2189,4 +2233,5 @@ class BackgroundService {
 
 module.exports = BackgroundService;
 module.exports.NICHT_ZUGEORDNETE_MAILS_TAGE = NICHT_ZUGEORDNETE_MAILS_TAGE;
+module.exports.ARCHIVIERTE_VORGAENGE_TAGE = ARCHIVIERTE_VORGAENGE_TAGE;
 module.exports.MAIL_ABHOL_TAKT_MS = MAIL_ABHOL_TAKT_MS;

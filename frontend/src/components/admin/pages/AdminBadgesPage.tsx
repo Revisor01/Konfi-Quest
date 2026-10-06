@@ -23,6 +23,10 @@ import BadgesView from '../BadgesView';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgeManagementModal from '../modals/BadgeManagementModal';
 import { triggerPullHaptic } from '../../../utils/haptics';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import WebKnopf from '../../web/WebKnopf';
+import { WebLaden } from '../../web/WebZustaende';
 
 interface Badge {
   id: number;
@@ -42,6 +46,8 @@ interface Badge {
 const AdminBadgesPage: React.FC = () => {
   const { user, setError, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-badges');
+  // Browser ab 992 px: die Web-Fassung (BadgesView -> web/start/WebAdminBadges).
+  const breit = useBreitesLayout();
 
   // State
   const [selectedRole, setSelectedRole] = useState<'konfi' | 'teamer'>('konfi');
@@ -148,6 +154,36 @@ const AdminBadgesPage: React.FC = () => {
   const handleRoleChange = (role: 'konfi' | 'teamer') => {
     setSelectedRole(role);
   };
+
+  if (breit) {
+    return (
+      <WebSeite
+        bereich="Mehr"
+        titel="Badges"
+        untertitel="Auszeichnungen und Erfolge"
+        zurueck={{ href: '/admin/settings', text: 'Mehr' }}
+        aktionen={(
+          <WebKnopf art="primaer" onClick={presentBadgeModal}>
+            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} aria-hidden="true" />
+            Neues Badge
+          </WebKnopf>
+        )}
+        pageRef={pageRef}
+      >
+        {loading ? (
+          <WebLaden kacheln={4} karten={2} text="Badges werden geladen." />
+        ) : (
+          <BadgesView
+            badges={badges || []}
+            onSelectBadge={handleSelectBadge}
+            onDeleteBadge={handleDeleteBadge}
+            targetRole={selectedRole}
+            onRoleChange={handleRoleChange}
+          />
+        )}
+      </WebSeite>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

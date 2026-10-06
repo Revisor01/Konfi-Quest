@@ -26,6 +26,11 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
   erledigt (03.10.2026): Gemeinden 4, 14 und 15 intern, Probe-Anfrage 1 und
   Probe-Mails liegen zur Ansicht. Offen: Simons Blick, dann ablehnen; 7a
   braucht ein Konto mit bedienbarer Adresse.
+- **[16-support-vorgaenge-probelauf.md](16-support-vorgaenge-probelauf.md)** —
+  nach dem Deploy des PRs „Web-Ansicht aller Bereiche und Support-Vorgänge"
+  (06.10.2026): Übernahme in Vorgänge prüfen, Probe-Anfrage als Vorgang,
+  Probe-Anliegen über das Support-Formular, Posteingang mit Einsortieren und
+  Archiv.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 

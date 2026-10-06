@@ -496,6 +496,20 @@ section.block{padding:6rem 0}
 @media(max-width:640px){.anfrage{padding:1.5rem 1.2rem}.anfrage-felder{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){.anfrage-senden button{transition:none}}
 
+/* SUPPORT (Formular "Hilfe und Support", 03.10.2026). Dieselbe weisse Karte wie
+   die Anfrage (.anfrage), hier auf dem hellen Abschnitt statt auf dem
+   violetten: Die Regeln, die der Anfrage unter .final die Textfarben und
+   Abstaende zuruecksetzen, gelten hier unter .support. */
+.support .anfrage{border:1px solid #e2e8f0;box-shadow:0 20px 50px rgba(15,23,42,.12)}
+.support .anfrage .anfrage-intro{color:var(--ink-soft);font-size:1rem;margin:0 0 1.4rem;max-width:none}
+.support .anfrage .feld-fehler{color:#b91c1c;font-size:.86rem;font-weight:600;margin:0;max-width:none}
+.support .anfrage .feld-hinweis{color:var(--ink-soft);font-size:.84rem;margin:0;max-width:none}
+.support .anfrage .anfrage-meldung{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:12px;padding:.8rem 1rem;font-weight:600;font-size:1rem;margin:0 0 1rem;max-width:none}
+.support .anfrage .anfrage-alt{color:var(--ink-soft);font-size:.92rem;margin:0;max-width:none}
+.support .anfrage .anfrage-intro a{color:var(--purple);font-weight:600;text-decoration:underline}
+.support .anfrage .anfrage-danke p{color:var(--ink-soft);margin:0 auto .8rem;max-width:52ch;font-size:1rem}
+.support .anfrage .anfrage-feld[hidden],.support .anfrage .pflicht[hidden]{display:none}
+
 /* FOOTER */
 footer{background:#0b1220;color:#fff;padding:4rem 0 2rem}
 .foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1.2fr 1fr;gap:2.5rem;margin-bottom:2.5rem}
@@ -1249,6 +1263,137 @@ footer a:hover{color:#fff}
  </div>
 </section>
 
+<!-- SUPPORT -->
+<section class="block support" id="support" style="background:var(--bg-soft)">
+ <div class="wrap">
+  <p class="kicker reveal">Hilfe und Support</p>
+  <h2 class="sec-h reveal d1">Fragen, Fehler oder Wünsche?</h2>
+  <p class="sec-p reveal d2">Schreibt uns, worum es geht – mit Art und Bereich zum Auswählen. So landet euer Anliegen gleich an der richtigen Stelle.</p>
+
+  <!-- Support-Formular (docs/planung/support-vorgaenge.md, Entscheidung 4;
+       Simon, 03.10.2026: "Support kommt auf die HP"). Gebaut wie das
+       Anfrageformular: Einwilligung, Honigtopf gegen Spam, Fehler am Feld.
+       Gesendet an POST /api/anliegen; das Skript steht am Seitenende
+       (id="anliegen-skript"). Aus dem Anliegen wird ein Vorgang in der
+       Support-Ansicht; die Bestaetigung kommt von support@ mit der Nummer im
+       Betreff. Das Feld "website" ist ein Honigtopf fuer Programme: unsichtbar,
+       nicht erreichbar, muss leer bleiben. -->
+  <div class="anfrage reveal d2">
+   <form id="anliegen-formular" novalidate aria-labelledby="anliegen-titel" aria-describedby="anliegen-intro">
+    <h3 id="anliegen-titel">Anliegen an den Support senden</h3>
+    <p class="anfrage-intro" id="anliegen-intro">Ihr nutzt Konfi Quest schon und braucht Hilfe? Dann seid ihr hier richtig. Ihr bekommt eine Bestätigung mit der Nummer eures Vorgangs; wenn ihr auf diese Mail antwortet, landet die Antwort direkt dabei. Pflichtfelder sind mit * markiert. Noch keine Gemeinde bei Konfi Quest? Dann nutzt das <a href="#kontakt">Anfrageformular</a>.</p>
+    <p class="anfrage-meldung" id="anliegen-meldung" role="alert" hidden></p>
+
+    <fieldset>
+     <legend>Wer seid ihr?</legend>
+     <div class="anfrage-felder">
+      <div class="anfrage-feld breit">
+       <label for="anliegen-gemeinde">Gemeinde <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="text" id="anliegen-gemeinde" name="gemeinde" required aria-required="true" maxlength="200" autocomplete="organization" aria-describedby="anliegen-fehler-gemeinde">
+       <p class="feld-fehler" id="anliegen-fehler-gemeinde" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anliegen-name">Name <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="text" id="anliegen-name" name="name" required aria-required="true" maxlength="200" autocomplete="name" aria-describedby="anliegen-fehler-name">
+       <p class="feld-fehler" id="anliegen-fehler-name" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anliegen-funktion">Funktion</label>
+       <input type="text" id="anliegen-funktion" name="funktion" maxlength="200" autocomplete="organization-title" aria-describedby="anliegen-hinweis-funktion">
+       <p class="feld-hinweis" id="anliegen-hinweis-funktion">z.&nbsp;B. Pastorin, Diakon, Gemeindepädagogin</p>
+      </div>
+      <div class="anfrage-feld breit">
+       <label for="anliegen-email">E-Mail <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="email" id="anliegen-email" name="email" required aria-required="true" maxlength="254" autocomplete="email" aria-describedby="anliegen-hinweis-email anliegen-fehler-email">
+       <p class="feld-hinweis" id="anliegen-hinweis-email">Dorthin schicken wir die Bestätigung und unsere Antwort.</p>
+       <p class="feld-fehler" id="anliegen-fehler-email" hidden></p>
+      </div>
+     </div>
+    </fieldset>
+
+    <fieldset>
+     <legend>Euer Anliegen</legend>
+     <div class="anfrage-felder">
+      <div class="anfrage-feld">
+       <label for="anliegen-art">Art <span class="pflicht" aria-hidden="true">*</span></label>
+       <select id="anliegen-art" name="art" required aria-required="true" aria-describedby="anliegen-fehler-art">
+        <option value="">Bitte wählen</option>
+        <option value="frage">Frage zur Bedienung</option>
+        <option value="fehler">Fehler melden</option>
+        <option value="wunsch">Wunsch oder Idee</option>
+        <option value="zugang">Zugang und Konten</option>
+        <option value="lizenz">Lizenz und Abrechnung</option>
+        <option value="datenschutz">Datenschutz</option>
+        <option value="sonstiges">Sonstiges</option>
+       </select>
+       <p class="feld-fehler" id="anliegen-fehler-art" hidden></p>
+      </div>
+      <div class="anfrage-feld">
+       <label for="anliegen-bereich">Bereich <span class="pflicht" id="anliegen-stern-bereich" aria-hidden="true" hidden>*</span></label>
+       <select id="anliegen-bereich" name="bereich" aria-describedby="anliegen-hinweis-bereich anliegen-fehler-bereich">
+        <option value="">Bitte wählen</option>
+        <option value="konfis">Konfis</option>
+        <option value="termine">Events</option>
+        <option value="punkte">Punkte und Anträge</option>
+        <option value="challenges">Challenges</option>
+        <option value="chat">Chat</option>
+        <option value="badges">Badges</option>
+        <option value="material">Material</option>
+        <option value="konten">Konten und Einladungen</option>
+        <option value="einstellungen">Einstellungen</option>
+        <option value="sonstiges">Sonstiges</option>
+       </select>
+       <p class="feld-hinweis" id="anliegen-hinweis-bereich">Bei Frage, Fehler und Wunsch bitte angeben.</p>
+       <p class="feld-fehler" id="anliegen-fehler-bereich" hidden></p>
+      </div>
+      <div class="anfrage-feld breit">
+       <label for="anliegen-dringlichkeit">Dringlichkeit <span class="pflicht" aria-hidden="true">*</span></label>
+       <select id="anliegen-dringlichkeit" name="dringlichkeit" required aria-required="true" aria-describedby="anliegen-hinweis-dringlichkeit anliegen-fehler-dringlichkeit">
+        <option value="normal" selected>Normal</option>
+        <option value="dringend">Dringend – wir können gerade nicht weiterarbeiten</option>
+       </select>
+       <p class="feld-hinweis" id="anliegen-hinweis-dringlichkeit">„Dringend“ nur, wenn eure Gemeinde gerade nicht mit Konfi Quest arbeiten kann.</p>
+       <p class="feld-fehler" id="anliegen-fehler-dringlichkeit" hidden></p>
+      </div>
+      <div class="anfrage-feld breit">
+       <label for="anliegen-betreff">Betreff <span class="pflicht" aria-hidden="true">*</span></label>
+       <input type="text" id="anliegen-betreff" name="betreff" required aria-required="true" maxlength="120" autocomplete="off" aria-describedby="anliegen-fehler-betreff">
+       <p class="feld-fehler" id="anliegen-fehler-betreff" hidden></p>
+      </div>
+      <div class="anfrage-feld breit">
+       <label for="anliegen-beschreibung">Beschreibung <span class="pflicht" aria-hidden="true">*</span></label>
+       <textarea id="anliegen-beschreibung" name="beschreibung" required aria-required="true" maxlength="5000" rows="6" aria-describedby="anliegen-hinweis-beschreibung anliegen-fehler-beschreibung"></textarea>
+       <p class="feld-hinweis" id="anliegen-hinweis-beschreibung">Was wolltet ihr tun, was ist passiert, was hättet ihr erwartet? Bitte keine Passwörter und keine Namen von Konfis.</p>
+       <p class="feld-fehler" id="anliegen-fehler-beschreibung" hidden></p>
+      </div>
+     </div>
+    </fieldset>
+
+    <div class="anfrage-honig" aria-hidden="true">
+     <label for="anliegen-website">Website (bitte leer lassen)</label>
+     <input type="text" id="anliegen-website" name="website" tabindex="-1" autocomplete="off" value="">
+    </div>
+
+    <div class="anfrage-einwilligung">
+     <input type="checkbox" id="anliegen-einwilligung" name="einwilligung" required aria-required="true" aria-describedby="anliegen-fehler-einwilligung">
+     <label for="anliegen-einwilligung">Ich bin einverstanden, dass Konfi Quest meine Angaben speichert, um das Anliegen zu bearbeiten und mich dazu zu kontaktieren. Mehr dazu in der <a href="/datenschutz">Datenschutzerklärung</a>. <span class="pflicht" aria-hidden="true">*</span></label>
+    </div>
+    <p class="feld-fehler" id="anliegen-fehler-einwilligung" hidden></p>
+
+    <div class="anfrage-senden">
+     <button type="submit">Anliegen senden</button>
+     <p class="anfrage-alt">Lieber per Mail? <a href="mailto:support@konfi-quest.de?subject=Konfi%20Quest%20Support">support@konfi-quest.de</a></p>
+    </div>
+   </form>
+
+   <div class="anfrage-danke" id="anliegen-danke" role="status" tabindex="-1" hidden>
+    <h3>Danke, euer Anliegen ist angekommen.</h3>
+    <p>Eine Bestätigung mit der Nummer eures Vorgangs ist an die angegebene E-Mail-Adresse unterwegs. Wenn ihr etwas ergänzen wollt, antwortet einfach auf diese Mail – eure Antwort landet im selben Vorgang.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
 <!-- FOOTER -->
 <footer>
  <div class="wrap">
@@ -1257,7 +1402,7 @@ footer a:hover{color:#fff}
     <div class="foot-brand"><img src="/assets/icon/logo-mark-512.png" width="30" height="30" loading="lazy" alt="">Konfi&nbsp;Quest</div>
     <p class="foot-note">Moderne Konfi-Arbeit, die bei den Jugendlichen ankommt – für Konfis, Teamer:innen und die ganze Gemeinde.</p>
    </div>
-   <div><h4>Produkt</h4><a href="#problem">Warum</a><a href="#challenges">Challenges</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#preise">Preise</a><a href="/docs">Handbuch</a><a href="/login">Zur App</a></div>
+   <div><h4>Produkt</h4><a href="#problem">Warum</a><a href="#challenges">Challenges</a><a href="#features">Funktionen</a><a href="#sicherheit">Sicherheit</a><a href="#preise">Preise</a><a href="/docs">Handbuch</a><a href="#support">Hilfe und Support</a><a href="/login">Zur App</a></div>
    <div><h4>Kontakt</h4><p class="foot-note">Pastor Simon Luthe<br>Marktstraße 2<br>25764 Wesselburen<br><a href="mailto:moin@konfi-quest.de" style="display:inline">moin@konfi-quest.de</a></p>
     <p class="foot-note" style="margin-top:.7rem">Entwickelt von <a href="https://simonluthe.de" rel="me" style="display:inline">Simon Luthe</a></p></div>
    <div><h4>Rechtliches</h4><a href="/impressum">Impressum</a><a href="/datenschutz">Datenschutz</a><a href="/einwilligung">Vorlage Einwilligung</a><a href="/konto-loeschen">Konto löschen</a></div>
@@ -1495,6 +1640,191 @@ document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
   }
   formular.addEventListener('input', aufraeumen);
   formular.addEventListener('change', aufraeumen);
+})();
+</script>
+<script id="anliegen-skript">
+// Support-Formular (docs/planung/support-vorgaenge.md, Entscheidung 4): gleicher
+// Aufbau wie das Anfrageformular -- Pruefung vor dem Senden, Fehler am Feld,
+// Honigtopf, Dank statt Formular. Gesendet wird an POST /api/anliegen.
+(function(){
+  'use strict';
+  var formular = document.getElementById('anliegen-formular');
+  if(!formular) return;
+  var meldung = document.getElementById('anliegen-meldung');
+  var danke = document.getElementById('anliegen-danke');
+  var knopf = formular.querySelector('button[type="submit"]');
+  var KNOPF_TEXT = knopf ? knopf.textContent : '';
+
+  var EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  var MAIL_HINWEIS = ' Oder schreibt uns an support@konfi-quest.de.';
+  var TEXTE = {
+    gemeinde: 'Bitte nennt eure Gemeinde.',
+    name: 'Bitte nennt euren Namen.',
+    email: 'Bitte gebt eine gültige E-Mail-Adresse an.',
+    art: 'Bitte wählt eine Art.',
+    bereich: 'Bei Frage, Fehler und Wunsch bitte einen Bereich wählen.',
+    dringlichkeit: 'Bitte wählt die Dringlichkeit.',
+    betreff: 'Bitte gebt einen Betreff an.',
+    beschreibung: 'Bitte beschreibt euer Anliegen.',
+    einwilligung: 'Bitte stimmt zu, damit wir euer Anliegen bearbeiten dürfen.',
+    zuViele: 'Von diesem Anschluss kamen gerade zu viele Anliegen. Bitte versucht es in einer Stunde noch einmal.' + MAIL_HINWEIS,
+    pruefen: 'Bitte prüft eure Angaben.',
+    allgemein: 'Das Anliegen ließ sich gerade nicht senden. Bitte versucht es später noch einmal.' + MAIL_HINWEIS
+  };
+  // Felder mit eigener Fehlerzeile; auch die, die der Server benennen kann
+  // (400, details[].field).
+  var FELDER = ['gemeinde', 'name', 'email', 'funktion', 'art', 'bereich', 'dringlichkeit', 'betreff', 'beschreibung', 'einwilligung'];
+  var OPTIONAL = ['funktion', 'bereich'];
+  var ARTEN = ['frage', 'fehler', 'wunsch', 'zugang', 'lizenz', 'datenschutz', 'sonstiges'];
+  var DRINGLICHKEITEN = ['normal', 'dringend'];
+  // Frage, Fehler und Wunsch brauchen einen Bereich -- sonst laesst sich nicht sagen, wo es klemmt.
+  var BEREICH_PFLICHT = ['frage', 'fehler', 'wunsch'];
+
+  function feld(name){ return formular.elements.namedItem(name); }
+  function wert(name){
+    var el = feld(name);
+    return el && typeof el.value === 'string' ? el.value.trim() : '';
+  }
+  function bereichPflicht(){ return BEREICH_PFLICHT.indexOf(wert('art')) !== -1; }
+
+  // Der Stern am Bereich und aria-required folgen der Art.
+  function bereichMarkieren(){
+    var pflicht = bereichPflicht();
+    var stern = document.getElementById('anliegen-stern-bereich');
+    if(stern) stern.hidden = !pflicht;
+    var el = feld('bereich');
+    if(el){
+      if(pflicht) el.setAttribute('aria-required', 'true'); else el.removeAttribute('aria-required');
+    }
+  }
+
+  function fehlerSetzen(name, text){
+    var el = feld(name);
+    var zeile = document.getElementById('anliegen-fehler-' + name);
+    if(!el || !zeile) return;
+    if(text){
+      el.setAttribute('aria-invalid', 'true');
+      zeile.textContent = text;
+      zeile.hidden = false;
+    } else {
+      el.removeAttribute('aria-invalid');
+      zeile.textContent = '';
+      zeile.hidden = true;
+    }
+  }
+
+  function meldungZeigen(text){
+    meldung.textContent = text || '';
+    meldung.hidden = !text;
+  }
+
+  // Liefert die Namen der falschen Felder, in Reihenfolge der Seite.
+  function pruefen(){
+    var fehler = {
+      gemeinde: wert('gemeinde') ? '' : TEXTE.gemeinde,
+      name: wert('name') ? '' : TEXTE.name,
+      funktion: '',
+      email: EMAIL.test(wert('email')) ? '' : TEXTE.email,
+      art: ARTEN.indexOf(wert('art')) !== -1 ? '' : TEXTE.art,
+      bereich: bereichPflicht() && !wert('bereich') ? TEXTE.bereich : '',
+      dringlichkeit: DRINGLICHKEITEN.indexOf(wert('dringlichkeit')) !== -1 ? '' : TEXTE.dringlichkeit,
+      betreff: wert('betreff') ? '' : TEXTE.betreff,
+      beschreibung: wert('beschreibung') ? '' : TEXTE.beschreibung,
+      einwilligung: feld('einwilligung').checked ? '' : TEXTE.einwilligung
+    };
+    var falsch = [];
+    FELDER.forEach(function(name){
+      fehlerSetzen(name, fehler[name]);
+      if(fehler[name]) falsch.push(name);
+    });
+    return falsch;
+  }
+
+  function koerper(){
+    var k = {
+      gemeinde: wert('gemeinde'),
+      name: wert('name'),
+      email: wert('email'),
+      art: wert('art'),
+      dringlichkeit: wert('dringlichkeit'),
+      betreff: wert('betreff'),
+      beschreibung: wert('beschreibung'),
+      einwilligung: true,
+      // Honigtopf: unveraendert mitschicken, der Server entscheidet.
+      website: feld('website') ? feld('website').value : ''
+    };
+    OPTIONAL.forEach(function(name){ var w = wert(name); if(w) k[name] = w; });
+    return k;
+  }
+
+  function sendend(ja){
+    if(knopf){
+      knopf.disabled = ja;
+      knopf.textContent = ja ? 'Wird gesendet …' : KNOPF_TEXT;
+    }
+    if(ja) formular.setAttribute('aria-busy', 'true'); else formular.removeAttribute('aria-busy');
+  }
+
+  function fokusAuf(name){
+    var el = feld(name);
+    if(el && typeof el.focus === 'function') el.focus();
+  }
+
+  formular.addEventListener('submit', function(ev){
+    ev.preventDefault();
+    meldungZeigen('');
+    var falsch = pruefen();
+    if(falsch.length){
+      meldungZeigen(falsch.length === 1 ? 'Bitte prüft das markierte Feld.' : 'Bitte prüft die ' + falsch.length + ' markierten Felder.');
+      fokusAuf(falsch[0]);
+      return;
+    }
+    sendend(true);
+    return fetch('/api/anliegen', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(koerper())
+    }).then(function(antwort){
+      if(antwort.ok){
+        formular.hidden = true;
+        danke.hidden = false;
+        danke.focus();
+        return;
+      }
+      return antwort.json().catch(function(){ return null; }).then(function(daten){
+        if(antwort.status === 429){ meldungZeigen(TEXTE.zuViele); return; }
+        if(antwort.status === 400){
+          var erster = null;
+          var details = daten && Array.isArray(daten.details) ? daten.details : [];
+          details.forEach(function(d){
+            if(d && FELDER.indexOf(d.field) !== -1 && typeof d.message === 'string'){
+              fehlerSetzen(d.field, d.message);
+              if(!erster) erster = d.field;
+            }
+          });
+          var text = daten && typeof daten.error === 'string' && daten.error !== 'Validierungsfehler' ? daten.error : TEXTE.pruefen;
+          meldungZeigen(text);
+          if(erster) fokusAuf(erster);
+          return;
+        }
+        meldungZeigen(TEXTE.allgemein);
+      });
+    }).catch(function(){
+      meldungZeigen(TEXTE.allgemein);
+    }).then(function(){
+      sendend(false);
+    });
+  });
+
+  // Ein korrigiertes Feld verliert seinen Fehler sofort; die Art bestimmt, ob der Bereich Pflicht ist.
+  function aufraeumen(ev){
+    var name = ev.target && ev.target.name;
+    if(name === 'art'){ bereichMarkieren(); fehlerSetzen('bereich', ''); }
+    if(name && FELDER.indexOf(name) !== -1) fehlerSetzen(name, '');
+  }
+  formular.addEventListener('input', aufraeumen);
+  formular.addEventListener('change', aufraeumen);
+  bereichMarkieren();
 })();
 </script>
 

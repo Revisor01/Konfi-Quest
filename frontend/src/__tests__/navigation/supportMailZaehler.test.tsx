@@ -22,7 +22,7 @@ import {
   useSupportMailZaehler,
 } from '../../navigation/supportMailZaehler';
 
-const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 } };
+const ZAEHLER = { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: { 4: 2 }, je_gemeinde: { 7: 1 }, vorgaenge: 5, posteingang: 4 };
 const abrufe = () => h.apiGet.mock.calls.filter(([p]) => p === '/support/mail/zaehler').length;
 let sichtbarkeit: DocumentVisibilityState = 'visible';
 
@@ -140,9 +140,18 @@ describe('mailsAlsGelesen', () => {
 });
 
 describe('supportMailZahl: eine Rechnung fuer Leiste und Uebersicht', () => {
-  it('Anfragen: ungelesene zu Anfragen; Posteingang: nicht zugeordnete plus Gemeinden', () => {
-    expect(supportMailZahl(ZAEHLER, 'supportAnfragen')).toBe(2);
-    expect(supportMailZahl(ZAEHLER, 'supportPost')).toBe(4);
-    expect(supportMailZahl(null, 'supportPost')).toBe(0);
+  it('Vorgaenge und Posteingang tragen die Zahlen, die der Server fertig liefert -- nicht mehr aus Anfragen und Gemeinden zusammengesetzt', () => {
+    expect(supportMailZahl(ZAEHLER, 'supportVorgaenge')).toBe(5);
+    expect(supportMailZahl(ZAEHLER, 'supportPosteingang')).toBe(4);
+    expect(supportMailZahl(null, 'supportPosteingang')).toBe(0);
+    expect(supportMailZahl(null, 'supportVorgaenge')).toBe(0);
+  });
+
+  it('ein aelterer Server ohne die neuen Felder: beide Zahlen sind 0, nichts stuerzt ab', async () => {
+    h.apiGet.mockResolvedValue({ data: { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: {}, je_gemeinde: {} } });
+    const { result } = renderHook(() => useSupportMailZaehler(true));
+    await act(async () => {});
+    expect(supportMailZahl(result.current, 'supportVorgaenge')).toBe(0);
+    expect(supportMailZahl(result.current, 'supportPosteingang')).toBe(0);
   });
 });

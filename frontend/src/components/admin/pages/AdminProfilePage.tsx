@@ -41,11 +41,16 @@ import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import { useMediaCacheControl } from '../../../hooks/useMediaCacheControl';
 import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, selbstbezeichnung } from '../../../utils/rollenNamen';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebSeite from '../../web/WebSeite';
+import WebAdminProfil from '../web/start/WebAdminProfil';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
   const { user, setUser } = useApp();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
+  // Browser ab 992 px: die Web-Fassung (web/start/WebAdminProfil), zweispaltig.
+  const breit = useBreitesLayout();
 
   // Offline-Query: Profile (user-spezifisch)
   const { data: profileData, refresh: refreshProfile } = useOfflineQuery<{ role_title?: string; email?: string; created_at?: string }>(
@@ -120,6 +125,32 @@ const AdminProfilePage: React.FC = () => {
       presentingElement: presentingElement || undefined
     });
   };
+
+  if (breit) {
+    const rolle = rollenName(user?.role_name, 'Leitung');
+    const funktion = selbstbezeichnung(profileData?.role_title);
+    return (
+      <WebSeite bereich="Profil" titel="Mein Profil" untertitel="Konto und Einstellungen" pageRef={pageRef}>
+        <WebAdminProfil
+          name={user?.display_name || rolle}
+          untertitel={funktion ? `${rolle} · ${funktion}` : rolle}
+          benutzername={user?.username}
+          email={profileData?.email || user?.email || ''}
+          rolle={rolle}
+          rolleName={user?.role_name}
+          gemeinde={user?.organization}
+          seit={profileData?.created_at ? datumKurz(profileData.created_at) : undefined}
+          funktion={selbstbezeichnung(profileData?.role_title)}
+          cacheLabel={cacheLabel}
+          onFunktion={handleOpenRoleTitleModal}
+          onEmail={handleOpenEmailModal}
+          onPasswort={handleOpenPasswordModal}
+          onCache={handleClearMediaCache}
+          onLoeschen={handleOpenDeleteAccount}
+        />
+      </WebSeite>
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

@@ -30,6 +30,8 @@ import { SectionHeader, EmptyState } from '../../shared';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { datumKurz } from '../../../utils/dateUtils';
 import { fehlerText } from '../../../utils/fehler';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebRueckblick from '../web/leitung/WebRueckblick';
 
 /**
  * Die Rueckblick-Ausgaben verwalten.
@@ -111,6 +113,9 @@ type TeamJahr = { jahr: number; gesperrt: boolean };
 const AdminWrappedPage: React.FC = () => {
   const { user, setSuccess, setError } = useApp();
   const [zeigeAlert] = useIonAlert();
+  // Im Browser ab 992 px eine Tabelle mit Dialog (web/leitung/WebRueckblick.tsx);
+  // Laden, Erzeugen und Loeschen dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   // Fuer die Card-Modal-Optik (Sheet ueber der zurueckweichenden Seite),
   // wie auf den uebrigen Admin-Seiten.
@@ -240,6 +245,36 @@ const AdminWrappedPage: React.FC = () => {
   };
 
   const sichtbar = ausgaben.filter(a => a.typ === segment);
+
+  if (breit) {
+    return (
+      <WebRueckblick
+        ausgaben={ausgaben}
+        jahrgaenge={jahrgaenge}
+        laedt={laedt}
+        ohneJahrgang={ohneJahrgang}
+        istLeitung={istLeitung}
+        reiter={segment}
+        onReiter={setSegment}
+        onLoeschen={loeschen}
+        dialog={{
+          offen: modalOffen,
+          onOeffnen: () => setModalOffen(true),
+          onSchliessen: () => setModalOffen(false),
+          jahrgangId: neuerJahrgang,
+          onJahrgang: setNeuerJahrgang,
+          jahr: neuesJahr,
+          onJahr: setNeuesJahr,
+          teamJahre,
+          name: neuerName,
+          onName: setNeuerName,
+          namensVorschlag,
+          erzeugt,
+          onErzeugen: erzeugen,
+        }}
+      />
+    );
+  }
 
   return (
     <IonPage ref={pageRef}>

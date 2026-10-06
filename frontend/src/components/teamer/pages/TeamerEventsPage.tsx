@@ -95,6 +95,11 @@ import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { trackMitmachenAnsicht } from '../../../services/analytics';
 import { linkOeffnen } from '../../../services/systemDialoge';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
+import { mitgliedSegmentAusAdresse } from '../../shared/web/termine/terminFilter';
+import WebTeamEvents from '../web/termine/WebTeamEvents';
+import WebTeamTerminDetail from '../web/termine/WebTeamTerminDetail';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -107,6 +112,8 @@ const TeamerEventsPage: React.FC = () => {
   const router = useIonRouter();
   const queryEventId = new URLSearchParams(routerLocation.search).get('eventId');
   const [presentAlert] = useIonAlert();
+  // Im Browser ab 992 px zeigt die Seite ihre Web-Fassung (siehe unten).
+  const breit = useBreitesLayout();
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
@@ -2063,6 +2070,75 @@ const TeamerEventsPage: React.FC = () => {
       </IonContent>
     </IonPage>
   );
+
+  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md,
+  // Entscheidung 1): im Browser ab 992 px die Web-Fassung -- Events als Karten
+  // im Raster, das Event zweispaltig, die eigenen Aktivitäten als Tabelle --,
+  // sonst die Darstellung der App, unverändert. Daten, Rechte und Funktionen
+  // (Zusage, Absage mit Grund, QR-Code, Material) sind dieselben.
+  //
+  // Im Browser trägt die ADRESSE, welches Event offen ist (?eventId=, derselbe
+  // Weg wie die Links aus Dashboard und Push): Die Karten der Liste sind echte
+  // Links, der Weg zurück führt auf /teamer/events. Der Effekt oben wählt das
+  // Event aus der Liste; bis dahin steht ein Ladezustand da.
+  if (breit) {
+    const adresseOeffnet = !!queryEventId;
+    const gewaehlt = adresseOeffnet && selectedEvent && String(selectedEvent.id) === queryEventId ? selectedEvent : null;
+    const wartetAufAuswahl = adresseOeffnet && !gewaehlt && !jahrgangHinweis
+      && (loading || (!!events && handledEventId !== queryEventId));
+    if (adresseOeffnet && (jahrgangHinweis || gewaehlt || wartetAufAuswahl)) {
+      return (
+        <WebTeamTerminDetail
+          pageRef={pageRef}
+          jahrgangFehlt={jahrgangHinweis}
+          laedt={wartetAufAuswahl}
+          event={gewaehlt}
+          teilnehmende={eventTeilnehmer}
+          materialien={eventMaterials}
+          zeitfenster={eventTimeslots}
+          isOnline={isOnline}
+          bucht={bookingLoading}
+          aktionen={{
+            zusage: (dabei) => { if (gewaehlt) void handleZusage(gewaehlt, dabei); },
+            absage: oeffneAbsage,
+            qr: () => presentQRDisplayModal({ presentingElement: pageRef.current || presentingElement || undefined }),
+            chat: () => router.push(`/teamer/chat/room/${gewaehlt?.chat_room_id}`, 'root'),
+            material: (id) => {
+              materialIdRef.current = id;
+              presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
+            },
+            neuLaden: () => {
+              void refresh();
+              if (gewaehlt) void ladeTerminDetail(gewaehlt.id);
+            },
+          }}
+        />
+      );
+    }
+    return (
+      <WebMitmachenMitglied
+        rolle="team"
+        basisPfad="/teamer/events"
+        segment={mitgliedSegmentAusAdresse(routerLocation.search)}
+        pageRef={pageRef}
+        presentingElement={presentingElement}
+        eventsInhalt={<WebTeamEvents events={safeEvents} />}
+        eventsLaden={loading}
+        antraege={Array.isArray(requests) ? requests : []}
+        antraegeLaden={requestsLoading}
+        standardFilterAntraege="alle"
+        wartend={wartend}
+        gescheitert={gescheitert}
+        onVergessen={(id) => { void vergessen(id); }}
+        onScannen={() => presentScannerModal()}
+        onNeueAktivitaet={handleAddRequest}
+        onAntragOeffnen={handleSelectRequest}
+        onAntragLoeschen={handleDeleteRequest}
+        neuLaden={refresh}
+        antraegeNeuLaden={refreshRequests}
+      />
+    );
+  }
 
   // Detail ersetzt die Liste (selectedEvent-State steuert die Ansicht).
   if (jahrgangHinweis) return renderJahrgangHinweis();

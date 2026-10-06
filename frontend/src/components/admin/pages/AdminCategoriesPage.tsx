@@ -50,6 +50,8 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
 import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import WebKategorien from '../web/leitung/WebKategorien';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -220,6 +222,9 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 const AdminCategoriesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-categories');
   const { user, setError, isOnline } = useApp();
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebKategorien.tsx); Daten,
+  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   // Offline-Query: Categories
   const { data: categories, loading, refresh: refreshCategories, refreshLive: refreshCategoriesLive } = useOfflineQuery<Category[]>(
@@ -295,6 +300,22 @@ const AdminCategoriesPage: React.FC = () => {
   const canCreate = isAdmin;
   const canEdit = isAdmin;
   const canDelete = isAdmin;
+
+  if (breit) {
+    return (
+      <WebKategorien
+        kategorien={categories || []}
+        laedt={loading}
+        darfAnlegen={canCreate}
+        darfBearbeiten={canEdit}
+        darfLoeschen={canDelete}
+        pageRef={pageRef}
+        onAnlegen={openCreateModal}
+        onBearbeiten={openEditModal}
+        onLoeschen={handleDelete}
+      />
+    );
+  }
 
   if (loading) {
     return (

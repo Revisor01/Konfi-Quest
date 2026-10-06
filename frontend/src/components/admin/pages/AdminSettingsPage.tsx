@@ -13,6 +13,8 @@ import {
   useIonModal
 } from '@ionic/react';
 import AdminInvitePage from './AdminInvitePage';
+import WebMehr from '../web/leitung/WebMehr';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import {
   ICON_ABMELDEN_GEFUELLT,
@@ -20,8 +22,10 @@ import {
   ICON_AKTION_GEFUELLT,
   ICON_APPS,
   ICON_DATEI_GEFUELLT,
+  ICON_EXTERN_OEFFNEN,
   ICON_FUNKELN,
   ICON_GRUPPE_GEFUELLT,
+  ICON_HILFE,
   ICON_INFO,
   ICON_JAHRGANG,
   ICON_JAHRGANG_GEFUELLT,
@@ -52,6 +56,8 @@ import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { istSuperAdmin } from '../../../utils/superAdmin';
+import { SUPPORT_FORMULAR_URL, sieheHilfeEintrag } from '../../../utils/supportFormular';
+import { linkOeffnen } from '../../../services/systemDialoge';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
@@ -59,6 +65,9 @@ const AdminSettingsPage: React.FC = () => {
   const { user, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
+  // Im Browser ab 992 px ein Raster aus Kacheln (web/leitung/WebMehr.tsx); die
+  // Erklaerungen und die Fenster dieser Seite bleiben dieselben.
+  const breit = useBreitesLayout();
 
   // Tour und Update-Hinweis jederzeit erneut aufrufbar (Vollbild-Overlays,
   // keine Modals — identisch zum automatischen Ablauf beim ersten Start).
@@ -200,6 +209,46 @@ const AdminSettingsPage: React.FC = () => {
     });
   };
 
+  // Tour, Aenderungsanzeige und Erklaerung: Vollbild-Ueberlagerungen, in der
+  // App wie in der Web-Fassung dieselben.
+  const ueberlagerungen = (
+    <>
+      {showOnboarding && (
+        <AdminOnboardingModal
+          onClose={() => setShowOnboarding(false)}
+          displayName={(user?.display_name || '').split(' ')[0]}
+        />
+      )}
+
+      {showUpdateWalkthrough && (
+        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
+      )}
+
+      {showMitmachenErklaerung && (
+        <MitmachenErklaerungModal
+          rolle="admin"
+          onClose={() => setShowMitmachenErklaerung(false)}
+        />
+      )}
+    </>
+  );
+
+  if (breit) {
+    return (
+      <WebMehr
+        konto={user}
+        infos={INFOS}
+        onAktion={(aktion) => {
+          if (aktion === 'tour') setShowOnboarding(true);
+          else if (aktion === 'neuigkeiten') setShowUpdateWalkthrough(true);
+          else setShowMitmachenErklaerung(true);
+        }}
+        pageRef={pageRef}
+        overlays={ueberlagerungen}
+      />
+    );
+  }
+
   return (
     <IonPage ref={pageRef}>
       <AppKopfzeile
@@ -285,6 +334,31 @@ const AdminSettingsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Hilfe und Support: das Formular auf der Homepage (Simon,
+                  03.10.2026: "Support kommt auf die HP") -- Art, Bereich und
+                  Dringlichkeit als Auswahl, damit der Support es gleich
+                  sortiert hat. Ein Link nach draussen, kein Formular in der
+                  App. Nur fuer Gemeindeleitung und Leitung. */}
+              {sieheHilfeEintrag(user?.role_name) && (
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
+                  className="app-list-item app-list-item--users"
+                  onClick={() => linkOeffnen(SUPPORT_FORMULAR_URL)}
+                >
+                  <div className="app-list-item__row">
+                    <div className="app-list-item__main">
+                    <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+                    <IonIcon icon={ICON_HILFE} />
+                    </div>
+                    <div className="app-list-item__content">
+                    <div className="app-list-item__title">Hilfe und Support</div>
+                    <div className="app-list-item__meta"><span className="app-list-item__meta-item">Frage, Fehler oder Wunsch an uns schicken – öffnet konfi-quest.de</span></div>
+                    </div>
+                    </div>
+                    <IonIcon icon={ICON_EXTERN_OEFFNEN} aria-hidden="true" style={{ color: 'var(--app-text-system)' }} />
+                  </div>
+                </div>
+              )}
                 </div>
             </IonCardContent>
           </IonCard>
@@ -573,23 +647,7 @@ const AdminSettingsPage: React.FC = () => {
         <div className="ion-padding-bottom"></div>
       </IonContent>
 
-      {showOnboarding && (
-        <AdminOnboardingModal
-          onClose={() => setShowOnboarding(false)}
-          displayName={(user?.display_name || '').split(' ')[0]}
-        />
-      )}
-
-      {showUpdateWalkthrough && (
-        <AdminUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />
-      )}
-
-      {showMitmachenErklaerung && (
-        <MitmachenErklaerungModal
-          rolle="admin"
-          onClose={() => setShowMitmachenErklaerung(false)}
-        />
-      )}
+      {ueberlagerungen}
     </IonPage>
   );
 };

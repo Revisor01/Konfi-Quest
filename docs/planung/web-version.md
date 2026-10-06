@@ -315,6 +315,10 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 - **Support-Ansicht als echte Web-Oberfläche** (Dashboard, Gemeinden nach
   Landeskirche und Kirchenkreis, Tabellen statt Listen, Umschalter in der
   Leiste) — eigener Plan: [support-web.md](support-web.md).
+- **Web-Fassung für alle Bereiche** (Chat, Start, Termine, Challenges,
+  Leitung) — eigener Plan: [web-alle-bereiche.md](web-alle-bereiche.md).
+- **Support mit Vorgängen, Formular, Archiv und Löschen** — eigener Plan:
+  [support-vorgaenge.md](support-vorgaenge.md).
 - **Statistik.** Gebaut sind Konten je Rolle, aktive Konten in 30 Tagen und
   Jahrgänge je Gemeinde, nur für Super-Admins; jede Zahl steht ungefiltert da
   (Entscheidung 17). Offen: weitere Kennzahlen (Speicher, Termine).

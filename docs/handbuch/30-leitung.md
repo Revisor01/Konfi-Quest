@@ -79,6 +79,64 @@ Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
 ([je Gemeinde](60-badges.md#verstehen-was-bei-teamer-badges-anders-zaehlt)). Wer wen anlegen darf, steht unter
 [Wer wen anlegen darf](05-rollen.md#nachschlagen-wer-wen-anlegen-darf).
 
+### Im Browser Konfis und Team als Tabelle verwalten
+
+Im Browser — ab einer Fensterbreite von 992 Pixeln, siehe
+[Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
+— steht die zentrale Liste als **Tabelle**. Der Titel zeigt, ob **Konfis** oder
+**Team** offen ist; darunter steht, wie viele Konfis in wie vielen Jahrgängen
+oder wie viele Personen im Team stehen. Oben rechts stehen **Anwesenheit** (die
+Anwesenheits-Matrix), **Konfi anlegen** beziehungsweise **Teamer:in anlegen**
+und, für die Gemeindeleitung in der Konfi-Ansicht, **Konfis einladen**. Vier
+Kacheln fassen zusammen: bei den Konfis die Zahl der Konfis und Jahrgänge, die
+Punkte gesamt und wie viele ihr Ziel erreicht haben; beim Team die Zahl der
+Personen, der Zertifikate und der Badges.
+
+Über der Tabelle wechselst du mit **Konfis** und **Team** die Ansicht — die Zahl
+am Knopf zählt die Personen —, suchst nach Name und Benutzername und grenzt
+die Konfis mit **Jahrgang** ein; als Leitung stehen dort nur deine Jahrgänge.
+Bei der Suche darfst du Umlaute umschreiben („mueller" findet „Müller"), die
+Escape-Taste leert das Feld. Ein Klick auf eine Spaltenüberschrift sortiert —
+bei den Konfis nach Name, Jahrgang, Gesamt oder Badges, beim Team nach Name,
+Badges oder Zertifikaten —, ein zweiter Klick kehrt die Richtung um. Namen
+beginnen bei A, Zahlen mit dem größten Wert.
+
+Eine Konfi-Zeile zeigt Name und Benutzername, Jahrgang, Fortschrittsbalken für
+Gottesdienst, Gemeinde und Gesamt — ein Strich steht dort, wo der Jahrgang die
+Punkteart abgeschaltet hat — und die Zahl der Badges. **Punkte** öffnet die
+Wahl zwischen **Aktivität eintragen** und **Bonuspunkte vergeben**, der Knopf
+daneben löscht die Konfi nach einer Rückfrage. Eine Team-Zeile zeigt Name,
+Jahrgänge, Badges, Zertifikate und das Jahr, seit dem die Person im Team ist;
+löschen kann sie nur die Gemeindeleitung. Der Name ist ein Link auf die
+Detailseite.
+
+### Im Browser die Detailseite einer Person in zwei Spalten nutzen
+
+Die Detailseite hat den Namen als Titel, bei einer Konfi darunter die Punkte
+(„12 von 20 Punkten"); **Alle Konfis** beziehungsweise **Alle im Team** führt
+zurück in die Liste. Alles aus
+[Die Detailansicht einer Person nutzen](#die-detailansicht-einer-person-nutzen)
+gibt es auch hier, nur anders verteilt.
+
+Links steht die Person: der Jahrgang, bei einer Konfi mit den Ringen für Punkte
+und Ziele, bei einer Teamer:in mit der Zahl der Zertifikate, Events und Badges.
+Darunter folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
+eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen — und, bei
+einer Konfi, **Bonuspunkte**; bei einer Teamer:in stattdessen **Zertifikate**,
+die **Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen
+über zehn hinaus, klappt **Alle … anzeigen** den Rest auf.
+
+Rechts stehen die **Aktionen** — **Aktivität eintragen**, **Bonuspunkte
+vergeben**, **Konfi bearbeiten** und **Passwort zurücksetzen**, bei einer
+Teamer:in **Zertifikat zuweisen** statt Bonuspunkten und Bearbeiten — und
+darunter die Karten **Konfirmation** (Datum, Konfispruch, besuchte
+Pflicht-Events), bei einer Teamer:in **Teamer:in seit** mit dem Datum zum
+Ändern, **Badges**, **Events**, **Offene Anträge** mit dem Link **Anträge
+bearbeiten →**, **Stempel**, **Jahresrückblick** und **Rolle ändern** mit **Zur
+Teamer:in befördern**. Offene Anträge, Stempel und Rückblick stehen nur da,
+wenn es etwas zu zeigen gibt. Ohne Netz gehen nur das Eintragen von
+Aktivitäten und Bonuspunkten; alles andere wartet auf die Verbindung.
+
 ## Chats moderieren
 
 ![Die Chat-Übersicht der Leitung.](/docs/bilder/iphone/leitung-chat.png)
@@ -151,13 +209,19 @@ die [Zu- und Absagen der Teamer:innen](70-termine.md#das-teamer-kontingent-verwa
 Fällt ein Event aus, hast du die Wahl zwischen
 [Absagen und Löschen](70-termine.md#ein-event-absagen-oder-loeschen).
 
+Im Browser stehen die Events als Tabelle, und ein Event hat zwei Spalten; wie
+das aussieht, steht unter
+[Im Browser Events in Tabellen und Karten nutzen](70-termine.md#im-browser-events-in-tabellen-und-karten-nutzen).
+
 ### Aktivitäten
 
 Die Meldungen der Konfis und Teamer:innen: **Offen**, **Verbucht**,
 **Abgelehnt**. Du siehst das Nachweis-Foto und entscheidest; beim Ablehnen
 gibst du einen Grund an, den die Person zu sehen bekommt. Der ganze
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) steht
-im Punkte-Kapitel.
+im Punkte-Kapitel. Im Browser heißt dieser Bereich **Anträge**; **Aktivitäten**
+ist dort der Katalog dessen, was gemeldet werden kann
+([Aktivitäten und Anträge in Tabellen bearbeiten](70-termine.md#aktivitaeten-und-antraege-in-tabellen-bearbeiten)).
 
 ## Challenges stellen und begleiten
 
@@ -191,8 +255,11 @@ Der fünfte Reiter sammelt alles, was du seltener anfasst, in drei Abschnitten.
 
 **Profil** (Passwort und E-Mail ändern), **Benachrichtigungen** (welche
 Mitteilungen aufs Handy kommen, siehe [Auswählen, welche Mitteilungen aufs
-Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen))
-und **App-Tour ansehen**.
+Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)),
+**App-Tour ansehen** und **Hilfe und Support** — das Formular auf
+konfi-quest.de, über das ihr dem Support eine Frage, einen Fehler oder einen
+Wunsch schickt; ihr bekommt eine Bestätigung mit der Nummer eures
+Anliegens.
 
 ### Verwaltung (nur Gemeindeleitung)
 
@@ -219,6 +286,79 @@ E-Mail-Adresse.
 | **Material** | Dateien und Links für Events und Jahrgänge |
 | **Jahresrückblick** | [Ausgaben anlegen, benennen und freigeben](95-wrapped.md#einen-rueckblick-anlegen) |
 | **Zertifikate** | Nachweise für Teamer:innen, mit Gültigkeit |
+
+### Im Browser die Einstellungen als Kacheln finden
+
+Im Browser heißt der fünfte Eintrag der Leiste **Mehr** und zeigt statt der
+Liste **Kacheln in Gruppen**. Jede Kachel ist ein Link auf ihre Seite
+(Strg-Klick, am Mac ⌘-Klick: neuer Tab); ein kleines **i** daneben erklärt in
+einem Fenster, wofür der Bereich da ist — mit denselben Texten wie die
+Info-Fenster der App.
+
+- **Punkte und Inhalte:** Aktivitäten, Punkte und Level, Kategorien, Badges,
+  Material und Jahresrückblick.
+- **Gemeinde:** Benutzer:innen, Jahrgänge, Einladungen, Dashboard und
+  Zertifikate. Benutzer:innen, Einladungen und Dashboard sieht nur die
+  Gemeindeleitung.
+- **Konto und Hilfe:** Profil, App-Tour, **Was ist neu?**, **Events und
+  Aktivitäten** — die Erklärung des Bereichs Mitmachen — und **Hilfe und
+  Support**.
+
+**Hilfe und Support** führt nach draußen: Die Kachel öffnet in einem neuen Tab
+das Formular „Anliegen an den Support senden" auf konfi-quest.de. Dort gibst du
+Gemeinde, Namen und E-Mail-Adresse an, wählst die Art des Anliegens — etwa
+**Frage zur Bedienung**, **Fehler melden** oder **Wunsch oder Idee** —, den
+Bereich und die Dringlichkeit aus und beschreibst, worum es geht; Passwörter
+und Namen von Konfis gehören nicht hinein. Die Bestätigung mit der Nummer des
+Vorgangs kommt per E-Mail. **Dringend** gilt nur, wenn die Gemeinde gerade nicht
+mit Konfi Quest arbeiten kann. Die Kachel sehen die Gemeindeleitung und die
+Leitung; in der App steht derselbe Eintrag unter **Mehr** im Abschnitt Konto.
+Konten des Betriebs von Konfi Quest sehen zusätzlich die Gruppe **Support und
+Betrieb**.
+
+**Profil** öffnet eine Seite mit zwei Spalten: links die Person mit
+Benutzername, E-Mail-Adresse, Rolle und Gemeinde, rechts die offenen
+Einladungen in eine weitere Gemeinde, die Einstellungen — Funktionsbeschreibung,
+E-Mail-Adresse, Passwort und Medien-Cache — und **Konto löschen**. **Abmelden**
+steht nicht im Profil, sondern unten in der Leiste.
+
+### Im Browser Verwaltungsseiten als Tabellen nutzen
+
+Die Seiten, die du über **Mehr** erreichst, sind im Browser Tabellen mit
+Kennzahlen darüber. Oben links führt **Mehr** zurück, oben rechts legst du Neues
+an, in der Zeile bearbeitest und löschst du — mit denselben Fenstern und
+Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
+[Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
+
+| Seite | Was die Seite zeigt | Außerdem |
+|---|---|---|
+| **Benutzer:innen** | Name, Rolle, Jahrgänge, Status und letzte Anmeldung | Knöpfe **Alle**, **Aktiv**, **Leitung** und **Team**, Suche nach Name, Benutzername und E-Mail; **Person einladen**, **Benutzer:in anlegen** und die Tabelle **Offene Einladungen** mit **Zurückziehen** nur für die Gemeindeleitung; wer aus einer anderen Gemeinde kommt, trägt **Gast** |
+| **Kategorien** | Name und Beschreibung | |
+| **Level** | Symbol und Titel, Beschreibung, ab wie vielen Punkten | |
+| **Zertifikate** | Kacheln mit Symbol und Name statt einer Tabelle | Bearbeiten und Löschen an der Kachel |
+| **Jahrgänge** | Konfis, Punkteziele, Konfispruch frei oder gesperrt, Rückblick | Kennzahlen darüber; **Neuer Jahrgang** nur für die Gemeindeleitung |
+| **Material verwalten** | Titel mit Beschreibung, für wen sichtbar, was daran hängt, wer es angelegt hat | Suche, Auswahl **Jahrgang** oder **Nur globales Material**; fremdes Material steht auf **Ansehen** |
+| **Jahresrückblick** | Ausgaben mit Jahrgang, Zeitraum, Zahl der Rückblicke und Stand | **Konfis** und **Team** (Team nur für die Gemeindeleitung); **Neuer Rückblick** öffnet ein Fenster |
+| **Dashboard** | zwei Listen nebeneinander, für Konfis und für das Team | je Bereich ein Schalter; die Pfeile nach oben und unten ersetzen das Ziehen der App; jede Änderung gilt sofort |
+| **Einladungen** | aktive Codes mit Jahrgang, Verwendungen und Gültigkeit | Formular für einen neuen Code; rechts der QR-Code mit **Link kopieren** und **Teilen** |
+| **Betrieb** | Zustand, Fehler, Routen und Verlauf des Servers | nur für Konten mit Super-Admin-Recht |
+
+Die Aktivitäten haben im Browser zwei Wege: die Kachel **Aktivitäten** und den
+Reiter bei Mitmachen; beide zeigen denselben Katalog.
+
+### Im Browser Badges in der Tabelle verwalten
+
+Die Seite **Badges** hat oben vier Kacheln — **Badges**, **Aktiv**, **Geheim**
+und **Verliehen** —, darunter die Wahl **Konfis** oder **Team**, die Suche in
+Name und Beschreibung, die Filter **Alle**, **Aktiv**, **Geheim** und **Inaktiv**
+mit den Zahlen und die Sortierung nach Kriterium, Name oder Verliehen. Die
+Tabelle nennt je Badge den Namen mit der Beschreibung, das Kriterium, den
+Stand — aktiv oder inaktiv, geheim oder sichtbar — und wie oft es verliehen
+wurde; ein Klick auf den Namen oder den Stift öffnet dasselbe Formular wie in
+der App, der Papierkorb löscht nach einer Rückfrage. Inaktive Badges stehen
+blass da. **Neues Badge** oben rechts legt eines an; wie Bedingungen
+funktionieren, steht unter
+[Ein Badge anlegen](60-badges.md#ein-badge-anlegen).
 
 ## Eine neue Gemeinde einrichten
 

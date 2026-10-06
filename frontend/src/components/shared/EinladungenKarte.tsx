@@ -35,7 +35,12 @@ interface Props {
   variante: 'users' | 'teamer' | 'purple';
 }
 
-const EinladungenKarte: React.FC<Props> = ({ variante }) => {
+/**
+ * Laden und Beantworten der offenen Einladungen -- die Logik der Karte, damit
+ * die Web-Fassung des Profils (konfi/web/WebProfilBausteine) dieselben Abrufe
+ * und Meldungen nutzt und nur anders darstellt.
+ */
+export const useEinladungen = () => {
   const { setError, setSuccess, isOnline } = useApp();
   const [einladungen, setEinladungen] = useState<OffeneEinladung[]>([]);
   const [laeuft, setLaeuft] = useState<number | null>(null);
@@ -72,6 +77,12 @@ const EinladungenKarte: React.FC<Props> = ({ variante }) => {
       setLaeuft(null);
     }
   };
+
+  return { einladungen, laeuft, antworten, isOnline };
+};
+
+const EinladungenKarte: React.FC<Props> = ({ variante }) => {
+  const { einladungen, laeuft, antworten, isOnline } = useEinladungen();
 
   if (einladungen.length === 0) return null;
 

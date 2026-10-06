@@ -11,7 +11,6 @@
 // Form der Vertrag offenlaesst. Die Seiten tragen nur Darstellung und Aufrufe.
 
 import type {
-  GemeindeAnfrage,
   GemeindeKurz,
   MailAntwortDaten,
   MailBaustein,
@@ -407,8 +406,22 @@ const zahlenTabelle = (wert: unknown): Record<string, number> => {
   return raus;
 };
 
-/** GET /mail/zaehler lesen; fehlende oder falsche Felder zaehlen 0. Kein Objekt: null. */
-export function zaehlerLesen(daten: unknown): MailZaehler | null {
+/**
+ * GET /support/mail/zaehler: die Zahlen der Mail (`anfragen`, `gemeinden`,
+ * `eingang`, je Anfrage und Gemeinde -- aelter, bleiben) plus die zwei roten
+ * Zahlen der Support-Ansicht seit den Vorgaengen (docs/planung/
+ * support-vorgaenge.md): `vorgaenge` (nicht archivierte Vorgaenge mit Status
+ * „Neu" oder ungelesener Mail) und `posteingang` (ungelesene, nicht
+ * einsortierte, nicht archivierte Mails). Beide sind zusaetzliche Felder:
+ * ein aelterer Server liefert sie nicht, dann zaehlen sie 0.
+ */
+export interface SupportZaehler extends MailZaehler {
+  vorgaenge: number;
+  posteingang: number;
+}
+
+/** GET /support/mail/zaehler lesen; fehlende oder falsche Felder zaehlen 0. Kein Objekt: null. */
+export function zaehlerLesen(daten: unknown): SupportZaehler | null {
   if (!daten || typeof daten !== 'object' || Array.isArray(daten)) return null;
   const d = daten as Record<string, unknown>;
   return {
@@ -417,6 +430,8 @@ export function zaehlerLesen(daten: unknown): MailZaehler | null {
     eingang: positiveZahl(d.eingang),
     je_anfrage: zahlenTabelle(d.je_anfrage),
     je_gemeinde: zahlenTabelle(d.je_gemeinde),
+    vorgaenge: positiveZahl(d.vorgaenge),
+    posteingang: positiveZahl(d.posteingang),
   };
 }
 
@@ -465,19 +480,6 @@ export function empfaengerLesen(daten: unknown): MailEmpfaenger[] {
 export function empfaengerText(e: MailEmpfaenger): string {
   const wer = e.name ? `${e.name} <${e.adresse}>` : e.adresse;
   return e.herkunft ? `${wer} · ${e.herkunft}` : wer;
-}
-
-// --- Zuordnen ------------------------------------------------------------------
-
-const OFFEN = new Set(['neu', 'in_arbeit']);
-
-/** Anfragen zur Auswahl beim Zuordnen: offene (neu, in Arbeit) zuerst, darin die neuesten vorn. */
-export function anfragenZumZuordnen(anfragen: readonly GemeindeAnfrage[]): GemeindeAnfrage[] {
-  const zeit = (a: GemeindeAnfrage) => new Date(a.created_at).getTime() || 0;
-  return [...anfragen].sort((a, b) => {
-    const offen = Number(OFFEN.has(b.status)) - Number(OFFEN.has(a.status));
-    return offen || zeit(b) - zeit(a) || b.id - a.id;
-  });
 }
 
 /** Anzeigename einer Gemeinde. */

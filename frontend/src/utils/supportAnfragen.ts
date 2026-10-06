@@ -7,33 +7,10 @@
 // Status, die Vorbelegung des Formulars aus der Anfrage und die Pruefungen vor
 // dem Absenden. Die Seiten selbst tragen nur Darstellung und Aufrufe.
 
-import type { AnfrageAnlegenDaten, AnfrageStatus, GemeindeAnfrage, Kirchenkreis } from '../types/support';
+import type { AnfrageAnlegenDaten, GemeindeAnfrage, Kirchenkreis } from '../types/support';
 import { systemnameAusAnzeigename, umlauteUmschreiben } from './gemeindeSystemname';
 import { USERNAME_MAX_LENGTH, isValidUsername } from './usernameValidation';
 import { TESTPHASE_KONFIS, limitNachUmschalten, limitVorgabe } from './konfiLimitVorgabe';
-
-export const ANFRAGE_STATUS: Record<AnfrageStatus, { label: string; farbe: string }> = {
-  neu: { label: 'Neu', farbe: 'var(--app-color-warning)' },
-  in_arbeit: { label: 'In Arbeit', farbe: 'var(--app-color-info)' },
-  angelegt: { label: 'Angelegt', farbe: 'var(--app-color-success)' },
-  abgelehnt: { label: 'Abgelehnt', farbe: 'var(--app-color-neutral)' },
-};
-
-/** Reihenfolge im Filter der Liste; "alle" ohne Status-Parameter. */
-export const STATUS_FILTER: Array<{ wert: AnfrageStatus | 'alle'; label: string }> = [
-  { wert: 'neu', label: 'Neu' },
-  { wert: 'in_arbeit', label: 'In Arbeit' },
-  { wert: 'angelegt', label: 'Angelegt' },
-  { wert: 'abgelehnt', label: 'Abgelehnt' },
-  { wert: 'alle', label: 'Alle' },
-];
-
-/**
- * Status, die sich von Hand setzen lassen. "Angelegt" setzt allein das
- * Anlegen der Gemeinde (POST /support/anfragen/:id/anlegen) -- sonst stuende
- * eine Anfrage als erledigt da, zu der es keine Gemeinde gibt.
- */
-export const STATUS_VON_HAND: AnfrageStatus[] = ['neu', 'in_arbeit', 'abgelehnt'];
 
 /** Tage der Testphase beim Anlegen, wie im Formular "Gemeinde anlegen" (30 Tage). */
 export const TESTPHASE_TAGE = 30;

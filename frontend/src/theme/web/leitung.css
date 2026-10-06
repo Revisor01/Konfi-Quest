@@ -1,0 +1,1105 @@
+/* ===================================================================
+   Web-Fassung der Leitungs- und Verwaltungsseiten (03.10.2026,
+   docs/planung/web-alle-bereiche.md, Entscheidung 6)
+
+   Konfis, Konfi-Detail, Benutzer:innen, "Mehr" und die Verwaltungsseiten
+   (Kategorien, Jahrgaenge, Level, Einladungen, Zertifikate, Startseite,
+   Material, Rueckblick, Betrieb) im Browser ab 992 px. Eingebunden von den
+   Web-Komponenten unter components/admin/web/leitung/ und
+   components/teamer/web/material/. Dieselben Regeln wie web-ansicht.css:
+   Klassen mit Praefix web-, nur Tokens, Dunkelmodus ueber die Tokens, keine
+   Bewegung, kein Eingriff in Ionic, sichtbarer Fokus an allem Bedienbaren.
+   =================================================================== */
+
+/* --- Kreis mit Initialen --- */
+.web-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-konfis);
+  color: var(--app-weiss);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1;
+}
+
+.web-avatar--gross {
+  width: 56px;
+  height: 56px;
+  font-size: var(--app-text-gross);
+}
+
+.web-avatar--erreicht {
+  background: var(--app-color-success-strong);
+}
+
+.web-avatar--teamer {
+  background: var(--app-color-teamer);
+}
+
+.web-avatar--users {
+  background: var(--app-color-users);
+}
+
+.web-avatar--leitung {
+  background: var(--app-color-leitung);
+}
+
+.web-avatar--neutral {
+  background: var(--app-color-neutral);
+}
+
+.web-person-zelle {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-person-zelle__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* --- Rolle als Marke: Farbe der Rolle (Gemeindeleitung, Leitung, Teamer:in), Wort immer dabei --- */
+.web-rolle {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--app-abstand-haar) var(--app-abstand-schmal);
+  border: 1px solid color-mix(in srgb, var(--app-color-neutral) 35%, var(--web-karte));
+  border-radius: var(--app-radius-gross);
+  background: color-mix(in srgb, var(--app-color-neutral) 14%, var(--web-karte));
+  color: var(--app-text-system);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.web-rolle--users {
+  border-color: color-mix(in srgb, var(--app-color-users) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-users) 14%, var(--web-karte));
+  color: var(--app-text-users);
+}
+
+.web-rolle--leitung {
+  border-color: color-mix(in srgb, var(--app-color-leitung) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-leitung) 14%, var(--web-karte));
+  color: var(--app-text-leitung);
+}
+
+.web-rolle--teamer {
+  border-color: color-mix(in srgb, var(--app-color-teamer) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-teamer) 14%, var(--web-karte));
+  color: var(--app-text-teamer);
+}
+
+.web-rolle--konfis {
+  border-color: color-mix(in srgb, var(--app-color-konfis) 35%, var(--web-karte));
+  background: color-mix(in srgb, var(--app-color-konfis) 14%, var(--web-karte));
+  color: var(--app-text-konfis);
+}
+
+/* --- Fortschritt: "7 / 10" mit schmalem Balken --- */
+.web-fortschritt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  min-width: 88px;
+}
+
+.web-fortschritt__text {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  font-size: var(--app-text-hinweis);
+  font-variant-numeric: tabular-nums;
+  color: var(--web-text);
+  white-space: nowrap;
+}
+
+.web-fortschritt__prozent {
+  color: var(--app-color-success-tief);
+  font-size: var(--app-text-klein);
+}
+
+.web-fortschritt__spur {
+  display: block;
+  height: 6px;
+  /* Ein Prozentwert (--app-radius-kreis) machte aus dem flachen Balken eine Ellipse. */
+  border-radius: var(--app-radius-gross);
+  background: var(--app-surface-dim);
+  overflow: hidden;
+}
+
+.web-fortschritt__fuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--app-radius-gross);
+  background: var(--app-color-konfis);
+}
+
+.web-fortschritt--gottesdienst .web-fortschritt__fuellung {
+  background: var(--app-color-gottesdienst);
+}
+
+.web-fortschritt--gemeinde .web-fortschritt__fuellung {
+  background: var(--app-color-gemeinde);
+}
+
+.web-fortschritt--erreicht .web-fortschritt__fuellung {
+  background: var(--app-color-success-strong);
+}
+
+/* --- Werkzeugleiste: Auswahl neben der Suche --- */
+.web-filterauswahl {
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+
+.web-werkzeuge__zahl {
+  margin-left: auto;
+  font-size: var(--app-text-hinweis);
+}
+
+/* --- Kopf einer sortierbaren Spalte --- */
+.web-sortkopf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-sortkopf:hover {
+  color: var(--web-text);
+}
+
+.web-sortkopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--app-radius-fein);
+}
+
+.web-sortkopf__pfeil {
+  font-size: var(--app-text-klein);
+  opacity: 0.35;
+}
+
+.web-sortkopf__pfeil--aktiv {
+  opacity: 1;
+  color: var(--ion-color-primary);
+}
+
+/* --- Zeile, die per Knopf ein Fenster oeffnet: das Netz spannt sich ueber die Zeile --- */
+.web-zeilenknopf {
+  display: block;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  font-weight: var(--app-schrift-halbfett);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-zeilenknopf::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.web-zeilenknopf:focus-visible {
+  outline: none;
+}
+
+.web-zeilenknopf:focus-visible::after {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+  border-radius: var(--app-radius-fein);
+}
+
+/* Eine gesperrte Person steht gedaempft da. */
+.web-zeile--gesperrt .web-zeilenknopf {
+  color: var(--web-text-leise);
+}
+
+/* --- Kleinkram in Zellen --- */
+.web-zahl-mit-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  color: var(--web-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-zahl-mit-symbol__symbol {
+  color: var(--web-text-leise);
+}
+
+.web-spalte-aktionen-breit {
+  width: 200px;
+}
+
+.web-spalte-aktionen-schmal {
+  width: 72px;
+}
+
+.web-extern-symbol {
+  font-size: var(--app-text-gross);
+  color: var(--web-text-leise);
+}
+
+/* --- Auswahl im Dialog: zwei grosse Wege --- */
+.web-wahlkarten {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-wahlkarte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  width: 100%;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-wahlkarte:hover {
+  background: var(--web-hover);
+}
+
+.web-wahlkarte:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-wahlkarte__titel {
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-wahlkarte__text {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+/* --- "Mehr": gruppierte Kacheln --- */
+.web-mehr-gruppe {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittelweit);
+}
+
+.web-mehr-gruppe__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: -0.01em;
+  color: var(--web-text);
+}
+
+.web-mehr-gruppe__text {
+  margin: var(--app-abstand-mini) 0 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-mehr-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-mehr-kachel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+}
+
+.web-mehr-kachel:hover {
+  background: var(--web-hover);
+}
+
+/* Das Netz des Links spannt sich ueber die ganze Kachel; das "i" liegt darueber. */
+.web-mehr-kachel .web-mehr-kachel__link {
+  display: flex;
+  align-items: center;
+  flex: 1 1 auto;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  color: var(--web-text);
+  text-decoration: none;
+}
+
+.web-mehr-kachel .web-mehr-kachel__link:hover {
+  text-decoration: none;
+}
+
+.web-mehr-kachel__link::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: var(--app-radius-karte);
+}
+
+.web-mehr-kachel__link:focus-visible {
+  outline: none;
+}
+
+.web-mehr-kachel__link:focus-visible::after {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-mehr-kachel .web-mehr-kachel__link--knopf {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-mehr-kachel__symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-karte);
+  background: var(--app-color-users);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-mehr-kachel__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-mehr-kachel__titel {
+  font-weight: var(--app-schrift-halbfett);
+  font-size: var(--app-text-standard);
+}
+
+.web-mehr-kachel__beschreibung {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-mehr-kachel__info {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+}
+
+.web-mehr-kachel__info-symbol {
+  font-size: var(--app-text-gross);
+}
+
+.web-mehr-kachel__pfeil {
+  flex: 0 0 auto;
+  color: var(--web-text-leise);
+}
+
+.web-mehr-absatz {
+  margin: 0;
+}
+
+.web-mehr-farbe--users { background: var(--app-color-users); }
+.web-mehr-farbe--activities { background: var(--app-color-activities); }
+.web-mehr-farbe--badges { background: var(--app-color-badges); }
+.web-mehr-farbe--jahrgang { background: var(--app-color-jahrgang); }
+.web-mehr-farbe--categories { background: var(--app-color-categories); }
+.web-mehr-farbe--level { background: var(--app-color-level); }
+.web-mehr-farbe--material { background: var(--app-color-material); }
+.web-mehr-farbe--wrapped { background: var(--app-color-wrapped); }
+.web-mehr-farbe--teamer { background: var(--app-color-teamer); }
+.web-mehr-farbe--organizations { background: var(--app-color-organizations); }
+.web-mehr-farbe--konfis { background: var(--app-color-konfis); }
+.web-mehr-farbe--events { background: var(--app-color-events); }
+.web-mehr-farbe--chat { background: var(--app-color-chat); }
+
+/* --- Detailseite einer Person --- */
+.web-person-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-weit);
+  padding: var(--app-abstand-weit);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-gradient-konfi);
+  color: var(--app-weiss);
+}
+
+.web-person-hero--teamer {
+  background: var(--app-gradient-teamer);
+}
+
+.web-person-hero .web-avatar {
+  background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+}
+
+.web-person-hero__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-basis);
+  min-width: 0;
+}
+
+.web-person-hero__text {
+  min-width: 0;
+}
+
+.web-person-hero__name {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1.2;
+  color: var(--app-weiss);
+}
+
+.web-person-hero__zeile {
+  margin: var(--app-abstand-winzig) 0 0;
+  font-size: var(--app-text-sekundaer);
+  color: color-mix(in srgb, var(--app-weiss) 82%, transparent);
+}
+
+.web-person-hero__zahlen {
+  display: flex;
+  gap: var(--app-abstand-weit);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-person-hero__zahlen li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.web-person-hero__zahlen strong {
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-anzeige-zahl);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1.1;
+}
+
+.web-person-hero__zahlen span {
+  font-size: var(--app-text-klein);
+  color: color-mix(in srgb, var(--app-weiss) 82%, transparent);
+}
+
+.web-aktionsliste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-aktionsliste .web-knopf {
+  justify-content: flex-start;
+}
+
+.web-karte__fuss {
+  display: flex;
+  justify-content: center;
+  padding: var(--app-abstand-eng);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-karte__text {
+  margin: 0 0 var(--app-abstand-mittel);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-karte__leer--eng {
+  padding: 0;
+}
+
+.web-zelle-mit-knopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-zelle-symbol {
+  color: var(--app-text-teamer);
+  font-size: var(--app-text-gross);
+}
+
+/* Eine Zeile, deren Punkteart abgeschaltet ist, steht gedaempft da. */
+.web-tabelle tbody tr.web-zeile--leise td,
+.web-feed__zeile.web-zeile--leise {
+  color: var(--web-text-leise);
+}
+
+.web-feed__zeile.web-zeile--leise {
+  opacity: 0.7;
+}
+
+.web-pflicht {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-pflicht--gut {
+  color: var(--app-color-success-tief);
+}
+
+.web-pflicht--mittel {
+  color: var(--app-text-warnung);
+}
+
+.web-pflicht--schwach {
+  color: var(--app-text-fehler);
+}
+
+.web-badges-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  text-align: center;
+}
+
+.web-badge__symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-badges);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel);
+}
+
+.web-badge__name {
+  font-size: var(--app-text-klein);
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}
+
+.web-stempel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-stempel__eintrag {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-stempel__symbol {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-challenges);
+  color: var(--app-weiss);
+  font-size: var(--app-text-gross);
+}
+
+.web-stempel__eintrag--offen .web-stempel__symbol {
+  background: var(--app-surface-dim);
+  color: var(--web-text-leise);
+}
+
+.web-stempel__eintrag--offen .web-zelle-titel {
+  color: var(--web-text-leise);
+}
+
+.web-stempel__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* --- Symbol im farbigen Kreis (Kategorie, Level, Jahrgang, Zertifikat ...) --- */
+.web-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-neutral);
+  color: var(--app-weiss);
+  font-size: var(--app-text-gross);
+}
+
+.web-symbol--gross {
+  width: 48px;
+  height: 48px;
+  font-size: var(--app-text-ueberschrift-gross);
+}
+
+.web-symbol--categories { background: var(--app-color-categories); }
+.web-symbol--level { background: var(--app-color-level); }
+.web-symbol--jahrgang { background: var(--app-color-jahrgang); }
+.web-symbol--teamer { background: var(--app-color-teamer); }
+.web-symbol--material { background: var(--app-color-material); }
+.web-symbol--wrapped { background: var(--app-color-wrapped); }
+.web-symbol--users { background: var(--app-color-users); }
+.web-symbol--erfolg { background: var(--app-color-success-strong); }
+
+/* --- Kacheln in einer Karte (Zertifikate) --- */
+.web-kachelliste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-kachelliste__eintrag {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  padding: var(--app-abstand-basis);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+}
+
+.web-kachelliste__name {
+  min-width: 0;
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
+  overflow-wrap: anywhere;
+}
+
+/* --- Dashboard einrichten: Bereiche mit Schalter und zwei Pfeilen --- */
+.web-reihenfolge {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-reihenfolge__zeile {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-reihenfolge__zeile:last-child {
+  border-bottom: 0;
+}
+
+.web-reihenfolge__nr {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.web-reihenfolge__pfeile {
+  display: inline-flex;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Formular mit zwei Feldern nebeneinander --- */
+.web-formular__felder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--app-abstand-mittel);
+}
+
+/* --- Einladungscode: Schrift mit gleicher Breite, damit sich Zeichen lesen lassen --- */
+.web-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--app-text-hinweis);
+  letter-spacing: 0.08em;
+  color: var(--web-text);
+}
+
+.web-code--gross {
+  font-size: var(--app-text-ueberschrift);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.14em;
+  color: var(--web-text);
+}
+
+.web-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  text-align: center;
+}
+
+/* Der QR-Code steht auf hellem Grund, auch im Dunkeln: Scanner brauchen den Kontrast. */
+.web-qr__bild {
+  display: block;
+  width: 200px;
+  height: 200px;
+  border-radius: var(--app-radius-karte);
+  box-shadow: var(--app-schatten-schwebend);
+}
+
+.web-qr__code {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  width: 100%;
+  padding: var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  background: var(--app-surface-muted);
+}
+
+.web-qr__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--app-abstand-eng);
+}
+
+/* Die Zeile, deren Code gerade im QR-Feld steht. */
+.web-tabelle tbody tr.web-zeile--gewaehlt td {
+  background: var(--web-hover);
+}
+
+/* --- Material: Beschreibung, Links und Dateien --- */
+.web-zwei-zeilen {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.web-beschreibung {
+  margin: 0;
+  color: var(--web-text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-material-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-material-eintrag {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-karte);
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.web-material-eintrag:hover {
+  background: var(--web-hover);
+}
+
+.web-material-eintrag:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-material-eintrag__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* --- Betrieb: Urteil, Anteile, Vergleich und Last --- */
+.web-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text);
+}
+
+.web-zustand {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  border: 1px solid var(--web-linie);
+  border-left: 4px solid var(--app-color-success-klassisch);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+}
+
+.web-zustand--auffaellig {
+  border-left-color: var(--app-color-ampel-maessig);
+}
+
+.web-zustand--stoerung {
+  border-left-color: var(--app-color-danger);
+}
+
+.web-zustand__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-zustand__punkt {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-success-klassisch);
+}
+
+.web-zustand--auffaellig .web-zustand__punkt {
+  background: var(--app-color-ampel-maessig);
+}
+
+.web-zustand--stoerung .web-zustand__punkt {
+  background: var(--app-color-danger);
+}
+
+.web-zustand__titel {
+  margin: 0;
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-zustand__satz {
+  margin: 0;
+  color: var(--web-text);
+}
+
+.web-zustand__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+  padding-top: var(--app-abstand-eng);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-apdex {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mittel);
+}
+
+.web-grosszahl {
+  font-size: var(--app-text-ueberschrift-gross);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1;
+}
+
+.web-karte__text--unten {
+  margin: var(--app-abstand-mittel) 0 0;
+}
+
+.web-anteile__balken {
+  display: flex;
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--app-radius-fein);
+  background: var(--web-linie-leise);
+}
+
+.web-anteile__teil {
+  display: block;
+  height: 100%;
+}
+
+.web-anteile__legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng) var(--app-abstand-mittel);
+  margin: var(--app-abstand-eng) 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-anteile__legende li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+.web-anteile__punkt {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--app-radius-kreis);
+}
+
+.web-vergleiche {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-vergleich {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+}
+
+.web-vergleich__links {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: var(--web-text);
+}
+
+.web-vergleich__rechts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: 0 0 auto;
+}
+
+.web-vergleich__jetzt {
+  color: var(--web-text);
+  font-size: var(--app-text-gross);
+}
+
+.web-vergleich__delta {
+  font-size: var(--app-text-hinweis);
+}
+
+.web-last {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-last__kopf {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mini);
+}
+
+.web-last__spur {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--app-radius-fein);
+  background: var(--web-linie-leise);
+}
+
+.web-last__fuellung {
+  display: block;
+  height: 100%;
+  border-radius: var(--app-radius-fein);
+  background: var(--app-color-chat);
+}
+
+/* --- Pillen und Werte in einer Zeile --- */
+.web-pillreihe--eine-zeile {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.web-nowrap {
+  white-space: nowrap;
+}
+
+.web-zweizeilig {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
