@@ -136,6 +136,7 @@ Versionsüberschrift.
   Zahlen gibt es für Vorgänge und Posteingang.
 - Im Browser markiert die Leiste auch auf Seiten, die über „Mehr" erreicht
   werden, den Eintrag „Mehr", bei den Aktivitäten „Mitmachen".
+- Im Browser stehen gewählte Filter in der Farbe der eigenen Rolle.
 
 ### Behoben
 - Direkt nach der Anmeldung zeigte der Gemeinde-Umschalter den Namen der
