@@ -164,6 +164,18 @@ ion-content.web-inhalt {
   min-width: 0;
 }
 
+.web-karte__symbol {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin: var(--app-abstand-winzig) 0 0;
+}
+
+.web-karte__kopftext {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .web-karte__kopf {
   display: flex;
   align-items: flex-start;
@@ -308,6 +320,21 @@ a.web-kachel:hover {
   background: var(--app-flaeche-fehler);
   border-color: var(--app-rand-fehler);
   color: var(--app-text-fehler);
+}
+
+/* Eine Marke in eigener Farbe (Merkmale eines Events: Pflicht, Team,
+   Konfirmation, Serie) -- dieselben Farben und Symbole wie die Eck-Badges
+   der App (Simon, 07.10.2026). */
+.web-pill--farbig {
+  --web-pill-farbe: var(--app-color-neutral);
+  background: color-mix(in srgb, var(--web-pill-farbe) 12%, var(--web-karte));
+  border-color: color-mix(in srgb, var(--web-pill-farbe) 40%, transparent);
+  color: var(--web-pill-farbe);
+}
+
+.web-pill__icon {
+  flex: 0 0 auto;
+  font-size: var(--app-text-hinweis);
 }
 
 /* Das Postfach (moin@, support@): eckiger, in Schreibmaschinen-Optik. */
@@ -1633,7 +1660,8 @@ mark.web-treffer {
 
 .web-angaben__zeile {
   display: grid;
-  grid-template-columns: 124px minmax(0, 1fr);
+  /* Breit genug fuer Symbol und "Check-in-Fenster" in einer Zeile. */
+  grid-template-columns: 152px minmax(0, 1fr);
   gap: var(--app-abstand-eng);
   padding: var(--app-abstand-eng) 0;
   border-bottom: 1px solid var(--web-linie-leise);
@@ -1644,8 +1672,18 @@ mark.web-treffer {
 }
 
 .web-angaben__label {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-kompakt);
   color: var(--web-text-leise);
   font-size: var(--app-text-hinweis);
+}
+
+/* Das Symbol der App vor der Bezeichnung; die Farbe kommt von app-icon-color--*. */
+.web-angaben__icon {
+  flex: 0 0 auto;
+  margin-top: var(--app-abstand-winzig);
+  font-size: var(--app-text-standard);
 }
 
 .web-angaben__wert {

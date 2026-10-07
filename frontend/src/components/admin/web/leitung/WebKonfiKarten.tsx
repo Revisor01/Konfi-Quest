@@ -39,6 +39,7 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebLink from '../../../web/WebLink';
 import WebAngaben from '../../../web/WebAngaben';
+import { ANGABE_SYMBOLE } from '../../../web/angabeSymbole';
 import { WebLeer } from '../../../web/WebZustaende';
 import StempelInfo from '../../../web/StempelInfo';
 import WebAuszeichnungen, { type WebAuszeichnung } from '../../../web/WebAuszeichnungen';
@@ -452,6 +453,9 @@ export const KonfirmationKarte: React.FC<{
           },
           {
             label: spruch?.reference || 'Konfispruch',
+            // Die Bezeichnung ist die Bibelstelle -- das Symbol des Konfispruchs kommt mit.
+            icon: ANGABE_SYMBOLE.Konfispruch.icon,
+            iconKlasse: ANGABE_SYMBOLE.Konfispruch.klasse,
             wert: spruch?.text
               ? spruch.text
               : <span className="web-gedaempft">{spruch ? 'Übersetzung noch nicht hinterlegt' : 'Noch kein Spruch gewählt'}</span>,

@@ -98,6 +98,9 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- Im Browser tragen alle Angaben das Symbol der App in ihrer Farbe, und die
+  Merkmale eines Events (Pflicht, Nur Team, Konfirmation …) stehen als
+  farbige Marken mit Symbol.
 - Im Browser sind die Kacheln von Konfis, Team und Events gebaut wie die der
   Challenges: farbiger Kopf mit Symbol, darunter die Angaben mit Symbolen und
   unten die Knöpfe; bei Events und Personen steht der Name im Kopf, Merkmale

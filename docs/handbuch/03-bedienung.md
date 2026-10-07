@@ -143,7 +143,13 @@ Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
   ihre Aktivitäten und Punkte.
 - **Rechts, schmal** stehen die **Angaben**, bei Events dazu Zeitfenster, Serie
   und Material, bei Challenges der Stempel, bei einer Person Konfirmation,
-  Badges, Events und mehr.
+  Badges, Events und mehr. Jede Angabe trägt das Symbol der App in ihrer
+  Farbe — Kalender vor dem Datum, Ortsmarke vor dem Ort, Pokal vor den
+  Punkten.
+
+Merkmale eines Events wie **Pflicht**, **Nur Team**, **Team gesucht**,
+**Konfirmation** und **Serie** stehen als farbige Marken mit Symbol, in
+denselben Farben wie die Zeichen in der App.
 
 Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
 

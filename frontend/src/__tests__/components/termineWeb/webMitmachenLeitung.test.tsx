@@ -462,6 +462,13 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' })).toBeInTheDocument();
     // Merkmale als Chips, keine Eck-Badges der App auf der Kachel (Simon, 07.10.2026).
     expect(karte('Konfi-Tag').querySelector('.app-corner-badges')).toBeNull();
+    // Merkmal-Chips mit Farbe und Symbol wie die Eck-Badges der App (Simon, 07.10.2026).
+    const pflicht = within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' });
+    expect(pflicht).toHaveClass('web-pill--farbig');
+    expect(pflicht.style.getPropertyValue('--web-pill-farbe')).toBe('var(--app-color-events)');
+    expect(pflicht.querySelector('[data-icon]')).not.toBeNull();
+    const nurTeam = within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' });
+    expect(nurTeam.style.getPropertyValue('--web-pill-farbe')).toBe('var(--app-color-teamer)');
     expect(karte('Konfi-Tag')).toHaveTextContent('Plätze: 12 Konfis');
     // Nur Team: die Zahl des Teams statt der Plätze, dazu die Marke.
     expect(within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' })).toBeInTheDocument();
