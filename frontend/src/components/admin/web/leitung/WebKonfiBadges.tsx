@@ -1,16 +1,17 @@
 // Die erreichten Badges einer Person in der Detailseite der Leitung (Web-Fassung):
-// ein Raster aus Kreis mit Symbol und Name. Geladen wird wie in der App
-// (useKonfiBadges: eigene Route fuer Teamer:innen); der Text zu einem Badge
-// steht als Hinweis am Kreis. Waehrend des Ladens steht nichts da -- kein
+// ein Raster aus Kreis mit Symbol und Name wie bei den Stempeln
+// (WebAuszeichnungen). Geladen wird wie in der App (useKonfiBadges: eigene
+// Route fuer Teamer:innen); die Info zu einem Badge erscheint beim
+// Darueberfahren und beim Fokus. Waehrend des Ladens steht nichts da -- kein
 // Platzhalter, der aufblitzt.
 
 import React from 'react';
-import { IonIcon } from '@ionic/react';
 import { getIconFromString } from '../../../../utils/badgeIcons';
-import { datumKurz } from '../../../../utils/dateUtils';
 import WebKarte from '../../../web/WebKarte';
+import BadgePopoverContent from '../../../shared/BadgePopoverContent';
 import { useKonfiBadges } from '../../views/useKonfiBadges';
 import { getBadgeColor } from '../../views/KonfiBadgesSection';
+import WebAuszeichnungen from '../../../web/WebAuszeichnungen';
 
 const WebKonfiBadges: React.FC<{ konfiId: number; rolle: 'konfi' | 'teamer' }> = ({ konfiId, rolle }) => {
   const { erreicht, laedt } = useKonfiBadges(konfiId, rolle);
@@ -21,21 +22,18 @@ const WebKonfiBadges: React.FC<{ konfiId: number; rolle: 'konfi' | 'teamer' }> =
       {erreicht.length === 0 ? (
         <p className="web-karte__leer web-karte__leer--eng">Noch keine Badges erreicht.</p>
       ) : (
-        <ul className="web-badges-raster">
-          {erreicht.map((b) => (
-            <li
-              key={b.id}
-              className="web-badge"
-              title={[b.description, b.earned_at ? `erreicht am ${datumKurz(b.earned_at)}` : ''].filter(Boolean).join(' · ') || undefined}
-            >
-              {/* Die Farbe ist die gepflegte des Badges (Datenwert), das Symbol steht weiss darauf. */}
-              <span className="web-badge__symbol" style={{ background: getBadgeColor(b) }} aria-hidden="true">
-                <IonIcon icon={getIconFromString(b.icon)} />
-              </span>
-              <span className="web-badge__name">{b.name}</span>
-            </li>
-          ))}
-        </ul>
+        <WebAuszeichnungen
+          beschriftung="Badges"
+          eintraege={erreicht.map((b) => ({
+            schluessel: `b-${b.id}`,
+            name: b.name,
+            icon: getIconFromString(b.icon),
+            // Die gepflegte Farbe des Badges (Datenwert), das Symbol steht weiss darauf.
+            farbe: getBadgeColor(b),
+            erreicht: true,
+            info: <BadgePopoverContent dataRef={{ current: { badge: b, isEarned: true } }} />,
+          }))}
+        />
       )}
     </WebKarte>
   );

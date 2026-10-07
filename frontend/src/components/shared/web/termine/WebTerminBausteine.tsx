@@ -9,11 +9,15 @@
 import React, { useCallback } from 'react';
 import { IonIcon, useIonRouter } from '@ionic/react';
 import {
+  ICON_FLAMME_GEFUELLT,
   ICON_GEMEINDE_GEFUELLT,
   ICON_GOTTESDIENST_GEFUELLT,
   ICON_GRUPPE_GEFUELLT,
   ICON_LISTE,
+  ICON_PERSON_HINZUFUEGEN_GEFUELLT,
   ICON_POKAL_GEFUELLT,
+  ICON_SCHUTZ_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
 } from '../../icons';
 import SegmentZahl from '../../SegmentZahl';
 import WebPill from '../../../web/WebPill';
@@ -105,11 +109,12 @@ export const WebMerkmale: React.FC<{
   ohnePflicht?: boolean;
 }> = ({ event, teamZeigen, serieZeigen = false, ohnePflicht = false }) => (
   <>
-    {event.mandatory && !ohnePflicht && <WebPill title="Pflichtveranstaltung">Pflicht</WebPill>}
-    {event.is_konfirmation && <WebPill ton="info" title="Konfirmation">Konfirmation</WebPill>}
-    {teamZeigen && event.teamer_only && <WebPill title="Nur Team">Nur Team</WebPill>}
-    {teamZeigen && !event.teamer_only && event.teamer_needed && <WebPill title="Team gesucht">Team gesucht</WebPill>}
-    {serieZeigen && event.is_series && <WebPill title="Teil einer Event-Serie">Serie</WebPill>}
+    {/* Farben und Symbole wie die Eck-Badges der App (EventCornerBadges). */}
+    {event.mandatory && !ohnePflicht && <WebPill title="Pflichtveranstaltung" icon={ICON_SCHUTZ_GEFUELLT} farbe="var(--app-color-events)">Pflicht</WebPill>}
+    {event.is_konfirmation && <WebPill title="Konfirmation" icon={ICON_FLAMME_GEFUELLT} farbe="var(--app-color-konfis)">Konfirmation</WebPill>}
+    {teamZeigen && event.teamer_only && <WebPill title="Nur Team" icon={ICON_GRUPPE_GEFUELLT} farbe="var(--app-color-teamer)">Nur Team</WebPill>}
+    {teamZeigen && !event.teamer_only && event.teamer_needed && <WebPill title="Team gesucht" icon={ICON_PERSON_HINZUFUEGEN_GEFUELLT} farbe="var(--app-color-teamer)">Team gesucht</WebPill>}
+    {serieZeigen && event.is_series && <WebPill title="Teil einer Event-Serie" icon={ICON_TERMIN_GEFUELLT} farbe="var(--app-color-info)">Serie</WebPill>}
   </>
 );
 
@@ -122,7 +127,10 @@ export const WebTerminMarken: React.FC<{
   statusZeigen?: boolean;
 }> = ({ status, event, teamZeigen, serieZeigen, statusZeigen = true }) => (
   <span className="web-pillreihe">
-    {statusZeigen && <WebPill ton={status.ton as PillTon} punkt>{status.text}</WebPill>}
+    {statusZeigen && (status.text.startsWith('Pflicht')
+      // Der Stand sagt schon "Pflicht": dann im Aussehen des Merkmals, mit Schild.
+      ? <WebPill title="Pflichtveranstaltung" icon={ICON_SCHUTZ_GEFUELLT} farbe="var(--app-color-events)">{status.text}</WebPill>
+      : <WebPill ton={status.ton as PillTon} punkt>{status.text}</WebPill>)}
     <WebMerkmale event={event} teamZeigen={teamZeigen} serieZeigen={serieZeigen} ohnePflicht={status.text.startsWith('Pflicht')} />
   </span>
 );
@@ -177,6 +185,19 @@ export const WebFakten: React.FC<{ fakten: readonly Fakt[]; gedaempft?: boolean;
  * Die Angaben eines Events als Liste "Bezeichnung -- Wert". Der Ort fuehrt zur
  * Karte; das Material ruft `onMaterial` (springt zum Abschnitt oder oeffnet es).
  */
+/**
+ * Die Punkteart haengt am Wert: "Typ" zeigt Kirche oder Gemeinde wie die App.
+ * Alle uebrigen Angaben holen ihr Symbol aus components/web/angabeSymbole.ts.
+ */
+const typSymbol = (a: TerminAngabe): { icon?: string; iconKlasse?: string } => {
+  if (a.label !== 'Typ') return {};
+  const gottesdienst = a.zeilen[0] === 'Gottesdienst';
+  return {
+    icon: gottesdienst ? ICON_GOTTESDIENST_GEFUELLT : ICON_GEMEINDE_GEFUELLT,
+    iconKlasse: gottesdienst ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde',
+  };
+};
+
 export const WebTerminAngaben: React.FC<{
   angaben: readonly TerminAngabe[];
   beschriftung?: string;
@@ -186,6 +207,7 @@ export const WebTerminAngaben: React.FC<{
     beschriftung={beschriftung}
     angaben={angaben.map((a) => ({
       label: a.label,
+      ...typSymbol(a),
       wert: a.ortLink
         ? <WebExternLink href={a.ortLink} title="Auf der Karte zeigen">{a.zeilen[0]}</WebExternLink>
         : a.materialSprung && onMaterial

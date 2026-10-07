@@ -453,12 +453,22 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(gottesdienst).toHaveTextContent('Jahrgang 2026');
     expect(gottesdienst).toHaveTextContent('Datum: 04.10.2026 · 10:00 Uhr');
     expect(gottesdienst).toHaveTextContent('Ort: Kirche Musterdorf');
-    expect(gottesdienst).toHaveTextContent('Kategorien: Gottesdienst');
+    // Titel und Kategorien stehen im farbigen Kopf (Simon, 07.10.2026).
+    expect(gottesdienst.querySelector('.web-bildkarte__kopf')).toHaveTextContent('Event · GottesdienstSonntagsgottesdienst');
     expect(gottesdienst).toHaveTextContent('Plätze: 3/20');
     expect(gottesdienst).toHaveTextContent('Punkte: 1P');
     expect(within(gottesdienst).getByText('Offen', { selector: '.web-pill' })).toBeInTheDocument();
 
     expect(within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' })).toBeInTheDocument();
+    // Merkmale als Chips, keine Eck-Badges der App auf der Kachel (Simon, 07.10.2026).
+    expect(karte('Konfi-Tag').querySelector('.app-corner-badges')).toBeNull();
+    // Merkmal-Chips mit Farbe und Symbol wie die Eck-Badges der App (Simon, 07.10.2026).
+    const pflicht = within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' });
+    expect(pflicht).toHaveClass('web-pill--farbig');
+    expect(pflicht.style.getPropertyValue('--web-pill-farbe')).toBe('var(--app-color-events)');
+    expect(pflicht.querySelector('[data-icon]')).not.toBeNull();
+    const nurTeam = within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' });
+    expect(nurTeam.style.getPropertyValue('--web-pill-farbe')).toBe('var(--app-color-teamer)');
     expect(karte('Konfi-Tag')).toHaveTextContent('Plätze: 12 Konfis');
     // Nur Team: die Zahl des Teams statt der Plätze, dazu die Marke.
     expect(within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' })).toBeInTheDocument();
@@ -601,7 +611,7 @@ describe('Ansicht: Liste und Kacheln', () => {
     it('VERBOTEN: Teamer:innen sehen die Karten, aber keinen Fuss und keine Aktion', async () => {
       await kachelnOeffnen('teamer');
       expect(kartenNamen()).toHaveLength(4);
-      expect(document.querySelector('.web-termin-karte__fuss')).toBe(null);
+      expect(document.querySelector('.web-bildkarte__fuss')).toBe(null);
       expect(screen.queryByRole('button', { name: /^Event (kopieren|absagen|löschen)/ })).toBe(null);
       expect(screen.queryByRole('button', { name: /^Absage/ })).toBe(null);
     });

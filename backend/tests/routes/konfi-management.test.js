@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
-const { seed, USERS, JAHRGAENGE, ACTIVITIES, BADGES, ORGS } = require('../helpers/seed');
+const { seed, USERS, JAHRGAENGE, ACTIVITIES, BADGES, ORGS, EVENTS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 
 describe('Konfi-Management Routes', () => {
@@ -350,6 +350,38 @@ describe('Konfi-Management Routes', () => {
         .set('Authorization', `Bearer ${admin2Token}`);
 
       expect(res.status).toBe(404);
+    });
+
+    // ADDITIV 07.10.2026: teamerEvents[] traegt die Anwesenheit. booking_status
+    // allein sagt nur "angemeldet" -- die Web-Fassung zeigte daraus fuer jedes
+    // gebuchte Event "Anwesend", auch fuer kuenftige und als abwesend verbuchte.
+    it('teamerEvents tragen attendance_status neben dem unveraenderten booking_status', async () => {
+      const buchen = (eventId, anwesenheit) => db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, attendance_status, organization_id)
+         VALUES ($1, $2, 'confirmed', $3, $4)`,
+        [eventId, USERS.teamer1.id, anwesenheit, ORGS.testGemeinde.id]
+      );
+      await buchen(EVENTS.gottesdienstEvent.id, 'present');
+      await buchen(EVENTS.pflichtEvent.id, 'absent');
+      await buchen(EVENTS.timeslotEvent.id, null);
+
+      const res = await request(app)
+        .get(`/api/admin/konfis/${USERS.teamer1.id}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      const nachEvent = Object.fromEntries(res.body.teamerEvents.map((e) => [e.id, e]));
+      expect(Object.keys(nachEvent)).toHaveLength(3);
+      expect(nachEvent[EVENTS.gottesdienstEvent.id].attendance_status).toBe('present');
+      expect(nachEvent[EVENTS.pflichtEvent.id].attendance_status).toBe('absent');
+      expect(nachEvent[EVENTS.timeslotEvent.id].attendance_status).toBeNull();
+      // Vertrag der ausgelieferten Apps: die bisherigen Felder bleiben.
+      for (const e of res.body.teamerEvents) {
+        expect(e.booking_status).toBe('confirmed');
+        expect(Object.keys(e)).toEqual(expect.arrayContaining(
+          ['id', 'name', 'event_date', 'location', 'teamer_only', 'teamer_needed', 'booking_status', 'booking_date']
+        ));
+      }
     });
   });
 

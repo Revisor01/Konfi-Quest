@@ -18,6 +18,8 @@ export interface TeamerTermin {
   teamer_needed: boolean;
   booking_status: string;
   booking_date: string;
+  /** Anwesenheit (present/absent/excused), null solange nicht verbucht. Seit 07.10.2026. */
+  attendance_status?: string | null;
 }
 
 export interface Zertifikat {

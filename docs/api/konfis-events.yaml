@@ -3812,6 +3812,15 @@ paths:
         Store-Apps zeigen es weiter. Die aktuelle Oberflaeche zeigt
         `event_date` (Rueckfall `date`) und ordnet selbst danach (Simon,
         01.10.2026). Gleiche Regel wie GET /api/konfi/points-history.
+        ERGAENZT 07.10.2026, additiv: Jeder Eintrag in `teamerEvents`
+        (nur bei Teamer:innen als Zielobjekt) traegt `attendance_status`
+        (present|absent|excused, null solange nicht verbucht) aus
+        event_bookings. `booking_status` sagt nur, ob sie angemeldet ist;
+        die Oberflaeche zeigte daraus bis dahin fuer jedes gebuchte Event
+        "Anwesend", auch fuer kuenftige und als abwesend verbuchte (behoben
+        07.10.2026). Stand jetzt nach utils/teilnahmeStatus.ts wie in der
+        Teilnehmerliste. `booking_status` und alle uebrigen Felder bleiben:
+        die ausgelieferten Apps lesen sie weiter.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]

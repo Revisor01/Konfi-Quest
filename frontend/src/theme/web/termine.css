@@ -85,80 +85,12 @@
   gap: var(--app-abstand-mini);
 }
 
-/* --- Karten im Raster (Konfis und Team) --- */
+/* --- Karten im Raster (Konfis und Team); die Karte selbst ist WebBildKarte --- */
 .web-termin-raster {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
   gap: var(--app-abstand-basis);
   align-items: stretch;
-}
-
-.web-termin-karte {
-  /* Die Farbe des Status: die Seite setzt sie je Karte (var(--app-color-...)). */
-  --web-akzent: var(--web-linie);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-mittel);
-  min-width: 0;
-  padding: var(--app-abstand-basis) var(--app-abstand-gross);
-  background: var(--web-karte);
-  border: 1px solid var(--web-linie);
-  border-left: 4px solid var(--web-akzent);
-  border-radius: var(--app-radius-karte);
-  box-shadow: var(--app-schatten-karte-flaeche);
-}
-
-.web-termin-karte:hover {
-  background: var(--web-hover);
-}
-
-.web-termin-karte--gedaempft {
-  opacity: 0.75;
-}
-
-.web-termin-karte__kopf {
-  /* Platz fuer die Eck-Badges oben rechts. */
-  padding-right: var(--app-freiraum-aktion-l);
-  min-width: 0;
-}
-
-.web-termin-karte__titel {
-  margin: 0;
-  font-family: var(--app-schriftart-ueberschrift);
-  font-size: var(--app-text-gross);
-  font-weight: var(--app-schrift-halbfett);
-  line-height: 1.3;
-  color: var(--web-text);
-  overflow-wrap: anywhere;
-}
-
-.web-termin-karte__untertitel {
-  margin: var(--app-abstand-mini) 0 0;
-  font-size: var(--app-text-hinweis);
-  color: var(--web-text-leise);
-}
-
-/* Der Link spannt sich ueber die ganze Karte (Mittelklick, Rechtsklick). */
-.web-termin-karte__link {
-  color: inherit;
-}
-
-.web-termin-karte__link::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-}
-
-.web-termin-karte__link:focus-visible {
-  outline: none;
-}
-
-.web-termin-karte__link:focus-visible::after {
-  outline: 2px solid var(--ion-color-primary);
-  outline-offset: -2px;
-  border-radius: var(--app-radius-karte);
 }
 
 .web-absage-zeile {
@@ -308,18 +240,3 @@
   justify-content: flex-start;
 }
 
-/* --- Ansicht Liste/Kacheln (Events) ---
-   Der Umschalter steht in der Werkzeugzeile (web-werkzeuge__rechts), die
-   Regeln dazu in web-ansicht.css. Hier nur, was die Karte der Events dazu
-   braucht: den Fuss mit den Knoepfen der Leitung (Kopieren, Absagen,
-   Loeschen), wie der Fuss der Challenge-Karte. Er reicht bis an die Kanten der
-   Karte und rutscht in einem Raster mit unterschiedlich hohen Karten ans
-   untere Ende; die Knoepfe liegen ueber dem Link der Karte (web-vorn). */
-.web-termin-karte__fuss {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--app-abstand-eng);
-  margin: auto calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-basis));
-  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
-  border-top: 1px solid var(--web-linie-leise);
-}

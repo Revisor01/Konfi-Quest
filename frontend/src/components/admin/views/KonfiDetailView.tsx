@@ -141,6 +141,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     teamer_needed: boolean;
     booking_status: string;
     booking_date: string;
+    /** Seit 07.10.2026; aeltere Server liefern es nicht. */
+    attendance_status?: string | null;
   }>>([]);
   // Stempel einer Teamer:in aus Challenges, die mit ihrem Jahrgang geloescht
   // wurden (28.09.2026). GET /admin/konfis/:id leitet challengeMarks aus den

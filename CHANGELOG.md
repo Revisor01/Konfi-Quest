@@ -98,6 +98,22 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- Im Browser tragen alle Angaben das Symbol der App in ihrer Farbe, und die
+  Merkmale eines Events (Pflicht, Nur Team, Konfirmation …) stehen als
+  farbige Marken mit Symbol.
+- Im Browser sind die Kacheln von Konfis, Team und Events gebaut wie die der
+  Challenges: farbiger Kopf mit Symbol, darunter die Angaben mit Symbolen und
+  unten die Knöpfe; bei Events und Personen steht der Name im Kopf, Merkmale
+  wie „Pflicht" stehen als Marken.
+- Im Browser sehen die Stempel in den Challenges genauso aus wie auf der
+  Seite einer Person und zeigen beim Darüberfahren dieselbe Info; ein Klick
+  öffnet weiter die Challenge.
+- Auf der Seite einer Person im Browser stehen die Events links zwischen
+  Aktivitäten und Bonuspunkten bzw. Zertifikaten, als Tabelle mit denselben
+  Spaltenbreiten wie die übrigen Listen.
+- Badges und Stempel einer Person sehen im Browser gleich aus — Badges in
+  ihrer Farbe, offene Stempel gedämpft — und zeigen ihre Info beim
+  Darüberfahren, beim Ansteuern mit der Tastatur und beim Antippen.
 - Im breiten Browserfenster steht der Gemeinde-Umschalter nur noch unten in
   der Leiste — mit dem Namen der Gemeinde, der eigenen Rolle dort und den
   roten Zahlen je Gemeinde; in den Apps und im schmalen Fenster bleibt er oben
@@ -150,6 +166,12 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Im Browser öffnen sich die Seite einer Person und die Seite eines Events
+  beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
+  oder neu lud.
+- Auf der Seite einer Teamer:in zeigen die Events, ob sie wirklich da war:
+  Bisher stand bei jedem gebuchten Event „Anwesend", auch bei künftigen und
+  bei als abwesend verbuchten.
 - In der Konfi-Liste der Leitung im Browser waren die Fortschrittsbalken nur
   ein flacher Streifen mit abgeschnittener Zahl, und vor dem Namen klaffte eine
   leere Fläche statt des Kreises mit den Initialen.

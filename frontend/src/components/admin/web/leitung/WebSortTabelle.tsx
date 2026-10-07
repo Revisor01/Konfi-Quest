@@ -32,13 +32,15 @@ export interface WebSortTabelleProps<T> {
   zeileKlasse?: (zeile: T) => string | undefined;
   mittig?: boolean;
   fest?: boolean;
+  /** Zusaetzliche Klasse an der Tabelle. */
+  klasse?: string;
   sortierung?: WebSortierung;
   /** Ein Klick auf den Kopf einer sortierbaren Spalte (Schluessel der Spalte). */
   onSortieren?: (schluessel: string) => void;
 }
 
 function WebSortTabelle<T>({
-  beschriftung, spalten, zeilen, zeileSchluessel, zeileKlasse, mittig = false, fest = false, sortierung, onSortieren,
+  beschriftung, spalten, zeilen, zeileSchluessel, zeileKlasse, mittig = false, fest = false, klasse, sortierung, onSortieren,
 }: WebSortTabelleProps<T>): React.ReactElement {
   const zellKlasse = (s: WebSortSpalte<T>) =>
     [s.zahl ? 'web-zahl' : '', s.optional ? 'web-optional' : '', s.klasse ?? ''].filter(Boolean).join(' ') || undefined;
@@ -50,7 +52,7 @@ function WebSortTabelle<T>({
   return (
     <div className="web-tabelle-huelle">
       <div className="web-tabelle-scroll">
-        <table className={['web-tabelle', mittig ? 'web-tabelle--mittig' : '', fest ? 'web-tabelle--fest' : ''].filter(Boolean).join(' ')} aria-label={beschriftung}>
+        <table className={['web-tabelle', mittig ? 'web-tabelle--mittig' : '', fest ? 'web-tabelle--fest' : '', klasse ?? ''].filter(Boolean).join(' ')} aria-label={beschriftung}>
           <thead>
             <tr>
               {spalten.map((s) => (

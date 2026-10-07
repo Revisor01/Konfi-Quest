@@ -26,7 +26,6 @@ import {
   type DetailZeitfenster,
 } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
-import WebSeite from '../../../web/WebSeite';
 import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
@@ -77,16 +76,20 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
 
   if (p.laedt) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebLaden karten={2} text="Das Event wird geladen." />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebLaden karten={2} text="Das Event wird geladen." />
+        )}
+      />
     );
   }
   if (!eventData) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event nicht gefunden" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebFehler text="Dieses Event gibt es nicht (mehr) oder du siehst es nicht." onErneut={aktionen.neuLaden} />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event nicht gefunden" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebFehler text="Dieses Event gibt es nicht (mehr) oder du siehst es nicht." onErneut={aktionen.neuLaden} />
+        )}
+      />
     );
   }
 

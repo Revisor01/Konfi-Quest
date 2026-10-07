@@ -205,17 +205,24 @@ describe('Challenges der Konfis (Web): Filter und Suche', () => {
 });
 
 describe('Challenges der Konfis (Web): die eigenen Stempel', () => {
-  it('erhaltene mit Datum, noch zu holende grau, beendete als vorbei', () => {
+  it('dasselbe Raster wie auf der Seite einer Person: erhalten mit Datum in der Info, offen gestrichelt, vorbei sagt es', () => {
     render(<KonfiChallengesPage />);
     const stempel = screen.getByRole('region', { name: 'Deine Stempel' });
     expect(stempel).toHaveTextContent('1 erhalten · 2 noch zu holen');
-    const erhalten = within(stempel).getByText('Sommerkind').closest('li')!;
-    expect(erhalten).toHaveTextContent('Erhalten am 04.08.2026');
-    expect(within(erhalten).getByRole('link', { name: 'Mein schönster Moment im Sommer' }).getAttribute('href')).toBe('/konfi/challenges/17');
-    const offen = within(stempel).getByText('Playlist').closest('li')!;
-    expect(offen).toHaveClass('web-stempel--offen');
-    expect(offen).toHaveTextContent('Noch zu holen');
-    expect(within(stempel).getByText('Segensbringer:in').closest('li')).toHaveTextContent('Challenge vorbei');
+    const erhalten = within(stempel).getByRole('link', { name: 'Sommerkind' });
+    expect(erhalten.getAttribute('href')).toBe('/konfi/challenges/17');
+    const info = document.getElementById(erhalten.getAttribute('aria-describedby')!)!;
+    fireEvent.focus(erhalten);
+    expect(info).toBeVisible();
+    expect(info).toHaveTextContent('Mein schönster Moment im Sommer');
+    expect(info).toHaveTextContent('04.08.2026');
+    fireEvent.blur(erhalten);
+    expect(info).not.toBeVisible();
+    const offen = within(stempel).getByRole('link', { name: 'Playlist' });
+    expect(offen.closest('li')).toHaveClass('web-auszeichnung--offen');
+    expect(document.getElementById(offen.getAttribute('aria-describedby')!)).toHaveTextContent('Mach bei dieser Challenge mit');
+    const vorbei = within(stempel).getByRole('link', { name: 'Segensbringer:in' });
+    expect(document.getElementById(vorbei.getAttribute('aria-describedby')!)).toHaveTextContent('Diese Challenge ist vorbei.');
   });
 
   it('ohne Stempel steht die Karte trotzdem da, mit dem Satz der App', () => {

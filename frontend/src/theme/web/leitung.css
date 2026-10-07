@@ -345,72 +345,11 @@
   color: var(--web-text-leise);
 }
 
-/* --- Karte einer Person im Raster (Ansicht "Kacheln" der Konfi- und Team-Seite) ---
-   Die ganze Karte ist ein Link auf die Detailseite (web-link--zeile); der
-   Loeschen-Knopf liegt als web-vorn darueber. */
-.web-personenkacheln {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: var(--app-abstand-basis);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.web-personenkachel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-mittel);
-  padding: var(--app-abstand-basis);
-}
-
-.web-personenkachel:hover {
-  background: var(--web-hover);
-}
-
-.web-personenkachel .web-initialen {
-  width: 44px;
-  height: 44px;
-  font-size: var(--app-text-standard);
-}
-
-.web-personenkachel__kopf {
-  display: flex;
-  align-items: center;
-  gap: var(--app-abstand-mittel);
-  min-width: 0;
-}
-
-.web-personenkachel__titel {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-width: 0;
-}
-
-.web-personenkachel__meta {
-  margin: 0;
-  color: var(--web-text-leise);
-  font-size: var(--app-text-hinweis);
-}
-
+/* Die drei Punktebalken in der Kachel einer Konfi (WebBildKarte). */
 .web-personenkachel__balken {
   display: flex;
   flex-direction: column;
   gap: var(--app-abstand-mittel);
-}
-
-/* Der Fuss steht unten, auch wenn die Nachbarkarte in der Reihe hoeher ist. */
-.web-personenkachel__fuss {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--app-abstand-eng) var(--app-abstand-basis);
-  margin-top: auto;
-  padding-top: var(--app-abstand-mittel);
-  border-top: 1px solid var(--web-linie-leise);
-  color: var(--web-text-leise);
-  font-size: var(--app-text-hinweis);
 }
 
 /* --- "Mehr": gruppierte Kacheln --- */
@@ -621,84 +560,6 @@
 
 .web-pflicht--schwach {
   color: var(--app-text-fehler);
-}
-
-.web-badges-raster {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
-  gap: var(--app-abstand-basis);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.web-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--app-abstand-mini);
-  text-align: center;
-}
-
-.web-badge__symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--app-radius-kreis);
-  background: var(--app-color-badges);
-  color: var(--app-weiss);
-  font-size: var(--app-text-titel);
-}
-
-.web-badge__name {
-  font-size: var(--app-text-klein);
-  color: var(--web-text);
-  overflow-wrap: anywhere;
-}
-
-.web-stempel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-mittel);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.web-stempel__eintrag {
-  display: flex;
-  align-items: center;
-  gap: var(--app-abstand-mittel);
-}
-
-.web-stempel__symbol {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--app-radius-kreis);
-  background: var(--app-color-challenges);
-  color: var(--app-weiss);
-  font-size: var(--app-text-gross);
-}
-
-.web-stempel__eintrag--offen .web-stempel__symbol {
-  background: var(--app-surface-dim);
-  color: var(--web-text-leise);
-}
-
-.web-stempel__eintrag--offen .web-zelle-titel {
-  color: var(--web-text-leise);
-}
-
-.web-stempel__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
 }
 
 /* --- Symbol im farbigen Kreis (Kategorie, Level, Jahrgang, Zertifikat ...) --- */
@@ -1122,4 +983,17 @@
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+/* Aktivitaeten, Events und Bonuspunkte der Personenseite: feste, gemeinsame
+   Spaltenbreiten (WebKonfiKarten, SPALTE), auch auf schmaler Flaeche -- dort
+   faellt "Eingetragen von" weg, statt dass die Tabelle waagerecht scrollt. */
+.web-tabelle--punkte {
+  table-layout: fixed;
+}
+
+.web-tabelle--punkte .web-zelle-titel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

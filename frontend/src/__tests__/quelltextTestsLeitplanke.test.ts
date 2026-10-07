@@ -39,8 +39,13 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  gehoert genau einer Stylesheet-Datei der Web-Fassungen. Die Doppelung gibt es
  *  erst im gemeinsamen Buendel; ein gerenderter Test laedt nur die Dateien seiner
  *  Seite und kann sie nicht sehen (so verschwanden Balken und Kreis der
- *  Konfi-Liste). */
-const OBERGRENZE = 119;
+ *  Konfi-Liste).
+ *  07.10.2026 +1: components/webDetailSeiteEinGeruest.test.ts -- Bau-Waechter:
+ *  keine Datei unter components/ gibt WebSeite UND WebDetailSeite zurueck
+ *  (sonst bleibt die neu gebaute IonPage nach dem Seitenuebergang
+ *  unsichtbar). Er soll auch kuenftige Detailseiten erfassen; das Verhalten
+ *  selbst prueft webKonfiDetail.test.tsx gerendert (dieselbe IonPage). */
+const OBERGRENZE = 120;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -125,6 +130,7 @@ const BEKANNT: string[] = [
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',
   '__tests__/components/webAnsichtCss.test.ts',
   '__tests__/components/webCssKlassen.test.ts',
+  '__tests__/components/webDetailSeiteEinGeruest.test.ts',
   '__tests__/components/wrappedBewegungReduzieren.test.ts',
   '__tests__/components/wrappedBildNichtVerdeckt.test.ts',
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',

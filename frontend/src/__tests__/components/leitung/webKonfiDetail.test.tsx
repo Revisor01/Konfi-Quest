@@ -1,9 +1,10 @@
 // Detailseite einer Konfi bzw. Teamer:in in der Web-Fassung (/admin/konfis/:id),
 // gerendert. Aufbau wie jede Detailseite (WebDetailSeite; Simon, 06.10.2026:
 // „Person gleich auch noch erledigen"): Kopf mit Jahrgang und Benutzername und
-// allen Aktionen, Kennzahlen (Punkte und Ziele, Badges), links Aktivitaeten
-// und Bonuspunkte, rechts Angaben, Konfirmation, Badges, Events, Antraege,
-// Stempel, Rueckblick. Die Seite
+// allen Aktionen, Kennzahlen (Punkte und Ziele, Badges), links Aktivitaeten,
+// Events und Bonuspunkte mit gleichen Spaltenbreiten, rechts Angaben,
+// Konfirmation, Badges, Antraege, Stempel, Rueckblick; Badges und Stempel als
+// ein Raster mit Info bei Hover und Fokus (Simon, 07.10.2026). Die Seite
 // (KonfiDetailView) haelt Daten und Aktionen und oeffnet dieselben Fenster und
 // Rueckfragen wie in der App; geprueft wird, dass die Web-Fassung genau diese
 // ruft -- mit den richtigen Werten --, und dass die App-Darstellung bleibt.
@@ -107,9 +108,12 @@ const TEAMER = {
     { id: 1, certificate_type_id: 1, name: 'JuLeiCa', icon: 'ribbon', issued_date: '2025-12-07', expiry_date: '2028-12-07', status: 'valid' },
     { id: 2, certificate_type_id: 2, name: 'Erste-Hilfe-Kurs', icon: 'medkit', issued_date: '2024-04-16', expiry_date: '2026-09-01', status: 'expired' },
   ],
+  // Gebucht ist nicht anwesend: Der Stand kommt aus attendance_status (07.10.2026).
   teamerEvents: [
-    { id: 301, name: 'Konfi-Wochenende', event_date: '2026-09-13', location: 'Jugendhaus', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '2026-08-01' },
-    { id: 303, name: 'Adventsbasar', event_date: '2026-10-01', location: 'Gemeindehaus', teamer_only: false, teamer_needed: true, booking_status: 'pending', booking_date: '2026-09-20' },
+    { id: 301, name: 'Konfi-Wochenende', event_date: '2026-09-13', location: 'Jugendhaus', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '2026-08-01', attendance_status: 'present' },
+    { id: 303, name: 'Adventsbasar', event_date: '2026-10-01', location: 'Gemeindehaus', teamer_only: false, teamer_needed: true, booking_status: 'waitlist', booking_date: '2026-09-20', attendance_status: null },
+    { id: 304, name: 'Freizeit-Planung', event_date: '2026-09-24', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-09-01', attendance_status: 'absent' },
+    { id: 305, name: 'Teamer-Treffen', event_date: '2026-10-22', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-10-01', attendance_status: null },
   ],
   konfiHistory: { history: [{ id: 1, title: 'Gottesdienstbesuch', points: 1, category: 'gottesdienst', date: '2024-12-02', source_type: 'activity' }], totals: { gottesdienst: 9, gemeinde: 11, total: 20 } },
 };
@@ -145,6 +149,19 @@ const kopf = () => within(screen.getByRole('heading', { level: 1 }).closest('hea
 const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
+/** Die Ueberschriften der Karten einer Spalte, von oben nach unten. */
+const kartenIn = (spalte: 'haupt' | 'seite') =>
+  [...document.querySelectorAll(`.web-spalten__${spalte} .web-karte`)].map((k) => k.getAttribute('aria-labelledby'))
+    .map((id) => document.getElementById(id ?? '')?.textContent);
+/** Die Breiten der Spaltenkoepfe einer Tabelle, wie sie im Stil stehen. */
+const kopfBreiten = (name: string) =>
+  within(screen.getByRole('table', { name })).getAllByRole('columnheader').map((c) => (c as HTMLElement).style.width);
+/** Der Knopf eines Eintrags im Raster aus Badges bzw. Stempeln und seine Info. */
+const eintrag = (bereich: string, name: string) => {
+  const knopf = within(karte(bereich)).getByRole('button', { name: new RegExp(name) });
+  const info = document.getElementById(knopf.getAttribute('aria-describedby') ?? '') as HTMLElement;
+  return { knopf, info };
+};
 const fenster = (komponente: unknown) => h.stand.fenster.filter((f) => f.komponente === komponente);
 // Antwort auf das Zuruecksetzen. Der Einmalwert entsteht zur Laufzeit: Ein
 // Wert im Quelltext galt Geheimnis-Scannern als Passwort, und der Test prueft
@@ -348,25 +365,68 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     }));
   });
 
-  it('Badges: die erreichten mit Namen, geladen ueber die Route der Konfi', async () => {
+  it('Badges: die erreichten mit Namen und in ihrer Farbe, geladen ueber die Route der Konfi', async () => {
     await oeffnen();
     expect(h.apiGet).toHaveBeenCalledWith(`/admin/konfis/${ID}/badges`);
-    const b = karte('Badges (2)');
-    expect(within(b).getByText('Erste Schritte')).toBeInTheDocument();
-    expect(within(b).getByText('Helfende Hand')).toBeInTheDocument();
+    const erste = eintrag('Badges (2)', 'Erste Schritte');
+    const kreis = erste.knopf.querySelector('.web-abzeichen-symbol') as HTMLElement;
+    expect(kreis.style.background).toBe('rgb(16, 185, 129)');
+    expect(kreis).not.toHaveClass('web-abzeichen-symbol--offen');
+    expect(eintrag('Badges (2)', 'Helfende Hand').knopf).toBeInTheDocument();
   });
 
-  it('Events: Eventdatum statt Verbuchungsdatum, Punkte und Punkteart', async () => {
+  it('Badges: Info beim Darueberfahren und beim Fokus, weg beim Verlassen; ueber aria-describedby angebunden', async () => {
     await oeffnen();
-    const e = within(karte('Events'));
-    const eintraege = e.getAllByRole('listitem');
-    expect(eintraege).toHaveLength(2);
-    expect(eintraege[0]).toHaveTextContent('Konfi-Wochenende');
-    expect(eintraege[0]).toHaveTextContent('04.09.');
-    expect(eintraege[0]).toHaveTextContent('+2');
-    expect(eintraege[0]).toHaveTextContent('Gemeinde');
-    expect(eintraege[1]).toHaveTextContent('Taizé-Abend');
-    expect(screen.getByText('3 Punkte', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+    const { knopf, info } = eintrag('Badges (2)', 'Erste Schritte');
+    expect(info).toHaveAttribute('role', 'tooltip');
+    expect(info).not.toBeVisible();
+    fireEvent.mouseEnter(knopf.parentElement as HTMLElement);
+    expect(info).toBeVisible();
+    expect(info).toHaveTextContent('Erreicht');
+    fireEvent.mouseLeave(knopf.parentElement as HTMLElement);
+    expect(info).not.toBeVisible();
+    fireEvent.focus(knopf);
+    expect(info).toBeVisible();
+    fireEvent.keyDown(knopf, { key: 'Escape' });
+    expect(info).not.toBeVisible();
+    fireEvent.focus(knopf);
+    fireEvent.blur(knopf);
+    expect(info).not.toBeVisible();
+    // Tablet: Ein Tippen oeffnet, ein zweites schliesst.
+    fireEvent.click(knopf);
+    expect(info).toBeVisible();
+    fireEvent.click(knopf);
+    expect(info).not.toBeVisible();
+  });
+
+  it('Events stehen links zwischen Aktivitaeten und Bonuspunkten, nicht mehr rechts', async () => {
+    await oeffnen();
+    expect(kartenIn('haupt')).toEqual(['Aktivitäten', 'Events', 'Bonuspunkte']);
+    expect(kartenIn('seite')).not.toContain('Events');
+  });
+
+  it('Events: eine Tabelle mit Eventdatum statt Verbuchungsdatum, Punkten und Punkteart', async () => {
+    await oeffnen();
+    const e = zeilen('Events');
+    expect(e).toHaveLength(2);
+    expect(zelle(e[0], 0)).toHaveTextContent('Konfi-Wochenende');
+    expect(zelle(e[0], 1)).toHaveTextContent('04.09.2026');
+    expect(zelle(e[0], 2)).toHaveTextContent('Gemeinde');
+    expect(zelle(e[0], 3)).toHaveTextContent('+2');
+    expect(zelle(e[0], 4)).toHaveTextContent('Alex Beispiel');
+    expect(zelle(e[1], 0)).toHaveTextContent('Taizé-Abend');
+    expect(screen.getByText('3 Punkte aus 2 Events', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+  });
+
+  it('Aktivitaeten, Events und Bonuspunkte haben dieselben festen Spaltenbreiten', async () => {
+    await oeffnen();
+    const aktivitaeten = kopfBreiten('Aktivitäten');
+    expect(aktivitaeten).toEqual(['', '100px', '118px', '68px', '128px', '']);
+    expect(kopfBreiten('Events')).toEqual(aktivitaeten);
+    expect(kopfBreiten('Bonuspunkte')).toEqual(aktivitaeten);
+    for (const name of ['Aktivitäten', 'Events', 'Bonuspunkte']) {
+      expect(screen.getByRole('table', { name })).toHaveClass('web-tabelle--punkte');
+    }
   });
 
   it('Offene Antraege: mit Punkten und Foto, ohne den Zusatz "(gemeldet)"; das Foto oeffnet die Ansicht der App', async () => {
@@ -380,13 +440,35 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(h.stand.fenster.some((f) => (f.props as { antragId?: number }).antragId === 71)).toBe(true);
   });
 
-  it('Stempel: erhaltene und noch offene', async () => {
+  it('Stempel: dasselbe Raster wie die Badges, erhalten in der Challenge-Farbe, offen gedaempft', async () => {
     await oeffnen();
-    const s = within(karte('Stempel'));
-    expect(s.getByText('Morgenimpuls')).toBeInTheDocument();
-    expect(s.getByText('erhalten am 13.09.2026')).toBeInTheDocument();
-    expect(s.getByText('Foto vom Turm')).toBeInTheDocument();
-    expect(s.getByText('noch nicht erhalten')).toBeInTheDocument();
+    const s = karte('Stempel');
+    expect(s.querySelector('.web-auszeichnungen')).not.toBeNull();
+    const frueh = eintrag('Stempel', 'Früh');
+    expect((frueh.knopf.querySelector('.web-abzeichen-symbol') as HTMLElement).style.background).toBe('var(--app-color-challenges)');
+    const foto = eintrag('Stempel', 'Foto');
+    expect(foto.knopf.querySelector('.web-abzeichen-symbol')).toHaveClass('web-abzeichen-symbol--offen');
+    expect(foto.knopf.closest('li')).toHaveClass('web-auszeichnung--offen');
+  });
+
+  it('Stempel: Info bei Hover und Fokus mit Challenge, "erhalten am" bzw. "noch nicht erhalten"', async () => {
+    await oeffnen();
+    const frueh = eintrag('Stempel', 'Früh');
+    expect(frueh.info).not.toBeVisible();
+    fireEvent.mouseEnter(frueh.knopf.parentElement as HTMLElement);
+    expect(frueh.info).toBeVisible();
+    expect(frueh.info).toHaveTextContent('Morgenimpuls');
+    expect(frueh.info).toHaveTextContent('Erhalten');
+    expect(frueh.info).toHaveTextContent('13.09.2026');
+    fireEvent.mouseLeave(frueh.knopf.parentElement as HTMLElement);
+    expect(frueh.info).not.toBeVisible();
+    const foto = eintrag('Stempel', 'Foto');
+    fireEvent.focus(foto.knopf);
+    expect(foto.info).toBeVisible();
+    expect(foto.info).toHaveTextContent('Foto vom Turm');
+    expect(foto.info).toHaveTextContent('Noch nicht erhalten');
+    fireEvent.blur(foto.knopf);
+    expect(foto.info).not.toBeVisible();
   });
 
   it('Rueckblick: der Name der Ausgabe; "Ansehen" oeffnet das Fenster mit dem Rueckblick der Konfi', async () => {
@@ -410,7 +492,7 @@ describe('Teamer-Detail (Web)', () => {
     expect(screen.getByRole('link', { name: 'Alle im Team' })).toHaveAttribute('href', '/admin/konfis?filter=team');
     expect(kopf().getByText('Teamer:in')).toBeInTheDocument();
     expect(kopf().getByText(/seit 01\.09\.2024/)).toBeInTheDocument();
-    expect(kennzahlen()).toEqual(['Zertifikate: 2', 'Events: 2', 'Badges: 4']);
+    expect(kennzahlen()).toEqual(['Zertifikate: 2', 'Events: 4', 'Badges: 4']);
     expect(kopf().getAllByRole('button').map((b) => b.textContent))
       .toEqual(['Zertifikat zuweisen', 'Passwort zurücksetzen', 'Aktivität eintragen']);
     expect(screen.queryByTestId('ringe')).toBeNull();
@@ -446,13 +528,25 @@ describe('Teamer-Detail (Web)', () => {
     expect((f.props.availableTypes as Array<{ name: string }>).map((t) => t.name)).toEqual(['Ersthelfer:in']);
   });
 
-  it('Events der Teamer:in mit Status, Badges ueber die Route der Teamer:innen, Konfi-Historie', async () => {
+  it('Events der Teamer:in links zwischen Aktivitaeten und Zertifikaten, als Tabelle mit Status', async () => {
+    await oeffnen();
+    expect(kartenIn('haupt').slice(0, 3)).toEqual(['Aktivitäten', 'Events', 'Zertifikate']);
+    expect(kartenIn('seite')).not.toContain('Events');
+    const events = zeilen('Events');
+    expect(events.map((z) => [zelle(z, 0).textContent, zelle(z, 2).textContent])).toEqual([
+      ['Konfi-Wochenende', 'Anwesend'],
+      ['Adventsbasar', 'Warteliste'],
+      ['Freizeit-Planung', 'Abwesend'],
+      // Gebucht, aber noch nicht verbucht -- vorher stand hier "Anwesend".
+      ['Teamer-Treffen', 'Gebucht'],
+    ]);
+    // Dieselben Breiten wie die Aktivitaeten darueber: Stand steht unter "Eingetragen von".
+    expect(kopfBreiten('Events')).toEqual(kopfBreiten('Aktivitäten'));
+  });
+
+  it('Badges ueber die Route der Teamer:innen, Konfi-Historie', async () => {
     await oeffnen();
     expect(h.apiGet).toHaveBeenCalledWith(`/teamer/${ID}/badges`);
-    const events = within(karte('Events')).getAllByRole('listitem');
-    expect(events[0]).toHaveTextContent('Konfi-Wochenende');
-    expect(events[0]).toHaveTextContent('Anwesend');
-    expect(events[1]).toHaveTextContent('Ausstehend');
     expect(screen.getByText(/20 Punkte in der Konfi-Zeit · 9 Gottesdienst · 11 Gemeinde/)).toBeInTheDocument();
     expect(within(screen.getByRole('table', { name: 'Konfi-Historie' })).getAllByRole('row')).toHaveLength(2);
   });
@@ -465,9 +559,63 @@ describe('Teamer-Detail (Web)', () => {
     await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith(`/admin/konfis/${ID}/teamer-since`, { teamer_since: '2024-10-15' }));
   });
 
+  it('Stempel: ein aufbewahrter aus einer geloeschten Challenge sagt das in der Info, ohne Link', async () => {
+    h.antworten.set(`/challenges/admin/bewahrte-stempel/${ID}`, [
+      { challenge_id: 77, badge_icon: 'star', badge_name: 'Alter Stempel', title: 'Geloeschte Challenge', earned_at: '2025-06-01T10:00:00Z', bewahrt: true },
+    ]);
+    await oeffnen();
+    const alt = eintrag('Stempel', 'Alter Stempel');
+    expect(alt.info).toHaveTextContent('Geloeschte Challenge');
+    expect(alt.info).toHaveTextContent('Die Challenge gibt es nicht mehr.');
+    expect(alt.knopf.tagName).toBe('BUTTON');
+  });
+
   it('Rueckblick ohne Namen: "Jahresrückblick 2026"', async () => {
     await oeffnen();
     expect(within(karte('Jahresrückblick')).getByText('Jahresrückblick 2026')).toBeInTheDocument();
+  });
+});
+
+describe('Teamer-Detail in der App (schmal): Stand der Events aus der Anwesenheit', () => {
+  it('Anwesend, Warteliste, Abwesend und Gebucht -- dieselbe Regel wie im Browser', async () => {
+    h.breit = false;
+    h.antworten.set(`/admin/konfis/${ID}`, TEAMER);
+    await oeffnen();
+    const staende = TEAMER.teamerEvents.map((e) => {
+      const zeile = screen.getByText(e.name).closest('.app-list-item') as HTMLElement;
+      return within(zeile).getByRole('img').getAttribute('aria-label');
+    });
+    expect(staende).toEqual(['Anwesend', 'Warteliste', 'Abwesend', 'Gebucht']);
+  });
+});
+
+describe('Konfi-Detail (Web): eine Seite fuer Laden und Inhalt', () => {
+  // Weisse Seite bis zum zweiten Klick (Simon, 07.10.2026): Beim Laden kam
+  // WebSeite, danach WebDetailSeite zurueck. Der andere Baustein an der Wurzel
+  // liess React die IonPage neu bauen; die neue blieb nach dem schon
+  // gelaufenen Seitenuebergang unsichtbar. Dieselbe Seite muss bleiben.
+  it('die Seite aus der Ladeansicht ist dieselbe, die danach den Inhalt zeigt', async () => {
+    let freigeben: () => void = () => {};
+    const gehalten = new Promise<void>((r) => { freigeben = r; });
+    const normal = h.apiGet.getMockImplementation()!;
+    h.apiGet.mockImplementation(async (pfad: string, ...rest: unknown[]) => {
+      if (pfad === `/admin/konfis/${ID}`) await gehalten;
+      return normal(pfad, ...rest);
+    });
+    const { container } = render(<KonfiDetailView konfiId={ID} onBack={vi.fn()} />);
+    await act(async () => { await Promise.resolve(); });
+    const ladeTitel = screen.getByRole('heading', { level: 1 });
+    expect(ladeTitel).toHaveTextContent('Konfi');
+    // Die IonPage (hier ein div; IonContent reicht nur durch) um .web-seite.
+    const seiteBeimLaden = ladeTitel.closest('.web-seite')!.parentElement as HTMLElement;
+    expect(seiteBeimLaden).not.toBe(container);
+
+    await act(async () => { freigeben(); });
+    for (let i = 0; i < 8; i += 1) await act(async () => { await Promise.resolve(); });
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Anna Müller');
+    expect(seiteBeimLaden.isConnected).toBe(true);
+    expect(seiteBeimLaden).toContainElement(screen.getByRole('heading', { level: 1 }));
   });
 });
 

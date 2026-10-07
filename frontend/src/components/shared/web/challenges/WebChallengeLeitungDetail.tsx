@@ -27,6 +27,7 @@
 
 import React, { useId, useState, type RefObject } from 'react';
 import { IonIcon } from '@ionic/react';
+import WebBadgeSymbol from '../../../konfi/web/WebBadgeSymbol';
 import { ICON_BEARBEITEN, ICON_HINZUFUEGEN, ICON_OFFLINE, ICON_ALBEN, ICON_TEILEN } from '../../icons';
 import WebChallengeRahmen from './WebChallengeRahmen';
 import WebChallengeHinweis from './WebChallengeHinweis';
@@ -317,9 +318,8 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
 
             <WebKarte titel="Stempel">
               <div className="web-challenge-stempelinfo">
-                <span className="web-stempel__symbol">
-                  <IonIcon icon={getChallengeBadgeIcon(challenge.badge_icon)} aria-hidden="true" />
-                </span>
+                {/* Derselbe Kreis wie in den Stempel-Rastern (WebAuszeichnungen). */}
+                <WebBadgeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} farbe="var(--app-color-challenges)" erreicht />
                 <div>
                   <strong>{challenge.badge_name}</strong>
                   <p className="web-challenge-hinweistext">

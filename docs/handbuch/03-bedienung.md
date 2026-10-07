@@ -114,6 +114,12 @@ einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
 Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
 Klick auf eine Zeile oder Karte öffnet den Eintrag.
 
+Alle Karten sind gleich gebaut: oben ein farbiger Kopf mit Symbol — bei
+Challenges der Stempel, bei Events und Personen der Titel bzw. Name mit Art
+und Kategorie oder dem Jahrgang —, darunter Stand und Merkmale wie „Pflicht"
+als Marken, die Angaben mit Symbolen und unten die Knöpfe. Der Kopf einer Konfi wird grün, sobald sie ihr Punkteziel
+erreicht hat; der eines Events trägt die Farbe seines Stands.
+
 Beim ersten Öffnen beginnt die Leitung mit der Liste, Konfis und Team mit den
 Kacheln. Der Browser merkt sich deine Wahl für jede Seite einzeln; in einem
 privaten Fenster gilt sie nur, bis du die Seite neu lädst. In der App gibt es
@@ -137,7 +143,13 @@ Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
   ihre Aktivitäten und Punkte.
 - **Rechts, schmal** stehen die **Angaben**, bei Events dazu Zeitfenster, Serie
   und Material, bei Challenges der Stempel, bei einer Person Konfirmation,
-  Badges, Events und mehr.
+  Badges, Events und mehr. Jede Angabe trägt das Symbol der App in ihrer
+  Farbe — Kalender vor dem Datum, Ortsmarke vor dem Ort, Pokal vor den
+  Punkten.
+
+Merkmale eines Events wie **Pflicht**, **Nur Team**, **Team gesucht**,
+**Konfirmation** und **Serie** stehen als farbige Marken mit Symbol, in
+denselben Farben wie die Zeichen in der App.
 
 Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
 

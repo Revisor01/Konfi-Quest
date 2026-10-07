@@ -31,7 +31,6 @@ import { absageBeschriftung, welcheKnoepfe, zusageBeschriftung } from '../../../
 import { datumKurz, datumUhrzeit } from '../../../../utils/dateUtils';
 import { kennzahlAnzeige, leitungDetailStatus, leitungKennzahlen, terminAngaben } from '../../../../utils/termineWeb';
 import type { Event, EventMaterial, Participant, Unregistration } from '../../../../types/event';
-import WebSeite from '../../../web/WebSeite';
 import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
@@ -89,30 +88,36 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
 
   if (p.laedt) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebLaden karten={2} text="Das Event wird geladen." />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebLaden karten={2} text="Das Event wird geladen." />
+        )}
+      />
     );
   }
 
   // Termin aus einem fremden Jahrgang (Push oder Link): den Grund nennen -- derselbe Wortlaut wie in der App.
   if (p.jahrgangFehlt) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebLeer
-          icon={ICON_JAHRGANG}
-          titel="Nicht deinem Jahrgang zugeordnet"
-          text="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
-        />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebLeer
+            icon={ICON_JAHRGANG}
+            titel="Nicht deinem Jahrgang zugeordnet"
+            text="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+          />
+        )}
+      />
     );
   }
 
   if (!eventData) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebFehler text="Das Event konnte nicht geladen werden." onErneut={aktionen.neuLaden} />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebFehler text="Das Event konnte nicht geladen werden." onErneut={aktionen.neuLaden} />
+        )}
+      />
     );
   }
 

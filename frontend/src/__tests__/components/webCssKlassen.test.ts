@@ -57,9 +57,6 @@ const BEKANNT: Record<string, string[]> = {
   'web-menue': ['web/chat.css', 'web/termine.css'],
   'web-rolle': ['web/leitung.css', 'web/start.css'],
   'web-rolle--leitung': ['web/leitung.css', 'web/start.css'],
-  'web-stempel': ['web/challenges.css', 'web/leitung.css'],
-  'web-stempel__symbol': ['web/challenges.css', 'web/leitung.css'],
-  'web-stempel__text': ['web/challenges.css', 'web/leitung.css'],
 };
 
 describe('Stylesheets der Web-Fassungen: eine Klasse, eine Datei', () => {

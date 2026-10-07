@@ -38,6 +38,7 @@ import type { UseIonModalResult } from '@ionic/react';
 import type { AxiosInstance } from 'axios';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { eckBadgeKlasse, teilnahmeDarstellung } from '../../../utils/teilnahmeStatus';
 import { punkteAnzeigeDatum, nachAnzeigeDatumAbsteigend } from '../../../utils/punkteDatum';
 import { datumKurz, datumLang, uhrzeit } from '../../../utils/dateUtils';
 import { punkteText } from '../../../utils/punkteText';
@@ -623,6 +624,8 @@ interface TeamerEventsSectionProps {
     teamer_needed: boolean;
     booking_status: string;
     booking_date: string;
+    /** Seit 07.10.2026; aeltere Server liefern es nicht. */
+    attendance_status?: string | null;
   }>;
   formatDate: (dateString: string) => string;
 }
@@ -650,6 +653,11 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
         ) : (
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           {teamerEvents.slice(0, 10).map((event, index) => {
+            // Dieselbe Regel wie die Teilnehmerliste eines Events: Anwesend und
+            // Abwesend kommen aus der Anwesenheit, nicht aus der Buchung. Bis
+            // 07.10.2026 stand hier "confirmed" = "Anwesend" -- auch fuer
+            // kuenftige und als abwesend verbuchte Events.
+            const stand = teilnahmeDarstellung({ status: event.booking_status, attendance_status: event.attendance_status });
             return (
               <IonItem
                 key={event.id}
@@ -666,24 +674,15 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
                       volle Breite. Klartext haengt am title-Attribut. */}
                   <div className="app-corner-badges">
                     <div
-                      className="app-corner-badge"
-                      style={{
-                        backgroundColor: event.booking_status === 'confirmed' ? 'var(--app-color-success-strong)'
-                          : event.booking_status === 'absent' ? 'var(--app-color-events)'
-                          : 'var(--app-color-badges)',
-                        padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)'
-                      }}
-                      title={event.booking_status === 'confirmed' ? 'Anwesend'
-                        : event.booking_status === 'absent' ? 'Abwesend'
-                        : 'Ausstehend'}
+                      className={`app-corner-badge ${eckBadgeKlasse(stand)}`}
+                      style={{ padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
+                      title={stand.statusText}
                       role="img"
-                      aria-label={event.booking_status === 'confirmed' ? 'Anwesend'
-                        : event.booking_status === 'absent' ? 'Abwesend'
-                        : 'Ausstehend'}
+                      aria-label={stand.statusText}
                     >
                       <IonIcon
-                        icon={event.booking_status === 'confirmed' ? ICON_ZUSAGE_GEFUELLT
-                          : event.booking_status === 'absent' ? ICON_ABSAGE
+                        icon={stand.farbe === 'success' ? ICON_ZUSAGE_GEFUELLT
+                          : stand.farbe === 'danger' ? ICON_ABSAGE
                           : ICON_UHRZEIT_GEFUELLT}
                         style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }}
                       />

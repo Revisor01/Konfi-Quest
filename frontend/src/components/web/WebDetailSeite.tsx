@@ -35,9 +35,19 @@ export interface WebDetailSeiteProps {
   /** Die Kennzahl-Kacheln unter dem Kopf, ueber beide Spalten. */
   kennzahlen?: ReadonlyArray<WebKachelProps>;
   /** Links, breit: das Eigentliche der Seite. */
-  haupt: React.ReactNode;
+  haupt?: React.ReactNode;
   /** Rechts, schmal: die Angaben und was zu ihnen gehoert. */
-  seite: React.ReactNode;
+  seite?: React.ReactNode;
+  /**
+   * Statt Kennzahlen und Spalten: Laden, Fehler oder ein Hinweis
+   * (nicht zugeordnet). Jede Detailseite gibt in ALLEN Zustaenden dieses
+   * Geruest zurueck, nie zwischendurch WebSeite: Ein anderer Baustein an
+   * der Wurzel laesst React die IonPage neu bauen, und die neue bleibt
+   * nach dem schon gelaufenen Seitenuebergang unsichtbar
+   * (ion-page-invisible) -- weisse Seite bis zum zweiten Klick (Simon,
+   * 07.10.2026).
+   */
+  zustand?: React.ReactNode;
   /** Name der schmalen Spalte fuer Vorleseprogramme (Vorgabe "Angaben"). */
   seiteBeschriftung?: string;
   /** Fuer Modale, die auf dieser Seite aufklappen (useModalPage). */
@@ -45,7 +55,8 @@ export interface WebDetailSeiteProps {
 }
 
 /** Alles unter dem Kopf: Hinweis, Kennzahlen, links der Hauptinhalt, rechts die Angaben. */
-export type WebDetailInhaltProps = Pick<WebDetailSeiteProps, 'hinweis' | 'kennzahlen' | 'haupt' | 'seite' | 'seiteBeschriftung'>;
+export type WebDetailInhaltProps = Pick<WebDetailSeiteProps, 'hinweis' | 'kennzahlen' | 'seiteBeschriftung'>
+  & Required<Pick<WebDetailSeiteProps, 'haupt' | 'seite'>>;
 
 /**
  * Der Inhalt der Detailseite ohne eigenen Rahmen. Die Seiten einer Challenge
@@ -70,10 +81,12 @@ export const WebDetailInhalt: React.FC<WebDetailInhaltProps> = ({
 );
 
 const WebDetailSeite: React.FC<WebDetailSeiteProps> = ({
-  bereich, zurueck, titel, kennzeichen, aktionen, hinweis, kennzahlen, haupt, seite, seiteBeschriftung, pageRef,
+  bereich, zurueck, titel, kennzeichen, aktionen, hinweis, kennzahlen, haupt, seite, seiteBeschriftung, zustand, pageRef,
 }) => (
   <WebSeite bereich={bereich} titel={titel} untertitel={kennzeichen} aktionen={aktionen} zurueck={zurueck} pageRef={pageRef}>
-    <WebDetailInhalt hinweis={hinweis} kennzahlen={kennzahlen} haupt={haupt} seite={seite} seiteBeschriftung={seiteBeschriftung} />
+    {zustand !== undefined
+      ? zustand
+      : <WebDetailInhalt hinweis={hinweis} kennzahlen={kennzahlen} haupt={haupt ?? null} seite={seite ?? null} seiteBeschriftung={seiteBeschriftung} />}
   </WebSeite>
 );
 
