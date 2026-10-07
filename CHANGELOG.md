@@ -98,6 +98,9 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- In der Teilnehmerliste eines Events im Browser hat der Stand mehr Platz:
+  Anwesend und Abwesend sind kompakte Knöpfe mit Symbol, verbucht grün bzw.
+  rot.
 - Im Browser tragen alle Angaben das Symbol der App in ihrer Farbe, und die
   Merkmale eines Events (Pflicht, Nur Team, Konfirmation …) stehen als
   farbige Marken mit Symbol.

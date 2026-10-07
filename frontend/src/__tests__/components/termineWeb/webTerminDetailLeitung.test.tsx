@@ -193,6 +193,10 @@ describe('Konfis: Anwesenheit', () => {
     await oeffne();
     const mia = within(umschalter('Mia Muster'));
     expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'true');
+    // Kompakt, damit der Status Platz hat (Simon, 07.10.2026): nur das Symbol, gruen bzw. rot verbucht.
+    expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveTextContent(/^$/);
+    expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveClass('web-umschalter__knopf--anwesend');
+    expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveClass('web-umschalter__knopf--abwesend');
     expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveAttribute('aria-pressed', 'false');
     const kim = within(umschalter('Kim Konfi'));
     expect(kim.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'false');

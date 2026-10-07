@@ -229,6 +229,19 @@
   color: var(--ion-color-primary-contrast);
 }
 
+/* Verbucht: anwesend gruen, abwesend rot -- der Stand ist am Knopf zu sehen. */
+.web-umschalter__knopf--anwesend[aria-pressed='true'] {
+  background: var(--app-color-success);
+  border-color: var(--app-color-success);
+  color: var(--app-weiss);
+}
+
+.web-umschalter__knopf--abwesend[aria-pressed='true'] {
+  background: var(--app-color-danger);
+  border-color: var(--app-color-danger);
+  color: var(--app-weiss);
+}
+
 /* Das Menue im Fenster: Aktionen untereinander. */
 .web-menue {
   display: flex;
