@@ -245,42 +245,6 @@
   min-width: 190px;
 }
 
-/* --- Kopf einer sortierbaren Spalte --- */
-.web-sortkopf {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--app-abstand-mini);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  font-weight: inherit;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.web-sortkopf:hover {
-  color: var(--web-text);
-}
-
-.web-sortkopf:focus-visible {
-  outline: 2px solid var(--ion-color-primary);
-  outline-offset: 2px;
-  border-radius: var(--app-radius-fein);
-}
-
-.web-sortkopf__pfeil {
-  font-size: var(--app-text-klein);
-  opacity: 0.35;
-}
-
-.web-sortkopf__pfeil--aktiv {
-  opacity: 1;
-  color: var(--ion-color-primary);
-}
-
 /* --- Zeile, die per Knopf ein Fenster oeffnet: das Netz spannt sich ueber die Zeile --- */
 .web-zeilenknopf {
   display: block;

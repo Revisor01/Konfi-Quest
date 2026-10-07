@@ -4,14 +4,14 @@
 // sortierbaren Spalte ein Knopf ist. Der Zustand der Sortierung (aria-sort)
 // steht am Kopf, der Pfeil daneben ist nur Zierde.
 //
-// Warum eine eigene Tabelle statt WebTabelle: Der allgemeine Baustein kennt nur
-// Texte im Kopf. Wird die Sortierung spaeter in WebTabelle aufgenommen, faellt
-// diese Datei weg.
+// Seit 07.10.2026 sortiert auch WebTabelle selbst (Spalten mit `sortWert`).
+// Diese Tabelle bleibt fuer die Seiten, die die Ordnung selbst halten
+// (`sortierung`/`onSortieren`: Konfi- und Team-Liste, dieselbe Ordnung fuer
+// Liste und Kacheln); ohne `onSortieren` sortiert sie wie WebTabelle.
 
-import React from 'react';
-import { IonIcon } from '@ionic/react';
-import { ICON_AUFKLAPPEN, ICON_ZUKLAPPEN } from '../../../shared/icons';
-import type { WebSpalte } from '../../../web/WebTabelle';
+import React, { useMemo, useState } from 'react';
+import { WebSortKopf, type WebSpalte } from '../../../web/WebTabelle';
+import { ariaSortVon, naechsteSortierung, sortiereZeilen, type TabellenSortierung } from '../../../../utils/tabelleSortieren';
 import '../../../../theme/web/leitung.css';
 
 export interface WebSortSpalte<T> extends WebSpalte<T> {
@@ -44,10 +44,21 @@ function WebSortTabelle<T>({
 }: WebSortTabelleProps<T>): React.ReactElement {
   const zellKlasse = (s: WebSortSpalte<T>) =>
     [s.zahl ? 'web-zahl' : '', s.optional ? 'web-optional' : '', s.klasse ?? ''].filter(Boolean).join(' ') || undefined;
-  const ariaSort = (s: WebSortSpalte<T>): 'ascending' | 'descending' | 'none' | undefined => {
-    if (!s.sortierbar) return undefined;
-    if (sortierung?.schluessel !== s.schluessel) return 'none';
-    return sortierung.richtung === 'auf' ? 'ascending' : 'descending';
+  // Ohne `onSortieren` sortiert die Tabelle selbst nach `sortWert` (wie WebTabelle);
+  // mit `onSortieren` sortiert die Seite (Konfi- und Team-Liste: dieselbe
+  // Ordnung gilt fuer Liste und Kacheln).
+  const [eigene, setEigene] = useState<TabellenSortierung | null>(null);
+  const aussen = Boolean(onSortieren);
+  const aktuell = aussen ? sortierung ?? null : eigene;
+  const sortierbar = (s: WebSortSpalte<T>) => (aussen ? Boolean(s.sortierbar) : Boolean(s.sortWert));
+  const sortSpalte = !aussen && eigene ? spalten.find((s) => s.schluessel === eigene.schluessel && s.sortWert) : undefined;
+  const geordnet = useMemo(
+    () => (!aussen && eigene && sortSpalte?.sortWert ? sortiereZeilen(zeilen, sortSpalte.sortWert, eigene.richtung) : zeilen),
+    [aussen, zeilen, eigene, sortSpalte],
+  );
+  const klick = (schluessel: string) => {
+    if (onSortieren) onSortieren(schluessel);
+    else setEigene((jetzt) => naechsteSortierung(jetzt, schluessel));
   };
   return (
     <div className="web-tabelle-huelle">
@@ -56,23 +67,16 @@ function WebSortTabelle<T>({
           <thead>
             <tr>
               {spalten.map((s) => (
-                <th key={s.schluessel} scope="col" className={zellKlasse(s)} style={s.breite ? { width: s.breite } : undefined} aria-sort={ariaSort(s)}>
-                  {s.sortierbar && onSortieren ? (
-                    <button type="button" className="web-sortkopf" onClick={() => onSortieren(s.schluessel)}>
-                      {s.kopf}
-                      <IonIcon
-                        icon={sortierung?.schluessel === s.schluessel && sortierung.richtung === 'auf' ? ICON_ZUKLAPPEN : ICON_AUFKLAPPEN}
-                        className={sortierung?.schluessel === s.schluessel ? 'web-sortkopf__pfeil web-sortkopf__pfeil--aktiv' : 'web-sortkopf__pfeil'}
-                        aria-hidden="true"
-                      />
-                    </button>
+                <th key={s.schluessel} scope="col" className={zellKlasse(s)} style={s.breite ? { width: s.breite } : undefined} aria-sort={ariaSortVon(sortierbar(s), aktuell, s.schluessel)}>
+                  {sortierbar(s) && !s.kopfVersteckt ? (
+                    <WebSortKopf kopf={s.kopf} aktiv={aktuell?.schluessel === s.schluessel} richtung={aktuell?.richtung} onKlick={() => klick(s.schluessel)} />
                   ) : s.kopfVersteckt ? <span className="web-nur-vorlesen">{s.kopf}</span> : s.kopf}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {zeilen.map((zeile, index) => (
+            {geordnet.map((zeile, index) => (
               <tr key={zeileSchluessel(zeile)} className={['web-zeile', zeileKlasse?.(zeile) ?? ''].filter(Boolean).join(' ')}>
                 {spalten.map((s) => (
                   <td key={s.schluessel} className={zellKlasse(s)}>{s.zelle(zeile, index)}</td>
