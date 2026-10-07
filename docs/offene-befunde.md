@@ -30,6 +30,13 @@ Stand: 02.10.2026, gegen den Code geprüft.
   Fix: je Bereich umbenennen; der Wächter
   `__tests__/components/webCssKlassen.test.ts` führt sie als bekannt und lässt
   keine neuen zu — wer eine behebt, streicht sie dort. Gefunden 06.10.2026.
+- **Filterzeile der Challenges zweizeilig bis etwa 1400 px.** Auf der
+  Challenge-Seite der Leitung rutschen Suche und Umschalter Liste/Kacheln
+  unter die Zustands-Chips, solange das Fenster 1366 px oder schmaler ist
+  (Zeile 86 statt 40 px hoch); ab 1440 px steht alles in einer Zeile.
+  Gemessen 07.10.2026 bei 1100, 1280, 1366, 1440 und 1600 px gegen einen
+  lokalen Server mit vier Challenges. Stelle:
+  `components/shared/web/challenges/WebChallengeFilter.tsx`.
 
 - **Bearbeiten-Knopf bei Super-Admin-Konten.** `GET /users` setzt `can_edit`
   allein nach der Rolle (`filterUsersByHierarchy`); bei einem Konto mit
@@ -273,6 +280,15 @@ Stand: 02.10.2026, gegen den Code geprüft.
   Serverregel dagegen gibt es nicht. So lassen? (30.09.2026)
 - **Meldungen der Sicherheitsregeln (CSP).** Ein Endpunkt, an den der Browser
   Verstöße meldet, existiert nicht; gewünscht? (29.09.2026)
+- **Beschriftungen, Reiter und Filter an einer Stelle für App und
+  Web-Fassung?** Laden, Rechte und Zähler teilen sich beide Fassungen; die
+  Darstellung ist doppelt. Die Web-Fassung hat 130 Dateien mit rund 18.700
+  Zeilen TSX und 6.700 Zeilen CSS neben rund 78.100 Zeilen
+  App-Komponenten; an 54 Stellen wählt eine Weiche zwischen beiden
+  (gezählt 06.10.2026). Ein neuer Filter oder ein umbenannter Reiter muss
+  heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
+  gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
+  Web-Fassung lesen. Umsetzen?
 - **Nutzungsmessung.** Die Vorschläge S1–S17 in
   [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
   auf Simons Entscheidung.

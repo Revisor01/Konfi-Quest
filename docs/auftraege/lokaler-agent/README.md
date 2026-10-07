@@ -31,6 +31,11 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
   (06.10.2026): Übernahme in Vorgänge prüfen, Probe-Anfrage als Vorgang,
   Probe-Anliegen über das Support-Formular, Posteingang mit Einsortieren und
   Archiv.
+- **[17-web-live-weiterbauen.md](17-web-live-weiterbauen.md)** — jetzt
+  (07.10.2026): die Web-Fassung auf Simons Rechner live einrichten (lokale
+  Datenbank, Backend und Entwicklungsserver), dann mit Simon die Detailseite
+  einer Konfi umbauen: Events zwischen Aktivitäten und Bonuspunkten, Badges
+  und Stempel gleich, Badge-Farben, Info beim Darüberfahren.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 
