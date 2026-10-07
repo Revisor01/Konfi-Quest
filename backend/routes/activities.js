@@ -11,6 +11,7 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { nachAntwort } = require('../utils/nachAntwort');
 // Wer welchen Antrag sieht: EINE Regel fuer Liste, Zaehler und die Empfaenger
 // von "Neuer Antrag eingegangen" (27.09.2026).
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
@@ -737,16 +738,17 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         client.release();
       }
 
-      // Badge-Check NACH COMMIT (verwendet db Pool)
+      // Badge-Check NACH COMMIT (verwendet db Pool). Die Abzeichen werden
+      // hier angelegt, weil die Antwort sie als newBadges meldet. Ihre
+      // Mitteilungen (Postfach, Push, Live-Update) sammelt der Check nur ein;
+      // sie laufen unten nach der Antwort.
+      const organizationId = req.user.organization_id;
+      const badgeMitteilungen = [];
       if (status === 'approved') {
-        newBadges = await checkAndAwardBadges(db, request.user_id, { organizationId: req.user.organization_id });
-
-        // Level-Check NACH Badge-Check
-        try {
-          await PushService.checkAndSendLevelUp(db, request.user_id, req.user.organization_id);
-        } catch (levelErr) {
-          console.error('Level-up check failed:', levelErr);
-        }
+        newBadges = await checkAndAwardBadges(db, request.user_id, {
+          organizationId,
+          mitteilungenSammeln: badgeMitteilungen
+        });
 
         // VORUEBERGEHEND DEAKTIVIERT (28.06.2026): Foto-Datei NICHT sofort löschen.
         // Grund: Admins müssen genehmigte Antrags-Fotos weiter sehen können,
@@ -766,56 +768,6 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // }
       }
 
-      // Send push notification to konfi
-      try {
-        const notificationTitle = status === 'approved' 
-          ? `Antrag genehmigt!`
-          : `Antrag abgelehnt`;
-        
-        const notificationBody = status === 'approved'
-          ? `Dein Antrag für "${request.activity_name}" wurde genehmigt. Du erhältst ${request.points} ${request.points === 1 ? 'Punkt' : 'Punkte'}!`
-          : `Dein Antrag für "${request.activity_name}" wurde leider abgelehnt.${admin_comment ? ` Grund: ${admin_comment}` : ''}`;
-
-        // Create notification entry
-        await db.query(
-          "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
-          [
-            request.user_id,
-            notificationTitle,
-            notificationBody,
-            'activity_request_decision',
-            JSON.stringify({ 
-              request_id: requestId, 
-              activity_name: request.activity_name,
-              status: status,
-              points: request.points
-            }),
-            req.user.organization_id
-          ]
-        );
-
-
-        // Push an die antragstellende Person (mit Request ID für Navigation).
-        // organization_id ausdruecklich mitgeben: Antraege stellen auch
-        // Teamer:innen (target_role === 'teamer', siehe oben), und die
-        // koennen mehreren Gemeinden angehoeren. Ohne Content-Org griffe der
-        // Primaer-Org-Fallback und der Tap landete in der falschen Gemeinde
-        // (Befund M4, Push-Bericht 27.08.2026).
-        await PushService.sendActivityRequestStatusToKonfi(
-          db,
-          request.user_id,
-          request.activity_name,
-          request.points,
-          status,
-          admin_comment,
-          requestId,
-          req.user.organization_id
-        );
-      } catch (notifErr) {
- console.error('Error sending notification:', notifErr);
-        // Don't fail the request if notification fails
-      }
-
       res.json({ message: 'Antragsstatus aktualisiert', newBadges });
 
       // Live-Update für Antragsliste an alle Admins/Org-Admins/Teamer:innen der
@@ -830,6 +782,76 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Teamer-Anträgen in den leeren Konfi-Raum senden.
       liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
       liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
+
+      // Mitteilungen NACH der Antwort (utils/nachAntwort.js): Jeder Push geht
+      // abgewartet an FCM (kalt 330-450 ms, warm 90-130 ms je Sendung); vor der
+      // Antwort stand die Leitung damit in Produktion bis zu 1524 ms vor dem
+      // Knopf (07.10.2026). Die Entscheidung ist hier laengst committet, die
+      // Mitteilungen sind Beiwerk. Reihenfolge wie zuvor: Abzeichen, Level-Up,
+      // dann Postfach-Eintrag vor dem Status-Push.
+      nachAntwort(req, async () => {
+        for (const melden of badgeMitteilungen) {
+          await melden();
+        }
+
+        if (status === 'approved') {
+          // Level-Check NACH Badge-Check
+          try {
+            await PushService.checkAndSendLevelUp(db, request.user_id, organizationId);
+          } catch (levelErr) {
+            console.error('Level-up check failed:', levelErr);
+          }
+        }
+
+        // Postfach-Eintrag und Push an die antragstellende Person
+        try {
+          const notificationTitle = status === 'approved'
+            ? `Antrag genehmigt!`
+            : `Antrag abgelehnt`;
+
+          const notificationBody = status === 'approved'
+            ? `Dein Antrag für "${request.activity_name}" wurde genehmigt. Du erhältst ${request.points} ${request.points === 1 ? 'Punkt' : 'Punkte'}!`
+            : `Dein Antrag für "${request.activity_name}" wurde leider abgelehnt.${admin_comment ? ` Grund: ${admin_comment}` : ''}`;
+
+          // Create notification entry
+          await db.query(
+            "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+            [
+              request.user_id,
+              notificationTitle,
+              notificationBody,
+              'activity_request_decision',
+              JSON.stringify({
+                request_id: requestId, 
+                activity_name: request.activity_name,
+                status: status,
+                points: request.points
+              }),
+              organizationId
+            ]
+          );
+
+          // Push an die antragstellende Person (mit Request ID für Navigation).
+          // organization_id ausdruecklich mitgeben: Antraege stellen auch
+          // Teamer:innen (target_role === 'teamer', siehe oben), und die
+          // koennen mehreren Gemeinden angehoeren. Ohne Content-Org griffe der
+          // Primaer-Org-Fallback und der Tap landete in der falschen Gemeinde
+          // (Befund M4, Push-Bericht 27.08.2026).
+          await PushService.sendActivityRequestStatusToKonfi(
+            db,
+            request.user_id,
+            request.activity_name,
+            request.points,
+            status,
+            admin_comment,
+            requestId,
+            organizationId
+          );
+        } catch (notifErr) {
+          console.error('Error sending notification:', notifErr);
+          // Don't fail the request if notification fails
+        }
+      }, 'PUT /admin/activities/requests/:id (Mitteilungen)');
     } catch (err) {
  console.error('Database error in PUT /api/activities/requests/%s:', requestId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
