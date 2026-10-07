@@ -13,6 +13,7 @@ import {
 } from './geruestWeb';
 import WebAntraege from '../../../components/admin/web/termine/WebAntraege';
 import type { AntragZeile } from '../../../components/admin/web/termine/typen';
+import { WebAktivitaetenTabelle, type AktivitaetZeile } from '../../../components/admin/web/termine/WebAktivitaeten';
 
 const antrag = (id: number, zusatz: Partial<AntragZeile>): AntragZeile => ({
   id, konfi_id: id + 10, konfi_name: 'Mia Muster', jahrgang_name: 'Jahrgang 2026', activity_id: 3,
@@ -49,6 +50,8 @@ beforeEach(() => {
   vi.setSystemTime(JETZT);
 });
 afterEach(() => { vi.useRealTimers(); });
+// Die Wahl Liste/Kacheln merkt sich der Browser -- jeder Test beginnt mit der Vorgabe.
+beforeEach(() => { try { window.localStorage.clear(); } catch { /* ohne Speicher gilt die Vorgabe */ } });
 
 /** 'antraege': der Reiter „Aktivitäten" unter Mitmachen; 'aktivitaeten': der Katalog unter Mehr. */
 const oeffneReiter = (segment: 'antraege' | 'aktivitaeten', nutzer: 'leitung' | 'admin' | 'teamer' = 'leitung', filter = '') => {
@@ -317,5 +320,205 @@ describe('/admin/activities (die Adresse aus "Mehr")', () => {
     expect(screen.queryByRole('table')).toBe(null);
     expect(screen.queryByRole('navigation', { name: 'Bereiche von Mitmachen' })).toBe(null);
     expect(screen.getAllByTestId('termin')).toHaveLength(3);
+  });
+});
+
+// --- Sortieren nach Spalte (Simon, 07.10.2026) und Liste/Kacheln (07.10.2026) ---
+
+/** Die Reihenfolge der Zeilen, gelesen an den Namen, die in ihnen stehen. */
+const reihenfolge = (t: HTMLElement, namen: readonly string[]) => within(t).getAllByRole('row').slice(1)
+  .map((zeile) => namen.find((n) => zeile.textContent!.includes(n)) ?? '?');
+/** Klick auf den Kopf der Spalte -- der Knopf im columnheader. */
+const sortiere = (t: HTMLElement, kopf: string) => {
+  const zelle = within(t).getByRole('columnheader', { name: new RegExp(`^${kopf}`) });
+  fireEvent.click(within(zelle).getByRole('button'));
+  return zelle;
+};
+
+const zeigeAntraege = () => {
+  const aktionen = { pruefen: vi.fn(), zuruecksetzen: vi.fn() };
+  h.standort = { pathname: '/admin/events', search: '?segment=antraege&filter=alle' };
+  const r = render(<WebAntraege antraege={ANTRAEGE} ohneJahrgang={false} aktionen={aktionen} />);
+  return { ...r, aktionen };
+};
+
+const KATALOG: AktivitaetZeile[] = [
+  { id: 3, name: 'Gemeindefest helfen', description: 'Auf- und Abbau', points: 2, type: 'gemeinde', categories: [{ id: 1, name: 'Mithelfen' }] },
+  { id: 1, name: 'Sonntagsgottesdienst', points: 1, type: 'gottesdienst', categories: [{ id: 2, name: 'Gottesdienst' }] },
+  { id: 4, name: 'Adventsmarkt', points: 3, type: 'gemeinde', categories: [] },
+] as unknown as AktivitaetZeile[];
+
+const zeigeKatalog = (rolle: 'konfi' | 'teamer' = 'konfi') => {
+  const aufrufe = { onBearbeiten: vi.fn(), onLoeschen: vi.fn(), onAnlegen: vi.fn(), onRolle: vi.fn() };
+  const r = render(
+    <WebAktivitaetenTabelle
+      aktivitaeten={rolle === 'konfi' ? KATALOG : (AKTIVITAETEN_TEAM as unknown as AktivitaetZeile[])}
+      rolle={rolle}
+      darfAnlegen
+      darfBearbeiten
+      darfLoeschen
+      {...aufrufe}
+    />,
+  );
+  return { ...r, aufrufe };
+};
+
+const umschalter = (name: 'Liste' | 'Kacheln') => within(screen.getByRole('group', { name: 'Ansicht' })).getByRole('button', { name });
+/** Die Kachel, in deren Kopf der Name steht. */
+const kachel = (name: string) => [...document.querySelectorAll<HTMLElement>('.web-bildkarte')]
+  .find((k) => k.querySelector('.web-bildkarte__kopf')!.textContent!.includes(name))!;
+const akzent = (k: HTMLElement) => k.style.getPropertyValue('--web-bildkarte-akzent');
+
+describe('Anträge: Sortieren nach Spalte', () => {
+  const NAMEN = ['Mia Muster', 'Ben Beispiel', 'Zoe Probe', 'Tim Teamer'];
+
+  it('bis zum Klick neueste zuerst; "Von" ordnet nach Name, ein zweiter Klick dreht', () => {
+    zeigeAntraege();
+    const t = () => tabelle('Gemeldete Aktivitäten');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Mia Muster', 'Tim Teamer', 'Ben Beispiel', 'Zoe Probe']);
+    const kopf = sortiere(t(), 'Von');
+    expect(kopf).toHaveAttribute('aria-sort', 'ascending');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Ben Beispiel', 'Mia Muster', 'Tim Teamer', 'Zoe Probe']);
+    sortiere(t(), 'Von');
+    expect(kopf).toHaveAttribute('aria-sort', 'descending');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Tim Teamer', 'Mia Muster', 'Ben Beispiel']);
+  });
+
+  it('"Eingang" ordnet nach Datum, "Status" nach dem Wort, "Punkte" mit dem Team unten', () => {
+    zeigeAntraege();
+    const t = () => tabelle('Gemeldete Aktivitäten');
+    sortiere(t(), 'Eingang');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Ben Beispiel', 'Tim Teamer', 'Mia Muster']);
+    sortiere(t(), 'Status');
+    // Abgelehnt, Offen, Offen, Verbucht -- gleiche Wörter behalten die Reihenfolge der Seite.
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Mia Muster', 'Tim Teamer', 'Ben Beispiel']);
+    sortiere(t(), 'Punkte');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Ben Beispiel', 'Mia Muster', 'Zoe Probe', 'Tim Teamer']);
+    sortiere(t(), 'Punkte');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Mia Muster', 'Zoe Probe', 'Ben Beispiel', 'Tim Teamer']);
+  });
+});
+
+describe('Aktivitäten: Sortieren nach Spalte', () => {
+  const NAMEN = ['Gemeindefest helfen', 'Sonntagsgottesdienst', 'Adventsmarkt'];
+
+  it('"Punkte" ordnet nach der Zahl, ein zweiter Klick dreht; "Art" nach dem Wort', () => {
+    zeigeKatalog();
+    const t = () => tabelle('Aktivitäten');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Adventsmarkt', 'Gemeindefest helfen', 'Sonntagsgottesdienst']);
+    const kopf = sortiere(t(), 'Punkte');
+    expect(kopf).toHaveAttribute('aria-sort', 'ascending');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Sonntagsgottesdienst', 'Gemeindefest helfen', 'Adventsmarkt']);
+    sortiere(t(), 'Punkte');
+    expect(kopf).toHaveAttribute('aria-sort', 'descending');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Adventsmarkt', 'Gemeindefest helfen', 'Sonntagsgottesdienst']);
+    sortiere(t(), 'Art');
+    sortiere(t(), 'Art');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Sonntagsgottesdienst', 'Adventsmarkt', 'Gemeindefest helfen']);
+  });
+
+  it('"Aktivität" und "Kategorien" ordnen nach Text; ohne Kategorie steht unten', () => {
+    zeigeKatalog();
+    const t = () => tabelle('Aktivitäten');
+    sortiere(t(), 'Aktivität');
+    sortiere(t(), 'Aktivität');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Sonntagsgottesdienst', 'Gemeindefest helfen', 'Adventsmarkt']);
+    sortiere(t(), 'Kategorien');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Sonntagsgottesdienst', 'Gemeindefest helfen', 'Adventsmarkt']);
+    sortiere(t(), 'Kategorien');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Gemeindefest helfen', 'Sonntagsgottesdienst', 'Adventsmarkt']);
+  });
+});
+
+describe('Aktivitäten: Liste oder Kacheln', () => {
+  it('Vorgabe Liste; "Kacheln" wechselt und merkt sich die Wahl über das Neuladen hinaus', () => {
+    const { unmount } = zeigeKatalog();
+    expect(umschalter('Liste')).toHaveAttribute('aria-pressed', 'true');
+    expect(tabelle('Aktivitäten')).toBeInTheDocument();
+    fireEvent.click(umschalter('Kacheln'));
+    expect(umschalter('Kacheln')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('table')).toBe(null);
+    expect(within(screen.getByRole('list', { name: 'Aktivitäten' })).getAllByRole('article')).toHaveLength(3);
+    expect(window.localStorage.getItem('konfiquest.ansicht.aktivitaeten')).toBe('kacheln');
+    unmount();
+    zeigeKatalog();
+    expect(umschalter('Kacheln')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('table')).toBe(null);
+    fireEvent.click(umschalter('Liste'));
+    expect(window.localStorage.getItem('konfiquest.ansicht.aktivitaeten')).toBe('liste');
+    expect(tabelle('Aktivitäten')).toBeInTheDocument();
+  });
+
+  it('die Kachel trägt den Namen im Kopf, in der Farbe der Art: Gottesdienst, Gemeinde, Team', () => {
+    window.localStorage.setItem('konfiquest.ansicht.aktivitaeten', 'kacheln');
+    const { unmount } = zeigeKatalog();
+    expect(kachel('Sonntagsgottesdienst').querySelector('.web-bildkarte__kopf')).toHaveTextContent('GottesdienstSonntagsgottesdienst');
+    expect(akzent(kachel('Sonntagsgottesdienst'))).toBe('var(--app-color-gottesdienst)');
+    expect(akzent(kachel('Adventsmarkt'))).toBe('var(--app-color-gemeinde)');
+    expect(kachel('Adventsmarkt')).toHaveTextContent('+3 Punkte');
+    unmount();
+    zeigeKatalog('teamer');
+    expect(kachel('Freizeit begleitet').querySelector('.web-bildkarte__kopf')).toHaveTextContent('TeamFreizeit begleitet');
+    expect(akzent(kachel('Freizeit begleitet'))).toBe('var(--app-color-teamer)');
+  });
+
+  it('Titel und "Bearbeiten" öffnen genau diese Aktivität, "Löschen" ebenso', () => {
+    window.localStorage.setItem('konfiquest.ansicht.aktivitaeten', 'kacheln');
+    const { aufrufe } = zeigeKatalog();
+    // Nicht die erste Kachel -- sonst fiele ein falscher Eintrag nicht auf.
+    fireEvent.click(screen.getByRole('button', { name: 'Sonntagsgottesdienst bearbeiten' }));
+    expect(aufrufe.onBearbeiten).toHaveBeenCalledTimes(1);
+    expect(aufrufe.onBearbeiten.mock.calls[0][0].id).toBe(1);
+    fireEvent.click(within(kachel('Gemeindefest helfen')).getByRole('button', { name: 'Aktivität bearbeiten' }));
+    expect(aufrufe.onBearbeiten).toHaveBeenCalledTimes(2);
+    expect(aufrufe.onBearbeiten.mock.calls[1][0].id).toBe(3);
+    fireEvent.click(within(kachel('Sonntagsgottesdienst')).getByRole('button', { name: 'Aktivität löschen' }));
+    expect(aufrufe.onLoeschen).toHaveBeenCalledTimes(1);
+    expect(aufrufe.onLoeschen.mock.calls[0][0].id).toBe(1);
+  });
+});
+
+describe('Anträge: Liste oder Kacheln', () => {
+  it('Vorgabe Liste; "Kacheln" wechselt und merkt sich die Wahl', () => {
+    const { unmount } = zeigeAntraege();
+    expect(umschalter('Liste')).toHaveAttribute('aria-pressed', 'true');
+    expect(tabelle('Gemeldete Aktivitäten')).toBeInTheDocument();
+    fireEvent.click(umschalter('Kacheln'));
+    expect(screen.queryByRole('table')).toBe(null);
+    expect(within(screen.getByRole('list', { name: 'Gemeldete Aktivitäten' })).getAllByRole('article')).toHaveLength(4);
+    expect(window.localStorage.getItem('konfiquest.ansicht.antraege')).toBe('kacheln');
+    unmount();
+    zeigeAntraege();
+    expect(umschalter('Kacheln')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.queryByRole('table')).toBe(null);
+  });
+
+  it('die Kachel trägt den Namen im Kopf, in der Farbe des Stands: offen, verbucht, abgelehnt', () => {
+    window.localStorage.setItem('konfiquest.ansicht.antraege', 'kacheln');
+    zeigeAntraege();
+    expect(kachel('Mia Muster').querySelector('.web-bildkarte__kopf')).toHaveTextContent('Mia Muster');
+    expect(kachel('Mia Muster').querySelector('.web-bildkarte__kopf')).toHaveTextContent('Gemeinde · Jahrgang 2026');
+    expect(akzent(kachel('Mia Muster'))).toBe('var(--app-color-warning)');
+    expect(akzent(kachel('Ben Beispiel'))).toBe('var(--app-color-success)');
+    expect(akzent(kachel('Zoe Probe'))).toBe('var(--app-color-danger)');
+    expect(kachel('Zoe Probe')).toHaveTextContent('Grund der Ablehnung: Nicht belegt');
+  });
+
+  it('Titel und "Prüfen" rufen das Prüfen genau dieses Antrags; erledigte "Zurücksetzen"', () => {
+    window.localStorage.setItem('konfiquest.ansicht.antraege', 'kacheln');
+    const { aktionen } = zeigeAntraege();
+    // Der Titel im Kopf ...
+    const titel = within(within(kachel('Tim Teamer')).getByRole('heading')).getByRole('button', { name: 'Aktivität von Tim Teamer prüfen' });
+    fireEvent.click(titel);
+    // ... und "Prüfen" im Fuß -- derselbe Weg wie in der Liste. Beides nicht an
+    // der ersten Kachel (Mia), sonst fiele ein falscher Eintrag nicht auf.
+    const fuss = kachel('Tim Teamer').querySelector('footer') as HTMLElement;
+    fireEvent.click(within(fuss).getByRole('button', { name: 'Aktivität von Tim Teamer prüfen' }));
+    expect(aktionen.pruefen.mock.calls.map((c) => c[0].id)).toEqual([74, 74]);
+    // Erledigte: der Titel heißt "ansehen" und öffnet dasselbe Fenster.
+    fireEvent.click(within(within(kachel('Ben Beispiel')).getByRole('heading')).getByRole('button', { name: 'Aktivität von Ben Beispiel ansehen' }));
+    expect(aktionen.pruefen.mock.calls.at(-1)![0].id).toBe(72);
+    fireEvent.click(within(kachel('Zoe Probe')).getByRole('button', { name: 'Aktivität zurücksetzen' }));
+    expect(aktionen.zuruecksetzen.mock.calls.map((c) => c[0].id)).toEqual([73]);
   });
 });

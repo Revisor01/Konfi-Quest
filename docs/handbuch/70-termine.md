@@ -1389,8 +1389,10 @@ Zeitfenster als Tabelle mit Belegung (**Frei** oder **Voll**), bei einer Serie
 die weiteren Events und das Material. Jede Zeile
 nennt den Namen mit dem Jahrgang, bei Events mit Zeitfenstern das gebuchte
 Fenster und den Stand mit Abmeldegrund, Notiz und dem, wer den Eintrag gemacht
-hat. Dazu trägt sie die Anwesenheit: **Anwesend** und **Abwesend** verbuchen mit
-einem Klick, ein zweiter Klick auf denselben Knopf nimmt den Eintrag zurück.
+hat. Dazu trägt sie die Anwesenheit: Der Haken (**Anwesend**) und das Kreuz
+(**Abwesend**) verbuchen mit einem Klick, ein zweiter Klick auf denselben Knopf
+nimmt den Eintrag zurück. Verbucht steht der Haken grün, das Kreuz rot; fährst
+du mit der Maus darüber, steht der Name des Knopfs daneben.
 Die drei Punkte am Zeilenende öffnen **Weitere Aktionen**:
 
 - **Abgemeldet eintragen** — hat die Person schon eine Abmeldung, steht dort

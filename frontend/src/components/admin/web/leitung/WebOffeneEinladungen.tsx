@@ -26,6 +26,7 @@ const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisie
     {
       schluessel: 'person',
       kopf: 'Person',
+      sortWert: (e) => e.display_name,
       zelle: (e) => (
         <span className="web-person-zelle">
           <WebAvatar text={initialen(e.display_name) || '??'} farbe={rollenFarbe(e.role_name)} />
@@ -40,6 +41,7 @@ const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisie
       schluessel: 'rolle',
       kopf: 'Eingeladen als',
       breite: '170px',
+      sortWert: (e) => rollenName(e.role_name, e.role_display_name ?? undefined),
       zelle: (e) => <WebRolleMarke rolle={e.role_name} text={rollenName(e.role_name, e.role_display_name ?? undefined)} />,
     },
     {
@@ -47,6 +49,7 @@ const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisie
       kopf: 'Eingeladen am',
       breite: '190px',
       optional: true,
+      sortWert: (e) => new Date(e.created_at),
       zelle: (e) => (
         <>
           <span className="web-zelle-titel">{datumKurz(e.created_at)}</span>
@@ -58,6 +61,7 @@ const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisie
       schluessel: 'gueltig',
       kopf: 'Gültig bis',
       breite: '130px',
+      sortWert: (e) => new Date(e.expires_at),
       zelle: (e) => datumKurz(e.expires_at),
     },
     {

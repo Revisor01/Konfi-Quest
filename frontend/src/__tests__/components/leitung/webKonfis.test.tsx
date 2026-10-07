@@ -639,8 +639,51 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
       ['jahrgang:ab', 'Jahrgang Z–A'],
       ['badges:ab', 'Meiste Badges'],
       ['badges:auf', 'Wenigste Badges'],
+      ['gottesdienst:ab', 'Meiste Gottesdienst-Punkte'],
+      ['gottesdienst:auf', 'Wenigste Gottesdienst-Punkte'],
+      ['gemeinde:ab', 'Meiste Gemeinde-Punkte'],
+      ['gemeinde:auf', 'Wenigste Gemeinde-Punkte'],
     ]);
     expect(sortierAuswahl()).toHaveValue('name:auf');
+  });
+
+  it('Gottesdienst und Gemeinde sortieren nach ihren Punkten, eine abgeschaltete Art steht unten; dieselbe Ordnung in den Kacheln', () => {
+    zeigen();
+    const kopf = (name: string) => within(tabelle('Konfis')).getByRole('columnheader', { name });
+    // Erster Klick: meiste zuerst (wie Gesamt und Badges). Dora hat Gottesdienst abgeschaltet.
+    fireEvent.click(within(kopf('Gottesdienst')).getByRole('button'));
+    expect(kopf('Gottesdienst')).toHaveAttribute('aria-sort', 'descending');
+    expect(namen()).toEqual(['Ben Schmidt', 'Anna Müller', 'Clara Beispiel', 'Emil Probe', 'Dora Test']);
+    fireEvent.click(within(kopf('Gottesdienst')).getByRole('button'));
+    expect(kopf('Gottesdienst')).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen()).toEqual(['Emil Probe', 'Clara Beispiel', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+    fireEvent.click(within(kopf('Gemeinde')).getByRole('button'));
+    expect(namen()).toEqual(['Ben Schmidt', 'Dora Test', 'Anna Müller', 'Clara Beispiel', 'Emil Probe']);
+    waehle('Kacheln');
+    expect(sortierAuswahl()).toHaveValue('gemeinde:ab');
+    expect(kartenNamen()).toEqual(['Ben Schmidt', 'Dora Test', 'Anna Müller', 'Clara Beispiel', 'Emil Probe']);
+    sortiereKacheln('gottesdienst:auf');
+    expect(kartenNamen()).toEqual(['Emil Probe', 'Clara Beispiel', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+  });
+
+  it('Letzte Aktivität sortiert nach Datum, ohne Aktivität unten; die Auswahl der Kacheln bietet sie nur mit der Spalte an', () => {
+    const mitDatum = [
+      { ...KONFIS[0], letzte_aktivitaet: '2026-09-28T10:00:00Z' },
+      { ...KONFIS[1], letzte_aktivitaet: null },
+      { ...KONFIS[2], letzte_aktivitaet: '2026-10-05T10:00:00Z' },
+      { ...KONFIS[3], letzte_aktivitaet: '2026-08-01T10:00:00Z' },
+    ];
+    zeigen({ konfis: mitDatum });
+    const kopf = () => within(tabelle('Konfis')).getByRole('columnheader', { name: 'Letzte Aktivität' });
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'descending');
+    expect(namen()).toEqual(['Clara Beispiel', 'Anna Müller', 'Dora Test', 'Ben Schmidt']);
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(namen()).toEqual(['Dora Test', 'Anna Müller', 'Clara Beispiel', 'Ben Schmidt']);
+    waehle('Kacheln');
+    expect(sortierAuswahl()).toHaveValue('aktivitaet:auf');
+    expect(optionen(sortierAuswahl()).slice(-2)).toEqual([['aktivitaet:ab', 'Zuletzt aktiv'], ['aktivitaet:auf', 'Am längsten nicht aktiv']]);
+    expect(kartenNamen()).toEqual(['Dora Test', 'Anna Müller', 'Clara Beispiel', 'Ben Schmidt']);
   });
 
   it('Suche, Jahrgang und Zaehlzeile gelten auch fuer die Kacheln; die Kennzahlen bleiben', () => {
@@ -733,6 +776,10 @@ describe('Team (Web): Kacheln', () => {
       ['badges:auf', 'Wenigste Badges'],
       ['zertifikate:ab', 'Meiste Zertifikate'],
       ['zertifikate:auf', 'Wenigste Zertifikate'],
+      ['jahrgaenge:auf', 'Jahrgänge A–Z'],
+      ['jahrgaenge:ab', 'Jahrgänge Z–A'],
+      ['seit:ab', 'Zuletzt ins Team gekommen'],
+      ['seit:auf', 'Am längsten im Team'],
     ]);
     sortiereKacheln('badges:ab');
     expect(kartenNamen('Team')).toEqual(['Gero B.', 'Frieda Muster']);
@@ -744,6 +791,29 @@ describe('Team (Web): Kacheln', () => {
     waehle('Liste');
     expect(namen('Team')).toEqual(['Gero B.', 'Frieda Muster']);
     expect(within(tabelle('Team')).getByRole('columnheader', { name: 'Badges' })).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('Team nach Jahrgängen und "Im Team seit": Klick auf den Kopf, ohne Angabe unten, dieselbe Ordnung in den Kacheln', async () => {
+    h.apiGet.mockResolvedValue({ data: [...TEAM, { id: 23, name: 'Hanna Ohne', username: 'hanna', badge_count: 0, cert_count: 0 }, { id: 24, name: 'Ida Neu', username: 'ida', jahrgang_name: 'Jahrgang 2024', badge_count: 1, cert_count: 0, teamer_since: '2025-09-01' }] });
+    zeigen();
+    await screen.findByRole('table', { name: 'Team' });
+    const kopf = (name: string) => within(tabelle('Team')).getByRole('columnheader', { name });
+    fireEvent.click(within(kopf('Jahrgänge')).getByRole('button'));
+    expect(kopf('Jahrgänge')).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen('Team')).toEqual(['Ida Neu', 'Gero B.', 'Frieda Muster', 'Hanna Ohne']);
+    fireEvent.click(within(kopf('Jahrgänge')).getByRole('button'));
+    expect(namen('Team')).toEqual(['Frieda Muster', 'Gero B.', 'Ida Neu', 'Hanna Ohne']);
+    // "Im Team seit": erster Klick neueste zuerst.
+    fireEvent.click(within(kopf('Im Team seit')).getByRole('button'));
+    expect(kopf('Im Team seit')).toHaveAttribute('aria-sort', 'descending');
+    expect(namen('Team')).toEqual(['Ida Neu', 'Frieda Muster', 'Gero B.', 'Hanna Ohne']);
+    fireEvent.click(within(kopf('Im Team seit')).getByRole('button'));
+    expect(namen('Team')).toEqual(['Gero B.', 'Frieda Muster', 'Ida Neu', 'Hanna Ohne']);
+    waehle('Kacheln');
+    expect(sortierAuswahl()).toHaveValue('seit:auf');
+    expect(kartenNamen('Team')).toEqual(['Gero B.', 'Frieda Muster', 'Ida Neu', 'Hanna Ohne']);
+    sortiereKacheln('jahrgaenge:auf');
+    expect(kartenNamen('Team')).toEqual(['Ida Neu', 'Gero B.', 'Frieda Muster', 'Hanna Ohne']);
   });
 
   it('Suche im Team gilt fuer die Karten; im Team gibt es keinen Jahrgang-Filter', async () => {

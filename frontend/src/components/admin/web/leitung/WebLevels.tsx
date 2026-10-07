@@ -45,6 +45,7 @@ const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen
       schluessel: 'level',
       kopf: 'Level',
       breite: '30%',
+      sortWert: (l) => l.title,
       zelle: (l) => (
         <span className="web-person-zelle">
           <WebSymbol icon={getIconFromString(l.icon || 'trophy')} ton="level" farbe={l.color || undefined} />
@@ -55,6 +56,7 @@ const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen
     {
       schluessel: 'beschreibung',
       kopf: 'Beschreibung',
+      sortWert: (l) => l.description,
       zelle: (l) => (l.description
         ? <span className="web-zelle-leise">{l.description}</span>
         : <span className="web-gedaempft">Keine Beschreibung</span>),
@@ -64,6 +66,7 @@ const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen
       kopf: 'Ab Punkten',
       zahl: true,
       breite: '120px',
+      sortWert: (l) => l.points_required,
       zelle: (l) => <span className="web-zelle-titel">{l.points_required}</span>,
     },
     {

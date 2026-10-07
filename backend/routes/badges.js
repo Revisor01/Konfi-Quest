@@ -177,8 +177,18 @@ const STILL = { still: true };
 // ein und bekam zwoelf Konfi-Abzeichen von Kirchspiel West -- die Rolle wurde
 // am Konto gelesen, das Konfi-Profil der Testgemeinde gegen die Abzeichen der
 // Stamm-Gemeinde gewertet. Test: tests/routes/abzeichenNurFuerKonfisUndTeamer.
+//
+// optionen.mitteilungenSammeln (Array, Standard: aus): Die Abzeichen werden
+// wie immer sofort angelegt, aber Postfach-Eintrag, Push und Live-Update je
+// neuem Abzeichen werden NICHT abgewartet, sondern als Funktion in dieses
+// Array gelegt. Der Aufrufer ruft sie nach seiner Antwort auf
+// (utils/nachAntwort.js). Grund: PUT /admin/activities/requests/:id wartete
+// auf jeden Push an FCM (kalt 330-450 ms je Sendung) und antwortete in
+// Produktion einmal erst nach 1524 ms (07.10.2026). Nicht mit `still`
+// verwechseln -- `still` unterdrueckt die Mitteilungen ganz.
 const checkAndAwardBadges = async (db, userId, optionen = {}) => {
   const still = optionen.still === true;
+  const sammeln = Array.isArray(optionen.mitteilungenSammeln) ? optionen.mitteilungenSammeln : null;
   try {
     const { rows: [userInfo] } = await db.query(
       `SELECT g.organization_id,
@@ -199,7 +209,7 @@ const checkAndAwardBadges = async (db, userId, optionen = {}) => {
     // TEAMER-BRANCH
     // =====================================================================
     if (userInfo.role_name === 'teamer') {
-      return await checkAndAwardTeamerBadges(db, userId, organizationId, still);
+      return await checkAndAwardTeamerBadges(db, userId, organizationId, still, sammeln);
     }
 
     // Leitung (admin, org_admin, super_admin) und Nicht-Mitglieder: nichts.
@@ -451,7 +461,7 @@ const checkAndAwardBadges = async (db, userId, optionen = {}) => {
     }
 
     if (earnedBadgeIds.length > 0) {
-      await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still);
+      await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still, sammeln);
     }
 
     return { count: newBadges, badges: earnedBadgeDetails };
@@ -464,7 +474,7 @@ const checkAndAwardBadges = async (db, userId, optionen = {}) => {
 // =====================================================================
 // Teamer-Badge-Prüfung
 // =====================================================================
-async function checkAndAwardTeamerBadges(db, userId, organizationId, still = false) {
+async function checkAndAwardTeamerBadges(db, userId, organizationId, still = false, sammeln = null) {
   // Teamer-Badges laden
   const { rows: badges } = await db.query(
     "SELECT id, name, description, icon, color, criteria_type, criteria_value::int AS criteria_value, criteria_extra, is_hidden, sort_order, is_active, target_role, organization_id FROM custom_badges WHERE is_active = true AND organization_id = $1 AND target_role = 'teamer'",
@@ -727,7 +737,7 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId, still = fal
   }
 
   if (earnedBadgeIds.length > 0) {
-    await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still);
+    await insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still, sammeln);
   }
 
   return { count: newBadges, badges: earnedBadgeDetails };
@@ -757,12 +767,24 @@ async function checkStreakCriteria(db, userId, organizationId, criteriaValue, is
 // =====================================================================
 // Shared: Badges einfuegen und Notifications senden
 // =====================================================================
-async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still = false) {
+async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds, earnedBadgeDetails, still = false, sammeln = null) {
   // Auf einem Client nacheinander, ueber den Pool parallel (utils/abfragenBuendeln.js).
   await abfragenBuendeln(db, earnedBadgeIds.map(badgeId => () =>
     db.query("INSERT INTO user_badges (user_id, badge_id, organization_id) VALUES ($1, $2, $3)", [userId, badgeId, organizationId])
   ));
 
+  // Die Abzeichen stehen jetzt. Was folgt, ist Mitteilung: entweder gleich
+  // abwarten (Standard) oder dem Aufrufer fuer die Zeit nach seiner Antwort
+  // mitgeben (optionen.mitteilungenSammeln, siehe checkAndAwardBadges).
+  const melden = () => meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, still);
+  if (sammeln) {
+    sammeln.push(melden);
+    return;
+  }
+  await melden();
+}
+
+async function meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, still) {
   try {
     // Stille Vergabe (Nachhol-Lauf ueber "Abzeichen neu pruefen"): weder
     // In-App-Nachricht noch Push. Das Abzeichen steht danach im Profil, es

@@ -238,6 +238,18 @@ interface PunkteEintrag {
   event_date?: string | null;
 }
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
+/** Die Marken der Spalte „Art" als Text -- danach sortiert die Spalte. */
+const artText = (e: PunkteEintrag): string => [
+  e.category === 'gottesdienst' ? 'Gottesdienst' : e.category === 'gemeinde' ? 'Gemeinde' : '',
+  e.source_type === 'event' ? 'Event' : e.source_type === 'bonus' ? 'Bonus' : '',
+].filter(Boolean).join(' ');
+
 export interface WebPunkteVerlaufProps {
   /** Route des Verlaufs: `/konfi/points-history` oder `/teamer/konfi-history`. */
   endpunkt: string;
@@ -290,10 +302,11 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
             zeilen={gezeigt}
             zeileSchluessel={(e) => `${e.source_type}-${e.id}`}
             spalten={[
-              { schluessel: 'datum', kopf: 'Datum', breite: '110px', zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
+              { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (e) => zeitpunkt(punkteAnzeigeDatum(e)), zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
               {
                 schluessel: 'titel',
                 kopf: 'Wofür',
+                sortWert: (e) => e.title,
                 zelle: (e) => (
                   <>
                     <span className="web-zelle-titel">{e.title}</span>
@@ -305,6 +318,7 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
                 schluessel: 'art',
                 kopf: 'Art',
                 breite: '190px',
+                sortWert: (e) => artText(e),
                 zelle: (e) => (
                   <span className="web-pillreihe">
                     {e.category === 'gottesdienst' && <WebPill ton="info">Gottesdienst</WebPill>}
@@ -314,7 +328,7 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
                   </span>
                 ),
               },
-              { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', zelle: (e) => <strong title={punkteText(e.points)}>+{e.points}</strong> },
+              { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (e) => e.points, zelle: (e) => <strong title={punkteText(e.points)}>+{e.points}</strong> },
             ]}
           />
           {eintraege.length > zuerst && (

@@ -274,8 +274,29 @@ describe('Links: wer kommt -- nur lesend', () => {
     expect(konfis).toHaveTextContent('Jahrgang 2026');
     expect(konfis).toHaveTextContent('Krank');
     expect(within(karte('Team (1)')).getByText('Tim Teamer')).toBeInTheDocument();
-    expect(within(konfis).queryByRole('button')).toBe(null);
-    expect(within(karte('Team (1)')).queryByRole('button')).toBe(null);
+    // Knöpfe gibt es nur im Kopf zum Sortieren -- in den Zeilen keinen.
+    const zeilenKnoepfe = (k: HTMLElement) => within(k).getAllByRole('row').slice(1).flatMap((z) => within(z).queryAllByRole('button'));
+    expect(zeilenKnoepfe(konfis)).toEqual([]);
+    expect(zeilenKnoepfe(karte('Team (1)'))).toEqual([]);
+  });
+
+  it('"Name" und "Status" sortieren die Liste, ein zweiter Klick dreht', async () => {
+    await oeffneEvent(402, { teilnehmende: [teilnehmer(1, 'Mia Muster'), teilnehmer(2, 'Ben Beispiel', { status: 'opted_out' }), teilnehmer(4, 'Zoe Probe')] });
+    const tabelle = () => within(karte('Konfis (3)')).getByRole('table');
+    const namen = () => within(tabelle()).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[0].querySelector('.web-zelle-titel')!.textContent);
+    expect(namen()).toEqual(['Mia Muster', 'Ben Beispiel', 'Zoe Probe']);
+    const kopf = within(tabelle()).getByRole('columnheader', { name: /^Name/ });
+    fireEvent.click(within(kopf).getByRole('button'));
+    expect(kopf).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen()).toEqual(['Ben Beispiel', 'Mia Muster', 'Zoe Probe']);
+    fireEvent.click(within(kopf).getByRole('button'));
+    expect(kopf).toHaveAttribute('aria-sort', 'descending');
+    expect(namen()).toEqual(['Zoe Probe', 'Mia Muster', 'Ben Beispiel']);
+    // Status: "Abgemeldet" vor "Angemeldet" -- Ben nach oben, die anderen in der Reihenfolge der Seite.
+    fireEvent.click(within(within(tabelle()).getByRole('columnheader', { name: /^Status/ })).getByRole('button'));
+    expect(namen()).toEqual(['Ben Beispiel', 'Mia Muster', 'Zoe Probe']);
+    fireEvent.click(within(within(tabelle()).getByRole('columnheader', { name: /^Status/ })).getByRole('button'));
+    expect(namen()).toEqual(['Mia Muster', 'Zoe Probe', 'Ben Beispiel']);
   });
 
   it('niemand angemeldet: keine Karten "Konfis" und "Team"', async () => {

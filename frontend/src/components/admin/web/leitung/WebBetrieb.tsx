@@ -127,43 +127,46 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
 
   // --- Fehler ---
   const fehlerSpalten: Array<WebSpalte<BetriebsFehlerGruppe>> = [
-    { schluessel: 'route', kopf: 'Route', zelle: (g) => <span className="web-mono web-einzeilig">{g.route}</span> },
+    { schluessel: 'route', kopf: 'Route', sortWert: (g) => g.route, zelle: (g) => <span className="web-mono web-einzeilig">{g.route}</span> },
     {
       schluessel: 'art',
       kopf: 'Art',
       breite: '200px',
+      sortWert: (g) => g.status,
       zelle: (g) => <span style={{ color: statusColor(g.status), fontWeight: 'var(--app-schrift-halbfett)' }}>{g.status} · {statusBezeichnung(g.status)}</span>,
     },
-    { schluessel: 'anzahl', kopf: 'Anzahl', zahl: true, breite: '100px', zelle: (g) => `${fmtZahl(g.anzahl)}×` },
-    { schluessel: 'seit', kopf: 'Erstmals', breite: '120px', optional: true, zelle: (g) => fmtSeit(g.seit) },
-    { schluessel: 'zuletzt', kopf: 'Zuletzt', breite: '120px', zelle: (g) => fmtSeit(g.zuletzt) },
-    { schluessel: 'url', kopf: 'Zuletzt aufgerufen', optional: true, zelle: (g) => <span className="web-mono web-einzeilig web-gedaempft">{g.beispielUrl}</span> },
+    { schluessel: 'anzahl', kopf: 'Anzahl', zahl: true, breite: '100px', sortWert: (g) => g.anzahl, zelle: (g) => `${fmtZahl(g.anzahl)}×` },
+    { schluessel: 'seit', kopf: 'Erstmals', breite: '120px', optional: true, sortWert: (g) => new Date(g.seit), zelle: (g) => fmtSeit(g.seit) },
+    { schluessel: 'zuletzt', kopf: 'Zuletzt', breite: '120px', sortWert: (g) => new Date(g.zuletzt), zelle: (g) => fmtSeit(g.zuletzt) },
+    { schluessel: 'url', kopf: 'Zuletzt aufgerufen', optional: true, sortWert: (g) => g.beispielUrl, zelle: (g) => <span className="web-mono web-einzeilig web-gedaempft">{g.beispielUrl}</span> },
   ];
   const einzelSpalten: Array<WebSpalte<BetriebsEinzelfehler>> = [
-    { schluessel: 'url', kopf: 'Adresse', zelle: (e) => <span className="web-mono web-einzeilig">{e.url}</span> },
-    { schluessel: 'status', kopf: 'Status', breite: '90px', zelle: (e) => <span style={{ color: statusColor(e.status), fontWeight: 'var(--app-schrift-halbfett)' }}>{e.status}</span> },
-    { schluessel: 'zeit', kopf: 'Uhrzeit', breite: '120px', zelle: (e) => `${uhrzeit(e.at)} Uhr` },
-    { schluessel: 'dauer', kopf: 'Dauer', zahl: true, breite: '100px', zelle: (e) => `${e.durationMs} ms` },
+    { schluessel: 'url', kopf: 'Adresse', sortWert: (e) => e.url, zelle: (e) => <span className="web-mono web-einzeilig">{e.url}</span> },
+    { schluessel: 'status', kopf: 'Status', breite: '90px', sortWert: (e) => e.status, zelle: (e) => <span style={{ color: statusColor(e.status), fontWeight: 'var(--app-schrift-halbfett)' }}>{e.status}</span> },
+    { schluessel: 'zeit', kopf: 'Uhrzeit', breite: '120px', sortWert: (e) => new Date(e.at), zelle: (e) => `${uhrzeit(e.at)} Uhr` },
+    { schluessel: 'dauer', kopf: 'Dauer', zahl: true, breite: '100px', sortWert: (e) => e.durationMs, zelle: (e) => `${e.durationMs} ms` },
   ];
 
   // --- Routen ---
   const routenSpalten: Array<WebSpalte<RoutenZeile>> = [
-    { schluessel: 'route', kopf: 'Route', zelle: (r) => <span className="web-mono web-einzeilig">{r.route}</span> },
+    { schluessel: 'route', kopf: 'Route', sortWert: (r) => r.route, zelle: (r) => <span className="web-mono web-einzeilig">{r.route}</span> },
     {
       schluessel: 'median',
       kopf: 'Median',
       zahl: true,
       breite: '95px',
+      sortWert: (r) => r.mitteMs,
       zelle: (r) => <span className="web-nowrap" title="Median: die Hälfte aller Anfragen war schneller" style={{ color: msColor(r.mitteMs), fontWeight: 'var(--app-schrift-halbfett)' }}>{r.mitteMs} ms</span>,
     },
-    { schluessel: 'aufrufe', kopf: 'Aufrufe', zahl: true, breite: '80px', zelle: (r) => fmtZahl(r.count) },
-    { schluessel: 'schnitt', kopf: 'Durchschnitt', zahl: true, breite: '100px', optional: true, zelle: (r) => `${Math.round(r.schnittMs)} ms` },
+    { schluessel: 'aufrufe', kopf: 'Aufrufe', zahl: true, breite: '80px', sortWert: (r) => r.count, zelle: (r) => fmtZahl(r.count) },
+    { schluessel: 'schnitt', kopf: 'Durchschnitt', zahl: true, breite: '100px', optional: true, sortWert: (r) => r.schnittMs, zelle: (r) => `${Math.round(r.schnittMs)} ms` },
     {
       schluessel: 'p95',
       kopf: 'p95',
       zahl: true,
       breite: '170px',
       optional: true,
+      sortWert: (r) => r.p95,
       // Bei wenigen Messwerten IST der p95 der langsamste Einzelwert -- dann steht er so da
       // und nennt die Zahl der Messwerte statt eines "hoechstens", das dasselbe sagte.
       zelle: (r) => (r.p95Duenn ? (
@@ -178,7 +181,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
         </span>
       )),
     },
-    { schluessel: 'anteil', kopf: 'Anteil Serverzeit', zahl: true, breite: '90px', zelle: (r) => <span title="Anteil an der gesamten Serverzeit aller Routen">{r.anteilProzent} %</span> },
+    { schluessel: 'anteil', kopf: 'Anteil Serverzeit', zahl: true, breite: '90px', sortWert: (r) => r.anteilProzent, zelle: (r) => <span title="Anteil an der gesamten Serverzeit aller Routen">{r.anteilProzent} %</span> },
     {
       schluessel: 'hinweise',
       kopf: 'Hinweise',
@@ -203,29 +206,31 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
   // --- Verlauf ---
   const tageNeuesteZuerst = [...p.tage].reverse();
   const tagSpalten: Array<WebSpalte<Tagesbilanz>> = [
-    { schluessel: 'tag', kopf: 'Tag', breite: '120px', zelle: (t) => <span className="web-zelle-titel">{t.tag}</span> },
-    { schluessel: 'anfragen', kopf: 'Anfragen', zahl: true, breite: '120px', zelle: (t) => fmtZahl(t.anfragen) },
+    { schluessel: 'tag', kopf: 'Tag', breite: '120px', sortWert: (t) => p.tage.indexOf(t), zelle: (t) => <span className="web-zelle-titel">{t.tag}</span> },
+    { schluessel: 'anfragen', kopf: 'Anfragen', zahl: true, breite: '120px', sortWert: (t) => t.anfragen, zelle: (t) => fmtZahl(t.anfragen) },
     {
       schluessel: 'fehler',
       kopf: 'Fehler',
       zahl: true,
       breite: '100px',
+      sortWert: (t) => t.fehler,
       zelle: (t) => <span style={{ color: t.fehler > 0 ? METRIK_AMPEL.kritisch : METRIK_AMPEL.gut, fontWeight: t.fehler > 0 ? 'var(--app-schrift-halbfett)' : undefined }}>{t.fehler}</span>,
     },
-    { schluessel: 'dauer', kopf: 'Langsamste', zahl: true, breite: '120px', zelle: (t) => <span style={{ color: msColor(t.schlimmsteMs) }}>{fmtDauer(t.schlimmsteMs)}</span> },
-    { schluessel: 'route', kopf: 'Langsamste Route', optional: true, zelle: (t) => (t.schlimmsteRoute ? <span className="web-mono web-einzeilig web-gedaempft">{t.schlimmsteRoute}</span> : <span className="web-gedaempft">–</span>) },
+    { schluessel: 'dauer', kopf: 'Langsamste', zahl: true, breite: '120px', sortWert: (t) => t.schlimmsteMs, zelle: (t) => <span style={{ color: msColor(t.schlimmsteMs) }}>{fmtDauer(t.schlimmsteMs)}</span> },
+    { schluessel: 'route', kopf: 'Langsamste Route', optional: true, sortWert: (t) => t.schlimmsteRoute, zelle: (t) => (t.schlimmsteRoute ? <span className="web-mono web-einzeilig web-gedaempft">{t.schlimmsteRoute}</span> : <span className="web-gedaempft">–</span>) },
   ];
   const schrittSpalten: Array<WebSpalte<HistorieDelta>> = [
-    { schluessel: 'zeit', kopf: 'Zeitpunkt', breite: '170px', zelle: (d) => datumUhrzeit(d.at, { ohneJahr: true }) },
-    { schluessel: 'anfragen', kopf: 'Anfragen', zahl: true, breite: '120px', zelle: (d) => fmtZahl(d.requests) },
+    { schluessel: 'zeit', kopf: 'Zeitpunkt', breite: '170px', sortWert: (d) => new Date(d.at), zelle: (d) => datumUhrzeit(d.at, { ohneJahr: true }) },
+    { schluessel: 'anfragen', kopf: 'Anfragen', zahl: true, breite: '120px', sortWert: (d) => d.requests, zelle: (d) => fmtZahl(d.requests) },
     {
       schluessel: 'fehler',
       kopf: 'Fehler',
       zahl: true,
       breite: '100px',
+      sortWert: (d) => d.errors,
       zelle: (d) => (d.errors > 0 ? <span style={{ color: METRIK_AMPEL.kritisch, fontWeight: 'var(--app-schrift-halbfett)' }}>{d.errors}</span> : <span className="web-gedaempft">0</span>),
     },
-    { schluessel: 'dauer', kopf: 'Langsamste', zahl: true, breite: '120px', zelle: (d) => <span style={{ color: msColor(d.worstP95) }}>{fmtDauer(d.worstP95)}</span> },
+    { schluessel: 'dauer', kopf: 'Langsamste', zahl: true, breite: '120px', sortWert: (d) => d.worstP95, zelle: (d) => <span style={{ color: msColor(d.worstP95) }}>{fmtDauer(d.worstP95)}</span> },
   ];
 
   const chips = [

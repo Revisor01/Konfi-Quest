@@ -98,6 +98,17 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- In der Event-Liste im Browser steht vor jedem Event ein farbiger Kreis mit
+  Symbol, der den Stand zeigt — wie die Initialen in der Konfi-Liste.
+- Das Annehmen oder Ablehnen einer gemeldeten Aktivität ist sofort erledigt;
+  Mitteilung und Postfach-Eintrag an die Konfi folgen gleich danach.
+- Im Browser lässt sich jede Liste per Klick auf den Spaltennamen sortieren,
+  ein zweiter Klick dreht die Richtung.
+- Die Aktivitäten unter „Mehr“ und die gemeldeten Aktivitäten unter
+  „Mitmachen“ lassen sich im Browser auch als Kacheln ansehen.
+- In der Teilnehmerliste eines Events im Browser hat der Stand mehr Platz:
+  Anwesend und Abwesend sind kompakte Knöpfe mit Symbol, verbucht grün bzw.
+  rot.
 - Im Browser tragen alle Angaben das Symbol der App in ihrer Farbe, und die
   Merkmale eines Events (Pflicht, Nur Team, Konfirmation …) stehen als
   farbige Marken mit Symbol.

@@ -48,7 +48,7 @@ import { WebLeer } from '../../../web/WebZustaende';
 import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
 import { useAnsicht } from '../../../web/useAnsicht';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
-import { WebAbsageZeile, WebFakten, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
+import { WebTerminSymbol, WebAbsageZeile, WebFakten, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
 import WebEventAktionen from './WebEventAktionen';
 import WebEventsKacheln from './WebEventsKacheln';
 import { ZEIT_FILTER, type TerminAktionen, type ZeitFilter } from './typen';
@@ -78,6 +78,12 @@ export interface WebEventsTabelleProps {
   darfVerwalten: boolean;
   aktionen: TerminAktionen;
 }
+
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
 
 const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, jahrgaenge, darfVerwalten, aktionen }) => {
   const [zeit, setZeit] = useFilterAusAdresse<ZeitFilter>('/admin/events', ZEIT_FILTER, 'aktuell');
@@ -128,11 +134,14 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'event',
       kopf: 'Event',
       breite: '25%',
+      sortWert: (e) => e.name,
       zelle: (e) => {
         const abgesagtes = istAbgesagt(e);
         const jahrgaenge = jahrgaengeZeile(e);
         return (
-          <>
+          <span className="web-person-zelle">
+            <WebTerminSymbol status={leitungListeStatus(e)} event={e} />
+            <span className="web-person-zelle__text">
             <WebLink
               href={`/admin/events/${e.id}`}
               className="web-link--zeile web-link--text web-termin-titel"
@@ -144,7 +153,8 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
             </WebLink>
             {jahrgaenge && <span className="web-zelle-leise">{jahrgaenge}</span>}
             <WebAbsageZeile event={e} />
-          </>
+            </span>
+          </span>
         );
       },
     },
@@ -152,6 +162,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'wann',
       kopf: 'Wann',
       breite: '140px',
+      sortWert: (e) => zeitpunkt(e.event_date),
       zelle: (e) => {
         const { datum, zeit: uhr } = zeitspanneKurz(e);
         return (
@@ -167,6 +178,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       kopf: 'Ort',
       breite: '15%',
       optional: true,
+      sortWert: (e) => e.location || kategorienText(e) || null,
       zelle: (e) => {
         const kategorienZeile = kategorienText(e);
         return e.location || kategorienZeile ? (
@@ -181,6 +193,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'teilnahme',
       kopf: 'Teilnahme',
       breite: '120px',
+      sortWert: (e) => e.registered_count || 0,
       zelle: (e) => {
         const zahlen = leitungFakten(e).filter((f) => f.art === 'plaetze' || f.art === 'team' || f.art === 'warteliste');
         return zahlen.length > 0 ? <WebFakten fakten={zahlen} spalte /> : <span className="web-gedaempft">–</span>;
@@ -191,6 +204,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       kopf: 'Punkte',
       breite: '104px',
       optional: true,
+      sortWert: (e) => e.points || 0,
       zelle: (e) => {
         const punkte = leitungFakten(e).filter((f) => f.art === 'punkte' || f.art === 'punkteart');
         return punkte.length > 0 ? <WebFakten fakten={punkte} spalte /> : <span className="web-gedaempft">–</span>;
@@ -200,6 +214,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'status',
       kopf: 'Status',
       breite: '168px',
+      sortWert: (e) => leitungListeStatus(e).text,
       zelle: (e) => {
         const s = leitungListeStatus(e);
         return <WebTerminMarken status={s} event={e} teamZeigen serieZeigen />;

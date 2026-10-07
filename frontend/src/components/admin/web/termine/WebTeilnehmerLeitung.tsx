@@ -85,7 +85,8 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
     {
       schluessel: 'name',
       kopf: 'Name',
-      breite: '30%',
+      breite: '26%',
+      sortWert: (p) => p.participant_name,
       zelle: (p) => (
         <>
           <span className="web-zelle-titel">{p.participant_name}</span>
@@ -102,6 +103,8 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
       schluessel: 'zeitfenster',
       kopf: 'Zeitfenster',
       breite: '128px',
+      // Beginn des Fensters; ohne Fenster unten.
+      sortWert: (p) => p.timeslot_start_time || null,
       zelle: (p) => (p.timeslot_start_time && p.timeslot_end_time
         ? `${formatEventTime(p.timeslot_start_time)} – ${formatEventTime(p.timeslot_end_time)}`
         : <span className="web-gedaempft">–</span>),
@@ -111,6 +114,7 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
   spalten.push({
     schluessel: 'status',
     kopf: 'Status',
+    sortWert: (p) => teilnahmeDarstellung(p).statusText,
     zelle: (p) => {
       const d = teilnahmeDarstellung(p);
       return (
@@ -127,7 +131,10 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
       schluessel: 'aktionen',
       kopf: 'Aktionen',
       kopfVersteckt: true,
-      breite: '300px',
+      // Schmal, damit der Status Platz hat (Simon, 07.10.2026: „die spalte
+      // status [ist] zu schmal ... alles so gestaucht"): Anwesend und
+      // Abwesend nur als Symbol, der Name steht in aria-label und Tooltip.
+      breite: '112px',
       klasse: 'web-spalte-termin-aktionen',
       zelle: (p) => {
         if (warteliste || p.status === 'waitlist') {
@@ -150,25 +157,25 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
             <div className="web-umschalter" role="group" aria-label={`Anwesenheit von ${p.participant_name}`}>
               <button
                 type="button"
-                className="web-knopf web-knopf--klein web-umschalter__knopf"
+                className="web-knopf web-knopf--klein web-knopf--symbol web-umschalter__knopf web-umschalter__knopf--anwesend"
                 aria-pressed={anwesend}
+                aria-label="Anwesend"
                 disabled={!isOnline}
-                title={offlineHinweis ?? (anwesend ? 'Eintrag zurücksetzen' : 'Als anwesend verbuchen')}
+                title={offlineHinweis ?? (anwesend ? 'Anwesend – Eintrag zurücksetzen' : 'Als anwesend verbuchen')}
                 onClick={() => aktionen.anwesenheit(p, anwesend ? null : 'present')}
               >
                 <IonIcon icon={ICON_ZUSAGE_GEFUELLT} aria-hidden="true" />
-                Anwesend
               </button>
               <button
                 type="button"
-                className="web-knopf web-knopf--klein web-umschalter__knopf"
+                className="web-knopf web-knopf--klein web-knopf--symbol web-umschalter__knopf web-umschalter__knopf--abwesend"
                 aria-pressed={abwesend}
+                aria-label="Abwesend"
                 disabled={!isOnline}
-                title={offlineHinweis ?? (abwesend ? 'Eintrag zurücksetzen' : 'Als abwesend verbuchen')}
+                title={offlineHinweis ?? (abwesend ? 'Abwesend – Eintrag zurücksetzen' : 'Als abwesend verbuchen')}
                 onClick={() => aktionen.anwesenheit(p, abwesend ? null : 'absent')}
               >
                 <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
-                Abwesend
               </button>
             </div>
             <WebKnopf klein symbol aria-label={`Weitere Aktionen für ${p.participant_name}`} title="Weitere Aktionen" onClick={() => setMenuFuer(p)}>
@@ -243,7 +250,8 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
           spalten={spalten}
           zeilen={teilnehmende}
           zeileSchluessel={(p) => p.id}
-          mittig
+          // Oben ausgerichtet: wird der Stand zweizeilig, bleiben Name und
+          // Knoepfe auf der ersten Zeile (Simon, 07.10.2026).
         />
       ) : (
         <p className="web-gedaempft" role="status">{leerText ?? 'Noch niemand angemeldet.'}</p>

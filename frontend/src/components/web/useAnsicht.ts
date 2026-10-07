@@ -1,5 +1,6 @@
-// Liste oder Kacheln: die eine Wahl fuer Events, Challenges und Konfis in der
-// Web-Fassung (Simon, 06.10.2026: „kacheln oder listen ... ein umschalter").
+// Liste oder Kacheln: die eine Wahl fuer Events, Challenges, Konfis und
+// Aktivitaeten in der Web-Fassung (Simon, 06.10.2026: „kacheln oder listen
+// ... ein umschalter"; Aktivitaeten seit 07.10.2026).
 // Jede Seite hat einen Umschalter (WebAnsichtUmschalter); der Browser merkt
 // sich die Wahl je Seite. Beim ersten Oeffnen startet die Leitung mit der
 // Liste, Konfis und Team mit Kacheln.
@@ -14,7 +15,9 @@ export type WebAnsichtSeite =
   | 'events-mitglied'
   | 'challenges-leitung'
   | 'challenges-mitglied'
-  | 'konfis';
+  | 'konfis'
+  | 'aktivitaeten'
+  | 'antraege';
 
 const LEITUNG = new Set(['admin', 'org_admin', 'super_admin']);
 

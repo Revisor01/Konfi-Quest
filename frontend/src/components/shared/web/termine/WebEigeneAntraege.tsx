@@ -48,6 +48,12 @@ export interface WebEigeneAntraegeProps {
   onLoeschen: (antrag: ActivityRequest) => void;
 }
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pfad, standardFilter, teamerMode, onOeffnen, onLoeschen }) => {
   const antraege = useMemo<ActivityRequest[]>(() => (Array.isArray(roh) ? [...roh] : []), [roh]);
   const [filter, setFilter] = useFilterAusAdresse<EigenerAntragFilter>(pfad, EIGENER_ANTRAG_FILTER, standardFilter);
@@ -72,6 +78,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
       schluessel: 'aktivitaet',
       kopf: 'Aktivität',
       breite: '38%',
+      sortWert: (a) => a.activity_name,
       zelle: (a) => (
         <>
           <button type="button" className="web-link web-link--zeile web-link--text web-link--knopf" onClick={() => onOeffnen(a)}>
@@ -88,6 +95,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
       schluessel: 'datum',
       kopf: 'Stattgefunden',
       breite: '128px',
+      sortWert: (a) => zeitpunkt(a.requested_date),
       zelle: (a) => (
         <>
           <span className="web-zelle-titel web-zelle-normal">{datumKurz(a.requested_date)}</span>
@@ -108,6 +116,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
       kopf: 'Punkte',
       breite: '120px',
       optional: true,
+      sortWert: (a) => a.activity_points ?? 0,
       zelle: (a) => (
         <>
           {a.activity_points ? <span className="web-zelle-titel">{a.activity_points}P</span> : null}
@@ -122,6 +131,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
       schluessel: 'status',
       kopf: 'Status',
       breite: '128px',
+      sortWert: (a) => STATUS[a.status].text,
       zelle: (a) => <WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>,
     },
     {

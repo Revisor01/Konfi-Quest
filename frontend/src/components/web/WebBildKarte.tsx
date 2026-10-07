@@ -40,7 +40,12 @@ export interface WebBildKarteProps {
   /** Marken ueber dem Titel (Status). */
   marken?: React.ReactNode;
   titel: React.ReactNode;
-  href: string;
+  /** Ziel des Titels als Link ... */
+  href?: string;
+  /** ... oder ein Klick (Aktivitaeten haben keine eigene Seite, sie oeffnen das Bearbeiten-Fenster). */
+  onTitel?: () => void;
+  /** Name des Knopfs fuer Vorleseprogramme, wenn `onTitel` gesetzt ist. */
+  titelBeschriftung?: string;
   /** Unter dem Titel, leise (Benutzername, Jahrgaenge). */
   unterzeile?: React.ReactNode;
   /** Ein Absatz Text, hoechstens drei Zeilen. */
@@ -68,14 +73,20 @@ export const WebBildKarteSymbol: React.FC<{ icon?: string; text?: string }> = ({
 );
 
 const WebBildKarte: React.FC<WebBildKarteProps> = ({
-  akzent, akzentDunkel, symbol, label, name, titelImKopf = false, marken, titel, href, unterzeile, text, children,
+  akzent, akzentDunkel, symbol, label, name, titelImKopf = false, marken, titel, href, onTitel, titelBeschriftung, unterzeile, text, children,
   angaben = [], fuss, gedaempft = false, klasse, stil, titelStil,
 }) => {
   const titelId = useId();
   const sichtbar = angaben.filter((a): a is WebBildKarteAngabe => Boolean(a));
   const titelZeile = (
     <h3 id={titelId} className={titelImKopf ? 'web-bildkarte__name web-bildkarte__name--titel' : 'web-bildkarte__titel'} style={titelStil}>
-      <WebLink href={href} className="web-link--zeile web-link--text">{titel}</WebLink>
+      {href ? (
+        <WebLink href={href} className="web-link--zeile web-link--text">{titel}</WebLink>
+      ) : onTitel ? (
+        <button type="button" className="web-link web-link--zeile web-link--text web-link--knopf" aria-label={titelBeschriftung} onClick={onTitel}>
+          {titel}
+        </button>
+      ) : titel}
     </h3>
   );
   const farben = {

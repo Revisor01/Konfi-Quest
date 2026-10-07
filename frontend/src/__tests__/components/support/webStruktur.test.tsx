@@ -295,3 +295,20 @@ describe('Struktur: zwei Gesichter, eine Seite', () => {
     expect(h.apiGet).not.toHaveBeenCalled();
   });
 });
+
+describe('Struktur (Web): sortieren nach Spalte', () => {
+  it('Klick auf "Gemeinden" ordnet die Kirchenkreise einer Landeskirche nach Zahl, der zweite Klick dreht', async () => {
+    await oeffnen();
+    const namen = () => zeilen('Kirchenkreise von Nordkirche').map((r) => within(r).getAllByRole('cell')[0].textContent);
+    const kopf = () => within(tabelle('Kirchenkreise von Nordkirche')).getByRole('columnheader', { name: 'Gemeinden' });
+    expect(namen()).toEqual(['Dithmarschen', 'Plön-Segeberg']);
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(namen()).toEqual(['Plön-Segeberg', 'Dithmarschen']);
+    expect(kopf()).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(namen()).toEqual(['Dithmarschen', 'Plön-Segeberg']);
+    expect(kopf()).toHaveAttribute('aria-sort', 'descending');
+    // Jede Tabelle sortiert für sich: die andere bleibt unberührt.
+    expect(within(tabelle('Kirchenkreise ohne Landeskirche')).getByRole('columnheader', { name: 'Gemeinden' })).toHaveAttribute('aria-sort', 'none');
+  });
+});

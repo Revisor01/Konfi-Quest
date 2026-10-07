@@ -16,7 +16,7 @@ import type { Event } from '../../../../types/event';
 import type { WebAnsicht } from '../../../web/useAnsicht';
 import WebLink from '../../../web/WebLink';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
-import { WebAbsageZeile, WebFakten, WebTerminMarken } from './WebTerminBausteine';
+import { WebTerminSymbol, WebAbsageZeile, WebFakten, WebTerminMarken } from './WebTerminBausteine';
 import WebTerminKarte from './WebTerminKarte';
 import '../../../../theme/web/termine.css';
 
@@ -51,26 +51,37 @@ const PLAETZE = new Set<Fakt['art']>(['plaetze', 'team', 'warteliste', 'teamWart
 /** Die Zahlen der Spalte "Punkte": Punkte und ihre Art. */
 const PUNKTE = new Set<Fakt['art']>(['punkte', 'punkteart']);
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> => [
   {
     schluessel: 'event',
     kopf: 'Event',
     breite: '28%',
-    zelle: ({ event: e, href, unterzeile }) => (
-      <>
-        <WebLink href={href} className="web-link--zeile web-link--text web-termin-titel">
-          <span style={{ textDecoration: titelDekoration('liste', e) }}>{e.name}</span>
-          {istAbgesagt(e) && <span className="web-nur-vorlesen">, abgesagt</span>}
-        </WebLink>
-        {unterzeile && <span className="web-zelle-leise">{unterzeile}</span>}
-        <WebAbsageZeile event={e} />
-      </>
+    sortWert: ({ event: e }) => e.name,
+    zelle: ({ event: e, href, unterzeile, status }) => (
+      <span className="web-person-zelle">
+        <WebTerminSymbol status={status} event={e} />
+        <span className="web-person-zelle__text">
+          <WebLink href={href} className="web-link--zeile web-link--text web-termin-titel">
+            <span style={{ textDecoration: titelDekoration('liste', e) }}>{e.name}</span>
+            {istAbgesagt(e) && <span className="web-nur-vorlesen">, abgesagt</span>}
+          </WebLink>
+          {unterzeile && <span className="web-zelle-leise">{unterzeile}</span>}
+          <WebAbsageZeile event={e} />
+        </span>
+      </span>
     ),
   },
   {
     schluessel: 'wann',
     kopf: 'Wann',
     breite: '140px',
+    sortWert: ({ event: e }) => zeitpunkt(e.event_date),
     zelle: ({ event: e }) => {
       const { datum, zeit } = zeitspanneKurz(e);
       return (
@@ -86,6 +97,7 @@ const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> =>
     kopf: 'Ort',
     breite: '15%',
     optional: true,
+    sortWert: ({ event: e }) => e.location || kategorienText(e) || null,
     zelle: ({ event: e }) => {
       const kategorien = kategorienText(e);
       return e.location || kategorien ? (
@@ -100,6 +112,7 @@ const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> =>
     schluessel: 'plaetze',
     kopf: 'Plätze',
     breite: '120px',
+    sortWert: ({ event: e, fakten }) => (fakten.some((f) => PLAETZE.has(f.art)) ? e.registered_count || 0 : null),
     zelle: ({ fakten }) => {
       const zahlen = fakten.filter((f) => PLAETZE.has(f.art));
       return zahlen.length > 0 ? <WebFakten fakten={zahlen} spalte /> : <span className="web-gedaempft">–</span>;
@@ -110,6 +123,7 @@ const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> =>
     kopf: 'Punkte',
     breite: '104px',
     optional: true,
+    sortWert: ({ event: e, fakten }) => (fakten.some((f) => PUNKTE.has(f.art)) ? e.points || 0 : null),
     zelle: ({ fakten }) => {
       const punkte = fakten.filter((f) => PUNKTE.has(f.art));
       return punkte.length > 0 ? <WebFakten fakten={punkte} spalte /> : <span className="web-gedaempft">–</span>;
@@ -119,6 +133,7 @@ const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> =>
     schluessel: 'status',
     kopf: 'Status',
     breite: '168px',
+    sortWert: ({ status, statusZeigen = true }) => (statusZeigen ? status.text : null),
     zelle: ({ event: e, status, statusZeigen = true }) => (
       <WebTerminMarken status={status} event={e} teamZeigen={teamZeigen} statusZeigen={statusZeigen} />
     ),

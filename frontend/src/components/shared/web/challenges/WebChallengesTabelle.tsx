@@ -48,6 +48,12 @@ export interface WebChallengesTabelleProps<T extends ListenChallenge> {
   aktionen?: (challenge: T) => React.ReactNode;
 }
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 function WebChallengesTabelle<T extends ListenChallenge>({
   eintraege,
   suche = '',
@@ -64,6 +70,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
       schluessel: 'challenge',
       kopf: 'Challenge',
       breite: leitung ? '25%' : '40%',
+      sortWert: ({ challenge: c }) => c.title,
       zelle: ({ challenge: c }) => (
         <div className="web-challenge-zelle">
           <WebChallengeSymbol icon={getChallengeBadgeIcon(c.badge_icon)} kugel={kugel(c.id)} klein />
@@ -84,6 +91,8 @@ function WebChallengesTabelle<T extends ListenChallenge>({
       schluessel: 'zeitraum',
       kopf: 'Zeitraum',
       breite: leitung ? '156px' : '180px',
+      // Nach dem Ende -- was zuerst ausläuft, steht oben.
+      sortWert: ({ challenge: c }) => zeitpunkt(c.ends_at) ?? zeitpunkt(c.starts_at),
       zelle: ({ challenge: c, status }) => {
         const rest = status === 'active' ? restzeitText(formatRemaining(c.ends_at)) : '';
         return (
@@ -98,6 +107,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
       schluessel: 'status',
       kopf: 'Status',
       breite: leitung ? '136px' : '130px',
+      sortWert: ({ status }) => STATUS_WORT[status],
       zelle: ({ challenge: c, status }) => (
         <div className="web-pillreihe web-challenge-marken">
           <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
@@ -116,6 +126,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
         kopf: 'Beiträge',
         breite: '148px',
         optional: true,
+        sortWert: ({ challenge: c }) => c.submission_count ?? 0,
         zelle: ({ challenge: c }) => (
           <>
             <span className="web-challenge-wert">{anzahlBeitraege(c.submission_count ?? 0)}</span>
@@ -127,6 +138,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
         schluessel: 'wartet',
         kopf: 'Freigabe',
         breite: '88px',
+        sortWert: ({ challenge: c }) => kugel(c.id).wartend ?? 0,
         zelle: ({ challenge: c }) => {
           const wartend = kugel(c.id).wartend ?? 0;
           // Die orange Zahl wie am Filter: so viele Beitraege warten auf Freigabe.
@@ -146,6 +158,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
         schluessel: 'zielgruppe',
         kopf: 'Zielgruppe',
         optional: true,
+        sortWert: ({ challenge: c }) => [c.audience ? AUDIENCE_LABEL[c.audience] : '', jahrgangText(c.jahrgaenge ?? [])].filter(Boolean).join(' ') || null,
         zelle: ({ challenge: c }) => {
           const zielgruppe = c.audience ? AUDIENCE_LABEL[c.audience] : undefined;
           const jahrgaenge = c.jahrgaenge ?? [];
@@ -173,6 +186,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
     spalten.push({
       schluessel: 'stand',
       kopf: 'Dein Stand',
+      sortWert: ({ challenge: c }) => (eingereicht(c) ? 'Eingereicht' : null),
       zelle: ({ challenge: c }) => (eingereicht(c) ? <WebEingereichtPill /> : <span className="web-gedaempft">–</span>),
     });
   }

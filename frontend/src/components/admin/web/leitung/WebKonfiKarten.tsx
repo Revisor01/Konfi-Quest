@@ -44,6 +44,7 @@ import { WebLeer } from '../../../web/WebZustaende';
 import StempelInfo from '../../../web/StempelInfo';
 import WebAuszeichnungen, { type WebAuszeichnung } from '../../../web/WebAuszeichnungen';
 import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
+import { naechsteSortierung, sortiereZeilen, type TabellenSortierung } from '../../../../utils/tabelleSortieren';
 import type { Anwesenheit, KonfiHistorie, TeamerTermin, Zertifikat } from './konfiDetailTypen';
 
 const ZEILEN_KURZ = 10;
@@ -62,6 +63,28 @@ const ArtMarke: React.FC<{ art?: string }> = ({ art }) => (
 /** Ist diese Punkteart fuer den Jahrgang der Person abgeschaltet? (Die Zeile steht dann gedaempft da.) */
 const artAus = (konfi: Konfi | null, art?: string): boolean =>
   (art === 'gottesdienst' && konfi?.gottesdienst_enabled === false) || (art === 'gemeinde' && konfi?.gemeinde_enabled === false);
+
+/** Ein Datum zum Sortieren; ohne Datum steht die Zeile unten. */
+const alsDatum = (iso?: string | null): Date | null => (iso ? new Date(iso) : null);
+
+/**
+ * Sortieren fuer Karten, die nur die ersten Zeilen zeigen ("Alle anzeigen"):
+ * Die Karte haelt die Ordnung und sortiert die GANZE Liste, bevor sie kuerzt --
+ * sonst ordnete ein Klick auf den Spaltenkopf nur die sichtbaren Zeilen um.
+ */
+function useGanzeListeSortiert<T>(zeilen: readonly T[], spalten: ReadonlyArray<WebSortSpalte<T>>) {
+  const [sortierung, setSortierung] = useState<TabellenSortierung | null>(null);
+  const spalte = sortierung ? spalten.find((s) => s.schluessel === sortierung.schluessel && s.sortWert) : undefined;
+  const geordnet = sortierung && spalte?.sortWert ? sortiereZeilen(zeilen, spalte.sortWert, sortierung.richtung) : zeilen;
+  return {
+    geordnet,
+    tabelle: {
+      spalten: spalten.map((s) => ({ ...s, sortierbar: Boolean(s.sortWert) })),
+      sortierung: sortierung ?? undefined,
+      onSortieren: (schluessel: string) => setSortierung((jetzt) => naechsteSortierung(jetzt, schluessel)),
+    },
+  };
+}
 
 const AlleZeigen: React.FC<{ anzahl: number; alle: boolean; onUmschalten: () => void }> = ({ anzahl, alle, onUmschalten }) => (
   anzahl > ZEILEN_KURZ ? (
@@ -84,13 +107,13 @@ export const AktivitaetenKarte: React.FC<{
   onFoto: (a: Activity) => void;
 }> = ({ aktivitaeten, konfi, istTeamer, onEintragen, onLoeschen, onFoto }) => {
   const [alle, setAlle] = useState(false);
-  const sichtbar = alle ? aktivitaeten : aktivitaeten.slice(0, ZEILEN_KURZ);
   const summe = aktivitaeten.reduce((s, a) => s + (a.points || 0), 0);
 
   const spalten: Array<WebSortSpalte<Activity>> = [
     {
       schluessel: 'name',
       kopf: 'Aktivität',
+      sortWert: (a) => a.name,
       zelle: (a) => (
         <span className="web-zelle-mit-knopf">
           <span className="web-zelle-titel">{a.name}</span>
@@ -103,23 +126,26 @@ export const AktivitaetenKarte: React.FC<{
         </span>
       ),
     },
-    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (a) => datumKurz(a.completed_date || a.date) },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (a) => alsDatum(a.completed_date || a.date), zelle: (a) => datumKurz(a.completed_date || a.date) },
     ...(!istTeamer ? [{
       schluessel: 'art',
       kopf: 'Art',
       breite: SPALTE.art,
+      sortWert: (a: Activity) => a.type,
       zelle: (a: Activity) => <ArtMarke art={a.type} />,
     }, {
       schluessel: 'punkte',
       kopf: 'Punkte',
       zahl: true,
       breite: SPALTE.punkte,
+      sortWert: (a: Activity) => a.points,
       zelle: (a: Activity) => <strong>+{a.points}</strong>,
     }] : []),
     {
       schluessel: 'von',
       kopf: 'Eingetragen von',
       breite: SPALTE.von, optional: true,
+      sortWert: (a) => a.admin || a.admin_name || 'Leitung',
       zelle: (a) => a.admin || a.admin_name || 'Leitung',
     },
     {
@@ -136,6 +162,8 @@ export const AktivitaetenKarte: React.FC<{
       ),
     },
   ];
+  const aktivTabelle = useGanzeListeSortiert(aktivitaeten, spalten);
+  const sichtbar = alle ? aktivTabelle.geordnet : aktivTabelle.geordnet.slice(0, ZEILEN_KURZ);
 
   return (
     <WebKarte
@@ -155,7 +183,7 @@ export const AktivitaetenKarte: React.FC<{
         <>
           <WebSortTabelle
             beschriftung="Aktivitäten"
-            spalten={spalten}
+            {...aktivTabelle.tabelle}
             zeilen={sichtbar}
             zeileSchluessel={(a) => a.id}
             zeileKlasse={(a) => (!istTeamer && artAus(konfi, a.type) ? 'web-zeile--leise' : undefined)}
@@ -182,6 +210,7 @@ export const BonusKarte: React.FC<{
     {
       schluessel: 'grund',
       kopf: 'Grund',
+      sortWert: (b) => b.description || 'Bonuspunkte',
       zelle: (b) => (
         <span className="web-zelle-mit-knopf">
           <span className="web-zelle-titel">{b.description || 'Bonuspunkte'}</span>
@@ -190,10 +219,10 @@ export const BonusKarte: React.FC<{
       ),
     },
     // `bonus.date` gibt es in dieser Antwort nicht -- sie liefert bp.* aus bonus_points.
-    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (b) => datumKurz(b.completed_date || b.created_at || '') },
-    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, zelle: (b) => <ArtMarke art={b.type} /> },
-    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, zelle: (b) => <strong>+{b.points}</strong> },
-    { schluessel: 'von', kopf: 'Vergeben von', breite: SPALTE.von, optional: true, zelle: (b) => b.admin_name || 'Leitung' },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (b) => alsDatum(b.completed_date || b.created_at), zelle: (b) => datumKurz(b.completed_date || b.created_at || '') },
+    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, sortWert: (b) => b.type, zelle: (b) => <ArtMarke art={b.type} /> },
+    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, sortWert: (b) => b.points, zelle: (b) => <strong>+{b.points}</strong> },
+    { schluessel: 'von', kopf: 'Vergeben von', breite: SPALTE.von, optional: true, sortWert: (b) => b.admin_name || 'Leitung', zelle: (b) => b.admin_name || 'Leitung' },
     {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
@@ -241,6 +270,7 @@ export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintr
     {
       schluessel: 'event',
       kopf: 'Event',
+      sortWert: (e) => e.event_name || 'Event',
       zelle: (e) => (
         <span className="web-zelle-mit-knopf">
           <span className="web-zelle-titel">{e.event_name || 'Event'}</span>
@@ -248,10 +278,10 @@ export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintr
         </span>
       ),
     },
-    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
-    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, zelle: (e) => <ArtMarke art={e.point_type} /> },
-    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, zelle: (e) => <strong>+{e.points}</strong> },
-    { schluessel: 'von', kopf: 'Verbucht von', breite: SPALTE.von, optional: true, zelle: (e) => e.admin_name || 'Leitung' },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (e) => alsDatum(punkteAnzeigeDatum(e)), zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
+    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, sortWert: (e) => e.point_type, zelle: (e) => <ArtMarke art={e.point_type} /> },
+    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, sortWert: (e) => e.points, zelle: (e) => <strong>+{e.points}</strong> },
+    { schluessel: 'von', kopf: 'Verbucht von', breite: SPALTE.von, optional: true, sortWert: (e) => e.admin_name || 'Leitung', zelle: (e) => e.admin_name || 'Leitung' },
     // Leer, aber gleich breit: Die Spalten stehen unter denen von Aktivitaeten und Bonuspunkten.
     { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },
   ];
@@ -289,16 +319,16 @@ const STAND_TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
 
 export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = ({ events }) => {
   const [alle, setAlle] = useState(false);
-  const sichtbar = alle ? events : events.slice(0, ZEILEN_KURZ);
   // Steht links unter den Aktivitaeten (Simon, 07.10.2026) und teilt deren
   // Spaltenbreiten: Event, Datum, Stand an der Stelle von "Eingetragen von".
   const spalten: Array<WebSortSpalte<TeamerTermin>> = [
-    { schluessel: 'event', kopf: 'Event', zelle: (e) => <span className="web-zelle-titel">{e.name}</span> },
-    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (e) => datumKurz(e.event_date) },
+    { schluessel: 'event', kopf: 'Event', sortWert: (e) => e.name, zelle: (e) => <span className="web-zelle-titel">{e.name}</span> },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (e) => alsDatum(e.event_date), zelle: (e) => datumKurz(e.event_date) },
     {
       schluessel: 'stand',
       kopf: 'Stand',
       breite: SPALTE.von,
+      sortWert: (e) => teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status }).statusText,
       zelle: (e) => {
         const stand = teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status });
         return <WebPill ton={STAND_TON[stand.farbe]}>{stand.statusText}</WebPill>;
@@ -306,6 +336,8 @@ export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = 
     },
     { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },
   ];
+  const eventTabelle = useGanzeListeSortiert(events, spalten);
+  const sichtbar = alle ? eventTabelle.geordnet : eventTabelle.geordnet.slice(0, ZEILEN_KURZ);
   return (
     <WebKarte titel="Events" untertitel={mitEinheit(events.length, 'Event', 'Events')} bund={events.length > 0}>
       {events.length === 0 ? (
@@ -313,7 +345,7 @@ export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = 
         <WebLeer icon={ICON_TERMIN} titel="Keine Events" text="Noch bei keinem Event dabei gewesen." />
       ) : (
         <>
-          <WebSortTabelle beschriftung="Events" spalten={spalten} zeilen={sichtbar} zeileSchluessel={(e) => e.id} mittig klasse="web-tabelle--punkte" />
+          <WebSortTabelle beschriftung="Events" {...eventTabelle.tabelle} zeilen={sichtbar} zeileSchluessel={(e) => e.id} mittig klasse="web-tabelle--punkte" />
           <AlleZeigen anzahl={events.length} alle={alle} onUmschalten={() => setAlle((a) => !a)} />
         </>
       )}
@@ -333,6 +365,7 @@ export const ZertifikateKarte: React.FC<{
     {
       schluessel: 'name',
       kopf: 'Zertifikat',
+      sortWert: (z) => z.name,
       zelle: (z) => (
         <span className="web-zelle-mit-knopf">
           <IonIcon icon={getIconFromString(z.icon)} className="web-zelle-symbol" aria-hidden="true" />
@@ -341,8 +374,8 @@ export const ZertifikateKarte: React.FC<{
         </span>
       ),
     },
-    { schluessel: 'ausgestellt', kopf: 'Ausgestellt', breite: '120px', zelle: (z) => datumKurz(z.issued_date) },
-    { schluessel: 'ablauf', kopf: 'Läuft ab', breite: '120px', optional: true, zelle: (z) => (z.expiry_date ? datumKurz(z.expiry_date) : <span className="web-gedaempft">–</span>) },
+    { schluessel: 'ausgestellt', kopf: 'Ausgestellt', breite: '120px', sortWert: (z) => alsDatum(z.issued_date), zelle: (z) => datumKurz(z.issued_date) },
+    { schluessel: 'ablauf', kopf: 'Läuft ab', breite: '120px', optional: true, sortWert: (z) => alsDatum(z.expiry_date), zelle: (z) => (z.expiry_date ? datumKurz(z.expiry_date) : <span className="web-gedaempft">–</span>) },
     {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
@@ -381,15 +414,16 @@ export const KonfiHistorieKarte: React.FC<{ historie: KonfiHistorie }> = ({ hist
   // NULL-SICHER: Fehlt history/totals (alter Cache, Teamer ohne Konfi-Zeit), wirft ein Zugriff hier den ganzen Render.
   const eintraege = Array.isArray(historie?.history) ? nachAnzeigeDatumAbsteigend(historie.history) : [];
   const summe = historie?.totals || { gottesdienst: 0, gemeinde: 0, total: 0 };
-  const sichtbar = alle ? eintraege : eintraege.slice(0, 3);
   const herkunft = (t: string) => (t === 'bonus' ? 'Bonus' : t === 'event' ? 'Event' : 'Aktivität');
   const spalten: Array<WebSortSpalte<(typeof eintraege)[number]>> = [
-    { schluessel: 'titel', kopf: 'Eintrag', zelle: (e) => <span className="web-zelle-titel">{e.title}</span> },
-    { schluessel: 'datum', kopf: 'Datum', breite: '110px', zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
-    { schluessel: 'herkunft', kopf: 'Herkunft', breite: '110px', zelle: (e) => <WebPill>{herkunft(e.source_type)}</WebPill> },
-    { schluessel: 'art', kopf: 'Art', breite: '124px', zelle: (e) => <ArtMarke art={e.category} /> },
-    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '80px', zelle: (e) => <strong>+{e.points}</strong> },
+    { schluessel: 'titel', kopf: 'Eintrag', sortWert: (e) => e.title, zelle: (e) => <span className="web-zelle-titel">{e.title}</span> },
+    { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (e) => alsDatum(punkteAnzeigeDatum(e)), zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
+    { schluessel: 'herkunft', kopf: 'Herkunft', breite: '110px', sortWert: (e) => herkunft(e.source_type), zelle: (e) => <WebPill>{herkunft(e.source_type)}</WebPill> },
+    { schluessel: 'art', kopf: 'Art', breite: '124px', sortWert: (e) => e.category, zelle: (e) => <ArtMarke art={e.category} /> },
+    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '80px', sortWert: (e) => e.points, zelle: (e) => <strong>+{e.points}</strong> },
   ];
+  const historieTabelle = useGanzeListeSortiert(eintraege, spalten);
+  const sichtbar = alle ? historieTabelle.geordnet : historieTabelle.geordnet.slice(0, 3);
   return (
     <WebKarte
       titel="Konfi-Historie"
@@ -400,7 +434,7 @@ export const KonfiHistorieKarte: React.FC<{ historie: KonfiHistorie }> = ({ hist
         <WebLeer icon={ICON_UHRZEIT} titel="Keine Konfi-Punkte" text="Keine Konfi-Punkte vorhanden." />
       ) : (
         <>
-          <WebSortTabelle beschriftung="Konfi-Historie" spalten={spalten} zeilen={sichtbar} zeileSchluessel={(e) => `${e.source_type}-${e.id}`} mittig />
+          <WebSortTabelle beschriftung="Konfi-Historie" {...historieTabelle.tabelle} zeilen={sichtbar} zeileSchluessel={(e) => `${e.source_type}-${e.id}`} mittig />
           {eintraege.length > 3 && (
             <div className="web-karte__fuss">
               <WebKnopf art="text" klein onClick={() => setAlle((a) => !a)}>
@@ -419,10 +453,10 @@ export const KonfiZeitKarte: React.FC<{ zeit: KonfiZeit }> = ({ zeit }) => {
   const termine = Array.isArray(zeit.termine) ? zeit.termine : [];
   if (termine.length === 0) return null;
   const spalten: Array<WebSortSpalte<(typeof termine)[number]>> = [
-    { schluessel: 'name', kopf: 'Event', zelle: (t) => <span className="web-zelle-titel">{t.name}</span> },
-    { schluessel: 'datum', kopf: 'Datum', breite: '110px', zelle: (t) => datumKurz(t.datum) },
-    { schluessel: 'status', kopf: 'Stand', breite: '150px', zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
-    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', zelle: (t) => ((t.punkte ?? 0) > 0 ? <strong>+{t.punkte}</strong> : <span className="web-gedaempft">–</span>) },
+    { schluessel: 'name', kopf: 'Event', sortWert: (t) => t.name, zelle: (t) => <span className="web-zelle-titel">{t.name}</span> },
+    { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (t) => alsDatum(t.datum), zelle: (t) => datumKurz(t.datum) },
+    { schluessel: 'status', kopf: 'Stand', breite: '150px', sortWert: (t) => konfiZeitTerminStatus(t), zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
+    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (t) => t.punkte ?? 0, zelle: (t) => ((t.punkte ?? 0) > 0 ? <strong>+{t.punkte}</strong> : <span className="web-gedaempft">–</span>) },
   ];
   return (
     <WebKarte titel="Events der Konfi-Zeit" untertitel={mitEinheit(termine.length, 'Event', 'Events')} bund>

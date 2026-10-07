@@ -1,5 +1,9 @@
 # 17. Web-Fassung live am eigenen Rechner weiterbauen
 
+> **Übergabe 07.10.2026 abends.** Teil 1 und 3 sind erledigt und live (PR #229,
+> #230). Simon will weiter an der Web-Fassung arbeiten — die nächste Sitzung
+> beginnt mit „Wieder aufnehmen“ unten.
+
 Stand 07.10.2026. Simon will an der Web-Fassung (Browser ab 992 px) auf
 seinem Rechner weiterarbeiten und jede Änderung sofort im Browser sehen:
 „ich möchte bitte das live auf meinem rechner machen … und dann mach ich da
@@ -200,3 +204,42 @@ Simons Wort angefasst: die übrigen CSS-Doppelungen, die Zeitgeber-Kandidaten,
 die zweizeilige Filterzeile der Challenges und die Frage nach einer
 gemeinsamen Stelle für Beschriftungen, Reiter und Filter von App und
 Web-Fassung.
+
+## 5. Stand und Wieder aufnehmen (07.10.2026)
+
+**Erledigt und gemergt** (CHANGELOG `[Unreleased] - 2.4.0`):
+- #229: Personenseite (Events links, gleiche Spaltenbreiten, Badges/Stempel
+  als ein Raster mit Info bei Hover/Fokus), Stempel in den Challenges gleich,
+  Kacheln von Konfis/Team/Events auf `WebBildKarte` (Titel bzw. Name im Kopf),
+  Angaben immer mit Symbol (`components/web/angabeSymbole.ts`), Merkmale als
+  farbige Chips; behoben: weiße Detailseite beim ersten Klick, Teamer-Events
+  „gebucht = anwesend“ (`teamerEvents[].attendance_status`, additiv).
+- #230: alle Tabellen per Spaltenkopf sortierbar (`sortWert`,
+  `utils/tabelleSortieren.ts`), Aktivitäten (Mehr) und gemeldete Aktivitäten
+  (Mitmachen) als Liste/Kacheln, Teilnehmerliste mit kompakten
+  Anwesenheitsknöpfen, `PUT /admin/activities/requests/:id` antwortet vor
+  den Pushes (1230 → 27 ms lokal, Pushes verzögert).
+
+**Bauregeln, die dabei entstanden sind:**
+- Jede Kachel ist `WebBildKarte` (`components/web/`); keine eigene Kartenform.
+- Jede Detailseite gibt in allen Zuständen `WebDetailSeite` zurück (`zustand`
+  für Laden/Fehler) — nie zwischendurch `WebSeite`, sonst bleibt die Seite
+  nach dem Übergang unsichtbar. Wächter: `webDetailSeiteEinGeruest.test.ts`.
+- Neue Angaben-Bezeichnung → Eintrag in `angabeSymbole.ts`.
+- Neue Tabellenspalte → `sortWert` mitgeben.
+- Den farbigen Kreis im Kartenkopf (wie `app-section-icon`) will Simon nicht.
+
+**Offen bei Simon:** fachliche Reihenfolge der Status-Spalten; Punkte-Verlauf
+vor dem Kürzen sortieren (beides in `docs/offene-befunde.md`).
+
+**Wieder aufnehmen** (Schritte aus Teil 1, mit zwei Abweichungen):
+- **Backend auf Port 5556**, nicht 5555: Ein laufender Android-Emulator belegt
+  5555 (adb) und fängt die Anfragen ab. Also `PORT=5556` beim Backend und
+  `VITE_API_URL=http://localhost:5556/api` bei der Oberfläche.
+- **Node 26** liegt unter `/opt/homebrew/opt/node@26/bin` (Standard-`node` ist 22).
+- Läuft `konfi-quest-e2e-db-1` noch, sind die Testdaten da (Seed plus
+  Aktivitäten, Badges, Stempel, Pflicht- und Team-Events, gemeldete
+  Aktivitäten „Messung …“). Nach einem Neustart von Docker: Seed und Daten
+  neu anlegen wie in Teil 1.
+- Backend-Tests nie gegen 5444 laufen lassen (leert Simons Ansicht), sondern
+  `docker compose -f backend/docker-compose.test.yml` auf 5433.

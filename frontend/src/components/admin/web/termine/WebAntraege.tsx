@@ -1,4 +1,5 @@
-// Die Antraege der Leitung als Tabelle (Web-Fassung von Mitmachen, 03.10.2026):
+// Die Antraege der Leitung als Tabelle oder Kacheln (Web-Fassung von
+// Mitmachen, 03.10.2026; Kacheln wie die Challenges seit 07.10.2026):
 // was Konfis und Team als Aktivitaet gemeldet haben und auf eine Entscheidung
 // wartet. Status als Marke und als Filter (Offen, Verbucht, Abgelehnt, Alle).
 //
@@ -9,7 +10,15 @@
 
 import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ANTWORTEN, ICON_KAMERA_GEFUELLT, ICON_TEXTDOKUMENT } from '../../../shared/icons';
+import {
+  ICON_AKTION_GEFUELLT,
+  ICON_ANTWORTEN,
+  ICON_KAMERA_GEFUELLT,
+  ICON_POKAL_GEFUELLT,
+  ICON_TERMIN_GEFUELLT,
+  ICON_TEXTDOKUMENT,
+} from '../../../shared/icons';
+import { initialen } from '../../../../utils/konfiListe';
 import { datumKurz } from '../../../../utils/dateUtils';
 import { suchTreffer, suchbegriff, type PillTon } from '../../../../utils/supportWeb';
 import WebChips from '../../../web/WebChips';
@@ -19,6 +28,9 @@ import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import WebTreffer from '../../../web/WebTreffer';
+import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
+import WebBildKarte, { WebBildKarteSymbol } from '../../../web/WebBildKarte';
+import { useAnsicht } from '../../../web/useAnsicht';
 import { WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { ANTRAG_FILTER, type AntragAktionen, type AntragFilter, type AntragZeile } from './typen';
@@ -36,6 +48,19 @@ const STATUS: Record<AntragZeile['status'], { text: string; ton: PillTon }> = {
   pending: { text: 'Offen', ton: 'warnung' },
   approved: { text: 'Verbucht', ton: 'erfolg' },
   rejected: { text: 'Abgelehnt', ton: 'fehler' },
+};
+
+/** Kopf der Kachel in der Farbe des Stands: offen orange, verbucht gruen, abgelehnt rot. */
+const KOPF: Record<AntragZeile['status'], { akzent: string; dunkel: string }> = {
+  pending: { akzent: 'var(--app-color-warning)', dunkel: 'var(--app-color-warning)' },
+  approved: { akzent: 'var(--app-color-success)', dunkel: 'var(--app-color-success-strong)' },
+  rejected: { akzent: 'var(--app-color-danger)', dunkel: 'var(--app-color-danger)' },
+};
+
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
 };
 
 const LEER_TEXT: Record<AntragFilter, string> = {
@@ -60,6 +85,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
   const antraege = useMemo<AntragZeile[]>(() => (Array.isArray(roh) ? [...roh] : []), [roh]);
   const [filter, setFilter] = useFilterAusAdresse<AntragFilter>('/admin/events', ANTRAG_FILTER, 'offen');
   const [suche, setSuche] = useState('');
+  const [ansicht, setAnsicht] = useAnsicht('antraege', 'liste');
 
   const zaehlen = useMemo(() => ({
     offen: antraege.filter((a) => a.status === 'pending').length,
@@ -86,12 +112,14 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       schluessel: 'eingang',
       kopf: 'Eingang',
       breite: '112px',
+      sortWert: (a) => zeitpunkt(a.created_at),
       zelle: (a) => <span title={a.created_at}>{datumKurz(a.created_at)}</span>,
     },
     {
       schluessel: 'person',
       kopf: 'Von',
       breite: '22%',
+      sortWert: (a) => a.konfi_name,
       zelle: (a) => (
         <>
           <span className="web-zelle-titel"><WebTreffer text={a.konfi_name} suche={suche} /></span>
@@ -104,6 +132,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
     {
       schluessel: 'aktivitaet',
       kopf: 'Aktivität',
+      sortWert: (a) => a.activity_name,
       zelle: (a) => (
         <>
           <span className="web-zelle-titel"><WebTreffer text={a.activity_name} suche={suche} /></span>
@@ -119,6 +148,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       kopf: 'Stattgefunden',
       breite: '120px',
       optional: true,
+      sortWert: (a) => zeitpunkt(a.requested_date),
       zelle: (a) => (
         <>
           <span className="web-zelle-titel web-zelle-normal">{datumKurz(a.requested_date)}</span>
@@ -136,6 +166,8 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       kopf: 'Punkte',
       breite: '112px',
       optional: true,
+      // Team-Antraege tragen keine Punkte und stehen deshalb unten.
+      sortWert: (a) => (a.activity_target_role === 'teamer' ? null : a.activity_points ?? 0),
       // Antraege des Teams sind reiner Nachweis: keine Punkte, keine Art.
       zelle: (a) => (a.activity_target_role === 'teamer'
         ? <span className="web-gedaempft">–</span>
@@ -150,6 +182,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       schluessel: 'status',
       kopf: 'Status',
       breite: '112px',
+      sortWert: (a) => STATUS[a.status].text,
       zelle: (a) => <WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>,
     },
     {
@@ -199,9 +232,57 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Aktivitäten durchsuchen" platzhalter="Person oder Aktivität suchen" wert={suche} onWert={setSuche} />
+          {/* Der Umschalter steht immer ganz rechts neben der Suche. */}
+          <WebAnsichtUmschalter wert={ansicht} onWert={setAnsicht} />
         </div>
       </div>
 
+      {sichtbar.length > 0 && ansicht === 'kacheln' ? (
+        <ul className="web-bildkarten" aria-label="Gemeldete Aktivitäten">
+          {sichtbar.map((a) => {
+            const team = a.activity_target_role === 'teamer';
+            const art = team ? 'Team' : a.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+            return (
+              <li key={a.id} className="web-bildkarten__eintrag">
+                <WebBildKarte
+                  akzent={KOPF[a.status].akzent}
+                  akzentDunkel={KOPF[a.status].dunkel}
+                  symbol={<WebBildKarteSymbol text={initialen(a.konfi_name)} />}
+                  label={[art, team ? '' : a.jahrgang_name].filter(Boolean).join(' · ')}
+                  titelImKopf
+                  titel={<WebTreffer text={a.konfi_name} suche={suche} />}
+                  onTitel={() => aktionen.pruefen(a)}
+                  titelBeschriftung={`Aktivität von ${a.konfi_name} ${a.status === 'pending' ? 'prüfen' : 'ansehen'}`}
+                  marken={<WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>}
+                  text={a.comment ? `„${a.comment}“` : undefined}
+                  angaben={[
+                    { icon: ICON_AKTION_GEFUELLT, inhalt: <WebTreffer text={a.activity_name} suche={suche} />, farbe: 'var(--app-color-activities)' },
+                    { icon: ICON_TERMIN_GEFUELLT, inhalt: `Stattgefunden am ${datumKurz(a.requested_date)} · gemeldet am ${datumKurz(a.created_at)}`, farbe: 'var(--app-color-events)' },
+                    !team && a.activity_points && { icon: ICON_POKAL_GEFUELLT, inhalt: `${a.activity_points}P ${art}`, farbe: 'var(--app-color-warning)' },
+                    a.photo_filename && { icon: ICON_KAMERA_GEFUELLT, inhalt: 'Mit Nachweisfoto', farbe: 'var(--app-color-konfis)' },
+                    a.status === 'rejected' && a.admin_comment && { icon: ICON_ANTWORTEN, inhalt: `Grund der Ablehnung: ${a.admin_comment}`, farbe: 'var(--app-color-danger)' },
+                  ]}
+                  fuss={a.status === 'pending' ? (
+                    <WebKnopf klein art="primaer" vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} prüfen`}>
+                      Prüfen
+                    </WebKnopf>
+                  ) : (
+                    <>
+                      <WebKnopf klein vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} ansehen`}>
+                        Ansehen
+                      </WebKnopf>
+                      <WebKnopf klein vorn onClick={() => aktionen.zuruecksetzen(a)} aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren">
+                        <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
+                        Zurücksetzen
+                      </WebKnopf>
+                    </>
+                  )}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
       <div className="web-karte">
         {sichtbar.length > 0 ? (
           <WebTabelle
@@ -222,6 +303,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
           />
         )}
       </div>
+      )}
     </>
   );
 };

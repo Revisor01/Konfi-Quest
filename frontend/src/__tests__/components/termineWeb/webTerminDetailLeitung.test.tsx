@@ -193,6 +193,12 @@ describe('Konfis: Anwesenheit', () => {
     await oeffne();
     const mia = within(umschalter('Mia Muster'));
     expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'true');
+    // Kompakt, damit der Status Platz hat (Simon, 07.10.2026): nur das Symbol, gruen bzw. rot verbucht.
+    expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveTextContent(/^$/);
+    expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveClass('web-umschalter__knopf--anwesend');
+    expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveClass('web-umschalter__knopf--abwesend');
+    // Oben ausgerichtet: ein zweizeiliger Stand zieht Name und Knoepfe nicht in die Mitte.
+    expect((mia.getByRole('button', { name: 'Anwesend' }).closest('table') as HTMLElement)).not.toHaveClass('web-tabelle--mittig');
     expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveAttribute('aria-pressed', 'false');
     const kim = within(umschalter('Kim Konfi'));
     expect(kim.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'false');
@@ -382,6 +388,34 @@ describe('Warteliste und Team', () => {
     expect(abmeldungen).toHaveTextContent('Krank');
   });
 
+  it('Abmeldungen sortieren nach Name und Zeitpunkt, ein zweiter Klick dreht', async () => {
+    zustand.detail = freizeit({
+      unregistrations: [
+        { id: 1, konfi_name: 'Ben Beispiel', unregistered_at: '2026-10-01T08:00:00Z', reason: 'Krank' },
+        { id: 2, konfi_name: 'Anna Abend', unregistered_at: '2026-10-02T08:00:00Z', reason: 'Urlaub' },
+        { id: 3, konfi_name: 'Carl Clever', unregistered_at: '2026-09-28T08:00:00Z', reason: '' },
+      ],
+    });
+    await oeffne();
+    const namen = () => within(karte('Abmeldungen (3)')).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[0].textContent);
+    const kopf = (name: RegExp) => within(karte('Abmeldungen (3)')).getByRole('columnheader', { name });
+    expect(namen()).toEqual(['Ben Beispiel', 'Anna Abend', 'Carl Clever']);
+    fireEvent.click(within(kopf(/^Name/)).getByRole('button'));
+    expect(kopf(/^Name/)).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen()).toEqual(['Anna Abend', 'Ben Beispiel', 'Carl Clever']);
+    fireEvent.click(within(kopf(/^Name/)).getByRole('button'));
+    expect(namen()).toEqual(['Carl Clever', 'Ben Beispiel', 'Anna Abend']);
+    fireEvent.click(within(kopf(/^Abgemeldet am/)).getByRole('button'));
+    expect(namen()).toEqual(['Carl Clever', 'Ben Beispiel', 'Anna Abend']);
+    fireEvent.click(within(kopf(/^Abgemeldet am/)).getByRole('button'));
+    expect(namen()).toEqual(['Anna Abend', 'Ben Beispiel', 'Carl Clever']);
+    // Ohne Grund steht unten -- in beiden Richtungen.
+    fireEvent.click(within(kopf(/^Grund/)).getByRole('button'));
+    expect(namen()).toEqual(['Ben Beispiel', 'Anna Abend', 'Carl Clever']);
+    fireEvent.click(within(kopf(/^Grund/)).getByRole('button'));
+    expect(namen()).toEqual(['Anna Abend', 'Ben Beispiel', 'Carl Clever']);
+  });
+
   it('Event nur für das Team: keine Konfi-Tabelle', async () => {
     zustand.detail = freizeit({ teamer_only: true, participants: [TEILNEHMENDE[4]] });
     await oeffne();
@@ -428,6 +462,30 @@ describe('Zeitfenster', () => {
     expect(zeilen[0]).toHaveTextContent('Voll');
     expect(zeilen[1]).toHaveTextContent('1/4');
     expect(zeilen[1]).toHaveTextContent('Frei');
+  });
+
+  it('"Belegt" und "Zeitfenster" sortieren, ein zweiter Klick dreht', async () => {
+    zustand.detail = freizeit({
+      has_timeslots: true,
+      timeslots: [
+        { id: 1, start_time: '2026-10-10T09:00:00Z', end_time: '2026-10-10T10:00:00Z', max_participants: 4, registered_count: 3 },
+        { id: 2, start_time: '2026-10-10T08:00:00Z', end_time: '2026-10-10T09:00:00Z', max_participants: 4, registered_count: 4 },
+        { id: 3, start_time: '2026-10-10T10:00:00Z', end_time: '2026-10-10T11:00:00Z', max_participants: 4, registered_count: 1 },
+      ],
+    });
+    await oeffne();
+    const belegung = () => within(karte('Zeitfenster (3)')).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[1].textContent);
+    const kopf = (name: RegExp) => within(karte('Zeitfenster (3)')).getByRole('columnheader', { name });
+    expect(belegung()).toEqual(['3/4', '4/4', '1/4']);
+    fireEvent.click(within(kopf(/^Belegt/)).getByRole('button'));
+    expect(kopf(/^Belegt/)).toHaveAttribute('aria-sort', 'ascending');
+    expect(belegung()).toEqual(['1/4', '3/4', '4/4']);
+    fireEvent.click(within(kopf(/^Belegt/)).getByRole('button'));
+    expect(belegung()).toEqual(['4/4', '3/4', '1/4']);
+    fireEvent.click(within(kopf(/^Zeitfenster/)).getByRole('button'));
+    expect(belegung()).toEqual(['4/4', '3/4', '1/4']);
+    fireEvent.click(within(kopf(/^Zeitfenster/)).getByRole('button'));
+    expect(belegung()).toEqual(['1/4', '3/4', '4/4']);
   });
 });
 

@@ -47,6 +47,12 @@ export interface WebTeamerMaterialProps {
   onLink: (url: string) => void;
 }
 
+/** Wie viel am Material haengt (Dateien, Links, Events) -- danach sortiert die Spalte „Inhalt"; ohne Inhalt unten. */
+const inhaltAnzahl = (m: MaterialListeneintrag): number | null => {
+  const summe = (m.file_count ?? 0) + (m.link_count ?? (m.link_url ? 1 : 0)) + (m.event_count ?? 0);
+  return summe > 0 ? summe : null;
+};
+
 const inhaltZeile = (m: MaterialListeneintrag): React.ReactNode => {
   const links = m.link_count ?? (m.link_url ? 1 : 0);
   const teile = [
@@ -95,6 +101,7 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
       schluessel: 'titel',
       kopf: 'Material',
       breite: '46%',
+      sortWert: (m) => m.title,
       zelle: (m) => (
         <span className="web-person-zelle">
           <WebSymbol icon={m.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT} ton="material" />
@@ -110,12 +117,13 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
       kopf: 'Jahrgänge',
       optional: true,
       breite: '22%',
+      sortWert: (m) => (m.jahrgaenge ?? []).map((j) => j.name).join(', ') || null,
       zelle: (m) => {
         const namen = (m.jahrgaenge ?? []).map((j) => j.name);
         return namen.length > 0 ? <span className="web-zelle-leise">{namen.join(', ')}</span> : <span className="web-gedaempft">–</span>;
       },
     },
-    { schluessel: 'inhalt', kopf: 'Inhalt', zelle: inhaltZeile },
+    { schluessel: 'inhalt', kopf: 'Inhalt', sortWert: inhaltAnzahl, zelle: inhaltZeile },
   ];
 
   const tabelle = (titel: string, zeilen: readonly MaterialListeneintrag[], beschriftung: string) => (

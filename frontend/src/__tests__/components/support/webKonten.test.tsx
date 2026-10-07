@@ -319,3 +319,25 @@ describe('Support-Konten: zwei Gesichter, eine Seite', () => {
     expect(h.apiGet).not.toHaveBeenCalled();
   });
 });
+
+describe('Support-Konten (Web): sortieren nach Spalte', () => {
+  const kopf = (name: string) => within(screen.getByRole('table', { name: 'Support-Konten' })).getByRole('columnheader', { name });
+  const benutzernamen = () => zeilen().map((z) => zelle(z, 1).textContent);
+
+  it('Klick auf "Name" ordnet aufsteigend, der zweite Klick absteigend', async () => {
+    await oeffnen();
+    expect(benutzernamen()).toEqual(['support1', 'support2', 'support3']);
+    fireEvent.click(within(kopf('Name')).getByRole('button'));
+    expect(benutzernamen()).toEqual(['support3', 'support1', 'support2']);
+    expect(kopf('Name')).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.click(within(kopf('Name')).getByRole('button'));
+    expect(benutzernamen()).toEqual(['support2', 'support1', 'support3']);
+    expect(kopf('Name')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('Aktionen sind nicht sortierbar', async () => {
+    await oeffnen();
+    expect(within(kopf('Aktionen')).queryByRole('button')).toBeNull();
+    expect(kopf('Aktionen')).not.toHaveAttribute('aria-sort');
+  });
+});

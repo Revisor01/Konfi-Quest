@@ -81,6 +81,7 @@ const WebEinladung: React.FC<WebEinladungProps> = (p) => {
     {
       schluessel: 'jahrgang',
       kopf: 'Jahrgang',
+      sortWert: (c) => c.jahrgang_name,
       zelle: (c) => (
         <span className="web-person-zelle">
           <WebSymbol icon={ICON_QRCODE_GEFUELLT} ton="erfolg" />
@@ -92,6 +93,7 @@ const WebEinladung: React.FC<WebEinladungProps> = (p) => {
       schluessel: 'code',
       kopf: 'Code',
       breite: '150px',
+      sortWert: (c) => c.invite_code,
       zelle: (c) => <span className="web-code">{c.invite_code}</span>,
     },
     {
@@ -100,12 +102,14 @@ const WebEinladung: React.FC<WebEinladungProps> = (p) => {
       zahl: true,
       breite: '100px',
       optional: true,
+      sortWert: (c) => c.used_count || 0,
       zelle: (c) => c.used_count || 0,
     },
     {
       schluessel: 'gueltig',
       kopf: 'Gültigkeit',
       breite: '210px',
+      sortWert: (c) => (c.expires_at ? new Date(c.expires_at) : null),
       zelle: (c) => <WebPill ton={ablaufTon(c.expires_at)} punkt>{p.ablaufSatz(c.expires_at)}</WebPill>,
     },
     {

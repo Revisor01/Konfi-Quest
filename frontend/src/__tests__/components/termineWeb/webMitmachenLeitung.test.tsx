@@ -482,6 +482,16 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(routerPush).toHaveBeenCalledWith('/admin/events/202', 'none', 'push');
   });
 
+  it('Liste: vor dem Namen ein Kreis mit dem Stand -- Farbe und Symbol je Stand, Pflicht im Rot des Chips', async () => {
+    await kachelnOeffnen();
+    waehle('Liste');
+    const kreis = (name: string) => zeileVon(name).querySelector('.web-symbol') as HTMLElement;
+    expect(kreis('Sonntagsgottesdienst')).toHaveAttribute('data-stand', 'Offen');
+    expect(kreis('Sonntagsgottesdienst')).toHaveAttribute('aria-hidden', 'true');
+    expect(kreis('Konfi-Tag')).toHaveAttribute('data-stand', 'Pflicht');
+    expect(kreis('Konfi-Tag').style.background).toBe('var(--app-color-events)');
+  });
+
   it('abgesagt: Marke und Grund auf der Karte, der Titel durchgestrichen -- in Liste und Kacheln', async () => {
     await kachelnOeffnen();
     fireEvent.click(chip(/^Abgesagt/));

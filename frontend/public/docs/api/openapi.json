@@ -10454,7 +10454,7 @@
           "Aktivitäten & Anträge"
         ],
         "summary": "Antrag genehmigen oder ablehnen",
-        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt. Die angelegte Zuordnung traegt seit 26.09.2026 den gutgeschriebenen Wert (user_activities.points = activities.points zum Zeitpunkt der Genehmigung, Migration 163; Punkte/Termine BF-02, behoben).\n",
+        "description": "Setzt den Status eines ausstehenden Antrags auf approved oder rejected. Bei approved werden die Punkte gutgeschrieben und Badges geprüft. Bereits entschiedene Anträge werden mit 400 abgelehnt. Die angelegte Zuordnung traegt seit 26.09.2026 den gutgeschriebenen Wert (user_activities.points = activities.points zum Zeitpunkt der Genehmigung, Migration 163; Punkte/Termine BF-02, behoben). GEAENDERT 07.10.2026: Postfach-Eintrag (activity_request_decision), Status-Push, Level-Up-Push und die Mitteilungen zu neuen Abzeichen laufen erst nach der Antwort; die Abzeichen selbst werden weiter vor der Antwort angelegt. Die Antwort kam vorher erst nach allen Pushes (in Produktion bis 1524 ms). Antwortform unverändert: { message, newBadges } mit newBadges = { count, badges } beim Genehmigen und 0 beim Ablehnen.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
