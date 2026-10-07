@@ -379,7 +379,8 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
     it('die Spalten: Challenge, Zeitraum, Status und der eigene Stand -- ohne Zahlen und Knoepfe der Leitung', () => {
       render(<KonfiChallengesPage />);
       expect(within(tabelle()).getAllByRole('columnheader').map((k) => k.textContent)).toEqual(['Challenge', 'Zeitraum', 'Status', 'Dein Stand']);
-      expect(within(tabelle()).queryByRole('button')).toBeNull();
+      // Knöpfe nur im Kopf zum Sortieren (07.10.2026) -- in den Zeilen keine Knöpfe der Leitung.
+      expect(within(tabelle()).getAllByRole('row').slice(1).flatMap((z) => within(z).queryAllByRole('button'))).toEqual([]);
       expect(tabelle()).not.toHaveTextContent('Beiträge');
       expect(screen.queryByRole('button', { name: 'Neue Challenge' })).toBeNull();
     });

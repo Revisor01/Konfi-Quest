@@ -83,6 +83,12 @@ export interface WebTerminDetailLeitungProps {
 
 const ZURUECK = { href: '/admin/events', text: 'Alle Events' };
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   const { eventData, teilnehmende, aktionen, isOnline, darfVerwalten, darfEintragen } = p;
 
@@ -171,12 +177,13 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
 
   const zeitfenster = eventData.has_timeslots && eventData.timeslots ? eventData.timeslots : [];
   const zeitfensterSpalten: Array<WebSpalte<(typeof zeitfenster)[number]>> = [
-    { schluessel: 'zeit', kopf: 'Zeitfenster', zelle: (s) => `${formatEventTime(s.start_time)} – ${formatEventTime(s.end_time)}` },
-    { schluessel: 'belegt', kopf: 'Belegt', zahl: true, zelle: (s) => `${s.registered_count || 0}/${s.max_participants}` },
+    { schluessel: 'zeit', kopf: 'Zeitfenster', sortWert: (s) => s.start_time || null, zelle: (s) => `${formatEventTime(s.start_time)} – ${formatEventTime(s.end_time)}` },
+    { schluessel: 'belegt', kopf: 'Belegt', zahl: true, sortWert: (s) => s.registered_count || 0, zelle: (s) => `${s.registered_count || 0}/${s.max_participants}` },
     {
       schluessel: 'wartend',
       kopf: 'Warteliste',
       zahl: true,
+      sortWert: (s) => (s as { waitlist_count?: number }).waitlist_count || 0,
       zelle: (s) => {
         const n = (s as { waitlist_count?: number }).waitlist_count || 0;
         return n > 0 ? n : <span className="web-gedaempft">–</span>;
@@ -185,6 +192,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
     {
       schluessel: 'status',
       kopf: 'Status',
+      sortWert: (s) => ((s.registered_count || 0) >= s.max_participants ? 'Voll' : 'Frei'),
       zelle: (s) => ((s.registered_count || 0) >= s.max_participants
         ? <WebPill ton="fehler">Voll</WebPill>
         : <WebPill ton="erfolg">Frei</WebPill>),
@@ -319,9 +327,9 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
           <WebTabelle
             beschriftung="Abmeldungen"
             spalten={[
-              { schluessel: 'name', kopf: 'Name', breite: '28%', zelle: (u) => <span className="web-zelle-titel">{u.konfi_name}</span> },
-              { schluessel: 'am', kopf: 'Abgemeldet am', breite: '168px', zelle: (u) => datumUhrzeit(u.unregistered_at) },
-              { schluessel: 'grund', kopf: 'Grund', zelle: (u) => u.reason || <span className="web-gedaempft">–</span> },
+              { schluessel: 'name', kopf: 'Name', breite: '28%', sortWert: (u) => u.konfi_name, zelle: (u) => <span className="web-zelle-titel">{u.konfi_name}</span> },
+              { schluessel: 'am', kopf: 'Abgemeldet am', breite: '168px', sortWert: (u) => zeitpunkt(u.unregistered_at), zelle: (u) => datumUhrzeit(u.unregistered_at) },
+              { schluessel: 'grund', kopf: 'Grund', sortWert: (u) => u.reason || null, zelle: (u) => u.reason || <span className="web-gedaempft">–</span> },
             ] satisfies Array<WebSpalte<Unregistration>>}
             zeilen={p.abmeldungen}
             zeileSchluessel={(u) => u.id}

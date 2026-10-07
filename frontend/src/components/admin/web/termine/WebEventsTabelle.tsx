@@ -79,6 +79,12 @@ export interface WebEventsTabelleProps {
   aktionen: TerminAktionen;
 }
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, jahrgaenge, darfVerwalten, aktionen }) => {
   const [zeit, setZeit] = useFilterAusAdresse<ZeitFilter>('/admin/events', ZEIT_FILTER, 'aktuell');
   const [suche, setSuche] = useState('');
@@ -128,6 +134,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'event',
       kopf: 'Event',
       breite: '25%',
+      sortWert: (e) => e.name,
       zelle: (e) => {
         const abgesagtes = istAbgesagt(e);
         const jahrgaenge = jahrgaengeZeile(e);
@@ -152,6 +159,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'wann',
       kopf: 'Wann',
       breite: '140px',
+      sortWert: (e) => zeitpunkt(e.event_date),
       zelle: (e) => {
         const { datum, zeit: uhr } = zeitspanneKurz(e);
         return (
@@ -167,6 +175,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       kopf: 'Ort',
       breite: '15%',
       optional: true,
+      sortWert: (e) => e.location || kategorienText(e) || null,
       zelle: (e) => {
         const kategorienZeile = kategorienText(e);
         return e.location || kategorienZeile ? (
@@ -181,6 +190,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'teilnahme',
       kopf: 'Teilnahme',
       breite: '120px',
+      sortWert: (e) => e.registered_count || 0,
       zelle: (e) => {
         const zahlen = leitungFakten(e).filter((f) => f.art === 'plaetze' || f.art === 'team' || f.art === 'warteliste');
         return zahlen.length > 0 ? <WebFakten fakten={zahlen} spalte /> : <span className="web-gedaempft">–</span>;
@@ -191,6 +201,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       kopf: 'Punkte',
       breite: '104px',
       optional: true,
+      sortWert: (e) => e.points || 0,
       zelle: (e) => {
         const punkte = leitungFakten(e).filter((f) => f.art === 'punkte' || f.art === 'punkteart');
         return punkte.length > 0 ? <WebFakten fakten={punkte} spalte /> : <span className="web-gedaempft">–</span>;
@@ -200,6 +211,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'status',
       kopf: 'Status',
       breite: '168px',
+      sortWert: (e) => leitungListeStatus(e).text,
       zelle: (e) => {
         const s = leitungListeStatus(e);
         return <WebTerminMarken status={s} event={e} teamZeigen serieZeigen />;

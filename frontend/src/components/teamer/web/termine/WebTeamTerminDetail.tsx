@@ -85,6 +85,7 @@ const WerKommt: React.FC<{ titel: string; personen: readonly Participant[] }> = 
       schluessel: 'name',
       kopf: 'Name',
       breite: '40%',
+      sortWert: (x) => x.participant_name,
       zelle: (x) => (
         <>
           <span className="web-zelle-titel">{x.participant_name}</span>
@@ -95,6 +96,7 @@ const WerKommt: React.FC<{ titel: string; personen: readonly Participant[] }> = 
     {
       schluessel: 'status',
       kopf: 'Status',
+      sortWert: (x) => teilnahmeDarstellung(x).statusText,
       zelle: (x) => {
         const d = teilnahmeDarstellung(x);
         return (

@@ -86,6 +86,7 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
       schluessel: 'name',
       kopf: 'Name',
       breite: '26%',
+      sortWert: (p) => p.participant_name,
       zelle: (p) => (
         <>
           <span className="web-zelle-titel">{p.participant_name}</span>
@@ -102,6 +103,8 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
       schluessel: 'zeitfenster',
       kopf: 'Zeitfenster',
       breite: '128px',
+      // Beginn des Fensters; ohne Fenster unten.
+      sortWert: (p) => p.timeslot_start_time || null,
       zelle: (p) => (p.timeslot_start_time && p.timeslot_end_time
         ? `${formatEventTime(p.timeslot_start_time)} – ${formatEventTime(p.timeslot_end_time)}`
         : <span className="web-gedaempft">–</span>),
@@ -111,6 +114,7 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
   spalten.push({
     schluessel: 'status',
     kopf: 'Status',
+    sortWert: (p) => teilnahmeDarstellung(p).statusText,
     zelle: (p) => {
       const d = teilnahmeDarstellung(p);
       return (

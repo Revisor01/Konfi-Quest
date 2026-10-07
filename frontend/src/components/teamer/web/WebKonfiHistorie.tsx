@@ -48,6 +48,12 @@ export interface WebKonfiHistorieProps {
   onRueckblick: (eintrag: WrappedHistoryEntry) => void;
 }
 
+/** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
+const zeitpunkt = (wert?: string | null): number | null => {
+  const ms = wert ? new Date(wert).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
 const WebKonfiHistorie: React.FC<WebKonfiHistorieProps> = ({ punkte, badges, termine, rueckblick, onRueckblick }) => {
   const [offen, setOffen] = useState<number | null>(null);
   const sortiert = [...badges].sort((a, b) => new Date(b.awarded_date).getTime() - new Date(a.awarded_date).getTime());
@@ -64,10 +70,10 @@ const WebKonfiHistorie: React.FC<WebKonfiHistorieProps> = ({ punkte, badges, ter
             zeilen={termine}
             zeileSchluessel={(t) => t.event_id}
             spalten={[
-              { schluessel: 'datum', kopf: 'Datum', breite: '110px', zelle: (t) => datumKurz(t.datum) },
-              { schluessel: 'name', kopf: 'Event', zelle: (t) => <span className="web-zelle-titel">{t.name}</span> },
-              { schluessel: 'status', kopf: 'Stand', breite: '150px', zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
-              { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', zelle: (t) => ((t.punkte ?? 0) > 0 ? <strong>+{t.punkte}</strong> : <span className="web-gedaempft">–</span>) },
+              { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (t) => zeitpunkt(t.datum), zelle: (t) => datumKurz(t.datum) },
+              { schluessel: 'name', kopf: 'Event', sortWert: (t) => t.name, zelle: (t) => <span className="web-zelle-titel">{t.name}</span> },
+              { schluessel: 'status', kopf: 'Stand', breite: '150px', sortWert: (t) => konfiZeitTerminStatus(t), zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
+              { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (t) => t.punkte ?? 0, zelle: (t) => ((t.punkte ?? 0) > 0 ? <strong>+{t.punkte}</strong> : <span className="web-gedaempft">–</span>) },
             ]}
           />
         </WebKarte>
