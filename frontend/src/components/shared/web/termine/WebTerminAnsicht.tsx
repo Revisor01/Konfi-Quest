@@ -16,7 +16,7 @@ import type { Event } from '../../../../types/event';
 import type { WebAnsicht } from '../../../web/useAnsicht';
 import WebLink from '../../../web/WebLink';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
-import { WebAbsageZeile, WebFakten, WebTerminMarken } from './WebTerminBausteine';
+import { WebTerminSymbol, WebAbsageZeile, WebFakten, WebTerminMarken } from './WebTerminBausteine';
 import WebTerminKarte from './WebTerminKarte';
 import '../../../../theme/web/termine.css';
 
@@ -63,15 +63,18 @@ const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> =>
     kopf: 'Event',
     breite: '28%',
     sortWert: ({ event: e }) => e.name,
-    zelle: ({ event: e, href, unterzeile }) => (
-      <>
-        <WebLink href={href} className="web-link--zeile web-link--text web-termin-titel">
-          <span style={{ textDecoration: titelDekoration('liste', e) }}>{e.name}</span>
-          {istAbgesagt(e) && <span className="web-nur-vorlesen">, abgesagt</span>}
-        </WebLink>
-        {unterzeile && <span className="web-zelle-leise">{unterzeile}</span>}
-        <WebAbsageZeile event={e} />
-      </>
+    zelle: ({ event: e, href, unterzeile, status }) => (
+      <span className="web-person-zelle">
+        <WebTerminSymbol status={status} event={e} />
+        <span className="web-person-zelle__text">
+          <WebLink href={href} className="web-link--zeile web-link--text web-termin-titel">
+            <span style={{ textDecoration: titelDekoration('liste', e) }}>{e.name}</span>
+            {istAbgesagt(e) && <span className="web-nur-vorlesen">, abgesagt</span>}
+          </WebLink>
+          {unterzeile && <span className="web-zelle-leise">{unterzeile}</span>}
+          <WebAbsageZeile event={e} />
+        </span>
+      </span>
     ),
   },
   {

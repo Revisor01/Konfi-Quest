@@ -18,6 +18,11 @@ import {
   ICON_POKAL_GEFUELLT,
   ICON_SCHUTZ_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
+  ICON_SPERRE_GEFUELLT,
+  ICON_WARTEND_GEFUELLT,
+  ICON_ABSAGE,
+  ICON_UHRZEIT_GEFUELLT,
+  ICON_ZUSAGE_GEFUELLT,
 } from '../../icons';
 import SegmentZahl from '../../SegmentZahl';
 import WebPill from '../../../web/WebPill';
@@ -117,6 +122,40 @@ export const WebMerkmale: React.FC<{
     {serieZeigen && event.is_series && <WebPill title="Teil einer Event-Serie" icon={ICON_TERMIN_GEFUELLT} farbe="var(--app-color-info)">Serie</WebPill>}
   </>
 );
+
+/**
+ * Der Stand eines Events als Kreis vor dem Namen in der Liste -- wie die
+ * Initialen in der Konfi-Liste (Simon, 07.10.2026: „liste events bitte vorne
+ * ein icon das den status zeigt"). Farbe des Stands, Symbol je Wort; das Wort
+ * selbst steht in der Spalte Status, der Kreis ist fuer Vorleseprogramme
+ * deshalb ausgeblendet.
+ */
+const STAND_SYMBOL: Record<string, string> = {
+  Offen: ICON_TERMIN_GEFUELLT,
+  Bald: ICON_UHRZEIT_GEFUELLT,
+  Pflicht: ICON_SCHUTZ_GEFUELLT,
+  Warteliste: ICON_LISTE,
+  Ausgebucht: ICON_SPERRE_GEFUELLT,
+  Geschlossen: ICON_SPERRE_GEFUELLT,
+  Verbuchen: ICON_WARTEND_GEFUELLT,
+  Verbucht: ICON_ZUSAGE_GEFUELLT,
+  Abgesagt: ICON_ABSAGE,
+};
+
+export const WebTerminSymbol: React.FC<{
+  status: Pick<TerminStatus, 'text' | 'farbe'>;
+  event: Pick<Event, 'is_konfirmation'>;
+}> = ({ status, event }) => {
+  const icon = event.is_konfirmation && status.text !== 'Abgesagt'
+    ? ICON_FLAMME_GEFUELLT
+    : STAND_SYMBOL[status.text.split(' ')[0]] ?? ICON_TERMIN_GEFUELLT;
+  return (
+    // Pflicht im Rot des Pflicht-Chips, nicht in der Farbe "anmeldbar".
+    <span className="web-symbol" style={{ background: status.text === 'Pflicht' ? 'var(--app-color-events)' : status.farbe }} title={status.text} aria-hidden="true" data-stand={status.text}>
+      <IonIcon icon={icon} />
+    </span>
+  );
+};
 
 /** Status und Merkmale in einer Reihe. */
 export const WebTerminMarken: React.FC<{

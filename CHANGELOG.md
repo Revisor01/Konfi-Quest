@@ -98,6 +98,8 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- In der Event-Liste im Browser steht vor jedem Event ein farbiger Kreis mit
+  Symbol, der den Stand zeigt — wie die Initialen in der Konfi-Liste.
 - Das Annehmen oder Ablehnen einer gemeldeten Aktivität ist sofort erledigt;
   Mitteilung und Postfach-Eintrag an die Konfi folgen gleich danach.
 - Im Browser lässt sich jede Liste per Klick auf den Spaltennamen sortieren,

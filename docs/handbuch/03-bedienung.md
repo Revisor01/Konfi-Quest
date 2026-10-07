@@ -115,6 +115,12 @@ einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
 Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
 Klick auf eine Zeile oder Karte öffnet den Eintrag.
 
+In der Liste der Events steht vor jedem Namen ein farbiger Kreis mit dem
+Stand: Kalender für offen, Uhr für bald, Schild für Pflicht, Liste für
+Warteliste, Schloss für ausgebucht oder geschlossen, Sanduhr für zu
+verbuchen, Haken für verbucht, Kreuz für abgesagt und Flamme für die
+Konfirmation.
+
 Jede Tabelle im Browser lässt sich sortieren: Ein Klick auf den Namen einer
 Spalte ordnet nach ihr aufsteigend, ein zweiter Klick dreht die Richtung; ein
 kleiner Pfeil zeigt, wonach gerade sortiert ist. Leere Felder stehen immer

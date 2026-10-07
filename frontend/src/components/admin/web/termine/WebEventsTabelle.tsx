@@ -48,7 +48,7 @@ import { WebLeer } from '../../../web/WebZustaende';
 import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
 import { useAnsicht } from '../../../web/useAnsicht';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
-import { WebAbsageZeile, WebFakten, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
+import { WebTerminSymbol, WebAbsageZeile, WebFakten, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
 import WebEventAktionen from './WebEventAktionen';
 import WebEventsKacheln from './WebEventsKacheln';
 import { ZEIT_FILTER, type TerminAktionen, type ZeitFilter } from './typen';
@@ -139,7 +139,9 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
         const abgesagtes = istAbgesagt(e);
         const jahrgaenge = jahrgaengeZeile(e);
         return (
-          <>
+          <span className="web-person-zelle">
+            <WebTerminSymbol status={leitungListeStatus(e)} event={e} />
+            <span className="web-person-zelle__text">
             <WebLink
               href={`/admin/events/${e.id}`}
               className="web-link--zeile web-link--text web-termin-titel"
@@ -151,7 +153,8 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
             </WebLink>
             {jahrgaenge && <span className="web-zelle-leise">{jahrgaenge}</span>}
             <WebAbsageZeile event={e} />
-          </>
+            </span>
+          </span>
         );
       },
     },
