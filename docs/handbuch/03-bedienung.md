@@ -107,12 +107,19 @@ auf Handy und Tablet bleibt es immer bei der Reiterleiste.
 
 ### Im Browser zwischen Liste und Kacheln wählen
 
-Events, Challenges und die Konfis der Leitung lassen sich im Browser als
+Events, Challenges, die Konfis der Leitung, die Aktivitäten unter **Mehr** und
+die gemeldeten Aktivitäten unter **Mitmachen** lassen sich im Browser als
 **Liste** oder als **Kacheln** ansehen. Die Wahl steht in der Zeile mit Filtern
 und Suche ganz rechts, direkt neben der Suche. Die Liste ist eine Tabelle mit
 einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
 Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
 Klick auf eine Zeile oder Karte öffnet den Eintrag.
+
+Jede Tabelle im Browser lässt sich sortieren: Ein Klick auf den Namen einer
+Spalte ordnet nach ihr aufsteigend, ein zweiter Klick dreht die Richtung; ein
+kleiner Pfeil zeigt, wonach gerade sortiert ist. Leere Felder stehen immer
+unten. Bei Konfis und Team gilt dieselbe Ordnung auch für die Kacheln, dort
+wählst du sie unter **Sortieren**.
 
 Alle Karten sind gleich gebaut: oben ein farbiger Kopf mit Symbol — bei
 Challenges der Stempel, bei Events und Personen der Titel bzw. Name mit Art

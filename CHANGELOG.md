@@ -98,6 +98,10 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- Im Browser lässt sich jede Liste per Klick auf den Spaltennamen sortieren,
+  ein zweiter Klick dreht die Richtung.
+- Die Aktivitäten unter „Mehr“ und die gemeldeten Aktivitäten unter
+  „Mitmachen“ lassen sich im Browser auch als Kacheln ansehen.
 - In der Teilnehmerliste eines Events im Browser hat der Stand mehr Platz:
   Anwesend und Abwesend sind kompakte Knöpfe mit Symbol, verbucht grün bzw.
   rot.
