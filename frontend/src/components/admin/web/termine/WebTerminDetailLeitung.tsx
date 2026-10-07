@@ -18,15 +18,11 @@ import {
   ICON_ABSAGE,
   ICON_BEARBEITEN,
   ICON_CHAT,
-  ICON_DATEI_GEFUELLT,
   ICON_GESPERRT,
-  ICON_INFO_GEFUELLT,
   ICON_JAHRGANG,
   ICON_KOPIEREN,
   ICON_QRCODE,
   ICON_RUECKGAENGIG,
-  ICON_TERMIN_GEFUELLT,
-  ICON_UHRZEIT_GEFUELLT,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../../shared/icons';
 import { formatEventTime, istAbgesagt, zeitraumText } from '../../../shared/eventFormatting';
@@ -270,7 +266,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   const haupt = (
     <>
       {eventData.description && (
-        <WebKarte titel="Beschreibung" symbol={{ icon: ICON_INFO_GEFUELLT, farbe: 'events' }}>
+        <WebKarte titel="Beschreibung">
           <p className="web-beschreibung">{eventData.description}</p>
         </WebKarte>
       )}
@@ -319,7 +315,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
       )}
 
       {p.abmeldungen.length > 0 && (
-        <WebKarte titel={`Abmeldungen (${p.abmeldungen.length})`} symbol={{ icon: ICON_ABSAGE, farbe: 'danger' }} bund>
+        <WebKarte titel={`Abmeldungen (${p.abmeldungen.length})`} bund>
           <WebTabelle
             beschriftung="Abmeldungen"
             spalten={[
@@ -338,12 +334,12 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   // Rechts, schmal: die Angaben und was zu ihnen gehoert -- Zeitfenster, Serie, Material.
   const seite = (
     <>
-      <WebKarte titel="Angaben" symbol={{ icon: ICON_TERMIN_GEFUELLT, farbe: 'events' }}>
+      <WebKarte titel="Angaben">
         <WebTerminAngaben angaben={angaben} onMaterial={materialHinweis} />
       </WebKarte>
 
       {zeitfenster.length > 0 && (
-        <WebKarte titel={`Zeitfenster (${zeitfenster.length})`} symbol={{ icon: ICON_UHRZEIT_GEFUELLT, farbe: 'events' }} bund>
+        <WebKarte titel={`Zeitfenster (${zeitfenster.length})`} bund>
           <WebTabelle
             beschriftung="Zeitfenster"
             spalten={zeitfensterSpalten}
@@ -355,7 +351,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
       )}
 
       {serie.length > 0 && (
-        <WebKarte titel="Weitere Events dieser Serie" symbol={{ icon: ICON_TERMIN_GEFUELLT, farbe: 'info' }} bund>
+        <WebKarte titel="Weitere Events dieser Serie" bund>
           <ul className="web-liste-schlicht">
             {serie.map((s) => {
               const unbegrenzt = (s.max_participants || 0) === 0;
@@ -378,7 +374,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
 
       {p.materialien.length > 0 && (
         <section id="web-event-material" aria-label="Material">
-          <WebKarte titel={`Material (${p.materialien.length})`} symbol={{ icon: ICON_DATEI_GEFUELLT, farbe: 'material' }} bund>
+          <WebKarte titel={`Material (${p.materialien.length})`} bund>
             <ul className="web-liste-schlicht">
               {p.materialien.map((m) => (
                 <li key={m.id} className="web-liste-schlicht__zeile">

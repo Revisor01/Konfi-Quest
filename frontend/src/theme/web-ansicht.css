@@ -164,18 +164,6 @@ ion-content.web-inhalt {
   min-width: 0;
 }
 
-.web-karte__symbol {
-  flex: 0 0 auto;
-  width: 28px;
-  height: 28px;
-  margin: var(--app-abstand-winzig) 0 0;
-}
-
-.web-karte__kopftext {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
 .web-karte__kopf {
   display: flex;
   align-items: flex-start;
