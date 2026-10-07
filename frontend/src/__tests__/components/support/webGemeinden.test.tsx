@@ -461,3 +461,42 @@ describe('Gemeinden: zwei Gesichter, eine Seite', () => {
     expect(h.apiGet).not.toHaveBeenCalledWith('/support/gemeinden');
   });
 });
+
+describe('Gemeinden (Web): sortieren nach Spalte', () => {
+  const TAB = 'Gemeinden im Kirchenkreis Küstenland';
+  const namen = () => within(screen.getByRole('table', { name: TAB })).getAllByRole('row').slice(1)
+    .map((r) => r.querySelector('.web-zelle-titel')?.textContent);
+  const kopf = (name: string) => within(screen.getByRole('table', { name: TAB })).getByRole('columnheader', { name });
+
+  it('Klick auf "Gemeinde" ordnet nach Namen, der zweite Klick dreht', async () => {
+    antworten();
+    await zeigen();
+    // Die Seite ordnet schon alphabetisch; aufsteigend bleibt es dabei, absteigend dreht es.
+    expect(namen()).toEqual(['Kirchengemeinde Hafenstadt', 'Kirchengemeinde Musterdorf']);
+    fireEvent.click(within(kopf('Gemeinde')).getByRole('button'));
+    expect(namen()).toEqual(['Kirchengemeinde Hafenstadt', 'Kirchengemeinde Musterdorf']);
+    expect(kopf('Gemeinde')).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.click(within(kopf('Gemeinde')).getByRole('button'));
+    expect(namen()).toEqual(['Kirchengemeinde Musterdorf', 'Kirchengemeinde Hafenstadt']);
+    expect(kopf('Gemeinde')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('Klick auf "Konfis" ordnet nach Zahl', async () => {
+    antworten();
+    await zeigen();
+    expect(namen()).toEqual(['Kirchengemeinde Hafenstadt', 'Kirchengemeinde Musterdorf']);
+    fireEvent.click(within(kopf('Konfis')).getByRole('button'));
+    expect(namen()).toEqual(['Kirchengemeinde Musterdorf', 'Kirchengemeinde Hafenstadt']);
+    fireEvent.click(within(kopf('Konfis')).getByRole('button'));
+    expect(namen()).toEqual(['Kirchengemeinde Hafenstadt', 'Kirchengemeinde Musterdorf']);
+  });
+
+  it('"Status" stellt Lizenz mit Ende vor "Unbegrenzt"; der zweite Klick dreht', async () => {
+    antworten();
+    await zeigen();
+    fireEvent.click(within(kopf('Status')).getByRole('button'));
+    expect(namen()).toEqual(['Kirchengemeinde Musterdorf', 'Kirchengemeinde Hafenstadt']);
+    fireEvent.click(within(kopf('Status')).getByRole('button'));
+    expect(namen()).toEqual(['Kirchengemeinde Hafenstadt', 'Kirchengemeinde Musterdorf']);
+  });
+});

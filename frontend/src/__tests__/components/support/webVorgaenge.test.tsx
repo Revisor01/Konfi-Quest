@@ -579,3 +579,27 @@ describe('Vorgänge: zwei Gesichter, eine Seite', () => {
     expect(h.apiGet).not.toHaveBeenCalled();
   });
 });
+
+describe('Vorgänge (Web): sortieren nach Spalte', () => {
+  const kopf = (name: string) => within(screen.getByRole('table', { name: 'Vorgänge' })).getByRole('columnheader', { name });
+
+  it('Klick auf "Status" ordnet wie die Status-Auswahl (Neu, In Arbeit, Wartet), der zweite Klick dreht', async () => {
+    await zeigen();
+    expect(nummern()).toEqual(['1', '3', '2', '4']);
+    fireEvent.click(within(kopf('Status')).getByRole('button'));
+    // Gleicher Status behält die Reihenfolge der Seite (1 vor 4).
+    expect(nummern()).toEqual(['1', '4', '2', '3']);
+    expect(kopf('Status')).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.click(within(kopf('Status')).getByRole('button'));
+    expect(nummern()).toEqual(['3', '2', '1', '4']);
+    expect(kopf('Status')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('Klick auf "Nr." ordnet nach Nummer', async () => {
+    await zeigen();
+    fireEvent.click(within(kopf('Nr.')).getByRole('button'));
+    expect(nummern()).toEqual(['1', '2', '3', '4']);
+    fireEvent.click(within(kopf('Nr.')).getByRole('button'));
+    expect(nummern()).toEqual(['4', '3', '2', '1']);
+  });
+});

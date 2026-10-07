@@ -113,6 +113,7 @@ const WebStruktur: React.FC = () => {
     {
       schluessel: 'name',
       kopf: 'Kirchenkreis',
+      sortWert: (kk) => kk.name,
       zelle: (kk) => <span className="web-zelle-titel">{kk.name}</span>,
     },
     {
@@ -120,6 +121,7 @@ const WebStruktur: React.FC = () => {
       kopf: 'Gemeinden',
       breite: '120px',
       zahl: true,
+      sortWert: gemeindenVon,
       zelle: (kk) => {
         const n = gemeindenVon(kk);
         return n === null ? <span className="web-gedaempft">–</span> : String(n);

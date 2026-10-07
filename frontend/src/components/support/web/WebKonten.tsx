@@ -76,6 +76,7 @@ const WebKonten: React.FC = () => {
       schluessel: 'name',
       kopf: 'Name',
       breite: '17%',
+      sortWert: (k) => k.display_name,
       zelle: (k) => (
         <>
           <span className="web-zelle-titel">{k.display_name}{k.id === userId ? ' (du)' : ''}</span>
@@ -89,6 +90,7 @@ const WebKonten: React.FC = () => {
       schluessel: 'benutzername',
       kopf: 'Benutzername',
       breite: '140px',
+      sortWert: (k) => k.username,
       zelle: (k) => <span className="web-einzeilig">{k.username}</span>,
     },
     {
@@ -96,6 +98,7 @@ const WebKonten: React.FC = () => {
       kopf: 'E-Mail',
       breite: '16%',
       optional: true,
+      sortWert: (k) => k.email,
       zelle: (k) => (k.email
         ? <a className="web-link web-einzeilig" href={`mailto:${k.email}`}>{k.email}</a>
         : <span className="web-gedaempft">–</span>),
@@ -104,12 +107,14 @@ const WebKonten: React.FC = () => {
       schluessel: 'status',
       kopf: 'Status',
       breite: '100px',
+      sortWert: (k) => (k.is_active ? 'Aktiv' : 'Gesperrt'),
       zelle: (k) => <WebPill ton={k.is_active ? 'erfolg' : 'neutral'} punkt>{k.is_active ? 'Aktiv' : 'Gesperrt'}</WebPill>,
     },
     {
       schluessel: 'angemeldet',
       kopf: 'Zuletzt angemeldet',
       breite: '128px',
+      sortWert: (k) => (k.last_login_at ? Date.parse(k.last_login_at) : null),
       zelle: (k) => (k.last_login_at
         ? <span title={datumUhrzeit(k.last_login_at)}>{zeitpunktText(k.last_login_at)}</span>
         : <span className="web-gedaempft">noch nie</span>),

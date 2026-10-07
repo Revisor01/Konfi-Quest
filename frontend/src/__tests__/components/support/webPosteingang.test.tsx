@@ -643,3 +643,25 @@ describe('Posteingang: zwei Gesichter, eine Seite', () => {
     expect(server.aufrufe('get', '/support/mail/eingang')).toHaveLength(0);
   });
 });
+
+describe('Posteingang (Web): sortieren nach Spalte', () => {
+  const kopf = (name: string) => within(screen.getByRole('table', { name: TABELLE })).getByRole('columnheader', { name });
+
+  it('Klick auf "Von" ordnet nach Absender (Name, sonst Adresse), der zweite Klick dreht', async () => {
+    await zeigen();
+    fireEvent.click(within(kopf('Von')).getByRole('button'));
+    expect(betreffe()).toEqual(['Passwort vergessen?', 'Angebot', 'Rückfrage zur Lizenz', 'Pressemitteilung', 'Frage zu den Jahrgängen']);
+    expect(kopf('Von')).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.click(within(kopf('Von')).getByRole('button'));
+    expect(betreffe()).toEqual(['Frage zu den Jahrgängen', 'Pressemitteilung', 'Rückfrage zur Lizenz', 'Angebot', 'Passwort vergessen?']);
+    expect(kopf('Von')).toHaveAttribute('aria-sort', 'descending');
+  });
+
+  it('Klick auf "Datum" stellt die älteste Mail nach oben', async () => {
+    await zeigen();
+    fireEvent.click(within(kopf('Datum')).getByRole('button'));
+    expect(betreffe()).toEqual(['Pressemitteilung', 'Angebot', 'Passwort vergessen?', 'Frage zu den Jahrgängen', 'Rückfrage zur Lizenz']);
+    fireEvent.click(within(kopf('Datum')).getByRole('button'));
+    expect(betreffe()).toEqual(['Rückfrage zur Lizenz', 'Frage zu den Jahrgängen', 'Passwort vergessen?', 'Angebot', 'Pressemitteilung']);
+  });
+});

@@ -143,12 +143,14 @@ const WebPosteingang: React.FC = () => {
       schluessel: 'postfach',
       kopf: 'Postfach',
       breite: '92px',
+      sortWert: (m) => POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach,
       zelle: (m) => <WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill>,
     },
     {
       schluessel: 'von',
       kopf: 'Von',
       breite: '22%',
+      sortWert: (m) => m.von_name?.trim() || m.von_adresse,
       zelle: (m) => {
         const name = m.von_name?.trim();
         return (
@@ -162,6 +164,7 @@ const WebPosteingang: React.FC = () => {
     {
       schluessel: 'betreff',
       kopf: 'Betreff',
+      sortWert: (m) => m.betreff?.trim() || '(ohne Betreff)',
       zelle: (m) => {
         const anhaenge = (m.anhaenge ?? []).length;
         return (
@@ -191,6 +194,7 @@ const WebPosteingang: React.FC = () => {
       kopf: 'Datum',
       breite: '104px',
       zahl: true,
+      sortWert: (m) => Date.parse(m.gesendet_am),
       zelle: (m) => <span title={datumUhrzeit(m.gesendet_am)}>{zeitpunktText(m.gesendet_am)}</span>,
     },
     {

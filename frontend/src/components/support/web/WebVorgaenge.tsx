@@ -125,11 +125,13 @@ const WebVorgaenge: React.FC = () => {
       kopf: 'Nr.',
       breite: '56px',
       zahl: true,
+      sortWert: (v) => v.id,
       zelle: (v) => <span className="web-gedaempft">{v.id}</span>,
     },
     {
       schluessel: 'betreff',
       kopf: 'Betreff',
+      sortWert: (v) => v.betreff || '(ohne Betreff)',
       zelle: (v) => (
         <>
           <WebLink
@@ -148,12 +150,14 @@ const WebVorgaenge: React.FC = () => {
       kopf: 'Art',
       breite: '136px',
       optional: true,
+      sortWert: (v) => artKurz(v.art),
       zelle: (v) => <span className="web-einzeilig">{artKurz(v.art)}</span>,
     },
     {
       schluessel: 'gemeinde',
       kopf: 'Gemeinde',
       breite: '19%',
+      sortWert: (v) => v.gemeinde_name,
       zelle: (v) => (v.gemeinde_name
         ? <span className="web-einzeilig"><WebTreffer text={v.gemeinde_name} suche={auswahl.suche} /></span>
         : <span className="web-gedaempft web-einzeilig">Nicht zugeordnet</span>),
@@ -162,6 +166,8 @@ const WebVorgaenge: React.FC = () => {
       schluessel: 'status',
       kopf: 'Status',
       breite: '108px',
+      // Reihenfolge wie in jeder Status-Auswahl: Neu, In Arbeit, Wartet, Erledigt.
+      sortWert: (v) => STATUS_REIHE.indexOf(v.status),
       zelle: (v) => <StatusPill status={v.status} />,
     },
     {
@@ -169,6 +175,8 @@ const WebVorgaenge: React.FC = () => {
       kopf: 'Dringlichkeit',
       breite: '100px',
       optional: true,
+      // Dringendes beim ersten Klick oben.
+      sortWert: (v) => (v.dringlichkeit === 'dringend' ? 0 : 1),
       zelle: (v) => (v.dringlichkeit === 'dringend' ? <DringlichPill dringlichkeit={v.dringlichkeit} /> : <span className="web-gedaempft">Normal</span>),
     },
     {
@@ -176,6 +184,7 @@ const WebVorgaenge: React.FC = () => {
       kopf: archiv ? 'Archiviert' : 'Letzte Aktivität',
       breite: '108px',
       zahl: true,
+      sortWert: (v) => Date.parse(archiv && v.archiviert_am ? v.archiviert_am : v.letzte_aktivitaet),
       zelle: (v) => {
         const zeit = archiv && v.archiviert_am ? v.archiviert_am : v.letzte_aktivitaet;
         return <span title={datumUhrzeit(zeit)}>{zeitpunktText(zeit)}</span>;
@@ -186,6 +195,7 @@ const WebVorgaenge: React.FC = () => {
       kopf: 'Ungelesen',
       breite: '76px',
       zahl: true,
+      sortWert: (v) => v.ungelesen,
       zelle: (v) => (v.ungelesen > 0
         ? <span className="web-chip__zahl web-chip__zahl--rot">{v.ungelesen}</span>
         : <span className="web-gedaempft">–</span>),

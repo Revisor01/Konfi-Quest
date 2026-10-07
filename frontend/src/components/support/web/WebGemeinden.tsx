@@ -108,6 +108,21 @@ const Leitung: React.FC<{ gemeinde: SupportGemeinde; suche: string }> = ({ gemei
   );
 };
 
+/**
+ * Sortierwert der Status-Spalte: erst was Aufmerksamkeit braucht -- gesperrt,
+ * abgelaufen, Testphase, Lizenz, unbegrenzt --, innerhalb davon das fruehere
+ * Ende zuerst. Ein Text wie „Lizenz bis 01.02.2027" saehe nach Tag statt Jahr.
+ */
+function statusRang(g: SupportGemeinde): number {
+  const ende = g.trial_ends_at ? Date.parse(g.trial_ends_at) : NaN;
+  const hatEnde = !Number.isNaN(ende);
+  const rang = !g.is_active ? 0
+    : hatEnde && ende < Date.now() ? 1
+      : g.is_trial ? 2
+        : hatEnde ? 3 : 4;
+  return rang * 1e14 + (hatEnde ? ende : 0);
+}
+
 const Tabelle: React.FC<{
   gruppe: KirchenkreisGruppe;
   suche: string;
@@ -119,6 +134,7 @@ const Tabelle: React.FC<{
       schluessel: 'name',
       kopf: 'Gemeinde',
       breite: '20%',
+      sortWert: (g) => g.display_name,
       zelle: (g) => (
         <>
           <span className="web-zelle-titel"><WebTreffer text={g.display_name} suche={suche} /></span>
@@ -130,6 +146,7 @@ const Tabelle: React.FC<{
       schluessel: 'status',
       kopf: 'Status',
       breite: '16%',
+      sortWert: statusRang,
       zelle: (g) => {
         const laufzeit = laufzeitAngabe(g);
         return (
@@ -145,6 +162,7 @@ const Tabelle: React.FC<{
       kopf: 'Konfis',
       breite: '9%',
       zahl: true,
+      sortWert: (g) => g.konfi_count,
       zelle: (g) => {
         const anteil = limitAnteil(g);
         const ton = anteil === null ? 'info' : limitTon(anteil);
@@ -165,15 +183,16 @@ const Tabelle: React.FC<{
         );
       },
     },
-    { schluessel: 'team', kopf: 'Team', breite: '6%', zahl: true, optional: true, zelle: (g) => zahl(g.team_count) },
+    { schluessel: 'team', kopf: 'Team', breite: '6%', zahl: true, optional: true, sortWert: (g) => g.team_count, zelle: (g) => zahl(g.team_count) },
     {
       schluessel: 'lizenz',
       kopf: 'Wunschlizenz',
       breite: '10%',
       optional: true,
+      sortWert: (g) => lizenzFinden(g.wunsch_lizenz)?.name,
       zelle: (g) => lizenzFinden(g.wunsch_lizenz)?.name ?? <span className="web-gedaempft">–</span>,
     },
-    { schluessel: 'leitung', kopf: 'Gemeindeleitung', zelle: (g) => <Leitung gemeinde={g} suche={suche} /> },
+    { schluessel: 'leitung', kopf: 'Gemeindeleitung', sortWert: (g) => g.leitung[0]?.display_name, zelle: (g) => <Leitung gemeinde={g} suche={suche} /> },
     {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
