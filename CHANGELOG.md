@@ -237,6 +237,8 @@ Versionsüberschrift.
   Absturzberichte nicht mehr gleich zu Beginn ab; er läuft dann ohne beides.
 - Die Logik der Seiten liegt in Hooks, die App und Browser gemeinsam
   nutzen; die Bausteine der Web-Ansicht stehen an einer Stelle.
+- Die Android-App wird mit aktuellen Bauwerkzeugen gebaut; das Bundle ist
+  etwas kleiner, die Ressourcen schrumpfen um rund ein Viertel.
 
 ## [2.3.0] - 2026-10-02
 

@@ -258,8 +258,15 @@ Stand: 02.10.2026, gegen den Code geprüft.
      unkomprimierter DEX 4,13 MB. Erfüllt (grüner Haken): „Vollständiger
      Modus“ und „Entfernung von Ressourcen“. Nicht erfüllt: „Optimierte
      Entfernung von Ressourcen“ und „Klassen neu bündeln“ — beide gibt es
-     erst mit AGP 9. Geplant für 2.4.0, Auftrag
-     [18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md).
+     erst mit AGP 9. **Im Repo erledigt (08.10.2026):** AGP 9.2.1, Gradle
+     9.5.1; am unsignierten Release-Bau gemessen DEX 4,13 → 4,03 MB,
+     Ressourcen 1,39 → 1,02 MB, Klassen neu gebündelt (in Paketen 2.305 → 92).
+     Offen: Maltes Gerätetest und der Haken in der Console nach dem Release,
+     Auftrag [18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md).
+     Für Gradle 10 vorzumerken: Fünf Zeilen in `android/build.gradle` und
+     `android/app/build.gradle` setzen Werte noch ohne `=` (Warnung, kein
+     Fehler). `mappingFileUploadEnabled true` prüfen `prepare-android.sh` und
+     zwei Tests wörtlich — beim Umschreiben mitziehen.
   Keins davon bricht die App heute; 2 und 3 werden mit Android 16 sichtbar.
 - **Store-Release 2.3.0: Freigabe bei Apple abwarten.** Android 2.3.0 (134)
   steht seit 03.10.2026 in Produktion bei 100 %, Tag `2.3.0` liegt auf

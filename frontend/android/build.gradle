@@ -7,8 +7,14 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.13.1'
-        classpath 'com.google.gms:google-services:4.4.4'
+        // AGP 9 seit 08.10.2026 (2.4.0, Auftrag 18). 9.2.1 mit Gradle 9.5.1
+        // und google-services 4.5.0 ist die Kombination, mit der auch
+        // Capacitor 9 baut. Die R8-Gewinne kommen aus den Voreinstellungen
+        // von AGP 9, nicht aus einer Zeile hier -- deshalb darf
+        // gradle.properties sie nicht zurueckdrehen. Messung und Waechter:
+        // androidGradlePlugin9.test.ts.
+        classpath 'com.android.tools.build:gradle:9.2.1'
+        classpath 'com.google.gms:google-services:4.5.0'
         // Crashlytics-Gradle-Plugin (Absturzdiagnose, 24.09.2026).
         //
         // Das Plugin macht zwei Dinge, die kein Code zur Laufzeit nachholen
@@ -19,7 +25,8 @@ buildscript {
         // dann a.b.c.
         //
         // Version 3.0.8 (nicht die 2.9.9 aus der Plugin-Doku): 2.x ist mit
-        // AGP 8.13 nicht mehr vertraeglich.
+        // AGP 8.13 nicht mehr vertraeglich. Unter AGP 9.2.1 nachgesehen:
+        // Mapping-ID und Upload-Task haengen weiter am Release-Bau.
         classpath 'com.google.firebase:firebase-crashlytics-gradle:3.0.8'
 
         // NOTE: Do not place your application dependencies here; they belong
