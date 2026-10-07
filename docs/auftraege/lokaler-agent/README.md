@@ -36,6 +36,9 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
   Datenbank, Backend und Entwicklungsserver), dann mit Simon die Detailseite
   einer Konfi umbauen: Events zwischen Aktivitäten und Bonuspunkten, Badges
   und Stempel gleich, Badge-Farben, Info beim Darüberfahren.
+- **[18-agp9-android-2.4.0.md](18-agp9-android-2.4.0.md)** — mit 2.4.0:
+  Android-Gradle-Plugin 9, Capacitor-Plugins nachziehen, Build in der CI,
+  interner Testtrack für Malte.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 

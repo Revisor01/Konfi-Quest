@@ -258,7 +258,8 @@ Stand: 02.10.2026, gegen den Code geprüft.
      unkomprimierter DEX 4,13 MB. Erfüllt (grüner Haken): „Vollständiger
      Modus“ und „Entfernung von Ressourcen“. Nicht erfüllt: „Optimierte
      Entfernung von Ressourcen“ und „Klassen neu bündeln“ — beide gibt es
-     erst mit AGP 9.
+     erst mit AGP 9. Geplant für 2.4.0, Auftrag
+     [18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md).
   Keins davon bricht die App heute; 2 und 3 werden mit Android 16 sichtbar.
 - **Store-Release 2.3.0: Freigabe bei Apple abwarten.** Android 2.3.0 (134)
   steht seit 03.10.2026 in Produktion bei 100 %, Tag `2.3.0` liegt auf
