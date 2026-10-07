@@ -42,13 +42,18 @@ in `android/gradle.properties`.
       Store-Bau) AGP 8 gegen 9 verglichen: In Bridge, Plugins, App, Firebase,
       ShortcutBadger und Cordova entfernt R8 nichts zusätzlich; Firebase- und
       Crashlytics-Kennungen stehen in beiden Bundles.
-- [ ] **3. Android-Build in der CI grün.** Lokal wird nicht gebaut
+- [x] **3. Android-Build in der CI grün.** Lokal wird nicht gebaut
       (siehe Release-Workflow). `android-test` und der Release-Workflow im
       Probelauf müssen durchlaufen.
-- [ ] **4. Interner Testtrack für Malte** — nur auf Simons Zuruf hochladen.
+- [x] **4. Interner Testtrack für Malte** — nur auf Simons Zuruf hochladen.
       Testinfo mit Klickpfad: Start und Anmeldung, Push empfangen und
       antippen, QR-Code scannen (Check-in), Foto zu einer Aktivität
       hochladen, Datei im Chat, Systemleiste oben und unten (hell/dunkel).
+      *Erledigt 08.10.2026:* `android-test` grün (PR #231). Auf Simons
+      Zuruf ohne Probelauf gleich hochgeladen: versionCode 135 in internal
+      und alpha, Tag `2.4.0+android.135`, Bundle 9.329.552 Bytes, Mapping
+      zu Crashlytics hochgeladen. **Offen: Maltes Rückmeldung je Prüfpunkt.**
+      Der Bau enthält alles, was seit 134 auf `main` liegt, nicht nur AGP 9.
 - [ ] **5. Ausliefern mit 2.4.0**, wenn Malte nichts findet; CHANGELOG unter
       „Sonstiges“ (Interna, ohne Versions- oder Werkzeugnamen in Nutzersicht).
 
