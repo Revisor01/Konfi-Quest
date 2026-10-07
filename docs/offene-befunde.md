@@ -19,14 +19,21 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Code
 
+- **Mitteilungen nach der Antwort gehen bei einem Neustart verloren.**
+  `utils/nachAntwort.js` läuft im Backend-Prozess: Startet der Container in
+  den Millisekunden nach der Antwort neu (Deploy, Absturz), fehlen Push und
+  Postfach-Eintrag; die eigentliche Änderung (Punkte, Abzeichen) ist
+  gespeichert. Betrifft seit 07.10.2026 auch die Entscheidung über gemeldete
+  Aktivitäten (vorher abgewartet, 1,5 s in Produktion). Fix: dauerhafte
+  Warteschlange in der Datenbank, die ein Hintergrunddienst abarbeitet.
 - **Gleiche CSS-Klassen in zwei Bereichs-Stylesheets der Web-Fassung.**
   Alle Dateien unter `frontend/src/theme/web/` liegen im selben Bündel; setzen
   zwei Bereiche dieselbe Klasse, mischen sich die Regeln auf beiden Seiten. So
   waren die Fortschrittsbalken der Konfi-Liste nur ein flacher Streifen
   (behoben 06.10.2026). Noch doppelt: `web-beschreibung` (leitung/termine),
   `web-menue` (chat/termine), `web-rolle` und `web-rolle--leitung`
-  (leitung/start), `web-stempel` mit `__symbol` und `__text`
-  (challenges/leitung). Ob sie sichtbar falsch aussehen, ist nicht geprüft.
+  (leitung/start). `web-stempel` ist behoben (07.10.2026). Ob die übrigen
+  sichtbar falsch aussehen, ist nicht geprüft.
   Fix: je Bereich umbenennen; der Wächter
   `__tests__/components/webCssKlassen.test.ts` führt sie als bekannt und lässt
   keine neuen zu — wer eine behebt, streicht sie dort. Gefunden 06.10.2026.
@@ -239,6 +246,13 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ## Bei Simon zu entscheiden
 
+- **Status-Spalten der Web-Tabellen sortieren alphabetisch** nach dem
+  angezeigten Wort (07.10.2026). Fachliche Reihenfolge gewünscht, etwa
+  Offen – Verbucht – Abgelehnt? Ausnahmen mit Rang schon heute: Support
+  (Gemeinden, Vorgänge), Rückblick.
+- **Punkte-Verlauf im Profil und in der Konfi-Zeit sortiert nur, was sichtbar
+  ist** (die ersten acht, bis „Alle anzeigen“). Auf der Personenseite der
+  Leitung wird schon vor dem Kürzen sortiert; hier genauso?
 - **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
   `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
   der Produktionsdatenbank, an denselben Uploads und am selben `JWT_SECRET`
