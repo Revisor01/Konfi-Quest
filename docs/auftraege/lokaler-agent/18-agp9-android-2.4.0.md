@@ -25,12 +25,23 @@ in `android/gradle.properties`.
 
 ## Schritte
 
-- [ ] **1. Branch** von `main`. AGP in `frontend/android/build.gradle`
+- [x] **1. Branch** von `main`. AGP in `frontend/android/build.gradle`
       (heute 8.13.1) auf 9.x, dazu den Gradle-Wrapper auf die Version, die
       AGP 9 verlangt. Capacitor-Pakete und offizielle Plugins aktualisieren.
-- [ ] **2. Fremd-Plugins prüfen**, eins nach dem anderen (Firebase, Barcode,
+      *Erledigt 08.10.2026, Branch `chore/agp9-android`:* AGP 9.2.1, Gradle
+      9.5.1, google-services 4.5.0 (die Kombination von Capacitor 9).
+      Die npm-Pakete blieben bewusst stehen: Kein Plugin brauchte ein Update
+      (siehe 2), und ein Plugin-Update im selben Build hätte Maltes Befunde
+      unklar gemacht.
+- [x] **2. Fremd-Plugins prüfen**, eins nach dem anderen (Firebase, Barcode,
       alle übrigen aus `frontend/package.json`): verweist eins noch auf
       `proguard-android.txt`? Nicht raten — im Paket nachsehen.
+      *Erledigt:* Alle 17 Plugins und Capacitor selbst nutzen schon
+      `proguard-android-optimize.txt`; der Test
+      `androidGradlePlugin9.test.ts` hält das fest. Lokal (unsigniert, kein
+      Store-Bau) AGP 8 gegen 9 verglichen: In Bridge, Plugins, App, Firebase,
+      ShortcutBadger und Cordova entfernt R8 nichts zusätzlich; Firebase- und
+      Crashlytics-Kennungen stehen in beiden Bundles.
 - [ ] **3. Android-Build in der CI grün.** Lokal wird nicht gebaut
       (siehe Release-Workflow). `android-test` und der Release-Workflow im
       Probelauf müssen durchlaufen.
