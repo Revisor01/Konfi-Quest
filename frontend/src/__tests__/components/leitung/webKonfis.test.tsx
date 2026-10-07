@@ -78,7 +78,8 @@ const zeileVon = (name: string) => zeilen().find((z) => zelle(z, 0).querySelecto
 const umschalter = () => screen.getByRole('group', { name: 'Ansicht' });
 const waehle = (ansicht: 'Liste' | 'Kacheln') => fireEvent.click(within(umschalter()).getByRole('button', { name: ansicht }));
 const kartenListe = (name = 'Konfis') => screen.getByRole('list', { name });
-const karten = (name = 'Konfis') => within(kartenListe(name)).getAllByRole('listitem');
+// Nur die Karten selbst: jede Karte hat darin ihre eigene Liste "Angaben".
+const karten = (name = 'Konfis') => [...kartenListe(name).children] as HTMLElement[];
 const kartenNamen = (name = 'Konfis') => karten(name).map((k) => within(k).getAllByRole('link')[0].textContent);
 const kartenLinks = (name = 'Konfis') => karten(name).map((k) => within(k).getAllByRole('link')[0].getAttribute('href'));
 const karteVon = (name: string) => karten().find((k) => within(k).getAllByRole('link')[0].textContent === name)!;
@@ -533,7 +534,11 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
     zeigen();
     waehle('Kacheln');
     const anna = karteVon('Anna Müller');
-    expect(anna.querySelector('.web-initialen')!.textContent).toBe('AM');
+    // Aufbau der Challenge-Karte (Simon, 07.10.2026): Kopf in der Konfi-Farbe mit Initialen und Jahrgang.
+    expect(anna.querySelector('.web-bildkarte__initialen')!.textContent).toBe('AM');
+    expect((anna.querySelector('.web-bildkarte') as HTMLElement).style.getPropertyValue('--web-bildkarte-akzent')).toBe('var(--app-color-konfis)');
+    // Der Name steht im Kopf, darueber der Jahrgang (Simon: „konfi name in den kopf").
+    expect(anna.querySelector('.web-bildkarte__kopf')).toHaveTextContent('AMJahrgang 2026Anna Müller');
     expect(anna).toHaveTextContent('anna.mueller');
     expect(anna).toHaveTextContent('Jahrgang 2026');
     expect(anna).toHaveTextContent('3 Badges');
@@ -554,7 +559,8 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
     zeigen();
     waehle('Kacheln');
     const ben = karteVon('Ben Schmidt');
-    expect(ben.querySelector('.web-initialen')!.className).toBe('web-initialen web-initialen--erreicht');
+    expect((ben.querySelector('.web-bildkarte') as HTMLElement).style.getPropertyValue('--web-bildkarte-akzent')).toBe('var(--app-color-success)');
+    expect(ben.querySelector('.web-bildkarte__label')!.textContent).toMatch(/ · Ziel erreicht$/);
     expect(within(ben).getByRole('progressbar', { name: 'Punkte gesamt' })).toHaveAttribute('aria-valuetext', '20 von 20, Ziel erreicht');
     const dora = karteVon('Dora Test');
     expect(within(dora).queryByRole('progressbar', { name: 'Gottesdienst-Punkte' })).toBeNull();
@@ -686,18 +692,18 @@ describe('Team (Web): Kacheln', () => {
     expect(kartenNamen('Team')).toEqual(['Frieda Muster', 'Gero B.']);
     expect(kartenLinks('Team')).toEqual(['/admin/konfis/21', '/admin/konfis/22']);
     const [frieda, gero] = karten('Team');
-    expect(frieda.querySelector('.web-initialen')!.className).toBe('web-initialen web-initialen--teamer');
-    expect(frieda.querySelector('.web-initialen')!.textContent).toBe('FM');
+    expect((frieda.querySelector('.web-bildkarte') as HTMLElement).style.getPropertyValue('--web-bildkarte-akzent')).toBe('var(--app-color-teamer)');
+    expect(frieda.querySelector('.web-bildkarte__initialen')!.textContent).toBe('FM');
     expect(frieda).toHaveTextContent('frieda');
     expect(frieda).toHaveTextContent('Jahrgang 2026');
     expect(frieda).toHaveTextContent('2 Badges');
     expect(frieda).toHaveTextContent('1 Zertifikat');
     expect(frieda).not.toHaveTextContent('1 Zertifikate');
-    expect(frieda).toHaveTextContent('Im Team seit 2024');
+    expect(frieda.querySelector('.web-bildkarte__kopf')).toHaveTextContent('Teamer:in · im Team seit 2024Frieda Muster');
     expect(gero).toHaveTextContent('Jahrgang 2025, Jahrgang 2026');
     expect(gero).toHaveTextContent('6 Badges');
     expect(gero).toHaveTextContent('3 Zertifikate');
-    expect(gero).toHaveTextContent('Im Team seit 2023');
+    expect(gero.querySelector('.web-bildkarte__label')).toHaveTextContent('Teamer:in · im Team seit 2023');
     // Die Kennzahlen des Teams bleiben.
     expect(screen.getByRole('group', { name: 'Zertifikate: 4' })).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Badges: 8' })).toBeInTheDocument();

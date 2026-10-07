@@ -98,6 +98,10 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- Im Browser sind die Kacheln von Konfis, Team und Events gebaut wie die der
+  Challenges: farbiger Kopf mit Symbol, darunter die Angaben mit Symbolen und
+  unten die Knöpfe; bei Events und Personen steht der Name im Kopf, Merkmale
+  wie „Pflicht" stehen als Marken.
 - Im Browser sehen die Stempel in den Challenges genauso aus wie auf der
   Seite einer Person und zeigen beim Darüberfahren dieselbe Info; ein Klick
   öffnet weiter die Challenge.

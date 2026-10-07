@@ -1,4 +1,5 @@
-// Eine Challenge als Karte im Raster der Web-Fassung (Browser ab 992 px):
+// Eine Challenge als Karte im Raster der Web-Fassung (Browser ab 992 px),
+// gebaut auf der einen Kachel aller Bereiche (components/web/WebBildKarte):
 // oben das "Bild" -- der Stempel der Challenge gross auf einem Verlauf, mit
 // der roten Zahl der neuen Beitraege -- darunter Status, Titel, Aufgabe in
 // drei Zeilen und die Angaben (Zeitraum, Zielgruppe, Beitraege). Die ganze
@@ -9,15 +10,14 @@
 // Was jemand sieht und tut, entscheiden die Seiten, die sie fuellen --
 // und der Server (backend/utils/challengeLeitungSicht.js).
 
-import React, { useId } from 'react';
-import { IonIcon } from '@ionic/react';
+import React from 'react';
 import {
   ICON_ALBEN,
   ICON_GRUPPE,
   ICON_PERSON,
   ICON_TERMIN,
 } from '../../icons';
-import WebLink from '../../../web/WebLink';
+import WebBildKarte from '../../../web/WebBildKarte';
 import WebPill from '../../../web/WebPill';
 import WebTreffer from '../../../web/WebTreffer';
 import { WebChallengeSymbol, WebEingereichtPill } from './WebChallengeBausteine';
@@ -66,65 +66,47 @@ const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
   mitBeitraegen = false,
   fuss,
 }) => {
-  const titelId = useId();
   const autor = getAuthorLabel(challenge as Parameters<typeof getAuthorLabel>[0]) ?? challenge.author_name?.trim() ?? null;
   const zielgruppe = challenge.audience ? AUDIENCE_LABEL[challenge.audience] : undefined;
   const jahrgaenge = challenge.jahrgaenge ?? [];
   const rest = status === 'active' ? restzeitText(formatRemaining(challenge.ends_at)) : '';
+  const modifikator = STATUS_MODIFIKATOR[status];
 
   return (
     <li className="web-challenge-raster__eintrag">
-      <article className={`web-zeile web-challenge-karte web-challenge-karte--${STATUS_MODIFIKATOR[status]}`} aria-labelledby={titelId}>
-        <div className="web-challenge-karte__bild">
-          <WebChallengeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} kugel={kugel} />
-          <span className="web-challenge-karte__stempel">
-            <span className="web-challenge-karte__stempel-label">Stempel</span>
-            <span className="web-challenge-karte__stempel-name">{challenge.badge_name}</span>
-          </span>
-        </div>
-
-        <div className="web-challenge-karte__inhalt">
-          <div className="web-challenge-karte__marken">
+      <WebBildKarte
+        akzent={modifikator === 'geplant' ? 'var(--app-color-info)' : 'var(--app-color-challenges)'}
+        akzentDunkel="var(--app-color-challenges-dunkel)"
+        gedaempft={modifikator === 'entwurf' || modifikator === 'beendet'}
+        klasse={`web-challenge-karte--${modifikator}`}
+        symbol={<WebChallengeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} kugel={kugel} />}
+        label="Stempel"
+        name={challenge.badge_name}
+        marken={(
+          <>
             <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
             {wartend > 0 && <WebPill ton="warnung" title={wartenAufFreigabe(wartend)}>{wartenAufFreigabe(wartend)}</WebPill>}
             {eingereicht && <WebEingereichtPill />}
-          </div>
-
-          <h3 id={titelId} className="web-challenge-karte__titel">
-            <WebLink href={href} className="web-link--zeile web-link--text">
-              <WebTreffer text={challenge.title} suche={suche} />
-            </WebLink>
-          </h3>
-          {challenge.description && <p className="web-challenge-karte__text">{challenge.description}</p>}
-
-          <ul className="web-challenge-karte__meta" aria-label="Angaben">
-            <li className="web-challenge-karte__meta-eintrag">
-              <IonIcon icon={ICON_TERMIN} className="web-challenge-icon" aria-hidden="true" />
-              <span>{[zeitraumText(challenge, status), rest].filter(Boolean).join(' · ')}</span>
-            </li>
-            {mitBeitraegen && (
-              <li className="web-challenge-karte__meta-eintrag">
-                <IonIcon icon={ICON_ALBEN} className="web-challenge-icon" aria-hidden="true" />
-                <span>{anzahlBeitraege(challenge.submission_count ?? 0)} · {VISIBILITY_LABEL[challenge.visibility] ?? challenge.visibility}</span>
-              </li>
-            )}
-            {(zielgruppe || jahrgaenge.length > 0) && (
-              <li className="web-challenge-karte__meta-eintrag" title={jahrgaenge.map((j) => j.name).join(', ') || undefined}>
-                <IonIcon icon={ICON_GRUPPE} className="web-challenge-icon" aria-hidden="true" />
-                <span>{[zielgruppe, jahrgangText(jahrgaenge)].filter(Boolean).join(' · ')}</span>
-              </li>
-            )}
-            {autor && (
-              <li className="web-challenge-karte__meta-eintrag">
-                <IonIcon icon={ICON_PERSON} className="web-challenge-icon" aria-hidden="true" />
-                <span>Gestellt von {autor}</span>
-              </li>
-            )}
-          </ul>
-        </div>
-
-        {fuss && <footer className="web-challenge-karte__fuss">{fuss}</footer>}
-      </article>
+          </>
+        )}
+        titel={<WebTreffer text={challenge.title} suche={suche} />}
+        href={href}
+        text={challenge.description || undefined}
+        angaben={[
+          { icon: ICON_TERMIN, inhalt: [zeitraumText(challenge, status), rest].filter(Boolean).join(' · ') },
+          mitBeitraegen && {
+            icon: ICON_ALBEN,
+            inhalt: `${anzahlBeitraege(challenge.submission_count ?? 0)} · ${VISIBILITY_LABEL[challenge.visibility] ?? challenge.visibility}`,
+          },
+          (zielgruppe || jahrgaenge.length > 0) && {
+            icon: ICON_GRUPPE,
+            inhalt: [zielgruppe, jahrgangText(jahrgaenge)].filter(Boolean).join(' · '),
+            titel: jahrgaenge.map((j) => j.name).join(', ') || undefined,
+          },
+          autor && { icon: ICON_PERSON, inhalt: `Gestellt von ${autor}` },
+        ]}
+        fuss={fuss}
+      />
     </li>
   );
 };

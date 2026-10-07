@@ -109,7 +109,7 @@ Eine Konfi zeigt den Kreis mit ihren Initialen, Name und Benutzername,
 Jahrgang, je einen Balken für Gottesdienst, Gemeinde und Gesamt mit dem Stand
 darüber, etwa „7 / 10" — ein Haken zeigt das erreichte Ziel, ein Strich steht
 dort, wo der Jahrgang die Punkteart abgeschaltet hat — und die Zahl der Badges.
-Der kleine Knopf mit dem Papierkorb löscht die Konfi nach einer Rückfrage.
+**Löschen** unten auf der Karte löscht die Konfi nach einer Rückfrage.
 Punkte vergibst du auf der Detailseite der Konfi, mit **Aktivität eintragen**
 und **Bonuspunkte vergeben**. Eine Teamer:in zeigt Name, Jahrgänge, Badges,
 Zertifikate und das Jahr, seit dem sie im Team ist; löschen kann sie nur die

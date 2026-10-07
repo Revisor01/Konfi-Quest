@@ -2124,6 +2124,198 @@ mark.web-treffer {
   gap: var(--app-abstand-mittel);
 }
 
+/* --- Kacheln: Raster und die eine Karte (WebBildKarte) ---
+   Vorbild war die Challenge-Karte; Konfis, Team und Events nutzen dieselbe
+   (Simon, 07.10.2026). Farbe des Kopfes kommt als Token von der Seite. */
+.web-bildkarten {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--app-abstand-basis);
+  align-items: stretch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-bildkarten__eintrag {
+  display: flex;
+  min-width: 0;
+}
+
+.web-bildkarte {
+  --web-bildkarte-akzent: var(--app-color-neutral);
+  --web-bildkarte-akzent-dunkel: var(--app-color-neutral);
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-karte-flaeche);
+  color: var(--web-text);
+}
+
+.web-bildkarte:hover {
+  background: var(--web-hover);
+}
+
+.web-bildkarte:focus-within {
+  border-color: var(--ion-color-primary);
+}
+
+.web-bildkarte__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittelweit);
+  min-height: 88px;
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  background: linear-gradient(135deg, var(--web-bildkarte-akzent) 0%, var(--web-bildkarte-akzent-dunkel) 100%);
+  color: var(--app-weiss);
+}
+
+.web-bildkarte--gedaempft .web-bildkarte__kopf {
+  background: linear-gradient(135deg, var(--app-color-neutral-hell) 0%, var(--app-color-neutral) 100%);
+}
+
+.web-bildkarte__symbol {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid color-mix(in srgb, var(--app-weiss) 45%, transparent);
+  border-radius: var(--app-radius-kreis);
+  background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+  color: var(--app-weiss);
+  font-size: var(--app-text-titel-gross);
+}
+
+.web-bildkarte__initialen {
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-bildkarte__kopftext {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-bildkarte__label {
+  font-size: var(--app-text-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.web-bildkarte__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-bildkarte__name--titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.web-bildkarte__name--titel .web-link {
+  color: inherit;
+}
+
+.web-bildkarte__inhalt {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittelweit) var(--app-abstand-gross) var(--app-abstand-basis);
+}
+
+.web-bildkarte__marken {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-bildkarte__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-gross);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.web-bildkarte--gedaempft .web-bildkarte__titel {
+  color: var(--web-text-leise);
+}
+
+.web-bildkarte__unterzeile {
+  margin: 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-bildkarte__text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  margin: 0;
+  overflow: hidden;
+  color: var(--web-text-leise);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-bildkarte__angaben {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  margin: auto 0 0;
+  padding: var(--app-abstand-eng) 0 0;
+  list-style: none;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-bildkarte__angabe {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+}
+
+.web-bildkarte__icon {
+  flex: 0 0 auto;
+  margin-top: var(--app-abstand-winzig);
+  color: var(--web-bildkarte-akzent);
+}
+
+.web-bildkarte--gedaempft .web-bildkarte__icon {
+  color: var(--web-text-leise);
+}
+
+.web-bildkarte__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
 /* --- Badges und Stempel: ein Raster aus Kreis und Name (WebAuszeichnungen),
    auf der Seite einer Person und in den Challenges --- */
 .web-auszeichnungen {
