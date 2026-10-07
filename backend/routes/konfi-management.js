@@ -980,10 +980,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 const { rows: certRows } = await db.query(certQuery, [konfiId, req.user.organization_id]);
                 certificates = certRows;
 
-                // Events für Teamer: gebuchte Events mit Status
+                // Events für Teamer: gebuchte Events mit Status. attendance_status
+                // (07.10.2026, additiv): booking_status sagt nur "angemeldet",
+                // ob sie da war, steht erst hier (present/absent/excused/null).
                 const eventsQuery = `
                     SELECT e.id, e.name, e.event_date, e.location, e.teamer_only, e.teamer_needed,
-                           eb.status as booking_status, eb.booking_date
+                           eb.status as booking_status, eb.booking_date, eb.attendance_status
                     FROM event_bookings eb
                     JOIN events e ON eb.event_id = e.id
                     WHERE eb.user_id = $1 AND e.organization_id = $2

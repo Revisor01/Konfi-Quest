@@ -27,6 +27,8 @@ import { punkteText } from '../../../../utils/punkteText';
 import { konfiZeitTerminStatus } from '../../../../utils/konfiZeit';
 import { nachAnzeigeDatumAbsteigend, punkteAnzeigeDatum } from '../../../../utils/punkteDatum';
 import { mitEinheit } from '../../../../utils/supportStatistik';
+import { teilnahmeDarstellung, type TeilnahmeDarstellung } from '../../../../utils/teilnahmeStatus';
+import type { PillTon } from '../../../../utils/supportWeb';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../../types/user';
 import type { KonfiZeit } from '../../../../types/konfiZeit';
 import type { ChallengeMark, OffenerStempel } from '../../../../types/challenges';
@@ -277,9 +279,11 @@ export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintr
 
 // --- Events einer Teamer:in -----------------------------------------------------------
 
-const BUCHUNG: Record<string, { text: string; ton: 'erfolg' | 'warnung' | 'neutral' }> = {
-  confirmed: { text: 'Anwesend', ton: 'erfolg' },
-  absent: { text: 'Abwesend', ton: 'warnung' },
+// Stand einer Teamer:in bei einem Event: dieselbe Regel wie die
+// Teilnehmerliste (teilnahmeDarstellung) -- Anwesend/Abwesend aus der
+// Anwesenheit, sonst Gebucht, Warteliste oder Abgemeldet.
+const STAND_TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
+  success: 'erfolg', danger: 'fehler', warning: 'warnung', info: 'info', neutral: 'neutral',
 };
 
 export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = ({ events }) => {
@@ -295,8 +299,8 @@ export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = 
       kopf: 'Stand',
       breite: SPALTE.von,
       zelle: (e) => {
-        const b = BUCHUNG[e.booking_status] ?? { text: 'Ausstehend', ton: 'neutral' as const };
-        return <WebPill ton={b.ton}>{b.text}</WebPill>;
+        const stand = teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status });
+        return <WebPill ton={STAND_TON[stand.farbe]}>{stand.statusText}</WebPill>;
       },
     },
     { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },

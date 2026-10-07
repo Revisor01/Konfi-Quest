@@ -139,8 +139,10 @@ eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen —, darunt
 **Events** und bei einer Konfi **Bonuspunkte**. Bei einer Konfi zeigt
 **Events** die Events, die Punkte gebracht haben, mit ihrem Datum, Art und
 Punkten; bei einer Teamer:in die Events, für die sie eingetragen ist, mit
-ihrem Stand. Alle drei Tabellen haben dieselben Spalten in derselben Breite;
-wird das Fenster schmal, fällt die Spalte, wer eingetragen hat, in allen
+ihrem Stand — **Anwesend** oder **Abwesend**, sobald die Anwesenheit verbucht
+ist, vorher **Gebucht**, dazu **Warteliste** und **Abgemeldet**, wie in der
+Teilnehmerliste des Events. Alle drei Tabellen haben dieselben Spalten in
+derselben Breite; wird das Fenster schmal, fällt die Spalte, wer eingetragen hat, in allen
 dreien weg. Bei einer Teamer:in folgen **Zertifikate**, die
 **Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen über
 zehn hinaus, klappt **Alle … anzeigen** den Rest auf.

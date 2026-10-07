@@ -108,9 +108,12 @@ const TEAMER = {
     { id: 1, certificate_type_id: 1, name: 'JuLeiCa', icon: 'ribbon', issued_date: '2025-12-07', expiry_date: '2028-12-07', status: 'valid' },
     { id: 2, certificate_type_id: 2, name: 'Erste-Hilfe-Kurs', icon: 'medkit', issued_date: '2024-04-16', expiry_date: '2026-09-01', status: 'expired' },
   ],
+  // Gebucht ist nicht anwesend: Der Stand kommt aus attendance_status (07.10.2026).
   teamerEvents: [
-    { id: 301, name: 'Konfi-Wochenende', event_date: '2026-09-13', location: 'Jugendhaus', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '2026-08-01' },
-    { id: 303, name: 'Adventsbasar', event_date: '2026-10-01', location: 'Gemeindehaus', teamer_only: false, teamer_needed: true, booking_status: 'pending', booking_date: '2026-09-20' },
+    { id: 301, name: 'Konfi-Wochenende', event_date: '2026-09-13', location: 'Jugendhaus', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '2026-08-01', attendance_status: 'present' },
+    { id: 303, name: 'Adventsbasar', event_date: '2026-10-01', location: 'Gemeindehaus', teamer_only: false, teamer_needed: true, booking_status: 'waitlist', booking_date: '2026-09-20', attendance_status: null },
+    { id: 304, name: 'Freizeit-Planung', event_date: '2026-09-24', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-09-01', attendance_status: 'absent' },
+    { id: 305, name: 'Teamer-Treffen', event_date: '2026-10-22', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-10-01', attendance_status: null },
   ],
   konfiHistory: { history: [{ id: 1, title: 'Gottesdienstbesuch', points: 1, category: 'gottesdienst', date: '2024-12-02', source_type: 'activity' }], totals: { gottesdienst: 9, gemeinde: 11, total: 20 } },
 };
@@ -489,7 +492,7 @@ describe('Teamer-Detail (Web)', () => {
     expect(screen.getByRole('link', { name: 'Alle im Team' })).toHaveAttribute('href', '/admin/konfis?filter=team');
     expect(kopf().getByText('Teamer:in')).toBeInTheDocument();
     expect(kopf().getByText(/seit 01\.09\.2024/)).toBeInTheDocument();
-    expect(kennzahlen()).toEqual(['Zertifikate: 2', 'Events: 2', 'Badges: 4']);
+    expect(kennzahlen()).toEqual(['Zertifikate: 2', 'Events: 4', 'Badges: 4']);
     expect(kopf().getAllByRole('button').map((b) => b.textContent))
       .toEqual(['Zertifikat zuweisen', 'Passwort zurücksetzen', 'Aktivität eintragen']);
     expect(screen.queryByTestId('ringe')).toBeNull();
@@ -530,9 +533,13 @@ describe('Teamer-Detail (Web)', () => {
     expect(kartenIn('haupt').slice(0, 3)).toEqual(['Aktivitäten', 'Events', 'Zertifikate']);
     expect(kartenIn('seite')).not.toContain('Events');
     const events = zeilen('Events');
-    expect(zelle(events[0], 0)).toHaveTextContent('Konfi-Wochenende');
-    expect(zelle(events[0], 2)).toHaveTextContent('Anwesend');
-    expect(zelle(events[1], 2)).toHaveTextContent('Ausstehend');
+    expect(events.map((z) => [zelle(z, 0).textContent, zelle(z, 2).textContent])).toEqual([
+      ['Konfi-Wochenende', 'Anwesend'],
+      ['Adventsbasar', 'Warteliste'],
+      ['Freizeit-Planung', 'Abwesend'],
+      // Gebucht, aber noch nicht verbucht -- vorher stand hier "Anwesend".
+      ['Teamer-Treffen', 'Gebucht'],
+    ]);
     // Dieselben Breiten wie die Aktivitaeten darueber: Stand steht unter "Eingetragen von".
     expect(kopfBreiten('Events')).toEqual(kopfBreiten('Aktivitäten'));
   });
@@ -555,6 +562,19 @@ describe('Teamer-Detail (Web)', () => {
   it('Rueckblick ohne Namen: "Jahresrückblick 2026"', async () => {
     await oeffnen();
     expect(within(karte('Jahresrückblick')).getByText('Jahresrückblick 2026')).toBeInTheDocument();
+  });
+});
+
+describe('Teamer-Detail in der App (schmal): Stand der Events aus der Anwesenheit', () => {
+  it('Anwesend, Warteliste, Abwesend und Gebucht -- dieselbe Regel wie im Browser', async () => {
+    h.breit = false;
+    h.antworten.set(`/admin/konfis/${ID}`, TEAMER);
+    await oeffnen();
+    const staende = TEAMER.teamerEvents.map((e) => {
+      const zeile = screen.getByText(e.name).closest('.app-list-item') as HTMLElement;
+      return within(zeile).getByRole('img').getAttribute('aria-label');
+    });
+    expect(staende).toEqual(['Anwesend', 'Warteliste', 'Abwesend', 'Gebucht']);
   });
 });
 

@@ -156,6 +156,9 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Auf der Seite einer Teamer:in zeigen die Events, ob sie wirklich da war:
+  Bisher stand bei jedem gebuchten Event „Anwesend", auch bei künftigen und
+  bei als abwesend verbuchten.
 - In der Konfi-Liste der Leitung im Browser waren die Fortschrittsbalken nur
   ein flacher Streifen mit abgeschnittener Zahl, und vor dem Namen klaffte eine
   leere Fläche statt des Kreises mit den Initialen.
