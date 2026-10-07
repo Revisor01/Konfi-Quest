@@ -41,9 +41,12 @@ import {
   konfiPunkte,
   sichtbareJahrgaenge,
   sortiereKonfis,
+  sortiereTeam,
+  TEAM_ERSTE_RICHTUNG,
   teamerName,
   type KonfiListenEintrag,
   type KonfiSortierSchluessel,
+  type TeamSortierSchluessel,
 } from '../../../../utils/konfiListe';
 import type { TeamerListenEintrag } from '../../../../types/user';
 import { useTeamerListe } from '../../useTeamerListe';
@@ -101,6 +104,13 @@ const KONFI_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 
   { schluessel: 'jahrgang', richtung: 'ab', label: 'Jahrgang Z–A' },
   { schluessel: 'badges', richtung: 'ab', label: 'Meiste Badges' },
   { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
+  { schluessel: 'gottesdienst', richtung: 'ab', label: 'Meiste Gottesdienst-Punkte' },
+  { schluessel: 'gottesdienst', richtung: 'auf', label: 'Wenigste Gottesdienst-Punkte' },
+  { schluessel: 'gemeinde', richtung: 'ab', label: 'Meiste Gemeinde-Punkte' },
+  { schluessel: 'gemeinde', richtung: 'auf', label: 'Wenigste Gemeinde-Punkte' },
+  // Nur, wenn die Liste die letzte Aktivitaet liefert (sonst fehlt auch die Spalte).
+  { schluessel: 'aktivitaet', richtung: 'ab', label: 'Zuletzt aktiv' },
+  { schluessel: 'aktivitaet', richtung: 'auf', label: 'Am längsten nicht aktiv' },
 ];
 
 const TEAM_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 'ab'; label: string }> = [
@@ -110,6 +120,10 @@ const TEAM_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | '
   { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
   { schluessel: 'zertifikate', richtung: 'ab', label: 'Meiste Zertifikate' },
   { schluessel: 'zertifikate', richtung: 'auf', label: 'Wenigste Zertifikate' },
+  { schluessel: 'jahrgaenge', richtung: 'auf', label: 'Jahrgänge A–Z' },
+  { schluessel: 'jahrgaenge', richtung: 'ab', label: 'Jahrgänge Z–A' },
+  { schluessel: 'seit', richtung: 'ab', label: 'Zuletzt ins Team gekommen' },
+  { schluessel: 'seit', richtung: 'auf', label: 'Am längsten im Team' },
 ];
 
 const sortierWert = (s: { schluessel: string; richtung: 'auf' | 'ab' }): string => `${s.schluessel}:${s.richtung}`;
@@ -159,16 +173,7 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   // --- Team -----------------------------------------------------------------------
   const sichtbaresTeam = useMemo(() => {
     const gefiltert = team.teamers.filter((t) => !sucht || [teamerName(t), t.name, t.username].some((x) => !!x && suchTreffer(x, suche).length > 0));
-    const vorzeichen = teamSortierung.richtung === 'auf' ? 1 : -1;
-    const wert = (t: TeamerListenEintrag): number => (teamSortierung.schluessel === 'badges' ? t.badge_count || 0 : t.cert_count || 0);
-    return [...gefiltert].sort((a, b) => {
-      if (teamSortierung.schluessel === 'badges' || teamSortierung.schluessel === 'zertifikate') {
-        const d = wert(a) - wert(b);
-        if (d !== 0) return d * vorzeichen;
-        return teamerName(a).localeCompare(teamerName(b), 'de');
-      }
-      return teamerName(a).localeCompare(teamerName(b), 'de') * vorzeichen;
-    });
+    return sortiereTeam(gefiltert, teamSortierung.schluessel as TeamSortierSchluessel, teamSortierung.richtung);
   }, [team.teamers, suche, sucht, teamSortierung]);
 
   const sortieren = (
@@ -180,7 +185,11 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
     else setzen({ schluessel, richtung: ersteRichtung(schluessel) });
   };
   const sortiereKonfisNach = sortieren(konfiSortierung, setKonfiSortierung, (s) => ERSTE_RICHTUNG[s as KonfiSortierSchluessel] ?? 'auf');
-  const sortiereTeamNach = sortieren(teamSortierung, setTeamSortierung, (s) => (s === 'name' ? 'auf' : 'ab'));
+  const sortiereTeamNach = sortieren(teamSortierung, setTeamSortierung, (s) => TEAM_ERSTE_RICHTUNG[s as TeamSortierSchluessel] ?? 'auf');
+
+  // "Letzte Aktivitaet" gibt es als Spalte nur, wenn die Liste sie liefert -- dann auch in der Auswahl.
+  const mitAktivitaet = konfis.some((k) => !!k.letzte_aktivitaet);
+  const konfiSortierungen = mitAktivitaet ? KONFI_SORTIERUNGEN : KONFI_SORTIERUNGEN.filter((s) => s.schluessel !== 'aktivitaet');
 
   const istTeam = ansicht === 'team';
   const titel = istTeam ? 'Team' : 'Konfis';
@@ -345,7 +354,7 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
                 const [schluessel, richtung] = w.split(':');
                 (istTeam ? setTeamSortierung : setKonfiSortierung)({ schluessel, richtung: richtung === 'ab' ? 'ab' : 'auf' });
               }}
-              optionen={(istTeam ? TEAM_SORTIERUNGEN : KONFI_SORTIERUNGEN).map((s) => ({ wert: sortierWert(s), label: s.label }))}
+              optionen={(istTeam ? TEAM_SORTIERUNGEN : konfiSortierungen).map((s) => ({ wert: sortierWert(s), label: s.label }))}
             />
           )}
           <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />

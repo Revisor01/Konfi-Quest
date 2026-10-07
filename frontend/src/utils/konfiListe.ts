@@ -85,40 +85,102 @@ export const initialen = (name: string | undefined | null): string => {
 export const jahrgangVon = (k: Pick<KonfiListenEintrag, 'jahrgang_name' | 'jahrgang'>): string =>
   k.jahrgang_name || k.jahrgang || '';
 
-export type KonfiSortierSchluessel = 'name' | 'jahrgang' | 'punkte' | 'badges';
+export type KonfiSortierSchluessel = 'name' | 'jahrgang' | 'gottesdienst' | 'gemeinde' | 'punkte' | 'badges' | 'aktivitaet';
 export type Richtung = 'auf' | 'ab';
 
-/** Die Richtung, mit der eine Spalte beim ersten Klick beginnt: Zahlen groesste zuerst, Namen A-Z. */
+/** Die Richtung, mit der eine Spalte beim ersten Klick beginnt: Zahlen und Daten groesste/neueste zuerst, Namen A-Z. */
 export const ERSTE_RICHTUNG: Record<KonfiSortierSchluessel, Richtung> = {
   name: 'auf',
   jahrgang: 'auf',
+  gottesdienst: 'ab',
+  gemeinde: 'ab',
   punkte: 'ab',
   badges: 'ab',
+  aktivitaet: 'ab',
 };
 
 const text = (a: string, b: string): number => a.localeCompare(b, 'de');
 
+/** Ein Zeitpunkt zum Ordnen; ohne (oder mit unlesbarem) Datum null. */
+const zeitpunkt = (iso?: string | null): number | null => {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  return Number.isNaN(t) ? null : t;
+};
+
+/**
+ * Ordnet nach `wert`; bei gleichem Wert entscheidet der Name (A-Z). Ein Wert
+ * `null` (abgeschaltete Punkteart, kein Datum, kein Jahrgang) steht in beiden
+ * Richtungen unten.
+ */
+function ordne<T>(liste: readonly T[], wert: (x: T) => number | string | null, richtung: Richtung, name: (x: T) => string): T[] {
+  const vorzeichen = richtung === 'auf' ? 1 : -1;
+  return [...liste].sort((a, b) => {
+    const x = wert(a);
+    const y = wert(b);
+    if (x === null || y === null) {
+      if (x !== y) return x === null ? 1 : -1;
+      return text(name(a), name(b));
+    }
+    const vergleich = typeof x === 'number' && typeof y === 'number' ? x - y : text(String(x), String(y));
+    return vergleich !== 0 ? vergleich * vorzeichen : text(name(a), name(b));
+  });
+}
+
 /**
  * Konfis ordnen. Bei gleichem Wert entscheidet der Name (A-Z), damit die
  * Reihenfolge nicht vom Zufall der Antwort abhaengt. Die Liste selbst bleibt
- * unveraendert.
+ * unveraendert. Eine abgeschaltete Punkteart und eine fehlende letzte
+ * Aktivitaet stehen unten.
  */
 export function sortiereKonfis<T extends KonfiListenEintrag>(konfis: readonly T[], nach: KonfiSortierSchluessel, richtung: Richtung): T[] {
-  const vorzeichen = richtung === 'auf' ? 1 : -1;
-  const wert = (k: T): number | string => {
+  const wert = (k: T): number | string | null => {
     switch (nach) {
       case 'punkte': return konfiPunkte(k).gesamt;
+      case 'gottesdienst': { const p = konfiPunkte(k); return p.gottesdienstAn ? p.gottesdienst : null; }
+      case 'gemeinde': { const p = konfiPunkte(k); return p.gemeindeAn ? p.gemeinde : null; }
       case 'badges': return k.badgeCount || 0;
+      case 'aktivitaet': return zeitpunkt(k.letzte_aktivitaet);
       case 'jahrgang': return jahrgangVon(k);
       default: return k.name || '';
     }
   };
-  return [...konfis].sort((a, b) => {
-    const x = wert(a);
-    const y = wert(b);
-    const vergleich = typeof x === 'number' && typeof y === 'number' ? x - y : text(String(x), String(y));
-    return vergleich !== 0 ? vergleich * vorzeichen : text(a.name || '', b.name || '');
-  });
+  return ordne(konfis, wert, richtung, (k) => k.name || '');
+}
+
+export type TeamSortierSchluessel = 'name' | 'jahrgaenge' | 'badges' | 'zertifikate' | 'seit';
+
+/** Erste Richtung je Spalte der Team-Liste: Namen A-Z, Zahlen und Daten groesste/neueste zuerst. */
+export const TEAM_ERSTE_RICHTUNG: Record<TeamSortierSchluessel, Richtung> = {
+  name: 'auf',
+  jahrgaenge: 'auf',
+  badges: 'ab',
+  zertifikate: 'ab',
+  seit: 'ab',
+};
+
+/** Was die Team-Liste zum Ordnen braucht (GET /admin/teamer, types/user TeamerListenEintrag). */
+export interface TeamSortierEintrag {
+  name: string;
+  display_name?: string;
+  jahrgang_name?: string;
+  badge_count?: number;
+  cert_count?: number;
+  teamer_since?: string;
+}
+
+/** Das Team ordnen -- dieselbe Ordnung fuer Liste und Kacheln. Ohne Jahrgang oder "seit" steht man unten. */
+export function sortiereTeam<T extends TeamSortierEintrag>(team: readonly T[], nach: TeamSortierSchluessel, richtung: Richtung): T[] {
+  const wert = (t: T): number | string | null => {
+    switch (nach) {
+      case 'badges': return t.badge_count || 0;
+      case 'zertifikate': return t.cert_count || 0;
+      case 'jahrgaenge': return t.jahrgang_name || null;
+      case 'seit': return zeitpunkt(t.teamer_since);
+      default: return teamerName(t);
+    }
+  };
+  return ordne(team, wert, richtung, teamerName);
 }
 
 /** Was die Jahrgangs-Regel vom angemeldeten Konto braucht (AppContext: user). */

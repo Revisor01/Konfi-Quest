@@ -57,6 +57,7 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
     {
       schluessel: 'gottesdienst',
       kopf: 'Gottesdienst',
+      sortierbar: true,
       breite: '160px',
       optional: true,
       zelle: (k) => {
@@ -67,6 +68,7 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
     {
       schluessel: 'gemeinde',
       kopf: 'Gemeinde',
+      sortierbar: true,
       breite: '160px',
       optional: true,
       zelle: (k) => {
@@ -101,6 +103,7 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
     ...(mitAktivitaet ? [{
       schluessel: 'aktivitaet',
       kopf: 'Letzte Aktivität',
+      sortierbar: true,
       breite: '128px',
       optional: true,
       zelle: (k: KonfiListenEintrag) => (k.letzte_aktivitaet ? datumKurz(k.letzte_aktivitaet) : <span className="web-gedaempft">–</span>),

@@ -43,6 +43,7 @@ const WebTeamTabelle: React.FC<WebTeamTabelleProps> = ({ team, suche, sortierung
     {
       schluessel: 'jahrgaenge',
       kopf: 'Jahrgänge',
+      sortierbar: true,
       breite: '24%',
       zelle: (t) => t.jahrgang_name || <span className="web-gedaempft">Kein Jahrgang</span>,
     },
@@ -75,6 +76,7 @@ const WebTeamTabelle: React.FC<WebTeamTabelleProps> = ({ team, suche, sortierung
     {
       schluessel: 'seit',
       kopf: 'Im Team seit',
+      sortierbar: true,
       breite: '120px',
       optional: true,
       zelle: (t) => (t.teamer_since ? String(new Date(t.teamer_since).getFullYear()) : <span className="web-gedaempft">–</span>),
