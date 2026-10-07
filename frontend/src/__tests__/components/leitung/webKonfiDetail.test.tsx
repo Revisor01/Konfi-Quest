@@ -578,6 +578,36 @@ describe('Teamer-Detail in der App (schmal): Stand der Events aus der Anwesenhei
   });
 });
 
+describe('Konfi-Detail (Web): eine Seite fuer Laden und Inhalt', () => {
+  // Weisse Seite bis zum zweiten Klick (Simon, 07.10.2026): Beim Laden kam
+  // WebSeite, danach WebDetailSeite zurueck. Der andere Baustein an der Wurzel
+  // liess React die IonPage neu bauen; die neue blieb nach dem schon
+  // gelaufenen Seitenuebergang unsichtbar. Dieselbe Seite muss bleiben.
+  it('die Seite aus der Ladeansicht ist dieselbe, die danach den Inhalt zeigt', async () => {
+    let freigeben: () => void = () => {};
+    const gehalten = new Promise<void>((r) => { freigeben = r; });
+    const normal = h.apiGet.getMockImplementation()!;
+    h.apiGet.mockImplementation(async (pfad: string, ...rest: unknown[]) => {
+      if (pfad === `/admin/konfis/${ID}`) await gehalten;
+      return normal(pfad, ...rest);
+    });
+    const { container } = render(<KonfiDetailView konfiId={ID} onBack={vi.fn()} />);
+    await act(async () => { await Promise.resolve(); });
+    const ladeTitel = screen.getByRole('heading', { level: 1 });
+    expect(ladeTitel).toHaveTextContent('Konfi');
+    // Die IonPage (hier ein div; IonContent reicht nur durch) um .web-seite.
+    const seiteBeimLaden = ladeTitel.closest('.web-seite')!.parentElement as HTMLElement;
+    expect(seiteBeimLaden).not.toBe(container);
+
+    await act(async () => { freigeben(); });
+    for (let i = 0; i < 8; i += 1) await act(async () => { await Promise.resolve(); });
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Anna Müller');
+    expect(seiteBeimLaden.isConnected).toBe(true);
+    expect(seiteBeimLaden).toContainElement(screen.getByRole('heading', { level: 1 }));
+  });
+});
+
 describe('Konfi-Detail: schmal bleibt die Darstellung der App', () => {
   it('ohne breites Layout keine zwei Spalten und keine Karten der Web-Fassung', async () => {
     h.breit = false;

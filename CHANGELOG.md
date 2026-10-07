@@ -156,6 +156,9 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Im Browser öffnen sich die Seite einer Person und die Seite eines Events
+  beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
+  oder neu lud.
 - Auf der Seite einer Teamer:in zeigen die Events, ob sie wirklich da war:
   Bisher stand bei jedem gebuchten Event „Anwesend", auch bei künftigen und
   bei als abwesend verbuchten.

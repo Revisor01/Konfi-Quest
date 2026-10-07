@@ -29,7 +29,6 @@ import {
 import { datumKurz } from '../../../../utils/dateUtils';
 import { konfiPunkte } from '../../../../utils/konfiListe';
 import { mitEinheit } from '../../../../utils/supportStatistik';
-import WebSeite from '../../../web/WebSeite';
 import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
@@ -64,16 +63,20 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
 
   if (p.laedt) {
     return (
-      <WebSeite bereich="Verwaltung" titel={platzhalter} zurueck={zurueck} pageRef={p.pageRef}>
-        <WebLaden karten={2} text={istTeamer ? 'Die Teamer:in wird geladen.' : 'Die Konfi wird geladen.'} />
-      </WebSeite>
+      <WebDetailSeite bereich="Verwaltung" titel={platzhalter} zurueck={zurueck} pageRef={p.pageRef}
+        zustand={(
+          <WebLaden karten={2} text={istTeamer ? 'Die Teamer:in wird geladen.' : 'Die Konfi wird geladen.'} />
+        )}
+      />
     );
   }
   if (!konfi) {
     return (
-      <WebSeite bereich="Verwaltung" titel={platzhalter} zurueck={zurueck} pageRef={p.pageRef}>
-        <WebFehler text="Diese Person konnte nicht geladen werden." onErneut={p.onNeuLaden} />
-      </WebSeite>
+      <WebDetailSeite bereich="Verwaltung" titel={platzhalter} zurueck={zurueck} pageRef={p.pageRef}
+        zustand={(
+          <WebFehler text="Diese Person konnte nicht geladen werden." onErneut={p.onNeuLaden} />
+        )}
+      />
     );
   }
 

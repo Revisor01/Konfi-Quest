@@ -27,7 +27,6 @@ import {
   type DetailZeitfenster,
 } from '../../../../utils/termineWeb';
 import type { Event, Participant } from '../../../../types/event';
-import WebSeite from '../../../web/WebSeite';
 import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
@@ -119,20 +118,24 @@ const WebTeamTerminDetail: React.FC<WebTeamTerminDetailProps> = (p) => {
 
   if (p.jahrgangFehlt) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebLeer
-          icon={ICON_JAHRGANG}
-          titel="Nicht deinem Jahrgang zugeordnet"
-          text="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
-        />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebLeer
+            icon={ICON_JAHRGANG}
+            titel="Nicht deinem Jahrgang zugeordnet"
+            text="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
+          />
+        )}
+      />
     );
   }
   if (p.laedt || !event) {
     return (
-      <WebSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}>
-        <WebLeer icon={ICON_JAHRGANG} titel="Event wird geladen" text="Einen Moment, das Event wird geöffnet." />
-      </WebSeite>
+      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
+        zustand={(
+          <WebLeer icon={ICON_JAHRGANG} titel="Event wird geladen" text="Einen Moment, das Event wird geöffnet." />
+        )}
+      />
     );
   }
 
