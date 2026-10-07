@@ -237,6 +237,29 @@ Stand: 02.10.2026, gegen den Code geprüft.
 
 ### Release
 
+- **Play Console empfiehlt vier Änderungen an der Android-App** (Release
+  2.3.0, abgelesen von Simon am 07.10.2026; dort stand zugleich „Der Release
+  2.3.0 wird überprüft“). Am Code geprüft:
+  1. *Randlose Anzeige ab Android 15:* Die App zielt auf SDK 36; Google rät,
+     die randlose Anzeige zu testen bzw. `EdgeToEdge.enable()` zu rufen.
+  2. *Eingestellte APIs* `Window.get/setStatusBarColor`, `setNavigationBarColor`
+     — aufgerufen aus `@capacitor/status-bar` (v8) und dem Material-Datepicker,
+     nicht aus eigenem Code. Fix: Plugin-Update bzw. Status-Bar-Farbe nicht mehr
+     setzen; vorher am Gerät (Malte) die Systemleiste prüfen.
+  3. *Feste Ausrichtung:* `android:screenOrientation="portrait"` in
+     `android/app/src/main/AndroidManifest.xml`; ab Android 16 ignoriert das
+     System sie auf Tablets und Foldables. Fix: Einschränkung entfernen und
+     Layouts quer und auf großen Displays testen.
+  4. *R8 schwach:* Optimierungsrate 48 %, Verschleierung 49 %, Ressourcen 49 %;
+     Android-Gradle-Plugin steht auf 8.13.1, empfohlen ab 9.0
+     (`android/build.gradle`). `minifyEnabled` und `shrinkResources` sind an.
+     Bundle 134 (2.3.0) laut Console: 6,35 MB neu, 2,31 MB Update, Ziel-SDK 36,
+     ab API 24, 16-KB-Seitengröße unterstützt, DEX-Optimierung „Medium“,
+     unkomprimierter DEX 4,13 MB. Erfüllt (grüner Haken): „Vollständiger
+     Modus“ und „Entfernung von Ressourcen“. Nicht erfüllt: „Optimierte
+     Entfernung von Ressourcen“ und „Klassen neu bündeln“ — beide gibt es
+     erst mit AGP 9.
+  Keins davon bricht die App heute; 2 und 3 werden mit Android 16 sichtbar.
 - **Store-Release 2.3.0: Freigabe bei Apple abwarten.** Android 2.3.0 (134)
   steht seit 03.10.2026 in Produktion bei 100 %, Tag `2.3.0` liegt auf
   `dac246eb`. iOS-Build 240 ist am 02.10.2026 eingereicht und wartet auf die
