@@ -197,6 +197,8 @@ describe('Konfis: Anwesenheit', () => {
     expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveTextContent(/^$/);
     expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveClass('web-umschalter__knopf--anwesend');
     expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveClass('web-umschalter__knopf--abwesend');
+    // Oben ausgerichtet: ein zweizeiliger Stand zieht Name und Knoepfe nicht in die Mitte.
+    expect((mia.getByRole('button', { name: 'Anwesend' }).closest('table') as HTMLElement)).not.toHaveClass('web-tabelle--mittig');
     expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveAttribute('aria-pressed', 'false');
     const kim = within(umschalter('Kim Konfi'));
     expect(kim.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'false');

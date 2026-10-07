@@ -246,7 +246,8 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
           spalten={spalten}
           zeilen={teilnehmende}
           zeileSchluessel={(p) => p.id}
-          mittig
+          // Oben ausgerichtet: wird der Stand zweizeilig, bleiben Name und
+          // Knoepfe auf der ersten Zeile (Simon, 07.10.2026).
         />
       ) : (
         <p className="web-gedaempft" role="status">{leerText ?? 'Noch niemand angemeldet.'}</p>
