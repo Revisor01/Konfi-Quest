@@ -402,20 +402,32 @@ describe('Challenges (Web): leere Zustaende, Stempel und Laden', () => {
     expect(screen.getByRole('heading', { level: 3, name: 'Nichts wartet auf Freigabe' })).toBeInTheDocument();
   });
 
-  it('die eigenen Stempel: erhaltene mit Datum, noch zu holende grau, beendete als vorbei; die Kachel fuehrt zur Challenge', () => {
+  it('die eigenen Stempel: dasselbe Raster wie auf der Seite einer Person; die Info nennt Challenge und Stand; ein Klick fuehrt zur Challenge', () => {
     zeigen();
     const stempel = screen.getByRole('region', { name: 'Deine Stempel' });
     expect(stempel).toHaveTextContent('1 erhalten · 3 noch zu holen');
-    const foto = within(stempel).getByText('Fotograf:in').closest('li')!;
-    expect(foto).toHaveTextContent('Erhalten am 30.09.2026');
-    expect(within(foto).getByRole('link', { name: 'Mein Lieblingsplatz' }).getAttribute('href')).toBe('/admin/challenges/12');
-    const offen = within(stempel).getByText('Fürbitter:in').closest('li')!;
-    expect(offen).toHaveClass('web-stempel--offen');
-    expect(offen).toHaveTextContent('Noch zu holen');
+    expect(stempel.querySelector('.web-auszeichnungen')).not.toBeNull();
+    const foto = within(stempel).getByRole('link', { name: 'Fotograf:in' });
+    expect(foto.getAttribute('href')).toBe('/admin/challenges/12');
+    expect((foto.querySelector('.web-abzeichen-symbol') as HTMLElement).style.background).toBe('var(--app-color-challenges)');
+    const info = document.getElementById(foto.getAttribute('aria-describedby')!)!;
+    expect(info).not.toBeVisible();
+    fireEvent.mouseEnter(foto.parentElement!);
+    expect(info).toBeVisible();
+    expect(info).toHaveTextContent('Mein Lieblingsplatz');
+    expect(info).toHaveTextContent('Erhalten');
+    expect(info).toHaveTextContent('30.09.2026');
+    fireEvent.mouseLeave(foto.parentElement!);
+    expect(info).not.toBeVisible();
+    const offen = within(stempel).getByRole('link', { name: 'Fürbitter:in' });
+    expect(offen.closest('li')).toHaveClass('web-auszeichnung--offen');
+    expect(offen.querySelector('.web-abzeichen-symbol')).toHaveClass('web-abzeichen-symbol--offen');
+    expect(document.getElementById(offen.getAttribute('aria-describedby')!)).toHaveTextContent('Noch nicht erhalten');
     // Challenges, die es nur geplant gibt, bringen keinen Stempel zum Holen (Befund Simon, 18.09.2026).
     expect(within(stempel).queryByText('Versfinder:in')).toBeNull();
     expect(within(stempel).queryByText('Kartenkünstler:in')).toBeNull();
-    expect(within(stempel).getByText('Sommerkind').closest('li')).toHaveTextContent('Challenge vorbei');
+    const vorbei = within(stempel).getByRole('link', { name: 'Sommerkind' });
+    expect(document.getElementById(vorbei.getAttribute('aria-describedby')!)).toHaveTextContent('Diese Challenge ist vorbei.');
   });
 
   it('ohne Stempel steht die Karte trotzdem da und sagt, wie man einen bekommt', () => {
@@ -427,9 +439,9 @@ describe('Challenges (Web): leere Zustaende, Stempel und Laden', () => {
   it('bewahrte Stempel aus geloeschten Challenges: ohne Link', () => {
     h.bewahrt = [{ challenge_id: 99, badge_icon: 'star', badge_name: 'Alter Stempel', title: 'Geloeschte Challenge', earned_at: tage(-100), bewahrt: true }];
     zeigen();
-    const kachel = screen.getByText('Alter Stempel').closest('li')!;
-    expect(kachel).toHaveTextContent('Die Challenge gibt es nicht mehr');
-    expect(within(kachel).queryByRole('link')).toBeNull();
+    const knopf = within(screen.getByRole('region', { name: 'Deine Stempel' })).getByRole('button', { name: 'Alter Stempel' });
+    expect(within(knopf.closest('li')!).queryByRole('link')).toBeNull();
+    expect(document.getElementById(knopf.getAttribute('aria-describedby')!)).toHaveTextContent('Die Challenge gibt es nicht mehr.');
   });
 });
 
@@ -619,7 +631,7 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(zeilen()).toHaveLength(6);
       const stempel = screen.getByRole('region', { name: 'Deine Stempel' });
       expect(stempel).toHaveTextContent('1 erhalten · 3 noch zu holen');
-      expect(within(stempel).getByText('Fotograf:in').closest('li')).toHaveTextContent('Erhalten am 30.09.2026');
+      expect(within(stempel).getByRole('link', { name: 'Fotograf:in' }).getAttribute('href')).toBe('/admin/challenges/12');
     });
   });
 

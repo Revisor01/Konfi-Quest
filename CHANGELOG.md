@@ -98,6 +98,9 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- Im Browser sehen die Stempel in den Challenges genauso aus wie auf der
+  Seite einer Person und zeigen beim Darüberfahren dieselbe Info; ein Klick
+  öffnet weiter die Challenge.
 - Auf der Seite einer Person im Browser stehen die Events links zwischen
   Aktivitäten und Bonuspunkten bzw. Zertifikaten, als Tabelle mit denselben
   Spaltenbreiten wie die übrigen Listen.

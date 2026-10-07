@@ -559,6 +559,17 @@ describe('Teamer-Detail (Web)', () => {
     await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith(`/admin/konfis/${ID}/teamer-since`, { teamer_since: '2024-10-15' }));
   });
 
+  it('Stempel: ein aufbewahrter aus einer geloeschten Challenge sagt das in der Info, ohne Link', async () => {
+    h.antworten.set(`/challenges/admin/bewahrte-stempel/${ID}`, [
+      { challenge_id: 77, badge_icon: 'star', badge_name: 'Alter Stempel', title: 'Geloeschte Challenge', earned_at: '2025-06-01T10:00:00Z', bewahrt: true },
+    ]);
+    await oeffnen();
+    const alt = eintrag('Stempel', 'Alter Stempel');
+    expect(alt.info).toHaveTextContent('Geloeschte Challenge');
+    expect(alt.info).toHaveTextContent('Die Challenge gibt es nicht mehr.');
+    expect(alt.knopf.tagName).toBe('BUTTON');
+  });
+
   it('Rueckblick ohne Namen: "Jahresrückblick 2026"', async () => {
     await oeffnen();
     expect(within(karte('Jahresrückblick')).getByText('Jahresrückblick 2026')).toBeInTheDocument();

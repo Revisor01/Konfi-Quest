@@ -11,7 +11,7 @@ import WebKarte from '../../../web/WebKarte';
 import BadgePopoverContent from '../../../shared/BadgePopoverContent';
 import { useKonfiBadges } from '../../views/useKonfiBadges';
 import { getBadgeColor } from '../../views/KonfiBadgesSection';
-import WebAuszeichnungen from './WebAuszeichnungen';
+import WebAuszeichnungen from '../../../web/WebAuszeichnungen';
 
 const WebKonfiBadges: React.FC<{ konfiId: number; rolle: 'konfi' | 'teamer' }> = ({ konfiId, rolle }) => {
   const { erreicht, laedt } = useKonfiBadges(konfiId, rolle);

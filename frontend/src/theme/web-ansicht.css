@@ -2124,6 +2124,60 @@ mark.web-treffer {
   gap: var(--app-abstand-mittel);
 }
 
+/* --- Badges und Stempel: ein Raster aus Kreis und Name (WebAuszeichnungen),
+   auf der Seite einer Person und in den Challenges --- */
+.web-auszeichnungen {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-auszeichnung {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.web-auszeichnung__knopf {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  padding: var(--app-abstand-eng) var(--app-abstand-mini);
+  border: 0;
+  border-radius: var(--app-radius-knopf);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: default;
+}
+
+.web-auszeichnung__knopf:hover,
+.web-auszeichnung__knopf[aria-expanded="true"] {
+  background: var(--web-hover);
+}
+
+.web-auszeichnung__name {
+  font-size: var(--app-text-klein);
+  color: var(--web-text);
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.web-auszeichnung--offen .web-auszeichnung__name {
+  color: var(--web-text-leise);
+}
+
+a.web-auszeichnung__knopf {
+  cursor: pointer;
+  text-decoration: none;
+}
+
 /* --- Info beim Darueberfahren und beim Fokus (WebInfoTipp) --- */
 .web-infotipp {
   position: relative;
@@ -2132,6 +2186,8 @@ mark.web-treffer {
 }
 
 .web-infotipp__blase {
+  /* Versatz am Rand des Inhalts; WebInfoTipp setzt ihn beim Oeffnen. */
+  --web-infotipp-versatz: 0px;
   position: absolute;
   top: calc(100% + var(--app-abstand-mini));
   left: 50%;
@@ -2144,9 +2200,16 @@ mark.web-treffer {
   background: var(--web-karte);
   box-shadow: var(--app-schatten-schwebend);
   text-align: left;
-  transform: translateX(-50%);
+  transform: translateX(calc(-50% + var(--web-infotipp-versatz)));
 }
 
 .web-infotipp__blase[hidden] {
   display: none;
+}
+
+.web-infotipp__zusatz {
+  display: block;
+  padding: 0 var(--app-abstand-mittel) var(--app-abstand-mittel);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-meta);
 }

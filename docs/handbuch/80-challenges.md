@@ -462,6 +462,14 @@ zugehöriger Challenge und ihrer Beschreibung. Bei einem erhaltenen Stempel steh
 dort das Datum, an dem er verliehen wurde; bei einem grauen, ob die Challenge
 noch läuft oder vorbei ist.
 
+Im Browser stehen die Stempel überall gleich da — im Challenges-Bereich wie auf
+der Seite einer Person: als Kreis mit dem Namen darunter, erhaltene in der
+Farbe der Challenges, noch nicht erhaltene grau und gestrichelt, genau wie die
+Badges. Dasselbe Fenster erscheint hier, sobald du mit der Maus über einen
+Stempel fährst oder ihn mit der Tabulatortaste ansteuerst; ein Klick öffnet
+die Challenge. Bei einem Stempel, dessen Challenge gelöscht wurde, steht im
+Fenster, dass es sie nicht mehr gibt.
+
 > **Achtung:** Änderst du Name oder Symbol nachträglich, ändert sich das auch
 > für alle, die den Stempel schon haben — er hängt an der Challenge, nicht an
 > der Person. Entziehen lässt er sich nicht.

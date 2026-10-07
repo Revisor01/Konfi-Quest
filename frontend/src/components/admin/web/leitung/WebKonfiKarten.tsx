@@ -40,8 +40,8 @@ import WebPill from '../../../web/WebPill';
 import WebLink from '../../../web/WebLink';
 import WebAngaben from '../../../web/WebAngaben';
 import { WebLeer } from '../../../web/WebZustaende';
-import StempelPopoverContent from '../../../shared/StempelPopoverContent';
-import WebAuszeichnungen, { type WebAuszeichnung } from './WebAuszeichnungen';
+import StempelInfo from '../../../web/StempelInfo';
+import WebAuszeichnungen, { type WebAuszeichnung } from '../../../web/WebAuszeichnungen';
 import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
 import type { Anwesenheit, KonfiHistorie, TeamerTermin, Zertifikat } from './konfiDetailTypen';
 
@@ -524,7 +524,7 @@ export const StempelKarte: React.FC<{ marks: readonly ChallengeMark[]; offene: r
       icon: getIconFromString(m.badge_icon, ICON_CHALLENGE_GEFUELLT),
       farbe: 'var(--app-color-challenges)',
       erreicht: true,
-      info: <StempelPopoverContent dataRef={{ current: { stempel: m, erhalten: true } }} />,
+      info: <StempelInfo stempel={m} />,
     })),
     ...offene.map((o) => ({
       schluessel: `o-${o.challenge_id}`,
@@ -532,7 +532,7 @@ export const StempelKarte: React.FC<{ marks: readonly ChallengeMark[]; offene: r
       icon: getIconFromString(o.badge_icon, ICON_CHALLENGE_GEFUELLT),
       farbe: 'var(--app-color-challenges)',
       erreicht: false,
-      info: <StempelPopoverContent dataRef={{ current: { stempel: o, erhalten: false } }} />,
+      info: <StempelInfo stempel={o} offen />,
     })),
   ];
   return (
