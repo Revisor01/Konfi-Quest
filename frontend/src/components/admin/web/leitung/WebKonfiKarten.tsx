@@ -11,6 +11,7 @@ import {
   ICON_AKTION,
   ICON_BILD,
   ICON_BONUS,
+  ICON_CHALLENGE_GEFUELLT,
   ICON_FUNKELN,
   ICON_HINZUFUEGEN,
   ICON_LOESCHEN,
@@ -37,10 +38,18 @@ import WebPill from '../../../web/WebPill';
 import WebLink from '../../../web/WebLink';
 import WebAngaben from '../../../web/WebAngaben';
 import { WebLeer } from '../../../web/WebZustaende';
+import StempelPopoverContent from '../../../shared/StempelPopoverContent';
+import WebAuszeichnungen, { type WebAuszeichnung } from './WebAuszeichnungen';
 import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
 import type { Anwesenheit, KonfiHistorie, TeamerTermin, Zertifikat } from './konfiDetailTypen';
 
 const ZEILEN_KURZ = 10;
+
+// Aktivitaeten, Events und Bonuspunkte stehen untereinander und haben dieselben
+// Spaltenbreiten (Simon, 07.10.2026: „die listen sollen immer die gleichen
+// spaltenbreite haben"). Die Aktionsspalte ist .web-spalte-aktionen-schmal;
+// "Eingetragen von" faellt auf schmaler Flaeche in allen dreien weg.
+const SPALTE = { datum: '100px', art: '118px', punkte: '68px', von: '128px' } as const;
 
 /** Eine Punkteart als Marke: Gottesdienst blau, Gemeinde gruen (wie in der App). */
 const ArtMarke: React.FC<{ art?: string }> = ({ art }) => (
@@ -91,23 +100,23 @@ export const AktivitaetenKarte: React.FC<{
         </span>
       ),
     },
-    { schluessel: 'datum', kopf: 'Datum', breite: '110px', zelle: (a) => datumKurz(a.completed_date || a.date) },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (a) => datumKurz(a.completed_date || a.date) },
     ...(!istTeamer ? [{
       schluessel: 'art',
       kopf: 'Art',
-      breite: '124px',
+      breite: SPALTE.art,
       zelle: (a: Activity) => <ArtMarke art={a.type} />,
     }, {
       schluessel: 'punkte',
       kopf: 'Punkte',
       zahl: true,
-      breite: '80px',
+      breite: SPALTE.punkte,
       zelle: (a: Activity) => <strong>+{a.points}</strong>,
     }] : []),
     {
       schluessel: 'von',
       kopf: 'Eingetragen von',
-      breite: '136px',
+      breite: SPALTE.von, optional: true,
       zelle: (a) => a.admin || a.admin_name || 'Leitung',
     },
     {
@@ -148,6 +157,7 @@ export const AktivitaetenKarte: React.FC<{
             zeileSchluessel={(a) => a.id}
             zeileKlasse={(a) => (!istTeamer && artAus(konfi, a.type) ? 'web-zeile--leise' : undefined)}
             mittig
+            klasse="web-tabelle--punkte"
           />
           <AlleZeigen anzahl={aktivitaeten.length} alle={alle} onUmschalten={() => setAlle((a) => !a)} />
         </>
@@ -177,10 +187,10 @@ export const BonusKarte: React.FC<{
       ),
     },
     // `bonus.date` gibt es in dieser Antwort nicht -- sie liefert bp.* aus bonus_points.
-    { schluessel: 'datum', kopf: 'Datum', breite: '110px', zelle: (b) => datumKurz(b.completed_date || b.created_at || '') },
-    { schluessel: 'art', kopf: 'Art', breite: '124px', zelle: (b) => <ArtMarke art={b.type} /> },
-    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '80px', zelle: (b) => <strong>+{b.points}</strong> },
-    { schluessel: 'von', kopf: 'Vergeben von', breite: '136px', zelle: (b) => b.admin_name || 'Leitung' },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (b) => datumKurz(b.completed_date || b.created_at || '') },
+    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, zelle: (b) => <ArtMarke art={b.type} /> },
+    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, zelle: (b) => <strong>+{b.points}</strong> },
+    { schluessel: 'von', kopf: 'Vergeben von', breite: SPALTE.von, optional: true, zelle: (b) => b.admin_name || 'Leitung' },
     {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
@@ -210,7 +220,7 @@ export const BonusKarte: React.FC<{
       {bonus.length === 0 ? (
         <WebLeer icon={ICON_BONUS} titel="Keine Bonuspunkte" text="Noch keine Bonuspunkte erhalten." />
       ) : (
-        <WebSortTabelle beschriftung="Bonuspunkte" spalten={spalten} zeilen={bonus} zeileSchluessel={(b) => b.id} mittig />
+        <WebSortTabelle beschriftung="Bonuspunkte" spalten={spalten} zeilen={bonus} zeileSchluessel={(b) => b.id} mittig klasse="web-tabelle--punkte" />
       )}
     </WebKarte>
   );
@@ -221,29 +231,45 @@ export const BonusKarte: React.FC<{
 export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintrag[]; konfi: Konfi | null }> = ({ eventPunkte, konfi }) => {
   const summe = eventPunkte.reduce((s, e) => s + (e.points || 0), 0);
   const geordnet = nachAnzeigeDatumAbsteigend(eventPunkte);
+  // Dieselbe Tabelle wie Aktivitaeten und Bonuspunkte darueber und darunter,
+  // mit denselben festen Spaltenbreiten (Simon, 07.10.2026: Events als Liste
+  // zwischen den beiden, „immer die gleichen spaltenbreite").
+  const spalten: Array<WebSortSpalte<EventPunkteEintrag>> = [
+    {
+      schluessel: 'event',
+      kopf: 'Event',
+      zelle: (e) => (
+        <span className="web-zelle-mit-knopf">
+          <span className="web-zelle-titel">{e.event_name || 'Event'}</span>
+          {artAus(konfi, e.point_type) && <WebPill>deaktiviert</WebPill>}
+        </span>
+      ),
+    },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
+    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, zelle: (e) => <ArtMarke art={e.point_type} /> },
+    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, zelle: (e) => <strong>+{e.points}</strong> },
+    { schluessel: 'von', kopf: 'Verbucht von', breite: SPALTE.von, optional: true, zelle: (e) => e.admin_name || 'Leitung' },
+    // Leer, aber gleich breit: Die Spalten stehen unter denen von Aktivitaeten und Bonuspunkten.
+    { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },
+  ];
   return (
-    <WebKarte titel="Events" untertitel={punkteText(summe)} bund={eventPunkte.length > 0}>
+    <WebKarte
+      titel="Events"
+      untertitel={`${punkteText(summe)} aus ${mitEinheit(eventPunkte.length, 'Event', 'Events')}`}
+      bund={eventPunkte.length > 0}
+    >
       {eventPunkte.length === 0 ? (
         <WebLeer icon={ICON_PODIUM} titel="Keine Event-Punkte" text="Noch keine Event-Punkte erhalten." />
       ) : (
-        <ul className="web-feed">
-          {geordnet.map((e, i) => (
-            <li key={e.id ?? i} className={`web-feed__zeile${artAus(konfi, e.point_type) ? ' web-zeile--leise' : ''}`}>
-              <div className="web-feed__haupt">
-                <span className="web-feed__titel">{e.event_name || 'Event'}</span>
-                <span className="web-feed__meta">
-                  <span>{datumKurz(punkteAnzeigeDatum(e), { ohneJahr: true })}</span>
-                  <span>{e.admin_name || 'Leitung'}</span>
-                  {artAus(konfi, e.point_type) && <span>(deaktiviert)</span>}
-                </span>
-              </div>
-              <div className="web-feed__rechts">
-                <strong>+{e.points}</strong>
-                <ArtMarke art={e.point_type} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <WebSortTabelle
+          beschriftung="Events"
+          spalten={spalten}
+          zeilen={geordnet}
+          zeileSchluessel={(e) => e.id}
+          zeileKlasse={(e) => (artAus(konfi, e.point_type) ? 'web-zeile--leise' : undefined)}
+          mittig
+          klasse="web-tabelle--punkte"
+        />
       )}
     </WebKarte>
   );
@@ -256,33 +282,39 @@ const BUCHUNG: Record<string, { text: string; ton: 'erfolg' | 'warnung' | 'neutr
   absent: { text: 'Abwesend', ton: 'warnung' },
 };
 
-export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = ({ events }) => (
-  <WebKarte titel="Events" untertitel={mitEinheit(events.length, 'Event', 'Events')} bund={events.length > 0}>
-    {events.length === 0 ? (
-      // Auch leer anzeigen: sonst ist "war bei keinem Event" nicht von "nicht geladen" zu unterscheiden.
-      <WebLeer icon={ICON_TERMIN} titel="Keine Events" text="Noch bei keinem Event dabei gewesen." />
-    ) : (
-      <ul className="web-feed">
-        {events.slice(0, ZEILEN_KURZ).map((e) => {
-          const b = BUCHUNG[e.booking_status] ?? { text: 'Ausstehend', ton: 'neutral' as const };
-          return (
-            <li key={e.id} className="web-feed__zeile">
-              <div className="web-feed__haupt">
-                <span className="web-feed__titel">{e.name}</span>
-                <span className="web-feed__meta"><span>{datumKurz(e.event_date)}</span></span>
-              </div>
-              <div className="web-feed__rechts"><WebPill ton={b.ton}>{b.text}</WebPill></div>
-            </li>
-          );
-        })}
-        {/* Die Liste ist auf 10 begrenzt, der Titel zaehlt aber alle. */}
-        {events.length > ZEILEN_KURZ && (
-          <li className="web-feed__zeile"><span className="web-gedaempft">und {events.length - ZEILEN_KURZ} weitere</span></li>
-        )}
-      </ul>
-    )}
-  </WebKarte>
-);
+export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = ({ events }) => {
+  const [alle, setAlle] = useState(false);
+  const sichtbar = alle ? events : events.slice(0, ZEILEN_KURZ);
+  // Steht links unter den Aktivitaeten (Simon, 07.10.2026) und teilt deren
+  // Spaltenbreiten: Event, Datum, Stand an der Stelle von "Eingetragen von".
+  const spalten: Array<WebSortSpalte<TeamerTermin>> = [
+    { schluessel: 'event', kopf: 'Event', zelle: (e) => <span className="web-zelle-titel">{e.name}</span> },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, zelle: (e) => datumKurz(e.event_date) },
+    {
+      schluessel: 'stand',
+      kopf: 'Stand',
+      breite: SPALTE.von,
+      zelle: (e) => {
+        const b = BUCHUNG[e.booking_status] ?? { text: 'Ausstehend', ton: 'neutral' as const };
+        return <WebPill ton={b.ton}>{b.text}</WebPill>;
+      },
+    },
+    { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },
+  ];
+  return (
+    <WebKarte titel="Events" untertitel={mitEinheit(events.length, 'Event', 'Events')} bund={events.length > 0}>
+      {events.length === 0 ? (
+        // Auch leer anzeigen: sonst ist "war bei keinem Event" nicht von "nicht geladen" zu unterscheiden.
+        <WebLeer icon={ICON_TERMIN} titel="Keine Events" text="Noch bei keinem Event dabei gewesen." />
+      ) : (
+        <>
+          <WebSortTabelle beschriftung="Events" spalten={spalten} zeilen={sichtbar} zeileSchluessel={(e) => e.id} mittig klasse="web-tabelle--punkte" />
+          <AlleZeigen anzahl={events.length} alle={alle} onUmschalten={() => setAlle((a) => !a)} />
+        </>
+      )}
+    </WebKarte>
+  );
+};
 
 // --- Zertifikate (Teamer) ---------------------------------------------------------------
 
@@ -480,28 +512,28 @@ export const AntraegeKarte: React.FC<{ antraege: readonly Activity[]; onFoto: (a
 
 export const StempelKarte: React.FC<{ marks: readonly ChallengeMark[]; offene: readonly OffenerStempel[] }> = ({ marks, offene }) => {
   if (marks.length === 0 && offene.length === 0) return null;
+  // Stempel tragen immer die Challenge-Farbe, nie eine eigene (wie in der App).
+  const eintraege: WebAuszeichnung[] = [
+    ...marks.map((m) => ({
+      schluessel: `m-${m.challenge_id}`,
+      name: m.badge_name || m.title,
+      icon: getIconFromString(m.badge_icon, ICON_CHALLENGE_GEFUELLT),
+      farbe: 'var(--app-color-challenges)',
+      erreicht: true,
+      info: <StempelPopoverContent dataRef={{ current: { stempel: m, erhalten: true } }} />,
+    })),
+    ...offene.map((o) => ({
+      schluessel: `o-${o.challenge_id}`,
+      name: o.badge_name || o.title,
+      icon: getIconFromString(o.badge_icon, ICON_CHALLENGE_GEFUELLT),
+      farbe: 'var(--app-color-challenges)',
+      erreicht: false,
+      info: <StempelPopoverContent dataRef={{ current: { stempel: o, erhalten: false } }} />,
+    })),
+  ];
   return (
     <WebKarte titel="Stempel" untertitel={`${mitEinheit(marks.length, 'Stempel', 'Stempel')} erhalten`}>
-      <ul className="web-stempel">
-        {marks.map((m) => (
-          <li key={`m-${m.challenge_id}`} className="web-stempel__eintrag" title={m.description || undefined}>
-            <span className="web-stempel__symbol" aria-hidden="true"><IonIcon icon={getIconFromString(m.badge_icon)} /></span>
-            <span className="web-stempel__text">
-              <span className="web-zelle-titel">{m.title}</span>
-              <span className="web-zelle-leise">{m.earned_at ? `erhalten am ${datumKurz(m.earned_at)}` : 'erhalten'}{m.bewahrt ? ' · Challenge gelöscht' : ''}</span>
-            </span>
-          </li>
-        ))}
-        {offene.map((o) => (
-          <li key={`o-${o.challenge_id}`} className="web-stempel__eintrag web-stempel__eintrag--offen" title={o.description || undefined}>
-            <span className="web-stempel__symbol" aria-hidden="true"><IonIcon icon={getIconFromString(o.badge_icon)} /></span>
-            <span className="web-stempel__text">
-              <span className="web-zelle-titel">{o.title}</span>
-              <span className="web-zelle-leise">noch nicht erhalten{o.status === 'ended' ? ' · Challenge beendet' : ''}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <WebAuszeichnungen beschriftung="Stempel" eintraege={eintraege} />
     </WebKarte>
   );
 };

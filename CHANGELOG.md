@@ -98,6 +98,12 @@ Versionsüberschrift.
   Support" für Gemeindeleitung und Leitung dorthin.
 
 ### Geändert
+- Auf der Seite einer Person im Browser stehen die Events links zwischen
+  Aktivitäten und Bonuspunkten bzw. Zertifikaten, als Tabelle mit denselben
+  Spaltenbreiten wie die übrigen Listen.
+- Badges und Stempel einer Person sehen im Browser gleich aus — Badges in
+  ihrer Farbe, offene Stempel gedämpft — und zeigen ihre Info beim
+  Darüberfahren, beim Ansteuern mit der Tastatur und beim Antippen.
 - Im breiten Browserfenster steht der Gemeinde-Umschalter nur noch unten in
   der Leiste — mit dem Namen der Gemeinde, der eigenen Rolle dort und den
   roten Zahlen je Gemeinde; in den Apps und im schmalen Fenster bleibt er oben

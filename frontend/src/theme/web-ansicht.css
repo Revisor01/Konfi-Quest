@@ -342,6 +342,7 @@ a.web-kachel:hover {
 
 .web-link:focus-visible,
 .web-knopf:focus-visible,
+.web-infotipp__ausloeser:focus-visible,
 .web-chip:focus-visible,
 .web-akkordeon__kopf:focus-visible,
 .web-suche__eingabe:focus-visible,
@@ -2121,4 +2122,31 @@ mark.web-treffer {
   display: flex;
   flex-direction: column;
   gap: var(--app-abstand-mittel);
+}
+
+/* --- Info beim Darueberfahren und beim Fokus (WebInfoTipp) --- */
+.web-infotipp {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+.web-infotipp__blase {
+  position: absolute;
+  top: calc(100% + var(--app-abstand-mini));
+  left: 50%;
+  z-index: 20;
+  width: 300px;
+  max-width: 80vw;
+  overflow: hidden;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  box-shadow: var(--app-schatten-schwebend);
+  text-align: left;
+  transform: translateX(-50%);
+}
+
+.web-infotipp__blase[hidden] {
+  display: none;
 }

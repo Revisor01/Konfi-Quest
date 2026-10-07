@@ -623,82 +623,51 @@
   color: var(--app-text-fehler);
 }
 
-.web-badges-raster {
+/* --- Badges und Stempel der Personenseite: ein Raster aus Kreis und Name --- */
+.web-auszeichnungen {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
   gap: var(--app-abstand-basis);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.web-badge {
+.web-auszeichnung {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.web-auszeichnung__knopf {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--app-abstand-mini);
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  padding: var(--app-abstand-eng) var(--app-abstand-mini);
+  border: 0;
+  border-radius: var(--app-radius-knopf);
+  background: none;
+  color: inherit;
+  font: inherit;
   text-align: center;
+  cursor: default;
 }
 
-.web-badge__symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--app-radius-kreis);
-  background: var(--app-color-badges);
-  color: var(--app-weiss);
-  font-size: var(--app-text-titel);
+.web-auszeichnung__knopf:hover,
+.web-auszeichnung__knopf[aria-expanded="true"] {
+  background: var(--web-hover);
 }
 
-.web-badge__name {
+.web-auszeichnung__name {
   font-size: var(--app-text-klein);
   color: var(--web-text);
   overflow-wrap: anywhere;
 }
 
-.web-stempel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-mittel);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.web-stempel__eintrag {
-  display: flex;
-  align-items: center;
-  gap: var(--app-abstand-mittel);
-}
-
-.web-stempel__symbol {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--app-radius-kreis);
-  background: var(--app-color-challenges);
-  color: var(--app-weiss);
-  font-size: var(--app-text-gross);
-}
-
-.web-stempel__eintrag--offen .web-stempel__symbol {
-  background: var(--app-surface-dim);
+.web-auszeichnung--offen .web-auszeichnung__name {
   color: var(--web-text-leise);
-}
-
-.web-stempel__eintrag--offen .web-zelle-titel {
-  color: var(--web-text-leise);
-}
-
-.web-stempel__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
 }
 
 /* --- Symbol im farbigen Kreis (Kategorie, Level, Jahrgang, Zertifikat ...) --- */
@@ -1122,4 +1091,17 @@
   display: inline-flex;
   flex-direction: column;
   align-items: flex-end;
+}
+
+/* Aktivitaeten, Events und Bonuspunkte der Personenseite: feste, gemeinsame
+   Spaltenbreiten (WebKonfiKarten, SPALTE), auch auf schmaler Flaeche -- dort
+   faellt "Eingetragen von" weg, statt dass die Tabelle waagerecht scrollt. */
+.web-tabelle--punkte {
+  table-layout: fixed;
+}
+
+.web-tabelle--punkte .web-zelle-titel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

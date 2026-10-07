@@ -6,9 +6,11 @@
 //             alle Aktionen als Knoepfe oben rechts
 //   Kennzahl  Gottesdienst, Gemeinde, Gesamt, Badges -- bei einer Teamer:in
 //             Zertifikate, Events, Badges
-//   links     Aktivitaeten, Bonuspunkte -- bei einer Teamer:in Zertifikate,
-//             Konfi-Historie und die Events der Konfi-Zeit;
-//   rechts    Angaben, Konfirmation, Badges, Events, offene Antraege, Stempel,
+//   links     Aktivitaeten, Events, Bonuspunkte -- bei einer Teamer:in
+//             Aktivitaeten, Events, Zertifikate, Konfi-Historie und die
+//             Events der Konfi-Zeit; Events stehen immer unter den
+//             Aktivitaeten (Simon, 07.10.2026);
+//   rechts    Angaben, Konfirmation, Badges, offene Antraege, Stempel,
 //             Rueckblick und "Rolle aendern".
 //
 // Daten und Aktionen kommen von der Seite (KonfiDetailView): Sie laedt, haelt
@@ -198,6 +200,7 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
         onLoeschen={p.onAktivitaetLoeschen}
         onFoto={p.onFoto}
       />
+      {istTeamer ? <TeamerEventsKarte events={p.teamerEvents} /> : <EventPunkteKarte eventPunkte={p.eventPunkte} konfi={konfi} />}
       {!istTeamer && (
         <BonusKarte bonus={p.bonus} konfi={konfi} summe={p.punkte.bonus} onVergeben={p.onBonusVergeben} onLoeschen={p.onBonusLoeschen} />
       )}
@@ -215,7 +218,6 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
       {mitKonfirmation && <KonfirmationKarte konfi={konfi} anwesenheit={p.anwesenheit} onMatrix={p.onMatrix} />}
       {teamerSeit}
       <WebKonfiBadges konfiId={p.konfiId} rolle={istTeamer ? 'teamer' : 'konfi'} />
-      {istTeamer ? <TeamerEventsKarte events={p.teamerEvents} /> : <EventPunkteKarte eventPunkte={p.eventPunkte} konfi={konfi} />}
       <AntraegeKarte antraege={offene} onFoto={p.onFoto} />
       <StempelKarte marks={p.stempel} offene={p.offeneStempel} />
       <RueckblickKarte eintraege={p.rueckblicke} istTeamer={istTeamer} onOeffnen={p.onRueckblick} />

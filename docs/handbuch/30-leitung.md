@@ -135,17 +135,28 @@ Jahrgang abgeschaltet hat, steht dort als abgeschaltet — und die Badges, bei
 einer Teamer:in Zertifikate, Events und Badges.
 
 Links folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
-eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen — und, bei
-einer Konfi, **Bonuspunkte**; bei einer Teamer:in stattdessen **Zertifikate**,
-die **Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen
-über zehn hinaus, klappt **Alle … anzeigen** den Rest auf.
+eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen —, darunter
+**Events** und bei einer Konfi **Bonuspunkte**. Bei einer Konfi zeigt
+**Events** die Events, die Punkte gebracht haben, mit ihrem Datum, Art und
+Punkten; bei einer Teamer:in die Events, für die sie eingetragen ist, mit
+ihrem Stand. Alle drei Tabellen haben dieselben Spalten in derselben Breite;
+wird das Fenster schmal, fällt die Spalte, wer eingetragen hat, in allen
+dreien weg. Bei einer Teamer:in folgen **Zertifikate**, die
+**Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen über
+zehn hinaus, klappt **Alle … anzeigen** den Rest auf.
 
 Rechts stehen die **Angaben** — Jahrgang, Benutzername und Bonuspunkte — und
 darunter die Karten **Konfirmation** (Datum, Konfispruch, besuchte
 Pflicht-Events), bei einer Teamer:in **Teamer:in seit** mit dem Datum zum
-Ändern, **Badges**, **Events**, **Offene Anträge** mit dem Link **Anträge
+Ändern, **Badges**, **Offene Anträge** mit dem Link **Anträge
 bearbeiten →**, **Stempel**, **Jahresrückblick** und **Rolle ändern** mit **Zur
-Teamer:in befördern**. Offene Anträge, Stempel und Rückblick stehen nur da,
+Teamer:in befördern**. Badges und Stempel stehen als Kreise mit Namen
+darunter: Badges in ihrer eigenen Farbe, erhaltene Stempel in der Farbe der
+Challenges, noch offene Stempel grau und gestrichelt. Fährst du mit der Maus
+über einen Kreis oder springst mit der Tabulatortaste darauf, erscheint die
+Info dazu — beim Badge Beschreibung und Datum, beim Stempel die Challenge und
+wann er erhalten wurde oder dass er noch fehlt; auf dem Tablet öffnet ein
+Tippen die Info. Offene Anträge, Stempel und Rückblick stehen nur da,
 wenn es etwas zu zeigen gibt. Ohne Netz gehen nur das Eintragen von
 Aktivitäten und Bonuspunkten; ein Hinweis unter dem Kopf sagt das, alles andere
 wartet auf die Verbindung.
