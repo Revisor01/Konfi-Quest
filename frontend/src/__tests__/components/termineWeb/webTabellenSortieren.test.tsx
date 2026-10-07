@@ -4,6 +4,7 @@
 // Kopf ordnet aufsteigend, ein zweiter dreht. Die Anträge und Aktivitäten
 // der Leitung stehen in webAntraegeAktivitaeten.test.tsx, die Tabellen der
 // Termin-Details in webTerminDetailLeitung.test.tsx und webTeamTerminDetail.test.tsx.
+import { STATUS_FARBE } from '../../../utils/termineWeb';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { h, zuruecksetzen, termin, inTagen, JETZT } from './geruestWeb';
@@ -196,7 +197,7 @@ describe('Events von Konfis und Team (WebTerminAnsicht)', () => {
   const eintrag = (id: number, name: string, tage: number, angemeldet: number): WebTerminEintrag => ({
     event: termin(id, name, { event_date: inTagen(tage), registered_count: angemeldet, max_participants: 20 }),
     href: `/konfi/events/${id}`,
-    status: { text: 'Offen', farbe: 'success', ton: 'erfolg' } as WebTerminEintrag['status'],
+    status: { text: 'Offen', farbe: STATUS_FARBE.success, ton: 'erfolg' } as WebTerminEintrag['status'],
     fakten: [{ art: 'plaetze', text: `${angemeldet}/20` }] as unknown as WebTerminEintrag['fakten'],
   });
   const EINTRAEGE = [eintrag(1, 'Zeltlager', 3, 9), eintrag(2, 'Bastelnachmittag', 12, 4), eintrag(3, 'Mitarbeiterabend', 1, 15)];
