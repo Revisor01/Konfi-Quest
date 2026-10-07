@@ -110,6 +110,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
     {
       schluessel: 'name',
       kopf: 'Name',
+      sortWert: (u) => u.display_name,
       zelle: (u) => {
         const avatar: AvatarFarbe = rollenFarbe(u.role_name);
         const titel = <WebTreffer text={u.display_name} suche={suche} />;
@@ -132,6 +133,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       schluessel: 'rolle',
       kopf: 'Rolle',
       breite: '150px',
+      sortWert: (u) => rollenName(u.role_name),
       zelle: (u) => <WebRolleMarke rolle={u.role_name} />,
     },
     {
@@ -139,12 +141,15 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       kopf: 'Jahrgänge',
       breite: '150px',
       optional: true,
+      // Die Gemeindeleitung hat alle Jahrgaenge: sie steht oben bei absteigend
+      sortWert: (u) => (u.role_name === 'org_admin' ? Number.MAX_SAFE_INTEGER : Number(u.assigned_jahrgaenge_count) || 0),
       zelle: jahrgaengeText,
     },
     {
       schluessel: 'status',
       kopf: 'Status',
       breite: '190px',
+      sortWert: (u) => (u.is_active ? 'Aktiv' : 'Gesperrt'),
       zelle: (u) => (
         <span className="web-pillreihe">
           <WebPill ton={u.is_active ? 'erfolg' : 'neutral'} punkt>{u.is_active ? 'Aktiv' : 'Gesperrt'}</WebPill>
@@ -159,6 +164,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       kopf: 'Zuletzt angemeldet',
       breite: '140px',
       optional: true,
+      sortWert: (u) => (u.last_login_at ? new Date(u.last_login_at) : null),
       zelle: (u) => (u.last_login_at ? datumKurz(u.last_login_at) : <span className="web-gedaempft">noch nie</span>),
     },
     {

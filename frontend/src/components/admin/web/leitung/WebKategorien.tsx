@@ -56,6 +56,7 @@ const WebKategorien: React.FC<WebKategorienProps> = ({
       schluessel: 'name',
       kopf: 'Name',
       breite: '32%',
+      sortWert: (k) => k.name,
       zelle: (k) => (
         <span className="web-person-zelle">
           <WebSymbol icon={ICON_KATEGORIE_GEFUELLT} ton="categories" />
@@ -68,6 +69,7 @@ const WebKategorien: React.FC<WebKategorienProps> = ({
     {
       schluessel: 'beschreibung',
       kopf: 'Beschreibung',
+      sortWert: (k) => k.description,
       zelle: (k) => (k.description
         ? <span className="web-zelle-leise">{k.description}</span>
         : <span className="web-gedaempft">Keine Beschreibung</span>),

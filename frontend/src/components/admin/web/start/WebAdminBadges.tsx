@@ -138,6 +138,7 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
               {
                 schluessel: 'badge',
                 kopf: 'Badge',
+                sortWert: (b) => b.name,
                 zelle: (b) => (
                   <span className="web-badge-zelle">
                     <WebBadgeSymbol icon={getIconFromString(b.icon)} farbe={b.color || 'var(--app-color-users)'} erreicht={b.is_active} groesse="klein" />
@@ -154,6 +155,7 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
                 schluessel: 'kriterium',
                 kopf: 'Kriterium',
                 optional: true,
+                sortWert: (b) => p.kriteriumText(b.criteria_type),
                 zelle: (b) => (
                   <span className="web-badge-kriterium">
                     <IonIcon icon={getCriteriaIcon(b.criteria_type)} className="web-badge-kriterium__symbol" aria-hidden="true" />
@@ -168,6 +170,7 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
                 schluessel: 'status',
                 kopf: 'Status',
                 breite: '210px',
+                sortWert: (b) => `${b.is_active ? 'Aktiv' : 'Inaktiv'} ${b.is_hidden ? 'Geheim' : 'Sichtbar'}`,
                 zelle: (b) => (
                   <span className="web-pillreihe">
                     <WebPill ton={b.is_active ? 'erfolg' : 'fehler'} punkt>{b.is_active ? 'Aktiv' : 'Inaktiv'}</WebPill>
@@ -175,7 +178,7 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
                   </span>
                 ),
               },
-              { schluessel: 'verliehen', kopf: 'Verliehen', zahl: true, breite: '110px', zelle: (b) => `${b.earned_count || 0}×` },
+              { schluessel: 'verliehen', kopf: 'Verliehen', zahl: true, breite: '110px', sortWert: (b) => b.earned_count || 0, zelle: (b) => `${b.earned_count || 0}×` },
               {
                 schluessel: 'aktionen',
                 kopf: 'Aktionen',

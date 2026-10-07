@@ -77,6 +77,7 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
       schluessel: 'titel',
       kopf: 'Material',
       breite: '32%',
+      sortWert: (m) => m.title,
       zelle: (m) => (
         <span className="web-person-zelle">
           <WebSymbol icon={m.link_url ? ICON_LINK : ICON_DATEI_GEFUELLT} ton="material" />
@@ -92,6 +93,7 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
       kopf: 'Sichtbar für',
       breite: '18%',
       optional: true,
+      sortWert: (m) => (m.ist_global ? 'Für alle' : jahrgangsText(m)),
       zelle: (m) => (m.ist_global
         ? <WebPill ton="info">Für alle</WebPill>
         : (jahrgangsText(m) ?? <span className="web-gedaempft">–</span>)),
@@ -99,6 +101,8 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
     {
       schluessel: 'inhalt',
       kopf: 'Inhalt',
+      // Wie viel dranhaengt: Dateien, Links und Events zusammen
+      sortWert: (m) => (m.file_count ?? 0) + (m.link_count ?? (m.link_url ? 1 : 0)) + (m.event_count ?? 0),
       zelle: (m) => {
         const links = m.link_count ?? (m.link_url ? 1 : 0);
         const teile = [
@@ -116,6 +120,7 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
       kopf: 'Erstellt von',
       breite: '140px',
       optional: true,
+      sortWert: (m) => m.created_by_name,
       zelle: (m) => m.created_by_name || <span className="web-gedaempft">–</span>,
     },
     {

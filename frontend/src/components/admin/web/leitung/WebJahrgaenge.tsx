@@ -58,6 +58,7 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       schluessel: 'name',
       kopf: 'Jahrgang',
       breite: '20%',
+      sortWert: (j) => j.name,
       zelle: (j) => (
         <span className="web-person-zelle">
           <WebSymbol icon={ICON_JAHRGANG_GEFUELLT} ton="jahrgang" />
@@ -72,11 +73,14 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       kopf: 'Konfis',
       zahl: true,
       breite: '90px',
+      sortWert: (j) => j.konfi_count ?? 0,
       zelle: (j) => j.konfi_count ?? 0,
     },
     {
       schluessel: 'ziele',
       kopf: 'Punkteziele',
+      // Summe der Ziele, die gelten (wie angezeigt: ohne Wert gilt 10)
+      sortWert: (j) => (j.gottesdienst_enabled !== false ? j.target_gottesdienst || 10 : 0) + (j.gemeinde_enabled !== false ? j.target_gemeinde || 10 : 0),
       zelle: (j) => {
         const godi = j.gottesdienst_enabled !== false;
         const gemeinde = j.gemeinde_enabled !== false;
@@ -94,6 +98,7 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       kopf: 'Konfispruch',
       breite: '150px',
       optional: true,
+      sortWert: (j) => (j.konfspruch_enabled !== false ? 'Spruch frei' : 'Spruch gesperrt'),
       zelle: (j) => (j.konfspruch_enabled !== false
         ? <WebPill ton="erfolg" punkt>Spruch frei</WebPill>
         : <WebPill punkt>Spruch gesperrt</WebPill>),
@@ -103,6 +108,7 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       kopf: 'Rückblick',
       breite: '190px',
       optional: true,
+      sortWert: (j) => (j.wrapped_released_at ? new Date(j.wrapped_released_at) : null),
       zelle: (j) => (j.wrapped_released_at
         ? <span className="web-zelle-leise">Gestartet am {datumKurz(j.wrapped_released_at)}</span>
         : <span className="web-gedaempft">Noch kein Rückblick</span>),

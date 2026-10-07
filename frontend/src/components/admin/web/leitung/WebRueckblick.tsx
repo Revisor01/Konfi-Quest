@@ -93,6 +93,7 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
     {
       schluessel: 'name',
       kopf: 'Name',
+      sortWert: (a) => a.titel,
       zelle: (a) => (
         <span className="web-person-zelle">
           <WebSymbol icon={a.typ === 'teamer' ? ICON_GRUPPE_GEFUELLT : ICON_FUNKELN_GEFUELLT} ton="wrapped" />
@@ -104,6 +105,7 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
       schluessel: 'jahrgang',
       kopf: 'Jahrgang',
       breite: '170px',
+      sortWert: (a: RueckblickAusgabe) => a.jahrgang_name,
       zelle: (a: RueckblickAusgabe) => a.jahrgang_name ?? <span className="web-gedaempft">–</span>,
     }] : []),
     {
@@ -111,6 +113,7 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
       kopf: 'Zeitraum',
       breite: '210px',
       optional: true,
+      sortWert: (a) => new Date(a.zeitraum_start),
       zelle: (a) => <span className="web-zelle-leise">{zeitraum(a)}</span>,
     },
     {
@@ -118,12 +121,15 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
       kopf: 'Rückblicke',
       zahl: true,
       breite: '110px',
+      sortWert: (a) => a.snapshots,
       zelle: (a) => a.snapshots,
     },
     {
       schluessel: 'status',
       kopf: 'Status',
       breite: '200px',
+      // Nicht freigegeben zuerst, dann nach Tag der Freigabe
+      sortWert: (a) => (a.freigegeben ? (a.freigegeben_at ? new Date(a.freigegeben_at).getTime() : 1) : 0),
       zelle: (a) => (a.freigegeben
         ? <WebPill ton="erfolg" punkt>Freigegeben{a.freigegeben_at ? ` ${datumKurz(a.freigegeben_at)}` : ''}</WebPill>
         : <WebPill punkt>Nicht freigegeben</WebPill>),
