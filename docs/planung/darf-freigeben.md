@@ -8,6 +8,9 @@ App-Symbol mitzählen" entfällt damit.
 **Entschieden 02.10.2026:** Simon: „darf freigeben werden wir bauen". Die
 sechs Fragen unter „Was zu entscheiden ist" sind die nächsten Schritte.
 
+**Verschoben 08.10.2026:** Simon: „machen wir viel später". Nicht in 2.4.0;
+die sechs Fragen bleiben offen, bis das Thema wieder aufgenommen wird.
+
 ## Anlass
 
 Rückmeldung aus dem Gerätetest (Build 130/236): Am App-Symbol stand 52,

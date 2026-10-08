@@ -18,27 +18,20 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
 
 ## Aktuell
 
-- **[13-store-freigabe-2.3.0.md](13-store-freigabe-2.3.0.md)** — jetzt
-  (02.10.2026): Versions-Tag `2.3.0` setzen, Deploy prüfen, Android-Lauf
-  verfolgen, iOS-Build 240 in App Store Connect einreichen, beide Prüfungen
-  verfolgen, alte Branches löschen.
-- **[15-support-probelauf.md](15-support-probelauf.md)** — bis auf 7a
-  erledigt (03.10.2026): Gemeinden 4, 14 und 15 intern, Probe-Anfrage 1 und
-  Probe-Mails liegen zur Ansicht. Offen: Simons Blick, dann ablehnen; 7a
-  braucht ein Konto mit bedienbarer Adresse.
 - **[16-support-vorgaenge-probelauf.md](16-support-vorgaenge-probelauf.md)** —
   nach dem Deploy des PRs „Web-Ansicht aller Bereiche und Support-Vorgänge"
-  (06.10.2026): Übernahme in Vorgänge prüfen, Probe-Anfrage als Vorgang,
-  Probe-Anliegen über das Support-Formular, Posteingang mit Einsortieren und
-  Archiv.
-- **[17-web-live-weiterbauen.md](17-web-live-weiterbauen.md)** — jetzt
-  (07.10.2026): die Web-Fassung auf Simons Rechner live einrichten (lokale
-  Datenbank, Backend und Entwicklungsserver), dann mit Simon die Detailseite
-  einer Konfi umbauen: Events zwischen Aktivitäten und Bonuspunkten, Badges
-  und Stempel gleich, Badge-Farben, Info beim Darüberfahren.
+  (06.10.2026), alle Schritte offen: Übernahme in Vorgänge prüfen,
+  Probe-Anfrage 1 als Vorgang, Probe-Anliegen über das Support-Formular,
+  Posteingang mit Einsortieren und Archiv, Mail von einem Leitungskonto der
+  Gemeinde 4; danach liegen lassen, bis Simon sie angesehen hat. Den
+  Probelauf vom 03.10.2026 (Auftrag 15) führt er fort.
+- **[17-web-live-weiterbauen.md](17-web-live-weiterbauen.md)** — Einrichtung
+  und erste Wünsche erledigt (07.10.2026, #229, #230); bleibt die Anleitung,
+  wenn Simon die Web-Fassung live am eigenen Rechner weiterbaut. Fallen beim
+  lokalen Start: [wissen/lokal-entwickeln.md](../../wissen/lokal-entwickeln.md).
 - **[18-agp9-android-2.4.0.md](18-agp9-android-2.4.0.md)** — mit 2.4.0:
-  Android-Gradle-Plugin 9, Capacitor-Plugins nachziehen, Build in der CI,
-  interner Testtrack für Malte.
+  versionCode 135 liegt im internen Testtrack (08.10.2026); offen sind Maltes
+  Rückmeldung je Prüfpunkt und das Ausliefern mit 2.4.0.
 - **Umami bereinigen, Anfang November 2026** — monatliche Routine nach
   [docs/betrieb/routinen.md](../../betrieb/routinen.md#umami-bereinigen).
 
@@ -50,7 +43,7 @@ Rückspielprobe, Prüfung nach dem Deploy, Notfall-Deploy — steht in
 [docs/betrieb/routinen.md](../../betrieb/routinen.md), der Release-Ablauf in
 [docs/betrieb/release.md](../../betrieb/release.md).
 
-Die erledigten Aufträge 00–12 und 14 (27.09.–03.10.2026) liegen mit allen Messwerten
+Die erledigten Aufträge 00–15 (27.09.–08.10.2026) liegen mit allen Messwerten
 in der Git-Historie ([docs/README.md](../../README.md#erledigte-aufträge-und-frühere-listen)).
 
 ## Rückmeldung

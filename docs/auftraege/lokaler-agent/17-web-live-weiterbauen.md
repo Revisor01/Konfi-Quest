@@ -29,10 +29,10 @@ Geheimnisse. Durchgespielt am 07.10.2026 in der Cloud-Umgebung: Datenbank aus
 `init-scripts/`, Backend mit `npm run dev`, Seed, Vite-Entwicklungsserver,
 Anmeldung als `admin1`, Detailseite von „Test Konfi 1" bei 1280 px.
 
-- [ ] **1. Werkzeuge.** Node nach `.nvmrc` (26), Docker. In Wurzel,
+- [x] **1. Werkzeuge.** Node nach `.nvmrc` (26), Docker. In Wurzel,
       `backend/` und `frontend/` je `npm ci`.
 
-- [ ] **2. Datenbank.** Aus der Wurzel:
+- [x] **2. Datenbank.** Aus der Wurzel:
 
           docker compose -f docker-compose.e2e.yml up -d --wait e2e-db
 
@@ -40,13 +40,13 @@ Anmeldung als `admin1`, Detailseite von „Test Konfi 1" bei 1280 px.
       im Arbeitsspeicher (`tmpfs`): Nach `docker compose … down` oder einem
       Neustart von Docker ist sie leer, dann Schritt 3 und 4 wiederholen.
 
-- [ ] **3. Backend** im ersten Terminal, aus `backend/`:
+- [x] **3. Backend** im ersten Terminal, aus `backend/`:
 
           DATABASE_URL=postgresql://postgres:postgres@localhost:5444/postgres \
           JWT_SECRET='e2e-test-secret-key-min-32-chars!!' \
           QR_SECRET=e2e-qr-secret-nur-fuer-tests \
           ACTIVITY_PHOTO_ENCRYPTION_KEY=0000000000000000000000000000000000000000000000000000000000000000 \
-          CORS_ORIGINS=http://localhost:5173 PORT=5555 NODE_ENV=test \
+          CORS_ORIGINS=http://localhost:5173 PORT=5556 NODE_ENV=test \
           npm run dev
 
       `npm run dev` ist `node --watch`: Jede gespeicherte Backend-Datei
@@ -59,7 +59,7 @@ Anmeldung als `admin1`, Detailseite von „Test Konfi 1" bei 1280 px.
       Zeitüberschreitung, zweiter mit allen 16 Migrationen). Mails und
       Push gehen lokal nicht raus; die Warnungen dazu sind richtig.
 
-- [ ] **4. Testdaten.** Erst wenn die Migrationen gelaufen sind, aus der
+- [x] **4. Testdaten.** Erst wenn die Migrationen gelaufen sind, aus der
       Wurzel — derselbe Seed wie in `e2e/global-setup.ts`, samt den
       Jahrgängen der Admins:
 
@@ -70,15 +70,15 @@ Anmeldung als `admin1`, Detailseite von „Test Konfi 1" bei 1280 px.
       `orgadmin1` (Gemeindeleitung), `admin1` (Leitung, Jahrgang 1),
       `teamer1`, `konfi1`, dazu Gemeinde 2 mit `admin2` usw.
 
-- [ ] **5. Oberfläche** im zweiten Terminal, aus `frontend/`:
+- [x] **5. Oberfläche** im zweiten Terminal, aus `frontend/`:
 
-          VITE_API_URL=http://localhost:5555/api npm run dev
+          VITE_API_URL=http://localhost:5556/api npm run dev
 
       Im Browser `http://localhost:5173` öffnen — genau diese Adresse, sie
       steht in `CORS_ORIGINS`. Jede gespeicherte Datei unter `frontend/src`
       erscheint ohne Neuladen.
 
-- [ ] **6. Ansehen.** Fenster mindestens 992 px breit, sonst zeigt der
+- [x] **6. Ansehen.** Fenster mindestens 992 px breit, sonst zeigt der
       Browser die App-Fassung. Als `admin1` anmelden, „Konfis" → „Test Konfi
       1". Hell und dunkel prüfen (Systemeinstellung des Rechners).
 
@@ -143,7 +143,7 @@ Alle vier Punkte betreffen die Detailseite einer Konfi für die Leitung,
 und stempel sollten gleich aussehen. badges in ihrer zugewiesenen farbe beim
 hover bitte die info jeweils zeigen."
 
-- [ ] **a. Events zwischen Aktivitäten und Bonuspunkten.** Heute steht
+- [x] **a. Events zwischen Aktivitäten und Bonuspunkten.** Heute steht
       `EventPunkteKarte` rechts in `seite` (unter Badges). Sie wandert nach
       links in `haupt`, zwischen `AktivitaetenKarte` und `BonusKarte`. Bei
       einer Teamer:in steht rechts `TeamerEventsKarte` — ob sie analog
@@ -153,7 +153,7 @@ hover bitte die info jeweils zeigen."
       Hauptspalte stehen die Überschriften in der Reihenfolge Aktivitäten,
       Events, Bonuspunkte; Gegenprobe.
 
-- [ ] **b. Badges und Stempel sehen gleich aus.** Heute:
+- [x] **b. Badges und Stempel sehen gleich aus.** Heute:
       - Badges (`WebKonfiBadges.tsx`, Klassen `.web-badge*` in
         `theme/web/leitung.css`): Raster aus 48-px-Kreisen, Name darunter.
       - Stempel (`StempelKarte` in `WebKonfiKarten.tsx`, `.web-stempel*` in
@@ -171,14 +171,14 @@ hover bitte die info jeweils zeigen."
       (Badge-Seite der Konfis) — wiederverwenden statt einer dritten
       Fassung. Das Aussehen mit Simon live festlegen.
 
-- [ ] **c. Badges in ihrer Farbe.** Der Code setzt die Farbe schon
+- [x] **c. Badges in ihrer Farbe.** Der Code setzt die Farbe schon
       (`getBadgeColor(b)` als Hintergrund des Kreises). Sieht Simon trotzdem
       eine einheitliche Farbe, erst nachsehen, was
       `GET /admin/konfis/:id/badges` bzw. `/teamer/:id/badges` in
       `earned[].color` liefert — nicht raten. Ein lokal angelegtes Badge mit
       eigener Farbe zeigt es.
 
-- [ ] **d. Info beim Darüberfahren.** Heute steht die Info nur im
+- [x] **d. Info beim Darüberfahren.** Heute steht die Info nur im
       `title`-Attribut: Der Browser zeigt sie spät, ungestaltet und nicht
       per Tastatur. Gewünscht: beim Darüberfahren **und** beim Fokus eine
       sichtbare Info — Badge: Name, Beschreibung bzw. Kriterium, „erreicht
@@ -196,6 +196,8 @@ Für a bis d: Handbuch
 „Geändert", Generatoren. Keine Route betroffen, also keine API-Doku.
 
 **Ergebnis:** je Punkt Commit-Hash und eine Zeile, was Simon abgenommen hat.
+*Erledigt 07.10.2026:* a bis d mit #229 (`fb07f831`), live mit Simon gebaut
+und abgenommen; Einzelheiten unter 5.
 
 ## 4. Zur Einordnung, nicht Teil des Auftrags
 
@@ -232,14 +234,11 @@ Web-Fassung.
 **Offen bei Simon:** fachliche Reihenfolge der Status-Spalten; Punkte-Verlauf
 vor dem Kürzen sortieren (beides in `docs/offene-befunde.md`).
 
-**Wieder aufnehmen** (Schritte aus Teil 1, mit zwei Abweichungen):
-- **Backend auf Port 5556**, nicht 5555: Ein laufender Android-Emulator belegt
-  5555 (adb) und fängt die Anfragen ab. Also `PORT=5556` beim Backend und
-  `VITE_API_URL=http://localhost:5556/api` bei der Oberfläche.
-- **Node 26** liegt unter `/opt/homebrew/opt/node@26/bin` (Standard-`node` ist 22).
-- Läuft `konfi-quest-e2e-db-1` noch, sind die Testdaten da (Seed plus
-  Aktivitäten, Badges, Stempel, Pflicht- und Team-Events, gemeldete
-  Aktivitäten „Messung …“). Nach einem Neustart von Docker: Seed und Daten
-  neu anlegen wie in Teil 1.
-- Backend-Tests nie gegen 5444 laufen lassen (leert Simons Ansicht), sondern
-  `docker compose -f backend/docker-compose.test.yml` auf 5433.
+**Wieder aufnehmen:** die Schritte aus Teil 1. Die Fallen dabei — Port 5556
+statt 5555 wegen des Android-Emulators, Node 26 neben einem älteren
+Standard-`node`, Backend-Tests nie gegen die Datenbank der Vorschau — stehen
+in [wissen/lokal-entwickeln.md](../../wissen/lokal-entwickeln.md). Läuft
+`konfi-quest-e2e-db-1` noch, sind die Testdaten da (Seed plus Aktivitäten,
+Badges, Stempel, Pflicht- und Team-Events, gemeldete Aktivitäten
+„Messung …“); nach einem Neustart von Docker Seed und Daten neu anlegen wie
+in Teil 1.

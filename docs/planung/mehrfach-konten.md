@@ -139,6 +139,14 @@ Migration 101 hat jedes damalige Konto mit seiner Stamm-Gemeinde auch in
 
 ## Fragen an Simon
 
+**Entschieden 08.10.2026** (Simon), in Arbeit auf dem Branch
+`feat/mehrfach-konten-abschluss`: Fragen 2 bis 6 und 8 mit „ja"; zu Frage 7
+werden Funktionsbezeichnung, „Teamer seit" und Sperre **je Gemeinde**
+geführt, und eine Sperre gilt nur in der Gemeinde, die sperrt. Dazu kommen
+die verwandten Einträge aus [offene-befunde.md](../offene-befunde.md): Rolle
+und Gemeindeleitung aus der aktiven statt der Stamm-Gemeinde, Sperre sofort
+auf beiden Replicas, Gemeinde-Rückfall im Frontend.
+
 1. **Altbestand:** Was geschieht mit Konten, die Konfi und Team zugleich sind?
    Konfi-Rolle entfernen und Team bleiben, Team-Mitgliedschaft beenden oder
    Einzelfall? **Entschieden 01.10.2026:** Gemessen gibt es genau ein solches

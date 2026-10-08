@@ -76,5 +76,8 @@ Kapitel unter „Im Browser …".
 
 ## Offen
 
-- Konfi-Detail und Termin-Detail sind die größten Seiten; was dort an
-  Ionic-Modalen bleibt, wird nach dem ersten Durchgang entschieden.
+- Konfi-Detail und Termin-Detail: *Erledigt 06./07.10.2026* (#227, #229) —
+  beide stehen auf `WebDetailSeite`; Formulare, Rückfragen und die Wahl der
+  Personen öffnen bewusst dieselben Fenster wie in der App (Entscheidung 5).
+  Was an der Web-Fassung sonst fehlt, steht in
+  [web-version.md](web-version.md#offen).

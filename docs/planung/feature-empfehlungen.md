@@ -593,7 +593,7 @@ unverändert.
 
 ### E-15: Nachricht melden und Konfi im Raum stummschalten
 
-- **Status:** offen 27.09.2026 — nicht begonnen. Seit der Gesamtabnahme (Punkt 31, Simons Rahmen vom 26.09.: alle Chats moderiert, kein Konfi-zu-Konfi-Chat) eine Produktentscheidung, keine Auflage. Offen bleibt, ob die Store-Prüfung einen Meldeweg verlangt; vor EKD-Ausrollung klären (Screens Konfi/Teamer BF-06).
+- **Status:** **wird nicht gebaut** (Simon, 08.10.2026): Jeder Chat ist moderiert — Konfis erreichen einander nur in Räumen, die die Leitung liest, ein Konfi-zu-Konfi-Chat existiert nicht. Vorher offen seit 27.09.2026 (Gesamtabnahme Punkt 31; Screens Konfi/Teamer BF-06). Der Text unten bleibt als Begründung stehen, falls eine Store-Prüfung doch einen Meldeweg verlangt.
 - **Für wen:** Konfi / Teamer:in / Leitung
 - **Warum jetzt:** Der Chat ist bewusst eng geführt: Konfis erreichen einander
   nie direkt, sechs positive Reaktionen (`chat.js:2579`), die Leitung kann jeden
