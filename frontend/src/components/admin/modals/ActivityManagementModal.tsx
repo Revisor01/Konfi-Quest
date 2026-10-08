@@ -16,6 +16,7 @@ import { networkMonitor } from '../../../services/networkMonitor';
 import { safeUUID } from '../../../utils/uuid';
 import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 interface Activity {
   id: number;
@@ -63,6 +64,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
 
   const doClose = () => {
     if (dismiss) {
@@ -172,7 +174,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
     };
 
     initializeModal().then(() => {
-      setTimeout(() => { initializedRef.current = true; }, 100);
+      zeitgeber.nach(100, () => { initializedRef.current = true; });
     });
   }, [activityId, activity]);
 

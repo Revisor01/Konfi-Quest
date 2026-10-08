@@ -212,7 +212,7 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
     const schliesseUnd = (aktion: () => void) => () => { setMenuFuer(null); aktion(); };
     return (
       <WebDialog titel={p.participant_name} beschreibung="Anwesenheit verwalten" onSchliessen={() => setMenuFuer(null)}>
-        <div className="web-menue">
+        <div className="web-teilnehmer-menue">
           <WebKnopf onClick={schliesseUnd(() => aktionen.abmeldung(p))}>
             <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
             {p.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet eintragen'}

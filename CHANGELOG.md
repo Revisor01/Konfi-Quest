@@ -177,6 +177,17 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Nach dem Schließen einer Seite laufen dort angestoßene Meldungen,
+  Rückfragen und Nachladevorgänge nicht mehr weiter — so entsteht kein
+  Einmalpasswort mehr, wenn man die Seite einer Person direkt nach dem
+  Bestätigen verlässt.
+- Die Videovorschau im Chat lädt nach dem Schließen nicht weiter, und ein
+  langer Druck auf eine gerade verschwundene Nachricht öffnet kein Menü mehr.
+- In der Web-Version tragen die Start- und Profilseiten nicht mehr Rahmen,
+  Fläche und Schrift der Rollenmarke aus der Benutzerliste; Beschreibungen
+  und Menüs anderer Seiten mischen sich ebenso nicht mehr.
+- Die Filterzeile der Challenges steht in der Web-Version auch bei 1366 px
+  Fensterbreite in einer Zeile.
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
   oder neu lud.
@@ -216,6 +227,11 @@ Versionsüberschrift.
   Satz.
 
 ### Sonstiges
+- Eine automatische Prüfung stellt sicher, dass Zeitgeber und Horcher mit
+  ihrer Seite enden.
+- Nach vielen Chat-Nachrichten kurz hintereinander werden die Zähler einmal
+  statt für jede Nachricht neu abgefragt.
+- Die iOS-App verlangt keine veraltete 32-Bit-Geräteeigenschaft mehr.
 - Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne
   Gemeinde statt einer eigenen Gemeinde für den Betrieb.
 - Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von

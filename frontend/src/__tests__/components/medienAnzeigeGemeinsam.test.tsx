@@ -265,6 +265,63 @@ describe('Video: dieselbe Vorschau für Chat und Challenges', () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
+  // Zeitgeber und Horcher, die das Schliessen ueberleben (offene Befunde,
+  // Tests und CI): Das unsichtbare Video fuer das Vorschaubild behielt seine
+  // Horcher und seine Quelle, wenn die Vorschau vorher verschwand -- seine
+  // Rueckrufe setzten danach noch Dauer und Bild an der abgebauten Vorschau.
+  it('abgehängt, bevor das Vorschaubild fertig ist: das Hilfs-Video hört auf und zeichnet nichts mehr', async () => {
+    const echtesErzeugen = document.createElement.bind(document);
+    const hilfsVideos: HTMLVideoElement[] = [];
+    let leinwaende = 0;
+    const spion = vi.spyOn(document, 'createElement').mockImplementation(((name: string, optionen?: ElementCreationOptions) => {
+      const el = echtesErzeugen(name, optionen);
+      if (name === 'video') hilfsVideos.push(el as HTMLVideoElement);
+      if (name === 'canvas') leinwaende += 1;
+      return el;
+    }) as typeof document.createElement);
+    try {
+      const { container, unmount } = render(<VideoPreview filePath="vv66" fileName="clip.mp4" />);
+      await waitFor(() => expect(container.querySelector('video')).not.toBeNull());
+      // Das Hilfs-Video haengt nie im Dokument; das sichtbare Video schon.
+      const hilfsVideo = hilfsVideos.filter((v) => !v.isConnected);
+      expect(hilfsVideo).toHaveLength(1);
+      const [hilfs] = hilfsVideo;
+      expect(hilfs.getAttribute('src')).toMatch(/^blob:/);
+
+      unmount();
+      expect(hilfs.getAttribute('src')).toBeNull();
+      hilfs.dispatchEvent(new Event('seeked'));
+      expect(leinwaende).toBe(0);
+    } finally {
+      spion.mockRestore();
+    }
+  });
+
+  it('erlaubter Fall: steht die Vorschau, zeichnet das Hilfs-Video das Vorschaubild', async () => {
+    const echtesErzeugen = document.createElement.bind(document);
+    const hilfsVideos: HTMLVideoElement[] = [];
+    let leinwaende = 0;
+    const spion = vi.spyOn(document, 'createElement').mockImplementation(((name: string, optionen?: ElementCreationOptions) => {
+      const el = echtesErzeugen(name, optionen);
+      if (name === 'video') hilfsVideos.push(el as HTMLVideoElement);
+      if (name === 'canvas') leinwaende += 1;
+      return el;
+    }) as typeof document.createElement);
+    try {
+      const { container } = render(<VideoPreview filePath="vv77" fileName="clip.mp4" />);
+      await waitFor(() => expect(container.querySelector('video')).not.toBeNull());
+      const hilfs = hilfsVideos.filter((v) => !v.isConnected);
+      expect(hilfs).toHaveLength(1);
+      // jsdom zeichnet nicht (getContext ohne canvas-Paket): leer zurueck, still.
+      const leinwand = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+      hilfs[0].dispatchEvent(new Event('seeked'));
+      leinwand.mockRestore();
+      expect(leinwaende).toBe(1);
+    } finally {
+      spion.mockRestore();
+    }
+  });
+
   it('wieder geöffnet: das Video kommt aus dem Cache, nicht vom Server', async () => {
     const erstes = render(<VideoPreview filePath="vv55" fileName="clip.mp4" quelle="challenges" />);
     await waitFor(() => expect(erstes.container.querySelector('video')).not.toBeNull());

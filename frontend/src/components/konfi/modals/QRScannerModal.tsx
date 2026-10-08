@@ -15,6 +15,7 @@ import QrScanner from 'qr-scanner';
 import QrScannerWorkerPath from 'qr-scanner/qr-scanner-worker.min.js?url';
 import api from '../../../services/api';
 import { useApp } from '../../../contexts/AppContext';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 QrScanner.WORKER_PATH = QrScannerWorkerPath;
 
@@ -41,6 +42,10 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
   const scanRef = useRef<(data: string) => void>(() => undefined);
   const [banner, setBanner] = useState<{ type: 'error' | 'info'; message: string } | null>(null);
   const [permissionDenied, setPermissionDenied] = useState(false);
+  // Der Neustart nach "bereits eingecheckt" oder einem Fehler endet mit dem
+  // Fenster: Lief er ueber das Schliessen hinaus, setzte er noch Zustand am
+  // abgebauten Fenster (in der CI am schon abgebauten Testfenster).
+  const zeitgeber = useZeitgeber();
 
   useEffect(() => {
     if (!videoRef.current) return;
@@ -91,26 +96,28 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
 
     try {
       const response = await api.post('/events/qr-checkin', { token: data });
+      if (!zeitgeber.aktiv()) return;
       const { event_id, event_name, already_checked_in } = response.data;
 
       if (already_checked_in) {
         setBanner({ type: 'info', message: 'Du bist bereits eingecheckt' });
-        setTimeout(() => {
+        zeitgeber.nach(2000, () => {
           setBanner(null);
           scanningRef.current = false;
           scannerRef.current?.start();
-        }, 2000);
+        });
       } else {
         onSuccess(event_id, event_name);
       }
     } catch (err) {
+      if (!zeitgeber.aktiv()) return;
       const errorMessage = fehlerText(err, 'QR-Code konnte nicht verarbeitet werden');
       setBanner({ type: 'error', message: errorMessage });
-      setTimeout(() => {
+      zeitgeber.nach(3000, () => {
         setBanner(null);
         scanningRef.current = false;
         scannerRef.current?.start();
-      }, 3000);
+      });
     }
   };
 

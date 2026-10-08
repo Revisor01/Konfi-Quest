@@ -3,6 +3,7 @@ import { useIonViewDidEnter } from '@ionic/react';
 import { Preferences } from '@capacitor/preferences';
 import { ermittleAppVersion } from '../utils/appVersion';
 import { entscheideNeuerungen } from '../utils/neuerungenGate';
+import { useZeitgeber } from './useZeitgeber';
 
 // Version, auf die sich die aktuellen Neuerungs-Texte beziehen. Sie steuert
 // NICHT mehr, wann der Hinweis erscheint -- das entscheidet seit 2.2.0 der
@@ -50,6 +51,8 @@ export const MITMACHEN_HINWEIS_KEY = 'mitmachen_hinweis_2_1_gesehen';
 // gesetzt (nicht erst beim Schliessen), damit die Tour nicht doppelt aufpoppt.
 export function useOnboardingOnce(keyPrefix: string, userId?: number | string): [boolean, () => void] {
   const [show, setShow] = useState(false);
+  // Der kleine Versatz vor dem Aufgehen endet mit der Seite.
+  const zeitgeber = useZeitgeber();
   const storageKey = `${keyPrefix}_${userId ?? 'x'}`;
 
   useIonViewDidEnter(() => {
@@ -58,7 +61,7 @@ export function useOnboardingOnce(keyPrefix: string, userId?: number | string): 
       if (!value) {
         Preferences.set({ key: storageKey, value: '1' });
         // Kleiner Versatz, damit die Seite erst sauber rendert.
-        setTimeout(() => setShow(true), 400);
+        zeitgeber.nach(400, () => setShow(true));
       }
     }).catch(() => { /* Preferences nicht verfuegbar -> Tour ueberspringen */ });
   });
@@ -113,6 +116,7 @@ export function useOnboardingWithUpdateOnce(
   userId?: number | string
 ): OnboardingWithUpdate {
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const zeitgeber = useZeitgeber();
   const [showNeuerungen, setShowNeuerungen] = useState(false);
   const [showUpdateHinweis, setShowUpdateHinweis] = useState(false);
   const [showMitmachenHinweis, setShowMitmachenHinweis] = useState(false);
@@ -166,7 +170,7 @@ export function useOnboardingWithUpdateOnce(
         if (entscheidung.merkeVersion) {
           Preferences.set({ key: gesehenKey, value: entscheidung.merkeVersion });
         }
-        setTimeout(() => setShowOnboarding(true), 400);
+        zeitgeber.nach(400, () => setShowOnboarding(true));
         return;
       }
 
@@ -183,7 +187,7 @@ export function useOnboardingWithUpdateOnce(
           // vermerken waere. Die Update-Karte bleibt solange weg (siehe unten).
           setZuMerkendeVersion(entscheidung.merkeVersion);
           // Kleiner Versatz wie bei der Tour, damit die Seite erst rendert.
-          setTimeout(() => setShowNeuerungen(true), 400);
+          zeitgeber.nach(400, () => setShowNeuerungen(true));
         }
       } else {
         // Nichts Neues: die Karten wie bisher unabhaengig voneinander zeigen.

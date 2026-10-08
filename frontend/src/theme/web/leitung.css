@@ -72,8 +72,11 @@
   min-width: 0;
 }
 
-/* --- Rolle als Marke: Farbe der Rolle (Gemeindeleitung, Leitung, Teamer:in), Wort immer dabei --- */
-.web-rolle {
+/* --- Rolle als Marke: Farbe der Rolle (Gemeindeleitung, Leitung, Teamer:in), Wort immer dabei ---
+   Heisst web-rollenmarke und nicht web-rolle: start.css setzt web-rolle als
+   Rollenfarbe der ganzen Startseite; im gemeinsamen Buendel trug sonst jede
+   Startseite Rahmen, Flaeche und Schrift dieser Marke. */
+.web-rollenmarke {
   display: inline-flex;
   align-items: center;
   padding: var(--app-abstand-haar) var(--app-abstand-schmal);
@@ -87,25 +90,25 @@
   white-space: nowrap;
 }
 
-.web-rolle--users {
+.web-rollenmarke--users {
   border-color: color-mix(in srgb, var(--app-color-users) 35%, var(--web-karte));
   background: color-mix(in srgb, var(--app-color-users) 14%, var(--web-karte));
   color: var(--app-text-users);
 }
 
-.web-rolle--leitung {
+.web-rollenmarke--leitung {
   border-color: color-mix(in srgb, var(--app-color-leitung) 35%, var(--web-karte));
   background: color-mix(in srgb, var(--app-color-leitung) 14%, var(--web-karte));
   color: var(--app-text-leitung);
 }
 
-.web-rolle--teamer {
+.web-rollenmarke--teamer {
   border-color: color-mix(in srgb, var(--app-color-teamer) 35%, var(--web-karte));
   background: color-mix(in srgb, var(--app-color-teamer) 14%, var(--web-karte));
   color: var(--app-text-teamer);
 }
 
-.web-rolle--konfis {
+.web-rollenmarke--konfis {
   border-color: color-mix(in srgb, var(--app-color-konfis) 35%, var(--web-karte));
   background: color-mix(in srgb, var(--app-color-konfis) 14%, var(--web-karte));
   color: var(--app-text-konfis);
@@ -689,9 +692,11 @@
   overflow: hidden;
 }
 
-.web-beschreibung {
+/* Heisst nicht web-beschreibung: die gehoert termine.css. */
+.web-material-beschreibung {
   margin: 0;
   color: var(--web-text);
+  line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }

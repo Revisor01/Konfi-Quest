@@ -74,6 +74,7 @@ import { kirchenkreisFinden } from '../../../utils/supportAnfragen';
 import { limitNachUmschalten, limitVorgabe } from '../../../utils/konfiLimitVorgabe';
 import { EIGENES_LIMIT, TARIF_OPTIONEN, istTarif, lizenzFinden, lizenzLimit, lizenzText } from '../../../utils/lizenzen';
 import type { Kirchenkreis } from '../../../types/support';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 interface Organization {
   id: number;
@@ -181,6 +182,7 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
   // Ref auf die IonPage dieses Modals — dient dem verschachtelten Passwort-Modal
   // als presentingElement, damit iOS den korrekten Card-Backdrop rendert.
   const pageRef = useRef<HTMLElement | null>(null);
@@ -366,10 +368,10 @@ const OrganizationManagementModal: React.FC<OrganizationManagementModalProps> = 
   useEffect(() => {
     if (isEditMode) {
       loadOrganization().then(() => {
-        setTimeout(() => { initializedRef.current = true; }, 100);
+        zeitgeber.nach(100, () => { initializedRef.current = true; });
       });
     } else {
-      setTimeout(() => { initializedRef.current = true; }, 100);
+      zeitgeber.nach(100, () => { initializedRef.current = true; });
     }
   }, [organizationId]);
 

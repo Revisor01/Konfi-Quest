@@ -33,6 +33,7 @@ import SegmentZahl from '../../shared/SegmentZahl';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
 import { segmentAusAdresse } from '../web/termine/typen';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -75,6 +76,7 @@ interface AdminEventsPageProps {
 }
 
 const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, selectedEventId }) => {
+  const zeitgeber = useZeitgeber();
   const { user, setSuccess, setError, isOnline } = useApp();
   // Orange Zahl in den Reiter-Knoepfen (28.09.2026, zur Ansicht): NUR
   // Wartendes, aus derselben Quelle wie der Events-Reiter unten
@@ -449,7 +451,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
       onDidDismiss: () => {
         const naechster = nachDemSchliessen;
         nachDemSchliessen = null;
-        if (naechster) setTimeout(naechster, 0);
+        if (naechster) zeitgeber.nach(0, naechster);
       }
     });
   };
@@ -535,7 +537,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
       onDidDismiss: () => {
         const naechster = nachDemSchliessen;
         nachDemSchliessen = null;
-        if (naechster) setTimeout(naechster, 0);
+        if (naechster) zeitgeber.nach(0, naechster);
       }
     });
   };

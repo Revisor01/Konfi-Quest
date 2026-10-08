@@ -20,6 +20,7 @@ import { SectionHeader, ListSection } from '../shared';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { tageBis } from '../shared/eventFormatting';
 import { datumKurz } from '../../utils/dateUtils';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -64,6 +65,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
   onSelectOrganization,
   onDeleteOrganization
 }) => {
+  const zeitgeber = useZeitgeber();
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
@@ -104,7 +106,7 @@ const OrganizationView: React.FC<OrganizationViewProps> = ({
 
   const handleRefresh = (event: CustomEvent) => {
     onUpdate();
-    setTimeout(() => event.detail.complete(), 500);
+    zeitgeber.nach(500, () => event.detail.complete());
   };
 
   return (

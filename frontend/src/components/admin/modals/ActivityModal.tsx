@@ -20,6 +20,7 @@ import { safeUUID } from '../../../utils/uuid';
 import { istPunkteartAktiv, type PunkteartFlags } from '../../../utils/punktearten';
 import { trackHandlung } from '../../../services/analytics';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 interface Activity {
   id: number;
@@ -54,6 +55,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
 
   // isDirty nach Initialisierung tracken
   useEffect(() => {
@@ -63,7 +65,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
   }, [selectedActivity, comment, selectedDate]);
 
   useEffect(() => {
-    setTimeout(() => { initializedRef.current = true; }, 100);
+    zeitgeber.nach(100, () => { initializedRef.current = true; });
   }, []);
 
   const doClose = () => {

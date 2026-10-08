@@ -57,6 +57,7 @@ import {
   zeitraumFehler
 } from '../../../utils/challengeForm';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 // Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
 // Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
@@ -146,6 +147,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   const [initialLoading, setInitialLoading] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
 
   const isEditMode = !!challenge;
   // Nach dem Start sind visibility/moderated/starts_at/allowed_media gesperrt —
@@ -228,7 +230,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
         }));
       }
       setInitialLoading(false);
-      setTimeout(() => { initializedRef.current = true; }, 100);
+      zeitgeber.nach(100, () => { initializedRef.current = true; });
     };
     init();
     // eslint-disable-next-line react-hooks/exhaustive-deps

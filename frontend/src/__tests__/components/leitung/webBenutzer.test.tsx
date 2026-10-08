@@ -93,13 +93,13 @@ describe('Benutzer:innen (Web): Tabelle', () => {
 
   it('die Rolle steht als Wort in der Farbe der Rolle: Gemeindeleitung, Leitung und Team haben je ihre eigene', async () => {
     render(<AdminUsersPage />);
-    const marke = (name: string) => zelle(zeileVon(name), 1).querySelector('.web-rolle')!;
+    const marke = (name: string) => zelle(zeileVon(name), 1).querySelector('.web-rollenmarke')!;
     expect(marke('Alex Beispiel')).toHaveTextContent('Gemeindeleitung');
-    expect(marke('Alex Beispiel').className).toContain('web-rolle--users');
+    expect(marke('Alex Beispiel').className).toContain('web-rollenmarke--users');
     expect(marke('Sam Muster')).toHaveTextContent('Leitung');
-    expect(marke('Sam Muster').className).toContain('web-rolle--leitung');
+    expect(marke('Sam Muster').className).toContain('web-rollenmarke--leitung');
     expect(marke('Robin Probe')).toHaveTextContent('Teamer:in');
-    expect(marke('Robin Probe').className).toContain('web-rolle--teamer');
+    expect(marke('Robin Probe').className).toContain('web-rollenmarke--teamer');
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 

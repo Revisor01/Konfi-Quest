@@ -81,6 +81,23 @@
   gap: var(--app-abstand-mittel) var(--app-abstand-basis);
 }
 
+/* Suche und Umschalter nehmen den Rest der Zeile. Mit der Wunschbreite der
+   Suche (360 px, web-ansicht.css) brach die Zeile bei der Leitung schon
+   unter 1100 px Inhaltsbreite um (fuenf Chips, 613 px) -- bei 1366 px
+   Fensterbreite stand die Suche in einer zweiten Zeile (86 statt 40 px hoch).
+   Mit 280 px Mindestanspruch bleibt die Zeile bis 910 px Inhaltsbreite eine
+   (gemessen 08.10.2026 an der gerenderten Leiste mit den Stylesheets der App). */
+.web-challenge-filter__zeile > .web-werkzeuge__rechts {
+  flex: 1 1 280px;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.web-challenge-filter__zeile > .web-werkzeuge__rechts > .web-suche {
+  flex: 1 1 200px;
+  min-width: 200px;
+}
+
 /* Zielgruppe und Jahrgang: Beschriftung ueber dem Feld, beide auf einer Linie unten. */
 .web-challenge-filter__zeile--unten {
   align-items: flex-end;

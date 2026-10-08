@@ -165,6 +165,8 @@ const MainTabs: React.FC = () => {
 
     let cleanupFns: Array<() => void> = [];
     let cancelled = false;
+    // Der naechste Versuch (Leiste noch nicht im DOM) endet mit dem Effekt.
+    let naechsterVersuch: ReturnType<typeof setTimeout> | undefined;
 
     const setup = () => {
       try {
@@ -189,7 +191,7 @@ const MainTabs: React.FC = () => {
               }
             });
           } else if (++attempts < 20) {
-            setTimeout(tryRegister, 150);
+            naechsterVersuch = setTimeout(tryRegister, 150);
           }
         };
         tryRegister();
@@ -202,6 +204,7 @@ const MainTabs: React.FC = () => {
 
     return () => {
       cancelled = true;
+      clearTimeout(naechsterVersuch);
       cleanupFns.forEach((fn) => fn());
       cleanupFns = [];
     };

@@ -25,6 +25,7 @@ import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
 import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
 import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 
 
@@ -98,6 +99,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   const darfPruefen = user?.role_name === 'admin' || user?.role_name === 'org_admin';
   const [pruefLoading, setPruefLoading] = useState(false);
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
 
   const doClose = () => onClose();
 
@@ -151,7 +153,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       if (isEditMode) {
         await loadBadge();
       }
-      setTimeout(() => { initializedRef.current = true; }, 100);
+      zeitgeber.nach(100, () => { initializedRef.current = true; });
     };
     init();
   }, [badgeId]);

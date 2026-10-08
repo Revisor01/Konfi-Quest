@@ -51,7 +51,7 @@ const WebMaterialInhalt: React.FC<WebMaterialInhaltProps> = ({ material, ladende
 
   const beschreibung = material.description ? (
     <WebKarte titel="Beschreibung" ebene={ebene}>
-      <p className="web-beschreibung">{material.description}</p>
+      <p className="web-material-beschreibung">{material.description}</p>
     </WebKarte>
   ) : null;
 

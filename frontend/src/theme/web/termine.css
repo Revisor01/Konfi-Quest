@@ -167,6 +167,7 @@
 
 .web-beschreibung {
   margin: 0;
+  color: var(--web-text);
   line-height: 1.5;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -242,14 +243,15 @@
   color: var(--app-weiss);
 }
 
-/* Das Menue im Fenster: Aktionen untereinander. */
-.web-menue {
+/* Das Menue im Fenster: Aktionen untereinander. Heisst nicht web-menue: das
+   ist das Aufklapp-Menue des Chats (chat.css). */
+.web-teilnehmer-menue {
   display: flex;
   flex-direction: column;
   gap: var(--app-abstand-eng);
 }
 
-.web-menue .web-knopf {
+.web-teilnehmer-menue .web-knopf {
   justify-content: flex-start;
 }
 

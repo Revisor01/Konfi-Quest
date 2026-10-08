@@ -34,6 +34,7 @@ import { useUmfragenUndReaktionen } from './useUmfragenUndReaktionen';
 import { useChatDateien } from './useChatDateien';
 import { nachrichtTeilen } from './chatTeilen';
 import { useChatVerwaltung } from './useChatVerwaltung';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 import {
   AELTERE_SEITE,
   ERSTER_BLOCK,
@@ -71,6 +72,9 @@ interface ChatRaumDeps {
 export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false, modalKlasse }: ChatRaumDeps) {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
+  // Nachzug nach dem Senden (Sprung ans Ende, Nachladen ohne Socket-Antwort)
+  // endet mit dem Raum: Wer ihn verlassen hat, laedt nicht 2,5 s spaeter nach.
+  const zeitgeber = useZeitgeber();
   // Anzahl ungelesener Nachrichten beim Oeffnen EINMAL einfrieren (bevor
   // markRoomAsRead sie auf 0 setzt) -> Position des "Neu"-Trenners + Scrollziel.
   const initialUnreadRef = useRef<number | null>(null);
@@ -570,7 +574,7 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     parkedAtDividerRef.current = false;
     // Doppel-rAF statt setTimeout(100): direkt nach dem Rendern der optimistischen
     // Bubble instant ans Ende springen — kein animiertes Nachziehen.
-    requestAnimationFrame(() => requestAnimationFrame(() => contentRef.current?.scrollToBottom(0)));
+    zeitgeber.imNaechstenBild(() => zeitgeber.imNaechstenBild(() => { void contentRef.current?.scrollToBottom(0); }));
 
     if (networkMonitor.isOnline) {
       // Online: Normal senden
@@ -607,12 +611,12 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
         // kein Voll-Reload pro Senden mehr; der liess die eigene Nachricht
         // kurz doppelt erscheinen. Fallback: liefert der Socket nicht binnen
         // 2,5s (z.B. still tot), einmal komplett nachladen.
-        setTimeout(() => {
+        zeitgeber.nach(2500, () => {
           if (pendingSendsRef.current.has(clientId)) {
             pendingSendsRef.current.delete(clientId);
             loadMessages();
           }
-        }, 2500);
+        });
 
         if (room) markRoomAsRead();
         setShouldAutoScroll(true);

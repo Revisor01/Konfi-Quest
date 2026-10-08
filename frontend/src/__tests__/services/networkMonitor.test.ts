@@ -73,6 +73,36 @@ describe('networkMonitor', () => {
     vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
   });
 
+  // Doppelte Registrierung (08.10.2026, Zeitgeber aufraeumen): Der Merker
+  // stand erst NACH dem ersten await. Zwei Aufrufe, bevor das Plugin
+  // antwortete (Remount des Providers, StrictMode), registrierten den
+  // Status-Horcher zweimal -- jede Netzaenderung lief dann doppelt durch.
+  it('init() zweimal gleichzeitig: ein Status-Horcher, eine Abfrage', async () => {
+    const { Capacitor } = await import('@capacitor/core');
+    vi.mocked(Capacitor.isNativePlatform).mockReturnValue(true);
+    const { networkMonitor } = await import('../../services/networkMonitor');
+
+    try {
+      await Promise.all([networkMonitor.init(), networkMonitor.init()]);
+
+      expect(mockGetStatus).toHaveBeenCalledTimes(1);
+      expect(mockAddListener).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.mocked(Capacitor.isNativePlatform).mockReturnValue(false);
+    }
+  });
+
+  it('init() zweimal gleichzeitig im Browser: online/offline je einmal registriert', async () => {
+    const addEventSpy = vi.spyOn(window, 'addEventListener');
+    const { networkMonitor } = await import('../../services/networkMonitor');
+
+    await Promise.all([networkMonitor.init(), networkMonitor.init()]);
+
+    expect(addEventSpy.mock.calls.filter((c) => c[0] === 'online')).toHaveLength(1);
+    expect(addEventSpy.mock.calls.filter((c) => c[0] === 'offline')).toHaveLength(1);
+    addEventSpy.mockRestore();
+  });
+
   it('connectionType "unknown" bleibt online, wenn der Server antwortet (Emulator-Fall)', async () => {
     // Nativer Pfad: Plugin meldet connected=false bei connectionType=unknown,
     // obwohl Netz da ist (typisch Android-Emulator) -> muss online bleiben.

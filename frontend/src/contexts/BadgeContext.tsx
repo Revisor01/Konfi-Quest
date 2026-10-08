@@ -12,6 +12,7 @@ import { offlineCache } from '../services/offlineCache';
 import { summeAllerGemeindenAusAntwort } from '../utils/offenJeGemeinde';
 import { useApp } from './AppContext';
 import { useLiveRefresh, useLiveUpdate, LiveUpdateType } from './LiveUpdateContext';
+import { entprellen } from '../hooks/useZeitgeber';
 
 // Stabiles Array (Modul-Ebene) -> useLiveRefresh re-subscribt nicht bei jedem Render.
 const BADGE_LIVE_TYPES: LiveUpdateType[] = ['requests', 'events', 'challenges'];
@@ -133,6 +134,12 @@ const gleicherInhalt = (a: Record<number, number>, b: Record<number, number>): b
   const bKeys = Object.keys(b);
   return aKeys.length === bKeys.length && bKeys.every(k => a[Number(k)] === b[Number(k)]);
 };
+
+/**
+ * Fenster, in dem neue Chat-Nachrichten zu EINEM Abruf der Zaehler
+ * zusammengefasst werden (siehe den newMessage-Effekt im Provider).
+ */
+const ZAEHLER_NACH_NACHRICHT_MS = 400;
 
 // Badge Provider Component
 export const BadgeProvider = ({ children }: { children: ReactNode }) => {
@@ -687,21 +694,31 @@ export const BadgeProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => { setzeGeraeteBadge(); }, [setzeGeraeteBadge]);
 
-  // WebSocket: Live-Update bei neuen Nachrichten
+  // WebSocket: Live-Update bei neuen Nachrichten.
+  //
+  // ENTPRELLT (08.10.2026, Betrieb BF-08, Rest): Jede 'newMessage' loeste
+  // einen eigenen Abruf aller Zaehler aus -- ein Gruppenchat mit zehn
+  // Nachrichten in fuenf Sekunden hiess zehnmal GET badge-counts. Jetzt
+  // buendelt ein kurzes Fenster die Anstoesse: ein Abruf, NACH der letzten
+  // Nachricht im Fenster (die letzte Anforderung gewinnt, der Stand ist der
+  // neueste). Ein wartender Abruf faellt weg, wenn der Effekt endet --
+  // Abmelden, Gemeinde- oder Socket-Wechsel; der neue Lauf zaehlt selbst.
   useEffect(() => {
     const token = getToken();
     if (!token || !user) return;
 
     const socket = initializeWebSocket(token);
+    const zaehlerAbruf = entprellen(() => { void refreshAllCounts(); }, ZAEHLER_NACH_NACHRICHT_MS);
 
     const handleNewMessage = () => {
-      refreshAllCounts();
+      zaehlerAbruf.ausloesen();
     };
 
     socket.on('newMessage', handleNewMessage);
 
     return () => {
       socket.off('newMessage', handleNewMessage);
+      zaehlerAbruf.abbrechen();
     };
     // socketEpoch in den Deps: nach Reconnect-mit-neuem-Token (reconnectWithToken)
     // ist getSocket() ein anderes Objekt -> Listener am frischen Socket neu binden.

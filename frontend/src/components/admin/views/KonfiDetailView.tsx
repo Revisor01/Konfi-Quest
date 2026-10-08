@@ -74,6 +74,7 @@ import LoadingSpinner from '../../common/LoadingSpinner';
 import { tastaturKlick } from '../../../utils/tastatur';
 import WebKonfiDetail from '../web/leitung/WebKonfiDetail';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 /**
  * Das Nachweisfoto eines Antrags auf ganzer Fläche. Steht außerhalb von
@@ -132,6 +133,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   }>>([]);
   const isTeamer = targetRole === 'teamer';
   const fotoAntragRef = React.useRef<number | null>(null);
+  // Das Passwort entsteht 300 ms nach dem Bestaetigen (der Dialog schliesst
+  // erst); wer die Ansicht in der Spanne verlaesst, setzt es nicht mehr zurueck.
+  const zeitgeber = useZeitgeber();
   const [teamerEvents, setTeamerEvents] = useState<Array<{
     id: number;
     name: string;
@@ -589,7 +593,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         {
           text: 'Generieren',
           handler: () => {
-            setTimeout(() => handlePasswordReset(), 300);
+            zeitgeber.nach(300, () => { void handlePasswordReset(); });
           }
         }
       ]

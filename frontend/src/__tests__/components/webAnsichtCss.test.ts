@@ -166,4 +166,21 @@ describe('theme/web/*.css: Stylesheets der Bereiche', () => {
     expect(ionRegeln.map(([sel]) => sel)).toEqual([]);
     expect(text.split('\n').filter((z) => /^\s*font-size\s*:\s*[\d.]+(?:px|rem|em)\b/.test(z))).toEqual([]);
   });
+
+  // Filterzeile der Challenges (offene Befunde, 07.10.2026: zweizeilig bis
+  // etwa 1400 px Fensterbreite). Ursache: Suche und Umschalter meldeten mit
+  // der Wunschbreite der Suche (360 px) rund 470 px an und brachen die Zeile
+  // unter 1100 px Inhaltsbreite um. Gemessen am 08.10.2026 im Browser an der
+  // gerenderten Leiste: vorher einzeilig ab 1100 px, jetzt ab 910 px.
+  // jsdom rechnet kein Layout; festgehalten werden die Werte, die das tragen.
+  it('challenges.css: Suche und Umschalter der Filterzeile melden hoechstens 280 px an', () => {
+    const text = ohneKommentare(readFileSync(join(ordner, 'challenges.css'), 'utf8'));
+    const regel = (selektor: string) => regeln(text).find(([sel]) => sel === selektor)?.[1] ?? '';
+    const rechts = regel('.web-challenge-filter__zeile > .web-werkzeuge__rechts');
+    expect(rechts).toMatch(/flex:\s*1 1 280px;/);
+    expect(rechts).toMatch(/min-width:\s*0;/);
+    const suche = regel('.web-challenge-filter__zeile > .web-werkzeuge__rechts > .web-suche');
+    expect(suche).toMatch(/flex:\s*1 1 200px;/);
+    expect(suche).toMatch(/min-width:\s*200px;/);
+  });
 });

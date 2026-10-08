@@ -130,3 +130,65 @@ describe('QR-Scanner: aktueller Zustand im Scan-Rueckruf', () => {
     expect(apiPost).toHaveBeenLastCalledWith('/events/qr-checkin', { token: 'token-2' });
   });
 });
+
+// Zeitgeber, die das Schliessen ueberleben (offene Befunde, Tests und CI):
+// Der Neustart nach "bereits eingecheckt" (2 s) bzw. nach einem Fehler (3 s)
+// lief bisher auch, wenn das Fenster laengst zu war, und setzte Zustand am
+// abgebauten Fenster. Die Kamera selbst blieb aus (scannerRef ist dann null);
+// gemessen wird deshalb der offene Zeitgeber.
+describe('QR-Scanner: nach dem Schliessen laeuft kein Zeitgeber weiter', () => {
+  it('geschlossen waehrend "bereits eingecheckt": kein offener Zeitgeber, kein Neustart', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    apiPost.mockResolvedValue({ data: { event_id: 5, event_name: 'Sommerfest', already_checked_in: true } });
+    const { unmount } = render(<QRScannerModal onClose={vi.fn()} onSuccess={vi.fn()} />);
+    scanne();
+    await waitFor(() => expect(screen.getByText('Du bist bereits eingecheckt')).toBeTruthy());
+    const startsVorher = scannerStart.mock.calls.length;
+    expect(startsVorher).toBe(1);
+
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(scannerStart).toHaveBeenCalledTimes(1);
+  });
+
+  it('geschlossen nach einem Fehler: kein Neustart, kein offener Zeitgeber', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    apiPost.mockRejectedValue({ response: { status: 400, data: { error: 'Ungültiger Code' } } });
+    const { unmount } = render(<QRScannerModal onClose={vi.fn()} onSuccess={vi.fn()} />);
+    scanne();
+    await waitFor(() => expect(screen.getByText('Ungültiger Code')).toBeTruthy());
+    expect(vi.getTimerCount()).toBe(1);
+
+    unmount();
+    expect(vi.getTimerCount()).toBe(0);
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(scannerStart).toHaveBeenCalledTimes(1);
+  });
+
+  it('erlaubter Fall: offen geblieben, startet der Scanner nach dem Fehler wieder', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    apiPost.mockRejectedValue({ response: { status: 400, data: { error: 'Ungültiger Code' } } });
+    render(<QRScannerModal onClose={vi.fn()} onSuccess={vi.fn()} />);
+    scanne();
+    await waitFor(() => expect(screen.getByText('Ungültiger Code')).toBeTruthy());
+    await act(async () => { vi.advanceTimersByTime(3100); });
+    expect(scannerStart).toHaveBeenCalledTimes(2);
+    expect(screen.queryByText('Ungültiger Code')).toBeNull();
+  });
+
+  it('geschlossen, waehrend der Check-in noch laeuft: danach weder Meldung noch Zeitgeber', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    let lehneAb: (grund: unknown) => void = () => undefined;
+    apiPost.mockImplementation(() => new Promise((_, r) => { lehneAb = r; }));
+    const { unmount } = render(<QRScannerModal onClose={vi.fn()} onSuccess={vi.fn()} />);
+    scanne();
+    unmount();
+    await act(async () => { lehneAb({ response: { status: 400, data: { error: 'Ungültiger Code' } } }); });
+    expect(vi.getTimerCount()).toBe(0);
+    await act(async () => { vi.advanceTimersByTime(5000); });
+    expect(scannerStart).toHaveBeenCalledTimes(1);
+  });
+});

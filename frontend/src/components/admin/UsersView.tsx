@@ -21,6 +21,7 @@ import { AdminUser } from '../../types/user';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { datumKurz } from '../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../utils/rollenNamen';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -47,6 +48,7 @@ const UsersView: React.FC<UsersViewProps> = ({
   darfVerwalten,
   onDeleteUser
 }) => {
+  const zeitgeber = useZeitgeber();
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('alle');
@@ -98,7 +100,7 @@ const UsersView: React.FC<UsersViewProps> = ({
 
   const handleRefresh = (event: CustomEvent) => {
     onUpdate();
-    setTimeout(() => event.detail.complete(), 500);
+    zeitgeber.nach(500, () => event.detail.complete());
   };
 
   return (

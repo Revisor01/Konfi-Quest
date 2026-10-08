@@ -27,6 +27,7 @@ import { ladeText, sendeText } from '../../utils/fortschritt';
 import { tastaturKlick } from '../../utils/tastatur';
 import { rollenName } from '../../utils/rollenNamen';
 import { sendeFehlerText } from './sendeFehler';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 import {
   getMimeFromFileName,
   linkifyText,
@@ -121,6 +122,10 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   // das native 'contextmenu'); ohne diese Sperre hob der zweite Aufruf den
   // ersten sofort wieder auf, weil onLongPress ein Toggle ist.
   const longPressFiredRef = React.useRef(false);
+  // Langes Druecken, Hervorhebung der beantworteten Nachricht und Fokus ins
+  // Eingabefeld enden mit der Blase: Verschwindet sie (Raum verlassen,
+  // Nachricht geloescht), oeffnet kein spaeter Zeitgeber mehr das Menue.
+  const zeitgeber = useZeitgeber();
 
   // AKTIONEN OHNE LANGEN DRUCK (27.09.2026). Die Auswahl einer Nachricht --
   // und damit Reaktion, Antworten, Teilen, Löschen -- öffnete nur über den
@@ -247,16 +252,16 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
         }}
         onTouchStart={(e) => {
           longPressFiredRef.current = false;
-          const timeoutId = setTimeout(() => {
+          const abbrechen = zeitgeber.nach(500, () => {
             // Umgekehrter Fall: hat 'contextmenu' schon zugeschlagen, nicht
             // noch einmal togglen.
             if (longPressFiredRef.current) return;
             longPressFiredRef.current = true;
             onLongPress(message);
-          }, 500);
+          });
 
           const cleanup = () => {
-            clearTimeout(timeoutId);
+            abbrechen();
             e.target.removeEventListener('touchend', cleanup);
             e.target.removeEventListener('touchmove', cleanup);
             e.target.removeEventListener('touchcancel', cleanup);
@@ -297,9 +302,9 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               if (replyElement) {
                 replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 replyElement.style.backgroundColor = 'rgba(var(--app-color-chat-rgb), 0.15)';
-                setTimeout(() => {
+                zeitgeber.nach(1500, () => {
                   replyElement.style.backgroundColor = '';
-                }, 1500);
+                }, true);
               }
             }}
             style={{
@@ -796,7 +801,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               onClick={() => {
                 onReply(message);
                 onDeselectMessage();
-                setTimeout(() => textareaRef.current?.setFocus(), 100);
+                zeitgeber.nach(100, () => { void textareaRef.current?.setFocus(); });
               }}
               style={{
                 width: '32px',
