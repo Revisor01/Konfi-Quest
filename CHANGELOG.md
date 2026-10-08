@@ -224,6 +224,8 @@ Versionsüberschrift.
 ### Sonstiges
 - Eine automatische Prüfung stellt sicher, dass Zeitgeber und Horcher mit
   ihrer Seite enden.
+- Nach vielen Chat-Nachrichten kurz hintereinander werden die Zähler einmal
+  statt für jede Nachricht neu abgefragt.
 - Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne
   Gemeinde statt einer eigenen Gemeinde für den Betrieb.
 - Sicherheitsupdate für eine Bibliothek, die der Server für den Versand von
