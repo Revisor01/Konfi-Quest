@@ -45,12 +45,15 @@ ist. Dasselbe gilt, wenn die Gemeindeleitung ein Leitungspasswort setzt.
 
 Hat die Person eine E-Mail-Adresse hinterlegt, bekommt sie eine
 [Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen), dass
-die Leitung ihr Passwort neu gesetzt hat. Das Passwort selbst steht nicht
+die Leitung ihr Passwort neu gesetzt hat — bei einem Support-Konto ohne
+Gemeinde, dass der Support es gesetzt hat. Das Passwort selbst steht nicht
 darin — das gibst du weiter.
 
 Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
 dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
-Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
+Sperre und Löschung sind für die Gemeindeleitung dort gesperrt. In der Liste
+unter **Mehr › Benutzer:innen** steht ein solches Konto deshalb ohne
+Bearbeiten und ohne Löschen; Antippen öffnet es nicht.
 
 **Leitungskonten laufen anders:** Für Leitung und Gemeindeleitung gibt es kein
 Einmalpasswort. Die Gemeindeleitung öffnet

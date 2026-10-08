@@ -13,3 +13,12 @@ import type { AdminUser } from '../types/user';
  */
 export const kontoBleibt = (u: Pick<AdminUser, 'mitgliedschaft' | 'weitere_gemeinden'>): boolean =>
   u.mitgliedschaft === 'weitere' || (u.weitere_gemeinden ?? 0) > 0;
+
+/**
+ * Bietet die Oberflaeche das Entfernen bzw. Loeschen an? Der Server sagt es
+ * mit can_delete (08.10.2026); fehlt das Feld, gilt wie bisher can_edit.
+ * Bearbeiten haengt allein an can_edit -- bei einem Konto mit
+ * Super-Admin-Merkmal ist beides aus, beim Support-Gast nur das Bearbeiten.
+ */
+export const darfEntfernen = (u: Pick<AdminUser, 'can_edit' | 'can_delete'>): boolean =>
+  u.can_delete ?? u.can_edit !== false;

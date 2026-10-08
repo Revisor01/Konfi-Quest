@@ -592,8 +592,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           // Gibt es keine Zuordnung mehr (schon über die Konfi-Verwaltung
           // gelöscht — dort wurden die Punkte bereits abgezogen), wird auch
           // nichts mehr abgezogen.
+          // Ebenso die Art (Migration 200): abgezogen wird von der Saeule, auf
+          // die gebucht wurde, nicht von der heutigen Art der Aktivitaet.
           const { rows: [zuordnung] } = await client.query(
-            `SELECT ua.id, COALESCE(ua.points, a.points) AS points
+            `SELECT ua.id, COALESCE(ua.points, a.points) AS points, COALESCE(ua.type, a.type) AS type
                FROM user_activities ua
                JOIN activities a ON a.id = ua.activity_id
               WHERE ua.user_id = $1 AND ua.activity_id = $2
@@ -604,8 +606,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
           if (zuordnung) {
             // Punkte abziehen nur für Konfi-Activities (Teamer haben keine bekommen)
-            if (!isTeamerActivity && zuordnung.points) {
-              const pointField = getPointField(request.type);
+            if (!isTeamerActivity && zuordnung.points && zuordnung.type) {
+              const pointField = getPointField(zuordnung.type);
               await client.query(`UPDATE konfi_profiles SET ${pointField} = GREATEST(0, ${pointField} - $1) WHERE user_id = $2`, [zuordnung.points, request.user_id]);
             }
 
@@ -704,9 +706,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           // (Migration 163). Ändert die Leitung die Aktivität später, bleibt
           // dieser Wert — Historie und Rücknahme lesen ihn (Audit 26.09.2026,
           // BF-02).
+          // type: ebenso die Art (Migration 200) -- Ruecknahme, Liste und
+          // Historie bleiben in der Saeule, in die gebucht wurde.
           await client.query(
-            "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points) VALUES ($1, $2, $3, $4, $5, $6)",
-            [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id, request.points]
+            "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points, type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id, request.points, request.type || null]
           );
 
           // Punkte nur für Konfi-Activities (Teamer-Activities sind nur Nachweis)
@@ -929,9 +933,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         // points: Wert der Aktivität zum Zeitpunkt der Vergabe, am Beleg
         // festgehalten (Migration 163, Audit 26.09.2026 BF-02).
+        // type: die Art zum Zeitpunkt der Vergabe (Migration 200).
         await client.query(
-          "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points) VALUES ($1, $2, $3, $4, $5, $6)",
-          [konfiId, activityId, req.user.id, date, req.user.organization_id, activity.points]
+          "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points, type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+          [konfiId, activityId, req.user.id, date, req.user.organization_id, activity.points, activity.type || null]
         );
 
         if (!isTeamerActivity && activity.points && activity.type) {

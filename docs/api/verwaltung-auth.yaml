@@ -1769,7 +1769,7 @@ paths:
                 kirchenkreis: { type: string, description: "Freitext; mit kirchenkreis_id uebergangen" }
                 kirchenkreis_id: { type: [integer, "null"], description: "seit 03.10.2026, optional: Zuordnung zu einem Kirchenkreis (GET /api/support/kirchenkreise); unbekannt 400 'Kirchenkreis nicht gefunden', kein Verweis 400 'Ungültiger Kirchenkreis' -- nichts angelegt" }
                 max_konfis: { type: [integer, "null"] }
-                admin_username: { type: string, description: "systemweit eindeutig (case-insensitiv), seit 29.09.2026 geprueft" }
+                admin_username: { type: string, description: "systemweit eindeutig (case-insensitiv), seit 29.09.2026 geprueft; 3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich (benutzernameRegel wie commonValidations.username), sonst 400 Validierungsfehler -- BEHOBEN 08.10.2026, bis dahin nur 'nicht leer' (Leerzeichen und Sonderzeichen gingen durch)" }
                 admin_password: { type: string, minLength: 8, description: "Volle Passwort-Policy (validatePassword): min 8 Zeichen, Gross- und Kleinbuchstabe, Zahl, Sonderzeichen, keine Leerzeichen; sonst 400. BEHOBEN 22.08.2026 (N6) -- hier bis 30.09.2026 noch als 'nur min 6 Zeichen, keine Policy' beschrieben" }
                 admin_display_name: { type: string }
       responses:
@@ -1915,11 +1915,14 @@ paths:
       tags: ["Organisationen"]
       summary: Passwort eines Support-Kontos setzen
       description: >
-        Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen und hebt
-        eine Kontosperre nach Fehlversuchen auf. ANDERS: keine Bestaetigungsmail
-        -- deren Vorlage spricht von "der Leitung deiner Gemeinde".
-        PUT /api/users/{id}/reset-password geht fuer Support-Konten ebenfalls
-        (Super-Admin, seit 03.10.2026 korrekt) und schickt diese Mail.
+        Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen, hebt
+        eine Kontosperre nach Fehlversuchen auf und schickt nach der Antwort
+        die Bestaetigung an die hinterlegte Adresse (ohne Passwort), mit dem
+        Satz "der Support von Konfi Quest hat ein neues Passwort fuer dein
+        Konto gesetzt". BEHOBEN 08.10.2026: bis dahin keine Mail hier und an
+        PUT /api/users/{id}/reset-password fuer Support-Konten der falsche Satz
+        "die Leitung deiner Gemeinde hat ..." (utils/passwortGeaendertMail.js
+        waehlt den Support-Satz fuer Konten ohne Gemeinde).
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
       requestBody:
@@ -2127,7 +2130,7 @@ paths:
               type: object
               required: [username, display_name, password]
               properties:
-                username: { type: string, description: "systemweit eindeutig (case-insensitiv)" }
+                username: { type: string, description: "systemweit eindeutig (case-insensitiv); 3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich (benutzernameRegel wie commonValidations.username), sonst 400 Validierungsfehler -- BEHOBEN 08.10.2026, bis dahin nur 'nicht leer' (Leerzeichen und Sonderzeichen gingen durch)" }
                 display_name: { type: string }
                 password: { type: string, minLength: 8, description: "Volle Passwort-Policy (validatePassword), sonst 400 -- seit 22.08.2026 (N6); hier bis 30.09.2026 noch als minLength 6 beschrieben" }
                 email: { type: string }
@@ -2517,7 +2520,7 @@ paths:
                 max_konfis: { type: [integer, "null"], minimum: 0, description: "wie POST /organizations; leer = unbegrenzt" }
                 trial_ends_at: { type: [string, "null"], format: date-time, description: "wie POST /organizations: fehlt das Feld, 30 Tage Testphase; null = unbegrenzt" }
                 is_trial: { type: boolean, description: "nur zusammen mit trial_ends_at" }
-                admin_username: { type: string }
+                admin_username: { type: string, description: "3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich (benutzernameRegel wie commonValidations.username), sonst 400 Validierungsfehler -- BEHOBEN 08.10.2026, bis dahin nur 'nicht leer' (Leerzeichen und Sonderzeichen gingen durch)" }
                 admin_display_name: { type: string }
                 admin_email: { type: string, description: "gueltige Adresse; fehlt sie, contact_email" }
                 admin_password: { type: string, description: "volle validatePassword-Policy" }
@@ -3909,7 +3912,7 @@ paths:
       tags: ["Benutzer & Rollen"]
       summary: Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie
       responses:
-        "200": { description: "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026; weitere_gemeinden (integer): in wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist, bei 'weitere' mindestens 1, nur die Zahl, keine Namen -- additiv seit 27.09.2026, der Loesch-Dialog erkennt daran, dass DELETE das Konto nicht loescht)" }
+        "200": { description: "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026; weitere_gemeinden (integer): in wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist, bei 'weitere' mindestens 1, nur die Zahl, keine Namen -- additiv seit 27.09.2026, der Loesch-Dialog erkennt daran, dass DELETE das Konto nicht loescht). can_edit folgt seit 08.10.2026 derselben Regel wie checkUserHierarchy: bei einem Super-Admin-Konto (Rolle ODER Merkmal is_super_admin) false, ausser der Aufrufer ist selbst Super-Admin (Befund 03.10.2026, behoben 08.10.2026: bis dahin can_edit nur nach der Rolle, Bearbeiten/Loeschen/Passwort endeten mit 403). can_delete (boolean, additiv seit 08.10.2026): darf DELETE /users/:id; meist gleich can_edit, beim Support-Gast (Konto ohne Stamm-Gemeinde) fuer die Gemeindeleitung true trotz can_edit false. Das Merkmal is_super_admin selbst steht nicht in der Antwort." }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
         rollen: [org_admin, admin]

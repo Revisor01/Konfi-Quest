@@ -22,6 +22,7 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { datumKurz } from '../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../utils/rollenNamen';
 import { useZeitgeber } from '../../hooks/useZeitgeber';
+import { darfEntfernen } from '../../utils/mitgliedschaft';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -290,7 +291,7 @@ const UsersView: React.FC<UsersViewProps> = ({
                     Tippen = bearbeiten, Wischen = löschen. Der frühere
                     Bearbeiten-Wisch rief exakt dieselbe Funktion wie der
                     Tap auf und war damit reine Doppelung (Audit 10.08.). */}
-                {darfVerwalten && user.can_edit !== false && (
+                {darfVerwalten && darfEntfernen(user) && (
                   <IonItemOptions side="end" className="app-swipe-actions">
                     <IonItemOption
                       onClick={() => {

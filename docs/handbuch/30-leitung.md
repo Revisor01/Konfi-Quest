@@ -401,7 +401,8 @@ Eine Gemeinde legt der Betrieb von Konfi Quest an, nicht die Gemeinde selbst —
 angefragt wird sie über das Formular auf der Startseite (siehe [Konfi Quest
 für eure Gemeinde anfragen](00-start.md#konfi-quest-fuer-eure-gemeinde-anfragen)).
 Dabei entsteht das erste Konto der **Gemeindeleitung**; Benutzername und
-Passwort bekommst du vom Betrieb. Melde dich damit an, ändere zuerst das
+Passwort bekommst du vom Betrieb. Der Benutzername folgt denselben Regeln wie
+jeder andere: 3 bis 50 Zeichen aus Buchstaben, Ziffern, Punkt und Bindestrich. Melde dich damit an, ändere zuerst das
 Passwort (siehe [Selbst ändern, wenn man angemeldet
 ist](35-passwoerter.md#weg-3-selbst-aendern-wenn-man-angemeldet-ist)) und
 hinterlege eine E-Mail-Adresse — dorthin gehen „Passwort vergessen" und der

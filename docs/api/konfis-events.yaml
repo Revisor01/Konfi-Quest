@@ -1355,6 +1355,10 @@ paths:
       tags: ["Termine (Verwaltung)"]
       summary: Event erstellen
       description: >
+        WIEDERHOLUNGSSCHUTZ (additiv seit 08.10.2026, Migration 201): optionales
+        client_id (UUID) im Rumpf. Ein zweiter Eingang derselben client_id in
+        derselben Gemeinde legt nichts an und antwortet 201 mit derselben id;
+        keine UUID: 400; ohne client_id wie bisher.
         Legt ein Event an inkl. Kategorien, Jahrgängen und optionalen
         Timeslots. Serverseitige Zwangsregeln: Pflicht-/Konfirmations-Events
         ohne Punkte und ohne Timeslots; Pflicht-Events ohne Warteliste und mit
@@ -4157,6 +4161,15 @@ paths:
                 points: { type: integer }
                 type: { type: string, enum: [gottesdienst, gemeinde] }
                 description: { type: string }
+                client_id:
+                  type: string
+                  format: uuid
+                  description: >
+                    Optional, additiv seit 08.10.2026 (Migration 201):
+                    Wiederholungsschutz. Ein zweiter Eingang derselben client_id
+                    in derselben Gemeinde bucht nichts und antwortet 201 mit
+                    derselben Antwort (auch bei gleichzeitigem Eingang). Keine
+                    UUID: 400. Ohne client_id (Store-Apps) wie bisher.
       responses:
         "201": { description: "Bonuspunkte vergeben (konfi-management.js:861 — die Doku nannte hier bis 27.08.2026 faelschlich 200)" }
         "400": { description: Pflichtfelder fehlen oder Punkte-Typ fuer den Jahrgang deaktiviert }

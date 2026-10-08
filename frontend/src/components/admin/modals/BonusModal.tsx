@@ -1,5 +1,5 @@
 import { fehlerText } from '../../../utils/fehler';
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
@@ -73,6 +73,11 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
   );
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { isSubmitting, guard } = useActionGuard();
+  // Eine Kennung je Vorgang (so lange das Fenster offen ist): Erreicht die
+  // Warteschlange den Server zweimal mit derselben, bucht er nur einmal
+  // (Wiederholungsschutz, 08.10.2026). Ein zweites Speichern nach einem
+  // Fehler ist derselbe Vorgang.
+  const vorgangKennung = useRef(safeUUID());
 
   const handleSave = async () => {
     if (!name.trim() || points <= 0) return;
@@ -87,7 +92,8 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
       points: points,
       type: type,
       description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,
-      completed_date: selectedDate
+      completed_date: selectedDate,
+      client_id: vorgangKennung.current
     };
 
     await guard(async () => {
@@ -112,7 +118,7 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
           hasFileUpload: false,
           metadata: {
             type: 'admin',
-            clientId: safeUUID(),
+            clientId: vorgangKennung.current,
             label: 'Bonus-Punkte vergeben'
           }
         });

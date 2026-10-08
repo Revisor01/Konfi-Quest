@@ -34,6 +34,8 @@
 // hier a.points: Änderte die Leitung den Punktwert, zeigte die Historie
 // Punkte, die nie gutgeschrieben wurden, und summierte sich nicht mehr zu
 // totals (Audit BF-02). Bestand ohne Wert fällt auf a.points zurück.
+// Ebenso die Art (category, Migration 200): die der Vergabe, Bestand ohne Art
+// liest a.type.
 const { abfragenBuendeln } = require('./abfragenBuendeln');
 
 const ACTIVITIES_QUERY = `
@@ -41,7 +43,7 @@ const ACTIVITIES_QUERY = `
     ka.id,
     a.name as title,
     COALESCE(ka.points, a.points) AS points,
-    a.type as category,
+    COALESCE(ka.type, a.type) as category,
     ka.completed_date as date,
     ka.comment,
     'activity' as source_type,

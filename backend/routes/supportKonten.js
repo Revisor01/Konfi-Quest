@@ -18,9 +18,11 @@
 // greifen nur auf Konten ohne Gemeinde zu; ein Konto mit Gemeinde ist hier
 // "nicht gefunden" (404) und wird in seiner Gemeinde verwaltet.
 //
-// Das Passwort setzt PUT /:id/passwort (ohne Mail: die Vorlage spricht von
-// "der Leitung deiner Gemeinde"); PUT /users/:id/reset-password ginge auch,
-// schickt aber genau diese Mail.
+// Das Passwort setzt PUT /:id/passwort; wie PUT /users/:id/reset-password
+// geht danach die Bestaetigung an die hinterlegte Adresse -- bei einem
+// Konto ohne Gemeinde mit dem Satz "der Support von Konfi Quest hat ..."
+// (utils/passwortGeaendertMail.js, seit 08.10.2026; bis dahin gar keine Mail,
+// weil die Vorlage nur "die Leitung deiner Gemeinde" kannte).
 
 const express = require('express');
 const bcrypt = require('bcrypt');
@@ -32,6 +34,7 @@ const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/be
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const { nachAntwort } = require('../utils/nachAntwort');
+const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { MELDUNG_LETZTER, bleibtEinSuperAdmin, systemrolleSuperAdmin } = require('../utils/superAdminKonten');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -215,6 +218,11 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       invalidateUserCache(id);
       liveUpdate.disconnectUserSockets(id);
       res.json({ message: 'Passwort gesetzt' });
+
+      // Bestaetigung an die hinterlegte Adresse, ohne das Passwort.
+      nachAntwort(req, () => meldePasswortGeaendert(db, id, {
+        durchLeitung: id !== Number(req.user.id)
+      }), 'PUT /organizations/support-konten/:id/passwort (Mail)');
     } catch (err) {
       console.error('Database error in PUT /organizations/support-konten/%s/passwort:', id, err);
       res.status(500).json({ error: 'Datenbankfehler' });

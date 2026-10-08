@@ -292,7 +292,14 @@ describe('Begriffe: das Handbuch spricht wie die App', () => {
 // Fachwort). Der Tarif fuer mehrere Gemeinden heisst "Verbund".
 describe('Begriffe: die Landingpage spricht wie die App', () => {
   const roh = readFileSync(join(FRONTEND, 'public/landing.html'), 'utf8');
-  const sichtbar = roh.replace(/<!--[\s\S]*?-->/g, '');
+  // Wiederholt, bis nichts mehr wegfaellt: Ein einmaliges replace liesse aus
+  // verschachtelten Resten wie "<!-<!---->-" wieder ein "<!--" entstehen
+  // (CodeQL js/incomplete-multi-character-sanitization, Meldung 128).
+  let sichtbar = roh;
+  for (let vorher = ''; vorher !== sichtbar;) {
+    vorher = sichtbar;
+    sichtbar = sichtbar.replace(/<!--[\s\S]*?-->/g, '');
+  }
 
   it('„Organisation" kommt nicht vor — auch nicht in Lizenz und Rollen', () => {
     expect(sichtbar.match(/Organisation\w*/g) ?? []).toEqual([]);

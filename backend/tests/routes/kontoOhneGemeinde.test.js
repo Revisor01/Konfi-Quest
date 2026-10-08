@@ -122,7 +122,20 @@ describe('Konto ohne Gemeinde', () => {
       const res = await request(app).get('/api/users').set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
       expect(res.status).toBe(200);
       const gast = res.body.find((u) => u.id === SUPPORT.id);
-      expect(gast).toMatchObject({ role_name: 'org_admin', mitgliedschaft: 'weitere', weitere_gemeinden: 0, can_edit: true });
+      // can_edit false, can_delete true (03./08.10.2026): Bearbeiten lehnt
+      // checkUserHierarchy fuer Super-Admin-Konten ab, Herausnehmen aus der
+      // Gemeinde ist die eine Ausnahme fuer die Gemeindeleitung. Bis dahin
+      // stand hier can_edit: true -- die Oberflaeche bot Bearbeiten an, das
+      // mit 403 endete.
+      expect(gast).toMatchObject({ role_name: 'org_admin', mitgliedschaft: 'weitere', weitere_gemeinden: 0, can_edit: false, can_delete: true });
+      expect(gast).not.toHaveProperty('is_super_admin');
+    });
+
+    it('verboten: die Leitung (admin) darf den Gast weder bearbeiten noch herausnehmen (can_edit und can_delete false)', async () => {
+      await alsGast(ORGS.testGemeinde.id, 'teamer');
+      const res = await request(app).get('/api/users').set('Authorization', `Bearer ${generateToken('admin1')}`);
+      expect(res.status).toBe(200);
+      expect(res.body.find((u) => u.id === SUPPORT.id)).toMatchObject({ can_edit: false, can_delete: false });
     });
 
     it('weitere_gemeinden zaehlt nur echte Gemeinden (Gast in zweien: 1)', async () => {

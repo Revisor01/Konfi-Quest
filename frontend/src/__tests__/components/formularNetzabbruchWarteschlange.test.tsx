@@ -177,6 +177,28 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
   });
 });
 
+// Wiederholungsschutz (08.10.2026): Offline eingereihte Bonuspunkte und neue
+// Events wiederholt die Warteschlange nach Netzfehlern. Beide tragen deshalb
+// eine client_id, EINE je offenem Fenster -- im Rumpf (der Server erkennt
+// daran den zweiten Eingang) und als Kennung des Warteschlangen-Eintrags.
+describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id', () => {
+  it('Bonuspunkte: eine Kennung je Fenster, im Rumpf und in der Warteschlange', () => {
+    const bonus = lies('admin/modals/BonusModal.tsx');
+    expect(bonus).toContain('const vorgangKennung = useRef(safeUUID());');
+    expect(bonus).toContain('client_id: vorgangKennung.current');
+    expect(bonus).toContain('clientId: vorgangKennung.current,');
+    // Je Speichern eine neue Kennung waere wirkungslos.
+    expect(bonus).not.toContain('clientId: safeUUID()');
+  });
+
+  it('Event anlegen: online und in der Warteschlange mit derselben Kennung', () => {
+    const event = lies('admin/modals/EventModal.tsx');
+    expect(event).toContain('const anlegeKennung = useRef(safeUUID());');
+    expect(event).toContain("api.post('/events', { ...payload, client_id: anlegeKennung.current })");
+    expect(event).toContain("url: '/events', body: { ...payload, client_id: anlegeKennung.current }");
+  });
+});
+
 // Leitungs-Formulare: Bearbeiten (PUT) faellt bei einem Abbruch in die
 // Warteschlange, Anlegen (POST ohne Idempotenzschluessel) nicht -- die
 // Methode entscheidet die Hilfsfunktion, keine Zusicherung.

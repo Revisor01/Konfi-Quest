@@ -82,6 +82,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
   const [teamerAccess, setTeamerAccess] = useState<'normal' | 'teamer_needed' | 'teamer_only'>('normal');
   const initializedRef = useRef(false);
   const zeitgeber = useZeitgeber();
+  // Wiederholungsschutz beim Anlegen eines einzelnen Events (08.10.2026): eine
+  // Kennung je offenem Fenster. Erreicht die Warteschlange den Server zweimal
+  // mit derselben, legt er das Event nur einmal an.
+  const anlegeKennung = useRef(safeUUID());
 
   useEffect(() => {
     if (initializedRef.current) setIsDirty(true);
@@ -295,7 +299,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
             });
             setSuccess(`Event-Serie mit ${formData.series_count} Events erstellt`);
           } else {
-            await api.post('/events', payload);
+            await api.post('/events', { ...payload, client_id: anlegeKennung.current });
             trackHandlung('termin-angelegt', {
               form: 'einzeln',
               zielgruppe: isTeamerOnly ? 'teamer' : 'konfi'
@@ -314,7 +318,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
           await writeQueue.enqueue({ method: 'POST', url: '/events/series', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event-Serie erstellen' } });
           setSuccess('Event-Serie wird erstellt sobald du wieder online bist');
         } else {
-          await writeQueue.enqueue({ method: 'POST', url: '/events', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event erstellen' } });
+          await writeQueue.enqueue({ method: 'POST', url: '/events', body: { ...payload, client_id: anlegeKennung.current }, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: anlegeKennung.current, label: 'Event erstellen' } });
           setSuccess('Event wird erstellt sobald du wieder online bist');
         }
       }

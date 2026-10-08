@@ -20,6 +20,7 @@ const { getTestApp, warteAufNachwehen } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS, ROLES, PASSWORD } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const { SUPPORT, supportKontoAnlegen } = require('../helpers/kontoOhneGemeinde');
 
 const sendMail = vi.fn();
 
@@ -169,6 +170,60 @@ describe('Passwort-Mails', () => {
       expect(gesendet[0].text).toContain('Das Passwort selbst steht nicht in dieser Mail');
       expect(gesendet[0].text).not.toContain(NEU);
       expect(gesendet[0].html).not.toContain(NEU);
+    });
+
+    // Support-Konto (ohne Gemeinde): Den Satz "die Leitung deiner Gemeinde"
+    // gibt es dort nicht -- gesetzt hat es der Support (Befund 03.10.2026).
+    // Bis dahin schickte PUT /users/:id/reset-password diesen falschen Satz,
+    // PUT /organizations/support-konten/:id/passwort gar keine Mail.
+    const SUPPORT_SATZ = 'der Support von Konfi Quest hat ein neues Passwort für dein Konto gesetzt.';
+
+    it('Support-Konto, Passwort über die Benutzerverwaltung: Mail nennt den Support, nicht die Leitung', async () => {
+      await supportKontoAnlegen(db);
+      await adresseSetzen(SUPPORT.id);
+
+      const res = await request(app)
+        .put(`/api/users/${SUPPORT.id}/reset-password`)
+        .set('Authorization', `Bearer ${generateToken('superAdmin')}`)
+        .send({ password: NEU });
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+
+      const gesendet = mails();
+      expect(gesendet.map((m) => m.to)).toEqual([ADRESSE]);
+      expect(gesendet[0].text).toContain(SUPPORT_SATZ);
+      expect(gesendet[0].text).not.toContain('Leitung deiner Gemeinde');
+      expect(gesendet[0].text).not.toContain(NEU);
+      expect(gesendet[0].html).not.toContain(NEU);
+    });
+
+    it('Support-Konto, Passwort über die Support-Konten: dieselbe Mail', async () => {
+      await supportKontoAnlegen(db);
+      await adresseSetzen(SUPPORT.id);
+
+      const res = await request(app)
+        .put(`/api/organizations/support-konten/${SUPPORT.id}/passwort`)
+        .set('Authorization', `Bearer ${generateToken('superAdmin')}`)
+        .send({ password: NEU });
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+
+      const gesendet = mails();
+      expect(gesendet.map((m) => m.to)).toEqual([ADRESSE]);
+      expect(gesendet[0].text).toContain(SUPPORT_SATZ);
+      expect(gesendet[0].text).not.toContain(NEU);
+    });
+
+    it('verboten: Support-Konto ohne Adresse -- keine Mail', async () => {
+      await supportKontoAnlegen(db);
+
+      const res = await request(app)
+        .put(`/api/organizations/support-konten/${SUPPORT.id}/passwort`)
+        .set('Authorization', `Bearer ${generateToken('superAdmin')}`)
+        .send({ password: NEU });
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+      expect(mails()).toEqual([]);
     });
 
     it('die Leitung setzt ein Passwort beim Bearbeiten: Mail; ohne Passwort im Formular: keine', async () => {

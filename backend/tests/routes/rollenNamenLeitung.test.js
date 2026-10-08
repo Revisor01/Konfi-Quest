@@ -76,7 +76,7 @@ describe('Rollennamen in Server-Texten und Standardrollen', () => {
         name: 'Rollen-Gemeinde',
         slug: 'rollen-gemeinde',
         display_name: 'Rollen-Gemeinde',
-        admin_username: 'rollen_admin',
+        admin_username: 'rollen.admin',
         admin_password: 'Sicher!Passwort1',
         admin_display_name: 'Rollen Admin'
       });

@@ -52,6 +52,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         commonValidations.points,
         commonValidations.type,
         body('description').trim().notEmpty().withMessage('Beschreibung ist erforderlich'),
+        body('client_id').optional({ values: 'null' }).isUUID().withMessage('client_id muss eine UUID sein'),
         handleValidationErrors
     ];
 
@@ -860,7 +861,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // BEWUSST hinter ka.* — pg nimmt bei gleichem Feldnamen die letzte
             // Spalte. Feldname und Typ bleiben, die Store-Apps lesen `points`.
             const activitiesQuery = `
-                SELECT ka.*, a.name, COALESCE(ka.points, a.points) AS points, a.type, a.target_role, u.display_name as admin_name
+                SELECT ka.*, a.name, COALESCE(ka.points, a.points) AS points, COALESCE(ka.type, a.type) AS type, a.target_role, u.display_name as admin_name
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 LEFT JOIN users u ON ka.admin_id = u.id
@@ -1000,7 +1001,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             if (konfi.role_name === 'teamer' && konfi.gottesdienst_points !== null) {
                 // Activities aus der Konfi-Zeit
                 const histActivities = `
-                    SELECT ka.id, a.name as title, COALESCE(ka.points, a.points) AS points, a.type as category,
+                    SELECT ka.id, a.name as title, COALESCE(ka.points, a.points) AS points, COALESCE(ka.type, a.type) as category,
                            ka.completed_date as date, 'activity' as source_type,
                            NULL::timestamptz as event_date
                     FROM user_activities ka
@@ -1251,6 +1252,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     // POST bonus points for a konfi
     router.post('/:id/bonus-points', rbacVerifier, requireTeamer, validateBonusPoints, async (req, res) => {
         const { points, type, description } = req.body;
+        // Wiederholungsschutz (Migration 201): Die Warteschlange der App
+        // wiederholt offline eingereihte Bonuspunkte nach Netzfehlern. Ein
+        // zweiter Eingang derselben client_id in dieser Gemeinde bucht nichts
+        // und bekommt dieselbe Antwort. Ohne client_id (Store-Apps) wie bisher.
+        const clientId = req.body.client_id || null;
+        const BONUS_ANTWORT = { message: 'Bonuspunkte erfolgreich hinzugefügt' };
         if (!points || !type || !description) {
             return res.status(400).json({ error: 'Punkte, Typ und Beschreibung sind erforderlich' });
         }
@@ -1288,14 +1295,22 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             const updateField = getPointField(type);
 
+            if (clientId) {
+                const { rows: [schonDa] } = await db.query(
+                    'SELECT id FROM bonus_points WHERE client_id = $1 AND organization_id = $2',
+                    [clientId, req.user.organization_id]
+                );
+                if (schonDa) return res.status(201).json(BONUS_ANTWORT);
+            }
+
             const client = await db.getClient();
             try {
                 await client.query('BEGIN');
 
                 const query = `
-                    INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
-                await client.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id]);
+                    INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at, client_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`;
+                await client.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id, clientId]);
 
                 const updateQuery = `
                     UPDATE konfi_profiles kp
@@ -1337,13 +1352,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
  console.error('Error sending bonus points push:', pushErr);
             }
 
-            res.status(201).json({ message: 'Bonuspunkte erfolgreich hinzugefügt' });
+            res.status(201).json(BONUS_ANTWORT);
 
             // Live Update: Notify konfi about dashboard (points) and admins about konfi change
             liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points });
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
+            // Zwei Eingaenge gleichzeitig: Beide sahen noch keine Buchung, der
+            // zweite INSERT scheitert am eindeutigen Index -- die Buchung des
+            // ersten steht, also dieselbe Antwort.
+            if (clientId && err.code === '23505' && err.constraint === 'idx_bonus_points_org_client_id') {
+                return res.status(201).json(BONUS_ANTWORT);
+            }
             if (err.message === 'Ungültiger Punktetyp') {
                 return res.status(400).json({ error: 'Ungültiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
             }
@@ -1466,10 +1487,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
                 // points: Wert der Aktivität zum Zeitpunkt der Vergabe, am Beleg
                 // festgehalten (Migration 163, Audit 26.09.2026 BF-02).
+                // type: ebenso die Art (Migration 200).
                 const query = `
-                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at, points)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`;
-                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id, activity.points]);
+                    INSERT INTO user_activities (user_id, activity_id, completed_date, comment, admin_id, organization_id, created_at, points, type)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7, $8)`;
+                await client.query(query, [req.params.id, activity_id, completed_date, comment || '', req.user.id, req.user.organization_id, activity.points, activity.type || null]);
 
                 if (!isTeamerActivity && activity.points && activity.type) {
                     const updateField = getPointField(activity.type);
@@ -1527,8 +1549,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // nicht der aktuelle Wert der Aktivität — sonst zieht das Löschen
             // nach einer Änderung des Punktwerts zu viel oder zu wenig ab
             // (Audit 26.09.2026, BF-02). Bestand ohne Wert: a.points wie vorher.
+            // Dasselbe fuer die Art (Migration 200): abgezogen wird von der
+            // Saeule der Vergabe; Bestand ohne Art liest a.type.
             const getActivityQuery = `
-                SELECT ka.*, COALESCE(ka.points, a.points) AS points, a.type, a.target_role
+                SELECT ka.*, COALESCE(ka.points, a.points) AS points, COALESCE(ka.type, a.type) AS type, a.target_role
                 FROM user_activities ka
                 JOIN activities a ON ka.activity_id = a.id
                 JOIN users u ON ka.user_id = u.id

@@ -311,6 +311,44 @@ describe('Organizations Routes', () => {
   // POST /api/organizations
   // ================================================================
   describe('POST /api/organizations', () => {
+    // Benutzername der ersten Gemeindeleitung: dieselbe Zeichenregel wie bei
+    // jedem anderen Konto (Befund 03.10.2026; bis dahin nur "nicht leer").
+    it.each([
+      ['Leerzeichen', 'neue leitung'],
+      ['Sonderzeichen', 'neue_leitung!'],
+      ['Unterstrich', 'neue_leitung'],
+      ['zu kurz', 'nl'],
+    ])('verboten: Benutzername mit %s -> 400, keine Gemeinde, kein Konto', async (_fall, admin_username) => {
+      const res = await request(app)
+        .post('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'Regel Gemeinde', slug: 'regel-gemeinde', display_name: 'Regel Gemeinde',
+          admin_username, admin_password: 'Sicher!Passwort1', admin_display_name: 'Leitung Regel'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details.map((d) => d.field)).toEqual(['admin_username']);
+      const { rows: [n] } = await db.query(
+        `SELECT (SELECT COUNT(*)::int FROM organizations WHERE slug = 'regel-gemeinde') AS gemeinden,
+                (SELECT COUNT(*)::int FROM users WHERE username = $1) AS konten`, [admin_username]);
+      expect(n).toEqual({ gemeinden: 0, konten: 0 });
+    });
+
+    it('erlaubt: Benutzername aus Buchstaben, Ziffern, Punkt und Bindestrich -> 201', async () => {
+      const res = await request(app)
+        .post('/api/organizations')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({
+          name: 'Regel Gemeinde', slug: 'regel-gemeinde', display_name: 'Regel Gemeinde',
+          admin_username: 'Leitung.Regel-2', admin_password: 'Sicher!Passwort1', admin_display_name: 'Leitung Regel'
+        });
+
+      expect(res.status).toBe(201);
+      const { rows } = await db.query('SELECT username FROM users WHERE id = $1', [res.body.admin_user_id]);
+      expect(rows[0].username).toBe('Leitung.Regel-2');
+    });
+
     it('SuperAdmin erstellt neue Org mit Admin-User -> 201', async () => {
       const res = await request(app)
         .post('/api/organizations')
@@ -319,7 +357,7 @@ describe('Organizations Routes', () => {
           name: 'Neue Gemeinde',
           slug: 'neue-gemeinde',
           display_name: 'Neue Gemeinde Hamburg',
-          admin_username: 'neue_admin',
+          admin_username: 'neue.admin',
           admin_password: 'Sicher!Passwort1',
           admin_display_name: 'Admin Neue Gemeinde'
         });
@@ -440,7 +478,7 @@ describe('Organizations Routes', () => {
           name: 'Konfi-Test-Gemeinde',
           slug: 'konfi-test-gemeinde',
           display_name: 'Konfi-Test-Gemeinde',
-          admin_username: 'kt_admin',
+          admin_username: 'kt.admin',
           admin_password: 'Sicher!Passwort1',
           admin_display_name: 'KT Admin'
         });
@@ -449,7 +487,7 @@ describe('Organizations Routes', () => {
       // Als neuer Org-Admin einloggen
       const loginRes = await request(app)
         .post('/api/auth/login')
-        .send({ username: 'kt_admin', password: 'Sicher!Passwort1' });
+        .send({ username: 'kt.admin', password: 'Sicher!Passwort1' });
       expect(loginRes.status).toBe(200);
       const newAdminToken = loginRes.body.token;
 
@@ -476,7 +514,7 @@ describe('Organizations Routes', () => {
           name: 'Verboten',
           slug: 'verboten',
           display_name: 'Verbotene Gemeinde',
-          admin_username: 'admin_verboten',
+          admin_username: 'admin.verboten',
           admin_password: 'Sicher!123',
           admin_display_name: 'Admin'
         });
@@ -489,7 +527,7 @@ describe('Organizations Routes', () => {
         .post('/api/organizations')
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          admin_username: 'admin_test',
+          admin_username: 'admin.test',
           admin_password: 'Sicher!123',
           admin_display_name: 'Admin'
         });
@@ -508,7 +546,7 @@ describe('Organizations Routes', () => {
           name: 'schwach-gemeinde',
           slug: 'schwach-gemeinde',
           display_name: 'Schwach Gemeinde',
-          admin_username: 'schwach_leitung',
+          admin_username: 'schwach.leitung',
           admin_password,
           admin_display_name: 'Schwache Leitung'
         });
@@ -516,7 +554,7 @@ describe('Organizations Routes', () => {
     const gemeindeUndKontoZaehlen = async () => {
       const { rows: [r] } = await db.query(
         `SELECT (SELECT COUNT(*)::int FROM organizations WHERE slug = 'schwach-gemeinde') AS gemeinden,
-                (SELECT COUNT(*)::int FROM users WHERE username = 'schwach_leitung') AS konten`
+                (SELECT COUNT(*)::int FROM users WHERE username = 'schwach.leitung') AS konten`
       );
       return r;
     };
@@ -556,7 +594,7 @@ describe('Organizations Routes', () => {
           name: 'Duplikat',
           slug: ORGS.testGemeinde.slug, // existiert bereits
           display_name: 'Duplikat Gemeinde',
-          admin_username: 'dup_admin',
+          admin_username: 'dup.admin',
           admin_password: 'Sicher!123',
           admin_display_name: 'Dup Admin'
         });
@@ -921,19 +959,35 @@ describe('Organizations Routes', () => {
   // POST /api/organizations/:id/admins
   // ================================================================
   describe('POST /api/organizations/:id/admins', () => {
+    it.each([
+      ['Leerzeichen', 'neue leitung'],
+      ['Sonderzeichen', 'neue@leitung'],
+      ['zu kurz', 'nl'],
+    ])('verboten: Benutzername mit %s -> 400, kein Konto', async (_fall, username) => {
+      const res = await request(app)
+        .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ username, display_name: 'Neue Leitung', password: 'Sicher!123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.details.map((d) => d.field)).toEqual(['username']);
+      const { rows } = await db.query('SELECT id FROM users WHERE username = $1', [username]);
+      expect(rows).toHaveLength(0);
+    });
+
     it('SuperAdmin erstellt Admin fuer Org -> 201', async () => {
       const res = await request(app)
         .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          username: 'neuer_admin',
+          username: 'neuer.admin',
           display_name: 'Neuer Admin',
           password: 'Sicher!123'
         });
 
       expect(res.status).toBe(201);
       expect(res.body.id).toBeDefined();
-      expect(res.body.username).toBe('neuer_admin');
+      expect(res.body.username).toBe('neuer.admin');
     });
 
     // Diese Route pruefte nur eine Mindestlaenge von 6 Zeichen — schwaecher
@@ -944,7 +998,7 @@ describe('Organizations Routes', () => {
         .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          username: 'schwach_admin',
+          username: 'schwach.admin',
           display_name: 'Schwach',
           password: 'abc123'
         });
@@ -957,7 +1011,7 @@ describe('Organizations Routes', () => {
         .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
         .set('Authorization', `Bearer ${superAdminToken}`)
         .send({
-          username: 'ohnesonder_admin',
+          username: 'ohnesonder.admin',
           display_name: 'Ohne Sonderzeichen',
           password: 'Langgenug123'
         });
@@ -983,7 +1037,7 @@ describe('Organizations Routes', () => {
         .post(`/api/organizations/${ORGS.testGemeinde.id}/admins`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          username: 'verboten_admin',
+          username: 'verboten.admin',
           display_name: 'Verboten',
           password: 'Sicher!123'
         });

@@ -153,28 +153,28 @@ describe('Benutzernamen bei gleichzeitiger Anlage', () => {
   describe('POST /organizations/:id/admins', () => {
     it('derselbe Name in zwei Gemeinden gleichzeitig: einer 201, einer 409', async () => {
       const antworten = await Promise.all([
-        leitungAnlegen(ORGS.testGemeinde.id, 'gleiche_leitung'),
-        leitungAnlegen(ORGS.andereGemeinde.id, 'gleiche_leitung'),
+        leitungAnlegen(ORGS.testGemeinde.id, 'gleiche.leitung'),
+        leitungAnlegen(ORGS.andereGemeinde.id, 'gleiche.leitung'),
       ]);
-      await genauEinerDurch(antworten, 'gleiche_leitung');
+      await genauEinerDurch(antworten, 'gleiche.leitung');
     });
 
     it('derselbe Name in anderer Schreibweise gleichzeitig: einer 201, einer 409', async () => {
       const antworten = await Promise.all([
-        leitungAnlegen(ORGS.testGemeinde.id, 'Gleiche_Leitung'),
-        leitungAnlegen(ORGS.testGemeinde.id, 'gleiche_leitung'),
+        leitungAnlegen(ORGS.testGemeinde.id, 'Gleiche.Leitung'),
+        leitungAnlegen(ORGS.testGemeinde.id, 'gleiche.leitung'),
       ]);
-      await genauEinerDurch(antworten, 'gleiche_leitung');
+      await genauEinerDurch(antworten, 'gleiche.leitung');
     });
 
     it('verschiedene Namen gleichzeitig: beide 201', async () => {
       const antworten = await Promise.all([
-        leitungAnlegen(ORGS.testGemeinde.id, 'erste_leitung'),
-        leitungAnlegen(ORGS.andereGemeinde.id, 'zweite_leitung'),
+        leitungAnlegen(ORGS.testGemeinde.id, 'erste.leitung'),
+        leitungAnlegen(ORGS.andereGemeinde.id, 'zweite.leitung'),
       ]);
       expect(antworten.map((r) => r.status)).toEqual([201, 201]);
-      expect(await kontenMitNamen('erste_leitung')).toBe(1);
-      expect(await kontenMitNamen('zweite_leitung')).toBe(1);
+      expect(await kontenMitNamen('erste.leitung')).toBe(1);
+      expect(await kontenMitNamen('zweite.leitung')).toBe(1);
     });
   });
 
@@ -188,26 +188,26 @@ describe('Benutzernamen bei gleichzeitiger Anlage', () => {
 
     it('zwei Gemeinden mit derselben Gemeindeleitung gleichzeitig: eine 201, eine 409 ohne Reste', async () => {
       const antworten = await Promise.all([
-        gemeindeAnlegen('gemeinde-eins', 'gleiche_leitung'),
-        gemeindeAnlegen('gemeinde-zwei', 'gleiche_leitung'),
+        gemeindeAnlegen('gemeinde-eins', 'gleiche.leitung'),
+        gemeindeAnlegen('gemeinde-zwei', 'gleiche.leitung'),
       ]);
-      await genauEinerDurch(antworten, 'gleiche_leitung');
+      await genauEinerDurch(antworten, 'gleiche.leitung');
       expect(await gemeindenMitSlug(['gemeinde-eins', 'gemeinde-zwei'])).toBe(1);
     });
 
     it('derselbe Name in anderer Schreibweise gleichzeitig: eine 201, eine 409', async () => {
       const antworten = await Promise.all([
-        gemeindeAnlegen('gemeinde-eins', 'Gleiche_Leitung'),
-        gemeindeAnlegen('gemeinde-zwei', 'gleiche_leitung'),
+        gemeindeAnlegen('gemeinde-eins', 'Gleiche.Leitung'),
+        gemeindeAnlegen('gemeinde-zwei', 'gleiche.leitung'),
       ]);
-      await genauEinerDurch(antworten, 'gleiche_leitung');
+      await genauEinerDurch(antworten, 'gleiche.leitung');
       expect(await gemeindenMitSlug(['gemeinde-eins', 'gemeinde-zwei'])).toBe(1);
     });
 
     it('verschiedene Namen gleichzeitig: beide 201', async () => {
       const antworten = await Promise.all([
-        gemeindeAnlegen('gemeinde-eins', 'erste_leitung'),
-        gemeindeAnlegen('gemeinde-zwei', 'zweite_leitung'),
+        gemeindeAnlegen('gemeinde-eins', 'erste.leitung'),
+        gemeindeAnlegen('gemeinde-zwei', 'zweite.leitung'),
       ]);
       expect(antworten.map((r) => r.status)).toEqual([201, 201]);
       expect(await gemeindenMitSlug(['gemeinde-eins', 'gemeinde-zwei'])).toBe(2);

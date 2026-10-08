@@ -43,6 +43,13 @@ export interface AdminUser {
   assigned_jahrgaenge?: { id: number; name: string; can_view?: boolean; can_edit?: boolean; assigned_at?: string; assigned_by_name?: string }[];
   can_edit?: boolean;
   /**
+   * Darf die Person aus der Gemeinde entfernt bzw. geloescht werden? Meist
+   * gleich can_edit; abweichend beim Support-Gast (Konto ohne Gemeinde mit
+   * Super-Admin-Merkmal): nicht bearbeitbar, aber von der Gemeindeleitung aus
+   * der Gemeinde zu nehmen. Fehlt bei aelteren Servern -- dann gilt can_edit.
+   */
+  can_delete?: boolean;
+  /**
    * 'stamm': das Konto ist in dieser Gemeinde zuhause. 'weitere': die Person
    * arbeitet hier ueber eine Gemeinde-Einladung mit -- verwaltbar sind dann
    * nur Rolle und Jahrgaenge, nicht Name, E-Mail, Passwort oder Sperre.

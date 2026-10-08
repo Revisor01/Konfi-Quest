@@ -57,6 +57,38 @@ describe('Users Routes', () => {
       expect(roleNames).not.toContain('super_admin');
     });
 
+    // Bearbeiten-Knopf bei Super-Admin-Konten (Befund 03.10.2026): can_edit
+    // kam allein aus der Rolle. Ein Konto mit Super-Admin-Merkmal (Rolle
+    // org_admin, Flag gesetzt) stand fuer die Gemeindeleitung auf
+    // can_edit: true, Bearbeiten, Loeschen und Passwort endeten aber mit 403.
+    it('verboten: fuer die Gemeindeleitung ohne Merkmal ist ein Konto mit Super-Admin-Merkmal nicht bearbeitbar', async () => {
+      const res = await request(app)
+        .get('/api/admin/users')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      const superKonto = res.body.find((u) => u.id === USERS.orgAdminSuper.id);
+      expect(superKonto).toMatchObject({ role_name: 'org_admin', can_edit: false, can_delete: false });
+      // Das Merkmal selbst bleibt intern.
+      expect(superKonto).not.toHaveProperty('is_super_admin');
+      // Andere Gemeindeleitungen und das Team bleiben bearbeitbar.
+      expect(res.body.find((u) => u.id === USERS.admin1.id)).toMatchObject({ can_edit: true, can_delete: true });
+    });
+
+    it('erlaubt: fuer eine Gemeindeleitung MIT Merkmal ist das Konto bearbeitbar', async () => {
+      const { rows: [zweites] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_super_admin)
+         VALUES ('orgadmin.super.zwei', 'Zweite Leitung mit Merkmal', 'x', $1, $2, true) RETURNING id`,
+        [USERS.orgAdmin1.role_id, ORGS.testGemeinde.id]
+      );
+      const res = await request(app)
+        .get('/api/admin/users')
+        .set('Authorization', `Bearer ${generateToken('orgAdminSuper')}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.find((u) => u.id === zweites.id)).toMatchObject({ can_edit: true, can_delete: true });
+    });
+
     // Bis 26.08.2026 stand hier 403. Seit der Entscheidung, dass Admins
     // Teamer:innen verwalten duerfen, brauchen sie auch die Liste.
     it('Admin sieht die Liste -> 200', async () => {
@@ -1409,6 +1441,71 @@ describe('Users Routes', () => {
       expect(res.status).toBe(200);
       const { rows: [u] } = await db.query('SELECT display_name FROM users WHERE id = $1', [zweiter.id]);
       expect(u.display_name).toBe('Zweite Leitung (neu)');
+    });
+
+    // Loeschen und Jahrgangszuweisung durch einen Super-Admin (Testluecke
+    // 27.09.2026). Die Benutzerverwaltung laeuft hinter requireAdmin
+    // (org_admin, admin) -- die Systemrolle super_admin kommt dort gar nicht
+    // hin. Ein Super-Admin, der hier verwaltet, ist deshalb immer eine
+    // Gemeindeleitung MIT Merkmal (Simons Konstellation, orgAdminSuper). Ziel
+    // ist ein zweites Konto mit Merkmal in derselben Gemeinde.
+    const zweitesSuperKonto = async () => {
+      const { rows: [konto] } = await db.query(
+        `INSERT INTO users (username, display_name, password_hash, role_id, organization_id, is_super_admin)
+         VALUES ('orgadmin.super.zwei', 'Zweite Leitung mit Merkmal', 'x', $1, $2, true) RETURNING id`,
+        [USERS.orgAdmin1.role_id, ORGS.testGemeinde.id]
+      );
+      return konto.id;
+    };
+
+    it('Super-Admin (Gemeindeleitung mit Merkmal) loescht ein Konto mit Merkmal -> 200', async () => {
+      const zielId = await zweitesSuperKonto();
+      const res = await request(app)
+        .delete(`/api/admin/users/${zielId}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdminSuper')}`);
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [zielId]);
+      expect(rows).toHaveLength(0);
+    });
+
+    it('Gegenstueck: dieselbe Loeschung durch die Gemeindeleitung OHNE Merkmal -> 403, Konto bleibt', async () => {
+      const zielId = await zweitesSuperKonto();
+      const res = await request(app)
+        .delete(`/api/admin/users/${zielId}`)
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query('SELECT id FROM users WHERE id = $1', [zielId]);
+      expect(rows).toHaveLength(1);
+    });
+
+    it('Super-Admin (Gemeindeleitung mit Merkmal) weist einem Konto mit Merkmal Jahrgaenge zu -> 200', async () => {
+      const zielId = await zweitesSuperKonto();
+      const res = await request(app)
+        .post(`/api/admin/users/${zielId}/jahrgaenge`)
+        .set('Authorization', `Bearer ${generateToken('orgAdminSuper')}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: false }] });
+
+      expect(res.status).toBe(200);
+      const { rows } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1', [zielId]
+      );
+      expect(rows.map((r) => Number(r.jahrgang_id))).toEqual([JAHRGAENGE.jahrgang1.id]);
+    });
+
+    it('Gegenstueck: dieselbe Zuweisung durch die Gemeindeleitung OHNE Merkmal -> 403, keine Zuweisung', async () => {
+      const zielId = await zweitesSuperKonto();
+      const res = await request(app)
+        .post(`/api/admin/users/${zielId}/jahrgaenge`)
+        .set('Authorization', `Bearer ${orgAdminToken}`)
+        .send({ jahrgang_assignments: [{ jahrgang_id: JAHRGAENGE.jahrgang1.id, can_view: true, can_edit: false }] });
+
+      expect(res.status).toBe(403);
+      const { rows } = await db.query(
+        'SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1', [zielId]
+      );
+      expect(rows).toHaveLength(0);
     });
   });
 
