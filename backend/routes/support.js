@@ -47,7 +47,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { body, param, query } = require('express-validator');
-const { handleValidationErrors } = require('../middleware/validation');
+const { handleValidationErrors, benutzernameRegel } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
 const liveUpdate = require('../utils/liveUpdate');
 const { gemeindeAnlegen, konfiLimitLesen, laufzeitLesen, fehlerAlsAntwort } = require('../utils/gemeindeAnlegen');
@@ -209,7 +209,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     nameFeld('name'),
     body('display_name').optional({ values: 'falsy' }).isString().withMessage('Text erwartet').bail()
       .trim().isLength({ max: NAME_MAX }).withMessage(`Höchstens ${NAME_MAX} Zeichen`),
-    body('admin_username').trim().notEmpty().withMessage('Admin-Benutzername ist erforderlich'),
+    benutzernameRegel('admin_username'),
     passwortPolicy,
     body('admin_display_name').trim().notEmpty().withMessage('Admin-Anzeigename ist erforderlich'),
     body('admin_email').optional({ values: 'falsy' }).trim().isEmail().withMessage('Ungültige E-Mail-Adresse'),

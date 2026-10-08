@@ -49,7 +49,7 @@ describe('POST /api/organizations: ganz oder gar nicht, eindeutige Namen', () =>
         name: 'neue-gemeinde',
         slug: 'neue-gemeinde',
         display_name: 'Neue Gemeinde',
-        admin_username: 'neue_leitung',
+        admin_username: 'neue.leitung',
         admin_password: 'Sicher!Passwort1',
         admin_display_name: 'Neue Leitung',
         ...felder,
@@ -87,11 +87,11 @@ describe('POST /api/organizations: ganz oder gar nicht, eindeutige Namen', () =>
     });
 
     it('nimmt einen freien Namen an (201, Konto in der neuen Gemeinde)', async () => {
-      const res = await anlegen({ admin_username: 'ganz_neue_leitung' });
+      const res = await anlegen({ admin_username: 'ganz.neue.leitung' });
 
       expect(res.status).toBe(201);
       const { rows: [konto] } = await db.query(
-        'SELECT organization_id FROM users WHERE username = $1', ['ganz_neue_leitung']
+        'SELECT organization_id FROM users WHERE username = $1', ['ganz.neue.leitung']
       );
       expect(konto.organization_id).toBe(res.body.id);
     });
@@ -120,22 +120,22 @@ describe('POST /api/organizations: ganz oder gar nicht, eindeutige Namen', () =>
       );
       const vorher = await db.query('SELECT COUNT(*)::int AS n FROM organizations');
 
-      const res = await anlegen({ admin_username: 'halbe_leitung' });
+      const res = await anlegen({ admin_username: 'halbe.leitung' });
 
       expect(res.status).toBe(500);
       expect(await gemeindenMitSlug('neue-gemeinde')).toBe(0);
       expect((await db.query('SELECT COUNT(*)::int AS n FROM organizations')).rows[0].n).toBe(vorher.rows[0].n);
-      expect(await kontenMitNamen('halbe_leitung')).toBe(0);
+      expect(await kontenMitNamen('halbe.leitung')).toBe(0);
     });
 
     it('legt ohne Fehler alles an, und ein zweiter Versuch nach einem Fehler gelingt', async () => {
       await db.query(
         'CREATE TRIGGER test_level_sperre BEFORE INSERT ON levels FOR EACH ROW EXECUTE FUNCTION test_level_sperre()'
       );
-      expect((await anlegen({ admin_username: 'zweiter_versuch' })).status).toBe(500);
+      expect((await anlegen({ admin_username: 'zweiter.versuch' })).status).toBe(500);
       await db.query('DROP TRIGGER test_level_sperre ON levels');
 
-      const res = await anlegen({ admin_username: 'zweiter_versuch' });
+      const res = await anlegen({ admin_username: 'zweiter.versuch' });
 
       expect(res.status).toBe(201);
       expect(await gemeindenMitSlug('neue-gemeinde')).toBe(1);
@@ -153,7 +153,7 @@ describe('POST /api/organizations: ganz oder gar nicht, eindeutige Namen', () =>
     };
 
     it('macht aus dem verlustbehafteten Namen der App („bsum" für „Büsum") „buesum"', async () => {
-      const res = await anlegen({ name: 'bsum', slug: 'bsum', display_name: 'Büsum', admin_username: 'leitung_buesum' });
+      const res = await anlegen({ name: 'bsum', slug: 'bsum', display_name: 'Büsum', admin_username: 'leitung.buesum' });
 
       expect(res.status).toBe(201);
       expect(await gespeichert(res.body.id)).toEqual({ name: 'buesum', slug: 'buesum', display_name: 'Büsum' });
@@ -166,7 +166,7 @@ describe('POST /api/organizations: ganz oder gar nicht, eindeutige Namen', () =>
         .replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
       expect(vonDerApp).toBe('gro-bk-knigsfrde-lzen');
 
-      const res = await anlegen({ name: vonDerApp, slug: vonDerApp, display_name: anzeige, admin_username: 'leitung_bk' });
+      const res = await anlegen({ name: vonDerApp, slug: vonDerApp, display_name: anzeige, admin_username: 'leitung.bk' });
 
       expect(res.status).toBe(201);
       const o = await gespeichert(res.body.id);
@@ -177,34 +177,34 @@ describe('POST /api/organizations: ganz oder gar nicht, eindeutige Namen', () =>
     it('ändert an einem Namen ohne Umlaute nichts (auch nicht an Bindestrichen)', async () => {
       // Die App wirft Bindestriche aus dem Anzeigenamen weg; daran ändert
       // sich nichts -- nur Umlaute werden umgeschrieben.
-      const res = await anlegen({ name: 'kirchspielwest', slug: 'kirchspielwest', display_name: 'Kirchspiel-West', admin_username: 'leitung_west' });
+      const res = await anlegen({ name: 'kirchspielwest', slug: 'kirchspielwest', display_name: 'Kirchspiel-West', admin_username: 'leitung.west' });
 
       expect(res.status).toBe(201);
       expect((await gespeichert(res.body.id)).slug).toBe('kirchspielwest');
     });
 
     it('transliteriert Umlaute, die jemand direkt im Systemnamen schickt', async () => {
-      const res = await anlegen({ name: 'büsum', slug: 'büsum', display_name: 'Kirchengemeinde Büsum', admin_username: 'leitung_b2' });
+      const res = await anlegen({ name: 'büsum', slug: 'büsum', display_name: 'Kirchengemeinde Büsum', admin_username: 'leitung.b2' });
 
       expect(res.status).toBe(201);
       expect((await gespeichert(res.body.id)).slug).toBe('buesum');
     });
 
     it('lässt einen eigenen Systemnamen ohne Umlaute stehen', async () => {
-      const res = await anlegen({ name: 'kirchspiel-sued', slug: 'ks-sued', display_name: 'Kirchspiel Süd', admin_username: 'leitung_sued' });
+      const res = await anlegen({ name: 'kirchspiel-sued', slug: 'ks-sued', display_name: 'Kirchspiel Süd', admin_username: 'leitung.sued' });
 
       expect(res.status).toBe(201);
       expect(await gespeichert(res.body.id)).toEqual({ name: 'kirchspiel-sued', slug: 'ks-sued', display_name: 'Kirchspiel Süd' });
     });
 
     it('meldet einen transliterierten Namen, den es schon gibt, als vergeben (409)', async () => {
-      expect((await anlegen({ name: 'bsum', slug: 'bsum', display_name: 'Büsum', admin_username: 'leitung_eins' })).status).toBe(201);
+      expect((await anlegen({ name: 'bsum', slug: 'bsum', display_name: 'Büsum', admin_username: 'leitung.eins' })).status).toBe(201);
 
-      const res = await anlegen({ name: 'bsum', slug: 'bsum', display_name: 'Büsum', admin_username: 'leitung_zwei' });
+      const res = await anlegen({ name: 'bsum', slug: 'bsum', display_name: 'Büsum', admin_username: 'leitung.zwei' });
 
       expect(res.status).toBe(409);
       expect(res.body.error).toBe('Gemeinde-Slug existiert bereits');
-      expect(await kontenMitNamen('leitung_zwei')).toBe(0);
+      expect(await kontenMitNamen('leitung.zwei')).toBe(0);
     });
 
     it('benennt eine bestehende Gemeinde beim Bearbeiten nicht um', async () => {

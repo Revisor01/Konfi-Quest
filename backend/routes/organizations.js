@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const { body, param } = require('express-validator');
-const { handleValidationErrors } = require('../middleware/validation');
+const { handleValidationErrors, benutzernameRegel } = require('../middleware/validation');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { validatePassword } = require('../utils/passwordUtils');
 const liveUpdate = require('../utils/liveUpdate');
@@ -58,7 +58,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
     body('slug').trim().notEmpty().withMessage('Slug ist erforderlich'),
     body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
-    body('admin_username').trim().notEmpty().withMessage('Admin-Benutzername ist erforderlich'),
+    benutzernameRegel('admin_username'),
     passwortPolicy('admin_password'),
     body('admin_display_name').trim().notEmpty().withMessage('Admin-Anzeigename ist erforderlich'),
     // Zuordnung zu einem Kirchenkreis (seit 03.10.2026, additiv): fehlt sie,
@@ -82,7 +82,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
   const validateCreateOrgAdmin = [
     param('id').isInt({ min: 1 }).withMessage('Ungültige Gemeinde-ID'),
-    body('username').trim().notEmpty().withMessage('Benutzername ist erforderlich'),
+    benutzernameRegel('username'),
     body('display_name').trim().notEmpty().withMessage('Anzeigename ist erforderlich'),
     passwortPolicy('password'),
     handleValidationErrors

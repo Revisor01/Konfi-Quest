@@ -34,6 +34,23 @@ function getPointField(type) {
   return field;
 }
 
+/**
+ * Zeichenregel fuer Benutzernamen, fuer ein beliebiges Feld (username,
+ * admin_username). KEIN trim(): Leerzeichen sollen NICHT still entfernt
+ * werden, sondern eine klare Fehlermeldung ausloesen (Regex verbietet sie).
+ * Erlaubt sind nur Buchstaben, Zahlen, Punkt und Bindestrich (KEIN
+ * Unterstrich, KEINE Leerzeichen). Gross-/Kleinschreibung bleibt erhalten --
+ * der Login ist case-insensitiv (LOWER-Vergleich), gespeichert wird die
+ * Original-Schreibweise.
+ *
+ * Eine Regel fuer alle Wege (08.10.2026): Bis dahin pruefte das Anlegen einer
+ * Gemeindeleitung (POST /organizations, POST /organizations/:id/admins,
+ * POST /support/anfragen/:id/anlegen) nur "nicht leer".
+ */
+const benutzernameRegel = (feld) => body(feld)
+  .isLength({ min: 3, max: 50 }).withMessage('Benutzername muss zwischen 3 und 50 Zeichen lang sein')
+  .matches(/^[a-zA-Z0-9.-]+$/).withMessage('Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten — keine Leerzeichen oder anderen Sonderzeichen');
+
 // Gemeinsame Validierungen für häufige Felder
 const commonValidations = {
   name: body('name').trim().notEmpty().withMessage('Name ist erforderlich')
@@ -43,14 +60,8 @@ const commonValidations = {
   points: body('points').isInt({ min: 1 }).withMessage('Punkte müssen eine positive Ganzzahl sein'),
   type: body('type').isIn(['gottesdienst', 'gemeinde']).withMessage('Typ muss "gottesdienst" oder "gemeinde" sein'),
   email: body('email').trim().isEmail().withMessage('Gültige E-Mail-Adresse erforderlich'),
-  // KEIN trim(): Leerzeichen sollen NICHT still entfernt werden, sondern eine
-  // klare Fehlermeldung auslösen (Regex unten verbietet sie).
-  // Erlaubt sind nur Buchstaben, Zahlen, Punkt und Bindestrich (KEIN Unterstrich,
-  // KEINE Leerzeichen). Gross-/Kleinschreibung bleibt erhalten — der Login ist
-  // case-insensitiv (LOWER-Vergleich), gespeichert wird die Original-Schreibweise.
-  username: body('username')
-    .isLength({ min: 3, max: 50 }).withMessage('Benutzername muss zwischen 3 und 50 Zeichen lang sein')
-    .matches(/^[a-zA-Z0-9.-]+$/).withMessage('Benutzername darf nur Buchstaben, Zahlen, Punkt (.) und Bindestrich (-) enthalten — keine Leerzeichen oder anderen Sonderzeichen'),
+  // Zeichenregel siehe benutzernameRegel oben.
+  username: benutzernameRegel('username'),
   password: body('password')
     .isLength({ min: 8 }).withMessage('Passwort muss mindestens 8 Zeichen lang sein')
     .matches(/^\S+$/).withMessage('Passwort darf keine Leerzeichen enthalten'),
@@ -58,6 +69,7 @@ const commonValidations = {
 };
 
 module.exports = {
+  benutzernameRegel,
   handleValidationErrors,
   getPointField,
   commonValidations

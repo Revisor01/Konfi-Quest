@@ -296,6 +296,10 @@ describe('/api/support', () => {
     it.each([
       ['ohne Name', { name: '' }, 'name'],
       ['ohne Benutzername', { admin_username: ' ' }, 'admin_username'],
+      // Zeichenregel wie ueberall (commonValidations.username), Befund 03.10.2026.
+      ['Benutzername mit Leerzeichen', { admin_username: 'leitung buesum' }, 'admin_username'],
+      ['Benutzername mit Sonderzeichen', { admin_username: 'leitung_buesum!' }, 'admin_username'],
+      ['Benutzername zu kurz', { admin_username: 'lb' }, 'admin_username'],
       ['schwaches Passwort', { admin_password: 'kurz' }, 'admin_password'],
       ['ohne Anzeigename der Leitung', { admin_display_name: '' }, 'admin_display_name'],
       ['Kirchenkreis kein Verweis', { kirchenkreis_id: 'abc' }, 'kirchenkreis_id'],

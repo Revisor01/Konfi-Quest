@@ -177,6 +177,9 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Der Benutzername einer neuen Gemeindeleitung folgt denselben Regeln wie
+  jeder andere Benutzername (3 bis 50 Zeichen, Buchstaben, Ziffern, Punkt und
+  Bindestrich).
 - In der Benutzerverwaltung stehen Konten mit Super-Admin-Recht ohne
   Bearbeiten und Löschen, in App und Browser; bisher gab es die Knöpfe, aber
   sie endeten mit einer Fehlermeldung. Ein Support-Konto kann die

@@ -1769,7 +1769,7 @@ paths:
                 kirchenkreis: { type: string, description: "Freitext; mit kirchenkreis_id uebergangen" }
                 kirchenkreis_id: { type: [integer, "null"], description: "seit 03.10.2026, optional: Zuordnung zu einem Kirchenkreis (GET /api/support/kirchenkreise); unbekannt 400 'Kirchenkreis nicht gefunden', kein Verweis 400 'Ungültiger Kirchenkreis' -- nichts angelegt" }
                 max_konfis: { type: [integer, "null"] }
-                admin_username: { type: string, description: "systemweit eindeutig (case-insensitiv), seit 29.09.2026 geprueft" }
+                admin_username: { type: string, description: "systemweit eindeutig (case-insensitiv), seit 29.09.2026 geprueft; 3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich (benutzernameRegel wie commonValidations.username), sonst 400 Validierungsfehler -- BEHOBEN 08.10.2026, bis dahin nur 'nicht leer' (Leerzeichen und Sonderzeichen gingen durch)" }
                 admin_password: { type: string, minLength: 8, description: "Volle Passwort-Policy (validatePassword): min 8 Zeichen, Gross- und Kleinbuchstabe, Zahl, Sonderzeichen, keine Leerzeichen; sonst 400. BEHOBEN 22.08.2026 (N6) -- hier bis 30.09.2026 noch als 'nur min 6 Zeichen, keine Policy' beschrieben" }
                 admin_display_name: { type: string }
       responses:
@@ -2127,7 +2127,7 @@ paths:
               type: object
               required: [username, display_name, password]
               properties:
-                username: { type: string, description: "systemweit eindeutig (case-insensitiv)" }
+                username: { type: string, description: "systemweit eindeutig (case-insensitiv); 3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich (benutzernameRegel wie commonValidations.username), sonst 400 Validierungsfehler -- BEHOBEN 08.10.2026, bis dahin nur 'nicht leer' (Leerzeichen und Sonderzeichen gingen durch)" }
                 display_name: { type: string }
                 password: { type: string, minLength: 8, description: "Volle Passwort-Policy (validatePassword), sonst 400 -- seit 22.08.2026 (N6); hier bis 30.09.2026 noch als minLength 6 beschrieben" }
                 email: { type: string }
@@ -2517,7 +2517,7 @@ paths:
                 max_konfis: { type: [integer, "null"], minimum: 0, description: "wie POST /organizations; leer = unbegrenzt" }
                 trial_ends_at: { type: [string, "null"], format: date-time, description: "wie POST /organizations: fehlt das Feld, 30 Tage Testphase; null = unbegrenzt" }
                 is_trial: { type: boolean, description: "nur zusammen mit trial_ends_at" }
-                admin_username: { type: string }
+                admin_username: { type: string, description: "3 bis 50 Zeichen, nur Buchstaben, Ziffern, Punkt und Bindestrich (benutzernameRegel wie commonValidations.username), sonst 400 Validierungsfehler -- BEHOBEN 08.10.2026, bis dahin nur 'nicht leer' (Leerzeichen und Sonderzeichen gingen durch)" }
                 admin_display_name: { type: string }
                 admin_email: { type: string, description: "gueltige Adresse; fehlt sie, contact_email" }
                 admin_password: { type: string, description: "volle validatePassword-Policy" }
