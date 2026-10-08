@@ -9,7 +9,8 @@
 # STAND 21.06.2026: Das Backend laeuft als ZWEI Replicas (backend + backend2) hinter
 # Traefik (gemeinsamer Service konfi-api + loadbalancer.healthcheck -> nur gesunde
 # Replicas bekommen Traffic). Cron-Leader: per Advisory-Lock gewaehlt (26.09.2026),
-# backend und backend2 bewerben sich, backend-test nie (RUN_BACKGROUND_JOBS=false).
+# backend und backend2 bewerben sich. Das fruehere Test-Backend (eigener Hostname,
+# dieselbe Datenbank) ist seit dem 08.10.2026 abgeschafft.
 # Lastverteilung verifiziert ~50/50. Der Stack laeuft auf FESTEM Commit-SHA-Tag
 # (das CI schreibt den Tag beim Deploy um); :latest ist auf ghcr unzuverlaessig.
 #
@@ -264,13 +265,13 @@ services:
     deploy:
       resources:
         limits:
-          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB,
-          # backend-test 49,0 MiB von 512 MiB. Uploads laufen seit dem
+          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB
+          # von 512 MiB. Uploads laufen seit dem
           # 24.09.2026 stromweise ueber die Platte statt komplett durch den
           # Heap; die alte Rechnung "512 - 53 = 459 MB / 50 MB = 9
           # gleichzeitige Uploads bis zum OOM-Kill" trifft damit nicht mehr zu.
           # Der Host hat 11,7 GB frei -- eine Anhebung auf 1G je Container
-          # waere ohne Weiteres moeglich (3 x 1G = 3G), ist nach der Umstellung
+          # waere ohne Weiteres moeglich (2 x 1G = 2G), ist nach der Umstellung
           # aber nicht mehr noetig. Bewusst NICHT mitgeaendert: das ist eine
           # Kapazitaetsentscheidung fuer den Betrieb, nicht Teil der Haertung.
           memory: 512M
@@ -302,7 +303,8 @@ services:
   # faehrt die Hintergrund-Jobs, faellt sie aus, uebernimmt die andere beim
   # naechsten Takt. Bis dahin stand hier RUN_BACKGROUND_JOBS=false und der
   # Leader war fest -- fiel backend aus, standen Erinnerungen, Auto-Loeschung
-  # und Co. unbemerkt. Die Variable bleibt NUR bei backend-test (nie Jobs).
+  # und Co. unbemerkt. RUN_BACKGROUND_JOBS=false setzt im Stack seit dem
+  # Ende des Test-Backends (08.10.2026) kein Dienst mehr.
   backend2:
     image: ghcr.io/revisor01/konfi-quest-backend:<TAG>
     # Ohne root (01.10.2026, Audit CI BF-06): eigene uid/gid 10001, seit dem
@@ -331,13 +333,13 @@ services:
     deploy:
       resources:
         limits:
-          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB,
-          # backend-test 49,0 MiB von 512 MiB. Uploads laufen seit dem
+          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB
+          # von 512 MiB. Uploads laufen seit dem
           # 24.09.2026 stromweise ueber die Platte statt komplett durch den
           # Heap; die alte Rechnung "512 - 53 = 459 MB / 50 MB = 9
           # gleichzeitige Uploads bis zum OOM-Kill" trifft damit nicht mehr zu.
           # Der Host hat 11,7 GB frei -- eine Anhebung auf 1G je Container
-          # waere ohne Weiteres moeglich (3 x 1G = 3G), ist nach der Umstellung
+          # waere ohne Weiteres moeglich (2 x 1G = 2G), ist nach der Umstellung
           # aber nicht mehr noetig. Bewusst NICHT mitgeaendert: das ist eine
           # Kapazitaetsentscheidung fuer den Betrieb, nicht Teil der Haertung.
           memory: 512M
@@ -350,94 +352,6 @@ services:
         max-size: "10m"
         max-file: "3"
     labels: *backend_labels
-    networks:
-      - traefik
-      - internal
-
-  # --- Test-Backend (Simons Geraetetest, 31.08.2026) ---
-  # Eigener Hostname, DIESELBE Datenbank: Die TestFlight-App spricht ueber
-  # test-api.konfi-quest.de mit neuem Code, waehrend Store-Apps und Browser
-  # unveraendert ueber konfi-quest.de laufen. Simon sieht dabei seine ECHTEN
-  # Daten — genau das war die Anforderung.
-  #
-  # Vier Punkte, die hier anders sind als bei backend/backend2:
-  #  1. EIGENER Router-Name (konfi-api-test). Mit dem Live-Namen wuerde
-  #     Traefik diesen Container in den Live-Pool aufnehmen.
-  #  2. RUN_BACKGROUND_JOBS=false — dieser Container nimmt NICHT an der
-  #     Cron-Leader-Wahl teil; sonst koennte Testcode Auto-Loeschung,
-  #     Erinnerungen und APM-Snapshots gegen die echten Daten fahren.
-  #  3. METRICS_PEERS leer — die Testmessung gehoert nicht in die Live-Zahlen.
-  #  4. CORS macht ALLEIN der vHost (Apache). NICHT zusaetzlich im Backend
-  #     ueber CORS_ORIGINS setzen: Dann schreiben BEIDE den Header, er steht
-  #     DOPPELT in der Antwort, und der Browser verwirft sie als ungueltig.
-  #     Folge auf dem Geraet: Die App zeigt die erste Seite und danach nur
-  #     noch Weiss — Chatraeume laden nicht mehr (Simons Geraetetest mit
-  #     Build 153, 31.08.2026). Gegenprobe: Live liefert genau EINEN Header.
-  #
-  # Das Image traegt den Tag test-latest und wird NUR vom Workflow
-  # test-backend.yml gebaut — 'latest' bleibt unberuehrt, der Live-Redeploy
-  # zieht davon nichts.
-  #
-  # ACHTUNG: Migrationen laufen beim Start automatisch (database.js) und
-  # wirken auf die GANZE Datenbank, nicht nur auf die Demo-Organisation.
-  # Der Build-Workflow bricht deshalb ab, wenn der Branch neue Migrationen
-  # mitbringt.
-  backend-test:
-    image: ghcr.io/revisor01/konfi-quest-backend:test-latest
-    # Ohne root (01.10.2026, Audit CI BF-06): eigene uid/gid 10001, seit dem
-    # 02.10.2026 als Nutzer `konfi` auch im Image (backend/Dockerfile).
-    # Upload-Verzeichnis und Firebase-Schluessel gehoeren am Host 10001
-    # (Auftrag 09 des lokalen Agenten, erledigt; docs/README.md).
-    user: "10001:10001"
-    environment:
-      <<: *backend_env
-      RUN_BACKGROUND_JOBS: "false"
-      METRICS_PEERS: ""
-    volumes:
-      - /opt/Konfi-Quest/uploads:/app/uploads
-      - /opt/Konfi-Quest/backend/push/firebase-service-account.json:/app/push/firebase-service-account.json:ro
-    extra_hosts:
-      - "${SMTP_HOST:?SMTP_HOST fehlt}:${SMTP_HOST_IP:?SMTP_HOST_IP fehlt}"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    stop_grace_period: 30s
-    healthcheck:
-      test: ["CMD", "node", "healthcheck.js"]
-      interval: 15s
-      timeout: 10s
-      retries: 3
-      start_period: 20s
-    deploy:
-      resources:
-        limits:
-          # Gemessen 24.09.2026: backend 58,4 MiB, backend2 56,7 MiB,
-          # backend-test 49,0 MiB von 512 MiB. Uploads laufen seit dem
-          # 24.09.2026 stromweise ueber die Platte statt komplett durch den
-          # Heap; die alte Rechnung "512 - 53 = 459 MB / 50 MB = 9
-          # gleichzeitige Uploads bis zum OOM-Kill" trifft damit nicht mehr zu.
-          # Der Host hat 11,7 GB frei -- eine Anhebung auf 1G je Container
-          # waere ohne Weiteres moeglich (3 x 1G = 3G), ist nach der Umstellung
-          # aber nicht mehr noetig. Bewusst NICHT mitgeaendert: das ist eine
-          # Kapazitaetsentscheidung fuer den Betrieb, nicht Teil der Haertung.
-          memory: 512M
-          cpus: '0.5'
-    security_opt:
-      - no-new-privileges:true
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.konfi-api-test.rule=Host(`test-api.konfi-quest.de`)"
-      - "traefik.http.routers.konfi-api-test.priority=10"
-      - "traefik.http.services.konfi-api-test.loadbalancer.server.port=5000"
-      - "traefik.http.services.konfi-api-test.loadbalancer.healthcheck.path=/api/health"
-      - "traefik.http.services.konfi-api-test.loadbalancer.healthcheck.interval=5s"
-      - "traefik.http.services.konfi-api-test.loadbalancer.healthcheck.timeout=3s"
     networks:
       - traefik
       - internal

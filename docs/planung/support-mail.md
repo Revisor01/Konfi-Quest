@@ -174,5 +174,5 @@ Wie oben, mit diesen Festlegungen, wo der Vertrag schwieg:
   Gemeinden.
 - Mails über 10 MB werden nicht heruntergeladen (Speichergrenze der
   Backends); es bleiben Angaben und ein Hinweis.
-- Auf einem Server mit `RUN_BACKGROUND_JOBS=false` (backend-test) weder
+- Auf einem Server mit `RUN_BACKGROUND_JOBS=false` (Instanz ohne Jobs) weder
   Abholen noch Versand; die Ansicht sagt das (`auf_diesem_server`).

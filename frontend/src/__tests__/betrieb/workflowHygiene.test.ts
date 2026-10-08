@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 // Hygiene der Workflows (29.09.2026, Audit CI BF-15).
@@ -26,7 +24,7 @@ function jobs(text: string): Array<{ name: string; rumpf: string }> {
 describe('Workflows: Hygiene', () => {
   it('die Workflows werden gefunden', () => {
     expect(workflows.map((w) => w.datei).sort()).toEqual([
-      'android-release.yml', 'ci-meldung.yml', 'ci.yml', 'ios-release.yml', 'notfall-deploy.yml', 'test-backend.yml',
+      'android-release.yml', 'ci-meldung.yml', 'ci.yml', 'ios-release.yml', 'notfall-deploy.yml',
     ]);
   });
 
@@ -49,82 +47,36 @@ describe('Workflows: Hygiene', () => {
     expect(ohne).toEqual([]);
   });
 
-  it('test-backend.yml baut nur einen ausdruecklich genannten Branch', () => {
-    // Die Vorgabe stand auf 'feat/ionic-9', seit dem 01.09.2026 gemergt.
-    const tb = workflows.find((w) => w.datei === 'test-backend.yml')!.text;
-    const eingabe = tb.slice(tb.indexOf('      branch:'), tb.indexOf('\npermissions:'));
-    expect(eingabe).toMatch(/required: true/);
-    expect(eingabe).not.toMatch(/default:/);
-  });
+  describe('kein Test-Backend mehr: jede App spricht mit der Produktion (Simon, 08.10.2026)', () => {
+    // Bis zum 08.10.2026 gab es einen eigenen Dienst an DERSELBEN Datenbank
+    // mit eigenem Hostnamen, ein eigenes Image (test-backend.yml) und im
+    // iOS-Release die Eingabe api_url, ueber die ein Testbuild dorthin zeigen
+    // konnte. Fuenf TestFlight-Builds (153-158, 31.08.-02.09.2026) waren so
+    // gebaut; sie wurden vor dem Abbau abgelaufen gelassen. Seither gibt es
+    // keinen anderen Weg als die Produktion -- auch nicht "fuer Testflights".
+    const release = workflows.filter((w) => /^(ios|android)-release\.yml$/.test(w.datei));
 
-  describe('test-backend.yml: Waechter gegen neue Migrationen', () => {
-    // Das Test-Backend haengt an der Produktionsdatenbank; eine neue Migration
-    // im Branch bricht den Build ab. Am 02.10.2026 wurden die Dateien 064-173
-    // entfernt (sie stehen im Dump) -- ohne --diff-filter=d hielt der Waechter
-    // jeden Branch mit dieser Loeschung fuer einen mit 110 neuen Migrationen.
-    // Geprueft wird das Skript des Schritts selbst, in einem Wegwerf-Repo.
-    const tb = () => workflows.find((w) => w.datei === 'test-backend.yml')!.text;
-    function waechter(): string {
-      const t = tb();
-      const ab = t.indexOf('- name: Auf neue Migrationen pruefen');
-      const rumpf = t.slice(t.indexOf('run: |', ab) + 'run: |'.length, t.indexOf('\n\n', ab));
-      return rumpf.split('\n').map((z) => z.replace(/^ {10}/, ''))
-        .filter((z) => !z.startsWith('git fetch')).join('\n');
-    }
-    let repo: string;
-    // Pfade im Wegwerf-Repo, nicht im echten -- ueber die Konstante gebaut,
-    // damit dateiverweiseImCode sie nicht fuer tote Verweise haelt.
-    const MIG = 'backend/migrations';
-    const git = (...a: string[]) => {
-      const r = spawnSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false', ...a], { cwd: repo, encoding: 'utf-8' });
-      expect(r.status, r.stderr).toBe(0);
-    };
-    const lauf = () => spawnSync('bash', ['-e', '-c', waechter()], { cwd: repo, encoding: 'utf-8' });
-    function aufbau() {
-      repo = mkdtempSync(join(tmpdir(), 'tb-waechter-'));
-      git('init', '-q', '-b', 'main');
-      mkdirSync(join(repo, MIG), { recursive: true });
-      writeFileSync(join(repo, MIG, '100_alt.sql'), 'SELECT 1;\n');
-      writeFileSync(join(repo, MIG, '174_bleibt.sql'), 'SELECT 1;\n');
-      git('add', '-A');
-      git('commit', '-q', '-m', 'main');
-      git('update-ref', 'refs/remotes/origin/main', 'HEAD');
-      git('checkout', '-q', '-b', 'zweig');
-    }
-
-    it('eine geloeschte Migration ist keine neue: der Schritt laeuft durch', () => {
-      aufbau();
-      try {
-        unlinkSync(join(repo, MIG, '100_alt.sql'));
-        git('commit', '-q', '-am', 'alte Migration raus');
-        const r = lauf();
-        expect(r.stdout + r.stderr).toContain('Keine neuen Migrationen');
-        expect(r.status).toBe(0);
-      } finally { rmSync(repo, { recursive: true, force: true }); }
+    it('beide Release-Workflows werden geprueft', () => {
+      expect(release.map((w) => w.datei).sort()).toEqual(['android-release.yml', 'ios-release.yml']);
     });
 
-    it('eine neue Migration bricht ab und wird genannt', () => {
-      aufbau();
-      try {
-        writeFileSync(join(repo, MIG, '190_neu.sql'), 'SELECT 1;\n');
-        git('add', '-A');
-        git('commit', '-q', '-m', 'neue Migration');
-        const r = lauf();
-        expect(r.status).toBe(1);
-        expect(r.stdout).toContain(`${MIG}/190_neu.sql`);
-        expect(r.stdout).toContain('::error::Dieser Branch bringt neue Migrationen mit:');
-      } finally { rmSync(repo, { recursive: true, force: true }); }
+    it('kein Release-Workflow nimmt eine API-Adresse entgegen oder setzt VITE_API_URL', () => {
+      for (const w of release) {
+        expect(w.text, w.datei).not.toMatch(/^\s+api_url:/m);
+        expect(w.text, w.datei).not.toMatch(/inputs\.api_url/);
+        expect(w.text, w.datei).not.toMatch(/VITE_API_URL\s*:/);
+      }
     });
 
-    it('eine geaenderte Migration bricht ebenfalls ab', () => {
-      aufbau();
-      try {
-        writeFileSync(join(repo, MIG, '174_bleibt.sql'), 'SELECT 2;\n');
-        git('commit', '-q', '-am', 'Migration geaendert');
-        const r = lauf();
-        expect(r.status).toBe(1);
-        expect(r.stdout).toContain(`${MIG}/174_bleibt.sql`);
-      } finally { rmSync(repo, { recursive: true, force: true }); }
+    it('der Build ohne VITE_API_URL landet bei der Produktion', () => {
+      const basis = readFileSync(join(wurzel, 'frontend/src/services/apiBasis.ts'), 'utf-8');
+      expect(basis).toMatch(/import\.meta\.env\.VITE_API_URL \|\| 'https:\/\/konfi-quest\.de\/api'/);
+    });
+
+    it('kein Workflow baut oder nennt das Test-Backend', () => {
+      for (const w of workflows) {
+        expect(w.text, w.datei).not.toMatch(/test-latest|test-api\./);
+      }
     });
   });
 

@@ -2347,7 +2347,7 @@ paths:
         sonst liesse sich ueber den Server beliebiger Text an fremde Adressen
         schicken) vom Postfach support@ mit [Vorgang N] im Betreff, damit Antworten
         im Vorgang landen. Sie steht im Verlauf des Vorgangs, der Status bleibt neu.
-        Auf einem Server mit RUN_BACKGROUND_JOBS=false (backend-test) geht nichts
+        Auf einem Server mit RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs) geht nichts
         hinaus; scheitert die Mail, bleibt das Anliegen.
 
         HONIGTOPF, GRENZEN, PROTOKOLL wie POST /api/anfragen (utils/oeffentlicheGrenzen.js,
@@ -2866,7 +2866,7 @@ paths:
   # support (bestehende Gemeinden). Abholen per IMAP nur lesend auf dem
   # Cron-Leader (services/mailAbholung.js), Zuordnen eingehender Mails an
   # einer Stelle (utils/mailZuordnung.js), Versand services/mailVersand.js.
-  # Auf einem Server mit RUN_BACKGROUND_JOBS=false (backend-test) wird weder
+  # Auf einem Server mit RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs) wird weder
   # abgeholt noch gesendet. Protokoll ohne Inhalte und Adressen. Tests:
   # backend/tests/routes/supportMail.test.js, supportMailAntworten.test.js,
   # tests/services/mailAbholung.test.js, mailVersand.test.js,

@@ -44,11 +44,14 @@ absichtlich nicht hier.
   `backend/services/backgroundService.js`) fährt genau eine Replica: Wer den
   Postgres-Advisory-Lock hält (`backend/utils/cronLeader.js`), ist Leader;
   fällt sie aus, übernimmt die andere im nächsten Takt.
-  `RUN_BACKGROUND_JOBS=false` heißt „nie" (Test-Backend). Sichtbar in
+  `RUN_BACKGROUND_JOBS=false` heißt „nie" (eine Instanz, die weder Jobs
+  fährt noch Mail sendet; im Stack setzt es derzeit kein Dienst). Sichtbar in
   `GET /api/status` (`cron_leader`).
-- **Test-Backend** `backend-test` mit eigenem Hostnamen und derselben
-  Datenbank, für TestFlight- und Testbuilds; nimmt nicht an der Leader-Wahl
-  teil.
+- **Kein Test-Backend.** Jede App — Store, TestFlight, interner Testtrack —
+  spricht mit der Produktion. Das frühere Test-Backend (eigener Hostname,
+  dieselbe Datenbank, dieselben Schlüssel) ist seit dem 08.10.2026
+  abgeschafft (Simons Entscheidung); die fünf TestFlight-Builds, die darauf
+  zeigten (153–158), wurden vorher abgelaufen gelassen.
 - **Uploads** liegen in einem Host-Verzeichnis, das alle Backends einhängen;
   Nachweisfotos und Challenge-Dateien sind verschlüsselt
   (`backend/utils/photoCrypto.js`, Schlüssel `ACTIVITY_PHOTO_ENCRYPTION_KEY`).

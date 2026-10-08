@@ -239,6 +239,8 @@ Versionsüberschrift.
   nutzen; die Bausteine der Web-Ansicht stehen an einer Stelle.
 - Die Android-App wird mit aktuellen Bauwerkzeugen gebaut; das Bundle ist
   etwas kleiner, die Ressourcen schrumpfen um rund ein Viertel.
+- Das gesonderte Test-System neben dem Betrieb ist abgeschafft: Jede
+  Fassung der App, auch jeder Testbuild, spricht mit dem echten Betrieb.
 
 ## [2.3.0] - 2026-10-02
 

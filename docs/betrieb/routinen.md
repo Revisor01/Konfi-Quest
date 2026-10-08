@@ -35,7 +35,6 @@ sieht. Gleich wie die App: `env -u PGTZ psql …`. Zeitstempel ohne Zone
 | Schema-Dump fortschreiben | mit jedem Release | [Schema-Dump fortschreiben](#schema-dump-fortschreiben) |
 | Rückspielprobe | vor jedem Release, nach Änderungen an Postgres oder am Sicherungsskript | [sicherung.md](sicherung.md#rückspielprobe) |
 | Stand prüfen | nach jedem Deploy | [Nach jedem Deploy](#nach-jedem-deploy) |
-| Test-Backend nachziehen | nach einem Merge, der das Schema ändert | [Test-Backend nachziehen](#test-backend-nachziehen) |
 | Notfall-Deploy | wenn ein gebauter Fix sofort raus muss oder zurückgerollt wird | [Notfall-Deploy](#notfall-deploy) |
 | Apple-Zertifikat erneuern | jährlich, jetzt vor dem 28.11.2026 | [release.md](release.md#8-das-apple-zertifikat-jährlich-erneuern) |
 
@@ -148,15 +147,6 @@ Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
   vollständig ist, zeigt der Abgleich mit `schema_migrations` in
   [`init-scripts/README.md`](../../init-scripts/README.md#was-in-backendmigrations-liegt--und-was-nicht).
 
-## Test-Backend nachziehen
-
-Der Deploy schreibt nur `backend`, `backend2` und `frontend` um.
-`backend-test` läuft auf dem Image `test-latest`, das `test-backend.yml` baut,
-und hängt an derselben Datenbank. Ändert ein Merge das Schema so, dass der
-alte Test-Stand daran scheitern könnte: `test-backend.yml` auf `main` laufen
-lassen, das Image ziehen, `backend-test` neu erstellen und an
-`/api/status` des Test-Backends den Commit prüfen.
-
 ## Notfall-Deploy
 
 `.github/workflows/notfall-deploy.yml` rollt einen **schon gebauten** Stand
@@ -173,7 +163,8 @@ aufhält, oder zum Zurückrollen. Er nimmt denselben Weg wie jeder CI-Deploy
    ```
 
    Erwartet: grün, im Log „OK Probelauf", die drei Dienste mit `alt -> neu`,
-   `backend-test` unverändert, „update_stack wurde NICHT aufgerufen". Ohne
+   kein Fehler aus der Gegenprobe auf die übrigen Dienste, „update_stack
+   wurde NICHT aufgerufen". Ohne
    `image_tag` sucht `deploy/notfall-tag.sh` rückwärts den jüngsten Commit,
    zu dem beide Images auf ghcr liegen.
 2. **Ernstfall** — mit Ansage an Simon und Grund:

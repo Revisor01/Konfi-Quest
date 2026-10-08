@@ -365,9 +365,9 @@ describe('Support-Mail: Antworten', () => {
   });
 
   // ==========================================================================
-  // backend-test: kein Versand
+  // Instanz ohne Jobs: kein Versand
   // ==========================================================================
-  describe('RUN_BACKGROUND_JOBS=false (backend-test an der Produktions-Datenbank)', () => {
+  describe('RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs an der Produktions-Datenbank)', () => {
     it('alle drei Antwort-Routen: 503 „Auf diesem Server ist der Versand aus.“ -- nichts gesendet, nichts gespeichert, nichts abgelegt', async () => {
       const a = await anfrageAnlegen();
       await db.query("UPDATE users SET email = 'leitung@andere.example' WHERE id = $1", [USERS.orgAdmin2.id]);

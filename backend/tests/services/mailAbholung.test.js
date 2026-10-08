@@ -469,7 +469,7 @@ describe('Mail-Abholung', () => {
       expect(attrappe.optionen.map((o) => o.auth.user)).toEqual(['s']);
     });
 
-    it('RUN_BACKGROUND_JOBS=false (backend-test): holt nie ab, kein Client entsteht', async () => {
+    it('RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs): holt nie ab, kein Client entsteht', async () => {
       const attrappe = imapAttrappe();
       expect(await alleAbholen(db, { env: { ...ENV, RUN_BACKGROUND_JOBS: 'false' }, imapFabrik: attrappe.fabrik })).toEqual([]);
       expect(attrappe.optionen).toEqual([]);

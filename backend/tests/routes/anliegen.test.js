@@ -8,7 +8,7 @@
 // wie beim Anfrageformular, aber eigene Zaehler), was gespeichert wird, die
 // Zuordnung ueber die E-Mail-Adresse eines Kontos (beide Quellen der
 // Zugehoerigkeit), die Bestaetigung vom Postfach support@ mit [Vorgang N] und
-// festem Text, kein Versand auf backend-test (RUN_BACKGROUND_JOBS=false) und
+// festem Text, kein Versand auf einer Instanz ohne Jobs (RUN_BACKGROUND_JOBS=false) und
 // ein Protokoll ohne Daten aus dem Formular.
 //
 // Kein Mailserver: nodemailer.createTransport ist ersetzt. supertest
@@ -264,7 +264,7 @@ describe('POST /api/anliegen', () => {
       expect((await db.query('SELECT organization_id, vorgang_id FROM mail_nachrichten')).rows).toEqual([{ organization_id: 2, vorgang_id: (await vorgaenge())[0].id }]);
     });
 
-    it('RUN_BACKGROUND_JOBS=false (backend-test): 201 und der Vorgang entsteht -- aber nichts geht hinaus, nichts wird gespeichert', async () => {
+    it('RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs): 201 und der Vorgang entsteht -- aber nichts geht hinaus, nichts wird gespeichert', async () => {
       process.env.RUN_BACKGROUND_JOBS = 'false';
       const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
       try {

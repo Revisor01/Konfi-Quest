@@ -265,7 +265,7 @@ describe('Mail-Abholung mit Vorgängen', () => {
       expect(await verwaisteMailsNachziehen(db)).toBe(0);
     });
 
-    it('läuft vor jedem Abholen (alleAbholen), nicht auf backend-test', async () => {
+    it('läuft vor jedem Abholen (alleAbholen), nicht auf einer Instanz ohne Jobs', async () => {
       const m = await d.mail({ organization_id: 2 });
       const attrappe = imapAttrappe();
       await alleAbholen(db, { env: { ...ENV, RUN_BACKGROUND_JOBS: 'false' }, imapFabrik: attrappe.fabrik });

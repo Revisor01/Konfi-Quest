@@ -156,7 +156,7 @@ oder eine der Kerntabellen fehlt, wenn die Zieldatenbank Konten enthält und
 
 ```bash
 # 1. Backends anhalten -- sie würden sonst beim Start Migrationen gegen eine
-#    halbe Datenbank fahren. In Portainer: backend, backend2, backend-test
+#    halbe Datenbank fahren. In Portainer: backend und backend2
 #    stoppen. (Das Skript prüft das und bricht sonst ab.)
 
 # 2. Wiederherstellen: leere Datenbank, Sicherung einspielen, zählen.

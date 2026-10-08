@@ -30,7 +30,7 @@ name: Notfall-Deploy
 #
 # PROBELAUF: Mit probelauf=true geht der Workflow denselben Weg bis
 # unmittelbar vor update_stack (Image auf ghcr, Portainer-Zugang,
-# Tag-Umschreibung auf einer Kopie, Gegenprobe auf backend-test, Status) und
+# Tag-Umschreibung auf einer Kopie, Gegenprobe auf alle anderen Dienste, Status) und
 # aendert nichts. So laesst sich der Rueckrollweg jederzeit gefahrlos proben
 # (docs/betrieb/routinen.md, „Notfall-Deploy").
 #

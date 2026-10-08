@@ -515,8 +515,8 @@ jobs:
     #
     # WAR PAUSIERT (01.09.2026 bis 02.09.2026): Der Branch feat/ionic-9 ging
     # nach main -- Ionic 9, react-router 6 und funf Migrationen (135-140) auf
-    # einmal. Getestet wurde ZUERST ueber test-api.konfi-quest.de und einen
-    # TestFlight-Build.
+    # einmal. Getestet wurde ZUERST ueber das damalige Test-Backend und einen
+    # TestFlight-Build (das Test-Backend ist seit dem 08.10.2026 abgeschafft).
     #
     # WIEDER AKTIV seit 02.09.2026 (Simons Entscheidung): Migration 142 ist
     # ausgerollt und nachgemessen (material_links: 1 Zeile aus dem Backfill,
@@ -527,9 +527,9 @@ jobs:
     # Dateien in backend/migrations/ fuehrt sie beim Start des ersten neuen
     # Backends aus (database.js, unter Advisory-Lock, je Migration eine
     # Transaktion). Der Verify in deploy/rollend.sh bricht ab, wenn
-    # /api/status eine uebersprungene Migration meldet. Das Test-Backend
-    # (backend-test) steht NICHT auf main, sondern auf test-latest aus
-    # test-backend.yml.
+    # /api/status eine uebersprungene Migration meldet. Ein Test-Backend
+    # neben der Produktion gibt es seit dem 08.10.2026 nicht mehr (Simons
+    # Entscheidung): Der Stack hat nur noch backend, backend2 und frontend.
     #
     # ZUM PAUSIEREN: in der if-Zeile unten ein "false &&" voranstellen -- und
     # oben vermerken, seit wann und warum. Ein pausierter Deploy ohne Notiz

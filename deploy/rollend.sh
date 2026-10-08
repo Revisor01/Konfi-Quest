@@ -39,7 +39,7 @@
 # Deshalb zieht das Skript die Images der Stufe VORAB ueber die Docker-API des
 # Endpoints (ziehe_images) und ruft update_stack mit pullImage:false. Ein
 # frisch gezogener Tag ist damit lokal da; Compose erstellt einen Dienst auch
-# dann neu, wenn sein Tag lokal auf ein anderes Image zeigt (test-latest).
+# dann neu, wenn sein Tag lokal auf ein anderes Image zeigt.
 # Das Skript prueft die Voraussetzung weiter: Erstellt eine Stufe einen
 # anderen Dienst als ihre eigenen neu, steht eine Warnung mit Namen im Lauf.
 #
@@ -141,8 +141,10 @@ hole_compose() {
 # unzuverlaessig; ein eindeutiger Tag ZWINGT den korrekten Pull. JEDEN
 # bestehenden Tag ersetzen (:latest ODER ein frueherer :sha), sonst greift
 # der zweite Deploy nicht. Owner-agnostisch am eindeutigen
-# 'konfi-quest-(backend|frontend)' geankert; backend-test (Tag test-latest,
-# gebaut von test-backend.yml) bleibt unangetastet (Release-Audit CI BF-03).
+# 'konfi-quest-(backend|frontend)' geankert; jeder andere Dienst bleibt
+# unangetastet (Release-Audit CI BF-03; frueher das Test-Backend, das am
+# 08.10.2026 abgeschafft wurde -- die Gegenprobe gilt seither allen Diensten
+# ausserhalb von backend, backend2 und frontend).
 # $1 = Dienste als Alternation, z. B. "backend|frontend" oder "backend2".
 schreibe_tags() {
   DIENSTE="$1" IMG_TAG="$IMG_TAG" perl -i -pe '
@@ -156,6 +158,15 @@ schreibe_tags() {
 
 image_von() {  # <dienst> -> image-Zeile dieses Dienstblocks in compose.yml
   awk -v svc="$1" '$0 ~ "^  "svc":" {f=1; next} f && /^  [A-Za-z0-9_.-]+:/ {f=0} f && /image:/ {print $2; exit}' compose.yml
+}
+
+# "dienst image" je Zeile fuer alle Dienste AUSSER backend, backend2 und
+# frontend -- die Gegenprobe, dass die Tag-Umschreibung nicht zu weit greift.
+# $1 = Datei (Standard compose.yml).
+andere_images() {
+  awk '/^services:/ {s=1; next} s && /^[^ #]/ {s=0}
+       s && /^  [A-Za-z0-9_.-]+:/ {d=$1; sub(/:$/, "", d); next}
+       s && d != "" && /^    image:/ && d !~ /^(backend|backend2|frontend)$/ {print d, $2}' "${1:-compose.yml}"
 }
 
 update_stack() {  # gibt den HTTP-Status aus
@@ -313,27 +324,27 @@ stufe() {  # <dienste-alternation> <zu-pruefender-dienst> [weitere zu ziehende D
 }
 
 hole_compose
-bt_vorher="$(image_von backend-test)"
+andere_vorher="$(andere_images)"
 
 # Probelauf (29.09.2026, Audit CI BF-10): Der Notfall-Deploy war nie gelaufen,
 # und ein echter Lauf veraendert Produktion. Der Probelauf geht denselben Weg
 # bis unmittelbar vor update_stack -- Zugang zur Portainer-API (Stack-Datei,
 # Variablen, Container), Tag-Umschreibung aller drei Dienste auf einer Kopie,
-# Gegenprobe auf backend-test, Statusabfrage -- und schreibt NICHTS. Was
+# Gegenprobe auf alle anderen Dienste, Statusabfrage -- und schreibt NICHTS. Was
 # danach kommt (update_stack, Warten auf gesund, Verify), laeuft bei jedem
 # Push auf main im CI-Deploy mit genau diesem Skript.
 if [ "$PROBELAUF" = "1" ]; then
   echo "== Probelauf: es wird nichts am Stack geaendert =="
   cp compose.yml compose.vorher.yml
   schreibe_tags "backend|frontend|backend2"
-  for d in backend backend2 frontend backend-test; do
+  for d in backend backend2 frontend; do
     echo "  $d: $(awk -v svc="$d" '$0 ~ "^  "svc":" {f=1; next} f && /^  [A-Za-z0-9_.-]+:/ {f=0} f && /image:/ {print $2; exit}' compose.vorher.yml) -> $(image_von "$d")"
   done
   fehler=0
   for d in backend backend2 frontend; do
     case "$(image_von "$d")" in *":$IMG_TAG") ;; *) echo "::error::Probelauf: $d stuende nicht auf :$IMG_TAG"; fehler=1 ;; esac
   done
-  if [ "$(image_von backend-test)" != "$bt_vorher" ]; then echo "::error::Probelauf: Tag-Umschreibung wuerde backend-test anfassen"; fehler=1; fi
+  if [ "$(andere_images)" != "$andere_vorher" ]; then echo "::error::Probelauf: Tag-Umschreibung wuerde einen anderen Dienst anfassen"; fehler=1; fi
   anzahl_env="$(api "$P_URL/api/stacks/$STACK_ID" | python3 -c "import sys,json;print(len(json.load(sys.stdin).get('Env') or []))" 2>/dev/null || echo "?")"
   echo "  Stack-Variablen, die mitgeschickt wuerden: $anzahl_env"
   for d in backend backend2 frontend; do echo "  laufend $d: $(container_zustand "$d" | cut -f2,3)"; done
@@ -345,8 +356,7 @@ if [ "$PROBELAUF" = "1" ]; then
 fi
 
 # Nach jeder Stufe: Hat sie Dienste neu erstellt, die sie nicht anfassen
-# sollte? Stufe 1 darf backend, frontend und backend-test (test-latest wird mit
-# gezogen und bei neuem Image neu erstellt), Stufe 2 nur backend2. Alles andere
+# sollte? Stufe 1 darf backend und frontend, Stufe 2 nur backend2. Alles andere
 # -- besonders postgres und die jeweils andere Replica -- heisst: Der Tausch
 # war nicht lueckenlos (Auftrag 10, Stand bis 30.09.2026).
 pruefe_stufe() {  # <name> <stand-vorher> <erlaubte-dienste>
@@ -360,23 +370,20 @@ pruefe_stufe() {  # <name> <stand-vorher> <erlaubte-dienste>
 
 # Stufe 1: backend (+ frontend) -- backend2 traegt den Traffic.
 vorher="$(ids_alle)"
-stufe "backend|frontend" backend backend-test
-pruefe_stufe 1 "$vorher" "backend|frontend|backend-test"
+stufe "backend|frontend" backend
+pruefe_stufe 1 "$vorher" "backend|frontend"
 
 # Stufe 2: backend2 -- das frische backend traegt den Traffic.
 vorher="$(ids_alle)"
 stufe "backend2" backend2
 pruefe_stufe 2 "$vorher" "backend2"
 
-# Gegenprobe: backend-test unveraendert, sonst hat der Rewrite zu weit gegriffen.
-bt_nachher="$(image_von backend-test)"
-if [ "$bt_vorher" != "$bt_nachher" ]; then
-  echo "::error::Tag-Rewrite hat backend-test angefasst ($bt_vorher -> $bt_nachher)."; exit 1
+# Gegenprobe: alle anderen Dienste unveraendert, sonst hat der Rewrite zu weit
+# gegriffen.
+andere_nachher="$(andere_images)"
+if [ "$andere_vorher" != "$andere_nachher" ]; then
+  echo "::error::Tag-Rewrite hat einen anderen Dienst angefasst: $(diff <(printf '%s\n' "$andere_vorher") <(printf '%s\n' "$andere_nachher") | grep '^[<>]' | tr '\n' ' ')"; exit 1
 fi
-case "$bt_nachher" in
-  ""|*:test-*) ;;
-  *) echo "::warning::backend-test steht auf $bt_nachher statt auf test-latest -- Altlast eines frueheren Rewrites. Im Portainer-Stack von Hand auf test-latest zurueckstellen." ;;
-esac
 grep -q "konfi-quest-backend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite backend fehlgeschlagen"; exit 1; }
 grep -q "konfi-quest-frontend:${IMG_TAG}" compose.yml || { echo "::error::Tag-Rewrite frontend fehlgeschlagen"; exit 1; }
 

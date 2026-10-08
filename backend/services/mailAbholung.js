@@ -19,7 +19,7 @@
 // (services/backgroundService.js), und das ruft nur die Replica, die die
 // Leader-Wahl gewonnen hat (server.js, utils/cronLeader.js). backend und
 // backend2 holen nie gleichzeitig ab. Ein Server mit
-// RUN_BACKGROUND_JOBS=false (backend-test an der Produktions-Datenbank)
+// RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs an der Produktions-Datenbank)
 // holt nie ab -- auch dann nicht, wenn jemand alleAbholen() direkt ruft.
 //
 // PROTOKOLL OHNE INHALTE UND OHNE ADRESSEN (utils/protokoll.js): nur

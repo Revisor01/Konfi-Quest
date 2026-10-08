@@ -56,7 +56,8 @@ Offline-Warteschlange und App-Sperre (Handbuch, 14 Kapitel, 5.236 Zeilen).
 
 Betrieben wird die App heute auf **einem** Host als Portainer-Stack: ein
 Postgres-Container (1 GB, `max_connections=200`), zwei Backend-Replicas mit je
-512 MB / 0,5 CPU plus ein Test-Backend, Uploads auf lokaler Platte
+512 MB / 0,5 CPU (das frühere Test-Backend ist seit dem 08.10.2026
+abgeschafft), Uploads auf lokaler Platte
 (`/opt/Konfi-Quest/uploads`), Push über Firebase, Mail über einen eigenen
 SMTP-Server, Tageslosung über ketiv.de, anonyme Nutzungsmessung über Umami
 (`deploy/compose.konfi_quest.yml:16-45, 58-111, 137-170`,

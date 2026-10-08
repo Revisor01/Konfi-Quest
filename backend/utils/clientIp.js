@@ -18,8 +18,8 @@
 // WARUM DIE PRUEFUNG UEBER DEN PEER UND NICHT UEBER `trust proxy` MIT
 // HOP-ZAHL: Die Hop-Zahl haengt davon ab, ob Apache X-Forwarded-For anhaengt
 // oder nicht -- genau das ist in Produktion offen (Bericht, "Auf Produktion
-// nachzumessen" Nr. 4). Die Netzgrenze dagegen ist sicher: backend, backend2
-// und backend-test haengen ausschliesslich an den Compose-Netzen `traefik`
+// nachzumessen" Nr. 4). Die Netzgrenze dagegen ist sicher: backend und
+// backend2 haengen ausschliesslich an den Compose-Netzen `traefik`
 // und `internal` (deploy/compose.konfi_quest.yml); der Port 5000 ist nicht
 // auf dem Host veroeffentlicht. Alles, was das Backend erreicht, kommt aus
 // einem privaten Bereich -- oder es ist ein Aufbau, dem nicht zu trauen ist.

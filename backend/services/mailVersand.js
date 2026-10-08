@@ -3,8 +3,9 @@
 //
 // Ablauf je Antwort:
 //   1. Darf dieser Server senden? Nicht mit RUN_BACKGROUND_JOBS=false
-//      (backend-test haengt an der Produktions-Datenbank und erbt dieselben
-//      Zugangsdaten) -> 503. Ist das Postfach eingerichtet? Sonst 503.
+//      (eine Instanz ohne Jobs an der Produktions-Datenbank erbt dieselben
+//      Zugangsdaten; bis 08.10.2026 das Test-Backend) -> 503. Ist das
+//      Postfach eingerichtet? Sonst 503.
 //   2. Text + Fusszeile (Trenner "-- " nach der Signaturkonvention), eigene
 //      Message-ID <kq-uuid@konfi-quest.de>, In-Reply-To/References auf die
 //      letzte Mail des Verlaufs, die Kennung im Betreff, wenn sie fehlt:

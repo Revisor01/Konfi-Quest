@@ -618,7 +618,7 @@ describe('/api/support/vorgaenge', () => {
       expect(sendMail).not.toHaveBeenCalled();
     });
 
-    it('RUN_BACKGROUND_JOBS=false (backend-test): 503, nichts gesendet, nichts gespeichert', async () => {
+    it('RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs): 503, nichts gesendet, nichts gespeichert', async () => {
       const v = await d.vorgang({ kontakt_email: 'erika@andere.example' });
       process.env.RUN_BACKGROUND_JOBS = 'false';
       try {
