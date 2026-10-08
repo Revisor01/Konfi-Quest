@@ -26,6 +26,7 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const { nachAntwort } = require('../utils/nachAntwort');
 const crypto = require('crypto');
 const { formatDatum } = require('../utils/zeitformat');
 const jwt = require('jsonwebtoken');
@@ -1983,7 +1984,10 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         res.json(updated);
 
         // Fire-and-forget NACH der Antwort: Pushes an die einreichende Person.
-        (async () => {
+        // Ueber nachAntwort (08.10.2026): Bis dahin eine nackte async-IIFE,
+        // die im Test niemand abwartete -- gemessen lief sie nach dem TRUNCATE
+        // des naechsten Tests weiter (Push, Postfach, Zaehler).
+        nachAntwort(req, async () => {
           try {
             // Ausgeblendet: die einreichende Person erfaehrt es (mit
             // Begruendung, falls eine eingetragen wurde) — ausser jemand
@@ -2068,7 +2072,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
           } catch (pushErr) {
             console.error('Push nach Challenge-Moderation fehlgeschlagen:', pushErr.message);
           }
-        })();
+        }, 'Push nach Challenge-Moderation');
 
         notifyJahrgaenge(submission.challenge_id, 'submission_update', { challengeId: submission.challenge_id });
         notifyLeadership(req.user.organization_id, 'submission_update', { challengeId: submission.challenge_id });
