@@ -199,7 +199,7 @@ Versionsüberschrift.
   Einmalpasswort.
 - Entfernt die Leitung eine Konfi, deren Konto noch zu einer anderen Gemeinde
   gehört, gehen mit ihr auch Aktivitäten, Punkte, Anträge, Beiträge und
-  Abzeichen aus dieser Gemeinde; in der anderen Gemeinde bleibt alles.
+  Badges aus dieser Gemeinde; in der anderen Gemeinde bleibt alles.
 - Gehört eine Konfi nur über eine weitere Mitgliedschaft zu einer Gemeinde,
   bekommt sie dort die Mitteilung über neue Beiträge im Challenge-Feed ihres
   Jahrgangs.

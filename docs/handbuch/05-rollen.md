@@ -494,7 +494,7 @@ anderen Gemeinde gehört, nur die Mitgliedschaft in deiner Gemeinde — mit
 ihren Jahrgängen, Chat-Plätzen, Mitteilungen und Event-Anmeldungen bei dir
 (auf ihre Plätze rückt die Warteliste nach). Mit ihr geht auch alles, was sie
 als Konfi bei dir gesammelt hat: Aktivitäten, Punkte, Anträge samt Foto,
-Challenge-Beiträge, Abzeichen und Rückblicke, dazu deine Mitteilungen über
+Challenge-Beiträge, Badges und Rückblicke, dazu deine Mitteilungen über
 sie. Das Konto bleibt für die andere Gemeinde, mit allem, was sie dort hat. Konfi und Team gehen nie zusammen; solche Konten gibt es nur aus der
 Zeit davor.
 
