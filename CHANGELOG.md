@@ -177,6 +177,10 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- In der Benutzerverwaltung stehen Konten mit Super-Admin-Recht ohne
+  Bearbeiten und Löschen, in App und Browser; bisher gab es die Knöpfe, aber
+  sie endeten mit einer Fehlermeldung. Ein Support-Konto kann die
+  Gemeindeleitung weiterhin aus der Gemeinde nehmen.
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
   oder neu lud.

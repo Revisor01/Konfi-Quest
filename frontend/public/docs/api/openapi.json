@@ -6255,7 +6255,7 @@
         "summary": "Alle Verwaltungs-User der eigenen Org (ohne Konfis/super_admin), mit can_edit-Flag aus der Hierarchie",
         "responses": {
           "200": {
-            "description": "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026; weitere_gemeinden (integer): in wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist, bei 'weitere' mindestens 1, nur die Zahl, keine Namen -- additiv seit 27.09.2026, der Loesch-Dialog erkennt daran, dass DELETE das Konto nicht loescht)"
+            "description": "User-Array (Rolle und Jahrgangs-Zaehler DIESER Gemeinde, can_edit, mitgliedschaft 'stamm'|'weitere' -- additiv seit 26.09.2026; weitere_gemeinden (integer): in wie vielen ANDEREN Gemeinden die Person ausserdem Mitglied ist, bei 'weitere' mindestens 1, nur die Zahl, keine Namen -- additiv seit 27.09.2026, der Loesch-Dialog erkennt daran, dass DELETE das Konto nicht loescht). can_edit folgt seit 08.10.2026 derselben Regel wie checkUserHierarchy: bei einem Super-Admin-Konto (Rolle ODER Merkmal is_super_admin) false, ausser der Aufrufer ist selbst Super-Admin (Befund 03.10.2026, behoben 08.10.2026: bis dahin can_edit nur nach der Rolle, Bearbeiten/Loeschen/Passwort endeten mit 403). can_delete (boolean, additiv seit 08.10.2026): darf DELETE /users/:id; meist gleich can_edit, beim Support-Gast (Konto ohne Stamm-Gemeinde) fuer die Gemeindeleitung true trotz can_edit false. Das Merkmal is_super_admin selbst steht nicht in der Antwort."
           },
           "403": {
             "$ref": "#/components/responses/Forbidden"

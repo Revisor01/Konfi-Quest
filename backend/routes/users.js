@@ -133,6 +133,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       )
       SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
              u.last_login_at, u.created_at, u.updated_at,
+             u.is_super_admin, u.organization_id AS stamm_organization_id,
              r.name as role_name, r.display_name as role_display_name,
              r.description as role_description,
              m.mitgliedschaft,
@@ -156,11 +157,29 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     try {
       const { rows: users } = await db.query(query, [organizationId]);
 
-      // Markiere Users als editierbar basierend auf Hierarchie statt sie zu filtern
-      const usersWithEditability = users.map(user => ({
-        ...user,
-        can_edit: filterUsersByHierarchy([user], req.user.role_name).length > 0
-      }));
+      // can_edit / can_delete sagen der Oberflaeche, welche Knoepfe sie
+      // anbietet -- sie folgen DERSELBEN Regel wie checkUserHierarchy
+      // (utils/roleHierarchy.js), sonst bietet die App Wege an, die mit 403
+      // enden (Befund 03.10.2026: Bearbeiten-Knopf bei Super-Admin-Konten).
+      //   - Grundlage ist die Rollen-Hierarchie (canManageRole).
+      //   - Ein Super-Admin-Konto (Rolle ODER Merkmal) verwaltet nur ein
+      //     Super-Admin; die Gemeindeleitung darf einen Support-Gast (Konto
+      //     ohne Stamm-Gemeinde) nur aus ihrer Gemeinde nehmen -- daher
+      //     can_delete getrennt (additives Feld, 08.10.2026). Store-Apps
+      //     lesen nur can_edit und blenden das Herausnehmen dann aus.
+      // is_super_admin und die Stamm-Gemeinde dienen nur dieser Rechnung und
+      // gehen nicht in die Antwort.
+      const usersWithEditability = users.map(({ is_super_admin, stamm_organization_id, ...user }) => {
+        const nachRolle = filterUsersByHierarchy([user], req.user.role_name).length > 0;
+        const superGesperrt = istSuperAdminKonto({ role_name: user.role_name, is_super_admin })
+          && req.user.is_super_admin !== true;
+        const supportGast = stamm_organization_id === null && req.user.role_name === 'org_admin';
+        return {
+          ...user,
+          can_edit: nachRolle && !superGesperrt,
+          can_delete: nachRolle && (!superGesperrt || supportGast)
+        };
+      });
       res.json(usersWithEditability);
 
     } catch (err) {

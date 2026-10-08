@@ -5,8 +5,8 @@
 //
 // Daten und Rechte kommen von der Seite (AdminUsersPage): Anlegen, Einladen,
 // Entfernen und die offenen Einladungen gibt es nur fuer die Gemeindeleitung
-// (requireOrgAdmin im Server), Bearbeiten nur bei `can_edit` -- wie in der
-// App. Das Formular ist dasselbe Fenster wie dort (UserManagementModal).
+// (requireOrgAdmin im Server), Bearbeiten nur bei `can_edit`, Entfernen nach
+// `can_delete` (utils/mitgliedschaft.ts, darfEntfernen) -- wie in der App. Das Formular ist dasselbe Fenster wie dort (UserManagementModal).
 
 import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -16,7 +16,7 @@ import { datumKurz } from '../../../../utils/dateUtils';
 import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
 import { suchTreffer, suchbegriff } from '../../../../utils/supportWeb';
 import { mitEinheit } from '../../../../utils/supportStatistik';
-import { kontoBleibt } from '../../../../utils/mitgliedschaft';
+import { darfEntfernen, kontoBleibt } from '../../../../utils/mitgliedschaft';
 import type { AdminUser } from '../../../../types/user';
 import WebSeite from '../../../web/WebSeite';
 import WebKnopf from '../../../web/WebKnopf';
@@ -172,13 +172,18 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       kopf: 'Aktionen',
       kopfVersteckt: true,
       klasse: 'web-spalte-aktionen-breit',
-      zelle: (u) => (u.can_edit === false ? null : (
+      // Bearbeiten nur bei can_edit, Entfernen nach darfEntfernen: beim
+      // Support-Gast bietet die Gemeindeleitung nur das Entfernen an, bei
+      // einem Konto mit Super-Admin-Merkmal gar nichts (Befund 03.10.2026).
+      zelle: (u) => (u.can_edit === false && !(darfVerwalten && darfEntfernen(u)) ? null : (
         <div className="web-zeilenaktionen">
-          <WebKnopf klein vorn onClick={() => onBearbeiten(u)} aria-label={`${u.display_name} bearbeiten`}>
-            <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
-            <span className="web-knopf__text">Bearbeiten</span>
-          </WebKnopf>
-          {darfVerwalten && (
+          {u.can_edit !== false && (
+            <WebKnopf klein vorn onClick={() => onBearbeiten(u)} aria-label={`${u.display_name} bearbeiten`}>
+              <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
+              <span className="web-knopf__text">Bearbeiten</span>
+            </WebKnopf>
+          )}
+          {darfVerwalten && darfEntfernen(u) && (
             <WebKnopf klein vorn art="gefahr" symbol onClick={() => onLoeschen(u)}
               aria-label={`${u.display_name} ${kontoBleibt(u) ? 'aus der Gemeinde entfernen' : 'löschen'}`}
               title={kontoBleibt(u) ? 'Aus der Gemeinde entfernen' : 'Benutzer:in löschen'}>

@@ -50,7 +50,9 @@ darin — das gibst du weiter.
 
 Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch
 dann, wenn ein solches Konto in deiner Gemeinde zuhause ist. Passwort, Name,
-Sperre und Löschung sind für die Gemeindeleitung dort gesperrt.
+Sperre und Löschung sind für die Gemeindeleitung dort gesperrt. In der Liste
+unter **Mehr › Benutzer:innen** steht ein solches Konto deshalb ohne
+Bearbeiten und ohne Löschen; Antippen öffnet es nicht.
 
 **Leitungskonten laufen anders:** Für Leitung und Gemeindeleitung gibt es kein
 Einmalpasswort. Die Gemeindeleitung öffnet

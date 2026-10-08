@@ -204,7 +204,8 @@ Jahrgängen und Chat-Plätzen dort — wie bei jeder Person aus einer anderen
 Gemeinde ([Mitglieder aus anderen Gemeinden
 verwalten](#mitglieder-aus-anderen-gemeinden-verwalten)); das Konto des
 Supports bleibt. Bearbeiten, ein Passwort setzen oder Jahrgänge zuweisen kann
-die Gemeindeleitung bei diesem Konto nicht; wie bei jedem Konto mit
+die Gemeindeleitung bei diesem Konto nicht — die Liste bietet dafür nur das
+Herausnehmen an, Antippen öffnet das Konto nicht; wie bei jedem Konto mit
 Super-Admin-Rechten ist das gesperrt ([Passwörter und
 Zugänge](35-passwoerter.md)). Leitung und Team können den Support nicht
 herausnehmen.
