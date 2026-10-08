@@ -324,7 +324,7 @@ eine Gemeinde von support@.
 **Abholen.** Der Cron-Leader liest beide Postfächer alle zwei Minuten — nur
 lesend: Er löscht nichts, verschiebt nichts und markiert nichts als gelesen.
 Im Mailprogramm bleibt alles, wie es war. Übernommen wird ab Einrichtung,
-nicht der Altbestand. Auf backend-test (`RUN_BACKGROUND_JOBS=false`) wird
+nicht der Altbestand. Auf einer Instanz mit `RUN_BACKGROUND_JOBS=false` wird
 weder abgeholt noch versendet. Den Zustand zeigt der Bereich **Posteingang**
 oben: eingerichtet, zuletzt abgeholt, letzter Fehler.
 

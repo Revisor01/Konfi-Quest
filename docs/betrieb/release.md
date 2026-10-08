@@ -80,12 +80,19 @@ die CI noch, wartet das Tor bis zu 45 Minuten.
 
 | Eingabe | Vorgabe | Bedeutung |
 |---|---|---|
-| `api_url` | leer | leer = Produktion; jeder andere Wert bricht den Build ab — ein Store-Build gegen die Test-API ist ausgeschlossen |
 | `allow_non_main` | aus | Build von einem anderen Ref; nur für bewusste Testbuilds, die CI des Commits muss trotzdem grün sein |
 
 ```bash
 gh workflow run ios-release.yml --ref main
 ```
+
+Jeder Build — Store, TestFlight und interner Testtrack — spricht mit der
+Produktion; eine Eingabe für eine andere API-Adresse gibt es nicht. Das
+frühere Test-Backend (eigener Hostname an derselben Datenbank, mit denselben
+Schlüsseln) ist seit dem 08.10.2026 abgeschafft (Simons Entscheidung). Die
+fünf TestFlight-Builds, die darauf zeigten (153, 154, 155, 157, 158, gebaut
+31.08.–02.09.2026), wurden vorher in App Store Connect abgelaufen gelassen.
+Android hatte nie eine solche Eingabe.
 
 Der Build landet in App Store Connect und TestFlight; das Einreichen zur
 Prüfung geschieht dort von Hand.

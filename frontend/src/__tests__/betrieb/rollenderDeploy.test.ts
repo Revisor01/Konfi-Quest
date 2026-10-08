@@ -12,7 +12,10 @@ import { join, resolve } from 'node:path';
 // was das Skript von Portainer liest und schreibt: Stack-Datei und -Variablen,
 // update_stack, die Container-Liste mit Healthcheck und /api/status. Die
 // Stack-Datei ist die Referenz aus deploy/compose.konfi_quest.yml -- also die
-// echte Struktur mit Ankern, Kommentaren und backend-test.
+// echte Struktur mit Ankern und Kommentaren. Das Test-Backend (eigener Dienst
+// an derselben Datenbank) ist seit dem 08.10.2026 abgeschafft; dass ein
+// fremder Dienst im Live-Stack trotzdem nie angefasst wird, pruefen die Faelle
+// mit ALTDIENST unten.
 //
 // Geprueft wird vor allem die Vorwaerts-Pruefung (NUR_VORWAERTS, Audit CI
 // BF-04): Sie darf einen Deploy NUR ueberspringen, wenn Produktion belegbar
@@ -27,6 +30,19 @@ const wurzel = resolve(__dirname, '../../../..');
 const SKRIPT = join(wurzel, 'deploy/rollend.sh');
 const REFERENZ = readFileSync(join(wurzel, 'deploy/compose.konfi_quest.yml'), 'utf-8');
 const SCHLUESSEL = 'test-schluessel';
+
+/**
+ * Ein Dienst ausserhalb von backend, backend2 und frontend -- so stand bis
+ * zum 08.10.2026 das Test-Backend im Live-Stack, und so steht er dort, bis der
+ * Stack ohne ihn neu ausgerollt ist. Die Tag-Umschreibung darf ihn nie fassen.
+ */
+const ALTDIENST = [
+  '  altdienst:',
+  '    image: ghcr.io/revisor01/konfi-quest-backend:test-latest',
+  '    restart: unless-stopped',
+  '',
+].join('\n');
+const mitAltdienst = (stack: string) => stack.replace(/^ {2}frontend:$/m, `${ALTDIENST}  frontend:`);
 
 /** image-Zeile je Dienst, so wie das Skript Dienstbloecke abgrenzt. */
 function imagesAus(text: string): Record<string, string> {
@@ -72,8 +88,8 @@ class Portainer {
   private naechsteId = 1;
   private reihum = 0;
 
-  anfang(tagAlt: string) {
-    this.stack = REFERENZ.split('<TAG>').join(tagAlt);
+  anfang(tagAlt: string, umbau: (stack: string) => string = (x) => x) {
+    this.stack = umbau(REFERENZ.split('<TAG>').join(tagAlt));
     this.puts = [];
     this.container.clear();
     this.statusVorgabe = [];
@@ -224,7 +240,7 @@ function rolle(gitSha: string, extra: Record<string, string> = {}): Promise<{ co
 const kurz = (sha: string) => sha.slice(0, 7);
 
 describe('rollender Deploy: der Normalfall', () => {
-  it('erst backend und frontend, dann backend2 -- backend-test bleibt unberuehrt', async () => {
+  it('erst backend und frontend, dann backend2 -- Postgres bleibt unberuehrt', async () => {
     portainer.anfang(kurz(A));
     const { code, aus } = await rolle(B, { NUR_VORWAERTS: '1' });
     expect(code, aus).toBe(0);
@@ -239,7 +255,8 @@ describe('rollender Deploy: der Normalfall', () => {
     const stufe2 = imagesAus(portainer.puts[1].compose);
     expect(stufe2.backend2).toBe(`ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`);
     for (const put of portainer.puts) {
-      expect(imagesAus(put.compose)['backend-test']).toBe('ghcr.io/revisor01/konfi-quest-backend:test-latest');
+      // Genau diese vier Dienste: Ein Test-Backend gibt es nicht mehr.
+      expect(Object.keys(imagesAus(put.compose)).sort()).toEqual(['backend', 'backend2', 'frontend', 'postgres']);
       expect(imagesAus(put.compose).postgres).toBe(imagesAus(REFERENZ).postgres);
       // Stack-Variablen gehen unveraendert zurueck ("env": [] loeschte sie).
       expect(put.env).toEqual([{ name: 'SMTP_HOST', value: 'mail.example' }]);
@@ -265,19 +282,18 @@ describe('Deploy-Luecke: nur die Dienste der Stufe werden neu erstellt (01.10.20
     const { code, aus } = await rolle(B);
     expect(code, aus).toBe(0);
     expect(portainer.puts.map((p) => p.pullImage)).toEqual([false, false]);
-    // Stufe 1 zieht backend, frontend und test-latest, bevor der Stack
-    // angefasst wird; Stufe 2 zieht backend2 zwischen den beiden Aufrufen.
+    // Stufe 1 zieht backend und frontend, bevor der Stack angefasst wird;
+    // Stufe 2 zieht backend2 zwischen den beiden Aufrufen.
     expect(portainer.pulls).toEqual([
       { ref: `ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`, putsDavor: 0 },
       { ref: `ghcr.io/revisor01/konfi-quest-frontend:${kurz(B)}`, putsDavor: 0 },
-      { ref: 'ghcr.io/revisor01/konfi-quest-backend:test-latest', putsDavor: 0 },
       { ref: `ghcr.io/revisor01/konfi-quest-backend:${kurz(B)}`, putsDavor: 1 },
     ]);
     // Postgres (per Digest) wird nie gezogen.
     expect(portainer.pulls.some((p) => p.ref.startsWith('postgres'))).toBe(false);
   });
 
-  it('Postgres, backend-test und die jeweils andere Replica bleiben stehen', async () => {
+  it('Postgres und die jeweils andere Replica bleiben stehen', async () => {
     portainer.anfang(kurz(A));
     const { code, aus } = await rolle(B);
     expect(code, aus).toBe(0);
@@ -294,7 +310,7 @@ describe('Deploy-Luecke: nur die Dienste der Stufe werden neu erstellt (01.10.20
     // Der Stand ist live -- der Lauf bleibt gruen, aber die Luecke steht im Log.
     expect(code, aus).toBe(0);
     expect(aus).toContain('::warning::Stufe 1 hat auch backend2 postgres mit neu erstellt');
-    expect(aus).toContain('::warning::Stufe 2 hat auch backend backend-test frontend postgres mit neu erstellt');
+    expect(aus).toContain('::warning::Stufe 2 hat auch backend frontend postgres mit neu erstellt');
   });
 
   it('ein Image, das ghcr noch nicht ausliefert: Runde endet VOR update_stack, die naechste klappt', async () => {
@@ -316,6 +332,33 @@ describe('Deploy-Luecke: nur die Dienste der Stufe werden neu erstellt (01.10.20
     expect(aus).toContain('::error::backend wurde nach 3 Runden nicht gesund');
     expect(portainer.puts).toHaveLength(0);
     expect(portainer.stack).toBe(stackVorher);
+  });
+});
+
+describe('ein fremder Dienst im Live-Stack bleibt unberuehrt (Test-Backend abgeschafft, 08.10.2026)', () => {
+  // Bis der Live-Stack ohne das fruehere Test-Backend neu ausgerollt ist, steht
+  // es dort noch -- mit einem konfi-quest-backend-Image, das die Umschreibung
+  // greifen koennte. Die Gegenprobe gilt jedem Dienst ausserhalb der drei.
+  it('Deploy: Image nie umgeschrieben, nie gezogen, nie neu erstellt', async () => {
+    portainer.anfang(kurz(A), mitAltdienst);
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('OK Rollender Deploy verifiziert');
+    expect(portainer.puts).toHaveLength(2);
+    for (const put of portainer.puts) {
+      expect(imagesAus(put.compose).altdienst).toBe('ghcr.io/revisor01/konfi-quest-backend:test-latest');
+    }
+    expect(portainer.pulls.map((p) => p.ref)).not.toContain('ghcr.io/revisor01/konfi-quest-backend:test-latest');
+    expect([...portainer.neuErstellt].sort()).toEqual(['backend', 'backend2', 'frontend']);
+  });
+
+  it('Probelauf: der fremde Dienst steht nicht im Plan, die Gegenprobe ist gruen', async () => {
+    portainer.anfang(kurz(C), mitAltdienst);
+    const { code, aus } = await rolle(A, { PROBELAUF: '1' });
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('OK Probelauf');
+    expect(aus).not.toContain('altdienst');
+    expect(aus).not.toContain('anderen Dienst anfassen');
   });
 });
 
@@ -414,11 +457,11 @@ describe('Probelauf (Notfall-Deploy proben, Audit CI BF-10)', () => {
     expect(aus).toContain('OK Probelauf');
     expect(portainer.puts).toHaveLength(0);
     expect(portainer.stack).toBe(stackVorher);
-    // Der Plan nennt alle drei Dienste auf dem Zielstand, backend-test bleibt.
+    // Der Plan nennt alle drei Dienste auf dem Zielstand -- und nur sie.
     for (const d of ['backend', 'backend2', 'frontend']) {
       expect(aus).toMatch(new RegExp(`${d}: \\S+:${kurz(C)} -> \\S+:${kurz(A)}`));
     }
-    expect(aus).toMatch(/backend-test: \S+:test-latest -> \S+:test-latest/);
+    expect(aus).not.toContain('backend-test');
     expect(aus).toContain('Stack-Variablen, die mitgeschickt wuerden: 1');
   });
 

@@ -67,7 +67,7 @@ Traefik dagegen protokolliert jede Anfrage als JSON-Zeile mit
 | Router | Wofür |
 |---|---|
 | `konfi-api@docker` | Produktion (`konfi-quest.de`) — **das** ist der relevante |
-| `konfi-api-test@docker` | Testsystem (`test-api.konfi-quest.de`) — beim Zählen ausschließen |
+| `konfi-api-test@docker` | früheres Testsystem, seit dem 08.10.2026 abgeschafft — taucht nur in älteren Logzeilen auf; beim Zählen ausschließen |
 
 ### Zählung je Route
 

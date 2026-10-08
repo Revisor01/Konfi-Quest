@@ -136,12 +136,13 @@ describe('Backend-Image: Laufzeit-Stufe ohne Werkzeug und ohne Tests', () => {
   });
 
   it('der Healthcheck des Stacks findet sein Werkzeug im Image', () => {
-    // Seit dem 01.10.2026 pruefen alle drei Backends im Stack wie das Image
+    // Seit dem 01.10.2026 pruefen alle Backends im Stack wie das Image
     // selbst mit `node healthcheck.js` -- curl wird nicht mehr nachinstalliert.
     // Fehlte das Werkzeug, waere jeder neue Container "unhealthy", und
     // deploy/rollend.sh wartet genau auf "healthy".
     const compose = lies('deploy/compose.konfi_quest.yml');
-    const backendBloecke = ['backend', 'backend2', 'backend-test'].map((d) => {
+    // Zwei Backends seit dem 08.10.2026 (Test-Backend abgeschafft).
+    const backendBloecke = ['backend', 'backend2'].map((d) => {
       const start = compose.indexOf(`\n  ${d}:\n`);
       expect(start, `Dienst ${d}`).toBeGreaterThan(-1);
       const rest = compose.slice(start + 1);
@@ -167,7 +168,8 @@ describe('Backend-Image: Laufzeit-Stufe ohne Werkzeug und ohne Tests', () => {
     // bestehenden Systemnutzer, und weitere Container laufen dort als 1000.
     // Eine uid, die am Host niemandem gehoert, laesst ausser root niemanden an
     // Uploads und Push-Schluessel.
-    expect(nutzer).toEqual(['10001:10001', '10001:10001', '10001:10001']);
+    // Zwei Eintraege: backend und backend2 (Test-Backend abgeschafft, 08.10.2026).
+    expect(nutzer).toEqual(['10001:10001', '10001:10001']);
   });
 
   it('das Image selbst laeuft als uid 10001, nicht als root und nicht als node (02.10.2026)', () => {

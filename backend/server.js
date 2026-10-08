@@ -426,8 +426,10 @@ server.on('request', (req, res) => {
 // Jetzt WAEHLEN die Replicas den Leader per Advisory-Lock (utils/cronLeader.js):
 // Jede Replica, die Jobs fahren DARF, versucht den Lock im Takt; wer ihn
 // haelt, startet die Jobs; stirbt sie, uebernimmt die naechste beim
-// naechsten Takt. RUN_BACKGROUND_JOBS='false' heisst weiterhin: NIE
-// (backend-test teilt sich die Datenbank mit Live und darf keine Jobs fahren).
+// naechsten Takt. RUN_BACKGROUND_JOBS='false' heisst weiterhin: NIE -- fuer
+// eine Instanz, die an der Datenbank haengt, aber weder Jobs fahren noch Mail
+// senden darf (bis 08.10.2026 das Test-Backend; im Stack setzt es seither
+// kein Dienst, der Schalter bleibt als Sicherung).
 // Alles andere heisst: an der Wahl teilnehmen. Sichtbar in /api/status als
 // `cron_leader` (diese Replica) und `checks.cron_leader` (irgendjemand).
 const BackgroundService = require('./services/backgroundService');

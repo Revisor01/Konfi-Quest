@@ -78,7 +78,7 @@ if [ "$VORHANDEN" = "1" ]; then
   # Datenbank fahren -- sie müssen vorher angehalten sein.
   SITZUNGEN=$(sql -d postgres -c "SELECT count(*) FROM pg_stat_activity WHERE datname = '$PG_DB' AND pid <> pg_backend_pid()")
   if [ "$SITZUNGEN" != "0" ]; then
-    echo "FEHLER: $SITZUNGEN Verbindungen auf $PG_DB. Erst alle Backends anhalten (backend, backend2, backend-test)." >&2
+    echo "FEHLER: $SITZUNGEN Verbindungen auf $PG_DB. Erst alle Backends anhalten (backend, backend2)." >&2
     exit 1
   fi
 fi

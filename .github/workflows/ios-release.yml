@@ -16,10 +16,6 @@ name: iOS Release Build
 on:
   workflow_dispatch:
     inputs:
-      api_url:
-        description: 'API-Basis (LEER = Produktion). Fuer Tests: https://test-api.konfi-quest.de/api'
-        required: false
-        default: ''
       allow_non_main:
         description: 'Build von einem anderen Ref als main zulassen (Standard AUS). Nur fuer bewusste Testbuilds; die CI des Commits muss trotzdem gruen sein.'
         type: boolean
@@ -137,30 +133,13 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Gegen das richtige Backend bauen
-        # SIMONS ANSAGE (18.09.2026): "wir duerfen nicht mehr gegen das test
-        # backend arbeiten, es muss das richtige backend sein". Bis hierher
-        # haette ein versehentlich gefuelltes Eingabefeld eine Fassung in den
-        # Store geschickt, die auf test-api zeigt -- und das faellt erst auf,
-        # wenn niemand mehr seine Daten sieht. Die Eingabe bleibt fuer
-        # TestFlight-Sonderfaelle erhalten, kostet aber jetzt eine bewusste
-        # Entscheidung statt eines Versehens.
-        run: |
-          if [ -n "${{ inputs.api_url }}" ]; then
-            echo "VITE_API_URL ist gesetzt: ${{ inputs.api_url }}"
-            echo "Ein Store-Build muss gegen die Produktion laufen (Feld LEER lassen)."
-            echo "Nur fuer bewusste Testflights: diesen Schritt im Workflow anpassen."
-            exit 1
-          fi
-          echo "API-Basis leer -> Produktion (https://konfi-quest.de/api). Richtig so."
-
       - name: Web-Build + Capacitor-Sync
         working-directory: frontend
-        # VITE_API_URL lenkt API UND Socket um (services/api.ts,
-        # services/websocket.ts lesen dieselbe Variable). LEER bedeutet
-        # Produktion — der normale Release-Weg aendert sich dadurch nicht.
-        env:
-          VITE_API_URL: ${{ inputs.api_url }}
+        # IMMER gegen die Produktion (services/apiBasis.ts, Vorgabe ohne
+        # VITE_API_URL). Die fruehere Eingabe api_url, ueber die ein Testbuild
+        # auf das Test-Backend zeigen konnte, ist mit dem Test-Backend am
+        # 08.10.2026 entfallen (Simons Entscheidung); workflowHygiene.test.ts
+        # haelt fest, dass kein Release-Workflow VITE_API_URL setzt.
         run: |
           npm ci --no-audit --no-fund
           npm run build

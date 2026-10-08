@@ -42,7 +42,7 @@
 // sich sonst beliebiger Text ueber unseren Server an fremde Adressen
 // schicken), vom Postfach support@ mit [Vorgang N] im Betreff, damit Antworten
 // im Vorgang landen (services/mailVersand.js). Auf einem Server mit
-// RUN_BACKGROUND_JOBS=false (backend-test) geht nichts hinaus; das Anliegen
+// RUN_BACKGROUND_JOBS=false (Instanz ohne Jobs) geht nichts hinaus; das Anliegen
 // bleibt gespeichert. Scheitert die Mail, bleibt es ebenfalls gespeichert.
 //
 // Aufbewahrung (Datenschutzerklaerung 9e): Ein Vorgang wird erledigt und damit
