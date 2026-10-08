@@ -739,8 +739,9 @@ rot, und du kannst sie wegwischen.
 Kommt eine Abmeldung von einem Event doppelt an — die erste ging durch, nur
 die Antwort darauf ging unterwegs verloren —, gilt auch die zweite als
 gelungen. Sie landet nicht unter „Nicht gesendet". Dasselbe gilt für
-Bonuspunkte und ein neues Event: Der Server erkennt den zweiten Eingang, die
-Punkte werden nur einmal gutgeschrieben, das Event entsteht nur einmal.
+Bonuspunkte, ein neues Event und eine neue Event-Serie: Der Server erkennt
+den zweiten Eingang, die Punkte werden nur einmal gutgeschrieben, das Event
+und die Serie entstehen nur einmal.
 
 ### Erkennen, was Netz braucht
 

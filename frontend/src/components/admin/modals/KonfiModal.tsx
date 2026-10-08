@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import {
   IonPage,
@@ -31,6 +31,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import type { KonfiFormDaten } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { safeUUID } from '../../../utils/uuid';
 
 interface Jahrgang {
   id: number;
@@ -71,6 +72,10 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
   const [name, setName] = useState(konfi?.display_name ?? '');
   const [jahrgangId, setJahrgangId] = useState<number | null>(konfi?.jahrgang_id ?? null);
   const { isSubmitting, guard } = useActionGuard();
+  // Wiederholungsschutz beim Anlegen: eine Kennung je offenem Fenster. Ein
+  // zweiter Versuch (keine Antwort, "Erneut versuchen", "Trotzdem anlegen")
+  // legt damit kein zweites Konto an.
+  const anlegeKennung = useRef(safeUUID());
 
   const handleClose = () => {
     if (dismiss) {
@@ -84,9 +89,10 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
     if (!name.trim() || jahrgangId === null) return;
 
     await guard(async () => {
-      const konfiData = {
+      const konfiData: KonfiFormDaten = {
         name: name.trim(),
-        jahrgang_id: jahrgangId
+        jahrgang_id: jahrgangId,
+        ...(bearbeiten ? {} : { client_id: anlegeKennung.current })
       };
 
       await onSave(konfiData);

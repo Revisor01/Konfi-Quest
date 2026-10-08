@@ -9553,7 +9553,7 @@
           "Termine (Verwaltung)"
         ],
         "summary": "Event-Serie erstellen (2-26 Termine, max 12 Monate)",
-        "description": "Erzeugt eine Serie (\"Name #n\") mit Intervall day | week | 2weeks | month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events, inkl. Auto-Enrollment bei Pflicht-Serien.\n\nBEHOBEN 17.09.2026 — ANMELDESCHLUSS: Der Riegel gegen einen bereits abgelaufenen Anmeldeschluss (siehe POST /api/events) fehlte hier. Ueber \"Serie anlegen\" liess sich damit genau der Widerspruch bauen, den die Einzelroute abweist: Termin kommt noch, Anmeldung war nie offen. Geprueft wird der ERSTE Termin — die Folgetermine erben den zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit in die Zukunft. Nachtragen vergangener Reihen bleibt erlaubt. Die Regel liegt jetzt gemeinsam in routes/events/validierung.js.\n\nBEHOBEN 28.09.2026 — ENDE (Audit Leitung BF-03): event_end_time vor event_date wird wie bei POST /api/events mit 400 (error_code ende_vor_beginn) abgewiesen, es entsteht keine Serie. Jeder Folgetermin erbt die DAUER des ersten (Ende minus Beginn in Millisekunden). Vorher wurde nur die Uhrzeit des Endes auf den Tag jedes Termins gesetzt: Ein erster Termin, der erst am Folgetag endet, ergab Serientermine, die vor ihrem Beginn endeten. Fuer Termine, die am selben Tag enden, bleibt das Ergebnis gleich.\n",
+        "description": "Erzeugt eine Serie (\"Name #n\") mit Intervall day | week | 2weeks | month. Gleiche Zwangsregeln und Org-Checks wie POST /api/events, inkl. Auto-Enrollment bei Pflicht-Serien.\n\nBEHOBEN 17.09.2026 — ANMELDESCHLUSS: Der Riegel gegen einen bereits abgelaufenen Anmeldeschluss (siehe POST /api/events) fehlte hier. Ueber \"Serie anlegen\" liess sich damit genau der Widerspruch bauen, den die Einzelroute abweist: Termin kommt noch, Anmeldung war nie offen. Geprueft wird der ERSTE Termin — die Folgetermine erben den zeitlichen Abstand zum Beginn, ihr Schluss wandert also mit in die Zukunft. Nachtragen vergangener Reihen bleibt erlaubt. Die Regel liegt jetzt gemeinsam in routes/events/validierung.js.\n\nBEHOBEN 28.09.2026 — ENDE (Audit Leitung BF-03): event_end_time vor event_date wird wie bei POST /api/events mit 400 (error_code ende_vor_beginn) abgewiesen, es entsteht keine Serie. Jeder Folgetermin erbt die DAUER des ersten (Ende minus Beginn in Millisekunden). Vorher wurde nur die Uhrzeit des Endes auf den Tag jedes Termins gesetzt: Ein erster Termin, der erst am Folgetag endet, ergab Serientermine, die vor ihrem Beginn endeten. Fuer Termine, die am selben Tag enden, bleibt das Ergebnis gleich.\n\nWIEDERHOLUNGSSCHUTZ (additiv seit 08.10.2026, Migration 201/203): optionales client_id (UUID) im Rumpf, EINE Kennung je Serie, gespeichert am ersten Termin (dem Anker, series_id = seine id) in events.client_id. Ein zweiter Eingang derselben client_id in derselben Gemeinde legt nichts an und antwortet 201 mit derselben Form (message, series_id, events_created = Zahl der Termine der Serie), auch bei gleichzeitigem Eingang. Keine UUID: 400; ohne client_id wie bisher.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -9593,6 +9593,11 @@
                       "month"
                     ],
                     "default": "week"
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Optional, additiv seit 08.10.2026: Wiederholungsschutz, eine Kennung fuer die ganze Serie. Siehe Beschreibung.\n"
                   }
                 },
                 "description": "Zusaetzlich alle Felder von POST /api/events"
@@ -9605,7 +9610,7 @@
             "description": "message, series_id, events_created"
           },
           "400": {
-            "description": "Serien-Limits/Validierung verletzt; seit 28.09.2026 auch: Ende vor dem Beginn (error_code ende_vor_beginn)"
+            "description": "Serien-Limits/Validierung verletzt; seit 28.09.2026 auch: Ende vor dem Beginn (error_code ende_vor_beginn); seit 08.10.2026 auch: client_id keine UUID"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -10828,7 +10833,7 @@
           "Konfis (Verwaltung)"
         ],
         "summary": "Neuen Konfi anlegen",
-        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername vorher durchprobiert wurde. Seit 28.09.2026 (Audit Fachlogik Punkte/Termine BF-13, behoben) laufen die Einschreibung in die Pflicht-Events und der Eintritt in deren Chats in derselben Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler nur im Log). Antwortform unveraendert. BENUTZERNAME: aus dem Namen erzeugt und systemweit frei (ohne Gross/klein), bei Kollision mit angehaengter Zahl (anna.muster2). Seit 30.09.2026 unter pg_advisory_xact_lock je Namen (backend/utils/benutzernameSperre.js, dieselbe Sperre wie bei allen anderen Anlagen): Eine gleichzeitige Anlage mit demselben Namen wartet bis zum COMMIT der ersten und nimmt dann den naechsten freien -- kein 409. Vorher entstanden in zwei Gemeinden zwei Konten \"anna.muster\".\n",
+        "description": "Legt User + konfi_profiles an, erzeugt Username und Startpasswort, hängt den Konfi an den Jahrgangs-Chat und bucht ihn in kuenftige Pflicht-Events des Jahrgangs ein. Das Konfi-Limit der Organisation wird geprüft. Seit 27.09.2026 (Audit Sicherheit BF-04) startet das neue Konto ohne Kontosperre, auch wenn der erzeugte Benutzername vorher durchprobiert wurde. Seit 28.09.2026 (Audit Fachlogik Punkte/Termine BF-13, behoben) laufen die Einschreibung in die Pflicht-Events und der Eintritt in deren Chats in derselben Transaktion wie das Anlegen: Scheitern sie, entsteht kein Konto und die Antwort ist 500 (vorher 201, Konto ohne Pflicht-Events, Fehler nur im Log). Antwortform unveraendert. BENUTZERNAME: aus dem Namen erzeugt und systemweit frei (ohne Gross/klein), bei Kollision mit angehaengter Zahl (anna.muster2). Seit 30.09.2026 unter pg_advisory_xact_lock je Namen (backend/utils/benutzernameSperre.js, dieselbe Sperre wie bei allen anderen Anlagen): Eine gleichzeitige Anlage mit demselben Namen wartet bis zum COMMIT der ersten und nimmt dann den naechsten freien -- kein 409. Vorher entstanden in zwei Gemeinden zwei Konten \"anna.muster\". WIEDERHOLUNGSSCHUTZ (additiv seit 08.10.2026, Migration 203): optionales client_id (UUID) im Rumpf, gespeichert am Konto. Ein zweiter Eingang derselben client_id in derselben Gemeinde legt kein zweites Konto an, sondern antwortet 201 in derselben Form mit demselben Konto (id, username) und einem NEUEN Einmalpasswort -- das der ersten Antwort ist danach ungueltig; gespeichert wird nur der Hash. Das gilt nur, solange sich das Konto noch nie angemeldet hat (last_login_at leer) und nicht geloescht ist; sonst 409 mit error_code bereits_angelegt (dann \"Passwort neu erzeugen\"). Gleiche Rechte wie beim Neu-Erzeugen des Passworts (Jahrgang der Konfi bearbeitbar, sonst 403). Die Wiederholung zaehlt nicht erneut gegen das Konfi-Limit. Keine UUID: 400. Ohne client_id (Store-Apps) wie bisher.\n",
         "x-berechtigung": {
           "rollen": [
             "org_admin",
@@ -10863,6 +10868,11 @@
                   "confirm": {
                     "type": "boolean",
                     "description": "Bestaetigung beim Ueberschreiten weicher Grenzen"
+                  },
+                  "client_id": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "Optional, additiv seit 08.10.2026 (Migration 203): Wiederholungsschutz, eine Kennung je Anlage-Fenster. Siehe Beschreibung. Ohne client_id (Store-Apps) wie bisher.\n"
                   }
                 }
               }
@@ -10871,10 +10881,10 @@
         },
         "responses": {
           "201": {
-            "description": "Angelegter Konfi inkl. Startpasswort: {id, username, temporaryPassword, message}; username ist der erzeugte, systemweit freie Name"
+            "description": "Angelegter Konfi inkl. Startpasswort: {id, username, temporaryPassword, message}; username ist der erzeugte, systemweit freie Name. Bei einer Wiederholung mit derselben client_id dieselbe Form mit demselben Konto und neuem Einmalpasswort."
           },
           "400": {
-            "description": "Validierung fehlgeschlagen"
+            "description": "Validierung fehlgeschlagen (auch client_id keine UUID)"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -10886,7 +10896,7 @@
             "description": "Jahrgang oder Rolle nicht gefunden"
           },
           "409": {
-            "description": "Konfi-Limit der Organisation erreicht"
+            "description": "Konfi-Limit der Organisation erreicht (error_code limit_grace); seit 08.10.2026 auch: Wiederholung mit derselben client_id, das Konto hat sich aber schon angemeldet -- {error, error_code: bereits_angelegt, id, username}, kein neues Passwort, kein zweites Konto"
           },
           "500": {
             "$ref": "#/components/responses/ServerError"

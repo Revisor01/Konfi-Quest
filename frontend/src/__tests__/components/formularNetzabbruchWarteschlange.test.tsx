@@ -197,6 +197,14 @@ describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id
     expect(event).toContain("api.post('/events', { ...payload, client_id: anlegeKennung.current })");
     expect(event).toContain("url: '/events', body: { ...payload, client_id: anlegeKennung.current }");
   });
+
+  it('Event-Serie anlegen: dieselbe Kennung des Fensters, EINE fuer die ganze Serie', () => {
+    const event = lies('admin/modals/EventModal.tsx');
+    expect(event).toContain("api.post('/events/series', { ...payload, client_id: anlegeKennung.current })");
+    expect(event).toContain("url: '/events/series', body: { ...payload, client_id: anlegeKennung.current }");
+    expect(event).toContain("clientId: anlegeKennung.current, label: 'Event-Serie erstellen'");
+    expect(event).not.toContain("clientId: safeUUID(), label: 'Event-Serie erstellen'");
+  });
 });
 
 // Leitungs-Formulare: Bearbeiten (PUT) faellt bei einem Abbruch in die

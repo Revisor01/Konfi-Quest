@@ -1,4 +1,4 @@
-import { fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
+import { endgueltigAbgelehnt, fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -325,14 +325,9 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Trotzdem anlegen',
-          handler: async () => {
-            try {
-              const response = await api.post('/admin/konfis', { ...konfiData, confirm: true });
-              await handleKonfiCreated(response, konfiData);
-            } catch (err) {
-              setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
-            }
-          }
+          // Derselbe Weg wie der erste Versuch -- mit derselben Kennung
+          // (client_id), damit auch hier "Erneut versuchen" greift.
+          handler: () => { handleAddKonfi({ ...konfiData, confirm: true }); }
         }
       ]
     });
@@ -360,9 +355,25 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
           message: `Das Konfi-Limit ist ausgeschöpft. Um weitere Konfis anzulegen, ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
           buttons: [{ text: 'Verstanden', role: 'cancel' }]
         });
+      } else if (errorCode === 'bereits_angelegt') {
+        // Wiederholung, aber das Konto hat sich schon angemeldet: kein neues
+        // Passwort, kein zweites Konto. Der Server sagt, wo es weitergeht.
+        setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
       } else if (fehlerStatus(err) === 409) {
         // Username-Kollision (unverändert)
         setError('Ein Konfi mit diesem Namen existiert bereits.');
+      } else if (konfiData.client_id && !endgueltigAbgelehnt(fehlerStatus(err))) {
+        // Keine Antwort, Zeitlimit oder Serverfehler: Ob das Konto steht, ist
+        // offen. Ein zweiter Versuch mit derselben Kennung legt kein zweites
+        // an, sondern liefert dasselbe Konto mit neuem Einmalpasswort.
+        presentAlert({
+          header: 'Keine Antwort vom Server',
+          message: `Ob "${konfiData.name}" angelegt wurde, ist unklar. Ein neuer Versuch legt kein zweites Konto an.`,
+          buttons: [
+            { text: 'Abbrechen', role: 'cancel' },
+            { text: 'Erneut versuchen', handler: () => { handleAddKonfi(konfiData); } }
+          ]
+        });
       } else {
         setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
       }

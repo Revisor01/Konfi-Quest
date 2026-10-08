@@ -9,14 +9,13 @@
 // Constraint haengt oder der die Eindeutigkeit traegt, sonst der aus der
 // Migrationskette benannte.
 //
+// Seit 08.10.2026 steht 175 im Schema-Dump (tests/schema/prod-schema.sql),
+// die Datei ist aus backend/migrations/ entfernt; der Test der Migration auf
+// dem Stand davor liegt in der Git-Historie. Geprueft wird hier, dass der
+// Dump ohne die acht Zwillinge und mit ihren Gegenstuecken kommt.
+//
 // Der Waechter unten findet JEDEN exakten Doppelgaenger, auch kuenftige.
-const {
-  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
-} = require('../helpers/schemaAufbau');
 const { getTestPool, closePool } = require('../helpers/db');
-
-const MIGRATION = '175_doppelte_indizes.sql';
-const DB = 'konfi_test_mig175';
 
 // Paare mit gleicher Tabelle, Spalten, Ausdruecken, Praedikat, Operator-
 // klassen, Sortierfolge und Methode.
@@ -69,56 +68,26 @@ const vorhanden = async (db, namen) => {
   return rows.map((r) => r.indexname);
 };
 
-describe('Migration 175 auf dem Stand, auf den sie beim Deploy trifft', () => {
-  let pool;
+describe('Kein exakt doppelter Index im Test-Schema (Deploy-Weg)', () => {
+  let db;
+  beforeAll(() => { db = getTestPool(); });
+  afterAll(async () => { await closePool(); });
 
-  beforeAll(async () => {
-    pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: MIGRATION });
-  }, 180000);
-
-  afterAll(async () => {
-    await dbWegraeumen(pool, DB);
-  }, 120000);
-
-  it('Ausgangslage: acht exakte Doppelgaenger', async () => {
-    const { rows } = await pool.query(DOPPELTE_SQL);
-    expect(rows).toHaveLength(8);
-    expect(await vorhanden(pool, WEG)).toEqual([...WEG].sort());
-  });
-
-  it('danach keiner mehr -- und die Gegenstuecke stehen noch', async () => {
-    await pool.query(migrationLesen(MIGRATION));
-    const { rows } = await pool.query(DOPPELTE_SQL);
-    expect(rows).toEqual([]);
-    expect(await vorhanden(pool, WEG)).toEqual([]);
-    expect(await vorhanden(pool, BLEIBT)).toEqual([...BLEIBT].sort());
-  });
-
-  it('die Eindeutigkeit bleibt, wo sie war (verbotener Fall)', async () => {
-    const { rows } = await pool.query(
+  it('die acht Zwillinge fehlen, ihre Gegenstuecke stehen -- eindeutig, wo sie es waren', async () => {
+    expect(await vorhanden(db, WEG)).toEqual([]);
+    expect(await vorhanden(db, BLEIBT)).toEqual([...BLEIBT].sort());
+    const { rows } = await db.query(
       `SELECT c.relname AS name, i.indisunique AS eindeutig FROM pg_index i
        JOIN pg_class c ON c.oid = i.indexrelid WHERE c.relname = ANY($1) ORDER BY 1`,
       [['idx_25067_sqlite_autoindex_password_resets_1', 'idx_25109_sqlite_autoindex_konfi_profiles_1',
         'uq_activity_categories_activity_category']]
     );
-    expect(rows.every((r) => r.eindeutig)).toBe(true);
-    expect(rows).toHaveLength(3);
-    await expect(pool.query(
-      `INSERT INTO daily_verses (date, translation, verse_data) VALUES (CURRENT_DATE, 'X', '{}'),
-                                                                       (CURRENT_DATE, 'X', '{}')`
-    )).rejects.toThrow(/duplicate key value violates unique constraint "daily_verses_date_translation_key"/);
+    expect(rows).toEqual([
+      { name: 'idx_25067_sqlite_autoindex_password_resets_1', eindeutig: true },
+      { name: 'idx_25109_sqlite_autoindex_konfi_profiles_1', eindeutig: true },
+      { name: 'uq_activity_categories_activity_category', eindeutig: true },
+    ]);
   });
-
-  it('ein zweiter Lauf scheitert nicht', async () => {
-    await expect(pool.query(migrationLesen(MIGRATION))).resolves.toBeDefined();
-  });
-});
-
-describe('Kein exakt doppelter Index im Test-Schema (Deploy-Weg)', () => {
-  let db;
-  beforeAll(() => { db = getTestPool(); });
-  afterAll(async () => { await closePool(); });
 
   it('keine zwei Indizes mit derselben Definition auf derselben Tabelle', async () => {
     // Kommt kuenftig ein Index doppelt dazu, nennt der Fehler das Paar.

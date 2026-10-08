@@ -82,9 +82,10 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
   const [teamerAccess, setTeamerAccess] = useState<'normal' | 'teamer_needed' | 'teamer_only'>('normal');
   const initializedRef = useRef(false);
   const zeitgeber = useZeitgeber();
-  // Wiederholungsschutz beim Anlegen eines einzelnen Events (08.10.2026): eine
-  // Kennung je offenem Fenster. Erreicht die Warteschlange den Server zweimal
-  // mit derselben, legt er das Event nur einmal an.
+  // Wiederholungsschutz beim Anlegen eines Events oder einer Serie
+  // (08.10.2026): eine Kennung je offenem Fenster. Erreicht die Warteschlange
+  // den Server zweimal mit derselben, legt er das Event bzw. die ganze Serie
+  // nur einmal an (die Serie traegt EINE Kennung, nicht eine je Termin).
   const anlegeKennung = useRef(safeUUID());
 
   useEffect(() => {
@@ -289,7 +290,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
           await api.put(`/events/${event.id}`, updatePayload);
         } else {
           if (formData.is_series) {
-            await api.post('/events/series', payload);
+            await api.post('/events/series', { ...payload, client_id: anlegeKennung.current });
             // Anonyme Messung NACH der erfolgreichen Antwort. Nur Form und
             // Zielgruppe — kein Titel, kein Datum, kein Jahrgang, keine
             // Teilnehmerzahl und auch nicht die Laenge der Serie.
@@ -315,7 +316,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
           await writeQueue.enqueue({ method: 'PUT', url: `/events/${event.id}`, body: updatePayload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event bearbeiten' } });
           setSuccess('Event wird aktualisiert sobald du wieder online bist');
         } else if (formData.is_series) {
-          await writeQueue.enqueue({ method: 'POST', url: '/events/series', body: payload, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: safeUUID(), label: 'Event-Serie erstellen' } });
+          await writeQueue.enqueue({ method: 'POST', url: '/events/series', body: { ...payload, client_id: anlegeKennung.current }, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: anlegeKennung.current, label: 'Event-Serie erstellen' } });
           setSuccess('Event-Serie wird erstellt sobald du wieder online bist');
         } else {
           await writeQueue.enqueue({ method: 'POST', url: '/events', body: { ...payload, client_id: anlegeKennung.current }, maxRetries: 5, hasFileUpload: false, metadata: { type: 'admin', clientId: anlegeKennung.current, label: 'Event erstellen' } });

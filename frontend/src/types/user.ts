@@ -95,6 +95,12 @@ export interface KonfiFormDaten {
   jahrgang_id: number;
   /** Nur beim zweiten Anlauf nach der Limit-Rueckfrage ("Trotzdem anlegen"). */
   confirm?: boolean;
+  /**
+   * Wiederholungsschutz: eine Kennung je geoeffnetem Anlage-Fenster. Ein
+   * zweiter Versuch mit derselben Kennung legt kein zweites Konto an, sondern
+   * gibt dasselbe mit neuem Einmalpasswort zurueck. Nur beim Anlegen.
+   */
+  client_id?: string;
 }
 
 /** Antwort von POST /admin/konfis. */
