@@ -311,4 +311,45 @@ describe('Chat: Push-Fan-out an viele Teilnehmende', () => {
     expect(pushes[0].data.type).toBe('chat');
     expect(pushes[0].data.messageId).toBe(String(res.body.message_id));
   });
+  // Push-Sperre je Gemeinde (Migration 196, 08.10.2026): Wer in der Gemeinde
+  // des Raums gesperrt ist, bekommt aus diesem Raum keinen Push -- auch wenn
+  // das Konto in einer anderen Gemeinde frei ist. teamer2 ist zuhause in
+  // Gemeinde 2 und betreut Gemeinde 1 ueber user_organizations.
+  // Gegenprobe: Ohne den Filter auf gesperrtInGemeinde in
+  // sendChatNotificationToMany faellt F8 (tok-teamer2 kommt an).
+  describe('Sperre in der Gemeinde des Raums', () => {
+    const T2 = 'tok-teamer2';
+    const mitgliedInOrg1 = async (aktiv) => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, $4)',
+        [USERS.teamer2.id, ORGS.testGemeinde.id, ROLES.teamer.id, aktiv]);
+      await db.query(
+        "INSERT INTO chat_participants (room_id, user_id, user_type) VALUES ($1, $2, 'teamer')",
+        [CHAT_ROOMS.jahrgang.id, USERS.teamer2.id]);
+      await db.query(
+        'INSERT INTO push_tokens (user_id, token, platform, device_id) VALUES ($1, $2, $3, $4)',
+        [USERS.teamer2.id, T2, 'ios', 'dev-' + T2]);
+    };
+
+    it('F8 verboten: in der Gemeinde des Raums gesperrt -> kein Push, die anderen bekommen ihn', async () => {
+      await mitgliedInOrg1(false);
+
+      await nachrichtSenden();
+
+      const tokens = gesendete().map((p) => p.token);
+      expect(tokens).not.toContain(T2);
+      expect(tokens).toContain('tok-konfi2');
+      expect(tokens).toHaveLength(TEILNEHMENDE - 4 - OHNE_GERAET + 3);
+    });
+
+    it('F9 erlaubt: in der Gemeinde des Raums nicht gesperrt -> Push', async () => {
+      await mitgliedInOrg1(true);
+
+      await nachrichtSenden();
+
+      const tokens = gesendete().map((p) => p.token);
+      expect(tokens.filter((t) => t === T2)).toHaveLength(1);
+      expect(tokens).toHaveLength(TEILNEHMENDE - 4 - OHNE_GERAET + 4);
+    });
+  });
 });

@@ -147,6 +147,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   als Auftrag in einer dauerhaften Warteschlange (Migration 202) und
   überleben einen Neustart (`feat/nachantwort-warteschlange`;
   [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)).
+- [x] 08.10.2026 — Reste der Mehrfach-Konten: Feed-Push an Konfis über beide
+  Quellen der Zugehörigkeit, Gegenprobe zur Push-Sperre im Chat-Versand,
+  beim Entfernen eines Konfi-Mischkontos gehen die Konfi-Daten dieser
+  Gemeinde mit, Chat-Export mit der Rolle in der Gemeinde des Raums; die
+  Leitung trägt Team aus einer anderen Stamm-Gemeinde wieder vom Termin aus
+  (`fix/mehrfach-konten-reste`).
 
 ## Offen
 
@@ -170,22 +176,38 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   zusammengelegt). Fix: eine Stelle je Funktion, Antwortformen unverändert.
   Seit 01.09.2026 bekannt (interne Aufgabenliste), am 08.10.2026 am Code
   bestätigt.
-- **Kleine Reste der Mehrfach-Konten.** Beim Abschluss am 08.10.2026
-  liegen geblieben, alle ohne sichtbaren Schaden heute:
-  - `sendChallengeFeedToJahrgaenge` (`backend/services/pushService.js`)
-    sucht die Empfänger noch über `u.organization_id` statt über beide
-    Quellen (`backend/utils/orgMitglieder.js`). Es trifft nur Konfis und ist
-    deshalb harmlos.
-  - Die Push-Sperre im Chat-Versand (wer in der Gemeinde des Raums gesperrt
-    ist, bekommt keinen Push) hat im Test keine eigene Gegenprobe.
-  - Löscht die Leitung ein Konfi-Mischkonto aus dem Altbestand (Konfi in
-    ihrer Gemeinde, zuhause anderswo), endet nur die Mitgliedschaft;
-    Aktivitäten und Bonuspunkte bleiben in der Gemeinde liegen. In
-    Produktion betrifft das ein Konto (gezählt 01.10.2026).
-  - Der Chat-Export (`GET /chat/rooms/:roomId/export`,
-    `backend/routes/chat.js`) liest die Rolle noch über `users.role_id`,
-    also aus der Stamm-Gemeinde (beim Prüfen am 08.10.2026 gesehen; die
-    Nachrichtenliste ist umgestellt).
+- **Stamm-Rolle an weiteren Stellen (Mehrfach-Konten).** Beim Abarbeiten der
+  Reste am 08.10.2026 per Suche nach `u.role_id`/`u.organization_id`
+  gefunden und am Code bestätigt; alle betreffen Team-Konten, die nur über
+  `user_organizations` zur Gemeinde gehören:
+  - Schutz „letzte Gemeindeleitung": `DELETE /users/:id`
+    (`backend/routes/users.js`) und die Selbstlöschung
+    (`POST /auth/delete-account`, `backend/routes/auth.js`) zählen nur
+    Gemeindeleitungen mit Stamm-Gemeinde hier. Folge: unnötiges 409, und wer
+    nur über `user_organizations` einzige Gemeindeleitung ist, kann sein
+    Konto löschen und die Gemeinde ohne Leitung lassen. Der Test in
+    `users.test.js` hält das Zählen „wie bisher" ausdrücklich fest —
+    **Entscheidung bei Simon**.
+  - Live-Updates an eine Person (`sendToUserByRole`,
+    `backend/utils/liveUpdate.js`) wählen den Socket-Raum nach der Rolle am
+    Konto; wer zuhause Teamer:in und hier Leitung ist (oder umgekehrt),
+    bekommt sie in der weiteren Gemeinde nicht.
+  - Jahrgang mit Zuweisungen anlegen (`POST /jahrgaenge`): Team aus einer
+    anderen Stamm-Gemeinde ergibt 404.
+  - Einmalpasswort (`POST /admin/konfis/:id/regenerate-password`) und
+    `PUT /users/:id/reset-password` finden Team aus einer anderen
+    Stamm-Gemeinde nicht (404/403). Ob eine weitere Gemeinde das
+    kontoweite Passwort setzen darf, ist **Entscheidung bei Simon**.
+  - Teamer-Rückblick (`backend/routes/wrapped.js`): „Dein Team" zählt nur
+    Teamer:innen mit Stamm-Gemeinde hier, `/team-jahre` nimmt die Rolle am
+    Konto.
+  - Teilnehmende eines Termins in der Konfi-Sicht (`backend/routes/konfi.js`)
+    filtern Teamer:innen nach der Rolle am Konto.
+  - Der Hintergrundlauf für App-Symbol-Zahl und Abzeichen
+    (`backend/services/backgroundService.js`) lässt aus, wessen
+    Stamm-Gemeinde gesperrt ist, auch wenn die weitere aktiv ist.
+  - Der Schutz der Gemeindeleitung im Jahrgangs-Chat
+    (`backend/utils/jahrgangChat.js`) beachtet die Sperre je Gemeinde nicht.
 - **Anlegen ohne Wiederholungsschutz (Rest).** Bonuspunkte und einzelne
   Events tragen seit 08.10.2026 eine `client_id` (Migration 201). Offen sind
   Event-Serien und die Konfi-Anlage; die Konfi-Anlage geht nur online, weil

@@ -377,6 +377,96 @@ async function kontenDatenLoeschen(client, userIds) {
   };
 }
 
+/**
+ * Konfi-Daten EINER Gemeinde: Spalte auf die Person -> wie die Zeile zur
+ * Gemeinde findet. Fuer das Ende einer Konfi-Mitgliedschaft, bei der das
+ * Konto bleibt (konfiDatenEinerGemeindeLoeschen).
+ *
+ * Bei den meisten Tabellen steht die Gemeinde in der Zeile
+ * (organization_id); Lesestaende und Erinnerungen finden sie ueber die
+ * Challenge bzw. den Termin.
+ */
+const GEMEINDE_DATEN_KONFI = Object.freeze({
+  'activity_requests.user_id': 'organization_id',
+  'bewahrte_stempel.user_id': 'organization_id',
+  'bonus_points.konfi_id': 'organization_id',
+  'challenge_read_status.user_id': { ueber: 'challenges', spalte: 'challenge_id' },
+  'challenge_submissions.user_id': 'organization_id',
+  'event_points.konfi_id': 'organization_id',
+  'event_reminders.user_id': { ueber: 'events', spalte: 'event_id' },
+  'event_unregistrations.user_id': 'organization_id',
+  'konfi_historie.user_id': 'organization_id',
+  'org_einladungen.user_id': 'organization_id',
+  'user_activities.user_id': 'organization_id',
+  'user_badges.user_id': 'organization_id',
+  'user_certificates.user_id': 'organization_id',
+  'wrapped_snapshots.user_id': 'organization_id',
+});
+
+/**
+ * Spalten mit Gemeinde, die beim Ende einer Mitgliedschaft ANDERSWO
+ * geraeumt werden: Buchungen mit Nachruecken (routes/konfi-management.js),
+ * Konfi-Profil (ebenda, ueber den Jahrgang), Postfach, Jahrgaenge und
+ * Chat-Plaetze (utils/mitgliedschaftEnde.js), die Mitgliedschaft selbst.
+ * Der Waechter (tests/routes/konfiMischkontoGemeindeDaten.test.js) prueft,
+ * dass jede Loesch-Spalte mit Gemeinde in einer der beiden Listen steht.
+ */
+const GEMEINDE_DATEN_ANDERSWO = Object.freeze([
+  'event_bookings.user_id',
+  'konfi_profiles.user_id',
+  'notifications.user_id',
+  'user_organizations.user_id',
+]);
+
+/**
+ * KONFI-MISCHKONTO VERLAESST EINE GEMEINDE (08.10.2026, Rest der
+ * Mehrfach-Konten): Die Leitung loescht ein Konfi-Konto, das noch zu einer
+ * weiteren Gemeinde gehoert (Altbestand, Simons Entscheidung 8). Das Konto
+ * bleibt; was die Konfi IN DIESER GEMEINDE hinterlassen hat, geht nach
+ * derselben Regel wie beim Kontoloeschen (Aktivitaeten, Bonuspunkte,
+ * Antraege samt Foto, Beitraege samt Datei, Abzeichen, Rueckblicke ...).
+ * Bis hierher blieb das alles in der Gemeinde liegen, ohne dass es dort noch
+ * eine Konfi dazu gab. Daten anderer Gemeinden bleiben unberuehrt.
+ *
+ * Dazu gehen die Leitungs-Mitteilungen dieser Gemeinde zu ihren Antraegen
+ * und ueber sie. Dateien werden nur eingesammelt -- loeschen nach dem COMMIT
+ * (kontoDateienLoeschen). In der Transaktion des Aufrufers laufen lassen.
+ *
+ * @param {import('pg').PoolClient} client  in einer Transaktion
+ * @param {number|string} userId
+ * @param {number|string} organizationId  die Gemeinde, die die Person verlaesst
+ * @returns {Promise<{dateien: {antragsfotos: string[], challenge: string[], chat: string[]}}>}
+ */
+async function konfiDatenEinerGemeindeLoeschen(client, userId, organizationId) {
+  const params = [userId, organizationId];
+  const { rows: antraege } = await client.query(
+    'SELECT id, photo_filename FROM activity_requests WHERE user_id = $1 AND organization_id = $2', params);
+  const { rows: beitraege } = await client.query(
+    `SELECT file_path FROM challenge_submissions
+      WHERE user_id = $1 AND organization_id = $2 AND file_path IS NOT NULL`, params);
+
+  await loescheMitteilungenZuAntraegen(client, antraege.map((a) => a.id));
+  await loescheMitteilungenUeberPerson(client, userId, { organizationId });
+
+  for (const [spalte, gemeinde] of Object.entries(GEMEINDE_DATEN_KONFI)) {
+    const [tabelle, feld] = spalte.split('.');
+    if (typeof gemeinde === 'string') {
+      await client.query(`DELETE FROM ${tabelle} WHERE ${feld} = $1 AND ${gemeinde} = $2`, params);
+    } else {
+      await client.query(
+        `DELETE FROM ${tabelle} t USING ${gemeinde.ueber} g
+          WHERE t.${gemeinde.spalte} = g.id AND t.${feld} = $1 AND g.organization_id = $2`, params);
+    }
+  }
+  return {
+    dateien: {
+      antragsfotos: antraege.map((a) => a.photo_filename).filter(Boolean),
+      challenge: beitraege.map((b) => b.file_path),
+      chat: [],
+    },
+  };
+}
+
 const VERZEICHNISSE = Object.freeze({
   antragsfotos: REQUESTS_DIR,
   challenge: CHALLENGES_DIR,
@@ -501,6 +591,9 @@ async function meldeNachKontoLoeschungEinreihen(db, ergebnis, { req = null, beze
 
 module.exports = {
   LOESCHREGELN,
+  GEMEINDE_DATEN_KONFI,
+  GEMEINDE_DATEN_ANDERSWO,
+  konfiDatenEinerGemeindeLoeschen,
   fremdschluesselAufUsers,
   pruefeLoeschregeln,
   kontoDatenLoeschen,

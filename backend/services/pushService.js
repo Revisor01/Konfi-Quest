@@ -2457,19 +2457,22 @@ class PushService {
   static async sendChallengeFeedToJahrgaenge(db, organizationId, challengeId, challengeTitle, submissionUserId, konfiName, medienArt) {
     try {
       // Empfaenger: Konfis der Jahrgaenge dieser Challenge, ohne die
-      // einreichende Person (die weiss es).
+      // einreichende Person (die weiss es). Konfi IN DIESER GEMEINDE ueber
+      // beide Quellen der Zugehoerigkeit (08.10.2026): Hier stand
+      // `u.organization_id = $1` mit der Rolle am Konto -- eine Konfi, die
+      // nur ueber user_organizations zur Gemeinde gehoert (Altbestand),
+      // sah den Beitrag im Feed, bekam aber keine Mitteilung.
+      // ladeMitgliederDerOrganisation laesst auch aus, wer hier gesperrt ist.
+      const konfisDerGemeinde = await ladeMitgliederDerOrganisation(db, organizationId, ['konfi']);
+      if (konfisDerGemeinde.length === 0) return;
       const { rows: konfis } = await db.query(
-        `SELECT DISTINCT u.id
-         FROM users u
-         JOIN roles r ON u.role_id = r.id
-         JOIN konfi_profiles kp ON kp.user_id = u.id
+        `SELECT DISTINCT kp.user_id AS id
+         FROM konfi_profiles kp
          JOIN challenge_jahrgang_assignments cja ON cja.jahrgang_id = kp.jahrgang_id
-         WHERE r.name = 'konfi'
-           AND u.organization_id = $1
-           AND u.deleted_at IS NULL
+         WHERE kp.user_id = ANY($1::bigint[])
            AND cja.challenge_id = $2
-           AND u.id <> $3`,
-        [organizationId, challengeId, submissionUserId]
+           AND kp.user_id <> $3`,
+        [konfisDerGemeinde, challengeId, submissionUserId]
       );
       if (konfis.length === 0) return;
 

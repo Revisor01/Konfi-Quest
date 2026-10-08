@@ -6,7 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
-const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen, konfiDatenEinerGemeindeLoeschen } = require('../utils/kontoLoeschen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
@@ -613,8 +613,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     // Gemeinde (gemessen 01.10.2026: eines). Mit der Mitgliedschaft gehen
     // Jahrgaenge, Chat-Plaetze und Postfach dieser Gemeinde
     // (utils/mitgliedschaftEnde.js), dazu die Buchungen fuer Termine dieser
-    // Gemeinde (mit Nachruecken) und das Konfi-Profil, wenn sein Jahrgang
-    // hierher gehoert. Die Antwort traegt dann konto_bleibt: true (additiv).
+    // Gemeinde (mit Nachruecken), das Konfi-Profil, wenn sein Jahrgang
+    // hierher gehoert, und alle uebrigen Konfi-Daten dieser Gemeinde samt
+    // Dateien (konfiDatenEinerGemeindeLoeschen, seit 08.10.2026). Die Antwort
+    // traegt dann konto_bleibt: true (additiv).
     // Die Selbstloeschung (POST /auth/delete-account) entfernt weiter alles.
     router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
@@ -692,6 +694,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                       WHERE kp.jahrgang_id = j.id AND kp.user_id = $1 AND j.organization_id = $2`,
                     [userId, organizationId]
                 );
+                // Was sie als Konfi IN DIESER GEMEINDE hinterlassen hat --
+                // Aktivitaeten, Bonuspunkte, Antraege, Beitraege, Abzeichen
+                // usw. (08.10.2026; blieb bis hierher liegen). Die Dateien
+                // gehen nach dem COMMIT.
+                ergebnis = await konfiDatenEinerGemeindeLoeschen(client, userId, organizationId);
             } else {
                 // Gemeinsame Loeschfunktion fuer alle Kontoloeschwege. Sie raeumt
                 // auch die Wartelisten nach: Jede bestaetigte Buchung der
@@ -710,6 +717,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
 
         if (kontoBleibt) {
+            await kontoDateienLoeschen(ergebnis?.dateien);
             res.json({
                 message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen',
                 konto_bleibt: true

@@ -239,18 +239,25 @@ const ARTEN_UEBER_PERSON = [
  * @param {{query: Function}} db  Pool oder Client
  * @param {number|string|Array<number|string>} userId  die Person, deren Konto
  *   geht -- oder mehrere (Loeschen einer ganzen Gemeinde, 29.09.2026)
+ * @param {object} [opt]
+ * @param {number|string|null} [opt.organizationId]  nur die Mitteilungen
+ *   DIESER Gemeinde (eine Konfi verlaesst eine von mehreren Gemeinden,
+ *   utils/kontoLoeschen.js konfiDatenEinerGemeindeLoeschen, 08.10.2026)
  * @returns {Promise<number>} Anzahl entfernter Mitteilungen
  */
-async function loescheMitteilungenUeberPerson(db, userId) {
+async function loescheMitteilungenUeberPerson(db, userId, { organizationId = null } = {}) {
   const ids = (Array.isArray(userId) ? userId : [userId])
     .filter((id) => id !== null && id !== undefined && String(id) !== '')
     .map(String);
   if (ids.length === 0) return 0;
+  const params = [ARTEN_UEBER_PERSON, ids];
+  if (organizationId !== null && organizationId !== undefined) params.push(organizationId);
   const { rowCount } = await db.query(
     `DELETE FROM notifications
       WHERE type = ANY($1::text[])
-        AND (data->>'konfi_id' = ANY($2::text[]) OR data->>'user_id' = ANY($2::text[]))`,
-    [ARTEN_UEBER_PERSON, ids]
+        AND (data->>'konfi_id' = ANY($2::text[]) OR data->>'user_id' = ANY($2::text[]))${params.length === 3 ? `
+        AND organization_id = $3` : ''}`,
+    params
   );
   return rowCount;
 }

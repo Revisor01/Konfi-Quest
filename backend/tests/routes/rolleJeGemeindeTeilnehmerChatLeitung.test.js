@@ -91,6 +91,33 @@ describe('Rolle je Gemeinde in Teilnehmerliste, Chat-Nachrichten und Gemeindelei
       const p = res.body.participants.find((x) => Number(x.user_id) === USERS.orgAdmin1.id);
       expect(p.role_name).toBe('org_admin');
     });
+
+    // DELETE /events/:id/bookings/:bookingId verglich die Stamm-Gemeinde der
+    // gebuchten Person mit der aktiven Gemeinde (08.10.2026, beim Pruefen der
+    // Reste gefunden): Wer nur ueber user_organizations hier mitarbeitet,
+    // liess sich von der Leitung nicht vom Termin nehmen (403). Massgeblich
+    // ist die Gemeinde des Termins.
+    // Gegenprobe: Mit dem alten Vergleich faellt der erlaubte Fall (403).
+    const buchungVon = async (userId, eventId) => (await db.query(
+      'SELECT id FROM event_bookings WHERE user_id = $1 AND event_id = $2', [userId, eventId])).rows[0];
+
+    it('erlaubt: die Leitung nimmt eine Person aus einer anderen Stamm-Gemeinde vom Termin', async () => {
+      const b = await buchungVon(USERS.teamer1.id, EVENTS.event2.id);
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.event2.id}/bookings/${b.id}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin2')}`);
+      expect(res.status).toBe(200);
+      expect(await buchungVon(USERS.teamer1.id, EVENTS.event2.id)).toBeUndefined();
+    });
+
+    it('verboten: die Leitung einer anderen Gemeinde -> 403, Buchung bleibt', async () => {
+      const b = await buchungVon(USERS.teamer1.id, EVENTS.event2.id);
+      const res = await request(app)
+        .delete(`/api/events/${EVENTS.event2.id}/bookings/${b.id}`)
+        .set('Authorization', `Bearer ${generateToken('admin1')}`);
+      expect(res.status).toBe(403);
+      expect(Number((await buchungVon(USERS.teamer1.id, EVENTS.event2.id)).id)).toBe(Number(b.id));
+    });
   });
 
   describe('GET /api/chat/rooms/:roomId/messages: Rolle hinter dem Namen', () => {
@@ -138,6 +165,34 @@ describe('Rolle je Gemeinde in Teilnehmerliste, Chat-Nachrichten und Gemeindelei
       const liste = await nachrichten(generateToken('admin1'), raumA.id);
       const von = liste.find((m) => Number(m.sender_id) === USERS.orgAdmin1.id);
       expect(von.sender_role_name).toBe('org_admin');
+    });
+
+    // Der Chat-Export las die Rolle noch ueber users.role_id (08.10.2026,
+    // Rest der Mehrfach-Konten): Im Export der Gemeinde B stand die
+    // Gemeindeleitung von A als "Org-Admin" statt als Teamer:in. Jetzt
+    // dieselbe Regel wie die Nachrichtenliste darueber.
+    // Gegenprobe: Mit `LEFT JOIN roles ro ON u.role_id = ro.id` faellt der
+    // erste Export-Test ('org_admin' statt 'teamer').
+    const exportiere = async (token, roomId) => {
+      const res = await request(app)
+        .get(`/api/chat/rooms/${roomId}/export?format=json`)
+        .set('Authorization', `Bearer ${token}`);
+      expect(res.status).toBe(200);
+      return JSON.parse(res.text).nachrichten;
+    };
+
+    it('Export, weitere Gemeinde: die Rolle dort (teamer statt org_admin)', async () => {
+      const liste = await exportiere(generateToken('admin2'), raumB.id);
+      const von = liste.filter((m) => m.absender === USERS.orgAdmin1.display_name);
+      expect(von.map((m) => [m.rolle_name, m.rolle])).toEqual([['teamer', ROLES.teamer2.display_name]]);
+      const vonAdmin2 = liste.filter((m) => m.absender === USERS.admin2.display_name);
+      expect(vonAdmin2.map((m) => m.rolle_name)).toEqual(['admin']);
+    });
+
+    it('Export, Stamm-Gemeinde: die Rolle am Konto', async () => {
+      const liste = await exportiere(generateToken('admin1'), raumA.id);
+      const von = liste.filter((m) => m.absender === USERS.orgAdmin1.display_name);
+      expect(von.map((m) => m.rolle_name)).toEqual(['org_admin']);
     });
   });
 

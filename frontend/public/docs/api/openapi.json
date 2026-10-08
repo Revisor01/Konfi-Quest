@@ -9477,7 +9477,7 @@
             "requireAdmin"
           ],
           "org-scope": true,
-          "objekt-pruefung": "User-Org UND Event-Org müssen der eigenen Org entsprechen (403 sonst)",
+          "objekt-pruefung": "Event-Org muss der eigenen (aktiven) Org entsprechen (403 sonst). BEHOBEN 08.10.2026: zusaetzlich musste die Stamm-Gemeinde der gebuchten Person (users.organization_id) die eigene sein -- wer nur ueber user_organizations hier mitarbeitet, liess sich nicht austragen (403).",
           "jahrgangs-bindung": "Seit 14.09.2026: darfTermin (can_view-Stufe) — ein Termin aus einem fremden Jahrgang wird mit 403 \"Kein Zugriff auf dieses Event\" abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und super_admin sind ausgenommen.\n",
           "hinweis": "Punkte-Entzugs-Weg m) der Analyse. BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — eine fremde Buchung liess sich samt Punkteentzug loeschen, ohne den Termin sehen zu koennen.\n"
         },
@@ -11102,7 +11102,7 @@
         ],
         "responses": {
           "200": {
-            "description": "{ message: 'Konfi erfolgreich gelöscht' } -- Konto und alles der Person geloescht, Dateien nach dem COMMIT entfernt (seit 28.09.2026 utils/kontoLoeschen.js); Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter). SEIT 08.10.2026 (Simon, Entscheidung 8): Gehoert das Konto noch einer weiteren Gemeinde an (Altbestand, Konfi und Team gibt es nicht zugleich), endet NUR die Mitgliedschaft in dieser Gemeinde -- Antwort { message, konto_bleibt: true } (additiv, wie DELETE /users/{id}); mit ihr gehen Jahrgaenge, Chat-Plaetze und Postfach dieser Gemeinde, die Buchungen fuer ihre Termine (Warteliste rueckt nach) und das Konfi-Profil eines Jahrgangs dieser Gemeinde. Ist die Gemeinde die Stamm-Gemeinde, zieht das Konto in die weitere um. Gesucht wird die Konfi ueber beide Quellen der Zugehoerigkeit mit der Rolle DIESER Gemeinde. Die Selbstloeschung (POST /auth/delete-account) entfernt weiterhin alles"
+            "description": "{ message: 'Konfi erfolgreich gelöscht' } -- Konto und alles der Person geloescht, Dateien nach dem COMMIT entfernt (seit 28.09.2026 utils/kontoLoeschen.js); Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter). SEIT 08.10.2026 (Simon, Entscheidung 8): Gehoert das Konto noch einer weiteren Gemeinde an (Altbestand, Konfi und Team gibt es nicht zugleich), endet NUR die Mitgliedschaft in dieser Gemeinde -- Antwort { message, konto_bleibt: true } (additiv, wie DELETE /users/{id}); mit ihr gehen Jahrgaenge, Chat-Plaetze und Postfach dieser Gemeinde, die Buchungen fuer ihre Termine (Warteliste rueckt nach), das Konfi-Profil eines Jahrgangs dieser Gemeinde und (seit 08.10.2026, behoben: blieb bis dahin liegen) alle uebrigen Konfi-Daten dieser Gemeinde -- Aktivitaeten, Bonus- und Eventpunkte, Antraege samt Foto, Challenge-Beitraege samt Datei, Abzeichen, Lesestaende, Erinnerungen, Abmeldungen, Zertifikate, Rueckblicke, Einladungen und die Leitungs-Mitteilungen ueber sie (utils/kontoLoeschen.js konfiDatenEinerGemeindeLoeschen); Daten anderer Gemeinden bleiben. Ist die Gemeinde die Stamm-Gemeinde, zieht das Konto in die weitere um. Gesucht wird die Konfi ueber beide Quellen der Zugehoerigkeit mit der Rolle DIESER Gemeinde. Die Selbstloeschung (POST /auth/delete-account) entfernt weiterhin alles"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -12483,7 +12483,7 @@
           "Chat"
         ],
         "summary": "Kompletten Chat-Verlauf exportieren (nur Leitung)",
-        "description": "Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch eingeschlossen) — nicht teamer, nicht konfi. Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die bekannten Rollen nach role_name: \"Leitung\" (admin), \"Gemeindeleitung\" (org_admin, bis 29.09.2026 \"Org-Leitung\"), \"Teamer:in\"; sonst roles.display_name (seit 28.09.2026, vorher immer display_name, in bestehenden Gemeinden also \"Hauptamt\"). Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.\n",
+        "description": "Gesamter Verlauf als Text (default) oder JSON, geloeschte Nachrichten als Platzhalter. Bewusst NUR admin/org_admin (super_admin technisch eingeschlossen) — nicht teamer, nicht konfi. Im Text steht hinter jedem Namen die Rolle in Klammern, fuer die bekannten Rollen nach role_name: \"Leitung\" (admin), \"Gemeindeleitung\" (org_admin, bis 29.09.2026 \"Org-Leitung\"), \"Teamer:in\"; sonst roles.display_name (seit 28.09.2026, vorher immer display_name, in bestehenden Gemeinden also \"Hauptamt\"). Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle. Die Rolle ist die in der Gemeinde des Raums (Stamm-Gemeinde: Rolle am Konto, weitere Gemeinde: user_organizations; wer nicht mehr Mitglied ist, behaelt die Rolle am Konto) -- wie die Nachrichtenliste. BEHOBEN 08.10.2026: vorher die Rolle der Stamm-Gemeinde (users.role_id).\n",
         "parameters": [
           {
             "name": "roomId",
