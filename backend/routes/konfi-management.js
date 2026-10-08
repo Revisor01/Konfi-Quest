@@ -52,6 +52,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         commonValidations.points,
         commonValidations.type,
         body('description').trim().notEmpty().withMessage('Beschreibung ist erforderlich'),
+        body('client_id').optional({ values: 'null' }).isUUID().withMessage('client_id muss eine UUID sein'),
         handleValidationErrors
     ];
 
@@ -1251,6 +1252,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     // POST bonus points for a konfi
     router.post('/:id/bonus-points', rbacVerifier, requireTeamer, validateBonusPoints, async (req, res) => {
         const { points, type, description } = req.body;
+        // Wiederholungsschutz (Migration 201): Die Warteschlange der App
+        // wiederholt offline eingereihte Bonuspunkte nach Netzfehlern. Ein
+        // zweiter Eingang derselben client_id in dieser Gemeinde bucht nichts
+        // und bekommt dieselbe Antwort. Ohne client_id (Store-Apps) wie bisher.
+        const clientId = req.body.client_id || null;
+        const BONUS_ANTWORT = { message: 'Bonuspunkte erfolgreich hinzugefügt' };
         if (!points || !type || !description) {
             return res.status(400).json({ error: 'Punkte, Typ und Beschreibung sind erforderlich' });
         }
@@ -1288,14 +1295,22 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             const updateField = getPointField(type);
 
+            if (clientId) {
+                const { rows: [schonDa] } = await db.query(
+                    'SELECT id FROM bonus_points WHERE client_id = $1 AND organization_id = $2',
+                    [clientId, req.user.organization_id]
+                );
+                if (schonDa) return res.status(201).json(BONUS_ANTWORT);
+            }
+
             const client = await db.getClient();
             try {
                 await client.query('BEGIN');
 
                 const query = `
-                    INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at)
-                    VALUES ($1, $2, $3, $4, $5, $6, NOW())`;
-                await client.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id]);
+                    INSERT INTO bonus_points (konfi_id, points, type, description, admin_id, organization_id, created_at, client_id)
+                    VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)`;
+                await client.query(query, [req.params.id, points, type, description, req.user.id, req.user.organization_id, clientId]);
 
                 const updateQuery = `
                     UPDATE konfi_profiles kp
@@ -1337,13 +1352,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
  console.error('Error sending bonus points push:', pushErr);
             }
 
-            res.status(201).json({ message: 'Bonuspunkte erfolgreich hinzugefügt' });
+            res.status(201).json(BONUS_ANTWORT);
 
             // Live Update: Notify konfi about dashboard (points) and admins about konfi change
             liveUpdate.sendToUser('konfi', parseInt(req.params.id), 'dashboard', 'update', { points });
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update', { konfiId: req.params.id });
 
         } catch (err) {
+            // Zwei Eingaenge gleichzeitig: Beide sahen noch keine Buchung, der
+            // zweite INSERT scheitert am eindeutigen Index -- die Buchung des
+            // ersten steht, also dieselbe Antwort.
+            if (clientId && err.code === '23505' && err.constraint === 'idx_bonus_points_org_client_id') {
+                return res.status(201).json(BONUS_ANTWORT);
+            }
             if (err.message === 'Ungültiger Punktetyp') {
                 return res.status(400).json({ error: 'Ungültiger Punktetyp. Erlaubt: gottesdienst, gemeinde' });
             }

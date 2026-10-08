@@ -40,6 +40,8 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
   // Validierungsregeln
   const validateCreateEvent = [
+    // Wiederholungsschutz (Migration 201), nur beim Anlegen ausgewertet.
+    body('client_id').optional({ values: 'null' }).isUUID().withMessage('client_id muss eine UUID sein'),
     body('name').trim().notEmpty().withMessage('Name ist erforderlich')
       .isLength({ max: 200 }).withMessage('Name darf maximal 200 Zeichen lang sein'),
     body('event_date').notEmpty().isISO8601().withMessage('Gültiges Datum erforderlich'),
@@ -218,6 +220,25 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // ROLLBACK und einen zweiten Status hinterher. Jetzt: Transaktion,
     // finally mit release, dann Antwort, dann Push ueber nachAntwort.
     // Test: tests/routes/verbindungFreigabeVorPush.test.js.
+    // WIEDERHOLUNGSSCHUTZ (Migration 201, 08.10.2026): Die Warteschlange der
+    // App wiederholt offline angelegte Events nach Netzfehlern. Ein zweiter
+    // Eingang derselben client_id in dieser Gemeinde legt nichts an und
+    // bekommt dieselbe Antwort (dieselbe id). Ohne client_id wie bisher.
+    const clientId = req.body.client_id || null;
+    const schonAngelegt = async () => {
+      const { rows: [vorhanden] } = await db.query(
+        'SELECT id FROM events WHERE client_id = $1 AND organization_id = $2',
+        [clientId, req.user.organization_id]
+      );
+      return vorhanden ? Number(vorhanden.id) : null;
+    };
+    if (clientId) {
+      const vorhandenId = await schonAngelegt();
+      if (vorhandenId) {
+        return res.status(201).json({ id: vorhandenId, message: 'Event erfolgreich erstellt' });
+      }
+    }
+
     const client = await db.getClient();
     let eventId = null;
     try {
@@ -231,8 +252,8 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           is_series, series_id, mandatory, is_konfirmation, bring_items, checkin_window,
           teamer_needed, teamer_only,
           teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
-          created_by, organization_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+          created_by, organization_id, client_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
         RETURNING id
       `;
       const { rows: [newEvent] } = await client.query(insertEventQuery, [
@@ -246,7 +267,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         teamer_max_participants !== undefined && teamer_max_participants !== null ? parseInt(teamer_max_participants, 10) : 0,
         teamer_waitlist_enabled !== undefined && teamer_waitlist_enabled !== null ? !!teamer_waitlist_enabled : true,
         teamer_max_waitlist_size !== undefined && teamer_max_waitlist_size !== null ? parseInt(teamer_max_waitlist_size, 10) : 10,
-        req.user.id, req.user.organization_id
+        req.user.id, req.user.organization_id, clientId
       ]);
       
       eventId = newEvent.id;
@@ -306,6 +327,14 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       await client.query('COMMIT');
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
+      // Zwei Eingaenge derselben client_id gleichzeitig: Der zweite INSERT
+      // scheitert am eindeutigen Index, das Event des ersten steht.
+      if (clientId && err.code === '23505' && err.constraint === 'idx_events_org_client_id') {
+        const vorhandenId = await schonAngelegt().catch(() => null);
+        if (vorhandenId) {
+          return res.status(201).json({ id: vorhandenId, message: 'Event erfolgreich erstellt' });
+        }
+      }
       console.error('Database error in POST /events:', err);
       // '23505' is the PostgreSQL code for unique_violation
       if (err.code === '23505') {

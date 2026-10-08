@@ -177,6 +177,9 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Bonuspunkte und neue Events, die ohne Netz gespeichert und später gesendet
+  werden, kommen auch dann nur einmal an, wenn die Verbindung beim Senden
+  abreißt.
 - Ändert die Leitung die Punkteart einer Aktivität, bleiben schon vergebene
   Punkte in ihrer Säule — in Liste, Verlauf und beim Zurücknehmen.
 - Der Benutzername einer neuen Gemeindeleitung folgt denselben Regeln wie
