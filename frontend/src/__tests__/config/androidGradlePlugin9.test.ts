@@ -56,7 +56,8 @@ describe('Android: Gradle-Plugin 9', () => {
       'android.r8.strictFullModeForKeepRules',
       'android.r8.proguardAndroidTxt.disallowed',
     ]) {
-      expect(props, schalter).not.toMatch(new RegExp(`^\\s*${schalter.replace(/\./g, '\\.')}\\s*=`, 'm'));
+      const maskiert = schalter.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      expect(props, schalter).not.toMatch(new RegExp(`^\\s*${maskiert}\\s*=`, 'm'));
     }
   });
 
