@@ -17,7 +17,7 @@ const { body, param } = require('express-validator');
 const validator = require('validator');
 const { handleValidationErrors, commonValidations } = require('../middleware/validation');
 const { validatePassword } = require('../utils/passwordUtils');
-const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
 const { checkKonfiLimit } = require('../utils/konfiLimit');
 const PushService = require('../services/pushService');
 // Empfaenger von "Neue Registrierung": die Leitung des Jahrgangs
@@ -27,7 +27,7 @@ const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { ladeMitgliedschaftenMitSperre, waehleGemeinde, nichtGesperrtIn, schreibeGemeindeFelder } = require('../utils/orgMitglieder');
 const { nachAntwort } = require('../utils/nachAntwort');
-const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { meldePasswortGeaendertEinreihen } = require('../utils/passwortGeaendertMail');
 const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
 const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
 const { refreshTokensBegrenzen } = require('../utils/refreshTokenGrenze');
@@ -733,7 +733,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Bestaetigung an die hinterlegte Adresse (Simon, 27.09.2026, F-12 /
       // BF-20) -- nach der Antwort, ein Versandfehler kippt nichts.
-      nachAntwort(req, () => meldePasswortGeaendert(db, userId), 'POST /auth/change-password (Mail)');
+      meldePasswortGeaendertEinreihen(db, userId, {}, { req, bezeichnung: 'POST /auth/change-password (Mail)' });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/change-password:', err);
@@ -833,7 +833,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // nicht mehr im catch unten, der nach der Antwort einen 500 versuchte.
       const organizationId = req.user.organization_id;
       nachAntwort(req, async () => {
-        await meldeNachKontoLoeschung(db, ergebnis);
+        await meldeNachKontoLoeschungEinreihen(db, ergebnis, { req, bezeichnung: 'POST /auth/delete-account (Nachrueck-Meldungen)' });
 
         // Admin-Liste aktualisieren und den Socket des geloeschten Kontos trennen —
         // sonst empfing er weiter Org-Updates und die Liste blieb stehen
@@ -1712,7 +1712,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // Bestaetigung an die hinterlegte Adresse (F-12 / BF-20), wie beim
       // Selbst-Aendern.
-      nachAntwort(req, () => meldePasswortGeaendert(db, resetRecord.user_id), 'POST /auth/reset-password (Mail)');
+      meldePasswortGeaendertEinreihen(db, resetRecord.user_id, {}, { req, bezeichnung: 'POST /auth/reset-password (Mail)' });
 
     } catch (err) {
  console.error('Database error in POST /api/auth/reset-password:', err);

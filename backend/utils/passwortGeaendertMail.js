@@ -18,11 +18,38 @@
 // der Fall, wenn jemand anderes das Passwort setzt. Das neue Passwort steht
 // NIE in der Mail; die Leitung gibt es persoenlich weiter.
 //
-// Gerufen wird NACH der Antwort (utils/nachAntwort.js): Die Aenderung ist
-// committet, ein Versandfehler darf sie nicht kippen und die Person nicht
-// auf den SMTP-Server warten lassen. Diese Funktion wirft deshalb nie.
+// Gerufen wird NACH der Antwort, als Auftrag der dauerhaften Warteschlange
+// (meldePasswortGeaendertEinreihen): Die Aenderung ist committet, ein
+// Versandfehler darf sie nicht kippen und die Person nicht auf den
+// SMTP-Server warten lassen; er wird spaeter wiederholt.
+// meldePasswortGeaendert selbst wirft nie.
 
 const emailService = require('../services/emailService');
+const { registriereArt, einreihen } = require('./warteschlange');
+
+// Wie meldePasswortGeaendert, wirft aber bei einem Versandfehler -- fuer den
+// Auftrag der Warteschlange, der dann spaeter wiederholt wird.
+async function sendePasswortGeaendert(db, userId, { durchLeitung = false } = {}) {
+  const { rows: [konto] } = await db.query(
+    `SELECT u.email, u.display_name, u.username, u.organization_id IS NULL AS ohne_gemeinde,
+            COALESCE(o.display_name, o.name) AS gemeinde
+       FROM users u
+       LEFT JOIN organizations o ON o.id = u.organization_id
+      WHERE u.id = $1 AND u.deleted_at IS NULL`,
+    [userId]
+  );
+  const adresse = konto && typeof konto.email === 'string' ? konto.email.trim() : '';
+  if (!adresse) return false;
+
+  // Ein Konto ohne Gemeinde (Support-Konto) hat keine Leitung, die ihm ein
+  // Passwort setzen koennte -- das tut der Support (Befund 03.10.2026).
+  await emailService.sendPasswordChangedEmail(
+    adresse,
+    konto.display_name || konto.username,
+    { durchLeitung, durchSupport: durchLeitung && konto.ohne_gemeinde === true, gemeinde: konto.gemeinde || null }
+  );
+  return true;
+}
 
 /**
  * Schickt die Bestaetigung an die Adresse des Kontos -- wenn es eine hat.
@@ -33,31 +60,32 @@ const emailService = require('../services/emailService');
  *   das Passwort gesetzt hat, sondern die Leitung.
  * @returns {Promise<boolean>} ob eine Mail rausging
  */
-async function meldePasswortGeaendert(db, userId, { durchLeitung = false } = {}) {
+async function meldePasswortGeaendert(db, userId, opt = {}) {
   try {
-    const { rows: [konto] } = await db.query(
-      `SELECT u.email, u.display_name, u.username, u.organization_id IS NULL AS ohne_gemeinde,
-              COALESCE(o.display_name, o.name) AS gemeinde
-         FROM users u
-         LEFT JOIN organizations o ON o.id = u.organization_id
-        WHERE u.id = $1 AND u.deleted_at IS NULL`,
-      [userId]
-    );
-    const adresse = konto && typeof konto.email === 'string' ? konto.email.trim() : '';
-    if (!adresse) return false;
-
-    // Ein Konto ohne Gemeinde (Support-Konto) hat keine Leitung, die ihm ein
-    // Passwort setzen koennte -- das tut der Support (Befund 03.10.2026).
-    await emailService.sendPasswordChangedEmail(
-      adresse,
-      konto.display_name || konto.username,
-      { durchLeitung, durchSupport: durchLeitung && konto.ohne_gemeinde === true, gemeinde: konto.gemeinde || null }
-    );
-    return true;
+    return await sendePasswortGeaendert(db, userId, opt);
   } catch (err) {
     console.error('Bestaetigungsmail nach Passwortaenderung fehlgeschlagen:', err.message);
     return false;
   }
 }
 
-module.exports = { meldePasswortGeaendert };
+// Die Routen reihen die Mail als Auftrag der dauerhaften Warteschlange ein
+// (utils/warteschlange.js): Ein Neustart direkt nach der Antwort verliert sie
+// nicht, ein Versandfehler wird spaeter wiederholt.
+registriereArt('passwort_geaendert_mail', async (db, p, k) => {
+  await k.schritt('mail', () => sendePasswortGeaendert(db, p.userId, { durchLeitung: p.durchLeitung === true }));
+});
+
+/**
+ * Reiht die Bestaetigung nach der Antwort ein (wirft nie).
+ *
+ * @param {{query: Function}} db
+ * @param {number|string} userId
+ * @param {{durchLeitung?: boolean}} [opt]
+ * @param {{req?: object, bezeichnung?: string}} [einreihOptionen]
+ */
+function meldePasswortGeaendertEinreihen(db, userId, { durchLeitung = false } = {}, { req = null, bezeichnung = null } = {}) {
+  return einreihen(db, 'passwort_geaendert_mail', { userId, durchLeitung }, { req, bezeichnung });
+}
+
+module.exports = { meldePasswortGeaendert, meldePasswortGeaendertEinreihen };

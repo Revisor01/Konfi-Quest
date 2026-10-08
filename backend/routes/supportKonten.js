@@ -32,9 +32,8 @@ const { invalidateUserCache } = require('../middleware/rbac');
 const { validatePassword } = require('../utils/passwordUtils');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
-const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
-const { nachAntwort } = require('../utils/nachAntwort');
-const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
+const { meldePasswortGeaendertEinreihen } = require('../utils/passwortGeaendertMail');
 const { MELDUNG_LETZTER, bleibtEinSuperAdmin, systemrolleSuperAdmin } = require('../utils/superAdminKonten');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -220,9 +219,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
       res.json({ message: 'Passwort gesetzt' });
 
       // Bestaetigung an die hinterlegte Adresse, ohne das Passwort.
-      nachAntwort(req, () => meldePasswortGeaendert(db, id, {
-        durchLeitung: id !== Number(req.user.id)
-      }), 'PUT /organizations/support-konten/:id/passwort (Mail)');
+      meldePasswortGeaendertEinreihen(db, id, { durchLeitung: id !== Number(req.user.id) },
+        { req, bezeichnung: 'PUT /organizations/support-konten/:id/passwort (Mail)' });
     } catch (err) {
       console.error('Database error in PUT /organizations/support-konten/%s/passwort:', id, err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -264,8 +262,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     liveUpdate.disconnectUserSockets(id);
     await kontoDateienLoeschen(ergebnis?.dateien);
     res.json({ message: 'Support-Konto gelöscht' });
-    nachAntwort(req, () => meldeNachKontoLoeschung(db, ergebnis),
-      'DELETE /organizations/support-konten/:id (Meldungen nach Kontoloeschung)');
+    meldeNachKontoLoeschungEinreihen(db, ergebnis,
+      { req, bezeichnung: 'DELETE /organizations/support-konten/:id (Meldungen nach Kontoloeschung)' });
   });
 
   return router;

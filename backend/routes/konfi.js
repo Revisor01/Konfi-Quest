@@ -17,7 +17,93 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 // Empfaenger der Abmelde-Meldungen: die Leitung, die das Event sieht
 // (27.09.2026, Regel in utils/terminLeitungSicht.js).
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
+
+// ARBEIT NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
+// (utils/warteschlange.js): Postfach-Eintrag und Push ueberstehen einen
+// Neustart direkt nach der Antwort. Je Teil ein Schritt -- eine Wiederholung
+// nach einem Fehler sendet nichts zweimal. Die Empfaenger werden wie bisher
+// erst beim Ausfuehren bestimmt.
+
+// POST /konfi/requests: Leitung erfaehrt vom neuen Antrag.
+registriereArt('konfi_antrag_eingegangen', async (db, p, k) => {
+  // EMPFAENGER (27.09.2026, Simon: "Antraege duerfen auch nur an Admins
+  // des Jahrgangs gehen"): wer den Antrag in seiner Liste sieht --
+  // org_admin immer, admin nur mit can_view-Zuweisung auf den Jahrgang
+  // des Konfis, Teamer:innen nie (utils/antragLeitungSicht.js). Vorher
+  // ging die Mitteilung an JEDEN Admin der Gemeinde (seit M6 admin UND
+  // org_admin, seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit
+  // -- beides bleibt, ladeLeitungZumAntrag baut darauf auf).
+  // Postfach und Push bekommen DIESELBE Liste.
+  const empfaenger = await ladeLeitungZumAntrag(db, p.requestId);
+
+  const { rows: [konfiData] } = await db.query(
+    "SELECT display_name FROM users WHERE id = $1",
+    [p.konfiId]
+  );
+
+  if (empfaenger.length > 0) {
+    await k.schritt('postfach', () => db.query(
+      `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+       SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+      [
+        empfaenger,
+        'Neuer Antrag eingegangen',
+        `${konfiData.display_name} hat einen Antrag für "${p.activityName}" (${p.points} ${p.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+        'new_activity_request',
+        JSON.stringify({
+          request_id: p.requestId,
+          konfi_id: p.konfiId,
+          konfi_name: konfiData.display_name,
+          activity_name: p.activityName,
+          points: p.points
+        }),
+        p.organizationId
+      ]
+    ));
+  }
+
+  await k.schritt('push', () => PushService.sendNewActivityRequestToLeadership(
+    db,
+    p.organizationId,
+    empfaenger,
+    konfiData.display_name,
+    p.activityName,
+    p.points
+  ));
+});
+
+// DELETE /konfi/events/:id/register: Konfi und Leitung erfahren von der Abmeldung.
+registriereArt('konfi_termin_abgemeldet', async (db, p, k) => {
+  // Push-Notification an Konfi senden
+  await k.schritt('push_konfi', () => PushService.sendEventUnregisteredToKonfi(db, p.konfiId, p.eventName, p.eventId, p.organizationId));
+
+  // An die Leitung, die das Event sieht (27.09.2026, Regel in
+  // utils/terminLeitungSicht.js): Org-Admins immer, Admins nur mit
+  // Zuweisung auf einen Jahrgang des Events. Vorher an JEDEN Admin der
+  // Gemeinde -- samt Grund (Audit wer-bekommt-was, BF-01).
+  // DELETE /events/:id/book meldet dasselbe (events/buchung.js).
+  await k.schritt('push_leitung', async () => {
+    const empfaenger = await ladeLeitungZumTermin(db, p.eventId);
+    await PushService.sendEventUnregistrationToLeadership(db, p.organizationId, empfaenger, p.konfiName, p.eventName, p.reason, p.eventId, p.konfiId);
+  });
+});
+
+// POST /konfi/events/:id/opt-out
+registriereArt('konfi_termin_opt_out', async (db, p, k) => {
+  await k.schritt('push_leitung', async () => {
+    const empfaenger = await ladeLeitungZumTermin(db, p.eventId);
+    await PushService.sendEventOptOutToLeadership(db, p.organizationId, empfaenger, p.konfiName, p.eventName, p.reason, p.eventId, p.konfiId);
+  });
+});
+
+// POST /konfi/events/:id/opt-in
+registriereArt('konfi_termin_opt_in', async (db, p, k) => {
+  await k.schritt('push_leitung', async () => {
+    const empfaenger = await ladeLeitungZumTermin(db, p.eventId);
+    await PushService.sendEventOptInToLeadership(db, p.organizationId, empfaenger, p.konfiName, p.eventName, p.eventId, p.konfiId);
+  });
+});
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, rueckeNach, pruefeKonfiStorno, wartelistenPlatzSql } = require('../utils/bookingUtils');
 const { buchungszahlenJeTerminSql } = require('../utils/buchungszahlen');
 const { konfiSiehtTerminSql, konfiSiehtTermin } = require('../utils/konfiTerminSicht');
@@ -724,54 +810,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       // 10.08.): Der Push-Versand laeuft ueber alle Empfaenger und deren
       // Geraete -- je Token ein FCM-Roundtrip. Lief das vor res.json(),
       // wartete der Konfi darauf (gemessen ~1,5 s p95 auf dem haeufigsten
-      // Antrags-Endpunkt). Seit 27.09.2026 ueber nachAntwort statt frei
-      // laufend: gleiches Verhalten, Tests koennen darauf warten.
-      nachAntwort(req, async () => {
-        // EMPFAENGER (27.09.2026, Simon: "Antraege duerfen auch nur an Admins
-        // des Jahrgangs gehen"): wer den Antrag in seiner Liste sieht --
-        // org_admin immer, admin nur mit can_view-Zuweisung auf den Jahrgang
-        // des Konfis, Teamer:innen nie (utils/antragLeitungSicht.js). Vorher
-        // ging die Mitteilung an JEDEN Admin der Gemeinde (seit M6 admin UND
-        // org_admin, seit 25.09.2026 ueber beide Quellen der Zugehoerigkeit
-        // -- beides bleibt, ladeLeitungZumAntrag baut darauf auf).
-        // Postfach und Push bekommen DIESELBE Liste.
-        const empfaenger = await ladeLeitungZumAntrag(db, newRequest.id);
-
-        const { rows: [konfiData] } = await db.query(
-          "SELECT display_name FROM users WHERE id = $1",
-          [konfiId]
-        );
-
-        if (empfaenger.length > 0) {
-          await db.query(
-            `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
-             SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
-            [
-              empfaenger,
-              'Neuer Antrag eingegangen',
-              `${konfiData.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
-              'new_activity_request',
-              JSON.stringify({
-                request_id: newRequest.id,
-                konfi_id: konfiId,
-                konfi_name: konfiData.display_name,
-                activity_name: activity.name,
-                points: activity.points
-              }),
-              req.user.organization_id
-            ]
-          );
-        }
-
-        await PushService.sendNewActivityRequestToLeadership(
-          db,
-          req.user.organization_id,
-          empfaenger,
-          konfiData.display_name,
-          activity.name,
-          activity.points
-        );
-      }, 'Leitungs-Mitteilung zum neuen Antrag');
+      // Antrags-Endpunkt). Als Auftrag der dauerhaften Warteschlange (Art
+      // 'konfi_antrag_eingegangen' oben): ueberlebt einen Neustart.
+      einreihen(db, 'konfi_antrag_eingegangen', {
+        requestId: newRequest.id,
+        konfiId,
+        activityName: activity.name,
+        points: activity.points,
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'Leitungs-Mitteilung zum neuen Antrag' });
 
       // Live-Update an alle Admins über neuen Antrag senden
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');
@@ -1876,24 +1923,16 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       res.json({ message: 'Abmeldung erfolgreich' });
 
-      // Seit 27.09.2026 ueber nachAntwort statt frei laufend (gleiches
-      // Verhalten, Tests koennen darauf warten).
-      nachAntwort(req, async () => {
-        // Push-Notification an Konfi senden
-        try {
-          await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId, req.user.organization_id);
-        } catch (pushErr) {
-          console.error('Error sending event unregistration push to konfi:', pushErr);
-        }
-
-        // An die Leitung, die das Event sieht (27.09.2026, Regel in
-        // utils/terminLeitungSicht.js): Org-Admins immer, Admins nur mit
-        // Zuweisung auf einen Jahrgang des Events. Vorher an JEDEN Admin der
-        // Gemeinde -- samt Grund (Audit wer-bekommt-was, BF-01).
-        // DELETE /events/:id/book meldet dasselbe (events/buchung.js).
-        const empfaenger = await ladeLeitungZumTermin(db, eventId);
-        await PushService.sendEventUnregistrationToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason, eventId, konfiId);
-      }, 'Abmelde-Mitteilungen');
+      // Als Auftrag der dauerhaften Warteschlange (Art
+      // 'konfi_termin_abgemeldet' oben): ueberlebt einen Neustart.
+      einreihen(db, 'konfi_termin_abgemeldet', {
+        konfiId,
+        konfiName,
+        eventId,
+        eventName: event.name,
+        reason,
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'Abmelde-Mitteilungen' });
 
       // Live-Update an Konfi und Admins senden
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
@@ -2020,12 +2059,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Push an die Leitung, die das Event sieht (27.09.2026,
       // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde, BF-01).
-      // Ueber nachAntwort, damit Tests darauf warten koennen.
-      nachAntwort(req, async () => {
-        const konfiName = req.user.display_name || req.user.username;
-        const empfaenger = await ladeLeitungZumTermin(db, eventId);
-        await PushService.sendEventOptOutToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, reason.trim(), eventId, konfiId);
-      }, 'Opt-out-Mitteilung an die Leitung');
+      // Als Auftrag der dauerhaften Warteschlange (Art 'konfi_termin_opt_out').
+      einreihen(db, 'konfi_termin_opt_out', {
+        konfiId,
+        konfiName: req.user.display_name || req.user.username,
+        eventId,
+        eventName: event.name,
+        reason: reason.trim(),
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'Opt-out-Mitteilung an die Leitung' });
 
       // Live-Update
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');
@@ -2103,11 +2145,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
 
       // Push an die Leitung, die das Event sieht (wie beim Opt-out,
       // 27.09.2026).
-      nachAntwort(req, async () => {
-        const konfiName = req.user.display_name || req.user.username;
-        const empfaenger = await ladeLeitungZumTermin(db, eventId);
-        await PushService.sendEventOptInToLeadership(db, req.user.organization_id, empfaenger, konfiName, event.name, eventId, konfiId);
-      }, 'Opt-in-Mitteilung an die Leitung');
+      einreihen(db, 'konfi_termin_opt_in', {
+        konfiId,
+        konfiName: req.user.display_name || req.user.username,
+        eventId,
+        eventName: event.name,
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'Opt-in-Mitteilung an die Leitung' });
 
       // Live-Update
       liveUpdate.sendToKonfi(konfiId, 'events', 'update');

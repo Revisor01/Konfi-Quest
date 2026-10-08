@@ -22,7 +22,94 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 // Empfaenger der Zu- und Absage-Meldungen: die Leitung, die das Event sieht
 // (27.09.2026, Regel in utils/terminLeitungSicht.js).
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
+
+// ARBEIT NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
+// (utils/warteschlange.js): ueberlebt einen Neustart direkt nach der Antwort;
+// je Teil ein Schritt, eine Wiederholung sendet nichts zweimal.
+
+// POST /teamer/events/:id/zusage: Chat-Mitgliedschaft dem Stand anpassen,
+// danach die Live-Updates (eine offene Ansicht laedt dann schon den neuen
+// Chat-Stand), dann die Pushes an die Leitung und an eine nachgerueckte
+// Teamer:in.
+registriereArt('teamer_zusage', async (db, p, k) => {
+  await k.schritt('chat', async () => {
+    if (p.dabei) {
+      await addToEventChat(db, p.eventId, p.userId, p.organizationId);
+    } else {
+      await removeFromEventChat(db, p.eventId, p.userId, p.organizationId);
+    }
+  });
+  liveUpdate.sendToUserByRole(p.userId, 'events', 'update', { eventId: p.eventId });
+  liveUpdate.sendToOrgAdmins(p.organizationId, 'events', 'update', { eventId: p.eventId, action: 'teamer_zusage' });
+
+  // Pushes an die Leitung — fehlten hier bis 01.09.2026 komplett (Begruendung
+  // an der Route). EMPFAENGER (27.09.2026): die Leitung, die das Event sieht
+  // (utils/terminLeitungSicht.js), ohne die Teamer:in selbst.
+  await k.schritt('push_leitung', async () => {
+    const empfaenger = await ladeLeitungZumTermin(db, p.eventId, { ausser: p.userId });
+    if (p.dabei) {
+      await PushService.sendTeamerEventBookingToLeadership(
+        db, p.organizationId, empfaenger, p.displayName,
+        p.eventName, p.status, p.eventId, p.userId
+      );
+    } else {
+      await PushService.sendTeamerEventCancellationToLeadership(
+        db, p.organizationId, empfaenger, p.displayName,
+        p.eventName, p.eventId, p.grund, p.userId
+      );
+    }
+  });
+
+  // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
+  // erfaehrt er das per Push — wie beim Storno-Weg.
+  if (p.promotedUserId) {
+    await k.schritt('push_nachgerueckt', () => PushService.sendWaitlistPromotionToTeamer(
+      db, p.promotedUserId, p.eventName, null, p.eventId, p.organizationId
+    ));
+  }
+});
+
+// POST /teamer/requests: Leitung erfaehrt vom neuen Teamer-Antrag.
+registriereArt('teamer_antrag_eingegangen', async (db, p, k) => {
+  // EMPFAENGER nach derselben Regel wie die Antragsliste
+  // (utils/antragLeitungSicht.js, 27.09.2026). Antraege von
+  // Teamer:innen sieht jeder Admin der Gemeinde (Teamer-Ausnahme vom
+  // 31.08.2026) -- hier kommen also weiterhin admin und org_admin an,
+  // ueber beide Quellen der Zugehoerigkeit. Postfach und Push bekommen
+  // DIESELBE Liste.
+  const empfaenger = await ladeLeitungZumAntrag(db, p.requestId);
+
+  if (empfaenger.length > 0) {
+    await k.schritt('postfach', () => db.query(
+      `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
+       SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
+      [
+        empfaenger,
+        'Neuer Antrag eingegangen',
+        `${p.displayName} hat einen Antrag für "${p.activityName}" (${p.points} ${p.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
+        'new_activity_request',
+        JSON.stringify({
+          request_id: p.requestId,
+          konfi_id: p.userId,
+          konfi_name: p.displayName,
+          activity_name: p.activityName,
+          points: p.points
+        }),
+        p.organizationId
+      ]
+    ));
+  }
+
+  await k.schritt('push', () => PushService.sendNewActivityRequestToLeadership(
+    db,
+    p.organizationId,
+    empfaenger,
+    p.displayName,
+    p.activityName,
+    p.points
+  ));
+});
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 const { ladeRolleInGemeinde, istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
 
@@ -1296,7 +1383,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Last haelt so jede Anfrage eine und wartet auf eine zweite; bei so
       // vielen Anfragen wie Pool-Plaetzen steht alles. Jetzt: Transaktion,
       // finally mit release, dann Antwort, dann alles Weitere ueber
-      // nachAntwort wie in den uebrigen Termin-Routen.
+      // die dauerhafte Warteschlange (utils/warteschlange.js).
       // Test: tests/routes/verbindungFreigabeVorPush.test.js.
       const client = await db.getClient();
       let ergebnis;
@@ -1338,23 +1425,6 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         message: dabei ? 'Zusage gespeichert' : 'Absage gespeichert'
       });
 
-      // Chat-Mitgliedschaft dem Stand anpassen, danach die Live-Updates
-      // (eine offene Ansicht laedt dann schon den neuen Chat-Stand).
-      // NACH COMMIT und fehlertolerant: daran darf die Zusage nie scheitern.
-      nachAntwort(req, async () => {
-        try {
-          if (dabei) {
-            await addToEventChat(db, eventId, req.user.id, req.user.organization_id);
-          } else {
-            await removeFromEventChat(db, eventId, req.user.id, req.user.organization_id);
-          }
-        } catch (chatErr) {
-          console.error('Event-Chat nach Teamer-Zusage:', chatErr.message);
-        }
-        liveUpdate.sendToUserByRole(req.user.id, 'events', 'update', { eventId });
-        liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'teamer_zusage' });
-      }, 'Chat und Live-Update nach Teamer-Zusage/-Absage');
-
       // Pushes an die Leitung — fehlten hier bis 01.09.2026 komplett: Der
       // regulaere Buchungs-/Storno-Weg meldete sich, die Zusage-Route
       // schwieg. Es sind bewusst die vorhandenen TEAMER-Typen
@@ -1368,31 +1438,23 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Jahrgangs-Events nur mit Zuweisung, bei "Nur Team" und Events ohne
       // Jahrgang alle. Vorher jeder Admin der Gemeinde (BF-01). Die
       // zusagende Person selbst nie: Die Route steht hinter requireTeamer,
-      // auch die Leitung sagt hier zu. Ueber nachAntwort, damit Tests darauf
-      // warten koennen.
+      // auch die Leitung sagt hier zu.
       const grund = typeof reason === 'string' && reason.trim() ? reason.trim().slice(0, 500) : null;
-      nachAntwort(req, async () => {
-        const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: req.user.id });
-        if (dabei) {
-          await PushService.sendTeamerEventBookingToLeadership(
-            db, req.user.organization_id, empfaenger, req.user.display_name,
-            ergebnis.event.name, ergebnis.status, eventId, req.user.id
-          );
-        } else {
-          await PushService.sendTeamerEventCancellationToLeadership(
-            db, req.user.organization_id, empfaenger, req.user.display_name,
-            ergebnis.event.name, eventId, grund, req.user.id
-          );
-        }
-      }, 'Push nach Teamer-Zusage/-Absage');
 
-      // Ist nach einer Absage jemand von der Team-Warteliste nachgerueckt,
-      // erfaehrt er das per Push — wie beim Storno-Weg.
-      if (ergebnis.promotedUserId) {
-        nachAntwort(req, () => PushService.sendWaitlistPromotionToTeamer(
-          db, ergebnis.promotedUserId, ergebnis.event.name, null, eventId, req.user.organization_id
-        ), 'Push an nachgerueckte Teamer:in');
-      }
+      // Chat-Mitgliedschaft, Live-Updates und Pushes NACH COMMIT als Auftrag
+      // der dauerhaften Warteschlange (Art 'teamer_zusage' oben): daran darf
+      // die Zusage nie scheitern, und ein Neustart verliert nichts.
+      einreihen(db, 'teamer_zusage', {
+        eventId,
+        userId: req.user.id,
+        organizationId: req.user.organization_id,
+        displayName: req.user.display_name,
+        dabei,
+        status: ergebnis.status,
+        eventName: ergebnis.event.name,
+        grund,
+        promotedUserId: ergebnis.promotedUserId || null,
+      }, { req, bezeichnung: 'Chat, Live-Update und Pushes nach Teamer-Zusage/-Absage' });
     });
 
   router.post('/requests', rbacVerifier, requireTeamer, validateCreateTeamerRequest, async (req, res) => {
@@ -1448,46 +1510,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // In-App-Mitteilung UND Push an die Leitung. Vorher gab es hier nur
       // Push — Teamer-Antraege fehlten damit im Mitteilungscenter der Leitung,
       // waehrend Konfi-Antraege dort auftauchten (Drei-Ansichten-Befund M6).
-      // Seit 27.09.2026 ueber nachAntwort statt frei laufend.
-      nachAntwort(req, async () => {
-        // EMPFAENGER nach derselben Regel wie die Antragsliste
-        // (utils/antragLeitungSicht.js, 27.09.2026). Antraege von
-        // Teamer:innen sieht jeder Admin der Gemeinde (Teamer-Ausnahme vom
-        // 31.08.2026) -- hier kommen also weiterhin admin und org_admin an,
-        // ueber beide Quellen der Zugehoerigkeit. Postfach und Push bekommen
-        // DIESELBE Liste.
-        const empfaenger = await ladeLeitungZumAntrag(db, newRequest.id);
-
-        if (empfaenger.length > 0) {
-          await db.query(
-            `INSERT INTO notifications (user_id, title, message, type, data, organization_id)
-             SELECT unnest($1::int[]), $2, $3, $4, $5, $6`,
-            [
-              empfaenger,
-              'Neuer Antrag eingegangen',
-              `${req.user.display_name} hat einen Antrag für "${activity.name}" (${activity.points} ${activity.points === 1 ? 'Punkt' : 'Punkte'}) eingereicht.`,
-              'new_activity_request',
-              JSON.stringify({
-                request_id: newRequest.id,
-                konfi_id: userId,
-                konfi_name: req.user.display_name,
-                activity_name: activity.name,
-                points: activity.points
-              }),
-              req.user.organization_id
-            ]
-          );
-        }
-
-        await PushService.sendNewActivityRequestToLeadership(
-          db,
-          req.user.organization_id,
-          empfaenger,
-          req.user.display_name,
-          activity.name,
-          activity.points
-        );
-      }, 'Leitungs-Mitteilung zum neuen Teamer-Antrag');
+      // Als Auftrag der dauerhaften Warteschlange (Art
+      // 'teamer_antrag_eingegangen' oben): ueberlebt einen Neustart.
+      einreihen(db, 'teamer_antrag_eingegangen', {
+        requestId: newRequest.id,
+        userId,
+        displayName: req.user.display_name,
+        activityName: activity.name,
+        points: activity.points,
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'Leitungs-Mitteilung zum neuen Teamer-Antrag' });
 
       // Live-Update an alle Admins/Org-Admins/Teamer:innen der Org (neuer Antrag)
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'create');

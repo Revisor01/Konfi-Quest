@@ -5,8 +5,8 @@ const { handleValidationErrors, commonValidations } = require('../middleware/val
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { computeCurrentStreak } = require('../utils/streakCalculation');
-// Seiteneffekte nach der Antwort (abwartbar im Test) -- siehe utils/nachAntwort.js
-const { nachAntwort } = require('../utils/nachAntwort');
+// Arbeit nach der Antwort als Auftrag der dauerhaften Warteschlange -- siehe utils/warteschlange.js
+const { registriereArt, einreihen } = require('../utils/warteschlange');
 // Auf einem Transaktions-Client nacheinander, ueber den Pool parallel (pg 9).
 const { abfragenBuendeln } = require('../utils/abfragenBuendeln');
 const { ladeMitgliederDerOrganisation, gemeindeFelderSql } = require('../utils/orgMitglieder');
@@ -180,10 +180,11 @@ const STILL = { still: true };
 //
 // optionen.mitteilungenSammeln (Array, Standard: aus): Die Abzeichen werden
 // wie immer sofort angelegt, aber Postfach-Eintrag, Push und Live-Update je
-// neuem Abzeichen werden NICHT abgewartet, sondern als Funktion in dieses
-// Array gelegt. Der Aufrufer ruft sie nach seiner Antwort auf
-// (utils/nachAntwort.js). Grund: PUT /admin/activities/requests/:id wartete
-// auf jeden Push an FCM (kalt 330-450 ms je Sendung) und antwortete in
+// neuem Abzeichen werden NICHT abgewartet, sondern als Daten
+// { userId, organizationId, badges, still } in dieses Array gelegt. Der
+// Aufrufer meldet sie nach seiner Antwort mit meldeNeueBadges -- ueber die
+// dauerhafte Warteschlange (utils/warteschlange.js). Grund: PUT
+// /admin/activities/requests/:id wartete auf jeden Push an FCM (kalt 330-450 ms je Sendung) und antwortete in
 // Produktion einmal erst nach 1524 ms (07.10.2026). Nicht mit `still`
 // verwechseln -- `still` unterdrueckt die Mitteilungen ganz.
 const checkAndAwardBadges = async (db, userId, optionen = {}) => {
@@ -778,13 +779,15 @@ async function insertBadgesAndNotify(db, userId, organizationId, earnedBadgeIds,
 
   // Die Abzeichen stehen jetzt. Was folgt, ist Mitteilung: entweder gleich
   // abwarten (Standard) oder dem Aufrufer fuer die Zeit nach seiner Antwort
-  // mitgeben (optionen.mitteilungenSammeln, siehe checkAndAwardBadges).
-  const melden = () => meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, still);
+  // mitgeben (optionen.mitteilungenSammeln, siehe checkAndAwardBadges). Als
+  // DATEN, nicht als Funktion: Der Aufrufer reiht sie in die dauerhafte
+  // Warteschlange ein (utils/warteschlange.js), und die speichert JSON. Er
+  // meldet sie mit meldeNeueBadges(db, userId, organizationId, badges, still).
   if (sammeln) {
-    sammeln.push(melden);
+    sammeln.push({ userId, organizationId, badges: earnedBadgeDetails, still });
     return;
   }
-  await melden();
+  await meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, still);
 }
 
 async function meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, still) {
@@ -999,19 +1002,28 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
   // Zielrolle und macht je Person mehrere Abfragen. Vor der Antwort haenge
   // das Speichern-Formular daran; abgekoppelt bleibt das Speichern so schnell
   // wie bisher. Fehler landen im Log, nicht in einer unbehandelten Promise.
-  function pruefeNachSpeichernImHintergrund(req, badgeId, organizationId) {
-    nachAntwort(req, async () => {
+  //
+  // Als Auftrag der dauerhaften Warteschlange (utils/warteschlange.js): Ein
+  // Neustart direkt nach dem Speichern verliert den Lauf nicht. Die Pruefung
+  // vergibt nur, was fehlt -- eine Wiederholung vergibt nichts doppelt. Hier
+  // im Router angemeldet, weil pruefeAbzeichenNach zu ihm gehoert.
+  registriereArt('abzeichen_nachpruefen', async (_db, p, k) => {
+    await k.schritt('pruefen', async () => {
       const { rows: [badge] } = await db.query(
         'SELECT id, name, target_role, is_active FROM custom_badges WHERE id = $1 AND organization_id = $2',
-        [badgeId, organizationId]
+        [p.badgeId, p.organizationId]
       );
       if (!badge || !badge.is_active) return;
-      const { neu_vergeben } = await pruefeAbzeichenNach(badge, organizationId);
+      const { neu_vergeben } = await pruefeAbzeichenNach(badge, p.organizationId);
       if (neu_vergeben > 0) {
-        liveUpdate.sendToOrgAdmins(organizationId, 'badges', 'update');
-        liveUpdate.sendToOrgKonfis(organizationId, 'badges', 'update');
+        liveUpdate.sendToOrgAdmins(p.organizationId, 'badges', 'update');
+        liveUpdate.sendToOrgKonfis(p.organizationId, 'badges', 'update');
       }
-    }, 'Abzeichen-Pruefung nach Speichern');
+    });
+  });
+
+  function pruefeNachSpeichernImHintergrund(req, badgeId, organizationId) {
+    einreihen(db, 'abzeichen_nachpruefen', { badgeId, organizationId }, { req, bezeichnung: 'Abzeichen-Pruefung nach Speichern' });
   }
 
   router.post('/:id/pruefen', rbacVerifier, requireAdmin, validateBadgeId, async (req, res) => {
@@ -1276,3 +1288,4 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }) => {
 };
 
 module.exports.checkAndAwardBadges = checkAndAwardBadges;
+module.exports.meldeNeueBadges = meldeNeueBadges;

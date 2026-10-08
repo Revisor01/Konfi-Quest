@@ -10,6 +10,7 @@ const { rueckeNach, takeBackEventPoints, freiePlaetze, zaehleBestaetigte } = req
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
+const { registriereArt, einreihen, alsDatum } = require('../../utils/warteschlange');
 const { darfTermin, gehoertZumTermin } = require('../../utils/jahrgangsZugriff');
 
 //
@@ -22,6 +23,70 @@ const { darfTermin, gehoertZumTermin } = require('../../utils/jahrgangsZugriff')
 // Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
 // Die Werte, die POST /:id/participants fuer `status` annimmt.
 const STATUS_VON_HAND = ['auto', 'confirmed', 'waitlist'];
+
+// PUSHES NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
+// (utils/warteschlange.js): ueberleben einen Neustart direkt nach der
+// Antwort; je Push ein Schritt, eine Wiederholung sendet nichts zweimal.
+// Live-Updates bleiben bei nachAntwort -- sie sind fluechtig. Zeitpunkte
+// kommen aus dem JSON als Zeichenkette und werden mit alsDatum wieder zu
+// Date, wie sie vorher im Prozess ankamen.
+
+// POST /events/:id/participants: Die eingetragene Person erfaehrt es
+// (Begruendung an der Route).
+registriereArt('termin_von_leitung_eingetragen', async (db, p, k) => {
+  await k.schritt('push', async () => {
+    if (p.addedIsTeamer) {
+      await PushService.sendEventRegisteredToTeamer(
+        db, p.userId, p.eventName, alsDatum(p.eventDate), p.status, p.eventId, p.organizationId
+      );
+    } else {
+      const timeslot = p.timeslot
+        ? { ...p.timeslot, start_time: alsDatum(p.timeslot.start_time), end_time: alsDatum(p.timeslot.end_time) }
+        : p.timeslot;
+      await PushService.sendEventRegisteredToKonfi(
+        db, p.userId, p.eventName, alsDatum(p.eventDate), p.status, p.eventId, timeslot, p.organizationId
+      );
+    }
+  });
+});
+
+// DELETE /events/:id/bookings/:bookingId und PUT .../status: Wer
+// ausgetragen oder auf die Warteliste gesetzt wird, erfaehrt es.
+registriereArt('termin_von_leitung_ausgetragen', async (db, p, k) => {
+  await k.schritt('push', () => PushService.sendEventRemovedByLeitung(
+    db, p.userId, p.eventName, alsDatum(p.eventDate), p.vorgang, p.eventId, p.organizationId
+  ));
+});
+
+// PUT /events/:eventId/participants/:participantId/status: Mitteilungen
+// nach dem Wechsel zwischen Warteliste und bestaetigt.
+registriereArt('termin_status_geaendert', async (db, p, k) => {
+  if (p.status === 'confirmed' && p.wasWaitlist) {
+    await k.schritt('push_befoerdert', () => PushService.sendWaitlistPromotionToKonfi(
+      db, p.userId, p.eventName, alsDatum(p.eventDate), p.eventId, p.organizationId
+    ));
+  }
+
+  // Wer auf die Warteliste zurueckgesetzt wird, erfaehrt es (Simon,
+  // 27.09.2026, F-06 / BF-14) -- wie beim Austragen nicht, wer sich
+  // selbst herabstuft. wasWaitlist ist hier false: 'waitlist' ->
+  // 'waitlist' lehnt die Route mit 400 ab.
+  if (p.status === 'waitlist' && !p.wasWaitlist && Number(p.userId) !== Number(p.ausloeserId)) {
+    await k.schritt('push_herabgestuft', () => PushService.sendEventRemovedByLeitung(
+      db, p.userId, p.eventName, alsDatum(p.eventDate), 'waitlist', p.eventId, p.organizationId
+    ));
+  }
+
+  // Wer durch die Herabstufung nachgerueckt ist, erfaehrt es — ueber
+  // denselben Weg wie an allen anderen Nachrueck-Stellen.
+  if (p.nachrueckerIn) {
+    await k.schritt('nachruecker', () => meldeNachrueckern(db, p.organizationId, [{
+      eventId: p.eventId,
+      userId: p.nachrueckerIn,
+      seite: p.nachrueckSeite
+    }]));
+  }
+});
 
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
@@ -314,49 +379,49 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         message: responseMessage
       });
 
-      // Seiteneffekte NACH der Antwort (siehe utils/nachAntwort.js): Die
-      // Leitung soll nicht warten, bis der Push draussen ist, und ein
-      // Push-Fehler darf die laengst committete Buchung nicht kippen.
+      // WER VON DER LEITUNG ANGEMELDET WIRD, ERFAEHRT ES AUCH (16.09.2026,
+      // Simon woertlich): "wenn ein admin jemanden zu einem evnt anmeldet,
+      // muss derjenige einen push bekommen. teamer, leitung oder auch
+      // konfi. bisher bekommt derjenige nichts."
+      //
+      // Vorher gab es hier nur Live-Updates: Die erreichen eine offene
+      // Sitzung, aber kein Handy. Es ist derselbe Wortlaut wie bei der
+      // Selbstanmeldung (routes/events/buchung.js) — die Meldung ist
+      // dieselbe, egal ob man sich selbst anmeldet oder angemeldet wird.
+      //
+      // AUCH BEI DER WARTELISTE (bewusst so entschieden): Wer direkt auf
+      // die Warteliste gesetzt wird, bekommt die passende Meldung "Du
+      // stehst auf der Warteliste" — sendEventRegisteredToKonfi
+      // unterscheidet den Wortlaut ueber den status. Schweigen waere hier
+      // falsch: Die Person weiss sonst nicht einmal, dass die Leitung sie
+      // ueberhaupt vorgemerkt hat, und hielte sich den Termin nicht frei.
+      //
+      // NICHT an die ausloesende Person: Die Leitung kann sich selbst
+      // einem Termin zuordnen (seit 31.08.2026, um in den Termin-Chat zu
+      // kommen). Wer gerade selbst auf den Knopf gedrueckt hat, braucht
+      // darueber keine Mitteilung aufs eigene Handy.
+      // Number(...) beidseitig: user_id kommt aus dem JSON-Rumpf und kann
+      // als Zeichenkette ankommen ("4"), req.user.id ist eine Zahl. Ein
+      // strikter Vergleich haette die Selbstzuordnung durchrutschen lassen.
+      if (Number(user_id) !== Number(req.user.id)) {
+        // NACH der Antwort als Auftrag der dauerhaften Warteschlange (Art
+        // 'termin_von_leitung_eingetragen' oben): Die Leitung soll nicht
+        // warten, bis der Push draussen ist, ein Push-Fehler darf die
+        // laengst committete Buchung nicht kippen, und ein Neustart
+        // verliert ihn nicht.
+        einreihen(db, 'termin_von_leitung_eingetragen', {
+          userId: user_id,
+          addedIsTeamer: Boolean(addedIsTeamer),
+          eventId,
+          eventName: event.name,
+          eventDate: event.event_date,
+          status: finalStatus,
+          timeslot,
+          organizationId: req.user.organization_id,
+        }, { req, bezeichnung: 'POST /events/:id/participants (Mitteilung)' });
+      }
+
       nachAntwort(req, async () => {
-        // WER VON DER LEITUNG ANGEMELDET WIRD, ERFAEHRT ES AUCH (16.09.2026,
-        // Simon woertlich): "wenn ein admin jemanden zu einem evnt anmeldet,
-        // muss derjenige einen push bekommen. teamer, leitung oder auch
-        // konfi. bisher bekommt derjenige nichts."
-        //
-        // Vorher gab es hier nur Live-Updates: Die erreichen eine offene
-        // Sitzung, aber kein Handy. Es ist derselbe Wortlaut wie bei der
-        // Selbstanmeldung (routes/events/buchung.js) — die Meldung ist
-        // dieselbe, egal ob man sich selbst anmeldet oder angemeldet wird.
-        //
-        // AUCH BEI DER WARTELISTE (bewusst so entschieden): Wer direkt auf
-        // die Warteliste gesetzt wird, bekommt die passende Meldung "Du
-        // stehst auf der Warteliste" — sendEventRegisteredToKonfi
-        // unterscheidet den Wortlaut ueber den status. Schweigen waere hier
-        // falsch: Die Person weiss sonst nicht einmal, dass die Leitung sie
-        // ueberhaupt vorgemerkt hat, und hielte sich den Termin nicht frei.
-        //
-        // NICHT an die ausloesende Person: Die Leitung kann sich selbst
-        // einem Termin zuordnen (seit 31.08.2026, um in den Termin-Chat zu
-        // kommen). Wer gerade selbst auf den Knopf gedrueckt hat, braucht
-        // darueber keine Mitteilung aufs eigene Handy.
-        // Number(...) beidseitig: user_id kommt aus dem JSON-Rumpf und kann
-        // als Zeichenkette ankommen ("4"), req.user.id ist eine Zahl. Ein
-        // strikter Vergleich haette die Selbstzuordnung durchrutschen lassen.
-        if (Number(user_id) !== Number(req.user.id)) {
-          try {
-            if (addedIsTeamer) {
-              await PushService.sendEventRegisteredToTeamer(
-                db, user_id, event.name, event.event_date, finalStatus, eventId, req.user.organization_id
-              );
-            } else {
-              await PushService.sendEventRegisteredToKonfi(
-                db, user_id, event.name, event.event_date, finalStatus, eventId, timeslot, req.user.organization_id
-              );
-            }
-          } catch (pushErr) {
-            console.error('Push notification failed for admin booking:', pushErr);
-          }
-        }
 
         // Live Update: Notify the booked person and admins about the admin-booking.
         // sendToUserByRole statt hart 'konfi': die Leitung kann hier auch
@@ -505,11 +570,14 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // sich ja bereits abgemeldet oder wurde abgemeldet.
       if (['confirmed', 'waitlist'].includes(booking.status)
           && Number(booking.user_id) !== Number(req.user.id)) {
-        nachAntwort(req, async () => {
-          await PushService.sendEventRemovedByLeitung(
-            db, booking.user_id, booking.event_name, booking.event_date, 'removed', eventId, req.user.organization_id
-          );
-        }, 'DELETE /events/:id/bookings/:bookingId (Mitteilung)');
+        einreihen(db, 'termin_von_leitung_ausgetragen', {
+          userId: booking.user_id,
+          eventName: booking.event_name,
+          eventDate: booking.event_date,
+          vorgang: 'removed',
+          eventId,
+          organizationId: req.user.organization_id,
+        }, { req, bezeichnung: 'DELETE /events/:id/bookings/:bookingId (Mitteilung)' });
       }
 
       // Ab hier ist alles festgeschrieben — Benachrichtigungen erst jetzt.
@@ -787,37 +855,25 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       const action = status === 'confirmed' ? 'Teilnehmer:in von Warteliste bestätigt' : 'Teilnehmer:in auf Warteliste gesetzt';
       res.json({ message: action, status });
 
-      // Push bei Befoerderung von der Warteliste (Muster wie die uebrigen Nachrueck-Stellen, gemeinsamer Nachlauf in utils/nachrueckMeldung.js).
-      // Seiteneffekt NACH res — Push-Fehler darf nichts kippen.
+      // Push bei Befoerderung von der Warteliste (Muster wie die uebrigen
+      // Nachrueck-Stellen, gemeinsamer Nachlauf in utils/nachrueckMeldung.js).
+      // Seiteneffekt NACH res — Push-Fehler darf nichts kippen. Als Auftrag
+      // der dauerhaften Warteschlange (Art 'termin_status_geaendert' oben),
+      // die Live-Updates gleich danach.
+      einreihen(db, 'termin_status_geaendert', {
+        status,
+        wasWaitlist: Boolean(wasWaitlist),
+        userId: betroffenerUser,
+        ausloeserId: req.user.id,
+        eventId,
+        eventName,
+        eventDate: eventDatum,
+        nachrueckerIn: herabstufungNachrueckerIn,
+        nachrueckSeite: herabstufungSeite,
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'PUT /events/:eventId/participants/:participantId/status (Mitteilungen)' });
+
       nachAntwort(req, async () => {
-        if (status === 'confirmed' && wasWaitlist) {
-          try {
-            await PushService.sendWaitlistPromotionToKonfi(db, betroffenerUser, eventName, eventDatum, eventId, req.user.organization_id);
-          } catch (pushErr) {
-            console.error('Error sending waitlist promotion push:', pushErr);
-          }
-        }
-
-        // Wer auf die Warteliste zurueckgesetzt wird, erfaehrt es (Simon,
-        // 27.09.2026, F-06 / BF-14) -- wie beim Austragen nicht, wer sich
-        // selbst herabstuft. wasWaitlist ist hier false: 'waitlist' ->
-        // 'waitlist' lehnt die Route oben mit 400 ab.
-        if (status === 'waitlist' && !wasWaitlist && Number(betroffenerUser) !== Number(req.user.id)) {
-          await PushService.sendEventRemovedByLeitung(
-            db, betroffenerUser, eventName, eventDatum, 'waitlist', eventId, req.user.organization_id
-          );
-        }
-
-        // Wer durch die Herabstufung nachgerueckt ist, erfaehrt es — ueber
-        // denselben Weg wie an allen anderen Nachrueck-Stellen.
-        if (herabstufungNachrueckerIn) {
-          await meldeNachrueckern(db, req.user.organization_id, [{
-            eventId,
-            userId: herabstufungNachrueckerIn,
-            seite: herabstufungSeite
-          }]);
-        }
-
         // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).
         liveUpdate.sendToUserByRole(betroffenerUser, 'events', 'update', { eventId });
         // Bei Punktentzug (Degradierung) zusaetzlich das Dashboard aktualisieren.
@@ -826,7 +882,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         }
         // Live-Update an Admins/Org-Admins/Teamer:innen der Org.
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });
-      }, 'PUT /events/:eventId/participants/:participantId/status');
+      }, 'PUT /events/:eventId/participants/:participantId/status (Live-Update)');
 
     } catch (err) {
  console.error('Database error in PUT /events/:eventId/participants/:participantId/status:', eventId, participantId, err);

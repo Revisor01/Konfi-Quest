@@ -6,7 +6,7 @@ const express = require('express');
 const PushService = require('../../services/pushService');
 const liveUpdate = require('../../utils/liveUpdate');
 const { checkPointTypeEnabled } = require('../../utils/pointTypeGuard');
-const { nachAntwort } = require('../../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../../utils/warteschlange');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
 const { rueckeNach } = require('../../utils/bookingUtils');
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
@@ -19,6 +19,44 @@ const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 //
 // Deshalb requireAdmin (org_admin, admin) statt des frueheren requireTeamer.
 // Gesperrt wird in BEIDEN Ebenen: Oberflaeche und Backend.
+// PUT /events/:eventId/participants/attendance-all: Seiteneffekte NACH
+// COMMIT (Muster Einzel-Handler) -- Badges, Level-Up, Push und Live-Updates
+// pro Person, fehlertolerant. Als Auftrag der dauerhaften Warteschlange
+// (utils/warteschlange.js): ueberlebt einen Neustart direkt nach der
+// Antwort, und je Person und Teil ein Schritt -- eine Wiederholung sendet
+// niemandem etwas zweimal.
+registriereArt('anwesenheit_alle_verbucht', async (db, p, k) => {
+  // Zur Laufzeit nachgeschlagen: dieselbe Funktion, die createApp den Routen
+  // mitgibt (routes/badges.js).
+  const { checkAndAwardBadges } = require('../badges');
+  for (const userId of p.marked) {
+    await k.schritt(`abzeichen:${userId}`, () => checkAndAwardBadges(db, userId, { organizationId: p.organizationId }));
+  }
+  for (const userId of p.marked) {
+    const gotPoints = p.awarded.includes(userId);
+    if (gotPoints) {
+      const levelOk = await k.schritt(`levelup:${userId}`, () => PushService.checkAndSendLevelUp(db, userId, p.organizationId));
+      // Wie bisher: scheitert der Level-Up, folgt fuer diese Person kein
+      // Anwesenheits-Push in diesem Durchgang (die Wiederholung holt beides).
+      if (levelOk) {
+        await k.schritt(`push:${userId}`, () => PushService.sendEventAttendanceToKonfi(db, userId, p.eventName, 'present', p.points, p.eventId, p.organizationId));
+      }
+    } else {
+      await k.schritt(`push:${userId}`, () => PushService.sendEventAttendanceToKonfi(db, userId, p.eventName, 'present', 0, p.eventId, p.organizationId));
+    }
+    if (gotPoints) {
+      // sendToUserByRole: die Sammel-Anwesenheit laeuft ueber ALLE
+      // Teilnehmenden eines Termins — darunter Teamer:innen, die in
+      // user_teamer_<id> sitzen und hart adressiert nichts mitbekamen.
+      liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: p.points });
+    }
+    liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId: p.eventId });
+  }
+  if (p.marked.length > 0) {
+    liveUpdate.sendToOrgAdmins(p.organizationId, 'events', 'update', { eventId: p.eventId, action: 'attendance' });
+  }
+});
+
 module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
   const router = express.Router();
 
@@ -142,38 +180,16 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
         points_awarded: awarded.length
       });
 
-      // Seiteneffekte NACH COMMIT (Muster Einzel-Handler): Badges, Level-Up,
-      // Push und LiveUpdates pro Person fehlertolerant.
-      nachAntwort(req, async () => {
-        for (const userId of marked) {
-          try {
-            await checkAndAwardBadges(db, userId, { organizationId: req.user.organization_id });
-          } catch (badgeErr) {
-            console.error('Error checking badges after bulk attendance:', badgeErr);
-          }
-        }
-        for (const userId of marked) {
-          const gotPoints = awarded.includes(userId);
-          try {
-            if (gotPoints) {
-              await PushService.checkAndSendLevelUp(db, userId, req.user.organization_id);
-            }
-            await PushService.sendEventAttendanceToKonfi(db, userId, event.name, 'present', gotPoints ? event.points : 0, eventId, req.user.organization_id);
-          } catch (pushErr) {
-            console.error('Push notification failed (bulk attendance):', pushErr);
-          }
-          if (gotPoints) {
-            // sendToUserByRole: die Sammel-Anwesenheit laeuft ueber ALLE
-            // Teilnehmenden eines Termins — darunter Teamer:innen, die in
-            // user_teamer_<id> sitzen und hart adressiert nichts mitbekamen.
-            liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: event.points });
-          }
-          liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId });
-        }
-        if (marked.length > 0) {
-          liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'attendance' });
-        }
-      }, 'PUT /events/:eventId/participants/attendance-all');
+      // Seiteneffekte NACH COMMIT als Auftrag der dauerhaften Warteschlange
+      // (Art 'anwesenheit_alle_verbucht' oben).
+      einreihen(db, 'anwesenheit_alle_verbucht', {
+        marked,
+        awarded,
+        eventId,
+        eventName: event.name,
+        points: event.points,
+        organizationId: req.user.organization_id,
+      }, { req, bezeichnung: 'PUT /events/:eventId/participants/attendance-all' });
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       console.error('Database error in PUT /events/:eventId/participants/attendance-all:', eventId, err);

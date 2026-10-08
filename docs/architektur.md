@@ -52,6 +52,15 @@ absichtlich nicht hier.
   dieselbe Datenbank, dieselben Schlüssel) ist seit dem 08.10.2026
   abgeschafft (Simons Entscheidung); die fünf TestFlight-Builds, die darauf
   zeigten (153–158), wurden vorher abgelaufen gelassen.
+- **Arbeit nach der Antwort.** Push, Postfach-Eintrag und E-Mail nach einer
+  Änderung legt die Route als Auftrag in die Tabelle `nachlauf_auftraege`
+  (Art und Parameter als JSON) und stößt ihn sofort selbst an
+  (`backend/utils/warteschlange.js`). Ein Arbeiter auf jeder Replica holt
+  nach, was liegen blieb — Aufträge eines beendeten Prozesses, Wiederholungen
+  nach Fehlern —; `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Replicas
+  denselben Auftrag annehmen. Live-Updates bleiben im Prozess
+  (`backend/utils/nachAntwort.js`). Betrieb:
+  [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange).
 - **Uploads** liegen in einem Host-Verzeichnis, das alle Backends einhängen;
   Nachweisfotos und Challenge-Dateien sind verschlüsselt
   (`backend/utils/photoCrypto.js`, Schlüssel `ACTIVITY_PHOTO_ENCRYPTION_KEY`).

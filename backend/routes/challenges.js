@@ -114,8 +114,8 @@ const CONTENT_TYPES = {
 // ist. Hier weiterhin re-exportiert (siehe module.exports unten).
 const { PUBLIC_SUBMISSION_SQL } = require('../utils/challengeSichtbarkeit');
 const { leitungSiehtChallengeSql, teamMachtMitSql, TEAM_MACHT_MIT_AUDIENCES } = require('../utils/challengeLeitungSicht');
-const { nachAntwort } = require('../utils/nachAntwort');
 const { MITGLIEDSCHAFTEN_SQL, istMitgliedDerOrganisation, ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('../utils/orgMitglieder');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
 
 // JS-Pendant für bereits geladene Zeilen (Datei-Auslieferung, Export).
 // Erwartet { moderation_status, konfi_consent } und { visibility }.
@@ -173,6 +173,54 @@ function parseAllowedMedia(raw) {
   }
   return [];
 }
+
+// POST /challenges/:id/submissions: Pushes nach einem Beitrag, als Auftrag
+// der dauerhaften Warteschlange (utils/warteschlange.js) -- ueberlebt einen
+// Neustart direkt nach der Antwort; je Push ein Schritt, eine Wiederholung
+// sendet nichts zweimal. Begruendung der einzelnen Pushes an der Route.
+registriereArt('challenge_beitrag', async (db, p, k) => {
+  await k.schritt('push_leitung', () => PushService.sendChallengeSubmissionToLeadership(
+    db,
+    p.organizationId,
+    p.challengeId,
+    p.challengeTitle,
+    p.displayName,
+    p.moderated,
+    p.userId
+  ));
+
+  if (p.sichtbar) {
+    await k.schritt('push_feed', () => PushService.sendChallengeFeedToJahrgaenge(
+      db,
+      p.organizationId,
+      p.challengeId,
+      p.challengeTitle,
+      p.userId,
+      p.anonym ? null : p.displayName,
+      p.mediaType
+    ));
+  }
+
+  if (p.moderationStatus === 'approved') {
+    await k.schritt('push_abzeichen', async () => {
+      const { rows: [{ count: approvedCount }] } = await db.query(
+        `SELECT COUNT(*)::int AS count FROM challenge_submissions
+         WHERE challenge_id = $1 AND user_id = $2
+           AND moderation_status = 'approved'`,
+        [p.challengeId, p.userId]
+      );
+      // Genau 1 => die soeben erstellte Submission ist die erste freigegebene.
+      if (approvedCount === 1) {
+        await PushService.sendChallengeBadgeEarnedToKonfi(
+          db,
+          p.userId,
+          p.challengeId,
+          p.challengeTitle
+        );
+      }
+    });
+  }
+});
 
 module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) => {
   const { requireTeamer, requireAdmin } = roleHelpers;
@@ -1004,73 +1052,35 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // sofort approved, der Push feuert hier. Bei moderierten Challenges
         // gibt es das Abzeichen erst mit der Freigabe — der Push feuert dann
         // in PUT /admin/submissions/:id/moderate.
-        // Ueber nachAntwort statt frei laufend (27.09.2026): gleiches Verhalten,
-        // aber Tests koennen auf den Nachlauf warten (warteAufNachwehen).
-        nachAntwort(req, async () => {
-          try {
-            await PushService.sendChallengeSubmissionToLeadership(
-              db,
-              req.user.organization_id,
-              challengeId,
-              challenge.title,
-              req.user.display_name,
-              challenge.moderated,
-              req.user.id
-            );
-          } catch (pushErr) {
-            console.error('Push für Challenge-Beitrag fehlgeschlagen:', pushErr.message);
-          }
-
-          try {
-            // Feed-Push an die Jahrgangs-Konfis — NUR wenn der Beitrag jetzt
-            // schon oeffentlich ist. Bei moderierten Challenges ist er das
-            // nicht; dort feuert der Push erst mit der Freigabe (PUT
-            // /admin/submissions/:id/moderate).
-            //
-            // Dieselbe Sichtbarkeitsregel wie die Galerie (isSubmissionPublic):
-            // Wer den Beitrag nicht sehen darf, erfaehrt auch nichts von ihm.
-            const sichtbar = isSubmissionPublic(
-              { moderation_status: moderationStatus, konfi_consent },
-              challenge
-            );
-            if (sichtbar) {
-              const anonym = isAnonymous({ konfi_consent }, challenge);
-              await PushService.sendChallengeFeedToJahrgaenge(
-                db,
-                req.user.organization_id,
-                challengeId,
-                challenge.title,
-                req.user.id,
-                anonym ? null : req.user.display_name,
-                media_type
-              );
-            }
-          } catch (pushErr) {
-            console.error('Feed-Push fehlgeschlagen:', pushErr.message);
-          }
-
-          try {
-            if (moderationStatus === 'approved') {
-              const { rows: [{ count: approvedCount }] } = await db.query(
-                `SELECT COUNT(*)::int AS count FROM challenge_submissions
-                 WHERE challenge_id = $1 AND user_id = $2
-                   AND moderation_status = 'approved'`,
-                [challengeId, req.user.id]
-              );
-              // Genau 1 => die soeben erstellte Submission ist die erste freigegebene.
-              if (approvedCount === 1) {
-                await PushService.sendChallengeBadgeEarnedToKonfi(
-                  db,
-                  req.user.id,
-                  challengeId,
-                  challenge.title
-                );
-              }
-            }
-          } catch (badgeErr) {
-            console.error('Abzeichen-Push für Challenge-Beitrag fehlgeschlagen:', badgeErr.message);
-          }
-        }, 'Pushes nach Challenge-Beitrag');
+        // Als Auftrag der dauerhaften Warteschlange (Art 'challenge_beitrag'
+        // oben): ueberlebt einen Neustart direkt nach der Antwort.
+        //
+        // Feed-Push an die Jahrgangs-Konfis — NUR wenn der Beitrag jetzt
+        // schon oeffentlich ist. Bei moderierten Challenges ist er das
+        // nicht; dort feuert der Push erst mit der Freigabe (PUT
+        // /admin/submissions/:id/moderate). Dieselbe Sichtbarkeitsregel wie
+        // die Galerie (isSubmissionPublic): Wer den Beitrag nicht sehen darf,
+        // erfaehrt auch nichts von ihm.
+        let sichtbar = false;
+        let anonym = false;
+        try {
+          sichtbar = isSubmissionPublic({ moderation_status: moderationStatus, konfi_consent }, challenge);
+          anonym = isAnonymous({ konfi_consent }, challenge);
+        } catch (sichtErr) {
+          console.error('Sichtbarkeit des Challenge-Beitrags nicht bestimmbar:', sichtErr.message);
+        }
+        einreihen(db, 'challenge_beitrag', {
+          organizationId: req.user.organization_id,
+          challengeId,
+          challengeTitle: challenge.title,
+          displayName: req.user.display_name,
+          moderated: challenge.moderated,
+          userId: req.user.id,
+          sichtbar,
+          anonym,
+          mediaType: media_type,
+          moderationStatus,
+        }, { req, bezeichnung: 'Pushes nach Challenge-Beitrag' });
 
         // Live-Update nur, wenn der Beitrag sofort oeffentlich sichtbar ist.
         if (isSubmissionPublic(created, challenge)) {

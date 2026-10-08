@@ -997,7 +997,9 @@ paths:
         tests/routes/konfiOderTeam.test.js.
 
         Meldung an die eingeladene Person ueber Postfach, Push (Gruppe
-        "Anfragen und Freigaben") und E-Mail, nach der Antwort (nachAntwort).
+        "Anfragen und Freigaben") und E-Mail, nach der Antwort -- seit
+        08.10.2026 als Auftrag der dauerhaften Warteschlange
+        (utils/warteschlange.js): ein Neustart direkt danach verliert sie nicht.
         Die Rolle steht darin mit dem festen Wort nach role_name ("Leitung",
         "Gemeindeleitung", "Teamer:in"; utils/rollenNamen.js). BEHOBEN 28.09.2026:
         Vorher stand dort der technische Name ("als admin mitzuarbeiten"),

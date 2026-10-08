@@ -76,6 +76,7 @@ const { kontoSperreAufheben } = require('./kontoSperre');
 const { meldeNachrueckern } = require('./nachrueckMeldung');
 const { REQUESTS_DIR, CHALLENGES_DIR, CHAT_DIR } = require('./photoStorage');
 const liveUpdate = require('./liveUpdate');
+const { registriereArt, einreihen } = require('./warteschlange');
 
 /**
  * Jede Fremdschluessel-Spalte auf users und was mit ihren Zeilen geschieht.
@@ -460,6 +461,44 @@ async function meldeNachKontoLoeschung(db, ergebnis, { melden = true } = {}) {
   }
 }
 
+// Die Mitteilungen an Nachgerueckte als Auftrag der dauerhaften
+// Warteschlange (utils/warteschlange.js): Ein Neustart direkt nach der
+// Antwort verliert sie nicht; je Gemeinde ein Schritt.
+registriereArt('konto_geloescht_nachruecker', async (db, p, k) => {
+  const jeGemeinde = new Map();
+  for (const eintrag of p.nachgerueckt || []) {
+    const liste = jeGemeinde.get(eintrag.organizationId) || [];
+    liste.push(eintrag);
+    jeGemeinde.set(eintrag.organizationId, liste);
+  }
+  for (const [organizationId, liste] of jeGemeinde) {
+    await k.schritt(`gemeinde:${organizationId}`, () => meldeNachrueckern(db, organizationId, liste));
+  }
+});
+
+/**
+ * Wie meldeNachKontoLoeschung, nach der Antwort einer Route: Die Chatlisten
+ * frischen sofort auf (fluechtig), die Mitteilungen an Nachgerueckte gehen
+ * als Auftrag in die Warteschlange. Wirft nie.
+ *
+ * @param {{query: Function}} db
+ * @param {object} ergebnis  Rueckgabe von kontoDatenLoeschen/kontenDatenLoeschen
+ * @param {{req?: object, bezeichnung?: string}} [optionen]
+ */
+async function meldeNachKontoLoeschungEinreihen(db, ergebnis, { req = null, bezeichnung = null } = {}) {
+  if (!ergebnis) return;
+  try {
+    liveUpdate.raeumeGeaendert(ergebnis.gespraechspartner);
+  } catch (err) {
+    console.error('Konto löschen: Chatlisten nicht aufgefrischt:', err.message);
+  }
+  const nachgerueckt = (ergebnis.nachgerueckt || []).map((e) => ({
+    eventId: e.eventId, userId: e.userId, seite: e.seite, organizationId: e.organizationId,
+  }));
+  if (nachgerueckt.length === 0) return;
+  await einreihen(db, 'konto_geloescht_nachruecker', { nachgerueckt }, { req, bezeichnung });
+}
+
 module.exports = {
   LOESCHREGELN,
   fremdschluesselAufUsers,
@@ -468,4 +507,5 @@ module.exports = {
   kontenDatenLoeschen,
   kontoDateienLoeschen,
   meldeNachKontoLoeschung,
+  meldeNachKontoLoeschungEinreihen,
 };

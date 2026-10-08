@@ -17,6 +17,44 @@ const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
+
+// Push zu einer neuen Chat-Nachricht (oder Umfrage) als Auftrag der
+// dauerhaften Warteschlange (utils/warteschlange.js): Ein Neustart direkt
+// nach der Antwort verliert ihn nicht. Die Empfaenger bringt der Auftrag mit
+// (dieselbe Teilnehmerliste, die eben den Socket-Broadcast bekam) -- so
+// kostet die Warteschlange keine zweite Teilnehmer-Abfrage.
+//
+// Text der Mitteilung: nur Absender und Art, kein Inhalt (Simon,
+// 29.09.2026) — Begruendung in utils/pushText.js, dort auch, warum es KEINE
+// echte Bildvorschau gibt.
+registriereArt('chat_push', async (db, p, k) => {
+  await k.schritt('push', async () => {
+    const { rows: [room] } = await db.query(
+      'SELECT name, type, organization_id FROM chat_rooms WHERE id = $1',
+      [p.roomId]
+    );
+    const roomName = room?.name || 'Chat';
+    const isDirectChat = room?.type === 'direct';
+
+    await PushService.sendChatNotificationToMany(db, p.empfaenger, {
+      title: isDirectChat ? p.sender.name : roomName,
+      body: chatPushText({ messageType: p.messageType, senderName: p.sender.name, isDirectChat }),
+      roomId: p.roomId,
+      messageId: p.messageId,
+      data: {
+        sender_id: p.sender.id,
+        sender_name: p.sender.name,
+        room_name: roomName,
+        room_type: room?.type || 'unknown',
+        // Content-Org des Raums (Multi-Org: der Tap wechselt in die
+        // Organisation des Raums) -- mitgereicht, damit der Push-Dienst
+        // sie nicht erneut nachsehen muss.
+        organization_id: room?.organization_id
+      }
+    });
+  });
+});
 const { darfRaumBetreten } = require('../utils/chatRoomAccess');
 const { istTextTyp, pruefeTextDatei, textInhaltsTyp } = require('../utils/textDatei');
 const { gemeindeFelderSql, ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('../utils/orgMitglieder');
@@ -99,8 +137,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   // @param {{id:number, type:string, name:string}} arg.sender
   // @param {number} arg.messageId
   // @param {(message:object) => object} arg.payload  Socket-Payload `message`
-  // @param {(raum:{roomName:string, isDirectChat:boolean}) => {title:string, body:string}} arg.textFuer
-  const nachNeuerNachricht = (req, { roomId, sender, messageId, payload, textFuer }) =>
+  // @param {string} arg.messageType  Art der Nachricht fuer den Push-Text
+  //   (utils/pushText.js)
+  const nachNeuerNachricht = (req, { roomId, sender, messageId, payload, messageType }) =>
     nachAntwort(req, async () => {
       const { rows: teilnehmer } = await db.query(
         'SELECT user_id, user_type FROM chat_participants WHERE room_id = $1',
@@ -117,37 +156,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         });
       }
 
-      // Push an alle anderen Teilnehmenden -- gesammelt, nicht je Kopf.
+      // Push an alle anderen Teilnehmenden -- gesammelt, nicht je Kopf, als
+      // Auftrag der dauerhaften Warteschlange (Art 'chat_push' oben).
       const empfaenger = teilnehmer
         .filter((p) => !(Number(p.user_id) === Number(sender.id) && p.user_type === sender.type))
         .map((p) => p.user_id);
       if (empfaenger.length === 0) return;
 
-      const { rows: [room] } = await db.query(
-        'SELECT name, type, organization_id FROM chat_rooms WHERE id = $1',
-        [roomId]
-      );
-      const roomName = room?.name || 'Chat';
-      const isDirectChat = room?.type === 'direct';
-      const { title, body } = textFuer({ roomName, isDirectChat });
-
-      await PushService.sendChatNotificationToMany(db, empfaenger, {
-        title,
-        body,
+      await einreihen(db, 'chat_push', {
         roomId,
+        empfaenger,
+        sender: { id: sender.id, type: sender.type, name: sender.name },
         messageId,
-        data: {
-          sender_id: sender.id,
-          sender_name: sender.name,
-          room_name: roomName,
-          room_type: room?.type || 'unknown',
-          // Content-Org des Raums (Multi-Org: der Tap wechselt in die
-          // Organisation des Raums) -- mitgereicht, damit der Push-Dienst
-          // sie nicht erneut nachsehen muss.
-          organization_id: room?.organization_id
-        }
-      });
-    }, 'Chat-Push');
+        messageType,
+      }, { req, bezeichnung: 'Chat-Push' });
+    }, 'Chat-Broadcast');
 
   // Hilfsfunktion: Nach einem Vote den aktuellen Poll-Stand einsammeln und per
   // 'pollUpdated' an den Raum senden, damit alle offenen Chats die neuen Votes
@@ -1449,17 +1472,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         sender: { id: userId, type: userType, name: message.sender_name },
         messageId: message.id,
         payload: message,
-        textFuer: ({ roomName, isDirectChat }) => ({
-          title: isDirectChat ? message.sender_name : roomName,
-          // Text der Mitteilung: nur Absender und Art, kein Inhalt (Simon,
-          // 29.09.2026) — Begruendung in utils/pushText.js, dort auch, warum
-          // es KEINE echte Bildvorschau gibt.
-          body: chatPushText({
-            messageType: message.message_type,
-            senderName: message.sender_name,
-            isDirectChat,
-          }),
-        }),
+        messageType: message.message_type,
       });
 
     } catch (err) {
@@ -2287,10 +2300,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           messageId,
           payload: pollMessage,
           // Ohne die Frage selbst, wie bei jeder Chat-Nachricht (utils/pushText.js).
-          textFuer: ({ roomName, isDirectChat }) => ({
-            title: isDirectChat ? senderName : roomName,
-            body: chatPushText({ messageType: 'poll', senderName, isDirectChat }),
-          }),
+          messageType: 'poll',
         });
       }, 'Umfrage-Nacharbeit');
 

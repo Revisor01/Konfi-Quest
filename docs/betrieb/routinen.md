@@ -36,6 +36,7 @@ sieht. Gleich wie die App: `env -u PGTZ psql …`. Zeitstempel ohne Zone
 | Rückspielprobe | vor jedem Release, nach Änderungen an Postgres oder am Sicherungsskript | [sicherung.md](sicherung.md#rückspielprobe) |
 | Stand prüfen | nach jedem Deploy | [Nach jedem Deploy](#nach-jedem-deploy) |
 | Notfall-Deploy | wenn ein gebauter Fix sofort raus muss oder zurückgerollt wird | [Notfall-Deploy](#notfall-deploy) |
+| Nachlauf-Warteschlange prüfen | nach jedem Deploy, bei Meldungen „Push kam nicht an" | [Nachlauf-Warteschlange](#nachlauf-warteschlange) |
 | Apple-Zertifikat erneuern | jährlich, jetzt vor dem 28.11.2026 | [release.md](release.md#8-das-apple-zertifikat-jährlich-erneuern) |
 
 ## Umami bereinigen
@@ -146,6 +147,58 @@ Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
   bekommen hat. Eine kleine Zahl ist also kein Fehler. Ob die Datenbank
   vollständig ist, zeigt der Abgleich mit `schema_migrations` in
   [`init-scripts/README.md`](../../init-scripts/README.md#was-in-backendmigrations-liegt--und-was-nicht).
+
+- Nachlauf-Warteschlange: nichts liegt länger als ein paar Minuten offen
+  (Abfrage im nächsten Abschnitt).
+
+## Nachlauf-Warteschlange
+
+Push, Postfach-Eintrag und E-Mail nach einer Änderung stehen als Auftrag in
+`nachlauf_auftraege` (Migration 202, `backend/utils/warteschlange.js`). Die
+Route stößt ihren Auftrag sofort selbst an; ein Arbeiter auf jeder Replica
+(alle 5 s, `NACHLAUF_TAKT_MS`) holt ab, was liegen blieb. Live-Updates laufen
+weiter im Prozess und gehen bei einem Neustart verloren — die Apps laden nach
+dem Wiederverbinden ohnehin neu.
+
+**Zustände:** `offen` (wartet ab `faellig_ab`), `laeuft` (angenommen von
+`gesperrt_von` bis `gesperrt_bis`, die Sperre wird während der Arbeit
+verlängert), `erledigt`, `fehlgeschlagen` (nach `max_versuche`, Vorgabe 5).
+Wiederholt wird nach 30 s, 1, 2, 4 … Minuten, höchstens stündlich; Teile, die
+schon durch sind (`erledigte_schritte`), laufen nicht noch einmal.
+
+**Beim Deploy** (Rolling, zwei Replicas): Die stoppende Replica nimmt nach
+SIGTERM nichts Neues mehr an, wartet bis zu 3 s (`NACHLAUF_STOPP_MS`, gekürzt,
+damit das Shutdown-Budget von 10 s reicht) und gibt Angefangenes an die
+Schlange zurück; die andere Replica macht weiter. Kommt das Zurückgeben nicht
+mehr durch, holt die andere den Auftrag nach Ablauf seiner Sperre (2 min,
+`NACHLAUF_SPERRE_MS`). Ein Auftrag einer Art, die ein noch laufender alter
+Stand nicht kennt, bleibt liegen, bis der neue Stand ihn nimmt. Der alte
+Stand (vor Migration 202) arbeitet weiter im Prozess wie bisher.
+
+**Aufräumen:** Erledigte Aufträge verlieren ihre Parameter sofort und gehen
+nach 7 Tagen, fehlgeschlagene nach 30 Tagen (stündlich, jede Replica).
+
+**Instanz ohne Jobs** (`RUN_BACKGROUND_JOBS=false`, im Stack derzeit keine)
+hätte keinen Arbeiter: Sie führte ihre eigenen Aufträge sofort aus, nähme aber
+keine fremden an; scheitert dort einer, holt ihn ein Live-Backend bei der
+Wiederholung.
+
+**Prüfen** (Lese-Abfrage):
+
+```sql
+SELECT status, art, count(*) AS anzahl,
+       min(erstellt_am) AS aeltester, max(letzter_fehler) AS ein_fehler
+  FROM nachlauf_auftraege
+ WHERE status IN ('offen', 'laeuft', 'fehlgeschlagen')
+ GROUP BY status, art ORDER BY status, art;
+```
+
+Erwartet: `offen`/`laeuft` leer oder nur Minuten alt. `fehlgeschlagen` heißt,
+eine Mitteilung ist endgültig nicht angekommen — `letzter_fehler` nennt den
+Grund. Einen fehlgeschlagenen Auftrag erneut anstoßen (ändert
+Produktionsdaten, nur nach Rücksprache): `status = 'offen'`,
+`versuche = 0`, `faellig_ab = NOW()` setzen; Schritte in
+`erledigte_schritte` laufen dabei nicht noch einmal.
 
 ## Notfall-Deploy
 

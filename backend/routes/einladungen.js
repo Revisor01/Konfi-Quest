@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { canCreateRole } = require('../utils/roleHierarchy');
 const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen, alsDatum } = require('../utils/warteschlange');
 const { rollenAnzeigename } = require('../utils/rollenNamen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const liveUpdate = require('../utils/liveUpdate');
@@ -30,6 +31,51 @@ const { istIrgendwoKonfi, pruefeKonfiOderTeam } = require('../utils/konfiOderTea
 //  - keine zweite Einladung, wenn schon Mitglied oder schon eine offene da ist
 //  - annehmen und ablehnen darf nur die eingeladene Person selbst
 //  - eine abgelaufene Einladung laesst sich nicht mehr annehmen (410)
+// MITTEILUNGEN NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
+// (utils/warteschlange.js): ueberleben einen Neustart direkt nach der
+// Antwort; je Teil ein Schritt, eine Wiederholung sendet nichts zweimal.
+// PushService und emailService zur Laufzeit nachgeschlagen wie in der Route.
+
+// POST /einladungen: Postfach und Push an die eingeladene Person, dazu die
+// E-Mail.
+registriereArt('gemeinde_einladung', async (db, p, k) => {
+  const PushService = require('../services/pushService');
+  const emailService = require('../services/emailService');
+  await k.schritt('push', () => PushService.sendGemeindeEinladungToUser(
+    db, p.zielId, p.orgName, p.rolleAnzeige, p.einladungId, p.organizationId
+  ));
+  if (p.email) {
+    await k.schritt('mail', () => emailService.sendGemeindeEinladungEmail(
+      p.email, p.displayName, p.orgName, p.rolleAnzeige, alsDatum(p.expiresAt)
+    ));
+  }
+});
+
+// POST /einladungen/:id/annehmen und /ablehnen: Die einladende Leitung
+// erfaehrt die Antwort (F-13).
+registriereArt('gemeinde_einladung_beantwortet', async (db, p, k) => {
+  const PushService = require('../services/pushService');
+  await k.schritt('push', async () => {
+    const { rows: [namen] } = await db.query(
+      `SELECT u.display_name AS person, r.display_name AS rolle_anzeige, r.name AS rolle,
+              COALESCE(o.display_name, o.name) AS gemeinde
+         FROM users u, roles r, organizations o
+        WHERE u.id = $1 AND r.id = $2 AND o.id = $3`,
+      [p.userId, p.roleId, p.organizationId]
+    );
+    await PushService.sendEinladungBeantwortetToLeitung(db, {
+      einladungId: p.einladungId,
+      organizationId: p.organizationId,
+      eingeladenVon: p.eingeladenVon,
+      eingeladenId: p.userId,
+      personName: namen?.person,
+      rolleName: rollenAnzeigename(namen?.rolle, namen?.rolle_anzeige),
+      orgName: namen?.gemeinde,
+      angenommen: p.angenommen
+    });
+  });
+});
+
 module.exports = (db, rbacVerifier, roleHelpers) => {
   const { requireOrgAdmin } = roleHelpers;
   const PushService = require('../services/pushService');
@@ -204,19 +250,18 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         });
 
         // Postfach, Push und E-Mail NACH der Antwort: Die Einladung steht
-        // bereits, der Versand ist Beiwerk (utils/nachAntwort.js).
-        nachAntwort(req, async () => {
-          const orgName = req.user.organization_name || 'einer Gemeinde';
-          await PushService.sendGemeindeEinladungToUser(
-            db, ziel.id, orgName, rollenAnzeigename(rolle.name), einladung.id, organizationId
-          );
-          if (ziel.email) {
-            await emailService.sendGemeindeEinladungEmail(
-              ziel.email, ziel.display_name, orgName,
-              rollenAnzeigename(rolle.name), einladung.expires_at
-            );
-          }
-        }, 'Einladung melden');
+        // bereits, der Versand ist Beiwerk -- als Auftrag der dauerhaften
+        // Warteschlange (Art 'gemeinde_einladung' oben).
+        einreihen(db, 'gemeinde_einladung', {
+          zielId: ziel.id,
+          email: ziel.email || null,
+          displayName: ziel.display_name,
+          orgName: req.user.organization_name || 'einer Gemeinde',
+          rolleAnzeige: rollenAnzeigename(rolle.name),
+          einladungId: einladung.id,
+          expiresAt: einladung.expires_at,
+          organizationId,
+        }, { req, bezeichnung: 'Einladung melden' });
       } catch (err) {
         console.error('Database error in POST /einladungen:', err);
         res.status(500).json({ error: 'Datenbankfehler' });
@@ -334,25 +379,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
    * Person, die eingeladen hat, solange sie dort Org-Admin ist -- sonst die
    * Org-Admins der Gemeinde. Laeuft nach der Antwort (nachAntwort).
    */
-  const meldeAntwort = async (einladung, angenommen) => {
-    const { rows: [namen] } = await db.query(
-      `SELECT u.display_name AS person, r.display_name AS rolle_anzeige, r.name AS rolle,
-              COALESCE(o.display_name, o.name) AS gemeinde
-         FROM users u, roles r, organizations o
-        WHERE u.id = $1 AND r.id = $2 AND o.id = $3`,
-      [einladung.user_id, einladung.role_id, einladung.organization_id]
-    );
-    await PushService.sendEinladungBeantwortetToLeitung(db, {
-      einladungId: einladung.id,
-      organizationId: einladung.organization_id,
-      eingeladenVon: einladung.eingeladen_von,
-      eingeladenId: einladung.user_id,
-      personName: namen?.person,
-      rolleName: rollenAnzeigename(namen?.rolle, namen?.rolle_anzeige),
-      orgName: namen?.gemeinde,
-      angenommen
-    });
-  };
+  // Die Antwort an die einladende Leitung, als Auftrag der dauerhaften
+  // Warteschlange (Art 'gemeinde_einladung_beantwortet' oben).
+  const meldeAntwort = (req, einladung, angenommen) => einreihen(db, 'gemeinde_einladung_beantwortet', {
+    einladungId: einladung.id,
+    organizationId: einladung.organization_id,
+    eingeladenVon: einladung.eingeladen_von,
+    userId: einladung.user_id,
+    roleId: einladung.role_id,
+    angenommen,
+  }, { req, bezeichnung: angenommen ? 'Einladung angenommen melden' : 'Einladung abgelehnt melden' });
 
   router.post('/:id/annehmen',
     rbacVerifier, param('id').isInt({ min: 1 }), handleValidationErrors,
@@ -418,10 +454,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         // Die einladende Leitung erfaehrt es (F-13), und die Benutzerliste
         // der Gemeinde laedt nach -- dort steht die Person jetzt (Live-
         // Signal 'users' wie in routes/users.js).
-        nachAntwort(req, async () => {
+        nachAntwort(req, () => {
           liveUpdate.sendToOrgAdmins(einladung.organization_id, 'users', 'update', { userId: Number(einladung.user_id) });
-          await meldeAntwort(einladung, true);
-        }, 'Einladung angenommen melden');
+        }, 'Einladung angenommen (Live-Update)');
+        meldeAntwort(req, einladung, true);
       } catch (err) {
         console.error('Database error in POST /einladungen/annehmen:', err);
         res.status(500).json({ error: 'Datenbankfehler' });
@@ -458,7 +494,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         res.json({ message: 'Einladung abgelehnt' });
 
         // Auch die Absage erfaehrt die einladende Leitung (F-13).
-        nachAntwort(req, () => meldeAntwort(einladung, false), 'Einladung abgelehnt melden');
+        meldeAntwort(req, einladung, false);
       } catch (err) {
         console.error('Database error in POST /einladungen/ablehnen:', err);
         res.status(500).json({ error: 'Datenbankfehler' });

@@ -11,7 +11,68 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { allIdsBelongToOrg } = require('../utils/orgOwnership');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
+const { meldeNeueBadges } = require('./badges');
+
+// Mitteilungen nach der Entscheidung ueber einen Antrag (PUT
+// /admin/activities/requests/:id), als Auftrag der dauerhaften Warteschlange.
+// Jeder Teil ist ein eigener Schritt: Wird der Auftrag nach einem Fehler
+// wiederholt, kommt kein Push zweimal.
+registriereArt('antrag_entschieden', async (db, p, k) => {
+  for (const [i, m] of (p.abzeichen || []).entries()) {
+    await k.schritt(`abzeichen:${i}`, () => meldeNeueBadges(db, m.userId, m.organizationId, m.badges, m.still));
+  }
+
+  if (p.status === 'approved') {
+    // Level-Check NACH Badge-Check
+    await k.schritt('levelup', () => PushService.checkAndSendLevelUp(db, p.userId, p.organizationId));
+  }
+
+  // Postfach-Eintrag und Push an die antragstellende Person
+  const notificationTitle = p.status === 'approved'
+    ? `Antrag genehmigt!`
+    : `Antrag abgelehnt`;
+
+  const notificationBody = p.status === 'approved'
+    ? `Dein Antrag für "${p.activityName}" wurde genehmigt. Du erhältst ${p.points} ${p.points === 1 ? 'Punkt' : 'Punkte'}!`
+    : `Dein Antrag für "${p.activityName}" wurde leider abgelehnt.${p.adminComment ? ` Grund: ${p.adminComment}` : ''}`;
+
+  const imPostfach = await k.schritt('postfach', () => db.query(
+    "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
+    [
+      p.userId,
+      notificationTitle,
+      notificationBody,
+      'activity_request_decision',
+      JSON.stringify({
+        request_id: p.requestId,
+        activity_name: p.activityName,
+        status: p.status,
+        points: p.points
+      }),
+      p.organizationId
+    ]
+  ));
+  // Wie bisher: ohne Postfach-Eintrag kein Push (der Tap fuehrt dorthin).
+  if (!imPostfach) return;
+
+  // Push an die antragstellende Person (mit Request ID für Navigation).
+  // organization_id ausdruecklich mitgeben: Antraege stellen auch
+  // Teamer:innen (target_role === 'teamer'), und die koennen mehreren
+  // Gemeinden angehoeren. Ohne Content-Org griffe der Primaer-Org-Fallback
+  // und der Tap landete in der falschen Gemeinde (Befund M4, Push-Bericht
+  // 27.08.2026).
+  await k.schritt('push', () => PushService.sendActivityRequestStatusToKonfi(
+    db,
+    p.userId,
+    p.activityName,
+    p.points,
+    p.status,
+    p.adminComment,
+    p.requestId,
+    p.organizationId
+  ));
+});
 // Wer welchen Antrag sieht: EINE Regel fuer Liste, Zaehler und die Empfaenger
 // von "Neuer Antrag eingegangen" (27.09.2026).
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
@@ -787,75 +848,24 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
       liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
 
-      // Mitteilungen NACH der Antwort (utils/nachAntwort.js): Jeder Push geht
-      // abgewartet an FCM (kalt 330-450 ms, warm 90-130 ms je Sendung); vor der
-      // Antwort stand die Leitung damit in Produktion bis zu 1524 ms vor dem
-      // Knopf (07.10.2026). Die Entscheidung ist hier laengst committet, die
-      // Mitteilungen sind Beiwerk. Reihenfolge wie zuvor: Abzeichen, Level-Up,
-      // dann Postfach-Eintrag vor dem Status-Push.
-      nachAntwort(req, async () => {
-        for (const melden of badgeMitteilungen) {
-          await melden();
-        }
-
-        if (status === 'approved') {
-          // Level-Check NACH Badge-Check
-          try {
-            await PushService.checkAndSendLevelUp(db, request.user_id, organizationId);
-          } catch (levelErr) {
-            console.error('Level-up check failed:', levelErr);
-          }
-        }
-
-        // Postfach-Eintrag und Push an die antragstellende Person
-        try {
-          const notificationTitle = status === 'approved'
-            ? `Antrag genehmigt!`
-            : `Antrag abgelehnt`;
-
-          const notificationBody = status === 'approved'
-            ? `Dein Antrag für "${request.activity_name}" wurde genehmigt. Du erhältst ${request.points} ${request.points === 1 ? 'Punkt' : 'Punkte'}!`
-            : `Dein Antrag für "${request.activity_name}" wurde leider abgelehnt.${admin_comment ? ` Grund: ${admin_comment}` : ''}`;
-
-          // Create notification entry
-          await db.query(
-            "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
-            [
-              request.user_id,
-              notificationTitle,
-              notificationBody,
-              'activity_request_decision',
-              JSON.stringify({
-                request_id: requestId, 
-                activity_name: request.activity_name,
-                status: status,
-                points: request.points
-              }),
-              organizationId
-            ]
-          );
-
-          // Push an die antragstellende Person (mit Request ID für Navigation).
-          // organization_id ausdruecklich mitgeben: Antraege stellen auch
-          // Teamer:innen (target_role === 'teamer', siehe oben), und die
-          // koennen mehreren Gemeinden angehoeren. Ohne Content-Org griffe der
-          // Primaer-Org-Fallback und der Tap landete in der falschen Gemeinde
-          // (Befund M4, Push-Bericht 27.08.2026).
-          await PushService.sendActivityRequestStatusToKonfi(
-            db,
-            request.user_id,
-            request.activity_name,
-            request.points,
-            status,
-            admin_comment,
-            requestId,
-            organizationId
-          );
-        } catch (notifErr) {
-          console.error('Error sending notification:', notifErr);
-          // Don't fail the request if notification fails
-        }
-      }, 'PUT /admin/activities/requests/:id (Mitteilungen)');
+      // Mitteilungen NACH der Antwort: Jeder Push geht abgewartet an FCM (kalt
+      // 330-450 ms, warm 90-130 ms je Sendung); vor der Antwort stand die
+      // Leitung damit in Produktion bis zu 1524 ms vor dem Knopf (07.10.2026).
+      // Die Entscheidung ist hier laengst committet, die Mitteilungen laufen
+      // als Auftrag der dauerhaften Warteschlange (utils/warteschlange.js) --
+      // ein Neustart direkt nach der Antwort verliert sie nicht mehr.
+      // Reihenfolge wie zuvor: Abzeichen, Level-Up, Postfach, Status-Push
+      // (Art 'antrag_entschieden' oben).
+      einreihen(db, 'antrag_entschieden', {
+        requestId,
+        userId: request.user_id,
+        organizationId,
+        status,
+        adminComment: admin_comment,
+        activityName: request.activity_name,
+        points: request.points,
+        abzeichen: badgeMitteilungen,
+      }, { req, bezeichnung: 'PUT /admin/activities/requests/:id (Mitteilungen)' });
     } catch (err) {
  console.error('Database error in PUT /api/activities/requests/%s:', requestId, err);
       res.status(500).json({ error: 'Datenbankfehler' });
