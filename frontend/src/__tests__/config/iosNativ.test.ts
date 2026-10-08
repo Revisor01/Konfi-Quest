@@ -100,4 +100,17 @@ describe('iOS: Info.plist', () => {
     expect(info.LSSupportsOpeningDocumentsInPlace ?? false).toBe(false);
     expect(info.UISupportsDocumentBrowser ?? false).toBe(false);
   });
+
+  // armv7 (32 Bit) stammte aus der Capacitor-Vorlage (auch 8.5.2 traegt es
+  // noch). Die App-Vorlagen von Xcode 27 setzen den Schluessel gar nicht; mit
+  // iOS 16.4 als Mindestversion laeuft ohnehin nur arm64. Ohne Schluessel gibt
+  // es keine Anforderung, die ein Geraet ausschliesst -- auch keine neue, die
+  // App Store Connect bei einem Update ablehnen koennte (CI BF-15, Rest).
+  it('keine veraltete Geraete-Anforderung (armv7)', () => {
+    expect(info.UIRequiredDeviceCapabilities).toBeUndefined();
+    const pbx = lies('App.xcodeproj/project.pbxproj').toString('utf8');
+    const ziele = [...pbx.matchAll(/IPHONEOS_DEPLOYMENT_TARGET = ([\d.]+);/g)].map((m) => Number(m[1]));
+    expect(ziele.length).toBeGreaterThan(0);
+    expect(Math.min(...ziele)).toBeGreaterThanOrEqual(11);
+  });
 });
