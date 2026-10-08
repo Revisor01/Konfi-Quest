@@ -207,7 +207,11 @@ describe('Nachlauf-Warteschlange', () => {
     warn.mockRestore();
     expect(zurueckgegeben).toBe(1);
 
-    const { rows } = await db.query(`SELECT art, status, versuche, gesperrt_von FROM ${T} ORDER BY id`);
+    // Nach der Art sortiert, nicht nach id: Die beiden einreihen() oben laufen
+    // gleichzeitig (der erste ist nicht abgewartet), ihre INSERTs bekommen
+    // die ids in beliebiger Reihenfolge (im vollen Lauf am 08.10.2026 einmal
+    // vertauscht gesehen).
+    const { rows } = await db.query(`SELECT art, status, versuche, gesperrt_von FROM ${T} ORDER BY art`);
     expect(rows).toEqual([
       { art: 'test_haengt', status: 'offen', versuche: 0, gesperrt_von: null },
       { art: 'test_schnell', status: 'erledigt', versuche: 1, gesperrt_von: ws.ICH },
