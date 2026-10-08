@@ -186,6 +186,8 @@ Versionsüberschrift.
 - In der Web-Version tragen die Start- und Profilseiten nicht mehr Rahmen,
   Fläche und Schrift der Rollenmarke aus der Benutzerliste; Beschreibungen
   und Menüs anderer Seiten mischen sich ebenso nicht mehr.
+- Die Filterzeile der Challenges steht in der Web-Version auch bei 1366 px
+  Fensterbreite in einer Zeile.
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
   oder neu lud.
