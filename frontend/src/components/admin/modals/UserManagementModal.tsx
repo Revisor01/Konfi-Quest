@@ -120,10 +120,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [user, setUser] = useState<AdminUser | null>(null);
   // Ueber eine Gemeinde-Einladung dabei (Audit 26.09.2026, Leitung BF-01):
-  // Das Konto ist in einer anderen Gemeinde zuhause. Hier gibt es nur Rolle
-  // und Jahrgaenge; Name, Benutzername, E-Mail, Passwort und Sperre sind
-  // gesperrt, und gespeichert wird nur die Rolle -- das Backend weist alles
-  // andere mit 400 ab.
+  // Das Konto ist in einer anderen Gemeinde zuhause. Hier gibt es Rolle,
+  // Funktionsbeschreibung, Sperre, Jahrgaenge und -- seit 08.10.2026 (Simon:
+  // "Jede Gemeinde darf das Passwort setzen") -- das Passwort; Name,
+  // Benutzername und E-Mail sind gesperrt, das Backend weist eine Aenderung
+  // daran mit 400 ab.
   const nurRolle = !!userId && user?.mitgliedschaft === 'weitere';
 
   // Jahrgang assignments
@@ -300,9 +301,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         let userIdForAssignments = userId;
         if (isEditMode) {
           // In einer weiteren Gemeinde nur, was je Gemeinde gilt: Rolle,
-          // Funktionsbeschreibung und Sperre (seit 08.10.2026).
+          // Funktionsbeschreibung und Sperre (seit 08.10.2026), dazu ein
+          // neues Passwort, wenn eines eingetragen ist (gilt fuer das Konto).
           await api.put(`/users/${userId}`, nurRolle
-            ? { role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active }
+            ? {
+                role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active,
+                ...(userData.password ? { password: userData.password } : {})
+              }
             : userData);
         } else {
           const response = await api.post('/users', userData);
@@ -417,8 +422,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <p style={{ margin: '0 0 var(--app-abstand-basis) 0', color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)' }}>
                   Diese Person ist in einer anderen Gemeinde zuhause. Hier änderst du
                   ihre Rolle, ihre Funktionsbeschreibung und ihre Jahrgänge bei dir
-                  und kannst sie bei dir sperren; Name, Benutzername, E-Mail und
-                  Passwort verwaltet ihre Stamm-Gemeinde.
+                  und kannst sie bei dir sperren; Name, Benutzername und E-Mail
+                  verwaltet ihre Stamm-Gemeinde. Ein neues Passwort gilt in allen
+                  ihren Gemeinden.
                 </p>
               )}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -477,7 +483,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.password}
                     onIonInput={(e) => setFormData({ ...formData, password: e.detail.value! })}
                     placeholder={isEditMode ? "Leer lassen um nicht zu ändern" : "Passwort eingeben"}
-                    disabled={isSubmitting || nurRolle}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
               </div>

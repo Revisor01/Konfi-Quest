@@ -423,13 +423,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
       // IN EINER WEITEREN GEMEINDE NUR, WAS JE GEMEINDE GILT: Rolle,
       // Funktionsbezeichnung und Sperre (seit 08.10.2026, Migration 196; die
-      // Sperre wirkt dann nur hier). Name, Benutzername, E-Mail und
-      // Passwort haengen am Konto und damit an der Stamm-Gemeinde
-      // -- sonst koennte die Leitung von Gemeinde B ueber das Passwort einer
-      // eingeladenen Teamer:in in deren Stamm-Gemeinde A hineinkommen
-      // (dieselbe Klasse wie Sicherheit BF-01). Unveraenderte Kontofelder
-      // duerfen mitkommen, weil die Oberflaeche das ganze Formular schickt;
-      // ein geaenderter Wert ist ein 400, kein stilles Weglassen.
+      // Sperre wirkt dann nur hier) -- und das Passwort. Name, Benutzername
+      // und E-Mail haengen am Konto und damit an der Stamm-Gemeinde.
+      // Unveraenderte Kontofelder duerfen mitkommen, weil die Oberflaeche
+      // das ganze Formular schickt; ein geaenderter Wert ist ein 400, kein
+      // stilles Weglassen.
+      //
+      // DAS PASSWORT SETZT AUCH DIE WEITERE GEMEINDE (Simon, 08.10.2026,
+      // Entscheidung 2: "Jede Gemeinde darf das Passwort setzen") -- mit
+      // denselben Rechten wie fuer Stamm-Mitglieder (Hierarchie und
+      // Super-Admin-Schutz prueft userHierarchyMiddleware), wie
+      // PUT /users/:id/reset-password und das Einmalpasswort. Bis dahin ein
+      // 400 nur_rolle_in_weiterer_gemeinde. Ausgelieferte Apps zeigen das
+      // Feld fuer weitere Mitglieder gesperrt und schicken kein Passwort mit;
+      // fuer sie aendert sich nichts.
       //
       // Verglichen wird wie die Oberflaeche liest (Kompatibilitaetspruefung
       // 27.09.2026): Leerer Text und NULL sind dasselbe, Leerzeichen am Rand
@@ -442,14 +449,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const gleich = (neu, alt) => neu === undefined || lesart(neu) === lesart(alt);
         const kontoUnveraendert =
           gleich(username, user.username) && gleich(email, user.email) &&
-          gleich(display_name, user.display_name) && !password;
+          gleich(display_name, user.display_name);
         if (!kontoUnveraendert) {
           return res.status(400).json({
-            error: 'In einer weiteren Gemeinde lassen sich nur Rolle, Funktionsbezeichnung und Sperre ändern. Name, Benutzername, E-Mail und Passwort verwaltet die Stamm-Gemeinde.',
+            error: 'In einer weiteren Gemeinde lassen sich nur Rolle, Funktionsbezeichnung, Sperre und Passwort ändern. Name, Benutzername und E-Mail verwaltet die Stamm-Gemeinde.',
             error_code: 'nur_rolle_in_weiterer_gemeinde'
           });
         }
-        if (role_id === undefined && role_title === undefined && is_active === undefined) {
+        if (role_id === undefined && role_title === undefined && is_active === undefined && !password) {
           return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
         }
       }
@@ -493,6 +500,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       const ganzesKonto = req.user.is_super_admin === true;
       const hatGemeindeFelder = Object.keys(gemeindeFelder).length > 0;
 
+      let passwortHash = null;
       if (password) {
         // Policy auch beim Bearbeiten prüfen (Audit 22.08.2026, LÜCKE N7):
         // Das optionale password-Feld wurde bisher ungeprueft gehasht — weder
@@ -502,8 +510,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         if (passwortFehler) {
           return res.status(400).json({ error: passwortFehler });
         }
+        passwortHash = await bcrypt.hash(password, 10);
         updateFields.push(`password_hash = $${updateParams.length + 1}`);
-        updateParams.push(await bcrypt.hash(password, 10));
+        updateParams.push(passwortHash);
       }
 
       if (updateFields.length === 0 && !hatGemeindeFelder) {
@@ -563,8 +572,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const client = await db.getClient();
         try {
           await client.query('BEGIN');
-          const { gefunden } = await schreibeGemeindeFelder(client, id, organizationId, gemeindeFelder, { ganzesKonto });
-          rowCount = gefunden ? 1 : 0;
+          if (hatGemeindeFelder) {
+            const { gefunden } = await schreibeGemeindeFelder(client, id, organizationId, gemeindeFelder, { ganzesKonto });
+            rowCount = gefunden ? 1 : 0;
+          } else {
+            rowCount = 1;
+          }
+          // Das Passwort gilt fuer das Konto (siehe oben): nur dieses Feld
+          // der users-Zeile, Mitgliedschaft hier ist oben geprueft.
+          if (rowCount > 0 && password) {
+            ({ rowCount } = await client.query(
+              'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND deleted_at IS NULL',
+              [passwortHash, id]
+            ));
+          }
           await client.query('COMMIT');
         } catch (txErr) {
           await client.query('ROLLBACK').catch(() => {});

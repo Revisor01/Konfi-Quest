@@ -1655,14 +1655,20 @@ describe('Users Routes', () => {
       expect(uo.role_id).toBe(ROLES.teamer.id);
     });
 
-    it('PUT mit Passwort -> 400', async () => {
+    // Bis 08.10.2026: "PUT mit Passwort -> 400". Simons Entscheidung vom
+    // 08.10.2026: Jede Gemeinde darf das Passwort setzen, auch ueber diesen
+    // Weg (verbotene Faelle in stammRolleWeitereStellen.test.js).
+    it('PUT mit Passwort -> 200, das Passwort gilt fuer das Konto', async () => {
+      const { rows: [vorher] } = await db.query('SELECT password_hash FROM users WHERE id = $1', [USERS.teamer2.id]);
       const res = await request(app)
         .put(`/api/admin/users/${USERS.teamer2.id}`)
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ password: 'Sicheres-Passwort-2026!' });
 
-      expect(res.status).toBe(400);
-      expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: 'Benutzer erfolgreich aktualisiert' });
+      const { rows: [nachher] } = await db.query('SELECT password_hash FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(nachher.password_hash).not.toBe(vorher.password_hash);
     });
 
     // Bis 08.10.2026: "reset-password setzt nur die Stamm-Gemeinde -> 403".

@@ -233,6 +233,73 @@ describe('Stamm-Rolle an weiteren Stellen (Mehrfach-Konten)', () => {
   });
 
   // ==========================================================================
+  // 2b. Passwort im Bearbeiten-Dialog (PUT /admin/users/:id)
+  // ==========================================================================
+  describe('PUT /admin/users/:id setzt das Passwort auch fuer Mitglieder einer weiteren Gemeinde', () => {
+    it('erlaubt: Gemeindeleitung setzt das Passwort einer Teamer:in aus einer anderen Stamm-Gemeinde, mit dem ganzen Formular', async () => {
+      await mitgliedschaft(USERS.teamer2.id, ORG1, ROLES.teamer.id);
+      const vorher = await passwortHash(USERS.teamer2.id);
+
+      // Die Oberflaeche schickt das ganze Formular mit unveraenderten Kontofeldern.
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
+        .send({
+          username: USERS.teamer2.username,
+          display_name: USERS.teamer2.display_name,
+          role_id: ROLES.teamer.id,
+          password: 'Neues!Pw123'
+        });
+
+      expect(res.status).toBe(200);
+      expect(await passwortHash(USERS.teamer2.id)).not.toBe(vorher);
+      // Stamm-Gemeinde und Rolle dort bleiben.
+      const { rows: [konto] } = await db.query(
+        'SELECT organization_id, role_id FROM users WHERE id = $1', [USERS.teamer2.id]);
+      expect(konto).toEqual({ organization_id: ORG2, role_id: ROLES.teamer2.id });
+    });
+
+    it('verboten: ein Admin setzt nicht das Passwort einer Gemeindeleitung aus einer weiteren Gemeinde (Hierarchie wie bei Stamm-Mitgliedern)', async () => {
+      await mitgliedschaft(USERS.teamer2.id, ORG1, ROLES.orgAdmin.id);
+      const vorher = await passwortHash(USERS.teamer2.id);
+
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${generateToken('admin1')}`)
+        .send({ password: 'Neues!Pw123' });
+
+      expect(res.status).toBe(403);
+      expect(await passwortHash(USERS.teamer2.id)).toBe(vorher);
+    });
+
+    it('verboten: Konto, das nicht zur Gemeinde gehoert', async () => {
+      const vorher = await passwortHash(USERS.teamer2.id);
+
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
+        .send({ password: 'Neues!Pw123' });
+
+      expect(res.status).toBe(404);
+      expect(await passwortHash(USERS.teamer2.id)).toBe(vorher);
+    });
+
+    it('verboten: ein geaenderter Name bleibt Sache der Stamm-Gemeinde, auch zusammen mit einem Passwort', async () => {
+      await mitgliedschaft(USERS.teamer2.id, ORG1, ROLES.teamer.id);
+      const vorher = await passwortHash(USERS.teamer2.id);
+
+      const res = await request(app)
+        .put(`/api/admin/users/${USERS.teamer2.id}`)
+        .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)
+        .send({ display_name: 'Umbenannt', password: 'Neues!Pw123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
+      expect(await passwortHash(USERS.teamer2.id)).toBe(vorher);
+    });
+  });
+
+  // ==========================================================================
   // 4. Jahrgang mit Zuweisungen anlegen
   // ==========================================================================
   describe('POST /admin/jahrgaenge mit Team aus einer anderen Stamm-Gemeinde', () => {

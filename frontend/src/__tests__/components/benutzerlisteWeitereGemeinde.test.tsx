@@ -72,16 +72,19 @@ describe('Bearbeiten-Dialog: in einer weiteren Gemeinde nur, was je Gemeinde gil
 
   // Seit 08.10.2026 (Migration 196) gelten Funktionsbeschreibung und Sperre
   // je Gemeinde; die weitere Gemeinde darf sie bei sich setzen.
-  it('leitet nurRolle aus dem Kennzeichen ab und speichert dann Rolle, Funktion und Sperre', () => {
+  it('leitet nurRolle aus dem Kennzeichen ab und speichert dann Rolle, Funktion, Sperre und ein neues Passwort', () => {
     expect(modal).toContain("const nurRolle = !!userId && user?.mitgliedschaft === 'weitere';");
-    expect(modal).toContain('{ role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active }');
+    expect(modal).toContain('role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active,');
+    // Seit 08.10.2026 (Simon: jede Gemeinde darf das Passwort setzen).
+    expect(modal).toContain('...(userData.password ? { password: userData.password } : {})');
   });
 
-  it('sperrt Anzeigename, Benutzername, E-Mail und Passwort, nicht Funktion und Aktiv-Schalter', () => {
-    // Vier Eingabefelder; Rollenauswahl, Funktion und Aktiv-Schalter bleiben frei.
+  it('sperrt Anzeigename, Benutzername und E-Mail, nicht Passwort, Funktion und Aktiv-Schalter', () => {
+    // Drei Eingabefelder; Passwort, Rollenauswahl, Funktion und Aktiv-Schalter bleiben frei.
     const gesperrt = modal.match(/disabled=\{isSubmitting \|\| nurRolle\}/g) ?? [];
-    expect(gesperrt).toHaveLength(4);
+    expect(gesperrt).toHaveLength(3);
     expect(modal).toContain('Diese Person ist in einer anderen Gemeinde zuhause.');
+    expect(modal).not.toContain('Passwort verwaltet ihre Stamm-Gemeinde');
     expect(modal).toContain("nurRolle ? 'Gilt nur für diese Gemeinde'");
   });
 });

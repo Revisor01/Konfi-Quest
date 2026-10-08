@@ -274,11 +274,11 @@ Vermerk „zuhause in einer anderen Gemeinde". Dort vergibst du ihre **Rolle**
 in deiner Gemeinde, ihre **Jahrgänge**, ihre **Funktionsbezeichnung** bei dir
 und kannst sie [in deiner Gemeinde sperren](#jemanden-nur-in-der-eigenen-gemeinde-sperren).
 Name, Benutzername und E-Mail bleiben Sache ihrer Stamm-Gemeinde; diese
-Felder sind bei dir gesperrt. Ein neues Passwort bekommt sie auch von dir: Für
-Teamer:innen erzeugst du ein
-[Einmalpasswort](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
-wie für alle anderen. Das Passwort gehört zum Konto und gilt danach in allen
-ihren Gemeinden.
+Felder sind bei dir gesperrt. Ein neues Passwort bekommt sie auch von dir — im
+Feld **Passwort** desselben Dialogs oder, bei Teamer:innen, als
+[Einmalpasswort](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort),
+mit denselben Rechten wie bei Mitgliedern deiner Gemeinde. Das Passwort gehört
+zum Konto und gilt danach in allen ihren Gemeinden.
 
 Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
 deiner Gemeinde** — samt ihrer Jahrgänge, ihrer Plätze in allen Chats

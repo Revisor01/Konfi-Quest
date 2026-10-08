@@ -155,7 +155,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
         <span className="web-pillreihe">
           <WebPill ton={u.is_active ? 'erfolg' : 'neutral'} punkt>{u.is_active ? 'Aktiv' : 'Gesperrt'}</WebPill>
           {u.mitgliedschaft === 'weitere' && (
-            <WebPill ton="info" title="Konto und Stamm-Gemeinde liegen in einer anderen Gemeinde; hier gibt es nur Rolle und Jahrgänge.">Gast</WebPill>
+            <WebPill ton="info" title="Konto und Stamm-Gemeinde liegen in einer anderen Gemeinde; Name, Benutzername und E-Mail verwaltet sie dort.">Gast</WebPill>
           )}
         </span>
       ),

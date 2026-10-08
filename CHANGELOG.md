@@ -214,8 +214,8 @@ Versionsüberschrift.
   mit, sodass das Löschen nicht mehr unnötig abgelehnt wird.
 - Die Leitung kann für Teamer:innen, die aus einer anderen Gemeinde bei ihr
   mitarbeiten, ein Einmalpasswort erzeugen und die Gemeindeleitung ein
-  Passwort setzen; bisher kam „Person nicht gefunden" oder „Keine
-  Berechtigung".
+  Passwort setzen, auch im Bearbeiten-Dialog; bisher kam „Person nicht
+  gefunden" oder „Keine Berechtigung", und das Passwortfeld war gesperrt.
 - Wer in zwei Gemeinden verschiedene Rollen hat, sieht Änderungen an Punkten,
   Anträgen, Badges und Events in der weiteren Gemeinde sofort, ohne neu zu
   laden.
