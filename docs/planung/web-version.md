@@ -296,11 +296,10 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
   Gemeinde" nach einem Gemeindewechsel (Refresh ohne Kopfzeile, der Server
   kann das schon) und ein Umschalter in der Support-Ansicht. In der
   Benutzerliste der Gemeinde steht der Support-Gast heute mit
-  „zuhause in einer anderen Gemeinde" und Bearbeiten-Knopf, obwohl der
-  Server das Bearbeiten mit 403 ablehnt (siehe
-  [offene-befunde.md](../offene-befunde.md), „Bearbeiten-Knopf bei
-  Super-Admin-Konten"); für eine eigene Kennzeichnung bräuchte `GET /users`
-  ein zusätzliches Feld.
+  „zuhause in einer anderen Gemeinde"; den Bearbeiten-Knopf, den der Server
+  mit 403 ablehnte, gibt es seit 08.10.2026 nicht mehr (`can_edit` beachtet
+  Super-Admin-Konten, Branch `fix/offene-backend-fehler`). Für eine eigene
+  Kennzeichnung bräuchte `GET /users` ein zusätzliches Feld.
 - **Bestände einordnen.** Die Tabellen stehen (oben, „Support-Ansicht,
   Backend"); nach dem Deploy die übernommenen Kirchenkreise ihren
   Landeskirchen zuordnen, Tippvarianten zusammenführen und die Gemeinden

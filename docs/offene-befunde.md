@@ -29,35 +29,11 @@ erledigt ist.
 
 ### In Arbeit
 
-- [ ] **Mehrfach-Konten abschließen** — Branch `feat/mehrfach-konten-abschluss`:
-  Event-Chat nach der Gemeinde des Termins, Push mit Gemeinde zwingend,
-  Urheber:innen und Detailansicht aus anderen Gemeinden, Stamm-Zeilen
-  angleichen, Funktionsbezeichnung, „Teamer seit" und Sperre je Gemeinde
-  (Sperre nur in der sperrenden Gemeinde), Löschen durch die Leitung beendet
-  nur die eigene Mitgliedschaft, Sperre sofort auf beiden Replicas, Rolle
-  und Gemeindeleitung aus der aktiven statt der Stamm-Gemeinde,
-  Gemeinde-Rückfall im Frontend. Entscheidungen:
-  [planung/mehrfach-konten.md](planung/mehrfach-konten.md#fragen-an-simon);
-  Einträge unten unter [Code](#code).
-- [ ] **Offene Backend-Fehler** — Branch `fix/offene-backend-fehler`:
-  Bearbeiten-Knopf bei Super-Admin-Konten, Testlücke Super-Admin,
-  Benutzername einer Gemeindeleitung, Punktart am Beleg,
-  Wiederholungsschutz beim Anlegen, Mail nach „Passwort setzen",
-  Sprühangriff prüfen, CodeQL #124, #127 und #128, das 500 an `mark-read`
-  ([Code](#code)).
-- [ ] **Mitteilungen nach der Antwort dauerhaft einreihen** — Branch
-  `feat/nachantwort-warteschlange` ([Code](#code), „Mitteilungen nach der
-  Antwort gehen bei einem Neustart verloren").
-- [ ] **Zeitgeber aufräumen und Kleinigkeiten der Web-Fassung** — Branch
-  `fix/zeitgeber-aufraeumen`: alle Zeitgeber mit Wächtertest, Zähler-Abruf
-  entprellen, doppelte CSS-Klassen, Filterzeile der Challenges, `armv7`
-  ([Code](#code), [Tests und CI](#tests-und-ci)).
-- [ ] **Test-Backend abschaffen** — Branch `chore/test-backend-abschaffen`
-  (Simon, 08.10.2026); zuerst prüfen, ob noch ein Build darauf zeigt
-  ([Betrieb](#betrieb), „Test-Backend teilt Datenbank und Schlüssel mit
-  Produktion").
-- [ ] **CodeQL #138** — PR #233 (`fix/codeql-138-regex`), offen, nicht
-  gemergt ([Code](#code), „CodeQL-Meldungen").
+- [ ] **Test-Backend am Server abbauen** — im Repo erledigt
+  (`chore/test-backend-abschaffen`); am Server erst nach dem Push auf
+  `main`: Stack-Dienst entfernen, Traefik-Regel, KeyHelp-vHost, DNS-Eintrag,
+  Registry-Tags `test-latest` ([Betrieb](#betrieb), „Test-Backend teilt
+  Datenbank und Schlüssel mit Produktion").
 
 ### Wartet auf Gerät oder Simon
 
@@ -70,6 +46,8 @@ erledigt ist.
 - [ ] **Simons offene Fragen** — unten unter
   [Bei Simon zu entscheiden](#bei-simon-zu-entscheiden); als Erstes die
   Status-Spalten (Simon fragt, was gemeint ist — dort erklärt).
+- [ ] **CodeQL #124 und #127 auf GitHub als „False positive" schließen** —
+  am Code begründet ([Code](#code), „CodeQL-Meldungen").
 
 ### Als Nächstes
 
@@ -135,39 +113,45 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   [planung/feature-empfehlungen.md](planung/feature-empfehlungen.md));
   Test-Backend abschaffen; Mehrfach-Konten-Fragen beantwortet;
   DSGVO/EKD-Unterlagen, „Darf freigeben" und Tablets später.
+- [x] 08.10.2026 — Arbeitsliste oben in dieser Datei (`docs/arbeitsliste`).
+- [x] 08.10.2026 — CodeQL #138, Schalternamen im Regex vollständig maskiert
+  (`fix/codeql-138-regex`, PR #233).
+- [x] 08.10.2026 — Test-Backend im Repo abgebaut: Dienst aus der
+  Referenz-Compose, Workflow und `api_url`-Eingabe entfernt; die fünf
+  TestFlight-Builds, die darauf zeigten, sind abgelaufen
+  (`chore/test-backend-abschaffen`). Die Server-Seite steht oben unter „In
+  Arbeit".
+- [x] 08.10.2026 — Zeitgeber und Horcher enden mit ihrer Seite (alle Stellen,
+  mit Wächtertest), Zähler-Abruf nach Chat-Nachrichten entprellt (Betrieb
+  BF-08), doppelte CSS-Klassen der Bereichs-Stylesheets aufgelöst,
+  Filterzeile der Challenges bei 1366 px einzeilig, `armv7` aus der
+  Info.plist (CI BF-15) (`fix/zeitgeber-aufraeumen`).
+- [x] 08.10.2026 — kein Bearbeiten-Knopf bei Super-Admin-Konten, erlaubter
+  Fall für Löschen und Jahrgangszuweisung durch Super-Admins im Test,
+  Zeichenregel für den Benutzernamen der Gemeindeleitung, eigene Mail nach
+  „Passwort setzen" für Support-Konten, Punktart am Beleg (Migration 200),
+  CodeQL #128, Wiederholungsschutz für Bonuspunkte und einzelne Events
+  (Migration 201); CodeQL #124 und #127 am Code als Fehlalarme begründet
+  (`fix/offene-backend-fehler`).
+- [x] 08.10.2026 — Mehrfach-Konten abgeschlossen: Event-Chat nach der
+  Gemeinde des Termins, Push mit Gemeinde zwingend, Urheber:innen und
+  Detailansicht aus anderen Gemeinden, Stamm-Zeilen angeglichen,
+  Funktionsbezeichnung, „Teamer seit" und Sperre je Gemeinde, Löschen durch
+  die Leitung beendet nur die eigene Mitgliedschaft, Rolle in
+  Termin-Teilnehmern und Chat-Nachrichten und Gemeindeleitung beim
+  Bearbeiten einer Gemeinde aus der aktiven Gemeinde, Sperre wirkt sofort
+  auf beiden Replicas (Sicherheit BF-10), Gemeinde-Rückfall lädt Rolle und
+  Namen neu (Grundgerüst BF-05) (`feat/mehrfach-konten-abschluss`;
+  [planung/mehrfach-konten.md](planung/mehrfach-konten.md#umsetzung-stand-08102026)).
+- [x] 08.10.2026 — Push, Postfach-Eintrag und Mail nach der Antwort stehen
+  als Auftrag in einer dauerhaften Warteschlange (Migration 202) und
+  überleben einen Neustart (`feat/nachantwort-warteschlange`;
+  [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)).
 
 ## Offen
 
 ### Code
 
-- **Mitteilungen nach der Antwort gehen bei einem Neustart verloren.**
-  `utils/nachAntwort.js` läuft im Backend-Prozess: Startet der Container in
-  den Millisekunden nach der Antwort neu (Deploy, Absturz), fehlen Push und
-  Postfach-Eintrag; die eigentliche Änderung (Punkte, Abzeichen) ist
-  gespeichert. Betrifft seit 07.10.2026 auch die Entscheidung über gemeldete
-  Aktivitäten (vorher abgewartet, 1,5 s in Produktion). Fix: dauerhafte
-  Warteschlange in der Datenbank, die ein Hintergrunddienst abarbeitet.
-  *In Arbeit: `feat/nachantwort-warteschlange`.*
-- **Gleiche CSS-Klassen in zwei Bereichs-Stylesheets der Web-Fassung.**
-  Alle Dateien unter `frontend/src/theme/web/` liegen im selben Bündel; setzen
-  zwei Bereiche dieselbe Klasse, mischen sich die Regeln auf beiden Seiten. So
-  waren die Fortschrittsbalken der Konfi-Liste nur ein flacher Streifen
-  (behoben 06.10.2026). Noch doppelt: `web-beschreibung` (leitung/termine),
-  `web-menue` (chat/termine), `web-rolle` und `web-rolle--leitung`
-  (leitung/start). `web-stempel` ist behoben (07.10.2026). Ob die übrigen
-  sichtbar falsch aussehen, ist nicht geprüft.
-  Fix: je Bereich umbenennen; der Wächter
-  `__tests__/components/webCssKlassen.test.ts` führt sie als bekannt und lässt
-  keine neuen zu — wer eine behebt, streicht sie dort. Gefunden 06.10.2026.
-  *In Arbeit: `fix/zeitgeber-aufraeumen`.*
-- **Filterzeile der Challenges zweizeilig bis etwa 1400 px.** Auf der
-  Challenge-Seite der Leitung rutschen Suche und Umschalter Liste/Kacheln
-  unter die Zustands-Chips, solange das Fenster 1366 px oder schmaler ist
-  (Zeile 86 statt 40 px hoch); ab 1440 px steht alles in einer Zeile.
-  Gemessen 07.10.2026 bei 1100, 1280, 1366, 1440 und 1600 px gegen einen
-  lokalen Server mit vier Challenges. Stelle:
-  `components/shared/web/challenges/WebChallengeFilter.tsx`.
-  *In Arbeit: `fix/zeitgeber-aufraeumen`.*
 - **Ringe und Zähler beachten „Bewegung reduzieren" nicht.**
   `frontend/src/components/admin/views/ActivityRings.tsx` und
   `frontend/src/hooks/useCountUp.ts` animieren auch, wenn das System
@@ -186,133 +170,48 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   zusammengelegt). Fix: eine Stelle je Funktion, Antwortformen unverändert.
   Seit 01.09.2026 bekannt (interne Aufgabenliste), am 08.10.2026 am Code
   bestätigt.
-- **Bearbeiten-Knopf bei Super-Admin-Konten.** `GET /users` setzt `can_edit`
-  allein nach der Rolle (`filterUsersByHierarchy`); bei einem Konto mit
-  Super-Admin-Recht — Simons Konto in seiner Gemeinde, ein Support-Gast —
-  steht `can_edit: true`, Bearbeiten, Entfernen und Passwort enden aber mit
-  403 „Super-Admin-Konten kann nur ein Super-Admin bearbeiten." (Schutz seit
-  26.09.2026, Sicherheit BF-01). Die App bietet also Knöpfe an, die nicht
-  gehen. Fix: `can_edit` zusätzlich nach `istSuperAdminKonto`
-  (`utils/roleHierarchy.js`), dafür `is_super_admin` in die Abfrage.
-  Gefunden 03.10.2026. *In Arbeit: `fix/offene-backend-fehler`.*
-- **Benutzername einer Gemeindeleitung ohne Zeichenregel.** `POST
-  /organizations` (erste Gemeindeleitung), `POST /organizations/:id/admins`
-  und `POST /support/anfragen/:id/anlegen` prüfen den Benutzernamen nur auf
-  „nicht leer" und systemweit frei; Leerzeichen und Sonderzeichen gehen
-  durch. Überall sonst gilt `commonValidations.username` (3 bis 50 Zeichen,
-  Buchstaben, Ziffern, Punkt, Bindestrich), auch für Support-Konten. Fix:
-  dieselbe Regel an den drei Stellen (für Bestandskonten folgenlos). Am Code
-  gefunden 03.10.2026. *In Arbeit: `fix/offene-backend-fehler`.*
-- **Mail nach „Passwort setzen" für Support-Konten.** `PUT
-  /users/:id/reset-password` schickt einem Support-Konto „die Leitung deiner
-  Gemeinde hat ein neues Passwort gesetzt"; `PUT
-  /organizations/support-konten/:id/passwort` schickt deshalb gar keine Mail.
-  Eine passende Vorlage fehlt. Gefunden 03.10.2026.
-  *In Arbeit: `fix/offene-backend-fehler`.*
-- **Challenge-Urheber:innen nur aus der Stamm-Gemeinde.** `GET
-  /challenges/admin/authors` und die Urheber-Prüfung beim Anlegen und Ändern
-  lesen nur `users.organization_id`; wer als Teamer:in in einer weiteren
-  Gemeinde mitarbeitet, steht dort nicht zur Auswahl (gesetzt über die
-  Kennung: 400). Seit 27.09.2026; Gruppenchats und Lizenz-Mail sind schon
-  umgestellt. Punkt 3 in
-  [planung/mehrfach-konten.md](planung/mehrfach-konten.md) (Chat BF-08,
-  Rest). *In Arbeit: `feat/mehrfach-konten-abschluss`.*
-- **Rolle aus der Stamm-Gemeinde in Termin-Teilnehmern und Chat-Nachrichten.**
-  `GET /events/:id` (Teilnehmerliste, `backend/routes/events/lesen.js`) und
-  `GET /chat/rooms/:roomId/messages` (`sender_role_name`) lesen die Rolle über
-  `users.role_id`. Wer eine Gemeinde zusätzlich betreut, steht dort mit der
-  Rolle der Stamm-Gemeinde: In der Teilnehmerliste hängen daran das Wort
-  „Leitung", die Trennung Konfi/Team und die Zähler, in der Nachricht das
-  Rollenwort hinter dem Namen. Die Chat-Mitgliederliste zieht die Rolle seit
-  02.10.2026 je Gemeinde (Regel wie `ladeRolleInGemeinde`,
-  `backend/utils/orgMitglieder.js`). Gefunden 02.10.2026 beim Nachstellen der
-  Rollenfarben. *In Arbeit: `feat/mehrfach-konten-abschluss`.*
-- **Gemeindeleitung beim Bearbeiten einer Gemeinde nur aus der
-  Stamm-Gemeinde.** `GET /organizations/:id/admins` fragt
-  `u.organization_id = $1`; wer die Gemeinde über `user_organizations` als
-  Gemeindeleitung betreut, fehlt im Abschnitt „Gemeindeleitung" — in
-  Produktion hat Organisation 2 ihre ganze Leitung nur dort (gemessen
-  25.09.2026). Gefunden 02.10.2026.
-  *In Arbeit: `feat/mehrfach-konten-abschluss`.*
-- **Punktart steht nicht am Beleg.** Seit Migration 163 speichert
-  `user_activities` den Punktwert zum Zeitpunkt der Vergabe, die Art
-  (Gottesdienst/Gemeinde) aber nicht. Ändert die Leitung die Art einer
-  Aktivität, landen Rücknahme, Detailliste und Historie in der anderen Säule
-  (`konfi-management.js` liest `a.type`); die Summe stimmt, die Verteilung
-  nicht. Seit 27.09.2026 (Punkte/Termine BF-02, Rest).
-  *In Arbeit: `fix/offene-backend-fehler`.*
-- **Sperre wirkt auf der zweiten Replica erst nach 30 s.** Deaktivieren und
-  Löschen leeren den Rechte-Zwischenspeicher nur auf der Replica, die die
-  Anfrage bearbeitet; die andere arbeitet bis zu 30 s mit dem alten Stand
-  (`USER_CACHE_TTL` in `backend/middleware/rbac.js`). Ein gemeinsamer Merker
-  (etwa über `token_invalidated_at`) fehlt. Seit 26.09.2026 (Sicherheit
-  BF-10). *In Arbeit: `feat/mehrfach-konten-abschluss`.*
-- **Sprühangriff über viele Konten.** Die Kontosperre zählt je Konto (10
-  Fehlversuche je Stunde); wer viele Konten mit je wenigen Versuchen
-  durchprobiert, wird nur von der IP-Grenze gebremst (300 je 15 Minuten).
-  Seit 27.09.2026, „später" (Sicherheit BF-04, Rest).
-  *In Arbeit (prüfen): `fix/offene-backend-fehler`.*
-- **Testlücke Super-Admin-Konten.** `backend/tests/routes/users.test.js`
-  prüft alle vier verbotenen Wege (Org-Leitung verwaltet ein Konto mit
-  Super-Admin-Merkmal), aber den erlaubten Fall nur für Passwort und
-  Bearbeiten; für Löschen und Jahrgangszuweisung durch einen Super-Admin fehlt
-  er. Seit 27.09.2026 (Sicherheit BF-01, Testlücke).
-  *In Arbeit: `fix/offene-backend-fehler`.*
-- **Gemeinde-Rückfall lässt Rolle und Namen stehen.** Wird einer Person die
-  aktive Gemeinde entzogen, wechselt die App per `auth:org-fallback`
-  (`frontend/src/contexts/AppContext.tsx`) Token, Zwischenspeicher und Socket
-  zur Stamm-Gemeinde, nicht aber Rolle und Gemeindenamen im Nutzer-Zustand —
-  bis zum nächsten Start zeigt sie womöglich die Oberfläche der entzogenen
-  Rolle. Seit 27.09.2026 (Grundgerüst BF-05, Nebenbefund).
-  *In Arbeit: `feat/mehrfach-konten-abschluss`.*
-- **Anlegen ohne Wiederholungsschutz.** POST und PATCH werden seit 26.09.2026
-  nie automatisch wiederholt, Doppelbuchungen entstehen nicht mehr. Damit
-  Bonuspunkte, Event- und Konfi-Anlage nach einem Netzabbruch sicher
-  wiederholbar wären, bräuchten sie eine `client_id` nach dem Muster
-  `backend/utils/antragIdempotenz.js` (Grundgerüst BF-02, Rest).
-  *In Arbeit: `fix/offene-backend-fehler`.*
+- **Kleine Reste der Mehrfach-Konten.** Beim Abschluss am 08.10.2026
+  liegen geblieben, alle ohne sichtbaren Schaden heute:
+  - `sendChallengeFeedToJahrgaenge` (`backend/services/pushService.js`)
+    sucht die Empfänger noch über `u.organization_id` statt über beide
+    Quellen (`backend/utils/orgMitglieder.js`). Es trifft nur Konfis und ist
+    deshalb harmlos.
+  - Die Push-Sperre im Chat-Versand (wer in der Gemeinde des Raums gesperrt
+    ist, bekommt keinen Push) hat im Test keine eigene Gegenprobe.
+  - Löscht die Leitung ein Konfi-Mischkonto aus dem Altbestand (Konfi in
+    ihrer Gemeinde, zuhause anderswo), endet nur die Mitgliedschaft;
+    Aktivitäten und Bonuspunkte bleiben in der Gemeinde liegen. In
+    Produktion betrifft das ein Konto (gezählt 01.10.2026).
+  - Der Chat-Export (`GET /chat/rooms/:roomId/export`,
+    `backend/routes/chat.js`) liest die Rolle noch über `users.role_id`,
+    also aus der Stamm-Gemeinde (beim Prüfen am 08.10.2026 gesehen; die
+    Nachrichtenliste ist umgestellt).
+- **Anlegen ohne Wiederholungsschutz (Rest).** Bonuspunkte und einzelne
+  Events tragen seit 08.10.2026 eine `client_id` (Migration 201). Offen sind
+  Event-Serien und die Konfi-Anlage; die Konfi-Anlage geht nur online, weil
+  ihre Antwort das Einmalpasswort trägt (Grundgerüst BF-02, Rest).
 - **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
   Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
   die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner
   Log-Zeile (01.10.2026: „nicht messbar ohne Code"). Seit 27.09.2026
   (Betrieb BF-10, Rest).
-- **Zähler-Abruf nach jeder Nachricht (optional).** Jede `newMessage` löst im
-  `BadgeContext` einen Abruf der Zähler aus; eine Entprellung wäre billiger.
-  Seit 27.09.2026, optional (Betrieb BF-08, Rest).
-  *In Arbeit: `fix/zeitgeber-aufraeumen`.*
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
-  antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200);
-  die Ursache ist nicht untersucht.
-  *In Arbeit: `fix/offene-backend-fehler`.*
-- **CodeQL-Meldungen.** Offen auf GitHub (abgefragt 08.10.2026):
-  - #124 `js/missing-rate-limiting` an `GET /chat/files/:filename`
-    (`backend/routes/chat.js`), seit 28.09.2026;
-  - #127 `js/missing-rate-limiting` an `POST /challenges/konfi/:id/submissions`
-    (`backend/routes/challenges.js`), seit 29.09.2026 — greift nicht
-    (Upload-Limiter und globaler Limiter hängen in `backend/createApp.js`,
-    nicht an der Route), am 29.09.2026 als „False positive" begründet, aber
-    nicht geschlossen;
-  - #128 `js/incomplete-multi-character-sanitization` in
-    `frontend/src/__tests__/begriffeEinheitlich.test.ts`, seit 29.09.2026;
-  - #138 `js/incomplete-sanitization` in
-    `frontend/src/__tests__/config/androidGradlePlugin9.test.ts`, PR #233.
-
-  *In Arbeit: #124, #127, #128 auf `fix/offene-backend-fehler`, #138 in PR
-  #233.*
+  antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
+  Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird
+  zwischen Rechteprüfung und Schreiben gelöscht (Fremdschlüssel), oder ein
+  Deadlock bzw. Verbindungs-Timeout. Beim nächsten Auftreten das Log der
+  Replica zur Uhrzeit lesen.
+- **CodeQL-Meldungen.** #124 `js/missing-rate-limiting` an `GET
+  /chat/files/:filename` (`backend/routes/chat.js`) und #127 an `POST
+  /challenges/konfi/:id/submissions` (`backend/routes/challenges.js`) sind
+  Fehlalarme: Der globale Limiter hängt per `app.use` vor allen Routen, der
+  Upload-Limiter an der Beitrags-Route (beides in `backend/createApp.js`);
+  CodeQL sieht das über die Dateigrenze nicht (am Code begründet
+  08.10.2026). Offen ist nur, dass Simon beide auf GitHub als „False
+  positive" schließt.
 
 ### Tests und CI
 
-- **Zeitgeber, die das Schließen einer Seite überleben.** Ein `setTimeout`,
-  das nach dem Schließen noch Zustand setzt, trifft in der CI das schon
-  abgebaute Testfenster: alle Tests grün, der Lauf rot („window is not
-  defined"). Zweimal am 06.10.2026 so aufgetreten und behoben (Anmeldeseite:
-  Rütteln; Registrierung: Benutzernamen-Prüfung, Rütteln, Sprung zum
-  Dashboard). Weitere Kandidaten ohne Aufräumen, nicht einzeln geprüft:
-  `KonfiDetailView.tsx` (Passwort nach 300 ms), `QRScannerModal.tsx`,
-  `WebNachricht.tsx` (Hervorhebung), `MessageBubble.tsx`. Fix je Stelle:
-  Zeitgeber in einem Ref halten und beim Abbau löschen, mit Test wie in
-  `konfiRegistrierung.test.tsx`. *In Arbeit: `fix/zeitgeber-aufraeumen`
-  (alle Stellen samt Wächtertest).*
 - **Dunkelmodus-Messung nicht in der CI.** `npm run dunkelmodus:messen`
   ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md)) läuft nur
   von Hand gegen eine lokale Vorschau; die CI prüft das Stylesheet als Text.
@@ -334,20 +233,17 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   (`ci-meldung.yml`) sind nur gegen Nachbauten geprüft. Beim ersten echten
   Überholfall bzw. roten `main` das Log und das Issue ansehen (CI BF-04,
   BF-07, Rest).
-- **`armv7` in der Info.plist.** `UIRequiredDeviceCapabilities` nennt noch
-  `armv7`; beim nächsten Umbau mit Xcode entfernen (CI BF-15, Rest).
-  *In Arbeit: `fix/zeitgeber-aufraeumen`.*
 
 ### Betrieb
 
 - **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
-  `backend-test` (eigener Hostname, für TestFlight- und Testbuilds) hängt an
-  der Produktionsdatenbank, an denselben Uploads und am selben `JWT_SECRET`
-  (`deploy/compose.konfi_quest.yml`, Anker `backend_env`): Ungetesteter Code
-  arbeitet mit echten Daten, und ein Token des einen Backends gilt beim
-  anderen. Gefunden 02.10.2026. **Entschieden 08.10.2026** (Simon):
-  abschaffen. Vorher prüfen, ob noch ein ausgelieferter oder Test-Build
-  darauf zeigt. *In Arbeit: `chore/test-backend-abschaffen`.*
+  `backend-test` hing an der Produktionsdatenbank, an denselben Uploads und
+  am selben `JWT_SECRET`. Entschieden 08.10.2026 (Simon): abschaffen. Im Repo
+  erledigt (`chore/test-backend-abschaffen`, 08.10.2026: Dienst aus
+  `deploy/compose.konfi_quest.yml`, Workflow und `api_url`-Eingabe entfernt;
+  kein gültiger Build zeigt mehr darauf). Offen ist die Server-Seite, erst
+  nach dem Push auf `main`: Dienst aus dem Live-Stack nehmen, Traefik-Regel,
+  KeyHelp-vHost, DNS-Eintrag und die Registry-Tags `test-latest` entfernen.
 - **Referenz-Compose nachziehen.** `deploy/compose.konfi_quest.yml` fehlen
   die gewollten Abweichungen des Live-Stacks (Abgleich 27.09.2026): Router
   auch für den `www.`-Host, die Middlewares für Kompression und
@@ -483,6 +379,29 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
   gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
   Web-Fassung lesen. Umsetzen?
+- **Sprühangriff über viele Konten.** Die Kontosperre zählt je Konto (10
+  Fehlversuche je Stunde); wer viele Konten mit je wenigen Versuchen
+  durchprobiert, wird nur von der IP-Grenze gebremst (300 je 15 Minuten).
+  Am 08.10.2026 geprüft, nichts geändert, weil beide Wege einen Preis haben:
+  Eine engere IP-Grenze trifft Schulklassen, die hinter einer Adresse
+  sitzen; eine globale Grenze für Fehlversuche wäre ein Hebel, alle
+  auszusperren. Welcher Weg oder so lassen? Seit 27.09.2026 (Sicherheit
+  BF-04, Rest).
+- **Passwort-Reset-Mail auch in die Warteschlange?** Push, Postfach und die
+  übrigen Mails nach der Antwort stehen seit 08.10.2026 als Auftrag in
+  `nachlauf_auftraege`; die Mail zum Zurücksetzen des Passworts läuft
+  bewusst weiter im Prozess. In der Warteschlange stünde der Reset-Token bis
+  zum Versand im Klartext in der Datenbank; dafür verliert ein Neustart in
+  diesem Moment heute die Mail. So lassen?
+- **Soll `GET /api/status` hängende Nachlauf-Aufträge melden?** Ein
+  additives Feld mit der Zahl fehlgeschlagener und lange offener Aufträge
+  machte Störungen von außen sichtbar. Bisher gibt es nur die SQL-Abfrage in
+  [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)
+  (08.10.2026).
+- **Ablage im Gesendet-Ordner dauerhaft machen?** Die Kopie einer Mail per
+  IMAP in den Gesendet-Ordner läuft weiter im Prozess und geht bei einem
+  Neustart verloren. Dauerhaft ginge es nur, wenn der Mailquelltext mit in
+  die Tabelle `nachlauf_auftraege` käme (08.10.2026).
 - **Nutzungsmessung.** Die Vorschläge S1–S17 in
   [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
   auf Simons Entscheidung.
@@ -490,7 +409,7 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 ## Geplant
 
 - **Version 2.4.0** — Challenges als Seiten, Web-Version mit
-  Support-Ansicht, Rollenfarben (gebaut), Mehrfach-Konten (in Arbeit) und
+  Support-Ansicht, Rollenfarben, Mehrfach-Konten (gebaut) und
   kleinere Punkte: [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version: was noch fehlt** — Leiste links, Support-Ansicht mit
   Vorgängen, Posteingang, Formularen und Support-Mail sowie die
@@ -504,9 +423,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   die Spalte „Letzte Aktivität" der Konfi-Tabelle im Browser bleibt
   ausgeblendet, bis `GET /admin/konfis` das Feld `letzte_aktivitaet`
   (additiv) liefert.
-- **Mehrfach-Konten sauber** — Team-Rollen je Gemeinde für Einzelfälle, auch
-  Admin in der einen und Teamer:in in der anderen Gemeinde; entschieden
-  08.10.2026, in Arbeit: [planung/mehrfach-konten.md](planung/mehrfach-konten.md).
 - **Feature-Empfehlungen** mit Simons Antworten vom 02.10.2026 —
   vor der EKD-Ausrollung Einwilligung (E-01, Vermerk am Konfi-Profil),
   Löschfristen (E-02), Selbstauskunft (E-21) und Hilfe und Support (E-04,
