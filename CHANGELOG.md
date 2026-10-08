@@ -190,6 +190,11 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Eine Event-Serie, die ohne Netz gespeichert und später gesendet wird,
+  entsteht auch dann nur einmal, wenn die Verbindung beim Senden abreißt.
+- Bleibt beim Anlegen einer Konfi die Antwort aus, legt „Erneut versuchen"
+  kein zweites Konto an, sondern zeigt für dasselbe Konto ein neues
+  Einmalpasswort.
 - Nach dem Schließen einer Seite laufen dort angestoßene Meldungen,
   Rückfragen und Nachladevorgänge nicht mehr weiter — so entsteht kein
   Einmalpasswort mehr, wenn man die Seite einer Person direkt nach dem

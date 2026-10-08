@@ -8,6 +8,8 @@ const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { darfJahrgang } = require('../../utils/jahrgangsZugriff');
 const { validateTeamerQuota, pruefeAnmeldeschluss, pruefeEndeNachBeginn } = require('./validierung');
 const { abfragenBuendeln } = require('../../utils/abfragenBuendeln');
+const { body } = require('express-validator');
+const { handleValidationErrors } = require('../../middleware/validation');
 
 //
 // TERMINVERWALTUNG IST LEITUNGSSACHE (16.09.2026, Simon woertlich):
@@ -20,8 +22,14 @@ const { abfragenBuendeln } = require('../../utils/abfragenBuendeln');
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
 
+  // Wiederholungsschutz (Migration 201/203), wie beim Einzel-Event.
+  const validateSerienKennung = [
+    body('client_id').optional({ values: 'null' }).isUUID().withMessage('client_id muss eine UUID sein'),
+    handleValidationErrors
+  ];
+
   // Create series events
-  router.post('/series', rbacVerifier, requireAdmin, async (req, res) => {
+  router.post('/series', rbacVerifier, requireAdmin, validateSerienKennung, async (req, res) => {
     // WICHTIG: Diese Liste muss mit POST / (Einzel-Event, verwaltung.js) synchron bleiben.
     // Fehlende Felder wurden hier früher stillschweigend auf den Spalten-
     // Default gesetzt — eine Serie kam damit ohne Teamer-Kontingent, ohne
@@ -35,6 +43,42 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
       mandatory, is_konfirmation, bring_items, checkin_window
     } = req.body;
+
+    // WIEDERHOLUNGSSCHUTZ (08.10.2026, Rest von Grundgeruest BF-02): Die
+    // Warteschlange der App wiederholt offline angelegte Serien nach
+    // Netzfehlern; ging nur die Antwort verloren, entstand die ganze Serie
+    // doppelt. EINE Kennung je Serie -- die App legt eine Serie als einen
+    // Vorgang an --, gespeichert am ERSTEN Termin, dem Anker der Serie
+    // (series_id = seine id), in events.client_id (Migration 201). Je Termin
+    // eine Kennung braeuchte die App 26, und ein Teil-Treffer kann nicht
+    // entstehen: Die Serie entsteht in einer Transaktion ganz oder gar nicht.
+    // Ein zweiter Eingang in dieser Gemeinde legt nichts an und bekommt
+    // dieselbe Antwort. Nachgeschlagen wird VOR den Pruefungen: Die hingen
+    // teils an der Uhrzeit und koennten bei einer spaeten Wiederholung
+    // anders ausfallen. Ohne client_id (Store-Apps) wie bisher.
+    const clientId = req.body.client_id || null;
+    const schonAngelegt = async () => {
+      const { rows: [anker] } = await db.query(
+        `SELECT e.series_id,
+                (SELECT COUNT(*)::int FROM events s
+                  WHERE s.series_id = e.series_id AND s.organization_id = e.organization_id) AS anzahl
+           FROM events e
+          WHERE e.client_id = $1 AND e.organization_id = $2 AND e.series_id IS NOT NULL`,
+        [clientId, req.user.organization_id]
+      );
+      return anker
+        ? { message: 'Serien-Events erfolgreich erstellt', series_id: Number(anker.series_id), events_created: anker.anzahl }
+        : null;
+    };
+    if (clientId) {
+      try {
+        const vorhanden = await schonAngelegt();
+        if (vorhanden) return res.status(201).json(vorhanden);
+      } catch (err) {
+        console.error('Database error in POST /events/series (Wiederholung):', err);
+        return res.status(500).json({ error: 'Datenbankfehler' });
+      }
+    }
 
     // Gleiche Kontingent-Prüfung wie beim Einzel-Event.
     const seriesTeamerQuotaCheck = validateTeamerQuota(teamer_max_participants, teamer_max_waitlist_size);
@@ -209,9 +253,9 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
               teamer_needed, teamer_only,
               teamer_max_participants, teamer_waitlist_enabled, teamer_max_waitlist_size,
               mandatory, is_konfirmation, bring_items, checkin_window,
-              created_by, organization_id
+              created_by, organization_id, client_id
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, true, $16, $17,
-                      $18, $19, $20, $21, $22, $23, $24, $25, $26)
+                      $18, $19, $20, $21, $22, $23, $24, $25, $26, $27)
             RETURNING id
           `;
           const { rows: [newEvent] } = await client.query(eventQuery, [
@@ -231,7 +275,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
             mandatory || false, is_konfirmation || false,
             bring_items || null,
             seriesCheckinWindow,
-            req.user.id, req.user.organization_id
+            req.user.id, req.user.organization_id, clientId
           ]);
           eventId = newEvent.id;
           seriesId = eventId; // Use first event's ID as series_id
@@ -350,6 +394,12 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     } catch (err) {
       try { await client.query('ROLLBACK'); } catch (e) { /* ignore */ }
       client.release();
+      // Zwei Eingaenge derselben client_id gleichzeitig: Der zweite INSERT
+      // des Ankers scheitert am eindeutigen Index, die Serie des ersten steht.
+      if (clientId && err.code === '23505' && err.constraint === 'idx_events_org_client_id') {
+        const vorhanden = await schonAngelegt().catch(() => null);
+        if (vorhanden) return res.status(201).json(vorhanden);
+      }
       console.error('Database error in POST /events/series:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }

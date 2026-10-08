@@ -147,6 +147,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   als Auftrag in einer dauerhaften Warteschlange (Migration 202) und
   überleben einen Neustart (`feat/nachantwort-warteschlange`;
   [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)).
+- [x] 08.10.2026 — Wiederholungsschutz auch für Event-Serien (eine Kennung
+  je Serie am ersten Termin) und die Konfi-Anlage (Migration 203; eine
+  Wiederholung liefert dasselbe Konto mit neuem Einmalpasswort, solange es
+  sich nie angemeldet hat, sonst 409); Schema-Dump bis 175 fortgeschrieben
+  (Grundgerüst BF-02, Rest; `fix/wiederholungsschutz-serien-konfis`).
 
 ## Offen
 
@@ -186,10 +191,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
     `backend/routes/chat.js`) liest die Rolle noch über `users.role_id`,
     also aus der Stamm-Gemeinde (beim Prüfen am 08.10.2026 gesehen; die
     Nachrichtenliste ist umgestellt).
-- **Anlegen ohne Wiederholungsschutz (Rest).** Bonuspunkte und einzelne
-  Events tragen seit 08.10.2026 eine `client_id` (Migration 201). Offen sind
-  Event-Serien und die Konfi-Anlage; die Konfi-Anlage geht nur online, weil
-  ihre Antwort das Einmalpasswort trägt (Grundgerüst BF-02, Rest).
 - **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
   Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
   die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner

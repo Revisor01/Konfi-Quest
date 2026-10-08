@@ -47,7 +47,7 @@ const STELLEN: Array<{
   {
     datei: 'src/components/admin/modals/EventModal.tsx',
     handlung: 'termin-angelegt',
-    vorher: "api.post('/events/series', payload)"
+    vorher: "api.post('/events/series', { ...payload, client_id: anlegeKennung.current })"
   },
   {
     datei: 'src/components/admin/modals/MaterialFormModal.tsx',
@@ -168,7 +168,7 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
     const quelle = lies('src/components/admin/modals/EventModal.tsx');
     // Der PUT-Zweig (Bearbeiten) darf keine Messung tragen.
     const posPut = quelle.indexOf('api.put(`/events/${event.id}`, updatePayload)');
-    const posSerie = quelle.indexOf("api.post('/events/series', payload)");
+    const posSerie = quelle.indexOf("api.post('/events/series', { ...payload, client_id: anlegeKennung.current })");
     expect(posPut).toBeGreaterThan(-1);
     expect(posSerie).toBeGreaterThan(posPut);
     // Zwischen dem PUT und dem naechsten POST steht keine Messung.

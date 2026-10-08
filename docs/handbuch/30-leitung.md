@@ -43,7 +43,12 @@ siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
 
 Über das Plus legst du an, was gerade geöffnet ist. Dabei erzeugt die App ein
 [Einmalpasswort](35-passwoerter.md#wie-die-einmalpasswoerter-aussehen), das du
-direkt kopieren kannst. Ganze Gruppen lädst du besser
+direkt kopieren kannst. Bleibt die Antwort aus, etwa weil das Netz abreißt,
+fragt die App, ob sie es **„Erneut versuchen"** soll. Das legt kein zweites
+Konto an: Stand das Konto schon, bekommst du für dasselbe Konto ein neues
+Einmalpasswort, das vorherige gilt nicht mehr. Hat sich die Konfi schon
+angemeldet, gibt es auf diesem Weg kein neues Passwort — dann
+[setzt du es in der Detailansicht neu](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort). Ganze Gruppen lädst du besser
 [per QR-Code ein](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen),
 statt jeden Konfi einzeln anzulegen.
 

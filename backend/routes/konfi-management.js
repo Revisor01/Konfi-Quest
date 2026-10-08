@@ -39,6 +39,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     const validateCreateKonfi = [
         body('name').trim().notEmpty().withMessage('Name ist erforderlich'),
         body('jahrgang_id').isInt({ min: 1 }).withMessage('Ungültige Jahrgangs-ID'),
+        // Wiederholungsschutz (Migration 203), nur beim Anlegen ausgewertet.
+        body('client_id').optional({ values: 'null' }).isUUID().withMessage('client_id muss eine UUID sein'),
         handleValidationErrors
     ];
 
@@ -260,6 +262,72 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const password = generateBiblicalPassword();
         const hashedPassword = await bcrypt.hash(password, 10);
 
+        // WIEDERHOLUNGSSCHUTZ (Migration 203, 08.10.2026, Rest von
+        // Grundgeruest BF-02): Kam die Anlage an und ging nur die Antwort
+        // verloren, legte ein zweiter Versuch ein zweites Konto an
+        // ("lena.muster2"). Mit client_id erkennt der Server den zweiten
+        // Eingang in dieser Gemeinde und gibt DASSELBE Konto zurueck.
+        //
+        // Das Einmalpasswort der ersten Antwort laesst sich nicht erneut
+        // ausliefern -- gespeichert ist nur der Hash, und ein Klartext auf
+        // Vorrat waere genau das, was Migration 176/187 abgeschafft haben.
+        // Deshalb bekommt das Konto bei der Wiederholung ein NEUES
+        // Einmalpasswort, und die Antwort hat dieselbe Form wie beim ersten
+        // Mal. Das alte Passwort hat niemand gesehen (die Antwort ging ja
+        // verloren); ersetzt wird es nur, solange sich das Konto noch nie
+        // angemeldet hat. Danach waere ein neues Passwort eine Uebernahme
+        // eines benutzten Kontos durch die Hintertuer: 409, das Passwort
+        // gibt es dann bewusst ueber "Passwort neu erzeugen".
+        //
+        // Die Rechte sind dieselben wie bei "Passwort neu erzeugen": Wer den
+        // Jahrgang der Konfi bearbeiten darf. Ohne client_id (Store-Apps)
+        // wie bisher.
+        const clientId = req.body.client_id || null;
+        const wiederholung = async () => {
+            const { rows: [konto] } = await db.query(
+                `SELECT u.id, u.username, u.last_login_at, u.deleted_at, kp.jahrgang_id
+                   FROM users u
+                   LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
+                  WHERE u.client_id = $1 AND u.organization_id = $2`,
+                [clientId, req.user.organization_id]
+            );
+            if (!konto) return null;
+            if (!darfJahrgang(req, konto.jahrgang_id, { edit: true })) {
+                return { status: 403, body: { error: 'Kein Zugriff auf diesen Jahrgang' } };
+            }
+            // Bedingt in EINER Anweisung: Meldet sich die Konfi zwischen
+            // Nachschlagen und Schreiben an, bleibt ihr Passwort stehen.
+            const { rowCount } = await db.query(
+                `UPDATE users SET password_hash = $1, updated_at = NOW()
+                  WHERE id = $2 AND last_login_at IS NULL AND deleted_at IS NULL`,
+                [hashedPassword, konto.id]
+            );
+            if (rowCount === 0) {
+                return {
+                    status: 409,
+                    body: {
+                        error: 'Dieses Konto ist schon angelegt und wird benutzt. Ein neues Passwort gibt es in der Detailansicht der Konfi.',
+                        error_code: 'bereits_angelegt',
+                        id: Number(konto.id),
+                        username: konto.username
+                    }
+                };
+            }
+            return {
+                status: 201,
+                body: { id: Number(konto.id), username: konto.username, temporaryPassword: password, message: 'Konfi erfolgreich erstellt' }
+            };
+        };
+        if (clientId) {
+            try {
+                const ergebnis = await wiederholung();
+                if (ergebnis) return res.status(ergebnis.status).json(ergebnis.body);
+            } catch (err) {
+                console.error('Database error in POST /konfis (Wiederholung):', err);
+                return res.status(500).json({ error: 'Datenbankfehler' });
+            }
+        }
+
         const client = await db.getClient();
         try {
             await client.query('BEGIN');
@@ -335,10 +403,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // under_limit ODER (grace mit confirm:true) -> normal anlegen.
 
             const userQuery = `
-                INSERT INTO users (username, display_name, password_hash, role_id, organization_id)
-                VALUES ($1, $2, $3, $4, $5)
+                INSERT INTO users (username, display_name, password_hash, role_id, organization_id, client_id)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING id`;
-            const { rows: [newUser] } = await client.query(userQuery, [username, name, hashedPassword, role.id, req.user.organization_id]);
+            const { rows: [newUser] } = await client.query(userQuery, [username, name, hashedPassword, role.id, req.user.organization_id, clientId]);
             const userId = newUser.id;
 
             const profileQuery = `
@@ -394,6 +462,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));
 
+            // Zwei Eingaenge derselben client_id gleichzeitig: Der zweite
+            // INSERT scheitert am eindeutigen Index, das Konto des ersten
+            // steht -- dann wie eine Wiederholung (neues Einmalpasswort).
+            if (clientId && err.code === '23505' && err.constraint === 'idx_users_org_client_id') {
+                const ergebnis = await wiederholung().catch(() => null);
+                if (ergebnis) return res.status(ergebnis.status).json(ergebnis.body);
+            }
             if (err.code === '23505') { // unique_violation
                 return res.status(409).json({ error: 'Benutzername existiert bereits' });
             }
