@@ -53,6 +53,7 @@ import WebEventAktionen from './WebEventAktionen';
 import WebEventsKacheln from './WebEventsKacheln';
 import { ZEIT_FILTER, type TerminAktionen, type ZeitFilter } from './typen';
 import '../../../../theme/web/termine.css';
+import { terminStatusRang } from '../../../../utils/statusReihenfolge';
 
 const LEER_TEXT: Record<ZeitFilter, string> = {
   aktuell: 'Keine anstehenden Events',
@@ -214,7 +215,7 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
       schluessel: 'status',
       kopf: 'Status',
       breite: '168px',
-      sortWert: (e) => leitungListeStatus(e).text,
+      sortWert: (e) => terminStatusRang(leitungListeStatus(e).text),
       zelle: (e) => {
         const s = leitungListeStatus(e);
         return <WebTerminMarken status={s} event={e} teamZeigen serieZeigen />;

@@ -41,6 +41,7 @@ import {
   WebTerminMarken,
 } from '../../../shared/web/termine/WebTerminBausteine';
 import '../../../../theme/web/termine.css';
+import { teilnahmeStatusRang } from '../../../../utils/statusReihenfolge';
 
 const TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
   danger: 'fehler',
@@ -96,7 +97,7 @@ const WerKommt: React.FC<{ titel: string; personen: readonly Participant[] }> = 
     {
       schluessel: 'status',
       kopf: 'Status',
-      sortWert: (x) => teilnahmeDarstellung(x).statusText,
+      sortWert: (x) => teilnahmeStatusRang(teilnahmeDarstellung(x).statusText),
       zelle: (x) => {
         const d = teilnahmeDarstellung(x);
         return (

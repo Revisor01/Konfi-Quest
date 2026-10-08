@@ -52,3 +52,20 @@ export function ariaSortVon(sortierbar: boolean, sortierung: TabellenSortierung 
   if (sortierung?.schluessel !== schluessel) return 'none';
   return sortierung.richtung === 'auf' ? 'ascending' : 'descending';
 }
+
+/**
+ * Sortierwert einer Status-Spalte: die Stelle des Status in seiner fachlichen
+ * Reihe (Offenes zuerst), nicht das angezeigte Wort (Simon, 08.10.2026).
+ * Alphabetisch stuende „Abgelehnt – Offen – Verbucht" da, nach der Reihe
+ * „Offen – Verbucht – Abgelehnt". Ein Wert, der in der Reihe fehlt, steht
+ * hinter allen bekannten; ein leerer (null) wie jeder leere Wert unten.
+ * Absteigend dreht `sortiereZeilen` die Reihe um. Die Reihen selbst stehen
+ * gesammelt in utils/statusReihenfolge.ts.
+ */
+export function nachReihe<S>(reihe: readonly S[]): (wert: S | null | undefined) => number | null {
+  return (wert) => {
+    if (wert === null || wert === undefined) return null;
+    const stelle = reihe.indexOf(wert);
+    return stelle === -1 ? reihe.length : stelle;
+  };
+}

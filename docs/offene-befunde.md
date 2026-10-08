@@ -44,8 +44,7 @@ erledigt ist.
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
 - [ ] **Simons offene Fragen** — unten unter
-  [Bei Simon zu entscheiden](#bei-simon-zu-entscheiden); als Erstes die
-  Status-Spalten (Simon fragt, was gemeint ist — dort erklärt).
+  [Bei Simon zu entscheiden](#bei-simon-zu-entscheiden).
 - [ ] **CodeQL #124 und #127 auf GitHub als „False positive" schließen** —
   am Code begründet ([Code](#code), „CodeQL-Meldungen").
 
@@ -165,6 +164,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Gemeinde mit, Chat-Export mit der Rolle in der Gemeinde des Raums; die
   Leitung trägt Team aus einer anderen Stamm-Gemeinde wieder vom Termin aus
   (`fix/mehrfach-konten-reste`).
+- [x] 08.10.2026 — Status-Spalten der Web-Tabellen sortieren in der
+  fachlichen Reihenfolge, Offenes zuerst (Simon: „umsetzen"); die Reihen
+  aller Status-Spalten an einer Stelle, `frontend/src/utils/statusReihenfolge.ts`
+  (`feat/status-spalten-sortierung`).
 
 ## Offen
 
@@ -369,14 +372,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-- **Status-Spalten der Web-Tabellen sortieren alphabetisch** (07.10.2026).
-  *Was gemeint ist* (Simon fragte am 08.10.2026 nach): In den Tabellen der
-  Web-Fassung lässt sich jede Spalte per Klick auf den Spaltenkopf sortieren.
-  Bei einer Status-Spalte geschieht das heute nach dem angezeigten Wort, also
-  „Abgelehnt – Offen – Verbucht" — nicht nach dem Ablauf. Frage: Soll eine
-  Status-Spalte stattdessen in der fachlichen Reihenfolge sortieren, etwa
-  Offen – Verbucht – Abgelehnt (Offenes zuerst)? So machen es heute schon
-  Support (Gemeinden, Vorgänge) und Rückblick. Offen bis zu Simons Antwort.
 - **Punkte-Verlauf im Profil und in der Konfi-Zeit sortiert nur, was sichtbar
   ist** (die ersten acht, bis „Alle anzeigen“). Auf der Personenseite der
   Leitung wird schon vor dem Kürzen sortiert; hier genauso?

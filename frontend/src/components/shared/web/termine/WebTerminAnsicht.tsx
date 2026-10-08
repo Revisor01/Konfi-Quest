@@ -19,6 +19,7 @@ import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebTerminSymbol, WebAbsageZeile, WebFakten, WebTerminMarken } from './WebTerminBausteine';
 import WebTerminKarte from './WebTerminKarte';
 import '../../../../theme/web/termine.css';
+import { terminStatusRang } from '../../../../utils/statusReihenfolge';
 
 /** Ein Event mit allem, was beide Ansichten von ihm zeigen. */
 export interface WebTerminEintrag {
@@ -133,7 +134,7 @@ const spaltenFuer = (teamZeigen: boolean): Array<WebSpalte<WebTerminEintrag>> =>
     schluessel: 'status',
     kopf: 'Status',
     breite: '168px',
-    sortWert: ({ status, statusZeigen = true }) => (statusZeigen ? status.text : null),
+    sortWert: ({ status, statusZeigen = true }) => (statusZeigen ? terminStatusRang(status.text) : null),
     zelle: ({ event: e, status, statusZeigen = true }) => (
       <WebTerminMarken status={status} event={e} teamZeigen={teamZeigen} statusZeigen={statusZeigen} />
     ),

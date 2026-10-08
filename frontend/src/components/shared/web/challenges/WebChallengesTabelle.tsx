@@ -30,6 +30,7 @@ import {
 } from '../../../../utils/challengesWeb';
 import { WebChallengeSymbol, WebEingereichtPill } from './WebChallengeBausteine';
 import '../../../../theme/web/challenges.css';
+import { challengeStatusRang } from '../../../../utils/statusReihenfolge';
 
 export interface WebChallengesTabelleProps<T extends ListenChallenge> {
   /** Die Challenges nach Filter und Suche, in der Reihenfolge der Seite. */
@@ -107,7 +108,7 @@ function WebChallengesTabelle<T extends ListenChallenge>({
       schluessel: 'status',
       kopf: 'Status',
       breite: leitung ? '136px' : '130px',
-      sortWert: ({ status }) => STATUS_WORT[status],
+      sortWert: ({ status }) => challengeStatusRang(status),
       zelle: ({ challenge: c, status }) => (
         <div className="web-pillreihe web-challenge-marken">
           <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>

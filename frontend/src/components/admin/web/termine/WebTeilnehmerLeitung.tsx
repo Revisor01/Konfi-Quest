@@ -31,6 +31,7 @@ import WebDialog from '../../../web/WebDialog';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebTeilnahmeHinweise } from '../../../shared/web/termine/WebTerminBausteine';
 import '../../../../theme/web/termine.css';
+import { teilnahmeStatusRang } from '../../../../utils/statusReihenfolge';
 
 const TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
   danger: 'fehler',
@@ -114,7 +115,7 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
   spalten.push({
     schluessel: 'status',
     kopf: 'Status',
-    sortWert: (p) => teilnahmeDarstellung(p).statusText,
+    sortWert: (p) => teilnahmeStatusRang(teilnahmeDarstellung(p).statusText),
     zelle: (p) => {
       const d = teilnahmeDarstellung(p);
       return (

@@ -22,6 +22,7 @@ import { WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { EIGENER_ANTRAG_FILTER, type EigenerAntragFilter } from './terminFilter';
 import '../../../../theme/web/termine.css';
+import { antragStatusRang } from '../../../../utils/statusReihenfolge';
 
 const STATUS_VON_FILTER: Record<Exclude<EigenerAntragFilter, 'alle'>, ActivityRequest['status']> = {
   offen: 'pending',
@@ -131,7 +132,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
       schluessel: 'status',
       kopf: 'Status',
       breite: '128px',
-      sortWert: (a) => STATUS[a.status].text,
+      sortWert: (a) => antragStatusRang(a.status),
       zelle: (a) => <WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>,
     },
     {

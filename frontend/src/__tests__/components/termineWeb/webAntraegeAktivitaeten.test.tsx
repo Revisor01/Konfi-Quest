@@ -384,14 +384,18 @@ describe('Anträge: Sortieren nach Spalte', () => {
     expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Tim Teamer', 'Mia Muster', 'Ben Beispiel']);
   });
 
-  it('"Eingang" ordnet nach Datum, "Status" nach dem Wort, "Punkte" mit dem Team unten', () => {
+  it('"Eingang" ordnet nach Datum, "Status" nach dem Ablauf, "Punkte" mit dem Team unten', () => {
     zeigeAntraege();
     const t = () => tabelle('Gemeldete Aktivitäten');
     sortiere(t(), 'Eingang');
     expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Ben Beispiel', 'Tim Teamer', 'Mia Muster']);
+    // Offen, Offen, Verbucht, Abgelehnt -- Offenes zuerst, nicht alphabetisch
+    // (das wäre Abgelehnt, Offen, Offen, Verbucht). Gleiche Status behalten
+    // die Reihenfolge der Seite; absteigend dreht die Reihe.
     sortiere(t(), 'Status');
-    // Abgelehnt, Offen, Offen, Verbucht -- gleiche Wörter behalten die Reihenfolge der Seite.
-    expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Mia Muster', 'Tim Teamer', 'Ben Beispiel']);
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Mia Muster', 'Tim Teamer', 'Ben Beispiel', 'Zoe Probe']);
+    sortiere(t(), 'Status');
+    expect(reihenfolge(t(), NAMEN)).toEqual(['Zoe Probe', 'Ben Beispiel', 'Mia Muster', 'Tim Teamer']);
     sortiere(t(), 'Punkte');
     expect(reihenfolge(t(), NAMEN)).toEqual(['Ben Beispiel', 'Mia Muster', 'Zoe Probe', 'Tim Teamer']);
     sortiere(t(), 'Punkte');

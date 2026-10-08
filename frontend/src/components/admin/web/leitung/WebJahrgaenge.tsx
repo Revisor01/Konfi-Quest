@@ -23,6 +23,7 @@ import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { WebSymbol, WebZeilenAktionen, WebZeilenKnopf } from './WebLeitungBausteine';
 import type { JahrgangEintrag } from './verwaltungTypen';
+import { konfispruchStatusRang } from '../../../../utils/statusReihenfolge';
 
 export interface WebJahrgaengeProps {
   jahrgaenge: readonly JahrgangEintrag[];
@@ -98,7 +99,7 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       kopf: 'Konfispruch',
       breite: '150px',
       optional: true,
-      sortWert: (j) => (j.konfspruch_enabled !== false ? 'Spruch frei' : 'Spruch gesperrt'),
+      sortWert: (j) => konfispruchStatusRang(j.konfspruch_enabled !== false),
       zelle: (j) => (j.konfspruch_enabled !== false
         ? <WebPill ton="erfolg" punkt>Spruch frei</WebPill>
         : <WebPill punkt>Spruch gesperrt</WebPill>),

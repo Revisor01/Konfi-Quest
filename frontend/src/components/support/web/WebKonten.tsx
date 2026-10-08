@@ -40,6 +40,7 @@ import WebDialog from '../../web/WebDialog';
 import WebFeld from '../../web/WebFeld';
 import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
 import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import { kontoStatusRang } from '../../../utils/statusReihenfolge';
 
 const WebKonten: React.FC = () => {
   const {
@@ -107,7 +108,7 @@ const WebKonten: React.FC = () => {
       schluessel: 'status',
       kopf: 'Status',
       breite: '100px',
-      sortWert: (k) => (k.is_active ? 'Aktiv' : 'Gesperrt'),
+      sortWert: (k) => kontoStatusRang(k.is_active),
       zelle: (k) => <WebPill ton={k.is_active ? 'erfolg' : 'neutral'} punkt>{k.is_active ? 'Aktiv' : 'Gesperrt'}</WebPill>,
     },
     {

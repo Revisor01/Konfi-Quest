@@ -77,6 +77,26 @@ describe('Events der Leitung (WebEventsTabelle)', () => {
     zeige();
     pruefeSortierung(tabelle, 'Teilnahme', NAMEN, ['Adventsmarkt', 'Bibelabend', 'Chorprobe']);
   });
+
+  it('"Status" ordnet nach dem Ablauf: Offen, Bald, Ausgebucht, Geschlossen -- nicht alphabetisch', () => {
+    const STAND = [
+      termin(1, 'Bibelabend', { event_date: inTagen(2), registration_status: 'closed' }),
+      termin(2, 'Adventsmarkt', { event_date: inTagen(5), registration_status: 'upcoming' }),
+      termin(3, 'Chorprobe', { event_date: inTagen(9), registration_status: 'open' }),
+      termin(4, 'Zeltlager', { event_date: inTagen(12), registered_count: 20, max_participants: 20 }),
+    ];
+    render(
+      <WebEventsTabelle
+        events={STAND}
+        abgesagte={[]}
+        jahrgaenge={[]}
+        darfVerwalten={false}
+        aktionen={{ neu: vi.fn(), kopieren: vi.fn(), absagen: vi.fn(), zuruecknehmen: vi.fn(), loeschen: vi.fn() }}
+      />,
+    );
+    // Alphabetisch stünde Ausgebucht, Bald, Geschlossen, Offen da.
+    pruefeSortierung(tabelle, 'Status', [...NAMEN, 'Zeltlager'], ['Chorprobe', 'Adventsmarkt', 'Zeltlager', 'Bibelabend']);
+  });
 });
 
 describe('Teilnehmende der Leitung (WebTeilnehmerLeitung)', () => {
@@ -116,14 +136,10 @@ describe('Teilnehmende der Leitung (WebTeilnehmerLeitung)', () => {
     pruefeSortierung(tabelle, 'Zeitfenster', NAMEN, ['Zoe Probe', 'Mia Muster', 'Ben Beispiel']);
   });
 
-  it('"Status" ordnet nach dem angezeigten Wort (Abgemeldet, Angemeldet/Anwesend ...)', () => {
+  it('"Status" ordnet nach dem Ablauf: Gebucht, Abgemeldet, Anwesend -- nicht alphabetisch', () => {
     zeige();
-    const tabelleJetzt = tabelle();
-    const woerter = within(tabelleJetzt).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[2].querySelector('.web-pill, span')!.textContent!.trim());
-    sortiere(tabelleJetzt, 'Status');
-    const sortiert = within(tabelle()).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[2].querySelector('.web-pill, span')!.textContent!.trim());
-    expect(sortiert).toEqual([...woerter].sort((a, b) => a.localeCompare(b, 'de')));
-    expect(sortiert).not.toEqual(woerter);
+    // Alphabetisch stünde Abgemeldet (Zoe), Anwesend (Ben), Gebucht (Mia) da.
+    pruefeSortierung(tabelle, 'Status', NAMEN, ['Mia Muster', 'Zoe Probe', 'Ben Beispiel']);
   });
 });
 
@@ -157,6 +173,27 @@ describe('Challenges (WebChallengesTabelle)', () => {
     pruefeSortierung(tabelle, 'Zeitraum', NAMEN, ['Bibelvers lernen', 'Kerze gestalten', 'Fotosafari']);
     pruefeSortierung(tabelle, 'Beiträge', NAMEN, ['Fotosafari', 'Kerze gestalten', 'Bibelvers lernen']);
   });
+
+  it('"Status" ordnet nach dem Ablauf: Läuft, Geplant, Entwurf, Beendet -- nicht alphabetisch', () => {
+    const mit = (e: ListenEintrag<ListenChallenge>, status: ListenEintrag<ListenChallenge>['status']) => ({ ...e, status });
+    const STAND = [
+      mit(EINTRAEGE[0], 'ended'),
+      mit(EINTRAEGE[1], 'draft'),
+      mit(eintrag(4, 'Psalm schreiben', 30, 0), 'scheduled'),
+      mit(EINTRAEGE[2], 'active'),
+    ];
+    render(
+      <WebChallengesTabelle
+        eintraege={STAND}
+        fuer="leitung"
+        href={(c) => `/admin/challenges/${c.id}`}
+        kugel={() => ({ anzahl: 0, text: '' })}
+        eingereicht={() => false}
+      />,
+    );
+    // Alphabetisch stünde Beendet, Entwurf, Geplant, Läuft da.
+    pruefeSortierung(tabelle, 'Status', [...NAMEN, 'Psalm schreiben'], ['Kerze gestalten', 'Psalm schreiben', 'Bibelvers lernen', 'Fotosafari']);
+  });
 });
 
 describe('Eigene Aktivitäten (WebEigeneAntraege)', () => {
@@ -181,14 +218,10 @@ describe('Eigene Aktivitäten (WebEigeneAntraege)', () => {
     pruefeSortierung(tabelle, 'Stattgefunden', NAMEN, ['Adventsmarkt', 'Gemeindefest', 'Krippenspiel']);
   });
 
-  it('"Status" ordnet nach dem Wort, "Punkte" nach der Zahl', () => {
+  it('"Status" ordnet nach dem Ablauf (Offen, Angerechnet, Abgelehnt), "Punkte" nach der Zahl', () => {
     zeige();
-    // Abgelehnt, Angerechnet/Verbucht ..., Offen -- die Wörter der Marken.
-    const zelle = sortiere(tabelle(), 'Status');
-    expect(zelle).toHaveAttribute('aria-sort', 'ascending');
-    const woerter = within(tabelle()).getAllByRole('row').slice(1).map((z) => within(z).getAllByRole('cell')[3].textContent!.trim());
-    expect(woerter).toEqual([...woerter].sort((a, b) => a.localeCompare(b, 'de')));
-    expect(reihenfolge(tabelle(), NAMEN)[0]).toBe('Krippenspiel');
+    // Alphabetisch stünde Abgelehnt (Krippenspiel) oben.
+    pruefeSortierung(tabelle, 'Status', NAMEN, ['Gemeindefest', 'Adventsmarkt', 'Krippenspiel']);
     pruefeSortierung(tabelle, 'Punkte', NAMEN, ['Krippenspiel', 'Gemeindefest', 'Adventsmarkt']);
   });
 });
@@ -209,6 +242,19 @@ describe('Events von Konfis und Team (WebTerminAnsicht)', () => {
     pruefeSortierung(tabelle, 'Wann', NAMEN, ['Mitarbeiterabend', 'Zeltlager', 'Bastelnachmittag']);
     pruefeSortierung(tabelle, 'Event', NAMEN, ['Bastelnachmittag', 'Mitarbeiterabend', 'Zeltlager']);
     pruefeSortierung(tabelle, 'Plätze', NAMEN, ['Bastelnachmittag', 'Zeltlager', 'Mitarbeiterabend']);
+  });
+
+  it('"Status" ordnet nach dem Ablauf: Offen, Angemeldet, Vergangen, Abgesagt -- nicht alphabetisch', () => {
+    const mit = (e: WebTerminEintrag, text: string): WebTerminEintrag => ({ ...e, status: { ...e.status, text } });
+    const STAND = [
+      mit(EINTRAEGE[0], 'Abgesagt'),
+      mit(EINTRAEGE[1], 'Vergangen'),
+      mit(EINTRAEGE[2], 'Offen'),
+      mit(eintrag(4, 'Jugendgottesdienst', 6, 2), 'Angemeldet'),
+    ];
+    render(<WebTerminAnsicht eintraege={STAND} ansicht="liste" teamZeigen={false} />);
+    // Alphabetisch stünde Abgesagt, Angemeldet, Offen, Vergangen da.
+    pruefeSortierung(tabelle, 'Status', [...NAMEN, 'Jugendgottesdienst'], ['Mitarbeiterabend', 'Jugendgottesdienst', 'Bastelnachmittag', 'Zeltlager']);
   });
 });
 
@@ -254,6 +300,26 @@ describe('Konfi-Zeit und Punkte-Verlauf (WebKonfiHistorie, WebPunkteVerlauf)', (
     const NAMEN = ['Osternacht', 'Konfi-Camp', 'Taizé-Abend'];
     pruefeSortierung(tabelle, 'Datum', NAMEN, ['Konfi-Camp', 'Taizé-Abend', 'Osternacht']);
     pruefeSortierung(tabelle, 'Punkte', NAMEN, ['Taizé-Abend', 'Osternacht', 'Konfi-Camp']);
+  });
+
+  it('Events der Konfi-Zeit: "Stand" ordnet nach dem Ablauf (Angemeldet, Dabei, Abgesagt) -- nicht alphabetisch', async () => {
+    render(
+      <WebKonfiHistorie
+        punkte={{ gesamt: 0, gottesdienst: 0, gemeinde: 0 }}
+        badges={[]}
+        termine={[
+          { event_id: 1, name: 'Osternacht', datum: '2026-04-04T20:00:00Z', status: 'confirmed', anwesenheit: 'present' },
+          { event_id: 2, name: 'Konfi-Camp', datum: '2025-09-12T10:00:00Z', status: 'confirmed', abgesagt: true },
+          { event_id: 3, name: 'Taizé-Abend', datum: '2026-01-20T18:00:00Z', status: 'confirmed' },
+        ]}
+        rueckblick={null}
+        onRueckblick={vi.fn()}
+      />,
+    );
+    await act(async () => { await Promise.resolve(); });
+    const tabelle = () => screen.getByRole('table', { name: 'Events der Konfi-Zeit' });
+    // Alphabetisch stünde Abgesagt, Angemeldet, Dabei da.
+    pruefeSortierung(tabelle, 'Stand', ['Osternacht', 'Konfi-Camp', 'Taizé-Abend'], ['Taizé-Abend', 'Osternacht', 'Konfi-Camp']);
   });
 
   it('Punkte-Verlauf: bis zum Klick neueste zuerst; "Wofür" ordnet nach Titel, "Punkte" nach der Zahl', async () => {

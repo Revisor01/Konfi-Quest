@@ -43,6 +43,7 @@ import { WebAbsage, WebTerminAngaben, WebTerminMarken } from '../../../shared/we
 import type { EventData } from '../../views/EventDetailSections';
 import WebTeilnehmerLeitung, { type TeilnehmerAktionen } from './WebTeilnehmerLeitung';
 import '../../../../theme/web/termine.css';
+import { zeitfensterStatusRang } from '../../../../utils/statusReihenfolge';
 
 export interface LeitungDetailAktionen extends TeilnehmerAktionen {
   alleBestaetigen: (anzahl: number, wartend: number, rolle: 'konfi' | 'teamer') => void;
@@ -192,7 +193,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
     {
       schluessel: 'status',
       kopf: 'Status',
-      sortWert: (s) => ((s.registered_count || 0) >= s.max_participants ? 'Voll' : 'Frei'),
+      sortWert: (s) => zeitfensterStatusRang((s.registered_count || 0) >= s.max_participants ? 'Voll' : 'Frei'),
       zelle: (s) => ((s.registered_count || 0) >= s.max_participants
         ? <WebPill ton="fehler">Voll</WebPill>
         : <WebPill ton="erfolg">Frei</WebPill>),
