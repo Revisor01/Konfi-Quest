@@ -696,11 +696,11 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Admins/Org-Admins/Teamer:innen der Org; Antragsteller:in (Konfi ODER
       // Teamer:in) über den korrekten Socket-Raum per Rolle.
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'requests', 'update');
-      liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
+      liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update', null, req.user.organization_id);
       // Wurde ein genehmigter Antrag zurückgesetzt, wurden Punkte entzogen
       // (nur bei Konfi-Activities) -> Punkte-/Dashboard-Ansicht aktualisieren.
       if (oldStatus === 'approved' && !isTeamerActivity) {
-        liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
+        liveUpdate.sendToUserByRole(request.user_id, 'points', 'update', null, req.user.organization_id);
       }
 
     } catch (err) {
@@ -845,8 +845,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
       // Antragsteller:in kann Konfi ODER Teamer:in sein (target_role='teamer'):
       // sendToUserByRole trifft den korrekten Socket-Raum, sendToKonfi wuerde bei
       // Teamer-Anträgen in den leeren Konfi-Raum senden.
-      liveUpdate.sendToUserByRole(request.user_id, 'points', 'update');
-      liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update');
+      liveUpdate.sendToUserByRole(request.user_id, 'points', 'update', null, req.user.organization_id);
+      liveUpdate.sendToUserByRole(request.user_id, 'requests', 'update', null, req.user.organization_id);
 
       // Mitteilungen NACH der Antwort: Jeder Push geht abgewartet an FCM (kalt
       // 330-450 ms, warm 90-130 ms je Sendung); vor der Antwort stand die
@@ -983,7 +983,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Live-Update an Ziel senden — sendToUserByRole (statt sendToKonfi), weil
       // Aktivitäten auch an Teamer:innen vergeben werden können (isTeamerActivity)
-      liveUpdate.sendToUserByRole(konfiId, 'points', 'update');
+      liveUpdate.sendToUserByRole(konfiId, 'points', 'update', null, req.user.organization_id);
       liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'update');
     } catch (err) {
  console.error('Database error in POST /api/activities/assign-activity:', err);

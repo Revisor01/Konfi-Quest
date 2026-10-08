@@ -252,6 +252,37 @@ describe('liveUpdate: Socket-Raum-Adressierung', () => {
       expect(rooms).toEqual([`user_admin_${USERS.orgAdmin1.id}`]);
     });
 
+    // Mehrfach-Konten (08.10.2026): Der Socket sitzt im Raum der Rolle in
+    // der Gemeinde, in der die App gerade arbeitet (utils/socketAnmeldung.js).
+    // Mit der Gemeinde des Inhalts waehlt sendToUserByRole den Raum nach der
+    // Rolle DORT -- vorher nach der Rolle am Konto (Stamm-Gemeinde).
+    it('mit Gemeinde des Inhalts: Raum nach der Rolle in dieser Gemeinde (weitere Gemeinde)', async () => {
+      // admin2: zuhause Admin in Org 2, in Org 1 Teamer:in.
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.admin2.id, ORG_ID, 2]
+      );
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToUserByRole(USERS.admin2.id, 'events', 'update', null, ORG_ID);
+
+      expect(roomsFor(emits)).toEqual([`user_teamer_${USERS.admin2.id}`]);
+    });
+
+    it('mit Gemeinde des Inhalts: in der Stamm-Gemeinde gilt die Rolle am Konto', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.admin2.id, ORG_ID, 2]
+      );
+      const { io, emits } = createFakeIo();
+      liveUpdate.init(io);
+
+      await liveUpdate.sendToUserByRole(USERS.admin2.id, 'events', 'update', null, 2);
+
+      expect(roomsFor(emits)).toEqual([`user_admin_${USERS.admin2.id}`]);
+    });
+
     it('macht bei unbekanntem User nichts (kein Throw, kein Emit)', async () => {
       const { io, emits } = createFakeIo();
       liveUpdate.init(io);

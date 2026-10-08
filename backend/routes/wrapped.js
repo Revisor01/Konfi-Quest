@@ -1948,10 +1948,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           AND andere.user_id <> meine.user_id
          JOIN jahrgaenge j ON j.id = meine.jahrgang_id
          JOIN users u ON u.id = andere.user_id
-         JOIN roles r ON r.id = u.role_id
+         -- Mitglied und Rolle in DIESER Gemeinde ueber beide Quellen
+         -- (08.10.2026), wie TEAM_MITGLIED_ROLLE in routes/chat.js: Der
+         -- INNER JOIN auf roles filtert zugleich die Mitgliedschaft. Vorher
+         -- zaehlte nur, wer hier zuhause ist.
+         LEFT JOIN user_organizations uo
+           ON uo.user_id = u.id AND uo.organization_id = $2
+         JOIN roles r
+           ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id ELSE uo.role_id END
         WHERE meine.user_id = $1
           AND j.organization_id = $2
-          AND u.organization_id = $2
           AND r.name = 'teamer'
           AND u.deleted_at IS NULL`,
       [userId, orgId]
@@ -2876,6 +2882,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         const { rows } = await db.query(
           `SELECT DISTINCT jahr FROM (
+             -- Rolle in DIESER Gemeinde ueber beide Quellen (08.10.2026),
+             -- wie TEAM_MITGLIED_ROLLE in routes/chat.js; vorher die Rolle
+             -- am Konto, gleich in welcher Gemeinde sie gilt.
+             --
              -- Termine: nur, wo ein Teamer auch WAR. Die blosse Existenz
              -- eines Termins sagt nichts -- ein reiner Konfi-Termin
              -- erzeugt keine einzige Zeile im Teamer-Rueckblick.
@@ -2883,7 +2893,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                FROM event_bookings eb
                JOIN events e ON eb.event_id = e.id
                JOIN users u ON eb.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
+               LEFT JOIN user_organizations uo
+                 ON uo.user_id = u.id AND uo.organization_id = $1
+               JOIN roles r
+                 ON r.id = CASE WHEN u.organization_id = $1 THEN u.role_id ELSE uo.role_id END
               WHERE e.organization_id = $1 AND r.name = 'teamer'
                 AND eb.status = 'confirmed' AND eb.attendance_status = 'present'
              UNION ALL
@@ -2893,7 +2906,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                FROM user_activities ua
                JOIN activities a ON ua.activity_id = a.id
                JOIN users u ON ua.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
+               LEFT JOIN user_organizations uo
+                 ON uo.user_id = u.id AND uo.organization_id = $1
+               JOIN roles r
+                 ON r.id = CASE WHEN u.organization_id = $1 THEN u.role_id ELSE uo.role_id END
               WHERE ua.organization_id = $1 AND r.name = 'teamer'
                 AND a.target_role = 'teamer'
              UNION ALL
@@ -2903,7 +2919,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                FROM user_badges ub
                JOIN custom_badges cb ON cb.id = ub.badge_id
                JOIN users u ON ub.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
+               LEFT JOIN user_organizations uo
+                 ON uo.user_id = u.id AND uo.organization_id = $1
+               JOIN roles r
+                 ON r.id = CASE WHEN u.organization_id = $1 THEN u.role_id ELSE uo.role_id END
               WHERE ub.organization_id = $1 AND r.name = 'teamer'
                 AND cb.target_role = 'teamer'
              UNION ALL
@@ -2912,7 +2931,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
              SELECT EXTRACT(YEAR FROM uc.issued_date)::int
                FROM user_certificates uc
                JOIN users u ON uc.user_id = u.id
-               JOIN roles r ON u.role_id = r.id
+               LEFT JOIN user_organizations uo
+                 ON uo.user_id = u.id AND uo.organization_id = $1
+               JOIN roles r
+                 ON r.id = CASE WHEN u.organization_id = $1 THEN u.role_id ELSE uo.role_id END
               WHERE uc.organization_id = $1 AND r.name = 'teamer'
              UNION ALL
              SELECT EXTRACT(YEAR FROM a.zeitraum_start)::int

@@ -427,7 +427,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
         // sendToUserByRole statt hart 'konfi': die Leitung kann hier auch
         // Teamer:innen eintragen (siehe addedIsTeamer oben) — die sitzen im Raum
         // user_teamer_<id> und bekamen ihr eigenes Ereignis sonst nie.
-        liveUpdate.sendToUserByRole(user_id, 'events', 'update', { eventId, status: finalStatus });
+        liveUpdate.sendToUserByRole(user_id, 'events', 'update', { eventId, status: finalStatus }, req.user.organization_id);
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'admin_booking' });
       }, 'POST /events/:id/participants');
 
@@ -879,10 +879,10 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
 
       nachAntwort(req, async () => {
         // Live-Update an die betroffene Person (korrekter Socket-Raum per Rolle).
-        liveUpdate.sendToUserByRole(betroffenerUser, 'events', 'update', { eventId });
+        liveUpdate.sendToUserByRole(betroffenerUser, 'events', 'update', { eventId }, req.user.organization_id);
         // Bei Punktentzug (Degradierung) zusaetzlich das Dashboard aktualisieren.
         if (punkteZurueck) {
-          liveUpdate.sendToUserByRole(betroffenerUser, 'dashboard', 'update');
+          liveUpdate.sendToUserByRole(betroffenerUser, 'dashboard', 'update', null, req.user.organization_id);
         }
         // Live-Update an Admins/Org-Admins/Teamer:innen der Org.
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId });

@@ -797,7 +797,7 @@ async function meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, s
     // klingelt nur nicht. Das Live-Update unten bleibt — es aktualisiert nur
     // den Zaehler in einer offenen App und macht kein Geraeusch.
     if (still) {
-      liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
+      liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length }, organizationId);
       return;
     }
 
@@ -844,7 +844,7 @@ async function meldeNeueBadges(db, userId, organizationId, earnedBadgeDetails, s
     // sendToUserByRole (statt sendToKonfi), weil Badges auch an Teamer:innen
     // vergeben werden können und deren Socket im Raum user_teamer_ sitzt.
     // Fire-and-forget.
-    liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length });
+    liveUpdate.sendToUserByRole(userId, 'badges', 'earned', { count: earnedBadgeDetails.length }, organizationId);
   } catch (notifErr) {
     console.error('Error sending badge notifications:', notifErr);
   }

@@ -195,6 +195,27 @@ describe('Gesperrte Gemeinde: keine Hintergrund-Mitteilungen (BF-22)', () => {
       const geprueft = pruefung.mock.calls.map(([, userId]) => Number(userId)).sort((a, b) => a - b);
       expect(geprueft).toEqual([USERS.konfi1.id, USERS.konfi2.id, USERS.teamer1.id]);
     });
+
+    // Mehrfach-Konten (08.10.2026): Die Auswahl fragte nur die
+    // Stamm-Gemeinde. Wer dort gesperrt ist, aber in einer weiteren aktiven
+    // Gemeinde mitarbeitet, fiel ganz heraus -- keine App-Symbol-Zahl, keine
+    // Badges in der aktiven Gemeinde.
+    it('Stamm-Gemeinde gesperrt, weitere Gemeinde aktiv: laeuft fuer die aktive Gemeinde mit', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer2.id, ORG1, 2]
+      );
+
+      await BackgroundService.updateAllUserBadges(db);
+
+      expect(stillEmpfaenger()).toContain(tok(USERS.teamer2));
+      const fuerTeamer2 = pruefung.mock.calls
+        .filter(([, userId]) => Number(userId) === USERS.teamer2.id)
+        .map(([, , opt]) => Number(opt.organizationId));
+      expect(fuerTeamer2).toEqual([ORG1]);
+      // Die uebrigen Konten der gesperrten Gemeinde bleiben draussen.
+      expect(stillEmpfaenger()).not.toContain(tok(USERS.konfi3));
+    });
   });
 
   // ------------------------------------------------------------------

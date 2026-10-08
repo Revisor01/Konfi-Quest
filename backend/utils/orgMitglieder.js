@@ -524,6 +524,36 @@ async function ladeRolleInGemeinde(db, userId, organizationId) {
   return z ? z.role_name : null;
 }
 
+/**
+ * In welchen Gemeinden ist diese Person die LETZTE aktive Gemeindeleitung
+ * (org_admin)? Ueber beide Quellen (Simon, 08.10.2026): Die eigene Rolle je
+ * Gemeinde kommt aus ladeMitgliedschaftenMitSperre, die anderen Leitungen aus
+ * ladeMitgliederDerOrganisation -- beide mit der Rolle DORT und ohne
+ * gesperrte Konten oder Sperren je Gemeinde.
+ *
+ * Fuer den Schutz "letzte Gemeindeleitung" in DELETE /users/:id und der
+ * Selbstloeschung (POST /auth/delete-account). Vorher zaehlten beide nur
+ * Leitungen mit Stamm-Gemeinde hier: unnoetiges 409, und wer nur ueber
+ * user_organizations einzige Leitung war, liess die Gemeinde ohne zurueck.
+ *
+ * @param {object} db
+ * @param {number|string} userId
+ * @param {Array<number>|null} [nurGemeinden]  nur diese Gemeinden pruefen
+ * @returns {Promise<number[]>}  die betroffenen Gemeinden (leer: keine)
+ */
+async function gemeindenOhneWeitereLeitung(db, userId, nurGemeinden = null) {
+  const nur = Array.isArray(nurGemeinden) ? new Set(nurGemeinden.map(Number)) : null;
+  const eigene = (await ladeMitgliedschaftenMitSperre(db, userId))
+    .filter((m) => m.role_name === 'org_admin' && !m.gesperrt)
+    .filter((m) => !nur || nur.has(Number(m.organization_id)));
+  const betroffen = [];
+  for (const m of eigene) {
+    const leitung = await ladeMitgliederDerOrganisation(db, m.organization_id, ['org_admin']);
+    if (!leitung.some((id) => Number(id) !== Number(userId))) betroffen.push(Number(m.organization_id));
+  }
+  return betroffen;
+}
+
 const STATISTIK_ROLLEN = ['konfi', 'teamer', 'admin', 'org_admin'];
 
 /**
@@ -642,6 +672,7 @@ module.exports = {
   STATISTIK_ROLLEN,
   istMitgliedDerOrganisation,
   ladeRolleInGemeinde,
+  gemeindenOhneWeitereLeitung,
   ladeMitgliederDerOrganisation,
   ladeLeitungDerOrganisation,
   ladeMitgliedschaftenDerPerson,

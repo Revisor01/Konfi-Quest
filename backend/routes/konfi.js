@@ -1571,7 +1571,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         FROM event_bookings eb
         JOIN users u ON eb.user_id = u.id
         JOIN events e ON eb.event_id = e.id
-        LEFT JOIN roles r ON u.role_id = r.id
+        -- Rolle in der Gemeinde des Termins (08.10.2026), wie der Chat-Export
+        -- in routes/chat.js: Hier stand u.role_id, die Rolle der
+        -- Stamm-Gemeinde. Wer nicht (mehr) Mitglied ist, behaelt die Rolle
+        -- am Konto.
+        LEFT JOIN user_organizations m_uo
+          ON m_uo.user_id = u.id AND m_uo.organization_id = e.organization_id
+        LEFT JOIN roles r
+          ON r.id = CASE WHEN u.organization_id = e.organization_id THEN u.role_id
+                         ELSE COALESCE(m_uo.role_id, u.role_id) END
         WHERE eb.event_id = $1
           AND e.organization_id = $2
           AND eb.status = 'confirmed'

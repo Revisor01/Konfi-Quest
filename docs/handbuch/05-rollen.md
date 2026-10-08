@@ -273,9 +273,12 @@ Nach der Zusage steht die Person unter **Mehr › Benutzer:innen** — mit dem
 Vermerk „zuhause in einer anderen Gemeinde". Dort vergibst du ihre **Rolle**
 in deiner Gemeinde, ihre **Jahrgänge**, ihre **Funktionsbezeichnung** bei dir
 und kannst sie [in deiner Gemeinde sperren](#jemanden-nur-in-der-eigenen-gemeinde-sperren).
-Name, Benutzername, E-Mail und Passwort bleiben Sache ihrer Stamm-Gemeinde;
-diese Felder sind bei dir gesperrt, und auch ein neues Passwort setzt nur die
-Stamm-Gemeinde.
+Name, Benutzername und E-Mail bleiben Sache ihrer Stamm-Gemeinde; diese
+Felder sind bei dir gesperrt. Ein neues Passwort bekommt sie auch von dir: Für
+Teamer:innen erzeugst du ein
+[Einmalpasswort](35-passwoerter.md#weg-1-die-leitung-setzt-ein-neues-passwort)
+wie für alle anderen. Das Passwort gehört zum Konto und gilt danach in allen
+ihren Gemeinden.
 
 Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
 deiner Gemeinde** — samt ihrer Jahrgänge, ihrer Plätze in allen Chats
@@ -482,7 +485,10 @@ Material, Nachrichten, vergebene Punkte —, bleibt mit ihrem Namen stehen.
 Gehört die Person nur deiner Gemeinde an, fragt die App **„Benutzer löschen"**
 — dann wird ihr Konto gelöscht, und mit ihm verschwindet alles, was zu ihr
 gehört (siehe [Ein Konto löschen](#ein-konto-loeschen)). Wer als Letzte:r in deiner Gemeinde zur
-Gemeindeleitung gehört, lässt sich auf keinem der beiden Wege entfernen.
+Gemeindeleitung gehört, lässt sich auf keinem der beiden Wege entfernen —
+gleich, ob sie bei dir zuhause ist oder aus einer anderen Gemeinde kommt.
+Gezählt wird jede Gemeindeleitung, die in deiner Gemeinde nicht gesperrt ist,
+auch eine aus einer anderen Gemeinde.
 
 Dasselbe geschieht, wenn du eine Teamer:in in der
 [Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten) unter **Team**
@@ -541,7 +547,9 @@ Gemeinde gehört ([Konfi oder Team, nie beides](#in-mehreren-gemeinden-mitarbeit
 Ein Konto verschwindet auf fünf Wegen, und auf jedem geschieht dasselbe:
 
 - Die Person löscht es selbst, ganz unten im Profil unter **Account löschen**,
-  mit ihrem Passwort.
+  mit ihrem Passwort. Ist sie in einer ihrer Gemeinden die letzte
+  Gemeindeleitung, lehnt die App das ab, bis sie die Rechte dort an jemanden
+  weitergegeben hat.
 - Die Leitung löscht eine Konfi in der
   [Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten). Gehört das
   Konto noch einer anderen Gemeinde an, endet auch hier nur die Mitgliedschaft

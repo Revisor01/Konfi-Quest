@@ -325,7 +325,7 @@
             "$ref": "#/components/responses/Unauthorized"
           },
           "409": {
-            "description": "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)"
+            "description": "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026; GEAENDERT 08.10.2026, Simons Entscheidung: geprueft wird JEDE Gemeinde, in der die Person nicht gesperrte Gemeindeleitung ist, auch nur ueber user_organizations, und gezaehlt werden die anderen aktiven Gemeindeleitungen aus BEIDEN Quellen mit der Rolle dort -- utils/orgMitglieder.js gemeindenOhneWeitereLeitung. BEHOBEN 08.10.2026: vorher nur die Stamm-Gemeinde und Leitungen mit Stamm-Gemeinde dort; wer nur ueber user_organizations einzige Leitung war, konnte sich loeschen, und eine zweite Leitung aus einer anderen Stamm-Gemeinde ergab ein unnoetiges 409. Fehlerform unveraendert) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)"
           },
           "500": {
             "description": "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen"
@@ -6516,7 +6516,7 @@
             "$ref": "#/components/responses/NotFound"
           },
           "409": {
-            "description": "Letzter org_admin der Org nicht entfernbar (gilt fuer Loeschen und Umzug)"
+            "description": "Letzter org_admin der Org nicht entfernbar (gilt fuer Loeschen, Umzug und -- seit 08.10.2026 -- das Ende einer Mitgliedschaft ueber user_organizations). GEAENDERT 08.10.2026 (Simons Entscheidung): gezaehlt werden die anderen aktiven, in dieser Gemeinde nicht gesperrten Gemeindeleitungen aus BEIDEN Quellen mit der Rolle dort (utils/orgMitglieder.js gemeindenOhneWeitereLeitung). BEHOBEN 08.10.2026: vorher nur Leitungen mit Stamm-Gemeinde hier -- unnoetiges 409, wenn die zweite Leitung ueber user_organizations dabei war; die Pruefung stand erst nach dem Zweig fuer Zusatzmitglieder. Fehlerform unveraendert"
           }
         },
         "x-berechtigung": {
@@ -6750,7 +6750,7 @@
             "validateResetPassword"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
+          "objekt-pruefung": "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin der aktiven Gemeinde, in der das Ziel Mitglied ist -- seit 08.10.2026 ueber BEIDE Quellen (Stamm-Gemeinde oder user_organizations; Simons Entscheidung: jede Gemeinde darf das kontoweite Passwort setzen; BEHOBEN 08.10.2026: Team aus einer anderen Stamm-Gemeinde ergab 403); org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
         }
       }
     },
@@ -8212,7 +8212,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array {id, display_name: 'Vorname N.'}"
+            "description": "Array {id, display_name: 'Vorname N.'} -- ohne Teamer:innen. BEHOBEN 08.10.2026: Die Rolle gilt in der Gemeinde des Termins (beide Quellen, wie der Chat-Export); vorher die Rolle am Konto -- wer zuhause Admin und hier Teamer:in war, stand in der Liste, wer zuhause Teamer:in und hier Leitung war, fehlte. Antwortform unveraendert"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11147,7 +11147,7 @@
             "param-id-Validierung"
           ],
           "org-scope": true,
-          "objekt-pruefung": "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org",
+          "objekt-pruefung": "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org. Seit 08.09.2026 auch Rolle teamer. GEAENDERT 08.10.2026 (Simons Entscheidung: jede Gemeinde darf das Passwort setzen): Mitgliedschaft und Rolle (konfi oder teamer) in der aktiven Gemeinde ueber BEIDE Quellen (utils/orgMitglieder.js ladeRolleInGemeinde), das UPDATE verlangt dieselbe Mitgliedschaft. BEHOBEN 08.10.2026: Team aus einer anderen Stamm-Gemeinde ergab 404; ein Konto, das hier Leitung ist, bleibt 404",
           "hinweis": "BEHOBEN 01.09.2026: Vorher gab es keinen Rollen-Check auf das Zielobjekt — die Route setzte das Passwort JEDES Users der eigenen Organisation zurück, auch von Teamer:innen und Leitung, und ein admin konnte damit jedes Konfi-Konto der Gemeinde uebernehmen. Teamer-Passwoerter setzt die Benutzerverwaltung (routes/users.js) zurueck. BEHOBEN 14.09.2026: Der Reset beendet jetzt die bestehenden Sitzungen (token_invalidated_at, Widerruf aller Refresh-Tokens, Loeschen der Push-Tokens). Vorher lief die alte Sitzung weiter — das Access-Token bis zu 15 Minuten, das Refresh-Token mit Rotation bis zu 90 Tage. Genau diese Route wird benutzt, wenn ein Konto uebernommen wurde; das neue Passwort allein half dann nicht. Gleiche Behandlung wie bei PUT /api/auth/change-password.\n"
         },
         "parameters": [
@@ -17825,7 +17825,7 @@
         },
         "responses": {
           "200": {
-            "description": "Array, absteigend nach Jahr: { jahr, gesperrt } — gesperrt = true fuer das laufende Jahr",
+            "description": "Array, absteigend nach Jahr: { jahr, gesperrt } — gesperrt = true fuer das laufende Jahr. BEHOBEN 08.10.2026: Ob eine Person Teamer:in ist, entscheidet ihre Rolle in DIESER Gemeinde (beide Quellen), nicht die Rolle am Konto. Antwortform unveraendert",
             "content": {
               "application/json": {
                 "schema": {
@@ -19136,7 +19136,7 @@
             "description": "Rolle unterhalb org_admin — oder eine Zuweisung an eine Person, die canManageRole dem Aufrufer verbietet (fuer org_admin: super_admin)"
           },
           "404": {
-            "description": "user_assignments nennt eine Person, die nicht zur eigenen Organisation gehoert"
+            "description": "user_assignments nennt eine Person, die nicht zur eigenen Organisation gehoert. Mitglied heisst seit 08.10.2026: Stamm-Gemeinde ODER user_organizations, mit der Rolle DIESER Gemeinde fuer canManageRole (wie TEAM_MITGLIED_ROLLE in routes/chat.js). BEHOBEN 08.10.2026: Team aus einer anderen Stamm-Gemeinde ergab 404"
           },
           "409": {
             "description": "Jahrgang-Name existiert bereits in dieser Gemeinde"

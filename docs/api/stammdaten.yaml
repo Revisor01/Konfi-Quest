@@ -687,7 +687,7 @@ paths:
         "400": { description: "Name fehlt / Validierung verletzt / Person doppelt in user_assignments" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { description: "Rolle unterhalb org_admin — oder eine Zuweisung an eine Person, die canManageRole dem Aufrufer verbietet (fuer org_admin: super_admin)" }
-        "404": { description: "user_assignments nennt eine Person, die nicht zur eigenen Organisation gehoert" }
+        "404": { description: "user_assignments nennt eine Person, die nicht zur eigenen Organisation gehoert. Mitglied heisst seit 08.10.2026: Stamm-Gemeinde ODER user_organizations, mit der Rolle DIESER Gemeinde fuer canManageRole (wie TEAM_MITGLIED_ROLLE in routes/chat.js). BEHOBEN 08.10.2026: Team aus einer anderen Stamm-Gemeinde ergab 404" }
         "409": { description: "Jahrgang-Name existiert bereits in dieser Gemeinde" }
       x-berechtigung:
         rollen: [org_admin]

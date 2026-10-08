@@ -866,6 +866,36 @@ describe('Wrapped Routes', () => {
       expect(snap.kacheln).toContain('teamer-team');
     });
 
+    // Mehrfach-Konten (08.10.2026): Mitglied ueber user_organizations, mit
+    // der Rolle in DIESER Gemeinde -- wie die Chat-Mitgliederliste.
+    it('Eine Teamer:in, die nur ueber user_organizations zur Gemeinde gehoert, zaehlt zum Team', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer2.id, ORGS.testGemeinde.id, USERS.teamer1.role_id]
+      );
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.teamer2.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.team.mitstreitende).toBe(1);
+    });
+
+    it('Zuhause Teamer:in, hier Admin: zaehlt nicht zum Team', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer2.id, ORGS.testGemeinde.id, USERS.admin1.role_id]
+      );
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id) VALUES ($1, $2)',
+        [USERS.teamer2.id, JAHRGAENGE.jahrgang1.id]
+      );
+
+      const snap = await snapshotVonTeamer1();
+      expect(snap.slides.team.mitstreitende).toBe(0);
+    });
+
     it('Eine Teamer:in aus einer fremden Gemeinde zaehlt nicht zum Team', async () => {
       // Mandantengrenze: teamer2 gehoert zu Org 2.
       await db.query(
@@ -4082,6 +4112,37 @@ describe('Wrapped Routes', () => {
       const jahr = res.body.find(j => j.jahr === JAHR_OHNE_TEAMER);
       expect(jahr).toBeDefined();
       expect(jahr.gesperrt).toBe(false);
+    });
+
+    // Mehrfach-Konten (08.10.2026): die Rolle in DIESER Gemeinde, nicht am Konto.
+    it('zuhause Admin, hier Teamer:in: das Jahr wird angeboten', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.admin2.id, ORGS.testGemeinde.id, USERS.teamer1.role_id]
+      );
+      await terminMitAnwesenheit(USERS.admin2.id, JAHR_OHNE_TEAMER + '-05-01');
+
+      const res = await request(app)
+        .get('/api/wrapped/team-jahre')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(j => j.jahr)).toContain(JAHR_OHNE_TEAMER);
+    });
+
+    it('zuhause Teamer:in, hier Admin: das Jahr wird NICHT angeboten', async () => {
+      await db.query(
+        'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer2.id, ORGS.testGemeinde.id, USERS.admin1.role_id]
+      );
+      await terminMitAnwesenheit(USERS.teamer2.id, JAHR_OHNE_TEAMER + '-05-01');
+
+      const res = await request(app)
+        .get('/api/wrapped/team-jahre')
+        .set('Authorization', `Bearer ${orgAdminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.map(j => j.jahr)).not.toContain(JAHR_OHNE_TEAMER);
     });
 
     it('ein Zertifikat allein macht das Jahr lieferbar -- es hat eine eigene Seite', async () => {

@@ -3,6 +3,7 @@
 
 let _io = null;
 let _db = null;
+const { ladeRolleInGemeinde } = require('./orgMitglieder');
 
 /**
  * OFFENE NACHLAEUFER -- nur im Test gefuehrt.
@@ -276,27 +277,42 @@ function sendToKonfi(konfiId, updateType, action = 'refresh', data = null) {
  * @param {string} updateType - z.B. 'badges', 'points', 'requests'
  * @param {string} action - 'refresh', 'update', 'delete', 'create', 'earned'
  * @param {object} data - Optionale zusaetzliche Daten
+ * @param {number|null} organizationId - Gemeinde des Inhalts; waehlt den
+ *   Raum nach der Rolle dort
  */
-async function sendToUserByRole(userId, updateType, action = 'refresh', data = null) {
+async function sendToUserByRole(userId, updateType, action = 'refresh', data = null, organizationId = null) {
   if (!_io) {
     return;
   }
 
   try {
     const db = getDb();
-    const { rows } = await db.query(`
-      SELECT r.name AS role_name FROM users u
-      JOIN roles r ON u.role_id = r.id
-      WHERE u.id = $1
-      AND u.deleted_at IS NULL
-    `, [userId]);
+    // ROLLE IN DER GEMEINDE DES INHALTS (08.10.2026, Mehrfach-Konten): Der
+    // Socket sitzt im Raum der Rolle, die die Person in der Gemeinde hat, in
+    // der die App gerade arbeitet (utils/socketAnmeldung.js). Wer zuhause
+    // Teamer:in und hier Leitung ist, sitzt hier in user_admin_<id> -- mit
+    // der Rolle am Konto ging das Ereignis in den leeren Teamer-Raum. Mit
+    // organizationId gilt deshalb die Rolle DORT (beide Quellen,
+    // ladeRolleInGemeinde); ohne, oder wenn die Person dort nicht Mitglied
+    // ist, wie bisher die Rolle am Konto.
+    let roleName = organizationId != null
+      ? await ladeRolleInGemeinde(db, userId, organizationId)
+      : null;
+    if (!roleName) {
+      const { rows } = await db.query(`
+        SELECT r.name AS role_name FROM users u
+        JOIN roles r ON u.role_id = r.id
+        WHERE u.id = $1
+        AND u.deleted_at IS NULL
+      `, [userId]);
 
-    if (rows.length === 0) {
-      // Unbekannter/geloeschter User -> still nichts senden.
-      return;
+      if (rows.length === 0) {
+        // Unbekannter/geloeschter User -> still nichts senden.
+        return;
+      }
+      roleName = rows[0].role_name;
     }
 
-    const roleName = rows[0].role_name;
     let userType;
     if (roleName === 'teamer') {
       userType = 'teamer';
@@ -381,9 +397,11 @@ module.exports = {
   disconnectUserSockets,
   raeumeGeaendert,
   sendToKonfi,
-  sendToUserByRole,
   // Die send*-Funktionen laufen durch _merken: Im Test wird ihr Nachlauf
   // mitgeschrieben, in Produktion ist es ein durchgereichter Aufruf.
+  // sendToUserByRole seit dem 08.10.2026 auch: Mit der Rolle je Gemeinde
+  // fragt es bis zu zwei Mal die Datenbank, ungewartet gerufen wie die anderen.
+  sendToUserByRole: (...a) => _merken(sendToUserByRole(...a)),
   sendToOrgAdmins: (...a) => _merken(sendToOrgAdmins(...a)),
   sendToOrgKonfis: (...a) => _merken(sendToOrgKonfis(...a)),
   sendToOrg: (...a) => _merken(sendToOrg(...a)),

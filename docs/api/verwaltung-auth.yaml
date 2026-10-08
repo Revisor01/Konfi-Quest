@@ -856,7 +856,7 @@ paths:
         "200": { description: "{ message: 'Account erfolgreich gelöscht' } -- Account geloescht (Hard-Delete in einer Transaktion, Rechte-Cache geleert -- seit 26.09.2026, BF-10 --, Sockets getrennt). Mit dem Konto gehen auch die Leitungs-Mitteilungen UEBER die Person (loescheMitteilungenUeberPerson; BEHOBEN 27.09.2026, Audit 'Wer bekommt was' BF-13 / F-07). Seit 28.09.2026 ueber utils/kontoLoeschen.js, dieselbe Funktion wie DELETE /admin/konfis/{id} (Regel und Umfang dort): alles der Person in ALLEN Gemeinden, Zweiergespraeche ganz, Zaehler der Anmeldesperre, Dateien nach dem COMMIT; was sie fuer eine Gemeinde angelegt hat, bleibt ohne Verweis. Antwortform unveraendert" }
         "400": { description: "Passwort fehlt oder falsch" }
         "401": { $ref: "#/components/responses/Unauthorized" }
-        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)" }
+        "409": { description: "Letzte Person der Gemeindeleitung in ihrer Gemeinde (seit 26.08.2026; GEAENDERT 08.10.2026, Simons Entscheidung: geprueft wird JEDE Gemeinde, in der die Person nicht gesperrte Gemeindeleitung ist, auch nur ueber user_organizations, und gezaehlt werden die anderen aktiven Gemeindeleitungen aus BEIDEN Quellen mit der Rolle dort -- utils/orgMitglieder.js gemeindenOhneWeitereLeitung. BEHOBEN 08.10.2026: vorher nur die Stamm-Gemeinde und Leitungen mit Stamm-Gemeinde dort; wer nur ueber user_organizations einzige Leitung war, konnte sich loeschen, und eine zweite Leitung aus einer anderen Stamm-Gemeinde ergab ein unnoetiges 409. Fehlerform unveraendert) -- ODER (seit 03.10.2026) das letzte aktive Super-Admin-Konto (Rolle oder Merkmal, mit oder ohne Gemeinde): 'Das letzte aktive Super-Admin-Konto lässt sich nicht löschen. Lege zuerst ein weiteres an.' (utils/superAdminKonten.js)" }
         "500": { description: "BEHOBEN 28.09.2026: Hatte die Person Antraege in einer WEITEREN Gemeinde, scheiterte die Loeschung am Fremdschluessel activity_requests_konfi_id_fkey (die alte Kaskade raeumte nur die Stamm-Gemeinde ab) -- eine eingeladene Teamer:in konnte ihr Konto nicht loeschen" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -4197,7 +4197,7 @@ paths:
         "400": { description: "Selbst-Loeschung verboten" }
         "403": { description: "Hierarchie verletzt" }
         "404": { $ref: "#/components/responses/NotFound" }
-        "409": { description: "Letzter org_admin der Org nicht entfernbar (gilt fuer Loeschen und Umzug)" }
+        "409": { description: "Letzter org_admin der Org nicht entfernbar (gilt fuer Loeschen, Umzug und -- seit 08.10.2026 -- das Ende einer Mitgliedschaft ueber user_organizations). GEAENDERT 08.10.2026 (Simons Entscheidung): gezaehlt werden die anderen aktiven, in dieser Gemeinde nicht gesperrten Gemeindeleitungen aus BEIDEN Quellen mit der Rolle dort (utils/orgMitglieder.js gemeindenOhneWeitereLeitung). BEHOBEN 08.10.2026: vorher nur Leitungen mit Stamm-Gemeinde hier -- unnoetiges 409, wenn die zweite Leitung ueber user_organizations dabei war; die Pruefung stand erst nach dem Zweig fuer Zusatzmitglieder. Fehlerform unveraendert" }
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, "userHierarchyMiddleware('delete')", validateUserId]
@@ -4364,7 +4364,7 @@ paths:
         rollen: [super_admin, org_admin]
         middleware: [verifyTokenRBAC, validateResetPassword]
         org-scope: true
-        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin derselben Org; org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
+        objekt-pruefung: "Inline: is_super_admin (org-uebergreifend, auch per Flag) ODER org_admin der aktiven Gemeinde, in der das Ziel Mitglied ist -- seit 08.10.2026 ueber BEIDE Quellen (Stamm-Gemeinde oder user_organizations; Simons Entscheidung: jede Gemeinde darf das kontoweite Passwort setzen; BEHOBEN 08.10.2026: Team aus einer anderen Stamm-Gemeinde ergab 403); org_admin darf auch andere org_admins resetten -- aber kein Konto mit Rolle super_admin oder Flag is_super_admin (403, seit 26.09.2026)"
         # BEHOBEN 26.09.2026 (war N1): der Ziel-User wird jetzt auf
         # super_admin-Rolle ODER is_super_admin-Flag geprueft; nur ein
         # Super-Admin darf ein solches Konto zuruecksetzen. Vorher konnte ein

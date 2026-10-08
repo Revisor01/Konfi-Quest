@@ -160,10 +160,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
         // Zielpersonen org-gescopt laden: eine fremde oder unbekannte Person
         // ist ein 404 — dieselbe Antwort wie checkUserHierarchy fuer
         // Zielbenutzer ausserhalb der eigenen Organisation.
+        //
+        // Mitglied und Rolle in DIESER Gemeinde ueber beide Quellen
+        // (08.10.2026), dieselbe Aufloesung wie TEAM_MITGLIED_ROLLE in
+        // routes/chat.js: Der INNER JOIN auf roles filtert zugleich die
+        // Mitgliedschaft. Vorher nur die Stamm-Gemeinde -- Team aus einer
+        // anderen Stamm-Gemeinde ergab 404.
         const { rows: zielUsers } = await client.query(
           `SELECT u.id, r.name AS role_name
-           FROM users u JOIN roles r ON u.role_id = r.id
-           WHERE u.id = ANY($1::int[]) AND u.organization_id = $2`,
+           FROM users u
+           LEFT JOIN user_organizations uo
+             ON uo.user_id = u.id AND uo.organization_id = $2
+           JOIN roles r
+             ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id ELSE uo.role_id END
+           WHERE u.id = ANY($1::int[]) AND u.deleted_at IS NULL`,
           [userIds, req.user.organization_id]
         );
         if (zielUsers.length !== userIds.length) {

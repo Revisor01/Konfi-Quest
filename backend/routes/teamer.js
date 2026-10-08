@@ -40,7 +40,7 @@ registriereArt('teamer_zusage', async (db, p, k) => {
       await removeFromEventChat(db, p.eventId, p.userId, p.organizationId);
     }
   });
-  liveUpdate.sendToUserByRole(p.userId, 'events', 'update', { eventId: p.eventId });
+  liveUpdate.sendToUserByRole(p.userId, 'events', 'update', { eventId: p.eventId }, p.organizationId);
   liveUpdate.sendToOrgAdmins(p.organizationId, 'events', 'update', { eventId: p.eventId, action: 'teamer_zusage' });
 
   // Pushes an die Leitung — fehlten hier bis 01.09.2026 komplett (Begruendung
@@ -813,7 +813,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         console.error('Error sending certificate push:', pushErr);
       }
       // Zertifikate hängen an den Teamer-Badge-/Dashboard-Ansichten -> 'badges'.
-      liveUpdate.sendToUserByRole(req.params.userId, 'badges', 'update');
+      liveUpdate.sendToUserByRole(req.params.userId, 'badges', 'update', null, req.user.organization_id);
     } catch (err) {
       if (err.code === '23505') {
         return res.status(409).json({ error: 'Dieses Zertifikat wurde dem Teamer bereits zugewiesen' });

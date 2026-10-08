@@ -2164,7 +2164,7 @@ paths:
         objekt-pruefung: "Alle Abfragen auf req.user.organization_id; Admins erreichen die Route nicht (der Team-Rueckblick ist Sache der Leitung, die Oberflaeche fragt sie nur als Leitung ab)"
       responses:
         "200":
-          description: "Array, absteigend nach Jahr: { jahr, gesperrt } — gesperrt = true fuer das laufende Jahr"
+          description: "Array, absteigend nach Jahr: { jahr, gesperrt } — gesperrt = true fuer das laufende Jahr. BEHOBEN 08.10.2026: Ob eine Person Teamer:in ist, entscheidet ihre Rolle in DIESER Gemeinde (beide Quellen), nicht die Rolle am Konto. Antwortform unveraendert"
           content:
             application/json:
               schema:

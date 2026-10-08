@@ -788,7 +788,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           }
           // sendToUserByRole: von der Warteliste ruecken auch Teamer:innen nach
           // (eigene Teamer-Warteliste, teamer_waitlist_enabled).
-          liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId: id, action: 'promoted' });
+          liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId: id, action: 'promoted' }, req.user.organization_id);
         }
       }
 
@@ -1060,7 +1060,7 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // Konfis, deren Punkte zurueckgenommen wurden: Dashboard aktualisieren
       // (analog Einzel-Storno in PUT /:id/participants/:participantId/status).
       for (const konfiId of new Set(awardedPoints.map(p => p.konfi_id))) {
-        liveUpdate.sendToUserByRole(konfiId, 'dashboard', 'update');
+        liveUpdate.sendToUserByRole(konfiId, 'dashboard', 'update', null, req.user.organization_id);
       }
     }, 'DELETE /events/:id');
   });

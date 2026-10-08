@@ -167,6 +167,15 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 08.10.2026 — CodeQL #124 und #127 auf GitHub als „False positive"
   geschlossen (globaler Limiter per `app.use`, Upload-Limiter an der
   Beitrags-Route in `backend/createApp.js`).
+- [x] 08.10.2026 — Stamm-Rolle an weiteren Stellen (Mehrfach-Konten), nach
+  Simons Entscheidungen: Schutz der letzten Gemeindeleitung zählt beide
+  Quellen (Löschen durch die Leitung und Selbstlöschung), jede Gemeinde setzt
+  das Passwort ihres Teams (Einmalpasswort, `reset-password`), Live-Updates
+  an eine Person nach der Rolle in der Gemeinde des Inhalts, Jahrgang mit
+  Team aus einer anderen Stamm-Gemeinde anlegen, Teamer-Rückblick („Dein
+  Team", `/team-jahre`), Teilnehmende in der Konfi-Sicht, Hintergrundlauf
+  bei gesperrter Stamm-Gemeinde, Schutz der Gemeindeleitung im
+  Jahrgangs-Chat mit Sperre je Gemeinde (`fix/stamm-rolle-weitere-stellen`).
 
 ## Offen
 
@@ -190,38 +199,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   zusammengelegt). Fix: eine Stelle je Funktion, Antwortformen unverändert.
   Seit 01.09.2026 bekannt (interne Aufgabenliste), am 08.10.2026 am Code
   bestätigt.
-- **Stamm-Rolle an weiteren Stellen (Mehrfach-Konten).** Beim Abarbeiten der
-  Reste am 08.10.2026 per Suche nach `u.role_id`/`u.organization_id`
-  gefunden und am Code bestätigt; alle betreffen Team-Konten, die nur über
-  `user_organizations` zur Gemeinde gehören:
-  - Schutz „letzte Gemeindeleitung": `DELETE /users/:id`
-    (`backend/routes/users.js`) und die Selbstlöschung
-    (`POST /auth/delete-account`, `backend/routes/auth.js`) zählen nur
-    Gemeindeleitungen mit Stamm-Gemeinde hier. Folge: unnötiges 409, und wer
-    nur über `user_organizations` einzige Gemeindeleitung ist, kann sein
-    Konto löschen und die Gemeinde ohne Leitung lassen. Der Test in
-    `users.test.js` hält das Zählen „wie bisher" ausdrücklich fest —
-    **Entscheidung bei Simon**.
-  - Live-Updates an eine Person (`sendToUserByRole`,
-    `backend/utils/liveUpdate.js`) wählen den Socket-Raum nach der Rolle am
-    Konto; wer zuhause Teamer:in und hier Leitung ist (oder umgekehrt),
-    bekommt sie in der weiteren Gemeinde nicht.
-  - Jahrgang mit Zuweisungen anlegen (`POST /jahrgaenge`): Team aus einer
-    anderen Stamm-Gemeinde ergibt 404.
-  - Einmalpasswort (`POST /admin/konfis/:id/regenerate-password`) und
-    `PUT /users/:id/reset-password` finden Team aus einer anderen
-    Stamm-Gemeinde nicht (404/403). Ob eine weitere Gemeinde das
-    kontoweite Passwort setzen darf, ist **Entscheidung bei Simon**.
-  - Teamer-Rückblick (`backend/routes/wrapped.js`): „Dein Team" zählt nur
-    Teamer:innen mit Stamm-Gemeinde hier, `/team-jahre` nimmt die Rolle am
-    Konto.
-  - Teilnehmende eines Termins in der Konfi-Sicht (`backend/routes/konfi.js`)
-    filtern Teamer:innen nach der Rolle am Konto.
-  - Der Hintergrundlauf für App-Symbol-Zahl und Abzeichen
-    (`backend/services/backgroundService.js`) lässt aus, wessen
-    Stamm-Gemeinde gesperrt ist, auch wenn die weitere aktiv ist.
-  - Der Schutz der Gemeindeleitung im Jahrgangs-Chat
-    (`backend/utils/jahrgangChat.js`) beachtet die Sperre je Gemeinde nicht.
 - **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
   Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
   die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner

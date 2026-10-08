@@ -25,7 +25,7 @@ const PushService = require('../services/pushService');
 const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
-const { ladeMitgliedschaftenMitSperre, waehleGemeinde, nichtGesperrtIn, schreibeGemeindeFelder } = require('../utils/orgMitglieder');
+const { ladeMitgliedschaftenMitSperre, waehleGemeinde, nichtGesperrtIn, schreibeGemeindeFelder, gemeindenOhneWeitereLeitung } = require('../utils/orgMitglieder');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendertEinreihen } = require('../utils/passwortGeaendertMail');
 const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
@@ -769,24 +769,15 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // die Organisation ohne jede Verwaltung zurueck und laesst sich nur noch
       // per Datenbankeingriff retten. DELETE /users/:id kannte diesen Schutz
       // laengst (users.js), die Selbstloeschung nicht (Befund 26.08.2026).
-      const { rows: [eigeneRolle] } = await db.query(
-        `SELECT r.name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = $1`,
-        [userId]
-      );
-      if (eigeneRolle?.name === 'org_admin') {
-        const { rows: [andere] } = await db.query(
-          `SELECT COUNT(*)::int AS anzahl
-             FROM users u JOIN roles r ON u.role_id = r.id
-            WHERE r.name = 'org_admin' AND u.organization_id = $1
-              AND u.id != $2 AND u.deleted_at IS NULL`,
-          [user.organization_id, userId]
-        );
-        if ((andere?.anzahl ?? 0) === 0) {
-          return res.status(409).json({
-            error: 'Du bist die letzte Person mit Verwaltungsrechten in dieser Gemeinde. '
-                 + 'Bitte gib die Rechte zuerst an jemanden weiter, dann kannst du dein Konto löschen.'
-          });
-        }
+      // Die Loeschung trifft das Konto in ALLEN Gemeinden: Geprueft wird jede,
+      // in der die Person Gemeindeleitung ist, mit Leitungen aus beiden
+      // Quellen (Simon, 08.10.2026, utils/orgMitglieder.js). Vorher nur die
+      // Stamm-Gemeinde und Leitungen mit Stamm-Gemeinde dort.
+      if ((await gemeindenOhneWeitereLeitung(db, userId)).length > 0) {
+        return res.status(409).json({
+          error: 'Du bist die letzte Person mit Verwaltungsrechten in dieser Gemeinde. '
+               + 'Bitte gib die Rechte zuerst an jemanden weiter, dann kannst du dein Konto löschen.'
+        });
       }
 
       // Alles in einer Transaktion (T-114-06): alles oder nichts. Mit dem

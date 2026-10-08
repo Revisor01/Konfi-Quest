@@ -50,7 +50,7 @@ async function meldeNachrueckern(db, organizationId, nachgerueckt) {
     }
     // sendToUserByRole statt harter Adressierung: Nachruecken trifft Konfis
     // UND Teamer:innen, und die sitzen in verschiedenen Socket-Raeumen.
-    liveUpdate.sendToUserByRole(eintrag.userId, 'events', 'update', { eventId: eintrag.eventId });
+    liveUpdate.sendToUserByRole(eintrag.userId, 'events', 'update', { eventId: eintrag.eventId }, organizationId);
   }
 }
 

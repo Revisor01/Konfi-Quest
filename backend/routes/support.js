@@ -308,7 +308,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
 
     res.status(201).json(antwort);
     // Wie POST /organizations: Live-Update nur an den Ausfuehrenden.
-    liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'create');
+    liveUpdate.sendToUserByRole(req.user.id, 'organizations', 'create', null, req.user.organization_id);
   });
 
   // ========================================================================

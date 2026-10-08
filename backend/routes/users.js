@@ -19,7 +19,7 @@ const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
-const { gemeindeFelderSql, schreibeGemeindeFelder } = require('../utils/orgMitglieder');
+const { gemeindeFelderSql, schreibeGemeindeFelder, gemeindenOhneWeitereLeitung, istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -782,6 +782,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       return res.status(400).json({ error: 'Du kannst dein eigenes Konto nicht löschen' });
     }
 
+    // LETZTE GEMEINDELEITUNG: weder Loeschung noch Umzug noch Ende der
+    // Mitgliedschaft -- alle drei Wege unten lassen die Gemeinde sonst ohne
+    // Leitung zurueck. Gezaehlt wird aus BEIDEN Quellen mit der Rolle in
+    // dieser Gemeinde (Simon, 08.10.2026, utils/orgMitglieder.js). Bis dahin
+    // stand die Pruefung erst nach dem Zweig fuer Zusatzmitglieder und
+    // zaehlte nur Leitungen mit Stamm-Gemeinde hier.
+    try {
+      if ((await gemeindenOhneWeitereLeitung(db, id, [organizationId])).length > 0) {
+        return res.status(409).json({ error: 'Die letzte Gemeindeleitung kann nicht gelöscht werden' });
+      }
+    } catch (err) {
+      console.error('Error checking last org_admin:', err);
+      return res.status(500).json({ error: 'Datenbankfehler' });
+    }
+
     // ZUSATZMITGLIED: HIER ENDET DIE MITGLIEDSCHAFT, NICHT DAS KONTO (Audit
     // 26.09.2026, Leitung BF-01). Wer ueber eine Gemeinde-Einladung hier
     // mitarbeitet, ist in einer anderen Gemeinde zuhause. Die Leitung dieser
@@ -844,26 +859,6 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       }
     } catch (err) {
       console.error('Error checking membership source:', err);
-      return res.status(500).json({ error: 'Datenbankfehler' });
-    }
-
-    // Prüfe ob letzter Org-Admin
-    try {
-      const targetUser = await db.query('SELECT role_id FROM users WHERE id = $1 AND organization_id = $2', [id, organizationId]);
-      if (targetUser.rows[0]) {
-        const targetRole = await db.query('SELECT name FROM roles WHERE id = $1', [targetUser.rows[0].role_id]);
-        if (targetRole.rows[0]?.name === 'org_admin') {
-          const orgAdminCount = await db.query(
-            'SELECT COUNT(*)::int as count FROM users u JOIN roles r ON u.role_id = r.id WHERE r.name = $1 AND u.organization_id = $2 AND u.id != $3',
-            ['org_admin', organizationId, id]
-          );
-          if (orgAdminCount.rows[0].count === 0) {
-            return res.status(409).json({ error: 'Die letzte Gemeindeleitung kann nicht gelöscht werden' });
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Error checking last org_admin:', err);
       return res.status(500).json({ error: 'Datenbankfehler' });
     }
 
@@ -1256,7 +1251,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // zuruecksetzen, obwohl er Super-Admin-Rechte hat.
       const isSuperAdmin = req.user.is_super_admin === true;
       const isOrgAdmin = req.user.role_name === 'org_admin';
-      const isSameOrg = req.user.organization_id === targetUser.organization_id;
+      // Mitglied der aktiven Gemeinde ueber BEIDE Quellen (Simon,
+      // 08.10.2026: "Jede Gemeinde darf das Passwort setzen"). Bis dahin nur
+      // die Stamm-Gemeinde -- die Leitung einer weiteren Gemeinde bekam fuer
+      // ihr Team 403. Das Passwort gilt fuer das ganze Konto.
+      const isSameOrg = Number(req.user.organization_id) === Number(targetUser.organization_id)
+        || await istMitgliedDerOrganisation(db, id, req.user.organization_id);
 
       // super_admin darf alle resetten, org_admin nur in eigener Org
       if (!isSuperAdmin && !(isOrgAdmin && isSameOrg)) {

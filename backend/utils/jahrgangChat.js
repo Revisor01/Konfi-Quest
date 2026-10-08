@@ -15,7 +15,7 @@
 //  dann nicht — siehe Migration 098.)
 
 // Mappt eine Rolle auf den chat_participants.user_type-Wert.
-const { nichtGesperrtIn } = require('./orgMitglieder');
+const { nichtGesperrtIn, ladeMitgliederDerOrganisation } = require('./orgMitglieder');
 const roleToParticipantType = (roleName) =>
   roleName === 'konfi' ? 'konfi' : roleName === 'teamer' ? 'teamer' : 'admin';
 
@@ -140,20 +140,21 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
   // Kostentreiber, da der Sync früher bei jedem GET /chat/rooms lief).
   // Schutz gilt für Primaer-Org-Org-Admins UND via user_organizations
   // eingewechselte Org-Admins (Multi-Org).
-  const { rows: orgAdminRows } = await db.query(
-    `SELECT u.id FROM users u JOIN roles r ON u.role_id = r.id
-      WHERE u.organization_id = $1 AND r.name = 'org_admin'
-     UNION
-     SELECT uo.user_id AS id FROM user_organizations uo
-      JOIN roles r ON uo.role_id = r.id
-      WHERE uo.organization_id = $1 AND r.name = 'org_admin'`,
-    [organizationId]
+  //
+  // SPERRE JE GEMEINDE (08.10.2026, Migration 196): Hier stand eine eigene
+  // Abfrage ohne Sperre -- wer nur in DIESER Gemeinde (oder als Konto)
+  // gesperrt war, fehlte in der Soll-Liste, blieb ueber den Schutz aber im
+  // Raum. Jetzt dieselbe Regel wie die Soll-Liste oben:
+  // ladeMitgliederDerOrganisation (Rolle je Gemeinde, ohne gesperrte Konten
+  // und Sperren je Gemeinde, eine Stamm-Zeile in user_organizations zaehlt
+  // nicht).
+  const orgAdminIds = new Set(
+    (await ladeMitgliederDerOrganisation(db, organizationId, ['org_admin'])).map(Number)
   );
-  const orgAdminIds = new Set(orgAdminRows.map((r) => r.id));
   for (const c of current) {
     if (sollKeys.has(`${c.user_id}:${c.user_type}`)) continue;
     // Org-Admin-Schutz: nie entfernen, selbst wenn (theoretisch) nicht in Soll.
-    if (orgAdminIds.has(c.user_id)) continue;
+    if (orgAdminIds.has(Number(c.user_id))) continue;
     await db.query(
       'DELETE FROM chat_participants WHERE room_id = $1 AND user_id = $2 AND user_type = $3',
       [roomId, c.user_id, c.user_type]

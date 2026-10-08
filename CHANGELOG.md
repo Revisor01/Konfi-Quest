@@ -208,6 +208,30 @@ Versionsüberschrift.
 - Die Leitung kann Teamer:innen, die aus einer anderen Gemeinde bei ihr
   mitarbeiten, wieder von einem Event austragen; bisher kam „Zugriff
   verweigert".
+- Die letzte Gemeindeleitung einer Gemeinde lässt sich auch dann nicht
+  löschen und kann ihr Konto nicht selbst löschen, wenn sie aus einer anderen
+  Gemeinde kommt; umgekehrt zählt eine solche zweite Gemeindeleitung jetzt
+  mit, sodass das Löschen nicht mehr unnötig abgelehnt wird.
+- Die Leitung kann für Teamer:innen, die aus einer anderen Gemeinde bei ihr
+  mitarbeiten, ein Einmalpasswort erzeugen und die Gemeindeleitung ein
+  Passwort setzen; bisher kam „Person nicht gefunden" oder „Keine
+  Berechtigung".
+- Wer in zwei Gemeinden verschiedene Rollen hat, sieht Änderungen an Punkten,
+  Anträgen, Badges und Events in der weiteren Gemeinde sofort, ohne neu zu
+  laden.
+- Beim Anlegen eines Jahrgangs lassen sich Teamer:innen aus einer anderen
+  Gemeinde, die bei dir mitarbeiten, gleich zuweisen.
+- Im Teamer-Rückblick zählen zu „Dein Team" auch Teamer:innen aus einer
+  anderen Gemeinde, und die Auswahl der Jahre richtet sich nach der Rolle in
+  dieser Gemeinde.
+- In der Teilnehmerliste eines Events, die Konfis sehen, fehlen die
+  Teamer:innen der Gemeinde auch dann, wenn sie anderswo eine andere Rolle
+  haben; Leitungen aus einer anderen Gemeinde stehen wieder darin.
+- Die Zahl am App-Symbol und neue Badges kommen auch bei Personen an, deren
+  eigene Gemeinde gesperrt ist, die aber in einer weiteren Gemeinde
+  mitarbeiten.
+- Eine Gemeindeleitung, die nur in dieser Gemeinde gesperrt ist, verlässt
+  die Jahrgangs-Chats dieser Gemeinde.
 - Nach dem Schließen einer Seite laufen dort angestoßene Meldungen,
   Rückfragen und Nachladevorgänge nicht mehr weiter — so entsteht kein
   Einmalpasswort mehr, wenn man die Seite einer Person direkt nach dem

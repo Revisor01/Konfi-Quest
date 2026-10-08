@@ -6,7 +6,7 @@ const apm = require('../utils/apm');
 const { formatUhrzeit } = require('../utils/zeitformat');
 const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
-const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { ladeMitgliederDerOrganisation, nichtGesperrtIn } = require('../utils/orgMitglieder');
 // Empfaenger der Leitungs-Meldungen aus dem Hintergrund (27.09.2026): die
 // Regel-Stellen fuer Events und Jahrgaenge, nicht mehr die ganze Leitung.
 const { terminWartetAufVerbuchungSql, zaehleWartendeTermineJeLeitung } = require('../utils/terminLeitungSicht');
@@ -330,12 +330,26 @@ class BackgroundService {
                ) AS hat_push
         FROM users u
         JOIN roles r ON u.role_id = r.id
-        -- Gesperrte Stamm-Gemeinde: keine Anmeldung, also auch kein stiller
-        -- Push und keine Abzeichen-Pruefung (BF-22, siehe Dateikopf).
-        JOIN organizations o ON o.id = u.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}
         WHERE r.name IN ('konfi', 'teamer', 'admin', 'org_admin')
           AND u.deleted_at IS NULL
           AND u.is_active = true
+          -- Ohne eine aktive Gemeinde keine Anmeldung, also auch kein stiller
+          -- Push und keine Abzeichen-Pruefung (BF-22, siehe Dateikopf).
+          -- Aktiv heisst: die Gemeinde ist nicht gesperrt und die Person ist
+          -- dort nicht gesperrt -- in der Stamm-Gemeinde ODER in einer
+          -- weiteren (08.10.2026, Mehrfach-Konten). Vorher zaehlte nur die
+          -- Stamm-Gemeinde: Wer dort gesperrt war, fiel auch in seiner
+          -- aktiven weiteren Gemeinde heraus. Welche Gemeinden dann zaehlen,
+          -- entscheidet unten ladeMitgliedschaftenVieler (Zaehler und Badges).
+          AND (
+            EXISTS (SELECT 1 FROM organizations o
+                     WHERE o.id = u.organization_id AND ${NUR_AKTIVE_GEMEINDE('o')}
+                       AND ${nichtGesperrtIn('u', 'u.organization_id')})
+            OR EXISTS (SELECT 1 FROM user_organizations uo
+                         JOIN organizations o ON o.id = uo.organization_id
+                        WHERE uo.user_id = u.id AND uo.is_active = true
+                          AND ${NUR_AKTIVE_GEMEINDE('o')})
+          )
       `;
       const { rows: users } = await db.query(usersQuery, []);
 

@@ -1665,13 +1665,17 @@ describe('Users Routes', () => {
       expect(res.body.error_code).toBe('nur_rolle_in_weiterer_gemeinde');
     });
 
-    it('reset-password setzt nur die Stamm-Gemeinde -> 403', async () => {
+    // Bis 08.10.2026: "reset-password setzt nur die Stamm-Gemeinde -> 403".
+    // Simons Entscheidung vom 08.10.2026: Jede Gemeinde, in der die Person
+    // Mitglied ist, darf das Passwort setzen (tests/routes/
+    // stammRolleWeitereStellen.test.js, mit dem verbotenen Fall).
+    it('reset-password setzt auch die weitere Gemeinde -> 200', async () => {
       const res = await request(app)
         .put(`/api/admin/users/${USERS.teamer2.id}/reset-password`)
         .set('Authorization', `Bearer ${orgAdminToken}`)
         .send({ password: 'Sicheres-Passwort-2026!' });
 
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(200);
     });
 
     it('DELETE beendet die Mitgliedschaft samt Jahrgaengen dieser Gemeinde -- das Konto bleibt', async () => {
@@ -1995,10 +1999,16 @@ describe('Users Routes', () => {
       expect(await konto(USERS.teamer1.id)).toBeNull();
     });
 
-    it('letzte:r Org-Admin der Gemeinde -> 409, nichts veraendert', async () => {
+    it('eine weitere Gemeindeleitung ueber user_organizations zaehlt mit -- kein 409, das Konto zieht um', async () => {
       // orgAdmin1 ist in Org 1 zuhause und in Org 2 Org-Admin. Die einzige
       // andere Org-Admin von Org 1 (orgAdminSuper) arbeitet dort nur ueber
-      // user_organizations mit -- sie zaehlt, wie bisher, nicht.
+      // user_organizations mit.
+      //
+      // Bis 08.10.2026 hielt dieser Test fest, dass sie "wie bisher" nicht
+      // zaehlt (409). Simons Entscheidung vom 08.10.2026: Gemeindeleitungen
+      // zaehlen aus BEIDEN Quellen -- Org 1 behaelt mit orgAdminSuper eine
+      // Leitung, also kein 409 (utils/orgMitglieder.js,
+      // gemeindenOhneWeitereLeitung).
       await db.query(
         'INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
         [USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.orgAdmin2.id]
@@ -2013,9 +2023,10 @@ describe('Users Routes', () => {
       const res = await entfernen(generateToken('orgAdminSuper'), USERS.orgAdmin1.id,
         { 'X-Active-Organization': String(ORGS.testGemeinde.id) });
 
-      expect(res.status).toBe(409);
-      expect(await konto(USERS.orgAdmin1.id)).toEqual({ organization_id: ORGS.testGemeinde.id, role_id: ROLES.orgAdmin.id });
-      expect(await weitere(USERS.orgAdmin1.id)).toEqual([{ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.orgAdmin2.id }]);
+      expect(res.status).toBe(200);
+      expect(res.body.konto_bleibt).toBe(true);
+      expect(await konto(USERS.orgAdmin1.id)).toEqual({ organization_id: ORGS.andereGemeinde.id, role_id: ROLES.orgAdmin2.id });
+      expect(await weitere(USERS.orgAdmin1.id)).toEqual([]);
     });
 
     it('Hierarchie: ein Admin entfernt keine andere Admin -> 403, nichts veraendert', async () => {

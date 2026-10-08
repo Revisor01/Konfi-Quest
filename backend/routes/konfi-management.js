@@ -860,13 +860,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // Leitungsrollen bleiben ausgeschlossen. Wer ein Leitungspasswort
             // setzen will, nimmt die Benutzerverwaltung — dort ist die
             // Hierarchie geprueft.
-            const { rows: [zielPerson] } = await client.query(
-                `SELECT u.id, r.name AS rolle FROM users u
-                 JOIN roles r ON u.role_id = r.id
-                 WHERE u.id = $1 AND u.organization_id = $2
-                   AND r.name IN ('konfi', 'teamer') AND u.deleted_at IS NULL`,
-                [req.params.id, req.user.organization_id]
-            );
+            //
+            // ROLLE UND MITGLIEDSCHAFT IN DIESER GEMEINDE (Simon, 08.10.2026:
+            // "Jede Gemeinde darf das Passwort setzen"): ueber beide Quellen,
+            // wie die Chat-Mitgliederliste. Bis dahin nur die Stamm-Gemeinde
+            // mit der Rolle am Konto -- Team, das ueber user_organizations
+            // hier mitarbeitet, ergab 404.
+            const rolleHier = await ladeRolleInGemeinde(client, req.params.id, req.user.organization_id);
+            const zielPerson = ['konfi', 'teamer'].includes(rolleHier) ? { rolle: rolleHier } : null;
             if (!zielPerson) {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Person nicht gefunden' });
@@ -890,9 +891,14 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // Genau dieser Weg wird beschritten, wenn ein Konto uebernommen
             // wurde — der Angreifer blieb drin. Dieselbe Behandlung wie in der
             // Selbstbedienungs-Route (auth.js, PUT /auth/change-password).
+            // Mitglied dieser Gemeinde aus einer der beiden Quellen (oben
+            // geprueft, hier noch einmal im selben Schreibschritt).
             const updateUserQuery = `
                 UPDATE users SET password_hash = $1, token_invalidated_at = NOW()
-                WHERE id = $2 AND organization_id = $3`;
+                WHERE id = $2 AND deleted_at IS NULL
+                  AND (organization_id = $3
+                       OR EXISTS (SELECT 1 FROM user_organizations uo
+                                   WHERE uo.user_id = users.id AND uo.organization_id = $3))`;
             const { rowCount } = await client.query(updateUserQuery, [hashedPassword, req.params.id, req.user.organization_id]);
 
             if (rowCount === 0) {

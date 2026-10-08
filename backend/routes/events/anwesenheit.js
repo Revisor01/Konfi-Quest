@@ -48,9 +48,9 @@ registriereArt('anwesenheit_alle_verbucht', async (db, p, k) => {
       // sendToUserByRole: die Sammel-Anwesenheit laeuft ueber ALLE
       // Teilnehmenden eines Termins — darunter Teamer:innen, die in
       // user_teamer_<id> sitzen und hart adressiert nichts mitbekamen.
-      liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: p.points });
+      liveUpdate.sendToUserByRole(userId, 'dashboard', 'update', { points: p.points }, p.organizationId);
     }
-    liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId: p.eventId });
+    liveUpdate.sendToUserByRole(userId, 'events', 'update', { eventId: p.eventId }, p.organizationId);
   }
   if (p.marked.length > 0) {
     liveUpdate.sendToOrgAdmins(p.organizationId, 'events', 'update', { eventId: p.eventId, action: 'attendance' });

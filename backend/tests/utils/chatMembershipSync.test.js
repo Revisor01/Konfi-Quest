@@ -60,6 +60,40 @@ describe('Chat-Mitgliedschafts-Sync mit user_organizations (Multi-Org)', () => {
     expect(rows).toContainEqual({ user_id: USERS.orgAdmin1.id, user_type: 'admin' });
   });
 
+  // Sperre je Gemeinde (Migration 196, 08.10.2026): Der Schutz "Org-Admins
+  // nie entfernen" fragte die Rolle ohne Sperre -- wer nur in DIESER Gemeinde
+  // gesperrt ist, blieb im Jahrgangs-Chat sitzen, obwohl die Soll-Liste ihn
+  // nicht mehr fuehrt.
+  it('Jahrgangs-Chat: eine in dieser Gemeinde gesperrte Org-Admin wird entfernt', async () => {
+    await addMembership(USERS.orgAdmin1.id, ORG2, ROLES.orgAdmin2.id);
+    const roomId = await syncJahrgangChat(db, JAHRGAENGE.jahrgang2.id, ORG2, USERS.orgAdmin2.id);
+    expect(await participants(roomId)).toContainEqual({ user_id: USERS.orgAdmin1.id, user_type: 'admin' });
+
+    await db.query(
+      'UPDATE user_organizations SET is_active = false WHERE user_id = $1 AND organization_id = $2',
+      [USERS.orgAdmin1.id, ORG2]
+    );
+    await syncJahrgangChat(db, JAHRGAENGE.jahrgang2.id, ORG2, USERS.orgAdmin2.id);
+
+    const ids = (await participants(roomId)).map((r) => r.user_id);
+    expect(ids).not.toContain(USERS.orgAdmin1.id);
+    // Die aktive Org-Admin der Gemeinde bleibt.
+    expect(ids).toContain(USERS.orgAdmin2.id);
+  });
+
+  it('Jahrgangs-Chat: in der Stamm-Gemeinde gesperrte Org-Admin wird entfernt', async () => {
+    const roomId = await syncJahrgangChat(db, JAHRGAENGE.jahrgang2.id, ORG2, USERS.orgAdmin2.id);
+    expect((await participants(roomId)).map((r) => r.user_id)).toContain(USERS.orgAdmin2.id);
+
+    await db.query(
+      'INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, false)',
+      [USERS.orgAdmin2.id, ORG2, ROLES.orgAdmin2.id]
+    );
+    await syncJahrgangChat(db, JAHRGAENGE.jahrgang2.id, ORG2, USERS.admin2.id);
+
+    expect((await participants(roomId)).map((r) => r.user_id)).not.toContain(USERS.orgAdmin2.id);
+  });
+
   it('Jahrgangs-Chat: eingewechselte Teamerin mit Jahrgangs-Zuweisung wird als teamer aufgenommen', async () => {
     await addMembership(USERS.teamer1.id, ORG2, ROLES.teamer2.id);
     await db.query(

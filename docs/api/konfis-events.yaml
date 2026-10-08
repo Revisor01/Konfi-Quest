@@ -975,7 +975,7 @@ paths:
         hinweis: "BEHOBEN 27.09.2026 (Audit 'Wer bekommt was', F-05): Bis dahin kein Jahrgang-Check -- die Teilnehmenden ('Vorname N.') von Events fremder Jahrgaenge und von 'Nur Team' waren mit der Kennung abrufbar. Fremde Gemeinde antwortet seither ebenfalls 404 statt 200 [] (Sicherheit BF-16)."
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "Array {id, display_name: 'Vorname N.'}" }
+        "200": { description: "Array {id, display_name: 'Vorname N.'} -- ohne Teamer:innen. BEHOBEN 08.10.2026: Die Rolle gilt in der Gemeinde des Termins (beide Quellen, wie der Chat-Export); vorher die Rolle am Konto -- wer zuhause Admin und hier Teamer:in war, stand in der Liste, wer zuhause Teamer:in und hier Leitung war, fehlte. Antwortform unveraendert" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: "Event unbekannt, aus fremder Gemeinde oder fuer die Konfi nicht sichtbar (seit 27.09.2026)" }
@@ -4059,7 +4059,7 @@ paths:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org"
+        objekt-pruefung: "Seit 01.09.2026: Ziel muss Rolle konfi haben (404 sonst) UND darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen); dann UPDATE ... WHERE id = :id AND organization_id = Token-Org. Seit 08.09.2026 auch Rolle teamer. GEAENDERT 08.10.2026 (Simons Entscheidung: jede Gemeinde darf das Passwort setzen): Mitgliedschaft und Rolle (konfi oder teamer) in der aktiven Gemeinde ueber BEIDE Quellen (utils/orgMitglieder.js ladeRolleInGemeinde), das UPDATE verlangt dieselbe Mitgliedschaft. BEHOBEN 08.10.2026: Team aus einer anderen Stamm-Gemeinde ergab 404; ein Konto, das hier Leitung ist, bleibt 404"
         hinweis: >
           BEHOBEN 01.09.2026: Vorher gab es keinen Rollen-Check auf das
           Zielobjekt — die Route setzte das Passwort JEDES Users der eigenen
