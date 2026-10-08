@@ -81,7 +81,11 @@ async function gemeindeZugehoerigkeitRaeumen(db, userId, organizationId) {
  * Gemeinde gehen wie bei jedem Ende einer Mitgliedschaft
  * (gemeindeZugehoerigkeitRaeumen).
  *
- * Welche Gemeinde: zuerst eine aktive, dann die aelteste Mitgliedschaft.
+ * Welche Gemeinde: zuerst eine, in der die Person nicht gesperrt ist
+ * (Migration 196), dann eine aktive Gemeinde, dann die aelteste
+ * Mitgliedschaft. Ist sie in der Zielgemeinde gesperrt (alle anderen
+ * ebenso), ist danach das ganze Konto gesperrt -- die Sperre der anderen
+ * Gemeinde gilt weiter.
  *
  * ZWEI WEGE rufen das: die Leitung entfernt eine hier beheimatete Person
  * (routes/users.js, DELETE /users/:id Fall 2) und der Super-Admin loescht
@@ -101,11 +105,12 @@ async function gemeindeZugehoerigkeitRaeumen(db, userId, organizationId) {
  */
 async function inWeitereGemeindeUmziehen(client, userId, organizationId) {
   const { rows: [ziel] } = await client.query(
-    `SELECT uo.organization_id, uo.role_id
+    `SELECT uo.organization_id, uo.role_id, uo.role_title, uo.teamer_since, uo.is_active
        FROM user_organizations uo
        JOIN organizations o ON o.id = uo.organization_id
       WHERE uo.user_id = $1 AND uo.organization_id <> $2
-      ORDER BY COALESCE(o.is_active, true) DESC,
+      ORDER BY uo.is_active DESC,
+               COALESCE(o.is_active, true) DESC,
                uo.created_at ASC NULLS LAST,
                uo.id ASC
       LIMIT 1`,
@@ -113,14 +118,30 @@ async function inWeitereGemeindeUmziehen(client, userId, organizationId) {
   );
   if (!ziel) return null;
 
+  // Felder je Gemeinde (08.10.2026, Migration 196): Funktionsbezeichnung und
+  // "Teamer:in seit" der neuen Stamm-Gemeinde stehen ab jetzt am Konto.
   await client.query(
-    'UPDATE users SET organization_id = $2, role_id = $3, updated_at = NOW() WHERE id = $1',
-    [userId, ziel.organization_id, ziel.role_id]
+    `UPDATE users SET organization_id = $2, role_id = $3, role_title = $4, teamer_since = $5,
+                      updated_at = NOW()
+      WHERE id = $1`,
+    [userId, ziel.organization_id, ziel.role_id, ziel.role_title, ziel.teamer_since]
   );
+  // Die Zeile der neuen Stamm-Gemeinde geht -- es sei denn, die Person ist
+  // dort gesperrt: Dann bleibt sie als Stamm-Zeile mit der Sperre stehen.
+  // Ist die Person danach nirgends mehr frei, ist das Konto gesperrt.
   await client.query(
-    'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id IN ($2, $3)',
-    [userId, ziel.organization_id, organizationId]
+    'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+    [userId, organizationId]
   );
+  if (ziel.is_active !== false) {
+    await client.query(
+      'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+      [userId, ziel.organization_id]
+    );
+  } else {
+    await client.query(
+      'UPDATE users SET is_active = false WHERE id = $1', [userId]);
+  }
   await gemeindeZugehoerigkeitRaeumen(client, userId, organizationId);
   return { organization_id: Number(ziel.organization_id), role_id: Number(ziel.role_id) };
 }

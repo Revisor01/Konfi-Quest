@@ -4,8 +4,9 @@
 // Wer ueber eine Gemeinde-Einladung mitarbeitet, fehlte in der Liste; die
 // Detailansicht und die Jahrgangszuweisung kannten die Person laengst. Jetzt
 // liefert GET /users sie mit dem Kennzeichen mitgliedschaft='weitere'. Die
-// Liste muss das zeigen, der Bearbeiten-Dialog darf dann nur die Rolle
-// speichern (alles andere weist das Backend mit 400 ab), und der Loesch-Dialog
+// Liste muss das zeigen, der Bearbeiten-Dialog darf dann nur Rolle,
+// Funktionsbeschreibung und Sperre speichern (alles andere weist das Backend
+// mit 400 ab), und der Loesch-Dialog
 // muss sagen, dass nur die Mitgliedschaft endet.
 
 import { describe, it, expect, vi } from 'vitest';
@@ -66,19 +67,22 @@ describe('Benutzerliste: Mitglieder aus weiteren Gemeinden', () => {
   });
 });
 
-describe('Bearbeiten-Dialog: in einer weiteren Gemeinde nur die Rolle', () => {
+describe('Bearbeiten-Dialog: in einer weiteren Gemeinde nur, was je Gemeinde gilt', () => {
   const modal = lies('src/components/admin/modals/UserManagementModal.tsx');
 
-  it('leitet nurRolle aus dem Kennzeichen ab und speichert dann nur role_id', () => {
+  // Seit 08.10.2026 (Migration 196) gelten Funktionsbeschreibung und Sperre
+  // je Gemeinde; die weitere Gemeinde darf sie bei sich setzen.
+  it('leitet nurRolle aus dem Kennzeichen ab und speichert dann Rolle, Funktion und Sperre', () => {
     expect(modal).toContain("const nurRolle = !!userId && user?.mitgliedschaft === 'weitere';");
-    expect(modal).toContain('nurRolle ? { role_id: formData.role_id } : userData');
+    expect(modal).toContain('{ role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active }');
   });
 
-  it('sperrt Anzeigename, Benutzername, Funktion, E-Mail, Passwort und den Aktiv-Schalter', () => {
-    // Fuenf Eingabefelder plus der Aktiv-Schalter; die Rollenauswahl bleibt frei.
+  it('sperrt Anzeigename, Benutzername, E-Mail und Passwort, nicht Funktion und Aktiv-Schalter', () => {
+    // Vier Eingabefelder; Rollenauswahl, Funktion und Aktiv-Schalter bleiben frei.
     const gesperrt = modal.match(/disabled=\{isSubmitting \|\| nurRolle\}/g) ?? [];
-    expect(gesperrt).toHaveLength(6);
+    expect(gesperrt).toHaveLength(4);
     expect(modal).toContain('Diese Person ist in einer anderen Gemeinde zuhause.');
+    expect(modal).toContain("nurRolle ? 'Gilt nur für diese Gemeinde'");
   });
 });
 

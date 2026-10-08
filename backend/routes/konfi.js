@@ -1881,7 +1881,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       nachAntwort(req, async () => {
         // Push-Notification an Konfi senden
         try {
-          await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId);
+          await PushService.sendEventUnregisteredToKonfi(db, konfiId, event.name, eventId, req.user.organization_id);
         } catch (pushErr) {
           console.error('Error sending event unregistration push to konfi:', pushErr);
         }

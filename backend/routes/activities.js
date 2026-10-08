@@ -961,7 +961,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
       // Push-Notification an Konfi senden
       try {
-        await PushService.sendActivityAssignedToKonfi(db, konfiId, activity.name, activity.points, activity.type);
+        await PushService.sendActivityAssignedToKonfi(db, konfiId, activity.name, activity.points, activity.type, req.user.organization_id);
       } catch (pushErr) {
  console.error('Error sending activity assigned push:', pushErr);
       }

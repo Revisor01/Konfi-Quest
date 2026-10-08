@@ -319,7 +319,7 @@ module.exports = (db, rbacVerifier) => {
           const { rows: [eventInfo] } = await db.query('SELECT name FROM events WHERE id = $1', [eventId]);
           const eventName = eventInfo ? eventInfo.name : 'Event';
           try {
-            await PushService.sendEventUnregisteredToKonfi(db, userId, eventName, eventId);
+            await PushService.sendEventUnregisteredToKonfi(db, userId, eventName, eventId, req.user.organization_id);
           } catch (pushErr) {
             console.error('Push notification failed for konfi cancellation:', pushErr);
           }

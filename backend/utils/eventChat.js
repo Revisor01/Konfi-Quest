@@ -36,6 +36,26 @@
 // konfi -> 'konfi', teamer -> 'teamer', org_admin/admin -> 'admin'
 // (dieselbe Abbildung wie in jahrgangChat.js).
 
+// DIE ROLLE DER GEMEINDE DES TERMINS (Simon, 08.10.2026,
+// docs/planung/mehrfach-konten.md Punkt 1). Bis dahin kam der Typ aus der
+// Rolle am Konto (users.role_id) -- der Stamm-Gemeinde. Wer zuhause
+// Gemeindeleitung und in B Teamer:in ist, sass in B's Event-Chats als
+// 'admin'; Chatliste und Zaehler in B suchen user_type = 'teamer' und fanden
+// den Raum nicht. Jetzt dieselbe Regel wie ladeRolleInGemeinde
+// (utils/orgMitglieder.js) und TEAM_MITGLIED_ROLLE (routes/chat.js): in der
+// Stamm-Gemeinde users.role_id -- auch wenn user_organizations sie noch einmal
+// fuehrt --, in jeder weiteren user_organizations.role_id. Inline als SQL,
+// weil syncEventChat fuer Mengen ist. Gehoert die Person der Gemeinde nicht
+// (mehr) an, bleibt der bisherige Wert (Rolle am Konto), damit niemand still
+// herausfaellt. Den Bestand gleicht Migration 197 an.
+// Erwartet die Aliase cr (chat_rooms) und u (users); liefert r (roles).
+const ROLLE_IN_GEMEINDE_DES_RAUMS = `
+     LEFT JOIN user_organizations uo_raum
+       ON uo_raum.user_id = u.id AND uo_raum.organization_id = cr.organization_id
+     JOIN roles r
+       ON r.id = CASE WHEN u.organization_id = cr.organization_id THEN u.role_id
+                      ELSE COALESCE(uo_raum.role_id, u.role_id) END`;
+
 /**
  * Entfernt eine Person aus allen Chat-Räumen eines Termins.
  * Idempotent: Ist sie nicht drin, passiert nichts.
@@ -68,7 +88,8 @@ async function removeFromEventChat(db, eventId, userId, organizationId) {
  * nicht — der Chat wird bewusst nur auf Wunsch der Leitung angelegt.
  *
  * Die Rolle wird selbst nachgesehen, damit der user_type stimmt: Ein Teamer,
- * der als 'admin' eingetragen wird, findet seinen eigenen Raum nicht.
+ * der als 'admin' eingetragen wird, findet seinen eigenen Raum nicht. Es ist
+ * die Rolle in der Gemeinde des Termins (ROLLE_IN_GEMEINDE_DES_RAUMS).
  *
  * @param {object} db   Pool ODER Client (muss .query haben).
  * @param {number} eventId
@@ -85,7 +106,7 @@ async function addToEventChat(db, eventId, userId, organizationId) {
                  ELSE 'admin' END
      FROM chat_rooms cr
      JOIN users u ON u.id = $2
-     JOIN roles r ON r.id = u.role_id
+     ${ROLLE_IN_GEMEINDE_DES_RAUMS}
      WHERE cr.event_id = $1
        AND cr.organization_id = $3
        AND u.deleted_at IS NULL
@@ -125,7 +146,7 @@ async function syncEventChat(db, eventId, organizationId) {
      FROM chat_rooms cr
      JOIN event_bookings eb ON eb.event_id = cr.event_id
      JOIN users u ON u.id = eb.user_id
-     JOIN roles r ON r.id = u.role_id
+     ${ROLLE_IN_GEMEINDE_DES_RAUMS}
      WHERE cr.event_id = $1
        AND cr.organization_id = $2
        AND eb.status = 'confirmed'

@@ -4,6 +4,7 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { beantworteTageslosung } = require('../services/losungService');
 const { getTeamerBadgeProgress } = require('../utils/teamerBadgeProgress');
+const { gemeindeFelderSql } = require('../utils/orgMitglieder');
 const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
 const { setzeTeamerZusage } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
@@ -74,11 +75,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // Stamm-Gemeinde. req.user.organization_id traegt die aktive Gemeinde
       // (rbac.js loest sie gegen user_organizations auf).
       // Antwortform unveraendert -- nur der Wert stimmt jetzt.
+      // Funktionsbezeichnung und "Teamer:in seit" ebenso je aktiver Gemeinde
+      // (08.10.2026, Migration 196; utils/orgMitglieder.js).
+      const gf = gemeindeFelderSql('$2');
       const userQuery = `
-        SELECT u.display_name, u.username, u.email, u.role_title, u.teamer_since,
+        SELECT u.display_name, u.username, u.email,
+               ${gf.role_title} AS role_title, ${gf.teamer_since} AS teamer_since,
                u.bible_translation,
                o.name as organization_name
         FROM users u
+        ${gf.join}
         LEFT JOIN organizations o ON o.id = $2
         WHERE u.id = $1
       `;

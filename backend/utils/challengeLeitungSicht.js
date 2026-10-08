@@ -24,6 +24,7 @@
 // sah sie aber in Liste und Reiter nicht.
 
 /** Teilnahmekreis, den das ganze Team ohne Jahrgang sieht. */
+const { nichtGesperrtIn } = require('./orgMitglieder');
 const TEAM_ORGWEITE_AUDIENCES = ['nur_team'];
 
 /**
@@ -106,6 +107,7 @@ async function ladeTeamDasMitmacht(db, challengeId) {
             WHERE ch.id = $1
               AND u.is_active = true
               AND u.deleted_at IS NULL
+              AND ${nichtGesperrtIn('u', 'ch.organization_id')}
            UNION ALL
            SELECT u.id, r.name, 1
              FROM challenges ch
@@ -114,6 +116,7 @@ async function ladeTeamDasMitmacht(db, challengeId) {
              JOIN roles r ON r.id = uo.role_id
             WHERE ch.id = $1
               AND u.is_active = true
+              AND uo.is_active = true
               AND u.deleted_at IS NULL
          ) m
         ORDER BY m.user_id, m.rang

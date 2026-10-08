@@ -416,6 +416,10 @@ paths:
         Jetzt wird die AKTIVE Gemeinde (req.user.organization_id) genommen.
         Antwortform unveraendert -- nur der Wert stimmt.
 
+        SEIT 08.10.2026 gelten auch role_title und teamer_since fuer die
+        aktive Gemeinde (Migration 196, je Gemeinde in user_organizations;
+        in der Stamm-Gemeinde am Konto). Antwortform unveraendert.
+
         Existiert
         ein konfi_profiles-Datensatz aus der Konfi-Zeit IN DER AKTIVEN
         GEMEINDE, wird er als
@@ -1103,7 +1107,8 @@ paths:
         Feld entfaellt oder aendert Form; ausgelieferte Fassungen lesen die
         neuen Schluessel nicht und verhalten sich unveraendert.
         ADDITIV 01.10.2026: greeting.role_title -- die Selbstbezeichnung
-        (users.role_title, null ohne Eintrag) fuer die Zeile unter dem Gruss;
+        (null ohne Eintrag; seit 08.10.2026 die der aktiven Gemeinde,
+        Migration 196) fuer die Zeile unter dem Gruss;
         die App zeigt ohne Wert "Teamer:in". POST /api/auth/update-role-title
         leert dafuer den 30-s-Zwischenspeicher der Anmeldung, sonst kaeme die
         alte Bezeichnung noch bis zu 30 s.

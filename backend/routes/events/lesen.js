@@ -708,7 +708,7 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         SELECT eb.*, eb.opt_out_reason, eb.opt_out_date, eb.absage_nach_zusage,
                 u.display_name as participant_name,
                 CASE
-                  WHEN r.name = 'teamer' THEN (SELECT STRING_AGG(DISTINCT j2.name, ', ' ORDER BY j2.name) FROM user_jahrgang_assignments uja2 JOIN jahrgaenge j2 ON uja2.jahrgang_id = j2.id WHERE uja2.user_id = u.id)
+                  WHEN r.name = 'teamer' THEN (SELECT STRING_AGG(DISTINCT j2.name, ', ' ORDER BY j2.name) FROM user_jahrgang_assignments uja2 JOIN jahrgaenge j2 ON uja2.jahrgang_id = j2.id WHERE uja2.user_id = u.id AND j2.organization_id = $2)
                   ELSE j.name
                 END as jahrgang_name,
                 kp.jahrgang_id,
@@ -731,7 +731,19 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         JOIN users u ON eb.user_id = u.id
         LEFT JOIN users u_att ON eb.attendance_set_by = u_att.id
         LEFT JOIN users u_note ON eb.note_set_by = u_note.id
-        LEFT JOIN roles r ON u.role_id = r.id
+        -- DIE ROLLE IN DER GEMEINDE DES TERMINS (08.10.2026, Planung
+        -- mehrfach-konten): Hier stand u.role_id, die Rolle der
+        -- Stamm-Gemeinde. Wer die Gemeinde zusaetzlich betreut, stand mit
+        -- der Rolle von zuhause in der Liste -- daran haengen das Wort
+        -- "Leitung", die Trennung Konfi/Team und die Zaehler unten. Regel
+        -- wie ladeRolleInGemeinde (utils/orgMitglieder.js); wer der Gemeinde
+        -- nicht (mehr) angehoert, behaelt die Rolle am Konto. Die
+        -- Jahrgaenge einer Teamer:in oben zaehlen nur die DIESER Gemeinde.
+        LEFT JOIN user_organizations uo_ev
+          ON uo_ev.user_id = u.id AND uo_ev.organization_id = $2
+        LEFT JOIN roles r
+          ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id
+                         ELSE COALESCE(uo_ev.role_id, u.role_id) END
         LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
         LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
         LEFT JOIN event_timeslots et ON eb.timeslot_id = et.id

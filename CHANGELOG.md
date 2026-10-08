@@ -176,6 +176,19 @@ Versionsüberschrift.
 - In der Konfi-Liste der Leitung im Browser gibt es keinen Knopf „Punkte"
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
+- Wer in mehreren Gemeinden mitarbeitet, hat in jeder Gemeinde eine eigene
+  Funktionsbezeichnung, ein eigenes „Teamer:in seit" und eine eigene Sperre;
+  die Leitung einer weiteren Gemeinde kann Funktionsbezeichnung und Sperre
+  bei sich selbst setzen.
+- Sperrt eine Gemeinde eine Person, die auch anderswo mitarbeitet, gilt die
+  Sperre nur dort: Die Person meldet sich weiter an und arbeitet in ihren
+  anderen Gemeinden; erst wenn alle Gemeinden sie gesperrt haben, ist das
+  Konto gesperrt.
+- Wer in einer Gemeinde gesperrt ist, bekommt aus ihr keine Mitteilungen und
+  Chat-Nachrichten mehr aufs Handy; aus den anderen Gemeinden weiter.
+- Löscht die Leitung eine Konfi, deren Konto noch zu einer weiteren Gemeinde
+  gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
+
 ### Behoben
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
@@ -214,6 +227,21 @@ Versionsüberschrift.
   statt „Geschlossen".
 - Die Rückfrage „Alle bestätigen" für das Team ist wieder ein vollständiger
   Satz.
+
+- Eine Sperre wirkt sofort auf jedem Gerät; bisher konnte eine laufende
+  Sitzung bis zu 30 Sekunden weiterarbeiten.
+- Wer in einer weiteren Gemeinde mitarbeitet, steht in Teilnehmerlisten,
+  Chat-Nachrichten und Event-Chats dort mit der Rolle dieser Gemeinde, nicht
+  mit der aus der eigenen.
+- Teamer:innen aus einer anderen Gemeinde lassen sich als Urheber:in einer
+  Challenge wählen, und die Leitung öffnet ihre Detailansicht mit den Angaben
+  aus der eigenen Gemeinde.
+- Beim Bearbeiten einer Gemeinde steht die ganze Gemeindeleitung da, auch wer
+  sie über eine Einladung leitet.
+- Mitteilungen aus einer weiteren Gemeinde führen beim Antippen immer in diese
+  Gemeinde.
+- Wird einer Person eine Gemeinde entzogen, zeigt die App sofort Rolle und
+  Namen der Gemeinde, in die sie zurückwechselt.
 
 ### Sonstiges
 - Eine neue Installation bekommt als ersten Zugang ein Support-Konto ohne

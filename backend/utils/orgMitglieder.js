@@ -24,11 +24,244 @@
 // uo.role_id fuer die Zusatzzugehoerigkeit -- und NICHT pauschal ueber die
 // Rolle am Nutzerkonto.
 //
-// GESPERRTE UND GELOESCHTE KONTEN fallen hier schon raus. Fuer den Push
+// GESPERRTE UND GELOESCHTE KONTEN fallen hier schon raus -- seit dem
+// 08.10.2026 auch, wer nur in DIESER Gemeinde gesperrt ist
+// (user_organizations.is_active, Migration 196). Fuer den Push
 // filtert getTokensForUser das seit dem 28.08.2026 ohnehin zentral; fuer die
 // In-App-Mitteilungen und die E-Mail gab es diesen zentralen Filter nicht.
 
 const { abfragenBuendeln } = require('./abfragenBuendeln');
+
+// ============================================================================
+// KONTOFELDER JE GEMEINDE (08.10.2026, Migration 196; Simon, Entscheidungen
+// 5 bis 7 in docs/planung/mehrfach-konten.md)
+// ============================================================================
+//
+// Funktionsbezeichnung (role_title), "Teamer:in seit" (teamer_since) und die
+// Sperre (is_active) gelten je Gemeinde. Die Regel steht HIER; Routen lesen
+// und schreiben nur ueber diese Bausteine:
+//
+//   - Stamm-Gemeinde (users.organization_id): role_id, role_title und
+//     teamer_since stehen am Konto. Jede Aenderung schreibt Konto UND eine
+//     vorhandene Stamm-Zeile in user_organizations (Altbestand aus Migration
+//     101), damit beide Stellen nicht mehr auseinanderlaufen.
+//   - weitere Gemeinde: die Werte in ihrer Zeile in user_organizations.
+//   - Sperre: users.is_active = false sperrt das GANZE Konto -- die Anmeldung
+//     scheitert, wie bisher. user_organizations.is_active = false sperrt die
+//     Person nur in DIESER Gemeinde: Die Gemeinde taucht fuer sie nicht mehr
+//     auf (Liste, Wechsel, 403 beim Zugriff), die anderen bleiben. Fuer eine
+//     Sperre nur in der Stamm-Gemeinde wird deren Zeile bei Bedarf angelegt.
+//     Ist die Person danach in KEINER Gemeinde mehr frei, wird auch das Konto
+//     gesperrt -- dann scheitert die Anmeldung, und jede Stelle, die nur
+//     users.is_active kennt (ausgelieferte Apps, aeltere Abfragen), sieht die
+//     Sperre ebenfalls.
+//
+// Die Spalten am Konto bleiben: Ausgelieferte Apps (2.3.0) lesen die Felder
+// unter denselben Namen; die Routen liefern dort den Wert der aktiven
+// Gemeinde.
+
+/**
+ * SQL-Bedingung: Die Person (Alias `u`) ist in der Gemeinde `org` NICHT
+ * gesperrt. Fehlt die Zeile (Stamm-Gemeinde ohne Zeile), gilt sie als frei.
+ * Die Sperre des Kontos (users.is_active) prueft der Aufrufer selbst.
+ *
+ * @param {string} u    Alias der users-Tabelle
+ * @param {string} org  SQL-Ausdruck der Gemeinde (Parameter oder Spalte)
+ */
+function nichtGesperrtIn(u, org) {
+  return `NOT EXISTS (SELECT 1 FROM user_organizations ug_sperre
+                       WHERE ug_sperre.user_id = ${u}.id
+                         AND ug_sperre.organization_id = ${org}
+                         AND ug_sperre.is_active = false)`;
+}
+
+/**
+ * SQL-Bausteine fuer die Felder je Gemeinde. `join` haengt die Zeile der
+ * Gemeinde an (LEFT JOIN, Alias `g`), die Ausdruecke lesen danach den Wert
+ * DIESER Gemeinde: in der Stamm-Gemeinde vom Konto, sonst aus der Zeile.
+ *
+ * @param {string} org  SQL-Ausdruck der Gemeinde
+ * @param {object} [opt]
+ * @param {string} [opt.u='u']   Alias der users-Tabelle
+ * @param {string} [opt.g='ug']  Alias fuer die angehaengte Zeile
+ */
+function gemeindeFelderSql(org, { u = 'u', g = 'ug' } = {}) {
+  const stamm = `${u}.organization_id = ${org}`;
+  return {
+    join: `LEFT JOIN user_organizations ${g} ON ${g}.user_id = ${u}.id AND ${g}.organization_id = ${org}`,
+    role_title: `CASE WHEN ${stamm} THEN ${u}.role_title ELSE ${g}.role_title END`,
+    teamer_since: `CASE WHEN ${stamm} THEN ${u}.teamer_since ELSE ${g}.teamer_since END`,
+    is_active: `(COALESCE(${u}.is_active, true) AND COALESCE(${g}.is_active, true))`,
+  };
+}
+
+/**
+ * Alle Mitgliedschaften einer Person samt Feldern und Sperre je Gemeinde --
+ * die Grundlage fuer Anmeldung, Refresh, rbac.js und die Socket-Anmeldung.
+ * Die Stamm-Gemeinde steht vorn (Rolle am Konto, auch wenn
+ * user_organizations sie noch einmal fuehrt), die weiteren nach ihrer id.
+ * Geloeschte Konten liefern [].
+ *
+ * @returns {Promise<Array<{organization_id:number, is_primary:boolean,
+ *   role_id:number, role_name:string, role_display_name:string,
+ *   organization_name:string, organization_slug:string,
+ *   organization_active:boolean, role_title:string|null,
+ *   teamer_since:Date|null, gesperrt:boolean}>>}
+ */
+async function ladeMitgliedschaftenMitSperre(db, userId) {
+  const { rows } = await db.query(
+    `SELECT m.organization_id, m.is_primary, m.role_id,
+            r.name AS role_name, r.display_name AS role_display_name,
+            o.name AS organization_name, o.slug AS organization_slug,
+            COALESCE(o.is_active, true) AS organization_active,
+            m.role_title, m.teamer_since, NOT m.frei AS gesperrt
+       FROM (
+         SELECT u.organization_id, true AS is_primary, u.role_id,
+                u.role_title, u.teamer_since,
+                COALESCE(us.is_active, true) AS frei
+           FROM users u
+           LEFT JOIN user_organizations us
+                  ON us.user_id = u.id AND us.organization_id = u.organization_id
+          WHERE u.id = $1 AND u.organization_id IS NOT NULL AND u.deleted_at IS NULL
+         UNION ALL
+         SELECT uo.organization_id, false, uo.role_id, uo.role_title, uo.teamer_since, uo.is_active
+           FROM user_organizations uo
+           JOIN users u ON u.id = uo.user_id AND u.deleted_at IS NULL
+          WHERE uo.user_id = $1 AND uo.organization_id IS DISTINCT FROM u.organization_id
+       ) m
+       JOIN roles r ON r.id = m.role_id
+       JOIN organizations o ON o.id = m.organization_id
+      ORDER BY m.is_primary DESC, m.organization_id`,
+    [userId]
+  );
+  return rows;
+}
+
+/**
+ * Die Gemeinde, in der eine Anfrage arbeitet: die gewuenschte (Umschalter),
+ * sonst die Stamm-Gemeinde -- und ist die Person NUR dort gesperrt, die erste
+ * freie weitere Gemeinde (08.10.2026). So kommt eine Person, die ihre
+ * Stamm-Gemeinde gesperrt hat, nach der Anmeldung ohne Umschalten in ihre
+ * andere Gemeinde; auch mit der Store-App 2.3.0, die die aktive Gemeinde erst
+ * nach einem Wechsel mitschickt.
+ *
+ * @param {Array} mitgliedschaften  aus ladeMitgliedschaftenMitSperre
+ * @param {number|null} gewuenscht  Gemeinde aus Kopfzeile oder Token-Claim
+ * @returns {{gemeinde: object|null, grund: null|'kein_mitglied'|'gesperrt'|'keine_freie'}}
+ *   'kein_mitglied' / 'gesperrt': die gewuenschte Gemeinde geht nicht (403
+ *   wie beim Verlust einer Mitgliedschaft); 'keine_freie': ohne Wunsch gibt
+ *   es keine freie Gemeinde (gemeinde ist dann die Stamm-Gemeinde, falls es
+ *   eine gibt).
+ */
+function waehleGemeinde(mitgliedschaften, gewuenscht = null) {
+  if (Number.isInteger(gewuenscht)) {
+    const m = mitgliedschaften.find((x) => Number(x.organization_id) === gewuenscht);
+    if (!m) return { gemeinde: null, grund: 'kein_mitglied' };
+    if (m.gesperrt) return { gemeinde: null, grund: 'gesperrt' };
+    return { gemeinde: m, grund: null };
+  }
+  const stamm = mitgliedschaften.find((x) => x.is_primary);
+  if (stamm && !stamm.gesperrt) return { gemeinde: stamm, grund: null };
+  // Erste freie weitere Gemeinde, bevorzugt eine, die selbst nicht gesperrt ist.
+  const frei = mitgliedschaften.filter((x) => !x.gesperrt && !x.is_primary);
+  const ziel = frei.find((x) => x.organization_active) || frei[0];
+  if (ziel) return { gemeinde: ziel, grund: null };
+  return { gemeinde: stamm || null, grund: stamm ? 'keine_freie' : null };
+}
+
+/**
+ * Schreibt Felder einer Person in EINER Gemeinde -- die eine Stelle, an der
+ * Rolle, Funktionsbezeichnung, "Teamer:in seit" und Sperre je Gemeinde
+ * geschrieben werden (Entscheidungen 5 und 6). In der Transaktion des
+ * Aufrufers laufen lassen, wenn es eine gibt.
+ *
+ * @param {object} db  Pool oder Client
+ * @param {number|string} userId
+ * @param {number|string} organizationId  die Gemeinde, fuer die geschrieben wird
+ * @param {object} felder  nur gesetzte Schluessel werden geschrieben:
+ *   role_id, role_title, teamer_since ('heute' = heutiges Datum der
+ *   Datenbank), is_active
+ * @param {object} [opt]
+ * @param {boolean} [opt.ganzesKonto]  is_active fuer das ganze Konto
+ *   (Super-Admin): Konto und alle Mitgliedschaften
+ * @returns {Promise<{gefunden:boolean, stamm:boolean, kontoAktiv:boolean|null}>}
+ *   kontoAktiv: users.is_active nach dem Schreiben (null, wenn nicht beruehrt)
+ */
+async function schreibeGemeindeFelder(db, userId, organizationId, felder = {}, { ganzesKonto = false } = {}) {
+  const { rows: [konto] } = await db.query(
+    `SELECT u.organization_id,
+            EXISTS (SELECT 1 FROM user_organizations uo
+                     WHERE uo.user_id = u.id AND uo.organization_id = $2) AS hat_zeile
+       FROM users u WHERE u.id = $1 AND u.deleted_at IS NULL`,
+    [userId, organizationId]
+  );
+  if (!konto) return { gefunden: false, stamm: false, kontoAktiv: null };
+  const stamm = konto.organization_id != null && Number(konto.organization_id) === Number(organizationId);
+  if (!stamm && !konto.hat_zeile) return { gefunden: false, stamm: false, kontoAktiv: null };
+
+  const spalten = ['role_id', 'role_title', 'teamer_since'].filter((k) => felder[k] !== undefined);
+  if (spalten.length > 0) {
+    const params = [userId, organizationId];
+    const set = spalten.map((k) => {
+      if (k === 'teamer_since' && felder[k] === 'heute') return 'teamer_since = CURRENT_DATE';
+      params.push(felder[k]);
+      return `${k} = $${params.length}`;
+    }).join(', ');
+    if (stamm) {
+      await db.query(`UPDATE users SET ${set}, updated_at = NOW() WHERE id = $1 AND organization_id = $2`, params);
+    }
+    // Zeile der Gemeinde: weitere Gemeinde immer, Stamm-Gemeinde nur, wenn
+    // es die Zeile gibt (Altbestand) -- sie wird dafuer nicht angelegt.
+    await db.query(`UPDATE user_organizations SET ${set} WHERE user_id = $1 AND organization_id = $2`, params);
+  }
+
+  let kontoAktiv = null;
+  if (felder.is_active !== undefined && felder.is_active !== null) {
+    const aktiv = felder.is_active === true;
+    if (ganzesKonto) {
+      await db.query('UPDATE users SET is_active = $2, updated_at = NOW() WHERE id = $1', [userId, aktiv]);
+      await db.query('UPDATE user_organizations SET is_active = $2 WHERE user_id = $1', [userId, aktiv]);
+      kontoAktiv = aktiv;
+    } else if (aktiv) {
+      // Freigeben: diese Gemeinde und das Konto. Eine Sperre in anderen
+      // Gemeinden bleibt.
+      await db.query('UPDATE user_organizations SET is_active = true WHERE user_id = $1 AND organization_id = $2',
+        [userId, organizationId]);
+      await db.query('UPDATE users SET is_active = true, updated_at = NOW() WHERE id = $1', [userId]);
+      kontoAktiv = true;
+    } else {
+      if (stamm && !konto.hat_zeile) {
+        await db.query(
+          `INSERT INTO user_organizations (user_id, organization_id, role_id, role_title, teamer_since, is_active)
+           SELECT u.id, u.organization_id, u.role_id, u.role_title, u.teamer_since, false
+             FROM users u WHERE u.id = $1
+           ON CONFLICT (user_id, organization_id) DO UPDATE SET is_active = false`,
+          [userId]
+        );
+      } else {
+        await db.query('UPDATE user_organizations SET is_active = false WHERE user_id = $1 AND organization_id = $2',
+          [userId, organizationId]);
+      }
+      // Bleibt eine freie Gemeinde? Sonst ist das ganze Konto gesperrt.
+      const { rows: [frei] } = await db.query(
+        `SELECT (EXISTS (
+                   SELECT 1 FROM users u
+                    WHERE u.id = $1 AND u.organization_id IS NOT NULL
+                      AND ${nichtGesperrtIn('u', 'u.organization_id')})
+                 OR EXISTS (
+                   SELECT 1 FROM user_organizations uo JOIN users u ON u.id = uo.user_id
+                    WHERE uo.user_id = $1 AND uo.organization_id IS DISTINCT FROM u.organization_id
+                      AND uo.is_active = true)) AS bleibt`,
+        [userId]
+      );
+      if (!frei.bleibt) {
+        await db.query('UPDATE users SET is_active = false, updated_at = NOW() WHERE id = $1', [userId]);
+        kontoAktiv = false;
+      }
+    }
+  }
+  return { gefunden: true, stamm, kontoAktiv };
+}
 
 /**
  * @param {object} db
@@ -71,16 +304,23 @@ async function ladeMitgliederDerOrganisation(db, organizationId, rollen, { jahrg
      WHERE u.organization_id = $1
        AND r.name = ANY($2::text[])
        AND u.is_active = true
-       AND u.deleted_at IS NULL${jahrgangFilter}
+       AND u.deleted_at IS NULL
+       AND ${nichtGesperrtIn('u', '$1')}${jahrgangFilter}
     UNION
-    -- Zusatzzugehoerigkeit: Rolle aus user_organizations.role_id DIESER Org
+    -- Zusatzzugehoerigkeit: Rolle aus user_organizations.role_id DIESER Org.
+    -- Eine Stamm-Zeile (Altbestand aus Migration 101) zaehlt hier nicht: In
+    -- der Stamm-Gemeinde gilt die Rolle am Konto (08.10.2026, Planung
+    -- Mehrfach-Konten Punkt 5) -- sonst bekam eine herabgestufte Org-Leitung
+    -- ueber ihre alte Stamm-Zeile weiter Leitungs-Mitteilungen.
     SELECT u.id
       FROM user_organizations uo
       JOIN users u ON u.id = uo.user_id
       JOIN roles r ON r.id = uo.role_id
      WHERE uo.organization_id = $1
+       AND uo.organization_id IS DISTINCT FROM u.organization_id
        AND r.name = ANY($2::text[])
        AND u.is_active = true
+       AND uo.is_active = true
        AND u.deleted_at IS NULL${jahrgangFilter}
     `,
     params
@@ -163,14 +403,14 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
       SELECT m.user_id, m.organization_id, m.role_name, m.is_primary, m.org_aktiv
         FROM (
           SELECT u.id AS user_id, u.organization_id, r.name AS role_name, true AS is_primary,
-                 COALESCE(o.is_active, true) AS org_aktiv
+                 COALESCE(o.is_active, true) AND ${nichtGesperrtIn('u', 'u.organization_id')} AS org_aktiv
             FROM users u
             JOIN roles r ON r.id = u.role_id
             JOIN organizations o ON o.id = u.organization_id
            WHERE u.id = ANY($1::bigint[]) AND u.deleted_at IS NULL
           UNION ALL
           SELECT uo.user_id, uo.organization_id, r.name AS role_name, false AS is_primary,
-                 COALESCE(o.is_active, true) AS org_aktiv
+                 COALESCE(o.is_active, true) AND uo.is_active AS org_aktiv
             FROM user_organizations uo
             JOIN users u ON u.id = uo.user_id AND u.deleted_at IS NULL
             JOIN roles r ON r.id = uo.role_id
@@ -206,7 +446,10 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
     }
     const eintrag = jePerson.get(userId);
     if (z.is_primary) eintrag.stamm_organization_id = z.organization_id;
-    // Gesperrte Gemeinden fallen heraus (wie GET /auth/my-organizations).
+    // Gesperrte Gemeinden fallen heraus (wie GET /auth/my-organizations),
+    // ebenso Gemeinden, in denen nur die Person gesperrt ist (Migration 196,
+    // 08.10.2026): Sie sieht die Gemeinde nicht mehr, also zaehlt dort auch
+    // nichts fuer sie.
     // Fuehrt user_organizations die Stamm-Gemeinde doppelt, gewinnt die Rolle
     // am Nutzerkonto: Die Stamm-Zeile kommt durch die Sortierung zuerst.
     if (!z.org_aktiv || eintrag.gesehen.has(z.organization_id)) continue;
@@ -294,7 +537,8 @@ const STATISTIK_ROLLEN = ['konfi', 'teamer', 'admin', 'org_admin'];
  *     fuehrt user_organizations die Stamm-Gemeinde noch einmal, zaehlt die
  *     Person dort einmal, mit der Rolle am Konto;
  *   - geloeschte Konten fehlen; gesperrte stehen drin (is_active), wer nur
- *     aktive will, filtert darauf;
+ *     aktive will, filtert darauf -- is_active gilt je Gemeinde (Konto und
+ *     Mitgliedschaft, Migration 196);
  *   - Support-Konten OHNE Gemeinde fehlen, auch dort, wo sie Gast sind --
  *     sie gehoeren zum Betrieb, nicht zur Gemeinde. Ein Super-Admin-Konto
  *     MIT Gemeinde (Simons) steht da wie jedes Konto.
@@ -308,13 +552,14 @@ const MITGLIEDSCHAFTEN_SQL = `
     FROM (
       -- Stamm-Gemeinde: Rolle am Konto
       SELECT u.id AS user_id, u.organization_id, r.name AS rolle,
-             COALESCE(u.is_active, true) AS is_active, true AS stamm
+             COALESCE(u.is_active, true) AND ${nichtGesperrtIn('u', 'u.organization_id')} AS is_active,
+             true AS stamm
         FROM users u
         JOIN roles r ON r.id = u.role_id
        WHERE u.organization_id IS NOT NULL AND u.deleted_at IS NULL
       UNION ALL
-      -- weitere Gemeinden: Rolle DORT; Konten ohne Gemeinde nicht
-      SELECT u.id, uo.organization_id, r.name, COALESCE(u.is_active, true), false
+      -- weitere Gemeinden: Rolle und Sperre DORT; Konten ohne Gemeinde nicht
+      SELECT u.id, uo.organization_id, r.name, COALESCE(u.is_active, true) AND uo.is_active, false
         FROM user_organizations uo
         JOIN users u ON u.id = uo.user_id
         JOIN roles r ON r.id = uo.role_id
@@ -386,6 +631,11 @@ async function zaehleKontenJeGemeinde(db) {
 }
 
 module.exports = {
+  nichtGesperrtIn,
+  gemeindeFelderSql,
+  ladeMitgliedschaftenMitSperre,
+  waehleGemeinde,
+  schreibeGemeindeFelder,
   zaehleKontenJeGemeinde,
   MITGLIEDSCHAFTEN_SQL,
   aktiv30TageSql,

@@ -6,7 +6,9 @@ const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { waehleKacheln, waehleTeamerKacheln, teamerJahrIstLeer } = require('../utils/wrappedKacheln');
 const { waehleSegen } = require('../utils/wrappedSegen');
 const { seiteFuerKategorie, datumsFenster, orgHatSommerfreizeit, STAVANGER_VON, STAVANGER_BIS } = require('../utils/wrappedKategorien');
-const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { ladeMitgliederDerOrganisation, gemeindeFelderSql } = require('../utils/orgMitglieder');
+// "Teamer:in seit" der Gemeinde des Rueckblicks (Migration 196, 08.10.2026).
+const GF_SEIT = gemeindeFelderSql('$2');
 const { begrenztParallel } = require('../utils/begrenztParallel');
 
 // Wie viele Konfi-Snapshots gleichzeitig entstehen (Betrieb BF-06, 26.09.2026).
@@ -1618,8 +1620,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     let teamerBeginn = vorigesEnde || null;
     if (!teamerBeginn) {
       const { rows: [seitRow] } = await client.query(
-        `SELECT teamer_since FROM users WHERE id = $1`,
-        [userId]
+        `SELECT ${GF_SEIT.teamer_since} AS teamer_since FROM users u ${GF_SEIT.join} WHERE u.id = $1`,
+        [userId, orgId]
       );
       if (seitRow && seitRow.teamer_since) {
         teamerBeginn = seitRow.teamer_since;
@@ -1982,8 +1984,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
     // Jahre aktiv (teamer_since). BEWUSST EIN LEBENSZEITWERT -- aber gegen
     // das Zeitraum-Ende gerechnet, nicht gegen "jetzt" (siehe oben).
     const { rows: [userRow] } = await client.query(
-      `SELECT teamer_since FROM users WHERE id = $1`,
-      [userId]
+      `SELECT ${GF_SEIT.teamer_since} AS teamer_since FROM users u ${GF_SEIT.join} WHERE u.id = $1`,
+      [userId, orgId]
     );
     const teamerSeit = userRow && userRow.teamer_since ? userRow.teamer_since : null;
     const stichtag = new Date(`${zeitraumEnde}T00:00:00`).getTime();

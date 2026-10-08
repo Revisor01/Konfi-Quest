@@ -18,6 +18,7 @@
 // Er kommt aus derselben Abfrage, eine weitere gibt es nicht.
 const jwt = require('jsonwebtoken');
 const { Sammelzeile } = require('./sammelzeile');
+const { ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('./orgMitglieder');
 
 // Abgelehnte Tokens beim Verbindungsaufbau (01.10.2026): gebuendelt je
 // Viertelstunde statt eine Zeile je Versuch. Der haeufigste Grund ist
@@ -72,23 +73,26 @@ function socketAnmeldung(db, jwtSecret) {
       // Aktive Organisation aufloesen (Umschalter). Ohne das arbeitet der Socket
       // immer in der Primaer-Org — die Raum-Prüfungen (joinRoom) hätten
       // in einer Zweit-Gemeinde die falsche Organisation verglichen.
+      // Dieselbe Regel wie rbac.js (utils/orgMitglieder.js, waehleGemeinde;
+      // 08.10.2026): Eine Gemeinde, in der die Person gesperrt ist, geht
+      // nicht; ist sie nur in der Stamm-Gemeinde gesperrt, verbindet der
+      // Socket ohne Wunsch in die erste freie weitere Gemeinde.
       let orgId = nutzer.organization_id;
       let rolle = nutzer.role_name;
       const tokenOrg = decoded.active_organization_id ? parseInt(decoded.active_organization_id) : null;
+      const gewuenscht = Number.isInteger(tokenOrg) ? tokenOrg : null;
 
-      if (Number.isInteger(tokenOrg) && tokenOrg !== orgId) {
-        const { rows: [mitgliedschaft] } = await db.query(
-          `SELECT uo.organization_id, r.name AS role_name
-           FROM user_organizations uo
-           JOIN roles r ON uo.role_id = r.id
-           WHERE uo.user_id = $1 AND uo.organization_id = $2`,
-          [decoded.id, tokenOrg]
-        );
-        if (!mitgliedschaft) {
+      if (gewuenscht !== null || orgId !== null) {
+        const mitgliedschaften = await ladeMitgliedschaftenMitSperre(db, decoded.id);
+        const { gemeinde, grund } = waehleGemeinde(mitgliedschaften, gewuenscht);
+        if (grund === 'kein_mitglied' || grund === 'gesperrt') {
           return next(new Error('Kein Zugriff auf diese Gemeinde'));
         }
-        orgId = mitgliedschaft.organization_id;
-        rolle = mitgliedschaft.role_name;
+        if (!gemeinde || grund === 'keine_freie') {
+          return next(new Error('Invalid token'));
+        }
+        orgId = gemeinde.organization_id;
+        rolle = gemeinde.role_name;
       }
 
       socket.user = {
