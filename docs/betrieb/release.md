@@ -108,6 +108,22 @@ gh workflow run android-release.yml --ref main -f tracks=production -f productio
 Reihenfolge: erst die Testkanäle (Android `internal`, iOS TestFlight),
 Gerätetest, dann die Produktion.
 
+**Einreichen und Freigabe** (so bei 2.2.0 und 2.3.0):
+
+- iOS: in App Store Connect die Version anlegen, den Build zuordnen, als
+  „Neues in dieser Version" den iOS-Abschnitt der Store-Texte ohne die
+  `>`-Zeilen; Veröffentlichung „nach Freigabe automatisch". Nach der
+  Freigabe erscheint die Version ohne weiteren Handgriff.
+- Android: `production` mit Anteil `0.1`; den Anteil erst mit Simons Okay
+  auf 100 % heben, vorher Absturzberichte und Vitals der neuen Version
+  ansehen. „completed" in der Play-API heißt nicht, dass die Prüfung durch
+  ist — den Prüfstatus zeigt nur die Console.
+- Wird eine Version abgelehnt: Grund im Wortlaut an Simon, an App und Texten
+  nichts eigenmächtig ändern.
+
+Branches werden beim Merge eines Pull Requests automatisch gelöscht
+(Repo-Einstellung `delete_branch_on_merge`, seit 03.10.2026).
+
 ## 7. Tags
 
 - **Build-Tags setzen die Workflows selbst**: nach jedem erfolgreichen Upload

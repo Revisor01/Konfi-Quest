@@ -6,8 +6,20 @@ die Ansicht arbeitet:
 [docs/betrieb/support-ansicht.md](../../betrieb/support-ansicht.md). Erst
 **nach dem Deploy** des PRs „Web-Ansicht aller Bereiche und
 Support-Vorgänge" — vorher gibt es die Vorgänge nicht (Migration 195).
-Baut auf [Auftrag 15](15-support-probelauf.md) auf: Probe-Anfrage 1 und die
-Probe-Mails von dort liegen noch und werden jetzt zu Vorgängen.
+Baut auf dem Probelauf vom 03.10.2026 auf (Auftrag 15, in diesem Auftrag
+aufgegangen; Messwerte in der Git-Historie, `git show
+8ef310f3:docs/auftraege/lokaler-agent/15-support-probelauf.md`). Von dort
+liegen noch und werden jetzt zu Vorgängen:
+
+- **Probe-Anfrage 1** an moin@ (Gemeinde „Probe – bitte nicht bearbeiten"),
+  mit Antwort aus der Support-Ansicht und Antwort aus dem Mailprogramm.
+- **Eine Probe-Mail an support@** von einer Adresse ohne Konto, der Gemeinde
+  4 zugeordnet.
+- **Das Probe-Postfach des Betriebs**, eigens für den Probelauf angelegt; es
+  dient als Kontaktadresse und wird nach Schritt 6 gelöscht.
+- **Interne Gemeinden** 4 („Test & Demo (App-Review)"), 14 und 15
+  (`organizations.intern = true`), siehe
+  [betrieb/support-ansicht.md](../../betrieb/support-ansicht.md#interne-gemeinden).
 
 > **Die Konten `review-*` und `google-test-*` nicht benutzen** — weder zum
 > Anmelden noch als Absender. Keine Adressen, Namen oder Passwörter ins Repo
@@ -32,8 +44,8 @@ Probe-Mails von dort liegen noch und werden jetzt zu Vorgängen.
 
 - [ ] **2. Die Probe-Anfrage als Vorgang.** In der Support-Ansicht unter
       „Vorgänge": Anfrage 1 steht als Vorgang der Art „Neue Gemeinde" mit
-      ihren Mails im Verlauf; der Schriftwechsel mit Gemeinde 4 aus Auftrag
-      15 (7b) steht als eigener Vorgang. Aus dem Vorgang der Anfrage
+      ihren Mails im Verlauf; der Schriftwechsel mit Gemeinde 4 (die
+      zugeordnete Probe-Mail von oben) steht als eigener Vorgang. Aus dem Vorgang der Anfrage
       antworten: Der Betreff trägt jetzt `[Vorgang N]`, die Mail geht von
       moin@. Im Mailprogramm darauf antworten; nach höchstens fünf Minuten
       steht die Antwort im Verlauf, mit roter Zahl an „Vorgänge".
@@ -43,7 +55,7 @@ Probe-Mails von dort liegen noch und werden jetzt zu Vorgängen.
 
 - [ ] **3. Probe-Anliegen über das Support-Formular.** Auf der Homepage unter
       „Hilfe und Support" (`#support`) ausfüllen: Gemeinde „Probe – bitte
-      nicht bearbeiten", das Probe-Postfach des Betriebs aus Auftrag 15, Art
+      nicht bearbeiten", das Probe-Postfach des Betriebs, Art
       „Frage zur Bedienung", Bereich „Chat", Betreff „Probe". Dann:
       - die Seite dankt; die Bestätigung kommt von support@ mit
         `[Vorgang N]` im Betreff und nennt nur die Nummer;
@@ -63,12 +75,13 @@ Probe-Mails von dort liegen noch und werden jetzt zu Vorgängen.
 
       Ins Ergebnis: je Mail, wo sie gelandet ist.
 
-- [ ] **5. Mail von der Adresse eines Leitungskontos.** Simon, 06.10.2026,
-      zu Auftrag 15, 7a: „leg es an oder besser nutze Review org". In der
+- [ ] **5. Mail von der Adresse eines Leitungskontos.** Im Probelauf vom
+      03.10.2026 offen geblieben: Kein Leitungskonto mit genau einer Gemeinde
+      hatte eine Adresse, die der Betrieb bedienen kann. Simon, 06.10.2026:
+      „leg es an oder besser nutze Review org". In der
       Gemeinde 4 („Test & Demo (App-Review)", intern) ein Konto anlegen:
       - Rolle **Leitung**, ohne Jahrgang, Name „Support-Probe";
-      - E-Mail-Adresse: das Probe-Postfach des Betriebs aus Auftrag 15
-        (Schritt 6);
+      - E-Mail-Adresse: das Probe-Postfach des Betriebs;
       - es gehört **nur** der Gemeinde 4, keiner weiteren;
       - das Passwort zufällig und nirgends notiert, das Konto meldet sich nie
         an.
@@ -91,9 +104,9 @@ Probe-Mails von dort liegen noch und werden jetzt zu Vorgängen.
       Ins Ergebnis: Kennung des Kontos, Nummer des Vorgangs, je Teilschritt
       Ja/Nein.
 
-- [ ] **6. Liegen lassen.** Die Probe-Vorgänge, Probe-Mails und das Konto
-      aus Schritt 5 bleiben stehen, bis Simon sie angesehen hat. Danach die
-      Vorgänge auf „Erledigt" setzen: Sie kommen ins Archiv; der Vorgang der
+- [ ] **6. Liegen lassen.** Die Probe-Anfrage 1, die Probe-Vorgänge,
+      Probe-Mails und das Konto aus Schritt 5 bleiben stehen, bis Simon sie
+      angesehen hat. Danach die Vorgänge auf „Erledigt" setzen: Sie kommen ins Archiv; der Vorgang der
       Probe-Anfrage gilt dann als abgelehnt und geht nach 180 Tagen, die
       anderen nach 730 Tagen. Löschen nur auf Simons Wort; das Konto aus
       Schritt 5 geht mit dem Probe-Postfach.

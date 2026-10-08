@@ -11,11 +11,11 @@ Wie Doku zusammen mit dem Code geändert wird, steht in
 | [handbuch/](handbuch/) | Anwenderhandbuch, ein Kapitel je Datei; Einstieg [00-start.md](handbuch/00-start.md) | Gemeinden: Konfis, Team, Leitung |
 | [api/](api/) | API-Doku als OpenAPI 3.1, eine Datei je Bereich; dazu [ABRISS.md](api/ABRISS.md), welche Routen alte App-Versionen noch rufen und wann sie wegdürfen | Entwicklung |
 | [architektur.md](architektur.md) | wie die Teile zusammenhängen: Gemeinden, Rollen, Backend, Datenbank, Push, Apps, Deploy | Entwicklung, Betrieb |
-| [offene-befunde.md](offene-befunde.md) | **die eine Liste für alles Offene**: Fehler, Entscheidungen bei Simon, Geplantes, Zurückgestelltes | alle |
+| [offene-befunde.md](offene-befunde.md) | **die eine Liste für alles Offene**: oben die Arbeitsliste (in Arbeit, wartet, als Nächstes, später, erledigt seit dem letzten Release), darunter Fehler, Entscheidungen bei Simon, Geplantes, Zurückgestelltes | alle |
 | [planung/](planung/) | was als Nächstes gebaut wird: [Umfang von 2.4.0](planung/2.4.0.md), [Web-Version mit Support-Ansicht](planung/web-version.md), [„darf freigeben"](planung/darf-freigeben.md), [Mehrfach-Konten](planung/mehrfach-konten.md), [Feature-Empfehlungen](planung/feature-empfehlungen.md) | Simon, Entwicklung |
 | [betrieb/](betrieb/) | [Sicherung und Wiederherstellung](betrieb/sicherung.md), [Gemeinde anlegen](betrieb/gemeinde-anlegen.md), [Support-Konto anlegen](betrieb/support-konto.md), [Support-Ansicht benutzen: Anfragen, Struktur, Konten](betrieb/support-ansicht.md), [wiederkehrende Routinen](betrieb/routinen.md), [Release](betrieb/release.md) | Betrieb |
 | [auftraege/lokaler-agent/](auftraege/lokaler-agent/) | aktuelle Aufträge an den lokalen Agenten mit Server- und Konsolenzugang | lokaler Agent |
-| [wissen/](wissen/) | Hintergrund: [Gestaltung](wissen/gestaltung.md), [Dunkelmodus prüfen](wissen/dunkelmodus-pruefen.md) | Entwicklung |
+| [wissen/](wissen/) | Hintergrund: [Gestaltung](wissen/gestaltung.md), [Dunkelmodus prüfen](wissen/dunkelmodus-pruefen.md), [lokal entwickeln: Fallen](wissen/lokal-entwickeln.md) | Entwicklung |
 | [messung/umami.md](messung/umami.md) | anonyme Nutzungsmessung: was gemessen wird, was nicht, offene Vorschläge | Simon, Entwicklung |
 | [screenshots/](screenshots/) | Bildschirmfotos, je Gerät ein Ordner (`iphone/`, `play/`); Quelle für Handbuch und Store-Einträge | Handbuch, Stores |
 | [store-texte-2.3.0.md](store-texte-2.3.0.md) | Texte für App Store und Google Play zur aktuellen Version | Release |
@@ -104,6 +104,10 @@ Ebenfalls im Stand `dac246ebcbb0a190ab1e53646c1b1d61105ff424`:
   Rückspielprobe, Token-Schlüssel) mit allen Messwerten. Code-Kommentare nennen sie als
   „Auftrag 05" usw. Was davon regelmäßig wiederkommt, steht in
   [betrieb/routinen.md](betrieb/routinen.md).
+- **Aufträge 13–15** (02.–08.10.2026: Store-Freigabe 2.3.0 und alte
+  Branches, Postfächer für die Support-Ansicht, Support-Probelauf) — 14 im Stand
+  `48f5c197^`, 13 und 15 im Stand `8ef310f3`; der offene Rest von 15 steht in
+  [Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md).
 - **Die alte Liste `docs/offene-befunde.md`** mit den Nummern 1–16
   (02.09.–02.10.2026). Verweise wie „offene-befunde Nr. 3" meinen diese
   Fassung.

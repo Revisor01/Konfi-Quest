@@ -394,7 +394,9 @@ unter Vorgänge, weil der Support sie bearbeitet; über ihre Kennung (`/admin/or
 `GET`/`PUT /api/organizations/:id`) bleiben sie erreichbar, ihre Konten
 melden sich an wie bisher. Einen Schalter dafür gibt es bewusst nicht:
 Gesetzt wird die Spalte nur direkt in der Datenbank, mit Sicherung vorher —
-das erste Mal mit [Auftrag 15](../auftraege/lokaler-agent/15-support-probelauf.md).
+das erste Mal am 03.10.2026 für die Gemeinden 4, 14 und 15 (Auftrag 15,
+heute in [Auftrag 16](../auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md)
+aufgegangen).
 
 ## Aufbewahrung
 
