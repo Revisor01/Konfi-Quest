@@ -449,6 +449,23 @@ if (hintergrundJobsErlaubt) {
 }
 
 // ====================================================================
+// NACHLAUF-WARTESCHLANGE (Arbeit nach der Antwort)
+// ====================================================================
+
+// Routen reihen Push, Postfach und E-Mail nach der Antwort als Auftrag in
+// nachlauf_auftraege ein und stossen ihn sofort selbst an
+// (utils/warteschlange.js, Migration 202). Der Arbeiter holt nach, was
+// liegen blieb: Auftraege eines beendeten Prozesses und Wiederholungen nach
+// einem Fehler. Er laeuft auf JEDER Replica, nicht nur auf dem Cron-Leader --
+// SKIP LOCKED verhindert doppeltes Annehmen, und faellt eine Replica beim
+// Deploy weg, arbeitet die andere sofort weiter, statt erst die Leader-Wahl
+// abzuwarten. RUN_BACKGROUND_JOBS='false' (backend-test an der
+// Produktions-Datenbank): kein Arbeiter -- diese Instanz fuehrt nur aus, was
+// sie selbst einreiht, und nimmt keine fremden Auftraege an.
+const warteschlange = require('./utils/warteschlange');
+const nachlaufArbeiter = hintergrundJobsErlaubt ? warteschlange.starteArbeiter(db) : null;
+
+// ====================================================================
 // SERVER STARTUP
 // ====================================================================
 
@@ -559,6 +576,24 @@ const gracefulShutdown = async (signal, exitCode = 0) => {
     console.warn('HTTP-Server und Socket.IO geschlossen.');
   } catch (err) {
     console.error('Fehler beim Schliessen von HTTP-Server/Socket.IO:', err.message);
+  }
+
+  // (3b) Nachlauf-Warteschlange: Nichts Neues mehr annehmen, kurz auf die
+  // angenommenen Auftraege warten (NACHLAUF_STOPP_MS, Vorgabe 3 s), den Rest
+  // an die Schlange zurueckgeben -- die andere Replica macht weiter. Erst nach
+  // (3), damit auch Auftraege der zuletzt beantworteten Anfragen dazugehoeren.
+  // Gewartet wird hoechstens bis eine Sekunde vor dem Notausstieg: Mit dem
+  // Drain (6 s in Produktion) ist das Budget von 10 s sonst schnell weg, und
+  // das Zurueckgeben muss noch durchkommen. Kommt es nicht durch, holt die
+  // andere Replica den Auftrag nach Ablauf seiner Sperre (2 min).
+  try {
+    if (nachlaufArbeiter) {
+      const rest = SHUTDOWN_TIMEOUT_MS - (Date.now() - begonnen) - 1000;
+      const wartenMs = Math.max(0, Math.min(parseInt(process.env.NACHLAUF_STOPP_MS || '3000', 10), rest));
+      await nachlaufArbeiter.stopp({ wartenMs });
+    }
+  } catch (err) {
+    console.error('Fehler beim Anhalten der Nachlauf-Warteschlange:', err.message);
   }
 
   // (4) Pools -- jetzt haelt niemand mehr einen Client.

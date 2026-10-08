@@ -30,8 +30,7 @@ const { invalidateUserCache } = require('../middleware/rbac');
 const { validatePassword } = require('../utils/passwordUtils');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
-const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
 const { MELDUNG_LETZTER, bleibtEinSuperAdmin, systemrolleSuperAdmin } = require('../utils/superAdminKonten');
 const liveUpdate = require('../utils/liveUpdate');
 
@@ -256,8 +255,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin }) => {
     liveUpdate.disconnectUserSockets(id);
     await kontoDateienLoeschen(ergebnis?.dateien);
     res.json({ message: 'Support-Konto gelöscht' });
-    nachAntwort(req, () => meldeNachKontoLoeschung(db, ergebnis),
-      'DELETE /organizations/support-konten/:id (Meldungen nach Kontoloeschung)');
+    meldeNachKontoLoeschungEinreihen(db, ergebnis,
+      { req, bezeichnung: 'DELETE /organizations/support-konten/:id (Meldungen nach Kontoloeschung)' });
   });
 
   return router;

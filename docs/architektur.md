@@ -46,6 +46,15 @@ absichtlich nicht hier.
   fällt sie aus, übernimmt die andere im nächsten Takt.
   `RUN_BACKGROUND_JOBS=false` heißt „nie" (Test-Backend). Sichtbar in
   `GET /api/status` (`cron_leader`).
+- **Arbeit nach der Antwort.** Push, Postfach-Eintrag und E-Mail nach einer
+  Änderung legt die Route als Auftrag in die Tabelle `nachlauf_auftraege`
+  (Art und Parameter als JSON) und stößt ihn sofort selbst an
+  (`backend/utils/warteschlange.js`). Ein Arbeiter auf jeder Replica holt
+  nach, was liegen blieb — Aufträge eines beendeten Prozesses, Wiederholungen
+  nach Fehlern —; `FOR UPDATE SKIP LOCKED` verhindert, dass zwei Replicas
+  denselben Auftrag annehmen. Live-Updates bleiben im Prozess
+  (`backend/utils/nachAntwort.js`). Betrieb:
+  [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange).
 - **Test-Backend** `backend-test` mit eigenem Hostnamen und derselben
   Datenbank, für TestFlight- und Testbuilds; nimmt nicht an der Leader-Wahl
   teil.

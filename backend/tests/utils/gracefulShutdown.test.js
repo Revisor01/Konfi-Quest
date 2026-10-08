@@ -175,4 +175,42 @@ describe('Graceful Shutdown von server.js', () => {
     expect(dauerMs).toBeGreaterThanOrEqual(1500);
     expect(dauerMs).toBeLessThan(4500);
   }, 45000);
+
+  // Nachlauf-Warteschlange (utils/warteschlange.js): Ein Auftrag, den dieser
+  // Prozess angenommen hat und beim Stopp nicht mehr fertig bekommt, geht
+  // zurueck in die Schlange -- sonst laege er bis zum Ablauf seiner Sperre
+  // (2 min), bevor die andere Replica ihn sieht. Fremde Auftraege bleiben
+  // unberuehrt.
+  it('gibt beim Stopp angenommene Nachlauf-Auftraege an die Schlange zurueck, fremde bleiben', async () => {
+    const os = require('os');
+    const { Pool } = require('pg');
+    const pool = new Pool({ connectionString: TEST_DB_URL });
+    try {
+      server = await starteServer();
+      const ich = `${os.hostname()}:${server.kind.pid}`;
+      const { rows: [eigener] } = await pool.query(
+        `INSERT INTO nachlauf_auftraege (art, status, versuche, gesperrt_von, gesperrt_bis, bezeichnung)
+         VALUES ('art_aus_neuerem_stand', 'laeuft', 1, $1, NOW() + INTERVAL '2 minutes', 'shutdown-eigen') RETURNING id`,
+        [ich]);
+      const { rows: [fremder] } = await pool.query(
+        `INSERT INTO nachlauf_auftraege (art, status, versuche, gesperrt_von, gesperrt_bis, bezeichnung)
+         VALUES ('art_aus_neuerem_stand', 'laeuft', 1, 'andere-replica:1', NOW() + INTERVAL '2 minutes', 'shutdown-fremd') RETURNING id`);
+
+      const { code } = await server.stoppe();
+      if (code !== 0) console.log(server.text());
+      expect(code).toBe(0);
+      expect(server.text()).toContain('Nachlauf: 1 angefangene Auftraege an die Schlange zurueckgegeben.');
+
+      const { rows } = await pool.query(
+        'SELECT id, status, versuche, gesperrt_von FROM nachlauf_auftraege WHERE id = ANY($1) ORDER BY id',
+        [[eigener.id, fremder.id]]);
+      expect(rows).toEqual([
+        { id: eigener.id, status: 'offen', versuche: 0, gesperrt_von: null },
+        { id: fremder.id, status: 'laeuft', versuche: 1, gesperrt_von: 'andere-replica:1' },
+      ]);
+    } finally {
+      await pool.query("DELETE FROM nachlauf_auftraege WHERE bezeichnung LIKE 'shutdown-%'").catch(() => {});
+      await pool.end();
+    }
+  }, 45000);
 });

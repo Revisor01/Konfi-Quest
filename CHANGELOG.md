@@ -177,6 +177,11 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Mitteilungen gehen bei einem Update des Servers nicht mehr verloren: Push,
+  Postfach-Eintrag und E-Mail nach einer Änderung (etwa einer genehmigten
+  Aktivität, einer Anmeldung oder einer neuen Chat-Nachricht) kommen auch
+  dann an, wenn der Server direkt danach neu startet, und werden bei einer
+  Störung später noch einmal versucht — ohne doppelt zu kommen.
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
   oder neu lud.

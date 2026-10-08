@@ -52,7 +52,7 @@ const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { formularGrenzen, honigtopf } = require('../utils/oeffentlicheGrenzen');
 const { vorgangFuerAnfrage } = require('../utils/supportVorgaenge');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
 const { aktiveSuperAdminAdressen } = require('../utils/superAdminKonten');
 const emailService = require('../services/emailService');
 const { LIZENZ_SCHLUESSEL } = require('../utils/lizenzen');
@@ -98,6 +98,36 @@ const zahlFeld = (feld) => body(feld)
   .optional({ values: 'falsy' })
   .isInt({ min: 0, max: ZAHL_MAX }).withMessage(`Eine ganze Zahl von 0 bis ${ZAHL_MAX.toLocaleString('de-DE')}`)
   .toInt();
+
+// Mails nach einer Anfrage: Bestaetigung an die anfragende Adresse, Hinweis
+// an jedes aktive Super-Admin-Konto. Protokolliert wird nur der Fehlercode,
+// keine Adresse. Scheitert die Bestaetigung, wird sie spaeter wiederholt;
+// die Hinweise bilden einen Schritt und werden -- wie bisher -- einzeln
+// gemeldet, aber nicht wiederholt (sonst bekaemen die uebrigen sie doppelt).
+registriereArt('anfrage_eingegangen', async (db, p, k) => {
+  const { anfrage } = p;
+  await k.schritt('bestaetigung', async () => {
+    try {
+      await emailService.sendAnfrageBestaetigungEmail(anfrage.email, { protokoll: `Anfrage ${anfrage.id}` });
+    } catch (err) {
+      console.error('Gemeinde-Anfrage %d: Bestätigung nicht versandt (%s)', anfrage.id, err.code || 'ohne Code');
+      // Ohne cause: Der Versandfehler nennt Adressen; Protokoll und Tabelle
+      // bekommen nur den Code.
+      // eslint-disable-next-line preserve-caught-error
+      throw new Error(`Bestätigung nicht versandt (${err.code || 'ohne Code'})`);
+    }
+  });
+  await k.schritt('hinweise', async () => {
+    const empfaenger = await aktiveSuperAdminAdressen(db);
+    for (const admin of empfaenger) {
+      try {
+        await emailService.sendAnfrageHinweisEmail(admin.email, admin.display_name, anfrage);
+      } catch (err) {
+        console.error('Gemeinde-Anfrage %d: Hinweis an ein Super-Admin-Konto nicht versandt (%s)', anfrage.id, err.code || 'ohne Code');
+      }
+    }
+  });
+});
 
 module.exports = (db) => {
   const router = express.Router();
@@ -157,22 +187,17 @@ module.exports = (db) => {
     console.log('Gemeinde-Anfrage %d eingegangen', anfrage.id);
     res.status(201).json(OK);
 
-    nachAntwort(req, async () => {
-      const kennung = `Anfrage ${anfrage.id}`;
-      try {
-        await emailService.sendAnfrageBestaetigungEmail(anfrage.email, { protokoll: kennung });
-      } catch (err) {
-        console.error('Gemeinde-Anfrage %d: Bestätigung nicht versandt (%s)', anfrage.id, err.code || 'ohne Code');
-      }
-      const empfaenger = await aktiveSuperAdminAdressen(db);
-      for (const admin of empfaenger) {
-        try {
-          await emailService.sendAnfrageHinweisEmail(admin.email, admin.display_name, anfrage);
-        } catch (err) {
-          console.error('Gemeinde-Anfrage %d: Hinweis an ein Super-Admin-Konto nicht versandt (%s)', anfrage.id, err.code || 'ohne Code');
-        }
-      }
-    }, 'POST /anfragen (Mails)');
+    // Als Auftrag der dauerhaften Warteschlange (Art 'anfrage_eingegangen'
+    // oben): Ein Neustart direkt nach der Antwort verliert die Mails nicht.
+    einreihen(db, 'anfrage_eingegangen', {
+      anfrage: {
+        id: anfrage.id,
+        gemeinde: anfrage.gemeinde,
+        kirchenkreis: anfrage.kirchenkreis,
+        landeskirche: anfrage.landeskirche,
+        email: anfrage.email,
+      },
+    }, { req, bezeichnung: 'POST /anfragen (Mails)' });
   });
 
   return router;

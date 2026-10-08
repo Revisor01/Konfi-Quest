@@ -8,9 +8,73 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { bucheTermin, zaehleBestaetigte, promoteFromWaitlist, pruefeKonfiStorno } = require('../../utils/bookingUtils');
 const { removeFromEventChat, addToEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../../utils/warteschlange');
 // Empfaenger der Buchungs- und Abmelde-Meldungen: die Leitung, die das Event
 // sieht (27.09.2026, Regel in utils/terminLeitungSicht.js).
 const { ladeLeitungZumTermin } = require('../../utils/terminLeitungSicht');
+
+// PUSHES NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
+// (utils/warteschlange.js): ueberleben einen Neustart direkt nach der
+// Antwort; je Push ein Schritt, eine Wiederholung sendet nichts zweimal.
+// Live-Updates bleiben bei nachAntwort -- sie sind fluechtig.
+
+// POST /events/:id/book (Teamer:in): an die Leitung, die das Event sieht
+// (27.09.2026, utils/terminLeitungSicht.js; vorher jeder Admin der
+// Gemeinde, BF-01).
+registriereArt('teamer_termin_gebucht', async (db, p, k) => {
+  await k.schritt('push_leitung', async () => {
+    const empfaenger = await ladeLeitungZumTermin(db, p.eventId, { ausser: p.userId });
+    await PushService.sendTeamerEventBookingToLeadership(
+      db, p.organizationId, empfaenger, p.displayName, p.eventName, p.status, p.eventId, p.userId
+    );
+  });
+});
+
+// DELETE /events/:id/book: Mitteilungen nach dem Storno.
+registriereArt('termin_storniert', async (db, p, k) => {
+  // Push an die Leitung, die das Event sieht (27.09.2026,
+  // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde,
+  // BF-01).
+  if (p.isTeamer) {
+    await k.schritt('push_leitung_teamer', async () => {
+      const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [p.eventId]);
+      const empfaenger = await ladeLeitungZumTermin(db, p.eventId, { ausser: p.userId });
+      await PushService.sendTeamerEventCancellationToLeadership(
+        db, p.organizationId, empfaenger, p.displayName,
+        eventInfo ? eventInfo.name : 'Event', p.eventId, null, p.userId
+      );
+    });
+  }
+
+  // KONFI-STORNO MELDET SICH WIE DIE ABMELDUNG (27.09.2026, Audit
+  // wer-bekommt-was BF-18). Die App meldet Konfis ueber DELETE
+  // /konfi/events/:id/register ab (konfi.js); dieser Weg ist fuer
+  // Konfis nur ueber die Schnittstelle erreichbar -- keine App-Fassung
+  // ruft ihn (geprueft 1.5.3 bis 2.2.0 und HEAD). Gesperrt wird er
+  // nicht: Seit dem 26.09.2026 gelten hier dieselben Regeln
+  // (pruefeKonfiStorno) und dasselbe Protokoll (event_unregistrations)
+  // wie dort, und die Abmeldung steht damit in der Liste der Leitung.
+  // Es fehlte nur die Mitteilung -- jetzt dieselbe wie auf dem
+  // regulaeren Weg: Bestaetigung an die Konfi, "Event-Abmeldung" samt
+  // Grund an die Leitung, die das Event sieht.
+  if (p.isKonfi) {
+    const { rows: [eventInfo] } = await db.query('SELECT name FROM events WHERE id = $1', [p.eventId]);
+    const eventName = eventInfo ? eventInfo.name : 'Event';
+    await k.schritt('push_konfi', () => PushService.sendEventUnregisteredToKonfi(db, p.userId, eventName, p.eventId));
+    await k.schritt('push_leitung_konfi', async () => {
+      const empfaenger = await ladeLeitungZumTermin(db, p.eventId);
+      // Mit konfi_id (29.09.2026): Ohne sie blieb die Mitteilung mit dem
+      // Namen der Konfi nach deren Kontoloeschung im Postfach der Leitung
+      // stehen (loescheMitteilungenUeberPerson findet sie ueber die
+      // Kennung). Alle uebrigen Aufrufer gaben sie schon mit.
+      await PushService.sendEventUnregistrationToLeadership(
+        db, p.organizationId, empfaenger,
+        p.displayName || 'Ein Konfi', eventName,
+        p.reason, p.eventId, p.userId
+      );
+    });
+  }
+});
 
 module.exports = (db, rbacVerifier) => {
   const router = express.Router();
@@ -80,12 +144,14 @@ module.exports = (db, rbacVerifier) => {
 
       // An die Leitung, die das Event sieht (27.09.2026,
       // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde, BF-01).
-      nachAntwort(req, async () => {
-        const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: userId });
-        await PushService.sendTeamerEventBookingToLeadership(
-          db, req.user.organization_id, empfaenger, req.user.display_name, event.name, status, eventId, userId
-        );
-      }, 'Push nach Teamer-Buchung');
+      einreihen(db, 'teamer_termin_gebucht', {
+        eventId,
+        userId,
+        organizationId: req.user.organization_id,
+        displayName: req.user.display_name,
+        eventName: event.name,
+        status,
+      }, { req, bezeichnung: 'Push nach Teamer-Buchung' });
 
       // Bestaetigung an die Teamer:in selbst (analog Konfi-Anmeldung)
       try {
@@ -288,53 +354,19 @@ module.exports = (db, rbacVerifier) => {
         liveUpdate.sendToUser(userType, userId, 'events', 'update', { eventId, action: 'canceled' });
         liveUpdate.sendToOrgAdmins(req.user.organization_id, 'events', 'update', { eventId, action: 'cancellation' });
 
-        // Push an die Leitung, die das Event sieht (27.09.2026,
-        // utils/terminLeitungSicht.js; vorher jeder Admin der Gemeinde,
-        // BF-01).
-        if (isTeamer) {
-          try {
-            const { rows: [eventInfo] } = await db.query("SELECT name FROM events WHERE id = $1", [eventId]);
-            const empfaenger = await ladeLeitungZumTermin(db, eventId, { ausser: userId });
-            await PushService.sendTeamerEventCancellationToLeadership(
-              db, req.user.organization_id, empfaenger, req.user.display_name,
-              eventInfo ? eventInfo.name : 'Event', eventId, null, userId
-            );
-          } catch (pushErr) {
-            console.error('Push notification failed for teamer cancellation:', pushErr);
-          }
-        }
+      }, 'DELETE /events/:eventId/book (Live-Update)');
 
-        // KONFI-STORNO MELDET SICH WIE DIE ABMELDUNG (27.09.2026, Audit
-        // wer-bekommt-was BF-18). Die App meldet Konfis ueber DELETE
-        // /konfi/events/:id/register ab (konfi.js); dieser Weg ist fuer
-        // Konfis nur ueber die Schnittstelle erreichbar -- keine App-Fassung
-        // ruft ihn (geprueft 1.5.3 bis 2.2.0 und HEAD). Gesperrt wird er
-        // nicht: Seit dem 26.09.2026 gelten hier dieselben Regeln
-        // (pruefeKonfiStorno) und dasselbe Protokoll (event_unregistrations)
-        // wie dort, und die Abmeldung steht damit in der Liste der Leitung.
-        // Es fehlte nur die Mitteilung -- jetzt dieselbe wie auf dem
-        // regulaeren Weg: Bestaetigung an die Konfi, "Event-Abmeldung" samt
-        // Grund an die Leitung, die das Event sieht.
-        if (isKonfi) {
-          const { rows: [eventInfo] } = await db.query('SELECT name FROM events WHERE id = $1', [eventId]);
-          const eventName = eventInfo ? eventInfo.name : 'Event';
-          try {
-            await PushService.sendEventUnregisteredToKonfi(db, userId, eventName, eventId);
-          } catch (pushErr) {
-            console.error('Push notification failed for konfi cancellation:', pushErr);
-          }
-          const empfaenger = await ladeLeitungZumTermin(db, eventId);
-          // Mit konfi_id (29.09.2026): Ohne sie blieb die Mitteilung mit dem
-          // Namen der Konfi nach deren Kontoloeschung im Postfach der Leitung
-          // stehen (loescheMitteilungenUeberPerson findet sie ueber die
-          // Kennung). Alle uebrigen Aufrufer gaben sie schon mit.
-          await PushService.sendEventUnregistrationToLeadership(
-            db, req.user.organization_id, empfaenger,
-            req.user.display_name || 'Ein Konfi', eventName,
-            (req.body && req.body.reason) || null, eventId, userId
-          );
-        }
-      }, 'DELETE /events/:eventId/book');
+      // Pushes als Auftrag der dauerhaften Warteschlange (Art
+      // 'termin_storniert' oben).
+      einreihen(db, 'termin_storniert', {
+        eventId,
+        userId,
+        isTeamer: Boolean(isTeamer),
+        isKonfi: Boolean(isKonfi),
+        organizationId: req.user.organization_id,
+        displayName: req.user.display_name,
+        reason: (req.body && req.body.reason) || null,
+      }, { req, bezeichnung: 'DELETE /events/:eventId/book' });
 
     } catch (err) {
       console.error('Database error in DELETE /events/:eventId/book:', eventId, err);

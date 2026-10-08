@@ -18,6 +18,13 @@
 // ab, damit ein fehlgeschlagener Push keinen unbehandelten Promise-Fehler
 // erzeugt.
 //
+// NUR FUER FLUECHTIGES (08.10.2026): Die Arbeit lebt hier im Speicher des
+// Prozesses -- ein Neustart direkt nach der Antwort verliert sie. Das ist
+// richtig fuer Live-Updates (Socket) und Cache-Leerungen: Eine App, die nach
+// dem Neustart wieder verbindet, laedt ohnehin neu. Mitteilungen (Push,
+// Postfach, E-Mail) und alles, was Daten schreibt, gehen stattdessen als
+// Auftrag in die dauerhafte Warteschlange (utils/warteschlange.js, einreihen).
+//
 // Verwendung in einer Route:
 //   res.json({ ... });
 //   nachAntwort(req, async () => {

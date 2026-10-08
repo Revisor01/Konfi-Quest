@@ -6,7 +6,7 @@ const { checkPointTypeEnabled } = require('../utils/pointTypeGuard');
 const { generateBiblicalPassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { benutzernameSperrenUndPruefen } = require('../utils/benutzernameSperre');
-const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { deletePhotoFile } = require('../utils/photoStorage');
 const { checkKonfiLimit, nextTier } = require('../utils/konfiLimit');
@@ -26,7 +26,7 @@ const { rueckeNach } = require('../utils/bookingUtils');
 const { meldeNachrueckern } = require('../utils/nachrueckMeldung');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 const { nachAntwort } = require('../utils/nachAntwort');
-const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { meldePasswortGeaendertEinreihen } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const router = express.Router();
 
@@ -658,7 +658,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         // auffrischen -- ueber nachAntwort wie DELETE /users/:id (29.09.2026,
         // Begruendung dort).
         nachAntwort(req, async () => {
-            await meldeNachKontoLoeschung(db, ergebnis);
+            await meldeNachKontoLoeschungEinreihen(db, ergebnis, { req, bezeichnung: 'DELETE /admin/konfis/:id (Nachrueck-Meldungen)' });
 
             // Live-Update NACH der Response: geloeschter Konfi aus der Admin-Liste entfernen.
             liveUpdate.sendToOrgAdmins(req.user.organization_id, 'konfis', 'delete', { konfiId: userId });
@@ -764,8 +764,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // Bestaetigung an die hinterlegte Adresse, falls es eine gibt
             // (Simon, 27.09.2026, F-12 / BF-20). Das Einmalpasswort steht
             // NICHT darin -- die Leitung gibt es persoenlich weiter.
-            nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(req.params.id, 10), { durchLeitung: true }),
-                'POST /admin/konfis/:id/regenerate-password (Mail)');
+            meldePasswortGeaendertEinreihen(db, parseInt(req.params.id, 10), { durchLeitung: true },
+                { req, bezeichnung: 'POST /admin/konfis/:id/regenerate-password (Mail)' });
 
         } catch (err) {
             await client.query('ROLLBACK').catch(rbErr => console.error('Rollback failed:', rbErr));

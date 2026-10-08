@@ -11,10 +11,10 @@ const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
-const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
+const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
 const liveUpdate = require('../utils/liveUpdate');
 const { nachAntwort } = require('../utils/nachAntwort');
-const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
+const { meldePasswortGeaendertEinreihen } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
@@ -539,9 +539,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // (Simon, 27.09.2026, F-12 / BF-20), ohne das Passwort. Nach der
       // Antwort; "durch die Leitung" nur, wenn es nicht das eigene Konto ist.
       if (password) {
-        nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(id, 10), {
+        meldePasswortGeaendertEinreihen(db, parseInt(id, 10), {
           durchLeitung: Number(id) !== Number(req.user.id)
-        }), 'PUT /users/:id (Passwort-Mail)');
+        }, { req, bezeichnung: 'PUT /users/:id (Passwort-Mail)' });
       }
 
       // Live-Update NACH der Response: geaenderter Benutzer in der Benutzer-Liste.
@@ -910,7 +910,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // warteAufNachwehen wusste davon nichts, und kontoLoeschenWege ("Team-Platz
     // nachruecken") war wacklig, je nachdem, ob der Push vor der Pruefung kam.
     nachAntwort(req, async () => {
-      await meldeNachKontoLoeschung(db, ergebnis);
+      await meldeNachKontoLoeschungEinreihen(db, ergebnis, { req, bezeichnung: 'DELETE /users/:id (Nachrueck-Meldungen)' });
 
       // Live-Update NACH der Response: geloeschter Benutzer aus der Benutzer-Liste.
       try {
@@ -1275,9 +1275,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
       // Bestaetigung an die hinterlegte Adresse (F-12 / BF-20), ohne das
       // Passwort -- die Leitung gibt es persoenlich weiter.
-      nachAntwort(req, () => meldePasswortGeaendert(db, parseInt(id, 10), {
+      meldePasswortGeaendertEinreihen(db, parseInt(id, 10), {
         durchLeitung: Number(id) !== Number(req.user.id)
-      }), 'PUT /users/:id/reset-password (Mail)');
+      }, { req, bezeichnung: 'PUT /users/:id/reset-password (Mail)' });
 
     } catch (err) {
  console.error('Database error in PUT /users/%s/reset-password:', id, err);

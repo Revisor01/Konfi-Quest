@@ -11,8 +11,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
-const { kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
@@ -790,8 +789,8 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
 
       // Nachgerueckte in anderen Gemeinden benachrichtigen, Chatlisten der
       // Gespraechspartner:innen auffrischen. Wirft nie.
-      nachAntwort(req, () => meldeNachKontoLoeschung(db, kontoLoeschung),
-        'DELETE /organizations/:id (Meldungen nach Kontoloeschung)');
+      meldeNachKontoLoeschungEinreihen(db, kontoLoeschung,
+        { req, bezeichnung: 'DELETE /organizations/:id (Meldungen nach Kontoloeschung)' });
 
       // Dateien nach dem COMMIT entfernen (nicht blockierend — ein fehlendes
       // File darf die bereits erfolgte Löschung nicht scheitern lassen).

@@ -54,7 +54,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const { formularGrenzen, honigtopf } = require('../utils/oeffentlicheGrenzen');
-const { nachAntwort } = require('../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
 const { gemeindeDesKontos } = require('../utils/mailZuordnung');
 const { einstellungenLesen } = require('../utils/mailEinstellungen');
 const {
@@ -108,6 +108,36 @@ const bestaetigungText = (nummer, absendername) => [
   'Viele Grüße',
   absendername,
 ].join('\n');
+
+// Bestaetigung an die Adresse des Anliegens. Protokolliert wird nur der
+// Fehlercode. Ein vorhersehbares Nein (503: Versand auf diesem Server aus,
+// Postfach nicht eingerichtet) wird nicht wiederholt; jeder andere Fehler
+// spaeter noch einmal -- antwortSenden speichert nur, was gesendet ist.
+registriereArt('anliegen_eingegangen', async (db, p, k) => {
+  await k.schritt('bestaetigung', async () => {
+    try {
+      const { absendername } = await einstellungenLesen(db);
+      await antwortSenden(db, {
+        postfach: 'support',
+        an: p.email,
+        text: bestaetigungText(p.vorgangId, absendername),
+        vorgangId: p.vorgangId,
+        standardBetreff: 'Euer Anliegen ist angekommen',
+        // Die Bestaetigung ist keine Antwort des Supports: Der Vorgang bleibt "neu".
+        statusFolgen: false,
+        verfasstVon: null,
+      });
+    } catch (err) {
+      const code = err.status || err.code || 'ohne Code';
+      console.error('Anliegen %d: Bestätigung nicht versandt (%s)', p.vorgangId, code);
+      if (err.status === 503) return;
+      // Ohne cause: Der Versandfehler nennt Adressen; Protokoll und Tabelle
+      // bekommen nur den Code.
+      // eslint-disable-next-line preserve-caught-error
+      throw new Error(`Bestätigung nicht versandt (${code})`);
+    }
+  });
+});
 
 module.exports = (db) => {
   const router = express.Router();
@@ -182,23 +212,10 @@ module.exports = (db) => {
     console.log('Anliegen %d eingegangen', vorgangId);
     res.status(201).json(OK);
 
-    nachAntwort(req, async () => {
-      try {
-        const { absendername } = await einstellungenLesen(db);
-        await antwortSenden(db, {
-          postfach: 'support',
-          an: email,
-          text: bestaetigungText(vorgangId, absendername),
-          vorgangId,
-          standardBetreff: 'Euer Anliegen ist angekommen',
-          // Die Bestaetigung ist keine Antwort des Supports: Der Vorgang bleibt "neu".
-          statusFolgen: false,
-          verfasstVon: null,
-        });
-      } catch (err) {
-        console.error('Anliegen %d: Bestätigung nicht versandt (%s)', vorgangId, err.status || err.code || 'ohne Code');
-      }
-    }, 'POST /anliegen (Bestätigung)');
+    // Als Auftrag der dauerhaften Warteschlange (Art 'anliegen_eingegangen'
+    // oben): Ein Neustart direkt nach der Antwort verliert die Bestaetigung
+    // nicht.
+    einreihen(db, 'anliegen_eingegangen', { vorgangId, email }, { req, bezeichnung: 'POST /anliegen (Bestätigung)' });
   });
 
   return router;

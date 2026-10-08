@@ -23,6 +23,7 @@ const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ACTIVITIES, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
 const PushService = require('../../services/pushService');
+const warteschlange = require('../../utils/warteschlange');
 
 const firebase = require('../../push/firebase');
 vi.spyOn(firebase, 'sendFirebasePushNotification').mockResolvedValue({ success: true });
@@ -190,5 +191,81 @@ describe('PUT /admin/activities/requests/:id: Antwort vor Postfach und Push', ()
     expect(await imPostfach('activity_request_decision')).toEqual([
       { title: 'Antrag genehmigt!', request_id: String(id), badge_id: null },
     ]);
+  });
+
+  // BEFUND "Mitteilungen nach der Antwort gehen bei einem Neustart verloren":
+  // Endete der Prozess direkt nach der Antwort (Deploy), fehlten Postfach und
+  // Push -- die Arbeit lebte nur im Speicher. Jetzt steht sie als Auftrag in
+  // der Datenbank, und der Arbeiter einer anderen Replica holt sie nach.
+  it('Prozess endet direkt nach der Antwort: der Auftrag steht in der Datenbank, eine andere Replica stellt Abzeichen, Postfach und Push zu', async () => {
+    const statusPush = vi.spyOn(PushService, 'sendActivityRequestStatusToKonfi').mockResolvedValue({ success: true });
+    const badgePush = vi.spyOn(PushService, 'sendBadgeEarnedToKonfi').mockResolvedValue({ success: true });
+    const levelUp = vi.spyOn(PushService, 'checkAndSendLevelUp').mockResolvedValue(undefined);
+
+    const id = await offenerAntrag();
+    warteschlange._lokalAnhalten(true);
+    let res;
+    try {
+      res = await entscheiden(id, { status: 'approved' });
+      await warteAufNachwehen(app);
+    } finally {
+      warteschlange._lokalAnhalten(false);
+    }
+    expect(res.status).toBe(200);
+    expect(res.body.newBadges.count).toBe(1);
+
+    // Der Prozess ist "weg": nichts zugestellt, aber der Auftrag liegt bereit.
+    expect(statusPush).toHaveBeenCalledTimes(0);
+    expect(await imPostfach('activity_request_decision')).toEqual([]);
+    const { rows: auftraege } = await db.query(
+      "SELECT art, status FROM nachlauf_auftraege ORDER BY id");
+    expect(auftraege).toEqual([{ art: 'antrag_entschieden', status: 'offen' }]);
+
+    // Der Arbeiter (hier: derselbe Testprozess als andere Replica) holt ihn.
+    expect(await warteschlange.einTakt(db)).toBe(1);
+
+    expect(badgePush).toHaveBeenCalledTimes(1);
+    expect(badgePush).toHaveBeenCalledWith(
+      db, USERS.konfi1.id, 'Erster Punkt', 'star', 'Der erste Punkt ist da', badgeId, ORG1);
+    expect(levelUp).toHaveBeenCalledTimes(1);
+    expect(statusPush).toHaveBeenCalledTimes(1);
+    expect(statusPush).toHaveBeenCalledWith(
+      db, USERS.konfi1.id, 'Kirchenchor', 1, 'approved', undefined, String(id), ORG1);
+    expect(await imPostfach('activity_request_decision')).toEqual([
+      { title: 'Antrag genehmigt!', request_id: String(id), badge_id: null },
+    ]);
+    expect(await imPostfach('badge_earned')).toEqual([
+      { title: 'Neues Badge erhalten!', request_id: null, badge_id: String(badgeId) },
+    ]);
+    const { rows: [erledigt] } = await db.query(
+      'SELECT status, erledigte_schritte FROM nachlauf_auftraege');
+    expect(erledigt).toEqual({ status: 'erledigt', erledigte_schritte: ['abzeichen:0', 'levelup', 'postfach', 'push'] });
+  });
+
+  it('ein Status-Push, der scheitert, wird spaeter wiederholt -- ohne zweiten Postfach-Eintrag und ohne zweiten Abzeichen-Push', async () => {
+    const statusPush = vi.spyOn(PushService, 'sendActivityRequestStatusToKonfi')
+      .mockRejectedValueOnce(new Error('FCM weg'))
+      .mockResolvedValue({ success: true });
+    const badgePush = vi.spyOn(PushService, 'sendBadgeEarnedToKonfi').mockResolvedValue({ success: true });
+    vi.spyOn(PushService, 'checkAndSendLevelUp').mockResolvedValue(undefined);
+    const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const id = await offenerAntrag();
+    await entscheiden(id, { status: 'approved' });
+    await warteAufNachwehen(app);
+    expect(statusPush).toHaveBeenCalledTimes(1);
+    const { rows: [nachErstem] } = await db.query('SELECT status, versuche FROM nachlauf_auftraege');
+    expect(nachErstem).toEqual({ status: 'offen', versuche: 1 });
+
+    await db.query('UPDATE nachlauf_auftraege SET faellig_ab = NOW()');
+    expect(await warteschlange.einTakt(db)).toBe(1);
+    fehler.mockRestore();
+
+    expect(statusPush).toHaveBeenCalledTimes(2);
+    expect(badgePush).toHaveBeenCalledTimes(1);
+    expect(await imPostfach('activity_request_decision')).toHaveLength(1);
+    expect(await imPostfach('badge_earned')).toHaveLength(1);
+    const { rows: [fertig] } = await db.query('SELECT status, versuche FROM nachlauf_auftraege');
+    expect(fertig).toEqual({ status: 'erledigt', versuche: 2 });
   });
 });

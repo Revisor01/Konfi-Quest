@@ -30,10 +30,67 @@ const { isRegistrationOpenForKonfis, zaehleBuchungen, rueckeNach, freiePlaetze, 
 const { allIdsBelongToOrg } = require('../../utils/orgOwnership');
 const { syncEventChat } = require('../../utils/eventChat');
 const { nachAntwort } = require('../../utils/nachAntwort');
+const { registriereArt, einreihen } = require('../../utils/warteschlange');
 const { validateTeamerQuota, pruefeAnmeldeschluss, pruefeEndeNachBeginn } = require('./validierung');
 const { formatDatum } = require('../../utils/zeitformat');
 const { darfTermin, darfJahrgang } = require('../../utils/jahrgangsZugriff');
 const { loescheTermin, entferneChatDateien } = require('../../utils/terminLoeschen');
+
+// PUSHES NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
+// (utils/warteschlange.js): ueberleben einen Neustart direkt nach der
+// Antwort; je Teil ein Schritt, eine Wiederholung sendet nichts zweimal.
+// Live-Updates bleiben bei nachAntwort -- sie sind fluechtig.
+
+// POST /events (Pflicht-Termin): Push nur an tatsaechlich enrollte Konfis
+// (jahrgangs-spezifisch).
+registriereArt('pflichttermin_angelegt', async (db, p, k) => {
+  await k.schritt('push', async () => {
+    const { rows: enrolledUsers } = await db.query(`
+      SELECT u.id FROM users u
+      JOIN konfi_profiles kp ON u.id = kp.user_id
+      JOIN roles r ON u.role_id = r.id
+      WHERE kp.jahrgang_id = ANY($1::int[])
+        AND u.organization_id = $2
+        AND r.name = 'konfi'
+        AND u.deleted_at IS NULL
+    `, [p.jahrgangIds, p.organizationId]);
+
+    if (enrolledUsers.length > 0) {
+      const userIds = enrolledUsers.map(u => u.id);
+      await PushService.sendMandatoryEventCreated(db, userIds, p.name, p.eventDate, p.eventId, p.organizationId);
+    }
+  });
+});
+
+// PUT /events/:id: Merker "Anmeldung moeglich" zuruecksetzen und Gebuchte
+// ueber eine Verlegung informieren (Begruendung an der Route).
+registriereArt('termin_geaendert', async (db, p, k) => {
+  if (p.merkerZuruecksetzen) {
+    await k.schritt('merker', () => db.query('UPDATE events SET registration_open_notified = false WHERE id = $1', [p.eventId]));
+  }
+  if (p.changes) {
+    await k.schritt('push', async () => {
+      const { rows: bookedParticipants } = await db.query(
+        `SELECT eb.user_id FROM event_bookings eb
+         JOIN users u ON eb.user_id = u.id
+         WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
+        [p.eventId]
+      );
+      const bookedUserIds = bookedParticipants.map(b => b.user_id);
+      if (bookedUserIds.length > 0) {
+        await PushService.sendEventChangedToKonfis(db, bookedUserIds, p.name, p.changes, p.eventId, p.organizationId);
+      }
+    });
+  }
+});
+
+// DELETE /events/:id: Absage-Meldung an die Betroffenen (Begruendung an der
+// Route).
+registriereArt('termin_geloescht', async (db, p, k) => {
+  await k.schritt('push', () => PushService.sendEventCancellationToKonfis(
+    db, p.userIds, p.name, p.eventDateFormatted, p.organizationId
+  ));
+});
 
 module.exports = (db, rbacVerifier, { requireAdmin }) => {
   const router = express.Router();
@@ -331,23 +388,13 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
     // (backgroundService, atomar, alle 1 Min) sendet GENAU EINEN Push, sobald
     // das Event anmeldbar ist. Verhindert Doppel-Pushes (POST + Cron).
     if (mandatory && jahrgang_ids && jahrgang_ids.length > 0) {
-      nachAntwort(req, async () => {
-        // Push nur an tatsaechlich enrollte Konfis (jahrgangs-spezifisch)
-        const { rows: enrolledUsers } = await db.query(`
-          SELECT u.id FROM users u
-          JOIN konfi_profiles kp ON u.id = kp.user_id
-          JOIN roles r ON u.role_id = r.id
-          WHERE kp.jahrgang_id = ANY($1::int[])
-            AND u.organization_id = $2
-            AND r.name = 'konfi'
-            AND u.deleted_at IS NULL
-        `, [jahrgang_ids, req.user.organization_id]);
-
-        if (enrolledUsers.length > 0) {
-          const userIds = enrolledUsers.map(u => u.id);
-          await PushService.sendMandatoryEventCreated(db, userIds, name, event_date, eventId, req.user.organization_id);
-        }
-      }, 'Push nach POST /events');
+      einreihen(db, 'pflichttermin_angelegt', {
+        jahrgangIds: jahrgang_ids,
+        organizationId: req.user.organization_id,
+        name,
+        eventDate: event_date,
+        eventId,
+      }, { req, bezeichnung: 'Push nach POST /events' });
     }
   });
   
@@ -740,82 +787,78 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       promoted_teamer_count: promotedTeamers.length
     });
 
-    nachAntwort(req, async () => {
-        // Live Update: Notify all konfis and admins about the event update
-        liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
+    // Live Update: Notify all konfis and admins about the event update
+    nachAntwort(req, () => {
+      liveUpdate.sendToOrg(req.user.organization_id, 'events', 'update', { eventId: id });
+    }, 'PUT /events/:id (Live-Update)');
 
-        // "Anmeldung möglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
-        // pflegen (Flankenerkennung). Den Push sendet allein der Cron (atomar) ->
-        // keine Doppel-Pushes.
-        // - Wird das Event NICHT-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) ->
-        //   Flag auf false zuruecksetzen, damit beim nächsten Oeffnen erneut
-        //   gepusht wird.
-        // - Wird es anmeldbar, ist das Flag aber noch false (z.B. neu geoeffnet),
-        //   greift der Cron automatisch.
-        // Pflicht-Events haben einen eigenen Erstellungs-Push -> hier ausgenommen.
-        if (!mandatory) {
-          try {
-            const openNow = isRegistrationOpenForKonfis({
-              registration_opens_at, registration_closes_at,
-              cancelled: false, teamer_only
-            });
-            if (!openNow && oldEvent?.registration_open_notified) {
-              await db.query('UPDATE events SET registration_open_notified = false WHERE id = $1', [id]);
-            }
-          } catch (pushErr) {
-            console.error('Flag-Reset for event update (registration open) failed:', pushErr);
-          }
+    // "Anmeldung möglich"-Push beim AENDERN — KEIN direkter Push hier, nur Flag
+    // pflegen (Flankenerkennung). Den Push sendet allein der Cron (atomar) ->
+    // keine Doppel-Pushes.
+    // - Wird das Event NICHT-anmeldbar (Anmeldung in Zukunft/zu/abgesagt) ->
+    //   Flag auf false zuruecksetzen, damit beim nächsten Oeffnen erneut
+    //   gepusht wird.
+    // - Wird es anmeldbar, ist das Flag aber noch false (z.B. neu geoeffnet),
+    //   greift der Cron automatisch.
+    // Pflicht-Events haben einen eigenen Erstellungs-Push -> hier ausgenommen.
+    // Nach der Antwort darf hier nichts mehr werfen (kein 500 nach 200).
+    try {
+      let merkerZuruecksetzen = false;
+      if (!mandatory) {
+        const openNow = isRegistrationOpenForKonfis({
+          registration_opens_at, registration_closes_at,
+          cancelled: false, teamer_only
+        });
+        merkerZuruecksetzen = !openNow && Boolean(oldEvent?.registration_open_notified);
+      }
+
+      // Push an gebuchte Teilnehmer bei relevanter Änderung (Termin/Uhrzeit/Ort).
+      // Normalisierung nötig: DB liefert Date-Objekte (event_date/event_end_time),
+      // der Request liefert Strings -> ohne Normalisierung wuerde der Vergleich bei
+      // JEDEM Speichern (auch ohne inhaltliche Änderung) als "geändert" durchgehen.
+      const normalizeDate = (value) => {
+        if (!value) return null;
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d.getTime();
+      };
+      const normalizeLocation = (value) => (value === undefined || value === null || value === '') ? null : String(value);
+
+      const dateChanged = normalizeDate(oldEvent?.event_date) !== normalizeDate(event_date);
+      const endTimeChanged = normalizeDate(oldEvent?.event_end_time) !== normalizeDate(event_end_time);
+      const locationChanged = normalizeLocation(oldEvent?.location) !== normalizeLocation(location);
+
+      const isFuture = normalizeDate(event_date) !== null && normalizeDate(event_date) > Date.now();
+
+      // Die Auswahl der Empfaenger (im Auftrag) faengt seit Migration 153
+      // (15.09.2026) einen Fall mit, der vorher durchrutschte: Eine
+      // abgemeldete Person steht nicht mehr auf 'confirmed' und bekommt damit
+      // kein "Der Termin wurde verlegt" mehr fuer einen Termin, an dem sie
+      // nicht teilnimmt. Die Regel "wer gebucht ist, wird benachrichtigt"
+      // stimmt jetzt einfach.
+      let changes = null;
+      if (oldEvent && !oldEvent.cancelled && isFuture && (dateChanged || endTimeChanged || locationChanged)) {
+        changes = {};
+        if (dateChanged || endTimeChanged) {
+          changes.newDate = event_date;
+          changes.newEndTime = event_end_time;
         }
-
-        // Push an gebuchte Teilnehmer bei relevanter Änderung (Termin/Uhrzeit/Ort).
-        // Normalisierung nötig: DB liefert Date-Objekte (event_date/event_end_time),
-        // der Request liefert Strings -> ohne Normalisierung wuerde der Vergleich bei
-        // JEDEM Speichern (auch ohne inhaltliche Änderung) als "geändert" durchgehen.
-        try {
-          const normalizeDate = (value) => {
-            if (!value) return null;
-            const d = new Date(value);
-            return Number.isNaN(d.getTime()) ? null : d.getTime();
-          };
-          const normalizeLocation = (value) => (value === undefined || value === null || value === '') ? null : String(value);
-
-          const dateChanged = normalizeDate(oldEvent?.event_date) !== normalizeDate(event_date);
-          const endTimeChanged = normalizeDate(oldEvent?.event_end_time) !== normalizeDate(event_end_time);
-          const locationChanged = normalizeLocation(oldEvent?.location) !== normalizeLocation(location);
-
-          const isFuture = normalizeDate(event_date) !== null && normalizeDate(event_date) > Date.now();
-
-          if (oldEvent && !oldEvent.cancelled && isFuture && (dateChanged || endTimeChanged || locationChanged)) {
-            // Die Auswahl bleibt, wie sie ist -- und faengt seit Migration
-            // 153 (15.09.2026) einen Fall mit, der vorher durchrutschte: Eine
-            // abgemeldete Person steht nicht mehr auf 'confirmed' und bekommt
-            // damit kein "Der Termin wurde verlegt" mehr fuer einen Termin,
-            // an dem sie nicht teilnimmt. Kein Eingriff noetig; die Regel
-            // "wer gebucht ist, wird benachrichtigt" stimmt jetzt einfach.
-            const { rows: bookedParticipants } = await db.query(
-              `SELECT eb.user_id FROM event_bookings eb
-               JOIN users u ON eb.user_id = u.id
-               WHERE eb.event_id = $1 AND eb.status IN ('confirmed', 'waitlist') AND u.deleted_at IS NULL`,
-              [id]
-            );
-            const bookedUserIds = bookedParticipants.map(p => p.user_id);
-
-            if (bookedUserIds.length > 0) {
-              const changes = {};
-              if (dateChanged || endTimeChanged) {
-                changes.newDate = event_date;
-                changes.newEndTime = event_end_time;
-              }
-              if (locationChanged) {
-                changes.newLocation = location;
-              }
-              await PushService.sendEventChangedToKonfis(db, bookedUserIds, name, changes, id, req.user.organization_id);
-            }
-          }
-        } catch (pushErr) {
-          console.error('Push notification failed for event change:', pushErr);
+        if (locationChanged) {
+          changes.newLocation = location;
         }
-    }, 'PUT /events/:id');
+      }
+
+      if (merkerZuruecksetzen || changes) {
+        einreihen(db, 'termin_geaendert', {
+          eventId: id,
+          merkerZuruecksetzen,
+          changes,
+          name,
+          organizationId: req.user.organization_id,
+        }, { req, bezeichnung: 'PUT /events/:id' });
+      }
+    } catch (nachErr) {
+      console.error('Mitteilungen nach PUT /events/:id nicht eingereiht:', id, nachErr);
+    }
   });
 
   // Delete event
@@ -972,9 +1015,14 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
       // OHNE KENNUNG (letzter Parameter bleibt weg): Der Termin ist in
       // derselben Transaktion geloescht worden. Ein Sprung dorthin fuehrte
       // ins Leere — die Meldung bleibt auf der Terminliste.
+      // Als Auftrag der dauerhaften Warteschlange (Art 'termin_geloescht').
       if (betroffeneUserIds.length > 0 && !event.cancelled) {
-        const eventDateFormatted = formatDatum(event.event_date);
-        try { await PushService.sendEventCancellationToKonfis(db, betroffeneUserIds, event.name, eventDateFormatted, req.user.organization_id); } catch (e) { console.error('Push notification failed:', e); }
+        einreihen(db, 'termin_geloescht', {
+          userIds: betroffeneUserIds,
+          name: event.name,
+          eventDateFormatted: formatDatum(event.event_date),
+          organizationId: req.user.organization_id,
+        }, { req, bezeichnung: 'DELETE /events/:id (Absage-Meldung)' });
       }
 
       // Live Update: Notify all konfis and admins about the event deletion
