@@ -100,7 +100,7 @@ async function sammleKonfiZeit(client, userId, organizationId) {
   );
 
   const { rows: aktivitaeten } = await client.query(
-    `SELECT a.name, a.type AS art, COALESCE(ua.points, a.points)::int AS punkte,
+    `SELECT a.name, COALESCE(ua.type, a.type) AS art, COALESCE(ua.points, a.points)::int AS punkte,
             ua.completed_date AS datum, ua.comment AS kommentar
        FROM user_activities ua
        JOIN activities a ON a.id = ua.activity_id

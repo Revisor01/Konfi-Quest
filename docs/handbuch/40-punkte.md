@@ -205,20 +205,22 @@ Konfi-Verwaltung nicht heran.
 
 ## Den Punktwert einer Aktivität ändern
 
-Den Punktwert einer Aktivität stellst du unter **Mehr › Aktivitäten** um. Die
-Regel dabei: **Der neue Wert gilt für alles, was ab jetzt vergeben wird. Was
-schon gutgeschrieben ist, bleibt, wie es war.**
+Den Punktwert und die Punkteart (Gottesdienst oder Gemeinde) einer Aktivität
+stellst du unter **Mehr › Aktivitäten** um. Die Regel dabei: **Der neue Wert
+und die neue Art gelten für alles, was ab jetzt vergeben wird. Was schon
+gutgeschrieben ist, bleibt, wie es war** — mit seinem Wert in seiner Säule.
 
-Jede Vergabe merkt sich den Wert, den die Aktivität in diesem Moment hatte —
+Jede Vergabe merkt sich den Wert und die Art, die die Aktivität in diesem Moment hatte —
 egal, ob sie über einen genehmigten Antrag oder eine direkte Zuschreibung
 entstanden ist. Daran hängt alles Weitere:
 
 - Der **Punktestand** ändert sich durch die Umstellung nicht.
 - Die **Punktegeschichte** und die Aktivitätenliste in der Konfi-Verwaltung
-  zeigen bei jedem Eintrag den Wert, der damals gutgeschrieben wurde.
+  zeigen bei jedem Eintrag den Wert und die Art, die damals gutgeschrieben
+  wurden.
 - Wird eine Vergabe später zurückgenommen — durch Zurücksetzen des Antrags
-  oder Löschen der Zuordnung —, verschwinden genau diese Punkte wieder, nicht
-  der neue Wert.
+  oder Löschen der Zuordnung —, verschwinden genau diese Punkte wieder aus
+  der Säule, in die sie gebucht wurden, nicht der neue Wert.
 
 *Beispiel:* Der „Sonntagsgottesdienst" bringt 1 Punkt; du hebst ihn auf 2 an.
 Wer ihn vorher fünfmal gemeldet hat, steht weiter bei 5 Punkten. Die sechste

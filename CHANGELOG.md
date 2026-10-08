@@ -177,6 +177,8 @@ Versionsüberschrift.
   mehr; Aktivitäten und Bonuspunkte vergibst du auf der Seite der Konfi.
 
 ### Behoben
+- Ändert die Leitung die Punkteart einer Aktivität, bleiben schon vergebene
+  Punkte in ihrer Säule — in Liste, Verlauf und beim Zurücknehmen.
 - Der Benutzername einer neuen Gemeindeleitung folgt denselben Regeln wie
   jeder andere Benutzername (3 bis 50 Zeichen, Buchstaben, Ziffern, Punkt und
   Bindestrich).
