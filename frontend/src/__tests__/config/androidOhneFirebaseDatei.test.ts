@@ -74,14 +74,14 @@ describe('Android: Bau ohne google-services.json', () => {
   it('der Mapping-Upload gilt weiter fuer release, und nur dort', () => {
     const gebunden = block(code, stellen(WITH_PLUGIN)[0]);
     const rumpf = code.slice(...gebunden);
-    expect(rumpf).toMatch(/buildTypes\s*\{\s*release\s*\{\s*firebaseCrashlytics\s*\{\s*mappingFileUploadEnabled true\s*\}\s*\}\s*\}/);
+    expect(rumpf).toMatch(/buildTypes\s*\{\s*release\s*\{\s*firebaseCrashlytics\s*\{\s*mappingFileUploadEnabled = true\s*\}\s*\}\s*\}/);
     expect(rumpf).not.toMatch(/\bdebug\s*\{/);
   });
 
   it('prepare-android.sh findet weiter, was es vor dem Store-Bau verlangt', () => {
     const skript = readFileSync(join(process.cwd(), 'scripts/prepare-android.sh'), 'utf8');
     const verlangt = [...skript.matchAll(/grep -q "([^"]+)" "\$FRONTEND_DIR\/android\/app\/build\.gradle"/g)].map((m) => m[1]);
-    expect(verlangt).toEqual(['com.google.gms.google-services', 'com.google.firebase.crashlytics', 'minifyEnabled true', 'mappingFileUploadEnabled true']);
+    expect(verlangt).toEqual(['com.google.gms.google-services', 'com.google.firebase.crashlytics', 'minifyEnabled = true', 'mappingFileUploadEnabled = true']);
     for (const v of verlangt) expect(code, v).toContain(v);
   });
 });

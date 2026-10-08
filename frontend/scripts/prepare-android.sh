@@ -82,8 +82,8 @@ grep -q "firebase-crashlytics-gradle" "$FRONTEND_DIR/android/build.gradle" \
 # Der Upload der Mapping-Datei ist die einzige Absicherung gegen unlesbare
 # Berichte, solange minifyEnabled true ist. Nur pruefen, wenn verschleiert
 # wird — ohne R8 braucht es kein Mapping.
-if grep -q "minifyEnabled true" "$FRONTEND_DIR/android/app/build.gradle"; then
-  grep -q "mappingFileUploadEnabled true" "$FRONTEND_DIR/android/app/build.gradle" \
+if grep -q "minifyEnabled = true" "$FRONTEND_DIR/android/app/build.gradle"; then
+  grep -q "mappingFileUploadEnabled = true" "$FRONTEND_DIR/android/app/build.gradle" \
     || fail "minifyEnabled ist an, aber mappingFileUploadEnabled fehlt — Absturzberichte waeren verschleiert und unlesbar."
 fi
 

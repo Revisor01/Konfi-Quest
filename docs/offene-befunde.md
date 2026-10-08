@@ -263,10 +263,6 @@ Stand: 02.10.2026, gegen den Code geprüft.
      Ressourcen 1,39 → 1,02 MB, Klassen neu gebündelt (in Paketen 2.305 → 92).
      Offen: Maltes Gerätetest und der Haken in der Console nach dem Release,
      Auftrag [18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md).
-     Für Gradle 10 vorzumerken: Fünf Zeilen in `android/build.gradle` und
-     `android/app/build.gradle` setzen Werte noch ohne `=` (Warnung, kein
-     Fehler). `mappingFileUploadEnabled true` prüfen `prepare-android.sh` und
-     zwei Tests wörtlich — beim Umschreiben mitziehen.
   Keins davon bricht die App heute; 2 und 3 werden mit Android 16 sichtbar.
 - **Store-Release 2.3.0: Freigabe bei Apple abwarten.** Android 2.3.0 (134)
   steht seit 03.10.2026 in Produktion bei 100 %, Tag `2.3.0` liegt auf
