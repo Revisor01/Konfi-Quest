@@ -30,7 +30,7 @@ export const WebAvatar: React.FC<{ text: string; farbe?: AvatarFarbe; gross?: bo
  * in der App). Der Text ist das Wort der Rolle, die Farbe nie allein der Traeger.
  */
 export const WebRolleMarke: React.FC<{ rolle?: string | null; text?: string }> = ({ rolle, text }) => (
-  <span className={`web-rolle web-rolle--${rollenFarbe(rolle)}`}>{text ?? rollenName(rolle)}</span>
+  <span className={`web-rollenmarke web-rollenmarke--${rollenFarbe(rolle)}`}>{text ?? rollenName(rolle)}</span>
 );
 
 // --- Punktebalken ------------------------------------------------------------------

@@ -183,6 +183,9 @@ Versionsüberschrift.
   Bestätigen verlässt.
 - Die Videovorschau im Chat lädt nach dem Schließen nicht weiter, und ein
   langer Druck auf eine gerade verschwundene Nachricht öffnet kein Menü mehr.
+- In der Web-Version tragen die Start- und Profilseiten nicht mehr Rahmen,
+  Fläche und Schrift der Rollenmarke aus der Benutzerliste; Beschreibungen
+  und Menüs anderer Seiten mischen sich ebenso nicht mehr.
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
   oder neu lud.

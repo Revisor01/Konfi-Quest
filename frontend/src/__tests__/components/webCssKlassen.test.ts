@@ -49,15 +49,11 @@ const doppelt = (karte: Map<string, string[]>) => [...karte].filter(([, ds]) => 
 const quellen = Object.fromEntries(dateien.map((d) => [d, readFileSync(join(theme, d), 'utf8')]));
 const alle = besitzer(quellen);
 
-// Altlast, am 06.10.2026 beim Beheben der Konfi-Liste gefunden und nicht Teil
-// dieser Aenderung: Diese Klassen setzen noch zwei Dateien. Wer eine behebt,
-// streicht sie hier. Neue Doppelungen duerfen nicht dazukommen.
-const BEKANNT: Record<string, string[]> = {
-  'web-beschreibung': ['web/leitung.css', 'web/termine.css'],
-  'web-menue': ['web/chat.css', 'web/termine.css'],
-  'web-rolle': ['web/leitung.css', 'web/start.css'],
-  'web-rolle--leitung': ['web/leitung.css', 'web/start.css'],
-};
+// Die Altlast vom 06.10.2026 (web-beschreibung, web-menue, web-rolle,
+// web-rolle--leitung) ist am 08.10.2026 aufgeloest: Rollenmarke der
+// Benutzerliste heisst web-rollenmarke, die Materialbeschreibung
+// web-material-beschreibung, das Menue im Teilnehmer-Fenster
+// web-teilnehmer-menue. Keine Ausnahme mehr.
 
 describe('Stylesheets der Web-Fassungen: eine Klasse, eine Datei', () => {
   it('der Pruefer erkennt eine Doppelung (Gegenprobe), auch mit Pseudo-Klasse und Attribut, und laesst Regeln mit Vorfahren in Ruhe', () => {
@@ -84,9 +80,19 @@ describe('Stylesheets der Web-Fassungen: eine Klasse, eine Datei', () => {
     expect(alle.size).toBeGreaterThan(600);
   });
 
-  it('keine neue Klasse steht in zwei Dateien', () => {
-    const neu = doppelt(alle).filter(([klasse, ds]) => !(BEKANNT[klasse] && ds.every((d) => BEKANNT[klasse].includes(d))));
-    expect(neu).toEqual([]);
+  it('keine Klasse steht in zwei Dateien', () => {
+    expect(doppelt(alle)).toEqual([]);
+  });
+
+  it('die aufgeloeste Altlast: jede der vier Klassen gehoert genau einer Datei', () => {
+    expect(alle.get('web-beschreibung')).toEqual(['web/termine.css']);
+    expect(alle.get('web-material-beschreibung')).toEqual(['web/leitung.css']);
+    expect(alle.get('web-menue')).toEqual(['web/chat.css']);
+    expect(alle.get('web-teilnehmer-menue')).toEqual(['web/termine.css']);
+    expect(alle.get('web-rolle')).toEqual(['web/start.css']);
+    expect(alle.get('web-rolle--leitung')).toEqual(['web/start.css']);
+    expect(alle.get('web-rollenmarke')).toEqual(['web/leitung.css']);
+    expect(alle.get('web-rollenmarke--leitung')).toEqual(['web/leitung.css']);
   });
 
   it('der Fehler vom 06.10.2026: Kreis und Balken der Konfi-Liste gehoeren leitung.css, das Profil und der Balken der Konfi-Seite start.css', () => {
