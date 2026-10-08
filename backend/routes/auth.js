@@ -266,12 +266,9 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
   const namensLimiter = erzeugeNamensLimiter(db);
   const { einladungscodeLimiter, resetTokenLimiter, refreshLimiter } = erzeugeOeffentlicheGrenzen(db);
   const { authLimiter, registerLimiter } = rateLimiters;
-  const emailService = require('../services/emailService');
-
-  // Generate password reset token
-  const generateResetToken = () => {
-    return crypto.randomBytes(32).toString('hex');
-  };
+  // Reset-Token und Mail entstehen im Auftrag der Warteschlange
+  // (utils/passwortResetMail.js), nicht hier.
+  const { resetMailEinreihen } = require('../utils/passwortResetMail');
 
   // Refresh-Token generieren (64 Bytes = 128 Hex-Zeichen)
   const generateRefreshToken = () => crypto.randomBytes(64).toString('hex');
@@ -1149,11 +1146,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // auch im Betreff. Eine Sammelmail braeuchte eine Liste in Text und
       // HTML und liesse offen, welcher Knopf zu welchem Konto gehoert.
       const query = `
-        SELECT u.id, u.email, u.username, u.display_name as name, r.name as role_name,
-               COALESCE(o.display_name, o.name) AS gemeinde
+        SELECT u.id
         FROM users u
-        LEFT JOIN roles r ON u.role_id = r.id
-        LEFT JOIN organizations o ON o.id = u.organization_id
         WHERE u.email = $1
           AND u.deleted_at IS NULL
           AND COALESCE(u.is_active, true) = true
@@ -1161,50 +1155,25 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       `;
       const { rows: konten } = await db.query(query, [email]);
 
-      const mails = [];
-      for (const user of konten) {
-        const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
-        const token = generateResetToken();
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-        // Nur den HASH speichern (Audit 22.08.2026). Der Klartext-Token lag
-        // bisher in der DB — wer sie lesen kann (Backup, Dump, SQL-Injection),
-        // konnte damit fremde Passwoerter zuruecksetzen. Refresh-Tokens werden
-        // hier laengst gehasht abgelegt; Reset-Tokens ziehen nach.
-        await db.query('INSERT INTO password_resets (user_id, user_type, token, expires_at) VALUES ($1, $2, $3, $4)',
-          [user.id, userType, hashToken(token), expiresAt]);
-
-        mails.push({
-          name: user.name,
-          token,
-          resetUrl: `https://konfi-quest.de/reset-password?token=${token}`,
-          // Gemeinde und Benutzername nur, wenn es etwas zu unterscheiden
-          // gibt: Bei einem einzigen Konto bleibt die Mail, wie sie war.
-          konto: konten.length > 1 ? { gemeinde: user.gemeinde, benutzername: user.username } : {}
-        });
-      }
-
       // Always return a success message to not reveal if an email exists or not
       // -- und nicht, WIE VIELE Konten es gibt: Die Antwort ist fuer null,
       // eins und mehrere Konten Zeichen fuer Zeichen dieselbe.
       res.json({ message: 'Falls ein Konto mit dieser E-Mail-Adresse existiert, wurde eine Reset-E-Mail gesendet' });
 
-      // Versand NACH der Antwort (27.09.2026, utils/nachAntwort.js): Vorher
-      // wartete die Antwort auf den SMTP-Server -- die Laufzeit verriet damit,
-      // ob (und bei mehreren Mails: wie viele) Konten es zur Adresse gibt.
-      // Fehler bleiben BEWUSST ohne Wirkung nach aussen (Audit 22.08.2026):
-      // Ein Fehlerstatus genau dann, wenn ein Konto existiert, haette dieselbe
-      // Auskunft ueber die Hintertuer gegeben.
-      if (mails.length > 0) {
-        nachAntwort(req, async () => {
-          for (const m of mails) {
-            try {
-              await emailService.sendPasswordResetEmail(email, m.name, m.token, m.resetUrl, m.konto);
-            } catch (emailError) {
-              console.error('E-Mail-Versand fehlgeschlagen:', emailError);
-            }
-          }
-        }, 'POST /auth/request-password-reset (Mail)');
+      // Versand NACH der Antwort (27.09.2026): Vorher wartete die Antwort auf
+      // den SMTP-Server -- die Laufzeit verriet damit, ob (und bei mehreren
+      // Mails: wie viele) Konten es zur Adresse gibt. Fehler bleiben BEWUSST
+      // ohne Wirkung nach aussen (Audit 22.08.2026): Ein Fehlerstatus genau
+      // dann, wenn ein Konto existiert, haette dieselbe Auskunft ueber die
+      // Hintertuer gegeben.
+      //
+      // Je Konto ein Auftrag der dauerhaften Warteschlange (08.10.2026,
+      // utils/passwortResetMail.js): Ein Neustart verliert die Mail nicht,
+      // ein Versandfehler wird wiederholt. Token und Hash entstehen erst im
+      // Auftrag -- der Klartext-Token steht nie in der Datenbank, auch nicht
+      // in nachlauf_auftraege.
+      for (const user of konten) {
+        resetMailEinreihen(db, user.id, { mehrereKonten: konten.length > 1 }, { req });
       }
 
     } catch (err) {

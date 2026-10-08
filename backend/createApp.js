@@ -9,6 +9,7 @@ const path = require('path');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { cronLeaderVorhanden } = require('./utils/cronLeader');
+const { zustand: warteschlangeZustand } = require('./utils/warteschlange');
 const { dateiFilter } = require('./utils/uploadTypen');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
@@ -355,6 +356,8 @@ function createApp(db, options = {}) {
   // Status-Endpoint — Detail-Readiness für Status-Page / Uptime Kuma.
   // Getrennt von /health, weil er echte Abhaengigkeiten prüft (DB) und damit
   // langsamer/haengbar ist. Gibt 200 bei gesunder DB, sonst 503.
+  let nachlaufZwischenstand = null;
+  const NACHLAUF_ZWISCHENSTAND_MS = 30 * 1000;
   app.get('/api/status', async (req, res) => {
     const startedAt = Date.now();
     let dbOk = false;
@@ -388,6 +391,35 @@ function createApp(db, options = {}) {
         leaderVorhanden = 'unbekannt';
       }
     }
+    // Nachlauf-Warteschlange (Simon, 08.10.2026), additiv: wie viele
+    // Auftraege haengen (laenger als 15 Minuten offen) und wie viele in den
+    // letzten 24 Stunden endgueltig gescheitert sind (utils/warteschlange.js,
+    // zustand). BEWUSST NICHT in checks und ohne Einfluss auf den Status: Ein
+    // gescheiterter Push ist kein kaputter Server -- ein 503 oder ein rotes
+    // checks-Feld nimmt die Replica nicht aus dem Pool, liesse aber Deploy-
+    // Verify und Ueberwachung auf etwas anschlagen, das ein Neustart nicht
+    // behebt. Die Zahlen sind zum Hinsehen da. Fehlt die Tabelle (Migration
+    // nicht durch), fehlt das Feld.
+    //
+    // 30 Sekunden zwischengespeichert: Gemessen am 08.10.2026 mit 300.000
+    // erledigten Auftraegen (sieben Tage bei rund 43.000 am Tag) kostet die
+    // Abfrage 17 ms -- die Zahl der gescheiterten laeuft ueber den Teilindex
+    // der erledigten und filtert die 86.000 des letzten Tages; die haengenden
+    // 0,03 ms. Der Pfad ist oeffentlich und wird von Ueberwachungen
+    // abgefragt; ein eine halbe Minute alter Stand reicht dafuer.
+    let nachlauf;
+    if (dbOk) {
+      if (nachlaufZwischenstand && nachlaufZwischenstand.bis > Date.now()) {
+        nachlauf = nachlaufZwischenstand.wert;
+      } else {
+        try {
+          nachlauf = await warteschlangeZustand(db);
+          nachlaufZwischenstand = { wert: nachlauf, bis: Date.now() + NACHLAUF_ZWISCHENSTAND_MS };
+        } catch {
+          // Tabelle fehlt oder Abfrage scheitert: Feld weglassen.
+        }
+      }
+    }
     const body = {
       status: dbOk ? 'OK' : 'DEGRADED',
       version: process.env.npm_package_version || require('./package.json').version,
@@ -408,6 +440,7 @@ function createApp(db, options = {}) {
           fehlgeschlagen: migrationen.fehlgeschlagen.map(f => f.file),
         },
       } : {}),
+      ...(nachlauf ? { nachlauf } : {}),
       responseTimeMs: Date.now() - startedAt,
     };
     res.status(dbOk ? 200 : 503).json(body);

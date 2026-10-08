@@ -1247,6 +1247,17 @@ paths:
         Vorher wartete die Antwort auf den SMTP-Server, ihre Laufzeit
         verriet damit, ob -- und wie viele -- Konten es zur Adresse gibt.
         Die Antwort ist fuer null, ein und mehrere Konten dieselbe.
+
+        WARTESCHLANGE (08.10.2026): Je Konto ein Auftrag
+        `passwort_reset_mail` in nachlauf_auftraege
+        (utils/passwortResetMail.js). Ein Neustart nach der Antwort verliert
+        die Mail nicht mehr, ein Versandfehler wird wiederholt (30 s, 1, 2,
+        4 min). Token und Hash entstehen erst im Auftrag: Im Auftrag stehen
+        nur Konto-ID und ob die Adresse mehrere Konten traegt, der
+        Klartext-Token steht nie in der Datenbank. Scheitert der Versand,
+        wird der Hash wieder geloescht; die Wiederholung schickt einen neuen
+        Link. Die Route schreibt vor der Antwort nichts mehr in
+        password_resets. Antwortform unveraendert.
       requestBody:
         required: true
         content:
@@ -3669,8 +3680,11 @@ paths:
         Vorgang mit ihr). Nach der
         Antwort wird dieselbe Mail per IMAP im Gesendet-Ordner abgelegt
         (Markierung \Sent, sonst ein Ordner "Sent"/"Gesendet"/..., sonst wird
-        "Sent" angelegt); scheitert das, bleibt die Mail gesendet (nur
-        Protokoll).
+        "Sent" angelegt); scheitert das, bleibt die Mail gesendet. Seit
+        08.10.2026 ist die Ablage ein Auftrag `mail_gesendet_ablegen` der
+        Warteschlange mit dem Quelltext der Mail: Ein Neustart verliert sie
+        nicht, ein IMAP-Fehler wird wiederholt; gesendet wird dabei nie ein
+        zweites Mal (das gilt fuer alle Antwort-Routen der Support-Mail).
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -4661,13 +4675,24 @@ paths:
         `fehlt` heisst: niemand faehrt Erinnerungen, Auto-Loeschung,
         Token-Bereinigung, APM-Schnappschuesse. Der HTTP-Status bleibt 200.
 
+        NACHLAUF (08.10.2026, additiv): `nachlauf` {haengend, fehlgeschlagen}
+        aus der Warteschlange nachlauf_auftraege. `haengend` = Auftraege, die
+        seit mehr als 15 Minuten offen sind oder laufen (die Wiederholungen
+        eines Auftrags sind nach rund 7,5 Minuten durch); `fehlgeschlagen` =
+        endgueltig gescheiterte der letzten 24 Stunden. BEWUSST nicht in
+        `checks` und ohne Einfluss auf den HTTP-Status: Ein gescheiterter Push
+        ist kein kaputter Server, Deploy-Verify und Ueberwachung sollen daran
+        nicht anschlagen. Der Stand wird 30 Sekunden zwischengespeichert
+        (Abfrage gemessen 17 ms bei 300.000 erledigten Auftraegen). Fehlt die
+        Tabelle, fehlt das Feld.
+
         VERSION (27.09.2026, Sammelbefund S-13, unveraendertes Feld): `version`
         ist die App-Version aus backend/package.json, die `npm run
         version:setzen` mit frontend/version.json (der einen Quelle)
         gleichzieht -- vorher stand hier 1.0.1 auf einem 2.3.0-System.
       security: []
       responses:
-        "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, responseTimeMs" }
+        "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, nachlauf{haengend, fehlgeschlagen}, responseTimeMs" }
         "503": { description: "DEGRADED — Datenbank nicht erreichbar" }
       x-berechtigung:
         rollen: [oeffentlich]

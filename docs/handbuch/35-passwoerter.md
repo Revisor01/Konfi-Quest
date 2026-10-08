@@ -122,6 +122,10 @@ Anfragen in einer Stunde — egal, von wo sie kommen. So kann niemand ein
 fremdes Postfach mit Reset-Mails fluten.
 
 **Prüfe den Spam-Ordner.** Die Mails kommen von `moin@konfi-quest.de`.
+Ist der Mailserver gerade nicht erreichbar, versucht Konfi Quest es in den
+folgenden Minuten erneut; die Mail kommt dann etwas später, mit einem eigenen
+Link. Erst wenn nach einer Viertelstunde nichts da ist, lohnt eine neue
+Anfrage.
 
 ## Weg 3: Selbst ändern, wenn man angemeldet ist
 

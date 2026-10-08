@@ -33,7 +33,6 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { nachAntwort } = require('../utils/nachAntwort');
 const { MITGLIEDSCHAFTEN_SQL } = require('../utils/orgMitglieder');
 const {
   NACHRICHT_SPALTEN, NACHRICHT_FROM, ANFRAGE_SPALTEN,
@@ -334,7 +333,7 @@ module.exports = (db) => {
             vorgangId,
             standardBetreff: einzeilig(req.body.betreff),
             verfasstVon: req.user.id,
-          }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Vorgang)') });
+          }, { nachlauf: { req, bezeichnung: 'Gesendet-Ordner (Vorgang)' } });
         } catch (err) {
           // Ohne Mail kein Vorgang: Wer es erneut versucht, legt nichts doppelt an.
           await db.query('DELETE FROM support_vorgaenge WHERE id = $1', [vorgangId]).catch(() => {});
@@ -473,7 +472,7 @@ module.exports = (db) => {
         bezug: letzte || null,
         standardBetreff: v.anfrage_gemeinde ? `Eure Anfrage für ${v.anfrage_gemeinde}` : v.betreff,
         verfasstVon: req.user.id,
-      }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Vorgang)') });
+      }, { nachlauf: { req, bezeichnung: 'Gesendet-Ordner (Vorgang)' } });
     } catch (err) {
       return fehlerAntwort(res, 'POST /support/vorgaenge/:id/antworten', err);
     }
