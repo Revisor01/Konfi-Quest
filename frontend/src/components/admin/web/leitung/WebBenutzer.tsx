@@ -29,6 +29,7 @@ import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
 import { WebAvatar, WebRolleMarke, WebZeilenKnopf, type AvatarFarbe } from './WebLeitungBausteine';
 import WebOffeneEinladungen from './WebOffeneEinladungen';
+import { kontoStatusRang } from '../../../../utils/statusReihenfolge';
 
 export type BenutzerFilter = 'alle' | 'aktiv' | 'admin' | 'teamer';
 
@@ -149,7 +150,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       schluessel: 'status',
       kopf: 'Status',
       breite: '190px',
-      sortWert: (u) => (u.is_active ? 'Aktiv' : 'Gesperrt'),
+      sortWert: (u) => kontoStatusRang(u.is_active),
       zelle: (u) => (
         <span className="web-pillreihe">
           <WebPill ton={u.is_active ? 'erfolg' : 'neutral'} punkt>{u.is_active ? 'Aktiv' : 'Gesperrt'}</WebPill>

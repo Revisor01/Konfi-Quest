@@ -104,6 +104,8 @@ Versionsüberschrift.
   Mitteilung und Postfach-Eintrag an die Konfi folgen gleich danach.
 - Im Browser lässt sich jede Liste per Klick auf den Spaltennamen sortieren,
   ein zweiter Klick dreht die Richtung.
+- Status-Spalten im Browser sortieren nach dem Ablauf, Offenes zuerst — etwa
+  Offen, Verbucht, Abgelehnt — statt nach dem Alphabet.
 - Die Aktivitäten unter „Mehr“ und die gemeldeten Aktivitäten unter
   „Mitmachen“ lassen sich im Browser auch als Kacheln ansehen.
 - In der Teilnehmerliste eines Events im Browser hat der Stand mehr Platz:

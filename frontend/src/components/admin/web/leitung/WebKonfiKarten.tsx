@@ -46,6 +46,7 @@ import WebAuszeichnungen, { type WebAuszeichnung } from '../../../web/WebAuszeic
 import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
 import { naechsteSortierung, sortiereZeilen, type TabellenSortierung } from '../../../../utils/tabelleSortieren';
 import type { Anwesenheit, KonfiHistorie, TeamerTermin, Zertifikat } from './konfiDetailTypen';
+import { konfiZeitStatusRang, teilnahmeStatusRang } from '../../../../utils/statusReihenfolge';
 
 const ZEILEN_KURZ = 10;
 
@@ -328,7 +329,7 @@ export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = 
       schluessel: 'stand',
       kopf: 'Stand',
       breite: SPALTE.von,
-      sortWert: (e) => teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status }).statusText,
+      sortWert: (e) => teilnahmeStatusRang(teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status }).statusText),
       zelle: (e) => {
         const stand = teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status });
         return <WebPill ton={STAND_TON[stand.farbe]}>{stand.statusText}</WebPill>;
@@ -455,7 +456,7 @@ export const KonfiZeitKarte: React.FC<{ zeit: KonfiZeit }> = ({ zeit }) => {
   const spalten: Array<WebSortSpalte<(typeof termine)[number]>> = [
     { schluessel: 'name', kopf: 'Event', sortWert: (t) => t.name, zelle: (t) => <span className="web-zelle-titel">{t.name}</span> },
     { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (t) => alsDatum(t.datum), zelle: (t) => datumKurz(t.datum) },
-    { schluessel: 'status', kopf: 'Stand', breite: '150px', sortWert: (t) => konfiZeitTerminStatus(t), zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
+    { schluessel: 'status', kopf: 'Stand', breite: '150px', sortWert: (t) => konfiZeitStatusRang(konfiZeitTerminStatus(t)), zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
     { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (t) => t.punkte ?? 0, zelle: (t) => ((t.punkte ?? 0) > 0 ? <strong>+{t.punkte}</strong> : <span className="web-gedaempft">–</span>) },
   ];
   return (

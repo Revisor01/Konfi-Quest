@@ -44,8 +44,14 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  keine Datei unter components/ gibt WebSeite UND WebDetailSeite zurueck
  *  (sonst bleibt die neu gebaute IonPage nach dem Seitenuebergang
  *  unsichtbar). Er soll auch kuenftige Detailseiten erfassen; das Verhalten
- *  selbst prueft webKonfiDetail.test.tsx gerendert (dieselbe IonPage). */
-const OBERGRENZE = 120;
+ *  selbst prueft webKonfiDetail.test.tsx gerendert (dieselbe IonPage).
+ *  08.10.2026 +1: utils/statusReihenfolge.test.ts -- ruft die Reihen auf und
+ *  sortiert mit ihnen; zusaetzlich ein Vollstaendigkeits-Waechter: jedes
+ *  Status-Wort in utils/termineWeb.ts steht in der Reihe der Status-Spalten.
+ *  Die Woerter entstehen in sechs Funktionen mit vielen Zweigen; nur das
+ *  Lesen der Quelle findet ein neues Wort sicher. Gerendert wird die
+ *  Sortierung in webTabellenSortieren.test.tsx. */
+const OBERGRENZE = 121;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -176,6 +182,7 @@ const BEKANNT: string[] = [
   '__tests__/utils/pushNavigationZiele.test.ts',
   '__tests__/utils/rollenFarben.test.ts',
   '__tests__/utils/rollenNamen.test.ts',
+  '__tests__/utils/statusReihenfolge.test.ts',
   '__tests__/utils/ueberbuchen.test.ts',
   '__tests__/versionsnummernEineQuelle.test.ts',
 ];

@@ -124,8 +124,12 @@ Konfirmation.
 Jede Tabelle im Browser lässt sich sortieren: Ein Klick auf den Namen einer
 Spalte ordnet nach ihr aufsteigend, ein zweiter Klick dreht die Richtung; ein
 kleiner Pfeil zeigt, wonach gerade sortiert ist. Leere Felder stehen immer
-unten. Bei Konfis und Team gilt dieselbe Ordnung auch für die Kacheln, dort
-wählst du sie unter **Sortieren**.
+unten. Eine Spalte mit dem Stand — Status, Stand, Konfispruch — ordnet nach
+dem Ablauf, Offenes zuerst: bei gemeldeten Aktivitäten etwa Offen, Verbucht,
+Abgelehnt, bei Events erst Verbuchen, dann Offenes und Bevorstehendes, dann
+Gelaufenes und zuletzt Abgesagtes. Der zweite Klick dreht auch diese
+Reihenfolge um. Bei Konfis und Team gilt dieselbe Ordnung auch für die
+Kacheln, dort wählst du sie unter **Sortieren**.
 
 Alle Karten sind gleich gebaut: oben ein farbiger Kopf mit Symbol — bei
 Challenges der Stempel, bei Events und Personen der Titel bzw. Name mit Art

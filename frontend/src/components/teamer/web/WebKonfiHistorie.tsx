@@ -28,6 +28,7 @@ import WebBadgeDialog from '../../konfi/web/WebBadgeDialog';
 import WebBadgeSymbol from '../../konfi/web/WebBadgeSymbol';
 import { WebPunkteVerlauf } from '../../konfi/web/WebProfilBausteine';
 import '../../../theme/web/start.css';
+import { konfiZeitStatusRang } from '../../../utils/statusReihenfolge';
 
 export interface KonfiHistorieBadge {
   badge_id: number;
@@ -72,7 +73,7 @@ const WebKonfiHistorie: React.FC<WebKonfiHistorieProps> = ({ punkte, badges, ter
             spalten={[
               { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (t) => zeitpunkt(t.datum), zelle: (t) => datumKurz(t.datum) },
               { schluessel: 'name', kopf: 'Event', sortWert: (t) => t.name, zelle: (t) => <span className="web-zelle-titel">{t.name}</span> },
-              { schluessel: 'status', kopf: 'Stand', breite: '150px', sortWert: (t) => konfiZeitTerminStatus(t), zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
+              { schluessel: 'status', kopf: 'Stand', breite: '150px', sortWert: (t) => konfiZeitStatusRang(konfiZeitTerminStatus(t)), zelle: (t) => <WebPill>{konfiZeitTerminStatus(t)}</WebPill> },
               { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (t) => t.punkte ?? 0, zelle: (t) => ((t.punkte ?? 0) > 0 ? <strong>+{t.punkte}</strong> : <span className="web-gedaempft">–</span>) },
             ]}
           />

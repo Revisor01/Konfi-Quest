@@ -292,11 +292,12 @@ describe('Links: wer kommt -- nur lesend', () => {
     fireEvent.click(within(kopf).getByRole('button'));
     expect(kopf).toHaveAttribute('aria-sort', 'descending');
     expect(namen()).toEqual(['Zoe Probe', 'Mia Muster', 'Ben Beispiel']);
-    // Status: "Abgemeldet" vor "Angemeldet" -- Ben nach oben, die anderen in der Reihenfolge der Seite.
-    fireEvent.click(within(within(tabelle()).getByRole('columnheader', { name: /^Status/ })).getByRole('button'));
-    expect(namen()).toEqual(['Ben Beispiel', 'Mia Muster', 'Zoe Probe']);
+    // Status nach dem Ablauf: "Gebucht" vor "Abgemeldet" -- Ben nach unten, die
+    // anderen in der Reihenfolge der Seite (alphabetisch stünde Ben oben).
     fireEvent.click(within(within(tabelle()).getByRole('columnheader', { name: /^Status/ })).getByRole('button'));
     expect(namen()).toEqual(['Mia Muster', 'Zoe Probe', 'Ben Beispiel']);
+    fireEvent.click(within(within(tabelle()).getByRole('columnheader', { name: /^Status/ })).getByRole('button'));
+    expect(namen()).toEqual(['Ben Beispiel', 'Mia Muster', 'Zoe Probe']);
   });
 
   it('niemand angemeldet: keine Karten "Konfis" und "Team"', async () => {

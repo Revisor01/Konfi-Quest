@@ -35,6 +35,7 @@ import { WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { ANTRAG_FILTER, type AntragAktionen, type AntragFilter, type AntragZeile } from './typen';
 import '../../../../theme/web/termine.css';
+import { antragStatusRang } from '../../../../utils/statusReihenfolge';
 
 const STATUS_VON_FILTER: Record<Exclude<AntragFilter, 'alle'>, AntragZeile['status']> = {
   offen: 'pending',
@@ -182,7 +183,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       schluessel: 'status',
       kopf: 'Status',
       breite: '112px',
-      sortWert: (a) => STATUS[a.status].text,
+      sortWert: (a) => antragStatusRang(a.status),
       zelle: (a) => <WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>,
     },
     {

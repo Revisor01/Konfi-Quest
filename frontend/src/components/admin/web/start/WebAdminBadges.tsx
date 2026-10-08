@@ -25,6 +25,7 @@ import WebTreffer from '../../../web/WebTreffer';
 import { WebLeer } from '../../../web/WebZustaende';
 import WebBadgeSymbol from '../../../konfi/web/WebBadgeSymbol';
 import '../../../../theme/web/start.css';
+import { badgeStatusRang } from '../../../../utils/statusReihenfolge';
 
 export interface WebAdminBadge {
   id: number;
@@ -170,7 +171,7 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
                 schluessel: 'status',
                 kopf: 'Status',
                 breite: '210px',
-                sortWert: (b) => `${b.is_active ? 'Aktiv' : 'Inaktiv'} ${b.is_hidden ? 'Geheim' : 'Sichtbar'}`,
+                sortWert: (b) => badgeStatusRang(b),
                 zelle: (b) => (
                   <span className="web-pillreihe">
                     <WebPill ton={b.is_active ? 'erfolg' : 'fehler'} punkt>{b.is_active ? 'Aktiv' : 'Inaktiv'}</WebPill>

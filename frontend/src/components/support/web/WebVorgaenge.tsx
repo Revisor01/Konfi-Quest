@@ -46,6 +46,7 @@ import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import WebNeuerVorgang from './WebNeuerVorgang';
 import { DringlichPill, StatusPill } from './WebVorgangTeile';
 import '../../../theme/web/support.css';
+import { vorgangStatusRang } from '../../../utils/statusReihenfolge';
 
 /** Wohin der Link „Zurueck zur Liste" eines Vorgangs fuehrt, mit dem Filter, der gerade gilt. */
 export const VORGAENGE_LISTE = '/admin/support/vorgaenge';
@@ -167,7 +168,7 @@ const WebVorgaenge: React.FC = () => {
       kopf: 'Status',
       breite: '108px',
       // Reihenfolge wie in jeder Status-Auswahl: Neu, In Arbeit, Wartet, Erledigt.
-      sortWert: (v) => STATUS_REIHE.indexOf(v.status),
+      sortWert: (v) => vorgangStatusRang(v.status),
       zelle: (v) => <StatusPill status={v.status} />,
     },
     {
