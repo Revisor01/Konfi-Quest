@@ -29,11 +29,7 @@ erledigt ist.
 
 ### In Arbeit
 
-- [ ] **Test-Backend am Server abbauen** — im Repo erledigt
-  (`chore/test-backend-abschaffen`); am Server erst nach dem Push auf
-  `main`: Stack-Dienst entfernen, Traefik-Regel, KeyHelp-vHost, DNS-Eintrag,
-  Registry-Tags `test-latest` ([Betrieb](#betrieb), „Test-Backend teilt
-  Datenbank und Schlüssel mit Produktion").
+Nichts.
 
 ### Wartet auf Gerät oder Simon
 
@@ -45,8 +41,6 @@ erledigt ist.
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
 - [ ] **Simons offene Fragen** — unten unter
   [Bei Simon zu entscheiden](#bei-simon-zu-entscheiden).
-- [ ] **CodeQL #124 und #127 auf GitHub als „False positive" schließen** —
-  am Code begründet ([Code](#code), „CodeQL-Meldungen").
 
 ### Als Nächstes
 
@@ -118,8 +112,7 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 08.10.2026 — Test-Backend im Repo abgebaut: Dienst aus der
   Referenz-Compose, Workflow und `api_url`-Eingabe entfernt; die fünf
   TestFlight-Builds, die darauf zeigten, sind abgelaufen
-  (`chore/test-backend-abschaffen`). Die Server-Seite steht oben unter „In
-  Arbeit".
+  (`chore/test-backend-abschaffen`); die Server-Seite folgte am selben Tag.
 - [x] 08.10.2026 — Zeitgeber und Horcher enden mit ihrer Seite (alle Stellen,
   mit Wächtertest), Zähler-Abruf nach Chat-Nachrichten entprellt (Betrieb
   BF-08), doppelte CSS-Klassen der Bereichs-Stylesheets aufgelöst,
@@ -168,6 +161,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   fachlichen Reihenfolge, Offenes zuerst (Simon: „umsetzen"); die Reihen
   aller Status-Spalten an einer Stelle, `frontend/src/utils/statusReihenfolge.ts`
   (`feat/status-spalten-sortierung`).
+- [x] 08.10.2026 — Test-Backend auch am Server abgebaut: Dienst aus dem
+  Live-Stack, Traefik-Regel, KeyHelp-vHost, DNS-Eintrag und Registry-Tags
+  entfernt (Server-Agent; `test-api` antwortet nicht mehr).
+- [x] 08.10.2026 — CodeQL #124 und #127 auf GitHub als „False positive"
+  geschlossen (globaler Limiter per `app.use`, Upload-Limiter an der
+  Beitrags-Route in `backend/createApp.js`).
 
 ## Offen
 
@@ -234,14 +233,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   zwischen Rechteprüfung und Schreiben gelöscht (Fremdschlüssel), oder ein
   Deadlock bzw. Verbindungs-Timeout. Beim nächsten Auftreten das Log der
   Replica zur Uhrzeit lesen.
-- **CodeQL-Meldungen.** #124 `js/missing-rate-limiting` an `GET
-  /chat/files/:filename` (`backend/routes/chat.js`) und #127 an `POST
-  /challenges/konfi/:id/submissions` (`backend/routes/challenges.js`) sind
-  Fehlalarme: Der globale Limiter hängt per `app.use` vor allen Routen, der
-  Upload-Limiter an der Beitrags-Route (beides in `backend/createApp.js`);
-  CodeQL sieht das über die Dateigrenze nicht (am Code begründet
-  08.10.2026). Offen ist nur, dass Simon beide auf GitHub als „False
-  positive" schließt.
 
 ### Tests und CI
 
@@ -269,14 +260,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Betrieb
 
-- **Test-Backend teilt Datenbank und Schlüssel mit Produktion.**
-  `backend-test` hing an der Produktionsdatenbank, an denselben Uploads und
-  am selben `JWT_SECRET`. Entschieden 08.10.2026 (Simon): abschaffen. Im Repo
-  erledigt (`chore/test-backend-abschaffen`, 08.10.2026: Dienst aus
-  `deploy/compose.konfi_quest.yml`, Workflow und `api_url`-Eingabe entfernt;
-  kein gültiger Build zeigt mehr darauf). Offen ist die Server-Seite, erst
-  nach dem Push auf `main`: Dienst aus dem Live-Stack nehmen, Traefik-Regel,
-  KeyHelp-vHost, DNS-Eintrag und die Registry-Tags `test-latest` entfernen.
 - **Referenz-Compose nachziehen.** `deploy/compose.konfi_quest.yml` fehlen
   die gewollten Abweichungen des Live-Stacks (Abgleich 27.09.2026): Router
   auch für den `www.`-Host, die Middlewares für Kompression und
@@ -404,14 +387,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
   gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
   Web-Fassung lesen. Umsetzen?
-- **Sprühangriff über viele Konten.** Die Kontosperre zählt je Konto (10
-  Fehlversuche je Stunde); wer viele Konten mit je wenigen Versuchen
-  durchprobiert, wird nur von der IP-Grenze gebremst (300 je 15 Minuten).
-  Am 08.10.2026 geprüft, nichts geändert, weil beide Wege einen Preis haben:
-  Eine engere IP-Grenze trifft Schulklassen, die hinter einer Adresse
-  sitzen; eine globale Grenze für Fehlversuche wäre ein Hebel, alle
-  auszusperren. Welcher Weg oder so lassen? Seit 27.09.2026 (Sicherheit
-  BF-04, Rest).
 - **Nutzungsmessung.** Die Vorschläge S1–S17 in
   [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
   auf Simons Entscheidung.
@@ -443,6 +418,15 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Zurückgestellt
 
+- **Sprühangriff über viele Konten.** Die Kontosperre zählt je Konto (10
+  Fehlversuche je Stunde); wer viele Konten mit je wenigen Versuchen
+  durchprobiert, wird nur von der IP-Grenze gebremst (300 je 15 Minuten).
+  Am 08.10.2026 geprüft, nichts geändert, weil beide Wege einen Preis haben:
+  Eine engere IP-Grenze trifft Schulklassen, die hinter einer Adresse
+  sitzen; eine globale Grenze für Fehlversuche wäre ein Hebel, alle
+  auszusperren. Seit 27.09.2026 (Sicherheit BF-04, Rest). Simon,
+  08.10.2026: „wir warten mal ab, wer soll das tun" — so lassen, bis ein
+  Anlass (gehäufte Fehlversuche über viele Konten im Log) es nahelegt.
 - **Rechenschaft vor der EKD-Ausrollung.** Die Datenschutzerklärung sagt
   nichts zur Mitarbeit in mehreren Gemeinden (wer sieht was, wer stimmt zu);
   ein Verzeichnis der Verarbeitungstätigkeiten, TOM und AVV — oder ein
