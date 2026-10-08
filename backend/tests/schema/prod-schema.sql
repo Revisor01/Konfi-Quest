@@ -4,7 +4,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 174_settings_primaerschluessel.sql -- also der Stand, den die Produktion nach
+-- 175_doppelte_indizes.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================
@@ -3242,13 +3242,6 @@ CREATE UNIQUE INDEX idx_24975_sqlite_autoindex_chat_read_status_1 ON public.chat
 
 
 --
--- Name: idx_25001_sqlite_autoindex_activity_categories_1; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX idx_25001_sqlite_autoindex_activity_categories_1 ON public.activity_categories USING btree (activity_id, category_id);
-
-
---
 -- Name: idx_25007_sqlite_autoindex_event_categories_1; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3536,13 +3529,6 @@ CREATE INDEX idx_chat_participants_user_id ON public.chat_participants USING btr
 
 
 --
--- Name: idx_chat_poll_votes_poll; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_chat_poll_votes_poll ON public.chat_poll_votes USING btree (poll_id);
-
-
---
 -- Name: idx_chat_poll_votes_poll_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3554,13 +3540,6 @@ CREATE INDEX idx_chat_poll_votes_poll_id ON public.chat_poll_votes USING btree (
 --
 
 CREATE INDEX idx_chat_poll_votes_user_id ON public.chat_poll_votes USING btree (user_id);
-
-
---
--- Name: idx_chat_polls_message; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_chat_polls_message ON public.chat_polls USING btree (message_id);
 
 
 --
@@ -3638,13 +3617,6 @@ CREATE INDEX idx_chat_rooms_type ON public.chat_rooms USING btree (type);
 --
 
 CREATE INDEX idx_custom_badges_organization_id ON public.custom_badges USING btree (organization_id);
-
-
---
--- Name: idx_daily_verses_date_translation; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_daily_verses_date_translation ON public.daily_verses USING btree (date, translation);
 
 
 --
@@ -3837,13 +3809,6 @@ CREATE INDEX idx_konfi_profiles_organization_id ON public.konfi_profiles USING b
 
 
 --
--- Name: idx_konfi_profiles_user_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_konfi_profiles_user_id ON public.konfi_profiles USING btree (user_id);
-
-
---
 -- Name: idx_konfspruch_uebersetzungen_spruch; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3869,13 +3834,6 @@ CREATE INDEX idx_konfsprueche_org ON public.konfsprueche USING btree (organizati
 --
 
 CREATE INDEX idx_levels_active ON public.levels USING btree (organization_id, is_active);
-
-
---
--- Name: idx_levels_organization_points; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_levels_organization_points ON public.levels USING btree (organization_id, points_required);
 
 
 --
@@ -3956,13 +3914,6 @@ CREATE INDEX idx_notifications_unread ON public.notifications USING btree (user_
 
 
 --
--- Name: idx_notifications_user; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_notifications_user ON public.notifications USING btree (user_id);
-
-
---
 -- Name: idx_notifications_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3988,13 +3939,6 @@ CREATE INDEX idx_org_einladungen_org ON public.org_einladungen USING btree (orga
 --
 
 CREATE INDEX idx_org_einladungen_user ON public.org_einladungen USING btree (user_id, status);
-
-
---
--- Name: idx_password_resets_token; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_password_resets_token ON public.password_resets USING btree (token);
 
 
 --
