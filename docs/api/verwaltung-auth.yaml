@@ -1915,11 +1915,14 @@ paths:
       tags: ["Organisationen"]
       summary: Passwort eines Support-Kontos setzen
       description: >
-        Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen und hebt
-        eine Kontosperre nach Fehlversuchen auf. ANDERS: keine Bestaetigungsmail
-        -- deren Vorlage spricht von "der Leitung deiner Gemeinde".
-        PUT /api/users/{id}/reset-password geht fuer Support-Konten ebenfalls
-        (Super-Admin, seit 03.10.2026 korrekt) und schickt diese Mail.
+        Wie PUT /api/users/{id}/reset-password: beendet alle Sitzungen, hebt
+        eine Kontosperre nach Fehlversuchen auf und schickt nach der Antwort
+        die Bestaetigung an die hinterlegte Adresse (ohne Passwort), mit dem
+        Satz "der Support von Konfi Quest hat ein neues Passwort fuer dein
+        Konto gesetzt". BEHOBEN 08.10.2026: bis dahin keine Mail hier und an
+        PUT /api/users/{id}/reset-password fuer Support-Konten der falsche Satz
+        "die Leitung deiner Gemeinde hat ..." (utils/passwortGeaendertMail.js
+        waehlt den Support-Satz fuer Konten ohne Gemeinde).
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID des Support-Kontos" }
       requestBody:

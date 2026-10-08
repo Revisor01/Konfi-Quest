@@ -36,7 +36,7 @@ const emailService = require('../services/emailService');
 async function meldePasswortGeaendert(db, userId, { durchLeitung = false } = {}) {
   try {
     const { rows: [konto] } = await db.query(
-      `SELECT u.email, u.display_name, u.username,
+      `SELECT u.email, u.display_name, u.username, u.organization_id IS NULL AS ohne_gemeinde,
               COALESCE(o.display_name, o.name) AS gemeinde
          FROM users u
          LEFT JOIN organizations o ON o.id = u.organization_id
@@ -46,10 +46,12 @@ async function meldePasswortGeaendert(db, userId, { durchLeitung = false } = {})
     const adresse = konto && typeof konto.email === 'string' ? konto.email.trim() : '';
     if (!adresse) return false;
 
+    // Ein Konto ohne Gemeinde (Support-Konto) hat keine Leitung, die ihm ein
+    // Passwort setzen koennte -- das tut der Support (Befund 03.10.2026).
     await emailService.sendPasswordChangedEmail(
       adresse,
       konto.display_name || konto.username,
-      { durchLeitung, gemeinde: konto.gemeinde || null }
+      { durchLeitung, durchSupport: durchLeitung && konto.ohne_gemeinde === true, gemeinde: konto.gemeinde || null }
     );
     return true;
   } catch (err) {

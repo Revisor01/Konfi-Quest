@@ -45,7 +45,8 @@ ist. Dasselbe gilt, wenn die Gemeindeleitung ein Leitungspasswort setzt.
 
 Hat die Person eine E-Mail-Adresse hinterlegt, bekommt sie eine
 [Bestätigung](#die-bestaetigung-nach-einer-passwortaenderung-einordnen), dass
-die Leitung ihr Passwort neu gesetzt hat. Das Passwort selbst steht nicht
+die Leitung ihr Passwort neu gesetzt hat — bei einem Support-Konto ohne
+Gemeinde, dass der Support es gesetzt hat. Das Passwort selbst steht nicht
 darin — das gibst du weiter.
 
 Konten mit Super-Admin-Rechten kann nur ein Super-Admin bearbeiten — auch

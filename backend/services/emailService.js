@@ -251,15 +251,22 @@ Dein Konfi Quest Team
  * @param {{durchLeitung?: boolean, gemeinde?: string|null}} [opt]
  *   durchLeitung: Die Leitung hat das Passwort gesetzt, nicht die Person.
  */
-const sendPasswordChangedEmail = async (email, name, { durchLeitung = false, gemeinde = null } = {}) => {
+// durchSupport (08.10.2026): Ein Support-Konto hat keine Gemeinde und damit
+// keine "Leitung deiner Gemeinde" -- gesetzt hat das Passwort der Support.
+const sendPasswordChangedEmail = async (email, name, { durchLeitung = false, durchSupport = false, gemeinde = null } = {}) => {
   const subject = 'Passwort geändert - Konfi Quest';
 
-  const vonWem = durchLeitung
-    ? `die Leitung deiner Gemeinde${gemeinde ? ` (${gemeinde})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
-    : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
-  const vonWemHtml = durchLeitung
-    ? `die Leitung deiner Gemeinde${gemeinde ? ` (${escapeHtml(gemeinde)})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
-    : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
+  const SUPPORT_SATZ = 'der Support von Konfi Quest hat ein neues Passwort für dein Konto gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es vom Support.';
+  const vonWem = durchSupport
+    ? SUPPORT_SATZ
+    : durchLeitung
+      ? `die Leitung deiner Gemeinde${gemeinde ? ` (${gemeinde})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
+      : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
+  const vonWemHtml = durchSupport
+    ? SUPPORT_SATZ
+    : durchLeitung
+      ? `die Leitung deiner Gemeinde${gemeinde ? ` (${escapeHtml(gemeinde)})` : ''} hat ein neues Passwort für dein Konto bei Konfi Quest gesetzt. Das Passwort selbst steht nicht in dieser Mail — du bekommst es von ihr.`
+      : 'dein Passwort für Konfi Quest wurde erfolgreich geändert.';
 
   const text = `
 Hallo ${name},

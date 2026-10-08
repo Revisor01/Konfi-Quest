@@ -182,6 +182,9 @@ Versionsüberschrift.
 - Der Benutzername einer neuen Gemeindeleitung folgt denselben Regeln wie
   jeder andere Benutzername (3 bis 50 Zeichen, Buchstaben, Ziffern, Punkt und
   Bindestrich).
+- Setzt der Support einem Support-Konto ein neues Passwort, sagt die
+  Bestätigungsmail, dass es der Support war, statt von der Leitung einer
+  Gemeinde zu sprechen.
 - In der Benutzerverwaltung stehen Konten mit Super-Admin-Recht ohne
   Bearbeiten und Löschen, in App und Browser; bisher gab es die Knöpfe, aber
   sie endeten mit einer Fehlermeldung. Ein Support-Konto kann die
