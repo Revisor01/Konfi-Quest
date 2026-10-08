@@ -127,9 +127,11 @@ vi.mock('../../services/websocket', () => ({
 
 import { AppProvider, useApp } from '../../contexts/AppContext';
 
-let aktuell: ReturnType<typeof useApp> | null = null;
+// Ein Halter statt einer Variable: React verbietet, aus einer Komponente eine
+// aeussere Variable neu zu belegen (Lint-Regel des React-Compilers).
+const halter: { aktuell: ReturnType<typeof useApp> | null } = { aktuell: null };
 const Lauscher = () => {
-  aktuell = useApp();
+  halter.aktuell = useApp();
   return null;
 };
 
@@ -153,7 +155,7 @@ describe('AppContext — Rueckfall gleicht Rolle und Gemeinde an', () => {
         </AppProvider>
       );
     });
-    expect(aktuell?.user?.role_name).toBe('org_admin');
+    expect(halter.aktuell?.user?.role_name).toBe('org_admin');
 
     // Zugang zur Zweitgemeinde entzogen: api.ts hat schon zurueckgestellt,
     // /auth/me meldet jetzt die Stamm-Gemeinde.
@@ -162,9 +164,9 @@ describe('AppContext — Rueckfall gleicht Rolle und Gemeinde an', () => {
       window.dispatchEvent(new CustomEvent('auth:org-fallback'));
     });
 
-    expect(aktuell?.user?.role_name).toBe('teamer');
-    expect(aktuell?.user?.type).toBe('teamer');
-    expect((aktuell?.user as unknown as { organization: string }).organization).toBe('Stammgemeinde');
+    expect(halter.aktuell?.user?.role_name).toBe('teamer');
+    expect(halter.aktuell?.user?.type).toBe('teamer');
+    expect((halter.aktuell?.user as unknown as { organization: string }).organization).toBe('Stammgemeinde');
     expect(gespeichert).toMatchObject({ role_name: 'teamer', type: 'teamer', organization: 'Stammgemeinde', organization_id: 1 });
     // Die Liste fuer den Umschalter wird neu geholt.
     expect(mockGet).toHaveBeenCalledWith('/auth/my-organizations');
