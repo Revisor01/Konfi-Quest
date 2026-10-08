@@ -89,6 +89,9 @@ describe('Antwortformen bestehender Konten bleiben, wie sie sind', () => {
       id: 'number', username: 'string', display_name: 'string', email: 'null', role_title: 'null',
       role_name: 'string', role_display_name: 'string', is_super_admin: 'boolean',
       trial_ends_at: 'null', is_trial: 'boolean', assigned_jahrgaenge: 'array',
+      // Hinzugefuegt am 08.10.2026 (Gemeinde-Rueckfall gleicht Rolle und
+      // Namen ab); dieselben Namen und Typen wie bei der Anmeldung.
+      organization_id: 'number', organization: 'string', type: 'string',
     });
   });
 

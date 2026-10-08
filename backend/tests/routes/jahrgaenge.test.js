@@ -804,7 +804,11 @@ describe('Jahrgaenge Routes', () => {
       abfragen.mockRestore();
 
       expect(res.status).toBe(200);
-      expect(anzahl).toBe(3);
+      // 3 Abfragen der Route plus 1 der Anmeldung: Seit dem 08.10.2026 prueft
+      // rbac auch bei gefuelltem Cache Sperre, Rolle und Mitgliedschaft je
+      // Anfrage (eine Abfrage, "Sperre wirkt auf der zweiten Replica erst
+      // nach 30 s"). Waechst die Zahl, faellt die Buendelung der Route weg.
+      expect(anzahl).toBe(4);
 
       // Und die Sprueche stimmen trotz Buendelung.
       const konfi1Entry = res.body.find(r => r.user_id === USERS.konfi1.id);

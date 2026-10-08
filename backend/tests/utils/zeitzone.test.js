@@ -327,7 +327,9 @@ describe('Terminabsage: das Datum in der Push-Nachricht traegt die Zeitzone', ()
   );
 
   it('formatiert das Termindatum ueber den gemeinsamen Helfer', () => {
-    const treffer = quelle().match(/const eventDateFormatted = formatDatum\(event\.event_date\);/g);
+    // Seit 08.10.2026 geht eine Stelle als Parameter in die Warteschlange
+    // (eventDateFormatted: formatDatum(...)) -- dasselbe Muster.
+    const treffer = quelle().match(/(?:const eventDateFormatted = |eventDateFormatted: )formatDatum\(event\.event_date\)/g);
     // Alle drei Stellen, an denen ein Termindatum in eine Push-Nachricht
     // geht: Termin geloescht, Termin abgesagt und -- seit dem 16.09.2026 --
     // Absage zurueckgenommen ("Findet doch statt").

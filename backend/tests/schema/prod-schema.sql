@@ -4,7 +4,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 173_einladungscode_ohne_urheber.sql -- also der Stand, den die Produktion nach
+-- 174_settings_primaerschluessel.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================
@@ -1990,7 +1990,7 @@ CREATE TABLE public.schema_migrations (
 CREATE TABLE public.settings (
     key text NOT NULL,
     value text,
-    organization_id integer
+    organization_id integer NOT NULL
 );
 
 
@@ -3164,11 +3164,11 @@ ALTER TABLE ONLY public.schema_migrations
 
 
 --
--- Name: settings settings_org_key_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: settings settings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.settings
-    ADD CONSTRAINT settings_org_key_unique UNIQUE (organization_id, key);
+    ADD CONSTRAINT settings_pkey PRIMARY KEY (organization_id, key);
 
 
 --
@@ -4233,13 +4233,6 @@ CREATE UNIQUE INDEX uq_categories_name_org ON public.categories USING btree (nam
 --
 
 CREATE UNIQUE INDEX uq_jahrgaenge_name_org ON public.jahrgaenge USING btree (name, organization_id);
-
-
---
--- Name: uq_settings_org_key; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX uq_settings_org_key ON public.settings USING btree (organization_id, key);
 
 
 --
