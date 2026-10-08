@@ -339,7 +339,10 @@ describe('9e Support-Formular: der Text folgt dem Code', () => {
     // Der Text entsteht aus der Nummer und dem Absendernamen der Einstellungen -- sonst aus nichts.
     expect(route).toContain('const bestaetigungText = (nummer, absendername) =>');
     expect(route).toContain("postfach: 'support'");
-    expect(route).toContain('text: bestaetigungText(vorgangId, absendername)');
+    expect(route).toContain('text: bestaetigungText(p.vorgangId, absendername)');
+    // Seit 08.10.2026 ein Auftrag der dauerhaften Warteschlange: Er speichert
+    // nur Nummer und Adresse, keine Angaben aus dem Formular.
+    expect(route).toContain("einreihen(db, 'anliegen_eingegangen', { vorgangId, email },");
     expect(abschnitt).toContain('eine Bestätigung mit festem Text — ohne Ihre Angaben — von support@konfi-quest.de; sie nennt die Nummer Ihres Anliegens');
   });
 
