@@ -1605,6 +1605,9 @@ paths:
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/events/{id}:
+    # BEHOBEN 08.10.2026 (offener Befund "Rolle aus der Stamm-Gemeinde in
+    # Termin-Teilnehmern"): Rolle und Jahrgaenge in der Teilnehmerliste gelten
+    # fuer die Gemeinde des Termins. Antwortform unveraendert.
     get:
       tags: ["Termine (Verwaltung)"]
       summary: Event-Details mit Teilnehmern (rollenabhaengig reduziert)
@@ -3728,7 +3731,9 @@ paths:
       summary: Liste der Teamer:innen der Organisation
       description: >
         Liefert alle User mit Rolle teamer der aktiven Organisation samt
-        Jahrgangsnamen, Abzeichen- und Zertifikatszaehler.
+        Jahrgangsnamen, Abzeichen- und Zertifikatszaehler. teamer_since ist
+        seit 08.10.2026 das Datum DIESER Gemeinde (Migration 196); Feld und
+        Typ unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -3783,6 +3788,11 @@ paths:
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/admin/konfis/{id}:
+    # BEHOBEN 08.10.2026 (Planung Mehrfach-Konten Punkt 4): Teamer:innen aus
+    # einer anderen Gemeinde laden fuer die Leitung (vorher 404) --
+    # organization_id, Rolle, role_title, teamer_since und is_active der aktiven
+    # Gemeinde, Termine/Zertifikate/Konfi-Zeit nur aus ihr. Antwortform
+    # unveraendert.
     get:
       tags: ["Konfis (Verwaltung)"]
       summary: Einzelner Konfi oder Teamer mit voller Historie
@@ -3978,7 +3988,7 @@ paths:
         objekt-pruefung: "Ziel muss Rolle konfi haben, zur eigenen Organisation gehören und darf nicht bereits gelöscht sein; seit 01.09.2026 zusaetzlich darfKonfi(edit) — 403 fuer admin ohne edit-Zuweisung auf den Jahrgang des Konfis (org_admin ausgenommen)"
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "{ message: 'Konfi erfolgreich gelöscht' } -- Konto und alles der Person geloescht, Dateien nach dem COMMIT entfernt (seit 28.09.2026 utils/kontoLoeschen.js); Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter)" }
+        "200": { description: "{ message: 'Konfi erfolgreich gelöscht' } -- Konto und alles der Person geloescht, Dateien nach dem COMMIT entfernt (seit 28.09.2026 utils/kontoLoeschen.js); Rechte-Cache der Person geleert (seit 26.09.2026, Audit Sicherheit BF-10 -- vorher galt die laufende Sitzung bis zu 30 s weiter). SEIT 08.10.2026 (Simon, Entscheidung 8): Gehoert das Konto noch einer weiteren Gemeinde an (Altbestand, Konfi und Team gibt es nicht zugleich), endet NUR die Mitgliedschaft in dieser Gemeinde -- Antwort { message, konto_bleibt: true } (additiv, wie DELETE /users/{id}); mit ihr gehen Jahrgaenge, Chat-Plaetze und Postfach dieser Gemeinde, die Buchungen fuer ihre Termine (Warteliste rueckt nach) und das Konfi-Profil eines Jahrgangs dieser Gemeinde. Ist die Gemeinde die Stamm-Gemeinde, zieht das Konto in die weitere um. Gesucht wird die Konfi ueber beide Quellen der Zugehoerigkeit mit der Rolle DIESER Gemeinde. Die Selbstloeschung (POST /auth/delete-account) entfernt weiterhin alles" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -4293,12 +4303,19 @@ paths:
     put:
       tags: ["Konfis (Verwaltung)"]
       summary: Aktiv-seit-Datum einer Teamer:in setzen
-      description: Setzt das Feld teamer_since des Ziel-Users.
+      description: >
+        Setzt teamer_since des Ziel-Users in der AKTIVEN Gemeinde (seit
+        08.10.2026, Migration 196): in der Stamm-Gemeinde am Konto (und in
+        einer vorhandenen Stamm-Zeile von user_organizations), in einer
+        weiteren Gemeinde in deren Zeile. BEHOBEN 08.10.2026: Vorher schrieb
+        die Route nur Konten der Stamm-Gemeinde (eine Teamer:in aus einer
+        anderen Gemeinde: 404) und setzte das Datum fuer alle Gemeinden
+        zugleich. Antwortform unveraendert ({ teamer_since }).
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
         org-scope: true
-        objekt-pruefung: "UPDATE users ... WHERE id = :id AND organization_id = Token-Org"
+        objekt-pruefung: "Mitglied der Token-Gemeinde ueber beide Quellen (utils/orgMitglieder.js, schreibeGemeindeFelder); sonst 404"
         hinweis: >
           Kein Rollen-Check auf das Zielobjekt: das Datum laesst sich auch bei
           Usern setzen, die keine Teamer:innen sind.

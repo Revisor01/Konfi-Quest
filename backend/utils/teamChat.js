@@ -23,6 +23,7 @@
  * @param {number|null} createdBy  User-ID für created_by bei Neuanlage.
  * @returns {Promise<number|null>} room_id des Team-Chats (oder null bei Fehler).
  */
+const { nichtGesperrtIn } = require('./orgMitglieder');
 async function syncTeamChat(db, organizationId, createdBy = null) {
   if (!organizationId) return null;
 
@@ -47,6 +48,8 @@ async function syncTeamChat(db, organizationId, createdBy = null) {
   //    (users.organization_id + users.role_id) ODER aus user_organizations
   //    (Org-Switcher) kommen — beide Quellen zählen, sonst entfernt der Sync
   //    eingewechselte Mitglieder aus dem Team-Chat.
+  //    Wer nur in DIESER Gemeinde gesperrt ist (Migration 196, 08.10.2026),
+  //    gehoert nicht dazu -- wie ein gesperrtes Konto.
   const { rows: sollMembers } = await db.query(
     `
     SELECT u.id AS user_id,
@@ -56,6 +59,7 @@ async function syncTeamChat(db, organizationId, createdBy = null) {
        AND r.name IN ('org_admin', 'admin', 'teamer')
        AND u.is_active = true
        AND u.deleted_at IS NULL
+       AND ${nichtGesperrtIn('u', '$1')}
     UNION
     SELECT u.id AS user_id,
            CASE WHEN r.name = 'teamer' THEN 'teamer' ELSE 'admin' END AS user_type
@@ -65,6 +69,7 @@ async function syncTeamChat(db, organizationId, createdBy = null) {
      WHERE uo.organization_id = $1
        AND r.name IN ('org_admin', 'admin', 'teamer')
        AND u.is_active = true
+       AND uo.is_active = true
        AND u.deleted_at IS NULL
     `,
     [organizationId]

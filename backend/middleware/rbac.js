@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('../utils/orgMitglieder');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -11,6 +12,23 @@ if (!JWT_SECRET) {
 const USER_CACHE_TTL = 30 * 1000; // 30 Sekunden
 const USER_CACHE_MAX = 500;
 const userCache = new Map();
+
+// Stand je Anfrage, auch bei gespeichertem Nutzer (08.10.2026, siehe
+// verifyTokenRBAC): Konto frei (nicht gesperrt, nicht geloescht), in der
+// gespeicherten Gemeinde Mitglied und dort nicht gesperrt, Rolle dort, Gemeinde
+// nicht gesperrt, Soft-Revoke. $2 ist die gespeicherte aktive Gemeinde; ein
+// Konto ohne Gemeinde (Support) hat dort NULL.
+const STAND_SQL = `
+  SELECT (COALESCE(u.is_active, false) AND u.deleted_at IS NULL
+          AND COALESCE(ug.is_active, true)) AS frei,
+         ($2::bigint IS NULL OR u.organization_id = $2 OR ug.id IS NOT NULL) AS mitglied,
+         CASE WHEN $2::bigint IS NULL OR u.organization_id = $2 THEN u.role_id ELSE ug.role_id END AS role_id,
+         ($2::bigint IS NULL OR COALESCE(o.is_active, true)) AS org_aktiv,
+         u.token_invalidated_at
+    FROM users u
+    LEFT JOIN user_organizations ug ON ug.user_id = u.id AND ug.organization_id = $2
+    LEFT JOIN organizations o ON o.id = $2
+   WHERE u.id = $1`;
 
 // ============================================
 // ABLEHNUNG "nicht Mitglied der aktiven Gemeinde" (403)
@@ -116,25 +134,45 @@ const verifyTokenRBAC = (db) => {
       const requestedActiveOrg = Number.isInteger(headerOrg) ? headerOrg
         : (Number.isInteger(tokenOrg) ? tokenOrg : null);
 
-      // Cache-Check VOR DB-Query (Key inkl. aktiver Org)
+      // Cache-Check (Key inkl. aktiver Org).
+      //
+      // SPERRE, LOESCHUNG, ROLLE UND MITGLIEDSCHAFT KOMMEN NIE AUS DEM
+      // ZWISCHENSPEICHER (08.10.2026, Befund "Sperre wirkt auf der zweiten
+      // Replica erst nach 30 s", Sicherheit BF-10). invalidateUserCache leert
+      // nur die Replica, die die Sperre bearbeitet; die andere arbeitete bis
+      // zu 30 s mit dem alten Stand weiter. Jetzt prueft jede Anfrage mit
+      // EINER Abfrage ueber zwei Primaerschluessel (users.id und den
+      // UNIQUE-Index user_organizations(user_id, organization_id)) den Stand
+      // -- unabhaengig davon, welche Replica gesperrt hat. Nur wenn alles
+      // gleich ist, gilt der gespeicherte Rest (Name, Jahrgaenge, Gemeinde).
+      // Gemessen am 08.10.2026 (lokale Test-Datenbank, 2 000 Aufrufe): siehe
+      // tests/routes/rbacSperreSofort.test.js und Commit-Nachricht.
       const ckey = cacheKey(decoded.id, requestedActiveOrg);
       const cached = getCachedUser(ckey);
       if (cached) {
-        // Soft-Revoke Check auch mit cached Data
-        if (cached.token_invalidated_at) {
-          const tokenIssuedAt = decoded.iat;
-          const invalidatedAt = Math.floor(new Date(cached.token_invalidated_at).getTime() / 1000);
-          if (tokenIssuedAt < invalidatedAt) {
-            return res.status(401).json({ error: 'Token invalidated' });
+        const { rows: [stand] } = await db.query(STAND_SQL, [decoded.id, cached.userObj.organization_id]);
+        const gleich = stand
+          && stand.frei === true
+          && stand.mitglied === true
+          && (stand.org_aktiv === true || cached.userObj.role_name === 'super_admin')
+          && Number(stand.role_id) === Number(cached.role_id);
+        if (gleich) {
+          if (stand.token_invalidated_at) {
+            const invalidatedAt = Math.floor(new Date(stand.token_invalidated_at).getTime() / 1000);
+            if (decoded.iat < invalidatedAt) {
+              return res.status(401).json({ error: 'Token invalidated' });
+            }
           }
+          req.user = cached.userObj;
+          return next();
         }
-        req.user = cached.userObj;
-        return next();
+        // Etwas hat sich geaendert: neu aufloesen, mit den Antworten unten.
+        userCache.delete(ckey);
       }
 
       // User-Query mit LEFT JOIN für super_admin (organization_id kann NULL sein)
       const userQuery = `
-        SELECT u.id, u.organization_id, u.username, u.display_name, u.is_active, u.deleted_at,
+        SELECT u.id, u.organization_id, u.role_id, u.username, u.display_name, u.is_active, u.deleted_at,
                u.role_title, u.is_super_admin, u.token_invalidated_at,
                r.name as role_name, r.display_name as role_display_name,
                o.name as organization_name, o.slug as organization_slug,
@@ -169,34 +207,36 @@ const verifyTokenRBAC = (db) => {
         }
       }
 
-      // AKTIVE Org anwenden: ist eine andere als die Primaer-Org gewuenscht UND
-      // ist der User dort Mitglied (user_organizations)? Dann Org + Rolle auf die
-      // aktive Org umschreiben. Alle nachgelagerten Org-isolierten Queries lesen
-      // danach req.user.organization_id und arbeiten transparent in der aktiven Org.
-      if (requestedActiveOrg && requestedActiveOrg !== user.organization_id) {
-        const { rows: [membership] } = await db.query(`
-          SELECT uo.organization_id,
-                 r.id as role_id, r.name as role_name, r.display_name as role_display_name,
-                 o.name as organization_name, o.slug as organization_slug,
-                 COALESCE(o.is_active, true) as organization_active
-          FROM user_organizations uo
-          JOIN roles r ON uo.role_id = r.id
-          JOIN organizations o ON uo.organization_id = o.id
-          WHERE uo.user_id = $1 AND uo.organization_id = $2
-        `, [decoded.id, requestedActiveOrg]);
-
-        if (!membership) {
-          // Nicht Mitglied der angeforderten Org -> Zugriff verweigern (kein
-          // stilles Zurueckfallen auf die Primaer-Org, das wäre verwirrend).
+      // AKTIVE Org anwenden (Multi-Org): die gewuenschte Gemeinde, sonst die
+      // Stamm-Gemeinde -- und ist die Person NUR dort gesperrt, die erste freie
+      // weitere (utils/orgMitglieder.js, waehleGemeinde; 08.10.2026). Rolle,
+      // Funktionsbezeichnung und Gemeinde gelten danach fuer die AKTIVE
+      // Gemeinde; alle nachgelagerten Abfragen lesen req.user.organization_id.
+      //
+      // Nicht Mitglied ODER dort gesperrt -> 403 wie beim Verlust einer
+      // Mitgliedschaft (kein stilles Zurueckfallen bei ausdruecklichem
+      // Wunsch; die App faellt mit error_code org_kein_zugriff selbst zurueck).
+      // Ein Konto ohne Gemeinde (Support) arbeitet ohne Wunsch weiter ohne
+      // Gemeinde.
+      let rolleId = user.role_id;
+      if (requestedActiveOrg || user.organization_id !== null) {
+        const mitgliedschaften = await ladeMitgliedschaftenMitSperre(db, decoded.id);
+        const gewuenscht = requestedActiveOrg || null;
+        const { gemeinde, grund } = waehleGemeinde(mitgliedschaften, gewuenscht);
+        if (grund === 'kein_mitglied' || grund === 'gesperrt') {
           return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
-
-        user.organization_id = membership.organization_id;
-        user.role_name = membership.role_name;
-        user.role_display_name = membership.role_display_name;
-        user.organization_name = membership.organization_name;
-        user.organization_slug = membership.organization_slug;
-        user.organization_active = membership.organization_active;
+        if (grund === 'keine_freie' || !gemeinde) {
+          return res.status(401).json({ error: 'User account is inactive' });
+        }
+        user.organization_id = gemeinde.organization_id;
+        user.role_name = gemeinde.role_name;
+        user.role_display_name = gemeinde.role_display_name;
+        user.organization_name = gemeinde.organization_name;
+        user.organization_slug = gemeinde.organization_slug;
+        user.organization_active = gemeinde.organization_active;
+        user.role_title = gemeinde.role_title;
+        rolleId = gemeinde.role_id;
       }
 
       // Super-Admin hat keine Organization - Skip org check
@@ -239,7 +279,7 @@ const verifyTokenRBAC = (db) => {
 
       // User-Objekt cachen (30s TTL, Key inkl. aktiver Org)
       setCachedUser(ckey, {
-        token_invalidated_at: user.token_invalidated_at,
+        role_id: rolleId,
         userObj: req.user
       });
 

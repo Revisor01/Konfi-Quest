@@ -156,10 +156,16 @@ async function abzeichenFingerabdruecke(db, personen) {
        GROUP BY organization_id`,
       [orgIds]
     ),
-    // teamer_since bestimmt bei teamer_year das Startjahr.
+    // teamer_since bestimmt bei teamer_year das Startjahr -- je Gemeinde
+    // (Migration 196, 08.10.2026): am Konto fuer die Stamm-Gemeinde, in
+    // user_organizations fuer jede weitere. Der Fingerabdruck nimmt beide.
     () => db.query(
-      `SELECT id AS user_id, COALESCE(teamer_since::text, '-') AS seit
-       FROM users WHERE id = ANY($1::int[])`,
+      `SELECT u.id AS user_id,
+              COALESCE(u.teamer_since::text, '-') || '|' ||
+              COALESCE((SELECT string_agg(uo.organization_id || ':' || COALESCE(uo.teamer_since::text, '-'),
+                                          ',' ORDER BY uo.organization_id)
+                          FROM user_organizations uo WHERE uo.user_id = u.id), '') AS seit
+       FROM users u WHERE u.id = ANY($1::int[])`,
       [ids]
     )
   ]);

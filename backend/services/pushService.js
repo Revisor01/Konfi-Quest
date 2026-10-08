@@ -10,7 +10,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // (users.organization_id UND user_organizations, Rolle je Quelle). Bis zum
 // 25.09.2026 fragte jede Leitungs-Meldung hier nur die Stamm-Organisation --
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
-const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation, ladeMitgliedschaftenVieler } = require('../utils/orgMitglieder');
 const { abfragenBuendeln } = require('../utils/abfragenBuendeln');
 const { TEAM_ORGWEITE_AUDIENCES, ladeTeamDasMitmacht } = require('../utils/challengeLeitungSicht');
 const { ladeKonfisDieTerminSehen } = require('../utils/konfiTerminSicht');
@@ -91,9 +91,12 @@ const { APP_SYMBOL_WEGE, wegFuerGeraet } = require('../utils/appSymbolWeg');
  *
  * Multi-Org: JEDER Payload trägt data.organization_id (als String, FCM-data
  * ist immer String) — die Organisation des INHALTS. Der Client wechselt beim
- * Antippen automatisch in diese Organisation, bevor er navigiert. Fehlt die
- * Content-Org an der Aufrufstelle, setzt sendToUser die Primär-Org des
- * Empfängers ein (für Single-Org-Empfänger identisch).
+ * Antippen automatisch in diese Organisation, bevor er navigiert. Seit
+ * 08.10.2026 gibt JEDE send...-Methode sie mit (Pflicht, geprueft fuer alle
+ * Arten in tests/services/pushGemeindeJederArt.test.js). Fehlt sie doch,
+ * setzt sendToUser nur bei Konten mit GENAU EINER Gemeinde diese ein
+ * (rueckfallGemeinde); bei mehreren geht der Push ohne organization_id
+ * raus und das Protokoll nennt Art und Konto.
  *
  * Multi-Org, Empfängerseite (25.09.2026): "Org-Admins", "Jahrgangs-Admins"
  * und "Leitung" werden über utils/orgMitglieder.js ermittelt — Stamm-
@@ -564,25 +567,91 @@ class PushService {
   }
 
   /**
-   * Helper: Primär-Org eines Empfängers als String auflösen.
+   * Rueckfall-Gemeinde fuer einen Payload OHNE Gemeinde des Inhalts
+   * (Simon, 08.10.2026, Mehrfach-Konten Entscheidung 2).
    *
-   * Fallback für Payloads OHNE explizite Content-Org: Für Konfis (immer
-   * Single-Org) ist die Primär-Org automatisch die richtige Organisation.
-   * Aufrufstellen, deren Empfänger Multi-Org sein können (Admins,
-   * Teamer:innen), setzen die Content-Org explizit im data-Objekt — dieser
-   * Fallback greift dann nicht.
+   * Jede Push-Art gibt die Gemeinde ihres Inhalts selbst mit
+   * (tests/services/pushGemeindeJederArt.test.js prueft das fuer alle
+   * send...-Methoden). Der Rueckfall bleibt nur fuer Konten mit GENAU EINER
+   * Gemeinde -- dort ist sie eindeutig. Bis hierher setzte er immer die
+   * Stamm-Gemeinde ein: Wer in A zuhause ist und in B mitarbeitet, landete
+   * mit einem Push aus B beim Antippen in A, und die Zahl wurde dort gebucht.
+   *
+   * Beide Quellen der Zugehoerigkeit (ladeMitgliedschaftenVieler): eine
+   * Stamm-Zeile in user_organizations zaehlt nicht doppelt, gesperrte
+   * Gemeinden fallen heraus. Hat die Person gar keine nutzbare Gemeinde
+   * mehr (Stamm-Gemeinde gesperrt, keine weitere), bleibt es bei der
+   * Stamm-Gemeinde -- auch das ist genau eine.
+   *
+   * @param {{stamm_organization_id:number|null, mitgliedschaften:Array}|undefined} eintrag
+   * @returns {{orgId: string|null, mehrdeutig: boolean}}
+   */
+  /**
+   * Wer von diesen Personen ist in DIESER Gemeinde gesperrt? (08.10.2026,
+   * Mehrfach-Konten Entscheidung 7: Sperre je Gemeinde.) Gesperrt heisst:
+   * eine Zeile in user_organizations fuer (Person, Gemeinde) mit
+   * is_active = false -- auch die Stamm-Zeile, wenn die Stamm-Gemeinde
+   * sperrt. Eine Mitteilung aus dieser Gemeinde geht an sie nicht raus,
+   * weder als Push noch als Postfach-Eintrag: Die Gemeinde taucht fuer sie
+   * nicht mehr auf. Die Sperre des ganzen Kontos filtert getTokensForUser.
+   *
+   * Eine Abfrage fuer alle. Bei einem Fehler: leere Menge (der Push geht
+   * raus wie bisher -- eine fehlende Zeile darf keine Mitteilung kippen).
+   *
+   * @returns {Promise<Set<string>>} Kennungen als String
+   */
+  static async gesperrtInGemeinde(db, userIds, organizationId) {
+    const ids = [...new Set((userIds || []).map(Number).filter(Number.isFinite))];
+    const orgId = Number(organizationId);
+    if (ids.length === 0 || !Number.isFinite(orgId)) return new Set();
+    try {
+      const { rows } = await db.query(
+        `SELECT user_id FROM user_organizations
+          WHERE user_id = ANY($1::bigint[]) AND organization_id = $2 AND is_active = false`,
+        [ids, orgId]
+      );
+      return new Set(rows.map((r) => String(r.user_id)));
+    } catch (err) {
+      console.error('gesperrtInGemeinde error:', err.message);
+      return new Set();
+    }
+  }
+
+  static rueckfallGemeinde(eintrag) {
+    if (!eintrag) return { orgId: null, mehrdeutig: false };
+    const orgs = [...new Set((eintrag.mitgliedschaften || []).map((m) => String(m.organization_id)))];
+    if (orgs.length > 1) return { orgId: null, mehrdeutig: true };
+    if (orgs.length === 1) return { orgId: orgs[0], mehrdeutig: false };
+    return {
+      orgId: eintrag.stamm_organization_id != null ? String(eintrag.stamm_organization_id) : null,
+      mehrdeutig: false,
+    };
+  }
+
+  /**
+   * Helper: Rueckfall-Gemeinde EINES Empfaengers (Einzelweg), siehe
+   * rueckfallGemeinde.
+   *
+   * @returns {Promise<{orgId: string|null, mehrdeutig: boolean}>}
+   */
+  static async ermittleRueckfallGemeinde(db, userId) {
+    try {
+      const jePerson = await ladeMitgliedschaftenVieler(db, [userId]);
+      return this.rueckfallGemeinde(jePerson.get(Number(userId)));
+    } catch (err) {
+      console.error('ermittleRueckfallGemeinde error:', err);
+      return { orgId: null, mehrdeutig: false };
+    }
+  }
+
+  /**
+   * Helper: Rueckfall-Gemeinde eines Empfaengers als String -- null, wenn sie
+   * nicht eindeutig ist (mehrere Gemeinden) oder das Konto fehlt. Name aus
+   * der Zeit, als hier immer die Stamm-Gemeinde stand.
    */
   static async resolveRecipientOrgId(db, userId) {
-    try {
-      const { rows: [row] } = await db.query(
-        'SELECT organization_id FROM users WHERE id = $1',
-        [userId]
-      );
-      return row && row.organization_id != null ? String(row.organization_id) : null;
-    } catch (err) {
-      console.error('resolveRecipientOrgId error:', err);
-      return null;
-    }
+    const { orgId } = await this.ermittleRueckfallGemeinde(db, userId);
+    return orgId;
   }
 
   /**
@@ -678,25 +747,29 @@ class PushService {
     const badges = new Map();
     const badgesAlteApps = new Map();
     const orgs = new Map();
+    // Konten mit mehreren Gemeinden: kein Rueckfall (rueckfallGemeinde).
+    const orgsMehrdeutig = new Set();
     const eindeutige = [...new Set(userIds)];
-    if (eindeutige.length === 0) return { badges, badgesAlteApps, orgs };
+    if (eindeutige.length === 0) return { badges, badgesAlteApps, orgs, orgsMehrdeutig };
 
     try {
       const jePerson = await appIconSummenAllerGemeinden(db, eindeutige);
-      for (const [userId, { summe, summeAlteApps, stamm_organization_id }] of jePerson) {
-        badges.set(userId, summe);
-        badgesAlteApps.set(userId, summeAlteApps);
-        // Primaer-Org als String, weil FCM-data immer String ist (dieselbe
-        // Regel wie in resolveRecipientOrgId).
-        if (stamm_organization_id != null) orgs.set(userId, String(stamm_organization_id));
+      for (const [userId, eintrag] of jePerson) {
+        badges.set(userId, eintrag.summe);
+        badgesAlteApps.set(userId, eintrag.summeAlteApps);
+        // Rueckfall-Gemeinde als String, weil FCM-data immer String ist --
+        // nur bei genau einer Gemeinde (rueckfallGemeinde, 08.10.2026).
+        const { orgId, mehrdeutig } = this.rueckfallGemeinde(eintrag);
+        if (orgId != null) orgs.set(userId, orgId);
+        if (mehrdeutig) orgsMehrdeutig.add(userId);
       }
-      return { badges, badgesAlteApps, orgs };
+      return { badges, badgesAlteApps, orgs, orgsMehrdeutig };
     } catch (err) {
       // Fehlertolerant: Ohne Zahl geht der Push trotzdem raus (der Aufrufer
       // faellt dann auf 1 zurueck). Eine Nachricht darf nicht daran
       // scheitern, dass eine Zahl fehlt.
       console.error('berechneBadgesFuerAlle error:', err.message);
-      return { badges, badgesAlteApps, orgs };
+      return { badges, badgesAlteApps, orgs, orgsMehrdeutig };
     }
   }
 
@@ -737,6 +810,17 @@ class PushService {
       //
       // Eigener Fehlerfang: Ein fehlgeschlagener Eintrag darf den Push nicht
       // kippen -- und umgekehrt haengt der Eintrag nicht am Push.
+      // Gesperrt in der Gemeinde des Inhalts (Sperre je Gemeinde,
+      // 08.10.2026): weder Postfach noch Push. Beim Versand an viele hat der
+      // Aufrufer das fuer den ganzen Block geprueft (vorberechnet).
+      const inhaltsOrg = notification.data && notification.data.organization_id;
+      if (!vorberechnet && inhaltsOrg != null && inhaltsOrg !== '') {
+        const gesperrt = await this.gesperrtInGemeinde(db, [userId], inhaltsOrg);
+        if (gesperrt.has(String(userId))) {
+          return { success: false, message: 'Gesperrt in dieser Gemeinde' };
+        }
+      }
+
       if (!vorberechnet) {
         await this.schreibePostfach(db, [userId], notification)
           .catch((err) => console.error('Postfach-Eintrag fehlgeschlagen:', err.message));
@@ -772,17 +856,31 @@ class PushService {
       // deshalb String() und der Vergleich im Client ebenfalls per String().
       // Kopie statt Mutation: notification wird bei sendToMultipleUsers über
       // mehrere Empfänger geteilt.
+      //
+      // Seit 08.10.2026 (Mehrfach-Konten, Entscheidung 2) gibt JEDE Push-Art
+      // die Gemeinde ihres Inhalts mit; der Rueckfall gilt nur noch fuer
+      // Konten mit genau einer Gemeinde (rueckfallGemeinde). Hat das Konto
+      // mehrere, geht der Push OHNE organization_id raus (die App bleibt in
+      // der geoeffneten Gemeinde) -- und das Protokoll nennt Art und Konto,
+      // denn dann hat eine Aufrufstelle die Gemeinde vergessen.
       const data = { ...(notification.data || {}) };
       if (data.organization_id != null && data.organization_id !== '') {
         data.organization_id = String(data.organization_id);
       } else {
-        // Beim Versand an viele steht die Primaer-Org schon aus der
+        // Beim Versand an viele steht die Rueckfall-Gemeinde schon aus der
         // gemeinsamen Abfrage bereit -- dann nicht erneut nachsehen. Das war
         // die letzte Abfrage, die noch je Kopf lief.
-        const recipientOrgId = (vorberechnet && 'orgId' in vorberechnet)
-          ? vorberechnet.orgId
-          : await this.resolveRecipientOrgId(db, userId);
-        if (recipientOrgId) data.organization_id = recipientOrgId;
+        const rueckfall = (vorberechnet && 'orgId' in vorberechnet)
+          ? { orgId: vorberechnet.orgId, mehrdeutig: vorberechnet.orgMehrdeutig === true }
+          : await this.ermittleRueckfallGemeinde(db, userId);
+        if (rueckfall.orgId) {
+          data.organization_id = rueckfall.orgId;
+        } else {
+          delete data.organization_id;
+          if (rueckfall.mehrdeutig) {
+            console.error(`Push ${data.type || 'ohne Art'} an Konto ${userId} ohne Gemeinde des Inhalts: Konto hat mehrere Gemeinden, kein Rückfall`);
+          }
+        }
       }
 
       // App-Icon-Zahl (Befund B2b): Der Server rechnet dieselbe Summe wie der
@@ -879,12 +977,20 @@ class PushService {
     const bilanz = this.neueBilanz();
     bilanz.empfaenger = userIds.length;
     for (let i = 0; i < userIds.length; i += this.EMPFAENGER_BLOCK) {
-      const block = userIds.slice(i, i + this.EMPFAENGER_BLOCK);
+      const ganzerBlock = userIds.slice(i, i + this.EMPFAENGER_BLOCK);
+      // Wer in der Gemeinde des Inhalts gesperrt ist, faellt hier heraus
+      // (Sperre je Gemeinde, 08.10.2026) -- vor Postfach und Push. Die
+      // Antwort behaelt einen Eintrag je Empfaenger in der Reihenfolge der
+      // userIds (Form unveraendert).
+      const gesperrt = braucheOrgs
+        ? new Set()
+        : await this.gesperrtInGemeinde(db, ganzerBlock, notification.data.organization_id);
+      const block = ganzerBlock.filter((id) => !gesperrt.has(String(id)));
 
       // Postfach-Eintrag fuer den ganzen Block in EINER Abfrage, VOR dem
       // Versand (siehe sendToUser). sendToUser schreibt unten nicht erneut,
       // weil vorberechnet gesetzt ist.
-      await this.schreibePostfach(db, block, notification)
+      if (block.length > 0) await this.schreibePostfach(db, block, notification)
         .catch((err) => console.error('Postfach-Eintrag fehlgeschlagen:', err.message));
 
       // Badge-Zahl, Organisationen und Tokens JE BLOCK in wenigen Abfragen --
@@ -893,9 +999,9 @@ class PushService {
       // Zeilen im Speicher, bevor der erste Push raus ist; genau die Spitze,
       // die die Drosselung vermeiden soll. So kostet ein Block eine feste,
       // kleine Zahl von Abfragen, unabhaengig davon, wie viele Bloecke folgen.
-      const { badges, badgesAlteApps, orgs } = braucheVorarbeit
+      const { badges, badgesAlteApps, orgs, orgsMehrdeutig } = braucheVorarbeit
         ? await this.berechneBadgesFuerAlle(db, block)
-        : { badges: new Map(), badgesAlteApps: new Map(), orgs: new Map() };
+        : { badges: new Map(), badgesAlteApps: new Map(), orgs: new Map(), orgsMehrdeutig: new Set() };
       const tokensJeUser = await this.getTokensForUsers(db, block, notification.data && notification.data.type);
 
       // Token-Buchfuehrung fuer den ganzen Block gesammelt (drei Abfragen
@@ -912,6 +1018,7 @@ class PushService {
             badge: badges.has(userId) ? badges.get(userId) : null,
             badgeAlteApps: badgesAlteApps.has(userId) ? badgesAlteApps.get(userId) : null,
             orgId: orgs.has(userId) ? orgs.get(userId) : null,
+            orgMehrdeutig: Boolean(orgsMehrdeutig && orgsMehrdeutig.has(userId)),
             tokens: tokensJeUser.get(userId) || [],
             sammler,
           };
@@ -920,7 +1027,9 @@ class PushService {
         })
       );
       await this.schreibeErgebnisSammler(db, sammler);
-      ergebnisse.push(...teil);
+      const jeId = new Map(teil.map((t) => [String(t.userId), t]));
+      ergebnisse.push(...ganzerBlock.map((id) => jeId.get(String(id))
+        || { userId: id, success: false, message: 'Gesperrt in dieser Gemeinde' }));
 
       // Nach jedem Block kurz pausieren -- aber nicht nach dem letzten, sonst
       // verzoegert jede Meldung an eine Handvoll Leute ohne Grund. Die Pause
@@ -1023,6 +1132,10 @@ class PushService {
       // Vorarbeit EINMAL fuer alle: App-Icon-Zahl und Tokens.
       const { badges, badgesAlteApps } = await this.berechneBadgesFuerAlle(db, empfaenger);
       const tokensJeUser = await this.getTokensForUsers(db, empfaenger, 'chat');
+      // Gesperrt in der Gemeinde des Raums: kein Chat-Push (08.10.2026).
+      const gesperrt = chatOrgId
+        ? await this.gesperrtInGemeinde(db, empfaenger, chatOrgId)
+        : new Set();
 
       const ergebnisse = [];
       let ohneGeraet = 0;
@@ -1033,6 +1146,9 @@ class PushService {
         const block = empfaenger.slice(i, i + this.EMPFAENGER_BLOCK);
         const sammler = this.neuerErgebnisSammler(bilanz);
         const teil = await Promise.all(block.map(async (userId) => {
+          if (gesperrt.has(String(userId))) {
+            return { userId, success: false, message: 'Gesperrt in dieser Gemeinde' };
+          }
           const tokens = tokensJeUser.get(userId) || [];
           if (tokens.length === 0) {
             ohneGeraet++;
@@ -1463,7 +1579,7 @@ class PushService {
   /**
    * Aktivität direkt zugewiesen - Push an Konfi
    */
-  static async sendActivityAssignedToKonfi(db, konfiId, activityName, points, type) {
+  static async sendActivityAssignedToKonfi(db, konfiId, activityName, points, type, organizationId = null) {
     try {
 
       const typeText = type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
@@ -1474,7 +1590,8 @@ class PushService {
           type: 'activity_assigned',
           activity_name: activityName,
           points: points.toString(),
-          category: type
+          category: type,
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -1488,7 +1605,7 @@ class PushService {
   /**
    * Bonuspunkte erhalten - Push an Konfi
    */
-  static async sendBonusPointsToKonfi(db, konfiId, points, description, type) {
+  static async sendBonusPointsToKonfi(db, konfiId, points, description, type, organizationId = null) {
     try {
 
       const typeText = type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
@@ -1498,7 +1615,8 @@ class PushService {
         data: {
           type: 'bonus_points',
           points: points.toString(),
-          category: type
+          category: type,
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -1578,7 +1696,7 @@ class PushService {
   /**
    * Event-Abmeldung bestätigt - Push an Konfi
    */
-  static async sendEventUnregisteredToKonfi(db, konfiId, eventName, eventId = null) {
+  static async sendEventUnregisteredToKonfi(db, konfiId, eventName, eventId = null, organizationId = null) {
     try {
 
       const notification = {
@@ -1587,7 +1705,8 @@ class PushService {
         data: {
           type: 'event_unregistered',
           event_name: eventName,
-          ...(eventId != null ? { event_id: String(eventId) } : {})
+          ...(eventId != null ? { event_id: String(eventId) } : {}),
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 
@@ -1761,7 +1880,7 @@ class PushService {
 
         // Level-Up Push senden
         await this.sendLevelUpToKonfi(
-          db, konfiId, newLevel.name, newLevel.title, newLevel.icon, newLevel.id
+          db, konfiId, newLevel.name, newLevel.title, newLevel.icon, newLevel.id, organizationId
         );
       }
     } catch (error) {
@@ -1773,7 +1892,7 @@ class PushService {
   /**
    * Level-Up - Push an Konfi
    */
-  static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon, levelId = null) {
+  static async sendLevelUpToKonfi(db, konfiId, levelName, levelTitle, levelIcon, levelId = null, organizationId = null) {
     try {
 
       const notification = {
@@ -1783,7 +1902,8 @@ class PushService {
           type: 'level_up',
           level_name: levelName,
           level_title: levelTitle || levelName,
-          level_id: levelId?.toString() || ''
+          level_id: levelId?.toString() || '',
+          ...(organizationId != null ? { organization_id: String(organizationId) } : {})
         }
       };
 

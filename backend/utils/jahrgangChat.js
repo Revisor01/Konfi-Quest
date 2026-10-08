@@ -15,6 +15,7 @@
 //  dann nicht — siehe Migration 098.)
 
 // Mappt eine Rolle auf den chat_participants.user_type-Wert.
+const { nichtGesperrtIn } = require('./orgMitglieder');
 const roleToParticipantType = (roleName) =>
   roleName === 'konfi' ? 'konfi' : roleName === 'teamer' ? 'teamer' : 'admin';
 
@@ -60,13 +61,15 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
   //    (users.organization_id + users.role_id) ODER aus user_organizations
   //    (Org-Switcher) kommen — beide Quellen zählen, sonst entfernt der Sync
   //    eingewechselte Mitglieder aus den Räumen.
+  //    Wer nur in DIESER Gemeinde gesperrt ist (Migration 196, 08.10.2026),
+  //    gehoert nicht dazu -- wie ein gesperrtes Konto.
   const { rows: sollMembers } = await db.query(
     `
     -- Org-Admins: immer drin (Primaer-Org)
     SELECT u.id AS user_id, 'admin'::text AS user_type
       FROM users u JOIN roles r ON u.role_id = r.id
      WHERE u.organization_id = $2 AND r.name = 'org_admin' AND u.is_active = true
-       AND u.deleted_at IS NULL
+       AND u.deleted_at IS NULL AND ${nichtGesperrtIn('u', '$2')}
     UNION
     -- Org-Admins: immer drin (Zusatz-Mitgliedschaft via user_organizations)
     SELECT u.id AS user_id, 'admin'::text AS user_type
@@ -74,7 +77,7 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
       JOIN users u ON uo.user_id = u.id
       JOIN roles r ON uo.role_id = r.id
      WHERE uo.organization_id = $2 AND r.name = 'org_admin'
-       AND u.is_active = true AND u.deleted_at IS NULL
+       AND u.is_active = true AND uo.is_active = true AND u.deleted_at IS NULL
     UNION
     -- Admins + Teamer mit Zuweisung auf diesen Jahrgang (Primaer-Org-Rolle)
     SELECT u.id AS user_id,
@@ -84,7 +87,7 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
       JOIN roles r ON u.role_id = r.id
      WHERE uja.jahrgang_id = $1 AND uja.can_view = true
        AND u.organization_id = $2 AND r.name IN ('admin', 'teamer')
-       AND u.is_active = true AND u.deleted_at IS NULL
+       AND u.is_active = true AND u.deleted_at IS NULL AND ${nichtGesperrtIn('u', '$2')}
     UNION
     -- Admins + Teamer mit Zuweisung (Rolle aus user_organizations dieser Org)
     SELECT u.id AS user_id,
@@ -95,7 +98,7 @@ async function syncJahrgangChat(db, jahrgangId, organizationId, createdBy = null
       JOIN roles r ON uo.role_id = r.id
      WHERE uja.jahrgang_id = $1 AND uja.can_view = true
        AND r.name IN ('admin', 'teamer')
-       AND u.is_active = true AND u.deleted_at IS NULL
+       AND u.is_active = true AND uo.is_active = true AND u.deleted_at IS NULL
     UNION
     -- Alle Konfis des Jahrgangs
     SELECT kp.user_id, 'konfi'::text AS user_type

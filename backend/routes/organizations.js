@@ -15,6 +15,7 @@ const { kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = r
 const { nachAntwort } = require('../utils/nachAntwort');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
+const { MITGLIEDSCHAFTEN_SQL } = require('../utils/orgMitglieder');
 const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeAnlegen, konfiLimitLesen, laufzeitLesen, fehlerAlsAntwort } = require('../utils/gemeindeAnlegen');
@@ -870,16 +871,23 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
     try {
       const { id } = req.params;
 
+      // BEIDE Quellen der Zugehoerigkeit, Rolle und Sperre DIESER Gemeinde,
+      // nur Jahrgaenge dieser Gemeinde (08.10.2026, Planung mehrfach-konten;
+      // Regel in MITGLIEDSCHAFTEN_SQL, utils/orgMitglieder.js). Vorher
+      // `u.organization_id = $1` mit der Rolle am Konto: Wer die Gemeinde
+      // ueber user_organizations betreut, fehlte. Antwortform unveraendert.
       const query = `
-        SELECT u.id, u.username, u.email, u.display_name, u.is_active,
+        SELECT u.id, u.username, u.email, u.display_name, m.is_active,
                u.last_login_at, u.created_at,
                r.name as role_name, r.display_name as role_display_name,
-               COUNT(DISTINCT uja.jahrgang_id) as assigned_jahrgaenge_count
-        FROM users u
-        LEFT JOIN roles r ON u.role_id = r.id
+               COUNT(DISTINCT j.id) as assigned_jahrgaenge_count
+        FROM (${MITGLIEDSCHAFTEN_SQL}) m
+        JOIN users u ON u.id = m.user_id
+        LEFT JOIN roles r ON r.organization_id = m.organization_id AND r.name = m.rolle
         LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
-        WHERE u.organization_id = $1
-        GROUP BY u.id, r.name, r.display_name
+        LEFT JOIN jahrgaenge j ON j.id = uja.jahrgang_id AND j.organization_id = $1
+        WHERE m.organization_id = $1
+        GROUP BY u.id, m.is_active, r.name, r.display_name
         ORDER BY u.created_at DESC
       `;
 
@@ -904,12 +912,21 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         return res.status(403).json({ error: 'Keine Berechtigung' });
       }
 
+      // BEIDE Quellen der Zugehoerigkeit, die Rolle DIESER Gemeinde
+      // (08.10.2026, Planung mehrfach-konten). Hier stand
+      // `u.organization_id = $1` mit der Rolle am Konto: Wer die Gemeinde
+      // ueber user_organizations leitet, fehlte im Abschnitt
+      // "Gemeindeleitung" -- in Produktion hat Organisation 2 ihre ganze
+      // Leitung nur dort (gemessen 25.09.2026). Regel in
+      // MITGLIEDSCHAFTEN_SQL (utils/orgMitglieder.js); is_active ist dort der
+      // Stand in DIESER Gemeinde. Geloeschte Konten fehlen. Antwortform
+      // unveraendert.
       const query = `
-        SELECT u.id, u.username, u.email, u.display_name, u.is_active,
+        SELECT u.id, u.username, u.email, u.display_name, m.is_active,
                u.last_login_at, u.created_at
-        FROM users u
-        JOIN roles r ON u.role_id = r.id
-        WHERE u.organization_id = $1 AND r.name = 'org_admin'
+        FROM (${MITGLIEDSCHAFTEN_SQL}) m
+        JOIN users u ON u.id = m.user_id
+        WHERE m.organization_id = $1 AND m.rolle = 'org_admin'
         ORDER BY u.created_at ASC
       `;
 

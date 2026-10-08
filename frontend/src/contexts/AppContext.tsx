@@ -673,11 +673,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } catch (socketErr) {
         console.error('Socket-Neuaufbau nach Gemeinde-Rueckfall fehlgeschlagen:', socketErr);
       }
+      // Rolle, Typ und Gemeindenamen der Gemeinde, in der die App jetzt
+      // arbeitet (08.10.2026): Vorher blieben die der entzogenen Gemeinde im
+      // Nutzer-Zustand stehen, und bis zum nächsten Start zeigte die App
+      // womöglich die Oberfläche der entzogenen Rolle. GET /auth/me meldet
+      // Rolle, Typ und Gemeinde der aktiven Gemeinde; danach die Liste für
+      // den Umschalter neu.
+      await refreshUser();
+      await loadOrganizations();
       setOrgVersion(v => v + 1);
     };
     window.addEventListener('auth:org-fallback', handler);
     return () => window.removeEventListener('auth:org-fallback', handler);
-  }, []);
+  }, [refreshUser, loadOrganizations]);
 
   // Org wechseln. Strategie: neues Token + aktive Org + User-State setzen, ALLE
   // Caches leeren, dann per orgVersion-Bump alle Views REMOUNTEN (React-key am

@@ -115,6 +115,7 @@ const CONTENT_TYPES = {
 const { PUBLIC_SUBMISSION_SQL } = require('../utils/challengeSichtbarkeit');
 const { leitungSiehtChallengeSql, teamMachtMitSql, TEAM_MACHT_MIT_AUDIENCES } = require('../utils/challengeLeitungSicht');
 const { nachAntwort } = require('../utils/nachAntwort');
+const { MITGLIEDSCHAFTEN_SQL, istMitgliedDerOrganisation, ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('../utils/orgMitglieder');
 
 // JS-Pendant für bereits geladene Zeilen (Datei-Auslieferung, Export).
 // Erwartet { moderation_status, konfi_consent } und { visibility }.
@@ -1149,7 +1150,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
          FROM users u
          LEFT JOIN roles r ON u.role_id = r.id
          LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
-         WHERE u.id = $1 AND u.deleted_at IS NULL`,
+         WHERE u.id = $1 AND u.deleted_at IS NULL AND u.is_active = true`,
         [decoded.id]
       );
       if (!requesterRow) {
@@ -1161,19 +1162,20 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       const tokenOrg = decoded.active_organization_id ? parseInt(decoded.active_organization_id) : null;
       const requestedActiveOrg = Number.isInteger(headerOrg) ? headerOrg
         : (Number.isInteger(tokenOrg) ? tokenOrg : null);
-      if (requestedActiveOrg && requestedActiveOrg !== requester.organization_id) {
-        const { rows: [membership] } = await db.query(
-          `SELECT uo.organization_id, r.name AS role_name
-           FROM user_organizations uo
-           JOIN roles r ON uo.role_id = r.id
-           WHERE uo.user_id = $1 AND uo.organization_id = $2`,
-          [decoded.id, requestedActiveOrg]
-        );
-        if (!membership) {
+      // Sperre je Gemeinde (08.10.2026, Migration 196): dieselbe Wahl wie
+      // rbac.js -- gesperrt in der gewuenschten Gemeinde -> 403; nur in der
+      // Stamm-Gemeinde gesperrt -> ohne Wunsch die erste freie weitere.
+      if (requestedActiveOrg || requester.organization_id !== null) {
+        const mitgliedschaften = await ladeMitgliedschaftenMitSperre(db, decoded.id);
+        const { gemeinde, grund } = waehleGemeinde(mitgliedschaften, requestedActiveOrg || null);
+        if (grund === 'kein_mitglied' || grund === 'gesperrt') {
           return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
-        requester.organization_id = membership.organization_id;
-        requester.role_name = membership.role_name;
+        if (!gemeinde || grund === 'keine_freie') {
+          return res.status(401).json({ error: 'Nicht angemeldet' });
+        }
+        requester.organization_id = gemeinde.organization_id;
+        requester.role_name = gemeinde.role_name;
       }
 
       // Für admin und Teamer die zugewiesenen Jahrgänge DER AKTIVEN ORG
@@ -1295,23 +1297,28 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       let konfiJahrgangFilter = '';
       if (viewable !== null) {
         if (viewable.length === 0) {
-          konfiJahrgangFilter = "AND r.name <> 'konfi'";
+          konfiJahrgangFilter = "AND m.rolle <> 'konfi'";
         } else {
           params.push(viewable);
-          konfiJahrgangFilter = `AND (r.name <> 'konfi' OR kp.jahrgang_id = ANY($2::int[]))`;
+          konfiJahrgangFilter = `AND (m.rolle <> 'konfi' OR kp.jahrgang_id = ANY($2::int[]))`;
         }
       }
 
+      // BEIDE Quellen der Zugehoerigkeit, die Rolle DIESER Gemeinde (Simon,
+      // 08.10.2026; docs/planung/mehrfach-konten.md, Punkt 3). Bis dahin
+      // stand hier `u.organization_id = $1` mit der Rolle am Konto: Eine
+      // Teamer:in aus A, die in B mitarbeitet, stand in B nicht zur Auswahl.
+      // Die Regel steht in MITGLIEDSCHAFTEN_SQL (utils/orgMitglieder.js);
+      // geloeschte Konten fehlen dort schon. Antwortform unveraendert.
       const { rows } = await db.query(
-        `SELECT u.id, u.display_name, r.name AS role_name
-         FROM users u
-         JOIN roles r ON u.role_id = r.id
+        `SELECT u.id, u.display_name, m.rolle AS role_name
+         FROM (${MITGLIEDSCHAFTEN_SQL}) m
+         JOIN users u ON u.id = m.user_id
          LEFT JOIN konfi_profiles kp ON kp.user_id = u.id
-         WHERE u.organization_id = $1
-           AND u.deleted_at IS NULL
-           AND r.name IN ('org_admin', 'admin', 'teamer', 'konfi')
+         WHERE m.organization_id = $1
+           AND m.rolle IN ('org_admin', 'admin', 'teamer', 'konfi')
            ${konfiJahrgangFilter}
-         ORDER BY (r.name = 'konfi'), u.display_name`,
+         ORDER BY (m.rolle = 'konfi'), u.display_name`,
         params
       );
 
@@ -1521,11 +1528,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
       }
       if (author_user_id) {
-        const { rows: [author] } = await db.query(
-          'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
-          [author_user_id, req.user.organization_id]
-        );
-        if (!author) {
+        // Beide Quellen der Zugehoerigkeit (08.10.2026, Punkt 3 der
+        // Planung mehrfach-konten): wie GET /admin/authors.
+        if (!await istMitgliedDerOrganisation(db, author_user_id, req.user.organization_id)) {
           return res.status(400).json({ error: 'Urheber nicht gefunden' });
         }
       }
@@ -1662,11 +1667,9 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
       }
       if (author_user_id) {
-        const { rows: [author] } = await db.query(
-          'SELECT id FROM users WHERE id = $1 AND organization_id = $2',
-          [author_user_id, req.user.organization_id]
-        );
-        if (!author) {
+        // Beide Quellen der Zugehoerigkeit (08.10.2026, Punkt 3 der
+        // Planung mehrfach-konten): wie GET /admin/authors.
+        if (!await istMitgliedDerOrganisation(db, author_user_id, req.user.organization_id)) {
           return res.status(400).json({ error: 'Urheber nicht gefunden' });
         }
       }

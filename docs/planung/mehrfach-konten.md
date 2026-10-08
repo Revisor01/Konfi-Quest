@@ -162,3 +162,34 @@ auf beiden Replicas, Gemeinde-Rückfall im Frontend.
    Konto lassen oder je Gemeinde führen?
 8. **Löschen (7):** Sollen Leitung und Selbstlöschung ein Mischkonto aus dem
    Altbestand nur in der eigenen Gemeinde beenden statt ganz löschen?
+
+## Umsetzung (Stand 08.10.2026)
+
+Simons Entscheidungen vom 08.10.2026 zu den Fragen 2 bis 8 sind umgesetzt
+(Branch `feat/mehrfach-konten-abschluss`):
+
+- **Event-Chat (1):** Teilnehmer-Typ nach der Rolle in der Gemeinde des
+  Termins (`backend/utils/eventChat.js`); Migration 197 gleicht den Bestand an.
+- **Push (2):** Jede Push-Art gibt die Gemeinde des Inhalts mit; ein Test
+  prüft alle `send…`-Funktionen. Der Rückfall auf die Stamm-Gemeinde gilt nur
+  noch für Konten mit genau einer Gemeinde.
+- **Urheber:innen (3)** und **Detailansicht (4):** beide Quellen, Rolle und
+  Daten der aktiven Gemeinde.
+- **Stamm-Zeilen (5):** Migration 196 setzt sie auf den Stand am Konto;
+  Rollenwechsel schreiben Konto und Stamm-Zeile über
+  `schreibeGemeindeFelder` (`backend/utils/orgMitglieder.js`);
+  `ladeMitgliederDerOrganisation` liest Stamm-Zeilen nicht mehr.
+- **Kontofelder (6):** `role_title`, `teamer_since` und `is_active` je
+  Gemeinde in `user_organizations` (Migration 196, additiv); in der
+  Stamm-Gemeinde bleiben die Werte am Konto maßgeblich und werden mitgeführt.
+  Lesen über `gemeindeFelderSql`.
+- **Sperre (7):** nur in der sperrenden Gemeinde; in allen gesperrt = Konto
+  gesperrt; Super-Admins sperren das ganze Konto. `verifyTokenRBAC` prüft
+  Sperre, Rolle und Mitgliedschaft je Anfrage (wirkt auf allen Replicas
+  sofort).
+- **Löschen (8):** `DELETE /admin/konfis/:id` beendet bei einem Konto mit
+  weiterer Gemeinde nur die eigene Mitgliedschaft (Team-Konten über
+  `DELETE /users/:id` schon seit 27.09.2026); die Selbstlöschung entfernt
+  alles.
+
+Bewusst so gelassen bleibt `sendToUserByRole` (siehe oben).

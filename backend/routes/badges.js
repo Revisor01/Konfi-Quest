@@ -9,7 +9,7 @@ const { computeCurrentStreak } = require('../utils/streakCalculation');
 const { nachAntwort } = require('../utils/nachAntwort');
 // Auf einem Transaktions-Client nacheinander, ueber den Pool parallel (pg 9).
 const { abfragenBuendeln } = require('../utils/abfragenBuendeln');
-const { ladeMitgliederDerOrganisation } = require('../utils/orgMitglieder');
+const { ladeMitgliederDerOrganisation, gemeindeFelderSql } = require('../utils/orgMitglieder');
 // Single Source of Truth: welche Events zählen für Badges (Konfi vs. Teamer).
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 const { loescheMitteilungenZuAbzeichen } = require('../utils/postfachAufraeumen');
@@ -589,10 +589,13 @@ async function checkAndAwardTeamerBadges(db, userId, organizationId, still = fal
         // Transition-Datum ermitteln (Fallback-Kette)
         let startYear = null;
 
-        // 1. Versuch: users.teamer_since (Promotions-Datum, Migration 064)
+        // 1. Versuch: "Teamer:in seit" DIESER Gemeinde (Promotions-Datum,
+        // Migration 064; je Gemeinde seit Migration 196, 08.10.2026 --
+        // utils/orgMitglieder.js gemeindeFelderSql).
+        const gfJahr = gemeindeFelderSql('$2');
         const { rows: [teamerRow] } = await db.query(
-          "SELECT teamer_since FROM users WHERE id = $1",
-          [userId]
+          `SELECT ${gfJahr.teamer_since} AS teamer_since FROM users u ${gfJahr.join} WHERE u.id = $1`,
+          [userId, organizationId]
         );
         if (teamerRow && teamerRow.teamer_since) {
           startYear = new Date(teamerRow.teamer_since).getFullYear();

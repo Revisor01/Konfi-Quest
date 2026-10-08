@@ -28,6 +28,8 @@ const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen'
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
+const { gemeindeFelderSql, schreibeGemeindeFelder } = require('../utils/orgMitglieder');
+const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
 const router = express.Router();
 
 // Konfis: Teamer darf ansehen, Admin darf bearbeiten
@@ -153,13 +155,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     // GET all teamers for the admin's organization
     router.get('/teamer', rbacVerifier, requireTeamer, async (req, res) => {
         try {
+            const gfTeamer = gemeindeFelderSql('$1');
             // Jahrgaenge und Badges nur aus DIESER Gemeinde (29.09.2026): Eine
             // Teamer:in mehrerer Gemeinden trug vorher die Jahrgangsnamen der
             // anderen Gemeinde mit in diese Liste. Badges bleiben an der
             // Gemeinde (Simon, 28.09.: "Es bleibt immer an der Gemeinde!").
             const query = `
                 WITH mitglieder AS (${mitgliederSql})
-                SELECT u.id, u.display_name as name, u.username, u.teamer_since,
+                SELECT u.id, u.display_name as name, u.username,
+                       -- "Teamer:in seit" DIESER Gemeinde (08.10.2026, Migration 196)
+                       ${gfTeamer.teamer_since} as teamer_since,
                        STRING_AGG(DISTINCT j.name, ', ' ORDER BY j.name) as jahrgang_name,
                        -- ADDITIV (25.09.2026): die IDs zu den Namen. Die
                        -- Teilnehmerauswahl am Termin bietet nur Personen aus
@@ -170,6 +175,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                        COALESCE(cert_counts.cert_count, 0)::int as cert_count
                 FROM mitglieder m
                 JOIN users u ON u.id = m.id
+                ${gfTeamer.join}
                 LEFT JOIN user_jahrgang_assignments uja ON u.id = uja.user_id
                 LEFT JOIN jahrgaenge j ON uja.jahrgang_id = j.id AND j.organization_id = $1
                 LEFT JOIN (
@@ -185,7 +191,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                     WHERE organization_id = $1
                     GROUP BY user_id
                 ) cert_counts ON u.id = cert_counts.user_id
-                GROUP BY u.id, u.display_name, u.username, u.teamer_since,
+                GROUP BY u.id, ug.id, u.display_name, u.username, u.teamer_since,
                          badge_counts.badge_count, cert_counts.cert_count
                 ORDER BY u.display_name
             `;
@@ -598,23 +604,47 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     // (utils/kontoLoeschen.js -- dieselbe Funktion wie Selbstloeschung,
     // automatische Loeschung und DELETE /users/:id; Simon, 28.09.2026:
     // "konto löschen muss wirklich alles löschen.").
+    //
+    // KONTO MIT WEITERER GEMEINDE (Simon, 08.10.2026, Entscheidung 8): Die
+    // Leitung beendet dann NUR die Mitgliedschaft in ihrer Gemeinde, das
+    // Konto bleibt fuer die andere -- wie DELETE /users/:id fuer Team-Konten.
+    // Konfi und Team gibt es nie zugleich (utils/konfiOderTeam.js); uebrig
+    // ist der Altbestand: ein Konto mit Konfi-Zeile in einer weiteren
+    // Gemeinde (gemessen 01.10.2026: eines). Mit der Mitgliedschaft gehen
+    // Jahrgaenge, Chat-Plaetze und Postfach dieser Gemeinde
+    // (utils/mitgliedschaftEnde.js), dazu die Buchungen fuer Termine dieser
+    // Gemeinde (mit Nachruecken) und das Konfi-Profil, wenn sein Jahrgang
+    // hierher gehoert. Die Antwort traegt dann konto_bleibt: true (additiv).
+    // Die Selbstloeschung (POST /auth/delete-account) entfernt weiter alles.
     router.delete('/:id', rbacVerifier, requireAdmin, validateParamId, async (req, res) => {
         const userId = req.params.id;
+        const organizationId = req.user.organization_id;
         const client = await db.getClient();
         let ergebnis = null;
+        let kontoBleibt = false;
+        const nachgerueckt = [];
         try {
             await client.query('BEGIN');
 
+            // Konfi IN DIESER GEMEINDE -- ueber beide Quellen, Rolle dort.
+            // Die Zeile bleibt bis zum COMMIT gesperrt.
             const checkUserQuery = `
-                SELECT u.id FROM users u
-                JOIN roles r ON u.role_id = r.id
-                WHERE u.id = $1 AND u.organization_id = $2 AND r.name = 'konfi' AND u.deleted_at IS NULL`;
-            const { rows: [user] } = await client.query(checkUserQuery, [userId, req.user.organization_id]);
+                SELECT u.id, u.organization_id,
+                       (SELECT COUNT(*)::int FROM user_organizations uo
+                         WHERE uo.user_id = u.id AND uo.organization_id <> $2
+                           AND uo.organization_id IS DISTINCT FROM u.organization_id) AS andere
+                  FROM users u
+                 WHERE u.id = $1 AND u.deleted_at IS NULL
+                 FOR UPDATE`;
+            const { rows: [user] } = await client.query(checkUserQuery, [userId, organizationId]);
+            const rolleHier = user ? await ladeRolleInGemeinde(client, userId, organizationId) : null;
 
-            if (!user) {
+            if (!user || rolleHier !== 'konfi') {
                 await client.query('ROLLBACK');
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
+            const stammHier = Number(user.organization_id) === Number(organizationId);
+            kontoBleibt = !stammHier || user.andere > 0;
 
             // Jahrgangs-Bindung (01.09.2026, Simons Regel vom 31.08.): Loeschen
             // ist der endgueltigste Eingriff in einen Konfi — wer den Jahrgang
@@ -622,16 +652,53 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // entfernen. Gleiche Stufe (edit) wie Anlegen und Verschieben
             // (POST /, PUT /:id). org_admin/super_admin bleiben ausgenommen.
             const loeschZugriff = await darfKonfi(client, req, userId, { edit: true });
-            if (!loeschZugriff.erlaubt) {
+            // Ohne Konfi-Profil in DIESER Gemeinde (Altbestand: Konfi-Zeile
+            // nur in user_organizations, 08.10.2026) haengt die Konfi an
+            // keinem Jahrgang hier -- wie bei einer Konfi ohne Jahrgang nur mit
+            // Vollzugriff (Gemeindeleitung, Super-Admin).
+            const vollzugriff = req.user.role_name === 'org_admin' || req.user.is_super_admin === true;
+            if (!loeschZugriff.erlaubt && !(loeschZugriff.gefunden === false && vollzugriff)) {
                 await client.query('ROLLBACK');
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            // Gemeinsame Loeschfunktion fuer alle Kontoloeschwege. Sie raeumt
-            // auch die Wartelisten nach: Jede bestaetigte Buchung der
-            // geloeschten Person gibt einen Platz frei (Luecke geschlossen
-            // 15.09.2026) und liefert die Nachgerueckten zurueck.
-            ergebnis = await kontoDatenLoeschen(client, userId);
+            if (kontoBleibt) {
+                if (stammHier) {
+                    // Hier zuhause: Das Konto zieht in die andere Gemeinde um.
+                    await inWeitereGemeindeUmziehen(client, userId, organizationId);
+                } else {
+                    await client.query(
+                        'DELETE FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
+                        [userId, organizationId]
+                    );
+                    await gemeindeZugehoerigkeitRaeumen(client, userId, organizationId);
+                }
+                // Buchungen fuer Termine DIESER Gemeinde; bestaetigte Plaetze
+                // gehen an die Warteliste.
+                const { rows: plaetze } = await client.query(
+                    `DELETE FROM event_bookings eb USING events e
+                      WHERE eb.event_id = e.id AND eb.user_id = $1 AND e.organization_id = $2
+                      RETURNING eb.event_id, eb.timeslot_id, eb.status`,
+                    [userId, organizationId]
+                );
+                for (const platz of plaetze.filter((x) => x.status === 'confirmed')) {
+                    const [promoted] = await rueckeNach(client, {
+                        eventId: platz.event_id, timeslotId: platz.timeslot_id, seite: 'konfi'
+                    });
+                    if (promoted) nachgerueckt.push({ eventId: platz.event_id, userId: promoted });
+                }
+                await client.query(
+                    `DELETE FROM konfi_profiles kp USING jahrgaenge j
+                      WHERE kp.jahrgang_id = j.id AND kp.user_id = $1 AND j.organization_id = $2`,
+                    [userId, organizationId]
+                );
+            } else {
+                // Gemeinsame Loeschfunktion fuer alle Kontoloeschwege. Sie raeumt
+                // auch die Wartelisten nach: Jede bestaetigte Buchung der
+                // geloeschten Person gibt einen Platz frei (Luecke geschlossen
+                // 15.09.2026) und liefert die Nachgerueckten zurueck.
+                ergebnis = await kontoDatenLoeschen(client, userId);
+            }
 
             await client.query('COMMIT');
         } catch (err) {
@@ -640,6 +707,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             return res.status(500).json({ error: 'Datenbankfehler' });
         } finally {
             client.release();
+        }
+
+        if (kontoBleibt) {
+            res.json({
+                message: 'Aus dieser Gemeinde entfernt; das Konto bleibt in einer anderen Gemeinde bestehen',
+                konto_bleibt: true
+            });
+            invalidateUserCache(parseInt(userId));
+            liveUpdate.disconnectUserSockets(userId);
+            nachAntwort(req, async () => {
+                await meldeNachrueckern(db, organizationId, nachgerueckt);
+                liveUpdate.sendToOrgAdmins(organizationId, 'konfis', 'delete', { konfiId: userId });
+            }, 'DELETE /admin/konfis/:id (Mitgliedschaft beendet)');
+            return;
         }
 
         // Nach dem COMMIT: erst die Dateien, dann die Antwort. Ein Fehler
@@ -782,6 +863,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         const konfiId = req.params.id;
         
         try {
+            const detailFelder = gemeindeFelderSql('$2', { g: 'ug_detail' });
             const konfiQuery = `
                 SELECT u.*, u.teamer_since, kp.gottesdienst_points, kp.gemeinde_points,
                        kp.konfspruch_id, kp.konfspruch_freitext, kp.konfspruch_freitext_referenz,
@@ -792,8 +874,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                        ce.event_date as confirmation_date, ce.location as confirmation_location,
                        -- Rolle in DIESER Gemeinde (29.09.2026): zuhause die am
                        -- Konto, sonst die aus user_organizations. Siehe unten.
-                       CASE WHEN u.organization_id = $2 THEN r.name ELSE uo_r.name END as role_name
+                       CASE WHEN u.organization_id = $2 THEN r.name ELSE uo_r.name END as role_name,
+                       -- Nichts aus der Stamm-Gemeinde (08.10.2026, Planung
+                       -- mehrfach-konten Punkt 4): u.* brachte deren Kennung
+                       -- und die Rollen-Kennung von dort mit. Dieselben
+                       -- Felder, derselbe Typ -- pg nimmt bei gleichem Namen
+                       -- die letzte Spalte, also diese.
+                       $2::bigint as organization_id,
+                       CASE WHEN u.organization_id = $2 THEN u.role_id ELSE uo.role_id END as role_id,
+                       -- Funktionsbezeichnung, "Teamer:in seit" und Sperre
+                       -- JE GEMEINDE (08.10.2026, Planung mehrfach-konten
+                       -- Punkt 6): u.* brachte die Werte vom Konto; hier
+                       -- gelten die DIESER Gemeinde. Gleiche Namen und Typen.
+                       ${detailFelder.role_title} as role_title,
+                       ${detailFelder.teamer_since} as teamer_since,
+                       ${detailFelder.is_active} as is_active
                 FROM users u
+                ${detailFelder.join}
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN user_organizations uo
                   ON uo.user_id = u.id AND uo.organization_id = $2
@@ -1347,7 +1444,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // Push-Notification an Konfi senden
             try {
-                await PushService.sendBonusPointsToKonfi(db, req.params.id, points, description, type);
+                await PushService.sendBonusPointsToKonfi(db, req.params.id, points, description, type, req.user.organization_id);
             } catch (pushErr) {
  console.error('Error sending bonus points push:', pushErr);
             }
@@ -1642,14 +1739,23 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             if (!teamer_since) {
                 return res.status(400).json({ error: 'teamer_since ist erforderlich' });
             }
-            const result = await db.query(
-                'UPDATE users SET teamer_since = $1 WHERE id = $2 AND organization_id = $3 RETURNING teamer_since',
-                [teamer_since, req.params.id, req.user.organization_id]
-            );
-            if (result.rows.length === 0) {
+            // JE GEMEINDE (08.10.2026, Migration 196): Das Datum gilt in der
+            // aktiven Gemeinde -- in der Stamm-Gemeinde am Konto, in einer
+            // weiteren in deren Zeile. Vorher schrieb die Route nur Konten
+            // der Stamm-Gemeinde (weitere: 404) und setzte das Datum fuer alle
+            // Gemeinden zugleich.
+            const { gefunden } = await schreibeGemeindeFelder(
+                db, req.params.id, req.user.organization_id, { teamer_since });
+            if (!gefunden) {
                 return res.status(404).json({ error: 'User nicht gefunden' });
             }
-            res.json({ teamer_since: result.rows[0].teamer_since });
+            const gf = gemeindeFelderSql('$2');
+            const { rows: [neu] } = await db.query(
+                `SELECT ${gf.teamer_since} AS teamer_since FROM users u ${gf.join} WHERE u.id = $1`,
+                [req.params.id, req.user.organization_id]
+            );
+            invalidateUserCache(parseInt(req.params.id));
+            res.json({ teamer_since: neu ? neu.teamer_since : null });
         } catch (err) {
             console.error('Database error in PUT /konfis/:id/teamer-since:', err);
             res.status(500).json({ error: 'Datenbankfehler' });
@@ -1731,17 +1837,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             });
 
             // 3. Rolle ändern + teamer_since setzen
-            await client.query('UPDATE users SET role_id = $1, teamer_since = CURRENT_DATE WHERE id = $2', [teamerRole.id, konfiId]);
             // 3a. Die Zeile der Stamm-Gemeinde in user_organizations zieht mit
             // (28.09.2026, "Konfi und Team geht nicht parallel"): Migration 101
             // hat jedes damalige Konto mit seiner Rolle auch dort eingetragen.
             // Blieb dort "konfi" stehen, war die befoerderte Person fuer jede
             // Abfrage ueber user_organizations weiter Konfi (etwa die
-            // Nachpruefung der Konfi-Abzeichen in badges.js).
-            await client.query(
-                'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
-                [teamerRole.id, konfiId, req.user.organization_id]
-            );
+            // Nachpruefung der Konfi-Abzeichen in badges.js). Seit dem
+            // 08.10.2026 ueber die eine Schreibstelle fuer Felder je Gemeinde
+            // (utils/orgMitglieder.js): Konto und Stamm-Zeile zugleich.
+            await schreibeGemeindeFelder(client, konfiId, req.user.organization_id,
+                { role_id: teamerRole.id, teamer_since: 'heute' });
 
             // 4. Event-Buchungen löschen.
             //

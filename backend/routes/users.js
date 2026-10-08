@@ -19,6 +19,7 @@ const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeZugehoerigkeitRaeumen, inWeitereGemeindeUmziehen } = require('../utils/mitgliedschaftEnde');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
+const { gemeindeFelderSql, schreibeGemeindeFelder } = require('../utils/orgMitglieder');
 
 // User management routes
 // WICHTIGER HINWEIS: Das übergebene 'db'-Objekt ist eine PostgreSQL Pool-Instanz.
@@ -120,6 +121,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // fehlte in der Liste, obwohl er fuer die Gemeinde sichtbar sein soll
     // (docs/planung/web-version.md, Punkt 14). Deshalb IS DISTINCT FROM; eine
     // fehlende Stamm-Gemeinde zaehlt in weitere_gemeinden nicht mit.
+    // Funktionsbezeichnung und Sperre DIESER Gemeinde (08.10.2026, Migration
+    // 196; utils/orgMitglieder.js): is_active ist false, wenn das Konto ODER
+    // die Mitgliedschaft hier gesperrt ist. Feldnamen und Typen wie bisher.
+    const gfListe = gemeindeFelderSql('$1');
     const query = `
       WITH mitglieder AS (
         SELECT u.id, u.role_id, 'stamm'::text AS mitgliedschaft
@@ -131,7 +136,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           JOIN users u ON u.id = uo.user_id
          WHERE uo.organization_id = $1 AND u.organization_id IS DISTINCT FROM $1
       )
-      SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
+      SELECT u.id, u.username, u.email, u.display_name,
+             ${gfListe.role_title} AS role_title, ${gfListe.is_active} AS is_active,
              u.last_login_at, u.created_at, u.updated_at,
              u.is_super_admin, u.organization_id AS stamm_organization_id,
              r.name as role_name, r.display_name as role_display_name,
@@ -146,11 +152,12 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
              + CASE WHEN u.organization_id <> $1 THEN 1 ELSE 0 END AS weitere_gemeinden
       FROM mitglieder m
       JOIN users u ON u.id = m.id
+      ${gfListe.join}
       LEFT JOIN roles r ON r.id = m.role_id
       LEFT JOIN user_jahrgang_assignments uja ON uja.user_id = u.id
       LEFT JOIN jahrgaenge j ON j.id = uja.jahrgang_id AND j.organization_id = $1
       WHERE r.name NOT IN ('konfi', 'super_admin')
-      GROUP BY u.id, r.name, r.display_name, r.description, m.mitgliedschaft
+      GROUP BY u.id, ug.id, r.name, r.display_name, r.description, m.mitgliedschaft
       ORDER BY u.created_at DESC
     `;
 
@@ -200,8 +207,11 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // Gemeinde aufgeloest (uo.role_id), damit die Anzeige nicht die Rolle der
     // Stamm-Gemeinde behauptet. IS DISTINCT FROM: ein Konto ohne Gemeinde
     // (organization_id NULL) ist hier Gast, kein 404.
+    // Funktionsbezeichnung und Sperre DIESER Gemeinde (08.10.2026).
+    const gfEinzeln = gemeindeFelderSql('$2', { g: 'ugf' });
     const userQuery = `
-      SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
+      SELECT u.id, u.username, u.email, u.display_name,
+             ${gfEinzeln.role_title} AS role_title, ${gfEinzeln.is_active} AS is_active,
              u.last_login_at, u.created_at, u.updated_at,
              COALESCE(uo.role_id, u.role_id) as role_id,
              r.name as role_name, r.display_name as role_display_name,
@@ -211,6 +221,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
              ON uo.user_id = u.id AND uo.organization_id = $2
                 AND u.organization_id IS DISTINCT FROM $2
       LEFT JOIN roles r ON r.id = COALESCE(uo.role_id, u.role_id)
+      ${gfEinzeln.join}
       WHERE u.id = $1 AND (u.organization_id = $2 OR uo.organization_id = $2)
     `;
 
@@ -383,10 +394,13 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       // 26.09.2026, Leitung BF-01): Stamm-Gemeinde am Konto ODER Mitglied
       // ueber user_organizations. `stamm` entscheidet unten, WAS hier
       // geaendert werden darf.
+      const gfPut = gemeindeFelderSql('$2');
       const { rows: [user] } = await db.query(
-        `SELECT u.id, u.username, u.email, u.display_name, u.role_title, u.is_active,
+        `SELECT u.id, u.username, u.email, u.display_name,
+                ${gfPut.role_title} AS role_title, ${gfPut.is_active} AS is_active,
                 COALESCE(u.organization_id = $2, false) AS stamm
            FROM users u
+           ${gfPut.join}
           WHERE u.id = $1
             AND (u.organization_id = $2
                  OR EXISTS (SELECT 1 FROM user_organizations uo
@@ -407,8 +421,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         neueRolle = role;
       }
 
-      // IN EINER WEITEREN GEMEINDE NUR DIE ROLLE. Name, Benutzername, E-Mail,
-      // Passwort und Sperre haengen am Konto und damit an der Stamm-Gemeinde
+      // IN EINER WEITEREN GEMEINDE NUR, WAS JE GEMEINDE GILT: Rolle,
+      // Funktionsbezeichnung und Sperre (seit 08.10.2026, Migration 196; die
+      // Sperre wirkt dann nur hier). Name, Benutzername, E-Mail und
+      // Passwort haengen am Konto und damit an der Stamm-Gemeinde
       // -- sonst koennte die Leitung von Gemeinde B ueber das Passwort einer
       // eingeladenen Teamer:in in deren Stamm-Gemeinde A hineinkommen
       // (dieselbe Klasse wie Sicherheit BF-01). Unveraenderte Kontofelder
@@ -426,15 +442,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         const gleich = (neu, alt) => neu === undefined || lesart(neu) === lesart(alt);
         const kontoUnveraendert =
           gleich(username, user.username) && gleich(email, user.email) &&
-          gleich(display_name, user.display_name) && gleich(role_title, user.role_title) &&
-          gleich(is_active, user.is_active) && !password;
+          gleich(display_name, user.display_name) && !password;
         if (!kontoUnveraendert) {
           return res.status(400).json({
-            error: 'In einer weiteren Gemeinde lässt sich nur die Rolle ändern. Name, Benutzername, E-Mail, Passwort und Sperre verwaltet die Stamm-Gemeinde.',
+            error: 'In einer weiteren Gemeinde lassen sich nur Rolle, Funktionsbezeichnung und Sperre ändern. Name, Benutzername, E-Mail und Passwort verwaltet die Stamm-Gemeinde.',
             error_code: 'nur_rolle_in_weiterer_gemeinde'
           });
         }
-        if (role_id === undefined) {
+        if (role_id === undefined && role_title === undefined && is_active === undefined) {
           return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
         }
       }
@@ -464,9 +479,19 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       addUpdate('username', username);
       addUpdate('email', email);
       addUpdate('display_name', display_name);
-      addUpdate('role_title', role_title);
-      addUpdate('role_id', role_id);
-      addUpdate('is_active', is_active);
+
+      // Rolle, Funktionsbezeichnung und Sperre gelten JE GEMEINDE und gehen
+      // ueber schreibeGemeindeFelder (utils/orgMitglieder.js, 08.10.2026):
+      // Konto und Stamm-Zeile in der Stamm-Gemeinde, sonst die Zeile der
+      // Gemeinde. Eine Sperre wirkt nur in dieser Gemeinde; ist die Person
+      // danach in keiner Gemeinde mehr frei, ist das Konto gesperrt. Ein
+      // Super-Admin sperrt und entsperrt das ganze Konto.
+      const gemeindeFelder = {};
+      if (role_id !== undefined) gemeindeFelder.role_id = role_id;
+      if (role_title !== undefined) gemeindeFelder.role_title = role_title;
+      if (is_active !== undefined && is_active !== null) gemeindeFelder.is_active = is_active === true;
+      const ganzesKonto = req.user.is_super_admin === true;
+      const hatGemeindeFelder = Object.keys(gemeindeFelder).length > 0;
 
       if (password) {
         // Policy auch beim Bearbeiten prüfen (Audit 22.08.2026, LÜCKE N7):
@@ -481,7 +506,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         updateParams.push(await bcrypt.hash(password, 10));
       }
 
-      if (updateFields.length === 0) {
+      if (updateFields.length === 0 && !hatGemeindeFelder) {
         return res.status(400).json({ error: 'Keine Felder zum Aktualisieren' });
       }
 
@@ -521,11 +546,8 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           }
 
           ({ rowCount } = await client.query(updateQuery, updateParams));
-          if (rowCount > 0 && neueRolle) {
-            await client.query(
-              'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
-              [neueRolle.id, id, organizationId]
-            );
+          if (rowCount > 0 && hatGemeindeFelder) {
+            await schreibeGemeindeFelder(client, id, organizationId, gemeindeFelder, { ganzesKonto });
           }
           await client.query('COMMIT');
         } catch (txErr) {
@@ -535,12 +557,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
           client.release();
         }
       } else {
-        // Zusatzmitglied: Die Rolle gilt je Gemeinde und steht in
-        // user_organizations -- users.role_id (Stamm-Gemeinde) bleibt.
-        ({ rowCount } = await db.query(
-          'UPDATE user_organizations SET role_id = $1 WHERE user_id = $2 AND organization_id = $3',
-          [role_id, id, organizationId]
-        ));
+        // Zusatzmitglied: Rolle, Funktionsbezeichnung und Sperre gelten je
+        // Gemeinde und stehen in user_organizations -- das Konto bleibt (bis
+        // auf die Kontosperre, wenn die Person danach nirgends mehr frei ist).
+        const client = await db.getClient();
+        try {
+          await client.query('BEGIN');
+          const { gefunden } = await schreibeGemeindeFelder(client, id, organizationId, gemeindeFelder, { ganzesKonto });
+          rowCount = gefunden ? 1 : 0;
+          await client.query('COMMIT');
+        } catch (txErr) {
+          await client.query('ROLLBACK').catch(() => {});
+          throw txErr;
+        } finally {
+          client.release();
+        }
       }
 
       if (rowCount === 0) {

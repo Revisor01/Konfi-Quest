@@ -43,9 +43,13 @@ describe('Konto löschen nimmt auf jedem Weg alles mit', () => {
 
   const bearer = (wer) => `Bearer ${generateToken(wer)}`;
 
+  // Ohne weitere Gemeinde (seit 08.10.2026, Simons Entscheidung 8): Gehoert
+  // das Konto noch zu einer anderen Gemeinde, beendet die Leitung nur die
+  // Mitgliedschaft bei sich -- das prueft tests/routes/sperreJeGemeinde.test.js.
+  // Konfi und Team gibt es ohnehin nicht zugleich (utils/konfiOderTeam.js).
   it('DELETE /admin/konfis/:id', async () => {
-    voll = await legeVollePersonAn(db, USERS.konfi1.id);
-    expect(await unbelegteSpalten(db, USERS.konfi1.id)).toEqual([]);
+    voll = await legeVollePersonAn(db, USERS.konfi1.id, { weitereGemeinde: false });
+    expect(await unbelegteSpalten(db, USERS.konfi1.id, { ausser: ['user_organizations.user_id'] })).toEqual([]);
 
     const res = await request(app)
       .delete(`/api/admin/konfis/${USERS.konfi1.id}`)

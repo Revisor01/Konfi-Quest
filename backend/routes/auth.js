@@ -25,6 +25,7 @@ const PushService = require('../services/pushService');
 const { ladeLeitungZumJahrgang } = require('../utils/jahrgangLeitungSicht');
 const liveUpdate = require('../utils/liveUpdate');
 const { invalidateUserCache } = require('../middleware/rbac');
+const { ladeMitgliedschaftenMitSperre, waehleGemeinde, nichtGesperrtIn, schreibeGemeindeFelder } = require('../utils/orgMitglieder');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { meldePasswortGeaendert } = require('../utils/passwortGeaendertMail');
 const { erzeugeKontoSperre, kontoSperreAufheben } = require('../utils/kontoSperre');
@@ -303,6 +304,28 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
   };
 
+  // Die Gemeinde, fuer die ein neues Token ausgestellt wird (08.10.2026):
+  // die gewuenschte, sonst die Stamm-Gemeinde -- und ist die Person NUR dort
+  // gesperrt, die erste freie weitere (utils/orgMitglieder.js,
+  // waehleGemeinde). Rueckgabe { gemeinde, claim }: claim ist die Gemeinde
+  // fuer active_organization_id, wenn sie nicht die Stamm-Gemeinde ist (wie
+  // POST /switch-org), sonst null. Bei einem gewuenschten, aber nicht
+  // (mehr) moeglichen Wunsch gilt die Standard-Gemeinde -- wie bisher beim
+  // Refresh. Ein Konto ohne Gemeinde liefert { gemeinde: null, claim: null }.
+  const gemeindeFuerToken = async (dbConn, userId, stammId, gewuenscht = null) => {
+    if (stammId === null && !Number.isInteger(gewuenscht)) return { gemeinde: null, claim: null, keineFreie: false };
+    const liste = await ladeMitgliedschaftenMitSperre(dbConn, userId);
+    let wahl = Number.isInteger(gewuenscht) && gewuenscht !== Number(stammId)
+      ? waehleGemeinde(liste, gewuenscht) : { gemeinde: null, grund: 'ohne_wunsch' };
+    if (!wahl.gemeinde) wahl = waehleGemeinde(liste, null);
+    const g = wahl.gemeinde;
+    return {
+      gemeinde: g,
+      claim: g && !g.is_primary ? Number(g.organization_id) : null,
+      keineFreie: wahl.grund === 'keine_freie',
+    };
+  };
+
   // Frisches Token-Paar für einen User erzeugen. Wird nach dem Passwortwechsel
   // gebraucht: dort werden alle Sitzungen invalidiert, und ohne neues Paar
   // wuerde der eigene Client sofort mitfliegen.
@@ -323,6 +346,11 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       );
       if (!u) return null;
 
+      // Rolle der Gemeinde, in der das Token gilt (08.10.2026): ist die
+      // Person nur in der Stamm-Gemeinde gesperrt, die erste freie weitere.
+      const { gemeinde: g, claim } = await gemeindeFuerToken(dbConn, u.id, u.organization_id);
+      if (g) u.role_name = g.role_name;
+
       const userType = u.role_name === 'konfi' ? 'konfi'
         : u.role_name === 'teamer' ? 'teamer' : 'admin';
 
@@ -339,6 +367,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         organization_id: u.organization_id,
         role_name: u.role_name,
         is_super_admin: u.is_super_admin || false,
+        ...(claim ? { active_organization_id: claim } : {}),
         iat: iatVordatiert
       }, JWT_SECRET, { expiresIn: '15m' });
 
@@ -461,6 +490,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // (er verwaltet auch gesperrte Gemeinden; ein Konto ohne Gemeinde hat
       // keine). Die Sperre des KONTOS gilt fuer jede Rolle, siehe unten.
       const isSuperAdmin = user.is_super_admin === true || user.role_name === 'super_admin';
+      const stammGemeindeId = user.organization_id;
 
       // Soft-geloescht (deleted_at; der Auto-Loeschlauf setzt es 60 Tage
       // nach der Konfirmation, hart geloescht wird ab Tag 120). Die Person
@@ -491,6 +521,34 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
         return res.status(403).json(OHNE_GEMEINDE_ANTWORT);
       }
 
+      // SPERRE JE GEMEINDE (08.10.2026, Migration 196): Ist die Person nur in
+      // ihrer Stamm-Gemeinde gesperrt, meldet sie sich in der ersten freien
+      // weiteren Gemeinde an -- Token mit active_organization_id wie nach
+      // einem Wechsel, Rolle und Gemeindename von dort. Ist sie in KEINER
+      // Gemeinde frei, scheitert die Anmeldung wie bei einem gesperrten
+      // Konto (dann ist auch users.is_active false; die Pruefung hier faengt
+      // den Fall ab, dass beides auseinanderliefe).
+      const { gemeinde: loginGemeinde, claim: loginClaim, keineFreie } =
+        await gemeindeFuerToken(db, user.id, user.organization_id);
+      if (keineFreie) {
+        console.warn(`Login blockiert: Konto ${user.id} ist in keiner Gemeinde frei`);
+        return sperrAntwort(res, 'user_inactive');
+      }
+      if (loginGemeinde && loginClaim) {
+        user.organization_id = Number(loginGemeinde.organization_id);
+        user.organization_name = loginGemeinde.organization_name;
+        user.organization_slug = loginGemeinde.organization_slug;
+        user.organization_active = loginGemeinde.organization_active;
+        user.role_name = loginGemeinde.role_name;
+        user.role_display_name = loginGemeinde.role_display_name;
+        // Die Testphase gehoert zur Stamm-Gemeinde; hier gilt die der
+        // weiteren Gemeinde.
+        const { rows: [weitere] } = await db.query(
+          'SELECT trial_ends_at, is_trial FROM organizations WHERE id = $1', [user.organization_id]);
+        user.trial_ends_at = weitere ? weitere.trial_ends_at : null;
+        user.is_trial = weitere ? weitere.is_trial : false;
+      }
+
       if (!isSuperAdmin) {
         // Trial abgelaufen (auch falls der Cron die Org noch nicht auf inaktiv gesetzt hat)
         const trialExpired = user.trial_ends_at && new Date(user.trial_ends_at) < new Date();
@@ -513,12 +571,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
 
       // JWT Token - Rollen-basiert (keine Permissions mehr)
       // Ohne Name und E-Mail (Audit Sicherheit BF-15), siehe TOKEN_INHALT oben.
+      // organization_id im Token bleibt die Stamm-Gemeinde (wie nach
+      // POST /switch-org); die Gemeinde, in der gearbeitet wird, steht dann im
+      // Claim active_organization_id.
       const token = jwt.sign({
         id: user.id,
         type: userType,
-        organization_id: user.organization_id,
+        organization_id: loginClaim ? stammGemeindeId : user.organization_id,
         role_name: user.role_name,
-        is_super_admin: user.is_super_admin || false
+        is_super_admin: user.is_super_admin || false,
+        ...(loginClaim ? { active_organization_id: loginClaim } : {})
       }, JWT_SECRET, { expiresIn: '15m' });
 
       // Refresh-Token erstellen und in DB speichern
@@ -828,7 +890,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       // Leerer String oder null wird als NULL gespeichert
       const titleValue = role_title?.trim() || null;
 
-      await db.query(`UPDATE users SET role_title = $1 WHERE id = $2`, [titleValue, userId]);
+      // JE GEMEINDE (08.10.2026, Migration 196): Die Bezeichnung gilt in der
+      // aktiven Gemeinde -- in der Stamm-Gemeinde am Konto (und in einer
+      // vorhandenen Stamm-Zeile), in einer weiteren in deren Zeile. Ein Konto
+      // ohne Gemeinde (Support) traegt sie am Konto.
+      const { gefunden } = req.user.organization_id
+        ? await schreibeGemeindeFelder(db, userId, req.user.organization_id, { role_title: titleValue })
+        : { gefunden: false };
+      if (!gefunden) {
+        await db.query(`UPDATE users SET role_title = $1 WHERE id = $2`, [titleValue, userId]);
+      }
       // req.user liegt 30 s im Zwischenspeicher (rbac.js). Ohne das hier zeigte
       // die Startseite (greeting.role_title, 01.10.2026) nach dem Ändern noch
       // bis zu 30 s die alte Bezeichnung.
@@ -893,11 +964,22 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       //
       // Antwortform unveraendert (ausgelieferte Apps lesen sie): dieselben
       // Felder, dieselben Typen -- nur die Werte stimmen jetzt.
+      //
+      // Seit dem 08.10.2026 ebenso role_title (je Gemeinde, Migration 196)
+      // und, ADDITIV, die aktive Gemeinde: organization_id, organization
+      // (Name, wie bei der Anmeldung) und type. Die App gleicht damit nach
+      // einem Rueckfall in die Stamm-Gemeinde (auth:org-fallback) Rolle und
+      // Gemeindenamen an; vorher standen bis zum naechsten Start die der
+      // entzogenen Gemeinde da.
       res.json({
         ...user,
+        role_title: req.user.organization_id ? (req.user.role_title ?? null) : user.role_title,
         role_name: req.user.role_name ?? user.role_name,
         role_display_name: req.user.role_display_name ?? user.role_display_name,
-        assigned_jahrgaenge: req.user.assigned_jahrgaenge || []
+        assigned_jahrgaenge: req.user.assigned_jahrgaenge || [],
+        organization_id: req.user.organization_id ?? null,
+        organization: req.user.organization_name ?? null,
+        type: req.user.type
       });
 
     } catch (err) {
@@ -934,6 +1016,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           JOIN organizations o ON u.organization_id = o.id
           JOIN roles r ON u.role_id = r.id
           WHERE u.id = $1 AND COALESCE(o.is_active, true) = true
+            AND ${nichtGesperrtIn('u', 'u.organization_id')}
           UNION ALL
           SELECT o.id, o.name, o.slug, o.display_name,
                  r.name as role_name, r.display_name as role_display_name,
@@ -943,9 +1026,13 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           JOIN organizations o ON uo.organization_id = o.id
           JOIN roles r ON uo.role_id = r.id
           WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
+            AND uo.is_active = true
         ) m
         ORDER BY m.id, m.is_primary DESC
       `, [userId]);
+      // Gemeinden, in denen die Person gesperrt ist, fehlen (08.10.2026,
+      // Migration 196): Sie tauchen fuer sie nicht mehr auf, wie eine
+      // entzogene Mitgliedschaft.
       // is_primary (zusaetzlich seit 03.10.2026) kennzeichnet die Stamm-Gemeinde.
       // Login und /me liefern deren Kennung nicht mit; ohne das Kennzeichen
       // fand der Gemeinde-Umschalter nach dem Anmelden die aktive Gemeinde
@@ -983,6 +1070,7 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows: [membership] } = await db.query(`
         SELECT o.id, o.name, o.slug, r.name as role_name,
                COALESCE(o.is_active, true) as is_active,
+               COALESCE(uo.is_active, true) as mitglied_frei,
                u.display_name, u.email, u.organization_id as primary_org_id, u.is_super_admin
         FROM users u
         JOIN organizations o ON o.id = $2
@@ -997,6 +1085,12 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       }
       if (membership.is_active === false) {
         return res.status(403).json({ error: 'Diese Gemeinde ist derzeit gesperrt' });
+      }
+      // Nur in dieser Gemeinde gesperrt (08.10.2026, Migration 196): wie
+      // keine Mitgliedschaft -- die Gemeinde steht auch nicht mehr in
+      // GET /my-organizations.
+      if (membership.mitglied_frei === false) {
+        return res.status(403).json({ error: 'Du bist kein Mitglied dieser Gemeinde' });
       }
 
       const userType = membership.role_name === 'konfi' ? 'konfi'
@@ -1844,15 +1938,15 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
     }
 
     // Aktive Org nur uebernehmen, wenn sie von der Primaer-Org abweicht UND der
-    // User dort Mitglied ist. Sonst (auch bei ungueltiger Org) Primaer-Org.
-    let activeOrgClaim = null;
-    if (activeOrgId && Number.isInteger(activeOrgId) && activeOrgId !== user.organization_id) {
-      const { rows: [m] } = await db.query(
-        'SELECT 1 FROM user_organizations WHERE user_id = $1 AND organization_id = $2',
-        [userId, activeOrgId]
-      );
-      if (m) activeOrgClaim = activeOrgId;
+    // User dort Mitglied und NICHT gesperrt ist. Sonst (auch bei ungueltiger
+    // Org) die Standard-Gemeinde: die Stamm-Gemeinde -- oder, ist die Person
+    // nur dort gesperrt, die erste freie weitere (08.10.2026).
+    const { gemeinde: refreshGemeinde, claim: activeOrgClaim, keineFreie } =
+      await gemeindeFuerToken(db, userId, user.organization_id, activeOrgId);
+    if (keineFreie) {
+      return sperrAntwort(res, 'user_inactive');
     }
+    if (refreshGemeinde) user.role_name = refreshGemeinde.role_name;
 
     const userType = user.role_name === 'konfi' ? 'konfi' : user.role_name === 'teamer' ? 'teamer' : 'admin';
 

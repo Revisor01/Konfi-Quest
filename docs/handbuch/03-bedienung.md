@@ -909,7 +909,8 @@ Von selbst leert die App ihn,
 - wenn du dich **abmeldest**,
 - wenn du in eine **andere Gemeinde wechselst** — auch dann, wenn die App
   dich zurück in deine Stamm-Gemeinde setzt, weil dir die andere entzogen
-  wurde,
+  wurde; Gemeindename, Rolle und Ansicht folgen dabei gleich der Gemeinde,
+  in der du jetzt arbeitest,
 - wenn sich auf dem Gerät ein **anderes Konto anmeldet** als das, dessen
   Dateien dort liegen — etwa nach einer abgelaufenen Anmeldung.
 

@@ -19,6 +19,7 @@ const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { darfRaumBetreten } = require('../utils/chatRoomAccess');
 const { istTextTyp, pruefeTextDatei, textInhaltsTyp } = require('../utils/textDatei');
+const { gemeindeFelderSql, ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('../utils/orgMitglieder');
 
 module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   const { verifyTokenRBAC } = rbacMiddleware;
@@ -277,7 +278,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       // $1 = Aufrufer, $2 = aktive Organisation (Reihenfolge wie dort).
       const query = `
         SELECT u.id, u.display_name, r.name AS role_name,
-               COALESCE(NULLIF(u.role_title, ''),
+               COALESCE(NULLIF(${TEAM_FELDER.role_title}, ''),
                  -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
                  CASE
                    WHEN r.name = 'teamer' THEN 'Teamer:in'
@@ -288,7 +289,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           FROM users u
           ${TEAM_MITGLIED_ROLLE}
          WHERE r.name IN ('admin', 'org_admin', 'teamer')
-           AND u.is_active = true
+           AND ${TEAM_FELDER.is_active}
            AND u.deleted_at IS NULL
            AND u.id != $1
          ORDER BY u.display_name
@@ -323,7 +324,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           FROM users u
           ${TEAM_MITGLIED_ROLLE}
          WHERE r.name IN ('admin', 'org_admin', 'teamer')
-           AND u.is_active = true
+           AND ${TEAM_FELDER.is_active}
            AND u.deleted_at IS NULL
            AND u.id <> $1
            AND ${KONFI_SIEHT_TEAMMITGLIED}
@@ -483,6 +484,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       ON uo.user_id = u.id AND uo.organization_id = $2
     JOIN roles r
       ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id ELSE uo.role_id END`;
+
+  // Funktionsbezeichnung und Sperre JE GEMEINDE (08.10.2026, Planung
+  // mehrfach-konten Punkt 6) -- zu TEAM_MITGLIED_ROLLE, das die Zeile der
+  // Gemeinde schon als `uo` anhaengt (deshalb ohne eigenen join). In der
+  // Stamm-Gemeinde gelten die Werte am Konto, sonst die aus user_organizations.
+  const TEAM_FELDER = gemeindeFelderSql('$2', { g: 'uo' });
 
   // SQL-Bedingung fuer Kontaktlisten von Konfis (Simons Regel vom
   // 01.09.2026, s. teamAnschreibenVerboten): erreichbar sind org_admin
@@ -1153,7 +1160,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               m.user_id as sender_id,
               m.user_type as sender_type,
               u.display_name as sender_name,
-              u.role_title as sender_role_title,
+              -- Funktionsbezeichnung in der Gemeinde des Raums (08.10.2026,
+              -- Punkt 6); wer nicht (mehr) Mitglied ist, behaelt den Wert am
+              -- Konto -- wie die Rolle unten.
+              CASE WHEN u.organization_id = m_raum.organization_id OR m_uo.id IS NULL
+                   THEN u.role_title ELSE m_uo.role_title END as sender_role_title,
               ro.display_name as sender_role_display_name,
               ro.name as sender_role_name,
               u.username as sender_username,
@@ -1176,7 +1187,18 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               reply_user.display_name as reply_to_sender_name
       FROM chat_messages m
       LEFT JOIN users u ON m.user_id = u.id
-      LEFT JOIN roles ro ON u.role_id = ro.id
+      -- Rolle in der Gemeinde des RAUMS (08.10.2026, Planung
+      -- mehrfach-konten): Hier stand u.role_id, die Rolle der
+      -- Stamm-Gemeinde -- wer eine Gemeinde zusaetzlich betreut, stand dort
+      -- mit dem Rollenwort von zuhause hinter dem Namen. Regel wie
+      -- TEAM_MITGLIED_ROLLE oben; wer nicht (mehr) Mitglied ist, behaelt die
+      -- Rolle am Konto (wie die Mitgliederliste).
+      LEFT JOIN chat_rooms m_raum ON m_raum.id = m.room_id
+      LEFT JOIN user_organizations m_uo
+        ON m_uo.user_id = u.id AND m_uo.organization_id = m_raum.organization_id
+      LEFT JOIN roles ro
+        ON ro.id = CASE WHEN u.organization_id = m_raum.organization_id THEN u.role_id
+                        ELSE COALESCE(m_uo.role_id, u.role_id) END
       LEFT JOIN chat_polls p ON m.id = p.message_id
       LEFT JOIN chat_messages reply_msg ON m.reply_to = reply_msg.id
       LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id`;
@@ -1700,7 +1722,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         cp.user_type,
         cp.joined_at,
         u.display_name as name,
-        u.role_title,
+        -- Funktionsbezeichnung DIESER Gemeinde (08.10.2026, Punkt 6); wer
+        -- nicht (mehr) Mitglied ist, behaelt den Wert am Konto -- wie die Rolle.
+        CASE WHEN u.organization_id = $2 OR uo.id IS NULL THEN u.role_title
+             ELSE uo.role_title END as role_title,
         r.name as role_name,
         r.display_name as role_display_name,
         -- Jahrgang nur für echte Konfis; Team-Mitglieder (admin/teamer) haben keinen.
@@ -2007,21 +2032,23 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       const gewuenschteOrg = Number.isInteger(headerOrg) ? headerOrg
         : (Number.isInteger(tokenOrg) ? tokenOrg : null);
 
-      if (gewuenschteOrg && gewuenschteOrg !== req.user.organization_id) {
-        const { rows: [mitgliedschaft] } = await db.query(
-          `SELECT uo.organization_id, r.name AS role_name
-           FROM user_organizations uo
-           JOIN roles r ON uo.role_id = r.id
-           WHERE uo.user_id = $1 AND uo.organization_id = $2`,
-          [decoded.id, gewuenschteOrg]
-        );
-        if (!mitgliedschaft) {
+      // Sperre je Gemeinde (08.10.2026, Migration 196): dieselbe Wahl wie
+      // rbac.js -- eine Gemeinde, in der die Person gesperrt ist, liefert
+      // keine Dateien (403 wie ohne Mitgliedschaft); ist sie nur in der
+      // Stamm-Gemeinde gesperrt, gilt ohne Wunsch die erste freie weitere.
+      if (gewuenschteOrg || req.user.organization_id !== null) {
+        const mitgliedschaften = await ladeMitgliedschaftenMitSperre(db, decoded.id);
+        const { gemeinde, grund } = waehleGemeinde(mitgliedschaften, gewuenschteOrg || null);
+        if (grund === 'kein_mitglied' || grund === 'gesperrt') {
           return res.status(403).json(ORG_KEIN_ZUGRIFF);
         }
-        req.user.organization_id = mitgliedschaft.organization_id;
-        req.user.role_name = mitgliedschaft.role_name;
-        req.user.type = mitgliedschaft.role_name === 'konfi' ? 'konfi'
-          : mitgliedschaft.role_name === 'teamer' ? 'teamer' : 'admin';
+        if (!gemeinde || grund === 'keine_freie') {
+          return res.status(401).json({ error: 'Nicht angemeldet' });
+        }
+        req.user.organization_id = gemeinde.organization_id;
+        req.user.role_name = gemeinde.role_name;
+        req.user.type = gemeinde.role_name === 'konfi' ? 'konfi'
+          : gemeinde.role_name === 'teamer' ? 'teamer' : 'admin';
       }
     } catch (err) {
       console.error('Auth-Fehler in GET /chat/files/:filename:', err);
@@ -2913,7 +2940,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         SELECT DISTINCT u.id, u.display_name as name,
           CASE WHEN r.name = 'teamer' THEN 'teamer' ELSE 'admin' END as type,
           r.name as role_name,
-          COALESCE(NULLIF(u.role_title, ''),
+          COALESCE(NULLIF(${TEAM_FELDER.role_title}, ''),
             -- Woerter wie utils/rollenNamen.js (Simon, 28.09.2026).
             CASE
               WHEN r.name = 'teamer' THEN 'Teamer:in'
@@ -2926,7 +2953,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         ${TEAM_MITGLIED_ROLLE}
         WHERE r.name IN ('admin', 'org_admin', 'teamer')
         AND u.id <> $1
-        AND u.is_active = true
+        AND ${TEAM_FELDER.is_active}
         AND u.deleted_at IS NULL
         AND ${KONFI_SIEHT_TEAMMITGLIED}
         ORDER BY u.display_name

@@ -440,6 +440,8 @@ paths:
   # ==========================================================================
 
   /api/chat/team-contacts:
+    # GEAENDERT 08.10.2026 (Migration 196): role_title je Gemeinde (in einer
+    # weiteren Gemeinde aus user_organizations). Antwortform unveraendert.
     get:
       tags: ["Chat"]
       summary: Team-Kontaktliste für Direktchats
@@ -469,6 +471,8 @@ paths:
         hinweis: "Konfis nutzen stattdessen GET /chat/admins bzw. /chat/available-users"
 
   /api/chat/admins:
+    # GEAENDERT 08.10.2026 (Migration 196): role_title je Gemeinde. Antwortform
+    # unveraendert.
     get:
       tags: ["Chat"]
       summary: Anschreibbare Team-Mitglieder (Konfi-Sicht)
@@ -790,6 +794,11 @@ paths:
   # ==========================================================================
 
   /api/chat/rooms/{roomId}/messages:
+    # BEHOBEN 08.10.2026 (offener Befund "Rolle aus der Stamm-Gemeinde in Chat-
+    # Nachrichten"): sender_role_name, sender_role_display_name und
+    # sender_role_title gelten fuer die Gemeinde des Raums (Stamm-Gemeinde
+    # users.role_id, sonst user_organizations), nicht mehr fuer die Stamm-
+    # Gemeinde der Absender:in. Antwortform unveraendert.
     get:
       tags: ["Chat"]
       summary: Nachrichten eines Raums laden
@@ -1136,6 +1145,10 @@ paths:
   # ==========================================================================
 
   /api/chat/files/{filename}:
+    # GEAENDERT 08.10.2026 (Migration 196): Ist die Person in der gewuenschten
+    # Gemeinde gesperrt, 403 org_kein_zugriff wie ohne Mitgliedschaft; nur in
+    # der Stamm-Gemeinde gesperrt -> ohne Wunsch die erste freie weitere
+    # Gemeinde (Regel wie verifyTokenRBAC).
     get:
       tags: ["Chat"]
       summary: Chat-Datei abrufen (entschluesselt)
@@ -1657,6 +1670,9 @@ paths:
         objekt-pruefung: "Keine — pauschale 403 für alle"
 
   /api/challenges/files/{filename}:
+    # BEHOBEN 08.10.2026: gesperrte Konten (users.is_active false) bekommen 401
+    # -- vorher pruefte die Route nur deleted_at. Sperre je Gemeinde wie GET
+    # /api/chat/files/{filename}.
     get:
       tags: ["Challenges (Konfis)"]
       summary: Challenge-Datei abrufen (entschluesselt)
@@ -1688,6 +1704,9 @@ paths:
   # ==========================================================================
 
   /api/challenges/admin/authors:
+    # BEHOBEN 08.10.2026 (offener Befund "Challenge-Urheber:innen nur aus der
+    # Stamm-Gemeinde"): beide Quellen der Zugehoerigkeit mit der Rolle DIESER
+    # Gemeinde (MITGLIEDSCHAFTEN_SQL). Antwortform unveraendert.
     get:
       tags: ["Challenges (Leitung)"]
       summary: Moegliche Urheber:innen einer Challenge
@@ -1718,6 +1737,10 @@ paths:
         objekt-pruefung: "Konfi-Eintraege auf die zugewiesenen Jahrgänge von admin bzw. teamer gefiltert (org_admin ungefiltert)"
 
   /api/challenges/admin:
+    # BEHOBEN 08.10.2026: Die Urheber-Pruefung (author_user_id) beim Anlegen
+    # nimmt beide Quellen (istMitgliedDerOrganisation); vorher 400 "Urheber
+    # nicht gefunden" fuer Team aus einer weiteren Gemeinde. Ein geloeschtes
+    # Konto -> 400.
     get:
       tags: ["Challenges (Leitung)"]
       summary: Alle Challenges der Org (inkl. Entwuerfe) mit Zaehlern
@@ -1835,6 +1858,8 @@ paths:
         objekt-pruefung: "jahrgang_ids müssen zur Org UND (bei admin/teamer) zu den eigenen Zuweisungen gehören; author_user_id org-gescopt"
 
   /api/challenges/admin/{id}:
+    # BEHOBEN 08.10.2026: Urheber-Pruefung beim Aendern wie beim Anlegen (beide
+    # Quellen).
     get:
       tags: ["Challenges (Leitung)"]
       summary: "Eine Challenge der Leitungsliste (NEU 2026-10-02, 2.4.0)"

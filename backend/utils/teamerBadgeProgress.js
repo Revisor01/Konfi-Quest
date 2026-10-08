@@ -21,6 +21,9 @@ const { angezeigteSerie } = require('./streakCalculation');
 const { berechneBadgeProgress, bedingungFehlt } = require('./badgeProgress');
 const { TEAMER_KATEGORIE_NAMEN_SQL } = require('./badgeKategorieRegel');
 const { abfragenBuendeln } = require('./abfragenBuendeln');
+const { gemeindeFelderSql } = require('./orgMitglieder');
+// "Teamer:in seit" je Gemeinde (Migration 196): $2 ist die Gemeinde.
+const GF_JAHR = gemeindeFelderSql('$2');
 
 // Ermittelt Abzeichen (verdient + offen + Fortschritt) fuer eine Teamer:in.
 // Erwartet: db (Pool oder Client), userId (users.id), orgId (organizations.id).
@@ -80,10 +83,11 @@ async function getTeamerBadgeProgress(db, userId, orgId) {
       ) d WHERE d.date IS NOT NULL`,
       [userId, orgId]
     ),
-    // Startjahr-Quelle (teamer_since, Migration 064) — konsistent zur Wertung (badges.js teamer_year)
+    // Startjahr-Quelle (teamer_since, Migration 064; je Gemeinde seit
+    // Migration 196) — konsistent zur Wertung (badges.js teamer_year)
     () => db.query(
-      "SELECT teamer_since FROM users WHERE id = $1",
-      [userId]
+      `SELECT ${GF_JAHR.teamer_since} AS teamer_since FROM users u ${GF_JAHR.join} WHERE u.id = $1`,
+      [userId, orgId]
     ),
     // Pro Kategorie: Anzahl Teamer-Aktivitäten + anwesende Events (für
     // category_activities-Progress). Identische Logik wie die Wertung in

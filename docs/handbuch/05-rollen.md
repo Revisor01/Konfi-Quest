@@ -182,6 +182,12 @@ Gemeinde**. Wer in der einen zur Gemeindeleitung gehört, kann in der anderen
 Teamer:in sein; die Rechte richten sich immer nach der Gemeinde, in der man
 gerade arbeitet, nie nach der Gemeinde am Konto.
 
+Ebenfalls je Gemeinde gelten die **Funktionsbezeichnung** (etwa „Diakonin"),
+das Datum **Teamer:in seit** und die **Sperre**. Was die eine Gemeinde dort
+einträgt, sieht die andere nicht; das Badge „Teamer-Jahr" rechnet in jeder
+Gemeinde ab deren Datum. Name, Benutzername, E-Mail-Adresse und Passwort
+gehören zum Konto und gelten überall.
+
 **Konfi oder Team, nie beides.** Ein Konto ist entweder Konfi — dann gehört es
 zu genau einer Gemeinde — oder im Team (Teamer:in, Leitung, Gemeindeleitung), dann
 auch in mehreren Gemeinden. Wer irgendwo Konfi ist, lässt sich in keine weitere
@@ -265,9 +271,11 @@ Zusage steht die Person in der Liste darüber.
 
 Nach der Zusage steht die Person unter **Mehr › Benutzer:innen** — mit dem
 Vermerk „zuhause in einer anderen Gemeinde". Dort vergibst du ihre **Rolle**
-in deiner Gemeinde und ihre **Jahrgänge**. Name, Benutzername, E-Mail,
-Passwort und Sperre bleiben Sache ihrer Stamm-Gemeinde; diese Felder sind bei
-dir gesperrt, und auch ein neues Passwort setzt nur die Stamm-Gemeinde.
+in deiner Gemeinde, ihre **Jahrgänge**, ihre **Funktionsbezeichnung** bei dir
+und kannst sie [in deiner Gemeinde sperren](#jemanden-nur-in-der-eigenen-gemeinde-sperren).
+Name, Benutzername, E-Mail und Passwort bleiben Sache ihrer Stamm-Gemeinde;
+diese Felder sind bei dir gesperrt, und auch ein neues Passwort setzt nur die
+Stamm-Gemeinde.
 
 Wischst du die Person in der Liste weg, endet nur ihre **Mitgliedschaft in
 deiner Gemeinde** — samt ihrer Jahrgänge, ihrer Plätze in allen Chats
@@ -290,6 +298,32 @@ die E-Mail-Adresse eines Konfis ein, meldet die App „Kein Konto mit diesem
 Benutzernamen oder dieser E-Mail-Adresse" — genau wie bei einer Kennung, die
 es nicht gibt. So lässt sich über die Einladung nicht herausfinden, ob ein Kind
 irgendwo ein Konto hat.
+
+### Jemanden nur in der eigenen Gemeinde sperren
+
+Unter **Mehr › Benutzer:innen** sperrst du eine Person mit dem Schalter
+**Aktiv** — bei einer Person, die auch in anderen Gemeinden mitarbeitet, **nur
+in deiner Gemeinde**. In der Liste steht sie bei dir als gesperrt, in ihren
+anderen Gemeinden bleibt sie frei:
+
+- Sie meldet sich weiter an und arbeitet in ihren anderen Gemeinden wie
+  bisher. Ist deine Gemeinde ihre Stamm-Gemeinde, landet sie nach der
+  Anmeldung gleich in einer anderen.
+- Deine Gemeinde verschwindet aus ihrer Gemeindeauswahl, und sie bekommt aus
+  deiner Gemeinde keine Mitteilungen und keine Chat-Nachrichten mehr aufs
+  Handy. Arbeitet sie gerade in deiner Gemeinde, wechselt ihre App von selbst
+  in eine andere — wie beim [Entzug einer Mitgliedschaft](#mitglieder-aus-anderen-gemeinden-verwalten).
+- Die Sperre wirkt **sofort**, auch auf Geräten, die gerade angemeldet sind.
+
+Ist die Person in **allen** ihren Gemeinden gesperrt, ist ihr Konto gesperrt:
+Die Anmeldung scheitert mit „Dein Zugang wurde deaktiviert". Gibt eine
+Gemeinde sie wieder frei, kann sie sich dort wieder anmelden; die Sperren der
+anderen Gemeinden bleiben. Bei einer Person, die nur zu deiner Gemeinde gehört,
+sperrt der Schalter wie gewohnt das Konto.
+
+Der Betrieb von Konfi Quest sperrt mit diesem Schalter immer das **ganze
+Konto** in allen Gemeinden; freigeben kann ihn danach wieder jede Gemeinde
+für sich.
 
 ### Die Gemeinde wechseln
 
@@ -455,6 +489,13 @@ Dasselbe geschieht, wenn du eine Teamer:in in der
 löschst. Dort nennt die Abfrage beide Möglichkeiten; die Meldung danach sagt,
 ob das Konto gelöscht wurde oder in der anderen Gemeinde bleibt.
 
+Auch beim **Löschen einer Konfi** endet bei einem Konto, das noch zu einer
+anderen Gemeinde gehört, nur die Mitgliedschaft in deiner Gemeinde — mit
+ihren Jahrgängen, Chat-Plätzen, Mitteilungen und Event-Anmeldungen bei dir
+(auf ihre Plätze rückt die Warteliste nach). Das Konto bleibt für die andere
+Gemeinde. Konfi und Team gehen nie zusammen; solche Konten gibt es nur aus der
+Zeit davor.
+
 ### Den Jahresrückblick fürs Team erstellen
 
 Der Team-Rückblick wird je Gemeinde erstellt und erfasst alle, die **in
@@ -500,7 +541,9 @@ Ein Konto verschwindet auf fünf Wegen, und auf jedem geschieht dasselbe:
 - Die Person löscht es selbst, ganz unten im Profil unter **Account löschen**,
   mit ihrem Passwort.
 - Die Leitung löscht eine Konfi in der
-  [Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten).
+  [Konfi-Liste](30-leitung.md#konfis-und-teamer-innen-verwalten). Gehört das
+  Konto noch einer anderen Gemeinde an, endet auch hier nur die Mitgliedschaft
+  bei dir.
 - Die Leitung löscht eine Teamer:in oder jemanden aus der Leitung unter
   **Mehr › Benutzer:innen** oder in der Konfi-Liste unter **Team**. Gehört die
   Person noch einer anderen Gemeinde an, endet dabei nur ihre Mitgliedschaft

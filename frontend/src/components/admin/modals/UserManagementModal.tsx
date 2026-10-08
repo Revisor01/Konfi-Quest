@@ -299,7 +299,11 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
         let userIdForAssignments = userId;
         if (isEditMode) {
-          await api.put(`/users/${userId}`, nurRolle ? { role_id: formData.role_id } : userData);
+          // In einer weiteren Gemeinde nur, was je Gemeinde gilt: Rolle,
+          // Funktionsbeschreibung und Sperre (seit 08.10.2026).
+          await api.put(`/users/${userId}`, nurRolle
+            ? { role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active }
+            : userData);
         } else {
           const response = await api.post('/users', userData);
           userIdForAssignments = response.data.id;
@@ -412,8 +416,9 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               {nurRolle && (
                 <p style={{ margin: '0 0 var(--app-abstand-basis) 0', color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)' }}>
                   Diese Person ist in einer anderen Gemeinde zuhause. Hier änderst du
-                  nur ihre Rolle und ihre Jahrgänge; Name, Benutzername, E-Mail,
-                  Passwort und Sperre verwaltet ihre Stamm-Gemeinde.
+                  ihre Rolle, ihre Funktionsbeschreibung und ihre Jahrgänge bei dir
+                  und kannst sie bei dir sperren; Name, Benutzername, E-Mail und
+                  Passwort verwaltet ihre Stamm-Gemeinde.
                 </p>
               )}
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -448,7 +453,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     value={formData.role_title}
                     onIonInput={(e) => setFormData({ ...formData, role_title: e.detail.value! })}
                     placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
-                    disabled={isSubmitting || nurRolle}
+                    disabled={isSubmitting}
                   />
                 </IonItem>
 
@@ -564,14 +569,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 <div>
                   <h3 style={{ fontWeight: 'var(--app-schrift-mittel)', margin: '0 0 var(--app-abstand-mini) 0', fontSize: 'var(--app-text-betont)' }}>Konto aktiv</h3>
                   <p style={{ color: 'var(--app-text-secondary)', margin: 0, fontSize: 'var(--app-text-hinweis)' }}>
-                    Benutzer kann sich anmelden
+                    {nurRolle ? 'Gilt nur für diese Gemeinde' : 'Benutzer kann sich anmelden'}
                   </p>
                 </div>
                 <IonToggle aria-label="Konto aktiv"
                   className={`app-toggle--${farbe}`}
                   checked={formData.is_active}
                   onIonChange={(e) => setFormData({ ...formData, is_active: e.detail.checked })}
-                  disabled={isSubmitting || nurRolle}
+                  disabled={isSubmitting}
                 />
               </div>
               )}

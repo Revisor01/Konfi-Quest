@@ -698,6 +698,18 @@ paths:
         true. Fuer Konten mit Gemeinde aendert das Feld nichts. Bedienkomfort,
         keine Sicherheitsgrenze -- die Rechte haelt verifyTokenRBAC.
         Tests: backend/tests/routes/kontoOhneGemeindeAnmeldung.test.js.
+
+
+        SPERRE JE GEMEINDE seit 08.10.2026 (Simon; Migration 196,
+        docs/planung/mehrfach-konten.md Entscheidung 7): Ist die Person nur in
+        ihrer Stamm-Gemeinde gesperrt (user_organizations.is_active = false
+        der Stamm-Zeile), ist aber in einer weiteren Gemeinde frei, gilt das
+        Token fuer die erste freie weitere Gemeinde -- mit Claim
+        active_organization_id wie nach POST /auth/switch-org, Rolle und
+        Gemeindename (user.organization, user.role_name) von dort. Ist sie in
+        KEINER Gemeinde frei, 403 error_code user_inactive wie bei einem
+        gesperrten Konto (dann ist auch users.is_active false).
+        Antwortform unveraendert. Tests: backend/tests/routes/sperreJeGemeinde.test.js.
       requestBody:
         required: true
         content:
@@ -883,6 +895,12 @@ paths:
     post:
       tags: ["Anmeldung & Konto"]
       summary: Eigene Funktionsbeschreibung (role_title) setzen
+      description: >
+        JE GEMEINDE seit 08.10.2026 (Migration 196): Die Bezeichnung gilt in
+        der AKTIVEN Gemeinde -- in der Stamm-Gemeinde am Konto (und in einer
+        vorhandenen Stamm-Zeile von user_organizations), in einer weiteren
+        Gemeinde in deren Zeile. Ein Konto ohne Gemeinde traegt sie am Konto.
+        Antwortform unveraendert ({ message, role_title }).
       requestBody:
         content:
           application/json:
@@ -923,8 +941,17 @@ paths:
         korrekt. Die App richtet ihre Oberflaeche aber nach dieser Antwort und
         zeigte in der Zweitgemeinde eine Leitungsansicht, deren Knoepfe der
         Server mit 403 abwies. Antwortform unveraendert.
+
+        SEIT 08.10.2026: role_title gilt ebenfalls fuer die aktive Gemeinde
+        (Migration 196). ADDITIV dazu organization_id, organization (Name)
+        und type der aktiven Gemeinde -- die App gleicht damit nach einem
+        Rueckfall (auth:org-fallback) Rolle und Gemeindenamen an; vorher
+        standen bis zum naechsten Start die der entzogenen Gemeinde da
+        (BEHOBEN 08.10.2026, Grundgeruest BF-05 Nebenbefund). Ausgelieferte
+        Apps mischen die Antwort in ihren Nutzer-Zustand; die Werte
+        entsprechen dem, was sie nach einem Wechsel selbst setzen.
       responses:
-        "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial, assigned_jahrgaenge[]" }
+        "200": { description: "id, username, display_name, email, role_title, role_name, is_super_admin, trial_ends_at, is_trial, assigned_jahrgaenge[]; additiv seit 08.10.2026: organization_id, organization, type (aktive Gemeinde)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -1165,7 +1192,7 @@ paths:
       tags: ["Anmeldung & Konto"]
       summary: Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle
       responses:
-        "200": { description: "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber." }
+        "200": { description: "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber. Seit 08.10.2026 fehlen Gemeinden, in denen die Person gesperrt ist (Migration 196) — wie eine entzogene Mitgliedschaft." }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]
@@ -1189,7 +1216,7 @@ paths:
       responses:
         "200": { description: "Neues 15-Min-Token, active_organization_id, Rolle in Ziel-Org" }
         "400": { description: "organization_id fehlt" }
-        "403": { description: "Keine Mitgliedschaft in Ziel-Org oder Ziel-Org gesperrt" }
+        "403": { description: "Keine Mitgliedschaft in Ziel-Org, Ziel-Org gesperrt oder (seit 08.10.2026, Migration 196) die Person ist nur in dieser Gemeinde gesperrt -- dann dieselbe Antwort wie ohne Mitgliedschaft" }
       x-berechtigung:
         rollen: [alle authentifizierten]
         middleware: [verifyTokenRBAC]
@@ -1509,6 +1536,14 @@ paths:
       tags: ["Anmeldung & Konto"]
       summary: Access-Token per Refresh-Token erneuern (Rotation, 5-Min-Grace-Window genau einmal)
       description: >
+        SPERRE JE GEMEINDE seit 08.10.2026 (Migration 196): Die Gemeinde aus
+        X-Active-Organization kommt nur in den Claim, wenn die Person dort
+        Mitglied UND nicht gesperrt ist. Sonst gilt die Standard-Gemeinde:
+        die Stamm-Gemeinde, oder -- ist die Person nur dort gesperrt -- die
+        erste freie weitere (dann mit Claim active_organization_id). In
+        keiner Gemeinde frei: 403 user_inactive. Antwortform unveraendert.
+
+
         OBERGRENZE seit 01.10.2026: Nach der Rotation bleiben je Konto
         hoechstens die zehn juengsten offenen Refresh-Tokens, eines je Geraet
         (siehe POST /api/auth/login). Das gerade rotierte Token ist dann schon
@@ -2089,6 +2124,9 @@ paths:
         objekt-pruefung: "Existenz der Org"
 
   /api/organizations/{id}/users:
+    # BEHOBEN 08.10.2026: beide Quellen der Zugehoerigkeit, Rolle und Sperre
+    # DIESER Gemeinde, Jahrgangszaehler nur dieser Gemeinde (vorher nur
+    # users.organization_id). Antwortform unveraendert.
     get:
       tags: ["Organisationen"]
       summary: Alle User einer Organisation (inkl. Konfis) mit Rolle und Jahrgangs-Zähler
@@ -2104,6 +2142,9 @@ paths:
         objekt-pruefung: "Inline: super_admin ODER (org_admin UND eigene Org)"
 
   /api/organizations/{id}/admins:
+    # BEHOBEN 08.10.2026 (offener Befund "Gemeindeleitung nur aus der Stamm-
+    # Gemeinde"): org_admin ueber beide Quellen (MITGLIEDSCHAFTEN_SQL),
+    # is_active je Gemeinde. Antwortform unveraendert.
     get:
       tags: ["Organisationen"]
       summary: org_admins einer Organisation auflisten
@@ -3928,6 +3969,7 @@ paths:
         # wahr ist; weitere_gemeinden zaehlte falsch. Jetzt steht es als
         # 'weitere' mit seiner Rolle hier, weitere_gemeinden zaehlt nur echte
         # Gemeinden. Antwortform unveraendert.
+        hinweis: "Seit 08.10.2026 (Migration 196) sind role_title und is_active die Werte DIESER Gemeinde: is_active ist false, wenn das Konto ODER die Mitgliedschaft hier gesperrt ist; role_title in einer weiteren Gemeinde aus deren Zeile in user_organizations. Feldnamen und Typen unveraendert."
     post:
       tags: ["Benutzer & Rollen"]
       summary: Verwaltungs-User anlegen (Rolle aus eigener Org, volle Passwort-Policy)
@@ -3996,9 +4038,9 @@ paths:
                 username: { type: string, minLength: 3, maxLength: 50, pattern: "^[a-zA-Z0-9.-]+$", description: "Seit 30.09.2026: Ein NEUER Name (ohne Gross/klein verglichen mit dem bisherigen) muss systemweit frei sein, ohne Gross/klein, das eigene Konto ausgenommen -- sonst 409. Geprueft in der Transaktion des Updates unter pg_advisory_xact_lock je Namen (utils/benutzernameSperre.js, dieselbe Sperre wie beim Anlegen). Der unveraenderte Name (so schicken ihn die Store-Apps 2.2.x und 2.3.0 bei jedem Speichern mit) und eine reine Aenderung der Schreibweise des eigenen Namens (anna -> Anna) werden nicht geprueft und gehen wie bisher durch -- auch neben einer Dublette im Altbestand. BEHOBEN 30.09.2026: vorher ohne jede Pruefung; Umbenennen auf den Namen eines Kontos einer anderen Gemeinde oder auf 'ADMIN1' neben 'admin1' gab 200, die Anmeldung wurde mehrdeutig" }
                 email: { type: string }
                 display_name: { type: string }
-                role_title: { type: string }
-                role_id: { type: integer, description: "Rollenwechsel: Hierarchie prueft neue Rolle; Sockets werden getrennt" }
-                is_active: { type: boolean, description: "false trennt aktive Sockets" }
+                role_title: { type: string, description: "Seit 08.10.2026 je Gemeinde (Migration 196): in der Stamm-Gemeinde am Konto und in einer vorhandenen Stamm-Zeile, in einer weiteren Gemeinde in deren Zeile von user_organizations" }
+                role_id: { type: integer, description: "Rollenwechsel: Hierarchie prueft neue Rolle; Sockets werden getrennt. Zuhause werden Konto und eine vorhandene Stamm-Zeile in user_organizations zugleich geschrieben (utils/orgMitglieder.js, schreibeGemeindeFelder)" }
+                is_active: { type: boolean, description: "false trennt aktive Sockets. Seit 08.10.2026 JE GEMEINDE (Migration 196, Simons Entscheidung 7): Bei einer Person mit weiterer Gemeinde sperrt false nur diese Gemeinde (user_organizations.is_active; fuer die Stamm-Gemeinde wird die Stamm-Zeile bei Bedarf angelegt) -- Anmeldung und die anderen Gemeinden bleiben, diese Gemeinde verschwindet aus GET /auth/my-organizations, Zugriff mit 403 org_kein_zugriff. Ist die Person danach in keiner Gemeinde mehr frei, wird auch das Konto gesperrt (users.is_active false). true gibt diese Gemeinde und das Konto frei. Ein Super-Admin (is_super_admin) sperrt und entsperrt das GANZE Konto samt aller Mitgliedschaften. Die Sperre wirkt sofort auf allen Replicas (verifyTokenRBAC prueft Sperre, Rolle und Mitgliedschaft je Anfrage)" }
                 password: { type: string, description: "Seit 27.09.2026 (BF-20 / F-12): Wird ein Passwort gesetzt, geht nach der Antwort eine Bestaetigung an die hinterlegte Adresse des Kontos -- ohne das Passwort, mit dem Hinweis, dass die Leitung es gesetzt hat (ausser beim eigenen Konto). Seit 27.09.2026 (Sicherheit BF-04) hebt es ausserdem eine Kontosperre nach Fehlversuchen auf" }
       responses:
         "200": { description: "Aktualisiert; Chat-Sync bei Rollen-/Aktiv-Wechsel; User-Cache bei JEDER Aenderung invalidiert (seit 26.09.2026 -- vorher nur bei role_id, is_active=false wirkte bis zu 30 s spaeter)" }
@@ -4027,8 +4069,13 @@ paths:
         # mit alter Sitzung -> 200). Jetzt bei jeder Aenderung; dasselbe nach
         # DELETE /users/:id, DELETE /admin/konfis/:id und POST /auth/delete-account.
         # Wirkt je Replica -- der gemeinsame Store bleibt offen (S-10).
+        # BEHOBEN 08.10.2026 (S-10, "Sperre wirkt auf der zweiten Replica erst
+        # nach 30 s"): verifyTokenRBAC prueft Sperre, Loeschung, Soft-Revoke,
+        # Rolle und Mitgliedschaft der gespeicherten Gemeinde je Anfrage mit
+        # einer Abfrage; nur Name, Jahrgaenge und Gemeindename kommen noch aus
+        # dem 30-s-Zwischenspeicher. Test tests/routes/sperreJeGemeinde.test.js.
         org-scope: true
-        objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): NUR role_id, geschrieben nach user_organizations.role_id; geaenderte Kontofelder oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026). \"Geaendert\" wie die Oberflaeche liest (27.09.2026): leerer Text = NULL, Leerzeichen am Rand zaehlen nicht -- die Store-App 2.2.x schickt leere Felder als null und Namen getrimmt, in der Datenbank stehen sie teils als ''."
+        objekt-pruefung: "Ziel-User in der aktiven Org ueber BEIDE Quellen; canManageRole + canCreateRole für neue Rolle. Zusatzmitglied (user_organizations): role_id, seit 08.10.2026 auch role_title und is_active (je Gemeinde, geschrieben nach user_organizations); geaenderte Kontofelder (Name, Benutzername, E-Mail) oder Passwort -> 400 nur_rolle_in_weiterer_gemeinde (seit 26.09.2026; error_code unveraendert, Text nennt seit 08.10.2026 Rolle, Funktionsbezeichnung und Sperre). \"Geaendert\" wie die Oberflaeche liest (27.09.2026): leerer Text = NULL, Leerzeichen am Rand zaehlen nicht -- die Store-App 2.2.x schickt leere Felder als null und Namen getrimmt, in der Datenbank stehen sie teils als ''."
         # BEHOBEN 22.08.2026 (war N7): das optionale password-Feld wird vor
         # dem Hashen gegen validatePassword geprüft.
         # BEHOBEN 26.09.2026 (Audit Leitung BF-01): vorher nur STAMM-Org,

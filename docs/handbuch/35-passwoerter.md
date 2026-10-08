@@ -523,7 +523,10 @@ Sonst muss der Betreiber der App helfen (Kontakt über die Website).
 **Das Konto ist deaktiviert.** Dann ist die Anmeldung gesperrt, unabhängig vom
 Passwort. Die Gemeindeleitung aktiviert es unter
 **[Mehr → Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)** wieder.
-Sich selbst kann niemand deaktivieren.
+Sich selbst kann niemand deaktivieren. Wer in mehreren Gemeinden mitarbeitet,
+ist erst dann ganz gesperrt, wenn ihn **jede** dieser Gemeinden gesperrt hat;
+sonst meldet er sich an und arbeitet in den übrigen weiter (siehe
+[Jemanden nur in der eigenen Gemeinde sperren](05-rollen.md#jemanden-nur-in-der-eigenen-gemeinde-sperren)).
 
 **Die Konfi-Zeit ist vorbei.** 60 Tage nach der Konfirmation nimmt die App
 ehemalige Konfis automatisch aus den Listen der Leitung, nach 120 Tagen werden
