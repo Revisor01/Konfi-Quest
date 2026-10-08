@@ -2,6 +2,7 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { Keyboard } from '@capacitor/keyboard';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { Message } from '../../types/chat';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 
 /**
  * Scroll-Verhalten des Chatraums (beim Aufteilen von ChatRoom.tsx hierher
@@ -51,6 +52,9 @@ interface ChatScrollDeps {
 }
 
 export function useChatScroll({ messages, initialUnreadRef, newDividerRef, onNaheAmAnfang }: ChatScrollDeps) {
+  // Scroll-Nachzuege (Bildaufbau, Tastatur-Animation) enden mit dem Raum:
+  // Nach dem Verlassen setzt keiner mehr Zustand am abgebauten Raum.
+  const zeitgeber = useZeitgeber();
   const contentRef = useRef<HTMLIonContentElement>(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -144,8 +148,8 @@ export function useChatScroll({ messages, initialUnreadRef, newDividerRef, onNah
         const unread = initialUnreadRef.current ?? 0;
         const targetDivider = unread > 0 && unread <= messages.length;
         // requestAnimationFrame: warten bis der Divider wirklich im DOM gerendert ist.
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
+        zeitgeber.imNaechstenBild(() => {
+          zeitgeber.imNaechstenBild(() => {
             if (targetDivider && newDividerRef.current) {
               newDividerRef.current.scrollIntoView({ block: 'center' });
               // Geparkt am Trenner: nachfolgende Updates duerfen nicht nach unten springen.
@@ -249,8 +253,8 @@ export function useChatScroll({ messages, initialUnreadRef, newDividerRef, onNah
     const scrollEnd = () => contentRef.current?.scrollToBottom(250);
     // Direkt + nach der Keyboard-Animation nochmal (Viewport hat sich dann verkleinert).
     scrollEnd();
-    setTimeout(scrollEnd, 150);
-    setTimeout(scrollEnd, 350);
+    zeitgeber.nach(150, scrollEnd);
+    zeitgeber.nach(350, scrollEnd);
   };
 
   // Robuster Trigger: wenn die Tastatur auf-/zugeht (nativ), ans Listenende
@@ -270,10 +274,10 @@ export function useChatScroll({ messages, initialUnreadRef, newDividerRef, onNah
       // Sofort, im nächsten Frame (nach Reflow) und nochmal verzoegert, weil die
       // Keyboard-/Resize-Animation je nach Geraet ~150-400ms dauert.
       go();
-      requestAnimationFrame(() => { go(); requestAnimationFrame(go); });
-      setTimeout(go, 120);
-      setTimeout(go, 300);
-      setTimeout(go, 500);
+      zeitgeber.imNaechstenBild(() => { go(); zeitgeber.imNaechstenBild(go); });
+      zeitgeber.nach(120, go);
+      zeitgeber.nach(300, go);
+      zeitgeber.nach(500, go);
     };
 
     Keyboard.addListener('keyboardWillShow', scrollToEndRepeated)
@@ -282,7 +286,7 @@ export function useChatScroll({ messages, initialUnreadRef, newDividerRef, onNah
       .then(h => handles.push(h)).catch(() => { /* Web/kein nativer Keyboard */ });
 
     return () => { handles.forEach(h => h?.remove?.()); };
-  }, []);
+  }, [zeitgeber]);
 
   return {
     contentRef,

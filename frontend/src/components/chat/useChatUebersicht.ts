@@ -14,6 +14,7 @@ import SimpleCreateChatModal from './modals/SimpleCreateChatModal';
 import type { ChatRoomOverview } from '../../types/chat';
 import { istTeamTyp } from '../../utils/chatRoles';
 import { bereinigeRaeume, raeumeFiltern } from './chatRaeume';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 
 /**
  * Die Raumliste des Chats (beim Anlegen der Web-Fassung aus ChatOverview.tsx
@@ -40,6 +41,8 @@ interface ChatUebersichtDeps {
 export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) {
   const { user, setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
+  // Die zweite Rueckfrage nach 300 ms erscheint nur, solange die Uebersicht steht.
+  const zeitgeber = useZeitgeber();
   const { chatUnreadByRoom } = useBadge();
   // socketEpoch: nach Reconnect-mit-neuem-Token ist getSocket() ein anderes
   // Objekt -> Listener am frischen Socket neu binden (gleiches Muster wie im
@@ -178,7 +181,7 @@ export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) 
                   : undefined;
                 if (data?.canForceDelete) {
                   // Hat Nachrichten - Force Delete nötig
-                  setTimeout(() => {
+                  zeitgeber.nach(300, () => {
                     presentAlert({
                       header: 'Chat hat Nachrichten',
                       message: `${data.error}\n\nTrotzdem löschen?`,
@@ -195,7 +198,7 @@ export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) 
                         }
                       ]
                     });
-                  }, 300);
+                  });
                 } else {
                   setError(fehlerText(error, 'Fehler beim Löschen'));
                 }

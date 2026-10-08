@@ -45,3 +45,11 @@ if (typeof navigator !== 'undefined') {
     nav.clearAppBadge = () => Promise.resolve();
   }
 }
+
+// HTMLMediaElement.load(): jsdom meldet "Not implemented" auf der Konsole.
+// Die Videovorschau ruft es beim Aufraeumen ihres Hilfs-Videos (Quelle weg,
+// Laden beenden); ohne diesen Ersatz stuende die Meldung bei jedem Abbau einer
+// Vorschau im Testlauf. Abspielen bleibt unberuehrt.
+if (typeof HTMLMediaElement !== 'undefined') {
+  HTMLMediaElement.prototype.load = function load() { /* jsdom: nichts zu laden */ };
+}

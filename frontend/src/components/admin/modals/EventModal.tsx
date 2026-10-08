@@ -42,6 +42,7 @@ interface EventModalProps {
 // genau der Fehler, der im Backend gerade erst behoben wurde. Der Re-Export
 // haelt den bisherigen Importpfad gueltig.
 import { anmeldeschlussVorschlag, toIonDatetimeISO, neuerTerminBeginn, endeNachDatumswechsel, endeVorBeginn, ENDE_VOR_BEGINN } from '../../../utils/terminVorbelegung';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 export { anmeldeschlussVorschlag };
 
 const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onClose, onSuccess, dismiss, onDirtyChange }) => {
@@ -80,6 +81,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
   const [timeslots, setTimeslots] = useState<Timeslot[]>([]);
   const [teamerAccess, setTeamerAccess] = useState<'normal' | 'teamer_needed' | 'teamer_only'>('normal');
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
 
   useEffect(() => {
     if (initializedRef.current) setIsDirty(true);
@@ -159,7 +161,7 @@ const EventModal: React.FC<EventModalProps> = ({ event, vorbelegteTimeslots, onC
       setTimeslots([]);
       setTeamerAccess('normal');
     }
-    setTimeout(() => { initializedRef.current = true; }, 100);
+    zeitgeber.nach(100, () => { initializedRef.current = true; });
   }, [event]);
 
   const loadCategories = async () => {

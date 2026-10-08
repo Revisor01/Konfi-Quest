@@ -61,15 +61,18 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({
     onFehler: () => onErrorRef.current?.('Fehler beim Laden des Videos'),
   });
 
-  // Canvas-basierte Thumbnail-Generierung (kein sichtbares play/pause)
-  const generateThumbnail = useCallback((blobUrl: string) => {
+  // Canvas-basierte Thumbnail-Generierung (kein sichtbares play/pause).
+  // Liefert das Aufraeumen: Verschwindet die Vorschau, bevor das Video-Element
+  // im Hintergrund fertig ist, setzen seine Rueckrufe keinen Zustand mehr, und
+  // es laedt nicht weiter.
+  const generateThumbnail = useCallback((blobUrl: string): (() => void) => {
     const offscreenVideo = document.createElement('video');
     offscreenVideo.preload = 'metadata';
     offscreenVideo.muted = true;
     offscreenVideo.playsInline = true;
     offscreenVideo.crossOrigin = 'anonymous';
 
-    offscreenVideo.addEventListener('loadedmetadata', () => {
+    const beiMetadaten = () => {
       // Dauer formatieren
       const totalSeconds = Math.floor(offscreenVideo.duration);
       if (totalSeconds > 0) {
@@ -79,9 +82,9 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({
       }
       // Zum Frame bei 0.1s springen
       offscreenVideo.currentTime = Math.min(0.1, offscreenVideo.duration);
-    });
+    };
 
-    offscreenVideo.addEventListener('seeked', () => {
+    const beiBild = () => {
       try {
         const canvas = document.createElement('canvas');
         canvas.width = offscreenVideo.videoWidth || 320;
@@ -95,20 +98,32 @@ const VideoPreview: React.FC<VideoPreviewProps> = ({
       } catch (error) {
         console.warn('Canvas-Thumbnail fehlgeschlagen:', fileName, error);
       }
-      // Offscreen-Video aufräumen
+      aufraeumen();
+    };
+
+    const beiFehler = () => {
+      console.warn('Offscreen-Video-Fehler bei Thumbnail-Generierung:', fileName);
+    };
+
+    // Offscreen-Video aufräumen: Rueckrufe ab, Quelle weg, Laden beenden.
+    const aufraeumen = () => {
+      offscreenVideo.removeEventListener('loadedmetadata', beiMetadaten);
+      offscreenVideo.removeEventListener('seeked', beiBild);
+      offscreenVideo.removeEventListener('error', beiFehler);
       offscreenVideo.removeAttribute('src');
       offscreenVideo.load();
-    });
+    };
 
-    offscreenVideo.addEventListener('error', () => {
-      console.warn('Offscreen-Video-Fehler bei Thumbnail-Generierung:', fileName);
-    });
-
+    offscreenVideo.addEventListener('loadedmetadata', beiMetadaten);
+    offscreenVideo.addEventListener('seeked', beiBild);
+    offscreenVideo.addEventListener('error', beiFehler);
     offscreenVideo.src = blobUrl;
+    return aufraeumen;
   }, [fileName]);
 
   useEffect(() => {
-    if (videoUrl) generateThumbnail(videoUrl);
+    if (!videoUrl) return undefined;
+    return generateThumbnail(videoUrl);
     // NUR an der URL — generateThumbnail ändert sich mit dem Namen, nicht
     // mit dem Video.
     // eslint-disable-next-line react-hooks/exhaustive-deps

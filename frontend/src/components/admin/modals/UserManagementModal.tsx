@@ -36,6 +36,7 @@ import { AdminUser } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, rollenFarbeVar, rollenTonVar } from '../../../utils/rollenNamen';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
 interface Role {
   id: number;
@@ -77,6 +78,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
   const initializedRef = useRef(false);
+  const zeitgeber = useZeitgeber();
 
   const doClose = () => onClose();
 
@@ -168,7 +170,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       if (isEditMode) {
         await loadUser();
       }
-      setTimeout(() => { initializedRef.current = true; }, 100);
+      zeitgeber.nach(100, () => { initializedRef.current = true; });
     };
     init();
   }, [userId]);

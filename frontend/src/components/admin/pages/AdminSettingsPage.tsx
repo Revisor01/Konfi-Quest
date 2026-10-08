@@ -58,9 +58,11 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import { istSuperAdmin } from '../../../utils/superAdmin';
 import { SUPPORT_FORMULAR_URL, sieheHilfeEintrag } from '../../../utils/supportFormular';
 import { linkOeffnen } from '../../../services/systemDialoge';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 // useIonRouter: Ionic 8 API - bei Ionic v9 ggf. auf useNavigate migrieren
 
 const AdminSettingsPage: React.FC = () => {
+  const zeitgeber = useZeitgeber();
   const { pageRef, presentingElement } = useModalPage('admin-settings');
   const { user, signOut } = useApp();
   const [presentAlert] = useIonAlert();
@@ -94,7 +96,7 @@ const AdminSettingsPage: React.FC = () => {
   const openInfo = (content: { title: string; icon: string; color: string; paragraphs: string[] }) => {
     setInfoContent(content);
     // im nächsten Tick praesentieren, damit der State sicher gesetzt ist
-    setTimeout(() => presentInfoModal({ presentingElement: presentingElement || undefined }), 0);
+    zeitgeber.nach(0, () => presentInfoModal({ presentingElement: presentingElement || undefined }));
   };
 
   // Erklaerungen je Bereich der "Mehr"-Seite. Fokus: WOFUER braucht man das +

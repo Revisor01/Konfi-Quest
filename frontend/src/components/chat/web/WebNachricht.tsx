@@ -36,6 +36,7 @@ import {
   reaktionenGruppieren,
 } from '../chatNachricht';
 import { sendeFehlerText } from '../sendeFehler';
+import { useZeitgeber } from '../../../hooks/useZeitgeber';
 import LazyImage from '../LazyImage';
 import VideoPreview from '../VideoPreview';
 import FortschrittsBalken from '../../shared/FortschrittsBalken';
@@ -79,6 +80,9 @@ const WebNachricht: React.FC<WebNachrichtProps> = ({
   onAntworten, onKopieren, onTeilen, onLoeschen, onReaktion, onPickerOeffnen, onPickerSchliessen,
   onAbstimmen, onDatei, onError, onErneutSenden, onVerwerfen,
 }) => {
+  // Die Hervorhebung der beantworteten Nachricht endet nach 1,5 s -- oder
+  // sofort, wenn diese Nachricht vorher verschwindet (sonst bliebe sie stehen).
+  const zeitgeber = useZeitgeber();
   const eigene = message.sender_id === user?.id && message.sender_type === user?.type;
   const mitAbsender = !eigene && room.type !== 'direct';
   // Eigene Funktionsbezeichnung vor dem festen Rollenwort (utils/rollenNamen);
@@ -122,7 +126,7 @@ const WebNachricht: React.FC<WebNachrichtProps> = ({
     if (!ziel) return;
     ziel.scrollIntoView({ block: 'center' });
     ziel.classList.add('web-chat-nachricht--hervorgehoben');
-    setTimeout(() => ziel.classList.remove('web-chat-nachricht--hervorgehoben'), 1500);
+    zeitgeber.nach(1500, () => ziel.classList.remove('web-chat-nachricht--hervorgehoben'), true);
   };
 
   const inhalt = () => {

@@ -84,7 +84,18 @@ async function auswerten(status: { connected: boolean; connectionType?: string }
   setzen(status.connected);
 }
 
-async function initNetworkMonitor(): Promise<void> {
+// Laufende bzw. erledigte Einrichtung. Der Merker _initialized steht erst am
+// Ende, nach dem ersten await -- zwei Aufrufe davor haetten die Horcher
+// doppelt registriert (Remount des Providers, StrictMode). Alle Aufrufer
+// teilen sich deshalb dieses eine Versprechen.
+let _einrichtung: Promise<void> | null = null;
+
+function initNetworkMonitor(): Promise<void> {
+  if (!_einrichtung) _einrichtung = einrichten();
+  return _einrichtung;
+}
+
+async function einrichten(): Promise<void> {
   if (_initialized) return;
 
   try {

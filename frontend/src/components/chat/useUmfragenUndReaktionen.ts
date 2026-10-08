@@ -7,6 +7,7 @@ import { writeQueue } from '../../services/writeQueue';
 import { networkMonitor } from '../../services/networkMonitor';
 import { safeUUID } from '../../utils/uuid';
 import { Message, PollVote, ChatUserType } from '../../types/chat';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 
 /**
  * Umfrage-Stimmen und Emoji-Reaktionen des Chatraums (beim Aufteilen von
@@ -27,6 +28,8 @@ export function useUmfragenUndReaktionen({
   loadMessages,
 }: UmfragenReaktionenDeps) {
   const { user, setError } = useApp();
+  // Auto-Scroll wieder einschalten endet mit dem Raum (kein Zustand danach).
+  const zeitgeber = useZeitgeber();
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
 
@@ -71,7 +74,7 @@ export function useUmfragenUndReaktionen({
         metadata: { type: 'chat-aktion', clientId: `poll-${messageId}-${optionIndex}-${safeUUID()}`, label: 'Abstimmung' },
       });
 
-      setTimeout(() => setShouldAutoScroll(true), 1000);
+      zeitgeber.nach(1000, () => setShouldAutoScroll(true));
       return;
     }
 
@@ -80,7 +83,7 @@ export function useUmfragenUndReaktionen({
       await api.post(`/chat/polls/${messageId}/vote`, { option_index: optionIndex });
       await loadMessages();
       // Re-enable auto-scroll after a short delay
-      setTimeout(() => setShouldAutoScroll(true), 1000);
+      zeitgeber.nach(1000, () => setShouldAutoScroll(true));
     } catch (err) {
       // Exklusive Umfrage: Option wurde inzwischen von jemand anderem belegt (409).
       if (fehlerStatus(err) === 409) {
@@ -136,7 +139,7 @@ export function useUmfragenUndReaktionen({
 
       setShowReactionPicker(false);
       setReactionTargetMessage(null);
-      setTimeout(() => setShouldAutoScroll(true), 500);
+      zeitgeber.nach(500, () => setShouldAutoScroll(true));
       return;
     }
 
@@ -182,7 +185,7 @@ export function useUmfragenUndReaktionen({
 
       setShowReactionPicker(false);
       setReactionTargetMessage(null);
-      setTimeout(() => setShouldAutoScroll(true), 500);
+      zeitgeber.nach(500, () => setShouldAutoScroll(true));
     } catch (err) {
       setError('Fehler beim Reagieren');
       console.error('Error toggling reaction:', err);

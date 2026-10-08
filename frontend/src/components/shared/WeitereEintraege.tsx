@@ -1,6 +1,7 @@
 import React from 'react';
 import { IonButton, IonInfiniteScroll, IonInfiniteScrollContent } from '@ionic/react';
 import { LISTE_SCHRITT } from '../../hooks/useSchrittweiseListe';
+import { useZeitgeber } from '../../hooks/useZeitgeber';
 
 interface Props {
   /** Wie viele Eintraege noch nicht gezeigt werden. 0 = nichts rendern. */
@@ -23,6 +24,7 @@ interface Props {
  * IonContent stehen (dort sucht IonInfiniteScroll seinen Scrollbereich).
  */
 const WeitereEintraege: React.FC<Props> = ({ weitere, onMehr, bezeichnung }) => {
+  const zeitgeber = useZeitgeber();
   if (weitere <= 0) return null;
   const naechste = Math.min(weitere, LISTE_SCHRITT);
   return (
@@ -39,7 +41,7 @@ const WeitereEintraege: React.FC<Props> = ({ weitere, onMehr, bezeichnung }) => 
           // Erst nach dem Rendern freigeben, sonst meldet sich die Schwelle
           // sofort noch einmal, weil die Liste noch nicht laenger ist.
           const ziel = e.target as HTMLIonInfiniteScrollElement;
-          window.setTimeout(() => { void ziel.complete(); }, 0);
+          zeitgeber.nach(0, () => { void ziel.complete(); });
         }}
       >
         <IonInfiniteScrollContent loadingSpinner="crescent" />
