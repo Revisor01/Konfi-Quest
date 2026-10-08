@@ -26,7 +26,6 @@
 const express = require('express');
 const { body, param, query } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
-const { nachAntwort } = require('../utils/nachAntwort');
 const { allePostfaecher, POSTFAECHER } = require('../utils/mailPostfaecher');
 const { einstellungenLesen, STANDARD_EINSTELLUNGEN } = require('../utils/mailEinstellungen');
 const {
@@ -427,7 +426,7 @@ module.exports = (db) => {
         bezug: mail,
         standardBetreff: mail.betreff,
         verfasstVon: req.user.id,
-      }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Posteingang)') });
+      }, { nachlauf: { req, bezeichnung: 'Gesendet-Ordner (Posteingang)' } });
     } catch (err) {
       return versandFehlerAntwort(res, 'POST /support/mail/nachrichten/:id/antworten', err);
     }
@@ -640,7 +639,7 @@ module.exports = (db) => {
         bezug: verlauf.length > 0 ? verlauf[verlauf.length - 1] : null,
         standardBetreff: `Eure Anfrage für ${anfrage.gemeinde}`,
         verfasstVon: req.user.id,
-      }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Anfrage)') });
+      }, { nachlauf: { req, bezeichnung: 'Gesendet-Ordner (Anfrage)' } });
     } catch (err) {
       return versandFehlerAntwort(res, 'POST /support/anfragen/:id/antworten', err);
     }
@@ -717,7 +716,7 @@ module.exports = (db) => {
           bezug: verlauf.length > 0 ? verlauf[verlauf.length - 1] : null,
           standardBetreff: `Konfi Quest – ${gemeinde.name}`,
           verfasstVon: req.user.id,
-        }, { danach: (arbeit) => nachAntwort(req, arbeit, 'Gesendet-Ordner (Gemeinde)') });
+        }, { nachlauf: { req, bezeichnung: 'Gesendet-Ordner (Gemeinde)' } });
       } catch (err) {
         if (angelegt) await db.query('DELETE FROM support_vorgaenge WHERE id = $1', [vorgangId]).catch(() => {});
         throw err;

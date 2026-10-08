@@ -147,6 +147,13 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   als Auftrag in einer dauerhaften Warteschlange (Migration 202) und
   überleben einen Neustart (`feat/nachantwort-warteschlange`;
   [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)).
+- [x] 08.10.2026 — Warteschlange erweitert nach Simons drei Ja: die Mail
+  „Passwort vergessen" ist ein Auftrag (Token entsteht erst im Auftrag und
+  steht nie in der Datenbank), `GET /api/status` meldet `nachlauf`
+  `{haengend, fehlgeschlagen}` (additiv, nicht in `checks`), die Ablage im
+  Gesendet-Ordner ist ein eigener Auftrag mit dem Mailquelltext
+  (`feat/warteschlange-erweitern`;
+  [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)).
 
 ## Offen
 
@@ -387,21 +394,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   sitzen; eine globale Grenze für Fehlversuche wäre ein Hebel, alle
   auszusperren. Welcher Weg oder so lassen? Seit 27.09.2026 (Sicherheit
   BF-04, Rest).
-- **Passwort-Reset-Mail auch in die Warteschlange?** Push, Postfach und die
-  übrigen Mails nach der Antwort stehen seit 08.10.2026 als Auftrag in
-  `nachlauf_auftraege`; die Mail zum Zurücksetzen des Passworts läuft
-  bewusst weiter im Prozess. In der Warteschlange stünde der Reset-Token bis
-  zum Versand im Klartext in der Datenbank; dafür verliert ein Neustart in
-  diesem Moment heute die Mail. So lassen?
-- **Soll `GET /api/status` hängende Nachlauf-Aufträge melden?** Ein
-  additives Feld mit der Zahl fehlgeschlagener und lange offener Aufträge
-  machte Störungen von außen sichtbar. Bisher gibt es nur die SQL-Abfrage in
-  [betrieb/routinen.md](betrieb/routinen.md#nachlauf-warteschlange)
-  (08.10.2026).
-- **Ablage im Gesendet-Ordner dauerhaft machen?** Die Kopie einer Mail per
-  IMAP in den Gesendet-Ordner läuft weiter im Prozess und geht bei einem
-  Neustart verloren. Dauerhaft ginge es nur, wenn der Mailquelltext mit in
-  die Tabelle `nachlauf_auftraege` käme (08.10.2026).
 - **Nutzungsmessung.** Die Vorschläge S1–S17 in
   [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
   auf Simons Entscheidung.

@@ -341,6 +341,43 @@ async function aufraeumen(db) {
   return rowCount;
 }
 
+// ---------------------------------------------------------------------
+// Zustand fuer GET /api/status
+// ---------------------------------------------------------------------
+
+// HAENGEND heisst: seit mehr als 15 Minuten eingereiht und noch nicht fertig
+// (status 'offen' oder 'laeuft'). Begruendung der Schwelle: Ein Auftrag
+// laeuft sonst sofort; die Wiederholungen nach Fehlern liegen 30 s, 1, 2 und
+// 4 min auseinander, nach dem fuenften Versuch ist er 'fehlgeschlagen' --
+// zusammen rund 7,5 Minuten plus Laufzeit. Wer nach 15 Minuten noch offen
+// ist, wird von keinem Arbeiter mehr angenommen (keiner laeuft, oder keiner
+// kennt die Art).
+// FEHLGESCHLAGEN zaehlt die der letzten 24 Stunden -- sie liegen 30 Tage
+// zum Nachsehen; ohne Zeitfenster stuende die Zahl einen Monat lang still
+// auf dem Stand einer laengst behobenen Stoerung.
+const HAENGEND_MINUTEN = 15;
+const FEHLGESCHLAGEN_STUNDEN = 24;
+
+/**
+ * Zahlen fuer /api/status. Beide Abfragen laufen ueber die Teilindizes
+ * (nachlauf_auftraege_faellig_idx bzw. _erledigt_idx).
+ *
+ * @returns {Promise<{haengend: number, fehlgeschlagen: number}>}
+ */
+async function zustand(db) {
+  const { rows: [z] } = await db.query(
+    `SELECT
+       (SELECT COUNT(*) FROM ${TABELLE}
+         WHERE status IN ('offen', 'laeuft')
+           AND erstellt_am < NOW() - $1 * INTERVAL '1 minute')::int AS haengend,
+       (SELECT COUNT(*) FROM ${TABELLE}
+         WHERE status = 'fehlgeschlagen'
+           AND erledigt_am > NOW() - $2 * INTERVAL '1 hour')::int AS fehlgeschlagen`,
+    [HAENGEND_MINUTEN, FEHLGESCHLAGEN_STUNDEN]
+  );
+  return { haengend: z.haengend, fehlgeschlagen: z.fehlgeschlagen };
+}
+
 /**
  * Startet den Arbeiter dieser Replica.
  *
@@ -434,6 +471,9 @@ module.exports = {
   aufraeumen,
   starteArbeiter,
   wartezeitMs,
+  zustand,
+  HAENGEND_MINUTEN,
+  FEHLGESCHLAGEN_STUNDEN,
   _lokalAnhalten,
   _zuruecksetzen,
 };

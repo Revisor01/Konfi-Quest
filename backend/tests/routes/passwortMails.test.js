@@ -370,6 +370,86 @@ describe('Passwort-Mails', () => {
       expect(mails()).toEqual([]);
     });
 
+    // Warteschlange (Simon, 08.10.2026): Die Mail ist ein Auftrag in
+    // nachlauf_auftraege; der Klartext-Token steht dort nie -- weder solange
+    // der Auftrag wartet noch danach. Gegenprobe: Erzeugt die Route den Token
+    // und gibt ihn dem Auftrag mit, fallen beide Tests.
+    describe('ueber die Warteschlange', () => {
+      const ws = require('../../utils/warteschlange');
+      const auftraege = async () => (await db.query(
+        `SELECT status, versuche, parameter, erledigte_schritte, row_to_json(a)::text AS roh
+           FROM nachlauf_auftraege a WHERE art = 'passwort_reset_mail' ORDER BY id`)).rows;
+      const tokenAus = (m) => m.text.match(/reset-password\?token=([0-9a-f]+)/)[1];
+      const tokenHashe = async (userId) => (await db.query(
+        'SELECT token FROM password_resets WHERE user_id = $1 ORDER BY id', [userId])).rows.map((r) => r.token);
+
+      afterEach(() => ws._zuruecksetzen());
+
+      it('Neustart direkt nach der Antwort: der Auftrag wartet ohne Token, die andere Replica schickt die Mail', async () => {
+        await adresseSetzen(USERS.konfi1.id);
+        ws._lokalAnhalten(true);
+        await anfordern(ADRESSE);
+        await warteAufNachwehen(app);
+        ws._lokalAnhalten(false);
+
+        expect(mails()).toEqual([]);
+        // Noch kein Token, auch nicht als Hash: Er entsteht erst im Auftrag.
+        expect(await resetsFuer(USERS.konfi1.id)).toBe(0);
+        const [wartend] = await auftraege();
+        expect(wartend.status).toBe('offen');
+        expect(wartend.parameter).toEqual({ userId: USERS.konfi1.id, mehrereKonten: false });
+
+        expect(await ws.einTakt(db)).toBe(1);
+        const gesendet = mails();
+        expect(gesendet.map((m) => m.to)).toEqual([ADRESSE]);
+        const token = tokenAus(gesendet[0]);
+        expect(token).toMatch(/^[0-9a-f]{64}$/);
+
+        const [fertig] = await auftraege();
+        expect(fertig.status).toBe('erledigt');
+        expect(fertig.parameter).toEqual({});
+        expect(fertig.roh).not.toContain(token);
+        // In password_resets nur der Hash.
+        expect(await tokenHashe(USERS.konfi1.id)).toEqual([require('../../utils/passwortResetMail')._hash(token)]);
+      });
+
+      it('Versand scheitert: kein gueltiger Link bleibt liegen; die Wiederholung schickt einen neuen, der Token steht nie im Auftrag', async () => {
+        await adresseSetzen(USERS.konfi1.id);
+        sendMail.mockRejectedValueOnce(Object.assign(new Error('Mailserver weg'), { code: 'ECONNECTION' }));
+        const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+          await anfordern(ADRESSE);
+          await warteAufNachwehen(app);
+        } finally {
+          fehler.mockRestore();
+        }
+        expect(sendMail).toHaveBeenCalledTimes(1);
+        const ersterToken = tokenAus(sendMail.mock.calls[0][0]);
+        const [wartend] = await auftraege();
+        expect(wartend.status).toBe('offen');
+        expect(wartend.versuche).toBe(1);
+        expect(wartend.erledigte_schritte).toEqual([]);
+        expect(wartend.roh).not.toContain(ersterToken);
+        // Der Hash des nie zugestellten Links ist wieder weg.
+        expect(await resetsFuer(USERS.konfi1.id)).toBe(0);
+
+        await db.query("UPDATE nachlauf_auftraege SET faellig_ab = NOW() WHERE art = 'passwort_reset_mail'");
+        expect(await ws.einTakt(db)).toBe(1);
+        expect(sendMail).toHaveBeenCalledTimes(2);
+        const zweiterToken = tokenAus(sendMail.mock.calls[1][0]);
+        expect(zweiterToken).not.toBe(ersterToken);
+        const [fertig] = await auftraege();
+        expect(fertig.status).toBe('erledigt');
+        expect(fertig.roh).not.toContain(zweiterToken);
+        expect(await resetsFuer(USERS.konfi1.id)).toBe(1);
+
+        // Der zugestellte Link loest ein.
+        const res = await request(app).post('/api/auth/reset-password').send({ token: zweiterToken, newPassword: NEU });
+        await warteAufNachwehen(app);
+        expect(res.status).toBe(200);
+      });
+    });
+
     it('scheitert der Versand, bleibt die Antwort neutral', async () => {
       await adresseSetzen(USERS.konfi1.id);
       sendMail.mockRejectedValue(Object.assign(new Error('Mailserver weg'), { code: 'EENVELOPE' }));

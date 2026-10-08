@@ -27,7 +27,21 @@
 //      "Gesendet", "Sent Items", "Gesendete Objekte" ...), sonst wird "Sent"
 //      angelegt (Befund in der Produktion, 03.10.2026: moin@ hat "Sent" ohne
 //      Markierung, support@ hat gar keinen). Scheitert das, bleibt die Mail
-//      gesendet; der Fehler steht nur im Protokoll.
+//      gesendet.
+//
+// ABLAGE ALS AUFTRAG DER WARTESCHLANGE (Simon, 08.10.2026): Mit der Option
+// `nachlauf` (die Routen) geht die Ablage als Auftrag 'mail_gesendet_ablegen'
+// in nachlauf_auftraege (utils/warteschlange.js) -- mit dem Quelltext der
+// Mail in den Parametern. Ein Neustart direkt nach dem Senden verliert sie so
+// nicht mehr, und ein IMAP-Fehler wird spaeter wiederholt. Gesendet wird in
+// diesem Auftrag NICHTS: SMTP ist da laengst durch (Schritt 3, vor der
+// Antwort), der Auftrag hat nur den einen Schritt 'gesendet'. Eine
+// Wiederholung kann die Mail deshalb nie ein zweites Mal verschicken; der
+// erledigte Schritt verhindert auch eine zweite Kopie im Ordner. Im
+// Quelltext stehen Adressen und Text -- dieselben, die ohnehin in
+// mail_nachrichten liegen; erledigte Auftraege verlieren ihre Parameter
+// sofort. Zugangsdaten stehen NICHT im Auftrag: Er nennt nur das Postfach,
+// die Anmeldung kommt beim Ausfuehren aus der Umgebung.
 //
 // Gesendet wird genau der Quelltext, der auch im Gesendet-Ordner landet
 // (MailComposer baut ihn einmal).
@@ -39,6 +53,7 @@ const { postfachKonfig, smtpOptionen, imapOptionen, nichtEingerichtetMeldung } =
 const { einstellungenLesen } = require('../utils/mailEinstellungen');
 const mailAbholung = require('./mailAbholung');
 const { mailSpalten, statusSetzen, vorgangBewegt } = require('../utils/supportVorgaenge');
+const { registriereArt, einreihen } = require('../utils/warteschlange');
 
 const { abmelden, fehlerText } = mailAbholung;
 
@@ -156,6 +171,37 @@ async function inGesendetAblegen(client, quelltext, datum) {
 }
 
 /**
+ * Meldet sich am IMAP-Postfach an und legt den Quelltext in den
+ * Gesendet-Ordner. Wirft bei jedem Fehler (Verbindung, Ordner, Ablage).
+ */
+async function gesendetAblegen(postfach, quelltext, datum, { env = process.env, imapFabrik = standardImapFabrik } = {}) {
+  const konfig = postfachKonfig(postfach, env);
+  let imap = null;
+  try {
+    imap = imapFabrik(imapOptionen(konfig, env));
+    await imap.connect();
+    return await inGesendetAblegen(imap, quelltext, datum);
+  } finally {
+    if (imap) await abmelden(imap);
+  }
+}
+
+// Der Auftrag der Warteschlange: ein Schritt, nur die Ablage. Scheitert sie,
+// wirft der Schritt, und die Warteschlange wiederholt den Auftrag spaeter
+// (30 s, 1, 2, 4 min; nach 5 Versuchen 'fehlgeschlagen').
+const ABLAGE_ART = 'mail_gesendet_ablegen';
+registriereArt(ABLAGE_ART, async (_db, p, k) => {
+  await k.schritt('gesendet', async () => {
+    try {
+      await gesendetAblegen(p.postfach, Buffer.from(String(p.quelltext || ''), 'base64'), new Date(p.gesendetAm));
+    } catch (err) {
+      console.error(`Mail-Versand (${p.postfach}): nicht im Gesendet-Ordner abgelegt (${fehlerText(err)}), wird wiederholt`);
+      throw err;
+    }
+  });
+});
+
+/**
  * Sendet eine Antwort, speichert sie und legt sie (danach) in den
  * Gesendet-Ordner.
  *
@@ -177,13 +223,13 @@ async function inGesendetAblegen(client, quelltext, datum) {
  * @param {object} [opt]
  * @param {object} [opt.env]
  * @param {(optionen: object) => object} [opt.imapFabrik]
- * @param {(arbeit: () => Promise<void>) => void} [opt.danach]  fuehrt das
- *   Ablegen im Gesendet-Ordner aus (Route: nachAntwort); ohne Angabe wartet
- *   die Funktion selbst darauf.
+ * @param {{req?: object, bezeichnung?: string}} [opt.nachlauf]  das Ablegen
+ *   im Gesendet-Ordner geht als Auftrag in die Warteschlange (Routen); ohne
+ *   Angabe wartet die Funktion selbst darauf.
  * @returns {Promise<object>} die gespeicherte Mail (Felder wie GET /mail/nachrichten/:id)
  * @throws {VersandFehler} 503 (Versand aus, Postfach nicht eingerichtet), 502 (Versand gescheitert)
  */
-async function antwortSenden(db, a, { env = process.env, imapFabrik = standardImapFabrik, danach = null } = {}) {
+async function antwortSenden(db, a, { env = process.env, imapFabrik = standardImapFabrik, nachlauf = null } = {}) {
   if (!versandAufDiesemServer(env)) throw new VersandFehler(503, VERSAND_AUS_MELDUNG);
   const konfig = postfachKonfig(a.postfach, env);
   if (!konfig.versandBereit) throw new VersandFehler(503, nichtEingerichtetMeldung(konfig));
@@ -267,20 +313,21 @@ async function antwortSenden(db, a, { env = process.env, imapFabrik = standardIm
     client.release();
   }
 
-  const ablegen = async () => {
-    let imap = null;
+  if (nachlauf) {
+    // Dauerhaft: Quelltext und Zeitpunkt in den Auftrag (base64, damit kein
+    // Byte unterwegs anders ankommt). Wirft nie.
+    einreihen(db, ABLAGE_ART, {
+      postfach: a.postfach,
+      quelltext: Buffer.from(quelltext).toString('base64'),
+      gesendetAm: gesendetAm.toISOString(),
+    }, { req: nachlauf.req || null, bezeichnung: nachlauf.bezeichnung || 'Gesendet-Ordner' });
+  } else {
     try {
-      imap = imapFabrik(imapOptionen(konfig, env));
-      await imap.connect();
-      await inGesendetAblegen(imap, quelltext, gesendetAm);
+      await gesendetAblegen(a.postfach, quelltext, gesendetAm, { env, imapFabrik });
     } catch (err) {
       console.error(`Mail-Versand (${a.postfach}): nicht im Gesendet-Ordner abgelegt (${fehlerText(err)})`);
-    } finally {
-      if (imap) await abmelden(imap);
     }
-  };
-  if (danach) danach(ablegen);
-  else await ablegen();
+  }
 
   const { rows: [gespeichert] } = await db.query(
     `SELECT ${NACHRICHT_SPALTEN} FROM ${NACHRICHT_FROM} WHERE m.id = $1`, [id]);
@@ -299,5 +346,7 @@ module.exports = {
   textMitFusszeile,
   bezugKopf,
   inGesendetAblegen,
+  gesendetAblegen,
+  ABLAGE_ART,
   antwortSenden,
 };

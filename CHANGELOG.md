@@ -221,6 +221,9 @@ Versionsüberschrift.
   Aktivität, einer Anmeldung oder einer neuen Chat-Nachricht) kommen auch
   dann an, wenn der Server direkt danach neu startet, und werden bei einer
   Störung später noch einmal versucht — ohne doppelt zu kommen.
+- Auch die Mail „Passwort vergessen" und die Kopie einer Support-Antwort im
+  Gesendet-Ordner gehen bei einem Update des Servers nicht mehr verloren und
+  werden bei einer Störung später noch einmal versucht.
 - Im Browser öffnen sich die Seite einer Person und die Seite eines Events
   beim ersten Klick; bisher blieb sie weiß, bis man ein zweites Mal klickte
   oder neu lud.
@@ -275,6 +278,8 @@ Versionsüberschrift.
   Namen der Gemeinde, in die sie zurückwechselt.
 
 ### Sonstiges
+- Die Statusabfrage des Servers meldet zusätzlich, wie viele Mitteilungen
+  hängen oder endgültig gescheitert sind.
 - Eine automatische Prüfung stellt sicher, dass Zeitgeber und Horcher mit
   ihrer Seite enden.
 - Nach vielen Chat-Nachrichten kurz hintereinander werden die Zähler einmal

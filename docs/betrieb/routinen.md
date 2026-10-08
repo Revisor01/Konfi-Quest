@@ -148,8 +148,8 @@ Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
   vollständig ist, zeigt der Abgleich mit `schema_migrations` in
   [`init-scripts/README.md`](../../init-scripts/README.md#was-in-backendmigrations-liegt--und-was-nicht).
 
-- Nachlauf-Warteschlange: nichts liegt länger als ein paar Minuten offen
-  (Abfrage im nächsten Abschnitt).
+- Nachlauf-Warteschlange: `nachlauf` in `/api/status` zeigt
+  `haengend: 0`; Einzelheiten mit der Abfrage im nächsten Abschnitt.
 
 ## Nachlauf-Warteschlange
 
@@ -177,6 +177,38 @@ Stand (vor Migration 202) arbeitet weiter im Prozess wie bisher.
 
 **Aufräumen:** Erledigte Aufträge verlieren ihre Parameter sofort und gehen
 nach 7 Tagen, fehlgeschlagene nach 30 Tagen (stündlich, jede Replica).
+
+**Passwort vergessen** (`passwort_reset_mail`): Je Konto ein Auftrag mit nur
+Konto-ID und „mehrere Konten ja/nein". Token und Hash entstehen erst beim
+Ausführen, im selben Schritt wie der Versand — der Klartext-Token steht nie in
+der Datenbank, auch nicht in fehlgeschlagenen Aufträgen, die 30 Tage liegen.
+Scheitert der Versand, wird der Hash wieder gelöscht, und die Wiederholung
+schickt einen neuen Link. Abgewogen (08.10.2026) gegen die einfachere Fassung,
+den fertigen Link in den Auftrag zu legen und nach dem Versand zu löschen: Die
+hätte den Token bis zum Versand und bei einem Fehlschlag einen Monat lang im
+Klartext liegen lassen. Preis der gewählten Fassung: Bricht der Prozess
+zwischen Versand und Vermerk ab, kommt eine zweite Mail mit einem zweiten,
+ebenfalls gültigen Link.
+
+**Gesendet-Ordner** (`mail_gesendet_ablegen`): Antworten der Support-Mail
+gehen vor der Antwort per SMTP hinaus; die Kopie per IMAP in den
+Gesendet-Ordner ist ein Auftrag mit dem Quelltext der Mail (base64), dem
+Postfach und dem Sendezeitpunkt — keine Zugangsdaten, die kommen beim
+Ausführen aus der Umgebung. Der Auftrag hat nur den Schritt `gesendet`; eine
+Wiederholung legt höchstens ab, sendet aber nie ein zweites Mal. Der
+Quelltext enthält Adressen und Text, dieselben, die ohnehin in
+`mail_nachrichten` stehen.
+
+**In `/api/status`** (öffentlich, 30 s zwischengespeichert): `nachlauf`
+`{haengend, fehlgeschlagen}`. `haengend` zählt Aufträge, die seit mehr als
+15 Minuten offen sind oder laufen — die Wiederholungen eines Auftrags sind
+nach rund 7,5 Minuten durch, länger liegt nur, was kein Arbeiter annimmt.
+`fehlgeschlagen` zählt die endgültig gescheiterten der letzten 24 Stunden.
+Beides steht bewusst nicht in `checks` und ändert den HTTP-Status nicht: Ein
+gescheiterter Push ist kein kaputter Server, Deploy-Verify und Überwachung
+sollen daran nicht anschlagen. Gemessen 08.10.2026 mit 300.000 erledigten
+Aufträgen: 17 ms für die Abfrage, fast alles für `fehlgeschlagen` (sie
+filtert über den Teilindex der erledigten die rund 86.000 des letzten Tages).
 
 **Instanz ohne Jobs** (`RUN_BACKGROUND_JOBS=false`, im Stack derzeit keine)
 hätte keinen Arbeiter: Sie führte ihre eigenen Aufträge sofort aus, nähme aber

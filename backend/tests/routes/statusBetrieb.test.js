@@ -1,7 +1,8 @@
 // backend/tests/routes/statusBetrieb.test.js
 //
 // GET /api/status als Betriebsanzeige: Migrationsstand (Audit 26.09.2026,
-// Datenbank BF-04) und Cron-Leader (Betrieb BF-10).
+// Datenbank BF-04), Cron-Leader (Betrieb BF-10) und die Nachlauf-
+// Warteschlange (Simon, 08.10.2026).
 //
 // Beides ADDITIV: Die bestehenden Felder (status, version, commit,
 // uptimeSeconds, checks.database, responseTimeMs) bleiben unveraendert, der
@@ -86,7 +87,8 @@ describe('GET /api/status als Betriebsanzeige', () => {
       expect(typeof res.body.uptimeSeconds).toBe('number');
       expect(typeof res.body.responseTimeMs).toBe('number');
       expect(Object.keys(res.body).sort()).toEqual(
-        ['checks', 'commit', 'migrationen', 'responseTimeMs', 'status', 'uptimeSeconds', 'version']
+        // nachlauf kam am 08.10.2026 hinzu (additiv); alle bisherigen Schluessel bleiben.
+        ['checks', 'commit', 'migrationen', 'nachlauf', 'responseTimeMs', 'status', 'uptimeSeconds', 'version']
       );
     });
   });
@@ -150,6 +152,66 @@ describe('GET /api/status als Betriebsanzeige', () => {
       }
       const danach = await request(appMitLeader(() => false)).get('/api/status');
       expect(danach.body.checks.cron_leader).toBe('fehlt');
+    });
+  });
+  describe('Nachlauf-Warteschlange', () => {
+    const { truncateAll } = require('../helpers/db');
+    const T = 'nachlauf_auftraege';
+    const app = () => createApp(db, { uploadsDir: require('os').tmpdir() });
+
+    beforeEach(async () => { await truncateAll(db); });
+
+    const anlegen = (status, { erstellt = 'NOW()', erledigt = 'NULL' } = {}) => db.query(
+      `INSERT INTO ${T} (art, status, erstellt_am, faellig_ab, erledigt_am)
+       VALUES ('x', $1, ${erstellt}, ${erstellt}, ${erledigt})`, [status]);
+
+    it('leere Schlange: nachlauf = {haengend: 0, fehlgeschlagen: 0}, checks unveraendert', async () => {
+      const res = await request(app()).get('/api/status');
+      expect(res.status).toBe(200);
+      expect(res.body.nachlauf).toEqual({ haengend: 0, fehlgeschlagen: 0 });
+      expect(res.body.checks).toEqual({ database: 'ok', cron_leader: 'fehlt' });
+    });
+
+    it('zaehlt haengend erst ab 15 Minuten und fehlgeschlagen nur der letzten 24 Stunden', async () => {
+      await anlegen('offen', { erstellt: "NOW() - INTERVAL '16 minutes'" });          // haengt
+      await anlegen('laeuft', { erstellt: "NOW() - INTERVAL '2 hours'" });            // haengt
+      await anlegen('offen', { erstellt: "NOW() - INTERVAL '14 minutes'" });          // noch nicht
+      await anlegen('erledigt', { erstellt: "NOW() - INTERVAL '3 hours'", erledigt: 'NOW()' }); // fertig
+      await anlegen('fehlgeschlagen', { erstellt: "NOW() - INTERVAL '1 hour'", erledigt: "NOW() - INTERVAL '1 hour'" });
+      await anlegen('fehlgeschlagen', { erstellt: "NOW() - INTERVAL '3 days'", erledigt: "NOW() - INTERVAL '25 hours'" }); // zu alt
+
+      const res = await request(app()).get('/api/status');
+      expect(res.body.nachlauf).toEqual({ haengend: 2, fehlgeschlagen: 1 });
+    });
+
+    it('Status und checks bleiben bei haengenden und gescheiterten Auftraegen unberuehrt', async () => {
+      await anlegen('offen', { erstellt: "NOW() - INTERVAL '1 hour'" });
+      await anlegen('fehlgeschlagen', { erledigt: 'NOW()' });
+      const res = await request(app()).get('/api/status');
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('OK');
+      expect(res.body.checks).toEqual({ database: 'ok', cron_leader: 'fehlt' });
+      expect(res.body.nachlauf).toEqual({ haengend: 1, fehlgeschlagen: 1 });
+    });
+
+    it('haelt den Stand 30 Sekunden (oeffentlicher Pfad, Abfrage gemessen 17 ms bei 300.000 Zeilen)', async () => {
+      const eine = app();
+      expect((await request(eine).get('/api/status')).body.nachlauf).toEqual({ haengend: 0, fehlgeschlagen: 0 });
+      await anlegen('offen', { erstellt: "NOW() - INTERVAL '1 hour'" });
+      expect((await request(eine).get('/api/status')).body.nachlauf).toEqual({ haengend: 0, fehlgeschlagen: 0 });
+      // Eine frische App (oder 30 s spaeter) sieht den neuen Stand.
+      expect((await request(app()).get('/api/status')).body.nachlauf).toEqual({ haengend: 1, fehlgeschlagen: 0 });
+    });
+
+    it('fehlt die Tabelle (Abfrage scheitert), fehlt das Feld -- der Status bleibt 200', async () => {
+      const ohneTabelle = createApp({
+        query: (t, p) => (String(t).includes(T) ? Promise.reject(Object.assign(new Error('relation does not exist'), { code: '42P01' })) : db.query(t, p)),
+        getClient: () => db.getClient(),
+      }, { uploadsDir: require('os').tmpdir() });
+      const res = await request(ohneTabelle).get('/api/status');
+      expect(res.status).toBe(200);
+      expect(res.body.nachlauf).toBeUndefined();
+      expect(res.body.status).toBe('OK');
     });
   });
 });

@@ -213,7 +213,16 @@ describe('Support-Mail: Antworten', () => {
       expect(attrappe.namen()).toEqual(['connect', 'list', 'append', 'logout']);
     });
 
-    it('scheitert das Ablegen, bleibt die Mail gesendet und gespeichert (nur Protokoll)', async () => {
+    // Ablage als Auftrag der Warteschlange (Simon, 08.10.2026): Quelltext im
+    // Auftrag, Ablage als eigener Schritt. Gegenprobe: Mit der Ablage wieder
+    // im Prozess (nachAntwort) faellt jeder der drei Tests.
+    const ablageAuftraege = async () => (await db.query(
+      `SELECT status, versuche, erledigte_schritte, parameter FROM nachlauf_auftraege
+        WHERE art = 'mail_gesendet_ablegen' ORDER BY id`)).rows;
+    const wiederFaellig = () => db.query(
+      "UPDATE nachlauf_auftraege SET faellig_ab = NOW() WHERE art = 'mail_gesendet_ablegen' AND status = 'offen'");
+
+    it('scheitert das Ablegen, bleibt die Mail gesendet und gespeichert; die Ablage wird wiederholt, ohne erneut zu senden', async () => {
       attrappe = imapAttrappe({ anhaengenFehler: Object.assign(new Error('Quota'), { code: 'OverQuota' }) });
       const a = await anfrageAnlegen();
       const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -221,7 +230,7 @@ describe('Support-Mail: Antworten', () => {
         const res = await post(`/api/support/anfragen/${a}/antworten`, { text: 'Hallo' });
         await warteAufNachwehen(app);
         expect(res.status).toBe(201);
-        expect(fehler.mock.calls).toEqual([['Mail-Versand (moin): nicht im Gesendet-Ordner abgelegt (OverQuota: Quota)']]);
+        expect(fehler.mock.calls[0]).toEqual(['Mail-Versand (moin): nicht im Gesendet-Ordner abgelegt (OverQuota: Quota), wird wiederholt']);
       } finally {
         fehler.mockRestore();
       }
@@ -229,6 +238,65 @@ describe('Support-Mail: Antworten', () => {
       expect(await anzahlMails()).toBe(1);
       // Kein Ordner da: er wurde angelegt, dann scheiterte das Anhaengen.
       expect(attrappe.namen()).toEqual(['connect', 'list', 'mailboxCreate', 'append', 'logout']);
+
+      // Der Auftrag wartet mit dem Quelltext auf die Wiederholung.
+      const [wartend] = await ablageAuftraege();
+      expect(wartend.status).toBe('offen');
+      expect(wartend.versuche).toBe(1);
+      expect(wartend.erledigte_schritte).toEqual([]);
+      expect(Buffer.from(wartend.parameter.quelltext, 'base64').toString('utf8')).toBe((await gesendet()).quelltext);
+      // Keine Zugangsdaten im Auftrag, nur das Postfach.
+      expect(Object.keys(wartend.parameter).sort()).toEqual(['gesendetAm', 'postfach', 'quelltext']);
+      expect(JSON.stringify(wartend.parameter)).not.toContain('geheim-moin');
+
+      // Wiederholung (Arbeiter): jetzt klappt es -- abgelegt, nicht neu gesendet.
+      attrappe = imapAttrappe({ ordner: [{ path: 'Sent', name: 'Sent', delimiter: '.', flags: new Set(), specialUse: '\\Sent' }] });
+      await wiederFaellig();
+      expect(await require('../../utils/warteschlange').einTakt(db)).toBe(1);
+      const appends = attrappe.aufrufe.filter((x) => x[0] === 'append');
+      expect(appends.map((x) => x[1])).toEqual(['Sent']);
+      expect(appends[0][2]).toBe((await gesendet()).quelltext);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const [fertig] = await ablageAuftraege();
+      expect(fertig).toEqual({ status: 'erledigt', versuche: 2, erledigte_schritte: ['gesendet'], parameter: {} });
+    });
+
+    it('Neustart direkt nach dem Senden: der Auftrag mit dem Quelltext bleibt liegen, die andere Replica legt die Mail ab', async () => {
+      const ws = require('../../utils/warteschlange');
+      const a = await anfrageAnlegen();
+      ws._lokalAnhalten(true);
+      try {
+        const res = await post(`/api/support/anfragen/${a}/antworten`, { text: 'Hallo' });
+        await warteAufNachwehen(app);
+        expect(res.status).toBe(201);
+      } finally {
+        ws._lokalAnhalten(false);
+      }
+      expect(attrappe.aufrufe.filter((x) => x[0] === 'append')).toEqual([]);
+      expect((await ablageAuftraege()).map((z) => z.status)).toEqual(['offen']);
+
+      expect(await ws.einTakt(db)).toBe(1);
+      const appends = attrappe.aufrufe.filter((x) => x[0] === 'append');
+      expect(appends.length).toBe(1);
+      expect(appends[0][2]).toBe((await gesendet()).quelltext);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      expect((await ablageAuftraege()).map((z) => z.status)).toEqual(['erledigt']);
+    });
+
+    it('ein erledigter Schritt wird bei einer Wiederholung nicht noch einmal abgelegt', async () => {
+      const ws = require('../../utils/warteschlange');
+      const a = await anfrageAnlegen();
+      await post(`/api/support/anfragen/${a}/antworten`, { text: 'Hallo' });
+      await warteAufNachwehen(app);
+      expect(attrappe.aufrufe.filter((x) => x[0] === 'append').length).toBe(1);
+
+      // Als waere der Prozess nach dem Schritt, aber vor "erledigt" gestorben.
+      await db.query(
+        `UPDATE nachlauf_auftraege SET status = 'offen', faellig_ab = NOW(), parameter = '{"postfach":"moin","quelltext":"","gesendetAm":"2026-10-08T10:00:00Z"}'
+          WHERE art = 'mail_gesendet_ablegen'`);
+      expect(await ws.einTakt(db)).toBe(1);
+      expect(attrappe.aufrufe.filter((x) => x[0] === 'append').length).toBe(1);
+      expect((await ablageAuftraege()).map((z) => z.status)).toEqual(['erledigt']);
     });
 
     it('502, wenn der Versand scheitert -- nichts gespeichert, Status bleibt, nichts abgelegt; das Protokoll ohne Adresse', async () => {

@@ -1,6 +1,6 @@
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
-const { getTestApp } = require('../helpers/testApp');
+const { getTestApp, warteAufNachwehen } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, PASSWORD, ORGS, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken, generateTokenMitAlter } = require('../helpers/auth');
@@ -681,10 +681,29 @@ describe('Auth Routes', () => {
       await db.query('UPDATE users SET email = $1 WHERE id = $2',
         ['reset-hash@test.de', USERS.konfi1.id]);
 
-      const res = await request(app)
-        .post('/api/auth/request-password-reset')
-        .send({ email: 'reset-hash@test.de' });
+      // Die Mail entsteht im Auftrag der Warteschlange (utils/passwortResetMail.js)
+      // -- erst danach steht der Hash in password_resets. Kein Mailserver:
+      // nodemailer ist ersetzt (Muster wie passwortMails.test.js), damit der
+      // Klartext-Token aus der Mail greifbar ist.
+      const nodemailer = require('nodemailer');
+      const sendMail = vi.fn().mockResolvedValue({ messageId: 'test' });
+      const smtp = { SMTP_HOST: 'mail.example.test', SMTP_USER: 'absender@example.test', SMTP_PASS: 'geheim' };
+      Object.assign(process.env, smtp);
+      const transport = vi.spyOn(nodemailer, 'createTransport').mockImplementation(() => ({ sendMail }));
+      let res;
+      try {
+        res = await request(app)
+          .post('/api/auth/request-password-reset')
+          .send({ email: 'reset-hash@test.de' });
+        await warteAufNachwehen(app);
+      } finally {
+        transport.mockRestore();
+        for (const k of Object.keys(smtp)) delete process.env[k];
+      }
       expect(res.status).toBe(200);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const klartext = sendMail.mock.calls[0][0].text.match(/reset-password\?token=([0-9a-f]+)/)[1];
+      expect(klartext).toMatch(/^[0-9a-f]{64}$/);
 
       const { rows } = await db.query(
         'SELECT token FROM password_resets WHERE user_id = $1 ORDER BY id DESC LIMIT 1',
@@ -702,6 +721,13 @@ describe('Auth Routes', () => {
         .post('/api/auth/reset-password')
         .send({ token: gespeichert, newPassword: 'SollNichtGehen123!' });
       expect(mitGespeichertem.status).toBe(400);
+      expect(gespeichert).not.toBe(klartext);
+
+      // Erlaubter Fall: Der Klartext aus der Mail loest ein.
+      const mitKlartext = await request(app)
+        .post('/api/auth/reset-password')
+        .send({ token: klartext, newPassword: 'SollGehen123!' });
+      expect(mitKlartext.status).toBe(200);
     });
 
     // Der Mail-Versand darf die Existenz einer Adresse nicht über den Status
