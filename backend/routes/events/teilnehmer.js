@@ -492,7 +492,11 @@ module.exports = (db, rbacVerifier, { requireAdmin }) => {
           // KEIN client.release() hier — das finally unten released.
           return res.status(404).json({ error: 'Buchung nicht gefunden' });
         }
-        if (booking.organization_id !== req.user.organization_id || booking.event_org_id !== req.user.organization_id) {
+        // Massgeblich ist die Gemeinde des TERMINS (08.10.2026). Hier stand
+        // zusaetzlich die Stamm-Gemeinde der gebuchten Person
+        // (u.organization_id) -- wer nur ueber user_organizations hier
+        // mitarbeitet, liess sich nicht vom Termin nehmen (403).
+        if (Number(booking.event_org_id) !== Number(req.user.organization_id)) {
           await client.query('ROLLBACK');
           return res.status(403).json({ error: 'Zugriff verweigert' });
         }

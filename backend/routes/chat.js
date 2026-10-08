@@ -1601,13 +1601,21 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
                 CASE WHEN reply_msg.deleted_at IS NOT NULL THEN NULL ELSE reply_msg.content END AS antwort_auf_inhalt
          FROM chat_messages m
          LEFT JOIN users u ON m.user_id = u.id
-         LEFT JOIN roles ro ON u.role_id = ro.id
+         -- Rolle in der Gemeinde des Raums ($2, oben geprueft), wie die
+         -- Nachrichtenliste (08.10.2026): Hier stand u.role_id, die Rolle
+         -- der Stamm-Gemeinde. Wer nicht (mehr) Mitglied ist, behaelt die
+         -- Rolle am Konto.
+         LEFT JOIN user_organizations m_uo
+           ON m_uo.user_id = u.id AND m_uo.organization_id = $2
+         LEFT JOIN roles ro
+           ON ro.id = CASE WHEN u.organization_id = $2 THEN u.role_id
+                           ELSE COALESCE(m_uo.role_id, u.role_id) END
          LEFT JOIN chat_polls p ON m.id = p.message_id
          LEFT JOIN chat_messages reply_msg ON m.reply_to = reply_msg.id
          LEFT JOIN users reply_user ON reply_msg.user_id = reply_user.id
          WHERE m.room_id = $1
          ORDER BY m.created_at ASC, m.id ASC`,
-        [roomId]
+        [roomId, organizationId]
       );
 
       const raumName = room.name || room.jahrgang_name || `Chat ${room.id}`;

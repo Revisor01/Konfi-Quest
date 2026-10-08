@@ -1289,6 +1289,9 @@ In der Teilnehmerliste der Detailansicht wischst du eine Person nach links:
 - **Auf die Warteliste setzen** (bei bestätigten Konfis) nimmt ihr den festen
   Platz, nach der Rückfrage „Auf die Warteliste setzen?".
 
+Das gilt für alle auf der Liste, auch für Teamer:innen, die aus einer anderen
+Gemeinde bei euch mitarbeiten.
+
 Ein Platz, der dabei frei wird, geht an die nächste wartende Person — siehe
 [Nachvollziehen, wann jemand nachrückt](#nachvollziehen-wann-jemand-nachrueckt).
 

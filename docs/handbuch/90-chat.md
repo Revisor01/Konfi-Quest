@@ -584,7 +584,9 @@ Exportiert am 23.08.2026 14:12 — 138 Nachrichten
 
 Mit dabei: Datum und Uhrzeit, Absender mit Rolle, der Text, bei Anhängen der
 Dateiname, bei Umfragen Frage und Antwortmöglichkeiten und bei Antworten der
-Bezug auf die zitierte Nachricht.
+Bezug auf die zitierte Nachricht. Die Rolle ist die in deiner Gemeinde — wer
+anderswo zuhause ist und bei euch mitarbeitet, steht mit der Rolle da, die er
+oder sie bei euch hat, wie im Chat selbst.
 
 Nicht im Export stehen: die **Dateien selbst** (nur ihre Namen), die
 **Reaktionen** und die **abgegebenen Stimmen** einer Umfrage — bei keiner

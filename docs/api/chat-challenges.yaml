@@ -962,6 +962,10 @@ paths:
         (org_admin, bis 29.09.2026 "Org-Leitung"), "Teamer:in"; sonst roles.display_name (seit 28.09.2026,
         vorher immer display_name, in bestehenden Gemeinden also "Hauptamt").
         Im JSON steht zusaetzlich (ADDITIV) rolle_name neben rolle.
+        Die Rolle ist die in der Gemeinde des Raums (Stamm-Gemeinde: Rolle am
+        Konto, weitere Gemeinde: user_organizations; wer nicht mehr Mitglied
+        ist, behaelt die Rolle am Konto) -- wie die Nachrichtenliste.
+        BEHOBEN 08.10.2026: vorher die Rolle der Stamm-Gemeinde (users.role_id).
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
         - { name: format, in: query, required: false, schema: { type: string, enum: [txt, json], default: txt }, description: "Export-Format: txt (Standard) oder json" }

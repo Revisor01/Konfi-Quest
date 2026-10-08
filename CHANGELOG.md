@@ -195,6 +195,17 @@ Versionsüberschrift.
 - Bleibt beim Anlegen einer Konfi die Antwort aus, legt „Erneut versuchen"
   kein zweites Konto an, sondern zeigt für dasselbe Konto ein neues
   Einmalpasswort.
+- Entfernt die Leitung eine Konfi, deren Konto noch zu einer anderen Gemeinde
+  gehört, gehen mit ihr auch Aktivitäten, Punkte, Anträge, Beiträge und
+  Abzeichen aus dieser Gemeinde; in der anderen Gemeinde bleibt alles.
+- Gehört eine Konfi nur über eine weitere Mitgliedschaft zu einer Gemeinde,
+  bekommt sie dort die Mitteilung über neue Beiträge im Challenge-Feed ihres
+  Jahrgangs.
+- Im Chat-Export steht hinter jedem Namen die Rolle in der Gemeinde des
+  Chats, nicht die aus der Heimatgemeinde.
+- Die Leitung kann Teamer:innen, die aus einer anderen Gemeinde bei ihr
+  mitarbeiten, wieder von einem Event austragen; bisher kam „Zugriff
+  verweigert".
 - Nach dem Schließen einer Seite laufen dort angestoßene Meldungen,
   Rückfragen und Nachladevorgänge nicht mehr weiter — so entsteht kein
   Einmalpasswort mehr, wenn man die Seite einer Person direkt nach dem

@@ -492,8 +492,10 @@ ob das Konto gelöscht wurde oder in der anderen Gemeinde bleibt.
 Auch beim **Löschen einer Konfi** endet bei einem Konto, das noch zu einer
 anderen Gemeinde gehört, nur die Mitgliedschaft in deiner Gemeinde — mit
 ihren Jahrgängen, Chat-Plätzen, Mitteilungen und Event-Anmeldungen bei dir
-(auf ihre Plätze rückt die Warteliste nach). Das Konto bleibt für die andere
-Gemeinde. Konfi und Team gehen nie zusammen; solche Konten gibt es nur aus der
+(auf ihre Plätze rückt die Warteliste nach). Mit ihr geht auch alles, was sie
+als Konfi bei dir gesammelt hat: Aktivitäten, Punkte, Anträge samt Foto,
+Challenge-Beiträge, Abzeichen und Rückblicke, dazu deine Mitteilungen über
+sie. Das Konto bleibt für die andere Gemeinde, mit allem, was sie dort hat. Konfi und Team gehen nie zusammen; solche Konten gibt es nur aus der
 Zeit davor.
 
 ### Den Jahresrückblick fürs Team erstellen
