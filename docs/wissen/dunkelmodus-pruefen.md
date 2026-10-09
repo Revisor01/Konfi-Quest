@@ -4,13 +4,22 @@ Stand: 29.09.2026. Zwei Skripte unter `frontend/scripts/` prüfen den
 Dunkelmodus gerendert, im echten Chromium, gegen eine lokale Vorschau.
 Die Stylesheet-Tests (`dunkelmodus.test.ts`, `farbTokens.test.ts`) lesen nur
 Text — ob eine Regel gegen das Ionic-Theme greift und wie es aussieht, zeigen
-erst diese beiden. Keines läuft in der CI (die Pipeline hat keinen laufenden
-Stack); **vor jeder Farbänderung und danach** lokal laufen lassen und die
-Zahlen in die Commit-Nachricht schreiben.
+erst diese beiden.
+
+`dunkelmodus:messen` läuft in der CI im Job `dunkelmodus` (`ci.yml`) gegen den
+E2E-Stack, sobald ein Push oder Pull Request ein Stylesheet unter
+`frontend/src/`, das Theme oder die Messung selbst (`frontend/scripts/dunkelmodus-*`)
+ändert, und bei jedem Handstart; sonst bleibt der Job ohne Messung grün. Die
+Testdaten spielt `frontend/scripts/dunkelmodus-daten.mjs` ein, das Ergebnis
+liegt als Artefakt `dunkelmodus-messung` am Lauf. Rot hält den Web-Deploy
+nicht an, sperrt aber die Store-Builds. `dunkelmodus:bilder` vergleicht zwei
+Läufe und bleibt lokal. **Vor jeder Farbänderung und danach** trotzdem lokal
+laufen lassen und die Zahlen in die Commit-Nachricht schreiben — die CI meldet
+erst nach dem Push.
 
 | Skript | Was es tut | Dauer |
 |---|---|---|
-| `npm run dunkelmodus:messen` | rechnet Kontraste und sucht helle Flächen über 188 Zustände (47 Seiten, hell und dunkel, iOS- und Android-Kennung); Restliste in `dunkelmodus-restliste.json` | rund 12 Minuten |
+| `npm run dunkelmodus:messen` | rechnet Kontraste und sucht helle Flächen über 188 Zustände (47 Seiten, hell und dunkel, iOS- und Android-Kennung); Restliste in `dunkelmodus-restliste.json` | rund 10 bis 12 Minuten (606 s am 09.10.2026) |
 | `npm run dunkelmodus:bilder` | macht 28 Bilder von 14 ausgewählten Seiten im Dunkeln (iOS und Android), prüft feste Merkmale und vergleicht mit einem früheren Lauf | rund 3 Minuten |
 
 ## Die lokale Vorschau aufsetzen
@@ -23,7 +32,9 @@ Test-Seed an (`backend/tests/helpers/seed.js`, Passwort dort).
    Stand aus `prod-migrations.txt`, dann die übrigen Migrationen, dann
    `seed()`). Für `dunkelmodus:messen` zusätzlich einige Chat-Nachrichten mit
    Reaktionen in Raum 1 (eine von jemand anderem als `konfi1`), einen Antrag
-   und eine laufende Challenge, sonst melden die Auflagen „Seed?".
+   und eine laufende Challenge, sonst melden die Auflagen „Seed?". Beides
+   zusammen — Seed und Zusätze — erledigt auf einer frischen Datenbank
+   `DATABASE_URL=… node scripts/dunkelmodus-daten.mjs` (aus `frontend/`).
    Alternativ der E2E-Stack: `docker compose -f docker-compose.e2e.yml up -d
    --build --wait` samt Seed aus `e2e/global-setup.ts` (Oberfläche auf
    Port 5556).

@@ -381,6 +381,8 @@ Versionsüberschrift.
   Namen der Gemeinde, in die sie zurückwechselt.
 
 ### Sonstiges
+- Die automatischen Prüfungen messen den Dunkelmodus im Browser nach, sobald
+  sich Farben oder das Erscheinungsbild ändern.
 - Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
 - Die anonyme Nutzungsmessung erfasst weitere Funktionen — etwa Abmeldungen,
   Postfach, Push-Auswahl, Einladungen, Suche, Jahresrückblick und offline

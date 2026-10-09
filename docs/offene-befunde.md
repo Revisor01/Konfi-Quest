@@ -194,6 +194,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   `@capacitor/status-bar` und dessen eingestellte Farb-APIs (Play Console
   Punkte 1 und 2, im Repo; Gerätetest offen, siehe [Release](#release);
   Branch `fix/bewegung-randlos-dunkelmodus-ci`).
+- [x] 09.10.2026 — Dunkelmodus-Messung in der CI: eigener Job, misst bei
+  Änderungen an Stylesheets, Theme oder Messung gegen den E2E-Stack
+  ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md), Branch
+  `fix/bewegung-randlos-dunkelmodus-ci`).
 
 
 ## Offen
@@ -224,11 +228,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Tests und CI
 
-- **Dunkelmodus-Messung nicht in der CI.** `npm run dunkelmodus:messen`
-  ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md)) läuft nur
-  von Hand gegen eine lokale Vorschau; die CI prüft das Stylesheet als Text.
-  Eine Farbänderung kann den Dunkelmodus zurückwerfen, ohne dass die CI rot
-  wird. Seit 27.09.2026 (Dunkelmodus-Audit BF-09, Rest).
 - **Quelltext-Tests.** 117 Frontend-Testdateien lesen Quelltext statt
   Verhalten (Stand 30.09.2026, Leitplanke
   `frontend/src/__tests__/quelltextTestsLeitplanke.test.ts` lässt keine neuen
