@@ -10,8 +10,12 @@ const PLUGIN = '@capawesome/capacitor-app-update';
 const lies = (pfad: string) => readFileSync(join(process.cwd(), pfad), 'utf8');
 
 describe('In-App-Updates nur auf Android', () => {
-  it('Android bindet alle gemeinsamen Plugins und zusaetzlich das Update-Plugin ein', () => {
-    expect(config.android?.includePlugins).toEqual([...(config.includePlugins ?? []), PLUGIN]);
+  it('Android bindet alle gemeinsamen Plugins (ohne status-bar) und zusaetzlich das Update-Plugin ein', () => {
+    // status-bar fehlt auf Android bewusst (androidOhneStatusBar.test.ts).
+    expect(config.android?.includePlugins).toEqual([
+      ...(config.includePlugins ?? []).filter((p) => p !== '@capacitor/status-bar'),
+      PLUGIN,
+    ]);
   });
 
   it('die gemeinsame Liste (gilt fuer iOS) enthaelt das Plugin nicht, iOS hat keine eigene Liste', () => {

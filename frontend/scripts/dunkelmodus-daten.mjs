@@ -23,7 +23,8 @@
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
-const { Pool } = require('pg');
+// pg aus dem Backend (dort deklariert) -- wie seed.js, das es von dort lädt.
+const { Pool } = createRequire(new URL('../../backend/package.json', import.meta.url))('pg');
 const { seed, USERS, ACTIVITIES, JAHRGAENGE, ORGS, CHAT_ROOMS } = require('../../backend/tests/helpers/seed.js');
 
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5444/postgres';

@@ -42,7 +42,9 @@ describe('Android ohne @capacitor/status-bar', () => {
   });
 
   it('die Android-Liste ist die allgemeine ohne status-bar -- sie ERSETZT sie, ein neues Plugin muss in beide', () => {
-    expect([...android].sort()).toEqual(allgemein.filter((p) => p !== STATUS_BAR).sort());
+    // Dazu nur fuer Android das Plugin fuer In-App-Updates (androidInAppUpdate.test.ts).
+    expect([...android].filter((p) => p !== '@capawesome/capacitor-app-update').sort())
+      .toEqual(allgemein.filter((p) => p !== STATUS_BAR).sort());
   });
 
   it('die von cap sync erzeugten Gradle-Dateien stimmen mit der Android-Liste ueberein', () => {

@@ -35,6 +35,9 @@ const AUSNAHMEN: Record<string, string[]> = {
   // Frontend wäre nur Gewicht für jeden CI-Lauf.
   // Dasselbe gilt fuer die Bildvergleiche im Dunkelmodus (29.09.2026).
   playwright: ['scripts/dunkelmodus-messen.mjs', 'scripts/dunkelmodus-bilder.mjs'],
+  // Testdaten der Dunkelmodus-Messung in der CI (09.10.2026): lädt pg aus
+  // backend/ (dort deklariert, der Job installiert es), wie der Seed selbst.
+  pg: ['scripts/dunkelmodus-daten.mjs'],
 };
 
 function dateien(pfad: string): string[] {

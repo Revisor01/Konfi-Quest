@@ -173,7 +173,7 @@ const config: CapacitorConfig = {
 // fuer Android. Test: androidInAppUpdate.test.ts.
 config.android = {
   ...config.android,
-  includePlugins: [...(config.includePlugins ?? []), '@capawesome/capacitor-app-update'],
+  includePlugins: [...(config.android?.includePlugins ?? config.includePlugins ?? []), '@capawesome/capacitor-app-update'],
 };
 
 export default config;
