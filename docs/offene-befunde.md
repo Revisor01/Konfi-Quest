@@ -193,6 +193,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   umgestellt, das 28 bis 35 Tage reicht ([api/ABRISS.md](api/ABRISS.md));
   Zählungen „Wer bekommt was" und Bestand gemessen
   (Branch `chore/betrieb-compose-logfenster-zaehlungen`).
+- [x] 09.10.2026 — 51 tote Antrags-Mitteilungen (Antrag gelöscht, 33
+  ungelesen in der roten Zahl) per Migration 209 nach der Regel des
+  Löschens entfernt; die 11.868 Aufrufe von `validate-invite` für einen Code
+  sind die am 11.09.2026 behobene Schleife im Browser (10./11.09., keine
+  Store-App betroffen, seit 12.09. höchstens 6 je Minute), jetzt mit
+  Render-Test an der Seite (Branch `fix/einladung-schleife-altmitteilungen`).
 
 
 ## Offen
@@ -279,13 +285,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Sockets (Speicher je Replica bei 512 MB Grenze), Zustellrate und Dauer bei
   Firebase unter Last, Postgres unter Parallellast (Betrieb, „Unklar" und
   „Nicht geprüft").
-- **Tote Antrags-Mitteilungen aus der Zeit vor dem Aufräumen.** 51
-  Mitteilungen „Neuer Antrag" und „Antrag eingereicht" zeigen auf Anträge,
-  die es nicht mehr gibt (33 davon ungelesen, bei 21 Personen; die jüngste
-  vom 25.09.2026, gemessen 09.10.2026). Sie stammen aus der Zeit, bevor
-  `backend/utils/postfachAufraeumen.js` beim Löschen mitaufräumte, und
-  zählen in die rote Zahl. Vorschlag: einmalige Migration nach derselben
-  Regel (nur die Zustands-Arten, Entscheidungen bleiben als Verlauf).
 
 ### Am Gerät
 

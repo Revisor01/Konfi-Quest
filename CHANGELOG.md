@@ -230,6 +230,8 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Mitteilungen zu Anträgen, die schon vor dem Aufräumen beim Löschen
+  gelöscht wurden, verschwinden aus dem Postfach; die rote Zahl stimmt wieder.
 - Mitteilungen im Postfach vom 21. bis 23.08.2026 zeigen ihre richtige
   Uhrzeit statt einer zwei Stunden späteren.
 - Zwischen Mitternacht und 2 Uhr nachts gilt auch auf dem Server schon der neue
