@@ -55,6 +55,23 @@ export const statusBezeichnung = (status: number): string => (
   status >= 500 ? 'Serverfehler' : status === 404 ? 'nicht gefunden' : status === 403 ? 'abgelehnt' : status === 401 ? 'nicht angemeldet' : 'abgewiesen'
 );
 
+/** Ergebnis eines Hintergrund-Laufs als Wort: "ok", "Fehler", "läuft", sonst "–". */
+export const laufErgebnisText = (ergebnis: string | null): string => (
+  ergebnis === 'ok' ? 'ok' : ergebnis === 'fehler' ? 'Fehler' : ergebnis === 'laeuft' ? 'läuft' : '–'
+);
+
+/** Die Ampelfarbe (Token) eines Hintergrund-Laufs: Fehler kritisch, ok gut, sonst blass. */
+export const laufErgebnisFarbe = (ergebnis: string | null): string => (
+  ergebnis === 'fehler' ? METRIK_AMPEL.kritisch : ergebnis === 'ok' ? METRIK_AMPEL.gut : METRIK_AMPEL.blass
+);
+
+/** Die drei Wege des Push-Versands in der Reihenfolge der Anzeige. */
+export const PUSH_WEGE = [
+  { schluessel: 'einzeln', name: 'An eine Person' },
+  { schluessel: 'viele', name: 'An viele' },
+  { schluessel: 'chat', name: 'Chat-Nachricht' },
+] as const;
+
 /**
  * Wie eine Veraenderung "heute gegen sonst" aussieht: der Pfeil und -- ab 10 %
  * Abweichung -- eine Farbe. Darunter ist es Rauschen und bekommt keine, sonst

@@ -8,6 +8,7 @@ import {
   ICON_PULS,
   ICON_STATISTIK,
   ICON_STUFEN,
+  ICON_UHRZEIT,
   ICON_WARTEND,
   ICON_WARNUNG,
 } from '../../shared/icons';
@@ -40,10 +41,10 @@ import {
   type RoutenZeile,
 } from '../../../utils/betriebsKennzahlen';
 import { datumUhrzeit, uhrzeit } from '../../../utils/dateUtils';
-import { fmtDauer, fmtSeit, fmtUptime, fmtZahl, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../utils/betriebsFormat';
+import { PUSH_WEGE, fmtDauer, fmtSeit, fmtUptime, fmtZahl, laufErgebnisFarbe, laufErgebnisText, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../utils/betriebsFormat';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebBetrieb from '../web/leitung/WebBetrieb';
-import type { BetriebsCspMeldungen } from '../web/leitung/betriebTypen';
+import type { BetriebsCspMeldungen, BetriebsHintergrund } from '../web/leitung/betriebTypen';
 import KonfispruchAuswertung from '../KonfispruchAuswertung';
 import { inFassung } from '../../../seiten/beschreibung';
 import { BETRIEB_REITER, ROUTEN_SORTIERUNG, type BetriebsReiterSchluessel } from '../../../seiten/betrieb';
@@ -101,6 +102,9 @@ interface Snapshot extends BetriebsSnapshot {
   fehlerGruppen?: FehlerGruppe[];
   // Seit dem 09.10.2026: vom Browser gemeldete CSP-Verstoesse der Web-Fassung.
   cspMeldungen?: BetriebsCspMeldungen;
+  // Seit dem 09.10.2026: Hintergrund-Jobs (letzter Lauf, Dauer, Ergebnis) und
+  // Dauer des Push-Versands.
+  hintergrund?: BetriebsHintergrund;
 }
 interface HistorySnap {
   captured_at: string;
@@ -568,6 +572,9 @@ const AdminMetricsPage: React.FC = () => {
                   </Karte>
                 )}
 
+                {/* Hintergrund: Aufgaben des Servers und Push-Versand (fehlt bei aelteren Servern) */}
+                {snap.hintergrund && <HintergrundKarte hintergrund={snap.hintergrund} />}
+
               </>
             )}
 
@@ -709,6 +716,49 @@ const CspListe: React.FC<{ csp: BetriebsCspMeldungen }> = ({ csp }) => (
       </div>
     ))}
   </div>
+);
+
+// Hintergrund: wann jede Aufgabe des Servers zuletzt lief, wie lange und ob es
+// geklappt hat; darunter die Dauer des Push-Versands je Weg.
+const HintergrundKarte: React.FC<{ hintergrund: BetriebsHintergrund }> = ({ hintergrund }) => (
+  <Karte
+    icon={ICON_UHRZEIT}
+    titel="Hintergrund"
+    farbe="var(--app-color-wrapped)"
+    hinweis="Seit dem letzten Neustart. Die Aufgaben fährt nur eine Instanz; Pushes gehen von jeder hinaus."
+  >
+    {hintergrund.jobs.length === 0 ? (
+      <div style={{ color: 'var(--app-text-system)', fontSize: 'var(--app-text-sekundaer)' }}>Seit dem letzten Neustart hat noch keine Aufgabe im Hintergrund gearbeitet.</div>
+    ) : hintergrund.jobs.map((j, i) => (
+      <div key={j.name} style={{ padding: 'var(--app-abstand-eng) 0', borderTop: i ? '1px solid var(--app-surface-dim)' : 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 'var(--app-abstand-eng)' }}>
+          <span style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-body)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{j.bezeichnung}</span>
+          <span style={{ fontWeight: 'var(--app-schrift-halbfett)', fontSize: 'var(--app-text-hinweis)', color: laufErgebnisFarbe(j.ergebnis), flexShrink: 0 }}>{laufErgebnisText(j.ergebnis)}</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-mini)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
+          <span>{j.letzterStart ? `zuletzt ${fmtSeit(j.letzterStart)}` : 'noch nicht'}</span>
+          {j.dauerMs !== null && <span style={{ color: msColor(j.dauerMs) }}>{fmtDauer(j.dauerMs)}</span>}
+          <span>{j.fehlerAnzahl > 0 ? `${fmtZahl(j.anzahl)} Läufe, ${fmtZahl(j.fehlerAnzahl)} mit Fehler` : `${fmtZahl(j.anzahl)} Läufe`}</span>
+          {j.takt && <span>{j.takt}</span>}
+        </div>
+        {j.ergebnis === 'fehler' && j.fehler && (
+          <div style={{ fontSize: 'var(--app-text-meta)', color: METRIK_AMPEL.kritisch, marginTop: 'var(--app-abstand-winzig)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{j.fehler}</div>
+        )}
+      </div>
+    ))}
+    <div style={{ fontSize: 'var(--app-text-hinweis)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-secondary)', marginTop: 'var(--app-abstand-mittel)' }}>Push-Versand</div>
+    {PUSH_WEGE.map((w) => {
+      const weg = hintergrund.pushVersand.jeWeg[w.schluessel];
+      return (
+        <div key={w.schluessel} style={{ display: 'flex', justifyContent: 'space-between', gap: 'var(--app-abstand-eng)', padding: 'var(--app-abstand-mini) 0', fontSize: 'var(--app-text-klein)' }}>
+          <span style={{ color: 'var(--app-text-body)' }}>{w.name}</span>
+          <span style={{ color: 'var(--app-text-system)' }}>
+            {weg.anzahl === 0 ? 'noch keiner' : `${fmtZahl(weg.anzahl)}× · Mittel ${fmtDauer(weg.mittelDauerMs ?? 0)} · längster ${fmtDauer(weg.maxDauerMs)}`}
+          </span>
+        </div>
+      );
+    })}
+  </Karte>
 );
 
 // Verlauf: erst die Tagesbilanz, darunter die Fünf-Minuten-Schritte.

@@ -4818,6 +4818,20 @@ paths:
           Gruppen; was darüber kommt, zählt in `verworfen`. Über mehrere
           Replicas werden gesamt, verworfen und die Anzahl je Gruppe addiert,
           `gruppenAnzahl` ist das Maximum. Im Speicher, ein Neustart leert es.
+        * `hintergrund` — {jobs, pushVersand} (Betrieb BF-10 Rest,
+          utils/hintergrundLaeufe.js). `jobs[]` je Hintergrund-Job, der seit
+          dem Neustart lief: name, bezeichnung, takt, letzterStart,
+          letztesEnde, dauerMs (letzter abgeschlossener Lauf), ergebnis
+          ('ok' | 'fehler' | 'laeuft'), fehler (Text, höchstens 200 Zeichen,
+          sonst null), anzahl, fehlerAnzahl, maxDauerMs, gesamtDauerMs,
+          mittelDauerMs. Die Jobs fährt nur der Cron-Leader; über mehrere
+          Replicas gilt je Job der jüngste Lauf (mit `replica`), die Zähler
+          werden addiert. `pushVersand.jeWeg` hat je Weg (einzeln, viele,
+          chat) anzahl, fehler, empfaenger, gesamtDauerMs, maxDauerMs,
+          mittelDauerMs, letzteDauerMs und zuletzt — gemessen vom Aufruf bis
+          zum letzten Gerät; über Replicas addiert. `pushVersand.langsamster`
+          ist der längste Versand {weg, art, empfaenger, dauerMs, zeit} oder
+          null. Im Speicher, ein Neustart leert es.
 
         BEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine
         Route, die sowohl in routesSlowest als auch in routesBusiest stand,
@@ -4831,7 +4845,7 @@ paths:
         behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst,
         weil die Ziffern-Regel vor der UUID-Regel lief.
       responses:
-        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen, routeSchluessel und cspMeldungen" }
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen, routeSchluessel, cspMeldungen und hintergrund" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
@@ -4926,8 +4940,13 @@ paths:
         Unaggregierter In-Memory-Snapshot der antwortenden Replica. Wird von
         /metrics für die Peer-Aggregation genutzt, ist aber auch direkt
         aufrufbar. Enthält dieselben Felder wie /metrics (siehe dort, inkl.
-        der Erweiterungen vom 22.09.2026 und 24.09.2026), nur ohne replicas.
-        `dbPool` ist hier der Zustand genau dieser Replica.
+        der Erweiterungen vom 22.09.2026, 24.09.2026 und 09.10.2026), nur
+        ohne replicas. `dbPool` ist hier der Zustand genau dieser Replica.
+
+        ERWEITERT (09.10.2026) — additiv: `hintergrund` (siehe /metrics) mit
+        den Jobs genau dieser Replica — leer, wenn sie nicht Cron-Leader ist —
+        und ihrem Push-Versand. Tests:
+        backend/tests/routes/hintergrundLaufzeiten.test.js.
       responses:
         "200": { description: "APM-Snapshot dieser Replica" }
         "401": { $ref: "#/components/responses/Unauthorized" }

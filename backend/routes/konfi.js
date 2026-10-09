@@ -6,10 +6,9 @@ const { body, param } = require('express-validator');
 const { handleValidationErrors } = require('../middleware/validation');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
-const { heuteBerlin } = require('../utils/zeitformat');
 const { beantworteTageslosung } = require('../services/losungService');
 const { encryptFileToFile, decryptFileToStream, leseKopfBytes } = require('../utils/photoCrypto');
-const { deletePhotoFile, istSichererDateiname } = require('../utils/photoStorage');
+const { istSichererDateiname } = require('../utils/photoStorage');
 const { darfKonfi } = require('../utils/jahrgangsZugriff');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
@@ -117,10 +116,11 @@ const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 // Anmeldestatus und Zeitfenster: eine Rechnung fuer Leitungs- und Konfi-Sicht.
 const { anmeldeStatusSql, kapazitaetSql, ladeZeitfenster } = require('../utils/terminAnmeldeStatus');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
-const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
+const { behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
-const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, loeseKonfspruchAuf, spruchStandLesen, spruchWahlMerken } = require('../utils/konfspruch');
-const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
+const { ladeSpruchliste, loeseKonfspruchAuf, beantworteKonfspruchSetzen, beantworteBibelUebersetzung } = require('../utils/konfspruch');
+const { stelleEigenenAntrag, nimmEigenenAntragZurueck } = require('../utils/eigeneAntraege');
+const { markiereAbzeichenGesehen } = require('../utils/abzeichenGesehen');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
@@ -737,69 +737,26 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     
     try {
       const konfiId = req.user.id;
-      const { activity_id, description, photo_filename, requested_date, client_id } = req.body;
 
-      if (!activity_id) {
+      // Unerreichbar hinter validateCreateRequest (isInt), bleibt als Gurt.
+      if (!req.body.activity_id) {
         return res.status(400).json({ error: 'Aktivitäts-ID ist erforderlich' });
       }
 
-      // Idempotency: Prüfen ob Antrag mit dieser client_id bereits existiert
-      // (Vorab-Check; den Race-Fall faengt der 23505-Catch unten ab)
-      const vorhanderAntrag = await findeAntragZuClientId(db, client_id);
-      if (vorhanderAntrag) {
-        return res.status(200).json(vorhanderAntrag);
-      }
-      
-      // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
-      // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Eintrag ohne Datum sonst
-      // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
-      const date = requested_date || heuteBerlin();
-      
-      // Get activity details for notification
-      // Befund N3 (27.08.2026): Hier fehlte der target_role-Filter. Gemessen:
-      // Eine Konfi konnte per API einen Antrag auf eine TEAMER-Aktivitaet
-      // stellen (POST -> 201), er erschien in ihrer Liste und die Leitung
-      // konnte ihn bestaetigen — Punkte aus einer Aktivitaet, die nicht fuer
-      // Konfis gedacht ist. Ueber die Oberflaeche nicht erreichbar (die Liste
-      // dort filtert), per API aber offen. Der Teamer-Weg filtert seit jeher
-      // (teamer.js:1287-1299).
-      const { rows: [activity] } = await db.query(
-        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2 AND target_role = 'konfi'",
-        [activity_id, req.user.organization_id]
-      );
-
-      if (!activity) {
+      // Kern in utils/eigeneAntraege.js -- dieselbe Stelle wie
+      // POST /teamer/requests (Befund N3: nur Konfi-Aktivitaeten).
+      const ergebnis = await stelleEigenenAntrag(db, {
+        userId: konfiId,
+        organizationId: req.user.organization_id,
+        zielrolle: 'konfi',
+        body: req.body,
+        ort: 'POST /konfi/requests',
+      });
+      if (ergebnis.vorhanden) return res.status(200).json(ergebnis.vorhanden);
+      if (ergebnis.nichtGefunden) {
         return res.status(404).json({ error: 'Aktivität nicht gefunden' });
       }
-
-      const insertQuery = `
-        INSERT INTO activity_requests (user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id)
-        VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
-        RETURNING id
-      `;
-      const { rows: [newRequest] } = await db.query(insertQuery, [konfiId, activity_id, date, description, photo_filename, req.user.organization_id, client_id || null]);
-      
-      // Send confirmation notification to konfi
-      try {
-        await db.query(
-          "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
-          [
-            konfiId,
-            'Antrag eingereicht',
-            `Dein Antrag für "${activity.name}" wurde eingereicht und wird geprüft.`,
-            'activity_request_submitted',
-            JSON.stringify({ 
-              request_id: newRequest.id,
-              activity_name: activity.name,
-              points: activity.points
-            }),
-            req.user.organization_id
-          ]
-        );
-      } catch (notifErr) {
- console.error('Error sending notification:', notifErr);
-        // Don't fail the request if notification fails
-      }
+      const { antrag: newRequest, activity } = ergebnis;
 
       res.status(201).json({
         id: newRequest.id,
@@ -980,38 +937,18 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
     
     try {
-      const requestId = req.params.id;
-      const konfiId = req.user.id;
-      
-      // Check if request exists and belongs to this konfi and is pending
-      const { rows: [request] } = await db.query(
-        "SELECT id, user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id, created_at, updated_at FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
-        [requestId, konfiId, req.user.organization_id]
-      );
-      
-      if (!request) {
+      // Kern in utils/eigeneAntraege.js -- dieselbe Stelle wie
+      // DELETE /teamer/requests/:id; die Texte bleiben je Weg.
+      const ergebnis = await nimmEigenenAntragZurueck(db, {
+        requestId: req.params.id,
+        userId: req.user.id,
+        organizationId: req.user.organization_id,
+      });
+      if (ergebnis === 'nicht_gefunden') {
         return res.status(404).json({ error: 'Antrag nicht gefunden' });
       }
-      
-      if (request.status !== 'pending') {
+      if (ergebnis === 'nicht_wartend') {
         return res.status(400).json({ error: 'Nur wartende Anträge können gelöscht werden' });
-      }
-
-      // Delete the request
-      await db.query(
-        "DELETE FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
-        [requestId, konfiId, req.user.organization_id]
-      );
-      // Postfach (25.09.2026): "Antrag eingereicht" (eigene) und "Neuer
-      // Antrag eingegangen" (Leitung) gehen mit dem Antrag. Vorher blieb die
-      // Mitteilung bei der Leitung stehen und fuehrte beim Antippen in eine
-      // Liste, in der der Antrag nicht mehr war (utils/postfachAufraeumen.js).
-      await loescheMitteilungenZuAntraegen(db, [requestId]);
-
-      // Nachweisfoto vom Dateisystem entfernen (kein Orphan, Datensparsamkeit).
-      // Bewusst NACH dem DB-Delete und nicht blockierend.
-      if (request.photo_filename) {
-        await deletePhotoFile(request.photo_filename);
       }
 
       res.json({ message: 'Antrag erfolgreich gelöscht' });
@@ -1162,11 +1099,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
     }
 
     try {
-      const konfiId = req.user.id;
-      await db.query(
-        'UPDATE user_badges SET seen = true WHERE user_id = $1 AND organization_id = $2 AND seen = false',
-        [konfiId, req.user.organization_id]
-      );
+      // Dasselbe UPDATE wie der Team-Weg: utils/abzeichenGesehen.js.
+      await markiereAbzeichenGesehen(db, req.user.id, req.user.organization_id);
       res.json({ success: true, message: 'Alle Badges als gesehen markiert' });
     } catch (err) {
  console.error('Database error in POST /badges/mark-seen:', err);
@@ -2177,38 +2111,9 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
     
-    try {
-      const konfiId = req.user.id;
-      const { translation } = req.body;
-      
-      // Validate translation (Liste in utils/konfspruch.js — eine Quelle
-      // fuer den Konfi- und den Teamer-Weg)
-      if (!BIBEL_UEBERSETZUNGEN.includes(translation)) {
-        return res.status(400).json({
-          error: 'Ungültige Bibelübersetzung',
-          valid_translations: BIBEL_UEBERSETZUNGEN
-        });
-      }
-      
-      // Die Wahl liegt seit Migration 132 fuer ALLE Rollen an users
-      // (Befund N8). Vorher hatte konfi_profiles eine eigene, gleichnamige
-      // Spalte -- was bei jeder Befoerderung Konfi -> Teamer die Wahl
-      // verlor, weil die Teamer-Ansicht die andere Spalte las.
-      await db.query(
-        'UPDATE users SET bible_translation = $1 WHERE id = $2',
-        [translation, konfiId]
-      );
-      
-      res.json({
-        success: true,
-        message: 'Bibelübersetzung erfolgreich aktualisiert',
-        translation: translation
-      });
-      
-    } catch (err) {
- console.error('Database error in PUT /bible-translation:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
+    // Kern in utils/konfspruch.js -- dieselbe Stelle wie
+    // PUT /teamer/bible-translation.
+    return beantworteBibelUebersetzung(db, req, res, '/bible-translation');
   });
 
   // Kuratierte Konfsprueche für das Auswahl-Modal (org-gefiltert)
@@ -2234,100 +2139,10 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       return res.status(403).json({ error: 'Konfi-Zugriff erforderlich' });
     }
 
-    try {
-      const konfiId = req.user.id;
-      const orgId = req.user.organization_id;
-      const { konfspruch_id, translation, konfspruch_freitext, konfspruch_freitext_referenz } = req.body;
-
-      // Modus 1: Listen-Wahl
-      if (konfspruch_id !== undefined && konfspruch_id !== null) {
-        const spruchId = parseInt(konfspruch_id, 10);
-        if (Number.isNaN(spruchId)) {
-          return res.status(400).json({ error: 'Ungültige Spruch-ID' });
-        }
-        if (!KONFSPRUCH_TRANSLATIONS.includes(translation)) {
-          return res.status(400).json({
-            error: 'Ungültige Bibelübersetzung',
-            valid_translations: KONFSPRUCH_TRANSLATIONS
-          });
-        }
-        // Spruch muss existieren und für die Org sichtbar sein
-        const { rows: [spruch] } = await db.query(
-          `SELECT id FROM konfsprueche
-           WHERE id = $1 AND is_active = true
-             AND (organization_id IS NULL OR organization_id = $2)`,
-          [spruchId, orgId]
-        );
-        if (!spruch) {
-          return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
-        }
-        // Listen-Wahl setzen, Freitext löschen (Exklusivitaet).
-        // konfspruch_translation ist die DEDIZIERTE Spalte - bible_translation (Tageslosung)
-        // wird hier bewusst NICHT angefasst.
-        const vorher = await spruchStandLesen(db, konfiId);
-        const { rowCount } = await db.query(
-          `UPDATE konfi_profiles
-           SET konfspruch_id = $1, konfspruch_translation = $2,
-               konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
-           WHERE user_id = $3`,
-          [spruchId, translation, konfiId]
-        );
-        // Personenunabhaengige Statistik (Migration 207): nur, wenn wirklich
-        // ein Profil geaendert wurde.
-        if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'vorschlag', spruchId, translation }, vorher);
-        return res.json({
-          success: true,
-          konfspruch: { source: 'liste', id: spruchId, translation }
-        });
-      }
-
-      // Modus 2: Freitext
-      if (konfspruch_freitext !== undefined && konfspruch_freitext !== null) {
-        const freitext = String(konfspruch_freitext).trim();
-        const referenz = konfspruch_freitext_referenz != null
-          ? String(konfspruch_freitext_referenz).trim()
-          : '';
-        if (!freitext) {
-          return res.status(400).json({ error: 'Der Spruchtext darf nicht leer sein' });
-        }
-        if (!referenz) {
-          return res.status(400).json({
-            error: 'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
-          });
-        }
-        // Laengen-Validierung (referenz -> VARCHAR(100), freitext -> sinnvolles Limit),
-        // damit ein zu langer Wert einen sauberen 400 statt eines Postgres-22001/500 liefert.
-        if (referenz.length > 100) {
-          return res.status(400).json({ error: 'Die Stellenangabe darf höchstens 100 Zeichen lang sein' });
-        }
-        if (freitext.length > 1000) {
-          return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
-        }
-        // Freitext setzen, Listen-Wahl löschen (Exklusivitaet).
-        // konfspruch_translation bleibt unverändert (Freitext hat keine Uebersetzungs-Tabs).
-        const vorher = await spruchStandLesen(db, konfiId);
-        const { rowCount } = await db.query(
-          `UPDATE konfi_profiles
-           SET konfspruch_freitext = $1, konfspruch_freitext_referenz = $2,
-               konfspruch_id = NULL
-           WHERE user_id = $3`,
-          [freitext, referenz, konfiId]
-        );
-        if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'eigen', freitext, referenz }, vorher);
-        return res.json({
-          success: true,
-          konfspruch: { source: 'freitext', text: freitext, reference: referenz }
-        });
-      }
-
-      // Weder gueltige Listen-Wahl noch Freitext
-      return res.status(400).json({
-        error: 'Bitte entweder einen Spruch aus der Liste (konfspruch_id + translation) oder einen eigenen Spruch (konfspruch_freitext + konfspruch_freitext_referenz) angeben'
-      });
-    } catch (err) {
-      console.error('Database error in PATCH /profile:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
+    // Pruefliste, Speichern und Antwort in utils/konfspruch.js -- dieselbe
+    // Stelle wie PATCH /teamer/profile. Unterschied: Konfis haben ihre
+    // Profilzeile immer, hier wird nur aktualisiert.
+    return beantworteKonfspruchSetzen(db, req, res, { anlegen: false, ort: '/profile' });
   });
 
   return router;

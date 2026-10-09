@@ -80,7 +80,8 @@ describe('cleanupNichtZugeordneteMails', () => {
   it('läuft im nächtlichen Aufräumlauf (02:00), nach den Anfragen', () => {
     const quelle = fs.readFileSync(path.join(__dirname, '..', '..', 'services', 'backgroundService.js'), 'utf8');
     const lauf = quelle.slice(quelle.indexOf('static startAutoDeletionCron'), quelle.indexOf('static async cleanupAbgelehnteAnfragen'));
-    expect(lauf).toContain('await this.cleanupNichtZugeordneteMails(db);');
+    // Seit 09.10.2026 mit Laufzeit (utils/hintergrundLaeufe.js).
+    expect(lauf).toContain("await messeLauf('mails_aufraeumen', () => this.cleanupNichtZugeordneteMails(db));");
     expect(lauf.indexOf('cleanupUnbewegteAnfragen(db)')).toBeLessThan(lauf.indexOf('cleanupNichtZugeordneteMails(db)'));
   });
 });

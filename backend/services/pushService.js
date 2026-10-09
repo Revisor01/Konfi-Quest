@@ -31,6 +31,8 @@ const { gruppeFuerArt, GRUPPE_CHAT } = require('../utils/pushGruppen');
 // eines Geraets passt, meldet die App bei der Token-Anmeldung
 // (push_tokens.app_symbol_weg, Migration 185).
 const { APP_SYMBOL_WEGE, wegFuerGeraet } = require('../utils/appSymbolWeg');
+// Dauer des Versands je Weg fuer /api/metrics (09.10.2026, Betrieb BF-10 Rest).
+const { messePush } = require('../utils/hintergrundLaeufe');
 
 /**
  * Push Notification Type Registry
@@ -795,6 +797,16 @@ class PushService {
    *   selbst; alle bestehenden Aufrufstellen bleiben unveraendert gueltig.
    */
   static async sendToUser(db, userId, notification, vorberechnet = null) {
+    // Gemessen wird nur der direkte Aufruf; beim Versand an viele misst
+    // sendToMultipleUsers den ganzen Versand.
+    if (vorberechnet) return this.zustellenAnEinePerson(db, userId, notification, vorberechnet);
+    const art = (notification && notification.data && notification.data.type) || null;
+    return messePush({ weg: 'einzeln', art, empfaenger: 1 },
+      () => this.zustellenAnEinePerson(db, userId, notification, null));
+  }
+
+  /** Der eigentliche Versand an eine Person -- nur ueber sendToUser. */
+  static async zustellenAnEinePerson(db, userId, notification, vorberechnet) {
     try {
       // Postfach ZUERST, vor der Token-Pruefung (25.09.2026): Wer kein
       // Push-Geraet hat oder Push abgeschaltet hat, bekommt unten "No tokens
@@ -965,6 +977,13 @@ class PushService {
    */
   static async sendToMultipleUsers(db, userIds, notification) {
     if (!userIds || userIds.length === 0) return [];
+    const art = (notification.data && notification.data.type) || null;
+    return messePush({ weg: 'viele', art, empfaenger: userIds.length },
+      () => this.zustellenAnViele(db, userIds, notification));
+  }
+
+  /** Der eigentliche Versand an viele -- nur ueber sendToMultipleUsers. */
+  static async zustellenAnViele(db, userIds, notification) {
 
     // Braucht der Payload den Organisations-Rueckfall? Traegt er schon eine
     // Content-Org, nicht. Steht ausserdem eine feste Badge-Zahl im Aufruf,
@@ -1094,6 +1113,12 @@ class PushService {
   static async sendChatNotificationToMany(db, userIds, notificationData) {
     const empfaenger = [...new Set(userIds || [])];
     if (empfaenger.length === 0) return [];
+    return messePush({ weg: 'chat', art: 'chat', empfaenger: empfaenger.length },
+      () => this.zustellenChatAnViele(db, empfaenger, notificationData));
+  }
+
+  /** Der eigentliche Chat-Versand -- nur ueber sendChatNotificationToMany. */
+  static async zustellenChatAnViele(db, empfaenger, notificationData) {
     try {
       // Content-Org des Chat-Raums (Multi-Org: der Tap wechselt in die
       // Organisation des Raums, NICHT in die Primär-Org des Empfängers).

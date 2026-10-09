@@ -57,7 +57,6 @@ Nichts.
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular
   ([planung/support-vorgaenge.md](planung/support-vorgaenge.md)).
-- [ ] **Doppelter Code Konfi/Team** ([Code](#code)).
 - [ ] **Feature-Empfehlungen vor der EKD-Ausrollung** —
   [planung/feature-empfehlungen.md](planung/feature-empfehlungen.md).
 
@@ -221,27 +220,22 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Änderungen an Stylesheets, Theme oder Messung gegen den E2E-Stack
   ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md), Branch
   `fix/bewegung-randlos-dunkelmodus-ci`).
+- [x] 09.10.2026 — Doppelter Code Konfi/Team zusammengelegt: Konfispruch
+  setzen und lesen, Spruchliste, Bibelübersetzung, eigenen Antrag stellen
+  und löschen, Abzeichen als gesehen markieren; Antworten per
+  Charakterisierungstest festgehalten
+  (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
+- [x] 09.10.2026 — Laufzeiten im Hintergrund sichtbar (Betrieb BF-10 Rest):
+  je Job letzter Start, Dauer und Ergebnis in `/api/metrics`, Dauer des
+  Push-Versands, Protokollzeile mit Dauer, Karte „Hintergrund" auf der Seite
+  „Betrieb"; Begrüßungsstunde des Teams nach Berliner Zeit
+  (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
 
 
 ## Offen
 
 ### Code
 
-- **Doppelter Code Konfi/Team.** `backend/routes/teamer.js` führt eine eigene
-  Liste `KONFSPRUCH_TRANSLATIONS` und ein eigenes `loadKonfspruch` (um Zeile
-  979 und 983), obwohl es beides aus `utils/konfspruch.js` importiert — die
-  lokale Konstante beschattet den Import. `PATCH /profile` steht zweimal,
-  in `routes/konfi.js` (um Zeile 2180) und `routes/teamer.js` (um Zeile
-  1074), mit eigener Prüfliste je Seite. Die Kopien sind schon einmal
-  auseinandergelaufen (Punkte-Historie, Tageslosung, beide inzwischen
-  zusammengelegt). Fix: eine Stelle je Funktion, Antwortformen unverändert.
-  Seit 01.09.2026 bekannt (interne Aufgabenliste), am 08.10.2026 am Code
-  bestätigt.
-- **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
-  Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
-  die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner
-  Log-Zeile (01.10.2026: „nicht messbar ohne Code"). Seit 27.09.2026
-  (Betrieb BF-10, Rest).
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird

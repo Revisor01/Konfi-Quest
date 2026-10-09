@@ -17,7 +17,7 @@
 // Ergebnis sich nicht aendert -- sonst haengt die Richtigkeit wieder an einer
 // Umgebungsvariablen, die beim naechsten Umzug verlorengeht.
 
-const { formatUhrzeit, formatDatum, heuteBerlin, BERLIN } = require('../../utils/zeitformat');
+const { formatUhrzeit, formatDatum, heuteBerlin, stundeBerlin, BERLIN } = require('../../utils/zeitformat');
 const { getTestPool, truncateAll } = require('../helpers/db');
 const { seed, USERS, EVENTS, ORGS } = require('../helpers/seed');
 
@@ -121,6 +121,35 @@ describe('heuteBerlin: der Kalendertag der App', () => {
     try {
       process.env.TZ = 'UTC';
       expect(heuteBerlin(new Date('2026-09-01T22:30:00Z'))).toBe('2026-09-02');
+    } finally {
+      process.env.TZ = vorher;
+    }
+  });
+});
+
+describe('stundeBerlin: die Stunde fuer die Begruessung (09.10.2026)', () => {
+  // getHours() rechnet in der Zone des Prozesses -- in Produktion UTC. Um
+  // 23:30 UTC im Sommer ist es in Berlin 1:30; die Begruessung des Teams
+  // bekam bis dahin 23.
+  it('Sommer: 23:30 UTC ist 1 Uhr in Berlin', () => {
+    expect(stundeBerlin(new Date('2026-07-15T23:30:00Z'))).toBe(1);
+  });
+
+  it('Winter: 23:30 UTC ist 0 Uhr in Berlin, 22:30 UTC ist 23 Uhr', () => {
+    expect(stundeBerlin(new Date('2026-12-01T23:30:00Z'))).toBe(0);
+    expect(stundeBerlin(new Date('2026-12-01T22:30:00Z'))).toBe(23);
+  });
+
+  it('liefert eine Zahl von 0 bis 23, Mitternacht als 0', () => {
+    expect(stundeBerlin(new Date('2026-07-15T22:00:00Z'))).toBe(0);
+    expect(stundeBerlin(new Date('2026-07-15T21:59:00Z'))).toBe(23);
+  });
+
+  it('bleibt richtig, auch wenn der Prozess in UTC laeuft', () => {
+    const vorher = process.env.TZ;
+    try {
+      process.env.TZ = 'UTC';
+      expect(stundeBerlin(new Date('2026-07-15T23:30:00Z'))).toBe(1);
     } finally {
       process.env.TZ = vorher;
     }
@@ -292,18 +321,23 @@ describe('Antragsdatum ohne Angabe: Konfi- und Teamer-Weg rechnen gleich', () =>
   const path = require('path');
   const lies = (p) => fs.readFileSync(path.join(__dirname, '..', '..', p), 'utf8');
 
-  it('teamer.js leitet das Antragsdatum aus heuteBerlin() ab', () => {
-    expect(lies('routes/teamer.js')).toContain('const date = requested_date || heuteBerlin();');
+  // Seit 09.10.2026 stellen beide Wege den Antrag an EINER Stelle
+  // (utils/eigeneAntraege.js); dort steht der Ausdruck einmal.
+  it('der gemeinsame Kern leitet das Antragsdatum aus heuteBerlin() ab', () => {
+    expect(lies('utils/eigeneAntraege.js')).toContain('const date = requested_date || heuteBerlin();');
   });
 
-  it('teamer.js nimmt den UTC-Tag nicht mehr als Antragsdatum', () => {
-    expect(lies('routes/teamer.js')).not.toContain("new Date().toISOString().split('T')[0]");
+  it('niemand nimmt den UTC-Tag als Antragsdatum', () => {
+    for (const datei of ['routes/teamer.js', 'routes/konfi.js', 'utils/eigeneAntraege.js']) {
+      expect(lies(datei)).not.toContain("new Date().toISOString().split('T')[0]");
+    }
   });
 
-  it('konfi.js und teamer.js nutzen denselben Ausdruck', () => {
-    const zeile = 'const date = requested_date || heuteBerlin();';
-    expect(lies('routes/konfi.js')).toContain(zeile);
-    expect(lies('routes/teamer.js')).toContain(zeile);
+  it('konfi.js und teamer.js stellen den Antrag ueber denselben Kern, ohne eigenes Datum', () => {
+    for (const datei of ['routes/konfi.js', 'routes/teamer.js']) {
+      expect(lies(datei)).toContain('await stelleEigenenAntrag(db, {');
+      expect(lies(datei)).not.toContain('requested_date ||');
+    }
   });
 
   it('der Fallback trifft um 00:30 Berliner Zeit den Berliner Tag, nicht den UTC-Tag', () => {

@@ -67,9 +67,12 @@ describe('Bibelübersetzungen: geteiltes Modal deckt die Backend-Liste ab', () =
       const inhalt = lies(datei);
       expect(inhalt, `${datei}: bindet utils/konfspruch nicht ein`)
         .toContain("require('../utils/konfspruch')");
-      expect(inhalt, `${datei}: nutzt BIBEL_UEBERSETZUNGEN nicht`)
-        .toContain('BIBEL_UEBERSETZUNGEN');
+      // Seit 09.10.2026 pruefen beide Routen ueber denselben Kern in
+      // utils/konfspruch.js (beantworteBibelUebersetzung), der die Liste liest.
+      expect(inhalt, `${datei}: nutzt den gemeinsamen Kern nicht`)
+        .toContain('beantworteBibelUebersetzung(db, req, res,');
     });
+    expect(lies('../backend/utils/konfspruch.js')).toContain('if (!BIBEL_UEBERSETZUNGEN.includes(translation))');
   });
 
   it('die entfernte Uebersetzung RVR60 taucht nirgends mehr auf', () => {

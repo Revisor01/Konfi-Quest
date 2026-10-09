@@ -1158,7 +1158,7 @@ paths:
               schema:
                 type: object
                 properties:
-                  greeting: { type: object, description: "display_name, hour; ADDITIV 01.10.2026: role_title (Selbstbezeichnung, null ohne Eintrag)" }
+                  greeting: { type: object, description: "display_name, hour (0-23, Stunde in Berliner Zeit; bis 09.10.2026 in der Zone des Servers, behoben 09.10.2026); ADDITIV 01.10.2026: role_title (Selbstbezeichnung, null ohne Eintrag)" }
                   certificates: { type: array, items: { type: object }, description: "id, name, icon, issued_date, expiry_date, status" }
                   events: { type: array, items: { type: object }, description: "id, title, event_date, event_end_time, location, type, teamer_only, teamer_needed, bring_items, cancelled, is_registered, booking_status; ADDITIV 15.09.2026: cancelled_reason, cancelled_by, cancelled_at, cancelled_by_name, cancelled_reason_set_by_name (alle NULL, wenn nicht abgesagt bzw. ohne Grund/Urheber)" }
                   badges: { type: object, description: "recent[], earned_count, total_count" }

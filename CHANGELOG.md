@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- Die Seite „Betrieb" zeigt im Überblick, wann jede Aufgabe des Servers im
+  Hintergrund zuletzt lief, wie lange sie brauchte und ob sie geklappt hat,
+  dazu die Dauer des Push-Versands.
 - In der Detailansicht einer Person lässt sich Offenes direkt bestätigen:
   Ein Tipp auf eine gemeldete Aktivität öffnet das Prüfen mit Genehmigen und
   Ablehnen, und Events mit ausstehender Anwesenheit stehen oben in der
@@ -453,6 +456,11 @@ Versionsüberschrift.
   etwas kleiner, die Ressourcen schrumpfen um rund ein Viertel.
 - Das gesonderte Test-System neben dem Betrieb ist abgeschafft: Jede
   Fassung der App, auch jeder Testbuild, spricht mit dem echten Betrieb.
+- Konfispruch, Bibelübersetzung, eigene Anträge und das Markieren gesehener
+  Abzeichen laufen für Konfis und Team über dieselbe Stelle im Server; die
+  Antworten bleiben unverändert.
+- Der Server meldet der Startseite des Teams die Tageszeit nach deutscher Zeit
+  statt nach seiner eigenen Uhr; die App begrüßt nach der Uhr des Geräts.
 
 ## [2.3.0] - 2026-10-02
 

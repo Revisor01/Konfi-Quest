@@ -10,12 +10,13 @@ const { setzeTeamerZusage } = require('../utils/bookingUtils');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
 const { addToEventChat, removeFromEventChat } = require('../utils/eventChat');
-const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { ladeKonfiHistorie, konfiBadgesAusKopie } = require('../utils/konfiHistorie');
-const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
-const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch, spruchStandLesen, spruchWahlMerken } = require('../utils/konfspruch');
-const { heuteBerlin, HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL } = require('../utils/zeitformat');
+const { behandleClientIdRace } = require('../utils/antragIdempotenz');
+const { ladeSpruchliste, ladeKonfspruch, beantworteKonfspruchSetzen, beantworteBibelUebersetzung } = require('../utils/konfspruch');
+const { stelleEigenenAntrag, nimmEigenenAntragZurueck } = require('../utils/eigeneAntraege');
+const { markiereAbzeichenGesehen } = require('../utils/abzeichenGesehen');
+const { HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL, stundeBerlin } = require('../utils/zeitformat');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
 const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
@@ -110,7 +111,6 @@ registriereArt('teamer_antrag_eingegangen', async (db, p, k) => {
     p.points
   ));
 });
-const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 const { ladeRolleInGemeinde, istMitgliedDerOrganisation } = require('../utils/orgMitglieder');
 
 module.exports = (db, rbacVerifier, roleHelpers) => {
@@ -512,13 +512,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // dieselbe Handlung, zwei Verben. In v2 ist das aufgeloest (POST, siehe
   // unten). Diese Route bleibt unveraendert, bis keine App im Store sie mehr
   // ruft (docs/api/ABRISS.md).
-  // Eine Quelle fuer beide Verben: die alte PUT-Route und die neue POST-Route
-  // machen exakt dasselbe UPDATE. Zweimal hingeschrieben liefen sie
-  // frueher oder spaeter auseinander.
-  const markiereAbzeichenGesehen = (userId, orgId) => db.query(
-    "UPDATE user_badges SET seen = true WHERE user_id = $1 AND organization_id = $2 AND seen = false",
-    [userId, orgId]
-  );
+  // Eine Quelle fuer beide Verben und fuer den Konfi-Weg:
+  // utils/abzeichenGesehen.js.
 
   router.put('/badges/mark-seen', rbacVerifier, requireTeamer, async (req, res) => {
     try {
@@ -526,7 +521,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(403).json({ error: 'Nur das Team kann Badges als gesehen markieren' });
       }
 
-      await markiereAbzeichenGesehen(req.user.id, req.user.organization_id);
+      await markiereAbzeichenGesehen(db, req.user.id, req.user.organization_id);
       res.json({ message: 'Badges als gesehen markiert' });
     } catch (err) {
       console.error('Error marking badges as seen:', err);
@@ -553,7 +548,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         return res.status(403).json({ error: 'Nur das Team kann Badges als gesehen markieren' });
       }
 
-      await markiereAbzeichenGesehen(req.user.id, req.user.organization_id);
+      await markiereAbzeichenGesehen(db, req.user.id, req.user.organization_id);
       res.json({ message: 'Badges als gesehen markiert' });
     } catch (err) {
       console.error('Error marking badges as seen:', err);
@@ -856,10 +851,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const orgId = req.user.organization_id;
 
       // 1. Greeting
-      const now = new Date();
+      // Stunde in Berliner Zeit: getHours() rechnete in der Zone des
+      // Prozesses (Produktion: UTC) und meldete um 1:30 Uhr Sommerzeit 23.
       const greeting = {
         display_name: req.user.display_name,
-        hour: now.getHours(),
+        hour: stundeBerlin(),
         // ADDITIV 01.10.2026: die Selbstbezeichnung fuer die Zeile unter dem
         // Gruss -- wie im Profil, sonst "Teamer:in" (App, rollenNamen.ts).
         role_title: req.user.role_title || null
@@ -1010,7 +1006,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       // eintragen. Bei abgeschalteter Karte wird gar nicht erst abgefragt.
       let konfspruch = null;
       if (config.show_konfispruch !== false) {
-        konfspruch = await loadKonfspruch(userId, orgId);
+        konfspruch = await ladeKonfspruch(db, userId, orgId);
       }
 
       // Wrapped-Verfuegbarkeit prüfen (Teamer: direkt auf wrapped_snapshots)
@@ -1067,53 +1063,10 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // damit ein bei der Beförderung mitgebrachter Spruch erhalten bleibt.
   // ====================================================================
 
-  // Gueltige Translation-Keys wie in routes/konfi.js (deskriptive Keys der
-  // Tabelle konfspruch_uebersetzungen, NICHT die Tageslosungs-Kuerzel).
-  const KONFSPRUCH_TRANSLATIONS = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
-
-  // Loest den gespeicherten Konfispruch eines Users auf (Listen-Wahl oder
-  // Freitext) — Rueckgabeform wie in GET /konfi/profile.
-  async function loadKonfspruch(userId, organizationId) {
-    const { rows: [kp] } = await db.query(
-      `SELECT konfspruch_id, konfspruch_freitext, konfspruch_freitext_referenz,
-              konfspruch_translation
-       FROM konfi_profiles WHERE user_id = $1`,
-      [userId]
-    );
-    if (!kp) return null;
-
-    if (kp.konfspruch_id) {
-      const spruchTranslation = kp.konfspruch_translation || 'luther2017';
-      const { rows: [spruch] } = await db.query(
-        `SELECT ks.id, ks.reference, ku.text
-         FROM konfsprueche ks
-         LEFT JOIN konfspruch_uebersetzungen ku
-           ON ku.spruch_id = ks.id AND ku.translation = $2
-         WHERE ks.id = $1 AND ks.is_active = true
-           AND (ks.organization_id IS NULL OR ks.organization_id = $3)`,
-        [kp.konfspruch_id, spruchTranslation, organizationId]
-      );
-      if (spruch) {
-        return {
-          source: 'liste',
-          id: spruch.id,
-          reference: spruch.reference,
-          text: spruch.text || '',
-          translation: kp.konfspruch_translation || null
-        };
-      }
-      return null;
-    }
-
-    if (kp.konfspruch_freitext) {
-      return {
-        source: 'freitext',
-        text: kp.konfspruch_freitext,
-        reference: kp.konfspruch_freitext_referenz
-      };
-    }
-    return null;
-  }
+  // Liste der Uebersetzungen, Aufloesung des gewaehlten Spruchs, Spruchliste
+  // und das Setzen stehen in utils/konfspruch.js -- eine Stelle fuer den
+  // Konfi- und den Team-Weg. Bis 09.10.2026 lagen hier eigene Kopien von
+  // KONFSPRUCH_TRANSLATIONS und loadKonfspruch, die den Import beschatteten.
 
   // GET /teamer/konfsprueche — kuratierte Liste für das Auswahl-Modal
   // (org-gefiltert, gleiche Aufbereitung wie GET /konfi/konfsprueche).
@@ -1122,38 +1075,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       return res.status(403).json({ error: 'Nur das Team kann die Spruchliste abrufen' });
     }
     try {
-      const orgId = req.user.organization_id;
-      const { rows } = await db.query(
-        `SELECT ks.id, ks.reference, ks.book, ks.chapter, ks.verse,
-                COALESCE(
-                  json_object_agg(ku.translation, ku.text) FILTER (WHERE ku.translation IS NOT NULL),
-                  '{}'::json
-                ) AS uebersetzungen
-         FROM konfsprueche ks
-         LEFT JOIN konfspruch_uebersetzungen ku ON ku.spruch_id = ks.id
-         WHERE ks.is_active = true
-           AND (ks.organization_id IS NULL OR ks.organization_id = $1)
-         GROUP BY ks.id, ks.reference, ks.book, ks.chapter, ks.verse, ks.sort_order
-         ORDER BY ks.sort_order, ks.id`,
-        [orgId]
-      );
-
-      const sprueche = rows.map((row) => {
-        const uebersetzungen = {};
-        for (const key of KONFSPRUCH_TRANSLATIONS) {
-          uebersetzungen[key] = (row.uebersetzungen && row.uebersetzungen[key]) || '';
-        }
-        return {
-          id: row.id,
-          reference: row.reference,
-          book: row.book,
-          chapter: row.chapter,
-          verse: row.verse,
-          uebersetzungen
-        };
-      });
-
-      res.json(sprueche);
+      res.json(await ladeSpruchliste(db, req.user.organization_id));
     } catch (err) {
       console.error('Database error in GET /teamer/konfsprueche:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
@@ -1162,100 +1084,13 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
   // PATCH /teamer/profile — eigenen Konfispruch setzen (Listen-Wahl ODER
   // Freitext, genau EINE Quelle aktiv). Anders als bei Konfis wird die
-  // konfi_profiles-Zeile per Upsert angelegt: direkt als Teamer:in angelegte
-  // Accounts haben noch keine.
+  // konfi_profiles-Zeile per Upsert angelegt (anlegen: true): direkt als
+  // Teamer:in angelegte Accounts haben noch keine.
   router.patch('/profile', rbacVerifier, requireTeamer, async (req, res) => {
     if (req.user.role_name !== 'teamer') {
       return res.status(403).json({ error: 'Nur das Team kann seinen Konfispruch setzen' });
     }
-    try {
-      const userId = req.user.id;
-      const orgId = req.user.organization_id;
-      const { konfspruch_id, translation, konfspruch_freitext, konfspruch_freitext_referenz } = req.body;
-
-      // Modus 1: Listen-Wahl
-      if (konfspruch_id !== undefined && konfspruch_id !== null) {
-        const spruchId = parseInt(konfspruch_id, 10);
-        if (Number.isNaN(spruchId)) {
-          return res.status(400).json({ error: 'Ungültige Spruch-ID' });
-        }
-        if (!KONFSPRUCH_TRANSLATIONS.includes(translation)) {
-          return res.status(400).json({
-            error: 'Ungültige Bibelübersetzung',
-            valid_translations: KONFSPRUCH_TRANSLATIONS
-          });
-        }
-        const { rows: [spruch] } = await db.query(
-          `SELECT id FROM konfsprueche
-           WHERE id = $1 AND is_active = true
-             AND (organization_id IS NULL OR organization_id = $2)`,
-          [spruchId, orgId]
-        );
-        if (!spruch) {
-          return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
-        }
-        const vorher = await spruchStandLesen(db, userId);
-        await db.query(
-          `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_id, konfspruch_translation)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (user_id) DO UPDATE
-           SET konfspruch_id = EXCLUDED.konfspruch_id,
-               konfspruch_translation = EXCLUDED.konfspruch_translation,
-               konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL`,
-          [userId, orgId, spruchId, translation]
-        );
-        // Personenunabhaengige Statistik (Migration 207).
-        await spruchWahlMerken(db, orgId, { quelle: 'vorschlag', spruchId, translation }, vorher);
-        return res.json({
-          success: true,
-          konfspruch: { source: 'liste', id: spruchId, translation }
-        });
-      }
-
-      // Modus 2: Freitext
-      if (konfspruch_freitext !== undefined && konfspruch_freitext !== null) {
-        const freitext = String(konfspruch_freitext).trim();
-        const referenz = konfspruch_freitext_referenz != null
-          ? String(konfspruch_freitext_referenz).trim()
-          : '';
-        if (!freitext) {
-          return res.status(400).json({ error: 'Der Spruchtext darf nicht leer sein' });
-        }
-        if (!referenz) {
-          return res.status(400).json({
-            error: 'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
-          });
-        }
-        if (referenz.length > 100) {
-          return res.status(400).json({ error: 'Die Stellenangabe darf höchstens 100 Zeichen lang sein' });
-        }
-        if (freitext.length > 1000) {
-          return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
-        }
-        const vorher = await spruchStandLesen(db, userId);
-        await db.query(
-          `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_freitext, konfspruch_freitext_referenz)
-           VALUES ($1, $2, $3, $4)
-           ON CONFLICT (user_id) DO UPDATE
-           SET konfspruch_freitext = EXCLUDED.konfspruch_freitext,
-               konfspruch_freitext_referenz = EXCLUDED.konfspruch_freitext_referenz,
-               konfspruch_id = NULL`,
-          [userId, orgId, freitext, referenz]
-        );
-        await spruchWahlMerken(db, orgId, { quelle: 'eigen', freitext, referenz }, vorher);
-        return res.json({
-          success: true,
-          konfspruch: { source: 'freitext', text: freitext, reference: referenz }
-        });
-      }
-
-      return res.status(400).json({
-        error: 'Bitte entweder einen Spruch aus der Liste (konfspruch_id + translation) oder einen eigenen Spruch (konfspruch_freitext + konfspruch_freitext_referenz) angeben'
-      });
-    } catch (err) {
-      console.error('Database error in PATCH /teamer/profile:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
+    return beantworteKonfspruchSetzen(db, req, res, { anlegen: true, ort: '/teamer/profile' });
   });
 
   // ====================================================================
@@ -1272,20 +1107,9 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
   // PUT /teamer/bible-translation — Bibeluebersetzung (Tageslosung) des Teamers setzen.
   router.put('/bible-translation', rbacVerifier, requireTeamer, async (req, res) => {
-    try {
-      const { translation } = req.body;
-      // Liste in utils/konfspruch.js — eine Quelle fuer den Konfi- und den
-      // Teamer-Weg. Vorher lag sie doppelt im Code und musste bei jeder
-      // Aenderung an BEIDEN Stellen nachgezogen werden (Befund M4).
-      if (!BIBEL_UEBERSETZUNGEN.includes(translation)) {
-        return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: BIBEL_UEBERSETZUNGEN });
-      }
-      await db.query('UPDATE users SET bible_translation = $1 WHERE id = $2', [translation, req.user.id]);
-      res.json({ success: true, message: 'Bibelübersetzung erfolgreich aktualisiert', translation });
-    } catch (err) {
-      console.error('Database error in PUT /teamer/bible-translation:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
+    // Kern in utils/konfspruch.js -- dieselbe Stelle wie
+    // PUT /konfi/bible-translation (Liste: Befund M4).
+    return beantworteBibelUebersetzung(db, req, res, '/teamer/bible-translation');
   });
 
   // ====================================================================
@@ -1465,49 +1289,21 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   router.post('/requests', rbacVerifier, requireTeamer, validateCreateTeamerRequest, async (req, res) => {
     try {
       const userId = req.user.id;
-      const { activity_id, description, photo_filename, requested_date, client_id } = req.body;
 
-      // Idempotency (Vorab-Check; den Race-Fall faengt der 23505-Catch unten ab)
-      const vorhanderAntrag = await findeAntragZuClientId(db, client_id);
-      if (vorhanderAntrag) return res.status(200).json(vorhanderAntrag);
-
-      // heuteBerlin() statt toISOString(): Letzteres liefert IMMER den UTC-Tag.
-      // Zwischen 00:00 und 02:00 Berliner Zeit trug ein Antrag ohne Datum sonst
-      // den Vortag -- und landete damit im falschen Tag der Punktehistorie.
-      const date = requested_date || heuteBerlin();
-
-      // Activity muss existieren und target_role='teamer' sein
-      const { rows: [activity] } = await db.query(
-        "SELECT name, points FROM activities WHERE id = $1 AND organization_id = $2 AND target_role = 'teamer'",
-        [activity_id, req.user.organization_id]
-      );
-      if (!activity) {
+      // Kern in utils/eigeneAntraege.js -- dieselbe Stelle wie
+      // POST /konfi/requests; hier nur Aktivitaeten fuer das Team.
+      const ergebnis = await stelleEigenenAntrag(db, {
+        userId,
+        organizationId: req.user.organization_id,
+        zielrolle: 'teamer',
+        body: req.body,
+        ort: 'POST /teamer/requests',
+      });
+      if (ergebnis.vorhanden) return res.status(200).json(ergebnis.vorhanden);
+      if (ergebnis.nichtGefunden) {
         return res.status(404).json({ error: 'Aktivität nicht gefunden' });
       }
-
-      const { rows: [newRequest] } = await db.query(
-        `INSERT INTO activity_requests (user_id, activity_id, requested_date, comment, photo_filename, status, organization_id, client_id)
-         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7)
-         RETURNING id`,
-        [userId, activity_id, date, description, photo_filename, req.user.organization_id, client_id || null]
-      );
-
-      // Notification an Teamer
-      try {
-        await db.query(
-          "INSERT INTO notifications (user_id, title, message, type, data, organization_id) VALUES ($1, $2, $3, $4, $5, $6)",
-          [
-            userId,
-            'Antrag eingereicht',
-            `Dein Antrag für "${activity.name}" wurde eingereicht und wird geprüft.`,
-            'activity_request_submitted',
-            JSON.stringify({ request_id: newRequest.id, activity_name: activity.name, points: activity.points }),
-            req.user.organization_id
-          ]
-        );
-      } catch (notifErr) {
-        console.error('Notification error (teamer request):', notifErr);
-      }
+      const { antrag: newRequest, activity } = ergebnis;
 
       res.status(201).json({ id: newRequest.id, message: 'Antrag eingereicht' });
 
@@ -1542,31 +1338,16 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
   // DELETE /teamer/requests/:id — eigenen Antrag löschen
   router.delete('/requests/:id', rbacVerifier, requireTeamer, [param('id').isInt({ min: 1 }), handleValidationErrors], async (req, res) => {
     try {
-      const userId = req.user.id;
-      const requestId = req.params.id;
-
-      // Nur pending eigene Anträge darf der Teamer selbst löschen
-      const { rows: [existing] } = await db.query(
-        "SELECT id, status, photo_filename FROM activity_requests WHERE id = $1 AND user_id = $2 AND organization_id = $3",
-        [requestId, userId, req.user.organization_id]
-      );
-      if (!existing) return res.status(404).json({ error: 'Antrag nicht gefunden' });
-      if (existing.status !== 'pending') {
+      // Kern in utils/eigeneAntraege.js -- dieselbe Stelle wie
+      // DELETE /konfi/requests/:id; die Texte bleiben je Weg.
+      const ergebnis = await nimmEigenenAntragZurueck(db, {
+        requestId: req.params.id,
+        userId: req.user.id,
+        organizationId: req.user.organization_id,
+      });
+      if (ergebnis === 'nicht_gefunden') return res.status(404).json({ error: 'Antrag nicht gefunden' });
+      if (ergebnis === 'nicht_wartend') {
         return res.status(400).json({ error: 'Nur ausstehende Anträge können gelöscht werden' });
-      }
-
-      await db.query('DELETE FROM activity_requests WHERE id = $1', [requestId]);
-      // Postfach (25.09.2026): "Antrag eingereicht" bei der Teamer:in und
-      // "Neuer Antrag eingegangen" bei der Leitung gehen mit dem Antrag --
-      // sonst fuehrte die Mitteilung in eine Liste ohne ihn
-      // (utils/postfachAufraeumen.js).
-      await loescheMitteilungenZuAntraegen(db, [requestId]);
-
-      // Nachweisfoto vom Dateisystem entfernen — NACH dem DB-Delete und nicht
-      // blockierend, wie im Konfi-Pfad (konfi.js). Vorher blieb die Datei als
-      // Waise liegen (Befund M5, 26.08.2026).
-      if (existing.photo_filename) {
-        await deletePhotoFile(existing.photo_filename);
       }
 
       res.json({ message: 'Antrag gelöscht' });

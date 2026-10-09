@@ -431,3 +431,83 @@ describe('Betrieb: schmal bleibt die Darstellung der App', () => {
     expect(screen.getByText('auf /konfi/events/:id')).toBeInTheDocument();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Hintergrund (09.10.2026, Betrieb BF-10 Rest): Aufgaben des Servers mit letztem
+// Lauf, Dauer und Ergebnis; Dauer des Push-Versands je Weg.
+const pushWeg = (anzahl: number, empfaenger: number, mittel: number | null, max: number) => ({
+  anzahl, fehler: 0, empfaenger, maxDauerMs: max, mittelDauerMs: mittel, letzteDauerMs: max, zuletzt: anzahl ? vorMin(5) : null,
+});
+const HINTERGRUND = {
+  jobs: [
+    {
+      name: 'auto_loeschung', bezeichnung: 'Automatisches Löschen', takt: 'täglich 2 Uhr', letzterStart: vorMin(120), letztesEnde: vorMin(120),
+      dauerMs: 1500, ergebnis: 'fehler', fehler: 'DB weg', anzahl: 3, fehlerAnzahl: 1, maxDauerMs: 2500, mittelDauerMs: 900,
+    },
+    {
+      name: 'zaehler', bezeichnung: 'Zähler am App-Symbol', takt: 'alle 5 Minuten', letzterStart: vorMin(3), letztesEnde: vorMin(3),
+      dauerMs: 52, ergebnis: 'ok', fehler: null, anzahl: 40, fehlerAnzahl: 0, maxDauerMs: 300, mittelDauerMs: 60,
+    },
+  ],
+  pushVersand: {
+    jeWeg: { einzeln: pushWeg(12, 12, 80, 400), viele: pushWeg(2, 150, 1200, 1800), chat: pushWeg(0, 0, null, 0) },
+    langsamster: { weg: 'viele', art: 'event_cancelled', empfaenger: 120, dauerMs: 1800, zeit: vorMin(60) },
+  },
+};
+
+describe('Betrieb: Hintergrund', () => {
+  it('Web, Ueberblick: Aufgaben mit letztem Lauf, Dauer, Ergebnis und Fehlertext; Push-Versand je Weg', async () => {
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, hintergrund: HINTERGRUND } : { snapshots: HISTORIE } }));
+    await oeffnen();
+    expect(spaltenkoepfe('Aufgaben im Hintergrund')).toEqual(['Aufgabe', 'Zuletzt', 'Dauer', 'Ergebnis', 'Läufe', 'Längster']);
+    const z = zeilen('Aufgaben im Hintergrund');
+    expect(z).toHaveLength(2);
+    expect(zelle(z[0], 0)).toHaveTextContent('Automatisches Löschen · täglich 2 UhrDB weg');
+    expect(zelle(z[0], 1)).toHaveTextContent('vor 2 Std');
+    expect(zelle(z[0], 2)).toHaveTextContent('1,5 s');
+    expect(zelle(z[0], 3)).toHaveTextContent('Fehler');
+    expect(zelle(z[0], 4)).toHaveTextContent('3 (1 Fehler)');
+    expect(zelle(z[0], 5)).toHaveTextContent('2,5 s');
+    expect(zelle(z[1], 0)).toHaveTextContent('Zähler am App-Symbol · alle 5 Minuten');
+    expect(zelle(z[1], 2)).toHaveTextContent('52 ms');
+    expect(zelle(z[1], 3)).toHaveTextContent('ok');
+    expect(zelle(z[1], 4)).toHaveTextContent('40');
+
+    expect(spaltenkoepfe('Push-Versand')).toEqual(['Versand', 'Versände', 'Empfänger:innen', 'Mittel', 'Längster']);
+    const p = zeilen('Push-Versand');
+    expect(p.map((r) => within(r).getAllByRole('cell').map((c) => c.textContent))).toEqual([
+      ['An eine Person', '12', '12', '80 ms', '400 ms'],
+      ['An viele', '2', '150', '1,2 s', '1,8 s'],
+      ['Chat-Nachricht', '0', '0', '–', '–'],
+    ]);
+    expect(screen.getByText('Längster Versand: 1,8 s an 120 Empfänger:innen, vor 1 Std.')).toBeInTheDocument();
+  });
+
+  it('Web: ohne Lauf steht "Noch kein Lauf"; ohne Feld (alter Server) fehlt die Karte', async () => {
+    const leer = { jobs: [], pushVersand: { jeWeg: { einzeln: pushWeg(0, 0, null, 0), viele: pushWeg(0, 0, null, 0), chat: pushWeg(0, 0, null, 0) }, langsamster: null } };
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, hintergrund: leer } : { snapshots: [] } }));
+    const { unmount } = await oeffnen();
+    expect(screen.getByText('Seit dem letzten Neustart hat noch keine Aufgabe im Hintergrund gearbeitet.')).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: 'Aufgaben im Hintergrund' })).toBeNull();
+    expect(screen.queryByText(/^Längster Versand/)).toBeNull();
+    unmount();
+
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? SNAP : { snapshots: [] } }));
+    await oeffnen();
+    expect(screen.queryByRole('region', { name: 'Hintergrund' })).toBeNull();
+    expect(screen.queryByRole('table', { name: 'Push-Versand' })).toBeNull();
+  });
+
+  it('App: die Karte "Hintergrund" im Ueberblick mit Ergebnis, Dauer, Fehlertext und Push-Versand', async () => {
+    h.breit = false;
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, hintergrund: HINTERGRUND } : { snapshots: HISTORIE } }));
+    await oeffnen();
+    expect(screen.getByText('Automatisches Löschen')).toBeInTheDocument();
+    expect(screen.getByText('DB weg')).toBeInTheDocument();
+    expect(screen.getByText('3 Läufe, 1 mit Fehler')).toBeInTheDocument();
+    expect(screen.getByText('40 Läufe')).toBeInTheDocument();
+    expect(screen.getByText('52 ms')).toBeInTheDocument();
+    expect(screen.getByText('12× · Mittel 80 ms · längster 400 ms')).toBeInTheDocument();
+    expect(screen.getByText('noch keiner')).toBeInTheDocument();
+  });
+});
