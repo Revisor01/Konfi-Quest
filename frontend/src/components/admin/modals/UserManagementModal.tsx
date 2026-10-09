@@ -69,6 +69,21 @@ const alleRechte = (z?: FreigabeRechte): Rechte => ({
   darf_challenges_freigeben: z?.darf_challenges_freigeben !== false,
 });
 
+// Welche Rechte an der Zuweisung einer Rolle einstellbar sind (dieselbe Regel
+// wie backend/utils/freigabeRechte.js): Admins alle drei; Teamer:innen nur
+// "Challenge-Beiträge freigeben" -- Anträge entscheiden und Verbuchen dürfen
+// sie ohnehin nicht (Simon, 09.10.2026). Andere Rollen: keine.
+const rechteFuerRolle = (rolle?: string): (keyof FreigabeRechte)[] => {
+  if (rolle === 'admin') return FREIGABE_RECHTE.map((r) => r.feld);
+  if (rolle === 'teamer') return ['darf_challenges_freigeben'];
+  return [];
+};
+
+// Nur die einstellbaren Felder -- die übrigen gehen nicht mit, der Server
+// behält dann ihren bisherigen Wert.
+const nurFelder = (rechte: Rechte, felder: (keyof FreigabeRechte)[]): FreigabeRechte =>
+  Object.fromEntries(felder.map((f) => [f, rechte[f]])) as FreigabeRechte;
+
 interface UserManagementModalProps {
   userId?: number | null;
   // Rolle fest vorgeben (Rollenname, z.B. 'teamer'). Dann entfaellt die
@@ -150,13 +165,14 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
   const isEditMode = !!userId;
 
-  // Die Rechte vergibt nur die Gemeindeleitung, und sie gelten nur fuer die
-  // Rolle Admin (Teamer:innen behalten ihr Verhalten, die Gemeindeleitung hat
+  // Die Rechte vergibt nur die Gemeindeleitung, an Zuweisungen der Rollen
+  // Admin (alle drei) und Teamer:in (nur Challenge-Beiträge; die Gemeindeleitung hat
   // sie immer). Das Backend weist jeden anderen, der die Felder mitschickt,
   // mit 403 ab -- deshalb haengt auch das Mitschicken an dieser Bedingung.
   const gewaehlteRolle = roles.find((r) => r.id === formData.role_id)?.name
     ?? (user && user.role_id === formData.role_id ? user.role_name : undefined);
-  const rechteVergeben = currentUser?.role_name === 'org_admin' && gewaehlteRolle === 'admin';
+  const rechteFelder = currentUser?.role_name === 'org_admin' ? rechteFuerRolle(gewaehlteRolle) : [];
+  const rechteVergeben = rechteFelder.length > 0;
 
   // Farbwelt des Dialogs: Wird er als "Neue Teamer:in" geoeffnet, nutzt er die
   // Teamer-Farbe (--app-color-teamer) statt der allgemeinen Nutzer-Farbe —
@@ -352,7 +368,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
             can_edit: true,
             // Nur die Gemeindeleitung bei der Rolle Admin; sonst fehlen die
             // Felder, und der Server behaelt die bisherigen Werte.
-            ...(rechteVergeben ? alleRechte(jahrgangRechte[parseInt(jahrgangId)]) : {})
+            ...(rechteVergeben ? nurFelder(alleRechte(jahrgangRechte[parseInt(jahrgangId)]), rechteFelder) : {})
           }));
 
         if (userIdForAssignments) {
@@ -689,7 +705,7 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     {rechteVergeben && isAssigned && (
                       <div role="group" aria-label={`Rechte für ${jahrgang.name}`}
                         style={{ padding: '0 var(--app-abstand-basis)', marginBottom: index < jahrgaenge.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
-                        {FREIGABE_RECHTE.map(({ feld, text }, i) => (
+                        {FREIGABE_RECHTE.filter(({ feld }) => rechteFelder.includes(feld)).map(({ feld, text }, i) => (
                           <div key={feld} style={{
                             display: 'flex',
                             alignItems: 'center',

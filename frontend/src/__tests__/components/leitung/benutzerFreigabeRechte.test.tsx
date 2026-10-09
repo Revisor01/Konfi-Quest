@@ -1,9 +1,11 @@
 // "Darf freigeben" im Benutzerfenster (09.10.2026, docs/planung/darf-freigeben.md):
 // Je zugewiesenem Jahrgang drei Rechte -- Anträge entscheiden, Events
 // verbuchen, Challenge-Beiträge freigeben. Vergeben darf sie NUR die
-// Gemeindeleitung, und nur an Personen mit der Rolle Admin (Leitung); das
-// Backend weist jeden anderen, der die Felder mitschickt, mit 403 ab. Deshalb
-// hängen Schalter UND Mitschicken an derselben Bedingung.
+// Gemeindeleitung: an eine Leitung (Rolle Admin) alle drei, an eine
+// Teamer:in seit 09.10.2026 nur "Challenge-Beiträge freigeben" (die beiden
+// anderen Handlungen dürfen Teamer:innen gar nicht). Das Backend weist jeden
+// anderen, der die Felder mitschickt, mit 403 ab. Deshalb hängen Schalter
+// UND Mitschicken an derselben Bedingung.
 //
 // Dasselbe Fenster nutzt die Web-Fassung (AdminUsersPage öffnet
 // UserManagementModal), deshalb gilt der Test für App und Web.
@@ -123,15 +125,45 @@ describe('ERLAUBT: die Gemeindeleitung vergibt die Rechte an eine Leitung', () =
   it('wer beim Bearbeiten zur Leitung gemacht wird, bekommt die Schalter sofort', async () => {
     h.person = { ...leitungsPerson([{ id: 11, name: '2026/27', can_view: true, can_edit: true }]), role_id: 3, role_name: 'teamer' };
     await oeffne();
-    expect(alleSchalter()).toHaveLength(0);
+    expect(alleSchalter()).toHaveLength(1);
     fireEvent.click(screen.getByText('Leitung'));
     expect(alleSchalter()).toHaveLength(3);
   });
 });
 
+describe('ERLAUBT: die Gemeindeleitung vergibt an eine Teamer:in nur "Challenge-Beiträge freigeben"', () => {
+  const teamerPerson = (zuweisungen: Record<string, unknown>[]) => ({ ...leitungsPerson(zuweisungen), role_id: 3, role_name: 'teamer' });
+
+  it('je zugewiesenem Jahrgang genau dieser eine Schalter, vorbelegt aus der Zuweisung; dazu der Hinweis', async () => {
+    h.person = teamerPerson([{ id: 11, name: '2026/27', can_view: true, can_edit: false, darf_challenges_freigeben: false }]);
+    await oeffne();
+    expect(screen.getByText(HINWEIS)).toBeInTheDocument();
+    expect(schalter('Challenge-Beiträge freigeben', '2026/27')!.checked).toBe(false);
+    expect(schalter('Anträge entscheiden', '2026/27')).toBeNull();
+    expect(schalter('Events verbuchen', '2026/27')).toBeNull();
+    expect(alleSchalter()).toHaveLength(1);
+  });
+
+  it('gespeichert wird nur dieses Feld -- die beiden anderen fehlen, der Server behält sie', async () => {
+    h.person = teamerPerson([{ id: 11, name: '2026/27', can_view: true, can_edit: false }]);
+    await oeffne();
+    expect(schalter('Challenge-Beiträge freigeben', '2026/27')!.checked).toBe(true);
+    fireEvent.click(schalter('Challenge-Beiträge freigeben', '2026/27')!);
+    fireEvent.click(jahrgangKnopf('2027/28'));
+    const body = await speichern();
+    expect(body).toEqual({
+      jahrgang_assignments: [
+        { jahrgang_id: 11, can_view: true, can_edit: true, darf_challenges_freigeben: false },
+        { jahrgang_id: 12, can_view: true, can_edit: true, darf_challenges_freigeben: true },
+      ],
+    });
+  });
+});
+
 describe('VERBOTEN: keine Schalter und keine Felder im Speichern', () => {
-  it('Gemeindeleitung bearbeitet eine Teamer:in: keine Schalter, die Zuweisung ohne die Felder', async () => {
-    h.person = { ...leitungsPerson([{ id: 11, name: '2026/27', can_view: true, can_edit: true }]), role_id: 3, role_name: 'teamer' };
+  it('eine Leitung (admin) öffnet eine Teamer:in: keine Schalter, und die Felder gehen NICHT mit (sonst 403)', async () => {
+    h.user = konto('admin', [11, 12]);
+    h.person = { ...leitungsPerson([{ id: 11, name: '2026/27', can_view: true, can_edit: true, darf_challenges_freigeben: false }]), role_id: 3, role_name: 'teamer' };
     await oeffne();
     expect(alleSchalter()).toHaveLength(0);
     expect(screen.queryByText(HINWEIS)).toBeNull();

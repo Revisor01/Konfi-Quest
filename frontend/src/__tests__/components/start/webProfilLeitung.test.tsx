@@ -183,8 +183,8 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     expect(knopfInZeile('Kennzahlen', 'Auswählen')).toBeInTheDocument();
   });
 
-  it('ohne Rolle mit Kennzahlen (Teamer:in im Baum der Leitung): keine Zeile, keine Anfrage', async () => {
-    h.user = { ...LEITUNG, role_name: 'teamer' };
+  it('ohne Rolle mit Kennzahlen (Konfi-Rolle im Baum der Leitung): keine Zeile, keine Anfrage', async () => {
+    h.user = { ...LEITUNG, role_name: 'konfi' };
     await zeige();
     expect(screen.queryByRole('button', { name: 'Kennzahlen: Auswählen' })).toBeNull();
     expect(h.apiGet).not.toHaveBeenCalledWith('/notifications/kennzahlen');

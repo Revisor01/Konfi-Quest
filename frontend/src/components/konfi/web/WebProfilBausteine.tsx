@@ -141,10 +141,12 @@ export const WebPushZeile: React.FC<WebPushZeileProps & { variante: 'users' | 't
 };
 
 /**
- * Kennzahlen der Leitung: dasselbe Fenster wie in der App (KennzahlenModal),
- * als Zeile der Einstellungen. Die Seite bindet sie nur für admin/org_admin ein.
+ * Kennzahlen: dasselbe Fenster wie in der App (KennzahlenModal), als Zeile
+ * der Einstellungen. Die Seite bindet sie nur ein, wo hatKennzahlenWahl gilt
+ * (Leitung; Team nur für Challenge-Beiträge).
  */
 export const WebKennzahlenZeile: React.FC<WebPushZeileProps> = ({ presentingElement }) => {
+  const { user } = useApp();
   const [kennzahlen, setKennzahlen] = useState<Kennzahlen | null>(null);
 
   useEffect(() => {
@@ -164,7 +166,7 @@ export const WebKennzahlenZeile: React.FC<WebPushZeileProps> = ({ presentingElem
     <WebEinstellung
       icon={ICON_PULS}
       titel="Kennzahlen"
-      wert={kennzahlenZusammenfassung(kennzahlen)}
+      wert={kennzahlenZusammenfassung(kennzahlen, user?.role_name ?? null)}
       knopf="Auswählen"
       onClick={() => zeige({ presentingElement: presentingElement?.() ?? undefined })}
     />

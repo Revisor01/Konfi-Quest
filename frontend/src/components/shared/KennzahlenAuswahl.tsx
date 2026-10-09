@@ -36,8 +36,9 @@ import { tastaturKlick } from '../../utils/tastatur';
  * neu geholt (BadgeContext.refreshAllCounts) -- keine zweite Rechnung in der
  * App, die mit dem Server auseinanderlaufen könnte.
  *
- * Nur für die Rollen admin und org_admin; Teamer:innen und Konfis haben diese
- * Zahlen nicht (der Server antwortet ihnen mit 403).
+ * Für admin und org_admin alle drei Bereiche; für Teamer:innen nur
+ * „Challenge-Beiträge" (seit 09.10.2026 -- die anderen beiden Zahlen haben
+ * sie nicht). Konfis haben keine Wahl (der Server antwortet ihnen mit 403).
  */
 
 export interface Kennzahlen {
@@ -52,9 +53,16 @@ export const KENNZAHL_BEREICHE: { id: keyof Kennzahlen; name: string; beschreibu
   { id: 'challenges', name: 'Challenge-Beiträge', beschreibung: 'Neue Beiträge zum Freigeben' },
 ];
 
-/** Wer die Wahl hat -- dieselbe Regel wie im Backend (utils/leitungKennzahlen.js). */
+/** Die Bereiche, die eine Rolle wählen kann -- dieselbe Regel wie im Backend (utils/leitungKennzahlen.js). */
+export const kennzahlBereicheFuer = (rolle?: string | null): typeof KENNZAHL_BEREICHE => {
+  if (rolle === 'admin' || rolle === 'org_admin') return KENNZAHL_BEREICHE;
+  if (rolle === 'teamer') return KENNZAHL_BEREICHE.filter((b) => b.id === 'challenges');
+  return [];
+};
+
+/** Wer die Wahl hat. */
 export const hatKennzahlenWahl = (rolle?: string | null): boolean =>
-  rolle === 'admin' || rolle === 'org_admin';
+  kennzahlBereicheFuer(rolle).length > 0;
 
 // Vorgabe: alles an. Fehlt ein Feld, gilt es als an.
 const ausAntwort = (d: Partial<Kennzahlen> | undefined): Kennzahlen => ({
@@ -68,13 +76,17 @@ export const ladeKennzahlen = async (): Promise<Kennzahlen> => {
   return ausAntwort(res.data);
 };
 
-/** Kurzfassung für die Meta-Zeile des Eintrags. */
-export const kennzahlenZusammenfassung = (k: Kennzahlen | null): string => {
+/** Kurzfassung für die Meta-Zeile des Eintrags (ohne Rolle: die der Leitung). */
+export const kennzahlenZusammenfassung = (k: Kennzahlen | null, rolle: string | null = 'admin'): string => {
   if (!k) return 'Welche Bereiche eine rote Zahl bekommen';
-  const an = KENNZAHL_BEREICHE.filter((b) => k[b.id]).length;
-  if (an === KENNZAHL_BEREICHE.length) return 'Alle Bereiche mit roter Zahl';
+  const bereiche = kennzahlBereicheFuer(rolle);
+  if (bereiche.length === 1) {
+    return k[bereiche[0].id] ? 'Challenge-Beiträge mit roter Zahl' : 'Keine rote Zahl für Challenge-Beiträge';
+  }
+  const an = bereiche.filter((b) => k[b.id]).length;
+  if (an === bereiche.length) return 'Alle Bereiche mit roter Zahl';
   if (an === 0) return 'Keine roten Zahlen für Anträge, Events und Challenges';
-  return `${an} von ${KENNZAHL_BEREICHE.length} Bereichen mit roter Zahl`;
+  return `${an} von ${bereiche.length} Bereichen mit roter Zahl`;
 };
 
 interface ModalProps {
@@ -85,7 +97,10 @@ interface ModalProps {
 
 /** Das Fenster: drei Schalter, jeder Wechsel wird sofort gespeichert (PUT). */
 export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) => {
-  const { setError } = useApp();
+  const { setError, user } = useApp();
+  // Teamer:innen sehen nur ihren Bereich und ihre Farbe.
+  const bereiche = kennzahlBereicheFuer(user?.role_name);
+  const farbe = user?.role_name === 'teamer' ? 'teamer' : 'users';
   const { refreshAllCounts } = useBadge();
   const [kennzahlen, setKennzahlen] = useState<Kennzahlen | null>(null);
   const [laedt, setLaedt] = useState(true);
@@ -135,7 +150,7 @@ export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) 
       <IonContent className="app-gradient-background">
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
-            <div className="app-section-icon app-section-icon--users">
+            <div className={`app-section-icon app-section-icon--${farbe}`}>
               <IonIcon icon={ICON_PULS} />
             </div>
             <IonLabel>Kennzahlen</IonLabel>
@@ -148,10 +163,10 @@ export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) 
                 </div>
               ) : (
                 <IonList lines="none" style={{ background: 'transparent' }}>
-                  {KENNZAHL_BEREICHE.map((b, index) => (
+                  {bereiche.map((b, index) => (
                     <IonItem
                       key={b.id}
-                      lines={index < KENNZAHL_BEREICHE.length - 1 ? 'full' : 'none'}
+                      lines={index < bereiche.length - 1 ? 'full' : 'none'}
                       className="app-dashboard-settings-item"
                     >
                       <IonLabel>
@@ -160,7 +175,7 @@ export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) 
                       </IonLabel>
                       <IonToggle
                         slot="end"
-                        className="app-toggle--users"
+                        className={`app-toggle--${farbe}`}
                         aria-label={b.name}
                         checked={kennzahlen[b.id]}
                         disabled={speichert}
@@ -191,9 +206,12 @@ interface EintragProps {
 
 /**
  * Der Eintrag in den Konto-Einstellungen der App (Mehr › Konto), direkt unter
- * „Benachrichtigungen". Die Seite bindet ihn nur für admin/org_admin ein.
+ * „Benachrichtigungen". Die Seite bindet ihn nur ein, wo hatKennzahlenWahl
+ * gilt (Leitung und Team).
  */
 const KennzahlenEintrag: React.FC<EintragProps> = ({ presentingRef }) => {
+  const { user } = useApp();
+  const farbe = user?.role_name === 'teamer' ? 'teamer' : 'users';
   const [kennzahlen, setKennzahlen] = useState<Kennzahlen | null>(null);
 
   useEffect(() => {
@@ -211,19 +229,19 @@ const KennzahlenEintrag: React.FC<EintragProps> = ({ presentingRef }) => {
 
   return (
     <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
-      className="app-list-item app-list-item--users"
+      className={`app-list-item app-list-item--${farbe}`}
       style={{ width: '100%', cursor: 'pointer' }}
       onClick={() => zeigeModal({ presentingElement: presentingRef?.current ?? undefined })}
     >
       <div className="app-list-item__row">
         <div className="app-list-item__main">
-          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--users">
+          <div className={`app-icon-circle app-icon-circle--lg app-icon-circle--${farbe}`}>
             <IonIcon icon={ICON_PULS} />
           </div>
           <div className="app-list-item__content">
             <div className="app-list-item__title">Kennzahlen</div>
             <div className="app-list-item__meta">
-              <span className="app-list-item__meta-item">{kennzahlenZusammenfassung(kennzahlen)}</span>
+              <span className="app-list-item__meta-item">{kennzahlenZusammenfassung(kennzahlen, user?.role_name ?? null)}</span>
             </div>
           </div>
         </div>
