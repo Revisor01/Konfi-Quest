@@ -414,6 +414,8 @@ Versionsüberschrift.
   Gemeinde.
 - Wird einer Person eine Gemeinde entzogen, zeigt die App sofort Rolle und
   Namen der Gemeinde, in die sie zurückwechselt.
+- In den Terminlisten stehen die Kategorien eines Termins ohne doppelte
+  Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
 
 ### Sonstiges
 - Reiter, Filter und Leertexte jeder Seite stehen für App und Browser an
@@ -461,6 +463,8 @@ Versionsüberschrift.
   Antworten bleiben unverändert.
 - Der Server meldet der Startseite des Teams die Tageszeit nach deutscher Zeit
   statt nach seiner eigenen Uhr; die App begrüßt nach der Uhr des Geräts.
+- Weitere automatische Prüfungen testen, was die App tut, statt ihren
+  Quelltext zu lesen; jede Hilfsfunktion hat einen eigenen Test.
 
 ## [2.3.0] - 2026-10-02
 

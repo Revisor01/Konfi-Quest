@@ -14,8 +14,7 @@ import { resolve } from 'path';
 //
 // Geprueft wird an der Quelldatei: Die Farbe steht als Prop im JSX eines
 // Modals, das Kontexte, Router und einen geladenen Challenge-Datensatz
-// braucht. Es zu rendern fuehrte mehr Annahmen ein, als der Test absichert --
-// dieselbe Begruendung wie in eingereichtBadgeGleich.test.ts.
+// braucht. Es zu rendern fuehrte mehr Annahmen ein, als der Test absichert.
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 

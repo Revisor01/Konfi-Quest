@@ -115,6 +115,7 @@ const { baueBadgeAntwortV2 } = require('../utils/badgeAntwortV2');
 const { KONFI_BADGE_EVENT_CONDITION } = require('../utils/badgeEventRule');
 // Anmeldestatus und Zeitfenster: eine Rechnung fuer Leitungs- und Konfi-Sicht.
 const { anmeldeStatusSql, kapazitaetSql, ladeZeitfenster } = require('../utils/terminAnmeldeStatus');
+const { paareSql, idNamePaare } = require('../utils/idNamePaare');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
@@ -1163,6 +1164,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
                END as max_participants,
                cats.category_ids,
                cats.category_names,
+               cats.kategorien_paare,
                event_chat.id as chat_room_id,
                ${anmeldeStatusSql({
                  kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
@@ -1260,7 +1262,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         ) bstats ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-                 STRING_AGG(DISTINCT c.name, ', ') as category_names
+                 STRING_AGG(DISTINCT c.name, ', ') as category_names,
+                 ${paareSql('c')} as kategorien_paare
           FROM event_categories ec
           JOIN categories c ON ec.category_id = c.id
           WHERE ec.event_id = e.id
@@ -1317,18 +1320,11 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const { rows } = await db.query(query, [req.user.organization_id, konfiId, jahrgangId]);
       
       // Transform the data to include categories arrays
-      const eventsWithRelations = rows.map(row => {
-        const categories = [];
-        if (row.category_ids) {
-          const ids = row.category_ids.split(',');
-          const names = row.category_names.split(',');
-          for (let i = 0; i < ids.length; i++) {
-            categories.push({
-              id: parseInt(ids[i], 10),
-              name: names[i]
-            });
-          }
-        }
+      const eventsWithRelations = rows.map(zeile => {
+        // Paare aus der Abfrage (utils/idNamePaare.js, 09.10.2026); die
+        // Hilfsspalte geht nicht mit hinaus.
+        const { kategorien_paare: kategorienPaare, ...row } = zeile;
+        const categories = idNamePaare(kategorienPaare);
         
         // qr_token MUSS raus, bevor die Zeile den Server verlaesst.
         // Die Abfrage holt `SELECT e.*`, damit lag der Check-in-Token jedes

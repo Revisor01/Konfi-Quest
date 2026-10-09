@@ -10,6 +10,7 @@ const { buchungszahlenJeTerminSql } = require('../../utils/buchungszahlen');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTermin, darfTerminVerbuchen } = require('../../utils/terminLeitungSicht');
 const { wartelistenRangSql } = require('../../utils/bookingUtils');
+const { paareSql, idNamePaare } = require('../../utils/idNamePaare');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
   const router = express.Router();
@@ -62,8 +63,10 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 e.point_type,
                 cats.category_ids,
                 cats.category_names,
+                cats.kategorien_paare,
                 jgs.jahrgang_ids,
                 jgs.jahrgang_names,
+                jgs.jahrgaenge_paare,
                 event_chat.id as chat_room_id,
                 ${anmeldeStatusSql({
                   kapazitaet: kapazitaetSql('timeslot_capacity.total_capacity'),
@@ -195,14 +198,16 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         ) absage_abm ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT c.id::text, ',') as category_ids,
-                 STRING_AGG(DISTINCT c.name, ', ') as category_names
+                 STRING_AGG(DISTINCT c.name, ', ') as category_names,
+                 ${paareSql('c')} as kategorien_paare
           FROM event_categories ec
           JOIN categories c ON ec.category_id = c.id
           WHERE ec.event_id = e.id
         ) cats ON true
         LEFT JOIN LATERAL (
           SELECT STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
-                 STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names
+                 STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names,
+                 ${paareSql('j')} as jahrgaenge_paare
           FROM event_jahrgang_assignments eja
           JOIN jahrgaenge j ON eja.jahrgang_id = j.id
           WHERE eja.event_id = e.id
@@ -303,30 +308,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       }
       
       // Transform the data to include categories and jahrgaenge arrays
-      const eventsWithRelations = filteredRows.map(row => {
-        const categories = [];
-        if (row.category_ids) {
-          const ids = row.category_ids.split(',');
-          const names = row.category_names.split(',');
-          for (let i = 0; i < ids.length; i++) {
-            categories.push({
-              id: parseInt(ids[i], 10),
-              name: names[i]
-            });
-          }
-        }
-        
-        const jahrgaenge = [];
-        if (row.jahrgang_ids) {
-          const ids = row.jahrgang_ids.split(',');
-          const names = row.jahrgang_names.split(',');
-          for (let i = 0; i < ids.length; i++) {
-            jahrgaenge.push({
-              id: parseInt(ids[i], 10),
-              name: names[i]
-            });
-          }
-        }
+      const eventsWithRelations = filteredRows.map(zeile => {
+        // Paare aus der Abfrage statt aus zwei getrennt sortierten Listen
+        // (utils/idNamePaare.js, 09.10.2026). Die Hilfsspalten selbst gehen
+        // nicht mit hinaus.
+        const { kategorien_paare: kategorienPaare, jahrgaenge_paare: jahrgaengePaare, ...row } = zeile;
+        const categories = idNamePaare(kategorienPaare);
+        const jahrgaenge = idNamePaare(jahrgaengePaare);
         
         // Verbuchen-Kennzeichen: BEIDE Rollen. Vorher zaehlte diese Zahl
         // Teamer gar nicht mit (Befund 3) — dann rutschten sie durch, sobald
@@ -396,6 +384,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
                 STRING_AGG(DISTINCT c.name, ', ') as category_names,
                 STRING_AGG(DISTINCT j.id::text, ',') as jahrgang_ids,
                 STRING_AGG(DISTINCT j.name, ', ') as jahrgang_names,
+                ${paareSql('c')} as kategorien_paare,
+                ${paareSql('j')} as jahrgaenge_paare,
                 -- Wer abgesagt hat (Migration 150), ADDITIV. e.* bringt
                 -- cancelled_reason und cancelled_by mit, nur der Name fehlt.
                 -- LEFT JOIN: Termine, die vor der Migration abgesagt wurden,
@@ -468,30 +458,13 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       const { rows } = await db.query(query, [req.user.organization_id]);
       
       // Transform the data to include categories and jahrgaenge arrays
-      const eventsWithRelations = rows.map(row => {
-        const categories = [];
-        if (row.category_ids) {
-          const ids = row.category_ids.split(',');
-          const names = row.category_names.split(',');
-          for (let i = 0; i < ids.length; i++) {
-            categories.push({
-              id: parseInt(ids[i], 10),
-              name: names[i]
-            });
-          }
-        }
-        
-        const jahrgaenge = [];
-        if (row.jahrgang_ids) {
-          const ids = row.jahrgang_ids.split(',');
-          const names = row.jahrgang_names.split(',');
-          for (let i = 0; i < ids.length; i++) {
-            jahrgaenge.push({
-              id: parseInt(ids[i], 10),
-              name: names[i]
-            });
-          }
-        }
+      const eventsWithRelations = rows.map(zeile => {
+        // Paare aus der Abfrage statt aus zwei getrennt sortierten Listen
+        // (utils/idNamePaare.js, 09.10.2026). Die Hilfsspalten selbst gehen
+        // nicht mit hinaus.
+        const { kategorien_paare: kategorienPaare, jahrgaenge_paare: jahrgaengePaare, ...row } = zeile;
+        const categories = idNamePaare(kategorienPaare);
+        const jahrgaenge = idNamePaare(jahrgaengePaare);
         
         // Abgesagte Termine: Dieser Kommentar sagte bis 29.09.2026,
         // unprocessed_count zaehle hier ueber ALLE Rollen (damals events.js:305)

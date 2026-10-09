@@ -15,7 +15,7 @@ import { fingerPrintOutline, scanOutline, lockClosedOutline } from 'ionicons/ico
 // wird der Sperrbildschirm; die Anmeldeseite holt ihr Symbol aus derselben
 // Quelle (biometrieIcon). Der dritte Ort, der Anmelde-Schalter in den
 // Konto-Einstellungen, ist seit dem 27.08.2026 ausgebaut und seit dem
-// 02.10.2026 auch als Datei geloescht (biometrieAlleDreiAnsichten.test.ts).
+// 02.10.2026 auch als Datei geloescht (biometrieAlleDreiAnsichten.test.tsx).
 //
 // Der wichtigste Fall ist der letzte: Ohne verlaessliche Auskunft darf NICHT
 // stillschweigend der Finger stehen. Genau das war der gemeldete Fehler.

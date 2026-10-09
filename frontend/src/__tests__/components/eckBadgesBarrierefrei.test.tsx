@@ -15,7 +15,7 @@
 import { describe, it, expect } from 'vitest';
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join, relative, resolve } from 'path';
-import { ohneKommentare } from './abgesagteTermineAnsichten.test';
+import { ohneKommentare } from '../ohneKommentare';
 
 const wurzel = resolve(process.cwd(), 'src/components');
 

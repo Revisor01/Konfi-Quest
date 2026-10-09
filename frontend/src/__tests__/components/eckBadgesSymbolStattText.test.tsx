@@ -10,14 +10,14 @@
 //
 // Die Quelltext-Pruefungen laufen ohne Kommentare (ohneKommentare), damit ein
 // erklaerender Kommentar wie 'statt "Voll"/"Frei"' nicht faelschlich
-// anschlaegt -- siehe abgesagteTermineAnsichten.test.ts.
+// anschlaegt -- siehe __tests__/ohneKommentare.ts.
 
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from '@testing-library/react';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { ohneKommentare } from './abgesagteTermineAnsichten.test';
+import { ohneKommentare } from '../ohneKommentare';
 import StatusBadge, { getStatusIcon } from '../../components/shared/StatusBadge';
 import {
   ICON_ABSAGE,

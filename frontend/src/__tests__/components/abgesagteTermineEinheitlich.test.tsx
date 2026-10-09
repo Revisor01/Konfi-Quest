@@ -35,10 +35,11 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 /**
- * Quelltext ohne Kommentare -- wortgleich mit dem Helfer im Ansichten-Test
- * nebenan (abgesagteTermineAnsichten.test.ts). Bewusst kopiert statt
- * importiert: Ein Import aus einer *.test.ts-Datei liesse Vitest deren
- * Suite ein zweites Mal registrieren.
+ * Quelltext ohne Kommentare -- wortgleich mit dem Helfer
+ * __tests__/ohneKommentare.ts (bis 09.10.2026 im Ansichten-Test nebenan,
+ * abgesagteTermineAnsichten.test.ts). Bewusst kopiert statt importiert: Ein
+ * Import aus einer *.test.ts-Datei liesse Vitest deren Suite ein zweites Mal
+ * registrieren.
  *
  * Ohne ihn schlaegt eine Pruefung an einer Zeichenkette an, die nur in der
  * Erklaerung steht -- im Repo dreimal passiert.
@@ -497,9 +498,9 @@ describe('keine festen Farbwerte in der neuen Auszeichnung', () => {
 // als Knoepfe IN der Karte -- und die Pruefungen dazu an dieser Stelle. Simon
 // hat entschieden, dass beides NUR noch ueber den Wisch an der Zeile in der
 // Terminliste laeuft. Der Baustein kennt die Aktionen deshalb gar nicht mehr;
-// dass es sie weiterhin gibt, prueft der Ansichten-Test nebenan
-// (abgesagteTermineAnsichten.test.ts) an den Wisch-Aktionen von Leitungs- und
-// Teamer-Liste.
+// dass es sie weiterhin gibt, pruefen terminListeRechteGerendert.test.tsx
+// (Wisch-Aktionen der Leitungsliste) und teamerTerminAbsagen.test.tsx (die
+// Teamer-Liste hat keine) gerendert.
 //
 // Hier bleibt nur die Gegenrichtung: Der Baustein darf keine Aktion mehr
 // anbieten, auch nicht versehentlich ueber eine durchgereichte Prop.

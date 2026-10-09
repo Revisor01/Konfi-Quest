@@ -230,6 +230,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Push-Versands, Protokollzeile mit Dauer, Karte „Hintergrund" auf der Seite
   „Betrieb"; Begrüßungsstunde des Teams nach Berliner Zeit
   (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
+- [x] 09.10.2026 — Quelltext-Tests: die 41 mit Verhaltensversprechen
+  rendern oder rufen jetzt auf, je mit Gegenprobe (Leitplanke 122 → 82);
+  jede Datei in Utils, Hooks und Services hat einen Test (12 → 0), eine
+  Leitplanke hält das; dabei behoben: Kategorien und Jahrgänge der
+  Terminlisten trugen vertauschte Namen (Branch `test/verhalten-statt-quelltext`).
 
 
 ## Offen
@@ -245,14 +250,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Tests und CI
 
-- **Quelltext-Tests.** 117 Frontend-Testdateien lesen Quelltext statt
-  Verhalten (Stand 30.09.2026, Leitplanke
-  `frontend/src/__tests__/quelltextTestsLeitplanke.test.ts` lässt keine neuen
-  zu); 41 davon versprechen Verhalten und sollten gerendert prüfen (Tests
-  BF-02, Rest).
-- **Ohne Test.** 3 Utils, 2 Hooks und 1 Service kommen in keinem Test vor
-  (30.09.2026); gegen neue Komponenten ohne Test gibt es keine Leitplanke
-  (Tests BF-10, Rest).
+- **Komponenten ohne eigenen Test.** 123 von 422 Dateien unter
+  `frontend/src/components/` kommen in keiner Testdatei als Pfad vor
+  (09.10.2026, 86 davon Web-Fassung; viele laufen in gerenderten
+  Seitentests mit). Für `utils/`, `hooks/` und `services/` hält
+  `ohneTestLeitplanke.test.ts` die Zahl auf 0, für Komponenten gibt es keine
+  Leitplanke (Tests BF-10, Rest).
 - **Erste echte Fälle beobachten.** Die Vorwärts-Prüfung des Deploys
   (`NUR_VORWAERTS` in `deploy/rollend.sh`) und die Meldung bei rotem `main`
   (`ci-meldung.yml`) sind nur gegen Nachbauten geprüft. Beim ersten echten

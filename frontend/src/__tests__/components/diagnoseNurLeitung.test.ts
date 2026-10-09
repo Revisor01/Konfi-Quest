@@ -22,7 +22,7 @@ import { resolve } from 'path';
  * Geprueft wird am Quelltext statt durch Rendern: Die Konfi-Profilansicht
  * haengt an einem Dutzend Kontexten, ein Rendertest waere schwer und wuerde
  * bei jeder fremden Aenderung wackeln. Dasselbe Muster nutzt schon
- * pushNavigationZiele.test.ts.
+ * pushNavigationZiele.test.tsx.
  */
 
 const pfad = (p: string) => resolve(__dirname, p);

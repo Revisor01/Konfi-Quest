@@ -63,6 +63,18 @@ describe('Teamer Routes', () => {
       expect(res.body.konfi_data).toBeDefined();
     });
 
+    it('Reine Teamer:in ohne Konfi-Vergangenheit bekommt konfi_data null', async () => {
+      // teamer1 hat im Seed keinen konfi_profiles-Eintrag. Das Teamer-Profil
+      // blendet den Einstieg "Konfi-Historie" an genau diesem null aus
+      // (frontend teamerKonfiHistorieOhneJahrgang.test.tsx) -- er fuehrte
+      // sonst ins Leere.
+      const res = await request(app)
+        .get('/api/teamer/profile')
+        .set('Authorization', `Bearer ${teamerToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.konfi_data).toBeNull();
+    });
+
     it('Befoerderter Konfi sieht seine Werte AUCH ohne Jahrgang (jahrgang_id NULL)', async () => {
       // teamer1 (id 3) bekommt ein konfi_profiles mit Werten, aber OHNE Jahrgang
       // (simuliert: alter Jahrgang wurde gelöscht -> jahrgang_id = NULL).
