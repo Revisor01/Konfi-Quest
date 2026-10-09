@@ -352,6 +352,11 @@ Systemeinstellungen des Handys (iOS: *Anzeige & Helligkeit*, Android:
 *Display*), und die App folgt sofort. Wer das Handy automatisch nach
 Tageszeit wechseln lässt, bekommt auch die App nach Tageszeit.
 
+Auf Android reicht die App bis unter die Statusleiste oben und die
+Navigationsleiste unten; beide sind durchsichtig, und ihre Symbole werden mit
+dem Handy hell oder dunkel. Knöpfe und Texte der App bleiben dabei frei von
+den Leisten.
+
 Zwei Dinge bleiben absichtlich hell: der QR-Code, damit ihn jede Kamera
 liest, und die Bilder des Jahresrückblicks, die ihre eigenen Hintergründe
 mitbringen.

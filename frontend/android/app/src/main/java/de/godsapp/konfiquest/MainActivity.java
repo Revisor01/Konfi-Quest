@@ -4,6 +4,8 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.WindowManager;
 
+import androidx.activity.EdgeToEdge;
+
 import com.getcapacitor.BridgeActivity;
 
 /**
@@ -50,6 +52,27 @@ public class MainActivity extends BridgeActivity {
         // (services/appSymbolZahl.ts, 29.09.2026).
         registerPlugin(AppSymbolZahlPlugin.class);
         super.onCreate(savedInstanceState);
+        // Randlose Anzeige auf JEDER Android-Version (09.10.2026, Play Console
+        // "randlose Anzeige ab Android 15"). Ab Android 15 erzwingt das System
+        // sie fuer targetSdk 35+ ohnehin; auf Android 7 bis 14 lag die App
+        // bisher nur oben unter der (durchsichtigen) Statusleiste, unten stand
+        // eine eigene Navigationsleiste. So sieht sie ueberall aus wie ab 15.
+        // Die Insets traegt das eingebaute SystemBars-Plugin als
+        // --safe-area-inset-* in die Seite (theme/variables.css, Ionics
+        // --ion-safe-area-*); die Symbolfarbe folgt bei beiden dem
+        // Telefon-Thema (capacitor.config.ts, SystemBars style DEFAULT).
+        //
+        // NACH super.onCreate, nicht davor: EdgeToEdge holt sich die
+        // DecorView. Davor gaebe es sie nur mit dem Start-Thema (Splash) --
+        // BridgeActivity setzt AppTheme.NoActionBar erst in super.onCreate,
+        // und eine einmal gebaute DecorView liest das Thema nicht neu.
+        //
+        // Die eingestellten Farb-APIs (Window.setStatusBarColor/
+        // setNavigationBarColor) ruft androidx.activity bis 1.11 (aufgeloest:
+        // 1.10.1) nur auf Android 6 bis 10; ab Android 11 setzt es nur Flags
+        // und die Insets-Steuerung. 1.13 ruft sie auch ab Android 15 wieder --
+        // vor einem Anheben im Bytecode nachsehen (EdgeToEdgeApi35).
+        EdgeToEdge.enable(this);
         // Dateiauswahl: Dokumente als stabile Kopie ans WebView (30.09.2026,
         // PDF/Word gingen vom Android-Handy nicht hoch -- DateiAuswahlChromeClient).
         // Muss hier in onCreate stehen: Der Client meldet beim Anlegen seine

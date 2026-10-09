@@ -190,6 +190,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 09.10.2026 — Ringe und Zähler beachten „Bewegung reduzieren": Punkte-Ringe
   und hochzählende Zahlen sofort auf dem Endstand, dazu der Wisch durch den
   Rückblick und sein Konfetti (Branch `fix/bewegung-randlos-dunkelmodus-ci`).
+- [x] 09.10.2026 — Android randlos auf jeder Systemversion, ohne
+  `@capacitor/status-bar` und dessen eingestellte Farb-APIs (Play Console
+  Punkte 1 und 2, im Repo; Gerätetest offen, siehe [Release](#release);
+  Branch `fix/bewegung-randlos-dunkelmodus-ci`).
 
 
 ## Offen
@@ -311,10 +315,23 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   2.3.0, abgelesen von Simon am 07.10.2026). Am Code geprüft:
   1. *Randlose Anzeige ab Android 15:* Die App zielt auf SDK 36; Google rät,
      die randlose Anzeige zu testen bzw. `EdgeToEdge.enable()` zu rufen.
+     **Im Repo erledigt (09.10.2026, Branch
+     `fix/bewegung-randlos-dunkelmodus-ci`):** `MainActivity` ruft
+     `EdgeToEdge.enable` nach `super.onCreate`, randlos auf jeder
+     Android-Version; die Insets trägt das eingebaute SystemBars-Plugin als
+     CSS-Variablen. Offen: Gerätetest Malte (Leisten oben/unten, Dunkel- und
+     Hellmodus, Tastatur, Datumsauswahl).
   2. *Eingestellte APIs* `Window.get/setStatusBarColor`, `setNavigationBarColor`
      — aufgerufen aus `@capacitor/status-bar` (v8) und dem Material-Datepicker,
-     nicht aus eigenem Code. Fix: Plugin-Update bzw. Status-Bar-Farbe nicht mehr
-     setzen; vorher am Gerät (Malte) die Systemleiste prüfen.
+     nicht aus eigenem Code. **Im Repo erledigt (09.10.2026, selber Branch):**
+     `@capacitor/status-bar` ist auf Android nicht mehr eingebunden
+     (`android.includePlugins` in `capacitor.config.ts`; iOS behält es). Auch
+     8.0.4 ruft die APIs bei jedem Start, ein Update half nicht. Übrig im
+     Bytecode, zur Laufzeit ab Android 11 nicht gerufen: `androidx.activity`
+     (EdgeToEdge, nur Android 6–10) und Materials `EdgeToEdgeUtils` (nur in
+     dessen eigenen Dialogen, die die App nicht öffnet; 1.9 bis 1.13 gleich).
+     Die Console kann beide weiter nennen. Offen: Gerätetest Malte, danach der
+     Haken in der Console.
   3. *Feste Ausrichtung:* `android:screenOrientation="portrait"` in
      `android/app/src/main/AndroidManifest.xml`; ab Android 16 ignoriert das
      System sie auf Tablets und Foldables. **Bewusst offen** (Simon,

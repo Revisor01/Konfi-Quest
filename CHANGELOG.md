@@ -228,6 +228,9 @@ Versionsüberschrift.
   Chat-Nachrichten mehr aufs Handy; aus den anderen Gemeinden weiter.
 - Löscht die Leitung eine Konfi, deren Konto noch zu einer weiteren Gemeinde
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
+- Auf Android reicht die App auf jeder Systemversion bis unter die
+  durchsichtige Status- und Navigationsleiste, wie es ab Android 15 ohnehin
+  gilt.
 
 ### Behoben
 - Ist im System „Bewegung reduzieren" eingeschaltet, stehen die Punkte-Ringe
