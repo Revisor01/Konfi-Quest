@@ -77,6 +77,7 @@ import BonusModal from '../../../components/admin/modals/BonusModal';
 import CertificateAssignModal from '../../../components/admin/modals/CertificateAssignModal';
 import AttendanceMatrixModal from '../../../components/admin/modals/AttendanceMatrixModal';
 import WrappedModal from '../../../components/wrapped/WrappedModal';
+import ActivityRequestModal from '../../../components/admin/modals/ActivityRequestModal';
 
 const ID = 9;
 
@@ -429,15 +430,66 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     }
   });
 
-  it('Offene Antraege: mit Punkten und Foto, ohne den Zusatz "(gemeldet)"; das Foto oeffnet die Ansicht der App', async () => {
+  // Offenes steht OBEN in der jeweiligen Liste, kein eigener Bereich
+  // (Simon, 09.10.2026).
+  it('Offene Antraege stehen oben in den Aktivitaeten, ohne "(gemeldet)"; mit Recht oeffnet "Pruefen" das Fenster der Antragsliste', async () => {
     await oeffnen();
-    const a = within(karte('Offene Anträge'));
-    expect(a.getByText('Gemeindebrief austragen')).toBeInTheDocument();
-    expect(a.getByText('2 Punkte')).toBeInTheDocument();
-    expect(a.getByRole('link', { name: /Anträge bearbeiten/ })).toHaveAttribute('href', '/admin/events?segment=antraege');
+    expect(screen.queryByRole('region', { name: 'Offene Anträge' })).toBeNull();
+    const akt = karte('Aktivitäten');
+    const offen = within(within(akt).getByRole('list', { name: 'Offene Anträge' }));
+    expect(offen.getByText('Gemeindebrief austragen')).toBeInTheDocument();
+    expect(offen.getByText('2 Punkte')).toBeInTheDocument();
+    // Die Liste steht VOR der Tabelle des Verbuchten.
+    const liste = within(akt).getByRole('list', { name: 'Offene Anträge' });
+    const tabelle = within(akt).getByRole('table', { name: 'Aktivitäten' });
+    expect(liste.compareDocumentPosition(tabelle) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // Der Zaehler im Untertitel zaehlt nur Verbuchtes (zwei Aktivitaeten).
+    expect(akt).toHaveTextContent('3 Punkte aus 2 Aktivitäten');
     expect(h.apiGet).toHaveBeenCalledWith('/admin/activities/requests', { params: { user_id: ID, status: 'pending' } });
-    fireEvent.click(a.getByRole('button', { name: 'Nachweisfoto zu Gemeindebrief austragen ansehen' }));
+    fireEvent.click(offen.getByRole('button', { name: 'Aktivität Gemeindebrief austragen prüfen' }));
+    const pruefen = fenster(ActivityRequestModal);
+    expect(pruefen).toHaveLength(1);
+    expect((pruefen[0].props as { requestId?: number }).requestId).toBe(71);
+  });
+
+  it('Offener Antrag ohne Recht: kein "Pruefen", nur das Foto', async () => {
+    h.antworten.set('/admin/activities/requests', [{ id: 71, user_id: ID, status: 'pending', activity_name: 'Gemeindebrief austragen', activity_points: 2, requested_date: '2026-10-02', photo_filename: 'foto.jpg', darf_entscheiden: false }]);
+    await oeffnen();
+    const offen = within(within(karte('Aktivitäten')).getByRole('list', { name: 'Offene Anträge' }));
+    expect(offen.queryByRole('button', { name: /prüfen/ })).toBeNull();
+    fireEvent.click(offen.getByRole('button', { name: 'Nachweisfoto zu Gemeindebrief austragen ansehen' }));
+    expect(fenster(ActivityRequestModal)).toHaveLength(0);
     expect(h.stand.fenster.some((f) => (f.props as { antragId?: number }).antragId === 71)).toBe(true);
+  });
+
+  it('Events: offene Anwesenheit und anstehende Termine oben; Anwesend ruft die Route des Termins', async () => {
+    h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, termine: [
+      { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: true },
+      { booking_id: 502, event_id: 42, event_name: 'Laternenumzug', event_date: '2026-11-11T17:00:00Z', booking_status: 'waitlist', art: 'anstehend', darf_verbuchen: true },
+    ] });
+    await oeffnen();
+    const ev = karte('Events');
+    const oben = within(within(ev).getByRole('list', { name: 'Offene und anstehende Events' }));
+    expect(oben.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
+    expect(oben.getByText('Warteliste')).toBeInTheDocument();
+    // Anstehende Termine haben keinen Knopf.
+    expect(oben.queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
+    // Der Untertitel zaehlt weiter nur die Event-Punkte.
+    expect(ev).toHaveTextContent('3 Punkte aus 2 Events');
+    await act(async () => { fireEvent.click(oben.getByRole('button', { name: 'Konfisamstag: anwesend' })); });
+    expect(h.apiPut).toHaveBeenCalledWith('/events/41/participants/501/attendance', { attendance_status: 'present' });
+    await waitFor(() => expect(h.triggerRefresh).toHaveBeenCalledWith('events'));
+    expect(h.triggerRefresh).toHaveBeenCalledWith('konfis');
+  });
+
+  it('Events ohne Recht am Termin: der Stand steht da, Knoepfe nicht', async () => {
+    h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, termine: [
+      { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: false },
+    ] });
+    await oeffnen();
+    const oben = within(within(karte('Events')).getByRole('list', { name: 'Offene und anstehende Events' }));
+    expect(oben.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
+    expect(oben.queryByRole('button')).toBeNull();
   });
 
   it('Stempel: dasselbe Raster wie die Badges, erhalten in der Challenge-Farbe, offen gedaempft', async () => {

@@ -82,6 +82,40 @@ lassen kannst.
   Eine Jahrgangs-Zuweisung bekommt die neue Teamer:in dabei nicht
   automatisch; die vergibst du unter **Mehr › Benutzer:innen**.
 
+### Offenes einer Person direkt bestätigen
+
+Was bei einer Person noch offen ist, steht in ihrer Detailansicht jeweils
+**oben** in der passenden Liste — dieselben Entscheidungen wie in der
+Antragsliste und im Event, nur von der Person aus:
+
+- **Aktivitäten:** Gemeldete Aktivitäten stehen orange mit „(gemeldet)" vor
+  den verbuchten. Ein Tipp öffnet **Aktivität prüfen** — dasselbe Fenster wie
+  in der Antragsliste, mit Genehmigen und Ablehnen samt Grund, siehe
+  [Eine gemeldete Aktivität entscheiden](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden).
+- **Events, zu verbuchen:** Events, die begonnen haben und bei denen die
+  Anwesenheit der Person noch fehlt, stehen orange mit **Anwesenheit
+  ausstehend**. **Anwesend** und **Nicht anwesend** tragen sie direkt ein —
+  mit denselben Folgen wie in der Teilnehmerliste des Events (Punkte, Badges,
+  Mitteilung an die Person), siehe
+  [Die Anwesenheit verbuchen](70-termine.md#die-anwesenheit-verbuchen).
+  Abmeldung, Notiz und Zurücksetzen gehen weiter im Event.
+- **Events, die anstehen:** Darunter stehen blau die kommenden Events, zu
+  denen die Person angemeldet ist oder auf der Warteliste steht, mit Datum
+  und Stand — ohne Knopf.
+
+Danach folgen wie gewohnt die verbuchten Einträge; die Zahl in der Überschrift
+zählt nur sie. Nach dem Entscheiden oder Eintragen verschwindet der Eintrag
+oben, und die Zahlen an den Reitern gehen mit zurück.
+
+Die Knöpfe erscheinen nur, wo du das auch an der anderen Stelle dürftest: bei
+Aktivitäten mit dem Recht **Anträge entscheiden**, bei Events mit dem Recht
+**Events verbuchen** für einen Jahrgang des Events, siehe
+[Festlegen, wer entscheiden, verbuchen und freigeben darf](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf).
+Ohne das Recht siehst du den Stand ohne Knöpfe; bei einer gemeldeten
+Aktivität öffnet ein Tipp dann nur das Nachweisfoto. Events aus Jahrgängen,
+die dir nicht zugewiesen sind, stehen hier nicht. Ohne Netz bleiben die
+Knöpfe gesperrt.
+
 Bei Teamer:innen kommen **Zertifikate** dazu (etwa JuLeiCa) und die Angabe,
 seit wann sie dabei sind. Badges und Zertifikate stehen hier immer für deine
 Gemeinde; ein Zertifikat, das du verleihst, gehört deiner Gemeinde
@@ -150,7 +184,12 @@ eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen —, darunt
 Punkten; bei einer Teamer:in die Events, für die sie eingetragen ist, mit
 ihrem Stand — **Anwesend** oder **Abwesend**, sobald die Anwesenheit verbucht
 ist, vorher **Gebucht**, dazu **Warteliste** und **Abgemeldet**, wie in der
-Teilnehmerliste des Events. Alle drei Tabellen haben dieselben Spalten in
+Teilnehmerliste des Events. Über den Tabellen steht, was offen ist: über den
+Aktivitäten die gemeldeten mit **Prüfen**, über den Events die zu verbuchenden
+mit **Anwesend** und **Nicht anwesend** und die anstehenden mit ihrem Stand —
+wie in
+[Offenes einer Person direkt bestätigen](#offenes-einer-person-direkt-bestaetigen).
+Alle drei Tabellen haben dieselben Spalten in
 derselben Breite; wird das Fenster schmal, fällt die Spalte, wer eingetragen hat, in allen
 dreien weg. Bei einer Teamer:in folgen **Zertifikate**, die
 **Konfi-Historie** und die **Events der Konfi-Zeit**. Reichen die Zeilen über
@@ -159,15 +198,14 @@ zehn hinaus, klappt **Alle … anzeigen** den Rest auf.
 Rechts stehen die **Angaben** — Jahrgang, Benutzername und Bonuspunkte — und
 darunter die Karten **Konfirmation** (Datum, Konfispruch, besuchte
 Pflicht-Events), bei einer Teamer:in **Teamer:in seit** mit dem Datum zum
-Ändern, **Badges**, **Offene Anträge** mit dem Link **Anträge
-bearbeiten →**, **Stempel**, **Jahresrückblick** und **Rolle ändern** mit **Zur
+Ändern, **Badges**, **Stempel**, **Jahresrückblick** und **Rolle ändern** mit **Zur
 Teamer:in befördern**. Badges und Stempel stehen als Kreise mit Namen
 darunter: Badges in ihrer eigenen Farbe, erhaltene Stempel in der Farbe der
 Challenges, noch offene Stempel grau und gestrichelt. Fährst du mit der Maus
 über einen Kreis oder springst mit der Tabulatortaste darauf, erscheint die
 Info dazu — beim Badge Beschreibung und Datum, beim Stempel die Challenge und
 wann er erhalten wurde oder dass er noch fehlt; auf dem Tablet öffnet ein
-Tippen die Info. Offene Anträge, Stempel und Rückblick stehen nur da,
+Tippen die Info. Stempel und Rückblick stehen nur da,
 wenn es etwas zu zeigen gibt. Ohne Netz gehen nur das Eintragen von
 Aktivitäten und Bonuspunkten; ein Hinweis unter dem Kopf sagt das, alles andere
 wartet auf die Verbindung.

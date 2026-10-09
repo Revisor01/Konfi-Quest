@@ -337,7 +337,69 @@ async function darfTerminVerbuchen(db, req, eventId) {
   return !!treffer;
 }
 
+/**
+ * Die Termine EINER Person, die in ihrer Detailansicht der Leitung oben in
+ * der Eventliste stehen (Simon, 09.10.2026: "In ein Konfi reingehen, seinen
+ * Status sehen und Offenes von da aus direkt bestaetigen"):
+ *
+ *   art 'verbuchen'  begonnen, nicht abgesagt, angemeldet (confirmed), ohne
+ *                    Anwesenheit -- dieselbe Bedingung wie
+ *                    terminWartetAufVerbuchungSql, nur je Buchung statt je
+ *                    Termin. Was hier steht, zaehlt auch am Reiter
+ *                    "Verbuchen" (sofern darf_verbuchen).
+ *   art 'anstehend'  noch nicht begonnen, nicht abgesagt, angemeldet oder
+ *                    auf der Warteliste (waitlist, pending)
+ *
+ * Nur Termine, die der Aufrufer SIEHT (gebundeneLeitungSiehtTerminSql mit
+ * den can_view-Jahrgaengen, wie die Terminliste). darf_verbuchen je Zeile
+ * aus derselben Bedingung wie darfTerminVerbuchen (Server-Pruefung der
+ * Anwesenheits-Route) -- und nur fuer die Leitung (requireAdmin an der
+ * Route); fuer Teamer:innen immer false.
+ *
+ * @param {object} db
+ * @param {object} req       req.user mit organization_id, type, role_name,
+ *   assigned_jahrgaenge
+ * @param {number|string} personId
+ * @returns {Promise<Array<{ booking_id: number, event_id: number,
+ *   event_name: string, event_date: string, location: string|null,
+ *   booking_status: string, art: 'verbuchen'|'anstehend',
+ *   darf_verbuchen: boolean }>>}
+ */
+async function termineDerPersonFuerLeitung(db, req, personId) {
+  const params = [personId, req.user.organization_id];
+  let sicht = 'true';
+  if (!leitungSiehtAlleTermine(req.user)) {
+    const sichtbar = (req.user.assigned_jahrgaenge || [])
+      .filter((j) => j.can_view).map((j) => Number(j.id));
+    params.push(sichtbar);
+    sicht = gebundeneLeitungSiehtTerminSql({ jahrgaenge: `$${params.length}::int[]` });
+  }
+  const darf = req.user.type === 'admin' ? darfVerbuchenBedingung(req.user, params) : 'false';
+  const { rows } = await db.query(
+    `SELECT eb.id AS booking_id, e.id AS event_id, e.name AS event_name,
+            e.event_date, e.location, eb.status AS booking_status,
+            CASE WHEN e.event_date < NOW() THEN 'verbuchen' ELSE 'anstehend' END AS art,
+            (${darf}) AS darf_verbuchen
+       FROM event_bookings eb
+       JOIN events e ON e.id = eb.event_id
+      WHERE eb.user_id = $1
+        AND e.organization_id = $2
+        AND e.cancelled IS NOT TRUE
+        AND (
+          (e.event_date < NOW() AND eb.status = 'confirmed' AND eb.attendance_status IS NULL)
+          OR (e.event_date >= NOW() AND eb.status IN ('confirmed', 'waitlist', 'pending'))
+        )
+        AND ${sicht}
+      ORDER BY (e.event_date < NOW()) DESC,
+               CASE WHEN e.event_date < NOW() THEN e.event_date END DESC,
+               e.event_date ASC`,
+    params
+  );
+  return rows.map((r) => ({ ...r, darf_verbuchen: r.darf_verbuchen === true }));
+}
+
 module.exports = {
+  termineDerPersonFuerLeitung,
   darfVerbuchenBedingung,
   darfTerminVerbuchen,
   leitungSiehtAlleTermine,

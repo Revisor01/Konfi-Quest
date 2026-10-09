@@ -33,11 +33,10 @@ import type { BonusEintrag, EventPunkteEintrag } from '../../../../types/user';
 import type { KonfiZeit } from '../../../../types/konfiZeit';
 import type { ChallengeMark, OffenerStempel } from '../../../../types/challenges';
 import type { WrappedHistoryEntry } from '../../../../types/wrapped';
-import type { Activity, Konfi } from '../../views/KonfiDetailSections';
+import { personTerminStand, type Activity, type AnwesenheitWahl, type Konfi, type PersonTermin } from '../../views/KonfiDetailSections';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
-import WebLink from '../../../web/WebLink';
 import WebAngaben from '../../../web/WebAngaben';
 import { ANGABE_SYMBOLE } from '../../../web/angabeSymbole';
 import { WebLeer } from '../../../web/WebZustaende';
@@ -97,16 +96,88 @@ const AlleZeigen: React.FC<{ anzahl: number; alle: boolean; onUmschalten: () => 
   ) : null
 );
 
+// --- Offenes oben in der Liste ---------------------------------------------------
+//
+// Offene Antraege stehen oben in den Aktivitaeten, zu verbuchende und
+// anstehende Termine oben in den Events (Simon, 09.10.2026) -- als Zeilen
+// ueber der Tabelle, die selbst nur Verbuchtes zeigt und zaehlt.
+
+const OffeneAntraegeZeilen: React.FC<{ antraege: readonly Activity[]; isOnline: boolean; onFoto: (a: Activity) => void }> = ({ antraege, isOnline, onFoto }) => (
+  <ul className="web-feed" aria-label="Offene Anträge">
+    {antraege.map((a) => {
+      const name = a.name.replace(/ \(gemeldet\)$/, '');
+      return (
+        <li key={a.id} className="web-feed__zeile">
+          <div className="web-feed__haupt">
+            <span className="web-feed__titel">{name}</span>
+            <span className="web-feed__meta"><span>gemeldet für {datumKurz(a.completed_date || a.date)}</span></span>
+          </div>
+          <div className="web-feed__rechts">
+            <WebPill ton="warnung" punkt>{a.points} Punkte</WebPill>
+            {a.darfEntscheiden ? (
+              <WebKnopf klein art="primaer" vorn disabled={!isOnline} onClick={() => onFoto(a)} aria-label={`Aktivität ${name} prüfen`}>
+                Prüfen
+              </WebKnopf>
+            ) : a.hasPhoto && (
+              <WebKnopf art="text" klein vorn onClick={() => onFoto(a)} aria-label={`Nachweisfoto zu ${name} ansehen`}>
+                <IonIcon icon={ICON_BILD} aria-hidden="true" />
+                Foto
+              </WebKnopf>
+            )}
+          </div>
+        </li>
+      );
+    })}
+  </ul>
+);
+
+const OffeneTermineZeilen: React.FC<{
+  termine: readonly PersonTermin[];
+  kannVerbuchen: boolean;
+  isOnline: boolean;
+  onAnwesenheit: (t: PersonTermin, status: AnwesenheitWahl) => void;
+}> = ({ termine, kannVerbuchen, isOnline, onAnwesenheit }) => (
+  <ul className="web-feed" aria-label="Offene und anstehende Events">
+    {termine.map((t) => {
+      const offen = t.art === 'verbuchen';
+      return (
+        <li key={t.booking_id} className="web-feed__zeile" data-termin-art={t.art}>
+          <div className="web-feed__haupt">
+            <span className="web-feed__titel">{t.event_name}</span>
+            <span className="web-feed__meta"><span>{datumKurz(t.event_date)}</span></span>
+          </div>
+          <div className="web-feed__rechts">
+            <WebPill ton={offen ? 'warnung' : 'info'} punkt>{personTerminStand(t)}</WebPill>
+            {offen && kannVerbuchen && t.darf_verbuchen && (
+              <>
+                <WebKnopf klein vorn disabled={!isOnline} onClick={() => onAnwesenheit(t, 'present')} aria-label={`${t.event_name}: anwesend`}>
+                  Anwesend
+                </WebKnopf>
+                <WebKnopf klein vorn disabled={!isOnline} onClick={() => onAnwesenheit(t, 'absent')} aria-label={`${t.event_name}: nicht anwesend`}>
+                  Nicht anwesend
+                </WebKnopf>
+              </>
+            )}
+          </div>
+        </li>
+      );
+    })}
+  </ul>
+);
+
 // --- Aktivitaeten -----------------------------------------------------------------
 
 export const AktivitaetenKarte: React.FC<{
   aktivitaeten: readonly Activity[];
+  /** Offene Antraege, oben in der Karte. */
+  offene?: readonly Activity[];
+  isOnline?: boolean;
   konfi: Konfi | null;
   istTeamer: boolean;
   onEintragen: () => void;
   onLoeschen: (a: Activity) => void;
   onFoto: (a: Activity) => void;
-}> = ({ aktivitaeten, konfi, istTeamer, onEintragen, onLoeschen, onFoto }) => {
+}> = ({ aktivitaeten, offene = [], isOnline = true, konfi, istTeamer, onEintragen, onLoeschen, onFoto }) => {
   const [alle, setAlle] = useState(false);
   const summe = aktivitaeten.reduce((s, a) => s + (a.points || 0), 0);
 
@@ -178,8 +249,9 @@ export const AktivitaetenKarte: React.FC<{
       )}
       bund
     >
+      {offene.length > 0 && <OffeneAntraegeZeilen antraege={offene} isOnline={isOnline} onFoto={onFoto} />}
       {aktivitaeten.length === 0 ? (
-        <WebLeer icon={ICON_AKTION} titel="Keine Aktivitäten" text="Noch keine Aktivitäten vorhanden." />
+        offene.length === 0 && <WebLeer icon={ICON_AKTION} titel="Keine Aktivitäten" text="Noch keine Aktivitäten vorhanden." />
       ) : (
         <>
           <WebSortTabelle
@@ -261,7 +333,17 @@ export const BonusKarte: React.FC<{
 
 // --- Events mit Punkten (Konfi) -----------------------------------------------------
 
-export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintrag[]; konfi: Konfi | null }> = ({ eventPunkte, konfi }) => {
+interface TermineOben {
+  termine?: readonly PersonTermin[];
+  kannVerbuchen?: boolean;
+  isOnline?: boolean;
+  onAnwesenheit?: (t: PersonTermin, status: AnwesenheitWahl) => void;
+}
+const nichtsTun = () => {};
+
+export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintrag[]; konfi: Konfi | null } & TermineOben> = ({
+  eventPunkte, konfi, termine = [], kannVerbuchen = false, isOnline = true, onAnwesenheit = nichtsTun,
+}) => {
   const summe = eventPunkte.reduce((s, e) => s + (e.points || 0), 0);
   const geordnet = nachAnzeigeDatumAbsteigend(eventPunkte);
   // Dieselbe Tabelle wie Aktivitaeten und Bonuspunkte darueber und darunter,
@@ -290,10 +372,11 @@ export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintr
     <WebKarte
       titel="Events"
       untertitel={`${punkteText(summe)} aus ${mitEinheit(eventPunkte.length, 'Event', 'Events')}`}
-      bund={eventPunkte.length > 0}
+      bund={eventPunkte.length > 0 || termine.length > 0}
     >
+      {termine.length > 0 && <OffeneTermineZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} />}
       {eventPunkte.length === 0 ? (
-        <WebLeer icon={ICON_PODIUM} titel="Keine Event-Punkte" text="Noch keine Event-Punkte erhalten." />
+        termine.length === 0 && <WebLeer icon={ICON_PODIUM} titel="Keine Event-Punkte" text="Noch keine Event-Punkte erhalten." />
       ) : (
         <WebSortTabelle
           beschriftung="Events"
@@ -318,8 +401,14 @@ const STAND_TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
   success: 'erfolg', danger: 'fehler', warning: 'warnung', info: 'info', neutral: 'neutral',
 };
 
-export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = ({ events }) => {
+export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] } & TermineOben> = ({
+  events: alleEvents, termine = [], kannVerbuchen = false, isOnline = true, onAnwesenheit = nichtsTun,
+}) => {
   const [alle, setAlle] = useState(false);
+  // Was oben steht, steht in der Tabelle nicht noch einmal; der Untertitel
+  // zaehlt wie bisher alle Events.
+  const oben = new Set(termine.map((t) => t.event_id));
+  const events = alleEvents.filter((e) => !oben.has(e.id));
   // Steht links unter den Aktivitaeten (Simon, 07.10.2026) und teilt deren
   // Spaltenbreiten: Event, Datum, Stand an der Stelle von "Eingetragen von".
   const spalten: Array<WebSortSpalte<TeamerTermin>> = [
@@ -340,10 +429,11 @@ export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] }> = 
   const eventTabelle = useGanzeListeSortiert(events, spalten);
   const sichtbar = alle ? eventTabelle.geordnet : eventTabelle.geordnet.slice(0, ZEILEN_KURZ);
   return (
-    <WebKarte titel="Events" untertitel={mitEinheit(events.length, 'Event', 'Events')} bund={events.length > 0}>
+    <WebKarte titel="Events" untertitel={mitEinheit(alleEvents.length, 'Event', 'Events')} bund={events.length > 0 || termine.length > 0}>
+      {termine.length > 0 && <OffeneTermineZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} />}
       {events.length === 0 ? (
         // Auch leer anzeigen: sonst ist "war bei keinem Event" nicht von "nicht geladen" zu unterscheiden.
-        <WebLeer icon={ICON_TERMIN} titel="Keine Events" text="Noch bei keinem Event dabei gewesen." />
+        termine.length === 0 && <WebLeer icon={ICON_TERMIN} titel="Keine Events" text="Noch bei keinem Event dabei gewesen." />
       ) : (
         <>
           <WebSortTabelle beschriftung="Events" {...eventTabelle.tabelle} zeilen={sichtbar} zeileSchluessel={(e) => e.id} mittig klasse="web-tabelle--punkte" />
@@ -513,40 +603,6 @@ export const KonfirmationKarte: React.FC<{
           }] : []),
         ]}
       />
-    </WebKarte>
-  );
-};
-
-// --- Offene Antraege -------------------------------------------------------------------------
-
-export const AntraegeKarte: React.FC<{ antraege: readonly Activity[]; onFoto: (a: Activity) => void }> = ({ antraege, onFoto }) => {
-  if (antraege.length === 0) return null;
-  return (
-    <WebKarte
-      titel="Offene Anträge"
-      untertitel="Warten auf Genehmigung"
-      aktion={<WebLink href="/admin/events?segment=antraege">Anträge bearbeiten →</WebLink>}
-      bund
-    >
-      <ul className="web-feed">
-        {antraege.map((a) => (
-          <li key={a.id} className="web-feed__zeile">
-            <div className="web-feed__haupt">
-              <span className="web-feed__titel">{a.name.replace(/ \(gemeldet\)$/, '')}</span>
-              <span className="web-feed__meta"><span>gemeldet für {datumKurz(a.completed_date || a.date)}</span></span>
-            </div>
-            <div className="web-feed__rechts">
-              <WebPill ton="warnung" punkt>{a.points} Punkte</WebPill>
-              {a.hasPhoto && (
-                <WebKnopf art="text" klein vorn onClick={() => onFoto(a)} aria-label={`Nachweisfoto zu ${a.name.replace(/ \(gemeldet\)$/, '')} ansehen`}>
-                  <IonIcon icon={ICON_BILD} aria-hidden="true" />
-                  Foto
-                </WebKnopf>
-              )}
-            </div>
-          </li>
-        ))}
-      </ul>
     </WebKarte>
   );
 };

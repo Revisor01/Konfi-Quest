@@ -2601,6 +2601,9 @@ paths:
         einmalig die Event-Punkte (nicht bei Pflicht-Events; 400 bei
         deaktiviertem Punkt-Typ), Teamer nur Anwesenheit. absent: vergebene
         Event-Punkte werden zurückgenommen.
+        Aufrufer seit 09.10.2026 auch die Detailansicht einer Person
+        (present/absent fuer Eintraege aus GET /api/admin/konfis/{id},
+        Feld `termine`); Route und Rechte unveraendert.
         ADDITIV 12.09.2026 (Migration 147): 'excused' ist die von der Leitung
         nachgetragene Abmeldung — jemand wurde ausserhalb der App abgemeldet.
         Punkte verhalten sich wie bei 'absent' (keine Vergabe, Abzug bereits
@@ -3922,6 +3925,25 @@ paths:
         07.10.2026). Stand jetzt nach utils/teilnahmeStatus.ts wie in der
         Teilnehmerliste. `booking_status` und alle uebrigen Felder bleiben:
         die ausgelieferten Apps lesen sie weiter.
+        ERGAENZT 09.10.2026, additiv (Konfis UND Teamer:innen als
+        Zielobjekt): `termine` — die Termine der Person, die die
+        Detailansicht oben in der Eventliste zeigt
+        (utils/terminLeitungSicht.js, termineDerPersonFuerLeitung). Je
+        Eintrag `booking_id` (= participantId fuer
+        PUT /api/events/{id}/participants/{participantId}/attendance),
+        `event_id`, `event_name`, `event_date`, `location`,
+        `booking_status`, `art` und `darf_verbuchen`. `art` = 'verbuchen':
+        begonnen (event_date < NOW()), nicht abgesagt, `confirmed`, ohne
+        Anwesenheit — dieselbe Bedingung wie der Reiter "Verbuchen" und
+        badge-counts.pendingEvents, nur je Buchung; 'anstehend': noch nicht
+        begonnen, nicht abgesagt, `confirmed`, `waitlist` oder `pending`.
+        Reihenfolge: zu verbuchende neueste zuerst, dann anstehende naechste
+        zuerst. Nur Termine, die der Aufrufer sieht (Sichtregel der
+        Terminliste mit den can_view-Jahrgaengen; org_admin/super_admin
+        alle). `darf_verbuchen` = dieselbe Pruefung wie die
+        Anwesenheits-Route (darfTerminVerbuchen, Recht "Events verbuchen");
+        fuer Teamer:innen als Aufrufer immer false (die Route ist
+        requireAdmin). Aeltere Apps lesen das Feld nicht.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]

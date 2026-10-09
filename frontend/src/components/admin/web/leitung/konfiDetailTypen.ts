@@ -3,7 +3,7 @@
 // Seite (admin/views/KonfiDetailView.tsx): Sie haelt Daten und Aktionen, die
 // Web-Fassung stellt sie dar.
 
-import type { Activity, Konfi } from '../../views/KonfiDetailSections';
+import type { Activity, AnwesenheitWahl, Konfi, PersonTermin } from '../../views/KonfiDetailSections';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../../types/user';
 import type { KonfiZeit } from '../../../../types/konfiZeit';
 import type { ChallengeMark, OffenerStempel } from '../../../../types/challenges';
@@ -70,6 +70,13 @@ export interface WebKonfiDetailProps {
   bonus: BonusEintrag[];
   eventPunkte: EventPunkteEintrag[];
   teamerEvents: TeamerTermin[];
+  /**
+   * Oben in der Eventliste: zu verbuchende und anstehende Termine der Person
+   * (GET /admin/konfis/:id, Feld `termine`, seit 09.10.2026).
+   */
+  termine: PersonTermin[];
+  /** Darf die angemeldete Person ueberhaupt Anwesenheit eintragen (Leitung)? */
+  kannVerbuchen: boolean;
   zertifikate: Zertifikat[];
   konfiHistorie: KonfiHistorie | null;
   konfiZeit: KonfiZeit | null;
@@ -98,7 +105,9 @@ export interface WebKonfiDetailProps {
   onAktivitaetLoeschen: (aktivitaet: Activity) => void;
   onBonusLoeschen: (bonus: BonusEintrag) => void;
   onZertifikatEntfernen: (zertifikat: { id: number; name: string }) => void;
+  /** Foto ansehen -- bei einem offenen Antrag mit Recht: "Aktivität prüfen". */
   onFoto: (aktivitaet: Activity) => void;
+  onAnwesenheit: (termin: PersonTermin, status: AnwesenheitWahl) => void;
   onRueckblick: (eintrag: WrappedHistoryEntry) => void;
   /** Datum als 'JJJJ-MM-TT'. */
   onTeamerSeit: (datum: string) => void;

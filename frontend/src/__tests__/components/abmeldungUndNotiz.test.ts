@@ -38,6 +38,10 @@ const abmeldungModal = lies('src/components/admin/modals/AbmeldungNachtragenModa
 // handgeschriebenen Ternaeren auf diese Datei umgezogen -- geprueft wird
 // dieselbe Regel, nur an der Stelle, an der sie jetzt steht.
 const teilnahme = lies('src/utils/teilnahmeStatus.ts');
+// Den Aufruf der Route baut seit dem 09.10.2026 EINE Stelle fuer den Termin
+// und die Detailansicht der Person (utils/anwesenheitSetzen.ts); die
+// Ansicht reicht die Texte unveraendert dorthin durch.
+const setzen = lies('src/utils/anwesenheitSetzen.ts');
 const handbuch = lies('../docs/handbuch/70-termine.md');
 
 describe('Abmeldung nachtragen (excused)', () => {
@@ -53,7 +57,8 @@ describe('Abmeldung nachtragen (excused)', () => {
   it('der Grund wird als eigenes Feld erfragt und geschickt', () => {
     expect(abmeldungModal).toContain('value={grundText}');
     expect(detail).toContain('excuse_reason: neuerGrund');
-    expect(detail).toContain('excuse_reason: texte.excuse_reason');
+    expect(detail).toMatch(/await anwesenheitSetzen\(eventId, participant\.id, status, \{\s*texte,/);
+    expect(setzen).toContain('excuse_reason: texte.excuse_reason');
   });
 
   it('der Grund wird nur bei excused gesetzt', () => {
@@ -301,7 +306,8 @@ describe('Eine Notiz laesst sich loeschen', () => {
     // "Feld ist leer" traegt das Loeschen. Ein `|| undefined` haette sie
     // eingeebnet — dann bliebe die Notiz stehen.
     expect(detail).toContain('const notizMitgeschickt = texte?.attendance_note !== undefined;');
-    expect(detail).toContain('...(notizMitgeschickt ? { attendance_note: texte!.attendance_note } : {})');
+    expect(setzen).toContain('...(texte?.attendance_note !== undefined ? { attendance_note: texte.attendance_note } : {})');
+    expect(setzen).not.toContain('|| undefined');
   });
 });
 
