@@ -597,7 +597,8 @@ App-Symbol stellen sich dabei gleich auf das Neue ein.
 ## Auswählen, welche Zahlen du siehst
 
 Leitung und Gemeindeleitung wählen selbst, welche roten Zahlen sie bekommen.
-Unter *Mehr → Konto → Kennzahlen* stehen drei Schalter:
+In der App unter *Mehr → Konto → Kennzahlen*, im Browser unter *Profil →
+Konto-Einstellungen → Kennzahlen → Auswählen* stehen drei Schalter:
 
 | Schalter | Was dann fehlt |
 |---|---|

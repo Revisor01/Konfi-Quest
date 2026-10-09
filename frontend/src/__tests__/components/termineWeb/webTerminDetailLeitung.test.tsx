@@ -266,6 +266,40 @@ describe('Konfis: Anwesenheit', () => {
   });
 });
 
+// Recht "Events verbuchen" (09.10.2026, docs/planung/darf-freigeben.md): ohne
+// es ist die Liste lesbar, Anwesenheit, Abmeldung, Notiz und "Alle bestätigen"
+// fehlen; Warteliste und Entfernen bleiben. Der Grund steht als Hinweis da.
+describe('Recht "Events verbuchen"', () => {
+  const HINWEIS = 'An diesem Event verbucht jemand anderes. Das Recht vergibt die Gemeindeleitung.';
+
+  it('VERBOTEN (false): keine Umschalter, kein "Alle bestätigen", im Menü nur Warteliste und Entfernen', async () => {
+    zustand.detail = freizeit({ darf_verbuchen: false });
+    await oeffne();
+    expect(screen.getByText(HINWEIS)).toBeInTheDocument();
+    expect(screen.queryAllByRole('group', { name: /^Anwesenheit von/ })).toEqual([]);
+    expect(screen.queryAllByRole('button', { name: /^Alle bestätigen/ })).toEqual([]);
+    // Die Liste bleibt: Kim steht da, Mia mit ihrem Stand.
+    expect(within(karte('Konfis (2)')).getByText('Kim Konfi')).toBeInTheDocument();
+    fireEvent.click(within(zeileVon('Kim Konfi')).getByRole('button', { name: 'Weitere Aktionen für Kim Konfi' }));
+    const menue = screen.getByRole('dialog', { name: 'Kim Konfi' });
+    expect(within(menue).getAllByRole('button').map((b) => b.textContent!.trim()).filter(Boolean))
+      .toEqual(['Auf Warteliste setzen', 'Teilnahme entfernen']);
+    // Warteliste bestaetigen verbucht nicht -- bleibt.
+    expect(within(karte('Warteliste (1)')).getByRole('button', { name: 'Wiebke Warte bestätigen' })).toBeInTheDocument();
+  });
+
+  it.each([
+    ['ERLAUBT (true)', { darf_verbuchen: true }],
+    ['älterer Server ohne das Feld', {}],
+  ])('%s: Umschalter und "Alle bestätigen" wie bisher, kein Hinweis', async (_name, zusatz) => {
+    zustand.detail = freizeit(zusatz);
+    await oeffne();
+    expect(screen.queryByText(HINWEIS)).toBe(null);
+    expect(umschalter('Kim Konfi')).toBeInTheDocument();
+    expect(within(karte('Konfis (2)')).getByRole('button', { name: 'Alle bestätigen (1)' })).toBeInTheDocument();
+  });
+});
+
 describe('Menü "Weitere Aktionen"', () => {
   const oeffneMenue = async (name: string) => {
     await oeffne();

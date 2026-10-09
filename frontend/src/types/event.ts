@@ -128,6 +128,8 @@ export interface Event {
    */
   abgemeldet_count?: number;
   // Serien
+  /** Recht „Events verbuchen" (09.10.2026, nur GET /events/:id für die Leitung). Fehlt = wie bisher. */
+  darf_verbuchen?: boolean;
   is_series?: boolean;
   series_id?: number;
   // Event-Chat: nur gesetzt, wenn die abrufende Person Mitglied des Raums ist

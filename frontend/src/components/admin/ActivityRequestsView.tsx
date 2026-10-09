@@ -47,6 +47,12 @@ interface ActivityRequest {
   activity_target_role?: 'konfi' | 'teamer';
   created_at: string;
   updated_at: string;
+  /**
+   * Darf die angemeldete Leitung über diesen Antrag entscheiden
+   * (genehmigen, ablehnen, zurücksetzen)? Recht „Anträge entscheiden" je
+   * Jahrgang (09.10.2026). Fehlt bei älteren Servern -- dann wie bisher.
+   */
+  darf_entscheiden?: boolean;
 }
 
 interface ActivityRequestsViewProps {
@@ -305,7 +311,9 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
 
                       {/* Swipe Actions: Admins loeschen Antraege NICHT (nur ablehnen ueber
                           die Detail-Ansicht). Loeschen duerfen nur Konfi/Teamer ihre eigenen. */}
-                      {!isPending && (
+                      {/* Ohne das Recht "Anträge entscheiden" kein Zurücksetzen
+                          (der Server antwortet 403); die Zeile bleibt lesbar. */}
+                      {!isPending && request.darf_entscheiden !== false && (
                         <IonItemOptions side="end" className="app-swipe-actions">
                           {/* Reset-Button für approved/rejected */}
                           <IonItemOption

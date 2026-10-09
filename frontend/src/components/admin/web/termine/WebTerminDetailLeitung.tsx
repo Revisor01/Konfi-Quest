@@ -73,6 +73,11 @@ export interface WebTerminDetailLeitungProps {
   isOnline: boolean;
   /** Terminverwaltung ist Leitungssache (utils/terminRechte.ts). */
   darfVerwalten: boolean;
+  /**
+   * Recht „Events verbuchen" (09.10.2026): Anwesenheit, Abmeldung, Notiz und
+   * „Alle bestätigen". Fehlt es, gilt darfVerwalten (wie bisher).
+   */
+  darfVerbuchen?: boolean;
   /** Darf hier noch jemand eingetragen werden? Nicht an abgesagten Events. */
   darfEintragen: boolean;
   /** Alle ausser Konfis melden sich selbst, wenn das Event Team sucht. */
@@ -92,6 +97,7 @@ const zeitpunkt = (wert?: string | null): number | null => {
 
 const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   const { eventData, teilnehmende, aktionen, isOnline, darfVerwalten, darfEintragen } = p;
+  const darfVerbuchen = darfVerwalten && p.darfVerbuchen !== false;
 
   if (p.laedt) {
     return (
@@ -159,6 +165,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   const gemeinsam = {
     pflicht: !!eventData.mandatory,
     darfVerwalten,
+    darfVerbuchen,
     isOnline,
     mitZeitfenster,
     aktionen,
@@ -284,12 +291,16 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
         <WebHinweis art="hinweis">Die Teilnehmerliste ist offline nicht verfügbar.</WebHinweis>
       )}
 
+      {darfVerwalten && !darfVerbuchen && (
+        <WebHinweis art="hinweis">An diesem Event verbucht jemand anderes. Das Recht vergibt die Gemeindeleitung.</WebHinweis>
+      )}
+
       {!eventData.teamer_only && (konfisSonst.length > 0 || darfEintragen) && (
         <WebTeilnehmerLeitung
           {...gemeinsam}
           titel={konfiTitel}
           teilnehmende={konfisSonst}
-          alleBestaetigen={darfVerwalten && offeneKonfis > 0
+          alleBestaetigen={darfVerbuchen && offeneKonfis > 0
             ? { anzahl: offeneKonfis, onClick: () => aktionen.alleBestaetigen(offeneKonfis, konfisWartend.length, 'konfi') }
             : undefined}
           hinzufuegen={darfEintragen ? [{ label: 'Konfi hinzufügen', onClick: () => aktionen.hinzufuegen('konfi') }] : undefined}
@@ -310,7 +321,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
           {...gemeinsam}
           titel={teamTitel}
           teilnehmende={team}
-          alleBestaetigen={darfVerwalten && offenesTeam > 0
+          alleBestaetigen={darfVerbuchen && offenesTeam > 0
             ? { anzahl: offenesTeam, onClick: () => aktionen.alleBestaetigen(offenesTeam, teamWartend.length, 'teamer') }
             : undefined}
           hinzufuegen={darfEintragen && teamErlaubt

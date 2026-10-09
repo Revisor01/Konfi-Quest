@@ -97,6 +97,10 @@ export const CONSENT_BADGE: Record<string, { label: string; icon: string; color:
  * Jetzt schlägt die Sichtbarkeit den Haken: bleibt der Beitrag bei der Leitung,
  * zeigt das Badge das Schloss.
  */
+/** Hinweis, wenn das Recht „Challenge-Beiträge freigeben" fehlt -- App und Web-Fassung. */
+export const HINWEIS_OHNE_FREIGABERECHT =
+  'Bei dieser Challenge gibt jemand anderes die Beiträge frei. Das Recht vergibt die Gemeindeleitung.';
+
 export const getStatusBadge = (
   submission: ChallengeSubmission,
   challenge: AdminChallenge
@@ -382,6 +386,10 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
   // Welche Aktionen ein Beitrag gerade zulaesst — EINE Quelle für Tippen
   // (ActionSheet) und Wischen (Swipe-Icons), damit beide Wege nie auseinander
   // laufen. Reihenfolge = Reihenfolge im ActionSheet.
+  // Recht "Challenge-Beiträge freigeben" (09.10.2026). Nur ein ausdrückliches
+  // false nimmt die Moderation weg; fehlt das Feld, bleibt alles wie bisher.
+  const darfFreigeben = challenge?.darf_freigeben !== false;
+
   const availableActions = (submission: ChallengeSubmission) => {
     const actions: Array<{
       key: 'approve' | 'anonymize' | 'hide' | 'unhide' | 'delete';
@@ -391,6 +399,21 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
       role?: 'destructive';
       run: () => void;
     }> = [];
+
+    // Ohne das Recht "Challenge-Beiträge freigeben" (09.10.2026) entfallen
+    // Freigeben, Anonym stellen, Ausblenden und Wieder einblenden -- der
+    // Server antwortet darauf mit 403. Endgültig löschen ist eine eigene
+    // Route und hängt nicht an diesem Recht.
+    if (!darfFreigeben) {
+      if (user?.type === 'admin') {
+        actions.push({
+          key: 'delete', text: 'Endgültig löschen', icon: ICON_LOESCHEN,
+          color: 'var(--app-color-danger)', role: 'destructive',
+          run: () => confirmDelete(submission)
+        });
+      }
+      return actions;
+    }
 
     if (submission.moderation_status === 'pending') {
       actions.push({
@@ -522,6 +545,7 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
     loadSubmissions,
     moderate,
     availableActions,
+    darfFreigeben,
     handleExport,
     oeffneEinreichen,
   };

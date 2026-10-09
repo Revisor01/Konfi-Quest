@@ -199,6 +199,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
    */
   const darfVerwalten = darfTermineVerwalten(user);
 
+  /**
+   * Recht „Events verbuchen" (09.10.2026, docs/planung/darf-freigeben.md):
+   * Anwesenheit setzen, Abmeldung und Notiz eintragen, „Alle bestätigen".
+   * Nur ein ausdrückliches false vom Server nimmt es weg; fehlt das Feld
+   * (älterer Server), bleibt alles wie bisher. Die Liste bleibt sichtbar.
+   */
+  const darfVerbuchen = darfVerwalten && eventData?.darf_verbuchen !== false;
+
   const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
     if (!eventData || zusageLaeuft) return;
     setZusageLaeuft(true);
@@ -869,7 +877,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // Anwesenheit verbuchen ist Leitungssache (requireAdmin). Der Riegel sitzt
     // hier UND am Zeilen-Tipp: Die Zeitfenster-Liste ruft dieselbe Funktion
     // ueber ein Prop auf, dort gaebe es sonst einen zweiten Weg herein.
-    if (!darfVerwalten) return;
+    if (!darfVerbuchen) return;
     if (offlineBlockiert(isOnline, setError)) return;
     const buttons: ActionSheetButton[] = [];
     if (participant.attendance_status !== 'present') {
@@ -1216,7 +1224,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           className="app-item-transparent"
           // Ohne Verwaltungsrecht ist die Zeile reine Anzeige: kein `button`,
           // damit kein Tipp ins Leere geht (17.09.2026).
-          button={darfVerwalten} detail={false} lines="none"
+          button={participant.status === 'waitlist' ? darfVerwalten : darfVerbuchen} detail={false} lines="none"
           onClick={() => {
             // 'opted_out' oeffnet DASSELBE Anwesenheits-Menue wie 'confirmed'
             // (Simon, 13.09.2026): "Ich als Admin will eine Selbstabmeldung
@@ -1382,6 +1390,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         materialien={eventMaterials}
         isOnline={isOnline}
         darfVerwalten={darfVerwalten}
+        darfVerbuchen={darfVerbuchen}
         darfEintragen={darfEintragen}
         darfSichMelden={darfSichMelden}
         eigeneZusage={eigeneZusage}
@@ -1680,6 +1689,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           </IonList>
         )}
 
+        {/* Ohne das Recht "Events verbuchen": Liste lesbar, Verbuchen fehlt
+            -- und der Grund steht da, statt dass Knöpfe still fehlen. */}
+        {darfVerwalten && !darfVerbuchen && (
+          <IonList inset={true} className="app-section-inset">
+            <IonCard className="app-card">
+              <IonCardContent className="app-info-box app-info-box--blue">
+                An diesem Event verbucht jemand anderes. Das Recht vergibt die Gemeindeleitung.
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
+
         {/* Timeslots mit Teilnehmern */}
         {eventData?.has_timeslots && eventData?.timeslots && eventData.timeslots.length > 0 && (
           <TimeslotsSection
@@ -1692,6 +1713,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             handleRemoveParticipant={handleRemoveParticipant}
             showWaitlistActionSheet={showWaitlistActionSheet}
             darfVerwalten={darfVerwalten}
+            darfVerbuchen={darfVerbuchen}
           />
         )}
 
@@ -1819,7 +1841,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       // Button nur, wenn es unverbuchte Angemeldete gibt (Konfis mit
                       // Status bestätigt, aber ohne Anwesenheits-Status).
                       const unprocessed = confirmedParticipants.filter(p => !p.attendance_status).length;
-                      if (unprocessed === 0 || !darfVerwalten) return null;
+                      if (unprocessed === 0 || !darfVerbuchen) return null;
                       return (
                         <IonButton fill="clear" size="small" disabled={!isOnline}
                           title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}
@@ -1862,7 +1884,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
                       // zaehlt beide Rollen (`backend/routes/events/lesen.js`,
                       // `unprocessedCount`).
                       const unprocessedTeamer = teamerConfirmed.filter(p => !p.attendance_status).length;
-                      if (unprocessedTeamer === 0 || !darfVerwalten) return null;
+                      if (unprocessedTeamer === 0 || !darfVerbuchen) return null;
                       return (
                         <IonButton fill="clear" size="small" disabled={!isOnline}
                           title={isOnline ? undefined : "Ohne Internetverbindung nicht möglich"}

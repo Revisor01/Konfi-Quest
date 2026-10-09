@@ -193,7 +193,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       breite: '184px',
       zelle: (a) => (
         <div className="web-termin-aktionen">
-          {a.status === 'pending' ? (
+          {a.status === 'pending' && a.darf_entscheiden !== false ? (
             <WebKnopf klein art="primaer" vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} prüfen`}>
               Prüfen
             </WebKnopf>
@@ -202,9 +202,12 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
               <WebKnopf klein vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} ansehen`}>
                 Ansehen
               </WebKnopf>
-              <WebKnopf klein symbol vorn aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren" onClick={() => aktionen.zuruecksetzen(a)}>
-                <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
-              </WebKnopf>
+              {/* Ohne das Recht "Anträge entscheiden" kein Zurücksetzen (Server: 403). */}
+              {a.status !== 'pending' && a.darf_entscheiden !== false && (
+                <WebKnopf klein symbol vorn aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren" onClick={() => aktionen.zuruecksetzen(a)}>
+                  <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
+                </WebKnopf>
+              )}
             </>
           )}
         </div>
@@ -253,7 +256,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
                   titelImKopf
                   titel={<WebTreffer text={a.konfi_name} suche={suche} />}
                   onTitel={() => aktionen.pruefen(a)}
-                  titelBeschriftung={`Aktivität von ${a.konfi_name} ${a.status === 'pending' ? 'prüfen' : 'ansehen'}`}
+                  titelBeschriftung={`Aktivität von ${a.konfi_name} ${a.status === 'pending' && a.darf_entscheiden !== false ? 'prüfen' : 'ansehen'}`}
                   marken={<WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>}
                   text={a.comment ? `„${a.comment}“` : undefined}
                   angaben={[
@@ -263,7 +266,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
                     a.photo_filename && { icon: ICON_KAMERA_GEFUELLT, inhalt: 'Mit Nachweisfoto', farbe: 'var(--app-color-konfis)' },
                     a.status === 'rejected' && a.admin_comment && { icon: ICON_ANTWORTEN, inhalt: `Grund der Ablehnung: ${a.admin_comment}`, farbe: 'var(--app-color-danger)' },
                   ]}
-                  fuss={a.status === 'pending' ? (
+                  fuss={a.status === 'pending' && a.darf_entscheiden !== false ? (
                     <WebKnopf klein art="primaer" vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} prüfen`}>
                       Prüfen
                     </WebKnopf>
@@ -272,10 +275,12 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
                       <WebKnopf klein vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} ansehen`}>
                         Ansehen
                       </WebKnopf>
-                      <WebKnopf klein vorn onClick={() => aktionen.zuruecksetzen(a)} aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren">
-                        <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
-                        Zurücksetzen
-                      </WebKnopf>
+                      {a.status !== 'pending' && a.darf_entscheiden !== false && (
+                        <WebKnopf klein vorn onClick={() => aktionen.zuruecksetzen(a)} aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren">
+                          <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
+                          Zurücksetzen
+                        </WebKnopf>
+                      )}
                     </>
                   )}
                 />

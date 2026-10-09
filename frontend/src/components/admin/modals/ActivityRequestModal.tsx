@@ -59,6 +59,12 @@ interface ActivityRequest {
   approved_by_name?: string;
   created_at: string;
   updated_at: string;
+  /**
+   * Darf die angemeldete Leitung über diesen Antrag entscheiden
+   * (genehmigen, ablehnen, zurücksetzen)? Recht „Anträge entscheiden" je
+   * Jahrgang (09.10.2026). Fehlt bei älteren Servern -- dann wie bisher.
+   */
+  darf_entscheiden?: boolean;
 }
 
 interface ActivityRequestModalProps {
@@ -191,6 +197,10 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
 
   const isPending = request?.status === 'pending';
   const isApproved = request?.status === 'approved';
+  // Recht "Anträge entscheiden" (09.10.2026). Nur ein ausdrückliches false
+  // nimmt die Knöpfe weg -- fehlt das Feld (älterer Server), bleibt alles wie
+  // bisher; der Server prüft ohnehin selbst (403).
+  const darfEntscheiden = request?.darf_entscheiden !== false;
 
   if (!request) {
     return (
@@ -224,7 +234,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>
-          {isPending && selectedAction && (
+          {isPending && darfEntscheiden && selectedAction && (
             <IonButtons slot="end">
               <IonButton aria-label="Entscheidung speichern" onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
                 {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
@@ -399,6 +409,11 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonLabel>Entscheidung</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
+              {!darfEntscheiden ? (
+                <IonCardContent className="app-info-box app-info-box--blue">
+                  Über diesen Antrag entscheidet jemand anderes. Das Recht vergibt die Gemeindeleitung.
+                </IonCardContent>
+              ) : (
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <div style={{ display: 'flex', gap: 'var(--app-abstand-mittel)' }}>
                   <IonButton
@@ -463,6 +478,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   </div>
                 )}
               </IonCardContent>
+              )}
             </IonCard>
           </IonList>
         )}

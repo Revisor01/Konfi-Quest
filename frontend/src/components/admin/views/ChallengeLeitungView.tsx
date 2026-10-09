@@ -46,6 +46,7 @@ import type {
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import {
   CONSENT_BADGE,
+  HINWEIS_OHNE_FREIGABERECHT,
   MEDIA_ICON,
   getStatusBadge,
   useChallengeLeitung,
@@ -138,6 +139,7 @@ const ChallengeLeitungView: React.FC<ChallengeLeitungViewProps> = ({
     dateiOeffnen,
     loadSubmissions,
     availableActions,
+    darfFreigeben,
     handleExport,
     oeffneEinreichen,
   } = useChallengeLeitung({ challenge, onChanged, seitenRef });
@@ -370,6 +372,18 @@ const ChallengeLeitungView: React.FC<ChallengeLeitungViewProps> = ({
             <IonSegmentButton value="meins"><IonLabel>Meins</IonLabel></IonSegmentButton>
           </IonSegment>
         </div>
+
+        {/* Ohne das Recht "Challenge-Beiträge freigeben": lesen ja,
+            moderieren nein -- und der Grund steht da. */}
+        {!darfFreigeben && (
+          <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
+            <IonCard className="app-card">
+              <IonCardContent className="app-info-box app-info-box--blue">
+                {HINWEIS_OHNE_FREIGABERECHT}
+              </IonCardContent>
+            </IonCard>
+          </IonList>
+        )}
 
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-block)' }}>

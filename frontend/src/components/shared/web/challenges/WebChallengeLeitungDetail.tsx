@@ -47,6 +47,7 @@ import { useBadge } from '../../../../contexts/BadgeContext';
 import type { ChallengeHinweisArt } from '../../challengeHinweisTexte';
 import {
   CONSENT_BADGE,
+  HINWEIS_OHNE_FREIGABERECHT,
   getStatusBadge,
   useChallengeLeitung,
   type StatusFilter,
@@ -114,6 +115,7 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
     dateiOeffnen,
     moderate,
     availableActions,
+    darfFreigeben,
     handleExport,
     oeffneEinreichen,
   } = useChallengeLeitung({ challenge, onChanged, seitenRef });
@@ -205,6 +207,10 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
               <WebHinweis art="hinweis" titel="Seit deinem letzten Besuch">
                 {neu.anzahl} {neu.text}
               </WebHinweis>
+            )}
+
+            {!darfFreigeben && (
+              <WebHinweis art="hinweis">{HINWEIS_OHNE_FREIGABERECHT}</WebHinweis>
             )}
 
             <section className="web-challenge-abschnitt" aria-labelledby={beitraegeId}>

@@ -621,3 +621,54 @@ describe('Challenge fuer Team und Leitung: zwei Gesichter, eine Seite', () => {
     expect(container.querySelector('ion-segment, ion-item, ion-card, ion-list')).toBeNull();
   });
 });
+
+// Recht "Challenge-Beiträge freigeben" (09.10.2026, docs/planung/darf-freigeben.md):
+// GET /challenges/admin/:id liefert `darf_freigeben`. Bei false bleibt alles
+// lesbar, aber Freigeben, Ausblenden, Wieder einblenden und Anonym stellen
+// fehlen (der Server antwortet 403); Endgueltig loeschen ist eine eigene Route
+// und bleibt der Leitung. Fehlt das Feld, gilt es als an.
+describe('Recht "Challenge-Beiträge freigeben"', () => {
+  const HINWEIS = 'Bei dieser Challenge gibt jemand anderes die Beiträge frei. Das Recht vergibt die Gemeindeleitung.';
+  const MODERATION = /^(Freigeben|Ausblenden|Wieder einblenden|Anonym stellen):/;
+
+  it('VERBOTEN (false): in keinem Reiter ein Knopf der Moderation, dafür der Grund; Beiträge bleiben lesbar', async () => {
+    antworten({ ...LAUFEND, darf_freigeben: false });
+    await zeigen();
+    expect(screen.getByText(HINWEIS)).toBeInTheDocument();
+    for (const reiter of [/^Feed/, /^Wartet/, /^Abgelehnt/]) {
+      waehle(reiter);
+      expect(screen.queryAllByRole('button', { name: MODERATION })).toEqual([]);
+    }
+    waehle(/^Wartet/);
+    expect(namen()).toEqual(['Mara Probe', 'Ole Vorlage']);
+    // Loeschen haengt nicht an diesem Recht.
+    expect(screen.getAllByRole('button', { name: /^Endgültig löschen:/ })).toHaveLength(2);
+  });
+
+  it.each([
+    ['ERLAUBT (true)', { darf_freigeben: true }],
+    ['älterer Server ohne das Feld', {}],
+  ])('%s: Freigeben, Ausblenden und Wieder einblenden wie bisher, kein Hinweis', async (_name, zusatz) => {
+    antworten({ ...LAUFEND, ...zusatz });
+    await zeigen();
+    expect(screen.queryByText(HINWEIS)).toBe(null);
+    waehle(/^Wartet/);
+    expect(screen.getByRole('button', { name: 'Freigeben: Mara Probe' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ausblenden: Mara Probe' })).toBeInTheDocument();
+    waehle(/^Abgelehnt/);
+    expect(screen.getByRole('button', { name: 'Wieder einblenden: Noah Entwurf' })).toBeInTheDocument();
+  });
+
+  it('App (schmales Fenster): derselbe Grund über der Liste; mit Recht nicht', async () => {
+    h.breit = false;
+    antworten({ ...LAUFEND, darf_freigeben: false });
+    const erste = oeffne();
+    await waitFor(() => expect(erste.container.querySelector('.app-list-item--challenges')).not.toBeNull());
+    expect(erste.container.textContent).toContain(HINWEIS);
+    erste.unmount();
+    antworten({ ...LAUFEND, darf_freigeben: true });
+    const zweite = oeffne();
+    await waitFor(() => expect(zweite.container.querySelector('.app-list-item--challenges')).not.toBeNull());
+    expect(zweite.container.textContent).not.toContain(HINWEIS);
+  });
+});

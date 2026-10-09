@@ -22,6 +22,12 @@ export interface AntragZeile {
   activity_target_role?: 'konfi' | 'teamer';
   created_at: string;
   updated_at: string;
+  /**
+   * Darf die angemeldete Leitung über diesen Antrag entscheiden
+   * (genehmigen, ablehnen, zurücksetzen)? Recht „Anträge entscheiden" je
+   * Jahrgang (09.10.2026). Fehlt bei älteren Servern -- dann wie bisher.
+   */
+  darf_entscheiden?: boolean;
 }
 
 /**

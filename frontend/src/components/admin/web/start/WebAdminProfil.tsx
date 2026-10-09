@@ -16,8 +16,10 @@ import {
   WebEinstellungenKarte,
   WebKontoKarte,
   WebPersonKarte,
+  WebKennzahlenZeile,
   WebPushZeile,
 } from '../../../konfi/web/WebProfilBausteine';
+import { hatKennzahlenWahl } from '../../../shared/KennzahlenAuswahl';
 import '../../../../theme/web/start.css';
 
 export interface WebAdminProfilProps {
@@ -80,6 +82,8 @@ const WebAdminProfil: React.FC<WebAdminProfilProps> = (props) => {
         {/* Wie bei Konfis und Team (in der App unter Mehr › Konto). Simon,
             06.10.2026: dass sie der Leitung im Browser fehlte, war nicht gewollt. */}
         <WebPushZeile variante="users" presentingElement={props.presentingElement} />
+        {/* Kennzahlen-Wahl wie in der App (Mehr › Konto), nur Leitung und Gemeindeleitung. */}
+        {hatKennzahlenWahl(props.rolleName) && <WebKennzahlenZeile presentingElement={props.presentingElement} />}
         <WebEinstellung icon={ICON_GALERIE} titel="Medien-Cache" wert={props.cacheLabel} knopf="Leeren" onClick={props.onCache} />
       </WebEinstellungenKarte>
 

@@ -64,6 +64,11 @@ export interface WebTeilnehmerLeitungProps {
   /** Pflicht-Event: Konfis lassen sich nicht entfernen oder auf die Warteliste setzen. */
   pflicht: boolean;
   darfVerwalten: boolean;
+  /**
+   * Recht „Events verbuchen" (09.10.2026): Anwesenheit, Abmeldung, Notiz und
+   * Eintrag zurücksetzen. Ohne es bleiben Warteliste und Entfernen. Fehlt = wie darfVerwalten.
+   */
+  darfVerbuchen?: boolean;
   isOnline: boolean;
   aktionen: TeilnehmerAktionen;
   /** "Alle bestaetigen (n)": die offenen Eintraege als anwesend verbuchen. */
@@ -77,7 +82,7 @@ export interface WebTeilnehmerLeitungProps {
 const istLeitung = (p: Participant) => p.role_name === 'admin' || p.role_name === 'org_admin';
 
 const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
-  titel, untertitel, teilnehmende, warteliste = false, mitZeitfenster, pflicht, darfVerwalten, isOnline, aktionen, alleBestaetigen, hinzufuegen, leerText,
+  titel, untertitel, teilnehmende, warteliste = false, mitZeitfenster, pflicht, darfVerwalten, darfVerbuchen = darfVerwalten, isOnline, aktionen, alleBestaetigen, hinzufuegen, leerText,
 }) => {
   const [menuFuer, setMenuFuer] = useState<Participant | null>(null);
   const offlineHinweis = isOnline ? undefined : 'Ohne Internetverbindung nicht möglich';
@@ -153,6 +158,18 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
         }
         const anwesend = p.attendance_status === 'present';
         const abwesend = p.attendance_status === 'absent';
+        // Ohne das Recht "Events verbuchen" bleibt nur das Menü -- und darin
+        // nur, was nicht verbucht (Warteliste, Entfernen); ist auch das leer, nichts.
+        if (!darfVerbuchen) {
+          const darfEntfernen = p.role_name !== 'konfi' || !pflicht;
+          return darfEntfernen ? (
+            <div className="web-termin-aktionen">
+              <WebKnopf klein symbol aria-label={`Weitere Aktionen für ${p.participant_name}`} title="Weitere Aktionen" onClick={() => setMenuFuer(p)}>
+                <IonIcon icon={ICON_MEHR} aria-hidden="true" />
+              </WebKnopf>
+            </div>
+          ) : null;
+        }
         return (
           <div className="web-termin-aktionen">
             <div className="web-umschalter" role="group" aria-label={`Anwesenheit von ${p.participant_name}`}>
@@ -212,18 +229,20 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
     const darfEntfernen = p.role_name !== 'konfi' || !pflicht;
     const schliesseUnd = (aktion: () => void) => () => { setMenuFuer(null); aktion(); };
     return (
-      <WebDialog titel={p.participant_name} beschreibung="Anwesenheit verwalten" onSchliessen={() => setMenuFuer(null)}>
+      <WebDialog titel={p.participant_name} beschreibung={darfVerbuchen ? 'Anwesenheit verwalten' : 'Teilnahme verwalten'} onSchliessen={() => setMenuFuer(null)}>
         <div className="web-teilnehmer-menue">
-          <WebKnopf onClick={schliesseUnd(() => aktionen.abmeldung(p))}>
-            <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
-            {p.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet eintragen'}
-          </WebKnopf>
-          {hatEintrag && (
+          {darfVerbuchen && (
+            <WebKnopf onClick={schliesseUnd(() => aktionen.abmeldung(p))}>
+              <IonIcon icon={ICON_ABSAGE} aria-hidden="true" />
+              {p.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet eintragen'}
+            </WebKnopf>
+          )}
+          {darfVerbuchen && hatEintrag && (
             <WebKnopf onClick={schliesseUnd(() => aktionen.notiz(p))}>
               {p.attendance_note ? 'Notiz bearbeiten' : 'Notiz hinzufügen'}
             </WebKnopf>
           )}
-          {hatEintrag && (
+          {darfVerbuchen && hatEintrag && (
             <WebKnopf onClick={schliesseUnd(() => aktionen.anwesenheit(p, null))}>
               <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
               Eintrag zurücksetzen

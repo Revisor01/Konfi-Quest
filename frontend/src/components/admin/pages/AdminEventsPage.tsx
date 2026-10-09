@@ -65,6 +65,8 @@ interface ActivityRequest {
   approved_by?: number;
   created_at: string;
   updated_at: string;
+  /** Recht „Anträge entscheiden" (09.10.2026); fehlt bei älteren Servern. */
+  darf_entscheiden?: boolean;
 }
 
 interface AdminEventsPageProps {

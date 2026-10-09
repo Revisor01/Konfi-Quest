@@ -539,6 +539,7 @@ describe('Chat und Challenges bauen keine eigene Kopfzeile mehr', () => {
       'src/components/admin/pages/AdminWrappedPage.tsx',       // <IonModal> "Neuer Rückblick"
       'src/components/admin/views/KonfiDetailView.tsx',        // PhotoModal (Innen-Komponente)
       'src/components/shared/AppKopfzeile.tsx',                // das Geruest selbst
+      'src/components/shared/KennzahlenAuswahl.tsx',           // per useIonModal: Kennzahlen-Wahl der Leitung
       'src/components/shared/PushAuswahl.tsx',                 // <IonModal> Mitteilungs-Auswahl
     ]);
   });

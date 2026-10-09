@@ -22,7 +22,29 @@ export interface BaseUser {
    * ihrer zugewiesenen Jahrgaenge. Bei `org_admin` ist die Liste leer oder
    * bedeutungslos — diese Rolle sieht ohnehin alles.
    */
-  assigned_jahrgaenge?: { id: number; name: string; can_view?: boolean; can_edit?: boolean }[];
+  assigned_jahrgaenge?: ({ id: number; name: string; can_view?: boolean; can_edit?: boolean } & FreigabeRechte)[];
+}
+
+/**
+ * Die drei Rechte "darf freigeben" an einer Jahrgangs-Zuweisung
+ * (docs/planung/darf-freigeben.md, entschieden 09.10.2026). Sie gelten fuer
+ * die Rolle Admin; die Gemeindeleitung hat sie immer. Vorgabe true -- fehlt
+ * ein Feld (aelterer Server, alter Cache), gilt es als an.
+ */
+export interface FreigabeRechte {
+  darf_antraege_entscheiden?: boolean;
+  darf_events_verbuchen?: boolean;
+  darf_challenges_freigeben?: boolean;
+}
+
+/** Eine Jahrgangs-Zuweisung wie GET /users/:id sie liefert. */
+export interface JahrgangsZuweisung extends FreigabeRechte {
+  id: number;
+  name: string;
+  can_view?: boolean;
+  can_edit?: boolean;
+  assigned_at?: string;
+  assigned_by_name?: string;
 }
 
 // Admin-User-Verwaltung (UsersView, AdminUsersPage, UserManagementModal)
@@ -40,7 +62,7 @@ export interface AdminUser {
   role_name: string;
   role_display_name: string;
   assigned_jahrgaenge_count: number;
-  assigned_jahrgaenge?: { id: number; name: string; can_view?: boolean; can_edit?: boolean; assigned_at?: string; assigned_by_name?: string }[];
+  assigned_jahrgaenge?: JahrgangsZuweisung[];
   can_edit?: boolean;
   /**
    * Darf die Person aus der Gemeinde entfernt bzw. geloescht werden? Meist

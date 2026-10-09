@@ -211,6 +211,39 @@ describe('Anträge: Hinweis ohne Jahrgang', () => {
   });
 });
 
+// Recht "Anträge entscheiden" (09.10.2026): ohne es kein "Prüfen", sondern
+// "Ansehen" (das Fenster zeigt den Grund), und kein Zurücksetzen.
+describe('Anträge: Recht "Anträge entscheiden"', () => {
+  const aktionen = { pruefen: vi.fn(), zuruecksetzen: vi.fn() };
+  const LISTE: AntragZeile[] = [
+    antrag(81, { konfi_name: 'Ohne Recht offen', darf_entscheiden: false }),
+    antrag(82, { konfi_name: 'Ohne Recht verbucht', status: 'approved', darf_entscheiden: false }),
+    antrag(83, { konfi_name: 'Mit Recht offen', darf_entscheiden: true }),
+    antrag(84, { konfi_name: 'Alt verbucht', status: 'approved' }),
+  ];
+  const zeigeAlle = () => {
+    render(<WebAntraege antraege={LISTE} ohneJahrgang={false} aktionen={aktionen} />);
+    fireEvent.click(screen.getByRole('button', { name: /^Alle/ }));
+  };
+
+  it('VERBOTEN: offen ohne Recht heißt "Ansehen" statt "Prüfen"; verbucht ohne Recht hat kein Zurücksetzen', () => {
+    zeigeAlle();
+    expect(screen.queryByRole('button', { name: 'Aktivität von Ohne Recht offen prüfen' })).toBe(null);
+    fireEvent.click(screen.getByRole('button', { name: 'Aktivität von Ohne Recht offen ansehen' }));
+    expect(aktionen.pruefen).toHaveBeenCalledWith(expect.objectContaining({ id: 81 }));
+    expect(screen.getByRole('button', { name: 'Aktivität von Ohne Recht verbucht ansehen' })).toBeInTheDocument();
+    // Zwei verbuchte, aber nur der mit Recht (Feld fehlt = wie bisher) lässt sich zurücksetzen.
+    expect(screen.getAllByRole('button', { name: 'Aktivität zurücksetzen' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Aktivität zurücksetzen' }));
+    expect(aktionen.zuruecksetzen).toHaveBeenCalledWith(expect.objectContaining({ id: 84 }));
+  });
+
+  it('ERLAUBT: mit Recht "Prüfen" am offenen Antrag', () => {
+    zeigeAlle();
+    expect(screen.getByRole('button', { name: 'Aktivität von Mit Recht offen prüfen' })).toBeInTheDocument();
+  });
+});
+
 describe('Aktivitäten: Tabelle', () => {
   it('der Katalog unter Mehr: nach Name sortiert, mit Art und Punkten; die Chips zählen die Arten', async () => {
     await oeffneReiter('aktivitaeten');

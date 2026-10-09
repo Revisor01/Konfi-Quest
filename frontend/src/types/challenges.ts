@@ -82,6 +82,13 @@ export interface AdminChallenge extends ChallengeBase {
    * liefern; das Popover zeigt dann nur den Text (16.09.2026).
    */
   earned_at?: string | null;
+  /**
+   * Darf die angemeldete Person Beiträge dieser Challenge freigeben,
+   * ausblenden, wieder einblenden oder anonymisieren? Recht
+   * „Challenge-Beiträge freigeben" je Jahrgang (09.10.2026). Fehlt bei
+   * älteren Servern -- dann wie bisher; der Server prüft selbst (403).
+   */
+  darf_freigeben?: boolean;
 }
 
 /**

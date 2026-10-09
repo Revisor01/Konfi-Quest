@@ -107,6 +107,12 @@ export interface EventData {
   teamer_waitlist_enabled?: boolean;
   teamer_max_waitlist_size?: number;
   teamer_waitlist_count?: number;
+  /**
+   * Darf die angemeldete Leitung an diesem Event Anwesenheit verbuchen? Recht
+   * „Events verbuchen" je Jahrgang (09.10.2026, GET /events/:id). Fehlt bei
+   * älteren Servern -- dann wie bisher; der Server prüft selbst (403).
+   */
+  darf_verbuchen?: boolean;
   is_series?: boolean;
   // Erster Termin der Serie -- die id des ersten Events (events.series_id),
   // also eine Zahl. In der Datenbank bigint (nachgemessen 30.08.2026 an
@@ -782,6 +788,8 @@ interface TimeslotsSectionProps {
    * Fehlt es, wird verwaltet wie bisher (true).
    */
   darfVerwalten?: boolean;
+  /** Recht „Events verbuchen" (09.10.2026): ohne es ist der Zeilen-Tipp keiner. Fehlt = wie darfVerwalten. */
+  darfVerbuchen?: boolean;
 }
 
 export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
@@ -793,7 +801,8 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
   handleDemoteParticipant,
   handleRemoveParticipant,
   showWaitlistActionSheet,
-  darfVerwalten = true
+  darfVerwalten = true,
+  darfVerbuchen = darfVerwalten
 }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -879,7 +888,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                     const listItemClass = listItemKlasse(darstellung);
                     return (
                       <IonItemSliding key={participant.id} className="app-event-detail__sliding-item">
-                        <IonItem className="app-item-transparent" button={darfVerwalten} detail={false} lines="none"
+                        <IonItem className="app-item-transparent" button={darfVerbuchen} detail={false} lines="none"
                           onClick={() => showAttendanceActionSheet(participant)}>
                           <div className={`app-list-item ${listItemClass} app-event-detail__list-item-flush`}>
                             <div className="app-corner-badges">

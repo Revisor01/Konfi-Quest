@@ -32,7 +32,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
-import { AdminUser } from '../../../types/user';
+import { AdminUser, FreigabeRechte, JahrgangsZuweisung } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, rollenFarbeVar, rollenTonVar } from '../../../utils/rollenNamen';
@@ -52,6 +52,22 @@ interface Jahrgang {
   id: number;
   name: string;
 }
+
+// Die drei Rechte "darf freigeben" je Jahrgang (docs/planung/darf-freigeben.md,
+// entschieden 09.10.2026). Reihenfolge = Reihenfolge der Schalter.
+const FREIGABE_RECHTE: { feld: keyof FreigabeRechte; text: string }[] = [
+  { feld: 'darf_antraege_entscheiden', text: 'Anträge entscheiden' },
+  { feld: 'darf_events_verbuchen', text: 'Events verbuchen' },
+  { feld: 'darf_challenges_freigeben', text: 'Challenge-Beiträge freigeben' },
+];
+type Rechte = Required<FreigabeRechte>;
+// Vorgabe des Servers: alle drei an. Gilt fuer neu ausgewaehlte Jahrgaenge und
+// fuer Zuweisungen, deren Feld fehlt (aelterer Server).
+const alleRechte = (z?: FreigabeRechte): Rechte => ({
+  darf_antraege_entscheiden: z?.darf_antraege_entscheiden !== false,
+  darf_events_verbuchen: z?.darf_events_verbuchen !== false,
+  darf_challenges_freigeben: z?.darf_challenges_freigeben !== false,
+});
 
 interface UserManagementModalProps {
   userId?: number | null;
@@ -129,8 +145,18 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
 
   // Jahrgang assignments
   const [jahrgangAssignments, setJahrgangAssignments] = useState<{ [key: number]: boolean }>({});
+  // Rechte je Jahrgang; fehlt ein Eintrag, gilt die Vorgabe (alle an).
+  const [jahrgangRechte, setJahrgangRechte] = useState<{ [key: number]: Rechte }>({});
 
   const isEditMode = !!userId;
+
+  // Die Rechte vergibt nur die Gemeindeleitung, und sie gelten nur fuer die
+  // Rolle Admin (Teamer:innen behalten ihr Verhalten, die Gemeindeleitung hat
+  // sie immer). Das Backend weist jeden anderen, der die Felder mitschickt,
+  // mit 403 ab -- deshalb haengt auch das Mitschicken an dieser Bedingung.
+  const gewaehlteRolle = roles.find((r) => r.id === formData.role_id)?.name
+    ?? (user && user.role_id === formData.role_id ? user.role_name : undefined);
+  const rechteVergeben = currentUser?.role_name === 'org_admin' && gewaehlteRolle === 'admin';
 
   // Farbwelt des Dialogs: Wird er als "Neue Teamer:in" geoeffnet, nutzt er die
   // Teamer-Farbe (--app-color-teamer) statt der allgemeinen Nutzer-Farbe —
@@ -243,12 +269,15 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
       });
 
       const assignments: { [key: number]: boolean } = {};
+      const rechte: { [key: number]: Rechte } = {};
       if (userData.assigned_jahrgaenge) {
-        userData.assigned_jahrgaenge.forEach((assignment: { id: number; name: string; can_view?: boolean; can_edit?: boolean; assigned_at?: string; assigned_by_name?: string }) => {
+        userData.assigned_jahrgaenge.forEach((assignment: JahrgangsZuweisung) => {
           assignments[assignment.id] = !!(assignment.can_view || assignment.can_edit);
+          rechte[assignment.id] = alleRechte(assignment);
         });
       }
       setJahrgangAssignments(assignments);
+      setJahrgangRechte(rechte);
     } catch (err) {
       setError('Fehler beim Laden des Benutzers');
  console.error('Error loading user:', err);
@@ -320,7 +349,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           .map(([jahrgangId, _]) => ({
             jahrgang_id: parseInt(jahrgangId),
             can_view: true,
-            can_edit: true
+            can_edit: true,
+            // Nur die Gemeindeleitung bei der Rolle Admin; sonst fehlen die
+            // Felder, und der Server behaelt die bisherigen Werte.
+            ...(rechteVergeben ? alleRechte(jahrgangRechte[parseInt(jahrgangId)]) : {})
           }));
 
         if (userIdForAssignments) {
@@ -335,6 +367,13 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         setError(fehlerText(err, 'Fehler beim Speichern des Benutzers'));
       }
     });
+  };
+
+  const setzeRecht = (jahrgangId: number, feld: keyof FreigabeRechte, wert: boolean) => {
+    setJahrgangRechte(prev => ({
+      ...prev,
+      [jahrgangId]: { ...alleRechte(prev[jahrgangId]), [feld]: wert }
+    }));
   };
 
   const handleJahrgangAssignment = (jahrgangId: number, value: boolean) => {
@@ -618,12 +657,19 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
               </IonItem>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {rechteVergeben && (
+                  <p style={{ margin: '0 0 var(--app-abstand-basis) 0', color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-hinweis)' }}>
+                    Wer ein Recht nicht hat, sieht die Vorgänge weiter, kann sie
+                    aber nicht entscheiden. Die Gemeindeleitung hat alle Rechte immer.
+                  </p>
+                )}
                 {jahrgaenge.map((jahrgang, index) => {
                   const isAssigned = jahrgangAssignments[jahrgang.id] || false;
+                  const rechte = alleRechte(jahrgangRechte[jahrgang.id]);
 
                   return (
+                    <React.Fragment key={jahrgang.id}>
                     <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
-                      key={jahrgang.id}
                       className={`app-list-item app-list-item--${farbe}`}
                       onClick={() => !isSubmitting && handleJahrgangAssignment(jahrgang.id, !isAssigned)}
                       style={{
@@ -638,6 +684,31 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     >
                       <span style={{ fontWeight: 'var(--app-schrift-mittel)', color: 'var(--app-text-primary)' }}>{jahrgang.name}</span>
                     </div>
+                    {/* Die Rechte stehen NEBEN der Zeile, nicht in ihr: Ein
+                        Tipp auf einen Schalter darf den Jahrgang nicht abwaehlen. */}
+                    {rechteVergeben && isAssigned && (
+                      <div role="group" aria-label={`Rechte für ${jahrgang.name}`}
+                        style={{ padding: '0 var(--app-abstand-basis)', marginBottom: index < jahrgaenge.length - 1 ? 'var(--app-abstand-eng)' : '0' }}>
+                        {FREIGABE_RECHTE.map(({ feld, text }, i) => (
+                          <div key={feld} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: 'var(--app-abstand-schmal) 0',
+                            borderTop: i > 0 ? '1px solid rgba(0,0,0,0.06)' : undefined
+                          }}>
+                            <span style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)' }}>{text}</span>
+                            <IonToggle aria-label={`${text} (${jahrgang.name})`}
+                              className={`app-toggle--${farbe}`}
+                              checked={rechte[feld]}
+                              onIonChange={(e) => setzeRecht(jahrgang.id, feld, e.detail.checked)}
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    </React.Fragment>
                   );
                 })}
               </div>
