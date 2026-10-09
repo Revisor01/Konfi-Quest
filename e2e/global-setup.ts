@@ -1,11 +1,13 @@
 // E2E Global Setup: Docker-Compose Stack starten + DB seeden
 import { execSync } from 'child_process';
 import { Pool } from 'pg';
+import { chromium } from '@playwright/test';
 
 const COMPOSE_FILE = 'docker-compose.e2e.yml';
 const BACKEND_URL = 'http://localhost:5555/api/health';
 const DB_URL = 'postgresql://postgres:postgres@localhost:5444/postgres';
 const MAX_WAIT_MS = 90_000;
+const FRONTEND_LOGIN_URL = 'http://localhost:5556/login';
 
 async function waitForBackend(): Promise<void> {
   const start = Date.now();
@@ -19,6 +21,35 @@ async function waitForBackend(): Promise<void> {
     await new Promise((r) => setTimeout(r, 2000));
   }
   throw new Error(`Backend nicht erreichbar nach ${MAX_WAIT_MS / 1000}s`);
+}
+
+// Aufwaermen (09.10.2026): Der erste Test nach dem Start des Stacks sah
+// mehrfach eine weisse Seite und fand die Anmeldung nicht (CI 37849897713,
+// 37938814113 zweimal hintereinander) -- Backend gesund, Frontend noch nicht
+// soweit. Deshalb einmal im Browser die Anmeldeseite laden, bis das Feld
+// steht, bevor der erste Test laeuft. Kein retries im Test: Das hier misst die
+// Umgebung, nicht die App.
+async function waitForFrontend(): Promise<void> {
+  const browser = await chromium.launch();
+  try {
+    const page = await browser.newPage();
+    const start = Date.now();
+    let letzterFehler: unknown = null;
+    while (Date.now() - start < MAX_WAIT_MS) {
+      try {
+        await page.goto(FRONTEND_LOGIN_URL, { waitUntil: 'load', timeout: 15_000 });
+        await page.locator('input[placeholder="Dein Nutzername"]').waitFor({ state: 'visible', timeout: 10_000 });
+        console.log(`E2E: Anmeldeseite nach ${Math.round((Date.now() - start) / 1000)} s bereit`);
+        return;
+      } catch (e) {
+        letzterFehler = e;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+    }
+    throw new Error(`Anmeldeseite nicht bereit nach ${MAX_WAIT_MS / 1000}s: ${String(letzterFehler)}`);
+  } finally {
+    await browser.close();
+  }
 }
 
 async function seedDatabase(): Promise<void> {
@@ -68,6 +99,9 @@ async function globalSetup(): Promise<void> {
 
   console.log('E2E: Seede Datenbank...');
   await seedDatabase();
+
+  console.log('E2E: Waerme die Anmeldeseite auf...');
+  await waitForFrontend();
 
   console.log('E2E: Setup abgeschlossen');
 }

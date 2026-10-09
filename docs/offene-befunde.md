@@ -238,9 +238,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - **Ohne Test.** 3 Utils, 2 Hooks und 1 Service kommen in keinem Test vor
   (30.09.2026); gegen neue Komponenten ohne Test gibt es keine Leitplanke
   (Tests BF-10, Rest).
-- **E2E-Aufwärmen.** Der erste E2E-Test direkt nach dem Start des Stacks kann
-  an `ERR_NETWORK_CHANGED` scheitern (beobachtet 30.09.2026); ein
-  Aufwärmschritt im E2E-Setup würde helfen.
 - **Erste echte Fälle beobachten.** Die Vorwärts-Prüfung des Deploys
   (`NUR_VORWAERTS` in `deploy/rollend.sh`) und die Meldung bei rotem `main`
   (`ci-meldung.yml`) sind nur gegen Nachbauten geprüft. Beim ersten echten
