@@ -38,7 +38,7 @@ describe('die Regel-Stelle', () => {
     expect(anwesenheitAusstehend(termin(KOMMEND), JETZT)).toBe(false);
     expect(anwesenheitAusstehend(termin(LAUFEND, { booking_status: 'waitlist', is_registered: false }), JETZT)).toBe(false);
     expect(anwesenheitAusstehend(termin(LAUFEND, { attendance_status: 'present' }), JETZT)).toBe(false);
-    expect(anwesenheitAusstehend(termin(LAUFEND, { is_registered: false, booking_status: null as unknown as string }), JETZT)).toBe(false);
+    expect(anwesenheitAusstehend(termin(LAUFEND, { is_registered: false, booking_status: null }), JETZT)).toBe(false);
   });
 });
 
