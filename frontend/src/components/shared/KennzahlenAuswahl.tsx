@@ -7,7 +7,6 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
-  IonItem,
   IonLabel,
   IonList,
   IonListHeader,
@@ -18,7 +17,14 @@ import {
   IonToolbar,
   useIonModal
 } from '@ionic/react';
-import { ICON_PULS, ICON_SCHLIESSEN } from './icons';
+import {
+  ICON_CHALLENGE_GEFUELLT,
+  ICON_INFO,
+  ICON_PULS,
+  ICON_SCHLIESSEN,
+  ICON_TERMIN_GEFUELLT,
+  ICON_TEXTDOKUMENT_GEFUELLT
+} from './icons';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import api from '../../services/api';
@@ -51,6 +57,13 @@ export const KENNZAHL_BEREICHE: { id: keyof Kennzahlen; name: string; beschreibu
   { id: 'verbuchen', name: 'Events verbuchen', beschreibung: 'Vergangene Events, an denen noch nichts verbucht ist' },
   { id: 'challenges', name: 'Challenge-Beiträge', beschreibung: 'Neue Beiträge zum Freigeben' },
 ];
+
+/** Symbol je Bereich, wie die Zeilen der Konto-Einstellungen eins tragen. */
+const BEREICH_ICON: Record<keyof Kennzahlen, string> = {
+  antraege: ICON_TEXTDOKUMENT_GEFUELLT,
+  verbuchen: ICON_TERMIN_GEFUELLT,
+  challenges: ICON_CHALLENGE_GEFUELLT,
+};
 
 /** Wer die Wahl hat -- dieselbe Regel wie im Backend (utils/leitungKennzahlen.js). */
 export const hatKennzahlenWahl = (rolle?: string | null): boolean =>
@@ -133,6 +146,15 @@ export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) 
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background">
+        {/* Aufbau wie die Schwesterseiten unter Mehr › Konto (Simon,
+            09.10.2026: "falsche Schriftgrößen, die Hinweistexte sehen nicht
+            aus wie auf den anderen Unterseiten, Subtexte zu groß"). Vorher
+            IonItem mit <h2>/<p>: Das iOS-Theme setzt <p> in einer Karte auf
+            "inherit" und überstimmt damit die Kartenregel -- gemessen 16 px
+            Untertext unter 14,4 px Titel. Jetzt die Zeilen der Konto-
+            Einstellungen (app-list-item wie AbsturzberichteSchalter: Titel
+            15,2 px, Untertext 12 px) und der Hinweis als eigener Abschnitt
+            wie in ChangeEmailModal. */}
         <IonList inset={true} className="app-segment-wrapper">
           <IonListHeader>
             <div className="app-section-icon app-section-icon--users">
@@ -141,41 +163,56 @@ export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) 
             <IonLabel>Kennzahlen</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               {laedt || !kennzahlen ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-mittel)' }}>
                   {laedt ? <IonSpinner name="crescent" /> : null}
                 </div>
               ) : (
-                <IonList lines="none" style={{ background: 'transparent' }}>
-                  {KENNZAHL_BEREICHE.map((b, index) => (
-                    <IonItem
-                      key={b.id}
-                      lines={index < KENNZAHL_BEREICHE.length - 1 ? 'full' : 'none'}
-                      className="app-dashboard-settings-item"
-                    >
-                      <IonLabel>
-                        <h2>{b.name}</h2>
-                        <p>{b.beschreibung}</p>
-                      </IonLabel>
-                      <IonToggle
-                        slot="end"
-                        className="app-toggle--users"
-                        aria-label={b.name}
-                        checked={kennzahlen[b.id]}
-                        disabled={speichert}
-                        onIonChange={(e) => { void schalten(b.id, e.detail.checked); }}
-                      />
-                    </IonItem>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  {KENNZAHL_BEREICHE.map((b) => (
+                    <div key={b.id} className="app-list-item app-list-item--users" style={{ width: '100%' }}>
+                      <div className="app-list-item__row">
+                        <div className="app-list-item__main">
+                          <div className="app-icon-circle app-icon-circle--users">
+                            <IonIcon icon={BEREICH_ICON[b.id]} />
+                          </div>
+                          <div className="app-list-item__content">
+                            <div className="app-list-item__title">{b.name}</div>
+                            <div className="app-list-item__meta">
+                              <span className="app-list-item__meta-item">{b.beschreibung}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <IonToggle
+                          className="app-toggle--users"
+                          aria-label={b.name}
+                          checked={kennzahlen[b.id]}
+                          disabled={speichert}
+                          onIonChange={(e) => { void schalten(b.id, e.detail.checked); }}
+                        />
+                      </div>
+                    </div>
                   ))}
-                </IonList>
+                </div>
               )}
             </IonCardContent>
           </IonCard>
-          <IonCard className="app-card">
-            <IonCardContent className="app-info-box app-info-box--blue">
-              Aus heißt: keine rote Zahl am Reiter, nichts davon in der Zahl am
-              App-Symbol und kein Push dafür. Gilt für diese Gemeinde.
+        </IonList>
+
+        <IonList inset={true} className="app-segment-wrapper">
+          <IonListHeader>
+            <div className="app-section-icon app-section-icon--users">
+              <IonIcon icon={ICON_INFO} />
+            </div>
+            <IonLabel>Hinweis</IonLabel>
+          </IonListHeader>
+          <IonCard className="app-card app-info-box--blue">
+            <IonCardContent className="app-info-box">
+              <p style={{ margin: 0 }}>
+                Aus heißt: keine rote Zahl am Reiter, nichts davon in der Zahl am
+                App-Symbol und kein Push dafür. Gilt für diese Gemeinde.
+              </p>
             </IonCardContent>
           </IonCard>
         </IonList>

@@ -91,6 +91,29 @@ describe('Das Fenster "Kennzahlen"', () => {
     expect(h.refreshAllCounts).not.toHaveBeenCalled();
   });
 
+  // Simon, 09.10.2026: "falsche Schriftgrößen, die Hinweistexte sehen nicht
+  // aus wie auf den anderen Unterseiten, Subtexte zu groß". Mit IonItem und
+  // <h2>/<p> setzte das iOS-Theme den Untertext auf 16 px über einen Titel
+  // von 14,4 px. Die Zeilen folgen jetzt den Konto-Einstellungen
+  // (app-list-item wie AbsturzberichteSchalter), der Hinweis steht als eigener
+  // Abschnitt "Hinweis" in einem <p> wie in ChangeEmailModal.
+  it('Aufbau wie die Schwesterseiten: Zeilen der Konto-Einstellungen, Hinweis als eigener Abschnitt', async () => {
+    const { container } = render(<KennzahlenModal onClose={vi.fn()} />);
+    await screen.findByRole('checkbox', { name: 'Anträge' });
+    const titel = [...container.querySelectorAll('.app-list-item__title')].map((e) => e.textContent);
+    expect(titel).toEqual(['Anträge', 'Events verbuchen', 'Challenge-Beiträge']);
+    const untertitel = [...container.querySelectorAll('.app-list-item__meta-item')].map((e) => e.textContent);
+    expect(untertitel).toEqual([
+      'Offene Anträge zum Entscheiden',
+      'Vergangene Events, an denen noch nichts verbucht ist',
+      'Neue Beiträge zum Freigeben',
+    ]);
+    // Kein <h2>/<p>-Label mehr -- daran hing die falsche Schriftgröße.
+    expect(container.querySelectorAll('h2')).toHaveLength(0);
+    expect(screen.getByText('Hinweis')).toBeInTheDocument();
+    expect(screen.getByText(ERKLAERUNG).tagName).toBe('P');
+  });
+
   it('scheitert das Laden: Meldung, keine Schalter', async () => {
     h.apiGet.mockRejectedValue(new Error('Netz weg'));
     render(<KennzahlenModal onClose={vi.fn()} />);
