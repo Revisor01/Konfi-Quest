@@ -243,6 +243,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 10.10.2026 — Bildschirmfotos der Challenges erneuert: Detail und Feed
   (iPhone und Play) zeigen die eigene Seite statt des Dialogs (Branch
   `docs/screenshots-challenges-2.4.0`).
+- [x] 10.10.2026 — Konfis ohne Jahrgang stehen beim Sortieren nach
+  Jahrgang in der Web-Fassung in beiden Richtungen unten, wie im Team und in
+  jeder Tabelle (Branch `fix/sortierung-ohne-jahrgang`).
 
 
 ## Offen

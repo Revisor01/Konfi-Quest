@@ -9,6 +9,8 @@
 //     gelten 10 (der Regler beginnt bei 1).
 //   - "Erreicht" heisst: die Summe der aktiven Arten hat das Gesamtziel erreicht.
 
+import { istLeer } from './tabelleSortieren';
+
 export interface KonfiListenEintrag {
   id: number;
   name: string;
@@ -109,17 +111,20 @@ const zeitpunkt = (iso?: string | null): number | null => {
 };
 
 /**
- * Ordnet nach `wert`; bei gleichem Wert entscheidet der Name (A-Z). Ein Wert
- * `null` (abgeschaltete Punkteart, kein Datum, kein Jahrgang) steht in beiden
- * Richtungen unten.
+ * Ordnet nach `wert`; bei gleichem Wert entscheidet der Name (A-Z). Ein leerer
+ * Wert (abgeschaltete Punkteart, kein Datum, kein Jahrgang -- null wie leerer
+ * Text) steht in beiden Richtungen unten, dieselbe Regel wie in jeder Tabelle
+ * (utils/tabelleSortieren, istLeer).
  */
 function ordne<T>(liste: readonly T[], wert: (x: T) => number | string | null, richtung: Richtung, name: (x: T) => string): T[] {
   const vorzeichen = richtung === 'auf' ? 1 : -1;
   return [...liste].sort((a, b) => {
     const x = wert(a);
     const y = wert(b);
-    if (x === null || y === null) {
-      if (x !== y) return x === null ? 1 : -1;
+    const xLeer = istLeer(x);
+    const yLeer = istLeer(y);
+    if (xLeer || yLeer) {
+      if (xLeer !== yLeer) return xLeer ? 1 : -1;
       return text(name(a), name(b));
     }
     const vergleich = typeof x === 'number' && typeof y === 'number' ? x - y : text(String(x), String(y));
@@ -130,8 +135,8 @@ function ordne<T>(liste: readonly T[], wert: (x: T) => number | string | null, r
 /**
  * Konfis ordnen. Bei gleichem Wert entscheidet der Name (A-Z), damit die
  * Reihenfolge nicht vom Zufall der Antwort abhaengt. Die Liste selbst bleibt
- * unveraendert. Eine abgeschaltete Punkteart und eine fehlende letzte
- * Aktivitaet stehen unten.
+ * unveraendert. Eine abgeschaltete Punkteart, eine fehlende letzte
+ * Aktivitaet und ein fehlender Jahrgang stehen in beiden Richtungen unten.
  */
 export function sortiereKonfis<T extends KonfiListenEintrag>(konfis: readonly T[], nach: KonfiSortierSchluessel, richtung: Richtung): T[] {
   const wert = (k: T): number | string | null => {

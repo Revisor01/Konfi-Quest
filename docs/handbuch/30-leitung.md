@@ -147,8 +147,9 @@ beide Gruppen. Bei der Suche darfst du Umlaute umschreiben („mueller" findet
 „Müller"), die Escape-Taste leert das Feld. In der Liste sortiert ein Klick auf
 eine Spaltenüberschrift — bei den Konfis nach Name, Jahrgang, Gesamt oder
 Badges, beim Team nach Name, Badges oder Zertifikaten —, ein zweiter Klick
-kehrt die Richtung um. In den Kacheln sortiert die Auswahl **Sortieren** neben
-der Wahl; beide stellen dieselbe Sortierung ein.
+kehrt die Richtung um; wer keinen Jahrgang hat, steht beim Sortieren nach
+Jahrgang in beiden Richtungen unten. In den Kacheln sortiert die Auswahl
+**Sortieren** neben der Wahl; beide stellen dieselbe Sortierung ein.
 
 Eine Konfi zeigt den Kreis mit ihren Initialen, Name und Benutzername,
 Jahrgang, je einen Balken für Gottesdienst, Gemeinde und Gesamt mit dem Stand

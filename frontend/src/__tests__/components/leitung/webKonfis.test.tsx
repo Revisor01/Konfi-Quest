@@ -328,6 +328,32 @@ describe('Konfis (Web): Suche, Filter, Sortierung', () => {
   });
 });
 
+describe('Konfis (Web): ohne Jahrgang steht beim Sortieren nach Jahrgang unten', () => {
+  // Wie im Team (und wie leere Werte in jeder Tabelle): in beiden Richtungen
+  // unten. Bis 10.10.2026 stand ein Konfi ohne Jahrgang bei A–Z ganz oben.
+  const MIT_OHNE = [...KONFIS, { id: 6, name: 'Aaron Ohne', username: 'aaron.ohne', gottesdienst_points: 0, gemeinde_points: 0, target_gottesdienst: 10, target_gemeinde: 10, badgeCount: 0 }];
+
+  it('Liste: Klick auf "Jahrgang" A–Z und ein zweiter Z–A, ohne Jahrgang beide Male zuletzt', () => {
+    zeigen({ konfis: MIT_OHNE });
+    const kopf = () => within(tabelle('Konfis')).getByRole('columnheader', { name: 'Jahrgang' });
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen()).toEqual(['Clara Beispiel', 'Dora Test', 'Anna Müller', 'Ben Schmidt', 'Emil Probe', 'Aaron Ohne']);
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'descending');
+    expect(namen()).toEqual(['Anna Müller', 'Ben Schmidt', 'Emil Probe', 'Clara Beispiel', 'Dora Test', 'Aaron Ohne']);
+  });
+
+  it('Kacheln: "Jahrgang A–Z" und "Jahrgang Z–A", ohne Jahrgang beide Male zuletzt', () => {
+    zeigen({ konfis: MIT_OHNE });
+    waehle('Kacheln');
+    sortiereKacheln('jahrgang:auf');
+    expect(kartenNamen()).toEqual(['Clara Beispiel', 'Dora Test', 'Anna Müller', 'Ben Schmidt', 'Emil Probe', 'Aaron Ohne']);
+    sortiereKacheln('jahrgang:ab');
+    expect(kartenNamen()).toEqual(['Anna Müller', 'Ben Schmidt', 'Emil Probe', 'Clara Beispiel', 'Dora Test', 'Aaron Ohne']);
+  });
+});
+
 describe('Konfis (Web): Rechte', () => {
   it('Gemeindeleitung: Anlegen, Einladen, Anwesenheit und Loeschen; alle Jahrgaenge im Filter', () => {
     zeigen();
