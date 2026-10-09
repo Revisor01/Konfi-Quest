@@ -4652,6 +4652,15 @@ paths:
         (frontend/src/services/updateCheck.ts, an beiden Tags unveraendert) —
         die zusaetzlichen Felder sehen sie nicht.
 
+        ANDROID AB 2.4.0 (09.10.2026, Antwortform unveraendert): Liegt die
+        installierte Version unter `android.min_version`, startet die App
+        zuerst Googles sofortiges In-App-Update (Vollbild, schliessbar) und
+        zeigt den Hinweis nur, wenn Google das Update nicht anbieten kann.
+        Ein flexibles Update (Laden im Hintergrund, dann "Neustarten zum
+        Aktualisieren") holt sie, wenn Google Play fuer das Geraet eine
+        neuere Version hat — dafuer zaehlt Play, nicht `android.version`.
+        Ablauf und Pruefung: docs/betrieb/mindestversion.md.
+
         Beispiel:
         `{"ios": {"version": "2.3.0", "url": "https://apps.apple.com/...",
         "min_version": "2.3.0"}, "android": {"version": "2.3.0", "url":

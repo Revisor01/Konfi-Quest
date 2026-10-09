@@ -461,6 +461,17 @@ Die Karte ist ein Hinweis: Du kannst die bisherige Fassung weiternutzen,
 solange sie unterstützt wird. Ohne Verbindung erscheint die Karte gar nicht,
 und im Browser nie — dort läuft immer der aktuelle Stand.
 
+Auf Android holt die App das Update selbst über Google Play, sobald Google
+Play für dein Gerät eine neuere Version hat: Google fragt einmal, ob du sie
+laden möchtest, und lädt sie dann im Hintergrund, während du weiterarbeitest.
+Ist sie geladen, sagt die blaue Karte **„Das Update ist geladen"** und „Hier
+tippen: Neustarten zum Aktualisieren." Ein Tipp darauf installiert das
+Update; die App startet dabei neu. Sagst du bei Google „Nein" oder tippst
+auf das Kreuz, kommt für dieses Update keine Karte mehr, erst für das
+nächste.
+Geht das Laden über Google nicht — etwa weil die App nicht aus Google Play
+installiert ist —, erscheint die Karte mit dem Weg zur Store-Seite wie oben.
+
 ### Eine nicht mehr unterstützte Version aktualisieren
 
 Wird die installierte Version nicht mehr unterstützt, erscheint über der App
@@ -477,6 +488,13 @@ erinnert solange die blaue Karte (siehe
 [Ein Update aus dem Store laden](#ein-update-aus-dem-store-laden)). Ist die
 App-Sperre mit Face ID oder Fingerabdruck eingeschaltet, erscheint der
 Hinweis erst nach dem Entsperren.
+
+Auf Android startet statt des Hinweises zuerst das Update von Google Play
+im Vollbild: Es lädt und installiert die neue Version, danach öffnet sich die
+App neu. Schließt du das Vollbild mit der Zurück-Taste, läuft die App normal
+weiter — das gilt wie „Später", bis zum nächsten Start. Kann Google das
+Update nicht anbieten, etwa weil die App nicht aus Google Play installiert
+ist, erscheint der Hinweis wie oben beschrieben.
 
 Der Hinweis erscheint nur, wenn der Server die Version als zu alt meldet —
 ohne Verbindung und im Browser nie. Welche Version mindestens nötig ist, legt
@@ -511,6 +529,12 @@ für das Gerät noch gar nicht gibt. Ein Wert, der keine Version der Form
 `x.y.z` ist, wird ignoriert und im Server-Log gemeldet. Beides wirkt erst ab
 App-Version 2.3; ältere Installationen kennen weder die Mindestversion noch
 den Wartungshinweis.
+
+Auf Android ab App-Version 2.4 löst die Mindestversion das Vollbild-Update
+von Google Play aus, eine neuere Store-Version das Laden im Hintergrund. Das
+Vollbild-Update gibt es nur für Geräte, denen Google Play die neue Version
+schon anbietet — während einer gestaffelten Freigabe also nicht für alle; die
+übrigen bekommen den Hinweis mit Store-Link.
 
 ## Etwas löschen: nach links wischen
 

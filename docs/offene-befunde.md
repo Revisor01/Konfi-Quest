@@ -235,6 +235,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   jede Datei in Utils, Hooks und Services hat einen Test (12 → 0), eine
   Leitplanke hält das; dabei behoben: Kategorien und Jahrgänge der
   Terminlisten trugen vertauschte Namen (Branch `test/verhalten-statt-quelltext`).
+- [x] 09.10.2026 — Android holt Updates über Googles In-App-Updates:
+  sofort unter der Mindestversion, sonst im Hintergrund mit „Neustarten
+  zum Aktualisieren" (Branch `feat/android-in-app-update`).
 
 
 ## Offen

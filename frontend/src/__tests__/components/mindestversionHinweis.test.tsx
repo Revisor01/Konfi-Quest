@@ -27,7 +27,31 @@ const halter = {
   installierteVersion: '2.2.0',
   apiAntwort: {} as unknown,
   apiFehler: null as Error | null,
+  // Googles In-App-Updates (nur Android): null = Plugin wirft (kein Play).
+  sofortCode: null as number | null,
 };
+
+// vi.hoisted: Die Datei importiert updateCheck statisch, die Attrappe muss
+// also stehen, bevor vi.mock sie braucht.
+const plugin = vi.hoisted(() => ({
+  getAppUpdateInfo: vi.fn(async () => {
+    if (halter.sofortCode === null) throw new Error('GooglePlayServices are not available.');
+    return { updateAvailability: 2, immediateUpdateAllowed: true, flexibleUpdateAllowed: true, installStatus: 0 };
+  }),
+  performImmediateUpdate: vi.fn(async () => ({ code: halter.sofortCode })),
+  startFlexibleUpdate: vi.fn(async () => ({ code: 1 })),
+  completeFlexibleUpdate: vi.fn(async () => undefined),
+  addListener: vi.fn(async () => ({ remove: async () => undefined })),
+}));
+
+vi.mock('@capawesome/capacitor-app-update', () => ({
+  AppUpdate: plugin,
+  AppUpdateAvailability: { UNKNOWN: 0, UPDATE_NOT_AVAILABLE: 1, UPDATE_AVAILABLE: 2, UPDATE_IN_PROGRESS: 3 },
+  AppUpdateResultCode: { OK: 0, CANCELED: 1, FAILED: 2, NOT_AVAILABLE: 3, NOT_ALLOWED: 4, INFO_MISSING: 5 },
+  FlexibleUpdateInstallStatus: {
+    UNKNOWN: 0, PENDING: 1, DOWNLOADING: 2, INSTALLING: 3, INSTALLED: 4, FAILED: 5, CANCELED: 6, DOWNLOADED: 11,
+  },
+}));
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -71,6 +95,7 @@ function antwort({ min = null as string | null, wartung = null as string | null 
 }
 
 import { pruefeBetriebsstatus, _nurFuerTests_reset } from '../../services/betriebsstatus';
+import { _nurFuerTests_reset as updateCheckZuruecksetzen } from '../../services/updateCheck';
 import MindestversionHinweis from '../../components/common/MindestversionHinweis';
 import WartungsHinweis from '../../components/shared/WartungsHinweis';
 
@@ -129,6 +154,10 @@ async function tippeImHinweis(name: string) {
 beforeEach(() => {
   // Der Stand liegt auf Modulebene -- jeder Test beginnt wie ein frischer Start.
   _nurFuerTests_reset();
+  updateCheckZuruecksetzen();
+  halter.sofortCode = null;
+  plugin.getAppUpdateInfo.mockClear();
+  plugin.performImmediateUpdate.mockClear();
   halter.nativ = true;
   halter.plattform = 'ios';
   halter.online = true;
@@ -223,6 +252,53 @@ describe('MindestversionHinweis', () => {
     expect(hinweis).toHaveTextContent('Die aktuelle Version liegt bei Google Play bereit.');
     await tippeImHinweis('Aktualisieren');
     expect(oeffnen).toHaveBeenCalledWith(PLAY_URL, '_blank');
+  });
+
+  // Android ab 2.4.0 (09.10.2026): zuerst Googles Sofort-Update.
+  it('auf Android: Googles Sofort-Update startet, kein Dialog', async () => {
+    halter.plattform = 'android';
+    halter.sofortCode = 0; // OK
+    halter.apiAntwort = antwort({ min: '2.3.0' });
+    await pruefeUndRendere();
+    await waitFor(() => expect(plugin.performImmediateUpdate).toHaveBeenCalledTimes(1));
+    await erwarteKeinenHinweis();
+  });
+
+  it('auf Android: Googles Vollbild geschlossen — gilt als „Später", kein zweiter Dialog', async () => {
+    halter.plattform = 'android';
+    halter.sofortCode = 1; // CANCELED
+    halter.apiAntwort = antwort({ min: '2.3.0' });
+    await pruefeUndRendere();
+    await waitFor(() => expect(plugin.performImmediateUpdate).toHaveBeenCalledTimes(1));
+    await erwarteKeinenHinweis();
+  });
+
+  it('auf Android: Google kann nicht (Plugin wirft) — der bisherige Dialog', async () => {
+    halter.plattform = 'android';
+    halter.sofortCode = null;
+    halter.apiAntwort = antwort({ min: '2.3.0' });
+    await pruefeUndRendere();
+    await findeHinweis();
+    expect(plugin.getAppUpdateInfo).toHaveBeenCalledTimes(1);
+    expect(plugin.performImmediateUpdate).not.toHaveBeenCalled();
+  });
+
+  it('auf Android ueber der Mindestversion: kein Sofort-Update', async () => {
+    halter.plattform = 'android';
+    halter.sofortCode = 0;
+    halter.apiAntwort = antwort({ min: '2.2.0' });
+    await pruefeUndRendere();
+    await erwarteKeinenHinweis();
+    expect(plugin.getAppUpdateInfo).not.toHaveBeenCalled();
+  });
+
+  it('auf iOS: Dialog wie bisher, das Plugin wird nie gerufen', async () => {
+    halter.sofortCode = 0;
+    halter.apiAntwort = antwort({ min: '2.3.0' });
+    await pruefeUndRendere();
+    await findeHinweis();
+    expect(plugin.getAppUpdateInfo).not.toHaveBeenCalled();
+    expect(plugin.performImmediateUpdate).not.toHaveBeenCalled();
   });
 
   it('Fokus: springt in den Hinweis und nach „Später" zurueck, wo er vorher stand', async () => {

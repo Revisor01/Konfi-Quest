@@ -13,6 +13,10 @@ Versionsüberschrift.
 - Die Seite „Betrieb" zeigt im Überblick, wann jede Aufgabe des Servers im
   Hintergrund zuletzt lief, wie lange sie brauchte und ob sie geklappt hat,
   dazu die Dauer des Push-Versands.
+- Auf Android lädt die App neue Versionen selbst über Google Play: Sie
+  lädt im Hintergrund, und danach genügt ein Tipp auf „Neustarten zum
+  Aktualisieren". Wird eine Version nicht mehr unterstützt, öffnet sich
+  Googles Update direkt im Vollbild; es lässt sich schließen.
 - In der Detailansicht einer Person lässt sich Offenes direkt bestätigen:
   Ein Tipp auf eine gemeldete Aktivität öffnet das Prüfen mit Genehmigen und
   Ablehnen, und Events mit ausstehender Anwesenheit stehen oben in der
