@@ -112,6 +112,10 @@ Versionsüberschrift.
   Challenge-Beiträge eine rote Zahl und einen Push bekommen.
 
 ### Geändert
+- Hinweistexte in Hinweis-Kästen (etwa unter „E-Mail ändern“,
+  „Funktionsbeschreibung“ und „Benachrichtigungen“) sind auf iPhone und
+  Android gleich groß und kleiner als die Zeilentitel; auf dem iPhone waren
+  sie bisher größer.
 - In der Event-Liste im Browser steht vor jedem Event ein farbiger Kreis mit
   Symbol, der den Stand zeigt — wie die Initialen in der Konfi-Liste.
 - Das Annehmen oder Ablehnen einer gemeldeten Aktivität ist sofort erledigt;

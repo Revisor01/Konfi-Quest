@@ -50,8 +50,12 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  Status-Wort in utils/termineWeb.ts steht in der Reihe der Status-Spalten.
  *  Die Woerter entstehen in sechs Funktionen mit vielen Zweigen; nur das
  *  Lesen der Quelle findet ein neues Wort sicher. Gerendert wird die
- *  Sortierung in webTabellenSortieren.test.tsx. */
-const OBERGRENZE = 121;
+ *  Sortierung in webTabellenSortieren.test.tsx.
+ *  09.10.2026 +1: components/hinweisBoxSchrift.test.ts -- Stil-Waechter: die
+ *  Schrift der Hinweis-Box schlaegt die Theme-Regeln an Spezifitaet. Die
+ *  Kaskade gegen ionic-theme-ios27 und Ionics Komponenten-CSS rechnet jsdom
+ *  nicht; rendern saehe den Befund (16 px statt 14,4 px) nicht. */
+const OBERGRENZE = 122;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -99,6 +103,7 @@ const BEKANNT: string[] = [
   '__tests__/components/formularfelderBenannt.test.ts',
   '__tests__/components/gruppenbezeichnungTeam.test.ts',
   '__tests__/components/haptikBrichtNichtAb.test.ts',
+  '__tests__/components/hinweisBoxSchrift.test.ts',
   '__tests__/components/kategorieUndTypInListe.test.ts',
   '__tests__/components/keinStillesOfflineScheitern.test.ts',
   '__tests__/components/klickbareElementeBedienbar.test.ts',
