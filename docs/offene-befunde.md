@@ -187,6 +187,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ausgeliefert) wieder entfernt: Mit Recht kommen rote Zahl, App-Symbol und
   Push, ohne Recht nichts davon (Simon, [planung/darf-freigeben.md](planung/darf-freigeben.md#abgebaut-09102026-nur-das-recht-entscheidet),
   Migration 205, Branch `refactor/kennzahlen-abbau`).
+- [x] 09.10.2026 — Referenz-Compose mit dem Live-Stack abgeglichen
+  (www-Host, Kompression, Wiederholung, Sticky-Cookie, Router für
+  `/docs/api`); Prüfweg für den Abriss auf das Apache-Zugriffslog
+  umgestellt, das 28 bis 35 Tage reicht ([api/ABRISS.md](api/ABRISS.md));
+  Zählungen „Wer bekommt was" und Bestand gemessen
+  (Branch `chore/betrieb-compose-logfenster-zaehlungen`).
 
 
 ## Offen
@@ -246,17 +252,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Betrieb
 
-- **Referenz-Compose nachziehen.** `deploy/compose.konfi_quest.yml` fehlen
-  die gewollten Abweichungen des Live-Stacks (Abgleich 27.09.2026): Router
-  auch für den `www.`-Host, die Middlewares für Kompression und
-  Wiederholung beim Deploy, das Sticky-Cookie am API-Dienst und der eigene
-  Router für `/docs/api`. Wer die Referenz kopiert, verliert sie.
-- **Log-Fenster vor dem nächsten Abriss von Routen.** Ob eine alte Route noch
-  gerufen wird, zeigt nur das Zugriffslog des Reverse-Proxys, und das reicht
-  heute nur wenige Tage zurück — die Regel verlangt zwei Wochen. Eine Null
-  aus einem zu kurzen Fenster beweist nichts. Vor dem nächsten Abriss die
-  Aufbewahrung des Zugriffslogs verlängern oder es täglich abgreifen; Weg
-  und Zahlen in [api/ABRISS.md](api/ABRISS.md). Seit 01.09.2026.
+- **Live-Stack ohne Mindestversion und Wartungshinweis.** Dem Live-Stack
+  fehlen die drei Zeilen `APP_MIN_VERSION_IOS`, `APP_MIN_VERSION_ANDROID`
+  und `WARTUNG_HINWEIS` aus der Referenz (Abgleich 09.10.2026). Eine
+  Stack-Variable allein wirkt deshalb nicht; wer den Hinweis braucht, muss
+  zuerst die drei Zeilen aus `deploy/compose.konfi_quest.yml` in den
+  Stack übernehmen.
 - **Aufbewahrung der Sicherungen.** Am Host bleiben 14 tägliche Dumps; die
   Wochen- und Jahresstände aus
   [betrieb/sicherung.md](betrieb/sicherung.md#rhythmus-und-aufbewahrung)
@@ -278,15 +279,13 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Sockets (Speicher je Replica bei 512 MB Grenze), Zustellrate und Dauer bei
   Firebase unter Last, Postgres unter Parallellast (Betrieb, „Unklar" und
   „Nicht geprüft").
-- **Vier Zählungen „Wer bekommt was".** In Produktion zu zählen: Admins mit
-  und ohne Jahrgangszuweisung, Gemeinden ohne Gemeindeleitung in der
-  Stamm-Gemeinde, Zuweisungen mit `can_view = false` und Leitungs-Mitteilungen
-  über Konfis, die es nicht mehr gibt. Sie zeigen, wie viele die Fixes vom
-  27.09.2026 betrafen. Seit 27.09.2026.
-- **Übrige Bestandszählungen.** Konfis ohne Jahrgang, aktive Pflicht-Events
-  ohne Jahrgang, Push-Tokens ohne `app_version`, ungelesene Mitteilungen je
-  Person — als Grundlage für spätere Aufräum-Migrationen nie gemessen
-  (Behebungsbericht, „Nach dem Deploy").
+- **Tote Antrags-Mitteilungen aus der Zeit vor dem Aufräumen.** 51
+  Mitteilungen „Neuer Antrag" und „Antrag eingereicht" zeigen auf Anträge,
+  die es nicht mehr gibt (33 davon ungelesen, bei 21 Personen; die jüngste
+  vom 25.09.2026, gemessen 09.10.2026). Sie stammen aus der Zeit, bevor
+  `backend/utils/postfachAufraeumen.js` beim Löschen mitaufräumte, und
+  zählen in die rote Zahl. Vorschlag: einmalige Migration nach derselben
+  Regel (nur die Zustands-Arten, Entscheidungen bleiben als Verlauf).
 
 ### Am Gerät
 

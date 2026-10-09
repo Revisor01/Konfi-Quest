@@ -84,8 +84,8 @@ services:
       # Server-Zeitzone fest auf UTC (01.10.2026): lief vorher nur ueber die
       # Konfigurationsdatei im Datenverzeichnis auf UTC; eine neu aufgesetzte
       # Instanz haette wegen TZ/PGTZ=Europe/Berlin Berliner Zeit bekommen.
-      - "-c"
-      - "timezone=UTC"
+      # Die Zeile stand hier bis zum 09.10.2026 doppelt; der Live-Stack
+      # fuehrt sie einmal.
       # Server-Zeitzone fest auf UTC (29.09.2026, Audit Datenbank "Erst-
       # Einrichtung" / BF-11). Die Produktion laeuft so (gemessen 27.09.2026:
       # postgresql.conf timezone = 'UTC', Sitzungen der Backends in UTC) --
@@ -285,16 +285,33 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    # Labels mit dem Live-Stack abgeglichen (09.10.2026). Die Middlewares
+    # `compress-default@file` (Kompression) und `retry-deploy@file` (3 Versuche,
+    # 250 ms Abstand -- faengt den Moment ab, in dem eine Replica beim rollenden
+    # Deploy schon aus dem Pool ist) liegen in der dynamischen Datei-Konfiguration
+    # von Traefik, nicht in diesem Stack. Wer die Vorlage auf einem anderen Traefik
+    # einsetzt, muss sie dort anlegen, sonst lehnt Traefik den Router ab.
     labels: &backend_labels
       - "traefik.enable=true"
-      - "traefik.http.routers.konfi-api.rule=Host(`konfi-quest.de`) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`))"
+      - "traefik.http.routers.konfi-api.rule=(Host(`konfi-quest.de`) || Host(`www.konfi-quest.de`)) && (PathPrefix(`/api`) || PathPrefix(`/socket.io`))"
       - "traefik.http.routers.konfi-api.priority=10"
+      - "traefik.http.routers.konfi-api.middlewares=compress-default@file,retry-deploy@file"
       - "traefik.http.services.konfi-api.loadbalancer.server.port=5000"
       # Traefik prueft selbst die Gesundheit JEDER Replica und routet nur zu gesunden.
       # So faengt ein gerade neu startender/sterbender Container keine Requests.
       - "traefik.http.services.konfi-api.loadbalancer.healthcheck.path=/api/health"
       - "traefik.http.services.konfi-api.loadbalancer.healthcheck.interval=5s"
       - "traefik.http.services.konfi-api.loadbalancer.healthcheck.timeout=3s"
+      # Sticky-Cookie: Ein Client bleibt bei derselben Replica, solange sie
+      # gesund ist. Faellt die App auf Long-Polling zurueck
+      # (frontend/src/services/websocket.ts), muessen alle Anfragen einer
+      # Socket.IO-Sitzung dieselbe Replica treffen. Faellt sie aus, waehlt
+      # Traefik neu.
+      - "traefik.http.services.konfi-api.loadbalancer.sticky.cookie=true"
+      - "traefik.http.services.konfi-api.loadbalancer.sticky.cookie.name=konfi_lb"
+      - "traefik.http.services.konfi-api.loadbalancer.sticky.cookie.httpOnly=true"
+      - "traefik.http.services.konfi-api.loadbalancer.sticky.cookie.secure=true"
+      - "traefik.http.services.konfi-api.loadbalancer.sticky.cookie.sameSite=lax"
     networks:
       - traefik
       - internal
@@ -383,8 +400,17 @@ services:
         max-file: "3"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.konfi-frontend.rule=Host(`konfi-quest.de`)"
+      # API-Doku unter /docs/api nur nach Anmeldung (routes/docsAuth.js): Die
+      # Middleware `konfi-docs-auth@file` ist ein ForwardAuth auf das Backend
+      # und liegt wie `retry-deploy@file` in der Datei-Konfiguration von
+      # Traefik. Die Anmeldeseite selbst bleibt frei, sonst kaeme niemand hin.
+      - "traefik.http.routers.konfi-docs.rule=(Host(`konfi-quest.de`) || Host(`www.konfi-quest.de`)) && PathPrefix(`/docs/api`) && !Path(`/docs/api/login.html`)"
+      - "traefik.http.routers.konfi-docs.priority=20"
+      - "traefik.http.routers.konfi-docs.middlewares=konfi-docs-auth@file,retry-deploy@file"
+      - "traefik.http.routers.konfi-docs.service=konfi-frontend"
+      - "traefik.http.routers.konfi-frontend.rule=Host(`konfi-quest.de`) || Host(`www.konfi-quest.de`)"
       - "traefik.http.routers.konfi-frontend.priority=1"
+      - "traefik.http.routers.konfi-frontend.middlewares=retry-deploy@file"
       - "traefik.http.services.konfi-frontend.loadbalancer.server.port=80"
     networks:
       - traefik
