@@ -20,7 +20,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 188_postfach_altbestand_ohne_kennung.sql -- also der Stand, den die Produktion nach
+-- 189_dateinamen_utf8_reparieren.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================

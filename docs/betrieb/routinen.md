@@ -139,6 +139,19 @@ Produktion, `vergleichen` gegen einen Stand aus `init-scripts/` und den
 Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
 `pg_stat_statements`, die bewusst nur im Betrieb liegt.
 
+Zwei Regeln hält das Test-Schema seit dem 10.10.2026 (Migrationen 210 und
+211): Kein Einzelspalten-Index steht neben einem längeren, der dieselbe
+Spalte vorn trägt (`migration210PraefixIndizes.test.js`), und jeder
+Fremdschlüssel ist auf beiden Seiten `bigint`
+(`migration211FremdschluesselBigint.test.js`). `bigint` kommt beim Backend
+als Zahl an, weil `backend/database.js` dafür einen eigenen Typ-Parser setzt;
+ohne ihn wären die Kennungen in jeder Antwort Zeichenketten
+(`tests/routes/kennungenAlsZahl.test.js`). Wie lange eine Typänderung die
+Tabellen sperrt, wächst mit dem Bestand: 0,3 s am Stand vom 10.10.2026, 4
+bis 8 s mit den zwei größten Tabellen auf dem 110-Fachen (Messung in
+Migration 211). Noch `integer` sind die Primärschlüssel von 18 Tabellen,
+auf die kein Fremdschlüssel zeigt.
+
 ## Nach jedem Deploy
 
 - `GET /api/status` mehrfach, damit beide Backends antworten: `version` gleich

@@ -242,6 +242,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 09.10.2026 — Android holt Updates über Googles In-App-Updates:
   sofort unter der Mindestversion, sonst im Hintergrund mit „Neustarten
   zum Aktualisieren" (Branch `feat/android-in-app-update`).
+- [x] 10.10.2026 — Datenbank vor der EKD-Ausrollung aufgeräumt (BF-09 und
+  BF-12, Rest): 24 Einzelspalten-Indizes, die ein längerer Index mitträgt,
+  entfernt; alle Fremdschlüssel und die sieben Schlüssel, auf die sie
+  zeigen, sind bigint; Wächter für beides im Test-Schema
+  (Branch `refactor/db-indizes-fremdschluessel`).
 
 
 ## Offen
@@ -452,13 +457,3 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   als „tolerable risk" geschlossen. Wieder prüfen, sobald Ionic react-router 7
   zulässt oder ein Navigationsziel aus Nutzereingaben, API-Antworten oder
   Push-Daten gebaut wird.
-- **Präfix-redundante Indizes.** 33 Einzelspalten-Indizes neben einem
-  längeren hatten am 01.10.2026 keinen einzigen Zugriff — bei 169 Konten liest
-  der Planer kleine Tabellen aber ohnehin ganz. Bei deutlich größerem Bestand
-  `pg_stat_user_indexes.idx_scan` neu messen, dann entscheiden (Datenbank
-  BF-09, Rest).
-- **Fremdschlüssel `integer` statt `bigint`.** 55 Fremdschlüssel bleiben: Die
-  Umstellung schriebe große Tabellen unter Sperre neu, ohne dass eine App
-  oder Abfrage es merkt; neue Migrationen nehmen `BIGINT` (Wächter
-  `migrationenKonventionen.test.js`). Wieder aufnehmen, falls ein Wert 2³¹
-  nahekommt (Datenbank BF-12, Rest).
