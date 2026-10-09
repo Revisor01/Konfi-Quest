@@ -334,17 +334,24 @@ jobs:
 
       # Der E2E-Stack baut seine Images (FROM node, nginx) und lädt Postgres
       # von Docker Hub. Anonyme Abrufe teilen sich die Grenze je
-      # Runner-Adresse; am 09.10.2026 brach der Job zweimal mit 429 ab. Der
-      # Docker-Dienst fragt deshalb zuerst Googles Spiegel und fällt bei
-      # Fehlen auf Docker Hub zurück.
-      - name: Docker-Hub-Spiegel einrichten
+      # Runner-Adresse; am 09.10.2026 brach der Job dreimal mit 429 ab. Eine
+      # Spiegel-Einstellung im Docker-Dienst greift auf dem Runner nicht
+      # (containerd-Bildspeicher), deshalb werden die Basis-Images hier von
+      # Googles Spiegel geholt und unter ihrem Docker-Hub-Namen markiert; der
+      # Bau findet sie dann lokal. Die Liste folgt den FROM-Zeilen und
+      # docker-compose.e2e.yml.
+      - name: Basis-Images vom Spiegel holen
         run: |
-          d=/etc/docker/daemon.json
-          [ -f "$d" ] || echo '{}' | sudo tee "$d" >/dev/null
-          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$d" | sudo tee "$d.neu" >/dev/null
-          sudo mv "$d.neu" "$d"
-          sudo systemctl restart docker
-          docker info --format '{{json .RegistryConfig.Mirrors}}'
+          set -e
+          for bild in node:26-alpine nginx:alpine node:26-bookworm node:26-bookworm-slim; do
+            docker pull -q "mirror.gcr.io/library/$bild"
+            docker tag "mirror.gcr.io/library/$bild" "$bild"
+          done
+          # Postgres ist per Prüfsumme gepinnt; die gilt nur unter dem Namen,
+          # unter dem sie geladen wurde. Deshalb nur hier im Lauf den Namen
+          # auf den Spiegel umschreiben -- Image und Prüfsumme bleiben gleich.
+          sed -i 's#^\( *image: \)postgres:#\1mirror.gcr.io/library/postgres:#' docker-compose.e2e.yml
+          grep -n 'image:' docker-compose.e2e.yml
 
       # Dieselbe Node-Linie wie alle anderen Jobs und die Images (.nvmrc,
       # 29.09.2026, Audit CI BF-11). Bis dahin lief dieser Job als einziger
@@ -496,17 +503,24 @@ jobs:
 
       # Der E2E-Stack baut seine Images (FROM node, nginx) und lädt Postgres
       # von Docker Hub. Anonyme Abrufe teilen sich die Grenze je
-      # Runner-Adresse; am 09.10.2026 brach der Job zweimal mit 429 ab. Der
-      # Docker-Dienst fragt deshalb zuerst Googles Spiegel und fällt bei
-      # Fehlen auf Docker Hub zurück.
-      - name: Docker-Hub-Spiegel einrichten
+      # Runner-Adresse; am 09.10.2026 brach der Job dreimal mit 429 ab. Eine
+      # Spiegel-Einstellung im Docker-Dienst greift auf dem Runner nicht
+      # (containerd-Bildspeicher), deshalb werden die Basis-Images hier von
+      # Googles Spiegel geholt und unter ihrem Docker-Hub-Namen markiert; der
+      # Bau findet sie dann lokal. Die Liste folgt den FROM-Zeilen und
+      # docker-compose.e2e.yml.
+      - name: Basis-Images vom Spiegel holen
         run: |
-          d=/etc/docker/daemon.json
-          [ -f "$d" ] || echo '{}' | sudo tee "$d" >/dev/null
-          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$d" | sudo tee "$d.neu" >/dev/null
-          sudo mv "$d.neu" "$d"
-          sudo systemctl restart docker
-          docker info --format '{{json .RegistryConfig.Mirrors}}'
+          set -e
+          for bild in node:26-alpine nginx:alpine node:26-bookworm node:26-bookworm-slim; do
+            docker pull -q "mirror.gcr.io/library/$bild"
+            docker tag "mirror.gcr.io/library/$bild" "$bild"
+          done
+          # Postgres ist per Prüfsumme gepinnt; die gilt nur unter dem Namen,
+          # unter dem sie geladen wurde. Deshalb nur hier im Lauf den Namen
+          # auf den Spiegel umschreiben -- Image und Prüfsumme bleiben gleich.
+          sed -i 's#^\( *image: \)postgres:#\1mirror.gcr.io/library/postgres:#' docker-compose.e2e.yml
+          grep -n 'image:' docker-compose.e2e.yml
 
       - name: Farben oder Theme geaendert?
         id: filter

@@ -153,7 +153,7 @@ describe('Waechter: jede Kopfzeile mit Zurueck-Knopf schaltet ihn ab', () => {
   // es bleibt aber die Liste der Gemeinde, und die behaelt den Umschalter
   // (Test unten).
   const AUSNAHMEN_MIT_ZURUECK: Array<{ datei: string; merkmal: string }> = [
-    { datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx', merkmal: 'titel="Material"' },
+    { datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx', merkmal: 'titel={MATERIAL_TEAM_TITEL}' },
   ];
 
   it('jede Kopfzeile mit Zurueck-Knopf schaltet ihn ab (Konfi, Teamer, Leitung)', () => {
