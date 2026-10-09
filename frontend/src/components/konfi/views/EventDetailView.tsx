@@ -48,6 +48,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
 import type { ActionSheetButton } from '@ionic/core';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
+import { detailMerken, gemerktesDetail } from '../../../services/detailSpeicher';
 import { track } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -125,6 +126,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // werden — sonst landet der Konfi ohne Zeitfenster im Event.
   const [timeslotsLoadFailed, setTimeslotsLoadFailed] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
+  // Kamen Teilnehmerliste bzw. Zeitfenster ohne Netz aus dem gemerkten Stand
+  // dieses Termins (services/detailSpeicher.ts)? Dann sind sie bekannt -- auch
+  // leer -- und der Offline-Platzhalter faellt weg.
+  const [gemerkt, setGemerkt] = useState({ teilnehmer: false, zeitfenster: false });
+  const orgId = user?.organization_id;
+  const teilnehmerSchluessel = `konfi:termin-teilnehmer:${orgId}:${eventId}`;
+  const zeitfensterSchluessel = `konfi:termin-zeitfenster:${orgId}:${eventId}`;
 
   const handleOptOut = async (reason: string) => {
     if (!eventData || reason.trim().length < 5) {
@@ -286,6 +294,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setParticipants([]);
     setHasExistingKonfirmation(false);
     setTimeslotsLoadFailed(false);
+    setGemerkt({ teilnehmer: false, zeitfenster: false });
   }, [eventId]);
 
   useLiveRefresh(['events'], useCallback(() => {
@@ -308,7 +317,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Ohne Verbindung gar nicht erst anfragen: Der Abruf schluege fehl und
       // wuerde die vorhandenen Werte auf leer setzen. Zeitfenster und
       // Teilnehmerliste behalten stattdessen ihren letzten Stand
-      // (Nutzerhinweis 25.08.2026).
+      // (Nutzerhinweis 25.08.2026) -- oder kommen aus dem gemerkten Stand,
+      // wenn dieser Termin schon einmal mit Netz offen war (09.10.2026).
       //
       // Das ist KEIN stilles Scheitern im Sinne von offlineAktion.ts: Hier
       // bricht keine Nutzeraktion ab, sondern ein Lade-Effekt laesst den
@@ -316,12 +326,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Seite zeigt den Termin ja. Was offline fehlt, sagen die Platzhalter
       // in den betroffenen Abschnitten.
       const offline = !networkMonitor.isOnline;
-      if (offline) return;
+      if (offline) {
+        const [ts, tn] = await Promise.all([
+          eventData.has_timeslots ? gemerktesDetail<DetailTimeslot[]>(zeitfensterSchluessel) : Promise.resolve(null),
+          gemerktesDetail<Participant[]>(teilnehmerSchluessel),
+        ]);
+        if (!gilt()) return;
+        if (ts) setTimeslots(ts);
+        if (tn) setParticipants(tn);
+        setGemerkt({ teilnehmer: !!tn, zeitfenster: !!ts });
+        return;
+      }
       setTimeslotsLoadFailed(false);
       try {
         if (eventData.has_timeslots) {
           const tsRes = await api.get(`/konfi/events/${fuerEventId}/timeslots`);
           if (gilt()) setTimeslots(tsRes.data || []);
+          void detailMerken(zeitfensterSchluessel, tsRes.data || []).catch(() => undefined);
         } else if (gilt()) {
           setTimeslots([]);
         }
@@ -336,6 +357,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       try {
         const partRes = await api.get(`/konfi/events/${fuerEventId}/participants`);
         if (gilt()) setParticipants(partRes.data || []);
+        void detailMerken(teilnehmerSchluessel, partRes.data || []).catch(() => undefined);
       } catch {
         // Teilnehmerliste ist nur Anzeige
       }
@@ -347,7 +369,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
     };
     loadDetails();
-  }, [eventData?.id, eventId, detailEpoch]);
+  }, [eventData?.id, eventId, detailEpoch, teilnehmerSchluessel, zeitfensterSchluessel]);
 
   const canUnregister = (event: Event) => {
     if (!event.is_registered) return false;
@@ -574,6 +596,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         teilnehmende={participants}
         hatKonfirmationGebucht={hasExistingKonfirmation}
         isOnline={isOnline}
+        gemerkt={gemerkt}
         anmeldungLaeuft={anmeldungLaeuft}
         aktionen={{
           anmelden: handleRegister,
@@ -756,7 +779,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               </div>
 
               {/* Zeitslots anzeigen wenn vorhanden (wie Admin) */}
-              {eventData.has_timeslots && timeslots.length === 0 && !isOnline && (
+              {eventData.has_timeslots && timeslots.length === 0 && !isOnline && !gemerkt.zeitfenster && (
                 <OfflinePlatzhalter was="Die Zeitfenster-Auswahl" />
               )}
               {eventData.has_timeslots && timeslots.length > 0 && (
@@ -1284,7 +1307,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         </IonList>
 
         {/* Teilnehmer-Liste */}
-        {participants.length === 0 && !isOnline && (
+        {participants.length === 0 && !isOnline && !gemerkt.teilnehmer && (
           <OfflinePlatzhalter was="Die Teilnehmerliste" />
         )}
         {participants.length > 0 && (

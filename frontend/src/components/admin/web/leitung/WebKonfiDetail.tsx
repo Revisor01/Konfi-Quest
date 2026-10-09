@@ -191,7 +191,7 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
 
   const haupt = (
     <>
-      {!isOnline && aktivitaetenAnzeige.length === 0 && (
+      {!isOnline && !p.ausSpeicher && aktivitaetenAnzeige.length === 0 && (
         // Punkte-Historie, Aktivitaeten und Anwesenheit haengen an GET /admin/konfis/:id und fehlen offline.
         <WebHinweis art="hinweis">Die Aktivitäten- und Punkte-Historie ist offline nicht verfügbar.</WebHinweis>
       )}

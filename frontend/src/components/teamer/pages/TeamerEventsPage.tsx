@@ -62,6 +62,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { useWartendeVorgaenge } from '../../../hooks/useWartendeVorgaenge';
 import WartendeVorgaengeKarte from '../../shared/WartendeVorgaengeKarte';
 import { networkMonitor } from '../../../services/networkMonitor';
+import { detailLaden } from '../../../services/detailSpeicher';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
@@ -104,6 +105,10 @@ import WebTeamTerminDetail from '../web/termine/WebTeamTerminDetail';
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
 
+
+/** Gemerkter Stand eines besuchten Termins (services/detailSpeicher.ts), je Gemeinde wie die Liste. */
+const terminSchluessel = (orgId: number | undefined, art: 'detail' | 'zeitfenster' | 'material', id: number) =>
+  `teamer:termin-${art}:${orgId}:${id}`;
 
 const TeamerEventsPage: React.FC = () => {
   const { user, setSuccess, setError, isOnline } = useApp();
@@ -313,16 +318,28 @@ const TeamerEventsPage: React.FC = () => {
 
   useLiveRefresh('events', refreshLive);
 
+  // Ohne Netz geht ein Termin, der schon einmal mit Netz offen war, mit
+  // Teilnehmerliste, Zeitfenstern und Material wieder auf (09.10.2026,
+  // services/detailSpeicher.ts): gemerkt werden die Antworten, die die Seite
+  // ohnehin abruft; ohne Netz fragt sie gar nicht erst. Je Gemeinde, wie die
+  // Liste.
+  const orgId = user?.organization_id;
+
   // Material für ausgewähltes Event laden
   useEffect(() => {
     if (selectedEvent) {
-      api.get(`/material/by-event/${selectedEvent.id}`)
-        .then(res => setEventMaterials(res.data || []))
+      const id = selectedEvent.id;
+      detailLaden<EventMaterial[]>(
+        terminSchluessel(orgId, 'material', id),
+        () => api.get(`/material/by-event/${id}`).then(res => res.data || []),
+        networkMonitor.isOnline
+      )
+        .then(ergebnis => setEventMaterials(ergebnis?.daten || []))
         .catch(() => setEventMaterials([]));
     } else {
       setEventMaterials([]);
     }
-  }, [selectedEvent?.id]);
+  }, [selectedEvent?.id, orgId]);
 
   // Teilnehmerliste fuer ausgewaehlten Termin laden (16.09.2026, Simons Befund:
   // "teamer sehen die tn liste nicht!").
@@ -366,10 +383,16 @@ const TeamerEventsPage: React.FC = () => {
   // vorhandenen Stand gelegt und ersetzt ihn nicht.
   const ladeTerminDetail = async (eventId: number) => {
     try {
-      const res = await api.get(`/events/${eventId}`);
-      setEventTeilnehmer(res.data?.participants || []);
+      const ergebnis = await detailLaden<Partial<Event> & { participants?: Participant[] }>(
+        terminSchluessel(orgId, 'detail', eventId),
+        () => api.get(`/events/${eventId}`).then(res => res.data),
+        networkMonitor.isOnline
+      );
+      const daten = ergebnis?.daten;
+      setEventTeilnehmer(daten?.participants || []);
+      if (!daten) return;
       setSelectedEvent(stand => (stand && stand.id === eventId
-        ? { ...stand, ...res.data }
+        ? { ...stand, ...daten }
         : stand));
     } catch {
       setEventTeilnehmer([]);
@@ -387,13 +410,18 @@ const TeamerEventsPage: React.FC = () => {
   // Zeitslots (samt Belegung + Warteliste) für ausgewaehltes Timeslot-Event laden
   useEffect(() => {
     if (selectedEvent?.has_timeslots) {
-      api.get(`/events/${selectedEvent.id}/timeslots`)
-        .then(res => setEventTimeslots(res.data || []))
+      const id = selectedEvent.id;
+      detailLaden<typeof eventTimeslots>(
+        terminSchluessel(orgId, 'zeitfenster', id),
+        () => api.get(`/events/${id}/timeslots`).then(res => res.data || []),
+        networkMonitor.isOnline
+      )
+        .then(ergebnis => setEventTimeslots(ergebnis?.daten || []))
         .catch(() => setEventTimeslots([]));
     } else {
       setEventTimeslots([]);
     }
-  }, [selectedEvent?.id, selectedEvent?.has_timeslots]);
+  }, [selectedEvent?.id, selectedEvent?.has_timeslots, orgId]);
 
   // Deep-Link auf einen Termin: ?eventId= kommt vom Dashboard und -- seit dem
   // 24.09.2026 -- ueber die Umleitung /teamer/events/:id aus den Termin-Pushes

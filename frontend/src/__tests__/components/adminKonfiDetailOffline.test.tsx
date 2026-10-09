@@ -91,3 +91,90 @@ describe('Ladeanzeige der Personenansicht', () => {
     expect(screen.getByText(/^Bonus \(/)).toBeInTheDocument();
   });
 });
+
+// Besuchte Detailseiten bewahren ihre Antwort auf (09.10.2026, Simon:
+// „Details aus Cache ist gut."): War die Person schon einmal mit Netz offen,
+// geht sie ohne Netz so auf wie zuletzt -- mit Historie, ohne Anfrage.
+describe('ohne Verbindung nach einem Besuch mit Netz', () => {
+  const MIT_HISTORIE = konfi({
+    name: 'Emilia Test',
+    activities: [{ id: 1, name: 'Kirchenputz', points: 2, type: 'gemeinde', date: '2026-09-01', admin: 'Pastor' }],
+  });
+  const PLATZHALTER = 'Die Aktivitäten- und Punkte-Historie ist offline nicht verfügbar.';
+
+  /** Das Merken laeuft im Hintergrund -- bis es durch ist. */
+  const nachlaufen = async () => {
+    for (let i = 0; i < 10; i += 1) await act(async () => { await Promise.resolve(); });
+  };
+
+  const einmalMitNetzOeffnen = async (antwort: unknown = MIT_HISTORIE) => {
+    zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, antwort);
+    const r = await oeffne();
+    await nachlaufen();
+    r.unmount();
+    api.get.mockClear();
+  };
+
+  it('merkt die Antwort unter Gemeinde und Person', async () => {
+    await einmalMitNetzOeffnen();
+    const stand = zustand.cache.get('admin:person-detail:1:9') as { konfi: { name: string } } | undefined;
+    expect(stand?.konfi.name).toBe('Emilia Test');
+  });
+
+  it('zeigt offline die Historie aus dem gemerkten Stand, ohne Platzhalter und ohne Anfrage', async () => {
+    await einmalMitNetzOeffnen();
+    zustand.online = false;
+    await oeffne();
+    // Keine der Detail-Routen (Rückblicke und Jahrgänge fragt die Seite seit
+    // jeher unabhängig vom Netz und liest sie nicht aus dem Stand).
+    const pfade = api.get.mock.calls.map((c) => c[0]);
+    for (const pfad of [`/admin/konfis/${KONFI_ID}`, '/admin/activities/requests', `/admin/konfis/${KONFI_ID}/event-points`, `/admin/konfis/${KONFI_ID}/attendance-stats`]) {
+      expect(pfade).not.toContain(pfad);
+    }
+    expect(pfade.filter((p) => !['/admin/jahrgaenge', `/wrapped/history/${KONFI_ID}`].includes(p))).toEqual([]);
+    expect(screen.getByText('Kirchenputz')).toBeInTheDocument();
+    expect(screen.queryByText(PLATZHALTER)).toBeNull();
+    expect(setError).not.toHaveBeenCalledWith('Diese Person wurde noch nicht geladen — dafür brauchst du eine Verbindung.');
+  });
+
+  it('auch eine gemerkte LEERE Historie ist bekannt: kein Platzhalter', async () => {
+    await einmalMitNetzOeffnen(konfi({ activities: [] }));
+    zustand.online = false;
+    await oeffne();
+    expect(screen.queryByText(PLATZHALTER)).toBeNull();
+  });
+
+  it('ohne gemerkten Stand bleibt es beim Grundstand aus der Liste samt Platzhalter', async () => {
+    zustand.online = false;
+    zustand.cache.set('admin:konfis:1', [AUS_DER_LISTE]);
+    await oeffne();
+    expect(screen.getByText(PLATZHALTER)).toBeInTheDocument();
+  });
+
+  it('der Stand einer anderen Gemeinde gilt nicht (Schlüssel je Gemeinde)', async () => {
+    zustand.cache.set('admin:person-detail:2:9', {
+      konfi: MIT_HISTORIE, antraege: [], bewahrteStempel: [], konfiZeit: null,
+      certificateTypes: null, eventPoints: [], attendanceStats: null,
+    });
+    zustand.cache.set('admin:konfis:1', [AUS_DER_LISTE]);
+    zustand.online = false;
+    await oeffne();
+    expect(screen.queryByText('Kirchenputz')).toBeNull();
+    expect(screen.getByText(PLATZHALTER)).toBeInTheDocument();
+  });
+
+  it('sagt der Server 403, ist der gemerkte Stand weg', async () => {
+    await einmalMitNetzOeffnen();
+    zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, Object.assign(new Error('403'), { response: { status: 403 } }));
+    await oeffne();
+    await nachlaufen();
+    expect(zustand.cache.has('admin:person-detail:1:9')).toBe(false);
+  });
+
+  it('Aktionen bleiben offline gesperrt, auch mit gemerktem Stand', async () => {
+    await einmalMitNetzOeffnen();
+    zustand.online = false;
+    await oeffne();
+    expect(screen.getByRole('button', { name: 'Passwort zurücksetzen' })).toBeDisabled();
+  });
+});

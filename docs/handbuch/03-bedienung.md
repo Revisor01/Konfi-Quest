@@ -805,7 +805,20 @@ Server; den gespeicherten Stand nimmt sie nur, wenn keine Antwort kommt. So
 erscheint ein Beitrag, den die Leitung inzwischen ausgeblendet hat, oder eine
 gelöschte Datei nicht noch einmal.
 
-Was sich wirklich nicht zeigen lässt, sagt die App als graue Zeile mit einem
+Auch ein **Event** und die **Seite einer Person** (als Leitung) kommen mit
+Netz immer frisch vom Server. Hattest du sie schon einmal mit Netz offen,
+gehen sie ohne Netz so auf wie beim letzten Mal — mit Teilnehmerliste, Zeitfenstern und Material
+beim Event, mit Punkte-Historie, offenen Anträgen und Anwesenheit bei einer
+Person. Die App fragt dafür nichts zusätzlich ab; sie hebt auf, was sie beim
+Öffnen ohnehin geladen hat, und zwar für die zuletzt geöffneten 60 Seiten.
+Ältere fallen von selbst heraus. Sagt der Server beim nächsten Öffnen, dass
+du ein Event oder eine Person nicht mehr sehen darfst oder dass es sie nicht
+mehr gibt, ist auch der aufgehobene Stand weg. Anmelden, Bearbeiten und die
+übrigen Knöpfe bleiben ohne Netz gesperrt wie überall
+(siehe [Erkennen, was Netz braucht](#erkennen-was-netz-braucht)).
+
+Was sich wirklich nicht zeigen lässt — etwa bei einem Event, das du noch nie
+mit Netz geöffnet hattest —, sagt die App als graue Zeile mit einem
 Wolken-Symbol, etwa: „Die Teilnehmerliste ist offline nicht verfügbar."
 
 > **Eine App-weite Anzeige „Du bist offline" gibt es nicht.** Du merkst es an
@@ -820,7 +833,8 @@ deinem Konto. Meldet sich auf demselben Gerät jemand anderes an — auch nachde
 deine Sitzung abgelaufen ist, ohne dass du dich abgemeldet hast —, sieht die
 Person nichts davon, und was von dir noch wartete, wird verworfen statt unter
 ihrem Namen gesendet. Meldest du dich selbst wieder an, ist alles noch da und
-geht raus. Beim Abmelden leert die App ohnehin alles.
+geht raus. Beim Abmelden und beim Wechsel der Gemeinde leert die App den
+gespeicherten Stand ohnehin ganz.
 
 ## Geladene Bilder und Dateien auf dem Gerät behalten
 

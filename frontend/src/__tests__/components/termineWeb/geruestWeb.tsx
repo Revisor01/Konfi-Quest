@@ -244,6 +244,9 @@ export const NUTZER = {
 // --- Ablauf ---------------------------------------------------------------------
 
 export const zuruecksetzen = () => {
+  // Gemerkte Detailseiten (services/detailSpeicher.ts) liegen im echten
+  // offlineCache, also in localStorage: Kein Test erbt den Stand des vorigen.
+  localStorage.clear();
   h.breit = true;
   h.online = true;
   h.user = NUTZER.leitung;

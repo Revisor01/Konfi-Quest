@@ -341,12 +341,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-- **Offline: Detailseiten beim Besuch zwischenspeichern?** Ohne Netz zeigen
-  Konfi-Termin, Leitungs-Termin und die Seite einer Person ehrlich einen
-  Platzhalter (`OfflinePlatzhalter`, seit 01.09.2026). Offen ist, ob
-  zusätzlich jede besuchte Detailseite ihre Antwort aufbewahrt, damit sie
-  ohne Netz noch einmal aufgeht — ohne zusätzliche Anfragen. Seit 01.09.2026
-  (interne Aufgabenliste).
 - **Beschriftungen, Reiter und Filter an einer Stelle für App und
   Web-Fassung?** Laden, Rechte und Zähler teilen sich beide Fassungen; die
   Darstellung ist doppelt. Die Web-Fassung hat 130 Dateien mit rund 18.700

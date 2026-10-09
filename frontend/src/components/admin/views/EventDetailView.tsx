@@ -38,6 +38,7 @@ import { offlineCache } from '../../../services/offlineCache';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
+import { detailMerken, detailVergessen, gemerktesDetail } from '../../../services/detailSpeicher';
 import api from '../../../services/api';
 import { SectionHeader, AbsageBlock, EmptyState, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
@@ -78,6 +79,12 @@ type SlidingRef = { close: () => Promise<void> };
 // Uebergabestellen `as any`-Casts, die den Unterschied verdeckten.
 type Event = EventData;
 
+/** Was ohne Netz von einem besuchten Termin bleibt: GET /events/:id und sein Material. */
+interface GemerkterTermin {
+  termin: Event & { participants?: Participant[]; unregistrations?: Unregistration[] };
+  material: EventMaterial[];
+}
+
 interface EventDetailViewProps {
   eventId: number;
   onBack: () => void;
@@ -90,6 +97,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const { user, setSuccess, setError, isOnline } = useApp();
+  // Je Gemeinde, wie die Liste ('admin:events:<org>').
+  const terminSchluessel = (id: number) => `admin:termin-detail:${user?.organization_id}:${id}`;
   const router = useIonRouter();
   const { triggerRefresh } = useLiveUpdate();
   const [presentActionSheet] = useIonActionSheet();
@@ -110,6 +119,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // mit dem Ausweg, im Wortlaut der Listen (KonfisView: "Kein Jahrgang
   // zugewiesen").
   const [jahrgangFehlt, setJahrgangFehlt] = useState(false);
+  // Kam der volle Stand ohne Netz aus dem gemerkten Termin
+  // (services/detailSpeicher.ts)? Dann ist die Teilnehmerliste bekannt,
+  // auch wenn sie leer ist -- kein Offline-Platzhalter.
+  const [ausSpeicher, setAusSpeicher] = useState(false);
 
   // ====================================================================
   // EIGENE AN-/ABMELDUNG (Simon, 03.09.2026)
@@ -558,6 +571,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setEventData(null);
     setEventMaterials([]);
     setJahrgangFehlt(false);
+    setAusSpeicher(false);
     setError('');
     setLoading(true);
   }, [eventId]);
@@ -603,7 +617,25 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // Die Liste liefert nur den Grundstand: Teilnehmerliste und Abmeldungen
     // haengen an GET /events/:id und bleiben offline leer. Besser der Titel
     // mit Datum als gar nichts.
+    //
+    // War der Termin schon einmal mit Netz offen, gibt es mehr (09.10.2026):
+    // Seine letzte Antwort samt Material ist gemerkt (detailSpeicher.ts) --
+    // die Seite geht dann so auf wie zuletzt, ohne Anfrage.
     if (!isOnline) {
+      try {
+        const stand = await gemerktesDetail<GemerkterTermin>(terminSchluessel(fuerEventId));
+        if (!gilt()) return;
+        if (stand?.termin) {
+          setEventData(stand.termin);
+          setParticipants(stand.termin.participants || []);
+          setUnregistrations(stand.termin.unregistrations || []);
+          setEventMaterials(stand.material || []);
+          setAusSpeicher(true);
+          setError('');
+          setLoading(false);
+          return;
+        }
+      } catch { /* weiter mit dem Grundstand aus der Liste */ }
       try {
         const gecacht = await offlineCache.get<Event[]>('admin:events:' + user?.organization_id);
         const ausListe = gecacht?.data?.find((e) => e.id === fuerEventId) || null;
@@ -626,16 +658,28 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       const eventRes = await api.get(`/events/${fuerEventId}`);
       if (!gilt()) return;
       setJahrgangFehlt(false);
+      setAusSpeicher(false);
       setEventData(eventRes.data);
       setParticipants(eventRes.data.participants || []);
       setUnregistrations(eventRes.data.unregistrations || []);
+      let material: EventMaterial[] = [];
       try {
         const matRes = await api.get(`/material/by-event/${fuerEventId}`);
-        if (gilt()) setEventMaterials(matRes.data || []);
+        material = matRes.data || [];
+        if (gilt()) setEventMaterials(material);
       } catch {
         if (gilt()) setEventMaterials([]);
       }
+      // Fuer ohne Netz merken -- dieselben Antworten, keine weitere Anfrage.
+      void detailMerken<GemerkterTermin>(terminSchluessel(fuerEventId), { termin: eventRes.data, material })
+        .catch(() => undefined);
     } catch (err) {
+      // Darf diese Person den Termin nicht (mehr) sehen oder ist er weg,
+      // verschwindet auch der gemerkte Stand.
+      const status = fehlerStatus(err);
+      if (status === 403 || status === 404) {
+        void detailVergessen(terminSchluessel(fuerEventId)).catch(() => undefined);
+      }
       if (!gilt()) return;
       // Kein Fehler der App, sondern eine Antwort mit Grund: Der Termin
       // gehoert zu einem Jahrgang, dem dieser Zugang nicht zugewiesen ist
@@ -1389,6 +1433,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         abmeldungen={unregistrations}
         materialien={eventMaterials}
         isOnline={isOnline}
+        ausSpeicher={ausSpeicher}
         darfVerwalten={darfVerwalten}
         darfVerbuchen={darfVerbuchen}
         darfEintragen={darfEintragen}
@@ -1610,7 +1655,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             und fehlen offline — der Grundstand kommt aus dem Listen-Cache.
             Ohne diesen Hinweis saehe die Seite aus, als gaebe es keine
             Teilnehmer (Simons Kritik vom 29.08.2026). */}
-        {eventData && participants.length === 0 && !isOnline && (
+        {eventData && participants.length === 0 && !isOnline && !ausSpeicher && (
           <OfflinePlatzhalter was="Die Teilnehmerliste" />
         )}
 

@@ -108,6 +108,10 @@ Versionsüberschrift.
 - Blockiert der Browser in der Web-Version etwas, das die Sicherheitsregeln
   nicht erlauben, meldet er es dem Server; der Betrieb sieht die Meldungen
   unter „Fehler“ — ohne Abfrageteile der Adressen und ohne Angaben zur Person.
+- Ein Event und die Seite einer Person, die du schon einmal mit Netz geöffnet
+  hattest, gehen ohne Netz wieder so auf wie zuletzt — mit Teilnehmerliste,
+  Zeitfenstern, Material und Punkte-Historie statt der grauen Zeile
+  „offline nicht verfügbar".
 
 ### Geändert
 - Der Punkte-Verlauf im Browser zeigt alle Einträge auf einmal; ein Klick auf

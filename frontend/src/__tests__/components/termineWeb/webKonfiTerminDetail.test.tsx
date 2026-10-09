@@ -245,6 +245,21 @@ describe('Kopf: Einchecken, Hinweise, Teilnehmende', () => {
     expect(screen.getByText('Die Teilnehmerliste ist offline nicht verfügbar.')).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: /^Teilnehmer:innen/ })).toBe(null);
   });
+
+  it('offline nach einem Besuch mit Netz: die gemerkte Liste, kein Hinweis', async () => {
+    const nachlaufen = async () => {
+      for (let i = 0; i < 10; i += 1) await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    };
+    zustand.teilnehmer = [{ id: 1, display_name: 'Mia Muster' }];
+    await oeffne(SOMMERFEST());
+    await nachlaufen();
+    cleanup();
+    zustand.online = false;
+    await oeffne(SOMMERFEST());
+    await nachlaufen();
+    expect(within(karte('Teilnehmer:innen (1)')).getByText('Mia Muster')).toBeInTheDocument();
+    expect(screen.queryByText('Die Teilnehmerliste ist offline nicht verfügbar.')).toBe(null);
+  });
 });
 
 describe('Kopf und Hinweise zeigen, was konfiAnmeldeZustand sagt -- für jeden Zustand', () => {

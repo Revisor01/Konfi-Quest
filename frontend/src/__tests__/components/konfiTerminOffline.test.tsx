@@ -10,8 +10,13 @@
 //     rot").
 //   - ladeanzeigeDetailansichten, "die Konfi-Terminansicht bleibt die
 //     Vorlage": Beim Laden steht die Ladeanzeige, nicht ein leeres Gerüst.
-import { describe, it, expect, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
+//
+// Seit 09.10.2026 (Simon: „Details aus Cache ist gut."): War der Termin schon
+// einmal mit Netz offen, kommen Teilnehmerliste und Zeitfenster ohne Netz aus
+// dem gemerkten Stand (services/detailSpeicher.ts) -- weiter ohne Anfrage.
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { screen, act } from '@testing-library/react';
+import { setUser } from '../../services/tokenStore';
 import { zustand, zuruecksetzen, termin, oeffne, api, querySchluessel } from './gerueste/konfiTerminDetail';
 
 beforeEach(zuruecksetzen);
@@ -56,5 +61,74 @@ describe('Die Konfi-Ansicht beim Laden', () => {
     await oeffne(termin());
     expect(screen.queryByTestId('ladeanzeige')).toBeNull();
     expect(screen.getAllByText('Bist du dabei?').length).toBeGreaterThan(0);
+  });
+});
+
+describe('ohne Verbindung nach einem Besuch mit Netz', () => {
+  const TEILNEHMER_PLATZHALTER = 'Die Teilnehmerliste ist offline nicht verfügbar.';
+  const ZEITFENSTER_PLATZHALTER = 'Die Zeitfenster-Auswahl ist offline nicht verfügbar.';
+  const MIT_ZEITFENSTER = () => termin({ has_timeslots: true });
+  const nachlaufen = async () => {
+    for (let i = 0; i < 10; i += 1) await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+  };
+  const einmalMitNetzOeffnen = async () => {
+    zustand.teilnehmer = [{ id: 1, display_name: 'Mia Muster' }];
+    zustand.zeitfenster = [{ id: 3, start_time: '10:00', end_time: '11:00', registered_count: 1, max_participants: 5 }];
+    const r = await oeffne(MIT_ZEITFENSTER());
+    await nachlaufen();
+    r.unmount();
+    api.get.mockClear();
+  };
+
+  afterEach(async () => { await setUser(null as never).catch(() => undefined); });
+
+  it('online: je eine Anfrage für Zeitfenster und Teilnehmerliste -- das Merken fragt nicht zusätzlich', async () => {
+    zustand.teilnehmer = [{ id: 1, display_name: 'Mia Muster' }];
+    await oeffne(MIT_ZEITFENSTER());
+    await nachlaufen();
+    const pfade = api.get.mock.calls.map((c) => c[0]);
+    expect(pfade.filter((p) => p === '/konfi/events/5/participants')).toHaveLength(1);
+    expect(pfade.filter((p) => p === '/konfi/events/5/timeslots')).toHaveLength(1);
+  });
+
+  it('offline: Teilnehmerliste und Zeitfenster aus dem gemerkten Stand, ohne Anfrage und ohne Platzhalter', async () => {
+    await einmalMitNetzOeffnen();
+    zustand.online = false;
+    await oeffne(MIT_ZEITFENSTER());
+    await nachlaufen();
+    expect(api.get).not.toHaveBeenCalled();
+    expect(screen.getByText('Mia Muster')).toBeInTheDocument();
+    expect(screen.getByText(/\(1\/5 TN\)/)).toBeInTheDocument();
+    expect(screen.queryByText(TEILNEHMER_PLATZHALTER)).toBeNull();
+    expect(screen.queryByText(ZEITFENSTER_PLATZHALTER)).toBeNull();
+  });
+
+  it('offline ohne gemerkten Stand: weiter die Platzhalter', async () => {
+    zustand.online = false;
+    await oeffne(MIT_ZEITFENSTER());
+    await nachlaufen();
+    expect(screen.getByText(TEILNEHMER_PLATZHALTER)).toBeInTheDocument();
+    expect(screen.getByText(ZEITFENSTER_PLATZHALTER)).toBeInTheDocument();
+  });
+
+  it('Anmelden bleibt offline gesperrt, auch mit gemerktem Stand', async () => {
+    await einmalMitNetzOeffnen();
+    zustand.online = false;
+    await oeffne(MIT_ZEITFENSTER());
+    await nachlaufen();
+    const gesperrt = screen.getAllByRole('button').filter((b) => /Du bist offline/.test(b.textContent ?? ''));
+    expect(gesperrt.length).toBeGreaterThan(0);
+    for (const k of gesperrt) expect(k).toBeDisabled();
+  });
+
+  it('Kontowechsel: ein anderes Konto sieht die gemerkte Teilnehmerliste nicht', async () => {
+    await setUser({ id: 7, type: 'konfi' } as never);
+    await einmalMitNetzOeffnen();
+    await setUser({ id: 8, type: 'konfi' } as never);
+    zustand.online = false;
+    await oeffne(MIT_ZEITFENSTER());
+    await nachlaufen();
+    expect(screen.queryByText('Mia Muster')).toBeNull();
+    expect(screen.getByText(TEILNEHMER_PLATZHALTER)).toBeInTheDocument();
   });
 });
