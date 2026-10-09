@@ -362,8 +362,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Migrationsrisiko bei Altbestand-Dubletten); die Store-App 2.2.x setzt beim
   Speichern einer Gemeinde den Systemnamen weiter ohne Umlaute, eine
   Serverregel dagegen gibt es nicht. So lassen? (30.09.2026)
-- **Meldungen der Sicherheitsregeln (CSP).** Ein Endpunkt, an den der Browser
-  Verstöße meldet, existiert nicht; gewünscht? (29.09.2026)
 - **Beschriftungen, Reiter und Filter an einer Stelle für App und
   Web-Fassung?** Laden, Rechte und Zähler teilen sich beide Fassungen; die
   Darstellung ist doppelt. Die Web-Fassung hat 130 Dateien mit rund 18.700

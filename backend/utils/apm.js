@@ -10,6 +10,8 @@
 // für die letzten ~30 Minuten. Persistenz (Verlauf über Deploys hinweg) macht
 // der BackgroundService via snapshot() -> apm_snapshots-Tabelle.
 
+const { stand: cspStand, zusammenfuehren: cspZusammenfuehren } = require('./cspMeldungen');
+
 const SLOW_MS = 1000;          // Schwelle fuer "langsamer Request" (Log-Warnung)
 const MAX_SAMPLES = 200;       // rollierende Dauer-Stichproben pro Route (p95)
 const MAX_ERRORS = 50;         // rollierendes Fenster letzter Fehler
@@ -654,6 +656,10 @@ function snapshot() {
     // fehlt in normalizePath ein Platzhalter (Feld ist neu hinzugekommen,
     // aeltere App-Fassungen lesen es einfach nicht).
     routeSchluessel: { anzahl: stats.size, grenze: MAX_ROUTE_KEYS, verworfen: verworfeneSchluessel },
+    // Vom Browser gemeldete Verstoesse gegen die CSP der Web-App
+    // (utils/cspMeldungen.js, 09.10.2026). Feld ist neu; aeltere
+    // App-Fassungen lesen es nicht.
+    cspMeldungen: cspStand(),
   };
 }
 
@@ -863,6 +869,9 @@ function mergeSnapshots(snaps) {
       wartend: valid.reduce((s, x) => s + ((x.dbPool || {}).wartend || 0), 0),
       max: valid.reduce((s, x) => s + ((x.dbPool || {}).max || 0), 0),
     } : null,
+    // CSP-Meldungen ueber die Replicas: Anzahl addieren, fruehestes "seit"
+    // und spaetestes "zuletzt" behalten (utils/cspMeldungen.js).
+    cspMeldungen: cspZusammenfuehren(valid.map(x => x.cspMeldungen)),
   };
 }
 

@@ -105,6 +105,9 @@ Versionsüberschrift.
   dort Challenge-Beiträge freigeben dürfen; ohne das Recht lesen sie die
   Beiträge nur mit und bekommen dafür weder Push noch rote Zahl. Bisher
   Zugewiesene behalten das Recht.
+- Blockiert der Browser in der Web-Version etwas, das die Sicherheitsregeln
+  nicht erlauben, meldet er es dem Server; der Betrieb sieht die Meldungen
+  unter „Fehler“ — ohne Abfrageteile der Adressen und ohne Angaben zur Person.
 
 ### Geändert
 - Der Punkte-Verlauf im Browser zeigt alle Einträge auf einmal; ein Klick auf

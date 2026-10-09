@@ -296,6 +296,47 @@ describe('Betrieb (Web): Fehler, Routen und Verlauf', () => {
     expect(screen.queryByRole('table')).toBeNull();
   });
 
+  it('Fehler: "Vom Browser blockiert" zeigt die CSP-Meldungen nach Regel, Adresse und Seite', async () => {
+    const csp = {
+      gesamt: 9, verworfen: 2, gruppenAnzahl: 2, grenze: 200,
+      gruppen: [
+        { direktive: 'img-src', blockiert: 'https://bilder.example.org/x.png', seite: '/konfi/events/:id', anzahl: 6, seit: vorMin(180), zuletzt: vorMin(20) },
+        { direktive: 'script-src-elem', blockiert: 'chrome-extension', seite: '/start', anzahl: 1, seit: vorMin(60), zuletzt: vorMin(60) },
+      ],
+    };
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, cspMeldungen: csp } : { snapshots: HISTORIE } }));
+    await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2$/ }));
+    expect(spaltenkoepfe('Vom Browser blockiert')).toEqual(['Regel', 'Blockiert', 'Seite', 'Anzahl', 'Erstmals', 'Zuletzt']);
+    const z = zeilen('Vom Browser blockiert');
+    expect(z).toHaveLength(2);
+    expect(zelle(z[0], 0)).toHaveTextContent('img-src');
+    expect(zelle(z[0], 1)).toHaveTextContent('https://bilder.example.org/x.png');
+    expect(zelle(z[0], 2)).toHaveTextContent('/konfi/events/:id');
+    expect(zelle(z[0], 3)).toHaveTextContent('6×');
+    expect(zelle(z[0], 4)).toHaveTextContent('vor 3 Std');
+    expect(zelle(z[1], 1)).toHaveTextContent('chrome-extension');
+    expect(screen.getByText('2 weitere Meldungen nicht aufgeschlüsselt (mehr als 200 verschiedene).')).toBeInTheDocument();
+  });
+
+  it('Fehler: ohne CSP-Meldung steht "Keine Meldung", auch wenn es sonst keinen Fehler gibt; ohne Feld (alter Server) fehlt die Karte', async () => {
+    h.apiGet.mockImplementation(async (url: string) => ({
+      data: url === '/metrics'
+        ? { ...SNAP, fehlerGruppen: [], recentErrors: [], cspMeldungen: { gesamt: 0, verworfen: 0, gruppenAnzahl: 0, grenze: 200, gruppen: [] } }
+        : { snapshots: [] },
+    }));
+    const { unmount } = await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: 'Fehler' }));
+    expect(screen.getByText('Kein Fehler seit dem letzten Neustart.')).toBeInTheDocument();
+    expect(screen.getByText('Der Browser hat seit dem letzten Neustart nichts blockiert.')).toBeInTheDocument();
+    unmount();
+
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? SNAP : { snapshots: [] } }));
+    await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2$/ }));
+    expect(screen.queryByText('Vom Browser blockiert')).toBeNull();
+  });
+
   it('Routen: die langsamsten zuerst -- Median, Aufrufe, Durchschnitt, p95, Anteil und Hinweise', async () => {
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Routen' }));
@@ -375,5 +416,18 @@ describe('Betrieb: schmal bleibt die Darstellung der App', () => {
     expect(screen.queryByRole('table')).toBeNull();
     // Die App zeigt das Urteil als Titel in ihrer Karte.
     expect(screen.getByText('Läuft, mit Fehlern in der Vergangenheit')).toBeInTheDocument();
+  });
+
+  it('die App zeigt die CSP-Meldungen im Reiter Fehler unter den Fehlern', async () => {
+    h.breit = false;
+    const csp = { gesamt: 6, verworfen: 0, gruppenAnzahl: 1, grenze: 200, gruppen: [
+      { direktive: 'img-src', blockiert: 'https://bilder.example.org/x.png', seite: '/konfi/events/:id', anzahl: 6, seit: vorMin(180), zuletzt: vorMin(20) },
+    ] };
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, cspMeldungen: csp } : { snapshots: HISTORIE } }));
+    await oeffnen();
+    fireEvent.click(screen.getByRole('tab', { name: /^Fehler/ }));
+    expect(screen.getByText('https://bilder.example.org/x.png')).toBeInTheDocument();
+    expect(screen.getByText('6×')).toBeInTheDocument();
+    expect(screen.getByText('auf /konfi/events/:id')).toBeInTheDocument();
   });
 });
