@@ -61,12 +61,6 @@ async function gemeindeZugehoerigkeitRaeumen(db, userId, organizationId) {
     'DELETE FROM notifications WHERE user_id = $1 AND organization_id = $2',
     [userId, organizationId]
   );
-  // Die Kennzahlen-Wahl gilt je Gemeinde (Migration 204) -- ohne
-  // Mitgliedschaft hat sie dort nichts mehr zu bedeuten.
-  await db.query(
-    'DELETE FROM leitung_kennzahlen WHERE user_id = $1 AND organization_id = $2',
-    [userId, organizationId]
-  );
   return { jahrgangIds: jahrgaenge.map((r) => r.id), chatPlaetze, mitteilungen };
 }
 

@@ -594,36 +594,6 @@ Auch wenn die App gerade offen ist, erscheint eine Mitteilung oben am
 Bildschirm — auf dem iPhone wie auf Android. Die Zahlen an den Reitern und am
 App-Symbol stellen sich dabei gleich auf das Neue ein.
 
-## Auswählen, welche Zahlen du siehst
-
-Leitung und Gemeindeleitung wählen selbst, welche roten Zahlen sie bekommen.
-In der App unter *Mehr → Konto → Kennzahlen*, im Browser unter *Profil →
-Konto-Einstellungen → Kennzahlen → Auswählen* stehen drei Schalter.
-Teamer:innen finden in ihrem [Profil](20-teamer.md#dein-profil-oeffnen),
-in der App wie im Browser, unter **Kennzahlen** nur den Schalter
-„Challenge-Beiträge" — die anderen beiden Zahlen haben sie nicht.
-
-| Schalter | Was dann fehlt |
-|---|---|
-| Anträge | die Zahl am Reiter „Anträge" und der Push zu neuen Anträgen |
-| Events verbuchen | die Zahl für Events, die auf das Verbuchen warten, und die tägliche Erinnerung daran |
-| Challenge-Beiträge | die Zahlen am Reiter „Challenges" — wartende Freigaben und neue Beiträge — und der Push zu neuen Beiträgen |
-
-Was du ausschaltest, zählt auch in der Zahl am App-Symbol und in der
-[Liste deiner Gemeinden](05-rollen.md#sehen-wo-etwas-offen-ist) nicht mehr
-mit. Die Listen selbst bleiben: Anträge, Events und Beiträge stehen weiter
-da, du kannst sie öffnen und erledigen. Ein neuer Antrag landet auch weiter
-im [Postfach](#mitteilungen-im-postfach-nachlesen).
-
-Die Wahl gilt für die Gemeinde, in der du gerade arbeitest, und für alle
-deine Geräte. Wer in mehreren Gemeinden mitarbeitet, stellt sie je Gemeinde ein.
-Neue Konten haben alles an.
-
-Unabhängig davon legt die Gemeindeleitung fest, wer überhaupt entscheiden,
-verbuchen und freigeben darf (siehe
-[Festlegen, wer entscheiden, verbuchen und freigeben darf](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf)).
-Was du nicht entscheiden darfst, bekommst du ohnehin nicht als Zahl.
-
 ## Auf Android Ton und Lautstärke je Gruppe einstellen
 
 Auf Android sind die vier Gruppen außerdem Kanäle des Systems. In den

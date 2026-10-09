@@ -101,15 +101,10 @@ Versionsüberschrift.
   Ohne das Recht bleiben die Vorgänge sichtbar, aber ohne Knöpfe, ohne Push,
   ohne Postfach-Eintrag und ohne rote Zahl; bisher Zugewiesene behalten alle
   drei Rechte.
-- Leitung und Gemeindeleitung wählen unter „Kennzahlen" je Gemeinde selbst,
-  ob Anträge, Events zum Verbuchen und Challenge-Beiträge eine rote Zahl am
-  Reiter und am App-Symbol bekommen und einen Push auslösen.
 - Die Gemeindeleitung legt auch für Teamer:innen je Jahrgang fest, ob sie
   dort Challenge-Beiträge freigeben dürfen; ohne das Recht lesen sie die
   Beiträge nur mit und bekommen dafür weder Push noch rote Zahl. Bisher
   Zugewiesene behalten das Recht.
-- Teamer:innen wählen unter „Kennzahlen" in ihrem Profil, ob
-  Challenge-Beiträge eine rote Zahl und einen Push bekommen.
 
 ### Geändert
 - In der Event-Liste im Browser steht vor jedem Event ein farbiger Kreis mit

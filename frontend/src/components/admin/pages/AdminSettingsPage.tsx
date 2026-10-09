@@ -51,7 +51,6 @@ import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import SpiritFooter from '../../shared/SpiritFooter';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
-import KennzahlenEintrag, { hatKennzahlenWahl } from '../../shared/KennzahlenAuswahl';
 import { useIonRouter } from '@ionic/react';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
@@ -319,11 +318,6 @@ const AdminSettingsPage: React.FC = () => {
                   Team, und dorthin fuehren Push und Postfach (Simon, 26.09.2026:
                   "Er sollte wohl bei allen immer im Profil stehen"). */}
               <PushAuswahlEintrag variante="users" presentingRef={pageRef} />
-
-              {/* Kennzahlen-Wahl (09.10.2026, docs/planung/darf-freigeben.md):
-                  welche Bereiche eine rote Zahl und Push bekommen -- nur fuer
-                  Leitung und Gemeindeleitung, je Gemeinde. */}
-              {hatKennzahlenWahl(user?.role_name) && <KennzahlenEintrag presentingRef={pageRef} />}
 
               {/* App-Tour und Neuerungen jederzeit erneut ansehen */}
               <div role="button" tabIndex={0} onKeyDown={tastaturKlick}

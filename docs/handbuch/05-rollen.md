@@ -153,6 +153,11 @@ Freigeben fehlen, und ein Hinweis nennt den Grund. Für diese Vorgänge gibt es
 dann **weder Push noch Postfach-Eintrag noch rote Zahl**; sie gehen an die,
 die entscheiden dürfen.
 
+Umgekehrt gilt: Wer das Recht hat, bekommt die rote Zahl am Reiter und am
+App-Symbol, ausblenden lässt sie sich nicht. Ob der Push dazu aufs Handy
+kommt, regelt wie bei jeder Mitteilung die Auswahl unter
+[Benachrichtigungen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen).
+
 Manche Vorgänge hängen an keinem Jahrgang: Anträge von Teamer:innen, Events
 „Nur Team" und Events ohne Jahrgang, Challenges „Nur das Team". Sie darf
 entscheiden, wer das Recht in **mindestens einem** seiner Jahrgänge hat — oder
@@ -163,9 +168,6 @@ Jahrgängen abgegeben hat, bekommt auch diese Vorgänge nicht mehr.
 > nicht hat, bekommt beim Antippen eine Fehlermeldung — eingetragen wird
 > nichts. Ein Speichern im Benutzer-Fenster einer älteren Fassung lässt die
 > gesetzten Rechte stehen.
-
-Welche Zahlen du selbst sehen willst, wählst du unabhängig davon unter
-[Auswählen, welche Zahlen du siehst](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst).
 
 ## Nachschlagen, wer was darf
 
@@ -458,9 +460,7 @@ zählen hier nicht mit — sie zeigt der blaue Punkt an der Glocke (siehe
 Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst —
 und bei Anträgen, Verbuchen und Freigaben nur, was du dort
 [entscheiden darfst](#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf).
-Was du unter
-[Auswählen, welche Zahlen du siehst](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst)
-abgewählt hast, zählt nicht mit. Eine Gemeinde ohne Zahl hat nichts Offenes.
+Eine Gemeinde ohne Zahl hat nichts Offenes.
 
 **Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
 Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die

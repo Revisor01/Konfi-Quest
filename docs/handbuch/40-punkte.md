@@ -183,9 +183,7 @@ und entscheiden dürfen:
 
 Die Zahl am Reiter, am
 [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
-App-Symbol zählt nach derselben Regel. Wer Anträge bei den
-[Kennzahlen](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst) abgewählt hat,
-bekommt dazu weder Zahl noch Push, wohl aber den Postfach-Eintrag. Wer in mehreren Gemeinden mitarbeitet,
+App-Symbol zählt nach derselben Regel. Wer in mehreren Gemeinden mitarbeitet,
 bekommt die Anträge jeder Gemeinde nach der Rolle und den Jahrgängen, die er
 dort hat.
 

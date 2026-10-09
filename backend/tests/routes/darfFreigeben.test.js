@@ -639,112 +639,79 @@ describe('Darf freigeben: Antraege, Verbuchen, Challenge-Beitraege', () => {
   });
 
   // ==================================================================
-  // Kennzahlen-Wahl der Leitung
+  // Keine persoenliche Abwahl: allein das Recht entscheidet
   // ==================================================================
-  describe('Kennzahlen-Wahl', () => {
-    it('Vorgabe: alles an -- fuer Admin und Gemeindeleitung', async () => {
-      for (const schluessel of ['admin1', 'orgAdmin1']) {
-        const res = await request(app).get('/api/notifications/kennzahlen').set(auth(schluessel));
-        expect(res.status).toBe(200);
-        expect(res.body).toEqual({ antraege: true, verbuchen: true, challenges: true });
-      }
-    });
-
-    it('verboten: Konfis haben keine Kennzahlen-Wahl', async () => {
-      expect((await request(app).get('/api/notifications/kennzahlen').set(auth('konfi1'))).status).toBe(403);
-      expect((await request(app).put('/api/notifications/kennzahlen').set(auth('konfi1')).send({ challenges: false })).status).toBe(403);
-    });
-
-    it('Teamer:innen: dieselbe Form, waehlbar nur Challenge-Beitraege', async () => {
-      const get = await request(app).get('/api/notifications/kennzahlen').set(auth('teamer1'));
-      expect(get.status).toBe(200);
-      expect(get.body).toEqual({ antraege: true, verbuchen: true, challenges: true });
-      for (const fremd of [{ antraege: false }, { verbuchen: false }, { antraege: false, challenges: false }]) {
-        expect((await request(app).put('/api/notifications/kennzahlen').set(auth('teamer1')).send(fremd)).status).toBe(400);
-      }
-      const { rows } = await db.query('SELECT 1 FROM leitung_kennzahlen WHERE user_id = $1', [USERS.teamer1.id]);
-      expect(rows.length).toBe(0);
-      const put = await request(app).put('/api/notifications/kennzahlen').set(auth('teamer1')).send({ challenges: false });
-      expect(put.status).toBe(200);
-      expect(put.body).toEqual({ antraege: true, verbuchen: true, challenges: false });
-    });
-
-    it('Teamer:innen: Challenge-Beitraege abgewaehlt -- keine Zahl, nicht am App-Symbol, kein Push', async () => {
-      const { challengeId } = await challengeMitBeitrag();
-      expect((await zaehler('teamer1')).pendingChallenges).toBe(1);
-      await request(app).put('/api/notifications/kennzahlen').set(auth('teamer1')).send({ challenges: false }).expect(200);
-      const z = await zaehler('teamer1');
-      expect([z.pendingChallenges, z.challengeApprovals.total, z.challengeUpdates.total]).toEqual([0, 0, 0]);
-      expect(await appSymbol('teamer1')).toBe(0);
-      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.konfi1.id }))
-        .not.toContain(USERS.teamer1.id);
-      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: false, ausser: USERS.konfi1.id }))
-        .not.toContain(USERS.teamer1.id);
-      // Das Recht bleibt: Moderieren geht weiter.
-      expect((await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'))).body.darf_freigeben).toBe(true);
-    });
-
-    it('verboten: unbekannte Werte und leere Anfrage', async () => {
-      expect((await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({ antraege: 'aus' })).status).toBe(400);
-      expect((await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({})).status).toBe(400);
-    });
-
-    it('Antraege abgewaehlt: keine Zahl, nicht am App-Symbol, kein Push -- Liste und Postfach bleiben', async () => {
-      const put = await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({ antraege: false });
-      expect(put.status).toBe(200);
-      expect(put.body).toEqual({ antraege: false, verbuchen: true, challenges: true });
-
+  // Simon, 09.10.2026: „Du darfst nicht verwalten, dann brauchst du es nicht
+  // sehen. Aber passiert bei Challenges was, dann guckst du es dir
+  // gefaelligst an." Die Kennzahlen-Wahl ist wieder entfernt (Migration 205).
+  describe('Allein das Recht: mit Recht Zahl und Push, ohne Recht nichts', () => {
+    async function allesAnlegen() {
       const res = await request(app).post('/api/konfi/requests').set(auth('konfi1'))
         .send({ activity_id: ACTIVITIES.sonntagsgottesdienst.id, requested_date: '2026-06-01' });
       expect(res.status).toBe(201);
       await warteAufNachwehen(app);
-
-      expect((await zaehler('orgAdmin1')).pendingRequests).toBe(0);
-      expect(await appSymbol('orgAdmin1')).toBe(0);
-      expect(pushTokens('new_activity_request')).toEqual([]);
-      const liste = await request(app).get('/api/admin/activities/requests?status=pending').set(auth('orgAdmin1'));
-      expect(liste.body.map((a) => [a.id, a.darf_entscheiden])).toEqual([[res.body.id, true]]);
-      const { rows } = await db.query(
-        "SELECT user_id FROM notifications WHERE type = 'new_activity_request' AND user_id = $1", [USERS.orgAdmin1.id]);
-      expect(rows.length).toBe(1);
-    });
-
-    it('erlaubt: die anderen Bereiche zaehlen weiter', async () => {
-      await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({ antraege: false }).expect(200);
-      await antrag();
-      await vergangenesEvent(410);
-      await challengeMitBeitrag();
-      const z = await zaehler('orgAdmin1');
-      expect([z.pendingRequests, z.pendingEvents, z.pendingChallenges]).toEqual([0, 1, 1]);
-      expect(await appSymbol('orgAdmin1')).toBe(2);
-    });
-
-    it('Verbuchen abgewaehlt: keine Zahl und keine Erinnerung', async () => {
-      await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({ verbuchen: false }).expect(200);
-      await vergangenesEvent(411);
-      expect((await zaehler('orgAdmin1')).pendingEvents).toBe(0);
-      expect(await appSymbol('orgAdmin1')).toBe(0);
-      const zahlen = await zaehleWartendeTermineJeLeitung(db, [ORG1]);
-      expect(zahlen.map((z) => z.user_id)).toEqual([USERS.orgAdminSuper.id]);
-    });
-
-    it('Challenge-Beitraege abgewaehlt: keine Freigaben-Zahl und kein Push', async () => {
-      await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({ challenges: false }).expect(200);
+      await vergangenesEvent(420);
       const { challengeId } = await challengeMitBeitrag();
-      const z = await zaehler('orgAdmin1');
-      expect([z.pendingChallenges, z.challengeApprovals.total]).toEqual([0, 0]);
-      expect(await appSymbol('orgAdmin1')).toBe(0);
-      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.konfi1.id }))
-        .not.toContain(USERS.orgAdmin1.id);
+      const PushService = require('../../services/pushService');
+      await PushService.sendChallengeSubmissionToLeadership(db, ORG1, challengeId, 'Runde', 'Konfi', true, USERS.konfi1.id);
+      return challengeId;
+    }
+
+    it('die Routen der Kennzahlen-Wahl gibt es nicht mehr', async () => {
+      for (const schluessel of ['admin1', 'orgAdmin1', 'teamer1']) {
+        expect((await request(app).get('/api/notifications/kennzahlen').set(auth(schluessel))).status).toBe(404);
+        expect((await request(app).put('/api/notifications/kennzahlen').set(auth(schluessel)).send({ challenges: false })).status).toBe(404);
+      }
     });
 
-    it('gilt je Gemeinde: die Wahl in Gemeinde 1 laesst Gemeinde 2 unberuehrt', async () => {
-      await request(app).put('/api/notifications/kennzahlen').set(auth('orgAdmin1')).send({ antraege: false }).expect(200);
-      const { rows } = await db.query('SELECT organization_id, antraege FROM leitung_kennzahlen WHERE user_id = $1', [USERS.orgAdmin1.id]);
-      expect(rows.map((r) => [Number(r.organization_id), r.antraege])).toEqual([[ORG1, false]]);
-      const { ladeKennzahlen } = require('../../utils/leitungKennzahlen');
-      expect(await ladeKennzahlen(db, USERS.orgAdmin1.id, ORGS.andereGemeinde.id))
-        .toEqual({ antraege: true, verbuchen: true, challenges: true });
+    it('die Tabelle der Kennzahlen-Wahl ist entfernt', async () => {
+      const { rows: [r] } = await db.query("SELECT to_regclass('public.leitung_kennzahlen') AS t");
+      expect(r.t).toBe(null);
+    });
+
+    it('erlaubt: Admin mit allen drei Rechten bekommt jede Zahl, die Summe am App-Symbol und jeden Push', async () => {
+      await zuweisen('admin1', J1);
+      await allesAnlegen();
+
+      const z = await zaehler('admin1');
+      expect([z.pendingRequests, z.pendingEvents, z.pendingChallenges, z.challengeApprovals.total]).toEqual([1, 1, 1, 1]);
+      expect(await appSymbol('admin1')).toBe(3);
+      expect(pushTokens('new_activity_request')).toEqual(['token-admin1', 'token-orgAdmin1']);
+      expect(pushTokens('challenge_submission')).toEqual(['token-admin1', 'token-orgAdmin1', 'token-teamer1']);
+      const erinnerung = await zaehleWartendeTermineJeLeitung(db, [ORG1]);
+      expect(erinnerung.map((e) => e.user_id)).toContain(USERS.admin1.id);
+    });
+
+    it('verboten: Admin ohne die drei Rechte bekommt keine Zahl, nichts am App-Symbol, keinen Push', async () => {
+      await zuweisen('admin1', J1, { antraege: false, verbuchen: false, challenges: false });
+      await allesAnlegen();
+
+      const z = await zaehler('admin1');
+      expect([z.pendingRequests, z.pendingEvents, z.pendingChallenges, z.challengeApprovals.total]).toEqual([0, 0, 0, 0]);
+      expect(await appSymbol('admin1')).toBe(0);
+      expect(pushTokens('new_activity_request')).toEqual(['token-orgAdmin1']);
+      expect(pushTokens('challenge_submission')).toEqual(['token-orgAdmin1', 'token-teamer1']);
+      const erinnerung = await zaehleWartendeTermineJeLeitung(db, [ORG1]);
+      expect(erinnerung.map((e) => e.user_id)).not.toContain(USERS.admin1.id);
+    });
+
+    it('erlaubt: Teamer:in mit Recht bekommt Zahl, App-Symbol und Push zum Challenge-Beitrag', async () => {
+      await allesAnlegen();
+      const z = await zaehler('teamer1');
+      expect([z.pendingChallenges, z.challengeApprovals.total]).toEqual([1, 1]);
+      expect(await appSymbol('teamer1')).toBe(1);
+      expect(pushTokens('challenge_submission')).toContain('token-teamer1');
+    });
+
+    it('verboten: Teamer:in ohne Recht bekommt nichts davon', async () => {
+      await db.query(
+        'UPDATE user_jahrgang_assignments SET darf_challenges_freigeben = false WHERE user_id = $1', [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+      await allesAnlegen();
+      const z = await zaehler('teamer1');
+      expect([z.pendingChallenges, z.challengeApprovals.total]).toEqual([0, 0]);
+      expect(await appSymbol('teamer1')).toBe(0);
+      expect(pushTokens('challenge_submission')).not.toContain('token-teamer1');
     });
   });
 });

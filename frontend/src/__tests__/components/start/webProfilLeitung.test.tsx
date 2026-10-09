@@ -170,23 +170,14 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     expect(modal('PushAuswahlModal')?.optionen?.presentingElement).toBe(h.seite);
   });
 
-  it('Kennzahlen wie in der App (Mehr › Konto): Leitung und Gemeindeleitung haben die Zeile, sie öffnet dasselbe Fenster', async () => {
-    // docs/planung/darf-freigeben.md, 09.10.2026: persönliche Wahl je Gemeinde.
-    h.antworten['/notifications/kennzahlen'] = { antraege: true, verbuchen: true, challenges: false };
+  it('keine Kennzahlen-Zeile: über Zahl und Push entscheidet allein das Recht (Simon, 09.10.2026)', async () => {
     const leitung = await zeige();
-    expect(await screen.findByText('2 von 3 Bereichen mit roter Zahl')).toBeInTheDocument();
-    fireEvent.click(knopfInZeile('Kennzahlen', 'Auswählen'));
-    expect(modal('KennzahlenModal')?.optionen?.presentingElement).toBe(h.seite);
+    expect(knopfInZeile('Benachrichtigungen', 'Auswählen')).toBeInTheDocument();
+    expect(screen.queryByText('Kennzahlen')).toBeNull();
     leitung.unmount();
     h.user = ORG_LEITUNG;
     await zeige();
-    expect(knopfInZeile('Kennzahlen', 'Auswählen')).toBeInTheDocument();
-  });
-
-  it('ohne Rolle mit Kennzahlen (Konfi-Rolle im Baum der Leitung): keine Zeile, keine Anfrage', async () => {
-    h.user = { ...LEITUNG, role_name: 'konfi' };
-    await zeige();
-    expect(screen.queryByRole('button', { name: 'Kennzahlen: Auswählen' })).toBeNull();
+    expect(screen.queryByText('Kennzahlen')).toBeNull();
     expect(h.apiGet).not.toHaveBeenCalledWith('/notifications/kennzahlen');
   });
 

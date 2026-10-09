@@ -57,8 +57,7 @@
 //   - Zaehler: badge-counts.pendingRequests, App-Symbol und
 //     Gemeinde-Umschalter (utils/appIconBadge.js)
 //   - Empfaenger von "Neuer Antrag eingegangen", Postfach und Push
-//     (ladeLeitungZumAntrag); den Push filtert zusaetzlich die
-//     Kennzahlen-Wahl (utils/leitungKennzahlen.js, Bereich 'antraege')
+//     (ladeLeitungZumAntrag)
 // Die LISTE selbst bleibt bei der Sicht: Wer nicht entscheiden darf, sieht
 // die Antraege weiter, nur lesend.
 
@@ -111,8 +110,7 @@ function gebundeneLeitungSiehtAntragSql({ jahrgaenge, ohneJahrgang = 'true', a =
 
 /**
  * Die Leitung, die ueber diesen Antrag entscheiden darf -- die Empfaenger von
- * "Neuer Antrag eingegangen" (Postfach und Push; den Push filtert die
- * Aufrufstelle zusaetzlich nach der Kennzahlen-Wahl).
+ * "Neuer Antrag eingegangen" (Postfach und Push).
  *
  * Beide Quellen der Zugehoerigkeit (users.organization_id UND
  * user_organizations, Rolle je Gemeinde) ueber ladeMitgliederDerOrganisation

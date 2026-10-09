@@ -230,9 +230,6 @@ auf.
 - **Bibelübersetzung** für die Tageslosung
 - **Benachrichtigungen** — welche Mitteilungen aufs Handy kommen; siehe
   [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen)
-- **Kennzahlen** — ob Challenge-Beiträge eine rote Zahl und einen Push
-  bekommen; siehe
-  [Auswählen, welche Zahlen du siehst](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst)
 - **App-Tour ansehen** und **Medien-Cache leeren** — Letzteres wirft die
   Dateien aus Chat, Challenges und Material weg, die zum schnelleren Öffnen
   auf dem Gerät liegen (siehe
@@ -261,7 +258,7 @@ Im Browser öffnest du das Profil über **Profil** unten in der Leiste. Die Seit
 heißt **Mein Profil** und hat zwei Spalten. Links stehen deine Angaben — Name
 mit Funktionsbeschreibung, Benutzername, E-Mail-Adresse, Gemeinde und „Dabei
 seit" —, die **Konto-Einstellungen** — Funktionsbeschreibung, E-Mail-Adresse,
-Passwort, Bibelübersetzung, App-Tour, Benachrichtigungen, Kennzahlen und Medien-Cache,
+Passwort, Bibelübersetzung, App-Tour, Benachrichtigungen und Medien-Cache,
 jeweils mit einem Knopf, der dasselbe Fenster öffnet wie in der App — und das
 **Konto** mit **Abmelden** und **Konto löschen**.
 

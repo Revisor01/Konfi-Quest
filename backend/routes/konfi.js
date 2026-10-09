@@ -14,7 +14,6 @@ const { darfKonfi } = require('../utils/jahrgangsZugriff');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
 const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
-const { nurMitKennzahl } = require('../utils/leitungKennzahlen');
 // Empfaenger der Abmelde-Meldungen: die Leitung, die das Event sieht
 // (27.09.2026, Regel in utils/terminLeitungSicht.js).
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
@@ -64,13 +63,10 @@ registriereArt('konfi_antrag_eingegangen', async (db, p, k) => {
     ));
   }
 
-  // Kennzahlen-Wahl (09.10.2026, utils/leitungKennzahlen.js): Wer Antraege
-  // bei den Kennzahlen abgewaehlt hat, bekommt keinen Push -- der
-  // Postfach-Eintrag oben bleibt.
-  await k.schritt('push', async () => PushService.sendNewActivityRequestToLeadership(
+  await k.schritt('push', () => PushService.sendNewActivityRequestToLeadership(
     db,
     p.organizationId,
-    await nurMitKennzahl(db, empfaenger, p.organizationId, 'antraege'),
+    empfaenger,
     konfiData.display_name,
     p.activityName,
     p.points

@@ -37,9 +37,7 @@
 //   - Zaehler: badge-counts.pendingChallenges/challengeApprovals,
 //     App-Symbol, Gemeinde-Umschalter (utils/appIconBadge.js)
 //   - Push "Neuer Challenge-Beitrag" (ladeLeitungZumChallengeBeitrag): bei
-//     moderierten Challenges an, wer freigeben darf; dazu die
-//     Kennzahlen-Wahl (Bereich 'challenges'), die Leitung und Teamer:innen
-//     gleich haben
+//     moderierten Challenges an, wer freigeben darf
 // Liste, Galerie und Neuigkeiten bleiben bei der Sicht.
 
 /** Teilnahmekreis, den das ganze Team ohne Jahrgang sieht. */
@@ -202,9 +200,8 @@ async function darfChallengeFreigeben(db, req, challengeId) {
  *
  *   org_admin        immer
  *   admin, teamer    moderierte Challenge: wer freigeben darf; sonst wer sieht
- * Alle zusaetzlich nur mit Kennzahl 'challenges' an
- * (utils/leitungKennzahlen.js) -- das filtert die Aufrufstelle nicht,
- * sondern diese Funktion, damit Push und Zahl nicht auseinanderlaufen.
+ * Dieselbe Regel wie die Zahl (badge-counts, App-Symbol) -- eine
+ * persoenliche Abwahl gibt es nicht (Simon, 09.10.2026).
  *
  * Beide Quellen der Zugehoerigkeit ueber ladeMitgliederDerOrganisation.
  *
@@ -256,19 +253,8 @@ async function ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert = fal
     () => filtern(teamer, nachRegel('teamer'))
   ]);
 
-  // Kennzahlen-Wahl (Bereich 'challenges') -- Leitung und Teamer:innen.
-  const kandidaten = [...new Set([...orgAdmins, ...adminsMit, ...teamerMit].map(Number))];
-  const { rows: abgewaehlt } = kandidaten.length > 0
-    ? await db.query(
-        `SELECT user_id FROM leitung_kennzahlen
-          WHERE organization_id = $1 AND user_id = ANY($2::bigint[]) AND challenges = false`,
-        [orgId, kandidaten]
-      )
-    : { rows: [] };
-  const aus = new Set(abgewaehlt.map((r) => Number(r.user_id)));
-
   const empfaenger = new Set();
-  for (const id of kandidaten.filter((x) => !aus.has(x))) {
+  for (const id of [...orgAdmins, ...adminsMit, ...teamerMit].map(Number)) {
     if (ausser != null && id === Number(ausser)) continue;
     empfaenger.add(id);
   }

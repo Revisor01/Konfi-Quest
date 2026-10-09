@@ -658,10 +658,8 @@ Ein Tipp auf eine dieser Mitteilungen öffnet die Challenge selbst, siehe
   Jahrgänge und die Challenges nur fürs Team. Wartet der Beitrag auf
   Freigabe, bekommen Leitung und Teamer:innen die Mitteilung nur, wenn sie
   [freigeben dürfen](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf).
-  Wer Challenge-Beiträge bei den
-  [Kennzahlen](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst) abgewählt hat,
-  bekommt keine. Wer selbst etwas einreicht, bekommt über den eigenen Beitrag
-  keine Mitteilung.
+  Wer selbst etwas einreicht, bekommt über den eigenen Beitrag keine
+  Mitteilung.
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel
   erhält, und eine, wenn ihr Beitrag ausgeblendet wird — mit eurer Begründung,
   falls ihr eine eingetragen habt.

@@ -2608,8 +2608,7 @@ class PushService {
       //   admin, teamer   bei 'nur_team' immer, sonst ueber einen Jahrgang
       //                   der Challenge
       // Seit 09.10.2026 ("Darf freigeben"): bei moderierten Challenges nur
-      // die Admins, die freigeben duerfen, und die Leitung nur mit Kennzahl
-      // 'challenges' an -- ladeLeitungZumChallengeBeitrag. Ohne Doppelte
+      // die, die freigeben duerfen -- ladeLeitungZumChallengeBeitrag. Ohne Doppelte
       // und ohne die Person, die selbst eingereicht hat (wie im Chat die
       // eigene Nachricht; bei Team-Challenges reicht die Leitung selbst ein).
       const empfaenger = await ladeLeitungZumChallengeBeitrag(db, challengeId, {

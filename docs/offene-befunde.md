@@ -177,14 +177,16 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 09.10.2026 — „Darf freigeben" gebaut nach Simons Entscheidungen vom
   selben Tag: drei Rechte je Jahrgang (Anträge entscheiden, Events verbuchen,
   Challenge-Beiträge freigeben, Migration 204, Vorgabe an), vergeben von der
-  Gemeindeleitung; Kennzahlen-Wahl je Leitung und Gemeinde
-  ([planung/darf-freigeben.md](planung/darf-freigeben.md), Branch
-  `feat/darf-freigeben`).
+  Gemeindeleitung ([planung/darf-freigeben.md](planung/darf-freigeben.md),
+  Branch `feat/darf-freigeben`).
 - [x] 09.10.2026 — „Darf freigeben" für Teamer:innen: das Recht
-  „Challenge-Beiträge freigeben" je Jahrgang wie bei Admins, dazu ihre
-  Kennzahlen-Wahl für Challenge-Beiträge; die drei offenen Festlegungen der
-  Umsetzung bestätigt ([planung/darf-freigeben.md](planung/darf-freigeben.md#teamerinnen-09102026),
+  „Challenge-Beiträge freigeben" je Jahrgang wie bei Admins; die drei offenen
+  Festlegungen der Umsetzung bestätigt ([planung/darf-freigeben.md](planung/darf-freigeben.md#teamerinnen-09102026),
   Branch `feat/teamer-rechte`).
+- [x] 09.10.2026 — Die persönliche Abwahl von Zahl und Push (nie im Store
+  ausgeliefert) wieder entfernt: Mit Recht kommen rote Zahl, App-Symbol und
+  Push, ohne Recht nichts davon (Simon, [planung/darf-freigeben.md](planung/darf-freigeben.md#abgebaut-09102026-nur-das-recht-entscheidet),
+  Migration 205, Branch `refactor/kennzahlen-abbau`).
 
 
 ## Offen
