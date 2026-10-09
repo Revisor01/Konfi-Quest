@@ -27,7 +27,7 @@ liegen noch und werden jetzt zu Vorgängen:
 
 ## Was zu tun ist
 
-- [ ] **1. Deploy und Übernahme prüfen.** `GET /api/status`: Version und
+- [x] **1. Deploy und Übernahme prüfen.** `GET /api/status`: Version und
       Commit wie der Merge, Migrationen ohne Fehler, `195_support_vorgaenge`
       unter den angewendeten. Dann nur lesend:
 
@@ -113,4 +113,37 @@ liegen noch und werden jetzt zu Vorgängen:
 
 ## Ergebnis
 
-(offen)
+10.10.2026 (lokaler Agent) — **angehalten nach Schritt 1**, Schritte 2 bis 5
+nicht begonnen, in Produktion nichts geschrieben:
+
+1. Commit `c070435d` (2.4.0; `90eb5b17` danach ändert nur Doku), 0 neue
+   Migrationen bei diesem Start, keine fehlgeschlagen; `195_support_vorgaenge`
+   angewendet am 06.10.2026 11:19. Zählungen: `support_vorgaenge` **0 Zeilen**,
+   Anfragen ohne Vorgang 0, zugeordnete Mails ohne Vorgang 0 — die beiden
+   Nullen stimmen nur, weil nichts mehr da ist. Seit dem Start der Datenbank
+   (vor 9 Tagen) zeigt die Statistik je Tabelle so viele Löschungen wie
+   Einfügungen: Anfragen 1/1, Vorgänge 1/1, Mails 6/6. Die Probe-Anfrage 1
+   wurde also nach der Übernahme am 06.10.2026 gelöscht, ihr Vorgang 1 und
+   die Mails 1–6 gingen mit; wer, ist nicht feststellbar (die
+   Server-Protokolle enden mit dem Neustart der Container). In den
+   Postfächern liegen die Mails noch.
+2. **Nicht möglich:** Anfrage 1 und der Schriftwechsel mit Gemeinde 4 sind
+   nicht mehr da (oben).
+3. bis 5. **Zurückgestellt:** Die Support-Mail ist in Produktion seit
+   08.10.2026 12:10 ganz aus. Im Stack gibt es keine Variablen mehr (die
+   Portainer-API meldet für den Stack eine leere Liste), in beiden Backends
+   sind `MAIL_IMAP_HOST`, `MAIL_MOIN_USER/_PASS` und
+   `MAIL_SUPPORT_USER/_PASS` leer. Letzte Abholung beider Postfächer
+   08.10.2026 12:09, seitdem keine (rund 46 Stunden); es war der erste
+   Deploy nach dem Neustart von Portainer am selben Morgen. Damit
+   holt der Server keine Mails, Antworten aus der Support-Ansicht scheitern,
+   und die Bestätigung eines Anliegens fällt still weg (503 wird nicht
+   wiederholt). Seit dem Ausfall ist in keinem der beiden Postfächer eine
+   Mail eingegangen, verpasst wurde also nichts. Schritte 3–5 jetzt
+   auszuführen, hinterließe Vorgänge ohne Bestätigung, auf die sich nicht
+   antworten lässt. Das Probe-Postfach des Betriebs besteht noch; das Konto
+   aus Schritt 5 ist nicht angelegt.
+
+Weiter, sobald Simon die Variablen im Stack wiederhergestellt hat (Prüfung:
+„zuletzt abgeholt" unter Posteingang jünger als fünf Minuten) und
+entschieden hat, ob für Schritt 2 eine neue Probe-Anfrage entsteht.
