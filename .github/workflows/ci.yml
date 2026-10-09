@@ -494,6 +494,20 @@ jobs:
           # (wie die Backend-Diff-Erkennung im deploy-Job).
           fetch-depth: 0
 
+      # Der E2E-Stack baut seine Images (FROM node, nginx) und lädt Postgres
+      # von Docker Hub. Anonyme Abrufe teilen sich die Grenze je
+      # Runner-Adresse; am 09.10.2026 brach der Job zweimal mit 429 ab. Der
+      # Docker-Dienst fragt deshalb zuerst Googles Spiegel und fällt bei
+      # Fehlen auf Docker Hub zurück.
+      - name: Docker-Hub-Spiegel einrichten
+        run: |
+          d=/etc/docker/daemon.json
+          [ -f "$d" ] || echo '{}' | sudo tee "$d" >/dev/null
+          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$d" | sudo tee "$d.neu" >/dev/null
+          sudo mv "$d.neu" "$d"
+          sudo systemctl restart docker
+          docker info --format '{{json .RegistryConfig.Mirrors}}'
+
       - name: Farben oder Theme geaendert?
         id: filter
         env:
