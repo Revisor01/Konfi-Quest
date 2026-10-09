@@ -53,6 +53,6 @@ describe('KonfispruchAuswertung', () => {
 
   it('App- und Web-Fassung zeigen den Reiter', () => {
     expect(lies('src/components/admin/pages/AdminMetricsPage.tsx')).toContain("{tab === 'sprueche' && <KonfispruchAuswertung />}");
-    expect(lies('src/components/admin/web/leitung/WebBetrieb.tsx')).toContain("{p.tab === 'sprueche' && <KonfispruchAuswertung />}");
+    expect(lies('src/components/admin/web/leitung/WebBetrieb.tsx')).toContain("{p.tab === 'sprueche' && <KonfispruchAuswertung web />}");
   });
 });

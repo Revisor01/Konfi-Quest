@@ -4986,7 +4986,7 @@ paths:
   /api/metrics/konfisprueche:
     get:
       tags: ["System & Monitoring"]
-      summary: Gewaehlte Konfisprueche ueber alle Gemeinden (nur super_admin)
+      summary: Gewaehlte Konfisprueche, gesamt oder je Landeskirche, Kirchenkreis, Gemeinde (nur super_admin)
       description: >
         Neu am 09.10.2026 (docs/messung/umami.md, S1). Wertet
         konfspruch_wahlen aus (Migration 207): je Wahl eine Zeile OHNE
@@ -4995,9 +4995,33 @@ paths:
         Kontos. Jeder Spruch mit Anzahl, auch Einzelnennungen, eigene
         Sprueche im Wortlaut mit Stellenangabe -- keine Schwelle (Simon,
         09.10.2026). Gezaehlt werden Wahlen, nicht Personen: Wer wechselt,
-        steht mit beiden in der Liste. Die Gemeinde ist gespeichert, wird
-        hier aber nicht ausgegeben. Der uebernommene Bestand traegt keinen
+        steht mit beiden in der Liste. Der uebernommene Bestand traegt keinen
         Monat (`monat: null`). Nichts davon geht an die Nutzungsmessung.
+
+
+        ERGAENZT 09.10.2026, additiv (Simon: Auswertung nach Gemeinde,
+        Kirchenkreis und Landeskirche): Ohne Parameter wie bisher ueber alle
+        Wahlen. Mit `ebene` und `id` zaehlen alle Listen nur die Wahlen
+        dieses Eintrags. Kirchenkreis und Landeskirche einer Wahl sind die vom
+        Zeitpunkt der Wahl (Migration 208: konfspruch_wahlen.kirchenkreis_id,
+        landeskirche_id, je ON DELETE SET NULL); fehlen beide, gilt die
+        heutige Zuordnung der Gemeinde, fehlt nur die Landeskirche, die
+        heutige des Kirchenkreises. Neue Felder `ebene` und `auswahl` (je
+        Ebene die Eintraege mit Wahlen und Anzahl, ungefiltert). Namen von
+        Gemeinden, Kirchenkreisen und Landeskirchen, nie von Personen. Der
+        Eintrag "Gemeinde wird gespeichert, aber nicht ausgegeben" ist damit
+        hinfaellig (09.10.2026).
+      parameters:
+        - name: ebene
+          in: query
+          required: false
+          schema: { type: string, enum: [landeskirche, kirchenkreis, gemeinde] }
+          description: Ohne = alle Wahlen. Mit ebene ist id Pflicht.
+        - name: id
+          in: query
+          required: false
+          schema: { type: integer, minimum: 0 }
+          description: Kennung der Landeskirche, des Kirchenkreises oder der Gemeinde. Unbekannt = Nullen und leere Listen.
       responses:
         "200":
           description: Auswertung
@@ -5026,6 +5050,26 @@ paths:
                   monate:
                     type: array
                     items: { type: object, properties: { monat: { type: [string, "null"], description: "JJJJ-MM, null = Bestand" }, anzahl: { type: integer } } }
+                  ebene:
+                    type: object
+                    description: "seit 09.10.2026: die ausgewertete Ebene"
+                    properties:
+                      art: { type: string, enum: [alle, landeskirche, kirchenkreis, gemeinde] }
+                      id: { type: [integer, "null"] }
+                  auswahl:
+                    type: object
+                    description: "seit 09.10.2026: je Ebene die Eintraege mit mindestens einer Wahl, nach Name; Zusatz = heutige Landeskirche des Kirchenkreises bzw. heutiger Kirchenkreis der Gemeinde"
+                    properties:
+                      landeskirchen:
+                        type: array
+                        items: { type: object, properties: { id: { type: integer }, name: { type: string }, anzahl: { type: integer } } }
+                      kirchenkreise:
+                        type: array
+                        items: { type: object, properties: { id: { type: integer }, name: { type: string }, landeskirche: { type: [string, "null"] }, anzahl: { type: integer } } }
+                      gemeinden:
+                        type: array
+                        items: { type: object, properties: { id: { type: integer }, name: { type: string }, kirchenkreis: { type: [string, "null"] }, anzahl: { type: integer } } }
+        "400": { description: "Ungueltige Ebene oder fehlende/ungueltige id (error: Ungültige Ebene)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "500": { $ref: "#/components/responses/ServerError" }

@@ -171,8 +171,9 @@ Konfirmationsablauf.
 
 Jede Wahl hält Konfi Quest außerdem **ohne Namen** in einer Statistik fest:
 welcher Spruch in welcher Übersetzung oder welcher eigene Text, die Gemeinde
-und den Monat. Diese Einträge bleiben, wenn ein Konto gelöscht wird; der
-Betrieb von Konfi Quest sieht sie zusammengefasst über alle Gemeinden.
+mit ihrem Kirchenkreis und ihrer Landeskirche und den Monat. Diese Einträge
+bleiben, wenn ein Konto gelöscht wird; der Betrieb von Konfi Quest sieht sie
+gesamt oder je Landeskirche, Kirchenkreis und Gemeinde.
 
 ## Nachvollziehen, was die Jahrgangs-Zuweisung steuert
 

@@ -433,11 +433,24 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   (`GET /api/metrics/konfisprueche`, nur super_admin) — jeder Spruch mit
   Anzahl, eigene im Wortlaut, Übersetzungen, je Monat; gezählt werden
   Wahlen, nicht Personen.
-- **Offen bei Simon:** In kleinen Gemeinden macht ein eigener Spruch im
-  Wortlaut zusammen mit Gemeinde und Monat eine Person wiedererkennbar —
-  der Spruch steht auf der Urkunde und oft im Gemeindebrief. Die Ansicht
-  zeigt die Gemeinde nicht, gespeichert ist sie (Eintrag in
-  [offene-befunde.md](../offene-befunde.md)).
+- **Gemeinde und Wortlaut zusammen — entschieden am 09.10.2026:** Die
+  Frage war, ob ein eigener Spruch im Wortlaut zusammen mit Gemeinde und
+  Monat in kleinen Gemeinden eine Person wiedererkennbar macht (der Spruch
+  steht auf der Urkunde und oft im Gemeindebrief). Simon: Die Auswertung
+  geht nach **Gemeinde, Kirchenkreis und Landeskirche**, vollständig, auch
+  eigene Sprüche im Wortlaut, personenunabhängig. Umgesetzt mit Migration
+  208: Je Wahl stehen zusätzlich Kirchenkreis und Landeskirche, wie die
+  Gemeinde sie beim Wählen zugeordnet hatte — so bleibt die Zahl auf diesen
+  Ebenen, wenn die Gemeinde gelöscht oder umgehängt wird. Gespeichert als
+  Kennungen mit `ON DELETE SET NULL`, nicht als Namen: Umbenennen (Schreibweise
+  korrigieren) zieht so in die Auswertung mit, statt einen Kirchenkreis in
+  zwei Zeilen zu teilen; wird ein Kirchenkreis gelöscht, bleibt die
+  Landeskirche der Wahl stehen. Fehlen einer Wahl beide Ebenen (Gemeinde
+  damals ohne Zuordnung), gilt die heutige Zuordnung der Gemeinde; der
+  Bestand bekam beim Einspielen die heutige Zuordnung. Ansicht: Betrieb ›
+  „Sprüche" mit Wahl der Ebene (Alle, Landeskirche, Kirchenkreis, Gemeinde)
+  und des Eintrags (`GET /api/metrics/konfisprueche?ebene=…&id=…`). Keine
+  Namen von Personen.
 
 ### S2 — Anträge-Ansicht der Leitung
 
