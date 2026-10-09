@@ -200,6 +200,9 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Im Fenster „Benachrichtigungen“ sind die Untertitel der Schalter nicht mehr
+  größer als die Titel; Zeilen und Hinweis sehen aus wie auf den übrigen
+  Seiten unter Konto.
 - Eine Event-Serie, die ohne Netz gespeichert und später gesendet wird,
   entsteht auch dann nur einmal, wenn die Verbindung beim Senden abreißt.
 - Bleibt beim Anlegen einer Konfi die Antwort aus, legt „Erneut versuchen"

@@ -186,6 +186,9 @@ export const KennzahlenModal: React.FC<ModalProps> = ({ onClose, onGeaendert }) 
                         </div>
                         <IonToggle
                           className="app-toggle--users"
+                          // Abstand zum Text: app-list-item__row hat keinen gap, sonst stoesst
+                          // ein langer Untertitel an den Schalter.
+                          style={{ marginInlineStart: 'var(--app-abstand-mittel)', flexShrink: 0 }}
                           aria-label={b.name}
                           checked={kennzahlen[b.id]}
                           disabled={speichert}

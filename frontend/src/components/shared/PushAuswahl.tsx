@@ -7,7 +7,6 @@ import {
   IonContent,
   IonHeader,
   IonIcon,
-  IonItem,
   IonLabel,
   IonList,
   IonListHeader,
@@ -18,7 +17,15 @@ import {
   IonToolbar,
   useIonModal
 } from '@ionic/react';
-import { ICON_BENACHRICHTIGUNG, ICON_SCHLIESSEN } from './icons';
+import {
+  ICON_BENACHRICHTIGUNG,
+  ICON_CHATS_GEFUELLT,
+  ICON_INFO,
+  ICON_POKAL_GEFUELLT,
+  ICON_SCHLIESSEN,
+  ICON_TERMIN_GEFUELLT,
+  ICON_WARTEND_GEFUELLT
+} from './icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
 import { fehlerText } from '../../utils/fehler';
@@ -97,6 +104,59 @@ export const pushZusammenfassung = (e: PushEinstellungen | null, berechtigung: s
   return `${an} von ${e.gruppen.length} Gruppen aufs Handy`;
 };
 
+/**
+ * Symbol je Gruppe. Die Schluessel sind die Gruppen-IDs des Servers
+ * (utils/pushGruppen.js); eine dort neu hinzukommende Gruppe bekommt die
+ * Glocke, bis sie hier ein eigenes Symbol hat.
+ */
+const GRUPPEN_ICON: Record<string, string> = {
+  konfi_chat: ICON_CHATS_GEFUELLT,
+  konfi_termine: ICON_TERMIN_GEFUELLT,
+  konfi_fortschritt: ICON_POKAL_GEFUELLT,
+  konfi_verwaltung: ICON_WARTEND_GEFUELLT
+};
+
+interface SchalterZeileProps {
+  variante: PushAuswahlVariante;
+  toggle: string;
+  icon: string;
+  titel: string;
+  untertitel: string;
+  ariaLabel: string;
+  an: boolean;
+  gesperrt: boolean;
+  onSchalten: (an: boolean) => void;
+}
+
+/** Eine Zeile wie in den Konto-Einstellungen (vgl. AbsturzberichteSchalter). */
+const SchalterZeile: React.FC<SchalterZeileProps> = ({ variante, toggle, icon, titel, untertitel, ariaLabel, an, gesperrt, onSchalten }) => (
+  <div className={`app-list-item app-list-item--${variante}`} style={{ width: '100%' }}>
+    <div className="app-list-item__row">
+      <div className="app-list-item__main">
+        <div className={`app-icon-circle app-icon-circle--${variante}`}>
+          <IonIcon icon={icon} />
+        </div>
+        <div className="app-list-item__content">
+          <div className="app-list-item__title">{titel}</div>
+          <div className="app-list-item__meta">
+            <span className="app-list-item__meta-item">{untertitel}</span>
+          </div>
+        </div>
+      </div>
+      <IonToggle
+        className={toggle}
+        // Abstand zum Text: app-list-item__row hat keinen gap, sonst stoesst
+        // ein langer Untertitel an den Schalter.
+        style={{ marginInlineStart: 'var(--app-abstand-mittel)', flexShrink: 0 }}
+        aria-label={ariaLabel}
+        checked={an}
+        disabled={gesperrt}
+        onIonChange={(e) => onSchalten(e.detail.checked)}
+      />
+    </div>
+  </div>
+);
+
 interface ModalProps {
   onClose: () => void;
   variante: PushAuswahlVariante;
@@ -172,16 +232,24 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
         </IonToolbar>
       </IonHeader>
       <IonContent className="app-gradient-background">
+        {/* Aufbau wie die Schwesterseiten unter Mehr › Konto (Simon,
+            09.10.2026, zuerst am Kennzahlen-Fenster: "Subtexte zu groß",
+            die Unterseiten sollen einheitlich aussehen). Vorher IonItem mit
+            <h2>/<p>: Das iOS-Theme setzt <p> in einer Karte auf "inherit"
+            und ueberstimmt die Kartenregel -- gemessen 16 px Untertext unter
+            14,4 px Titel. Jetzt die Zeilen der Konto-Einstellungen
+            (app-list-item wie AbsturzberichteSchalter), die Hinweise als
+            farbige Karte mit <p> wie in ChangeEmailModal. */}
         {!erlaubt && (
           <IonList inset={true} className="app-segment-wrapper">
-            <IonCard className="app-card">
-              <IonCardContent>
-                <div className={`app-info-box ${stil.infoBox}`}>
-                  <p>Das Handy erlaubt Konfi Quest noch keine Mitteilungen. Solange das so ist, kommt nichts an – die Auswahl unten gilt, sobald du es erlaubst.</p>
-                  <IonButton size="small" fill="outline" onClick={() => { void requestPushPermissions(); }}>
-                    Mitteilungen erlauben
-                  </IonButton>
-                </div>
+            <IonCard className={`app-card ${stil.infoBox}`}>
+              <IonCardContent className="app-info-box">
+                <p style={{ margin: '0 0 var(--app-abstand-mittel) 0' }}>
+                  Das Handy erlaubt Konfi Quest noch keine Mitteilungen. Solange das so ist, kommt nichts an – die Auswahl unten gilt, sobald du es erlaubst.
+                </p>
+                <IonButton size="small" fill="outline" onClick={() => { void requestPushPermissions(); }}>
+                  Mitteilungen erlauben
+                </IonButton>
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -195,66 +263,62 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
             <IonLabel>Aufs Handy</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
-            <IonCardContent>
+            <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
               {laedt || !einstellungen ? (
                 <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--app-abstand-mittel)' }}>
                   <IonSpinner name="crescent" />
                 </div>
               ) : (
-                <IonList lines="none" style={{ background: 'transparent' }}>
-                  <IonItem lines="full" className="app-dashboard-settings-item">
-                    <IonLabel>
-                      <h2>Alle Mitteilungen</h2>
-                      <p>Hauptschalter für die Gruppen darunter</p>
-                    </IonLabel>
-                    <IonToggle
-                      slot="end"
-                      className={stil.toggle}
-                      aria-label="Mitteilungen aufs Handy"
-                      checked={einstellungen.push_enabled}
-                      disabled={speichert}
-                      onIonChange={(e) => speichern({ push_enabled: e.detail.checked })}
-                    />
-                  </IonItem>
-                  {einstellungen.gruppen.map((g, index) => (
-                    <IonItem
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <SchalterZeile
+                    variante={variante}
+                    toggle={stil.toggle}
+                    icon={ICON_BENACHRICHTIGUNG}
+                    titel="Alle Mitteilungen"
+                    untertitel="Hauptschalter für die Gruppen darunter"
+                    ariaLabel="Mitteilungen aufs Handy"
+                    an={einstellungen.push_enabled}
+                    gesperrt={speichert}
+                    onSchalten={(an) => speichern({ push_enabled: an })}
+                  />
+                  {einstellungen.gruppen.map((g) => (
+                    <SchalterZeile
                       key={g.id}
-                      lines={index < einstellungen.gruppen.length - 1 ? 'full' : 'none'}
-                      className="app-dashboard-settings-item"
-                    >
-                      <IonLabel>
-                        <h2>{g.name}</h2>
-                        <p>{g.beschreibung}</p>
-                      </IonLabel>
-                      <IonToggle
-                        slot="end"
-                        className={stil.toggle}
-                        aria-label={g.name}
-                        checked={g.aktiv}
-                        disabled={speichert || !einstellungen.push_enabled}
-                        onIonChange={(e) => gruppeSchalten(g.id, e.detail.checked)}
-                      />
-                    </IonItem>
+                      variante={variante}
+                      toggle={stil.toggle}
+                      icon={GRUPPEN_ICON[g.id] ?? ICON_BENACHRICHTIGUNG}
+                      titel={g.name}
+                      untertitel={g.beschreibung}
+                      ariaLabel={g.name}
+                      an={g.aktiv}
+                      gesperrt={speichert || !einstellungen.push_enabled}
+                      onSchalten={(an) => gruppeSchalten(g.id, an)}
+                    />
                   ))}
-                </IonList>
+                </div>
               )}
-              {/* Ein Hinweis, nicht zwei (26.09.2026, Simons Befund: "Die
-                  Hinweistexte bei Benachrichtigungen sind voellig random
-                  doppelt, nicht so wie sonst die Hinweise"). Vorher stand
-                  dieselbe Aussage im Untertitel des Hauptschalters UND als
-                  Fliesstext unter der Karte -- und der als <p> mit eigenem
-                  Rand, waehrend die App sonst IonNote INNERHALB der Karte
-                  nutzt (siehe TerminAbsagenModal, AbmeldungNachtragenModal). */}
             </IonCardContent>
           </IonCard>
-          {/* Der Hinweis im farbigen Kasten, wie ueberall sonst (Simon,
-              26.09.2026: "Hinweise kriegen ja so einen Kasten, wie etwa wenn
-              du in das Modal guckst fuer E-Mail"). Eigene Karte unter der
-              Liste -- app-info-box faerbt sie nach der Rolle. */}
-          <IonCard className="app-card">
-            <IonCardContent className={`app-info-box ${stil.infoBox}`}>
-              Abgeschaltet wird nur der Weg aufs Handy – im Postfach unter der
-              Glocke steht jede Mitteilung trotzdem.
+        </IonList>
+
+        {/* Ein Hinweis, nicht zwei (26.09.2026, Simons Befund: "Die
+            Hinweistexte bei Benachrichtigungen sind voellig random doppelt").
+            Im farbigen Kasten wie ueberall sonst (Simon, 26.09.2026: "wie
+            etwa wenn du in das Modal guckst fuer E-Mail") -- als eigener
+            Abschnitt "Hinweis" genau wie dort. */}
+        <IonList inset={true} className="app-segment-wrapper">
+          <IonListHeader>
+            <div className={`app-section-icon ${stil.sectionIcon}`}>
+              <IonIcon icon={ICON_INFO} />
+            </div>
+            <IonLabel>Hinweis</IonLabel>
+          </IonListHeader>
+          <IonCard className={`app-card ${stil.infoBox}`}>
+            <IonCardContent className="app-info-box">
+              <p style={{ margin: 0 }}>
+                Abgeschaltet wird nur der Weg aufs Handy – im Postfach unter der
+                Glocke steht jede Mitteilung trotzdem.
+              </p>
             </IonCardContent>
           </IonCard>
         </IonList>
