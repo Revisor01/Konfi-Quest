@@ -120,5 +120,6 @@ INSERT INTO schema_migrations (name) VALUES
     ('172_konfi_historie_anlass_abzeichen.sql'),
     ('173_einladungscode_ohne_urheber.sql'),
     ('174_settings_primaerschluessel.sql'),
-    ('175_doppelte_indizes.sql')
+    ('175_doppelte_indizes.sql'),
+    ('176_kein_klartext_passwort.sql')
 ON CONFLICT (name) DO NOTHING;

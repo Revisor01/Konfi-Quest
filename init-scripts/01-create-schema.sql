@@ -20,7 +20,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 175_doppelte_indizes.sql -- also der Stand, den die Produktion nach
+-- 176_kein_klartext_passwort.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================
@@ -1401,7 +1401,8 @@ CREATE TABLE public.konfi_profiles (
     konfspruch_id integer,
     konfspruch_freitext text,
     konfspruch_freitext_referenz character varying(100),
-    konfspruch_translation character varying(30)
+    konfspruch_translation character varying(30),
+    CONSTRAINT konfi_profiles_password_plain_leer CHECK ((password_plain IS NULL))
 );
 
 
