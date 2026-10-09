@@ -41,7 +41,7 @@ Funktionsbeschreibung („Teamer:in", wenn du keine eigene hast). Oben stehen bi
 zu vier Kennzahlen: **Anstehende Events** mit dem nächsten, **Laufende
 Challenges** und **Badges erreicht** mit der Zahl der neuen — sie führen in den
 jeweiligen Bereich — und **Zertifikate gültig** mit dem Hinweis auf
-abgelaufene. Ist dein Jahresrückblick freigegeben, steht über den Karten ein
+abgelaufene; ein Zertifikat gilt bis einschließlich seines Ablaufdatums. Ist dein Jahresrückblick freigegeben, steht über den Karten ein
 farbiges Feld mit **Rückblick ansehen** und **Hinweis ausblenden**.
 
 Darunter folgen die Karten, die die Gemeindeleitung einschaltet, in ihrer

@@ -205,6 +205,12 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Mitteilungen im Postfach vom 21. bis 23.08.2026 zeigen ihre richtige
+  Uhrzeit statt einer zwei Stunden späteren.
+- Zwischen Mitternacht und 2 Uhr nachts gilt auch auf dem Server schon der neue
+  Tag: Ein gestern abgelaufenes Zertifikat zählt nicht mehr als gültig, die
+  Startseite des Teams zeigt die Events ab Mitternacht, Bonuspunkte tragen das
+  richtige Datum, und wer ins Team kommt, ist es seit heute.
 - Wer im Benutzerfenster gespeichert oder beim Anlegen eines Jahrgangs
   zugewiesen wird, bekommt das Recht, Konfis und Termine diesem Jahrgang
   zuzuordnen, nur noch als Leitung — Teamer:innen bekamen es bisher still
@@ -341,6 +347,7 @@ Versionsüberschrift.
   Namen der Gemeinde, in die sie zurückwechselt.
 
 ### Sonstiges
+- Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
 - Die Statusabfrage des Servers meldet zusätzlich, wie viele Mitteilungen
   hängen oder endgültig gescheitert sind.
 - Eine automatische Prüfung stellt sicher, dass Zeitgeber und Horcher mit

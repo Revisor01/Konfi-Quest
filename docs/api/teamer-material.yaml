@@ -1124,6 +1124,13 @@ paths:
         den Schluessel schon so und profitieren ohne Update; wer den Hinweis
         bisher weggeklickt hat, sieht ihn fuer die aktuelle Ausgabe einmal
         wieder.
+        BEHOBEN 09.10.2026 (Datenbank BF-11, Rest): "heute" ist der Berliner
+        Tag. Zertifikat-Status expired erst ab dem Tag nach expiry_date, die
+        Termine ab Berliner Mitternacht. Vorher rechnete die Abfrage mit
+        CURRENT_DATE der Sitzung (UTC): zwischen 00:00 und 02:00 Berliner
+        Zeit galt ein gestern abgelaufenes Zertifikat noch, und Termine
+        zaehlten erst ab 02:00 zu heute. Antwortform unveraendert. Tests:
+        backend/tests/utils/zeitzone.test.js.
       x-berechtigung:
         rollen: [teamer]
         middleware: [verifyTokenRBAC, requireTeamer, "Inline-Check role_name === 'teamer'"]

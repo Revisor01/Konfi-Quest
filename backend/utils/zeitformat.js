@@ -70,4 +70,39 @@ function heuteBerlin(wert = new Date()) {
   return new Date(wert).toLocaleDateString('sv-SE', { timeZone: ZONE });
 }
 
-module.exports = { BERLIN, formatUhrzeit, formatDatum, heuteBerlin };
+/**
+ * SQL: der heutige Kalendertag in Berliner Zeit (Typ date).
+ *
+ * ERSATZ FUER `CURRENT_DATE`. Das rechnet in der Zone der Datenbank-Sitzung,
+ * und die Sitzungen der Backends laufen in UTC -- zwischen 00:00 und 02:00
+ * Berliner Zeit also der Vortag: Eine Bescheinigung, die gestern ablief,
+ * galt noch zwei Stunden, und wer um 00:30 ins Team kam, war es seit gestern
+ * (09.10.2026, Datenbank BF-11).
+ *
+ * `jetzt` ist nur fuer Tests ein anderer SQL-Ausdruck als now().
+ */
+const heuteBerlinSql = (jetzt = 'now()') => `(${jetzt} AT TIME ZONE '${ZONE}')::date`;
+const HEUTE_BERLIN_SQL = heuteBerlinSql();
+
+/**
+ * SQL: Beginn des heutigen Berliner Tages als Zeitpunkt (timestamptz) --
+ * fuer den Vergleich mit einer Spalte mit Zeitzone ("ab heute"). Ein
+ * blosses `spalte >= CURRENT_DATE` beginnt den Tag um 00:00 UTC, also erst um
+ * 02:00 Berliner Sommerzeit.
+ */
+const tagesbeginnBerlinSql = (jetzt = 'now()') =>
+  `(date_trunc('day', ${jetzt} AT TIME ZONE '${ZONE}') AT TIME ZONE '${ZONE}')`;
+const TAGESBEGINN_BERLIN_SQL = tagesbeginnBerlinSql();
+
+/**
+ * SQL: der Berliner Kalendertag eines Zeitpunkts aus einem Parameter
+ * (`$n` als Date aus Node oder ISO-Zeichenkette).
+ * @param {string} platzhalter z.B. '$2'
+ */
+const tagBerlinSql = (platzhalter) => `((${platzhalter})::timestamptz AT TIME ZONE '${ZONE}')::date`;
+
+module.exports = {
+  BERLIN, formatUhrzeit, formatDatum, heuteBerlin,
+  HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL, tagBerlinSql,
+  heuteBerlinSql, tagesbeginnBerlinSql,
+};

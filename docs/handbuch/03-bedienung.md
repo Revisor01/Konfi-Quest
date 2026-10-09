@@ -41,7 +41,9 @@ Karten, ausgeschrieben als „Montag, 14. September 2026" in den Einzelansichten
 Uhrzeiten als 18:00. Die Event-Karten auf der Startseite nennen dazu den
 Wochentag: Mo., 14.09.2026. Wo wenig Platz ist — im Chat, in der
 Anwesenheitsliste —, steht nur 14.09. Maßgeblich ist die Zeit, auf die das
-Handy eingestellt ist.
+Handy eingestellt ist. Wo der Server einen Tag zählt — ob ein Zertifikat
+abgelaufen ist, welche Events ab heute anstehen, welches Datum Bonuspunkte
+tragen —, gilt deutsche Zeit: Der neue Tag beginnt um Mitternacht.
 
 ### Im Browser mit der Leiste links arbeiten
 
