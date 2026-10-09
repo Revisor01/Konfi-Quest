@@ -120,7 +120,7 @@ describe('Jahrgaenge-Seite je Rolle', () => {
 });
 
 describe('Direkt-Zuweisung beim Anlegen', () => {
-  it('bietet nur Admins und Teamer:innen an und schickt die Auswahl mit Sehen und Bearbeiten', async () => {
+  it('bietet nur Admins und Teamer:innen an und schickt die Auswahl nur mit Sehen (das Zuordnungsrecht setzt der Server)', async () => {
     oeffneFormular();
     expect(await screen.findByText('Anna Admin', {}, { timeout: 3000 })).toBeInTheDocument();
     expect(screen.getByText(/Zugriff für Leitung & Team/)).toBeInTheDocument();
@@ -136,7 +136,7 @@ describe('Direkt-Zuweisung beim Anlegen', () => {
     const [url, daten] = apiPost.mock.calls[0];
     expect(url).toBe('/admin/jahrgaenge');
     expect((daten as Record<string, unknown>).name).toBe('Jahrgang 2027/28');
-    expect((daten as Record<string, unknown>).user_assignments).toEqual([{ user_id: 22, can_view: true, can_edit: true }]);
+    expect((daten as Record<string, unknown>).user_assignments).toEqual([{ user_id: 22, can_view: true }]);
   });
 
   it('ohne Auswahl bleibt das Feld weg', async () => {

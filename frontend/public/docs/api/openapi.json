@@ -6622,7 +6622,8 @@
                         },
                         "can_edit": {
                           "type": "boolean",
-                          "default": false
+                          "deprecated": true,
+                          "description": "Wird angenommen, aber nicht mehr ausgewertet (seit 09.10.2026). Das Zuordnungsrecht folgt der Rolle der Person in DIESER Gemeinde: admin und org_admin true, teamer und konfi false. Die Store-Apps 2.2.x/2.3.x schicken weiter true; ab 2.4.0 fehlt das Feld."
                         },
                         "darf_antraege_entscheiden": {
                           "type": "boolean",
@@ -6671,7 +6672,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "Ziel-User muss in der aktiven Org arbeiten (users.organization_id ODER user_organizations); canManageRole(eigene Rolle, Ziel-Rolle DIESER Org); alle Jahrgang-IDs müssen zur aktiven Org gehören; seit 31.08.2026 fuer admin zusaetzlich zu seinen eigenen Zuweisungen (can_edit) — sonst 403. org_admin und super_admin ausgenommen.\n",
-          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder die Gemeindeleitung (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden. BEHOBEN 26.09.2026: Die Existenzpruefung suchte den Ziel-User allein ueber users.organization_id — wer ueber user_organizations in der Gemeinde arbeitet, bekam 404 und war dort nicht verwaltbar. Jetzt zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die Organisation gebunden. NEU 09.10.2026 (Darf freigeben, docs/planung/darf-freigeben.md): drei Rechte je Zuweisung, additiv. Vergeben darf sie nur org_admin; ein admin, der eines mitschickt, bekommt 403 (auch fuer Teamer:innen). Die Route loescht und schreibt die Zuweisungen neu -- fehlt ein Feld (Store-Apps 2.2.x/2.3.x kennen sie nicht), uebernimmt sie den bisherigen Wert; ein Speichern in einer alten App setzt die Rechte also nicht zurueck. Der Rechte-Cache wird wie bisher geleert, ein entzogenes Recht wirkt sofort.\"\n"
+          "hinweis": "GEAENDERT 31.08.2026: war requireOrgAdmin ohne Hierarchie-Pruefung. Wer Teamer:innen anlegen darf, muss ihnen auch Jahrgaenge geben koennen — sonst ist die neue Teamer:in fuer niemanden zustaendig. admin kommt damit an teamer und konfi, NICHT an andere Admins oder die Gemeindeleitung (403) und nicht an fremde Organisationen (404). BEHOBEN 31.08.2026: Die Route loeschte zuvor ALLE Zuweisungen des Ziel-Users und schrieb die uebergebene Liste neu. Ein admin nahm damit einer Teamer:in still Jahrgaenge weg, die er selbst gar nicht verantwortet. Seither ersetzt ein admin NUR die Zuweisungen auf seine eigenen Jahrgaenge; fremde bleiben unberuehrt, und ein fremder Ziel-Jahrgang wird mit 403 abgewiesen. org_admin ersetzt weiterhin alle. Zusaetzlich wird der Benutzer-Cache geleert, damit eine neue Zuweisung sofort greift statt erst nach 30 Sekunden. BEHOBEN 26.09.2026: Die Existenzpruefung suchte den Ziel-User allein ueber users.organization_id — wer ueber user_organizations in der Gemeinde arbeitet, bekam 404 und war dort nicht verwaltbar. Jetzt zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die Organisation gebunden. NEU 09.10.2026 (Darf freigeben, docs/planung/darf-freigeben.md): drei Rechte je Zuweisung, additiv. Vergeben darf sie nur org_admin; ein admin, der eines mitschickt, bekommt 403 (auch fuer Teamer:innen). Die Route loescht und schreibt die Zuweisungen neu -- fehlt ein Feld (Store-Apps 2.2.x/2.3.x kennen sie nicht), uebernimmt sie den bisherigen Wert; ein Speichern in einer alten App setzt die Rechte also nicht zurueck. Der Rechte-Cache wird wie bisher geleert, ein entzogenes Recht wirkt sofort.\" BEHOBEN 09.10.2026 (Befund 09.10.2026): can_edit an der Zuweisung ist das Zuordnungsrecht (Konfis anlegen und verschieben, Termine an den Jahrgang binden, Teamer:innen zuordnen, Rueckblick freigeben -- darfJahrgang mit edit). Die Route schrieb den mitgeschickten Wert, und das Benutzerfenster schickte immer true: Wer dort gespeichert wurde, bekam das Recht still, auch als Teamer:in. Seither setzt die Route can_edit allein nach der Rolle der Person in DIESER Gemeinde (admin/org_admin true, teamer/konfi false, utils/jahrgangsZugriff.js zuordnungsrechtFuerRolle); ein mitgeschickter Wert zaehlt nicht. Ein Rollenwechsel im Benutzerfenster speichert die Zuweisungen danach neu und zieht das Recht so mit. Antwortform unveraendert.\n"
         }
       }
     },
@@ -19109,7 +19110,7 @@
                   },
                   "user_assignments": {
                     "type": "array",
-                    "description": "OPTIONAL (seit 01.09.2026): Personen, die beim Anlegen direkt eine Jahrgangs-Zuweisung (user_jahrgang_assignments) bekommen. Fehlt das Feld, verhaelt sich die Route exakt wie vorher — ausgelieferte Apps senden es nicht. Defaults wie bei POST /users/{id}/jahrgaenge: can_view=true, can_edit=false; assigned_by = Aufrufer.\n",
+                    "description": "OPTIONAL (seit 01.09.2026): Personen, die beim Anlegen direkt eine Jahrgangs-Zuweisung (user_jahrgang_assignments) bekommen. Fehlt das Feld, verhaelt sich die Route exakt wie vorher — ausgelieferte Apps senden es nicht. Wie bei POST /users/{id}/jahrgaenge: can_view=true; can_edit folgt seit 09.10.2026 der Rolle in dieser Gemeinde (admin true, teamer false), ein mitgeschickter Wert zaehlt nicht (BEHOBEN 09.10.2026: vorher bekam eine Teamer:in mit can_edit true das Zuordnungsrecht); assigned_by = Aufrufer.\n",
                     "items": {
                       "type": "object",
                       "required": [
@@ -19126,7 +19127,8 @@
                         },
                         "can_edit": {
                           "type": "boolean",
-                          "default": false
+                          "deprecated": true,
+                          "description": "Wird angenommen, aber nicht ausgewertet (seit 09.10.2026); das Zuordnungsrecht folgt der Rolle."
                         }
                       }
                     }

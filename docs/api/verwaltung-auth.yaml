@@ -4268,7 +4268,10 @@ paths:
                     properties:
                       jahrgang_id: { type: integer }
                       can_view: { type: boolean, default: true }
-                      can_edit: { type: boolean, default: false }
+                      can_edit:
+                        type: boolean
+                        deprecated: true
+                        description: "Wird angenommen, aber nicht mehr ausgewertet (seit 09.10.2026). Das Zuordnungsrecht folgt der Rolle der Person in DIESER Gemeinde: admin und org_admin true, teamer und konfi false. Die Store-Apps 2.2.x/2.3.x schicken weiter true; ab 2.4.0 fehlt das Feld."
                       darf_antraege_entscheiden:
                         type: boolean
                         description: "Darf freigeben (09.10.2026, Migration 204): Antraege genehmigen, ablehnen, zuruecksetzen. Nur org_admin darf es mitschicken. Fehlt es, bleibt der bisherige Wert der Zuweisung (neue Zuweisung: true)."
@@ -4322,6 +4325,17 @@ paths:
           sie den bisherigen Wert; ein Speichern in einer alten App setzt die
           Rechte also nicht zurueck. Der Rechte-Cache wird wie bisher geleert,
           ein entzogenes Recht wirkt sofort."
+          BEHOBEN 09.10.2026 (Befund 09.10.2026): can_edit an der Zuweisung ist
+          das Zuordnungsrecht (Konfis anlegen und verschieben, Termine an den
+          Jahrgang binden, Teamer:innen zuordnen, Rueckblick freigeben --
+          darfJahrgang mit edit). Die Route schrieb den mitgeschickten Wert,
+          und das Benutzerfenster schickte immer true: Wer dort gespeichert
+          wurde, bekam das Recht still, auch als Teamer:in. Seither setzt die
+          Route can_edit allein nach der Rolle der Person in DIESER Gemeinde
+          (admin/org_admin true, teamer/konfi false, utils/jahrgangsZugriff.js
+          zuordnungsrechtFuerRolle); ein mitgeschickter Wert zaehlt nicht. Ein
+          Rollenwechsel im Benutzerfenster speichert die Zuweisungen danach
+          neu und zieht das Recht so mit. Antwortform unveraendert.
 
   /api/users/me/jahrgaenge:
     get:

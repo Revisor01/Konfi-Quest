@@ -672,16 +672,20 @@ paths:
                     OPTIONAL (seit 01.09.2026): Personen, die beim Anlegen
                     direkt eine Jahrgangs-Zuweisung (user_jahrgang_assignments)
                     bekommen. Fehlt das Feld, verhaelt sich die Route exakt wie
-                    vorher — ausgelieferte Apps senden es nicht. Defaults wie
-                    bei POST /users/{id}/jahrgaenge: can_view=true,
-                    can_edit=false; assigned_by = Aufrufer.
+                    vorher — ausgelieferte Apps senden es nicht. Wie bei
+                    POST /users/{id}/jahrgaenge: can_view=true; can_edit
+                    folgt seit 09.10.2026 der Rolle in dieser Gemeinde
+                    (admin true, teamer false), ein mitgeschickter Wert
+                    zaehlt nicht (BEHOBEN 09.10.2026: vorher bekam eine
+                    Teamer:in mit can_edit true das Zuordnungsrecht);
+                    assigned_by = Aufrufer.
                   items:
                     type: object
                     required: [user_id]
                     properties:
                       user_id: { type: integer, minimum: 1 }
                       can_view: { type: boolean, default: true }
-                      can_edit: { type: boolean, default: false }
+                      can_edit: { type: boolean, deprecated: true, description: "Wird angenommen, aber nicht ausgewertet (seit 09.10.2026); das Zuordnungsrecht folgt der Rolle." }
       responses:
         "201": { description: "Angelegter Jahrgang (vollstaendige Zeile, unveraendert) + ADDITIV assigned_user_ids (int[], leer ohne user_assignments); Live-Update an die Gemeindeleitung" }
         "400": { description: "Name fehlt / Validierung verletzt / Person doppelt in user_assignments" }

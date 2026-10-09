@@ -108,8 +108,8 @@ describe('ERLAUBT: die Gemeindeleitung vergibt die Rechte an eine Leitung', () =
     const body = await speichern();
     expect(body).toEqual({
       jahrgang_assignments: [
-        { jahrgang_id: 11, can_view: true, can_edit: true, darf_antraege_entscheiden: false, darf_events_verbuchen: false, darf_challenges_freigeben: true },
-        { jahrgang_id: 12, can_view: true, can_edit: true, darf_antraege_entscheiden: true, darf_events_verbuchen: true, darf_challenges_freigeben: false },
+        { jahrgang_id: 11, can_view: true, darf_antraege_entscheiden: false, darf_events_verbuchen: false, darf_challenges_freigeben: true },
+        { jahrgang_id: 12, can_view: true, darf_antraege_entscheiden: true, darf_events_verbuchen: true, darf_challenges_freigeben: false },
       ],
     });
   });
@@ -153,8 +153,8 @@ describe('ERLAUBT: die Gemeindeleitung vergibt an eine Teamer:in nur "Challenge-
     const body = await speichern();
     expect(body).toEqual({
       jahrgang_assignments: [
-        { jahrgang_id: 11, can_view: true, can_edit: true, darf_challenges_freigeben: false },
-        { jahrgang_id: 12, can_view: true, can_edit: true, darf_challenges_freigeben: true },
+        { jahrgang_id: 11, can_view: true, darf_challenges_freigeben: false },
+        { jahrgang_id: 12, can_view: true, darf_challenges_freigeben: true },
       ],
     });
   });
@@ -168,7 +168,7 @@ describe('VERBOTEN: keine Schalter und keine Felder im Speichern', () => {
     expect(alleSchalter()).toHaveLength(0);
     expect(screen.queryByText(HINWEIS)).toBeNull();
     const body = await speichern();
-    expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true, can_edit: true }] });
+    expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true }] });
   });
 
   it('Gemeindeleitung bearbeitet eine Gemeindeleitung: keine Schalter (sie hat alle Rechte immer)', async () => {
@@ -176,7 +176,7 @@ describe('VERBOTEN: keine Schalter und keine Felder im Speichern', () => {
     await oeffne();
     expect(alleSchalter()).toHaveLength(0);
     const body = await speichern();
-    expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true, can_edit: true }] });
+    expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true }] });
   });
 
   it('eine Leitung (admin) öffnet eine andere Leitung: keine Schalter, und die Felder gehen NICHT mit (sonst 403)', async () => {
@@ -185,6 +185,6 @@ describe('VERBOTEN: keine Schalter und keine Felder im Speichern', () => {
     expect(alleSchalter()).toHaveLength(0);
     expect(screen.queryByText(HINWEIS)).toBeNull();
     const body = await speichern();
-    expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true, can_edit: true }] });
+    expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true }] });
   });
 });

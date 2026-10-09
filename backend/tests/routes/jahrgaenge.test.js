@@ -242,7 +242,7 @@ describe('Jahrgaenge Routes', () => {
   // direkt zu.")
   // ================================================================
   describe('POST /api/admin/jahrgaenge mit user_assignments', () => {
-    it('Zuweisungen werden geschrieben — Defaults can_view=true/can_edit=false wie bei POST /users/:id/jahrgaenge', async () => {
+    it('Zuweisungen werden geschrieben — can_view=true, can_edit nach Rolle wie bei POST /users/:id/jahrgaenge', async () => {
       const res = await request(app)
         .post('/api/admin/jahrgaenge')
         .set('Authorization', `Bearer ${orgAdminToken}`)

@@ -144,7 +144,12 @@ Vorgänge ohne Jahrgang.
 
 Das Recht kommt zur Jahrgangs-Zuweisung dazu, es ersetzt sie nicht: Wer einen
 Jahrgang nicht sieht, hat dort auch kein Recht. Ob jemand den Jahrgang selbst
-bearbeiten und Konfis darin anlegen darf, hängt nicht an diesen Schaltern.
+bearbeiten und Konfis darin anlegen darf, hängt nicht an diesen Schaltern,
+sondern an der Rolle: Die Leitung legt in ihren Jahrgängen Konfis an,
+verschiebt sie, ordnet Events dem Jahrgang zu und weist ihm Teamer:innen zu.
+Teamer:innen tun das nicht, auch nicht mit einer Jahrgangs-Zuweisung. Wird
+jemand im Benutzer-Fenster zur Leitung gemacht oder aus ihr genommen, gilt
+das ab dem Speichern für alle seine Jahrgänge.
 
 Wer ein Recht nicht hat, **sieht die Vorgänge weiter**, nur lesend: Die
 Anträge stehen in der Liste, das Event zeigt seine Teilnehmenden, die

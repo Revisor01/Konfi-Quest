@@ -276,4 +276,34 @@ async function gehoertZumTermin(db, userId, eventId) {
   return Boolean(zugang.teamer_only || !zugang.hat_jahrgang || zugang.gemeinsam || zugang.vollzugriff);
 }
 
-module.exports = { darfJahrgang, darfKonfi, darfTermin, gehoertZumTermin };
+/**
+ * Bekommt eine Zuweisung das Zuordnungsrecht (can_edit)? Entscheidet allein
+ * die Rolle der Person in der Gemeinde des Jahrgangs.
+ *
+ * can_edit ist hier das Recht zum ZUORDNEN: Konfis im Jahrgang anlegen und
+ * verschieben, Termine an ihn binden, Teamer:innen ihm zuordnen, den
+ * Rueckblick freigeben und loeschen (alle Stellen mit { edit: true }).
+ * Sehen und Bearbeiten haengen an can_view.
+ *
+ *   admin, org_admin   true  -- die Leitung ordnet in ihren Jahrgaengen zu
+ *                              (org_admin ist ohnehin ausgenommen, s.o.)
+ *   teamer, konfi      false -- jede Stelle mit { edit: true } steht hinter
+ *                              requireAdmin; fuer Teamer:innen waere das Recht
+ *                              nur ein ruhender Schalter, der beim Wechsel zur
+ *                              Rolle Admin still mitwandert.
+ *
+ * Bis 09.10.2026 schrieben POST /users/:id/jahrgaenge und POST
+ * /admin/jahrgaenge den mitgeschickten Wert, und das Benutzerfenster schickte
+ * immer true -- wer im Fenster gespeichert wurde, bekam still das
+ * Zuordnungsrecht, auch als Teamer:in. Einen Schalter dafuer gab es nie
+ * (seit 22.07.2025 nur "zugewiesen ja/nein"). Ein mitgeschickter Wert zaehlt
+ * deshalb nicht mehr; die Store-Apps 2.2.x/2.3.x schicken weiter true.
+ *
+ * @param {string|null|undefined} rolle  Rollenname in DIESER Gemeinde
+ * @returns {boolean}
+ */
+function zuordnungsrechtFuerRolle(rolle) {
+  return rolle === 'admin' || rolle === 'org_admin';
+}
+
+module.exports = { darfJahrgang, darfKonfi, darfTermin, gehoertZumTermin, zuordnungsrechtFuerRolle };
