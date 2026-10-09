@@ -6,7 +6,6 @@
 
 import React from 'react';
 import { gemeindeName } from '../../../utils/supportMail';
-import { VORGANG_STATUS, artKurz, type Vorgang } from '../../../utils/supportVorgaenge';
 import { useEinsortieren, type EinsortierenModus } from '../useEinsortieren';
 import WebDialog from '../../web/WebDialog';
 import WebAuswahl from '../../web/WebAuswahl';
@@ -16,6 +15,8 @@ import WebFeld from '../../web/WebFeld';
 import WebHinweis from '../../web/WebHinweis';
 import WebKnopf from '../../web/WebKnopf';
 import { VorgangAuswahlfelder } from './WebVorgangTeile';
+import { inFassung } from '../../../seiten/beschreibung';
+import { EINSORTIEREN_IN, EINSORTIEREN_IN_BESCHRIFTUNG, vorgangEintrag } from '../../../seiten/supportEinsortieren';
 
 export interface WebEinsortierenProps {
   mail: { id: number; betreff: string | null };
@@ -23,12 +24,6 @@ export interface WebEinsortierenProps {
   /** Die Mail ist einsortiert; `vorgangId`, wenn der Server sie nennt. */
   onFertig?: (vorgangId: number | null) => void;
 }
-
-const eintrag = (v: Vorgang) => ({
-  wert: String(v.id),
-  titel: `Nr. ${v.id} · ${v.betreff || '(ohne Betreff)'}`,
-  beschreibung: `${v.gemeinde_name ?? 'Keine Gemeinde'} · ${artKurz(v.art)} · ${VORGANG_STATUS[v.status].kurz}`,
-});
 
 const WebEinsortieren: React.FC<WebEinsortierenProps> = ({ mail, onSchliessen, onFertig }) => {
   const z = useEinsortieren(mail, (id) => { onFertig?.(id); onSchliessen(); });
@@ -49,13 +44,10 @@ const WebEinsortieren: React.FC<WebEinsortierenProps> = ({ mail, onSchliessen, o
       <div className="web-formular">
         {z.fehler && <WebHinweis art="fehler" rolle="alert">{z.fehler}</WebHinweis>}
         <WebChips<EinsortierenModus>
-          beschriftung="Einsortieren in"
+          beschriftung={EINSORTIEREN_IN_BESCHRIFTUNG}
           wert={z.modus}
           onWert={z.setModus}
-          chips={[
-            { wert: 'bestehend', label: 'Bestehender Vorgang' },
-            { wert: 'neu', label: 'Neuer Vorgang' },
-          ]}
+          chips={inFassung(EINSORTIEREN_IN, 'web').map((m) => ({ wert: m.schluessel, label: m.label }))}
         />
         {z.modus === 'bestehend' ? (
           <>
@@ -64,7 +56,7 @@ const WebEinsortieren: React.FC<WebEinsortierenProps> = ({ mail, onSchliessen, o
               label="Vorgang"
               suchePlatzhalter="Vorgang suchen"
               leerText="Es gibt keinen offenen Vorgang. Lege einen neuen an."
-              eintraege={(z.vorgaenge ?? []).map(eintrag)}
+              eintraege={(z.vorgaenge ?? []).map(vorgangEintrag)}
               wert={z.vorgangWahl}
               onWert={z.setVorgangWahl}
             />

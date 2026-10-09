@@ -32,6 +32,8 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { fehlerText } from '../../../utils/fehler';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebRueckblick from '../web/leitung/WebRueckblick';
+import { inFassung } from '../../../seiten/beschreibung';
+import { RUECKBLICK_FUER, RUECKBLICK_LEER_TITEL, RUECKBLICK_NUR_LEITUNG, RUECKBLICK_OHNE_JAHRGANG, RUECKBLICK_TITEL, RUECKBLICK_UNTERTITEL, rueckblickLeerText, type RueckblickFuer } from '../../../seiten/rueckblick';
 
 /**
  * Die Rueckblick-Ausgaben verwalten.
@@ -129,7 +131,7 @@ const AdminWrappedPage: React.FC = () => {
   const [ohneJahrgang, setOhneJahrgang] = useState(false);
   const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
   const [laedt, setLaedt] = useState(true);
-  const [segment, setSegment] = useState<'konfi' | 'teamer'>('konfi');
+  const [segment, setSegment] = useState<RueckblickFuer>('konfi');
 
   const [modalOffen, setModalOffen] = useState(false);
   const [neuerJahrgang, setNeuerJahrgang] = useState<number | null>(null);
@@ -303,8 +305,8 @@ const AdminWrappedPage: React.FC = () => {
         {/* Stats-Kopf wie auf jeder anderen Seite: Wie viele Ausgaben gibt es,
             wie viele sind freigegeben, wie viele Rueckblicke stecken darin. */}
         <SectionHeader
-          title="Jahresrückblick"
-          subtitle="Ausgaben verwalten"
+          title={RUECKBLICK_TITEL}
+          subtitle={RUECKBLICK_UNTERTITEL}
           icon={ICON_FUNKELN}
           colors={{ primary: 'var(--app-color-wrapped)', secondary: 'var(--app-color-wrapped-dunkel)' }}
           stats={[
@@ -315,10 +317,14 @@ const AdminWrappedPage: React.FC = () => {
         />
 
         <div style={{ padding: 'var(--app-abstand-basis) var(--app-abstand-basis) 0' }}>
-          <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as 'konfi' | 'teamer')}>
-            <IonSegmentButton value="konfi">Konfis</IonSegmentButton>
-            {/* Teamer-Ausgaben betreffen die ganze Gemeinde -- nur die Leitung. */}
-            <IonSegmentButton value="teamer" disabled={!istLeitung}>Team</IonSegmentButton>
+          <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as RueckblickFuer)}>
+            {/* Reiter aus der gemeinsamen Beschreibung (seiten/rueckblick.ts).
+                Teamer-Ausgaben betreffen die ganze Gemeinde -- nur die Leitung. */}
+            {inFassung(RUECKBLICK_FUER, 'app').map((r) => (
+              <IonSegmentButton key={r.schluessel} value={r.schluessel} disabled={r.schluessel === RUECKBLICK_NUR_LEITUNG && !istLeitung}>
+                {r.kurz ?? r.label}
+              </IonSegmentButton>
+            ))}
           </IonSegment>
         </div>
 
@@ -342,7 +348,7 @@ const AdminWrappedPage: React.FC = () => {
               <IonCardContent>
                 <EmptyState
                   icon={ICON_FUNKELN}
-                  title={ohneJahrgang ? 'Kein Jahrgang zugewiesen' : 'Noch kein Rückblick'}
+                  title={ohneJahrgang ? RUECKBLICK_OHNE_JAHRGANG.titel : RUECKBLICK_LEER_TITEL}
                   // Beide Texte etwa gleich lang, damit der Leerzustand auf
                   // beiden Reitern gleich hoch steht (Simon, 05.09.2026).
                   // Der Team-Text richtet sich nach der Berechtigung: Das
@@ -355,12 +361,8 @@ const AdminWrappedPage: React.FC = () => {
                     // Derselbe Wortlaut wie in der Konfi-Liste
                     // (KonfisView.tsx): Es GIBT Rückblicke, dieser Zugang
                     // darf sie nur nicht sehen.
-                    ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
-                    : segment === 'konfi'
-                      ? 'Über das Plus oben legst du einen an — du wählst nur den Jahrgang, alles andere steht fest.'
-                      : istLeitung
-                        ? 'Über das Plus oben legst du einen an — fürs ganze Team gemeinsam, du wählst nur das Jahr.'
-                        : 'Für das Team ist noch keiner erstellt. Rückblicke fürs Team legt die Gemeindeleitung an.'}
+                    ? RUECKBLICK_OHNE_JAHRGANG.text
+                    : rueckblickLeerText('app', segment, istLeitung)}
                   iconColor="var(--app-color-wrapped)"
                 />
               </IonCardContent>

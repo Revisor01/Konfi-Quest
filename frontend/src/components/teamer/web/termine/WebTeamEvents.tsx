@@ -13,7 +13,6 @@
 import React, { useMemo, useState } from 'react';
 import { ICON_TERMIN } from '../../../shared/icons';
 import { useApp } from '../../../../contexts/AppContext';
-import { zaehltAlsMeiner } from '../../../shared/eventFormatting';
 import { suchbegriff } from '../../../../utils/supportWeb';
 import { jahrgaengeZeile, kommendeZuerst, teamFakten, teamListeStatus, terminSuchtTreffer } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
@@ -27,12 +26,8 @@ import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import WebTerminAnsicht, { type WebTerminEintrag } from '../../../shared/web/termine/WebTerminAnsicht';
 import { TEAM_EVENT_FILTER, type TeamEventFilter } from '../../../shared/web/termine/terminFilter';
 import '../../../../theme/web/termine.css';
-
-const LEER: Record<TeamEventFilter, string> = {
-  meine: 'Du bist noch bei keinem Event dabei',
-  alle: 'Keine Events vorhanden',
-  team: 'Keine Events fürs Team verfügbar',
-};
+import { inFassung, leerVon } from '../../../../seiten/beschreibung';
+import { MITGLIED_EVENTS_BESCHRIFTUNG, TEAM_EVENTS, TEAM_EVENTS_LEER_TITEL } from '../../../../seiten/mitmachenMitglied';
 
 const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   const [filter, setFilter] = useFilterAusAdresse<TeamEventFilter>('/teamer/events', TEAM_EVENT_FILTER, 'meine');
@@ -40,12 +35,11 @@ const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   const { user } = useApp();
   const [ansicht, setAnsicht] = useAnsicht('events-mitglied', ansichtVorgabe(user?.role_name));
 
-  const listen = useMemo<Record<TeamEventFilter, Event[]>>(() => ({
-    // "Alle" heisst alle -- auch reine Team-Events (User-Hinweis 25.08.2026).
-    alle: [...events],
-    meine: events.filter(zaehltAlsMeiner),
-    team: events.filter((e) => e.teamer_needed || e.teamer_only),
-  }), [events]);
+  // Die Listen der Reiter aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts), wie in der App.
+  // "Alle" heisst alle -- auch reine Team-Events (User-Hinweis 25.08.2026).
+  const listen = useMemo(() => Object.fromEntries(
+    TEAM_EVENTS.map((r) => [r.schluessel, events.filter((e) => r.passt?.(e) ?? true)]),
+  ) as Record<TeamEventFilter, Event[]>, [events]);
 
   const sichtbar = useMemo(
     () => kommendeZuerst(listen[filter]).filter((e) => terminSuchtTreffer(e, suche)),
@@ -72,14 +66,10 @@ const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
     <>
       <div className="web-werkzeuge">
         <WebChips<TeamEventFilter>
-          beschriftung="Events anzeigen"
+          beschriftung={MITGLIED_EVENTS_BESCHRIFTUNG}
           wert={filter}
           onWert={setFilter}
-          chips={[
-            { wert: 'alle', label: 'Alle', zahl: listen.alle.length },
-            { wert: 'meine', label: 'Meine', zahl: listen.meine.length },
-            { wert: 'team', label: 'Team', zahl: listen.team.length },
-          ]}
+          chips={inFassung(TEAM_EVENTS, 'web').map((r) => ({ wert: r.schluessel, label: r.label, zahl: listen[r.schluessel].length }))}
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Events durchsuchen" platzhalter="Name oder Ort suchen" wert={suche} onWert={setSuche} />
@@ -93,8 +83,8 @@ const WebTeamEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
         <div className="web-karte">
           <WebLeer
             icon={ICON_TERMIN}
-            titel={sucht ? 'Keine Treffer' : 'Keine Events'}
-            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl kein Event.` : LEER[filter]}
+            titel={sucht ? 'Keine Treffer' : TEAM_EVENTS_LEER_TITEL}
+            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl kein Event.` : leerVon(TEAM_EVENTS, filter)}
             aktion={sucht
               ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf>
               : filter === 'meine' && listen.alle.length > 0

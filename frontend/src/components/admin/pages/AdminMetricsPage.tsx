@@ -45,6 +45,8 @@ import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebBetrieb from '../web/leitung/WebBetrieb';
 import type { BetriebsCspMeldungen } from '../web/leitung/betriebTypen';
 import KonfispruchAuswertung from '../KonfispruchAuswertung';
+import { inFassung } from '../../../seiten/beschreibung';
+import { BETRIEB_REITER, ROUTEN_SORTIERUNG, type BetriebsReiterSchluessel } from '../../../seiten/betrieb';
 
 interface RouteRow {
   route: string;
@@ -266,7 +268,7 @@ const AdminMetricsPage: React.FC = () => {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [history, setHistory] = useState<HistorySnap[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'ueberblick' | 'fehler' | 'routen' | 'verlauf' | 'sprueche'>('ueberblick');
+  const [tab, setTab] = useState<BetriebsReiterSchluessel>('ueberblick');
   const [autoRefresh, setAutoRefresh] = useState(true);
   // Standard: die langsamsten zuerst, gemessen an der Zeit pro Anfrage.
   const [routenSicht, setRoutenSicht] = useState<RoutenSortierung>('langsam');
@@ -420,11 +422,16 @@ const AdminMetricsPage: React.FC = () => {
 
             {/* Tabs */}
             <IonSegment scrollable value={tab} onIonChange={(e) => setTab(e.detail.value as typeof tab)} style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
-              <IonSegmentButton value="ueberblick"><IonLabel>Überblick</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="fehler"><IonLabel>Fehler{(snap.fehlerGruppen?.length ?? 0) > 0 ? ` (${snap.fehlerGruppen!.length})` : ''}</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="routen"><IonLabel>Routen</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="verlauf"><IonLabel>Verlauf</IonLabel></IonSegmentButton>
-              <IonSegmentButton value="sprueche"><IonLabel>Sprüche</IonLabel></IonSegmentButton>
+              {/* Reiter aus der gemeinsamen Beschreibung (seiten/betrieb.ts); die
+                  Zahl der Fehlergruppen steht in der App in Klammern. */}
+              {inFassung(BETRIEB_REITER, 'app').map((r) => {
+                const zahl = r.zahlText ? (snap.fehlerGruppen?.length ?? 0) : 0;
+                return (
+                  <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+                    <IonLabel>{r.kurz ?? r.label}{zahl > 0 ? ` (${zahl})` : ''}</IonLabel>
+                  </IonSegmentButton>
+                );
+              })}
             </IonSegment>
 
             {tab === 'ueberblick' && (
@@ -572,8 +579,9 @@ const AdminMetricsPage: React.FC = () => {
             {tab === 'routen' && (
               <>
                 <IonSegment value={routenSicht} onIonChange={(e) => setRoutenSicht(e.detail.value as RoutenSortierung)} style={{ marginBottom: 'var(--app-abstand-mittel)' }}>
-                  <IonSegmentButton value="langsam"><IonLabel>Langsamste</IonLabel></IonSegmentButton>
-                  <IonSegmentButton value="haeufig"><IonLabel>Häufigste</IonLabel></IonSegmentButton>
+                  {inFassung(ROUTEN_SORTIERUNG, 'app').map((s) => (
+                    <IonSegmentButton key={s.schluessel} value={s.schluessel}><IonLabel>{s.kurz ?? s.label}</IonLabel></IonSegmentButton>
+                  ))}
                 </IonSegment>
                 <RoutenListe zeilen={routenZeilen} />
                 <div style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)', marginTop: 'var(--app-abstand-eng)', lineHeight: 1.4 }}>

@@ -104,7 +104,7 @@ describe('Admin ohne Jahrgangs-Zuweisung sieht den Grund', () => {
     await oeffne();
     expect(screen.getByText('Kein Jahrgang zugewiesen')).toBeInTheDocument();
     expect(screen.getByText(GRUND)).toBeInTheDocument();
-    expect(screen.queryByText('Noch keine Konfis angelegt')).toBeNull();
+    expect(screen.queryByText('Noch keine Konfis angelegt.')).toBeNull();
   });
 
   it('die Suche behält ihren eigenen Text', async () => {
@@ -114,7 +114,7 @@ describe('Admin ohne Jahrgangs-Zuweisung sieht den Grund', () => {
     await oeffne();
     fireEvent.change(screen.getByRole('textbox', { name: 'Konfi suchen' }), { target: { value: 'Emilia' } });
     expect(screen.getByText('Keine Konfis gefunden')).toBeInTheDocument();
-    expect(screen.getByText('Versuche andere Suchbegriffe')).toBeInTheDocument();
+    expect(screen.getByText('Versuche andere Suchbegriffe.')).toBeInTheDocument();
     expect(screen.queryByText('Kein Jahrgang zugewiesen')).toBeNull();
   });
 
@@ -123,14 +123,14 @@ describe('Admin ohne Jahrgangs-Zuweisung sieht den Grund', () => {
     // "Noch keine Konfis angelegt" die richtige Aussage.
     await oeffne();
     expect(screen.getByText('Keine Konfis gefunden')).toBeInTheDocument();
-    expect(screen.getByText('Noch keine Konfis angelegt')).toBeInTheDocument();
+    expect(screen.getByText('Noch keine Konfis angelegt.')).toBeInTheDocument();
     expect(screen.queryByText(GRUND)).toBeNull();
   });
 
   it('ein anderer Wert als "true" zählt nicht', async () => {
     kopf = { 'x-kein-jahrgang-zugewiesen': 'false' };
     await oeffne();
-    expect(screen.getByText('Noch keine Konfis angelegt')).toBeInTheDocument();
+    expect(screen.getByText('Noch keine Konfis angelegt.')).toBeInTheDocument();
     expect(screen.queryByText('Kein Jahrgang zugewiesen')).toBeNull();
   });
 });

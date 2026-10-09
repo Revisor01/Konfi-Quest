@@ -16,6 +16,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import BadgesView from '../views/BadgesView';
+import type { BadgesStatus } from '../../../seiten/badgesKonfi';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
@@ -38,7 +39,7 @@ const KonfiBadgesPage: React.FC = () => {
   const { user } = useApp();
   const { refreshAllCounts } = useBadge();
   const { pageRef } = useModalPage('konfi-badges');
-  const [selectedFilter, setSelectedFilter] = useState('alle');
+  const [selectedFilter, setSelectedFilter] = useState<BadgesStatus>('alle');
   // Browser ab 992 px: die Web-Fassung (BadgesView -> web/WebBadgesRaster).
   const breit = useBreitesLayout();
 

@@ -22,7 +22,6 @@ import { suchbegriff } from '../../../utils/supportWeb';
 import {
   ARTEN,
   STATUS_REIHE,
-  VORGANG_FILTER,
   VORGANG_STATUS,
   artKurz,
   bereichLabel,
@@ -47,17 +46,19 @@ import WebNeuerVorgang from './WebNeuerVorgang';
 import { DringlichPill, StatusPill } from './WebVorgangTeile';
 import '../../../theme/web/support.css';
 import { vorgangStatusRang } from '../../../utils/statusReihenfolge';
+import { inFassung, leerVon } from '../../../seiten/beschreibung';
+import {
+  ALLE_ARTEN,
+  ALLE_GEMEINDEN,
+  VORGAENGE_TITEL,
+  VORGANG_KEINE_TREFFER,
+  VORGANG_LEER_TITEL,
+  VORGANG_STAENDE,
+  VORGANG_STAENDE_BESCHRIFTUNG,
+} from '../../../seiten/supportVorgaenge';
 
 /** Wohin der Link „Zurueck zur Liste" eines Vorgangs fuehrt, mit dem Filter, der gerade gilt. */
 export const VORGAENGE_LISTE = '/admin/support/vorgaenge';
-
-const LEER_TEXT: Record<VorgangFilter, { titel: string; text: string }> = {
-  offen: { titel: 'Nichts zu tun', text: 'Es gibt keinen offenen Vorgang. Neue Anfragen, Formulare und Mails erscheinen hier.' },
-  neu: { titel: 'Nichts Neues', text: 'Alle Vorgänge sind schon in Arbeit.' },
-  in_arbeit: { titel: 'Nichts in Arbeit', text: 'Gerade ist kein Vorgang in Arbeit.' },
-  wartet: { titel: 'Nichts wartet', text: 'Kein Vorgang wartet auf eine Rückmeldung.' },
-  archiv: { titel: 'Das Archiv ist leer', text: 'Erledigte und archivierte Vorgänge liegen hier. Gelöscht werden sie 730 Tage nach dem Archivieren.' },
-};
 
 const WebVorgaenge: React.FC = () => {
   const { auswahl, setFilter, setArt, setGemeinde, setSuche, zuruecksetzen } = useVorgangsAuswahl();
@@ -98,7 +99,7 @@ const WebVorgaenge: React.FC = () => {
     ? gemeinden.find((g) => String(g.id) === auswahl.gemeinde)?.name ?? `Gemeinde ${auswahl.gemeinde}`
     : null;
   const gemeindeOptionen = [
-    { wert: 'alle', label: 'Alle Gemeinden' },
+    { wert: 'alle', label: ALLE_GEMEINDEN },
     ...gemeinden.map((g) => ({ wert: String(g.id), label: g.name })),
     // Eine Gemeinde aus der Adresse, die in der Liste fehlt, bleibt auswaehlbar.
     ...(auswahl.gemeinde !== 'alle' && !gemeinden.some((g) => String(g.id) === auswahl.gemeinde)
@@ -212,16 +213,20 @@ const WebVorgaenge: React.FC = () => {
     inhalt = (
       <>
         <WebChips<VorgangFilter>
-          beschriftung="Vorgänge nach Stand"
+          beschriftung={VORGANG_STAENDE_BESCHRIFTUNG}
           wert={auswahl.filter}
           onWert={setFilter}
-          chips={VORGANG_FILTER.map((f) => ({
-            wert: f,
-            label: f === 'offen' ? 'Offen' : f === 'archiv' ? 'Archiv' : VORGANG_STATUS[f as VorgangStatus].kurz,
-            zahl: f === 'archiv' ? liste.archivAnzahl ?? undefined : zaehlen?.[f],
-            rot: f === 'neu',
-            zahlText: f === 'offen' ? 'neu, in Arbeit oder wartet' : f === 'archiv' ? 'archiviert oder erledigt' : undefined,
-          }))}
+          // Stände aus der gemeinsamen Beschreibung (seiten/supportVorgaenge.ts); rot ist „Neu".
+          chips={inFassung(VORGANG_STAENDE, 'web').map((f) => {
+            const zahl = f.schluessel === 'archiv' ? liste.archivAnzahl ?? undefined : zaehlen?.[f.schluessel];
+            return {
+              wert: f.schluessel,
+              label: f.label,
+              zahl,
+              rot: f.schluessel === 'neu',
+              zahlText: zahl === undefined ? undefined : f.zahlText?.(zahl),
+            };
+          })}
         />
 
         <div className="web-werkzeuge">
@@ -230,7 +235,7 @@ const WebVorgaenge: React.FC = () => {
               label="Art"
               wert={auswahl.art}
               onWert={(w) => setArt(w as VorgangArt | 'alle')}
-              optionen={[{ wert: 'alle', label: 'Alle Arten' }, ...ARTEN.map((a) => ({ wert: a.wert, label: a.label }))]}
+              optionen={[{ wert: 'alle', label: ALLE_ARTEN }, ...ARTEN.map((a) => ({ wert: a.wert, label: a.label }))]}
             />
             <WebAuswahl label="Gemeinde" wert={auswahl.gemeinde} onWert={setGemeinde} optionen={gemeindeOptionen} />
           </div>
@@ -298,11 +303,9 @@ const WebVorgaenge: React.FC = () => {
           ) : (
             <WebLeer
               icon={ICON_LISTE}
-              titel={eingegrenzt ? 'Keine Treffer' : LEER_TEXT[auswahl.filter].titel}
-              text={eingegrenzt
-                ? `In dieser Auswahl gibt es keinen Vorgang${sucht ? ` zu „${auswahl.suche.trim()}“` : ''}.`
-                : LEER_TEXT[auswahl.filter].text}
-              aktion={eingegrenzt ? <WebKnopf onClick={zuruecksetzen}>Auswahl zurücksetzen</WebKnopf> : undefined}
+              titel={eingegrenzt ? VORGANG_KEINE_TREFFER.titel : VORGANG_LEER_TITEL[auswahl.filter]}
+              text={eingegrenzt ? VORGANG_KEINE_TREFFER.text(auswahl.suche) : leerVon(VORGANG_STAENDE, auswahl.filter)}
+              aktion={eingegrenzt ? <WebKnopf onClick={zuruecksetzen}>{VORGANG_KEINE_TREFFER.zuruecksetzen}</WebKnopf> : undefined}
             />
           )}
         </div>
@@ -321,7 +324,7 @@ const WebVorgaenge: React.FC = () => {
   return (
     <WebSeite
       bereich="Support"
-      titel="Vorgänge"
+      titel={VORGAENGE_TITEL}
       untertitel={untertitel}
       aktionen={(
         <>

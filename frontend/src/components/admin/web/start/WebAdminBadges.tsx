@@ -26,6 +26,16 @@ import { WebLeer } from '../../../web/WebZustaende';
 import WebBadgeSymbol from '../../../konfi/web/WebBadgeSymbol';
 import '../../../../theme/web/start.css';
 import { badgeStatusRang } from '../../../../utils/statusReihenfolge';
+import { inFassung } from '../../../../seiten/beschreibung';
+import {
+  BADGES_GRUPPE,
+  BADGES_GRUPPE_BESCHRIFTUNG,
+  LEITUNG_BADGES_LEER,
+  LEITUNG_BADGES_STATUS,
+  LEITUNG_BADGES_STATUS_BESCHRIFTUNG,
+  type BadgesGruppe,
+  type LeitungBadgesStatus,
+} from '../../../../seiten/badgesLeitung';
 
 export interface WebAdminBadge {
   id: number;
@@ -40,8 +50,8 @@ export interface WebAdminBadge {
   color?: string;
 }
 
-export type WebBadgeFilter = 'alle' | 'aktiv' | 'versteckt' | 'inaktiv';
-export type WebBadgeGruppe = 'konfi' | 'teamer';
+export type WebBadgeFilter = LeitungBadgesStatus;
+export type WebBadgeGruppe = BadgesGruppe;
 type Sortierung = 'kriterium' | 'name' | 'verliehen';
 
 export interface WebAdminBadgesProps<T extends WebAdminBadge> {
@@ -64,9 +74,12 @@ export interface WebAdminBadgesProps<T extends WebAdminBadge> {
 function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): React.ReactElement {
   const [sortierung, setSortierung] = useState<Sortierung>('kriterium');
 
-  const aktiv = p.badges.filter((b) => b.is_active && !b.is_hidden).length;
-  const geheim = p.badges.filter((b) => b.is_hidden).length;
-  const inaktiv = p.badges.filter((b) => !b.is_active).length;
+  // Zahl je Stand mit dem Prädikat der gemeinsamen Beschreibung (seiten/badgesLeitung.ts).
+  const zahl = Object.fromEntries(
+    LEITUNG_BADGES_STATUS.map((w) => [w.schluessel, p.badges.filter((b) => w.passt?.(b) ?? true).length]),
+  ) as Record<WebBadgeFilter, number>;
+  const aktiv = zahl.aktiv;
+  const geheim = zahl.versteckt;
   const verliehen = p.badges.reduce((summe, b) => summe + (b.earned_count || 0), 0);
 
   const zeilen = [...p.gefiltert].sort((a, b) => {
@@ -89,23 +102,18 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
       <div className="web-werkzeuge web-badges-werkzeuge">
         {p.onGruppe && (
           <WebChips<WebBadgeGruppe>
-            beschriftung="Für wen"
+            beschriftung={BADGES_GRUPPE_BESCHRIFTUNG}
             wert={p.gruppe}
             onWert={p.onGruppe}
-            chips={[{ wert: 'konfi', label: 'Konfis' }, { wert: 'teamer', label: 'Team' }]}
+            chips={inFassung(BADGES_GRUPPE, 'web').map((g) => ({ wert: g.schluessel, label: g.label }))}
           />
         )}
         <WebSuche beschriftung="Badges durchsuchen" platzhalter="Badges durchsuchen" wert={p.suche} onWert={p.onSuche} />
         <WebChips<WebBadgeFilter>
-          beschriftung="Status"
+          beschriftung={LEITUNG_BADGES_STATUS_BESCHRIFTUNG}
           wert={p.filter}
           onWert={p.onFilter}
-          chips={[
-            { wert: 'alle', label: 'Alle', zahl: p.badges.length },
-            { wert: 'aktiv', label: 'Aktiv', zahl: aktiv },
-            { wert: 'versteckt', label: 'Geheim', zahl: geheim },
-            { wert: 'inaktiv', label: 'Inaktiv', zahl: inaktiv },
-          ]}
+          chips={inFassung(LEITUNG_BADGES_STATUS, 'web').map((w) => ({ wert: w.schluessel, label: w.label, zahl: zahl[w.schluessel] }))}
         />
         <div className="web-werkzeuge__rechts web-badges-kategorie">
           <WebAuswahl
@@ -125,8 +133,8 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
         {zeilen.length === 0 ? (
           <WebLeer
             icon={ICON_ABZEICHEN}
-            titel="Keine Badges gefunden"
-            text={p.badges.length === 0 ? 'Lege das erste Badge an.' : 'Zu Suche und Filter gibt es kein Badge.'}
+            titel={LEITUNG_BADGES_LEER.titel}
+            text={p.badges.length === 0 ? LEITUNG_BADGES_LEER.ohneBadges : LEITUNG_BADGES_LEER.ohneTreffer}
           />
         ) : (
           <WebTabelle<T>

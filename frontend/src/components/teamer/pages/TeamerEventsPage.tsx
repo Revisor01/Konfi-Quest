@@ -98,7 +98,9 @@ import { track, trackHandlung, trackMitmachenAnsicht } from '../../../services/a
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
-import { mitgliedSegmentAusAdresse } from '../../shared/web/termine/terminFilter';
+import { mitgliedSegmentAusAdresse, type EigenerAntragFilter, type TeamEventFilter } from '../../shared/web/termine/terminFilter';
+import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
+import { EIGENE_ANTRAEGE_START, MITGLIED_BEREICHE, TEAM_EVENTS, TEAM_EVENTS_LEER_TITEL } from '../../../seiten/mitmachenMitglied';
 import WebTeamEvents from '../web/termine/WebTeamEvents';
 import WebTeamTerminDetail from '../web/termine/WebTeamTerminDetail';
 
@@ -130,7 +132,7 @@ const TeamerEventsPage: React.FC = () => {
     setMainSegment(ansicht);
   };
 
-  const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'team'>('meine');
+  const [activeTab, setActiveTab] = useState<TeamEventFilter>('meine');
   const [searchText, setSearchText] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
@@ -177,7 +179,10 @@ const TeamerEventsPage: React.FC = () => {
     { ttl: CACHE_TTL.REQUESTS }
   );
 
-  const [requestsTab, setRequestsTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  // Die App hat den Reiter „Alle" nicht; bis 09.10.2026 startete das Team
+  // trotzdem auf der Gesamtliste, ohne gewaehlten Reiter und ohne Weg zurueck
+  // (seiten/mitmachenMitglied.ts, EIGENE_ANTRAEGE_START).
+  const [requestsTab, setRequestsTab] = useState<EigenerAntragFilter>(EIGENE_ANTRAEGE_START.team.app);
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   // Die Warteschlange meldet ihre Aenderungen jetzt selbst — vorher aktuali-
   // sierte sich die Anzeige nur, wenn die Antragsliste neu lud. Leerte sich
@@ -230,19 +235,6 @@ const TeamerEventsPage: React.FC = () => {
     return datumKurz(dateString);
   };
 
-  const getFilteredRequests = () => {
-    const allRequests = Array.isArray(requests) ? requests : [];
-    switch (requestsTab) {
-      case 'pending':
-        return allRequests.filter(r => r.status === 'pending');
-      case 'approved':
-        return allRequests.filter(r => r.status === 'approved');
-      case 'rejected':
-        return allRequests.filter(r => r.status === 'rejected');
-      default:
-        return allRequests;
-    }
-  };
 
   const handleDeleteRequest = (request: ActivityRequest) => {
     if (!isOnline) {
@@ -512,18 +504,22 @@ const TeamerEventsPage: React.FC = () => {
   // ('waitlist') als auch die eigene Absage ('opted_out') aus dem Reiter
   // heraus. Die Kartendarstellung weiter unten kannte beide Zustaende laengst
   // und faerbte sie ein — nur der Filter davor nicht.
+  // Die Prädikate der drei Reiter stehen in der gemeinsamen Beschreibung
+  // (seiten/mitmachenMitglied.ts), die Web-Fassung liest dieselben.
   const meineEvents = useMemo(() =>
-    sortEvents(safeEvents.filter(zaehltAlsMeiner)),
+    sortEvents(safeEvents.filter((e) => wahlVon(TEAM_EVENTS, 'meine').passt?.(e) ?? true)),
   [safeEvents]);
 
   // "Alle" heisst alle — auch reine Team-Termine. Vorher filterte
   // `!e.teamer_only` sie heraus: Ein Termin nur fuers Team tauchte in KEINEM
   // Reiter ausser "Team" auf und fehlte in der Gesamtuebersicht
   // (User-Hinweis 25.08.2026).
-  const alleEvents = useMemo(() => sortEvents(safeEvents), [safeEvents]);
+  const alleEvents = useMemo(() =>
+    sortEvents(safeEvents.filter((e) => wahlVon(TEAM_EVENTS, 'alle').passt?.(e) ?? true)),
+  [safeEvents]);
 
   const teamEvents = useMemo(() =>
-    sortEvents(safeEvents.filter(e => e.teamer_needed || e.teamer_only)),
+    sortEvents(safeEvents.filter((e) => wahlVon(TEAM_EVENTS, 'team').passt?.(e) ?? true)),
   [safeEvents]);
 
   const getFilteredEvents = () => {
@@ -549,9 +545,10 @@ const TeamerEventsPage: React.FC = () => {
 
   // Stats — tab-abhaengig (analog Konfi-Pattern)
   const statsData = useMemo(() => {
-    const now = new Date();
-    const isFuture = (e: Event) => new Date(e.event_date) >= now;
-    const isPast = (e: Event) => new Date(e.event_date) < now;
+    // Ein mehrtaegiges Event ist erst nach seinem Ende vergangen (istVergangen,
+    // wie bei den Konfis); bis 09.10.2026 zaehlte es hier schon am ersten Tag dazu.
+    const isFuture = (e: Event) => !istVergangen(e);
+    const isPast = (e: Event) => istVergangen(e);
 
     if (activeTab === 'meine') {
       return [
@@ -948,14 +945,7 @@ const TeamerEventsPage: React.FC = () => {
 
   // Formatierung lang (wie Konfi EventDetailView)
   // Leere-Segment Texte
-  const getEmptyMessage = () => {
-    switch (activeTab) {
-      case 'meine': return 'Du bist noch bei keinem Event dabei';
-      case 'alle': return 'Keine Events vorhanden';
-      case 'team': return 'Keine Events fürs Team verfügbar';
-      default: return 'Keine Events';
-    }
-  };
+  const getEmptyMessage = () => leerVon(TEAM_EVENTS, activeTab);
 
   // Event Detail Ansicht - 1:1 wie Konfi EventDetailView
   // Detail-Ansicht als render-Funktion (statt früher early-return), damit sie
@@ -1713,12 +1703,11 @@ const TeamerEventsPage: React.FC = () => {
           value={mainSegment}
           onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
-          <IonSegmentButton value="events">
-            <IonLabel>Events</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="antraege">
-            <IonLabel>Aktivitäten</IonLabel>
-          </IonSegmentButton>
+          {MITGLIED_BEREICHE.map((b) => (
+            <IonSegmentButton key={b.schluessel} value={b.schluessel}>
+              <IonLabel>{b.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -1774,7 +1763,7 @@ const TeamerEventsPage: React.FC = () => {
             <LoadingSpinner message="Aktivitäten werden geladen..." />
           ) : (
             <RequestsView
-              requests={getFilteredRequests()}
+              requests={Array.isArray(requests) ? requests : []}
               onDeleteRequest={handleDeleteRequest}
               onSelectRequest={handleSelectRequest}
               activeTab={requestsTab}
@@ -1816,17 +1805,13 @@ const TeamerEventsPage: React.FC = () => {
             <div className="app-segment-wrapper">
               <IonSegment
                 value={activeTab}
-                onIonChange={(e) => setActiveTab(e.detail.value as 'meine' | 'alle' | 'team')}
+                onIonChange={(e) => setActiveTab(e.detail.value as TeamEventFilter)}
               >
-                <IonSegmentButton value="alle">
-                  <IonLabel>Alle</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="meine">
-                  <IonLabel>Meine</IonLabel>
-                </IonSegmentButton>
-                <IonSegmentButton value="team">
-                  <IonLabel>Team</IonLabel>
-                </IonSegmentButton>
+                {inFassung(TEAM_EVENTS, 'app').map((r) => (
+                  <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+                    <IonLabel>{r.kurz ?? r.label}</IonLabel>
+                  </IonSegmentButton>
+                ))}
               </IonSegment>
             </div>
 
@@ -1858,7 +1843,7 @@ const TeamerEventsPage: React.FC = () => {
               iconColorClass="events"
               isEmpty={filteredEvents.length === 0}
               emptyIcon={ICON_TERMIN}
-              emptyTitle="Keine Events"
+              emptyTitle={TEAM_EVENTS_LEER_TITEL}
               emptyMessage={getEmptyMessage()}
               emptyIconColor="var(--app-color-events)"
             >
@@ -2170,7 +2155,7 @@ const TeamerEventsPage: React.FC = () => {
         eventsLaden={loading}
         antraege={Array.isArray(requests) ? requests : []}
         antraegeLaden={requestsLoading}
-        standardFilterAntraege="alle"
+        standardFilterAntraege={EIGENE_ANTRAEGE_START.team.web}
         wartend={wartend}
         gescheitert={gescheitert}
         onVergessen={(id) => { void vergessen(id); }}

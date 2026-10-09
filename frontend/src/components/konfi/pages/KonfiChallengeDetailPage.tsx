@@ -61,6 +61,7 @@ import type {
   ChallengeSubmission,
   ChallengeGalerieZeile
 } from '../../../types/challenges';
+import { CHALLENGE_DETAIL_KONFI_REITER, konfiDetailLeer, konfiDetailUeberschrift } from '../../../seiten/challengeDetailKonfi';
 
 // Eine Challenge für Konfis als eigene Seite (/konfi/challenges/:id):
 // Beschreibung, oeffentliche Galerie (anonyme Beitraege OHNE Namen — das
@@ -510,8 +511,10 @@ const KonfiChallengeDetailAnsicht: React.FC<KonfiChallengeDetailAnsichtProps> = 
             {current.visibility !== 'private' && (
               <div style={{ margin: 'var(--app-abstand-basis) var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
                 <IonSegment value={reiter} onIonChange={(e) => setReiter(e.detail.value as KonfiReiter)}>
-                  <IonSegmentButton value="feed"><IonLabel>Feed</IonLabel></IonSegmentButton>
-                  <IonSegmentButton value="meins"><IonLabel>Meins</IonLabel></IonSegmentButton>
+                  {/* Reiter aus der gemeinsamen Beschreibung (seiten/challengeDetailKonfi.ts). */}
+                  {CHALLENGE_DETAIL_KONFI_REITER.map((r) => (
+                    <IonSegmentButton key={r.schluessel} value={r.schluessel}><IonLabel>{r.kurz ?? r.label}</IonLabel></IonSegmentButton>
+                  ))}
                 </IonSegment>
               </div>
             )}
@@ -522,9 +525,7 @@ const KonfiChallengeDetailAnsicht: React.FC<KonfiChallengeDetailAnsichtProps> = 
                   <IonIcon icon={effektiverReiter === 'meins' ? ICON_PERSON : ICON_GRUPPE} />
                 </div>
                 <IonLabel>
-                  {effektiverReiter === 'meins'
-                    ? (ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge')
-                    : 'Aus deiner Gruppe'}
+                  {konfiDetailUeberschrift(effektiverReiter, ownSubmissions.length)}
                 </IonLabel>
               </IonListHeader>
               <IonCard className="app-card">
@@ -533,23 +534,19 @@ const KonfiChallengeDetailAnsicht: React.FC<KonfiChallengeDetailAnsichtProps> = 
                     effektiverReiter === 'meins' ? (
                       <EmptyState
                         icon={ICON_TEXTDOKUMENT}
-                        title="Noch kein Beitrag von dir"
                         // Bei beendeter Challenge gibt es das Plus nicht mehr
                         // (canSubmitMore verlangt isActive) — der Hinweis
                         // zeigte auf einen Knopf, der nicht existiert
-                        // (Befund 30.08.2026).
-                        message={isActive
-                          ? 'Tippe oben auf das Plus, um etwas einzureichen.'
-                          : 'Diese Challenge ist beendet — du hattest nichts eingereicht.'}
+                        // (Befund 30.08.2026). Texte: seiten/challengeDetailKonfi.ts.
+                        title={konfiDetailLeer('meins', isActive, 'app').titel}
+                        message={konfiDetailLeer('meins', isActive, 'app').text}
                         iconColor="var(--app-color-challenges)"
                       />
                     ) : (
                       <EmptyState
                         icon={ICON_GRUPPE}
-                        title="Noch keine geteilten Beiträge"
-                        message={isActive
-                          ? 'Sobald jemand aus deiner Gruppe etwas veröffentlicht, findest du es hier. Vielleicht machst du ja den Anfang.'
-                          : 'Aus dieser Challenge hat niemand aus deiner Gruppe etwas veröffentlicht.'}
+                        title={konfiDetailLeer('feed', isActive, 'app').titel}
+                        message={konfiDetailLeer('feed', isActive, 'app').text}
                         iconColor="var(--app-color-challenges)"
                       />
                     )

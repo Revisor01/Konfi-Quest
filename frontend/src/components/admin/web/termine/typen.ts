@@ -1,6 +1,8 @@
 // Typen der Web-Fassung von Mitmachen bei der Leitung (03.10.2026).
 
 import type { Event } from '../../../../types/event';
+import { schluesselIn } from '../../../../seiten/beschreibung';
+import { LEITUNG_ANTRAG_STATUS, LEITUNG_BEREICHE, LEITUNG_ZEITRAUM } from '../../../../seiten/mitmachenLeitung';
 
 /** Ein gemeldeter Antrag (GET /admin/activities/requests) -- wie in ActivityRequestsView. */
 export interface AntragZeile {
@@ -36,7 +38,7 @@ export interface AntragZeile {
  * der Aktivitaeten steht wie in der App unter Mehr (/admin/activities); Simon,
  * 06.10.2026: der Reiter heisst ueberall „Aktivitaeten".
  */
-export type LeitungSegment = 'events' | 'antraege';
+export type LeitungSegment = (typeof LEITUNG_BEREICHE)[number]['schluessel'];
 
 /** Was die Leitung an Events tun kann -- die Funktionen kommen aus AdminEventsPage, dieselben wie in der App. */
 export interface TerminAktionen {
@@ -60,10 +62,10 @@ export function segmentAusAdresse(search: string): LeitungSegment {
   return wert === 'antraege' ? wert : 'events';
 }
 
-/** Die Zeitraeume der Event-Tabelle -- auch als `?filter=` in der Adresse. */
-export type ZeitFilter = 'aktuell' | 'verbuchen' | 'vergangen' | 'abgesagt';
-export const ZEIT_FILTER: readonly ZeitFilter[] = ['aktuell', 'verbuchen', 'vergangen', 'abgesagt'];
+/** Die Zeitraeume der Event-Tabelle -- auch als `?filter=` in der Adresse (seiten/mitmachenLeitung.ts). */
+export type ZeitFilter = (typeof LEITUNG_ZEITRAUM)[number]['schluessel'];
+export const ZEIT_FILTER: readonly ZeitFilter[] = schluesselIn(LEITUNG_ZEITRAUM, 'web');
 
-/** Die Status der Antrags-Tabelle -- auch als `?filter=` in der Adresse. */
-export type AntragFilter = 'offen' | 'verbucht' | 'abgelehnt' | 'alle';
-export const ANTRAG_FILTER: readonly AntragFilter[] = ['offen', 'verbucht', 'abgelehnt', 'alle'];
+/** Die Status der Antrags-Tabelle -- auch als `?filter=` in der Adresse (seiten/mitmachenLeitung.ts). */
+export type AntragFilter = (typeof LEITUNG_ANTRAG_STATUS)[number]['schluessel'];
+export const ANTRAG_FILTER: readonly AntragFilter[] = schluesselIn(LEITUNG_ANTRAG_STATUS, 'web');

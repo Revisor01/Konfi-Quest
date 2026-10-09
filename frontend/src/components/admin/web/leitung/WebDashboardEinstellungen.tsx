@@ -19,6 +19,7 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebSchalter from '../../../web/WebSchalter';
 import { WebLaden } from '../../../web/WebZustaende';
 import { verschiebeEintrag } from './dashboardReihenfolge';
+import { DASHBOARD_LISTE_TITEL } from '../../../../seiten/dashboardEinstellungen';
 
 export type DashboardZielgruppe = 'konfi' | 'teamer';
 
@@ -102,8 +103,8 @@ const WebDashboardEinstellungen: React.FC<WebDashboardEinstellungenProps> = ({ k
       zurueck={zurueck}
     >
       <div className="web-raster web-raster--zwei">
-        <Liste zielgruppe="konfi" titel="Konfi-Dashboard" bereiche={konfi} onSchalten={onSchalten} onVerschieben={onVerschieben} />
-        <Liste zielgruppe="teamer" titel="Team-Dashboard" bereiche={team} onSchalten={onSchalten} onVerschieben={onVerschieben} />
+        <Liste zielgruppe="konfi" titel={DASHBOARD_LISTE_TITEL.konfi} bereiche={konfi} onSchalten={onSchalten} onVerschieben={onVerschieben} />
+        <Liste zielgruppe="teamer" titel={DASHBOARD_LISTE_TITEL.teamer} bereiche={team} onSchalten={onSchalten} onVerschieben={onVerschieben} />
       </div>
     </WebSeite>
   );

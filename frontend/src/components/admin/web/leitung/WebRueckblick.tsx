@@ -27,8 +27,10 @@ import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { WebSymbol, WebZeilenAktionen } from './WebLeitungBausteine';
 import type { RueckblickAusgabe, TeamJahr } from './verwaltungTypen';
+import { inFassung } from '../../../../seiten/beschreibung';
+import { RUECKBLICK_FUER, RUECKBLICK_FUER_BESCHRIFTUNG, RUECKBLICK_LEER_TITEL, RUECKBLICK_NUR_LEITUNG, RUECKBLICK_OHNE_JAHRGANG, RUECKBLICK_TITEL, RUECKBLICK_UNTERTITEL, rueckblickLeerText, type RueckblickFuer } from '../../../../seiten/rueckblick';
 
-export type RueckblickReiter = 'konfi' | 'teamer';
+export type RueckblickReiter = RueckblickFuer;
 
 /** Der Dialog "Neuer Rueckblick": Zustand und Aktionen liegen bei der Seite. */
 export interface RueckblickDialog {
@@ -143,24 +145,22 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
     },
   ];
 
-  const chips = [
-    { wert: 'konfi' as const, label: 'Konfis', zahl: ausgaben.filter((a) => a.typ === 'konfi').length },
-    // Ausgaben fuers Team betreffen die ganze Gemeinde: nur die Leitung.
-    ...(istLeitung ? [{ wert: 'teamer' as const, label: 'Team', zahl: ausgaben.filter((a) => a.typ === 'teamer').length }] : []),
-  ];
+  // Reiter aus der gemeinsamen Beschreibung (seiten/rueckblick.ts). Ausgaben
+  // fuers Team betreffen die ganze Gemeinde: der Chip nur fuer die Leitung.
+  const chips = inFassung(RUECKBLICK_FUER, 'web')
+    .filter((r) => r.schluessel !== RUECKBLICK_NUR_LEITUNG || istLeitung)
+    .map((r) => ({ wert: r.schluessel, label: r.label, zahl: ausgaben.filter((a) => a.typ === r.schluessel).length }));
 
   const leerText = ohneJahrgang
     // Derselbe Wortlaut wie in der Konfi-Liste: Es GIBT Rueckblicke, dieser Zugang darf sie nur nicht sehen.
-    ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
-    : reiter === 'konfi'
-      ? 'Mit „Neuer Rückblick“ legst du einen an — du wählst nur den Jahrgang, alles andere steht fest.'
-      : 'Mit „Neuer Rückblick“ legst du einen an — fürs ganze Team gemeinsam, du wählst nur das Jahr.';
+    ? RUECKBLICK_OHNE_JAHRGANG.text
+    : rueckblickLeerText('web', reiter, istLeitung);
 
   return (
     <WebSeite
       bereich="Verwaltung"
-      titel="Jahresrückblick"
-      untertitel="Ausgaben verwalten"
+      titel={RUECKBLICK_TITEL}
+      untertitel={RUECKBLICK_UNTERTITEL}
       aktionen={(
         <WebKnopf art="primaer" onClick={dialog.onOeffnen}>
           <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
@@ -176,14 +176,14 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
       </div>
 
       <div className="web-werkzeuge">
-        <WebChips<RueckblickReiter> beschriftung="Rückblicke für" chips={chips} wert={reiter} onWert={onReiter} />
+        <WebChips<RueckblickReiter> beschriftung={RUECKBLICK_FUER_BESCHRIFTUNG} chips={chips} wert={reiter} onWert={onReiter} />
       </div>
 
       <WebKarte titel={reiter === 'konfi' ? 'Konfis' : 'Team'} untertitel={`${sichtbar.length} ${sichtbar.length === 1 ? 'Ausgabe' : 'Ausgaben'}`} bund={sichtbar.length > 0}>
         {sichtbar.length === 0 ? (
           <WebLeer
             icon={ICON_FUNKELN}
-            titel={ohneJahrgang ? 'Kein Jahrgang zugewiesen' : 'Noch kein Rückblick'}
+            titel={ohneJahrgang ? RUECKBLICK_OHNE_JAHRGANG.titel : RUECKBLICK_LEER_TITEL}
             text={leerText}
           />
         ) : (

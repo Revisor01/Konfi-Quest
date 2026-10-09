@@ -35,9 +35,20 @@ import ZaehlerKugel from '../../shared/ZaehlerKugel';
 import SegmentZahl from '../../shared/SegmentZahl';
 import type { AdminChallenge, ChallengeStatus, ChallengeMark, OffenerStempel } from '../../../types/challenges';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { anzahlBeitraege, kugelTextAmEintrag, kugelTextNeueBeitraege, wartenAufFreigabe, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
+import { anzahlBeitraege, kugelTextAmEintrag, kugelTextNeueBeitraege, wartenAufFreigabe } from '../../../utils/challengeTexte';
 import { datumKurz } from '../../../utils/dateUtils';
 import { darfChallengesLoeschen } from '../../../utils/challengeRechte';
+import { inFassung, labelVon, leerVon } from '../../../seiten/beschreibung';
+import {
+  CHALLENGES_LEITUNG_LEER_TITEL,
+  CHALLENGES_LEITUNG_REITER,
+  CHALLENGES_LEITUNG_TITEL,
+  CHALLENGES_LEITUNG_UNTERTITEL,
+  CHALLENGES_OHNE_JAHRGANG,
+} from '../../../seiten/challengesLeitung';
+
+/** Die Reiter der App (seiten/challengesLeitung.ts, inFassung 'app'). */
+type AppReiter = 'aktuell' | 'geplant' | 'archiv';
 
 // Gemeinsame Verwaltungs-Ansicht für Admin UND Teamer. Bewusst ohne eigenen
 // Datenzugriff: Laden/Modale liegen in der jeweiligen Seite, hier nur Darstellung
@@ -240,9 +251,14 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Fehlt die Jahrgangs-Zuweisung, ist JEDER Reiter aus demselben Grund
   // leer — deshalb bekommen alle drei denselben erklaerenden Text.
   const ohneJahrgangLeerText = {
-    emptyTitle: 'Kein Jahrgang zugewiesen',
-    emptyMessage: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Gemeindeleitung kann das in den Einstellungen ändern.'
+    emptyTitle: CHALLENGES_OHNE_JAHRGANG.titel,
+    emptyMessage: CHALLENGES_OHNE_JAHRGANG.text,
   };
+  /** Leertitel und -text eines Reiters (seiten/challengesLeitung.ts), ohne Jahrgang derselbe Grund in allen. */
+  const leerstand = (r: AppReiter) => (ohneJahrgang ? ohneJahrgangLeerText : {
+    emptyTitle: CHALLENGES_LEITUNG_LEER_TITEL[r],
+    emptyMessage: leerVon(CHALLENGES_LEITUNG_REITER, r),
+  });
   // Loeschen ist der Leitung vorbehalten (Nutzerentscheid 28.08.2026):
   // Teamer:innen moderieren voll mit -- anlegen, bearbeiten, freigeben,
   // ausblenden, anonymisieren --, nur das Endgueltige nicht. Beim Loeschen
@@ -267,7 +283,7 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   // Reiter wie in der Konfi-Sicht (Nutzerwunsch 22.08.2026). Vorher standen
   // "Aktuelle Challenges" und "Archiv" untereinander — bei vielen beendeten
   // Challenges scrollte man lange am Archiv vorbei.
-  const [reiter, setReiter] = useState<'aktuell' | 'geplant' | 'archiv'>('aktuell');
+  const [reiter, setReiter] = useState<AppReiter>('aktuell');
 
   // Drei Reiter: Aktuell = was läuft, Geplant = was kommt (eingeplant UND
   // Entwurf), Archiv = was vorbei ist. Die Zuordnung selbst liegt in
@@ -545,16 +561,16 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Challenges"
-        subtitle="Anlegen, begleiten, mitmachen"
+        title={CHALLENGES_LEITUNG_TITEL}
+        subtitle={CHALLENGES_LEITUNG_UNTERTITEL}
         icon={ICON_CHALLENGE_GEFUELLT}
         preset="challenges"
         stats={[
           // Jede Kachel zählt ihren Reiter und springt dorthin: Aktuell nur
           // Laufende, Geplant auch die Entwürfe (Nutzerentscheid 24.08.2026).
-          { value: current.length, label: 'Aktuell', onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
-          { value: planned.length, label: 'Geplant', onClick: () => setReiter('geplant'), active: reiter === 'geplant' },
-          { value: archived.length, label: 'Archiv', onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
+          { value: current.length, label: labelVon(CHALLENGES_LEITUNG_REITER, 'aktuell'), onClick: () => setReiter('aktuell'), active: reiter === 'aktuell' },
+          { value: planned.length, label: labelVon(CHALLENGES_LEITUNG_REITER, 'geplant'), onClick: () => setReiter('geplant'), active: reiter === 'geplant' },
+          { value: archived.length, label: labelVon(CHALLENGES_LEITUNG_REITER, 'archiv'), onClick: () => setReiter('archiv'), active: reiter === 'archiv' }
         ]}
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
       />
@@ -564,17 +580,17 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={reiter}
-          onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'geplant' | 'archiv')}
+          onIonChange={(e) => setReiter(e.detail.value as AppReiter)}
         >
-          <IonSegmentButton value="aktuell">
-            <IonLabel>Aktuell<SegmentZahl anzahl={wartendJeReiter.aktuell} label={wartenAufFreigabeKurz(wartendJeReiter.aktuell)} /></IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="geplant">
-            <IonLabel>Geplant<SegmentZahl anzahl={wartendJeReiter.geplant} label={wartenAufFreigabeKurz(wartendJeReiter.geplant)} /></IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="archiv">
-            <IonLabel>Archiv<SegmentZahl anzahl={wartendJeReiter.archiv} label={wartenAufFreigabeKurz(wartendJeReiter.archiv)} /></IonLabel>
-          </IonSegmentButton>
+          {/* Reiter aus der gemeinsamen Beschreibung (seiten/challengesLeitung.ts). */}
+          {inFassung(CHALLENGES_LEITUNG_REITER, 'app').map((r) => {
+            const wartend = wartendJeReiter[r.schluessel as AppReiter];
+            return (
+              <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+                <IonLabel>{r.kurz ?? r.label}<SegmentZahl anzahl={wartend} label={r.zahlText?.(wartend)} /></IonLabel>
+              </IonSegmentButton>
+            );
+          })}
         </IonSegment>
       </div>
 
@@ -590,8 +606,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={current.length === 0}
         emptyIcon={ICON_CHALLENGE_GEFUELLT}
-        emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Gerade läuft keine Challenge'}
-        emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können'}
+        emptyTitle={leerstand('aktuell').emptyTitle}
+        emptyMessage={leerstand('aktuell').emptyMessage}
         emptyIconColor="var(--app-color-challenges)"
       >
         {current.map((challenge, index) => renderChallenge(challenge, index, current.length))}
@@ -607,8 +623,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={planned.length === 0}
         emptyIcon={ICON_UHRZEIT}
-        emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Nichts in Planung'}
-        emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Entwürfe und Challenges mit einem Startdatum in der Zukunft erscheinen hier'}
+        emptyTitle={leerstand('geplant').emptyTitle}
+        emptyMessage={leerstand('geplant').emptyMessage}
         emptyIconColor="var(--app-color-challenges)"
       >
         {planned.map((challenge, index) => renderChallenge(challenge, index, planned.length))}
@@ -623,8 +639,8 @@ const ChallengesManageView: React.FC<ChallengesManageViewProps> = ({
         iconColorClass="challenges"
         isEmpty={archived.length === 0}
         emptyIcon={ICON_ARCHIV}
-        emptyTitle={ohneJahrgang ? ohneJahrgangLeerText.emptyTitle : 'Noch nichts im Archiv'}
-        emptyMessage={ohneJahrgang ? ohneJahrgangLeerText.emptyMessage : 'Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen'}
+        emptyTitle={leerstand('archiv').emptyTitle}
+        emptyMessage={leerstand('archiv').emptyMessage}
         emptyIconColor="var(--app-color-challenges)"
       >
         {archived.map((challenge, index) => renderChallenge(challenge, index, archived.length))}

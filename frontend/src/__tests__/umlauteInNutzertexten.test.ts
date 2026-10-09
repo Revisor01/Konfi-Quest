@@ -85,7 +85,8 @@ function funde(texte: SichtbarerText[]): string[] {
     ersatzschreibungen(text).map((wort) => `${ort}: "${wort}" in „${text.slice(0, 80)}"`));
 }
 
-const APP = sichtbareTexteDerApp(['components', 'services', 'navigation', 'utils', 'contexts', 'hooks']);
+// seiten/: die gemeinsamen Beschreibungen von App und Web (Reiter, Filter, Leertexte), seit 09.10.2026.
+const APP = sichtbareTexteDerApp(['components', 'seiten', 'services', 'navigation', 'utils', 'contexts', 'hooks']);
 const BACKEND = nutzertexteDesBackendsGesamt();
 
 describe('Die Regel erkennt Ersatzschreibungen', () => {

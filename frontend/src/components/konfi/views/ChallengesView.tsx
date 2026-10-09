@@ -25,6 +25,13 @@ import type { KonfiChallenge, ChallengeMark, OffenerStempel } from '../../../typ
 import { getIconFromString } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
+import { inFassung, leerVon } from '../../../seiten/beschreibung';
+import {
+  CHALLENGES_KONFI_LEER_TITEL,
+  CHALLENGES_KONFI_REITER,
+  CHALLENGES_KONFI_TITEL,
+  CHALLENGES_KONFI_UNTERTITEL,
+} from '../../../seiten/challengesKonfi';
 
 /**
  * Loest den gespeicherten Icon-Namen einer Challenge auf (Rueckfall: Flagge).
@@ -141,8 +148,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
     <div style={{ paddingBottom: 'var(--app-abstand-weit)' }}>
 
       <SectionHeader
-        title="Challenges"
-        subtitle="Mach mit, sei dabei"
+        title={CHALLENGES_KONFI_TITEL}
+        subtitle={CHALLENGES_KONFI_UNTERTITEL}
         icon={ICON_CHALLENGE}
         preset="challenges"
         stats={[
@@ -165,12 +172,12 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
           value={reiter}
           onIonChange={(e) => setReiter(e.detail.value as 'aktuell' | 'archiv')}
         >
-          <IonSegmentButton value="aktuell">
-            <IonLabel>Aktuell</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="archiv">
-            <IonLabel>Archiv</IonLabel>
-          </IonSegmentButton>
+          {/* Reiter aus der gemeinsamen Beschreibung (seiten/challengesKonfi.ts). */}
+          {inFassung(CHALLENGES_KONFI_REITER, 'app').map((r) => (
+            <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+              <IonLabel>{r.kurz ?? r.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -190,8 +197,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <EmptyState
                 icon={ICON_CHALLENGE}
-                title="Gerade läuft keine Challenge"
-                message="Sobald eine neue Challenge startet, findest du sie hier — und bekommst eine Nachricht."
+                title={CHALLENGES_KONFI_LEER_TITEL.aktuell}
+                message={leerVon(CHALLENGES_KONFI_REITER, 'aktuell')}
                 iconColor="var(--app-color-challenges)"
               />
             </IonCardContent>
@@ -293,8 +300,8 @@ const ChallengesView: React.FC<ChallengesViewProps> = ({
             {sortedArchive.length === 0 ? (
               <EmptyState
                 icon={ICON_ARCHIV}
-                title="Noch nichts im Archiv"
-                message="Beendete Challenges kannst du hier später in Ruhe nachlesen."
+                title={CHALLENGES_KONFI_LEER_TITEL.archiv}
+                message={leerVon(CHALLENGES_KONFI_REITER, 'archiv')}
                 iconColor="var(--app-color-challenges)"
               />
             ) : (

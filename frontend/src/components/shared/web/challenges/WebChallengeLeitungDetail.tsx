@@ -54,7 +54,7 @@ import {
 } from '../../../admin/views/useChallengeLeitung';
 import { AUDIENCE_LABEL, VISIBILITY_LABEL } from '../../../admin/views/ChallengesManageView';
 import { formatRemaining, getChallengeBadgeIcon } from '../../../konfi/views/ChallengesView';
-import { anzahlBeitraege, wartenAufFreigabeKurz } from '../../../../utils/challengeTexte';
+import { anzahlBeitraege } from '../../../../utils/challengeTexte';
 import { datumUhrzeit } from '../../../../utils/dateUtils';
 import {
   MEDIEN_WORT,
@@ -69,6 +69,14 @@ import {
 } from '../../../../utils/challengesWeb';
 import type { AdminChallenge, ChallengeSubmission } from '../../../../types/challenges';
 import '../../../../theme/web/challenges.css';
+import { leerVon } from '../../../../seiten/beschreibung';
+import {
+  CHALLENGE_DETAIL_FEED_WARTET,
+  CHALLENGE_DETAIL_LEER_TITEL,
+  CHALLENGE_DETAIL_LEITUNG_REITER,
+  CHALLENGE_DETAIL_REITER_BESCHRIFTUNG,
+  detailReiterFuer,
+} from '../../../../seiten/challengeDetailLeitung';
 
 export interface WebChallengeLeitungDetailProps {
   /** Die Challenge; solange es keine gibt (laedt, Hinweis), steht der Hinweis. */
@@ -88,13 +96,6 @@ export interface WebChallengeLeitungDetailProps {
   /** Liste dieser Rolle (/admin/challenges): der Weg zurueck. */
   listenPfad: string;
 }
-
-const LEER_TEXT: Record<StatusFilter, { titel: string; text: string }> = {
-  feed: { titel: 'Keine Beiträge', text: 'Sobald Beiträge freigegeben sind, erscheinen sie hier — wie bei den Konfis.' },
-  pending: { titel: 'Keine Beiträge', text: 'Hier ist gerade nichts.' },
-  hidden: { titel: 'Keine Beiträge', text: 'Hier ist gerade nichts.' },
-  meins: { titel: 'Keine Beiträge', text: 'Hier ist gerade nichts.' },
-};
 
 const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
   challenge, hinweisArt, onBack, onNochmal, onEdit, onChanged, seitenRef, listenPfad,
@@ -155,14 +156,14 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
     const autor = challenge.author_name || challenge.author_freetext || null;
     const beendet = status === 'ended';
 
-    const chips: Array<WebChallengeChip<StatusFilter>> = [
-      { wert: 'feed', label: 'Feed', zahl: counts.approved },
-      ...(challenge.moderated
-        ? [{ wert: 'pending' as const, label: 'Wartet', zahl: counts.pending, ton: 'orange' as const, zahlText: wartenAufFreigabeKurz(counts.pending) }]
-        : []),
-      ...(challenge.visibility !== 'private' ? [{ wert: 'hidden' as const, label: 'Abgelehnt', zahl: counts.hidden }] : []),
-      { wert: 'meins', label: 'Meins', zahl: ownSubmissions.length },
-    ];
+    // Reiter aus der gemeinsamen Beschreibung (seiten/challengeDetailLeitung.ts); jeder Chip zaehlt seine Beitraege.
+    const zahlVon: Record<StatusFilter, number> = { feed: counts.approved, pending: counts.pending, hidden: counts.hidden, meins: ownSubmissions.length };
+    const chips: Array<WebChallengeChip<StatusFilter>> = detailReiterFuer(challenge).map((r) => ({
+      wert: r.schluessel,
+      label: r.label,
+      zahl: zahlVon[r.schluessel],
+      ...(r.zahlText ? { ton: 'orange' as const, zahlText: r.zahlText(zahlVon[r.schluessel]) } : {}),
+    }));
 
     const statusZeile = status === 'draft'
       ? 'Entwurf — noch nicht veröffentlicht'
@@ -217,7 +218,7 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
               <div className="web-challenge-abschnitt__kopf">
                 <h2 id={beitraegeId} className="web-karte__titel">{anzahlBeitraege(filtered.length)}</h2>
                 <WebChallengeChips<StatusFilter>
-                  beschriftung="Beiträge nach Zustand"
+                  beschriftung={CHALLENGE_DETAIL_REITER_BESCHRIFTUNG}
                   chips={chips}
                   wert={effectiveFilter}
                   onWert={setStatusFilter}
@@ -234,10 +235,10 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
                 <div className="web-karte">
                   <WebLeer
                     icon={ICON_ALBEN}
-                    titel={LEER_TEXT[effectiveFilter].titel}
+                    titel={CHALLENGE_DETAIL_LEER_TITEL}
                     text={effectiveFilter === 'feed' && counts.pending > 0
-                      ? 'Im Feed steht nur, was freigegeben ist. Beiträge, die noch warten, findest du unter „Wartet“.'
-                      : LEER_TEXT[effectiveFilter].text}
+                      ? CHALLENGE_DETAIL_FEED_WARTET
+                      : leerVon(CHALLENGE_DETAIL_LEITUNG_REITER, effectiveFilter)}
                   />
                 </div>
               ) : (

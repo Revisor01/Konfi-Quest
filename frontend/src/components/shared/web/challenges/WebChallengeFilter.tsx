@@ -1,10 +1,10 @@
 // Die Werkzeugleiste der Challenge-Listen in der Web-Fassung: Chips mit
-// Zahl (laufend, geplant, beendet, alle -- fuer Team und Leitung dazu "Wartet
-// auf Freigabe"), die Suche und, als letztes rechts neben ihr, der Umschalter
-// Liste | Kacheln; darunter Zielgruppe und Jahrgang. Die Chips
-// tragen die Zahl dessen, was unter ihnen steht; die orange Zahl heisst wie
-// am Reiter der App: so viele Challenges haben Beitraege, die auf Freigabe
-// warten.
+// Zahl (Aktuell, Geplant, Archiv, Alle -- fuer Team und Leitung dazu "Wartet
+// auf Freigabe"; Namen aus seiten/challengesLeitung.ts), die Suche und, als
+// letztes rechts neben ihr, der Umschalter Liste | Kacheln; darunter
+// Zielgruppe und Jahrgang. Die Chips tragen die Zahl der Challenges, die
+// unter ihnen stehen; die orange Zahl am Chip "Wartet auf Freigabe" zaehlt
+// die BEITRAEGE, die auf Freigabe warten -- wie die orange Zahl am Reiter der App.
 //
 // Reihen, die nichts zu waehlen haetten (nur eine Zielgruppe, nur ein
 // Jahrgang), blendet die Seite gar nicht erst ein.
@@ -16,7 +16,9 @@ import type { WebAnsicht } from '../../../web/useAnsicht';
 import WebChallengeChips from './WebChallengeChips';
 import WebAuswahl from '../../../web/WebAuswahl';
 import { AUDIENCE_LABEL } from '../../../admin/views/ChallengesManageView';
-import { FILTER_TEXT, type ListenFilter } from '../../../../utils/challengesWeb';
+import type { ListenFilter } from '../../../../utils/challengesWeb';
+import { labelVon } from '../../../../seiten/beschreibung';
+import { CHALLENGES_LEITUNG_REITER, CHALLENGES_REITER_BESCHRIFTUNG } from '../../../../seiten/challengesLeitung';
 import type { ChallengeAudience, ChallengeJahrgang } from '../../../../types/challenges';
 import '../../../../theme/web/challenges.css';
 
@@ -72,10 +74,10 @@ const WebChallengeFilter: React.FC<WebChallengeFilterProps> = ({
     <div className="web-challenge-filter">
       <div className="web-challenge-filter__zeile">
         <WebChallengeChips<ListenFilter>
-          beschriftung="Challenges nach Zustand"
+          beschriftung={CHALLENGES_REITER_BESCHRIFTUNG}
           wert={filter}
           onWert={onFilter}
-          chips={chips.map((c) => ({ wert: c.wert, label: FILTER_TEXT[c.wert], zahl: c.zahl, ton: c.ton, zahlText: c.zahlText }))}
+          chips={chips.map((c) => ({ wert: c.wert, label: labelVon(CHALLENGES_LEITUNG_REITER, c.wert), zahl: c.zahl, ton: c.ton, zahlText: c.zahlText }))}
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Challenges durchsuchen" platzhalter="Challenges suchen" wert={suche} onWert={onSuche} />

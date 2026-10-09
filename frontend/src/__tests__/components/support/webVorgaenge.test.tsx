@@ -569,7 +569,8 @@ describe('Vorgänge: zwei Gesichter, eine Seite', () => {
     render(<SupportVorgaengePage />);
     expect(await screen.findByText('Chat zeigt nichts Neues')).toBeInTheDocument();
     expect(screen.queryByRole('table')).toBeNull();
-    expect(screen.getByRole('tablist', { name: 'Stand' })).toBeInTheDocument();
+    // Dieselbe Beschriftung wie die Chips im Browser (seiten/supportVorgaenge.ts).
+    expect(screen.getByRole('tablist', { name: 'Vorgänge nach Stand' })).toBeInTheDocument();
   });
 
   it('ohne Super-Admin-Recht: Hinweis, kein Abruf', () => {

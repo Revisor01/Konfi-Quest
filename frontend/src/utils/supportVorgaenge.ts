@@ -27,6 +27,8 @@
 import type { GemeindeAnfrage, MailAnhang, MailNachricht, Postfach } from '../types/support';
 import { suchbegriff, suchTreffer, type PillTon } from './supportWeb';
 import { istEmail } from './supportAnfragen';
+import { schluesselIn, wahlVon } from '../seiten/beschreibung';
+import { VORGANG_STAENDE, type VorgangStand } from '../seiten/supportVorgaenge';
 
 // --- Auswahlwerte ---------------------------------------------------------------
 
@@ -316,10 +318,10 @@ export function gemeindeAngabeVon(v: Pick<VorgangDetail, 'gemeinde_angabe' | 'an
  * In Arbeit und Wartet je Status; Archiv = alles Archivierte, auch die
  * erledigten.
  */
-export type VorgangFilter = 'offen' | 'neu' | 'in_arbeit' | 'wartet' | 'archiv';
+export type VorgangFilter = VorgangStand;
 
-/** Die Werte, die `?filter=` in der Adresse annimmt. */
-export const VORGANG_FILTER: readonly VorgangFilter[] = ['offen', 'neu', 'in_arbeit', 'wartet', 'archiv'];
+/** Die Werte, die `?filter=` in der Adresse annimmt (seiten/supportVorgaenge.ts). */
+export const VORGANG_FILTER: readonly VorgangFilter[] = schluesselIn(VORGANG_STAENDE, 'web');
 
 /** Gehoert der Filter zur Liste der Archivierten (eigener Abruf)? */
 export const istArchivFilter = (filter: VorgangFilter): boolean => filter === 'archiv';
@@ -332,12 +334,8 @@ export const brauchtAufmerksamkeit = (v: Pick<Vorgang, 'status' | 'ungelesen' | 
 
 /** Zahl je Filter aus der Liste der offenen Vorgaenge. */
 export function vorgaengeZaehlen(offene: readonly Vorgang[]): Record<Exclude<VorgangFilter, 'archiv'>, number> {
-  return {
-    offen: offene.length,
-    neu: offene.filter((v) => v.status === 'neu').length,
-    in_arbeit: offene.filter((v) => v.status === 'in_arbeit').length,
-    wartet: offene.filter((v) => v.status === 'wartet').length,
-  };
+  const zahl = (f: Exclude<VorgangFilter, 'archiv'>) => offene.filter((v) => wahlVon(VORGANG_STAENDE, f).passt?.(v) ?? true).length;
+  return { offen: zahl('offen'), neu: zahl('neu'), in_arbeit: zahl('in_arbeit'), wartet: zahl('wartet') };
 }
 
 export interface VorgangAuswahl {
@@ -372,10 +370,9 @@ export function vorgaengeSortieren<T extends Pick<Vorgang, 'id' | 'letzte_aktivi
  */
 export function vorgaengeFiltern(quelle: readonly Vorgang[], auswahl: VorgangAuswahl): Vorgang[] {
   const s = suchbegriff(auswahl.suche);
+  const stand = wahlVon(VORGANG_STAENDE, auswahl.filter).passt;
   return quelle.filter((v) => {
-    if (auswahl.filter === 'neu' && v.status !== 'neu') return false;
-    if (auswahl.filter === 'in_arbeit' && v.status !== 'in_arbeit') return false;
-    if (auswahl.filter === 'wartet' && v.status !== 'wartet') return false;
+    if (stand && !stand(v)) return false;
     if (auswahl.art !== 'alle' && v.art !== auswahl.art) return false;
     if (auswahl.gemeinde !== 'alle' && String(v.organization_id ?? '') !== auswahl.gemeinde) return false;
     return !s || vorgangSuchtexte(v).some((t) => suchTreffer(t, auswahl.suche).length > 0);

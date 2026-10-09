@@ -150,7 +150,9 @@ passiert, steht unter
 Auch du meldest eigene Aktivitäten: Aktivität wählen, Datum, gern ein Foto als
 Nachweis. Der
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
-derselbe wie bei den Konfis.
+derselbe wie bei den Konfis. Drei Reiter zeigen den Stand: **Offen**,
+**Angerechnet**, **Abgelehnt**; die App beginnt bei **Offen**, im Browser
+stehen zuerst **Alle**.
 
 ### Im Browser Events durchsuchen und zusagen
 

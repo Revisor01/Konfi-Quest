@@ -44,6 +44,7 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import { raumAnzeigeName, raumArt, raumFarbe, raumSymbol, zeitKurz } from './chatRaeume';
 import { useChatUebersicht } from './useChatUebersicht';
+import { CHAT_LEER, chatReiterFuer } from '../../seiten/chats';
 
 interface ChatOverviewProps {
   onSelectRoom: (room: ChatRoomOverview) => void;
@@ -160,12 +161,10 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
             ein, also gegen die eigene Erwartung. */}
         <div className="app-segment-wrapper">
           <IonSegment value={filterType} onIonChange={(e) => setFilterType(String(e.detail.value))}>
-            <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="ungelesen"><IonLabel>Ungelesen</IonLabel></IonSegmentButton>
-            <IonSegmentButton value="konfis"><IonLabel>Konfis</IonLabel></IonSegmentButton>
-            {gehoertZumTeam && (
-              <IonSegmentButton value="team"><IonLabel>Team</IonLabel></IonSegmentButton>
-            )}
+            {/* Reiter aus der gemeinsamen Beschreibung (seiten/chats.ts); "Team" nur fuers Team. */}
+            {chatReiterFuer(gehoertZumTeam).map((r) => (
+              <IonSegmentButton key={r.schluessel} value={r.schluessel}><IonLabel>{r.kurz ?? r.label}</IonLabel></IonSegmentButton>
+            ))}
           </IonSegment>
         </div>
 
@@ -209,8 +208,11 @@ const ChatOverview = React.forwardRef<ChatOverviewRef, ChatOverviewProps>(({ onS
               {filteredRooms.length === 0 ? (
                 <EmptyState
                   icon={ICON_CHATS_GEFUELLT}
-                  title="Keine Chaträume gefunden"
-                  message="Erstelle deinen ersten Chat!"
+                  // Wie im Browser: ohne Raeume die Einladung, mit Suche oder
+                  // Reiter der Hinweis darauf (seiten/chats.ts). Bis 09.10.2026
+                  // stand hier immer "Erstelle deinen ersten Chat!".
+                  title={(searchText.trim() !== '' || filterType !== 'alle') ? CHAT_LEER.gefiltert.titel : CHAT_LEER.keine.titel}
+                  message={(searchText.trim() !== '' || filterType !== 'alle') ? CHAT_LEER.gefiltert.text : CHAT_LEER.keine.text}
                   iconColor="var(--app-color-chat)"
                 />
               ) : (

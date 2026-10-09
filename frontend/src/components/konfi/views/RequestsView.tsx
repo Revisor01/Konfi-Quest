@@ -35,14 +35,18 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 // unterschiedlicher Nullbarkeit; Ionic 9 typisiert useIonModal strenger und
 // hat die Widersprueche aufgedeckt.
 import type { ActivityRequest } from '../modals/RequestDetailModal';
+import { inFassung, wahlVon } from '../../../seiten/beschreibung';
+import { EIGENE_ANTRAEGE_LEER, EIGENE_ANTRAG_STATUS, MITGLIED_ANTRAEGE_TITEL, MITGLIED_ANTRAEGE_UNTERTITEL } from '../../../seiten/mitmachenMitglied';
+import type { EigenerAntragFilter } from '../../shared/web/termine/terminFilter';
 
 
 interface RequestsViewProps {
+  /** ALLE eigenen Aktivitaeten -- den Reiter waehlt die Ansicht selbst, die Kacheln zaehlen ueber alle. */
   requests: ActivityRequest[];
   onDeleteRequest?: (request: ActivityRequest) => void;
   onSelectRequest?: (request: ActivityRequest) => void;
-  activeTab: 'all' | 'pending' | 'approved' | 'rejected';
-  onTabChange: (tab: 'all' | 'pending' | 'approved' | 'rejected') => void;
+  activeTab: EigenerAntragFilter;
+  onTabChange: (tab: EigenerAntragFilter) => void;
   formatDate: (dateString: string) => string;
   // Teamer-Aktivitäten haben keine Gottesdienst/Gemeinde-Punkte-Logik —
   // im Teamer-Modus wird stattdessen "Team" gezeigt und die Punktzahl ausgeblendet.
@@ -64,15 +68,18 @@ const RequestsView: React.FC<RequestsViewProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('');
 
-  const filteredRequests = requests.filter(r => {
+  // Reiter und Kacheln aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts).
+  // Bis 09.10.2026 bekam die Ansicht nur die Liste des gewaehlten Reiters,
+  // die Kacheln der anderen Staende standen deshalb immer auf 0.
+  const reiter = inFassung(EIGENE_ANTRAG_STATUS, 'app');
+  const imStand = (schluessel: EigenerAntragFilter) =>
+    requests.filter((r) => wahlVon(EIGENE_ANTRAG_STATUS, schluessel).passt?.(r) ?? true);
+
+  const filteredRequests = imStand(activeTab).filter(r => {
     if (!searchText.trim()) return true;
     const q = searchText.toLowerCase();
     return (r.activity_name || '').toLowerCase().includes(q);
   });
-
-  const pendingRequests = requests.filter(r => r.status === 'pending');
-  const approvedRequests = requests.filter(r => r.status === 'approved');
-  const rejectedRequests = requests.filter(r => r.status === 'rejected');
 
   // Status-Infos für einen Request
   const getRequestStatusInfo = (request: ActivityRequest) => {
@@ -91,27 +98,43 @@ const RequestsView: React.FC<RequestsViewProps> = ({
   return (
     <div>
       <SectionHeader
-        title="Deine Aktivitäten"
-        subtitle="Was du gemeldet hast"
+        title={MITGLIED_ANTRAEGE_TITEL}
+        subtitle={MITGLIED_ANTRAEGE_UNTERTITEL}
         icon={ICON_ZUSAGE_GEFUELLT}
         preset="konfi-requests"
-        stats={[
-          // Die Kacheln entsprechen den drei Reitern und schalten dorthin.
-          { value: pendingRequests.length, label: 'Offen', onClick: () => onTabChange('pending'), active: activeTab === 'pending' },
-          { value: approvedRequests.length, label: 'Erledigt', onClick: () => onTabChange('approved'), active: activeTab === 'approved' },
-          { value: rejectedRequests.length, label: 'Abgelehnt', onClick: () => onTabChange('rejected'), active: activeTab === 'rejected' }
-        ]}
+        // Die Kacheln entsprechen den Reitern und schalten dorthin.
+        stats={reiter.map((r) => ({
+          value: imStand(r.schluessel).length,
+          label: r.label,
+          onClick: () => onTabChange(r.schluessel),
+          active: activeTab === r.schluessel,
+        }))}
       />
 
       {headerSlot}
 
-      {/* Suche & Filter — wie Chat-Pattern */}
+      {/* Reiter ZUERST, Suche darunter (Simon, 06.09.2026): erst eingrenzen,
+          dann darin suchen -- wie bei den Events und im Chat. */}
+      <div className="app-segment-wrapper">
+        <IonSegment
+          value={activeTab}
+          onIonChange={(e) => onTabChange(e.detail.value as EigenerAntragFilter)}
+        >
+          {reiter.map((r) => (
+            <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+              <IonLabel>{r.kurz ?? r.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
+        </IonSegment>
+      </div>
+
+      {/* Suche -- steht UNTER den Reitern, siehe oben */}
       <IonList inset={true} style={{ margin: 'var(--app-abstand-basis)' }}>
         <IonListHeader>
           <div className="app-section-icon app-section-icon--success">
             <IonIcon icon={ICON_FILTER} />
           </div>
-          <IonLabel>Suche & Filter</IonLabel>
+          <IonLabel>Suche</IonLabel>
         </IonListHeader>
         <IonItemGroup>
           <IonItem>
@@ -125,24 +148,6 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         </IonItemGroup>
       </IonList>
 
-      {/* Tab Navigation */}
-      <div className="app-segment-wrapper">
-        <IonSegment
-          value={activeTab}
-          onIonChange={(e) => onTabChange(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
-        >
-          <IonSegmentButton value="pending">
-            <IonLabel>Offen</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="approved">
-            <IonLabel>Angerechnet</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="rejected">
-            <IonLabel>Abgelehnt</IonLabel>
-          </IonSegmentButton>
-        </IonSegment>
-      </div>
-
       {/* Aktivitäten-Liste — neue Aktivitäten laufen ueber den Plus-Button im Header */}
       <ListSection
         icon={ICON_TEXTDOKUMENT}
@@ -151,8 +156,8 @@ const RequestsView: React.FC<RequestsViewProps> = ({
         iconColorClass="success"
         isEmpty={filteredRequests.length === 0}
         emptyIcon={ICON_TEXTDOKUMENT}
-        emptyTitle="Keine Aktivitäten gefunden"
-        emptyMessage="Noch keine Aktivitäten gemeldet"
+        emptyTitle={EIGENE_ANTRAEGE_LEER.titel}
+        emptyMessage={EIGENE_ANTRAEGE_LEER.text}
         emptyIconColor="var(--app-color-success-strong)"
       >
         {filteredRequests.map((request) => {

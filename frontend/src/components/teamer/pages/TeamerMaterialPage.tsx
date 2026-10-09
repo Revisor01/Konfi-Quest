@@ -59,7 +59,9 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { materialInhalt, trackHandlung } from '../../../services/analytics';
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
-import WebTeamerMaterial from '../web/material/WebTeamerMaterial';
+import WebTeamerMaterial from '../web/material/WebTeamerMaterial';import { suchbegriff } from '../../../utils/supportWeb';
+import { MATERIAL_ALLE_JAHRGAENGE, MATERIAL_TEAM_TITEL, MATERIAL_TEAM_UNTERTITEL, materialPasst, materialTeamLeer } from '../../../seiten/materialTeam';
+
 
 interface Material {
   id: number;
@@ -149,23 +151,11 @@ const TeamerMaterialPage: React.FC = () => {
 
   // Clientseitiges Filtern nach Suche und Jahrgang
   const materials = useMemo(() => {
-    let filtered = allMaterials || [];
-    if (search) {
-      const lower = search.toLowerCase();
-      filtered = filtered.filter(m =>
-        m.title.toLowerCase().includes(lower) ||
-        (m.description && m.description.toLowerCase().includes(lower))
-      );
-    }
-    if (activeJahrgangId) {
-      // Die Zuordnung kommt als Array `jahrgaenge` an jedem Eintrag
-      // (material.js:177). Frueher stand hier `m.jahrgang_id` -- ein Feld,
-      // das GET /material gar nicht liefert (Legacy-Spalte, seit Migration
-      // 064 durch material_jahrgaenge ersetzt). Der Filter fand deshalb
-      // IMMER nichts.
-      filtered = filtered.filter(m => m.jahrgaenge?.some(j => j.id === activeJahrgangId));
-    }
-    return filtered;
+    // Die Zuordnung kommt als Array `jahrgaenge` an jedem Eintrag
+    // (material.js:177; die Legacy-Spalte jahrgang_id liefert GET /material
+    // nicht). Suche und Jahrgang aus der gemeinsamen Beschreibung
+    // (seiten/materialTeam.ts) -- dieselbe Liste in App und Browser.
+    return (allMaterials || []).filter((m) => materialPasst(m, search, activeJahrgangId));
   }, [allMaterials, search, activeJahrgangId]);
 
   // MATERIAL FUER ALLE (Entscheidung Simon, 31.08.2026)
@@ -174,6 +164,9 @@ const TeamerMaterialPage: React.FC = () => {
   // absichtlich fuer das ganze Team gedacht ist. Gecachte Eintraege von vor
   // der Umstellung liefern das Feld nicht -- die landen im unteren
   // Abschnitt, nie in einem Fehler.
+  // Grenzen Suche oder Jahrgang die Liste ein? Dann sagt der Leerzustand das.
+  const eingegrenzt = suchbegriff(search) !== '' || activeJahrgangId !== undefined;
+
   const globaleMaterials = useMemo(
     () => materials.filter(m => m.ist_global === true),
     [materials]
@@ -574,10 +567,10 @@ const TeamerMaterialPage: React.FC = () => {
     <IonPage>
       {/* Zurueck nur, wenn Material NICHT als eigener Reiter laeuft --
           dann kam man von der Startseite hierher. */}
-      <AppKopfzeile titel="Material" onZurueck={istEigenerTab ? undefined : () => window.history.back()} />
+      <AppKopfzeile titel={MATERIAL_TEAM_TITEL} onZurueck={istEigenerTab ? undefined : () => window.history.back()} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Material" />
+        <AppKopfzeileGross titel={MATERIAL_TEAM_TITEL} />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await Promise.all([refreshMaterial(), refreshJahrgaenge()]);
@@ -591,8 +584,8 @@ const TeamerMaterialPage: React.FC = () => {
         ) : (
           <>
             <SectionHeader
-              title="Material"
-              subtitle="Dokumente und Dateien"
+              title={MATERIAL_TEAM_TITEL}
+              subtitle={MATERIAL_TEAM_UNTERTITEL}
               icon={ICON_DATEI_GEFUELLT}
               colors={{ primary: 'var(--app-color-material)', secondary: 'var(--app-color-material-dunkel)' }}
               stats={(() => {
@@ -636,7 +629,7 @@ const TeamerMaterialPage: React.FC = () => {
                       placeholder="Jahrgang"
                       style={{ width: '100%' }}
                     >
-                      <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                      <IonSelectOption value="alle">{MATERIAL_ALLE_JAHRGAENGE}</IonSelectOption>
                       {jahrgaenge.map(jg => (
                         <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
                       ))}
@@ -660,8 +653,8 @@ const TeamerMaterialPage: React.FC = () => {
                   <IonCardContent>
                     <EmptyState
                       icon={ICON_DATEI}
-                      title="Keine Materialien"
-                      message="Noch keine Materialien vorhanden."
+                      title={materialTeamLeer(eingegrenzt).titel}
+                      message={materialTeamLeer(eingegrenzt).text}
                       iconColor="var(--app-color-material)"
                     />
                   </IonCardContent>

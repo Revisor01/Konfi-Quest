@@ -35,6 +35,7 @@ import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
 import { segmentAusAdresse } from '../web/termine/typen';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 import { trackBereich } from '../../../services/analytics';
+import { LEITUNG_ANTRAEGE_TITEL, LEITUNG_BEREICHE, LEITUNG_EVENTS_TITEL } from '../../../seiten/mitmachenLeitung';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -763,7 +764,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   const isAntraege = mainSegment === 'antraege';
   // Der Titel folgt dem Segment — siehe KonfiEventsPage: im iOS-Modus
   // nachgemessen, der Large-Title springt beim Umschalten nicht mehr.
-  const pageTitle = isAntraege ? 'Aktivitäten' : 'Events';
+  const pageTitle = isAntraege ? LEITUNG_ANTRAEGE_TITEL : LEITUNG_EVENTS_TITEL;
 
   // Oberste Segment-Ebene (Events | Aktivitäten) + einmaliger Umzugs-Hinweis. Wird
   // als headerSlot an die jeweils aktive View gereicht und dort DIREKT UNTER
@@ -775,12 +776,15 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           value={mainSegment}
           onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
-          <IonSegmentButton value="events">
-            <IonLabel>Events<SegmentZahl anzahl={pendingEventsCount} label={pendingEventsCount === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung'} /></IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="antraege">
-            <IonLabel>Aktivitäten<SegmentZahl anzahl={pendingRequestsCount} label={pendingRequestsCount === 1 ? 'Antrag wartet auf Entscheidung' : 'Anträge warten auf Entscheidung'} /></IonLabel>
-          </IonSegmentButton>
+          {/* Bereiche aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts). */}
+          {LEITUNG_BEREICHE.map((b) => {
+            const wartend = b.schluessel === 'events' ? pendingEventsCount : pendingRequestsCount;
+            return (
+              <IonSegmentButton key={b.schluessel} value={b.schluessel}>
+                <IonLabel>{b.label}<SegmentZahl anzahl={wartend} label={b.zahlText?.(wartend)} /></IonLabel>
+              </IonSegmentButton>
+            );
+          })}
         </IonSegment>
       </div>
 

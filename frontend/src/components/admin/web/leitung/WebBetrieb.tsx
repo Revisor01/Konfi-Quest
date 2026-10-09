@@ -1,7 +1,8 @@
 // Betrieb in der Web-Fassung, /admin/metrics (Browser ab 992 px;
 // docs/planung/web-alle-bereiche.md, Entscheidung 6): zuerst das Urteil "Laeuft
-// gerade alles?", dann die Kennzahlen und vier Reiter -- Ueberblick, Fehler,
-// Routen, Verlauf -- mit Karten und Tabellen statt langer Listen.
+// gerade alles?", dann die Kennzahlen und die Reiter -- Ueberblick, Fehler,
+// Routen, Verlauf, Sprueche (seiten/betrieb.ts) -- mit Karten und Tabellen
+// statt langer Listen.
 //
 // Laden, Aktualisieren (alle 5 Sekunden) und alle Urteile kommen von der Seite
 // (AdminMetricsPage): Sie holt GET /metrics, rechnet Zustand, Apdex, den
@@ -27,6 +28,8 @@ import WebPill from '../../../web/WebPill';
 import WebSchalter from '../../../web/WebSchalter';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
+import { inFassung } from '../../../../seiten/beschreibung';
+import { BETRIEB_REITER, BETRIEB_REITER_BESCHRIFTUNG, ROUTEN_SORTIERUNG, ROUTEN_SORTIERUNG_BESCHRIFTUNG } from '../../../../seiten/betrieb';
 import type { BetriebsAnsicht, BetriebsCspGruppe, BetriebsEinzelfehler, BetriebsFehlerGruppe, BetriebsReiter } from './betriebTypen';
 
 export interface WebBetriebProps {
@@ -263,12 +266,13 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
     { schluessel: 'dauer', kopf: 'Langsamste', zahl: true, breite: '120px', sortWert: (d) => d.worstP95, zelle: (d) => <span style={{ color: msColor(d.worstP95) }}>{fmtDauer(d.worstP95)}</span> },
   ];
 
+  // Reiter aus der gemeinsamen Beschreibung; die Fehlerzahl rot am Chip, nur wenn es Fehler gibt.
   const chips = [
-    { wert: 'ueberblick' as const, label: 'Überblick' },
-    { wert: 'fehler' as const, label: 'Fehler', ...(gruppen.length > 0 ? { zahl: gruppen.length, rot: true } : {}) },
-    { wert: 'routen' as const, label: 'Routen' },
-    { wert: 'verlauf' as const, label: 'Verlauf' },
-    { wert: 'sprueche' as const, label: 'Sprüche' },
+    ...inFassung(BETRIEB_REITER, 'web').map((r) => ({
+      wert: r.schluessel,
+      label: r.label,
+      ...(r.zahlText && gruppen.length > 0 ? { zahl: gruppen.length, rot: true, zahlText: r.zahlText(gruppen.length) } : {}),
+    })),
   ];
 
   const { apdex, statusKlassen, replicas, ueber1s, nutzer } = snap;
@@ -399,8 +403,8 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
     <>
       <div className="web-werkzeuge">
         <WebChips<RoutenSortierung>
-          beschriftung="Sortierung der Routen"
-          chips={[{ wert: 'langsam', label: 'Langsamste' }, { wert: 'haeufig', label: 'Häufigste' }]}
+          beschriftung={ROUTEN_SORTIERUNG_BESCHRIFTUNG}
+          chips={inFassung(ROUTEN_SORTIERUNG, 'web').map((s) => ({ wert: s.schluessel, label: s.label }))}
           wert={p.routenSicht}
           onWert={p.onRoutenSicht}
         />
@@ -472,7 +476,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
       </div>
 
       <div className="web-werkzeuge">
-        <WebChips<BetriebsReiter> beschriftung="Ansicht" chips={chips} wert={p.tab} onWert={p.onTab} />
+        <WebChips<BetriebsReiter> beschriftung={BETRIEB_REITER_BESCHRIFTUNG} chips={chips} wert={p.tab} onWert={p.onTab} />
       </div>
 
       {p.tab === 'ueberblick' && ueberblick}

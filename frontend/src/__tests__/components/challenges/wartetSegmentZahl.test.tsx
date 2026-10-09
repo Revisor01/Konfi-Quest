@@ -113,7 +113,9 @@ describe('Reiter „Wartet": orange Zahl der wartenden Beitraege', () => {
     const liste = lies('src/components/admin/views/ChallengesManageView.tsx');
     expect(modal).toContain("import SegmentZahl from '../../shared/SegmentZahl'");
     expect(liste).toContain("import SegmentZahl from '../../shared/SegmentZahl'");
-    expect(modal).toContain('<SegmentZahl anzahl={counts.pending} label={wartenAufFreigabeKurz(counts.pending)} />');
+    // Der Vorlesesatz kommt seit 09.10.2026 vom Reiter der Beschreibung
+    // (seiten/challengeDetailLeitung.ts: wartenAufFreigabeKurz); gerendert geprueft unten.
+    expect(modal).toContain('<SegmentZahl anzahl={counts.pending} label={r.zahlText(counts.pending)} />');
     // Keine eigene Fassung der Klasse im Modal.
     expect(modal).not.toContain('app-segment-zahl');
   });

@@ -240,10 +240,10 @@ describe('Challenges (Web): rote und orange Zahl wie in der App', () => {
 describe('Challenges (Web): Filter, Zielgruppe, Jahrgang und Suche', () => {
   it('Laufend ist voreingestellt; die Chips tragen die Zahl je Zustand', () => {
     zeigen();
-    expect(chip(/^Laufend/)).toHaveAttribute('aria-pressed', 'true');
-    expect(chip(/^Laufend/)).toHaveTextContent('3');
+    expect(chip(/^Aktuell/)).toHaveAttribute('aria-pressed', 'true');
+    expect(chip(/^Aktuell/)).toHaveTextContent('3');
     expect(chip(/^Geplant/)).toHaveTextContent('2');
-    expect(chip(/^Beendet/)).toHaveTextContent('1');
+    expect(chip(/^Archiv/)).toHaveTextContent('1');
     expect(chip(/^Alle/)).toHaveTextContent('6');
     expect(titel()).toHaveLength(3);
   });
@@ -252,7 +252,7 @@ describe('Challenges (Web): Filter, Zielgruppe, Jahrgang und Suche', () => {
     zeigen();
     waehle(/^Geplant/);
     expect(titel().sort()).toEqual(['Bibelvers des Monats', 'Weihnachtskarten']);
-    waehle(/^Beendet/);
+    waehle(/^Archiv/);
     expect(titel()).toEqual(['Sommerrückblick']);
     waehle(/^Alle/);
     expect(titel()).toHaveLength(6);
@@ -300,7 +300,7 @@ describe('Challenges (Web): Filter, Zielgruppe, Jahrgang und Suche', () => {
     expect(titel()).toEqual(['Fürbitten zum Erntedank']);
     expect(karten()[0].querySelector('mark')).toHaveTextContent('Fürbitt');
     expect(chip(/^Alle/)).toHaveTextContent('1');
-    expect(chip(/^Beendet/)).toHaveTextContent('0');
+    expect(chip(/^Archiv/)).toHaveTextContent('0');
     // Stempelname
     fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'fotograf' } });
     expect(titel()).toEqual(['Mein Lieblingsplatz']);
@@ -360,12 +360,12 @@ describe('Challenges (Web): die Uhr', () => {
     h.liste = [challenge(51, { title: 'Endet gleich', starts_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(), ends_at: new Date(Date.now() + 1200).toISOString() })];
     zeigen();
     expect(titel()).toEqual(['Endet gleich']);
-    expect(chip(/^Laufend/)).toHaveTextContent('1');
-    expect(chip(/^Beendet/)).toHaveTextContent('0');
-    await waitFor(() => expect(chip(/^Beendet/)).toHaveTextContent('1'), { timeout: 4000 });
-    expect(chip(/^Laufend/)).toHaveTextContent('0');
+    expect(chip(/^Aktuell/)).toHaveTextContent('1');
+    expect(chip(/^Archiv/)).toHaveTextContent('0');
+    await waitFor(() => expect(chip(/^Archiv/)).toHaveTextContent('1'), { timeout: 4000 });
+    expect(chip(/^Aktuell/)).toHaveTextContent('0');
     expect(screen.getByRole('heading', { level: 3, name: 'Gerade läuft keine Challenge' })).toBeInTheDocument();
-    fireEvent.click(chip(/^Beendet/));
+    fireEvent.click(chip(/^Archiv/));
     expect(titel()).toEqual(['Endet gleich']);
   });
 });
@@ -396,7 +396,7 @@ describe('Challenges (Web): leere Zustaende, Stempel und Laden', () => {
     zeigen();
     waehle(/^Geplant/);
     expect(screen.getByRole('heading', { level: 3, name: 'Nichts in Planung' })).toBeInTheDocument();
-    waehle(/^Beendet/);
+    waehle(/^Archiv/);
     expect(screen.getByRole('heading', { level: 3, name: 'Noch nichts im Archiv' })).toBeInTheDocument();
     waehle(/^Wartet auf Freigabe/);
     expect(screen.getByRole('heading', { level: 3, name: 'Nichts wartet auf Freigabe' })).toBeInTheDocument();
@@ -596,7 +596,7 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(zeilenTitel()).toEqual(['Mein Lieblingsplatz']);
       // Die Zaehler an den Chips folgen der Suche, wie bei den Karten.
       expect(chip(/^Alle/)).toHaveTextContent('1');
-      expect(chip(/^Beendet/)).toHaveTextContent('0');
+      expect(chip(/^Archiv/)).toHaveTextContent('0');
       waehleAnsicht('Kacheln');
       expect(titel()).toEqual(['Mein Lieblingsplatz']);
     });

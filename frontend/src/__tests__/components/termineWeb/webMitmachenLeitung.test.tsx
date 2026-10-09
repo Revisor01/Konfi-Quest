@@ -123,7 +123,8 @@ describe('Events: Zeitraum', () => {
   it('die Chips zählen die vier Zeiträume; "Verbuchen" trägt die Zahl auch für Vorleseprogramme', async () => {
     await oeffneEvents();
     expect(chip(/^Aktuell/)).toHaveTextContent(/^Aktuell4$/);
-    expect(chip(/^Verbuchen/)).toHaveTextContent(/^Verbuchen1 zum Verbuchen$/);
+    // Derselbe Vorlesesatz wie an der orangen Zahl der App (seiten/mitmachenLeitung.ts, 09.10.2026).
+    expect(chip(/^Verbuchen/)).toHaveTextContent(/^Verbuchen1 Event wartet auf Verbuchung$/);
     expect(chip(/^Vergangen/)).toHaveTextContent(/^Vergangen1$/);
     expect(chip(/^Abgesagt/)).toHaveTextContent(/^Abgesagt1$/);
     expect(chip(/^Aktuell/)).toHaveAttribute('aria-pressed', 'true');
@@ -407,7 +408,7 @@ describe('Ansicht: Liste und Kacheln', () => {
     await kachelnOeffnen();
     expect(kartenNamen()).toEqual(['Sonntagsgottesdienst', 'Teamabend', 'Fahrradtour', 'Konfi-Tag']);
     expect(chip(/^Aktuell/)).toHaveTextContent(/^Aktuell4$/);
-    expect(chip(/^Verbuchen/)).toHaveTextContent(/^Verbuchen1 zum Verbuchen$/);
+    expect(chip(/^Verbuchen/)).toHaveTextContent(/^Verbuchen1 Event wartet auf Verbuchung$/);
 
     fireEvent.click(chip(/^Verbuchen/));
     expect(kartenNamen()).toEqual(['Gemeindefest']);

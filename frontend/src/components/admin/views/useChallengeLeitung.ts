@@ -33,6 +33,8 @@ import type {
   KonfiChallenge,
   ChallengeSubmission
 } from '../../../types/challenges';
+import { wahlVon } from '../../../seiten/beschreibung';
+import { CHALLENGE_DETAIL_LEITUNG_REITER, type ChallengeDetailLeitungReiter } from '../../../seiten/challengeDetailLeitung';
 
 // Die Logik der Challenge-Seite fuer Team und Leitung -- Beitraege laden,
 // moderieren, einreichen, exportieren -- an EINER Stelle fuer die Ansicht der
@@ -123,7 +125,7 @@ export const getStatusBadge = (
 // "Ausgeblendet" das Weggeraeumte. Ein "Alle"-Reiter, der wartende und
 // ausgeblendete Beitraege in den normalen Feed mischt, existiert bewusst
 // nicht mehr.
-export type StatusFilter = 'feed' | 'pending' | 'hidden' | 'meins';
+export type StatusFilter = ChallengeDetailLeitungReiter;
 
 
 interface ChallengeLeitungOptionen {
@@ -253,11 +255,10 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
     // frueher zusaetzlich in einem Block oben — das war doppelt und machte die
     // Seite zu lang (User-Hinweis 26.08.2026).
     const active = effectiveFilter;
-    const list = active === 'feed'
-      ? submissions.filter((s) => s.moderation_status === 'approved')
-      : active === 'meins'
-        ? submissions.filter((s) => Boolean(user?.id) && s.user_id === user?.id)
-        : submissions.filter((s) => s.moderation_status === active);
+    // Die Praedikate von Feed, Wartet und Abgelehnt stehen am Reiter (seiten/challengeDetailLeitung.ts).
+    const list = active === 'meins'
+      ? submissions.filter((s) => Boolean(user?.id) && s.user_id === user?.id)
+      : submissions.filter((s) => wahlVon(CHALLENGE_DETAIL_LEITUNG_REITER, active).passt?.(s) ?? true);
     return list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [submissions, effectiveFilter, user?.id]);
 

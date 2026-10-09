@@ -1,5 +1,5 @@
-// Die Raumliste links in der Web-Fassung des Chats: Suche, Reiter mit roter
-// Zahl, die Raeume als echte Links -- mit Kreis in der Farbe der Art, Name,
+// Die Raumliste links in der Web-Fassung des Chats: Reiter mit roter Zahl,
+// darunter die Suche, die Raeume als echte Links -- mit Kreis in der Farbe der Art, Name,
 // Art (Gruppe, Direkt, Team ...), letzter Nachricht, Zeit und roter Zahl.
 // Daten, Reiter, Suche und das Loeschrecht kommen aus useChatUebersicht, wie
 // in der App-Uebersicht (components/chat/ChatOverview.tsx).
@@ -7,13 +7,13 @@
 import React, { useLayoutEffect, useRef } from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_CHATS_GEFUELLT, ICON_HINZUFUEGEN } from '../../shared/icons';
-import type { ChatRoomOverview } from '../../../types/chat';
 import {
   letzteNachrichtText,
   raumAnzeigeName,
   raumArtMessenger,
   raumFarbe,
   raumSymbol,
+  ungelesenVonRaum,
   zeitImMessenger,
 } from '../chatRaeume';
 import type { useChatUebersicht } from '../useChatUebersicht';
@@ -24,6 +24,7 @@ import WebChips, { type WebChip } from '../../web/WebChips';
 import { WebLaden, WebLeer } from '../../web/WebZustaende';
 import { listenMerker } from './chatListenMerker';
 import '../../../theme/web/chat.css';
+import { CHAT_LEER, CHAT_REITER_BESCHRIFTUNG, CHAT_UNGELESEN_ZAHLTEXT, chatReiterFuer } from '../../../seiten/chats';
 
 type Uebersicht = ReturnType<typeof useChatUebersicht>;
 
@@ -36,9 +37,8 @@ export interface WebChatListeProps {
   onNeuerChat: () => void;
 }
 
-/** Ungelesene eines Raums: die Zahl des Kontexts, sonst die des Servers. */
-const ungelesenVon = (room: ChatRoomOverview, ungelesen: Record<number, number>): number =>
-  ungelesen[room.id] ?? room.unread_count ?? 0;
+/** Ungelesene eines Raums: dieselbe Rechnung wie der Reiter "Ungelesen" (chatRaeume.ts). */
+const ungelesenVon = ungelesenVonRaum;
 
 const zahlText = (n: number): string => (n > 99 ? '99+' : String(n));
 
@@ -51,12 +51,10 @@ const WebChatListe: React.FC<WebChatListeProps> = ({ uebersicht, offenerRaumId, 
   const gesamtUngelesen = Object.values(chatUnreadByRoom).reduce((summe, n) => summe + n, 0);
   const jetzt = new Date();
 
-  const chips: Array<WebChip<string>> = [
-    { wert: 'alle', label: 'Alle' },
-    { wert: 'ungelesen', label: 'Ungelesen', zahl: gesamtUngelesen, rot: true, zahlText: 'ungelesene Nachrichten' },
-    { wert: 'konfis', label: 'Konfis' },
-    ...(gehoertZumTeam ? [{ wert: 'team', label: 'Team' }] : []),
-  ];
+  // Reiter aus der gemeinsamen Beschreibung (seiten/chats.ts); nur "Ungelesen" traegt eine Zahl.
+  const chips: Array<WebChip<string>> = chatReiterFuer(gehoertZumTeam).map((r) => (r.schluessel === 'ungelesen'
+    ? { wert: r.schluessel, label: r.label, zahl: gesamtUngelesen, rot: true, zahlText: CHAT_UNGELESEN_ZAHLTEXT }
+    : { wert: r.schluessel, label: r.label }));
 
   // Scrollposition ueber den Seitenwechsel halten (chatListenMerker.ts): beim
   // ersten Zeichnen mit Raeumen zuruecksetzen, danach merken.
@@ -112,8 +110,10 @@ const WebChatListe: React.FC<WebChatListeProps> = ({ uebersicht, offenerRaumId, 
       </div>
 
       <div className="web-chat-liste__werkzeuge">
+        {/* Reiter ZUERST, Suche darunter -- wie in der App (Simon, 06.09.2026:
+            "dann filtert man erst und dann sucht man"); bis 09.10.2026 stand hier die Suche oben. */}
+        <WebChips beschriftung={CHAT_REITER_BESCHRIFTUNG} chips={chips} wert={filterType} onWert={setFilterType} />
         <WebSuche beschriftung="Chats durchsuchen" platzhalter="Chats durchsuchen" wert={searchText} onWert={setSearchText} />
-        <WebChips beschriftung="Chats filtern" chips={chips} wert={filterType} onWert={setFilterType} />
       </div>
 
       <div
@@ -129,8 +129,8 @@ const WebChatListe: React.FC<WebChatListeProps> = ({ uebersicht, offenerRaumId, 
         ) : filteredRooms.length === 0 ? (
           <WebLeer
             icon={ICON_CHATS_GEFUELLT}
-            titel={suchend ? 'Keine Chats gefunden' : 'Noch keine Chats'}
-            text={suchend ? 'Passe die Suche oder den Reiter an.' : 'Starte deinen ersten Chat.'}
+            titel={suchend ? CHAT_LEER.gefiltert.titel : CHAT_LEER.keine.titel}
+            text={suchend ? CHAT_LEER.gefiltert.text : CHAT_LEER.keine.text}
           />
         ) : (
           <ul className="web-chat-liste__eintraege" onKeyDown={taste}>

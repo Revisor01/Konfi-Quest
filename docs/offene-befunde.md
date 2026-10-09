@@ -205,6 +205,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   der Wahl (Migration 208), Ebene wählbar unter Betrieb › „Sprüche"
   ([messung/umami.md](messung/umami.md), S1; Branch
   `feat/konfspruch-auswertung-ebenen`).
+- [x] 09.10.2026 — Reiter, Filter und Leertexte je Seite an einer Stelle für
+  App und Web-Fassung (Simon: „Filter ja"): `frontend/src/seiten/`, beschrieben
+  in [wissen/gestaltung.md](wissen/gestaltung.md#reiter-filter-und-leertexte-einer-seite);
+  dabei gefundene Abweichungen zwischen App und Browser behoben (Branch
+  `refactor/seitenbeschreibung-app-web`).
 
 
 ## Offen
@@ -354,6 +359,15 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
   gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
   Web-Fassung lesen. Umsetzen?
+- **Konfisprüche: Gemeinde und Wortlaut zusammen?** Die Statistik
+  `konfspruch_wahlen` (Migration 207, ohne Personenbezug) speichert je Wahl
+  die Gemeinde und den Monat, bei eigenen Sprüchen den Wortlaut. In einer
+  kleinen Gemeinde ist ein eigener Spruch mit Gemeinde und Monat einer
+  bestimmten Konfi zuzuordnen — der Spruch steht auf der Urkunde und oft im
+  Gemeindebrief; das gilt auch nach dem Löschen des Kontos. Die Ansicht
+  unter Betrieb zeigt die Gemeinde nicht. Gemeinde weiter speichern,
+  weglassen oder vergröbern (etwa Landeskirche)?
+  ([messung/umami.md](messung/umami.md), S1)
 
 ## Geplant
 

@@ -28,6 +28,14 @@ import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import SegmentZahl from '../shared/SegmentZahl';
 import WeitereEintraege from '../shared/WeitereEintraege';
 import { useSchrittweiseListe } from '../../hooks/useSchrittweiseListe';
+import { inFassung, leerVon } from '../../seiten/beschreibung';
+import {
+  LEITUNG_EVENTS_LEER_TITEL,
+  LEITUNG_EVENTS_TITEL,
+  LEITUNG_EVENTS_UNTERTITEL,
+  LEITUNG_ZEITRAUM,
+  JAHRGANG_FILTER,
+} from '../../seiten/mitmachenLeitung';
 
 interface EventsViewProps {
   events: Event[];
@@ -129,8 +137,8 @@ const EventsView: React.FC<EventsViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Events"
-        subtitle="Gottesdienste, Konfi-Tage und Fahrten"
+        title={LEITUNG_EVENTS_TITEL}
+        subtitle={LEITUNG_EVENTS_UNTERTITEL}
         icon={ICON_TERMIN_GEFUELLT}
         preset="events"
         onInfo={() => presentLegend({ presentingElement: presentingElement || undefined })}
@@ -181,15 +189,15 @@ const EventsView: React.FC<EventsViewProps> = ({
             value={activeTab}
             onIonChange={(e) => onTabChange(e.detail.value as 'aktuell' | 'verbuchen' | 'vergangen')}
           >
-            <IonSegmentButton value="aktuell">
-              <IonLabel>Aktuell</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="verbuchen">
-              <IonLabel>Verbuchen<SegmentZahl anzahl={wartendVerbuchen} label={wartendVerbuchen === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung'} /></IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="vergangen">
-              <IonLabel>Vergangen</IonLabel>
-            </IonSegmentButton>
+            {/* Reiter aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts). */}
+            {inFassung(LEITUNG_ZEITRAUM, 'app').map((r) => (
+              <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+                <IonLabel>
+                  {r.kurz ?? r.label}
+                  {r.zahlText && <SegmentZahl anzahl={wartendVerbuchen} label={r.zahlText(wartendVerbuchen)} />}
+                </IonLabel>
+              </IonSegmentButton>
+            ))}
           </IonSegment>
         </div>
       )}
@@ -216,15 +224,15 @@ const EventsView: React.FC<EventsViewProps> = ({
           {jahrgaenge && jahrgaenge.length > 0 && onJahrgangChange && (
             <IonItem>
               <IonIcon icon={ICON_TERMIN} slot="start" className="app-icon-color--system" style={{ fontSize: 'var(--app-text-standard)' }} />
-              <IonSelect aria-label="Jahrgang"
+              <IonSelect aria-label={JAHRGANG_FILTER.label}
                 value={selectedJahrgang}
                 onIonChange={(e) => onJahrgangChange(e.detail.value || null)}
                 interface="popover"
                 interfaceOptions={{ arrow: false }}
-                placeholder="Jahrgang"
+                placeholder={JAHRGANG_FILTER.label}
                 style={{ width: '100%' }}
               >
-                <IonSelectOption value={null}>Alle Jahrgänge</IonSelectOption>
+                <IonSelectOption value={null}>{JAHRGANG_FILTER.alle}</IonSelectOption>
                 {jahrgaenge.map(j => (
                   <IonSelectOption key={j.id} value={j.id}>{j.name}</IonSelectOption>
                 ))}
@@ -242,14 +250,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         iconColorClass="events"
         isEmpty={filteredAndSortedEvents.length === 0}
         emptyIcon={ICON_TERMIN}
-        emptyTitle="Keine Events gefunden"
-        emptyMessage={
-          activeTab === 'verbuchen'
-            ? 'Keine Events zum Verbuchen'
-            : activeTab === 'vergangen'
-            ? 'Keine vergangenen Events'
-            : 'Keine anstehenden Events'
-        }
+        emptyTitle={LEITUNG_EVENTS_LEER_TITEL}
+        emptyMessage={leerVon(LEITUNG_ZEITRAUM, activeTab)}
         emptyIconColor="var(--app-color-events)"
       >
         {sichtbareEvents.map((event, index) => {

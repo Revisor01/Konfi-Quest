@@ -271,7 +271,7 @@ Link; **Bearbeiten** und **Löschen** stehen als Symbole am Zeilenende.
 
 Darüber filterst du und suchst:
 
-- **Laufend**, **Geplant** (mit den Entwürfen), **Beendet** und **Alle**. Jeder
+- **Aktuell**, **Geplant** (mit den Entwürfen), **Archiv** und **Alle**. Jeder
   Knopf trägt die Zahl der Challenges, die darunter stehen.
 - **Wartet auf Freigabe** zeigt alle Challenges mit Beiträgen, die auf eure
   Freigabe warten — auch beendete. Die orange Zahl daran ist die Zahl dieser
@@ -299,7 +299,7 @@ deinem letzten Besuch dazugekommen sind. Rechts stehen die **Angaben** und der
 **Stempel**.
 
 Konfis sehen im Browser dieselbe Aufteilung: Kacheln oder Liste mit
-**Laufend**, **Beendet** und **Alle** — die Liste mit ihrem eigenen Stand —,
+**Aktuell**, **Archiv** und **Alle** — die Liste mit ihrem eigenen Stand —,
 darunter ihre Stempel. Auf der Seite einer Challenge steht oben rechts
 **Beitrag einreichen**; die Kennzahlen zeigen die Beiträge im Feed, die eigenen
 Beiträge, die Laufzeit und ob der Stempel schon da ist. Links stehen die

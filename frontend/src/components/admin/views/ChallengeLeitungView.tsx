@@ -37,7 +37,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { istWebLink } from '../../../utils/linkDisplay';
 import MusikLink from '../../shared/MusikLink';
-import { anzahlBeitraege, wartenAufFreigabeKurz } from '../../../utils/challengeTexte';
+import { anzahlBeitraege } from '../../../utils/challengeTexte';
 import SegmentZahl from '../../shared/SegmentZahl';
 import type {
   AdminChallenge,
@@ -52,6 +52,13 @@ import {
   useChallengeLeitung,
   type StatusFilter
 } from './useChallengeLeitung';
+import { leerVon } from '../../../seiten/beschreibung';
+import {
+  CHALLENGE_DETAIL_FEED_WARTET,
+  CHALLENGE_DETAIL_LEER_TITEL,
+  CHALLENGE_DETAIL_LEITUNG_REITER,
+  detailReiterFuer,
+} from '../../../seiten/challengeDetailLeitung';
 
 // VEREINTES Challenge-Detail für Leitung und Teamer:innen (11.08.): Verwalten
 // UND Mitmachen in EINER Ansicht, statt eines Segments, das die ganze Seite
@@ -347,29 +354,18 @@ const ChallengeLeitungView: React.FC<ChallengeLeitungViewProps> = ({
             {/* "Feed" zeigt nur Freigegebenes — denselben Blick, den die
                 Konfis auf die Galerie haben. Wartendes/Ausgeblendetes steht
                 ausschliesslich in den eigenen Reitern. */}
-            <IonSegmentButton value="feed"><IonLabel>Feed</IonLabel></IonSegmentButton>
-            {/* "Wartet" nur bei Challenges MIT Freigabe-Pflicht — ohne
-                Moderation ist jeder Beitrag sofort freigegeben, der Filter
-                waere immer leer. */}
-            {/* Orange Zahl wie am Umschalter Aktuell/Geplant/Archiv
-                (SegmentZahl, Simon 29.09.2026): so viele Beitraege dieser
-                Challenge warten auf Freigabe. Dieselbe Zaehlung wie die
-                Kachel "Wartet"; sie geht beim Freigeben und Ablehnen sofort
-                mit (moderate). Bei 0 steht keine Zahl. */}
-            {challenge.moderated && (
-              <IonSegmentButton value="pending">
-                <IonLabel>Wartet<SegmentZahl anzahl={counts.pending} label={wartenAufFreigabeKurz(counts.pending)} /></IonLabel>
+            {/* Reiter aus der gemeinsamen Beschreibung (seiten/challengeDetailLeitung.ts):
+                "Wartet" nur mit Freigabe-Pflicht, "Abgelehnt" nicht bei "nur Leitung".
+                Orange Zahl an "Wartet" wie am Umschalter Aktuell/Geplant/Archiv
+                (SegmentZahl, Simon 29.09.2026); bei 0 steht keine Zahl. */}
+            {detailReiterFuer(challenge).map((r) => (
+              <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+                <IonLabel>
+                  {r.kurz ?? r.label}
+                  {r.zahlText && <SegmentZahl anzahl={counts.pending} label={r.zahlText(counts.pending)} />}
+                </IonLabel>
               </IonSegmentButton>
-            )}
-            {/* "Ausgeblendet" ergibt nur Sinn, wenn es eine Gruppen-Galerie gibt,
-                aus der etwas herausgenommen werden koennte. Bei "nur Leitung"
-                sieht die Gruppe ohnehin nichts — der Reiter entfaellt
-                (User-Entscheid 25.08.2026). */}
-            {challenge.visibility !== 'private' && (
-              <IonSegmentButton value="hidden"><IonLabel>Abgelehnt</IonLabel></IonSegmentButton>
-            )}
-            {/* Eigene Beitraege: eigener Reiter statt eines Blocks darueber. */}
-            <IonSegmentButton value="meins"><IonLabel>Meins</IonLabel></IonSegmentButton>
+            ))}
           </IonSegment>
         </div>
 
@@ -404,13 +400,11 @@ const ChallengeLeitungView: React.FC<ChallengeLeitungViewProps> = ({
                 {filtered.length === 0 ? (
                   <EmptyState
                     icon={ICON_ALBEN}
-                    title="Keine Beiträge"
+                    title={CHALLENGE_DETAIL_LEER_TITEL}
                     message={
                       effectiveFilter === 'feed' && counts.pending > 0
-                        ? 'Im Feed steht nur, was freigegeben ist. Beiträge, die noch warten, findest du unter "Wartet".'
-                        : effectiveFilter === 'feed'
-                          ? 'Sobald Beiträge freigegeben sind, erscheinen sie hier — wie bei den Konfis.'
-                          : 'Hier ist gerade nichts.'
+                        ? CHALLENGE_DETAIL_FEED_WARTET
+                        : leerVon(CHALLENGE_DETAIL_LEITUNG_REITER, effectiveFilter)
                     }
                     iconColor="var(--app-color-challenges)"
                   />

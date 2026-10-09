@@ -4,12 +4,14 @@
 // oder dieselben Challenges als Tabelle mit dem eigenen Stand. Der Umschalter
 // Liste | Kacheln steht rechts neben der Suche; der Browser merkt sich die
 // Wahl, beim ersten Oeffnen sind es Kacheln (components/web/useAnsicht).
-// Filter (laufend, beendet, alle) und eine Live-Suche gelten in beiden
+// Filter (Aktuell, Archiv, Alle -- aus seiten/challengesKonfi.ts, wie die
+// Reiter der App) und eine Live-Suche gelten in beiden
 // Ansichten gleich; darunter die eigenen Stempel, erhaltene und noch zu
 // holende.
 //
-// Bewusst OHNE Zaehler, Fortschritt und Rangliste -- der Kern der Challenges
-// ist die eigene Deutung, nicht die Menge (konfi/views/ChallengesView). Die
+// Bewusst OHNE Fortschritt und Rangliste -- der Kern der Challenges ist die
+// eigene Deutung, nicht die Menge (konfi/views/ChallengesView); die Chips
+// zaehlen nur, wie viele Challenges unter ihnen stehen. Die
 // Daten und die Zahlen kommen aus derselben Seite wie in der App
 // (konfi/pages/KonfiChallengesPage); was ein Konfi sieht, entscheidet der
 // Server.
@@ -27,7 +29,6 @@ import WebSuche from '../../../web/WebSuche';
 import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
 import { useAnsicht } from '../../../web/useAnsicht';
 import {
-  FILTER_TEXT,
   KONFI_LISTEN_FILTER,
   OHNE_AUSWAHL,
   challengesFiltern,
@@ -39,15 +40,21 @@ import {
 import { suchbegriff } from '../../../../utils/supportWeb';
 import type { ChallengeMark, KonfiChallenge, OffenerStempel } from '../../../../types/challenges';
 import '../../../../theme/web/challenges.css';
+import { labelVon, leerVon } from '../../../../seiten/beschreibung';
+import { CHALLENGES_REITER_BESCHRIFTUNG } from '../../../../seiten/challengesLeitung';
+import {
+  CHALLENGES_KONFI_LEER_TITEL,
+  CHALLENGES_KONFI_REITER,
+  CHALLENGES_KONFI_TITEL,
+  CHALLENGES_KONFI_UNTERTITEL,
+  type ChallengesKonfiReiter,
+} from '../../../../seiten/challengesKonfi';
 
 const LISTEN_PFAD = '/konfi/challenges';
 
-/** Wortgleich mit der Liste der App (konfi/views/ChallengesView). Geplantes und Wartendes gibt es fuer Konfis nicht. */
-const LEER: Record<string, { titel: string; text: string }> = {
-  laufend: { titel: 'Gerade läuft keine Challenge', text: 'Sobald eine neue Challenge startet, findest du sie hier — und bekommst eine Nachricht.' },
-  beendet: { titel: 'Noch nichts im Archiv', text: 'Beendete Challenges kannst du hier später in Ruhe nachlesen.' },
-  alle: { titel: 'Noch keine Challenge', text: 'Sobald eine neue Challenge startet, findest du sie hier — und bekommst eine Nachricht.' },
-};
+/** Konfis kennen nur Aktuell, Archiv und Alle; jeder andere Filterwert gilt als Alle. */
+const konfiFilter = (f: ListenFilter): ChallengesKonfiReiter =>
+  (KONFI_LISTEN_FILTER as readonly string[]).includes(f) ? (f as ChallengesKonfiReiter) : 'alle';
 
 export interface WebKonfiChallengesProps {
   active: KonfiChallenge[];
@@ -64,7 +71,7 @@ export interface WebKonfiChallengesProps {
 
 const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive, marks, offeneStempel, neuigkeiten, loading, pageRef }) => {
   const [ansicht, setAnsicht] = useAnsicht('challenges-mitglied', 'kacheln');
-  const [auswahl, setAuswahl] = useState<ListenAuswahl>({ ...OHNE_AUSWAHL, filter: 'laufend' });
+  const [auswahl, setAuswahl] = useState<ListenAuswahl>({ ...OHNE_AUSWAHL, filter: 'aktuell' });
 
   // Defensive wie die Liste der App: kaputte oder gecachte Antworten als leer behandeln.
   const eintraege = useMemo(
@@ -85,10 +92,10 @@ const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive
           <div className="web-challenge-filter">
             <div className="web-challenge-filter__zeile">
               <WebChallengeChips<ListenFilter>
-                beschriftung="Challenges nach Zustand"
+                beschriftung={CHALLENGES_REITER_BESCHRIFTUNG}
                 wert={auswahl.filter}
                 onWert={(filter) => setAuswahl((a) => ({ ...a, filter }))}
-                chips={KONFI_LISTEN_FILTER.map((wert) => ({ wert, label: FILTER_TEXT[wert], zahl: zaehlen[wert] }))}
+                chips={KONFI_LISTEN_FILTER.map((wert) => ({ wert, label: labelVon(CHALLENGES_KONFI_REITER, konfiFilter(wert)), zahl: zaehlen[wert] }))}
               />
               <div className="web-werkzeuge__rechts">
                 <WebSuche
@@ -107,8 +114,8 @@ const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive
           <div className="web-karte">
             <WebLeer
               icon={ICON_CHALLENGE}
-              titel={sucht ? 'Keine Treffer' : (LEER[auswahl.filter] ?? LEER.alle).titel}
-              text={sucht ? 'In dieser Auswahl gibt es keine Challenge. Ändere den Filter oder die Suche.' : (LEER[auswahl.filter] ?? LEER.alle).text}
+              titel={sucht ? 'Keine Treffer' : CHALLENGES_KONFI_LEER_TITEL[konfiFilter(auswahl.filter)]}
+              text={sucht ? 'In dieser Auswahl gibt es keine Challenge. Ändere den Filter oder die Suche.' : leerVon(CHALLENGES_KONFI_REITER, konfiFilter(auswahl.filter))}
               aktion={sucht ? <WebKnopf onClick={() => setAuswahl((a) => ({ ...a, suche: '' }))}>Suche leeren</WebKnopf> : undefined}
             />
           </div>
@@ -150,7 +157,7 @@ const WebKonfiChallenges: React.FC<WebKonfiChallengesProps> = ({ active, archive
   }
 
   return (
-    <WebSeite bereich="Challenges" titel="Challenges" untertitel="Mach mit, sei dabei" pageRef={pageRef}>
+    <WebSeite bereich="Challenges" titel={CHALLENGES_KONFI_TITEL} untertitel={CHALLENGES_KONFI_UNTERTITEL} pageRef={pageRef}>
       {inhalt}
     </WebSeite>
   );

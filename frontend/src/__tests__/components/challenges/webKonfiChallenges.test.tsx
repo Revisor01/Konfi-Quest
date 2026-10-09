@@ -143,7 +143,7 @@ describe('Challenges der Konfis (Web): Karten im Raster', () => {
 
   it('Beendetes steht im Archiv: zuletzt Beendetes zuerst, mit Zeitraum statt Restzeit', () => {
     render(<KonfiChallengesPage />);
-    waehle(/^Beendet/);
+    waehle(/^Archiv/);
     expect(titel()).toEqual(['Mein schönster Moment im Sommer', 'Segenswünsche']);
     expect(karten()[0]).toHaveTextContent('Beendet');
     expect(karten()[0]).toHaveTextContent('20.07. – 14.08.2026');
@@ -155,8 +155,8 @@ describe('Challenges der Konfis (Web): Filter und Suche', () => {
   it('Laufend ist voreingestellt, die Chips tragen die Zahl; Geplantes und Wartendes gibt es fuer Konfis nicht', () => {
     render(<KonfiChallengesPage />);
     const gruppe = screen.getByRole('group', { name: 'Challenges nach Zustand' });
-    expect(within(gruppe).getAllByRole('button').map((b) => b.textContent)).toEqual(['Laufend3', 'Beendet2', 'Alle5']);
-    expect(chip(/^Laufend/)).toHaveAttribute('aria-pressed', 'true');
+    expect(within(gruppe).getAllByRole('button').map((b) => b.textContent)).toEqual(['Aktuell3', 'Archiv2', 'Alle5']);
+    expect(chip(/^Aktuell/)).toHaveAttribute('aria-pressed', 'true');
     waehle(/^Alle/);
     expect(titel()).toHaveLength(5);
   });
@@ -184,7 +184,7 @@ describe('Challenges der Konfis (Web): Filter und Suche', () => {
     cleanup();
     h.daten = { ...ANTWORT, archive: [] };
     render(<KonfiChallengesPage />);
-    waehle(/^Beendet/);
+    waehle(/^Archiv/);
     expect(screen.getByRole('heading', { level: 3, name: 'Noch nichts im Archiv' })).toBeInTheDocument();
     expect(screen.getByText('Beendete Challenges kannst du hier später in Ruhe nachlesen.')).toBeInTheDocument();
   });
@@ -339,10 +339,10 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
     it('Filter und Suche gelten in beiden Ansichten gleich und bleiben beim Umschalten', () => {
       window.localStorage.setItem(SCHLUESSEL, 'liste');
       render(<KonfiChallengesPage />);
-      waehle(/^Beendet/);
+      waehle(/^Archiv/);
       expect(zeilenTitel()).toEqual(['Mein schönster Moment im Sommer', 'Segenswünsche']);
       waehleAnsicht('Kacheln');
-      expect(chip(/^Beendet/)).toHaveAttribute('aria-pressed', 'true');
+      expect(chip(/^Archiv/)).toHaveAttribute('aria-pressed', 'true');
       expect(titel()).toEqual(['Mein schönster Moment im Sommer', 'Segenswünsche']);
       waehle(/^Alle/);
       fireEvent.change(screen.getByRole('searchbox', { name: 'Challenges durchsuchen' }), { target: { value: 'playlist' } });
@@ -351,8 +351,8 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
       expect(zeilenTitel()).toEqual(['Lied der Woche']);
       expect(zeilen()[0].querySelector('.web-zelle-leise mark')).toHaveTextContent('Playlist');
       expect(chip(/^Alle/)).toHaveTextContent('1');
-      expect(chip(/^Laufend/)).toHaveTextContent('1');
-      expect(chip(/^Beendet/)).toHaveTextContent('0');
+      expect(chip(/^Aktuell/)).toHaveTextContent('1');
+      expect(chip(/^Archiv/)).toHaveTextContent('0');
     });
 
     it('Leerzustaende und "Deine Stempel" bleiben in der Liste, wie bei den Karten', () => {
@@ -368,7 +368,7 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
       cleanup();
       h.daten = { ...ANTWORT, archive: [] };
       render(<KonfiChallengesPage />);
-      waehle(/^Beendet/);
+      waehle(/^Archiv/);
       expect(screen.getByRole('heading', { level: 3, name: 'Noch nichts im Archiv' })).toBeInTheDocument();
     });
   });
@@ -399,14 +399,14 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
       expect(zellen(zeile('Lied der Woche'))[3]).toHaveTextContent(/^–$/);
       expect(zellen(zeile('Fürbitten zum Erntedank'))[3]).toHaveTextContent(/^–$/);
       expect(screen.getAllByText('Du hast eingereicht')).toHaveLength(1);
-      waehle(/^Beendet/);
+      waehle(/^Archiv/);
       expect(zellen(zeile('Mein schönster Moment im Sommer'))[3]).toHaveTextContent(/^Du hast eingereicht$/);
       expect(zellen(zeile('Segenswünsche'))[3]).toHaveTextContent(/^–$/);
     });
 
     it('Beendetes mit Zeitraum statt Restzeit', () => {
       render(<KonfiChallengesPage />);
-      waehle(/^Beendet/);
+      waehle(/^Archiv/);
       const z = zellen(zeile('Mein schönster Moment im Sommer'));
       expect(texte(z[1])).toEqual(['20.07. – 14.08.2026']);
       expect(z[2]).toHaveTextContent(/^Beendet$/);

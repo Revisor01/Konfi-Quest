@@ -86,7 +86,7 @@ describe('Gemeinde-Umschalter: nicht in Detailansichten (26.09.2026)', () => {
     const quelle = lies('src/components/teamer/pages/TeamerMaterialPage.tsx');
     const gefunden = kopfzeilen(quelle);
     const detail = gefunden.filter((k) => k.includes('selectedMaterial.title'));
-    const liste = gefunden.filter((k) => k.includes('titel="Material"'));
+    const liste = gefunden.filter((k) => k.includes('titel={MATERIAL_TEAM_TITEL}'));
 
     expect(detail.length, 'Detail-Kopfzeile nicht gefunden').toBe(1);
     expect(liste.length, 'Listen-Kopfzeile nicht gefunden').toBe(1);
@@ -132,7 +132,7 @@ describe('Gemeinde-Umschalter: nicht in Detailansichten (26.09.2026)', () => {
   // es bleibt aber die Liste der Gemeinde, und die behaelt den Umschalter
   // (Test oben).
   const AUSNAHMEN_MIT_ZURUECK: Array<{ datei: string; merkmal: string }> = [
-    { datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx', merkmal: 'titel="Material"' },
+    { datei: 'src/components/teamer/pages/TeamerMaterialPage.tsx', merkmal: 'titel={MATERIAL_TEAM_TITEL}' },
   ];
 
   it('jede Kopfzeile mit Zurueck-Knopf schaltet ihn ab (Konfi, Teamer, Leitung)', () => {

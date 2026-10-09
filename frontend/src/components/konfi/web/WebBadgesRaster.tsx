@@ -25,6 +25,16 @@ import WebBadgeSymbol from './WebBadgeSymbol';
 import WebBadgeDialog from './WebBadgeDialog';
 import WebFortschritt from './WebFortschritt';
 import '../../../theme/web/start.css';
+import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
+import {
+  BADGES_KATEGORIE_FILTER,
+  BADGES_KEINE_TREFFER,
+  BADGES_LEER_TITEL,
+  BADGES_STATUS,
+  BADGES_STATUS_BESCHRIFTUNG,
+  badgeInArbeit,
+  type BadgesStatus,
+} from '../../../seiten/badgesKonfi';
 
 export interface WebBadgeKategorie {
   key: string;
@@ -40,9 +50,10 @@ export interface WebBadgesRasterProps {
   badgeStats: { totalVisible: number; totalSecret: number };
 }
 
-type Status = 'alle' | 'erhalten' | 'offen' | 'arbeit';
 
-const inArbeit = (b: AnzeigeBadge): boolean => !b.is_earned && (b.progress_percentage ?? 0) > 0;
+type Status = BadgesStatus;
+
+const inArbeit = badgeInArbeit;
 
 const normal = (text: string): string => text.toLowerCase();
 
@@ -113,17 +124,13 @@ const WebBadgesRaster: React.FC<WebBadgesRasterProps> = ({ kategorien, badgeStat
   const gesamt = badgeStats.totalVisible + badgeStats.totalSecret;
   const prozent = gesamt === 0 ? 0 : Math.round((erreichte.length / gesamt) * 100);
 
-  const zahl = {
-    alle: alle.length,
-    erhalten: erreichte.length,
-    offen: alle.filter((b) => !b.is_earned).length,
-    arbeit: alle.filter(inArbeit).length,
-  };
+  // Zahl je Stand und Prädikat aus der gemeinsamen Beschreibung (seiten/badgesKonfi.ts).
+  const zahl = Object.fromEntries(
+    BADGES_STATUS.map((w) => [w.schluessel, alle.filter((b) => w.passt?.(b) ?? true).length]),
+  ) as Record<Status, number>;
 
   const passt = (b: AnzeigeBadge): boolean => {
-    if (status === 'erhalten' && !b.is_earned) return false;
-    if (status === 'offen' && b.is_earned) return false;
-    if (status === 'arbeit' && !inArbeit(b)) return false;
+    if (!(wahlVon(BADGES_STATUS, status).passt?.(b) ?? true)) return false;
     const q = normal(suche.trim());
     return !q || normal(b.name).includes(q) || normal(b.description ?? '').includes(q);
   };
@@ -136,13 +143,9 @@ const WebBadgesRaster: React.FC<WebBadgesRasterProps> = ({ kategorien, badgeStat
   const gewaehlt = offen === null ? null : alle.find((b) => b.id === offen) ?? null;
   const gefiltert = status !== 'alle' || suche.trim() !== '' || kategorie !== 'alle';
 
-  const leer = (() => {
-    if (suche.trim() !== '') return { titel: 'Keine Badges gefunden', text: 'Zu diesem Suchbegriff gibt es kein Badge. Versuch es mit einem anderen Wort.' };
-    if (status === 'offen') return { titel: 'Alle Badges erreicht!', text: 'Du hast alle sichtbaren Badges eingesammelt.' };
-    if (status === 'arbeit') return { titel: 'Keine Badges in Arbeit', text: 'Sammle Punkte, um den Fortschritt bei Badges zu starten!' };
-    if (status === 'erhalten') return { titel: 'Noch keine Badges erhalten', text: 'Sammle Punkte für deine ersten Badges!' };
-    return { titel: 'Keine Badges gefunden', text: 'Sammle Punkte für deine ersten Badges!' };
-  })();
+  const leer = suche.trim() !== ''
+    ? BADGES_KEINE_TREFFER
+    : { titel: BADGES_LEER_TITEL[status], text: leerVon(BADGES_STATUS, status) };
 
   return (
     <div className={user?.type === 'teamer' ? 'web-start web-rolle web-rolle--team' : 'web-start web-rolle'}>
@@ -158,22 +161,17 @@ const WebBadgesRaster: React.FC<WebBadgesRasterProps> = ({ kategorien, badgeStat
       <div className="web-werkzeuge web-badges-werkzeuge">
         <WebSuche beschriftung="Badges durchsuchen" platzhalter="Badges durchsuchen" wert={suche} onWert={setSuche} />
         <WebChips<Status>
-          beschriftung="Status"
+          beschriftung={BADGES_STATUS_BESCHRIFTUNG}
           wert={status}
           onWert={setStatus}
-          chips={[
-            { wert: 'alle', label: 'Alle', zahl: zahl.alle },
-            { wert: 'erhalten', label: 'Erhalten', zahl: zahl.erhalten },
-            { wert: 'offen', label: 'Offen', zahl: zahl.offen },
-            { wert: 'arbeit', label: 'In Arbeit', zahl: zahl.arbeit },
-          ]}
+          chips={inFassung(BADGES_STATUS, 'web').map((w) => ({ wert: w.schluessel, label: w.label, zahl: zahl[w.schluessel] }))}
         />
         <div className="web-werkzeuge__rechts web-badges-kategorie">
           <WebAuswahl
-            label="Kategorie"
+            label={BADGES_KATEGORIE_FILTER.label}
             wert={kategorie}
             onWert={setKategorie}
-            optionen={[{ wert: 'alle', label: 'Alle Kategorien' }, ...kategorien.map((k) => ({ wert: k.key, label: k.title }))]}
+            optionen={[{ wert: 'alle', label: BADGES_KATEGORIE_FILTER.alle }, ...kategorien.map((k) => ({ wert: k.key, label: k.title }))]}
           />
         </div>
       </div>

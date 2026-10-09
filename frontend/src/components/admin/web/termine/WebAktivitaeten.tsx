@@ -31,8 +31,17 @@ import { useAnsicht } from '../../../web/useAnsicht';
 import { WebLeer } from '../../../web/WebZustaende';
 import type { Aktivitaet, AktivitaetenRolle } from '../../useAktivitaetenVerwaltung';
 import '../../../../theme/web/termine.css';
+import { inFassung, wahlVon } from '../../../../seiten/beschreibung';
+import {
+  KATALOG_ART,
+  KATALOG_ART_BESCHRIFTUNG,
+  KATALOG_LEER,
+  KATALOG_ROLLE,
+  KATALOG_ROLLE_BESCHRIFTUNG,
+  type KatalogArt,
+} from '../../../../seiten/aktivitaetenKatalog';
 
-type ArtFilter = 'alle' | 'gemeinde' | 'gottesdienst';
+type ArtFilter = KatalogArt;
 
 /** Kopf der Kachel je Art: Farbe und Symbol der Punktearten der App, Team in der Teamer-Farbe. */
 const FARBE = {
@@ -66,15 +75,14 @@ export const WebAktivitaetenTabelle: React.FC<WebAktivitaetenTabelleProps> = ({
   const [ansicht, setAnsicht] = useAnsicht('aktivitaeten', 'liste');
   const team = rolle === 'teamer';
 
-  const zaehlen = useMemo(() => ({
-    alle: aktivitaeten.length,
-    gemeinde: aktivitaeten.filter((a) => a.type === 'gemeinde').length,
-    gottesdienst: aktivitaeten.filter((a) => a.type === 'gottesdienst').length,
-  }), [aktivitaeten]);
+  // Zahl je Art und die Art selbst aus der gemeinsamen Beschreibung (seiten/aktivitaetenKatalog.ts).
+  const zaehlen = useMemo(() => Object.fromEntries(
+    KATALOG_ART.map((r) => [r.schluessel, aktivitaeten.filter((a) => r.passt?.(a) ?? true).length]),
+  ) as Record<ArtFilter, number>, [aktivitaeten]);
 
   // Nach Name sortiert, wie die Liste der App.
   const sichtbar = useMemo(() => aktivitaeten
-    .filter((a) => team || art === 'alle' || a.type === art)
+    .filter((a) => team || (wahlVon(KATALOG_ART, art).passt?.(a) ?? true))
     .filter((a) => !suchbegriff(suche)
       || suchTreffer(a.name || '', suche).length > 0
       || suchTreffer(a.description || '', suche).length > 0)
@@ -167,24 +175,17 @@ export const WebAktivitaetenTabelle: React.FC<WebAktivitaetenTabelleProps> = ({
     <>
       <div className="web-werkzeuge">
         <WebChips<AktivitaetenRolle>
-          beschriftung="Aktivitäten für"
+          beschriftung={KATALOG_ROLLE_BESCHRIFTUNG}
           wert={rolle}
           onWert={(r) => { setArt('alle'); onRolle(r); }}
-          chips={[
-            { wert: 'konfi', label: 'Konfis' },
-            { wert: 'teamer', label: 'Team' },
-          ]}
+          chips={inFassung(KATALOG_ROLLE, 'web').map((r) => ({ wert: r.schluessel, label: r.label }))}
         />
         {!team && (
           <WebChips<ArtFilter>
-            beschriftung="Aktivitäten nach Art"
+            beschriftung={KATALOG_ART_BESCHRIFTUNG}
             wert={art}
             onWert={setArt}
-            chips={[
-              { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
-              { wert: 'gemeinde', label: 'Gemeinde', zahl: zaehlen.gemeinde },
-              { wert: 'gottesdienst', label: 'Gottesdienst', zahl: zaehlen.gottesdienst },
-            ]}
+            chips={inFassung(KATALOG_ART, 'web').map((r) => ({ wert: r.schluessel, label: r.label, zahl: zaehlen[r.schluessel] }))}
           />
         )}
         <div className="web-werkzeuge__rechts">
@@ -259,8 +260,8 @@ export const WebAktivitaetenTabelle: React.FC<WebAktivitaetenTabelleProps> = ({
         ) : (
           <WebLeer
             icon={ICON_AKTION_GEFUELLT}
-            titel={sucht ? 'Keine Treffer' : 'Keine Aktivitäten gefunden'}
-            text={sucht ? `Zu „${suche.trim()}“ gibt es hier keine Aktivität.` : 'Noch keine Aktivitäten angelegt'}
+            titel={sucht ? 'Keine Treffer' : KATALOG_LEER.titel}
+            text={sucht ? `Zu „${suche.trim()}“ gibt es hier keine Aktivität.` : KATALOG_LEER.text}
             aktion={sucht ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf> : undefined}
           />
         )}

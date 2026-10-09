@@ -15,7 +15,6 @@
 import React, { useMemo, useState } from 'react';
 import { ICON_TERMIN } from '../../../shared/icons';
 import { useApp } from '../../../../contexts/AppContext';
-import { istVergangen, zaehltAlsMeiner } from '../../../shared/eventFormatting';
 import { suchbegriff } from '../../../../utils/supportWeb';
 import { konfiFakten, konfiListeStatus, kommendeZuerst, terminSuchtTreffer } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
@@ -29,12 +28,8 @@ import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import WebTerminAnsicht, { type WebTerminEintrag } from '../../../shared/web/termine/WebTerminAnsicht';
 import { KONFI_EVENT_FILTER, type KonfiEventFilter } from '../../../shared/web/termine/terminFilter';
 import '../../../../theme/web/termine.css';
-
-const LEER: Record<KonfiEventFilter, { titel: string; text: string }> = {
-  alle: { titel: 'Keine Events gefunden', text: 'Keine anstehenden Events' },
-  meine: { titel: 'Keine Events gefunden', text: 'Du bist noch für keine Events angemeldet' },
-  konfirmation: { titel: 'Keine Events gefunden', text: 'Keine Konfirmationstermine verfügbar' },
-};
+import { inFassung, leerVon } from '../../../../seiten/beschreibung';
+import { KONFI_EVENTS, KONFI_EVENTS_LEER_TITEL, MITGLIED_EVENTS_BESCHRIFTUNG } from '../../../../seiten/mitmachenMitglied';
 
 const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
   const [filter, setFilter] = useFilterAusAdresse<KonfiEventFilter>('/konfi/events', KONFI_EVENT_FILTER, 'meine');
@@ -48,12 +43,10 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
     [events],
   );
 
-  const listen = useMemo<Record<KonfiEventFilter, Event[]>>(() => ({
-    // Alle: wie in der App nur, was noch kommt, ohne Konfirmation (die hat ihren eigenen Reiter).
-    alle: events.filter((e) => !e.is_konfirmation && !istVergangen(e)),
-    meine: events.filter(zaehltAlsMeiner),
-    konfirmation: events.filter((e) => e.is_konfirmation),
-  }), [events]);
+  // Die Listen der Reiter aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts), wie in der App.
+  const listen = useMemo(() => Object.fromEntries(
+    KONFI_EVENTS.map((r) => [r.schluessel, events.filter((e) => r.passt?.(e) ?? true)]),
+  ) as Record<KonfiEventFilter, Event[]>, [events]);
 
   const sichtbar = useMemo(
     () => kommendeZuerst(listen[filter]).filter((e) => terminSuchtTreffer(e, suche, true)),
@@ -79,14 +72,10 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
     <>
       <div className="web-werkzeuge">
         <WebChips<KonfiEventFilter>
-          beschriftung="Events anzeigen"
+          beschriftung={MITGLIED_EVENTS_BESCHRIFTUNG}
           wert={filter}
           onWert={setFilter}
-          chips={[
-            { wert: 'alle', label: 'Alle', zahl: listen.alle.length },
-            { wert: 'meine', label: 'Meine', zahl: listen.meine.length },
-            { wert: 'konfirmation', label: 'Konfirmation', zahl: listen.konfirmation.length },
-          ]}
+          chips={inFassung(KONFI_EVENTS, 'web').map((r) => ({ wert: r.schluessel, label: r.label, zahl: listen[r.schluessel].length }))}
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Events durchsuchen" platzhalter="Name oder Ort suchen" wert={suche} onWert={setSuche} />
@@ -100,8 +89,8 @@ const WebKonfiEvents: React.FC<{ events: readonly Event[] }> = ({ events }) => {
         <div className="web-karte">
           <WebLeer
             icon={ICON_TERMIN}
-            titel={sucht ? 'Keine Treffer' : LEER[filter].titel}
-            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl kein Event.` : LEER[filter].text}
+            titel={sucht ? 'Keine Treffer' : KONFI_EVENTS_LEER_TITEL}
+            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl kein Event.` : leerVon(KONFI_EVENTS, filter)}
             aktion={sucht
               ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf>
               : filter === 'meine' && listen.alle.length > 0

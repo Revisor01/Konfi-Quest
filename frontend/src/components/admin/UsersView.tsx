@@ -23,6 +23,8 @@ import { datumKurz } from '../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../utils/rollenNamen';
 import { useZeitgeber } from '../../hooks/useZeitgeber';
 import { darfEntfernen } from '../../utils/mitgliedschaft';
+import { inFassung, wahlVon } from '../../seiten/beschreibung';
+import { BENUTZER_FILTER, BENUTZER_LEER, BENUTZER_TITEL, BENUTZER_UNTERTITEL, type BenutzerFilterSchluessel } from '../../seiten/benutzer';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -52,20 +54,14 @@ const UsersView: React.FC<UsersViewProps> = ({
   const zeitgeber = useZeitgeber();
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('alle');
+  const [selectedFilter, setSelectedFilter] = useState<BenutzerFilterSchluessel>('alle');
 
   const filteredAndSortedUsers = (() => {
     let result = filterBySearchTerm(users, searchTerm, ['username', 'display_name', 'email', 'role_display_name']);
 
-    if (selectedFilter === 'aktiv') {
-      result = result.filter(user => user.is_active);
-    } else if (selectedFilter === 'inaktiv') {
-      result = result.filter(user => !user.is_active);
-    } else if (selectedFilter === 'admin') {
-      result = result.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
-    } else if (selectedFilter === 'teamer') {
-      result = result.filter(user => user.role_name === 'teamer');
-    }
+    // Filter aus der gemeinsamen Beschreibung (seiten/benutzer.ts).
+    const wahl = wahlVon(BENUTZER_FILTER, selectedFilter);
+    result = result.filter((user) => wahl.passt?.(user) ?? true);
 
     // Sort: org_admin first, then admin, then teamer, then by name
     result = result.sort((a, b) => {
@@ -81,8 +77,8 @@ const UsersView: React.FC<UsersViewProps> = ({
     return result;
   })();
 
-  const getAdminUsers = () => users.filter(user => user.role_name === 'admin' || user.role_name === 'org_admin');
-  const getTeamerUsers = () => users.filter(user => user.role_name === 'teamer');
+  const getAdminUsers = () => users.filter((u) => wahlVon(BENUTZER_FILTER, 'admin').passt?.(u));
+  const getTeamerUsers = () => users.filter((u) => wahlVon(BENUTZER_FILTER, 'teamer').passt?.(u));
 
   // Rollenfarbe (25.09.2026) -- seit 29.09.2026 aus EINER Stelle, seit
   // 02.10.2026 als Klassen wie in jeder Personenliste (utils/rollenNamen:
@@ -111,8 +107,8 @@ const UsersView: React.FC<UsersViewProps> = ({
       </IonRefresher>
 
       <SectionHeader
-        title="Benutzer:innen"
-        subtitle="Leitung, Team und Rollen"
+        title={BENUTZER_TITEL}
+        subtitle={BENUTZER_UNTERTITEL}
         icon={ICON_GRUPPE_GEFUELLT}
         preset="users"
         stats={[
@@ -127,20 +123,13 @@ const UsersView: React.FC<UsersViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={selectedFilter}
-          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+          onIonChange={(e) => setSelectedFilter(e.detail.value as BenutzerFilterSchluessel)}
         >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="aktiv">
-            <IonLabel>Aktiv</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="admin">
-            <IonLabel>Leitung</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="teamer">
-            <IonLabel>Team</IonLabel>
-          </IonSegmentButton>
+          {inFassung(BENUTZER_FILTER, 'app').map((w) => (
+            <IonSegmentButton key={w.schluessel} value={w.schluessel}>
+              <IonLabel>{w.kurz ?? w.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -172,8 +161,8 @@ const UsersView: React.FC<UsersViewProps> = ({
         iconColorClass="users"
         isEmpty={filteredAndSortedUsers.length === 0}
         emptyIcon={ICON_PERSON}
-        emptyTitle="Keine Benutzer:innen gefunden"
-        emptyMessage="Noch keine Teammitglieder angelegt"
+        emptyTitle={BENUTZER_LEER.titel}
+        emptyMessage={searchTerm || selectedFilter !== 'alle' ? BENUTZER_LEER.keineTreffer : BENUTZER_LEER.niemand}
         emptyIconColor="var(--app-color-users)"
       >
         {filteredAndSortedUsers.map((user, index) => {
