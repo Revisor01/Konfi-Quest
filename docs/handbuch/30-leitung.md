@@ -11,7 +11,11 @@ Oben trägt jede Seite dieselbe Kopfzeile: rechts die **Glocke** mit dem
 [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen), links — wer
 mehrere Gemeinden betreut — der **Name der Gemeinde**, in der du gerade
 arbeitest (siehe [In mehreren Gemeinden
-mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Ein Tippen auf
+mitarbeiten](05-rollen.md#in-mehreren-gemeinden-mitarbeiten)). Dort steht
+eine Kurzform aus dem Systemnamen der Gemeinde, Umlaute darin als ae, oe, ue
+und ss (aus „Travemünde" wird „Travemuende"). Sie ändert sich nur mit dem
+Namen der Gemeinde — speichert jemand deren Angaben, bleibt sie, mit jeder
+App-Version. Ein Tippen auf
 den Namen zeigt alle deine Gemeinden, die aktive fett, jede mit einer roten
 Zahl, wenn dort etwas offen ist (siehe [Sehen, wo etwas offen
 ist](05-rollen.md#sehen-wo-etwas-offen-ist)). Der Name steht nur auf den

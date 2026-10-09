@@ -1773,8 +1773,9 @@ paths:
         genau dieser Bildung, bildet der Server ihn neu mit ä->ae, ö->oe,
         ü->ue, ß->ss ("buesum"); ein eigener Wert bleibt, nur Umlaute darin
         werden ebenso umgeschrieben (utils/gemeindeSystemname.js). Nur beim
-        Anlegen -- bestehende Gemeinden werden nicht umbenannt, PUT speichert
-        weiter, was geschickt wird. Antwortform unveraendert.
+        Anlegen -- bestehende Gemeinden werden nicht umbenannt. Antwortform
+        unveraendert. (Fuer PUT gilt seit 09.10.2026 eine eigene Regel, siehe
+        dort.)
         NACHTRAG 30.09.2026: Die App ab 2.3.0 bildet name/slug selbst mit
         derselben Umschrift (frontend/src/utils/gemeindeSystemname.ts, Test
         gegen diese Funktion); der Server behaelt, was sie schickt. Die
@@ -2040,8 +2041,8 @@ paths:
               type: object
               required: [name, slug, display_name]
               properties:
-                name: { type: string, description: "Systemname; wird wie geschickt gespeichert. Die App ab 2.3.0 schickt den gespeicherten Wert, solange display_name gleich bleibt, sonst den neu gebildeten mit ae/oe/ue/ss (utils/gemeindeSystemname.ts). Die Store-App 2.2.x bildet ihn bei jedem Speichern ohne Umlaute neu und benennt damit eine seit dem 29.09.2026 angelegte Gemeinde wie 'buesum' auf 'bsum' zurueck" }
-                slug: { type: string, description: "wie name" }
+                name: { type: string, description: "Systemname. Die App ab 2.3.0 schickt den gespeicherten Wert, solange display_name gleich bleibt, sonst den neu gebildeten mit ae/oe/ue/ss (frontend/src/utils/gemeindeSystemname.ts); er wird gespeichert, wie er kommt. BEHOBEN 09.10.2026 (utils/gemeindeSystemname.js, systemnameBeimBearbeiten; Test gemeindeSystemnameBearbeiten.test.js): Die Store-App 2.2.x bildet ihn bei jedem Speichern ohne Umlaute neu und benannte damit eine Gemeinde wie 'buesum' auf 'bsum' zurueck. Entspricht der geschickte Wert genau dieser Bildung aus display_name, speichert der Server dasselbe wie fuer die neue App: bei unveraendertem display_name den gespeicherten Wert (auch einen alten ohne Umlaut oder einen eigenen), sonst den neu gebildeten mit ae/oe/ue/ss. Jeder andere Wert bleibt, wie er geschickt wird. Bestehende Werte werden nicht umgeschrieben; Antwortform unveraendert" }
+                slug: { type: string, description: "wie name (dieselbe Regel, je Feld gegen den gespeicherten slug)" }
                 display_name: { type: string }
                 description: { type: string }
                 contact_name: { type: string }

@@ -22,6 +22,11 @@ const server = require(resolve(process.cwd(), '../backend/utils/gemeindeSystemna
   systemnameAusAnzeigename: (t: string) => string;
   systemnameWieDieApp: (t: string) => string;
   systemnameFuerNeueGemeinde: (geschickt: string, anzeigename: string) => string;
+  systemnameBeimBearbeiten: (
+    geschickt: string,
+    anzeigename: string,
+    gespeichert: { wert: string; anzeigename: string } | null
+  ) => string;
 };
 
 // Gemeinsame Faelle fuer App und Server: Anzeigename -> Systemname.
@@ -103,3 +108,32 @@ describe('Beim Speichern: neu anlegen und bearbeiten', () => {
 
 // Die Verdrahtung im Formular (Bearbeiten, was PUT schickt) prueft
 // components/gemeindeSystemnameBearbeiten.test.tsx.
+
+// Beim Bearbeiten kommt der Server zum selben Ergebnis, ob die Store-App 2.2.x
+// (bildet immer neu, ohne Umlaute) oder diese App schickt (09.10.2026,
+// backend/utils/gemeindeSystemname.js, systemnameBeimBearbeiten).
+describe('Systemname beim Bearbeiten: alte und neue App gleich', () => {
+  const GESPEICHERT = [
+    { name: 'buesum', slug: 'buesum', display_name: 'Büsum' },
+    { name: 'bsum', slug: 'bsum', display_name: 'Büsum' },
+    { name: 'ks-sued', slug: 'ks-sued', display_name: 'Kirchspiel Süd' },
+    { name: 'kirchspiel-west', slug: 'kirchspiel-west', display_name: 'Kirchspiel West' },
+  ];
+  const ANZEIGE = ['Büsum', 'Büsum Deichhausen', 'Kirchspiel Süd', 'Kirchspiel West', 'Groß Ölper'];
+
+  for (const gespeichert of GESPEICHERT) {
+    for (const anzeige of ANZEIGE) {
+      it(`${gespeichert.slug} mit Anzeigename „${anzeige}"`, () => {
+        const wieGespeichert = { wert: gespeichert.slug, anzeigename: gespeichert.display_name };
+        const vonDerAltenApp = server.systemnameWieDieApp(anzeige);
+        const vonDerNeuenApp = systemnameZumSpeichern(anzeige, gespeichert).slug;
+
+        const ausAlt = server.systemnameBeimBearbeiten(vonDerAltenApp, anzeige, wieGespeichert);
+        const ausNeu = server.systemnameBeimBearbeiten(vonDerNeuenApp, anzeige, wieGespeichert);
+
+        expect(ausAlt).toBe(vonDerNeuenApp);
+        expect(ausNeu).toBe(vonDerNeuenApp);
+      });
+    }
+  }
+});

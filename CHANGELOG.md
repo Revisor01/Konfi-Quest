@@ -211,6 +211,9 @@ Versionsüberschrift.
   Tag: Ein gestern abgelaufenes Zertifikat zählt nicht mehr als gültig, die
   Startseite des Teams zeigt die Events ab Mitternacht, Bonuspunkte tragen das
   richtige Datum, und wer ins Team kommt, ist es seit heute.
+- Speichert die Gemeindeleitung die Angaben ihrer Gemeinde mit einer älteren
+  App, verliert der Kurzname der Gemeinde seine Umlaute nicht mehr
+  („Travemuende" wurde zu „Travemnde").
 - Wer im Benutzerfenster gespeichert oder beim Anlegen eines Jahrgangs
   zugewiesen wird, bekommt das Recht, Konfis und Termine diesem Jahrgang
   zuzuordnen, nur noch als Leitung — Teamer:innen bekamen es bisher still

@@ -15,8 +15,17 @@
 // „Kirchspiel Süd") bleibt, nur Umlaute darin werden ebenso umgeschrieben.
 // Namen ohne Umlaute aendern sich nicht.
 //
-// BESTEHENDE GEMEINDEN WERDEN NICHT UMBENANNT: Die Regel gilt nur beim
-// Anlegen. PUT /organizations/:id speichert weiter, was geschickt wird.
+// BESTEHENDE GEMEINDEN WERDEN NICHT UMBENANNT: Keine Gemeinde bekommt einen
+// neuen Systemnamen, nur weil es diese Regel gibt.
+//
+// BEIM BEARBEITEN (PUT /organizations/:id, 09.10.2026) gilt
+// systemnameBeimBearbeiten: Die Store-App 2.2.x bildet den Namen bei JEDEM
+// Speichern neu und ohne Umlaute -- aus `travemuende` wurde beim Speichern
+// wieder `travemnde`. Ab 2.3.0 behaelt die App den gespeicherten Namen,
+// solange der Anzeigename bleibt, und bildet ihn sonst mit ae/oe/ue/ss
+// (frontend/src/utils/gemeindeSystemname.ts, systemnameZumSpeichern). Der
+// Server macht aus dem, was die alte App schickt, dasselbe; was nicht wie die
+// alte App gebildet ist, bleibt, wie es kommt.
 
 const UMLAUTE = { ä: 'ae', ö: 'oe', ü: 'ue', ß: 'ss', Ä: 'ae', Ö: 'oe', Ü: 'ue', ẞ: 'ss' };
 
@@ -53,9 +62,35 @@ function systemnameFuerNeueGemeinde(geschickt, anzeigename) {
   return umlauteUmschreiben(geschickt);
 }
 
+/**
+ * Der Systemname beim Bearbeiten einer Gemeinde -- dasselbe Ergebnis, ob die
+ * Store-App 2.2.x (bildet immer neu, ohne Umlaute) oder eine neuere schickt.
+ *
+ * Ist der geschickte Name genau der, den die alte App aus dem Anzeigenamen
+ * bildet: bei unveraendertem Anzeigenamen bleibt der gespeicherte Name (auch
+ * ein alter ohne Umlaut oder ein eigener), sonst entsteht er mit ae/oe/ue/ss.
+ * Alles andere bleibt, wie es geschickt wird.
+ *
+ * @param {string} geschickt - name oder slug aus der Anfrage (getrimmt)
+ * @param {string} anzeigename - display_name aus der Anfrage (getrimmt)
+ * @param {{wert: string, anzeigename: string}|null} gespeichert - der
+ *   gespeicherte name bzw. slug und der gespeicherte Anzeigename; null, wenn
+ *   die Gemeinde nicht gefunden wurde
+ * @returns {string}
+ */
+function systemnameBeimBearbeiten(geschickt, anzeigename, gespeichert) {
+  if (geschickt !== systemnameWieDieApp(anzeigename)) return geschickt;
+  if (gespeichert && gespeichert.wert
+      && String(anzeigename).trim() === String(gespeichert.anzeigename || '').trim()) {
+    return gespeichert.wert;
+  }
+  return systemnameAusAnzeigename(anzeigename);
+}
+
 module.exports = {
   umlauteUmschreiben,
   systemnameWieDieApp,
   systemnameAusAnzeigename,
   systemnameFuerNeueGemeinde,
+  systemnameBeimBearbeiten,
 };
