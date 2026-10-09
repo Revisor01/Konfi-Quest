@@ -2237,7 +2237,7 @@ paths:
         an der nur wartende Beitraege neu sind, erscheint in
         challengeUpdates.byChallenge nicht. Die App-Icon-Summe
         (utils/appIconBadge.js) liest challengeNeueBeitraege nicht.
-        GEAENDERT 2026-10-09 (Darf freigeben und Kennzahlen-Wahl,
+        GEAENDERT 2026-10-09 (Darf freigeben,
         docs/planung/darf-freigeben.md, Migration 204): Nur Werte, die
         Antwortform bleibt. (1) pendingRequests, pendingEvents und
         pendingChallenges/challengeApprovals zaehlen fuer die Rolle admin nur,
@@ -2245,15 +2245,10 @@ paths:
         Jahrgangs-Zuweisung; Vorgaenge ohne Jahrgang mit dem Recht in
         mindestens einem Jahrgang oder ohne jede Zuweisung). org_admin
         unveraendert; teamer seit 2026-10-09 bei pendingChallenges und
-        challengeApprovals nach derselben Regel wie admin. (2) Hat die Person
-        (admin, org_admin; teamer seit 2026-10-09 nur 'challenges') einen
-        Bereich bei den Kennzahlen abgewaehlt (GET/PUT
-        /api/notifications/kennzahlen), liefert das Feld 0 bzw. leer --
-        antraege: pendingRequests; verbuchen: pendingEvents; challenges:
-        pendingChallenges, challengeApprovals, challengeUpdates und
-        challengeNeueBeitraege. So zeigen auch Store-Apps 2.2.x/2.3.x keine
-        Zahl, ohne die Wahl zu kennen. Dieselbe Rechnung gilt am App-Symbol
-        und am Gemeinde-Umschalter (utils/appIconBadge.js).
+        challengeApprovals nach derselben Regel wie admin. (2) Eine
+        persoenliche Abwahl einzelner Zahlen gibt es nicht (Entscheidung
+        2026-10-09): Wer das Recht hat, bekommt die Zahl. Dieselbe Rechnung
+        gilt am App-Symbol und am Gemeinde-Umschalter (utils/appIconBadge.js).
       responses:
         '200':
           description: Zähler
@@ -2713,76 +2708,6 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Meldet nur ueber das eigene Geraet; nichts wird gespeichert"
-
-  /api/notifications/kennzahlen:
-    get:
-      tags: ["Benachrichtigungen"]
-      summary: Kennzahlen-Wahl lesen (je aktiver Gemeinde; Leitung und Team)
-      description: >
-        NEU 2026-10-09 (docs/planung/darf-freigeben.md, Migration 204): Jede
-        Leitungsperson (admin, org_admin) entscheidet fuer die aktive
-        Gemeinde, welche Zahlen sie sieht. GEAENDERT 2026-10-09: auch teamer,
-        dort waehlbar nur 'challenges' (pendingChallenges,
-        challengeApprovals, Challenge-Neuigkeiten, Push "Neuer
-        Challenge-Beitrag"); die Antwort hat fuer sie dieselbe Form, antraege
-        und verbuchen bleiben true und ohne Folge. Vorher 403 fuer teamer --
-        Store-Apps 2.2.x/2.3.x rufen die Route nicht. Aus heisst: badge-counts liefert
-        fuer den Bereich 0, die Zahl am App-Symbol und am Gemeinde-Umschalter
-        zaehlt ihn nicht, und die Pushes dazu gehen nicht an die Person
-        ("Neuer Antrag", "Neuer Challenge-Beitrag", die Verbuchen-Erinnerung).
-        Postfach-Eintraege zu einzelnen Vorgaengen bleiben; die
-        Verbuchen-Erinnerung ist selbst eine Zahl und entfaellt ganz.
-        Vorgabe ohne gespeicherte Wahl: alles an. Regel-Stelle:
-        backend/utils/leitungKennzahlen.js. Store-Apps kennen die Route nicht.
-      responses:
-        '200':
-          description: Die Wahl
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  antraege: { type: boolean, description: "pendingRequests und der Push zu neuen Antraegen" }
-                  verbuchen: { type: boolean, description: "pendingEvents und die Verbuchen-Erinnerung" }
-                  challenges: { type: boolean, description: "pendingChallenges, challengeApprovals, Challenge-Neuigkeiten der Leitung und der Push zu neuen Beitraegen" }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { description: "Konfis (keine Kennzahlen-Wahl); bis 09.10.2026 auch Teamer:innen" }
-        '500': { description: Datenbankfehler }
-      x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC]
-        org-scope: true
-        objekt-pruefung: "Nur das eigene Konto (req.user.id) in der aktiven Gemeinde; keine Parameter"
-    put:
-      tags: ["Benachrichtigungen"]
-      summary: Kennzahlen-Wahl setzen (Leitung und Team)
-      description: >
-        Setzt einen oder mehrere Bereiche; nicht genannte bleiben. Antwort in
-        derselben Form wie GET. teamer (seit 2026-10-09) nur 'challenges';
-        nennen sie antraege oder verbuchen, antwortet der Server 400 und
-        speichert nichts.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              minProperties: 1
-              properties:
-                antraege: { type: boolean }
-                verbuchen: { type: boolean }
-                challenges: { type: boolean }
-      responses:
-        '200': { description: "Die ganze Wahl danach (antraege, verbuchen, challenges)" }
-        '400': { description: "Kein Bereich genannt, ein Wert ist kein Wahrheitswert, oder teamer nennt antraege/verbuchen" }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { description: "Konfis; bis 09.10.2026 auch Teamer:innen" }
-        '500': { description: Datenbankfehler }
-      x-berechtigung:
-        rollen: [org_admin, admin, teamer]
-        middleware: [verifyTokenRBAC]
-        org-scope: true
-        objekt-pruefung: "Nur das eigene Konto in der aktiven Gemeinde"
 
   /api/notifications/preferences:
     get:

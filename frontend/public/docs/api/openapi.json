@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n328 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n326 Operationen."
   },
   "servers": [
     {
@@ -10394,7 +10394,7 @@
           ],
           "org-scope": true,
           "objekt-pruefung": "WHERE a.organization_id = req.user.organization_id",
-          "hinweis": "GEAENDERT 2026-08-31: Jahrgangs-Filter fuer die Rolle admin. org_admin/super_admin sehen weiterhin die Anträge ALLER Jahrgänge; ein admin sieht nur die aus seinen can_view-Jahrgängen, ein admin ohne Zuweisung ein leeres Array (kein 403 — die Antwort bleibt in jedem Fall ein Array). Anträge zu Teamer-Aktivitäten (target_role='teamer') bleiben fuer jeden Admin sichtbar, weil Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests). GEAENDERT 2026-09-01: Fehlt dem admin die Jahrgangs-Zuweisung, traegt die Antwort zusaetzlich den Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt ein Array, Teamer-Antraege sind weiterhin enthalten). Die Oberflaeche erklaert damit, warum keine Konfi-Antraege kommen. GEAENDERT 27.09.2026: Die Sichtregel steht in backend/utils/antragLeitungSicht.js und bestimmt zugleich, wer \"Neuer Antrag eingegangen\" bekommt (POST /api/konfi/requests, POST /api/teamer/requests) -- wer einen Antrag hier nicht sieht, bekommt keine Mitteilung dazu. Antwortform und Filter unveraendert. NEU 09.10.2026 (Darf freigeben, Migration 204): additives Feld darf_entscheiden je Antrag -- ob der Aufrufer genehmigen und ablehnen darf (Recht darf_antraege_entscheiden am Jahrgang der Konfi; Teamer-Antraege mit dem Recht in mindestens einem Jahrgang oder ohne jede Zuweisung; org_admin immer). Die Liste selbst bleibt bei der Sichtregel: Wer nicht entscheiden darf, sieht die Antraege weiter, nur lesend. Die Empfaenger von \"Neuer Antrag eingegangen\" (Postfach und Push) sind seitdem, wer entscheiden darf; den Push filtert zusaetzlich die Kennzahlen-Wahl (GET/PUT /api/notifications/kennzahlen). Regel-Stelle: backend/utils/antragLeitungSicht.js.\n"
+          "hinweis": "GEAENDERT 2026-08-31: Jahrgangs-Filter fuer die Rolle admin. org_admin/super_admin sehen weiterhin die Anträge ALLER Jahrgänge; ein admin sieht nur die aus seinen can_view-Jahrgängen, ein admin ohne Zuweisung ein leeres Array (kein 403 — die Antwort bleibt in jedem Fall ein Array). Anträge zu Teamer-Aktivitäten (target_role='teamer') bleiben fuer jeden Admin sichtbar, weil Teamer:innen keinen Jahrgang haben und ein Admin sie alle sieht. Teamer:innen haben hier keinen Zugriff (dafuer gibt es GET /api/teamer/requests). GEAENDERT 2026-09-01: Fehlt dem admin die Jahrgangs-Zuweisung, traegt die Antwort zusaetzlich den Header X-Kein-Jahrgang-Zugewiesen: true (additiv; die Antwortform bleibt ein Array, Teamer-Antraege sind weiterhin enthalten). Die Oberflaeche erklaert damit, warum keine Konfi-Antraege kommen. GEAENDERT 27.09.2026: Die Sichtregel steht in backend/utils/antragLeitungSicht.js und bestimmt zugleich, wer \"Neuer Antrag eingegangen\" bekommt (POST /api/konfi/requests, POST /api/teamer/requests) -- wer einen Antrag hier nicht sieht, bekommt keine Mitteilung dazu. Antwortform und Filter unveraendert. NEU 09.10.2026 (Darf freigeben, Migration 204): additives Feld darf_entscheiden je Antrag -- ob der Aufrufer genehmigen und ablehnen darf (Recht darf_antraege_entscheiden am Jahrgang der Konfi; Teamer-Antraege mit dem Recht in mindestens einem Jahrgang oder ohne jede Zuweisung; org_admin immer). Die Liste selbst bleibt bei der Sichtregel: Wer nicht entscheiden darf, sieht die Antraege weiter, nur lesend. Die Empfaenger von \"Neuer Antrag eingegangen\" (Postfach und Push) sind seitdem, wer entscheiden darf. Regel-Stelle: backend/utils/antragLeitungSicht.js.\n"
         },
         "responses": {
           "200": {
@@ -14622,7 +14622,7 @@
           "Benachrichtigungen"
         ],
         "summary": "Leichtgewichtige Badge-Zähler für die Tab-Leiste",
-        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der die Antragsliste filtert und die Empfaenger von \"Neuer Antrag eingegangen\" bestimmt werden. Die Zahl selbst und die Antwortform sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr bekommt (die sonst in postfach.ungelesen mitzaehlte). BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents zaehlte fuer gebundene Admins \"Team gesucht\"-Events (teamer_needed) fremder Jahrgaenge mit -- die Eventliste hatte diesen Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt pendingEvents ueber die gemeinsame Regel in backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events, die Zahl am App-Symbol und die Erinnerung \"Events warten auf Verbuchung\" (die seitdem jeder Person genau diese Zahl nennt, BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste nicht mehr mit. Antwortform unveraendert. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon: \"Die Challenges sollen sich verhalten wie der Chat\"): auch fuer Team und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem letzten Oeffnen in laufenden Challenges, die die Person sieht (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge). Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung nicht; ihr Reiter zeigt weiter nur pendingChallenges. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-07): Fuer Team und Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team', 'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis' nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol: Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen, der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js, postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js). Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12 -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren Gegenstand ein Reiter schon zaehlt (offener Antrag + \"Neuer Antrag eingegangen\"); Begruendung in backend/utils/postfachArten.js. Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der Reiter, bis die naechste Fassung im Store ist. GEAENDERT 2026-09-28 (Entscheidung Simon, hebt die Entscheidung vom 25.09.2026 auf): postfach.ungelesen geht NICHT mehr in die Zahl am App-Symbol ein -- weder im Client (BadgeContext.totalBadgeCount, alle drei Rollen) noch auf dem Server (utils/appIconBadge.js: Push, stiller Push, Hintergrund-Lauf, je-organisation). Die App zeigt an der Glocke nur noch \"ungelesen > 0 -> blauer Briefumschlag\", keine Zahl. Das Feld bleibt mit Form, Typ und Wert unveraendert: Die Store-App 2.3.0 liest es fuer diese Anzeige (bis zu ihrem naechsten Build addiert sie es im Vordergrund noch selbst). Keine Summe in dieser Antwort enthielt das Postfach (chat.total, challengeUpdates.total und challengeApprovals.total zaehlen je ihren Bereich); deshalb aendert sich hier kein Wert. GEAENDERT 2026-09-29 (nur Anzeige): Statt des Briefumschlags zeigt die App an der Glocke einen blauen Punkt ohne Symbol. Antwort, Feld und Wert unveraendert. NEU 2026-09-29, additiv: challengeNeueBeitraege -- die rote Zahl am Challenge-Eintrag von Team und Leitung (Simon: \"bei jeden Beitrag. Wie im Chat bei jeder Nachricht. Und zusaetzlich Orangen bei Freigaben.\"). Je laufender Challenge, die die Person sieht, jeder fremde Beitrag seit dem letzten Oeffnen (POST /api/challenges/konfi/{id}/mark-read), freigegeben UND wartend, dazu 1 fuer die nie geoeffnete Challenge, bei der das Team mitmacht. Ausgeblendete und Zeitstempel in der Zukunft zaehlen nicht. Ein wartender Beitrag steht damit bis zum Oeffnen hier und bis zur Freigabe in challengeApprovals. Dieselbe Regel-Stelle wie challengeUpdates (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge, Spalte neu), dieselbe Sichtbarkeit (utils/challengeLeitungSicht.js). Fuer Konfis immer leer (total 0): ihre Zahl an der Challenge bleibt challengeUpdates. UNVERAENDERT: pendingChallenges, challengeApprovals und challengeUpdates behalten Bedeutung und Werte -- Reiter und App-Symbol rechnen weiter \"wartend + neu freigegeben\" (die App 2.3.0 addiert pendingChallenges + challengeUpdates.total), eine Challenge, an der nur wartende Beitraege neu sind, erscheint in challengeUpdates.byChallenge nicht. Die App-Icon-Summe (utils/appIconBadge.js) liest challengeNeueBeitraege nicht. GEAENDERT 2026-10-09 (Darf freigeben und Kennzahlen-Wahl, docs/planung/darf-freigeben.md, Migration 204): Nur Werte, die Antwortform bleibt. (1) pendingRequests, pendingEvents und pendingChallenges/challengeApprovals zaehlen fuer die Rolle admin nur, was sie entscheiden, verbuchen bzw. freigeben DARF (Rechte an der Jahrgangs-Zuweisung; Vorgaenge ohne Jahrgang mit dem Recht in mindestens einem Jahrgang oder ohne jede Zuweisung). org_admin unveraendert; teamer seit 2026-10-09 bei pendingChallenges und challengeApprovals nach derselben Regel wie admin. (2) Hat die Person (admin, org_admin; teamer seit 2026-10-09 nur 'challenges') einen Bereich bei den Kennzahlen abgewaehlt (GET/PUT /api/notifications/kennzahlen), liefert das Feld 0 bzw. leer -- antraege: pendingRequests; verbuchen: pendingEvents; challenges: pendingChallenges, challengeApprovals, challengeUpdates und challengeNeueBeitraege. So zeigen auch Store-Apps 2.2.x/2.3.x keine Zahl, ohne die Wahl zu kennen. Dieselbe Rechnung gilt am App-Symbol und am Gemeinde-Umschalter (utils/appIconBadge.js).\n",
+        "description": "Chat-Ungelesen-Zähler je Raum (Semantik identisch zu GET /chat/rooms) plus Pending-Zähler: pendingRequests/pendingEvents nur für Admin-Typen; pendingChallenges für org_admin org-weit, für Teamer UND gebundene Admins (seit 01.09.2026) auf zugewiesene Jahrgänge begrenzt (nur_team zaehlt immer), für Konfis 0. Seit 01.09.2026 zaehlen auch pendingRequests und pendingEvents fuer die Rolle admin nur noch, was seine Listen zeigen: Antraege aus zugewiesenen Jahrgaengen (Teamer-Antraege immer), Termine nach dem Sichtbarkeits-Filter der Terminliste. org_admin bleibt org-weit. GEAENDERT 27.09.2026: pendingRequests zaehlt ueber die gemeinsame Regel in backend/utils/antragLeitungSicht.js -- dieselbe, nach der die Antragsliste filtert und die Empfaenger von \"Neuer Antrag eingegangen\" bestimmt werden. Die Zahl selbst und die Antwortform sind unveraendert; neu ist, dass ein Admin fuer einen Antrag, den dieser Zaehler nicht zaehlt, auch keine Postfach-Mitteilung mehr bekommt (die sonst in postfach.ungelesen mitzaehlte). BEHOBEN 27.09.2026 (Audit wer-bekommt-was BF-11): pendingEvents zaehlte fuer gebundene Admins \"Team gesucht\"-Events (teamer_needed) fremder Jahrgaenge mit -- die Eventliste hatte diesen Sichtbarkeitsgrund am 08.09.2026 gestrichen, die Zahl stand vor einem Event, das sich weder finden noch oeffnen liess. Jetzt zaehlt pendingEvents ueber die gemeinsame Regel in backend/utils/terminLeitungSicht.js, dieselbe wie GET /api/events, die Zahl am App-Symbol und die Erinnerung \"Events warten auf Verbuchung\" (die seitdem jeder Person genau diese Zahl nennt, BF-10). Buchungen geloeschter Konten zaehlen dabei wie in der Liste nicht mehr mit. Antwortform unveraendert. Seit 24.08.2026 zählen EIGENE Nachrichten nicht mehr als ungelesen — vorher stand nach der eigenen letzten Nachricht eine Eins am Reiter, bis der Raum erneut geoeffnet wurde. Der Hintergrunddienst hat sie seit jeher ausgeschlossen; die beiden Zählungen sind damit gleich. Seit 27.08.2026 kommt newBadges als fuenftes Feld dazu — die Anzahl der noch nicht gesehenen eigenen Abzeichen (user_badges.seen), fuer Konfis wie Teamer:innen aus derselben Tabelle. Vorher lief der Abzeichen-Zaehler ueber einen zweiten, eigenen Weg; jetzt kommen alle Reiter-Zahlen aus dieser einen Abfrage. Behoben 15.09.2026: pendingEvents zaehlt keine abgesagten Termine mehr (events.cancelled IS NOT TRUE — die Spalte ist nullable, NULL heisst \"nicht abgesagt\"). Der Verbuchen-Tab blendet sie aus, die Zahl stand also vor einer leeren Liste. Dieselbe Bedingung gilt in der App-Icon-Summe (utils/appIconBadge.js), damit Reiter und Icon gleich zaehlen. Seit 24.09.2026 kommt challengeUpdates additiv dazu (kein bestehendes Feld aendert Form oder Typ, aeltere Apps ignorieren es): die Challenge-Neuigkeiten fuer Konfis, je Challenge und als Summe -- das Gegenstueck zu chat.byRoom/chat.total. GEAENDERT 2026-09-27 (Simon: \"Die Challenges sollen sich verhalten wie der Chat\"): auch fuer Team und Leitung gefuellt -- fremde, freigegebene Beitraege seit dem letzten Oeffnen in laufenden Challenges, die die Person sieht (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge). Wartende Beitraege zaehlen weiter nur in pendingChallenges, ein Beitrag nie in beiden. Store-Apps 2.2.x lesen das Feld fuer Team und Leitung nicht; ihr Reiter zeigt weiter nur pendingChallenges. BEHOBEN 27.09.2026 (Audit \"Wer bekommt was\", BF-07): Fuer Team und Leitung zaehlt dazu die laufende Challenge selbst (1), solange sie nie geoeffnet wurde, das Team bei ihr mitmacht ('konfis_und_team', 'nur_team' -- utils/challengeLeitungSicht.js, teamMachtMitSql) und die Person sie nicht angelegt hat (challenges.created_by). Bei 'konfis' nicht. Nur Werte aendern sich, die Antwortform bleibt; dieselbe Rechnung speist die App-Icon-Summe und den Gemeinde-Umschalter. Seit 25.09.2026 kommt challengeApprovals additiv dazu: dieselbe Zaehlung wie pendingChallenges (gleiche Rollen- und Jahrgangsgrenzen), aufgeschluesselt je Challenge fuer die Zahl am Listeneintrag der Leitung. pendingChallenges bleibt unveraendert eine Zahl -- die Store-Apps 2.2.x lesen sie so. Fuer Konfis ist challengeApprovals 0/leer; Neuigkeiten (Konfis) und offene Freigaben (Leitung) werden nie in ein Feld gemischt. Seit 25.09.2026 kommt postfach additiv dazu: die Zahl ungelesener Postfach-Mitteilungen des KONTOS ueber alle Organisationen (dieselbe Zaehlung wie GET /api/notifications/postfach.ungelesen). Sie speist die Glocke -- und seit demselben Tag auch die Zahl am App-Symbol: Der Client addiert sie in allen drei Rollen zu den Reiter-Zahlen, der Server rechnet dieselbe Summe fuer den Push (utils/appIconBadge.js, postfachZaehler; Paritaetstest appIconBadgeParitaet.test.js). Gemessen vorher am Geraet: Glocke 23, Challenges 9, Chat 3, Symbol 12 -- jetzt 35. Ungelesene Mitteilungen zaehlen ALLE, auch die, deren Gegenstand ein Reiter schon zaehlt (offener Antrag + \"Neuer Antrag eingegangen\"); Begruendung in backend/utils/postfachArten.js. Kein bestehendes Feld aendert sich. Store-Apps 2.2.x addieren das Postfach nicht: Sie zeigen nach dem Oeffnen die kleinere Summe der Reiter, bis die naechste Fassung im Store ist. GEAENDERT 2026-09-28 (Entscheidung Simon, hebt die Entscheidung vom 25.09.2026 auf): postfach.ungelesen geht NICHT mehr in die Zahl am App-Symbol ein -- weder im Client (BadgeContext.totalBadgeCount, alle drei Rollen) noch auf dem Server (utils/appIconBadge.js: Push, stiller Push, Hintergrund-Lauf, je-organisation). Die App zeigt an der Glocke nur noch \"ungelesen > 0 -> blauer Briefumschlag\", keine Zahl. Das Feld bleibt mit Form, Typ und Wert unveraendert: Die Store-App 2.3.0 liest es fuer diese Anzeige (bis zu ihrem naechsten Build addiert sie es im Vordergrund noch selbst). Keine Summe in dieser Antwort enthielt das Postfach (chat.total, challengeUpdates.total und challengeApprovals.total zaehlen je ihren Bereich); deshalb aendert sich hier kein Wert. GEAENDERT 2026-09-29 (nur Anzeige): Statt des Briefumschlags zeigt die App an der Glocke einen blauen Punkt ohne Symbol. Antwort, Feld und Wert unveraendert. NEU 2026-09-29, additiv: challengeNeueBeitraege -- die rote Zahl am Challenge-Eintrag von Team und Leitung (Simon: \"bei jeden Beitrag. Wie im Chat bei jeder Nachricht. Und zusaetzlich Orangen bei Freigaben.\"). Je laufender Challenge, die die Person sieht, jeder fremde Beitrag seit dem letzten Oeffnen (POST /api/challenges/konfi/{id}/mark-read), freigegeben UND wartend, dazu 1 fuer die nie geoeffnete Challenge, bei der das Team mitmacht. Ausgeblendete und Zeitstempel in der Zukunft zaehlen nicht. Ein wartender Beitrag steht damit bis zum Oeffnen hier und bis zur Freigabe in challengeApprovals. Dieselbe Regel-Stelle wie challengeUpdates (utils/challengeNeuigkeiten.js, challengeNeuigkeitenLeitungJeChallenge, Spalte neu), dieselbe Sichtbarkeit (utils/challengeLeitungSicht.js). Fuer Konfis immer leer (total 0): ihre Zahl an der Challenge bleibt challengeUpdates. UNVERAENDERT: pendingChallenges, challengeApprovals und challengeUpdates behalten Bedeutung und Werte -- Reiter und App-Symbol rechnen weiter \"wartend + neu freigegeben\" (die App 2.3.0 addiert pendingChallenges + challengeUpdates.total), eine Challenge, an der nur wartende Beitraege neu sind, erscheint in challengeUpdates.byChallenge nicht. Die App-Icon-Summe (utils/appIconBadge.js) liest challengeNeueBeitraege nicht. GEAENDERT 2026-10-09 (Darf freigeben, docs/planung/darf-freigeben.md, Migration 204): Nur Werte, die Antwortform bleibt. (1) pendingRequests, pendingEvents und pendingChallenges/challengeApprovals zaehlen fuer die Rolle admin nur, was sie entscheiden, verbuchen bzw. freigeben DARF (Rechte an der Jahrgangs-Zuweisung; Vorgaenge ohne Jahrgang mit dem Recht in mindestens einem Jahrgang oder ohne jede Zuweisung). org_admin unveraendert; teamer seit 2026-10-09 bei pendingChallenges und challengeApprovals nach derselben Regel wie admin. (2) Eine persoenliche Abwahl einzelner Zahlen gibt es nicht (Entscheidung 2026-10-09): Wer das Recht hat, bekommt die Zahl. Dieselbe Rechnung gilt am App-Symbol und am Gemeinde-Umschalter (utils/appIconBadge.js).\n",
         "responses": {
           "200": {
             "description": "Zähler",
@@ -15145,120 +15145,6 @@
           ],
           "org-scope": false,
           "objekt-pruefung": "Meldet nur ueber das eigene Geraet; nichts wird gespeichert"
-        }
-      }
-    },
-    "/api/notifications/kennzahlen": {
-      "get": {
-        "tags": [
-          "Benachrichtigungen"
-        ],
-        "summary": "Kennzahlen-Wahl lesen (je aktiver Gemeinde; Leitung und Team)",
-        "description": "NEU 2026-10-09 (docs/planung/darf-freigeben.md, Migration 204): Jede Leitungsperson (admin, org_admin) entscheidet fuer die aktive Gemeinde, welche Zahlen sie sieht. GEAENDERT 2026-10-09: auch teamer, dort waehlbar nur 'challenges' (pendingChallenges, challengeApprovals, Challenge-Neuigkeiten, Push \"Neuer Challenge-Beitrag\"); die Antwort hat fuer sie dieselbe Form, antraege und verbuchen bleiben true und ohne Folge. Vorher 403 fuer teamer -- Store-Apps 2.2.x/2.3.x rufen die Route nicht. Aus heisst: badge-counts liefert fuer den Bereich 0, die Zahl am App-Symbol und am Gemeinde-Umschalter zaehlt ihn nicht, und die Pushes dazu gehen nicht an die Person (\"Neuer Antrag\", \"Neuer Challenge-Beitrag\", die Verbuchen-Erinnerung). Postfach-Eintraege zu einzelnen Vorgaengen bleiben; die Verbuchen-Erinnerung ist selbst eine Zahl und entfaellt ganz. Vorgabe ohne gespeicherte Wahl: alles an. Regel-Stelle: backend/utils/leitungKennzahlen.js. Store-Apps kennen die Route nicht.\n",
-        "responses": {
-          "200": {
-            "description": "Die Wahl",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "antraege": {
-                      "type": "boolean",
-                      "description": "pendingRequests und der Push zu neuen Antraegen"
-                    },
-                    "verbuchen": {
-                      "type": "boolean",
-                      "description": "pendingEvents und die Verbuchen-Erinnerung"
-                    },
-                    "challenges": {
-                      "type": "boolean",
-                      "description": "pendingChallenges, challengeApprovals, Challenge-Neuigkeiten der Leitung und der Push zu neuen Beitraegen"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "description": "Konfis (keine Kennzahlen-Wahl); bis 09.10.2026 auch Teamer:innen"
-          },
-          "500": {
-            "description": "Datenbankfehler"
-          }
-        },
-        "x-berechtigung": {
-          "rollen": [
-            "org_admin",
-            "admin",
-            "teamer"
-          ],
-          "middleware": [
-            "verifyTokenRBAC"
-          ],
-          "org-scope": true,
-          "objekt-pruefung": "Nur das eigene Konto (req.user.id) in der aktiven Gemeinde; keine Parameter"
-        }
-      },
-      "put": {
-        "tags": [
-          "Benachrichtigungen"
-        ],
-        "summary": "Kennzahlen-Wahl setzen (Leitung und Team)",
-        "description": "Setzt einen oder mehrere Bereiche; nicht genannte bleiben. Antwort in derselben Form wie GET. teamer (seit 2026-10-09) nur 'challenges'; nennen sie antraege oder verbuchen, antwortet der Server 400 und speichert nichts.\n",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "minProperties": 1,
-                "properties": {
-                  "antraege": {
-                    "type": "boolean"
-                  },
-                  "verbuchen": {
-                    "type": "boolean"
-                  },
-                  "challenges": {
-                    "type": "boolean"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Die ganze Wahl danach (antraege, verbuchen, challenges)"
-          },
-          "400": {
-            "description": "Kein Bereich genannt, ein Wert ist kein Wahrheitswert, oder teamer nennt antraege/verbuchen"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "description": "Konfis; bis 09.10.2026 auch Teamer:innen"
-          },
-          "500": {
-            "description": "Datenbankfehler"
-          }
-        },
-        "x-berechtigung": {
-          "rollen": [
-            "org_admin",
-            "admin",
-            "teamer"
-          ],
-          "middleware": [
-            "verifyTokenRBAC"
-          ],
-          "org-scope": true,
-          "objekt-pruefung": "Nur das eigene Konto in der aktiven Gemeinde"
         }
       }
     },

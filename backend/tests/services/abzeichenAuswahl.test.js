@@ -241,7 +241,9 @@ describe('Abzeichen-Lauf: nur veraenderte Personen pruefen', () => {
     // (utils/leitungKennzahlen.js, "Darf freigeben") kam als elfter Baustein
     // in die Zaehlrunde -- EINE Abfrage fuer alle Leitungs-Konten aller
     // Gemeinden zusammen. Konstant, nicht je Person: 1 + 2 + 11 + 7 = 21.
-    expect(z.stand()).toBe(21);
+    // Am selben Tag 21 -> 20: Die Kennzahlen-Wahl entfaellt wieder (Simon),
+    // der Baustein mit ihr: 1 + 2 + 10 + 7 = 20.
+    expect(z.stand()).toBe(20);
   });
 
   it('wer eine neue Aktivitaet bekommt, wird geprueft — und sonst niemand', async () => {

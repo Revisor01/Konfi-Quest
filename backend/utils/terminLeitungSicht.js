@@ -49,8 +49,7 @@
 //     /attendance-all (darfTerminVerbuchen, 403 ohne Recht)
 //   - Feld darf_verbuchen am Termin (GET /events/:id, Leitung)
 //   - Zaehler: badge-counts.pendingEvents, App-Symbol, Gemeinde-Umschalter
-//   - die Verbuchen-Erinnerung um 09:00 (zaehleWartendeTermineJeLeitung),
-//     zusaetzlich nach der Kennzahlen-Wahl (Bereich 'verbuchen')
+//   - die Verbuchen-Erinnerung um 09:00 (zaehleWartendeTermineJeLeitung)
 // Die Terminliste bleibt bei der Sicht, ebenso die Termin-Meldungen an die
 // Leitung (ladeLeitungZumTermin: Abmeldungen, Zu- und Absagen) -- sie
 // betreffen den Termin, nicht das Verbuchen.
@@ -276,8 +275,7 @@ async function zaehleWartendeTermineJeLeitung(db, orgIds) {
   if (personen.length === 0) return [];
 
   // Seit 09.10.2026 zaehlt die Erinnerung nur Termine, die die Person
-  // VERBUCHEN darf (Jahrgaenge ihres Rechts), und nur, wenn sie den Bereich
-  // bei den Kennzahlen nicht abgewaehlt hat -- dieselbe Zahl wie ihr Reiter.
+  // VERBUCHEN darf (Jahrgaenge ihres Rechts) -- dieselbe Zahl wie ihr Reiter.
   const { rows } = await db.query(
     `SELECT z.user_id, z.organization_id, COUNT(e.id)::int AS anzahl
        FROM unnest($1::bigint[], $2::int[], $3::boolean[]) AS z(user_id, organization_id, voll)
@@ -293,11 +291,6 @@ async function zaehleWartendeTermineJeLeitung(db, orgIds) {
             ohneJahrgang: rechtOhneJahrgangSql('verbuchen', 'u.id', 'z.organization_id')
           })}
         )
-      WHERE NOT EXISTS (
-        SELECT 1 FROM leitung_kennzahlen lk
-         WHERE lk.user_id = z.user_id AND lk.organization_id = z.organization_id
-           AND lk.verbuchen = false
-      )
       GROUP BY z.user_id, z.organization_id
       ORDER BY z.organization_id, z.user_id`,
     [personen.map((p) => p.id), personen.map((p) => p.orgId), personen.map((p) => p.voll)]

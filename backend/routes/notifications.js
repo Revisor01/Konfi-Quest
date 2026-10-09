@@ -8,7 +8,6 @@ const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
 const { rechtFuer } = require('../utils/freigabeRechte');
-const { ladeKennzahlen, speichereKennzahlen, hatKennzahlenWahl, kennzahlBereicheFuer, ALLES_AN, BEREICHE } = require('../utils/leitungKennzahlen');
 const { kennwortFuersProtokoll, diagnoseHinweisFuersProtokoll } = require('../utils/protokoll');
 const { wegAusAnmeldung, startbildschirmAusAnmeldung } = require('../utils/appSymbolWeg');
 
@@ -98,19 +97,12 @@ module.exports = (db, verifyTokenRBAC) => {
       // Konfis) nennen den Grund bereits ueber ihre eigenen Routen.
       const istGebundenerAdmin = req.user.role_name === 'admin' && !req.user.is_super_admin;
 
-      // "Darf freigeben" und Kennzahlen-Wahl (09.10.2026,
-      // docs/planung/darf-freigeben.md): Die drei Leitungs-Zahlen zaehlen nur,
-      // was die Person entscheiden, verbuchen bzw. freigeben DARF
-      // (utils/freigabeRechte.js, rechtFuer -- dieselbe Regel wie Server-
-      // Pruefung, Push-Empfaenger und App-Symbol), und nur, wenn sie den
-      // Bereich bei den Kennzahlen nicht abgewaehlt hat
-      // (utils/leitungKennzahlen.js). Die FORM der Antwort bleibt: eine
-      // abgewaehlte Zahl ist 0 -- so zeigen auch die Store-Apps 2.2.x/2.3.x
-      // keine Zahl, ohne das neue Feld zu kennen.
-      // Teamer:innen haben seit 09.10.2026 die Wahl fuer "challenges".
-      const kennzahlen = ((isAdminType || userType === 'teamer') && hatKennzahlenWahl(req.user.role_name))
-        ? await ladeKennzahlen(db, userId, organizationId)
-        : ALLES_AN;
+      // "Darf freigeben" (09.10.2026, docs/planung/darf-freigeben.md): Die
+      // drei Leitungs-Zahlen zaehlen nur, was die Person entscheiden,
+      // verbuchen bzw. freigeben DARF (utils/freigabeRechte.js, rechtFuer --
+      // dieselbe Regel wie Server-Pruefung, Push-Empfaenger und App-Symbol).
+      // Eine persoenliche Abwahl gibt es nicht (Simon, 09.10.2026): Wer das
+      // Recht hat, bekommt die Zahl. Die FORM der Antwort bleibt.
       const antragRecht = rechtFuer(req.user, 'antraege');
       const verbuchenRecht = rechtFuer(req.user, 'verbuchen');
       const freigabeRecht = rechtFuer(req.user, 'challenges');
@@ -128,9 +120,7 @@ module.exports = (db, verifyTokenRBAC) => {
       // Beitraege als offen gelten und wessen Challenges zaehlen, aendert
       // sich hier NICHT: dieselben WHERE-Bedingungen wie zuvor.
       let challengesPromise = Promise.resolve({ rows: [] });
-      if (!kennzahlen.challenges) {
-        // Kennzahl abgewaehlt (Leitung oder Teamer:in): keine Freigaben-Zahl.
-      } else if (isAdminType && !istGebundenerAdmin) {
+      if (isAdminType && !istGebundenerAdmin) {
         challengesPromise = db.query(
           `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
@@ -201,9 +191,7 @@ module.exports = (db, verifyTokenRBAC) => {
       // nach der auch die Empfaenger von "Neuer Antrag eingegangen" bestimmt
       // werden.
       let requestsPromise = zero;
-      if (isAdminType && !kennzahlen.antraege) {
-        // Kennzahl abgewaehlt: 0.
-      } else if (isAdminType && leitungSiehtAlleAntraege(req.user)) {
+      if (isAdminType && leitungSiehtAlleAntraege(req.user)) {
         requestsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM activity_requests ar
@@ -244,7 +232,7 @@ module.exports = (db, verifyTokenRBAC) => {
       // BF-11). Und Buchungen geloeschter Konten zaehlen nicht mehr, wie in
       // der Liste (utils/buchungszahlen.js).
       let eventsPromise = zero;
-      if (isAdminType && kennzahlen.verbuchen) {
+      if (isAdminType) {
         // Seit 09.10.2026: nur Termine, an denen die Person verbuchen darf.
         const gebunden = !leitungSiehtAlleTermine(req.user);
         const eventSichtFilter = gebunden
@@ -277,13 +265,9 @@ module.exports = (db, verifyTokenRBAC) => {
       // (2.2.x) lesen challengeUpdates nur im Konfi-Zweig und ignorieren
       // das Feld fuer Leitung und Team; die Antwortform bleibt.
       // Admins mit Super-Admin-Merkmal zaehlen wie oben org-weit.
-      // Kennzahl "challenges" abgewaehlt: auch keine Neuigkeiten-Zahlen der
-      // Leitung (dieselbe Wahl wie am App-Symbol, utils/appIconBadge.js).
       const neuigkeitenPromise = (userType === 'konfi')
         ? challengeNeuigkeitenJeChallenge(db, [{ id: userId, type: userType, organization_id: organizationId }])
-        : !kennzahlen.challenges
-          ? Promise.resolve([])
-          : challengeNeuigkeitenLeitungJeChallenge(db, [{
+        : challengeNeuigkeitenLeitungJeChallenge(db, [{
             id: userId,
             type: userType,
             organization_id: organizationId,
@@ -634,62 +618,6 @@ module.exports = (db, verifyTokenRBAC) => {
       res.json({ success: true, id, read_at: vorhanden[0].read_at });
     } catch (err) {
       console.error('Database error in PUT /notifications/postfach/:id/gelesen:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
-
-  // KENNZAHLEN-WAHL DER LEITUNG (09.10.2026, docs/planung/darf-freigeben.md)
-  //
-  // Jede Leitungsperson (admin, org_admin) entscheidet fuer die AKTIVE
-  // Gemeinde, welche Zahlen sie sieht: antraege, verbuchen, challenges. Aus
-  // heisst: keine Zahl am Reiter (badge-counts liefert 0), nichts in der Zahl
-  // am App-Symbol, kein Push dafuer. Der Postfach-Eintrag bleibt.
-  // Regel-Stelle: utils/leitungKennzahlen.js.
-  //
-  // Nur das eigene Konto (req.user.id) und nur die aktive Gemeinde aus dem
-  // Token -- keine Parameter, mit denen sich etwas Fremdes setzen liesse.
-  // Teamer:innen (seit 09.10.2026): nur der Bereich challenges -- GET liefert
-  // dieselbe Form mit allen drei Feldern, PUT mit antraege/verbuchen ist 400.
-  // Konfis: 403 (sie haben keine dieser Zahlen).
-  router.get('/kennzahlen', verifyTokenRBAC, async (req, res) => {
-    if (!hatKennzahlenWahl(req.user.role_name)) {
-      return res.status(403).json({ error: 'Die Kennzahlen-Wahl gibt es für Leitung und Team.' });
-    }
-    try {
-      res.json(await ladeKennzahlen(db, req.user.id, req.user.organization_id));
-    } catch (err) {
-      console.error('Database error in GET /notifications/kennzahlen:', err);
-      res.status(500).json({ error: 'Datenbankfehler' });
-    }
-  });
-
-  // Setzt einen oder mehrere Bereiche; nicht genannte bleiben. Antwort: die
-  // ganze Wahl danach, in derselben Form wie GET.
-  router.put('/kennzahlen', verifyTokenRBAC, [
-    ...BEREICHE.map((b) => body(b).optional().isBoolean().withMessage(`${b} muss true oder false sein`)),
-    handleValidationErrors
-  ], async (req, res) => {
-    if (!hatKennzahlenWahl(req.user.role_name)) {
-      return res.status(403).json({ error: 'Die Kennzahlen-Wahl gibt es für Leitung und Team.' });
-    }
-    const erlaubt = kennzahlBereicheFuer(req.user.role_name);
-    const fremd = BEREICHE.filter((b) => !erlaubt.includes(b) && req.body[b] !== undefined);
-    if (fremd.length > 0) {
-      return res.status(400).json({ error: 'Für Teamer:innen gibt es nur die Kennzahl für Challenge-Beiträge.' });
-    }
-    const wahl = {};
-    for (const b of erlaubt) {
-      if (typeof req.body[b] === 'boolean') wahl[b] = req.body[b];
-    }
-    if (Object.keys(wahl).length === 0) {
-      return res.status(400).json({ error: `Mindestens einer von ${erlaubt.join(', ')} ist erforderlich` });
-    }
-    try {
-      const ergebnis = await speichereKennzahlen(db, req.user.id, req.user.organization_id, wahl);
-      // Die App holt danach ihre Zaehler selbst neu (BadgeContext).
-      res.json(ergebnis);
-    } catch (err) {
-      console.error('Database error in PUT /notifications/kennzahlen:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

@@ -3421,9 +3421,7 @@ paths:
           oder ohne jede Zuweisung; org_admin immer). Die Liste selbst bleibt
           bei der Sichtregel: Wer nicht entscheiden darf, sieht die Antraege
           weiter, nur lesend. Die Empfaenger von "Neuer Antrag eingegangen"
-          (Postfach und Push) sind seitdem, wer entscheiden darf; den Push
-          filtert zusaetzlich die Kennzahlen-Wahl (GET/PUT
-          /api/notifications/kennzahlen). Regel-Stelle:
+          (Postfach und Push) sind seitdem, wer entscheiden darf. Regel-Stelle:
           backend/utils/antragLeitungSicht.js.
       responses:
         "200":

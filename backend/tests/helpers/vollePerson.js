@@ -142,8 +142,6 @@ async function legeVollePersonAn(db, P, { weitereGemeinde = true } = {}) {
     `INSERT INTO konfi_profiles (user_id, jahrgang_id, gottesdienst_points, gemeinde_points, organization_id)
      VALUES ($1, $2, 0, 0, $3) ON CONFLICT (user_id) DO NOTHING`, [P, JAHRGANG, ORG]);
   await db.query(
-    `INSERT INTO leitung_kennzahlen (user_id, organization_id, antraege) VALUES ($1, $2, false)`, [P, ORG]);
-  await db.query(
     `INSERT INTO notifications (user_id, title, message, type, organization_id) VALUES ($1, 'Eigene', 'x', 'bonus_points', $2)`, [P, ORG]);
   await db.query(
     `INSERT INTO org_einladungen (organization_id, user_id, role_id, eingeladen_von, expires_at)

@@ -15,6 +15,10 @@ die sechs Fragen bleiben offen, bis das Thema wieder aufgenommen wird.
 (Abschnitt „Entschieden 09.10.2026"), dazu eine Kennzahlen-Wahl für jede
 Leitung. Gebaut für 2.4.0.
 
+**Kennzahlen-Wahl abgebaut 09.10.2026:** Simon nahm sie am selben Tag
+zurück; es entscheidet allein das Recht (Abschnitt „Abgebaut 09.10.2026: nur
+das Recht entscheidet").
+
 ## Entschieden 09.10.2026
 
 1. **Welche Vorgänge:** drei Rechte, je einzeln festlegbar — *Anträge
@@ -33,11 +37,11 @@ Leitung. Gebaut für 2.4.0.
 
 Dazu, ohne Frage-Nummer:
 
-- **Kennzahlen-Wahl für jede Leitung** (Admin und Org-Admin): eine persönliche
+- ~~**Kennzahlen-Wahl für jede Leitung** (Admin und Org-Admin): eine persönliche
   Einstellung am eigenen Konto, je Gemeinde. Je Bereich — Anträge, Events
   verbuchen, Challenge-Beiträge — an oder aus. Aus heißt: keine rote Zahl am
   Reiter, nichts davon in der Zahl am App-Symbol und kein Push dafür. Vorgabe:
-  alles an, wie bisher.
+  alles an, wie bisher.~~ Abgebaut am selben Tag, siehe unten.
 - ~~**Teamer:innen** behalten ihr Verhalten: Sie moderieren Challenges für
   „Nur das Team" und ihre Jahrgänge; die Rechte an der Zuweisung gelten für
   die Rolle Admin.~~ Abgelöst am selben Tag, siehe „Teamer:innen
@@ -59,10 +63,10 @@ Dazu, ohne Frage-Nummer:
   und `challengeLeitungSicht.js`; die Kennzahlen in
   `backend/utils/leitungKennzahlen.js`. Liste (Feld `darf_…`), Zähler,
   App-Symbol, Push-Empfänger, Postfach und Server-Prüfung lesen sie.
-- Kennzahlen-Abwahl nimmt Zahl und Push, nicht den Postfach-Eintrag (Simon
+- ~~Kennzahlen-Abwahl nimmt Zahl und Push, nicht den Postfach-Eintrag (Simon
   nannte für die Abwahl „Push und Zahl", für das fehlende Recht zusätzlich das
   Postfach). Ausnahme: Die tägliche Verbuchen-Erinnerung ist selbst eine Zahl
-  und entfällt mit der Abwahl ganz, auch im Postfach.
+  und entfällt mit der Abwahl ganz, auch im Postfach.~~ Abgebaut, siehe unten.
 - Nicht am Recht hängen: die Termin-Meldungen an die Leitung (Abmeldungen,
   Zu- und Absagen) und das Erzeugen des QR-Codes zum Selbst-Check-in — sie
   folgen weiter der Sicht.
@@ -73,8 +77,8 @@ Simon hat die drei Festlegungen aus der Umsetzung bestätigt:
 
 1. **Vorgänge ohne Jahrgang:** Wer in keinem Jahrgang zugewiesen ist oder das
    Recht in mindestens einem seiner Jahrgänge hat, darf sie — bestätigt.
-2. **Postfach-Eintrag „Neuer Antrag"** bleibt bei abgewählter Kennzahl —
-   bestätigt.
+2. ~~**Postfach-Eintrag „Neuer Antrag"** bleibt bei abgewählter Kennzahl —
+   bestätigt.~~ Gegenstandslos mit dem Abbau der Kennzahlen-Wahl.
 3. **Notizen, Abmelden, QR-Code und Löschen** hängen an keinem der drei
    Rechte — bestätigt.
 
@@ -98,15 +102,39 @@ auf Challenges".
 - **can_view und can_edit** bleiben, wie sie sind: Das Recht zählt nur an
   Zuweisungen mit `can_view`; `can_edit` (bei Teamer:innen meist `false`)
   spielt dafür keine Rolle.
-- **Kennzahlen-Wahl:** Teamer:innen bekommen Zahl und Push für
+- ~~**Kennzahlen-Wahl:** Teamer:innen bekommen Zahl und Push für
   Challenge-Beiträge und deshalb dieselbe Wahl, nur für diesen einen
-  Bereich (`GET/PUT /notifications/kennzahlen`, Profil in App und Browser).
+  Bereich (`GET/PUT /notifications/kennzahlen`, Profil in App und Browser).~~
+  Abgebaut, siehe unten.
 - **Oberfläche:** Im Benutzerfenster setzt die Gemeindeleitung an der
   Zuweisung einer Teamer:in nur den Schalter „Challenge-Beiträge freigeben";
   nur dieses Feld geht mit. Alte Apps schicken kein Feld — der bisherige Wert
   bleibt.
 - **Vorgabe:** Spalte steht bei allen Zuweisungen auf `true`; nach dem Deploy
   darf jede Teamer:in, was sie vorher durfte.
+
+### Abgebaut 09.10.2026: nur das Recht entscheidet
+
+Simon: „Kennzahlen ausblenden auch für Admins raus. Der Gedanke ist: Du darfst
+nicht verwalten, dann brauchst du es nicht sehen. Aber passiert bei
+Challenges was, dann guckst du es dir gefälligst an. Also die Funktion wieder
+abbauen." — „Ein sauberes Rechtemanagement und gut ist."
+
+- **Mit Recht** (an der Jahrgangs-Zuweisung, Org-Admin immer): rote Zahl am
+  Reiter, Zahl am App-Symbol und am Gemeinde-Umschalter, Push und
+  Postfach-Eintrag — immer, ohne persönliche Abwahl. Den Push aufs Handy
+  regelt nur noch die allgemeine Auswahl der Push-Gruppen.
+- **Ohne Recht:** nichts davon; die Liste bleibt lesbar.
+- **Challenge-Neuigkeiten** (neue sichtbare Beiträge seit dem letzten
+  Öffnen) folgen wieder allein der Sicht, wie vor der Kennzahlen-Wahl.
+- **Entfernt:** `GET/PUT /notifications/kennzahlen`, das Fenster
+  „Kennzahlen" (App: Mehr › Konto und Teamer-Profil; Web: Profil der Leitung
+  und des Teams), die Regel-Stelle `backend/utils/leitungKennzahlen.js` und
+  die Tabelle `leitung_kennzahlen` (Migration 205, `DROP TABLE IF EXISTS`).
+  Kein Store-Build hat die Routen gerufen (nur TestFlight 242).
+- **Bleibt:** das Rechtemanagement — die Spalten `darf_*` an
+  `user_jahrgang_assignments`, die Schalter an der Zuweisung für Admins und
+  Teamer:innen, `backend/utils/freigabeRechte.js`.
 
 ## Anlass
 

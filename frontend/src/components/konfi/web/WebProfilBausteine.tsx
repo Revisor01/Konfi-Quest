@@ -18,7 +18,6 @@ import {
   ICON_BENACHRICHTIGUNG,
   ICON_GEMEINDE_GEFUELLT,
   ICON_LOESCHEN,
-  ICON_PULS,
   ICON_UHRZEIT,
   ICON_ZUSAGE_GEFUELLT,
   ICON_ABSAGE,
@@ -31,7 +30,6 @@ import { punkteText } from '../../../utils/punkteText';
 import { punkteAnzeigeDatum, nachAnzeigeDatumAbsteigend } from '../../../utils/punkteDatum';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { PushAuswahlModal, ladePushEinstellungen, pushZusammenfassung, type PushEinstellungen } from '../../shared/PushAuswahl';
-import { KennzahlenModal, ladeKennzahlen, kennzahlenZusammenfassung, type Kennzahlen } from '../../shared/KennzahlenAuswahl';
 import { useEinladungen } from '../../shared/EinladungenKarte';
 import WebKarte from '../../web/WebKarte';
 import WebKnopf from '../../web/WebKnopf';
@@ -136,39 +134,6 @@ export const WebPushZeile: React.FC<WebPushZeileProps & { variante: 'users' | 't
         if (pushNotificationsPermission !== 'granted') void requestPushPermissions();
         zeige({ presentingElement: presentingElement?.() ?? undefined });
       }}
-    />
-  );
-};
-
-/**
- * Kennzahlen: dasselbe Fenster wie in der App (KennzahlenModal), als Zeile
- * der Einstellungen. Die Seite bindet sie nur ein, wo hatKennzahlenWahl gilt
- * (Leitung; Team nur für Challenge-Beiträge).
- */
-export const WebKennzahlenZeile: React.FC<WebPushZeileProps> = ({ presentingElement }) => {
-  const { user } = useApp();
-  const [kennzahlen, setKennzahlen] = useState<Kennzahlen | null>(null);
-
-  useEffect(() => {
-    let abgemeldet = false;
-    ladeKennzahlen()
-      .then((k) => { if (!abgemeldet) setKennzahlen(k); })
-      .catch(() => { /* der Stand fällt auf den neutralen Text zurück */ });
-    return () => { abgemeldet = true; };
-  }, []);
-
-  const [zeige, schliesse] = useIonModal(KennzahlenModal, {
-    onClose: () => schliesse(),
-    onGeaendert: (k: Kennzahlen) => setKennzahlen(k),
-  });
-
-  return (
-    <WebEinstellung
-      icon={ICON_PULS}
-      titel="Kennzahlen"
-      wert={kennzahlenZusammenfassung(kennzahlen, user?.role_name ?? null)}
-      knopf="Auswählen"
-      onClick={() => zeige({ presentingElement: presentingElement?.() ?? undefined })}
     />
   );
 };

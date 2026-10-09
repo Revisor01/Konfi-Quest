@@ -4,7 +4,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 176_kein_klartext_passwort.sql -- also der Stand, den die Produktion nach
+-- 177_zeitstempel_statt_text.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================
@@ -805,7 +805,7 @@ CREATE TABLE public.event_bookings (
     timeslot_id bigint,
     status text DEFAULT 'confirmed'::text,
     booking_date timestamp with time zone DEFAULT now(),
-    created_at text DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone DEFAULT now(),
     organization_id bigint,
     attendance_status text,
     opt_out_reason text,
@@ -1058,7 +1058,7 @@ CREATE TABLE public.event_timeslots (
     start_time timestamp with time zone,
     end_time timestamp with time zone,
     max_participants bigint,
-    created_at text DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone DEFAULT now(),
     organization_id bigint
 );
 

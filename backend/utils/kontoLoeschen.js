@@ -107,7 +107,6 @@ const LOESCHREGELN = Object.freeze({
   'event_unregistrations.user_id': 'loeschen',      // Abmeldungen samt Grund
   'konfi_historie.user_id': 'loeschen',             // Kopie der Konfi-Zeit
   'konfi_profiles.user_id': 'loeschen',
-  'leitung_kennzahlen.user_id': 'loeschen',         // Kennzahlen-Wahl (Migration 204)
   'notifications.user_id': 'loeschen',              // eigenes Postfach
   'org_einladungen.user_id': 'loeschen',            // Einladungen AN die Person
   'password_resets.user_id': 'loeschen',
@@ -415,9 +414,6 @@ const GEMEINDE_DATEN_KONFI = Object.freeze({
 const GEMEINDE_DATEN_ANDERSWO = Object.freeze([
   'event_bookings.user_id',
   'konfi_profiles.user_id',
-  // Kennzahlen-Wahl der Leitung (Migration 204): raeumt das Ende der
-  // Mitgliedschaft (utils/mitgliedschaftEnde.js, gemeindeZugehoerigkeitRaeumen).
-  'leitung_kennzahlen.user_id',
   'notifications.user_id',
   'user_organizations.user_id',
 ]);
