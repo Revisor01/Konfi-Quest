@@ -207,6 +207,167 @@ async function spruchWahlMerken(db, organizationId, wahl, vorher) {
   }
 }
 
+// ------------------------------------------------------------------
+// Routen-Kerne, geteilt von routes/konfi.js und routes/teamer.js
+// ------------------------------------------------------------------
+//
+// PATCH /profile und PUT /bible-translation standen bis 09.10.2026 je
+// zweimal im Code, mit eigener Pruefliste je Seite (offene Befunde,
+// „Doppelter Code Konfi/Team"). Wie bei der Tageslosung
+// (services/losungService.js, beantworteTageslosung) pruefen die Routen nur
+// noch die Rolle; Pruefung, Speichern und Antwort stehen hier. Statuscodes,
+// Rumpf und Fehlertexte sind byte-gleich mit dem alten Stand -- die
+// Store-Apps lesen sie (tests/routes/konfiTeamerKopienCharakterisierung.test.js).
+
+const FEHLER_WEDER_NOCH = 'Bitte entweder einen Spruch aus der Liste (konfspruch_id + translation) oder einen eigenen Spruch (konfspruch_freitext + konfspruch_freitext_referenz) angeben';
+
+// Die beiden Schreibweisen der Profilzeile. Konfis haben sie immer (sie
+// entsteht beim Anlegen des Kontos) -- dort wird nur aktualisiert, und ohne
+// Zeile bleibt es bei 200 ohne Wirkung, wie bisher. Direkt als Teamer:in
+// angelegte Konten haben noch keine; dort wird sie per Upsert angelegt.
+const SCHREIBEN = {
+  liste: {
+    aktualisieren: `UPDATE konfi_profiles
+       SET konfspruch_id = $2, konfspruch_translation = $3,
+           konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
+       WHERE user_id = $1`,
+    anlegen: `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_id, konfspruch_translation)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) DO UPDATE
+       SET konfspruch_id = EXCLUDED.konfspruch_id,
+           konfspruch_translation = EXCLUDED.konfspruch_translation,
+           konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL`,
+  },
+  freitext: {
+    // konfspruch_translation bleibt unveraendert (Freitext hat keine Tabs).
+    aktualisieren: `UPDATE konfi_profiles
+       SET konfspruch_freitext = $2, konfspruch_freitext_referenz = $3,
+           konfspruch_id = NULL
+       WHERE user_id = $1`,
+    anlegen: `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_freitext, konfspruch_freitext_referenz)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (user_id) DO UPDATE
+       SET konfspruch_freitext = EXCLUDED.konfspruch_freitext,
+           konfspruch_freitext_referenz = EXCLUDED.konfspruch_freitext_referenz,
+           konfspruch_id = NULL`,
+  },
+};
+
+/**
+ * PATCH /profile: eigenen Konfispruch setzen -- Listen-Wahl ODER Freitext,
+ * genau EINE Quelle aktiv. Die Rolle prueft die aufrufende Route.
+ *
+ * konfspruch_translation ist die DEDIZIERTE Spalte; bible_translation
+ * (Tageslosung) wird hier bewusst nicht angefasst.
+ *
+ * @param {object} db
+ * @param {object} req  req.user.id, req.user.organization_id, req.body
+ * @param {object} res
+ * @param {{anlegen: boolean, ort: string}} optionen
+ *   anlegen: Profilzeile per Upsert anlegen (Team) statt nur aktualisieren
+ *   (Konfi); ort: Pfad fuer die Fehlerzeile im Log
+ */
+async function beantworteKonfspruchSetzen(db, req, res, { anlegen, ort }) {
+  const art = anlegen ? 'anlegen' : 'aktualisieren';
+  try {
+    const userId = req.user.id;
+    const orgId = req.user.organization_id;
+    const { konfspruch_id, translation, konfspruch_freitext, konfspruch_freitext_referenz } = req.body;
+    // Das UPDATE kennt die Gemeinde nicht (die Zeile hat sie schon); ein
+    // unbenutzter Parameter liesse Postgres am Typ scheitern.
+    const werte = (a, b) => (anlegen ? [userId, orgId, a, b] : [userId, a, b]);
+
+    // Modus 1: Listen-Wahl
+    if (konfspruch_id !== undefined && konfspruch_id !== null) {
+      const spruchId = parseInt(konfspruch_id, 10);
+      if (Number.isNaN(spruchId)) {
+        return res.status(400).json({ error: 'Ungültige Spruch-ID' });
+      }
+      if (!KONFSPRUCH_TRANSLATIONS.includes(translation)) {
+        return res.status(400).json({
+          error: 'Ungültige Bibelübersetzung',
+          valid_translations: KONFSPRUCH_TRANSLATIONS
+        });
+      }
+      // Spruch muss existieren und fuer die Gemeinde sichtbar sein.
+      const { rows: [spruch] } = await db.query(
+        `SELECT id FROM konfsprueche
+         WHERE id = $1 AND is_active = true
+           AND (organization_id IS NULL OR organization_id = $2)`,
+        [spruchId, orgId]
+      );
+      if (!spruch) {
+        return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
+      }
+      const vorher = await spruchStandLesen(db, userId);
+      const { rowCount } = await db.query(SCHREIBEN.liste[art], werte(spruchId, translation));
+      // Personenunabhaengige Statistik (Migration 207): nur, wenn wirklich
+      // ein Profil geschrieben wurde.
+      if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'vorschlag', spruchId, translation }, vorher);
+      return res.json({
+        success: true,
+        konfspruch: { source: 'liste', id: spruchId, translation }
+      });
+    }
+
+    // Modus 2: Freitext
+    if (konfspruch_freitext !== undefined && konfspruch_freitext !== null) {
+      const freitext = String(konfspruch_freitext).trim();
+      const referenz = konfspruch_freitext_referenz != null
+        ? String(konfspruch_freitext_referenz).trim()
+        : '';
+      if (!freitext) {
+        return res.status(400).json({ error: 'Der Spruchtext darf nicht leer sein' });
+      }
+      if (!referenz) {
+        return res.status(400).json({
+          error: 'Bei einem eigenen Spruch ist die Stellenangabe (Referenz) verpflichtend'
+        });
+      }
+      // Laengen (referenz -> VARCHAR(100)), damit ein zu langer Wert ein
+      // sauberes 400 statt eines Postgres-22001/500 liefert.
+      if (referenz.length > 100) {
+        return res.status(400).json({ error: 'Die Stellenangabe darf höchstens 100 Zeichen lang sein' });
+      }
+      if (freitext.length > 1000) {
+        return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
+      }
+      const vorher = await spruchStandLesen(db, userId);
+      const { rowCount } = await db.query(SCHREIBEN.freitext[art], werte(freitext, referenz));
+      if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'eigen', freitext, referenz }, vorher);
+      return res.json({
+        success: true,
+        konfspruch: { source: 'freitext', text: freitext, reference: referenz }
+      });
+    }
+
+    return res.status(400).json({ error: FEHLER_WEDER_NOCH });
+  } catch (err) {
+    console.error(`Database error in PATCH ${ort}:`, err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+}
+
+/**
+ * PUT /bible-translation: Uebersetzung der Tageslosung setzen. Die Wahl
+ * liegt seit Migration 132 fuer ALLE Rollen an users (Befund N8).
+ *
+ * @param {string} ort  Pfad fuer die Fehlerzeile im Log
+ */
+async function beantworteBibelUebersetzung(db, req, res, ort) {
+  try {
+    const { translation } = req.body;
+    if (!BIBEL_UEBERSETZUNGEN.includes(translation)) {
+      return res.status(400).json({ error: 'Ungültige Bibelübersetzung', valid_translations: BIBEL_UEBERSETZUNGEN });
+    }
+    await db.query('UPDATE users SET bible_translation = $1 WHERE id = $2', [translation, req.user.id]);
+    res.json({ success: true, message: 'Bibelübersetzung erfolgreich aktualisiert', translation });
+  } catch (err) {
+    console.error(`Database error in PUT ${ort}:`, err);
+    res.status(500).json({ error: 'Datenbankfehler' });
+  }
+}
+
 module.exports = {
   BIBEL_UEBERSETZUNGEN,
   KONFSPRUCH_TRANSLATIONS,
@@ -215,4 +376,6 @@ module.exports = {
   ladeKonfspruch,
   spruchStandLesen,
   spruchWahlMerken,
+  beantworteKonfspruchSetzen,
+  beantworteBibelUebersetzung,
 };

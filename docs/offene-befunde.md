@@ -57,7 +57,6 @@ Nichts.
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular
   ([planung/support-vorgaenge.md](planung/support-vorgaenge.md)).
-- [ ] **Doppelter Code Konfi/Team** ([Code](#code)).
 - [ ] **Feature-Empfehlungen vor der EKD-Ausrollung** —
   [planung/feature-empfehlungen.md](planung/feature-empfehlungen.md).
 
@@ -187,6 +186,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ausgeliefert) wieder entfernt: Mit Recht kommen rote Zahl, App-Symbol und
   Push, ohne Recht nichts davon (Simon, [planung/darf-freigeben.md](planung/darf-freigeben.md#abgebaut-09102026-nur-das-recht-entscheidet),
   Migration 205, Branch `refactor/kennzahlen-abbau`).
+- [x] 09.10.2026 — Doppelter Code Konfi/Team zusammengelegt: Konfispruch
+  setzen und lesen, Spruchliste, Bibelübersetzung, eigenen Antrag stellen
+  und löschen, Abzeichen als gesehen markieren; Antworten per
+  Charakterisierungstest festgehalten
+  (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
 
 
 ## Offen
@@ -201,16 +205,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ([03-bedienung.md](handbuch/03-bedienung.md#bewegung-reduzieren)) nennt
   sie nicht unter dem, was dann ruhig bleibt; die Angabe „Bewegung
   reduzieren" bei Apple setzt die Korrektur voraus ([Release](#release)).
-- **Doppelter Code Konfi/Team.** `backend/routes/teamer.js` führt eine eigene
-  Liste `KONFSPRUCH_TRANSLATIONS` und ein eigenes `loadKonfspruch` (um Zeile
-  979 und 983), obwohl es beides aus `utils/konfspruch.js` importiert — die
-  lokale Konstante beschattet den Import. `PATCH /profile` steht zweimal,
-  in `routes/konfi.js` (um Zeile 2180) und `routes/teamer.js` (um Zeile
-  1074), mit eigener Prüfliste je Seite. Die Kopien sind schon einmal
-  auseinandergelaufen (Punkte-Historie, Tageslosung, beide inzwischen
-  zusammengelegt). Fix: eine Stelle je Funktion, Antwortformen unverändert.
-  Seit 01.09.2026 bekannt (interne Aufgabenliste), am 08.10.2026 am Code
-  bestätigt.
 - **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
   Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
   die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner
