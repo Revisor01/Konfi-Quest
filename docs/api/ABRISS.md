@@ -53,79 +53,87 @@ Das ist erfüllt, wenn beides zutrifft:
 
 ## Wie man das prüft
 
-**Die Zugriffe stehen im Traefik-Zugriffslog, NICHT in den Backend-Logs.**
-Das ist der wichtigste Satz dieser Datei. Der Backend-Container
-(`konfi_quest-backend-1`) schreibt nur Startmeldungen, abgewiesene
-Anmeldungen gesperrter Konten und Fehler — **keine** Zeile pro Anfrage. Wer dort nach einer Route grept,
-bekommt für **jede** Route null Treffer und hält eine lebendige Route für
-tot. Genau diese Sorte falsche Sicherheit hat am 29.08.2026 die Apps
-zerlegt.
+**Die Zugriffe stehen im Zugriffslog des Apache vor Traefik, NICHT in den
+Backend-Logs und NICHT im Traefik-Log.** Das ist der wichtigste Satz dieser
+Datei. Der Backend-Container (`konfi_quest-backend-1`) schreibt nur
+Startmeldungen, abgewiesene Anmeldungen gesperrter Konten und Fehler —
+**keine** Zeile pro Anfrage. Wer dort nach einer Route grept, bekommt für
+**jede** Route null Treffer und hält eine lebendige Route für tot. Genau
+diese Sorte falsche Sicherheit hat am 29.08.2026 die Apps zerlegt.
 
-Traefik dagegen protokolliert jede Anfrage als JSON-Zeile mit
-`RequestPath` und `RouterName`. Die Router heißen:
+Das Traefik-Zugriffslog taugt dafür ebenso wenig: Traefik schreibt nur
+Anfragen mit Status 5xx oder über 800 ms Dauer (Filter in seinen
+Startparametern), und das Log lebt im Container-Log, das bei jedem Neuerstellen
+des Containers mit verschwindet. Nachgemessen am 09.10.2026: 540 Zeilen für
+`konfi-api@docker` in zweieinhalb Tagen, davon 18 mit Status 200 — bei
+mehreren zehntausend Anfragen am Tag. Eine Zählung dort ergibt für fast jede
+Route null.
 
-| Router | Wofür |
-|---|---|
-| `konfi-api@docker` | Produktion (`konfi-quest.de`) — **das** ist der relevante |
-| `konfi-api-test@docker` | früheres Testsystem, seit dem 08.10.2026 abgeschafft — taucht nur in älteren Logzeilen auf; beim Zählen ausschließen |
+Der Apache (verwaltet von KeyHelp) protokolliert dagegen **jede** Anfrage an
+`konfi-quest.de` und `www.konfi-quest.de` in je einer eigenen Datei im
+Logverzeichnis des KeyHelp-Nutzers (`<logverzeichnis>/konfi-quest.de/` und
+`<logverzeichnis>/www.konfi-quest.de/`, Zugang und Pfad aus der
+Betriebsdoku, nicht im Repo). Das Format ist das kombinierte Apache-Format:
+`"METHODE /pfad PROTOKOLL" status …`.
+
+### Wie weit das Log zurückreicht
+
+KeyHelp rotiert die Zugriffslogs **wöchentlich** und hebt vier alte Stände
+auf (`access.log`, `access.log.1`, `access.log.2.gz` … `access.log.4.gz`).
+Das Fenster liegt damit immer zwischen **28 und 35 Tagen** — mehr als die
+geforderten zwei Wochen, ohne Eingriff am Server. Nachgemessen am
+09.10.2026: ältester Eintrag vom 06.09.2026, 412.838 Zeilen, davon 332.097
+unter `/api/`. In den rotierten Ständen sind die IP-Adressen anonymisiert,
+für die Zählung spielt das keine Rolle.
+
+Die Aufbewahrung gehört KeyHelp. Ändert ein KeyHelp-Update sie, wird das
+Fenster still kürzer — deshalb vor jeder Abrissentscheidung den ältesten
+Eintrag prüfen (unten).
 
 ### Zählung je Route
 
 ```bash
 ssh <betriebszugang>   # user@host aus der Betriebsdoku, nicht im Repo
+cd <logverzeichnis>    # Logverzeichnis des KeyHelp-Nutzers
 
-# Alle Pfade der Produktion, IDs zusammengefasst, absteigend gezählt:
-docker logs --since 336h traefik 2>&1 \
-  | grep '"RouterName":"konfi-api@docker"' \
-  | grep -oE '"RequestPath":"[^"?]*' \
-  | sed 's/"RequestPath":"//' \
-  | sed -E 's#/[0-9]+#/:id#g' \
+# Alle Stände beider Hosts, auch die gepackten:
+alle() { zcat -f konfi-quest.de/access.log* www.konfi-quest.de/access.log*; }
+
+# Alle /api-Pfade, IDs zusammengefasst, absteigend gezählt:
+alle | grep -oE '"[A-Z]+ /api/[^ "?]*' \
+  | sed -E 's#^"##; s#/[0-9]+#/:id#g' \
   | sort | uniq -c | sort -rn
 ```
 
-Eine einzelne Route gezielt (hier `/api/konfi/badges` — das abschließende
-`"` verhindert, dass `/api/konfi/badges/v2` mitzählt):
+Eine einzelne Route gezielt (hier `GET /api/konfi/badges` — das `[ ?]`
+dahinter verhindert, dass `/api/konfi/badges/v2` mitzählt):
 
 ```bash
-docker logs --since 336h traefik 2>&1 \
-  | grep '"RouterName":"konfi-api@docker"' \
-  | grep -c '"RequestPath":"/api/konfi/badges"'
+alle | grep -cE '"GET /api/konfi/badges[ ?]'
 ```
 
-Taucht die Route dort mit **0** auf, ist ihre Bedingung erfüllt. Kommt sie
-noch vor, lohnt der Blick, **wer** sie ruft (Zeitpunkt und IP stehen in
-derselben Zeile):
+Taucht die Route mit **0** auf, ist ihre Bedingung erfüllt. Kommt sie noch
+vor, lohnt der Blick, **wann** und von wem sie kommt (Zeitpunkt und
+User-Agent stehen in derselben Zeile):
 
 ```bash
-docker logs --since 336h traefik 2>&1 \
-  | grep '"RouterName":"konfi-api@docker"' \
-  | grep '"RequestPath":"/api/konfi/badges"' \
-  | tail -20
+alle | grep -E '"GET /api/konfi/badges[ ?]' | tail -20
 ```
 
-### ⚠ Vorher: Das Log reicht derzeit nur ~5 Tage zurück
+Gegenprobe, dass die Zählung trifft: `GET /api/notifications/preferences`
+ist lebendig (Abschnitt C) und muss Treffer zeigen — am 09.10.2026 waren es
+267 GET und 4 PUT im Fenster. Zeigt sie null, ist der Weg kaputt, nicht die
+Route tot.
 
-Der Traefik-Container läuft mit `max-size=10m, max-file=3`, also 30 MB
-Ringpuffer. Am 01.09.2026 nachgemessen: Der älteste Eintrag war vom
-27.08.2026 — **rund fünf Tage**, nicht die geforderten vierzehn.
-`--since 336h` liefert dann trotzdem klaglos ein Ergebnis, nur eben aus
-einem zu kurzen Fenster. Eine Null daraus beweist **nichts**.
-
-Vor der ersten echten Abrissentscheidung deshalb eines von beiden:
-
-- Log-Rotation für den Traefik-Container hochsetzen (`max-file` erhöhen,
-  z. B. auf 20 = rund vier Wochen) und dann zwei Wochen abwarten, **oder**
-- die Zählung über den Zeitraum wiederholt abgreifen (etwa täglich per
-  Cron in eine Datei) und die Teilergebnisse summieren.
-
-Und immer gegenprüfen, dass das Fenster wirklich passt:
+### ⚠ Vorher: Das Fenster prüfen
 
 ```bash
-docker logs --since 336h traefik 2>&1 | grep -oE '"time":"[^"]*"' | head -1
+zcat -f konfi-quest.de/access.log.4.gz | head -1   # ältester Stand
 ```
 
-Liegt der älteste Zeitstempel weniger als 14 Tage zurück, ist die Zählung
-**nicht** aussagekräftig.
+Liegt der älteste Zeitstempel weniger als 14 Tage zurück (oder fehlt die
+Datei), ist die Zählung **nicht** aussagekräftig. Eine Null aus einem zu
+kurzen Fenster beweist nichts.
 
 ---
 
