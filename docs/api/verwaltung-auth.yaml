@@ -4728,13 +4728,26 @@ paths:
         (Abfrage gemessen 17 ms bei 300.000 erledigten Auftraegen). Fehlt die
         Tabelle, fehlt das Feld.
 
+        SUPPORT-MAIL (10.10.2026, additiv): `support_mail` (`ok` |
+        `nicht_eingerichtet` | `veraltet`), utils/supportMailZustand.js.
+        `nicht_eingerichtet` = Benutzer, Passwort oder IMAP-Host eines der
+        Postfaecher moin/support fehlt in der Umgebung; `veraltet` = der
+        letzte erfolgreiche Abruf (mail_abholstand.abgeholt_am) liegt mehr
+        als 30 Minuten zurueck oder fehlt (abgeholt wird alle zwei Minuten).
+        Anlass: Am 08.10.2026 fehlten nach einem Deploy die Stack-Variablen,
+        und die Support-Mail stand 46 Stunden, ohne dass es jemand merkte.
+        Wie `nachlauf` BEWUSST nicht in `checks` und ohne Einfluss auf den
+        HTTP-Status; nur das eine Wort, keine Adressen -- Einzelheiten je
+        Postfach in /api/metrics (super_admin). 30 Sekunden
+        zwischengespeichert. Fehlt die Tabelle, fehlt das Feld.
+
         VERSION (27.09.2026, Sammelbefund S-13, unveraendertes Feld): `version`
         ist die App-Version aus backend/package.json, die `npm run
         version:setzen` mit frontend/version.json (der einen Quelle)
         gleichzieht -- vorher stand hier 1.0.1 auf einem 2.3.0-System.
       security: []
       responses:
-        "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, nachlauf{haengend, fehlgeschlagen}, responseTimeMs" }
+        "200": { description: "status, version, commit, uptimeSeconds, cron_leader, checks.database, checks.migrations, checks.cron_leader, migrationen{gesamt, neu, fehlgeschlagen[]}, nachlauf{haengend, fehlgeschlagen}, support_mail, responseTimeMs" }
         "503": { description: "DEGRADED — Datenbank nicht erreichbar" }
       x-berechtigung:
         rollen: [oeffentlich]
@@ -4842,6 +4855,21 @@ paths:
           ist der längste Versand {weg, art, empfaenger, dauerMs, zeit} oder
           null. Im Speicher, ein Neustart leert es.
 
+        ERWEITERT (10.10.2026) — rein additiv:
+
+        * `supportMail` — {zustand, grenzeMinuten, postfaecher}
+          (utils/supportMailZustand.js). `postfaecher[]` je Postfach (moin,
+          support): postfach, eingerichtet, abgeholt_am (letzter
+          erfolgreicher Abruf oder null), alter_minuten (von der Datenbank
+          gerechnet, oder null), fehler (letzter Fehlertext ohne Adressen,
+          oder null) und zustand ('ok' | 'nicht_eingerichtet' | 'veraltet';
+          veraltet = eingerichtet, aber länger als `grenzeMinuten` (30) oder
+          nie abgeholt). `zustand` gesamt ist 'ok' nur, wenn beide ok sind;
+          eine fehlende Einrichtung geht einem veralteten Abruf vor. Einmal
+          für das Gesamtbild, nicht je Replica (dieselbe Datenbank). Keine
+          Adressen, keine Zugangsdaten. Fehlt die Tabelle, fehlt das Feld.
+          Die Seite „Betrieb" zeigt daraus eine Warnung unter dem Urteil.
+
         BEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine
         Route, die sowohl in routesSlowest als auch in routesBusiest stand,
         doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen
@@ -4854,7 +4882,7 @@ paths:
         behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst,
         weil die Ziffern-Regel vor der UUID-Regel lief.
       responses:
-        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen, routeSchluessel, cspMeldungen und hintergrund" }
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen, routeSchluessel, cspMeldungen, hintergrund und supportMail" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:

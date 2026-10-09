@@ -43,6 +43,8 @@ export interface WebBetriebProps {
   routenSicht: RoutenSortierung;
   onRoutenSicht: (sicht: RoutenSortierung) => void;
   zustand: { stufe: 'gut' | 'auffaellig' | 'stoerung'; titel: string; satz: string } | null;
+  /** Warnung "Support-Mail" (utils/betriebsKennzahlen.ts, supportMailHinweis); null = laeuft. */
+  mailHinweis?: { stufe: 'auffaellig' | 'stoerung'; titel: string; satz: string } | null;
   apdexInfo: { text: string; farbe: string; rat: string };
   veraenderung: ReturnType<typeof vergleichHeuteGegenVortage>;
   routenZeilen: readonly RoutenZeile[];
@@ -514,6 +516,16 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
           <WebSchalter label="Alle 5 Sekunden aktualisieren" an={p.autoAktualisieren} onAn={p.onAutoAktualisieren} />
         </div>
       </section>
+
+      {p.mailHinweis && (
+        <section className={`web-zustand web-zustand--${p.mailHinweis.stufe}`} aria-label="Support-Mail" role="status">
+          <div className="web-zustand__kopf">
+            <span className="web-zustand__punkt" aria-hidden="true" />
+            <h2 className="web-zustand__titel">{p.mailHinweis.titel}</h2>
+          </div>
+          <p className="web-zustand__satz">{p.mailHinweis.satz}</p>
+        </section>
+      )}
 
       <div className="web-raster web-raster--kacheln">
         {ueber1s && (

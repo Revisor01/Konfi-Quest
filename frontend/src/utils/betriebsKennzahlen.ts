@@ -9,6 +9,7 @@
 
 import { METRIK_AMPEL } from '../theme/colors';
 import { datumKurz } from './dateUtils';
+import { fmtSeit } from './betriebsFormat';
 
 // Nur die Felder, die fuer das Urteil gebraucht werden. Der Rest des
 // Snapshots interessiert hier nicht.
@@ -249,5 +250,58 @@ export function vergleichHeuteGegenVortage(tage: Tagesbilanz[], stundenHeute?: n
       route: heute.schlimmsteRoute,
       delta: rel(heute.schlimmsteMs, mittel(t => t.schlimmsteMs)),
     },
+  };
+}
+
+/** Zustand der Support-Mail je Postfach (GET /metrics, Feld supportMail; Server ab 10.10.2026). */
+export type SupportMailZustand = 'ok' | 'nicht_eingerichtet' | 'veraltet';
+export interface BetriebsSupportMail {
+  zustand: SupportMailZustand;
+  grenzeMinuten: number;
+  postfaecher: Array<{
+    postfach: string;
+    eingerichtet: boolean;
+    abgeholt_am: string | null;
+    alter_minuten: number | null;
+    fehler: string | null;
+    zustand: SupportMailZustand;
+  }>;
+}
+
+/*
+ * Warnung "Support-Mail" (10.10.2026) -- oder null, wenn alles laeuft oder der
+ * Server das Feld noch nicht kennt.
+ *
+ * Am 08.10.2026 fehlten nach einem Deploy die Zugangsdaten der Postfaecher;
+ * das Abholen stand 46 Stunden, und die Seite "Betrieb" zeigte gruen. Fehlt
+ * eine Einrichtung, ist das eine Stoerung (es kommt sicher nichts an); ein
+ * veralteter Abruf ist auffaellig (abgeholt wird alle zwei Minuten -- nach
+ * der Grenze stimmt etwas nicht, aber es kann auch der Leader wechseln).
+ */
+export function supportMailHinweis(
+  supportMail: BetriebsSupportMail | undefined,
+): { stufe: 'auffaellig' | 'stoerung'; titel: string; satz: string } | null {
+  if (!supportMail || supportMail.zustand === 'ok') return null;
+  const name = (p: { postfach: string }) => `„${p.postfach}“`;
+  const aufzaehlen = (liste: Array<{ postfach: string }>) => (liste.length === 1
+    ? `Postfach ${name(liste[0])}`
+    : `Postfächer ${liste.map(name).join(' und ')}`);
+  if (supportMail.zustand === 'nicht_eingerichtet') {
+    const fehlend = supportMail.postfaecher.filter((p) => p.zustand === 'nicht_eingerichtet');
+    return {
+      stufe: 'stoerung',
+      titel: 'Support-Mail ist aus',
+      satz: `${aufzaehlen(fehlend)}: Auf dem Server fehlen die Zugangsdaten — es werden keine Mails abgeholt und keine Antworten verschickt. Meist sind die Variablen des Stacks verloren gegangen; wieder eintragen und den Stack neu ausrollen.`,
+    };
+  }
+  const alt = supportMail.postfaecher.filter((p) => p.zustand === 'veraltet');
+  const einzeln = alt.map((p) => {
+    const wann = p.abgeholt_am ? `zuletzt abgeholt ${fmtSeit(p.abgeholt_am)}` : 'noch nie abgeholt';
+    return `${name(p)} ${wann}${p.fehler ? ` (letzter Fehler: ${p.fehler})` : ''}`;
+  });
+  return {
+    stufe: 'auffaellig',
+    titel: 'Support-Mail wird nicht abgeholt',
+    satz: `${einzeln.join('; ')}. Abgeholt wird alle zwei Minuten; mehr als ${supportMail.grenzeMinuten} Minuten Pause heißen, dass etwas nicht stimmt.`,
   };
 }

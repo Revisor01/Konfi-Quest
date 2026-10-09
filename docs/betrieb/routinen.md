@@ -44,6 +44,7 @@ zeigt es `SELECT current_setting('TimeZone')` über den Pool des Backends.
 | Rückspielprobe | vor jedem Release, nach Änderungen an Postgres oder am Sicherungsskript | [sicherung.md](sicherung.md#rückspielprobe) |
 | Stand prüfen | nach jedem Deploy | [Nach jedem Deploy](#nach-jedem-deploy) |
 | Notfall-Deploy | wenn ein gebauter Fix sofort raus muss oder zurückgerollt wird | [Notfall-Deploy](#notfall-deploy) |
+| Stack-Variablen wieder eintragen | wenn ein Deploy mit „Pflicht-Stack-Variablen fehlen" abbricht, wenn die Support-Mail aus ist | [Stack-Variablen](#stack-variablen) |
 | Nachlauf-Warteschlange prüfen | nach jedem Deploy, bei Meldungen „Push kam nicht an" | [Nachlauf-Warteschlange](#nachlauf-warteschlange) |
 | Hintergrund-Jobs prüfen | nach jedem Deploy, bei Meldungen „Erinnerung kam nicht", „Zahl am App-Symbol stimmt nicht" | [Hintergrund-Jobs](#hintergrund-jobs) |
 | Apple-Zertifikat erneuern | jährlich, jetzt vor dem 28.11.2026 | [release.md](release.md#8-das-apple-zertifikat-jährlich-erneuern) |
@@ -159,6 +160,9 @@ Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
 
 - Nachlauf-Warteschlange: `nachlauf` in `/api/status` zeigt
   `haengend: 0`; Einzelheiten mit der Abfrage im nächsten Abschnitt.
+- Support-Mail: `support_mail` in `/api/status` zeigt `ok`. Auf der Seite
+  „Betrieb" steht unter dem Urteil kein Kasten „Support-Mail"; sonst
+  [Stack-Variablen](#stack-variablen).
 - Hintergrund-Jobs: Nach rund fünf Minuten stehen auf der Seite „Betrieb"
   (Überblick, Karte „Hintergrund") der Zähler-Lauf und die Event-Erinnerungen
   mit „ok"; Einzelheiten im Abschnitt [Hintergrund-Jobs](#hintergrund-jobs).
@@ -274,6 +278,66 @@ noch nicht so weit (tägliche Jobs erst zu ihrer Uhrzeit) — oder es gibt
 keinen Leader: dann zeigt `checks.cron_leader` `fehlt`. Ein Zähler-Lauf über
 10 s heißt, dass er an seine Obergrenze kommt (800 Personen je Lauf,
 `backgroundService.ABZEICHEN_MAX_JE_LAUF`).
+
+## Stack-Variablen
+
+Die Werte, die der Live-Stack braucht (Zugangsdaten, Schlüssel, Hosts),
+stehen als **Stack-Variablen in Portainer**, nie in der Stack-Datei und nie im
+Repo. Die Referenz `deploy/compose.konfi_quest.yml` nennt nur ihre Namen.
+Jeder Deploy (`deploy/rollend.sh`) liest die Variablen aus Portainer und
+schickt sie beim Stack-Update unverändert zurück — Portainer ersetzt sie
+sonst durch die mitgeschickte Liste.
+
+Drei Sorten:
+
+| Sorte | in der Stack-Datei | fehlt sie … |
+|---|---|---|
+| Pflicht, laut | `${NAME:?…}` (etwa `JWT_SECRET`, `SMTP_HOST`) | scheitert das Stack-Update selbst; der Deploy wird rot |
+| Pflicht, still | `${NAME:-}`, gelistet in `deploy/stack-pflichtvariablen.txt` (die Zugänge der Support-Mail) | bricht der Deploy **vor** dem Stack-Update ab und nennt die Namen |
+| optional | `${NAME:-}`, nicht gelistet (`APP_MIN_VERSION_IOS`, `APP_MIN_VERSION_ANDROID`, `WARTUNG_HINWEIS`, `MAIL_SMTP_HOST`, `MAIL_SMTP_PORT`) | ist die Funktion aus — gewollt, leer heißt „aus" |
+
+Die stille Sorte ist der Grund für die Prüfung: Am 08.10.2026 verlor
+Portainer bei einem Neustart alle Stack-Variablen. Der nächste Deploy
+schickte die leere Liste zurück, die Container starteten ohne Zugänge zur
+Support-Mail, und 46 Stunden lang wurden keine Mails abgeholt, ohne dass
+etwas rot wurde. Am 10.10.2026 von Hand wiederhergestellt.
+
+**Eine neue Variable**, ohne die eine Funktion still ausfällt, kommt in
+`deploy/stack-pflichtvariablen.txt` — die eine Liste, die das Skript liest.
+Der Test `rollenderDeploy.test.ts` prüft, dass jeder Name dort in der
+Referenz-Compose als `${NAME:-}` steht.
+
+**Bricht ein Deploy ab** mit „Pflicht-Stack-Variablen fehlen oder sind leer:
+…", ist am Stack nichts geändert; Produktion läuft auf dem alten Stand
+weiter. Geprüft wird zusätzlich vor dem Stack-Update der zweiten Stufe —
+bricht es erst dort ab („vor dem Stack-Update der Stufe 'backend2'"), laufen
+`backend` und `frontend` schon auf dem neuen Stand, `backend2` noch auf dem
+alten; der wiederholte Lauf zieht ihn nach. Dann:
+
+1. In Portainer beim Stack unter den Variablen nachsehen: Fehlen nur die
+   genannten oder alle? Fehlen alle, hat Portainer sie verloren — die
+   Sicherung der Stack-Definition (Regel „Vorher sichern" oben) und die
+   Betriebsdoku außerhalb des Repos haben die Werte.
+2. Die fehlenden Variablen mit Wert wieder eintragen. Werte nie in Logs,
+   Commits oder Tickets schreiben; die Meldung des Skripts nennt nur Namen.
+3. Den Lauf wiederholen (fehlgeschlagenen Job `deploy` neu starten, oder den
+   [Notfall-Deploy](#notfall-deploy) mit dem Stand). Erwartet im Log:
+   „Pflicht-Stack-Variablen vollständig." und danach beide Stufen.
+4. Wie [nach jedem Deploy](#nach-jedem-deploy); `support_mail` in
+   `/api/status` zeigt nach dem nächsten Abruf (spätestens zwei Minuten)
+   wieder `ok`.
+
+Der **Probelauf** des Notfall-Deploys prüft dieselbe Liste und wird bei einer
+fehlenden Variablen rot — ein schneller Weg, den Stand ohne Änderung zu
+prüfen.
+
+**Ohne Deploy bemerken:** `support_mail` in `/api/status` meldet
+`nicht_eingerichtet` (Zugänge fehlen im laufenden Container) oder `veraltet`
+(letzter erfolgreicher Abruf über 30 Minuten her); die Seite „Betrieb" zeigt
+dann unter dem Urteil den Kasten „Support-Mail" mit Postfach, letztem Abruf
+und letztem Fehler. `veraltet` mit einem Anmeldefehler heißt meist ein
+geändertes Passwort, ohne Fehler eher, dass kein Cron-Leader läuft
+(`checks.cron_leader`).
 
 ## Notfall-Deploy
 

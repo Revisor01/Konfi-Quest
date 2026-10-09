@@ -2,7 +2,7 @@
 // "Betrieb" sie liest. Die Form ist die der Seite (admin/pages/AdminMetricsPage.tsx):
 // Sie laedt und rechnet die Urteile, die Web-Fassung stellt sie dar.
 
-import type { BetriebsSnapshot } from '../../../../utils/betriebsKennzahlen';
+import type { BetriebsSnapshot, BetriebsSupportMail } from '../../../../utils/betriebsKennzahlen';
 import type { BetriebsReiterSchluessel } from '../../../../seiten/betrieb';
 
 export interface BetriebsFehlerGruppe {
@@ -92,6 +92,8 @@ export interface BetriebsAnsicht extends BetriebsSnapshot {
   cspMeldungen?: BetriebsCspMeldungen;
   /** Hintergrund-Jobs und Push-Versand; fehlt bei einem Server vor dem 09.10.2026. */
   hintergrund?: BetriebsHintergrund;
+  /** Zustand der Support-Mail; fehlt bei einem Server vor dem 10.10.2026. */
+  supportMail?: BetriebsSupportMail;
 }
 
 export type BetriebsReiter = BetriebsReiterSchluessel;

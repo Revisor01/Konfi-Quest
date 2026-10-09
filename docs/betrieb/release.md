@@ -65,7 +65,9 @@ liest die Version der ersten Überschrift mit.
 
 Ein Merge nach `main` ist der Produktions-Deploy: `ci.yml` testet, baut die
 Images und tauscht die Backends nacheinander aus (`deploy/rollend.sh`, zwei
-Stufen, Verify gegen den Commit). Den Merge gibt Simon frei. Danach
+Stufen, Verify gegen den Commit). Vor dem ersten Stack-Update prüft das
+Skript die Pflicht-Stack-Variablen und bricht ab, wenn eine fehlt
+([routinen.md](routinen.md#stack-variablen)). Den Merge gibt Simon frei. Danach
 `GET /api/status` beider Backends: `version` und `commit` stimmen,
 `checks.migrations` ist `ok` ([routinen.md](routinen.md#nach-jedem-deploy)).
 

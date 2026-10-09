@@ -1,0 +1,28 @@
+# Stack-Variablen, ohne die deploy/rollend.sh NICHT ausrollt (10.10.2026).
+#
+# Hier stehen die Variablen, die deploy/compose.konfi_quest.yml als
+# `${NAME:-}` ohne sinnvollen Standard durchreicht und ohne die eine Funktion
+# STILL ausfaellt -- der Container startet, nichts meldet einen Fehler. Am
+# 08.10.2026 hatte Portainer bei einem Neustart die Stack-Variablen verloren;
+# der Deploy schickte die leere Liste zurueck, und die Support-Mail war
+# 46 Stunden aus, ohne dass es jemand merkte.
+#
+# Fehlt eine dieser Variablen in den Stack-Variablen von Portainer oder ist sie
+# leer, bricht der Deploy VOR dem Stack-Update ab und nennt die Namen (nie die
+# Werte). Was dann zu tun ist: docs/betrieb/routinen.md, Abschnitt
+# "Stack-Variablen".
+#
+# Bewusst NICHT hier (leer heisst "aus", das ist ein gewollter Zustand):
+#   APP_MIN_VERSION_IOS, APP_MIN_VERSION_ANDROID, WARTUNG_HINWEIS,
+#   MAIL_SMTP_HOST, MAIL_SMTP_PORT
+# Ebenfalls nicht hier: Variablen, die die Compose-Datei als `${NAME:?...}`
+# verlangt -- ohne sie scheitert das Stack-Update selbst laut.
+#
+# Ein Name je Zeile; # leitet einen Kommentar ein.
+
+# Support-Mail: Abholen der Postfaecher moin und support
+MAIL_IMAP_HOST
+MAIL_MOIN_USER
+MAIL_MOIN_PASS
+MAIL_SUPPORT_USER
+MAIL_SUPPORT_PASS

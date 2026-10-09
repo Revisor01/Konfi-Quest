@@ -10,6 +10,7 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const { cronLeaderVorhanden } = require('./utils/cronLeader');
 const { zustand: warteschlangeZustand } = require('./utils/warteschlange');
+const { supportMailZustand } = require('./utils/supportMailZustand');
 const { dateiFilter } = require('./utils/uploadTypen');
 
 // Upload-Limit für Challenge-Beitraege (Audio/Video sind deutlich größer als
@@ -364,6 +365,7 @@ function createApp(db, options = {}) {
   // langsamer/haengbar ist. Gibt 200 bei gesunder DB, sonst 503.
   let nachlaufZwischenstand = null;
   const NACHLAUF_ZWISCHENSTAND_MS = 30 * 1000;
+  let supportMailZwischenstand = null;
   app.get('/api/status', async (req, res) => {
     const startedAt = Date.now();
     let dbOk = false;
@@ -426,6 +428,27 @@ function createApp(db, options = {}) {
         }
       }
     }
+    // Support-Mail (10.10.2026), additiv: ein Wort -- 'ok',
+    // 'nicht_eingerichtet' oder 'veraltet' (letzter erfolgreicher Abruf
+    // aelter als 30 Minuten; utils/supportMailZustand.js). Am 08.10.2026
+    // fehlten nach einem Deploy die Stack-Variablen, und das Abholen stand
+    // 46 Stunden, ohne dass es jemand merkte. Wie nachlauf BEWUSST NICHT in
+    // checks und ohne Einfluss auf den Status: Ein Neustart behebt es nicht.
+    // Einzelheiten je Postfach nur in /api/metrics (super_admin). 30 Sekunden
+    // zwischengespeichert wie nachlauf; fehlt die Tabelle, fehlt das Feld.
+    let supportMail;
+    if (dbOk) {
+      if (supportMailZwischenstand && supportMailZwischenstand.bis > Date.now()) {
+        supportMail = supportMailZwischenstand.wert;
+      } else {
+        try {
+          supportMail = (await supportMailZustand(db)).zustand;
+          supportMailZwischenstand = { wert: supportMail, bis: Date.now() + NACHLAUF_ZWISCHENSTAND_MS };
+        } catch {
+          // Tabelle fehlt oder Abfrage scheitert: Feld weglassen.
+        }
+      }
+    }
     const body = {
       status: dbOk ? 'OK' : 'DEGRADED',
       version: process.env.npm_package_version || require('./package.json').version,
@@ -447,6 +470,7 @@ function createApp(db, options = {}) {
         },
       } : {}),
       ...(nachlauf ? { nachlauf } : {}),
+      ...(supportMail ? { support_mail: supportMail } : {}),
       responseTimeMs: Date.now() - startedAt,
     };
     res.status(dbOk ? 200 : 503).json(body);
@@ -487,6 +511,18 @@ function createApp(db, options = {}) {
   // METRICS_PEERS gesetzt (z.B. "http://backend:5000,http://backend2:5000"), fragt
   // dieser Endpoint ALLE Peers (/api/metrics/local) ab und mergt sie zu einem
   // Gesamtbild inkl. Lastverteilung pro Replica. Ohne METRICS_PEERS -> nur lokal.
+  //
+  // supportMail (10.10.2026, additiv): Zustand der Support-Mail je Postfach
+  // (utils/supportMailZustand.js) -- einmal fuer das Gesamtbild, nicht je
+  // Replica: Die Datenbank ist dieselbe, die Umgebung beider Replicas auch.
+  // Fehlt die Tabelle, fehlt das Feld.
+  const mitSupportMail = async (antwort) => {
+    try {
+      return { ...antwort, supportMail: await supportMailZustand(db) };
+    } catch {
+      return antwort;
+    }
+  };
   app.get('/api/metrics', rbacVerifier, async (req, res) => {
     if (!req.user?.is_super_admin) {
       return res.status(403).json({ error: 'Zugriff verweigert' });
@@ -494,7 +530,7 @@ function createApp(db, options = {}) {
     const peers = (process.env.METRICS_PEERS || '').split(',').map(s => s.trim()).filter(Boolean);
     if (peers.length === 0) {
       // Single-Replica: lokaler Snapshot, einheitliches Format (mit replicas-Feld).
-      return res.json(apmMerge([schnappschussMitPool()]));
+      return res.json(await mitSupportMail(apmMerge([schnappschussMitPool()])));
     }
     const auth = req.headers.authorization || '';
     const fetchPeer = async (base) => {
@@ -516,9 +552,9 @@ function createApp(db, options = {}) {
     const merged = apmMerge(snaps.filter(Boolean));
     if (!merged) {
       // Alle Peers nicht erreichbar -> wenigstens lokale Sicht liefern.
-      return res.json(apmMerge([apmSnapshot()]));
+      return res.json(await mitSupportMail(apmMerge([apmSnapshot()])));
     }
-    res.json(merged);
+    res.json(await mitSupportMail(merged));
   });
 
   // Welche Konfisprueche gewaehlt werden -- personenunabhaengig, ueber alle
