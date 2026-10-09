@@ -44,9 +44,7 @@ Nichts.
 
 ### Als Nächstes
 
-- [ ] **Release 2.4.0** — Bildschirmfotos der Challenges erneuern
-  ([planung/2.4.0.md](planung/2.4.0.md#1-challenges-als-eigene-seiten-wie-events)),
-  ausliefern mit 2.4.0 ([Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md),
+- [ ] **Release 2.4.0** — ausliefern ([Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md),
   Schritt 5), danach die Haken in der Play Console prüfen ([Release](#release),
   „Play Console empfiehlt vier Änderungen"); Ablauf in
   [betrieb/release.md](betrieb/release.md).
@@ -242,6 +240,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 09.10.2026 — Android holt Updates über Googles In-App-Updates:
   sofort unter der Mindestversion, sonst im Hintergrund mit „Neustarten
   zum Aktualisieren" (Branch `feat/android-in-app-update`).
+- [x] 10.10.2026 — Bildschirmfotos der Challenges erneuert: Detail und Feed
+  (iPhone und Play) zeigen die eigene Seite statt des Dialogs (Branch
+  `docs/screenshots-challenges-2.4.0`).
 
 
 ## Offen
