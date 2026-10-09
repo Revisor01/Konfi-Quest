@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- In der Detailansicht einer Person lässt sich Offenes direkt bestätigen:
+  Ein Tipp auf eine gemeldete Aktivität öffnet das Prüfen mit Genehmigen und
+  Ablehnen, und Events mit ausstehender Anwesenheit stehen oben in der
+  Eventliste mit „Anwesend" und „Nicht anwesend" — die Knöpfe erscheinen nur
+  mit dem passenden Recht.
+- Die Eventliste in der Detailansicht einer Person zeigt oben auch die
+  kommenden Events, zu denen sie angemeldet ist oder auf der Warteliste steht.
 - Unter Betrieb zeigt ein Reiter „Sprüche“, welche Konfisprüche über alle
   Gemeinden gewählt werden — jeder Spruch mit Anzahl, eigene im Wortlaut,
   ohne Namen; die Zahlen bleiben auch nach dem Löschen eines Kontos.

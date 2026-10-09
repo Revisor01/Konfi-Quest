@@ -115,7 +115,131 @@ export interface Activity {
   photo_filename?: string;
   requestId?: number;
   hasPhoto?: boolean;
+  /**
+   * Offener Antrag: darf die angemeldete Leitung entscheiden? Aus
+   * darf_entscheiden der Antragsliste (09.10.2026); fehlt das Feld (aelterer
+   * Server), gilt wie in der Antragsliste: ja.
+   */
+  darfEntscheiden?: boolean;
 }
+
+/**
+ * Ein Termin der Person, der oben in ihrer Eventliste steht (GET
+ * /admin/konfis/:id, Feld `termine`, seit 09.10.2026; backend
+ * utils/terminLeitungSicht.js termineDerPersonFuerLeitung).
+ *   art 'verbuchen'  begonnen, angemeldet, Anwesenheit offen
+ *   art 'anstehend'  noch nicht begonnen, angemeldet oder Warteliste
+ */
+export interface PersonTermin {
+  booking_id: number;
+  event_id: number;
+  event_name: string;
+  event_date: string;
+  location?: string | null;
+  booking_status: string;
+  art: 'verbuchen' | 'anstehend';
+  /** Darf die angemeldete Leitung hier Anwesenheit eintragen? */
+  darf_verbuchen: boolean;
+}
+
+/** Was eine Termin-Zeile ueber ihren Stand sagt. */
+export const personTerminStand = (t: PersonTermin): string =>
+  t.art === 'verbuchen'
+    ? 'Anwesenheit ausstehend'
+    : (t.booking_status === 'waitlist' || t.booking_status === 'pending') ? 'Warteliste' : 'Angemeldet';
+
+/** Die beiden Antworten, die die Zeile direkt anbietet. */
+export type AnwesenheitWahl = 'present' | 'absent';
+
+// ---- TerminZeilen (oben in der Eventliste) ----
+//
+// Zuerst die zu verbuchenden (warning, wie offene Antraege in der
+// Aktivitaetenliste), dann die anstehenden (info, ruhiger). Die Knoepfe
+// erscheinen nur mit darf_verbuchen UND wenn die Person ueberhaupt verbuchen
+// darf (kannVerbuchen) -- sonst antwortete der Server mit 403. Wer nur sehen
+// darf, sieht den Stand.
+interface TerminZeilenProps {
+  termine: readonly PersonTermin[];
+  kannVerbuchen: boolean;
+  isOnline: boolean;
+  onAnwesenheit: (termin: PersonTermin, status: AnwesenheitWahl) => void;
+  /** Abstand nach der letzten Zeile (wenn darunter weitere Eintraege folgen). */
+  mitAbstandUnten: boolean;
+}
+
+export const TerminZeilen: React.FC<TerminZeilenProps> = ({ termine, kannVerbuchen, isOnline, onAnwesenheit, mitAbstandUnten }) => (
+  <div style={{ display: 'flex', flexDirection: 'column' }}>
+    {termine.map((t, index) => {
+      const offen = t.art === 'verbuchen';
+      const knoepfe = offen && kannVerbuchen && t.darf_verbuchen;
+      const farbe = offen ? 'warning' : 'info';
+      const stand = personTerminStand(t);
+      return (
+        <div
+          key={`termin-${t.booking_id}`}
+          className={`app-list-item app-list-item--${farbe}`}
+          data-termin-art={t.art}
+          style={{ marginBottom: index < termine.length - 1 || mitAbstandUnten ? 'var(--app-abstand-eng)' : '0' }}
+        >
+          <div className="app-corner-badges">
+            <div
+              className={`app-corner-badge app-corner-badge--${farbe}`}
+              style={{ padding: 'var(--app-abstand-mini) var(--app-abstand-kompakt)' }}
+              title={stand}
+              role="img"
+              aria-label={stand}
+            >
+              <IonIcon icon={offen ? ICON_UHRZEIT_GEFUELLT : ICON_TERMIN_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
+            </div>
+          </div>
+          <div className="app-list-item__row">
+            <div className="app-list-item__main">
+              <div className={`app-icon-circle app-icon-circle--${farbe}`}>
+                <IonIcon icon={offen ? ICON_UHRZEIT_GEFUELLT : ICON_TERMIN_GEFUELLT} />
+              </div>
+              <div className="app-list-item__content">
+                <div className="app-list-item__title app-list-item__title--badge-space">{t.event_name}</div>
+                <div className="app-list-item__meta">
+                  <span className="app-list-item__meta-item">
+                    <IonIcon icon={ICON_TERMIN} className="app-icon-color--events" />
+                    {datumKurz(t.event_date)}
+                  </span>
+                  <span className="app-list-item__meta-item">{stand}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          {knoepfe && (
+            <div style={{ display: 'flex', gap: 'var(--app-abstand-eng)', marginTop: 'var(--app-abstand-eng)' }}>
+              <IonButton
+                size="small"
+                fill="outline"
+                color="success"
+                disabled={!isOnline}
+                aria-label={`${t.event_name}: anwesend`}
+                onClick={() => onAnwesenheit(t, 'present')}
+              >
+                <IonIcon icon={ICON_ZUSAGE_GEFUELLT} slot="start" />
+                Anwesend
+              </IonButton>
+              <IonButton
+                size="small"
+                fill="outline"
+                color="danger"
+                disabled={!isOnline}
+                aria-label={`${t.event_name}: nicht anwesend`}
+                onClick={() => onAnwesenheit(t, 'absent')}
+              >
+                <IonIcon icon={ICON_ABSAGE} slot="start" />
+                Nicht anwesend
+              </IonButton>
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+);
 
 // ---- KonfiHeaderCard ----
 
@@ -528,11 +652,22 @@ export const KonfispruchSection = React.memo<KonfispruchSectionProps>(({ konfspr
 interface EventPointsSectionProps {
   eventPoints: EventPunkteEintrag[];
   currentKonfi: Konfi | null;
+  /** Oben in der Liste: zu verbuchende und anstehende Termine (Feld `termine`). */
+  termine?: readonly PersonTermin[];
+  kannVerbuchen?: boolean;
+  isOnline?: boolean;
+  onAnwesenheit?: (termin: PersonTermin, status: AnwesenheitWahl) => void;
 }
+
+const nichtsTun = () => {};
 
 export const EventPointsSection = React.memo<EventPointsSectionProps>(({
   eventPoints,
-  currentKonfi
+  currentKonfi,
+  termine = [],
+  kannVerbuchen = false,
+  isOnline = true,
+  onAnwesenheit = nichtsTun
 }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -542,14 +677,19 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
       <IonLabel>Events ({eventPoints.reduce((sum, ep) => sum + (ep.points || 0), 0)})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: eventPoints.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
+      <IonCardContent style={{ padding: eventPoints.length === 0 && termine.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
+        {termine.length > 0 && (
+          <TerminZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} mitAbstandUnten={eventPoints.length > 0} />
+        )}
         {eventPoints.length === 0 ? (
-          <EmptyState
-            icon={ICON_TERMIN}
-            title="Keine Event-Punkte"
-            message="Noch keine Event-Punkte erhalten"
-            iconColor="var(--app-color-events)"
-          />
+          termine.length === 0 && (
+            <EmptyState
+              icon={ICON_TERMIN}
+              title="Keine Event-Punkte"
+              message="Noch keine Event-Punkte erhalten"
+              iconColor="var(--app-color-events)"
+            />
+          )
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {/* Eventdatum statt Verbuchungsdatum, danach geordnet
@@ -628,23 +768,40 @@ interface TeamerEventsSectionProps {
     attendance_status?: string | null;
   }>;
   formatDate: (dateString: string) => string;
+  /** Oben in der Liste: zu verbuchende und anstehende Termine (Feld `termine`). */
+  termine?: readonly PersonTermin[];
+  kannVerbuchen?: boolean;
+  isOnline?: boolean;
+  onAnwesenheit?: (termin: PersonTermin, status: AnwesenheitWahl) => void;
 }
 
 export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
-  teamerEvents,
-  formatDate
-}) => (
+  teamerEvents: alleTeamerEvents,
+  formatDate,
+  termine = [],
+  kannVerbuchen = false,
+  isOnline = true,
+  onAnwesenheit = nichtsTun
+}) => {
+  // Was oben steht, steht darunter nicht noch einmal. Der Zaehler im Kopf
+  // bleibt wie bisher bei allen Events.
+  const oben = new Set(termine.map((t) => t.event_id));
+  const teamerEvents = alleTeamerEvents.filter((e) => !oben.has(e.id));
+  return (
   <IonList className="app-section-inset" inset={true} style={{ marginBottom: 'var(--app-abstand-extraweit)' }}>
     <IonListHeader>
       <div className="app-section-icon app-section-icon--events">
         <IonIcon icon={ICON_TERMIN_GEFUELLT} />
       </div>
-      <IonLabel>Events ({teamerEvents.length})</IonLabel>
+      <IonLabel>Events ({alleTeamerEvents.length})</IonLabel>
     </IonListHeader>
     <IonCard className="app-card">
-      <IonCardContent style={{ padding: teamerEvents.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
+      <IonCardContent style={{ padding: teamerEvents.length === 0 && termine.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
+        {termine.length > 0 && (
+          <TerminZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} mitAbstandUnten={teamerEvents.length > 0} />
+        )}
         {teamerEvents.length === 0 ? (
-          <EmptyState
+          termine.length === 0 && <EmptyState
             icon={ICON_TERMIN_GEFUELLT}
             title="Keine Events"
             message="Noch bei keinem Event dabei gewesen"
@@ -728,7 +885,8 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
       </IonCardContent>
     </IonCard>
   </IonList>
-));
+  );
+});
 
 // ---- ActivitiesSection ----
 
@@ -791,7 +949,9 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
               <IonItemSliding key={activity.id} style={{ marginBottom: index < Math.min(activities.length, 10) - 1 ? '8px' : '0' }}>
                 <IonItem
                   className="app-item-transparent"
-                  button={activity.hasPhoto}
+                  // Offener Antrag mit Recht: Antippen oeffnet "Aktivitaet
+                  // pruefen" (genehmigen/ablehnen); sonst nur das Foto.
+                  button={activity.hasPhoto || (activity.isPending === true && activity.darfEntscheiden === true)}
                   onClick={() => handlePhotoClick(activity)}
                   detail={false}
                   lines="none"

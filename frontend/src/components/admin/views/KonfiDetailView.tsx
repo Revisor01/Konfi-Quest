@@ -43,7 +43,10 @@ import {
   TeamerSinceSection, KonfiHistorySection, PromoteSection, KonfispruchSection
 } from './KonfiDetailSections';
 import KonfiModal from '../modals/KonfiModal';
-import type { Konfi, Activity } from './KonfiDetailSections';
+import type { Konfi, Activity, PersonTermin, AnwesenheitWahl } from './KonfiDetailSections';
+import ActivityRequestModal from '../modals/ActivityRequestModal';
+import { anwesenheitSetzen } from '../../../utils/anwesenheitSetzen';
+import { darfTermineVerwalten } from '../../../utils/terminRechte';
 import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
 import { datumKurz } from '../../../utils/dateUtils';
 
@@ -60,6 +63,8 @@ interface OffenerAntrag {
   activity_points: number;
   requested_date: string;
   photo_filename?: string;
+  /** Recht "Anträge entscheiden" (09.10.2026); fehlt bei älteren Servern. */
+  darf_entscheiden?: boolean;
 }
 import KonfiBadgesSection from './KonfiBadgesSection';
 import ChallengeStempelSektion from '../../shared/ChallengeStempelSektion';
@@ -122,6 +127,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
   const [activities, setActivities] = useState<Activity[]>([]);
+  // Oben in der Eventliste (09.10.2026): zu verbuchende und anstehende
+  // Termine der Person, Feld `termine` von GET /admin/konfis/:id. Aeltere
+  // Server liefern es nicht -- dann bleibt die Liste wie bisher.
+  const [termine, setTermine] = useState<PersonTermin[]>([]);
   const [bonusEntries, setBonusEntries] = useState<BonusEintrag[]>([]);
   const [eventPoints, setEventPoints] = useState<EventPunkteEintrag[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
@@ -134,6 +143,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   }>>([]);
   const isTeamer = targetRole === 'teamer';
   const fotoAntragRef = React.useRef<number | null>(null);
+  const pruefAntragRef = React.useRef<number | null>(null);
+  // Anwesenheit eintragen ist Leitungssache (requireAdmin an der Route); je
+  // Termin entscheidet zusaetzlich darf_verbuchen.
+  const kannVerbuchen = darfTermineVerwalten(user);
   // Das Passwort entsteht 300 ms nach dem Bestaetigen (der Dialog schliesst
   // erst); wer die Ansicht in der Spanne verlaesst, setzt es nicht mehr zurueck.
   const zeitgeber = useZeitgeber();
@@ -202,6 +215,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       certificates?: typeof certificates;
       teamerEvents?: typeof teamerEvents;
       konfiHistory?: typeof konfiHistory;
+      termine?: PersonTermin[];
     };
     antraege: OffenerAntrag[];
     bewahrteStempel: ChallengeMark[];
@@ -265,6 +279,25 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       dismissPhotoModalHook();
     },
     get antragId() { return fotoAntragRef.current; }
+  });
+
+  // "Aktivität prüfen" aus der Aktivitätenliste (09.10.2026): DASSELBE
+  // Fenster wie in der Antragsliste (Genehmigen, Ablehnen mit Grund), mit
+  // denselben Folgen danach -- Neuladen, Antragszähler ('requests') und
+  // Punkte in der Konfi-Liste ('konfis'), wie AdminEventsPage.
+  const [presentPruefModal, dismissPruefModal] = useIonModal(ActivityRequestModal, {
+    get requestId() { return pruefAntragRef.current; },
+    onClose: () => {
+      pruefAntragRef.current = null;
+      dismissPruefModal();
+    },
+    onSuccess: () => {
+      pruefAntragRef.current = null;
+      dismissPruefModal();
+      void loadKonfiData();
+      triggerRefresh('requests');
+      triggerRefresh('konfis');
+    }
   });
 
   // Certificate Assign Modal mit useIonModal Hook
@@ -617,14 +650,17 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         points: req.activity_points,
         type: 'pending',
         date: req.requested_date,
-        admin: 'Wartend auf Genehmigung',
+        admin: req.darf_entscheiden !== false ? 'Antippen zum Prüfen' : 'Wartend auf Genehmigung',
         isPending: true,
+        darfEntscheiden: req.darf_entscheiden !== false,
         photo_filename: req.photo_filename,
         requestId: req.id,
         hasPhoto: !!req.photo_filename
       }));
 
-    setActivities([...enhancedActivities, ...pendingRequests]);
+    // Offene Anträge OBEN in der Liste, danach das Verbuchte.
+    setActivities([...pendingRequests, ...enhancedActivities]);
+    setTermine(Array.isArray(konfiData.termine) ? konfiData.termine : []);
   };
 
   const getGottesdienstPoints = () => {
@@ -752,11 +788,38 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Antippen sichtbar nichts, bei einem Fehler kam nur "Foto konnte nicht
   // geladen werden".
   const handlePhotoClick = (activity: Activity) => {
+    // Offener Antrag mit Recht: das Prüf-Fenster der Antragsliste, darin auch
+    // das Foto. Ohne Recht (oder ohne Netz) bleibt es beim Foto.
+    if (activity.isPending && activity.requestId && activity.darfEntscheiden && isOnline) {
+      pruefAntragRef.current = activity.requestId;
+      presentPruefModal({ presentingElement: presentingElement || undefined });
+      return;
+    }
     if (activity.hasPhoto && activity.requestId) {
       fotoAntragRef.current = activity.requestId;
       presentPhotoModalHook({
         presentingElement: presentingElement || undefined
       });
+    }
+  };
+
+  // Anwesenheit direkt aus der Eventliste (09.10.2026): dieselbe Route wie
+  // im Termin (utils/anwesenheitSetzen.ts) -- Punkte, Abzeichen, Push und
+  // Zähler laufen dort. Danach neu laden und die Zähler anstoßen wie im
+  // Termin ('events' für den Verbuchen-Reiter, 'konfis' für die Punkte).
+  const handleAnwesenheit = async (termin: PersonTermin, status: AnwesenheitWahl) => {
+    if (offlineBlockiert(isOnline, setError)) return;
+    if (!kannVerbuchen || !termin.darf_verbuchen) return;
+    try {
+      await anwesenheitSetzen(termin.event_id, termin.booking_id, status, {
+        gruppe: isTeamer ? 'teamer' : 'konfi'
+      });
+      setSuccess(status === 'present' ? 'Als anwesend eingetragen' : 'Als nicht anwesend eingetragen');
+      await loadKonfiData();
+      triggerRefresh('events');
+      triggerRefresh('konfis');
+    } catch (err) {
+      setError(fehlerText(err, 'Fehler beim Aktualisieren der Anwesenheit'));
     }
   };
 
@@ -847,6 +910,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         bonus={bonusEntries}
         eventPunkte={eventPoints}
         teamerEvents={teamerEvents}
+        termine={termine}
+        kannVerbuchen={kannVerbuchen}
+        onAnwesenheit={handleAnwesenheit}
         zertifikate={certificates}
         konfiHistorie={konfiHistory}
         konfiZeit={konfiZeit}
@@ -1084,6 +1150,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           <EventPointsSection
             eventPoints={eventPoints}
             currentKonfi={currentKonfi}
+            termine={termine}
+            kannVerbuchen={kannVerbuchen}
+            isOnline={isOnline}
+            onAnwesenheit={handleAnwesenheit}
           />
         )}
 
@@ -1093,6 +1163,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           <TeamerEventsSection
             teamerEvents={teamerEvents}
             formatDate={formatDate}
+            termine={termine}
+            kannVerbuchen={kannVerbuchen}
+            isOnline={isOnline}
+            onAnwesenheit={handleAnwesenheit}
           />
         )}
 

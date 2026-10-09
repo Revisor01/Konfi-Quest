@@ -64,6 +64,7 @@ import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
 import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { track, trackHandlung } from '../../../services/analytics';
+import { anwesenheitSetzen } from '../../../utils/anwesenheitSetzen';
 import { datumLang } from '../../../utils/dateUtils';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebTerminDetailLeitung from '../web/termine/WebTerminDetailLeitung';
@@ -866,16 +867,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         : p
     ));
     try {
-      await api.put(`/events/${eventId}/participants/${participant.id}/attendance`, {
-        attendance_status: status,
-        ...(texte?.excuse_reason !== undefined ? { excuse_reason: texte.excuse_reason } : {}),
-        ...(notizMitgeschickt ? { attendance_note: texte!.attendance_note } : {})
-      });
-      // Anonyme Messung NACH der erfolgreichen Antwort: die Anwesenheit ist
-      // wirklich verbucht. Nur Umfang und Gruppe — keine Person, kein Termin,
-      // kein Status-Detail, kein Grund und keine Notiz.
-      trackHandlung('anwesenheit-erfasst', {
-        umfang: 'einzeln',
+      // Dieselbe Stelle wie das Verbuchen aus der Detailansicht der Person
+      // (utils/anwesenheitSetzen.ts): Route, Koerper und Messung.
+      await anwesenheitSetzen(eventId, participant.id, status, {
+        texte,
         gruppe: participant.role_name === 'konfi' ? 'konfi' : 'teamer'
       });
       triggerRefresh('events');

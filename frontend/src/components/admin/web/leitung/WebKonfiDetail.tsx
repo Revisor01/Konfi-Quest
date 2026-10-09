@@ -10,8 +10,12 @@
 //             Aktivitaeten, Events, Zertifikate, Konfi-Historie und die
 //             Events der Konfi-Zeit; Events stehen immer unter den
 //             Aktivitaeten (Simon, 07.10.2026);
-//   rechts    Angaben, Konfirmation, Badges, offene Antraege, Stempel,
-//             Rueckblick und "Rolle aendern".
+//   rechts    Angaben, Konfirmation, Badges, Stempel, Rueckblick und
+//             "Rolle aendern".
+//
+// Offenes steht OBEN in der jeweiligen Liste (Simon, 09.10.2026): offene
+// Antraege in den Aktivitaeten (Pruefen), zu verbuchende und anstehende
+// Termine in den Events (Anwesend / Nicht anwesend).
 //
 // Daten und Aktionen kommen von der Seite (KonfiDetailView): Sie laedt, haelt
 // den Zustand und oeffnet dieselben Fenster und Rueckfragen wie in der App
@@ -39,7 +43,6 @@ import { WebFehler, WebLaden } from '../../../web/WebZustaende';
 import WebKonfiBadges from './WebKonfiBadges';
 import {
   AktivitaetenKarte,
-  AntraegeKarte,
   BefoerdernKarte,
   BonusKarte,
   EventPunkteKarte,
@@ -197,13 +200,17 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
       )}
       <AktivitaetenKarte
         aktivitaeten={aktivitaetenAnzeige}
+        offene={offene}
+        isOnline={isOnline}
         konfi={konfi}
         istTeamer={istTeamer}
         onEintragen={p.onAktivitaetEintragen}
         onLoeschen={p.onAktivitaetLoeschen}
         onFoto={p.onFoto}
       />
-      {istTeamer ? <TeamerEventsKarte events={p.teamerEvents} /> : <EventPunkteKarte eventPunkte={p.eventPunkte} konfi={konfi} />}
+      {istTeamer
+        ? <TeamerEventsKarte events={p.teamerEvents} termine={p.termine} kannVerbuchen={p.kannVerbuchen} isOnline={isOnline} onAnwesenheit={p.onAnwesenheit} />
+        : <EventPunkteKarte eventPunkte={p.eventPunkte} konfi={konfi} termine={p.termine} kannVerbuchen={p.kannVerbuchen} isOnline={isOnline} onAnwesenheit={p.onAnwesenheit} />}
       {!istTeamer && (
         <BonusKarte bonus={p.bonus} konfi={konfi} summe={p.punkte.bonus} onVergeben={p.onBonusVergeben} onLoeschen={p.onBonusLoeschen} />
       )}
@@ -221,7 +228,6 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
       {mitKonfirmation && <KonfirmationKarte konfi={konfi} anwesenheit={p.anwesenheit} onMatrix={p.onMatrix} />}
       {teamerSeit}
       <WebKonfiBadges konfiId={p.konfiId} rolle={istTeamer ? 'teamer' : 'konfi'} />
-      <AntraegeKarte antraege={offene} onFoto={p.onFoto} />
       <StempelKarte marks={p.stempel} offene={p.offeneStempel} />
       <RueckblickKarte eintraege={p.rueckblicke} istTeamer={istTeamer} onOeffnen={p.onRueckblick} />
       {!istTeamer && <BefoerdernKarte isOnline={isOnline} onBefoerdern={p.onBefoerdern} />}

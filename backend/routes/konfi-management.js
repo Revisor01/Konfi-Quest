@@ -19,6 +19,7 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
 // Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
+const { termineDerPersonFuerLeitung } = require('../utils/terminLeitungSicht');
 const { istMitgliedDerOrganisation, ladeRolleInGemeinde } = require('../utils/orgMitglieder');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
@@ -1271,9 +1272,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 }
             }
 
+            // Offene und anstehende Termine der Person (09.10.2026, additiv):
+            // oben in der Eventliste der Detailansicht -- zu verbuchende mit
+            // darf_verbuchen, anstehende nur zum Ansehen. Regel-Stelle:
+            // utils/terminLeitungSicht.js. Alte Apps lesen das Feld nicht.
+            const termine = await termineDerPersonFuerLeitung(db, req, konfiId);
+
             res.json({
                 ...konfi,
                 konfspruch,
+                termine,
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
                 badgeCount: badgeResult ? badgeResult.badgeCount : 0,

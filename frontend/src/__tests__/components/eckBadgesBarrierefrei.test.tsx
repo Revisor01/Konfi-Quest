@@ -92,7 +92,9 @@ describe('Eck-Badges mit Symbol sind fuer Vorlesehilfen beschriftet', () => {
     // 29.09.2026: 38 -- der Umschlag im Eselsohr des Postfachs ist dem
     // blauen Punkt gewichen (kein Eck-Badge mehr; role="img" und
     // aria-label = title prueft dort postfachModal.test.tsx).
-    expect(badges.length).toBe(38);
+    // 09.10.2026: 39 -- das Stand-Badge der Termine oben in der Eventliste
+    // einer Person (KonfiDetailSections.tsx, TerminZeilen).
+    expect(badges.length).toBe(39);
   });
 
   it.each(badges.map((b) => [b.ort, b.tag] as const))('%s: role="img" und aria-label = title', (_ort, tag) => {

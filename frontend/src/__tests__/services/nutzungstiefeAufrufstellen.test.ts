@@ -57,8 +57,12 @@ const STELLEN: Array<{
   {
     datei: 'src/components/admin/views/EventDetailView.tsx',
     handlung: 'anwesenheit-erfasst',
-    vorher: '/attendance`'
+    vorher: '/attendance-all`'
   },
+  // Die Einzel-Verbuchung misst seit dem 09.10.2026 an der gemeinsamen
+  // Stelle fuer Termin und Detailansicht der Person
+  // (utils/anwesenheitSetzen.ts, eigener Test unten: ohne catch-Zweig);
+  // die Sammelverbuchung misst weiter in EventDetailView.
   // Simon, 27.09.2026: Anträge, Material, Konfispruch
   // (docs/messung/umami.md, U1–U3).
   {
@@ -210,6 +214,18 @@ describe('Gemessen wird erst nach der erfolgreichen Antwort', () => {
     // mit Rumpf, also muessen mehr Zeilen angesehen worden sein als catch-Koepfe.
     const koepfe = zeilen.filter((z) => /\bcatch\s*(\(|\{)/.test(z)).length;
     expect(catchZeilen).toBeGreaterThan(koepfe);
+  });
+});
+
+describe('Einzel-Verbuchung: gemeinsame Stelle (utils/anwesenheitSetzen.ts)', () => {
+  it('misst nach dem awaiteten Aufruf und hat keinen catch-Zweig, der messen koennte', () => {
+    const quelle = lies('src/utils/anwesenheitSetzen.ts');
+    const posAufruf = quelle.indexOf('await api.put(`/events/${eventId}/participants/${buchungId}/attendance`');
+    const posMessung = quelle.indexOf("trackHandlung('anwesenheit-erfasst'");
+    expect(posAufruf).toBeGreaterThan(-1);
+    expect(posMessung).toBeGreaterThan(posAufruf);
+    // Ein Fehler wirft durch: kein catch, also auch keine Erfolgsmessung danach.
+    expect(/\bcatch\b/.test(quelle)).toBe(false);
   });
 });
 
