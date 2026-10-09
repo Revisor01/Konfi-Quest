@@ -34,9 +34,11 @@ import {
   apdexStufe,
   gesamtzustand,
   routenListe,
+  supportMailHinweis,
   tagesbilanz,
   vergleichHeuteGegenVortage,
   type BetriebsSnapshot,
+  type BetriebsSupportMail,
   type RoutenSortierung,
   type RoutenZeile,
 } from '../../../utils/betriebsKennzahlen';
@@ -105,6 +107,8 @@ interface Snapshot extends BetriebsSnapshot {
   // Seit dem 09.10.2026: Hintergrund-Jobs (letzter Lauf, Dauer, Ergebnis) und
   // Dauer des Push-Versands.
   hintergrund?: BetriebsHintergrund;
+  // Seit dem 10.10.2026: Laeuft die Support-Mail? (Zugangsdaten da, zuletzt abgeholt)
+  supportMail?: BetriebsSupportMail;
 }
 interface HistorySnap {
   captured_at: string;
@@ -360,6 +364,7 @@ const AdminMetricsPage: React.FC = () => {
   const zustand = snap ? gesamtzustand(snap) : null;
   const zustandsFarbe = zustand?.stufe === 'gut' ? METRIK_AMPEL.gut : zustand?.stufe === 'auffaellig' ? METRIK_AMPEL.maessig : METRIK_AMPEL.kritisch;
   const apdexInfo = apdexStufe(snap?.apdex?.wert);
+  const mailHinweis = supportMailHinweis(snap?.supportMail);
 
   if (breit) {
     return (
@@ -374,6 +379,7 @@ const AdminMetricsPage: React.FC = () => {
         routenSicht={routenSicht}
         onRoutenSicht={setRoutenSicht}
         zustand={zustand}
+        mailHinweis={mailHinweis}
         apdexInfo={apdexInfo}
         veraenderung={veraenderung}
         routenZeilen={routenZeilen}
@@ -423,6 +429,17 @@ const AdminMetricsPage: React.FC = () => {
                 </span>
               </div>
             </div>
+
+            {/* 2. Support-Mail: nur, wenn sie nicht laeuft (Vorfall 08.10.2026). */}
+            {mailHinweis && (
+              <div role="status" aria-label="Support-Mail" style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', padding: 'var(--app-abstand-mittel)', marginBottom: 'var(--app-abstand-basis)', boxShadow: 'var(--app-schatten-fein)', borderLeft: `4px solid ${mailHinweis.stufe === 'stoerung' ? METRIK_AMPEL.kritisch : METRIK_AMPEL.maessig}` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
+                  <IonIcon icon={ICON_WARNUNG} aria-hidden="true" style={{ color: mailHinweis.stufe === 'stoerung' ? METRIK_AMPEL.kritisch : METRIK_AMPEL.maessig, flexShrink: 0 }} />
+                  <span style={{ fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)', color: 'var(--app-text-emphasis)' }}>{mailHinweis.titel}</span>
+                </div>
+                <div style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-secondary)', marginTop: 'var(--app-abstand-mini)', lineHeight: 1.4 }}>{mailHinweis.satz}</div>
+              </div>
+            )}
 
             {/* Tabs */}
             <IonSegment scrollable value={tab} onIonChange={(e) => setTab(e.detail.value as typeof tab)} style={{ marginBottom: 'var(--app-abstand-mittel)' }}>

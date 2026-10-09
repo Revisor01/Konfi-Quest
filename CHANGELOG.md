@@ -422,6 +422,10 @@ Versionsüberschrift.
   Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
 
 ### Sonstiges
+- Ein Deploy bricht ab, bevor er etwas ändert, wenn auf dem Server die
+  Zugangsdaten der Support-Mail fehlen, und nennt die fehlenden Einträge.
+- Die Seite „Betrieb" warnt, wenn die Support-Mail aus ist oder länger als
+  30 Minuten keine Mails abgeholt hat; die Statusabfrage meldet dasselbe.
 - Reiter, Filter und Leertexte jeder Seite stehen für App und Browser an
   einer Stelle; ein neuer Filter erscheint so in beiden zugleich.
 - Die automatischen Prüfungen messen den Dunkelmodus im Browser nach, sobald

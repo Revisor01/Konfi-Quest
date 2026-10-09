@@ -242,6 +242,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 09.10.2026 — Android holt Updates über Googles In-App-Updates:
   sofort unter der Mindestversion, sonst im Hintergrund mit „Neustarten
   zum Aktualisieren" (Branch `feat/android-in-app-update`).
+- [x] 10.10.2026 — Deploy prüft die Pflicht-Stack-Variablen der Support-Mail
+  und bricht vor dem Stack-Update ab, wenn eine fehlt oder leer ist; Status,
+  Kennzahlen und Seite „Betrieb" melden, wenn die Support-Mail aus ist oder
+  länger als 30 Minuten nicht abgeholt wurde (Anlass: 46 Stunden ohne
+  Support-Mail nach verlorenen Stack-Variablen am 08.10.2026; Branch
+  `fix/deploy-stackvariablen-pruefen`).
 
 
 ## Offen

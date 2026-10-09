@@ -10,6 +10,7 @@ import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { neuerStand, type LeitungTestStand } from './leitungTestHilfe';
 import { fmtDauer, fmtSeit, fmtUptime, fmtZahl, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../utils/betriebsFormat';
 import { METRIK_AMPEL } from '../../../theme/colors';
+import { supportMailHinweis } from '../../../utils/betriebsKennzahlen';
 
 const h = vi.hoisted(() => ({
   breit: true,
@@ -509,5 +510,76 @@ describe('Betrieb: Hintergrund', () => {
     expect(screen.getByText('52 ms')).toBeInTheDocument();
     expect(screen.getByText('12× · Mittel 80 ms · längster 400 ms')).toBeInTheDocument();
     expect(screen.getByText('noch keiner')).toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Support-Mail (10.10.2026): Am 08.10.2026 fehlten nach einem Deploy die
+// Zugangsdaten der Postfaecher, das Abholen stand 46 Stunden -- und die Seite
+// "Betrieb" zeigte gruen. Die Warnung steht direkt unter dem Urteil, nur wenn
+// die Support-Mail nicht laeuft.
+describe('Betrieb: Support-Mail', () => {
+  const postfach = (name: string, zustand: 'ok' | 'nicht_eingerichtet' | 'veraltet', extra: Record<string, unknown> = {}) => ({
+    postfach: name, eingerichtet: zustand !== 'nicht_eingerichtet', abgeholt_am: zustand === 'ok' ? vorMin(1) : null,
+    alter_minuten: zustand === 'ok' ? 1 : null, fehler: null, zustand, ...extra,
+  });
+  const mitMail = (supportMail: unknown) => {
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, supportMail } : { snapshots: HISTORIE } }));
+  };
+
+  it('Urteil: null bei ok und ohne Feld (alter Server); Stoerung, wenn Zugangsdaten fehlen', () => {
+    expect(supportMailHinweis(undefined)).toBeNull();
+    expect(supportMailHinweis({ zustand: 'ok', grenzeMinuten: 30, postfaecher: [postfach('moin', 'ok'), postfach('support', 'ok')] })).toBeNull();
+    expect(supportMailHinweis({ zustand: 'nicht_eingerichtet', grenzeMinuten: 30, postfaecher: [postfach('moin', 'nicht_eingerichtet'), postfach('support', 'nicht_eingerichtet')] })).toEqual({
+      stufe: 'stoerung',
+      titel: 'Support-Mail ist aus',
+      satz: 'Postfächer „moin“ und „support“: Auf dem Server fehlen die Zugangsdaten — es werden keine Mails abgeholt und keine Antworten verschickt. Meist sind die Variablen des Stacks verloren gegangen; wieder eintragen und den Stack neu ausrollen.',
+    });
+  });
+
+  it('Urteil: auffaellig bei veraltetem Abruf, mit Alter und letztem Fehler je Postfach', () => {
+    const hinweis = supportMailHinweis({
+      zustand: 'veraltet',
+      grenzeMinuten: 30,
+      postfaecher: [
+        postfach('moin', 'veraltet', { abgeholt_am: vorMin(180), alter_minuten: 180, fehler: 'Verbindung gescheitert (ETIMEDOUT)' }),
+        postfach('support', 'ok'),
+      ],
+    });
+    expect(hinweis).toEqual({
+      stufe: 'auffaellig',
+      titel: 'Support-Mail wird nicht abgeholt',
+      satz: '„moin“ zuletzt abgeholt vor 3 Std (letzter Fehler: Verbindung gescheitert (ETIMEDOUT)). Abgeholt wird alle zwei Minuten; mehr als 30 Minuten Pause heißen, dass etwas nicht stimmt.',
+    });
+    expect(supportMailHinweis({ zustand: 'veraltet', grenzeMinuten: 30, postfaecher: [postfach('moin', 'ok'), postfach('support', 'veraltet')] })?.satz)
+      .toMatch(/^„support“ noch nie abgeholt\. /);
+  });
+
+  it('Web: die Warnung steht als eigener Kasten unter dem Urteil', async () => {
+    mitMail({ zustand: 'nicht_eingerichtet', grenzeMinuten: 30, postfaecher: [postfach('moin', 'ok'), postfach('support', 'nicht_eingerichtet')] });
+    await oeffnen();
+    const kasten = screen.getByRole('status', { name: 'Support-Mail' });
+    expect(kasten).toHaveClass('web-zustand', 'web-zustand--stoerung');
+    expect(within(kasten).getByRole('heading', { name: 'Support-Mail ist aus' })).toBeInTheDocument();
+    expect(kasten).toHaveTextContent('Postfach „support“: Auf dem Server fehlen die Zugangsdaten');
+  });
+
+  it('Web: laeuft die Support-Mail oder kennt der Server das Feld nicht, gibt es keinen Kasten', async () => {
+    mitMail({ zustand: 'ok', grenzeMinuten: 30, postfaecher: [postfach('moin', 'ok'), postfach('support', 'ok')] });
+    const { unmount } = await oeffnen();
+    expect(screen.queryByRole('status', { name: 'Support-Mail' })).toBeNull();
+    unmount();
+    mitMail(undefined);
+    await oeffnen();
+    expect(screen.queryByRole('status', { name: 'Support-Mail' })).toBeNull();
+  });
+
+  it('App: dieselbe Warnung unter dem Urteil', async () => {
+    h.breit = false;
+    mitMail({ zustand: 'veraltet', grenzeMinuten: 30, postfaecher: [postfach('moin', 'veraltet', { abgeholt_am: vorMin(45), alter_minuten: 45 }), postfach('support', 'ok')] });
+    await oeffnen();
+    const kasten = screen.getByRole('status', { name: 'Support-Mail' });
+    expect(kasten).toHaveTextContent('Support-Mail wird nicht abgeholt');
+    expect(kasten).toHaveTextContent('„moin“ zuletzt abgeholt vor 45 Min.');
   });
 });

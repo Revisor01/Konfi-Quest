@@ -59,6 +59,8 @@
 #                         setzt es nicht -- er darf bewusst zurueckrollen.
 #   PROBELAUF             1 = alles lesen und pruefen, aber NICHTS am Stack aendern
 #                         (Notfall-Deploy proben, siehe probelauf unten)
+#   PFLICHT_DATEI         Liste der Pflicht-Stack-Variablen (Standard:
+#                         stack-pflichtvariablen.txt neben diesem Skript)
 set -euo pipefail
 : "${P_URL:?P_URL fehlt}" "${P_KEY:?P_KEY fehlt}" "${STACK_ID:?STACK_ID fehlt}"
 : "${ENDPOINT_ID:?ENDPOINT_ID fehlt}" "${GIT_SHA:?GIT_SHA fehlt}" "${STATUS_URL:?STATUS_URL fehlt}"
@@ -72,6 +74,7 @@ VERIFY_ANLAUF_MAX="${VERIFY_ANLAUF_MAX:-30}"
 FEHLER_PAUSE_S="${FEHLER_PAUSE_S:-15}"
 NUR_VORWAERTS="${NUR_VORWAERTS:-0}"
 PROBELAUF="${PROBELAUF:-0}"
+PFLICHT_DATEI="${PFLICHT_DATEI:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/stack-pflichtvariablen.txt}"
 
 # Image-Tag: docker/metadata-action (type=sha,prefix=) pusht den KURZEN
 # 7-stelligen SHA-Tag -- NICHT den vollen github.sha. GIT_SHA (voll) bleibt
@@ -169,22 +172,79 @@ andere_images() {
        s && d != "" && /^    image:/ && d !~ /^(backend|backend2|frontend)$/ {print d, $2}' "${1:-compose.yml}"
 }
 
-update_stack() {  # gibt den HTTP-Status aus
+# Pflicht-Stack-Variablen (10.10.2026). Am 08.10.2026 hatte Portainer bei
+# einem Neustart die Stack-Variablen verloren (Env-Liste leer). update_stack
+# schickte zurueck, was Portainer meldete -- die leere Liste blieb leer, ohne
+# Warnung, und die Support-Mail war 46 Stunden aus: Die Compose-Datei reicht
+# diese Variablen als `${NAME:-}` durch, der Container startet auch ohne sie.
+# Welche Variablen Pflicht sind, steht an EINER Stelle: PFLICHT_DATEI
+# (deploy/stack-pflichtvariablen.txt). Fehlt eine in der Env-Liste oder ist
+# sie leer, geht der Deploy nicht weiter.
+#
+# hole_env <datei>: Env-Liste des Stacks als JSON in <datei>; 1 = nicht lesbar
+# (HTTP-Fehler, kein JSON). Eine fehlende oder leere Liste ist lesbar: [].
+hole_env() {
+  api -f "$P_URL/api/stacks/$STACK_ID" 2>/dev/null \
+    | python3 -c "import sys,json;json.dump(json.load(sys.stdin).get('Env') or [], open(sys.argv[1],'w'))" "$1" 2>/dev/null
+}
+
+# fehlende_pflichtvariablen <env-datei>: die Namen der Pflicht-Variablen, die
+# fehlen oder leer sind (nur Leerzeichen zaehlt als leer), durch Leerzeichen
+# getrennt; leer = alles da. NIE Werte ausgeben. Ist die Pflicht-Liste selbst
+# nicht lesbar oder leer, gilt das als Fehler.
+fehlende_pflichtvariablen() {
+  python3 - "$1" "$PFLICHT_DATEI" <<'PY'
+import json, sys
+try:
+    namen = [z.split("#", 1)[0].strip() for z in open(sys.argv[2], encoding="utf-8")]
+except OSError:
+    namen = []
+namen = [n for n in namen if n]
+if not namen:
+    print("<Liste der Pflicht-Variablen fehlt>"); raise SystemExit(0)
+gesetzt = set()
+try:
+    liste = json.load(open(sys.argv[1]))
+except Exception:
+    # Nie "alles da" melden, nur weil nichts zu lesen war.
+    print("<Stack-Variablen nicht lesbar>"); raise SystemExit(0)
+for e in liste if isinstance(liste, list) else []:
+    if isinstance(e, dict) and str(e.get("value") or "").strip():
+        gesetzt.add(e.get("name"))
+print(" ".join(n for n in namen if n not in gesetzt))
+PY
+}
+
+# Vor dem ersten Stack-Update (und im Probelauf): Abbruch mit den Namen.
+pruefe_stackvariablen() {
+  if ! hole_env stack-env.json; then
+    rm -f stack-env.json
+    echo "::error::Stack-Variablen nicht lesbar -- Deploy abgebrochen, der Stack wurde nicht angefasst."; exit 1
+  fi
+  local fehlend; fehlend="$(fehlende_pflichtvariablen stack-env.json)"
+  rm -f stack-env.json
+  if [ -n "$fehlend" ]; then
+    echo "::error::Pflicht-Stack-Variablen fehlen oder sind leer: $fehlend -- Deploy abgebrochen, der Stack wurde nicht angefasst. In Portainer bei den Variablen des Stacks wieder eintragen und den Lauf wiederholen (docs/betrieb/routinen.md, Abschnitt Stack-Variablen)."
+    exit 1
+  fi
+  echo "Pflicht-Stack-Variablen vollstaendig."
+}
+
+update_stack() {  # gibt den HTTP-Status aus -- oder "PFLICHT <namen>", ohne PUT
+  # Die Stack-Variablen (etwa SMTP_HOST) unveraendert zurueckschicken:
+  # Portainer ERSETZT sie beim Update durch die mitgeschickte Liste -- "env": []
+  # loeschte sie bei jedem Deploy (27.09.2026). Ohne Variablen bricht die
+  # Referenz-Compose mit "SMTP_HOST fehlt" ab. Geprueft wird GENAU die Liste,
+  # die gleich mitgeht -- unmittelbar vor jedem PUT, auch in Stufe 2.
+  hole_env stack-env.json || { rm -f stack-env.json; echo "000"; return 0; }
+  local fehlend; fehlend="$(fehlende_pflichtvariablen stack-env.json)"
+  if [ -n "$fehlend" ]; then rm -f stack-env.json; echo "PFLICHT $fehlend"; return 0; fi
   python3 - <<'PY'
 import json, os, urllib.request, urllib.error
 url, key = os.environ["P_URL"], os.environ["P_KEY"]
 sid, eid = os.environ["STACK_ID"], os.environ["ENDPOINT_ID"]
 compose = open("compose.yml").read()
-# Die Stack-Variablen (etwa SMTP_HOST) unverändert zurückschicken: Portainer
-# ERSETZT sie beim Update durch die mitgeschickte Liste -- "env": [] löschte
-# sie bei jedem Deploy (27.09.2026). Ohne Variablen bricht die Referenz-Compose
-# mit "SMTP_HOST fehlt" ab. Ohne gesetzte Variablen bleibt es eine leere Liste.
-req = urllib.request.Request(f"{url}/api/stacks/{sid}")
-req.add_header("X-API-Key", key)
-try:
-    env = json.load(urllib.request.urlopen(req, timeout=30)).get("Env") or []
-except Exception:
-    print("000"); raise SystemExit(0)
+env = json.load(open("stack-env.json"))
 # pullImage False (01.10.2026): True erstellte ALLE Dienste neu, auch Postgres
 # (Kopf dieser Datei). Die Images hat ziehe_images vorher geholt.
 body = json.dumps({"stackFileContent": compose, "env": env, "prune": False, "pullImage": False}).encode()
@@ -197,6 +257,7 @@ except urllib.error.HTTPError as e:
 except Exception:
     print("000")
 PY
+  rm -f stack-env.json
 }
 
 # Images vorab ziehen (01.10.2026, Auftrag 10): POST images/create ueber die
@@ -314,7 +375,12 @@ stufe() {  # <dienste-alternation> <zu-pruefender-dienst> [weitere zu ziehende D
     # nicht ausliefert (Propagation direkt nach dem Build), faellt hier auf --
     # die Runde endet, BEVOR der Stack angefasst wird.
     if ! ziehe_images "${ziehen[@]}" "$@"; then sleep "$FEHLER_PAUSE_S"; continue; fi
-    local code; code="$(update_stack)"; echo "update_stack HTTP $code"
+    local code; code="$(update_stack)"
+    case "$code" in PFLICHT*)
+      echo "::error::Pflicht-Stack-Variablen fehlen oder sind leer: ${code#PFLICHT } -- Deploy abgebrochen vor dem Stack-Update der Stufe '$dienste'. In Portainer wieder eintragen und den Lauf wiederholen (docs/betrieb/routinen.md, Abschnitt Stack-Variablen)."
+      exit 1 ;;
+    esac
+    echo "update_stack HTTP $code"
     if [ "$code" != "200" ]; then echo "::warning::update_stack HTTP $code"; sleep "$FEHLER_PAUSE_S"; continue; fi
     if warte_gesund "$pruefe"; then echo "OK $pruefe gesund auf :$IMG_TAG"; return 0; fi
     echo "Runde $runde: $pruefe nicht gesund auf :$IMG_TAG -> erneut"
@@ -325,6 +391,8 @@ stufe() {  # <dienste-alternation> <zu-pruefender-dienst> [weitere zu ziehende D
 
 hole_compose
 andere_vorher="$(andere_images)"
+# Auch im Probelauf: Ein echter Lauf braeche hier ab.
+pruefe_stackvariablen
 
 # Probelauf (29.09.2026, Audit CI BF-10): Der Notfall-Deploy war nie gelaufen,
 # und ein echter Lauf veraendert Produktion. Der Probelauf geht denselben Weg

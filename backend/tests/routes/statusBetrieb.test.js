@@ -88,7 +88,8 @@ describe('GET /api/status als Betriebsanzeige', () => {
       expect(typeof res.body.responseTimeMs).toBe('number');
       expect(Object.keys(res.body).sort()).toEqual(
         // nachlauf kam am 08.10.2026 hinzu (additiv); alle bisherigen Schluessel bleiben.
-        ['checks', 'commit', 'migrationen', 'nachlauf', 'responseTimeMs', 'status', 'uptimeSeconds', 'version']
+        // support_mail kam am 10.10.2026 hinzu (additiv, ohne Stack-Variablen 'nicht_eingerichtet').
+        ['checks', 'commit', 'migrationen', 'nachlauf', 'responseTimeMs', 'status', 'support_mail', 'uptimeSeconds', 'version']
       );
     });
   });

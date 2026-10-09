@@ -31,6 +31,18 @@ const SKRIPT = join(wurzel, 'deploy/rollend.sh');
 const REFERENZ = readFileSync(join(wurzel, 'deploy/compose.konfi_quest.yml'), 'utf-8');
 const SCHLUESSEL = 'test-schluessel';
 
+/** Die Pflicht-Stack-Variablen, so wie rollend.sh sie liest (eine Stelle). */
+const PFLICHT = readFileSync(join(wurzel, 'deploy/stack-pflichtvariablen.txt'), 'utf-8')
+  .split('\n').map((z) => z.split('#')[0].trim()).filter(Boolean);
+/** Bewusst optional: leer heisst "aus". */
+const OPTIONAL = ['APP_MIN_VERSION_IOS', 'APP_MIN_VERSION_ANDROID', 'WARTUNG_HINWEIS', 'MAIL_SMTP_HOST', 'MAIL_SMTP_PORT'];
+/** Werte, die in keiner Ausgabe auftauchen duerfen. */
+const geheim = (name: string) => `wert-von-${name.toLowerCase()}`;
+/** Vollstaendige Stack-Variablen wie in Produktion (Werte erfunden). */
+function vollEnv(): Array<{ name: string; value: string }> {
+  return [{ name: 'SMTP_HOST', value: 'mail.example' }, ...PFLICHT.map((name) => ({ name, value: geheim(name) }))];
+}
+
 /**
  * Ein Dienst ausserhalb von backend, backend2 und frontend -- so stand bis
  * zum 08.10.2026 das Test-Backend im Live-Stack, und so steht er dort, bis der
@@ -69,7 +81,7 @@ type Container = { id: string; image: string; created: number };
  */
 class Portainer {
   stack = '';
-  env = [{ name: 'SMTP_HOST', value: 'mail.example' }];
+  env: Array<{ name: string; value: string }> = vollEnv();
   puts: Array<{ compose: string; env: unknown; pullImage: unknown }> = [];
   container = new Map<string, Container>();
   /** Gezogene Images, mit der Zahl der update_stack-Aufrufe davor. */
@@ -85,6 +97,8 @@ class Portainer {
   /** Erzwungene Antworten fuer die ersten Status-Abfragen (null = 502). */
   statusVorgabe: Array<string | null> = [];
   statusAbfragen = 0;
+  /** Gegenprobe Stufe 2: diese Env-Liste meldet Portainer nach dem ersten PUT. */
+  envNachPut: Array<{ name: string; value: string }> | null = null;
   private naechsteId = 1;
   private reihum = 0;
 
@@ -97,6 +111,8 @@ class Portainer {
     this.pulls = [];
     this.fehlt.clear();
     this.alleNeu = false;
+    this.env = vollEnv();
+    this.envNachPut = null;
     this.uebernehme(this.stack, false);
     this.neuErstellt = [];
   }
@@ -140,6 +156,7 @@ class Portainer {
       const daten = JSON.parse(koerper);
       this.puts.push({ compose: daten.stackFileContent, env: daten.env, pullImage: daten.pullImage });
       this.stack = daten.stackFileContent;
+      if (this.envNachPut) this.env = this.envNachPut;
       this.uebernehme(this.stack, daten.pullImage === true || this.alleNeu);
       return json(200, { Id: 249 });
     }
@@ -259,7 +276,7 @@ describe('rollender Deploy: der Normalfall', () => {
       expect(Object.keys(imagesAus(put.compose)).sort()).toEqual(['backend', 'backend2', 'frontend', 'postgres']);
       expect(imagesAus(put.compose).postgres).toBe(imagesAus(REFERENZ).postgres);
       // Stack-Variablen gehen unveraendert zurueck ("env": [] loeschte sie).
-      expect(put.env).toEqual([{ name: 'SMTP_HOST', value: 'mail.example' }]);
+      expect(put.env).toEqual(vollEnv());
     }
   });
 
@@ -462,13 +479,118 @@ describe('Probelauf (Notfall-Deploy proben, Audit CI BF-10)', () => {
       expect(aus).toMatch(new RegExp(`${d}: \\S+:${kurz(C)} -> \\S+:${kurz(A)}`));
     }
     expect(aus).not.toContain('backend-test');
-    expect(aus).toContain('Stack-Variablen, die mitgeschickt wuerden: 1');
+    expect(aus).toContain(`Stack-Variablen, die mitgeschickt wuerden: ${PFLICHT.length + 1}`);
   });
 
   it('meldet einen falschen Schluessel, statt still durchzulaufen', async () => {
     portainer.anfang(kurz(C));
     const { code } = await rolle(A, { PROBELAUF: '1', P_KEY: 'falsch' });
     expect(code).not.toBe(0);
+    expect(portainer.puts).toHaveLength(0);
+  });
+});
+
+describe('Pflicht-Stack-Variablen (10.10.2026)', () => {
+  // Am 08.10.2026 verlor Portainer bei einem Neustart die Stack-Variablen
+  // (Env-Liste leer). Der Deploy schickte die leere Liste zurueck, ohne
+  // Warnung -- die Support-Mail war 46 Stunden aus.
+  const fehlerZeile = (aus: string) => aus.split('\n').find((z) => z.includes('Pflicht-Stack-Variablen fehlen')) ?? '';
+  const keinWertImLog = (aus: string) => {
+    for (const name of PFLICHT) expect(aus).not.toContain(geheim(name));
+  };
+
+  it('die Liste steht an einer Stelle und deckt genau die stillen Mail-Variablen ab', () => {
+    expect(PFLICHT).toEqual(['MAIL_IMAP_HOST', 'MAIL_MOIN_USER', 'MAIL_MOIN_PASS', 'MAIL_SUPPORT_USER', 'MAIL_SUPPORT_PASS']);
+    // Jede Pflicht-Variable reicht die Referenz-Compose ohne Standard durch ...
+    for (const name of PFLICHT) expect(REFERENZ).toContain(`${name}: \${${name}:-}`);
+    // ... die bewusst optionalen auch, aber sie stehen nicht in der Liste.
+    for (const name of OPTIONAL) {
+      expect(REFERENZ).toContain(`${name}: \${${name}:-}`);
+      expect(PFLICHT).not.toContain(name);
+    }
+    // Das Skript traegt keine zweite Liste.
+    const skript = readFileSync(SKRIPT, 'utf-8');
+    for (const name of PFLICHT) expect(skript).not.toContain(name);
+  });
+
+  it('vollstaendig: Deploy laeuft durch und meldet es', async () => {
+    portainer.anfang(kurz(A));
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('Pflicht-Stack-Variablen vollstaendig.');
+    expect(portainer.puts).toHaveLength(2);
+    keinWertImLog(aus);
+  });
+
+  it('Env-Liste leer (der Vorfall): Abbruch VOR dem ersten PUT, alle fuenf Namen genannt', async () => {
+    portainer.anfang(kurz(A));
+    portainer.env = [];
+    const stackVorher = portainer.stack;
+    const { code, aus } = await rolle(B, { NUR_VORWAERTS: '1' });
+    expect(code).toBe(1);
+    expect(fehlerZeile(aus)).toContain(`fehlen oder sind leer: ${PFLICHT.join(' ')} --`);
+    expect(aus).toContain('der Stack wurde nicht angefasst');
+    expect(portainer.puts).toHaveLength(0);
+    expect(portainer.pulls).toHaveLength(0);
+    expect(portainer.stack).toBe(stackVorher);
+  });
+
+  it('Env-Feld fehlt ganz (null): ebenso Abbruch', async () => {
+    portainer.anfang(kurz(A));
+    portainer.env = null as unknown as Array<{ name: string; value: string }>;
+    const { code, aus } = await rolle(B);
+    expect(code).toBe(1);
+    expect(fehlerZeile(aus)).toContain(PFLICHT.join(' '));
+    expect(portainer.puts).toHaveLength(0);
+  });
+
+  it('eine Pflicht-Variable leer, eine fehlt: Abbruch, genau diese beiden Namen, keine Werte', async () => {
+    portainer.anfang(kurz(A));
+    portainer.env = vollEnv()
+      .filter((e) => e.name !== 'MAIL_SUPPORT_PASS')
+      .map((e) => (e.name === 'MAIL_IMAP_HOST' ? { ...e, value: '  ' } : e));
+    const { code, aus } = await rolle(B);
+    expect(code).toBe(1);
+    expect(fehlerZeile(aus)).toContain('fehlen oder sind leer: MAIL_IMAP_HOST MAIL_SUPPORT_PASS --');
+    expect(portainer.puts).toHaveLength(0);
+    keinWertImLog(aus);
+  });
+
+  it('optionale Variablen leer: Deploy laeuft durch, sie gehen unveraendert mit', async () => {
+    portainer.anfang(kurz(A));
+    const optionalLeer = OPTIONAL.map((name) => ({ name, value: '' }));
+    portainer.env = [...vollEnv(), ...optionalLeer];
+    const { code, aus } = await rolle(B);
+    expect(code, aus).toBe(0);
+    expect(aus).toContain('OK Rollender Deploy verifiziert');
+    expect(portainer.puts).toHaveLength(2);
+    for (const put of portainer.puts) expect(put.env).toEqual([...vollEnv(), ...optionalLeer]);
+  });
+
+  it('gehen die Variablen zwischen den Stufen verloren: Abbruch VOR dem PUT der Stufe 2', async () => {
+    portainer.anfang(kurz(A));
+    portainer.envNachPut = [];
+    const { code, aus } = await rolle(B);
+    expect(code).toBe(1);
+    expect(aus).toContain("Deploy abgebrochen vor dem Stack-Update der Stufe 'backend2'");
+    expect(portainer.puts).toHaveLength(1);
+  });
+
+  it('Probelauf: meldet fehlende Variablen ebenso rot, ohne etwas zu aendern', async () => {
+    portainer.anfang(kurz(C));
+    portainer.env = vollEnv().filter((e) => e.name !== 'MAIL_MOIN_USER');
+    const { code, aus } = await rolle(A, { PROBELAUF: '1' });
+    expect(code).toBe(1);
+    expect(fehlerZeile(aus)).toContain('fehlen oder sind leer: MAIL_MOIN_USER --');
+    expect(aus).not.toContain('OK Probelauf');
+    expect(portainer.puts).toHaveLength(0);
+  });
+
+  it('ist die Liste selbst nicht lesbar: Abbruch statt still durchzulaufen', async () => {
+    portainer.anfang(kurz(A));
+    const { code, aus } = await rolle(B, { PFLICHT_DATEI: join(repo, 'gibt-es-nicht.txt') });
+    expect(code).toBe(1);
+    expect(fehlerZeile(aus)).toContain('Liste der Pflicht-Variablen fehlt');
     expect(portainer.puts).toHaveLength(0);
   });
 });
