@@ -4,9 +4,11 @@
 // ab Migration 174) -- damit die Altlasten nicht weiterwachsen:
 //
 // 1. Zeitspalten mit Zeitzone (timestamptz), nie `TIMESTAMP` ohne
-//    (Audit Datenbank BF-11). 24 Spalten sind noch ohne Zone; ihre Werte
-//    stimmen nur, weil Datenbank-Sitzungen und Node-Prozess beide in UTC
-//    laufen. Die Lehre aus Migration 138/139 stand im Repo -- trotzdem legten
+//    (Audit Datenbank BF-11). Seit Migration 206 (09.10.2026) ist keine
+//    Spalte mehr ohne Zone; vorher stimmten 24 Spalten nur, solange
+//    Datenbank-Sitzungen und Node-Prozess beide in UTC liefen -- vom 21. bis
+//    23.08.2026 taten sie es nicht. Die Lehre aus Migration 138/139 stand im
+//    Repo -- trotzdem legten
 //    124 (daily_verses.created_at) und 142 (material_links.created_at) danach
 //    wieder `TIMESTAMP` an.
 // 2. Fremdschluessel als BIGINT, nie INTEGER (Audit Datenbank BF-12): Alle

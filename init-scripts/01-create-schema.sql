@@ -20,7 +20,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 177_zeitstempel_statt_text.sql -- also der Stand, den die Produktion nach
+-- 188_postfach_altbestand_ohne_kennung.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================
@@ -1277,75 +1277,6 @@ ALTER SEQUENCE public.jahrgaenge_id_seq OWNED BY public.jahrgaenge.id;
 
 
 --
--- Name: user_activities; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_activities (
-    id bigint NOT NULL,
-    user_id bigint,
-    activity_id bigint,
-    admin_id bigint,
-    completed_date date DEFAULT CURRENT_DATE,
-    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    comment text,
-    organization_id bigint,
-    points bigint
-);
-
-
---
--- Name: konfi_activities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.konfi_activities_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: konfi_activities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.konfi_activities_id_seq OWNED BY public.user_activities.id;
-
-
---
--- Name: user_badges; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.user_badges (
-    id bigint NOT NULL,
-    user_id bigint,
-    badge_id bigint,
-    awarded_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    organization_id bigint DEFAULT 1,
-    seen boolean DEFAULT false
-);
-
-
---
--- Name: konfi_badges_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.konfi_badges_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: konfi_badges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.konfi_badges_id_seq OWNED BY public.user_badges.id;
-
-
---
 -- Name: konfi_historie; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1393,7 +1324,6 @@ CREATE TABLE public.konfi_profiles (
     jahrgang_id bigint,
     gottesdienst_points bigint DEFAULT '0'::bigint,
     gemeinde_points bigint DEFAULT '0'::bigint,
-    password_plain text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     organization_id bigint NOT NULL,
     current_level_id integer,
@@ -1401,8 +1331,7 @@ CREATE TABLE public.konfi_profiles (
     konfspruch_id integer,
     konfspruch_freitext text,
     konfspruch_freitext_referenz character varying(100),
-    konfspruch_translation character varying(30),
-    CONSTRAINT konfi_profiles_password_plain_leer CHECK ((password_plain IS NULL))
+    konfspruch_translation character varying(30)
 );
 
 
@@ -1868,7 +1797,10 @@ CREATE TABLE public.push_tokens (
     error_count integer DEFAULT 0,
     last_error_at timestamp with time zone,
     app_version text,
-    app_build text
+    app_build text,
+    app_symbol_weg text,
+    startbildschirm text,
+    CONSTRAINT push_tokens_app_symbol_weg_check CHECK (((app_symbol_weg IS NULL) OR (app_symbol_weg = ANY (ARRAY['anbieter'::text, 'mitteilungen'::text, 'punkt'::text]))))
 );
 
 
@@ -2039,6 +1971,75 @@ CREATE SEQUENCE public.socket_io_attachments_id_seq
 --
 
 ALTER SEQUENCE public.socket_io_attachments_id_seq OWNED BY public.socket_io_attachments.id;
+
+
+--
+-- Name: user_activities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_activities (
+    id bigint NOT NULL,
+    user_id bigint,
+    activity_id bigint,
+    admin_id bigint,
+    completed_date date DEFAULT CURRENT_DATE,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    comment text,
+    organization_id bigint,
+    points bigint
+);
+
+
+--
+-- Name: user_activities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_activities_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_activities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_activities_id_seq OWNED BY public.user_activities.id;
+
+
+--
+-- Name: user_badges; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_badges (
+    id bigint NOT NULL,
+    user_id bigint,
+    badge_id bigint,
+    awarded_date timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    organization_id bigint DEFAULT 1,
+    seen boolean DEFAULT false
+);
+
+
+--
+-- Name: user_badges_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_badges_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_badges_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_badges_id_seq OWNED BY public.user_badges.id;
 
 
 --
@@ -2584,14 +2585,14 @@ ALTER TABLE ONLY public.socket_io_attachments ALTER COLUMN id SET DEFAULT nextva
 -- Name: user_activities id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.user_activities ALTER COLUMN id SET DEFAULT nextval('public.konfi_activities_id_seq'::regclass);
+ALTER TABLE ONLY public.user_activities ALTER COLUMN id SET DEFAULT nextval('public.user_activities_id_seq'::regclass);
 
 
 --
 -- Name: user_badges id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.user_badges ALTER COLUMN id SET DEFAULT nextval('public.konfi_badges_id_seq'::regclass);
+ALTER TABLE ONLY public.user_badges ALTER COLUMN id SET DEFAULT nextval('public.user_badges_id_seq'::regclass);
 
 
 --

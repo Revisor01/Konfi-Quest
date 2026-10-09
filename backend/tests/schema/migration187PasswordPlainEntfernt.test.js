@@ -5,15 +5,14 @@
 // noch NULL zu, und keine Code-Stelle nennt die Spalte mehr (Waechter in
 // migration176KeinKlartext.test.js). Hier geht die Spalte selbst.
 //
-// Geprueft wird auf dem Stand, auf den 187 beim Deploy trifft (eigene
-// Datenbank bis vor 187), und im gemeinsamen Test-Schema, das alle
-// Migrationen durchlaufen hat.
-const {
-  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
-} = require('../helpers/schemaAufbau');
+// Seit 09.10.2026 steht 187 im Schema-Dump (tests/schema/prod-schema.sql),
+// die Datei ist aus backend/migrations/ entfernt; der Test der Migration auf
+// dem Stand davor (Spalte und CHECK aus 176 vorher, Profile bleiben, zweiter
+// Lauf) liegt in der Git-Historie. Geprueft wird hier der Dump und das
+// gemeinsame Test-Schema, das alle Migrationen durchlaufen hat.
+const { dbAnlegen, dbWegraeumen, produktionAufbauen } = require('../helpers/schemaAufbau');
 const { getTestPool, closePool } = require('../helpers/db');
 
-const MIGRATION = '187_password_plain_entfernen.sql';
 const DB = 'konfi_test_mig187';
 
 const spalte = (pool) => pool.query(`
@@ -21,52 +20,24 @@ const spalte = (pool) => pool.query(`
    WHERE table_schema = 'public' AND table_name = 'konfi_profiles'
      AND column_name = 'password_plain'`);
 
-describe('Migration 187 auf dem Stand, auf den sie beim Deploy trifft', () => {
+describe('Migration 187 im Schema-Dump', () => {
   let pool;
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: MIGRATION });
-    await pool.query(`INSERT INTO organizations (id, name, slug) VALUES (1, 'A', 'a')`);
-    await pool.query(`INSERT INTO roles (id, name, display_name, organization_id) VALUES (1, 'konfi', 'Konfi', 1)`);
-    await pool.query(`INSERT INTO users (id, username, display_name, password_hash, role_id, organization_id)
-                      VALUES (1, 'k1', 'K 1', 'x', 1, 1), (2, 'k2', 'K 2', 'x', 1, 1)`);
-    await pool.query(`INSERT INTO konfi_profiles (user_id, organization_id, gottesdienst_points, gemeinde_points)
-                      VALUES (1, 1, 4, 1), (2, 1, 2, 3)`);
+    await produktionAufbauen(pool, { vor: '189_dateinamen_utf8_reparieren.sql' });
   }, 180000);
 
   afterAll(async () => {
     await dbWegraeumen(pool, DB);
   }, 120000);
 
-  it('Ausgangslage: Spalte und CHECK aus 176 stehen', async () => {
-    expect((await spalte(pool)).rows).toHaveLength(1);
+  it('der Dump kennt weder die Spalte noch den CHECK aus 176', async () => {
+    expect((await spalte(pool)).rows).toHaveLength(0);
     const { rows } = await pool.query(
       "SELECT 1 FROM pg_constraint WHERE conname = 'konfi_profiles_password_plain_leer'"
     );
-    expect(rows).toHaveLength(1);
-  });
-
-  it('entfernt die Spalte samt CHECK und laesst die Profile stehen', async () => {
-    await pool.query(migrationLesen(MIGRATION));
-
-    expect((await spalte(pool)).rows).toHaveLength(0);
-    const { rows: check } = await pool.query(
-      "SELECT 1 FROM pg_constraint WHERE conname = 'konfi_profiles_password_plain_leer'"
-    );
-    expect(check).toHaveLength(0);
-    const { rows } = await pool.query(
-      'SELECT user_id, gottesdienst_points, gemeinde_points FROM konfi_profiles ORDER BY user_id'
-    );
-    expect(rows).toEqual([
-      { user_id: 1, gottesdienst_points: 4, gemeinde_points: 1 },
-      { user_id: 2, gottesdienst_points: 2, gemeinde_points: 3 },
-    ]);
-  });
-
-  it('ein zweiter Lauf scheitert nicht', async () => {
-    await expect(pool.query(migrationLesen(MIGRATION))).resolves.toBeTruthy();
-    expect((await spalte(pool)).rows).toHaveLength(0);
+    expect(rows).toHaveLength(0);
   });
 });
 

@@ -147,11 +147,13 @@ services:
       # (Abgleich des Live-Stacks vor 2.3.0: Backends in UTC). Der Code rechnet
       # Uhrzeiten und Datumsgrenzen seit f74ec501 selbst in Berliner Zeit
       # (utils/zeitformat.js), UTC ist fuer die Anzeige also unschaedlich.
-      # Riskant ist das Umschalten: node-postgres liest Spalten `timestamp`
-      # OHNE Zeitzone (24 Stueck, Audit Datenbank BF-11) in der Zeitzone des
-      # Prozesses -- mit TZ verschoebe sich jeder solche Wert beim Lesen um
-      # bis zu zwei Stunden, auch fuer den alten Code. Erst diese Spalten
-      # pruefen, dann entscheiden.
+      # Riskant war das Umschalten: node-postgres liest Spalten `timestamp`
+      # OHNE Zeitzone in der Zeitzone des Prozesses -- mit TZ verschob sich
+      # jeder solche Wert beim Lesen um bis zu zwei Stunden. Seit Migration
+      # 206 (09.10.2026) gibt es keine solche Spalte mehr; die Entscheidung
+      # ueber TZ steht damit noch aus, dieses Hindernis nicht mehr. Weiter
+      # pruefen: Date-Parameter, die in SQL zu ::date werden, nehmen den Tag
+      # in der Zone des Prozesses.
       # TZ: Europe/Berlin
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET fehlt}
       # Schluessel der verschluesselten Nachweisfotos (utils/photoCrypto.js,

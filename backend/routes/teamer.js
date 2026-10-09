@@ -15,7 +15,7 @@ const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { ladeKonfiHistorie, konfiBadgesAusKopie } = require('../utils/konfiHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
-const { heuteBerlin } = require('../utils/zeitformat');
+const { heuteBerlin, HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL } = require('../utils/zeitformat');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
 const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
@@ -871,7 +871,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                uc.issued_date, uc.expiry_date,
                CASE
                  WHEN uc.id IS NULL THEN 'not_earned'
-                 WHEN uc.expiry_date IS NOT NULL AND uc.expiry_date < CURRENT_DATE THEN 'expired'
+                 WHEN uc.expiry_date IS NOT NULL AND uc.expiry_date < ${HEUTE_BERLIN_SQL} THEN 'expired'
                  ELSE 'valid'
                END as status
         FROM certificate_types ct
@@ -879,8 +879,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         WHERE ct.organization_id = $2 AND ct.is_active = true
         ORDER BY
           CASE
-            WHEN uc.id IS NOT NULL AND (uc.expiry_date IS NULL OR uc.expiry_date >= CURRENT_DATE) THEN 0
-            WHEN uc.id IS NOT NULL AND uc.expiry_date < CURRENT_DATE THEN 1
+            WHEN uc.id IS NOT NULL AND (uc.expiry_date IS NULL OR uc.expiry_date >= ${HEUTE_BERLIN_SQL}) THEN 0
+            WHEN uc.id IS NOT NULL AND uc.expiry_date < ${HEUTE_BERLIN_SQL} THEN 1
             ELSE 2
           END,
           ct.name
@@ -937,7 +937,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         LEFT JOIN users u_cancel ON e.cancelled_by = u_cancel.id
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         WHERE e.organization_id = $2
-          AND e.event_date >= CURRENT_DATE
+          AND e.event_date >= ${TAGESBEGINN_BERLIN_SQL}
           AND (e.cancelled IS NOT TRUE OR eb.id IS NOT NULL)
           AND (
             eb.id IS NOT NULL          -- eigene Buchung: immer zeigen

@@ -344,13 +344,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - **Punkte-Verlauf im Profil und in der Konfi-Zeit sortiert nur, was sichtbar
   ist** (die ersten acht, bis „Alle anzeigen“). Auf der Personenseite der
   Leitung wird schon vor dem Kürzen sortiert; hier genauso?
-- **Zeitspalten ohne Zeitzone.** 24 Spalten stehen auf `timestamp without
-  time zone`, Produktion schreibt UTC; Stellen mit `CURRENT_DATE` nehmen
-  zwischen 0 und 2 Uhr Berliner Zeit den Vortag. Ob sie sich eindeutig auf
-  `timestamptz` umstellen lassen, hängt an einer Frage: Wurde seit der
-  SQLite-Zeit je per `psql` in Berliner Zeit in diese Tabellen geschrieben
-  (`notifications`, `refresh_tokens`, `users.deleted_at` …)? Danach eine
-  Migration nach dem Muster von 138. Seit 27.09.2026 (Datenbank BF-11, Rest).
 - **Offline: Detailseiten beim Besuch zwischenspeichern?** Ohne Netz zeigen
   Konfi-Termin, Leitungs-Termin und die Seite einer Person ehrlich einen
   Platzhalter (`OfflinePlatzhalter`, seit 01.09.2026). Offen ist, ob

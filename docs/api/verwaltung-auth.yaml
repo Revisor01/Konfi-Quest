@@ -1619,8 +1619,9 @@ paths:
         # Ausgabe durchgesetzt; Migration 186 zieht den Bestand einmal nach
         # (812 Tokens auf 12 Konten, 714 davon Demo-, Review- und
         # Testkonten). Antwortform unveraendert. Tests:
-        # backend/tests/routes/refreshTokenGrenze.test.js,
-        # backend/tests/utils/migration186Bestand.test.js.
+        # backend/tests/routes/refreshTokenGrenze.test.js; der Test der
+        # Migration 186 liegt seit 09.10.2026 in der Git-Historie (186 steht
+        # im Schema-Dump).
 
   /api/auth/logout:
     post:

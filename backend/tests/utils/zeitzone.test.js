@@ -402,3 +402,82 @@ describe('Test-Datenbank rechnet im selben Kalender wie die Anwendung', () => {
     expect(serviceTag).toBe('2026-09-04');
   });
 });
+
+describe('Der Berliner Tag in SQL statt CURRENT_DATE (09.10.2026)', () => {
+  // CURRENT_DATE rechnet in der Zone der Sitzung. Die Backends laufen in
+  // Produktion in UTC (gemessen 27.09. und 09.10.2026) -- zwischen 00:00 und
+  // 02:00 Berliner Zeit war "heute" dort gestern. Die Ersatz-Ausdruecke
+  // rechnen ihre Zone selbst; geprueft in einer Sitzung auf UTC wie in
+  // Produktion, an festen Zeitpunkten statt an der Uhr.
+  const {
+    heuteBerlinSql, tagesbeginnBerlinSql, tagBerlinSql, HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL,
+  } = require('../../utils/zeitformat');
+  let db;
+
+  beforeAll(() => { db = getTestPool(); });
+
+  const inUtcSitzung = async (sql, params = []) => {
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+      await client.query("SET LOCAL timezone = 'UTC'");
+      const { rows } = await client.query(sql, params);
+      await client.query('ROLLBACK');
+      return rows[0];
+    } finally {
+      client.release();
+    }
+  };
+
+  it('um 00:30 Berliner Sommerzeit ist heute schon heute -- CURRENT_DATE haette gestern gesagt', async () => {
+    const jetzt = "'2026-10-09 22:30:00+00'::timestamptz"; // 10.10. 00:30 Berlin
+    const r = await inUtcSitzung(`SELECT ${heuteBerlinSql(jetzt)}::text AS berlin, (${jetzt})::date::text AS wie_current_date`);
+    expect(r).toEqual({ berlin: '2026-10-10', wie_current_date: '2026-10-09' });
+  });
+
+  it('im Winter wechselt der Tag um 23:00 UTC', async () => {
+    const r = await inUtcSitzung(`SELECT ${heuteBerlinSql("'2026-12-01 22:30:00+00'::timestamptz")}::text AS vor,
+                                         ${heuteBerlinSql("'2026-12-01 23:30:00+00'::timestamptz")}::text AS nach`);
+    expect(r).toEqual({ vor: '2026-12-01', nach: '2026-12-02' });
+  });
+
+  it('der Tagesbeginn ist Berliner Mitternacht, nicht 00:00 UTC', async () => {
+    const r = await inUtcSitzung(`SELECT ${tagesbeginnBerlinSql("'2026-10-10 09:00:00+00'::timestamptz")} AS beginn`);
+    expect(r.beginn.toISOString()).toBe('2026-10-09T22:00:00.000Z');
+  });
+
+  it('der Tag eines Zeitpunkts aus Node ist sein Berliner Tag', async () => {
+    // Eine Konfirmation am 10.05.2027 um 01:00 Berliner Zeit.
+    const r = await inUtcSitzung(`SELECT ${tagBerlinSql('$1')}::text AS tag`, [new Date('2027-05-09T23:00:00Z')]);
+    expect(r).toEqual({ tag: '2027-05-10' });
+  });
+
+  it('die festen Ausdruecke nennen heute denselben Tag wie heuteBerlin()', async () => {
+    const r = await inUtcSitzung(`SELECT ${HEUTE_BERLIN_SQL}::text AS tag, ${TAGESBEGINN_BERLIN_SQL} AS beginn`);
+    expect(r.tag).toBe(heuteBerlin());
+    expect(heuteBerlin(r.beginn)).toBe(heuteBerlin());
+    expect(heuteBerlin(new Date(r.beginn.getTime() - 1))).not.toBe(heuteBerlin());
+  });
+
+  it('keine Code-Stelle rechnet mehr mit CURRENT_DATE', () => {
+    // Waechter: Routen, Dienste, Hilfen und Skripte. Kommentare duerfen den
+    // Namen nennen, Code nicht.
+    const fs = require('fs');
+    const path = require('path');
+    const BACKEND = path.join(__dirname, '..', '..');
+    const dateien = (ordner) => fs.readdirSync(ordner, { withFileTypes: true }).flatMap((e) => {
+      const voll = path.join(ordner, e.name);
+      if (e.isDirectory()) return dateien(voll);
+      return e.name.endsWith('.js') ? [voll] : [];
+    });
+    const alle = [
+      ...['routes', 'services', 'utils', 'middleware', 'scripts'].flatMap((o) => dateien(path.join(BACKEND, o))),
+      ...['server.js', 'createApp.js', 'database.js'].map((f) => path.join(BACKEND, f)),
+    ];
+    expect(alle.length).toBeGreaterThan(50);
+    const ohneKommentare = (code) => code.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/(^|[^:])\/\/[^\n]*/g, '$1');
+    const treffer = alle.filter((f) => /CURRENT_DATE/i.test(ohneKommentare(fs.readFileSync(f, 'utf8'))))
+      .map((f) => path.relative(BACKEND, f));
+    expect(treffer).toEqual([]);
+  });
+});

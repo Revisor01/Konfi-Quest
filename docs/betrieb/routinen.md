@@ -24,8 +24,16 @@ außerhalb des Repos. Wer welche Aufgabe gerade übernimmt, steht in
 **Beim Messen beachten:** Die Backends arbeiten in UTC, ihre
 Datenbanksitzungen ebenso. `psql` im Postgres-Container zeigt dagegen Berliner
 Zeit, weil dort `PGTZ` gesetzt ist — wer so misst, sieht nicht, was die App
-sieht. Gleich wie die App: `env -u PGTZ psql …`. Zeitstempel ohne Zone
-(`timestamp`) stehen in UTC.
+sieht. Gleich wie die App: `env -u PGTZ psql …`. Seit Migration 206
+(09.10.2026) trägt jede Zeitspalte eine Zone (`timestamptz`); ein von Hand
+geschriebener Wert landet damit richtig, gleich in welcher Zone die Sitzung
+läuft. „Heute" rechnet der Code als Berliner Tag
+(`HEUTE_BERLIN_SQL` in `backend/utils/zeitformat.js`), nie mit `CURRENT_DATE`.
+
+Vom 21. bis 23.08.2026 liefen alle Sitzungen der Backends in Berliner Zeit
+(gemessen 09.10.2026, Ursache unbekannt); Migration 206 hat die Werte aus
+diesem Zeitraum umgerechnet. Läuft eine Sitzung der App je wieder nicht in UTC,
+zeigt es `SELECT current_setting('TimeZone')` über den Pool des Backends.
 
 ## Überblick
 

@@ -3,7 +3,7 @@ const cron = require('node-cron');
 const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschung } = require('../utils/kontoLoeschen');
 const emailService = require('./emailService');
 const apm = require('../utils/apm');
-const { formatUhrzeit } = require('../utils/zeitformat');
+const { formatUhrzeit, HEUTE_BERLIN_SQL, tagBerlinSql } = require('../utils/zeitformat');
 const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { abzeichenFingerabdruecke } = require('../utils/abzeichenKandidaten');
 const { ladeMitgliederDerOrganisation, nichtGesperrtIn } = require('../utils/orgMitglieder');
@@ -1857,7 +1857,7 @@ class BackgroundService {
 
           // Im Warn-Fenster? (Tag 53..59) und noch nicht erinnert?
           const { rows: [windowRow] } = await db.query(
-            `SELECT (CURRENT_DATE - $1::date) AS age,
+            `SELECT (${HEUTE_BERLIN_SQL} - ${tagBerlinSql('$1')}) AS age,
                     (SELECT deletion_reminder_sent_at FROM jahrgaenge WHERE id = $2) AS sent_at`,
             [stichtag, jg.id]
           );
@@ -2006,14 +2006,14 @@ class BackgroundService {
         // Name: Das Log verlaesst den Server. Gemessen am 01.10.2026: kein
         // Konfi-Konto mit weiterer Gemeinde (docs/planung/mehrfach-konten.md).
         const { rows: uebersprungen } = await db.query(
-          `SELECT u.id, (CURRENT_DATE - $2::date) AS tag
+          `SELECT u.id, (${HEUTE_BERLIN_SQL} - ${tagBerlinSql('$2')}) AS tag
              FROM users u
              JOIN konfi_profiles kp ON kp.user_id = u.id
              JOIN roles r ON u.role_id = r.id
             WHERE kp.jahrgang_id = $1
               AND u.organization_id = $3
               AND r.name = 'konfi'
-              AND (CURRENT_DATE - $2::date) >= 60
+              AND (${HEUTE_BERLIN_SQL} - ${tagBerlinSql('$2')}) >= 60
               AND ${WOANDERS_MITGLIED_SQL('u')}`,
           [jg.id, stichtag, jg.organization_id]
         );
@@ -2039,7 +2039,7 @@ class BackgroundService {
             WHERE kp.jahrgang_id = $1
               AND u.organization_id = $3
               AND r.name = 'konfi'
-              AND (CURRENT_DATE - $2::date) >= 120
+              AND (${HEUTE_BERLIN_SQL} - ${tagBerlinSql('$2')}) >= 120
               AND NOT ${WOANDERS_MITGLIED_SQL('u')}`,
           [jg.id, stichtag, jg.organization_id]
         );
@@ -2092,8 +2092,8 @@ class BackgroundService {
               AND u.organization_id = $3
               AND r.name = 'konfi'
               AND u.deleted_at IS NULL
-              AND (CURRENT_DATE - $2::date) >= 60
-              AND (CURRENT_DATE - $2::date) < 120
+              AND (${HEUTE_BERLIN_SQL} - ${tagBerlinSql('$2')}) >= 60
+              AND (${HEUTE_BERLIN_SQL} - ${tagBerlinSql('$2')}) < 120
               AND NOT ${WOANDERS_MITGLIED_SQL('u')}
             RETURNING u.id`,
           [jg.id, stichtag, jg.organization_id]

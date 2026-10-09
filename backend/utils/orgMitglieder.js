@@ -31,6 +31,7 @@
 // In-App-Mitteilungen und die E-Mail gab es diesen zentralen Filter nicht.
 
 const { abfragenBuendeln } = require('./abfragenBuendeln');
+const { HEUTE_BERLIN_SQL } = require('./zeitformat');
 
 // ============================================================================
 // KONTOFELDER JE GEMEINDE (08.10.2026, Migration 196; Simon, Entscheidungen
@@ -203,7 +204,7 @@ async function schreibeGemeindeFelder(db, userId, organizationId, felder = {}, {
   if (spalten.length > 0) {
     const params = [userId, organizationId];
     const set = spalten.map((k) => {
-      if (k === 'teamer_since' && felder[k] === 'heute') return 'teamer_since = CURRENT_DATE';
+      if (k === 'teamer_since' && felder[k] === 'heute') return `teamer_since = ${HEUTE_BERLIN_SQL}`;
       params.push(felder[k]);
       return `${k} = $${params.length}`;
     }).join(', ');
