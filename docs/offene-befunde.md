@@ -225,6 +225,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   und löschen, Abzeichen als gesehen markieren; Antworten per
   Charakterisierungstest festgehalten
   (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
+- [x] 10.10.2026 — Live-Stack reicht `APP_MIN_VERSION_IOS`,
+  `APP_MIN_VERSION_ANDROID` und `WARTUNG_HINWEIS` an beide Backends weiter
+  (Stack-Datei über die Portainer-API ergänzt, Werte leer = aus;
+  [betrieb/mindestversion.md](betrieb/mindestversion.md)).
 - [x] 09.10.2026 — Laufzeiten im Hintergrund sichtbar (Betrieb BF-10 Rest):
   je Job letzter Start, Dauer und Ergebnis in `/api/metrics`, Dauer des
   Push-Versands, Protokollzeile mit Dauer, Karte „Hintergrund" auf der Seite
@@ -267,12 +271,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Betrieb
 
-- **Live-Stack ohne Mindestversion und Wartungshinweis.** Dem Live-Stack
-  fehlen die drei Zeilen `APP_MIN_VERSION_IOS`, `APP_MIN_VERSION_ANDROID`
-  und `WARTUNG_HINWEIS` aus der Referenz (Abgleich 09.10.2026). Eine
-  Stack-Variable allein wirkt deshalb nicht; wer den Hinweis braucht, muss
-  zuerst die drei Zeilen aus `deploy/compose.konfi_quest.yml` in den
-  Stack übernehmen.
 - **Aufbewahrung der Sicherungen.** Am Host bleiben 14 tägliche Dumps; die
   Wochen- und Jahresstände aus
   [betrieb/sicherung.md](betrieb/sicherung.md#rhythmus-und-aufbewahrung)

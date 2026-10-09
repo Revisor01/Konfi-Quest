@@ -45,10 +45,10 @@ wieder (Entscheidung 27.09.2026 „Keine Zwangsupdates").
 **Die Variable muss im Stack an den Dienst weitergereicht werden.** Die
 Referenz `deploy/compose.konfi_quest.yml` trägt dafür im Backend-Dienst die
 Zeilen `APP_MIN_VERSION_IOS`, `APP_MIN_VERSION_ANDROID` und
-`WARTUNG_HINWEIS` unter `environment`. Fehlen sie im Live-Stack, wirkt eine
-dort gesetzte Stack-Variable nicht — der offene Eintrag dazu steht in
-[offene-befunde.md](../offene-befunde.md) („Live-Stack ohne Mindestversion
-und Wartungshinweis"). Erst die Zeilen übernehmen, dann den Wert setzen.
+`WARTUNG_HINWEIS` unter `environment`; der Live-Stack trägt sie seit dem
+10.10.2026 ebenso. Fehlen sie dort einmal (etwa nach einem Neuaufbau des
+Stacks), wirkt eine gesetzte Stack-Variable nicht — dann erst die Zeilen
+übernehmen, dann den Wert setzen.
 
 Zurücknehmen: Variable leeren, Stack aktualisieren.
 
