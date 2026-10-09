@@ -15,7 +15,11 @@ export interface TabellenSortierung {
 
 const VERGLEICH = new Intl.Collator('de', { sensitivity: 'base', numeric: true });
 
-const leer = (w: SortWert): boolean => w === null || w === undefined || w === '' || (typeof w === 'number' && Number.isNaN(w));
+/**
+ * Ein leerer Sortierwert (null, undefined, leerer Text, NaN) steht in beiden
+ * Richtungen unten -- hier und in der Konfi- und Team-Liste (utils/konfiListe).
+ */
+export const istLeer = (w: SortWert): boolean => w === null || w === undefined || w === '' || (typeof w === 'number' && Number.isNaN(w));
 
 const alsZahl = (w: Date | number): number => (w instanceof Date ? w.getTime() : w);
 
@@ -30,8 +34,8 @@ export function sortiereZeilen<T>(zeilen: readonly T[], sortWert: (zeile: T) => 
   return zeilen
     .map((zeile, index) => ({ zeile, index, wert: sortWert(zeile) }))
     .sort((x, y) => {
-      const xLeer = leer(x.wert);
-      const yLeer = leer(y.wert);
+      const xLeer = istLeer(x.wert);
+      const yLeer = istLeer(y.wert);
       if (xLeer || yLeer) return xLeer === yLeer ? x.index - y.index : xLeer ? 1 : -1;
       const v = vergleiche(x.wert, y.wert);
       if (v !== 0) return richtung === 'auf' ? v : -v;

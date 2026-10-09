@@ -103,6 +103,12 @@ describe('sortiereKonfis', () => {
     expect(namen(liste)).toEqual(['Ben', 'Anna', 'Cem']);
   });
 
+  it('ohne Jahrgang (auch leerer Name) steht in beiden Richtungen unten', () => {
+    const mitOhne = [...liste, konfi(4, 'Aaron'), konfi(5, 'Dana', { jahrgang_name: '' })];
+    expect(namen(sortiereKonfis(mitOhne, 'jahrgang', 'auf'))).toEqual(['Cem', 'Anna', 'Ben', 'Aaron', 'Dana']);
+    expect(namen(sortiereKonfis(mitOhne, 'jahrgang', 'ab'))).toEqual(['Ben', 'Anna', 'Cem', 'Aaron', 'Dana']);
+  });
+
   it('erste Richtung: Namen A-Z, Zahlen und Daten groesste zuerst', () => {
     expect(ERSTE_RICHTUNG).toEqual({ name: 'auf', jahrgang: 'auf', gottesdienst: 'ab', gemeinde: 'ab', punkte: 'ab', badges: 'ab', aktivitaet: 'ab' });
     expect(TEAM_ERSTE_RICHTUNG).toEqual({ name: 'auf', jahrgaenge: 'auf', badges: 'ab', zertifikate: 'ab', seit: 'ab' });
@@ -130,6 +136,7 @@ describe('sortiereTeam und teamerName', () => {
   it('ohne Jahrgang oder "seit" steht man unten', () => {
     expect(anzeige(sortiereTeam(team, 'jahrgaenge', 'auf'))).toEqual(['Bea', 'Zoe Teamerin', 'adam']);
     expect(anzeige(sortiereTeam(team, 'seit', 'ab'))).toEqual(['Bea', 'Zoe Teamerin', 'adam']);
+    expect(anzeige(sortiereTeam(team, 'jahrgaenge', 'ab'))).toEqual(['Zoe Teamerin', 'Bea', 'adam']);
   });
 });
 
