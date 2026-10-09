@@ -42,9 +42,6 @@ Nichts.
 - [ ] **VoiceOver, Sprachsteuerung und größte Schrift am iPhone** —
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
-- [ ] **Support-Probelauf mit Vorgängen** — Schritte 1–5 erledigt
-  (10.10.2026); Simon sieht sich die Probe-Vorgänge an, dann Schritt 6
-  ([Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md)).
 
 ### Als Nächstes
 
@@ -57,7 +54,8 @@ Nichts.
   [betrieb/mindestversion.md](betrieb/mindestversion.md)). Vorher das
   Play-Bildschirmfoto `konfi-challenge-feed` nach dem Deploy der deckenden
   Kopfleiste neu ziehen.
-- [ ] **Web-Version: was noch fehlt** — Leiste „Verwaltung", Rückweg ohne
+- [ ] **Web-Version: was noch fehlt** — Support-Ansicht auf Handy und im
+  Web übersichtlicher (Simon, 10.10.2026), Leiste „Verwaltung", Rückweg ohne
   Gemeinde, Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular
@@ -261,6 +259,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   aus, weil der Live-Stack keine Variablen mehr hatte; Variablen
   wiederhergestellt, beide Postfächer holen wieder ab (Auftrag 16, Branch
   `docs/auftrag-16-probelauf`).
+- [x] 10.10.2026 — Support-Probelauf mit Vorgängen (Auftrag 16): Anfrage,
+  Formular, Posteingang und Mail eines Leitungskontos ordnen richtig zu,
+  höchstens 2,1 Minuten bis zur Zuordnung; Probe-Vorgänge 2–5 erledigt und
+  im Archiv. Konto 404 und das Probe-Postfach bleiben bewusst stehen
+  ([betrieb/support-ansicht.md](betrieb/support-ansicht.md#was-vom-probelauf-stehen-bleibt);
+  Branch `docs/auftrag-16-probelauf`).
 
 
 ## Offen

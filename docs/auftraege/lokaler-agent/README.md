@@ -18,13 +18,6 @@ schätzen, nichts Geheimes ins Repo, im Zweifel Simon fragen. Ein Merge nach
 
 ## Aktuell
 
-- **[16-support-vorgaenge-probelauf.md](16-support-vorgaenge-probelauf.md)** —
-  nach dem Deploy des PRs „Web-Ansicht aller Bereiche und Support-Vorgänge"
-  (06.10.2026), alle Schritte offen: Übernahme in Vorgänge prüfen,
-  Probe-Anfrage 1 als Vorgang, Probe-Anliegen über das Support-Formular,
-  Posteingang mit Einsortieren und Archiv, Mail von einem Leitungskonto der
-  Gemeinde 4; danach liegen lassen, bis Simon sie angesehen hat. Den
-  Probelauf vom 03.10.2026 (Auftrag 15) führt er fort.
 - **[17-web-live-weiterbauen.md](17-web-live-weiterbauen.md)** — Einrichtung
   und erste Wünsche erledigt (07.10.2026, #229, #230); bleibt die Anleitung,
   wenn Simon die Web-Fassung live am eigenen Rechner weiterbaut. Fallen beim
@@ -43,7 +36,7 @@ Rückspielprobe, Prüfung nach dem Deploy, Notfall-Deploy — steht in
 [docs/betrieb/routinen.md](../../betrieb/routinen.md), der Release-Ablauf in
 [docs/betrieb/release.md](../../betrieb/release.md).
 
-Die erledigten Aufträge 00–15 (27.09.–08.10.2026) liegen mit allen Messwerten
+Die erledigten Aufträge 00–16 (27.09.–10.10.2026) liegen mit allen Messwerten
 in der Git-Historie ([docs/README.md](../../README.md#erledigte-aufträge-und-frühere-listen)).
 
 ## Rückmeldung

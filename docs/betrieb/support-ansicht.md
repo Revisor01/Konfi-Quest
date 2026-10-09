@@ -395,8 +395,26 @@ unter Vorgänge, weil der Support sie bearbeitet; über ihre Kennung (`/admin/or
 melden sich an wie bisher. Einen Schalter dafür gibt es bewusst nicht:
 Gesetzt wird die Spalte nur direkt in der Datenbank, mit Sicherung vorher —
 das erste Mal am 03.10.2026 für die Gemeinden 4, 14 und 15 (Auftrag 15,
-heute in [Auftrag 16](../auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md)
-aufgegangen).
+Ergebnis in der Git-Historie).
+
+## Was vom Probelauf stehen bleibt
+
+Der Probelauf mit Vorgängen (Auftrag 16, 10.10.2026, Ergebnis in der
+Git-Historie) hat zwei Dinge hinterlassen, die **bewusst stehen bleiben**,
+bis Simon sie freigibt:
+
+- das **Probe-Postfach des Betriebs** — eine eigene Adresse unter der
+  Domain von Konfi Quest, nur für Probeläufe; Zugang beim Betrieb, nicht im
+  Repo;
+- das Konto **404** „Support-Probe" in der Gemeinde 4 (Leitung, ohne
+  Jahrgang, keine weitere Gemeinde, meldet sich nie an) mit der Adresse des
+  Probe-Postfachs. Mit ihm lässt sich jederzeit prüfen, dass eine Mail von
+  einem Leitungskonto einen neuen Vorgang ihrer Gemeinde eröffnet.
+
+Die Probe-Vorgänge 2–5 sind erledigt und liegen im Archiv; der Vorgang der
+Probe-Anfrage 2 gilt als abgelehnt und geht mit ihr nach 180 Tagen, die
+anderen nach 730 Tagen. Konto und Postfach gehen nur auf Simons Wort, und
+dann zusammen.
 
 ## Aufbewahrung
 
