@@ -42,7 +42,7 @@ liegen noch und werden jetzt zu Vorgängen:
 
       Ins Ergebnis: Commit, Zahl der neuen Migrationen, die Zählungen.
 
-- [ ] **2. Die Probe-Anfrage als Vorgang.** In der Support-Ansicht unter
+- [x] **2. Die Probe-Anfrage als Vorgang.** In der Support-Ansicht unter
       „Vorgänge": Anfrage 1 steht als Vorgang der Art „Neue Gemeinde" mit
       ihren Mails im Verlauf; der Schriftwechsel mit Gemeinde 4 (die
       zugeordnete Probe-Mail von oben) steht als eigener Vorgang. Aus dem Vorgang der Anfrage
@@ -53,7 +53,7 @@ liegen noch und werden jetzt zu Vorgängen:
       Ins Ergebnis: die Nummern der beiden Vorgänge, je Teilschritt Ja/Nein,
       Minuten bis zur Zuordnung.
 
-- [ ] **3. Probe-Anliegen über das Support-Formular.** Auf der Homepage unter
+- [x] **3. Probe-Anliegen über das Support-Formular.** Auf der Homepage unter
       „Hilfe und Support" (`#support`) ausfüllen: Gemeinde „Probe – bitte
       nicht bearbeiten", das Probe-Postfach des Betriebs, Art
       „Frage zur Bedienung", Bereich „Chat", Betreff „Probe". Dann:
@@ -65,7 +65,7 @@ liegen noch und werden jetzt zu Vorgängen:
 
       Ins Ergebnis: Nummer, je Teilschritt Ja/Nein.
 
-- [ ] **4. Posteingang.** Zwei Mails von einer Adresse, die zu keinem Konto
+- [x] **4. Posteingang.** Zwei Mails von einer Adresse, die zu keinem Konto
       gehört, an support@ (neue Mails, keine Antworten):
       - beide stehen im **Posteingang** mit roter Zahl;
       - die erste **einsortieren** in den Vorgang aus Schritt 3; danach ist
@@ -75,7 +75,7 @@ liegen noch und werden jetzt zu Vorgängen:
 
       Ins Ergebnis: je Mail, wo sie gelandet ist.
 
-- [ ] **5. Mail von der Adresse eines Leitungskontos.** Im Probelauf vom
+- [x] **5. Mail von der Adresse eines Leitungskontos.** Im Probelauf vom
       03.10.2026 offen geblieben: Kein Leitungskonto mit genau einer Gemeinde
       hatte eine Adresse, die der Betrieb bedienen kann. Simon, 06.10.2026:
       „leg es an oder besser nutze Review org". In der
@@ -113,37 +113,39 @@ liegen noch und werden jetzt zu Vorgängen:
 
 ## Ergebnis
 
-10.10.2026 (lokaler Agent) — **angehalten nach Schritt 1**, Schritte 2 bis 5
-nicht begonnen, in Produktion nichts geschrieben:
+10.10.2026 (lokaler Agent). Die Ansicht ist über die Routen geprüft, die sie
+liest (`/api/support/vorgaenge`, `/support/mail/eingang`,
+`/support/mail/zaehler`), angemeldet mit dem Super-Admin-Konto 41.
 
-1. Commit `c070435d` (2.4.0; `90eb5b17` danach ändert nur Doku), 0 neue
-   Migrationen bei diesem Start, keine fehlgeschlagen; `195_support_vorgaenge`
-   angewendet am 06.10.2026 11:19. Zählungen: `support_vorgaenge` **0 Zeilen**,
-   Anfragen ohne Vorgang 0, zugeordnete Mails ohne Vorgang 0 — die beiden
-   Nullen stimmen nur, weil nichts mehr da ist. Seit dem Start der Datenbank
-   (vor 9 Tagen) zeigt die Statistik je Tabelle so viele Löschungen wie
-   Einfügungen: Anfragen 1/1, Vorgänge 1/1, Mails 6/6. Die Probe-Anfrage 1
-   wurde also nach der Übernahme am 06.10.2026 gelöscht, ihr Vorgang 1 und
-   die Mails 1–6 gingen mit; wer, ist nicht feststellbar (die
-   Server-Protokolle enden mit dem Neustart der Container). In den
-   Postfächern liegen die Mails noch.
-2. **Nicht möglich:** Anfrage 1 und der Schriftwechsel mit Gemeinde 4 sind
-   nicht mehr da (oben).
-3. bis 5. **Zurückgestellt:** Die Support-Mail ist in Produktion seit
-   08.10.2026 12:10 ganz aus. Im Stack gibt es keine Variablen mehr (die
-   Portainer-API meldet für den Stack eine leere Liste), in beiden Backends
-   sind `MAIL_IMAP_HOST`, `MAIL_MOIN_USER/_PASS` und
-   `MAIL_SUPPORT_USER/_PASS` leer. Letzte Abholung beider Postfächer
-   08.10.2026 12:09, seitdem keine (rund 46 Stunden); es war der erste
-   Deploy nach dem Neustart von Portainer am selben Morgen. Damit
-   holt der Server keine Mails, Antworten aus der Support-Ansicht scheitern,
-   und die Bestätigung eines Anliegens fällt still weg (503 wird nicht
-   wiederholt). Seit dem Ausfall ist in keinem der beiden Postfächer eine
-   Mail eingegangen, verpasst wurde also nichts. Schritte 3–5 jetzt
-   auszuführen, hinterließe Vorgänge ohne Bestätigung, auf die sich nicht
-   antworten lässt. Das Probe-Postfach des Betriebs besteht noch; das Konto
-   aus Schritt 5 ist nicht angelegt.
-
-Weiter, sobald Simon die Variablen im Stack wiederhergestellt hat (Prüfung:
-„zuletzt abgeholt" unter Posteingang jünger als fünf Minuten) und
-entschieden hat, ob für Schritt 2 eine neue Probe-Anfrage entsteht.
+1. Commit `c070435d` (2.4.0), 0 neue Migrationen bei diesem Start, keine
+   fehlgeschlagen; `195_support_vorgaenge` angewendet am 06.10.2026.
+   Zählungen: `support_vorgaenge` 0 Zeilen, Anfragen ohne Vorgang 0,
+   zugeordnete Mails ohne Vorgang 0 — leer, weil Simon die Probe-Anfrage 1
+   samt Vorgang 1 und Mails 1–6 nach der Übernahme gelöscht hatte. Dabei
+   gefunden: Die Support-Mail war vom 08.10.2026 12:10 bis 10.10.2026 01:14
+   aus (Stack ohne Variablen); seit dem Wiederherstellen holt der Server
+   wieder ab. Die Schritte 2–5 liefen danach.
+2. Neue Probe-Anfrage **2** über das Formular (Dank ja, Bestätigung von moin@
+   ja) → Vorgang **2**, Art „Neue Gemeinde", Quelle Anfrage. Antwort aus dem
+   Vorgang: von moin@ ja, `[Vorgang 2]` im Betreff ja, kam an ja. Antwort aus
+   dem Mailprogramm im Verlauf von Vorgang 2 ja, nach **höchstens 2,0
+   Minuten**, rote Zahl ja (`vorgaenge` 0 → 2). Schriftwechsel mit Gemeinde
+   4: Probe-Mail ohne Konto an support@ stand im Posteingang (`posteingang`
+   1), einsortiert in einen neuen Vorgang **3** der Gemeinde 4.
+3. Anliegen über `#support` → Vorgang **4**. Dank ja; Bestätigung von
+   support@ mit `[Vorgang 4]` im Betreff ja, nennt nur die Nummer ja; unter
+   Vorgänge mit Art Frage, Bereich Chat, Status Neu ja; Antwort auf die
+   Bestätigung im Verlauf von Vorgang 4 ja, nach höchstens 0,9 Minuten.
+4. Zwei neue Mails ohne Konto an support@: beide im Posteingang mit roter
+   Zahl ja (`posteingang` 2). Mail 12 in Vorgang 4 einsortiert: aus dem
+   Posteingang weg ja, im Verlauf ja. Mail 13 archiviert: unter „Archiv" ja,
+   nicht mehr im Eingang ja (`posteingang` 0).
+5. Konto **404** (Leitung, ohne Jahrgang, nur Gemeinde 4, keine weitere
+   Mitgliedschaft, nie angemeldet; Passwort zufällig, nirgends notiert),
+   angelegt über die API als Gemeindeleitung der Gemeinde 4. Konten mit der
+   Adresse vorher 0, nachher 1. Neue Mail davon an support@ → neuer Vorgang
+   **5** der Gemeinde 4, Quelle Mail, nach höchstens 2,1 Minuten ja; rote
+   Zahl ja (`vorgaenge` 3 → 4); nicht im Posteingang ja.
+6. Wartet auf Simon: Anfrage 2, Vorgänge 2–5, die Probe-Mails und Konto 404
+   bleiben stehen, bis er sie angesehen hat. Das Passwort des Probe-Postfachs
+   wurde für den Probelauf neu gesetzt; es steht nicht im Repo.
