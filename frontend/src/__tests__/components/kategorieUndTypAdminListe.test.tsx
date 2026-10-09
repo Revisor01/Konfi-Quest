@@ -3,8 +3,9 @@ import { render, screen } from '@testing-library/react';
 import EventsView from '../../components/admin/EventsView';
 import type { Event } from '../../types/event';
 
-// Ergaenzung zu kategorieUndTypInListe.test.ts: Dort wird der Quelltext
-// geprueft, hier die tatsaechliche Ausgabe der Admin-Liste. Nutzerhinweis
+// Ergaenzung zu kategorieUndTypInListe.test.tsx: Dort stehen alle drei
+// Listen nebeneinander (Reihenfolge der Zeilen), hier die Faelle der
+// Admin-Liste im Einzelnen. Nutzerhinweis
 // 03.09.2026 -- Kategorie und Punkteart fehlten in der Gesamtliste.
 
 const basis = (ueberschreibung: Partial<Event> = {}): Event => ({

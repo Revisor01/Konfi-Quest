@@ -413,6 +413,8 @@ Versionsüberschrift.
   etwas kleiner, die Ressourcen schrumpfen um rund ein Viertel.
 - Das gesonderte Test-System neben dem Betrieb ist abgeschafft: Jede
   Fassung der App, auch jeder Testbuild, spricht mit dem echten Betrieb.
+- Weitere automatische Prüfungen testen, was die App tut, statt ihren
+  Quelltext zu lesen; jede Hilfsfunktion hat einen eigenen Test.
 
 ## [2.3.0] - 2026-10-02
 

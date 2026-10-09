@@ -59,7 +59,7 @@ describe('Der Ladezustand liegt oberhalb des Routers', () => {
 
   // Der Ausstieg haengt seit dem 15.09.2026 an ZWEI Bedingungen: am
   // Seitenbaum und daran, ob die App-Sperre schon geklaert ist (Simons
-  // Flacker-Befund, siehe components/appAbdeckung.test.ts). Geprueft wird
+  // Flacker-Befund, siehe components/appAbdeckung.test.tsx). Geprueft wird
   // deshalb, dass `!seitenBereit` die Bedingung anfuehrt — nicht mehr, dass
   // es allein darin steht. Die Regel dieses Tests ist die REIHENFOLGE
   // (Ausstieg vor dem Router), nicht die genaue Schreibweise der Zeile.

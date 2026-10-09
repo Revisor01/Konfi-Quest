@@ -59,6 +59,23 @@ describe('Chat Routes', () => {
       expect(roomIds).toContain(CHAT_ROOMS.direct.id);
     });
 
+    // Die Raumliste liefert die Zahl der Teilnehmenden, nicht die Liste
+    // selbst. Der Chat-Anlegen-Dialog kann darueber also keinen bestehenden
+    // Direktchat erkennen (das tut POST /chat/direct, siehe unten). Bis
+    // 09.10.2026 stand das als Quelltext-Pruefung im Frontend.
+    it('liefert participant_count statt einer Teilnehmerliste', async () => {
+      const res = await request(app)
+        .get('/api/chat/rooms')
+        .set('Authorization', `Bearer ${konfi1Token}`);
+
+      expect(res.status).toBe(200);
+      const direkt = res.body.find((r) => r.id === CHAT_ROOMS.direct.id);
+      expect(Number(direkt.participant_count)).toBe(2);
+      for (const raum of res.body) {
+        expect(raum).not.toHaveProperty('participants');
+      }
+    });
+
     it('Admin1 bekommt 200 + seine Raeume', async () => {
       const res = await request(app)
         .get('/api/chat/rooms')
@@ -609,6 +626,51 @@ describe('Chat Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.room_id).toEqual(expect.any(Number));
       // Koennte existing sein (Seed hat Direct-Room konfi1+admin1)
+    });
+
+    // Der Chat-Anlegen-Dialog prueft NICHT selbst, ob es den Direktchat schon
+    // gibt (SimpleCreateChatModal, 30.08.2026): Er verlaesst sich darauf, dass
+    // der Server einen bestehenden Raum zurueckgibt statt einen zweiten
+    // anzulegen. Bis 09.10.2026 stand das als Quelltext-Pruefung im Frontend.
+    it('bestehender Direktchat: derselbe Raum mit created:false, kein zweiter', async () => {
+      await db.query(
+        'INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view) VALUES ($1, 1, true)',
+        [USERS.admin1.id]
+      );
+      const zaehlen = async () => (await db.query(
+        `SELECT COUNT(*)::int AS n FROM chat_rooms r
+          WHERE r.type = 'direct'
+            AND EXISTS (SELECT 1 FROM chat_participants p WHERE p.room_id = r.id AND p.user_id = $1 AND p.user_type = 'konfi')
+            AND EXISTS (SELECT 1 FROM chat_participants p WHERE p.room_id = r.id AND p.user_id = $2 AND p.user_type = 'admin')`,
+        [USERS.konfi1.id, USERS.admin1.id]
+      )).rows[0].n;
+      expect(await zaehlen()).toBe(1);
+
+      for (let versuch = 0; versuch < 2; versuch++) {
+        const res = await request(app)
+          .post('/api/chat/direct')
+          .set('Authorization', `Bearer ${konfi1Token}`)
+          .send({ target_user_id: USERS.admin1.id, target_user_type: 'admin' });
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ room_id: CHAT_ROOMS.direct.id, created: false });
+      }
+      expect(await zaehlen()).toBe(1);
+    });
+
+    it('neuer Direktchat: created:true, danach derselbe Raum mit created:false', async () => {
+      const erst = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ target_user_id: USERS.teamer1.id, target_user_type: 'teamer' });
+      expect(erst.status).toBe(200);
+      expect(erst.body.created).toBe(true);
+
+      const nochmal = await request(app)
+        .post('/api/chat/direct')
+        .set('Authorization', `Bearer ${admin1Token}`)
+        .send({ target_user_id: USERS.teamer1.id, target_user_type: 'teamer' });
+      expect(nochmal.status).toBe(200);
+      expect(nochmal.body).toEqual({ room_id: erst.body.room_id, created: false });
     });
 
     it('Konfi darf keinen Direct-Chat mit anderem Konfi erstellen -> 403', async () => {

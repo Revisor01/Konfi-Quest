@@ -585,4 +585,65 @@ describe('Absagegrund: PUT /api/events/:id/cancel', () => {
       expect(anzahl).toBe(0);
     });
   });
+  // Befund II (Geraetetest Simon, 16.09.2026): "Der Termin zu dem ein Konfi
+  // angemeldet war, der abgesagt wurde muss unter meine stehen bleiben!" Die
+  // App sortiert ihn ueber zaehltAlsMeiner() ein (gerendert in
+  // frontend/src/__tests__/components/abgesagterTerminBleibtMeiner.test.tsx);
+  // dafuer muss die Liste ihn ueberhaupt liefern -- samt Buchung 'excused'.
+  // Bis 09.10.2026 stand das als Quelltext-Zusicherung im Frontend-Test.
+  describe('GET /konfi/events: abgesagt, aber mit eigener Buchung', () => {
+    it('liefert den abgesagten Termin mit booking_status excused und is_registered false', async () => {
+      const eventId = await terminMitKonfi();
+      const absage = await request(app)
+        .put(`/api/events/${eventId}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ cancelled_reason: 'Heizung defekt' });
+      expect(absage.status).toBe(200);
+
+      const res = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(res.status).toBe(200);
+      const eintrag = res.body.find(e => e.id === eventId);
+      expect(eintrag).toBeTruthy();
+      expect(eintrag.cancelled).toBe(true);
+      expect(eintrag.booking_status).toBe('excused');
+      expect(eintrag.is_registered).toBe(false);
+    });
+
+    it('VERBOTEN: ein abgesagter Termin OHNE eigene Buchung fehlt in der Liste', async () => {
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 14);
+      const createRes = await request(app)
+        .post('/api/events')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          name: 'Fremder Termin',
+          event_date: futureDate.toISOString(),
+          max_participants: 10,
+          points: 0,
+          jahrgang_ids: [JAHRGAENGE.jahrgang1.id],
+        });
+      expect(createRes.status).toBe(201);
+      const eventId = createRes.body.id;
+
+      // Gegenprobe: vor der Absage steht er (ohne Buchung) in der Liste.
+      const vorher = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(vorher.body.map(e => e.id)).toContain(eventId);
+
+      const absage = await request(app)
+        .put(`/api/events/${eventId}/cancel`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({});
+      expect(absage.status).toBe(200);
+
+      const nachher = await request(app)
+        .get('/api/konfi/events')
+        .set('Authorization', `Bearer ${konfiToken}`);
+      expect(nachher.status).toBe(200);
+      expect(nachher.body.map(e => e.id)).not.toContain(eventId);
+    });
+  });
 });

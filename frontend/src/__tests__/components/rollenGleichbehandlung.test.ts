@@ -9,8 +9,7 @@ import { resolve } from 'path';
 // verschiedene Zeichen und Abstaende. Simon hat entschieden, was angeglichen
 // wird; diese Tests halten die Entscheidungen fest.
 //
-// Sie pruefen bewusst die VERDRAHTUNG in den Quellen (Projektkonvention, vgl.
-// abzeichenZaehlerTeamer.test.ts) und nicht das Rendern: Der Fehlerfall ist
+// Sie pruefen bewusst die VERDRAHTUNG in den Quellen und nicht das Rendern: Der Fehlerfall ist
 // "jemand setzt an EINER Stelle wieder ein anderes Zeichen", und genau das
 // faengt ein Quelltest zuverlaessiger als ein Rendertest je Ansicht.
 

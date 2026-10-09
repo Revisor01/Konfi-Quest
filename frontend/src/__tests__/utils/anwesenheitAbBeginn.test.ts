@@ -94,4 +94,4 @@ describe('Leitung: laufender Termin mit offenen Buchungen heisst "Verbuchen"', (
 });
 
 // Dass die App-Ansichten dieselbe Stelle fragen, haelt
-// components/abgesagteTermineAnsichten.test.ts fest.
+// components/abgesagteTermineAnsichten.test.tsx fest.

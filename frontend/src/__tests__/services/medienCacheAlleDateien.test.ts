@@ -12,10 +12,10 @@ import { mimeAusDateiname } from '../../utils/dateiTypen';
 // einen direkten api.get in useChatDateien. Jedes Antippen einer PDF war ein
 // voller Download.
 //
-// Geprueft wird der Quelltext, wie in chatDateiFortschritt.test.ts und aus
-// demselben Grund: Der Cache haengt an Capacitor-Filesystem und axios-
-// Ereignissen. Ein Laufzeittest muesste beide nachbauen und pruefte dann die
-// Attrappe, nicht die Verdrahtung.
+// Geprueft wird der Quelltext: Der Cache haengt an Capacitor-Filesystem und
+// axios-Ereignissen. (chatDateiFortschritt.test.tsx prueft seit dem
+// 09.10.2026 den Chat-Weg dorthin gerendert -- Antippen laedt ueber
+// /chat/files/ mit Fortschritt, ein Cache-Treffer laedt nicht neu.)
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 

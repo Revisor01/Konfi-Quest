@@ -8,7 +8,7 @@ import { KONTO_MODAL_STIL } from '../../components/shared/ChangeEmailModal';
 // Konfi-Baum) — funktional identisch, nur die CSS-Klassen unterschieden sich.
 // Diese Tests sichern ab, dass alle drei Profil-Ansichten dieselbe geteilte
 // Komponente nutzen und keine neue Kopie entsteht (Muster wie
-// biometrieAlleDreiAnsichten.test.ts).
+// biometrieAlleDreiAnsichten.test.tsx).
 
 const profilSeiten: { rolle: string; datei: string; variante: string }[] = [
   {

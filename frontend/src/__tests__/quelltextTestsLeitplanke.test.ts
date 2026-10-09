@@ -14,6 +14,12 @@
 // Registrierung, App-Sperre, Chat-Mitglieder): 150 -> 117. Die Gerueste
 // dafuer liegen unter components/gerueste/ und nehmen weitere Umstellungen auf.
 //
+// Am 09.10.2026 die uebrigen 41 mit Verhaltensversprechen umgestellt (Termine
+// aller Rollen, Absagen, Abmeldung und Notiz, Chat-Dateien, Material,
+// Einladungen, Profile, Abzeichen und Challenges, Rueckblick, Push-Ziele):
+// 122 -> 82 (einschliesslich der neuen Leitplanke ohneTestLeitplanke). Was
+// bleibt, sind Stil-, Abwesenheits- und Abgleich-Waechter.
+//
 // Gezaehlt wie im Audit: Datei enthaelt `readFileSync` und kein `render(`.
 //
 // Die Liste darf nur SCHRUMPFEN:
@@ -30,7 +36,7 @@ import { join, relative, resolve } from 'path';
 const SRC = resolve(__dirname, '..');
 const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 
-/** Stand 06.10.2026: 119 (03.10.2026: 118, 30.09.2026: 117, 29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung.
+/** Stand 09.10.2026: 82 (06.10.2026: 122 mit den Nachtraegen unten, 30.09.2026: 117, 29.09.2026: 150). Nur nach unten anpassen, ausser mit Begruendung.
  *  03.10.2026 +1: components/webAnsichtCss.test.ts -- Stil-Waechter fuer das
  *  eigene Stylesheet der Web-Fassungen (nur Tokens, keine Bewegung, Praefix
  *  web-); dort IST das Lesen des Stylesheets der Zweck, rendern prueft keine
@@ -54,8 +60,13 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  09.10.2026 +1: components/hinweisBoxSchrift.test.ts -- Stil-Waechter: die
  *  Schrift der Hinweis-Box schlaegt die Theme-Regeln an Spezifitaet. Die
  *  Kaskade gegen ionic-theme-ios27 und Ionics Komponenten-CSS rechnet jsdom
- *  nicht; rendern saehe den Befund (16 px statt 14,4 px) nicht. */
-const OBERGRENZE = 122;
+ *  nicht; rendern saehe den Befund (16 px statt 14,4 px) nicht.
+ *  09.10.2026 -41: die 41 Dateien mit Verhaltensversprechen (Audit-Nachtrag
+ *  30.09.2026) rendern jetzt oder rufen auf, je mit Gegenprobe; 122 -> 81.
+ *  09.10.2026 +1: ohneTestLeitplanke.test.ts -- Leitplanke wie diese: sie
+ *  liest die Testdateien, um zu sehen, ob jede Datei in utils/, hooks/ und
+ *  services/ in einem Test vorkommt; rendern laesst sich dabei nichts. */
+const OBERGRENZE = 82;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -69,75 +80,44 @@ const PRUEFORDNER = ['__tests__/config/', '__tests__/betrieb/'];
 
 const BEKANNT: string[] = [
   '__tests__/begriffeEinheitlich.test.ts',
-  '__tests__/components/abgesagtFarbeGleichInAllenRollen.test.ts',
-  '__tests__/components/abgesagteTermineAnsichten.test.ts',
-  '__tests__/components/abgesagterTerminBleibtMeiner.test.ts',
-  '__tests__/components/abmeldefristSichtbar.test.ts',
-  '__tests__/components/abmeldungUndNotiz.test.ts',
   '__tests__/components/abstaendeTokens.test.ts',
   '__tests__/components/abzeichenTypNullbarkeit.test.ts',
-  '__tests__/components/abzeichenZaehlerTeamer.test.ts',
-  '__tests__/components/appAbdeckung.test.ts',
   '__tests__/components/beruehrungsziele.test.ts',
   '__tests__/components/bewegungsreduktion.test.ts',
   '__tests__/components/bibelUebersetzungenVollstaendig.test.ts',
-  '__tests__/components/biometrieAlleDreiAnsichten.test.ts',
   '__tests__/components/challenges/challengeIconFarbe.test.ts',
   '__tests__/components/challenges/challengesSeiteGeteilt.test.ts',
-  '__tests__/components/challenges/eingereichtBadgeGleich.test.ts',
-  '__tests__/components/challenges/neuigkeitenVerdrahtung.test.ts',
   '__tests__/components/challenges/stempelStattAbzeichen.test.ts',
-  '__tests__/components/chatAufraeumen.test.ts',
-  '__tests__/components/chatDateiFortschritt.test.ts',
   '__tests__/components/chatNutzertypDreiWerte.test.ts',
   '__tests__/components/dateiAuswahlNurUeberHuelle.test.ts',
   '__tests__/components/diagnoseNurLeitung.test.ts',
-  '__tests__/components/direktchatDoppelPruefung.test.ts',
   '__tests__/components/dunkelmodus.test.ts',
   '__tests__/components/dunkelmodusJsFarben.test.ts',
   '__tests__/components/eckBadgesBarrierefrei.test.tsx',
-  '__tests__/components/einladungVerlaengernRueckmeldung.test.ts',
-  '__tests__/components/einladungenKarteImProfil.test.ts',
-  '__tests__/components/emailAenderungUserContext.test.ts',
   '__tests__/components/farbTokens.test.ts',
   '__tests__/components/formularfelderBenannt.test.ts',
   '__tests__/components/gruppenbezeichnungTeam.test.ts',
   '__tests__/components/haptikBrichtNichtAb.test.ts',
   '__tests__/components/hinweisBoxSchrift.test.ts',
-  '__tests__/components/kategorieUndTypInListe.test.ts',
   '__tests__/components/keinStillesOfflineScheitern.test.ts',
   '__tests__/components/klickbareElementeBedienbar.test.ts',
   '__tests__/components/kontoModaleAlleDreiAnsichten.test.ts',
-  '__tests__/components/laufendeMehrtagesTermine.test.ts',
   '__tests__/components/listenAbstaendeProfil.test.ts',
-  '__tests__/components/materialDateiAuswahl.test.ts',
-  '__tests__/components/materialLink.test.ts',
   '__tests__/components/md3LayoutPasst.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
-  '__tests__/components/neuerungenBannerStartseiten.test.ts',
   '__tests__/components/onboardingTourGeteilt.test.ts',
   '__tests__/components/popoverBreite.test.ts',
-  '__tests__/components/profilAbzeichenZahlOhneZusatzabruf.test.ts',
-  '__tests__/components/profilWrappedReihenfolge.test.ts',
   '__tests__/components/rankingFeldnamen.test.ts',
   '__tests__/components/reiterUnterlaengen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
-  '__tests__/components/shared/hinweisKartenOhnePfeil.test.ts',
-  '__tests__/components/statuswortVerbucht.test.ts',
-  '__tests__/components/stempelEineStelle.test.ts',
   '__tests__/components/stylesheetsParsen.test.ts',
   '__tests__/components/tabLeisteAndroid.test.ts',
   '__tests__/components/tabZaehlerIos.test.ts',
   '__tests__/components/tageUndKalendertag.test.ts',
-  '__tests__/components/teamerDashboardZertifikate.test.ts',
-  '__tests__/components/teamerKonfiHistorieOhneJahrgang.test.ts',
-  '__tests__/components/terminDetailDreiAnsichten.test.ts',
-  '__tests__/components/terminKopieren.test.ts',
   '__tests__/components/terminModalDatumsfelder.test.ts',
   '__tests__/components/typografieTokens.test.ts',
   '__tests__/components/umlauteUndZurueckIcon.test.ts',
-  '__tests__/components/umschalterInDetailansichten.test.ts',
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',
   '__tests__/components/webAnsichtCss.test.ts',
   '__tests__/components/webCssKlassen.test.ts',
@@ -147,7 +127,6 @@ const BEKANNT: string[] = [
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',
   '__tests__/components/wrappedSeitenHabenBilder.test.ts',
   '__tests__/components/wrappedSprueche.test.ts',
-  '__tests__/components/wrappedStavanger2026.test.ts',
   '__tests__/components/wrappedTeilenAlleSeiten.test.ts',
   '__tests__/components/wrappedTexteUmlaute.test.ts',
   '__tests__/components/zentraleIcons.test.ts',
@@ -166,9 +145,8 @@ const BEKANNT: string[] = [
   '__tests__/navigation/keinTauschImOutlet.test.ts',
   '__tests__/navigation/routenInventar.test.ts',
   '__tests__/navigation/weisserScreenKaltstart.test.ts',
+  '__tests__/ohneTestLeitplanke.test.ts',
   '__tests__/services/apiPfadeExistieren.test.ts',
-  '__tests__/services/badgeIconsAufloesung.test.ts',
-  '__tests__/services/dateiDownloadHaertung.test.ts',
   '__tests__/services/keinTokenImQuery.test.ts',
   '__tests__/services/linkOeffnen.test.ts',
   '__tests__/services/messungAntragMaterialSpruch.test.ts',
@@ -176,17 +154,10 @@ const BEKANNT: string[] = [
   '__tests__/services/nutzungstiefeAufrufstellen.test.ts',
   '__tests__/services/umamiKennungen.test.ts',
   '__tests__/sprache.test.ts',
-  '__tests__/utils/badgeIcons.test.ts',
   '__tests__/utils/bekannteFehlertexte.test.ts',
-  '__tests__/utils/bewahrteStempel.test.ts',
   '__tests__/utils/datumsformate.test.ts',
   '__tests__/utils/deepLinks.test.ts',
-  '__tests__/utils/einladungsGueltigkeit.test.ts',
-  '__tests__/utils/jahrgangLoeschen.test.ts',
-  '__tests__/utils/konfiZeit.test.ts',
-  '__tests__/utils/pushNavigationZiele.test.ts',
   '__tests__/utils/rollenFarben.test.ts',
-  '__tests__/utils/rollenNamen.test.ts',
   '__tests__/utils/statusReihenfolge.test.ts',
   '__tests__/utils/ueberbuchen.test.ts',
   '__tests__/versionsnummernEineQuelle.test.ts',

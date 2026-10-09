@@ -12,8 +12,7 @@ import * as zentraleIcons from '../../components/shared/icons';
 // components/shared/icons.ts DIE eine Stelle: semantische Konstanten
 // (ICON_TERMIN, ICON_ZUSAGE, ...), die Komponenten nur noch von dort holen.
 //
-// Diese Tests lesen die Quellen, statt zu rendern (Muster wie
-// abzeichenZaehlerTeamer.test.ts): Geprueft wird die Verdrahtung — sie ist
+// Diese Tests lesen die Quellen, statt zu rendern: Geprueft wird die Verdrahtung — sie ist
 // genau das, was bei einem spaeteren Icon-Wechsel nicht zerbrechen darf.
 
 const lies = (pfad: string) =>
