@@ -105,6 +105,10 @@ Versionsüberschrift.
   dort Challenge-Beiträge freigeben dürfen; ohne das Recht lesen sie die
   Beiträge nur mit und bekommen dafür weder Push noch rote Zahl. Bisher
   Zugewiesene behalten das Recht.
+- Ein Event und die Seite einer Person, die du schon einmal mit Netz geöffnet
+  hattest, gehen ohne Netz wieder so auf wie zuletzt — mit Teilnehmerliste,
+  Zeitfenstern, Material und Punkte-Historie statt der grauen Zeile
+  „offline nicht verfügbar".
 
 ### Geändert
 - Hinweistexte in Hinweis-Kästen (etwa unter „E-Mail ändern“,

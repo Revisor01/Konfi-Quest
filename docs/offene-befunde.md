@@ -354,12 +354,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   SQLite-Zeit je per `psql` in Berliner Zeit in diese Tabellen geschrieben
   (`notifications`, `refresh_tokens`, `users.deleted_at` …)? Danach eine
   Migration nach dem Muster von 138. Seit 27.09.2026 (Datenbank BF-11, Rest).
-- **Offline: Detailseiten beim Besuch zwischenspeichern?** Ohne Netz zeigen
-  Konfi-Termin, Leitungs-Termin und die Seite einer Person ehrlich einen
-  Platzhalter (`OfflinePlatzhalter`, seit 01.09.2026). Offen ist, ob
-  zusätzlich jede besuchte Detailseite ihre Antwort aufbewahrt, damit sie
-  ohne Netz noch einmal aufgeht — ohne zusätzliche Anfragen. Seit 01.09.2026
-  (interne Aufgabenliste).
 - **Benutzernamen und Systemnamen.** Gleichzeitiges Anlegen desselben
   Benutzernamens schützt eine Sperre statt eines eindeutigen Index (kein
   Migrationsrisiko bei Altbestand-Dubletten); die Store-App 2.2.x setzt beim

@@ -139,6 +139,9 @@ export const termin = (zusatz: Partial<Event> = {}): Event => ({
 } as Event);
 
 export const zuruecksetzen = () => {
+  // Gemerkte Detailseiten (services/detailSpeicher.ts) liegen im echten
+  // offlineCache, also in localStorage: Kein Test erbt den Stand des vorigen.
+  localStorage.clear();
   zustand.online = true;
   zustand.events = [];
   zustand.teilnehmer = [];

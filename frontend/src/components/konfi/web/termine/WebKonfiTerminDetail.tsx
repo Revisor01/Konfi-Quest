@@ -55,6 +55,11 @@ export interface WebKonfiTerminDetailProps {
   teilnehmende: ReadonlyArray<{ id: number; display_name: string }>;
   hatKonfirmationGebucht: boolean;
   isOnline: boolean;
+  /**
+   * Ohne Netz aus dem gemerkten Stand des Termins bekannt -- auch leer
+   * (services/detailSpeicher.ts). Dann kein Offline-Hinweis.
+   */
+  gemerkt?: { teilnehmer: boolean; zeitfenster: boolean };
   /** Eine Anmeldung laeuft gerade (Sperre gegen den Doppeltipp). */
   anmeldungLaeuft: boolean;
   aktionen: KonfiDetailAktionen;
@@ -156,7 +161,7 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
         </WebKarte>
       )}
 
-      {p.teilnehmende.length === 0 && !isOnline && (
+      {p.teilnehmende.length === 0 && !isOnline && !p.gemerkt?.teilnehmer && (
         <WebHinweis art="hinweis">Die Teilnehmerliste ist offline nicht verfügbar.</WebHinweis>
       )}
       {p.teilnehmende.length > 0 && (
@@ -174,7 +179,7 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
   // Rechts, schmal: die Angaben.
   const seite = (
     <WebKarte titel="Angaben">
-      {eventData.has_timeslots && p.zeitfenster.length === 0 && !isOnline && (
+      {eventData.has_timeslots && p.zeitfenster.length === 0 && !isOnline && !p.gemerkt?.zeitfenster && (
         <WebHinweis art="hinweis">Die Zeitfenster-Auswahl ist offline nicht verfügbar.</WebHinweis>
       )}
       <WebTerminAngaben angaben={angaben} />

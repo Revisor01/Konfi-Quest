@@ -6,7 +6,7 @@ import {
   ICON_UHRZEIT,
 } from '../../shared/icons';
 import AppKopfzeile from '../../shared/AppKopfzeile';
-import { fehlerText } from '../../../utils/fehler';
+import { fehlerStatus, fehlerText } from '../../../utils/fehler';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   IonPage,
@@ -31,6 +31,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { offlineCache } from '../../../services/offlineCache';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
+import { detailMerken, detailVergessen, gemerktesDetail } from '../../../services/detailSpeicher';
 import ActivityModal from '../modals/ActivityModal';
 import BonusModal from '../modals/BonusModal';
 import CertificateAssignModal from '../modals/CertificateAssignModal';
@@ -189,6 +190,32 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       opt_out_reason: string | null;
     }>;
   } | null>(null);
+
+  // Was ohne Netz von einer besuchten Person bleibt (09.10.2026,
+  // services/detailSpeicher.ts): die Antworten, die die Seite mit Netz
+  // ohnehin abruft. `konfi` ist GET /admin/konfis/:id.
+  type GemerktePerson = {
+    konfi: Konfi & {
+      role_name?: string;
+      activities?: Activity[];
+      bonusPoints?: BonusEintrag[];
+      certificates?: typeof certificates;
+      teamerEvents?: typeof teamerEvents;
+      konfiHistory?: typeof konfiHistory;
+    };
+    antraege: OffenerAntrag[];
+    bewahrteStempel: ChallengeMark[];
+    /** Rohantwort von /teamer/:id/konfi-zeit; alsKonfiZeit prueft sie beim Zeigen. */
+    konfiZeit: unknown;
+    certificateTypes: typeof certificateTypes | null;
+    eventPoints: EventPunkteEintrag[];
+    attendanceStats: typeof attendanceStats;
+  };
+  // Je Gemeinde, wie die Liste ('admin:konfis:<org>').
+  const personSchluessel = `admin:person-detail:${user?.organization_id}:${konfiId}`;
+  // Kam der volle Stand ohne Netz aus dem gemerkten? Dann ist die Historie
+  // bekannt, auch wenn sie leer ist -- kein Offline-Platzhalter.
+  const [ausSpeicher, setAusSpeicher] = useState(false);
 
   // Activity Modal mit useIonModal Hook
   const [presentActivityModalHook, dismissActivityModalHook] = useIonModal(ActivityModal, {
@@ -423,7 +450,21 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     // Punkte, Aktivitaeten und Anwesenheit haengen an der Detail-Route und
     // bleiben offline leer; die Liste traegt Name, Jahrgang und Punktestand.
     // Besser der Name mit Punktestand als ein roter Kasten.
+    //
+    // War die Person schon einmal mit Netz offen, gibt es mehr (09.10.2026):
+    // Ihr letzter Stand ist gemerkt (detailSpeicher.ts) -- die Seite geht so
+    // auf wie zuletzt, mit Historie und Anwesenheit, ohne Anfrage.
     if (!isOnline) {
+      try {
+        const stand = await gemerktesDetail<GemerktePerson>(personSchluessel);
+        if (stand?.konfi) {
+          standZeigen(stand);
+          setAusSpeicher(true);
+          setError('');
+          setLoading(false);
+          return;
+        }
+      } catch { /* weiter mit dem Grundstand aus der Liste */ }
       try {
         const gecacht = await offlineCache.get<Konfi[]>('admin:konfis:' + user?.organization_id);
         const ausListe = gecacht?.data?.find((k) => k.id === konfiId) || null;
@@ -447,117 +488,143 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
 
     try {
       const konfiRes = await api.get(`/admin/konfis/${konfiId}`);
+      const konfiData = konfiRes.data;
 
       // Nur die OFFENEN Anträge DIESER Person (28.09.2026, Leitung BF-04).
       // Vorher lud die Ansicht die ganze Antragsgeschichte der Gemeinde und
       // filterte sie hier nach `konfi_id` — ein Feld, das die Liste seit der
       // Umbenennung in `user_id` nicht mehr trägt. Die offenen Anträge
       // erschienen deshalb nie.
-      let requestsRes: { data: OffenerAntrag[] } = { data: [] };
+      let antraege: OffenerAntrag[] = [];
       try {
-        requestsRes = await api.get<OffenerAntrag[]>('/admin/activities/requests', {
+        const requestsRes = await api.get<OffenerAntrag[]>('/admin/activities/requests', {
           params: { user_id: konfiId, status: 'pending' },
         });
+        antraege = requestsRes.data || [];
       } catch (requestsError) {
  console.warn('Could not load activity requests:', requestsError);
       }
 
-      const konfiData = konfiRes.data;
-      const allActivities = konfiData.activities || [];
+      const stand: GemerktePerson = {
+        konfi: konfiData,
+        antraege,
+        bewahrteStempel: [],
+        konfiZeit: null,
+        certificateTypes: null,
+        eventPoints: [],
+        attendanceStats: null,
+      };
 
-      // Rolle setzen für bedingte Anzeige
-      setTargetRole(konfiData.role_name || 'konfi');
-
-      // Teamer-Daten aus dem Detail-Response. IMMER setzen, auch auf leer:
-      // Vorher wurde nur bei vorhandenen Daten geschrieben, nie zurückgesetzt —
-      // beim Wechsel zwischen zwei Personen blieben die Werte der vorigen
-      // stehen (Teamer ohne Konfi-Zeit erbte die Historie des vorigen).
+      // Teamer-Zusaetze. Ein Fehler (etwa ein aelterer Server ohne die
+      // Route) darf die Detailansicht nicht kippen -- dann fehlen nur diese.
       if (konfiData.role_name === 'teamer') {
-        setCertificates(konfiData.certificates || []);
-        setTeamerEvents(konfiData.teamerEvents || []);
-        setKonfiHistory(konfiData.konfiHistory || null);
-        // Zusatz: ein Fehler (etwa ein aelterer Server ohne die Route) darf
-        // die Detailansicht nicht kippen -- dann fehlen nur diese Stempel.
         try {
           const bewahrtRes = await api.get(`/challenges/admin/bewahrte-stempel/${konfiId}`);
-          setBewahrteStempel(Array.isArray(bewahrtRes.data) ? bewahrtRes.data : []);
-        } catch {
-          setBewahrteStempel([]);
-        }
+          stand.bewahrteStempel = Array.isArray(bewahrtRes.data) ? bewahrtRes.data : [];
+        } catch { /* ohne bewahrte Stempel */ }
         try {
           const konfiZeitRes = await api.get(`/teamer/${konfiId}/konfi-zeit`);
-          setKonfiZeit(alsKonfiZeit(konfiZeitRes.data));
-        } catch {
-          setKonfiZeit(null);
-        }
-      } else {
-        setCertificates([]);
-        setTeamerEvents([]);
-        setKonfiHistory(null);
-        setBewahrteStempel([]);
-        setKonfiZeit(null);
-      }
-
-      // Zertifikat-Typen laden (für die Zuweisung)
-      if (konfiData.role_name === 'teamer') {
+          stand.konfiZeit = konfiZeitRes.data ?? null;
+        } catch { /* ohne Konfi-Zeit */ }
+        // Zertifikat-Typen laden (für die Zuweisung)
         try {
           const certTypesRes = await api.get('/teamer/certificate-types');
-          setCertificateTypes(certTypesRes.data || []);
+          stand.certificateTypes = certTypesRes.data || [];
         } catch {
           // Ignorieren
         }
       }
 
-      // bonusPoints vom Backend ist ein Array, nicht eine Zahl!
-      const bonusEntriesArray = Array.isArray(konfiData.bonusPoints) ? konfiData.bonusPoints : [];
-      setBonusEntries(bonusEntriesArray);
-
-      setCurrentKonfi({
-        ...konfiData,
-        // Nicht die bonus-Werte aus dem Backend übernehmen - wir berechnen aus bonusEntries
-      });
-
       try {
         const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
-        setEventPoints(eventPointsRes.data || []);
-      } catch {
-        setEventPoints([]);
-      }
+        stand.eventPoints = eventPointsRes.data || [];
+      } catch { /* leer */ }
 
       try {
         const attendanceRes = await api.get(`/admin/konfis/${konfiId}/attendance-stats`);
-        setAttendanceStats(attendanceRes.data);
-      } catch {
-        setAttendanceStats(null);
+        stand.attendanceStats = attendanceRes.data ?? null;
+      } catch { /* ohne Anwesenheit */ }
+
+      standZeigen(stand);
+      setAusSpeicher(false);
+      // Fuer ohne Netz merken -- dieselben Antworten, keine weitere Anfrage.
+      void detailMerken(personSchluessel, stand).catch(() => undefined);
+    } catch (err) {
+      // Darf diese Person nicht (mehr) gesehen werden oder ist sie weg,
+      // verschwindet auch der gemerkte Stand.
+      const status = fehlerStatus(err);
+      if (status === 403 || status === 404) {
+        void detailVergessen(personSchluessel).catch(() => undefined);
       }
-
-      const enhancedActivities: Activity[] = allActivities.map((activity: Activity) => ({
-        ...activity,
-        hasPhoto: false
-      }));
-
-      const pendingRequests: Activity[] = (requestsRes.data || [])
-        // Der Server filtert bereits; die Prüfung bleibt als Absicherung.
-        .filter((req: OffenerAntrag) => req.user_id === konfiId && req.status === 'pending')
-        .map((req: OffenerAntrag) => ({
-          id: `request-${req.id}`,
-          name: `${req.activity_name} (gemeldet)`,
-          points: req.activity_points,
-          type: 'pending',
-          date: req.requested_date,
-          admin: 'Wartend auf Genehmigung',
-          isPending: true,
-          photo_filename: req.photo_filename,
-          requestId: req.id,
-          hasPhoto: !!req.photo_filename
-        }));
-
-      setActivities([...enhancedActivities, ...pendingRequests]);
-    } catch {
       setError('Fehler beim Laden der Konfi-Daten');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Einen Stand auf die Seite bringen -- frisch vom Server oder ohne Netz aus
+  // dem gemerkten (detailSpeicher.ts). Eine Stelle fuer beides, damit der
+  // gemerkte Stand genauso aussieht wie der frische.
+  const standZeigen = (stand: GemerktePerson) => {
+    const konfiData = stand.konfi;
+    const allActivities = konfiData.activities || [];
+
+    // Rolle setzen für bedingte Anzeige
+    setTargetRole(konfiData.role_name || 'konfi');
+
+    // Teamer-Daten aus dem Detail-Response. IMMER setzen, auch auf leer:
+    // Vorher wurde nur bei vorhandenen Daten geschrieben, nie zurückgesetzt —
+    // beim Wechsel zwischen zwei Personen blieben die Werte der vorigen
+    // stehen (Teamer ohne Konfi-Zeit erbte die Historie des vorigen).
+    if (konfiData.role_name === 'teamer') {
+      setCertificates(konfiData.certificates || []);
+      setTeamerEvents(konfiData.teamerEvents || []);
+      setKonfiHistory(konfiData.konfiHistory || null);
+      setBewahrteStempel(stand.bewahrteStempel || []);
+      setKonfiZeit(stand.konfiZeit ? alsKonfiZeit(stand.konfiZeit) : null);
+      if (stand.certificateTypes) setCertificateTypes(stand.certificateTypes);
+    } else {
+      setCertificates([]);
+      setTeamerEvents([]);
+      setKonfiHistory(null);
+      setBewahrteStempel([]);
+      setKonfiZeit(null);
+    }
+
+    // bonusPoints vom Backend ist ein Array, nicht eine Zahl!
+    const bonusEntriesArray = Array.isArray(konfiData.bonusPoints) ? konfiData.bonusPoints : [];
+    setBonusEntries(bonusEntriesArray);
+
+    setCurrentKonfi({
+      ...konfiData,
+      // Nicht die bonus-Werte aus dem Backend übernehmen - wir berechnen aus bonusEntries
+    });
+
+    setEventPoints(stand.eventPoints || []);
+    setAttendanceStats(stand.attendanceStats ?? null);
+
+    const enhancedActivities: Activity[] = allActivities.map((activity: Activity) => ({
+      ...activity,
+      hasPhoto: false
+    }));
+
+    const pendingRequests: Activity[] = (stand.antraege || [])
+      // Der Server filtert bereits; die Prüfung bleibt als Absicherung.
+      .filter((req: OffenerAntrag) => req.user_id === konfiId && req.status === 'pending')
+      .map((req: OffenerAntrag) => ({
+        id: `request-${req.id}`,
+        name: `${req.activity_name} (gemeldet)`,
+        points: req.activity_points,
+        type: 'pending',
+        date: req.requested_date,
+        admin: 'Wartend auf Genehmigung',
+        isPending: true,
+        photo_filename: req.photo_filename,
+        requestId: req.id,
+        hasPhoto: !!req.photo_filename
+      }));
+
+    setActivities([...enhancedActivities, ...pendingRequests]);
   };
 
   const getGottesdienstPoints = () => {
@@ -788,6 +855,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         stempel={mitBewahrtenStempeln(currentKonfi?.challengeMarks || [], bewahrteStempel)}
         offeneStempel={currentKonfi?.offeneStempel || []}
         isOnline={isOnline}
+        ausSpeicher={ausSpeicher}
         pageRef={pageRef}
         onNeuLaden={() => { setLoading(true); void loadKonfiData(); }}
         onBearbeiten={() => presentBearbeitenModal({ presentingElement: presentingElement || undefined })}
@@ -888,7 +956,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         {/* Punkte-Historie, Aktivitaeten und Anwesenheit haengen an
             GET /admin/konfis/:id und fehlen offline — Name und Punktestand
             kommen aus dem Listen-Cache. */}
-        {currentKonfi && activities.length === 0 && !isOnline && (
+        {currentKonfi && activities.length === 0 && !isOnline && !ausSpeicher && (
           <OfflinePlatzhalter was="Die Aktivitäten- und Punkte-Historie" />
         )}
 

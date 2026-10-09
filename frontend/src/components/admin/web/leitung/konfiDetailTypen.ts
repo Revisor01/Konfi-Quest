@@ -78,6 +78,11 @@ export interface WebKonfiDetailProps {
   stempel: ChallengeMark[];
   offeneStempel: OffenerStempel[];
   isOnline: boolean;
+  /**
+   * Ohne Netz kam der volle Stand aus dem gemerkten der Person
+   * (services/detailSpeicher.ts): Die Historie ist bekannt, auch leer.
+   */
+  ausSpeicher?: boolean;
   /** Fuer die Fenster, die auf dieser Seite aufklappen (Ionic-Modale). */
   pageRef?: React.Ref<HTMLElement>;
 

@@ -65,7 +65,12 @@ vi.mock('../../../contexts/LiveUpdateContext', () => ({
 }));
 vi.mock('../../../services/offlineCache', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../services/offlineCache')>()),
-  offlineCache: { get: (...a: unknown[]) => cacheGet(...a), set: vi.fn(), remove: vi.fn() },
+  offlineCache: {
+    get: (...a: unknown[]) => cacheGet(...a),
+    // Merken landet im selben Speicher, aus dem get liest (detailSpeicher.ts).
+    set: async (k: string, d: unknown) => { zustand.cache.set(k, d); },
+    remove: async (k: string) => { zustand.cache.delete(k); },
+  },
 }));
 vi.mock('../../../services/analytics', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../services/analytics')>()),

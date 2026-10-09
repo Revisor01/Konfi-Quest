@@ -71,6 +71,11 @@ export interface WebTerminDetailLeitungProps {
   abmeldungen: readonly Unregistration[];
   materialien: readonly EventMaterial[];
   isOnline: boolean;
+  /**
+   * Ohne Netz kam der volle Stand aus dem gemerkten Termin
+   * (services/detailSpeicher.ts): Die Teilnehmerliste ist bekannt, auch leer.
+   */
+  ausSpeicher?: boolean;
   /** Terminverwaltung ist Leitungssache (utils/terminRechte.ts). */
   darfVerwalten: boolean;
   /**
@@ -287,7 +292,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
         </WebKarte>
       )}
 
-      {teilnehmende.length === 0 && !isOnline && (
+      {teilnehmende.length === 0 && !isOnline && !p.ausSpeicher && (
         <WebHinweis art="hinweis">Die Teilnehmerliste ist offline nicht verfügbar.</WebHinweis>
       )}
 
