@@ -479,7 +479,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
       {p.tab === 'fehler' && fehlerReiter}
       {p.tab === 'routen' && routenReiter}
       {p.tab === 'verlauf' && verlaufReiter}
-      {p.tab === 'sprueche' && <KonfispruchAuswertung />}
+      {p.tab === 'sprueche' && <KonfispruchAuswertung web />}
     </WebSeite>
   );
 };

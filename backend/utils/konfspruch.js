@@ -163,9 +163,17 @@ async function spruchStandLesen(db, userId) {
   return stand || null;
 }
 
+// Kirchenkreis und Landeskirche der Gemeinde ($1) beim Waehlen (Migration
+// 208): der Stand zu diesem Zeitpunkt, damit die Zahl auf diesen Ebenen
+// bleibt, wenn die Gemeinde geht oder umgehaengt wird. Ohne Zuordnung NULL.
+const EBENEN_DER_GEMEINDE = `
+  (SELECT o.kirchenkreis_id FROM organizations o WHERE o.id = $1),
+  (SELECT k.landeskirche_id FROM organizations o JOIN kirchenkreise k ON k.id = o.kirchenkreis_id WHERE o.id = $1)`;
+
 /**
  * Eine Wahl in konfspruch_wahlen festhalten -- OHNE Person, Konto oder
- * Profil: Gemeinde, Monat und der Spruch selbst (Simon, 09.10.2026: „volle
+ * Profil: Gemeinde mit Kirchenkreis und Landeskirche, Monat und der Spruch
+ * selbst (Simon, 09.10.2026: „volle
  * Speicherung ... personenunabhängig"). Die Zeile bleibt bei einer
  * Kontoloeschung stehen; sie hat keinen Verweis auf users.
  *
@@ -185,8 +193,8 @@ async function spruchWahlMerken(db, organizationId, wahl, vorher) {
       if (vorher && Number(vorher.konfspruch_id) === Number(wahl.spruchId)
         && vorher.konfspruch_translation === wahl.translation) return false;
       await db.query(
-        `INSERT INTO konfspruch_wahlen (organization_id, quelle, konfspruch_id, stelle, translation, monat)
-         VALUES ($1, 'vorschlag', $2::bigint, (SELECT reference FROM konfsprueche WHERE id = $2::bigint), $3,
+        `INSERT INTO konfspruch_wahlen (organization_id, kirchenkreis_id, landeskirche_id, quelle, konfspruch_id, stelle, translation, monat)
+         VALUES ($1, ${EBENEN_DER_GEMEINDE}, 'vorschlag', $2::bigint, (SELECT reference FROM konfsprueche WHERE id = $2::bigint), $3,
                  date_trunc('month', NOW())::date)`,
         [organizationId, wahl.spruchId, wahl.translation]
       );
@@ -196,8 +204,8 @@ async function spruchWahlMerken(db, organizationId, wahl, vorher) {
       && vorher.konfspruch_freitext === wahl.freitext
       && vorher.konfspruch_freitext_referenz === wahl.referenz) return false;
     await db.query(
-      `INSERT INTO konfspruch_wahlen (organization_id, quelle, freitext, freitext_referenz, monat)
-       VALUES ($1, 'eigen', $2, $3, date_trunc('month', NOW())::date)`,
+      `INSERT INTO konfspruch_wahlen (organization_id, kirchenkreis_id, landeskirche_id, quelle, freitext, freitext_referenz, monat)
+       VALUES ($1, ${EBENEN_DER_GEMEINDE}, 'eigen', $2, $3, date_trunc('month', NOW())::date)`,
       [organizationId, wahl.freitext, wahl.referenz]
     );
     return true;

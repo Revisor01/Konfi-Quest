@@ -10,11 +10,16 @@
 //     bleibt nach dem Loeschen des Kontos stehen.
 //   - GET /api/metrics/konfisprueche: nur super_admin; jeder Spruch mit
 //     Anzahl, auch Einzelnennungen, eigene Sprueche im Wortlaut.
+//   - Ebenen (Migration 208; Simon, 09.10.2026: „nach Gemeinde, Kirchenkreis
+//     und Landeskirche"): Kirchenkreis und Landeskirche wie beim Waehlen;
+//     die Zahl bleibt, wenn die Gemeinde umgehaengt oder geloescht wird;
+//     ohne Zuordnung beim Waehlen gilt die heutige.
 const request = require('supertest');
 const { getTestApp, warteAufNachwehen } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, USERS, ORGS } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const { spruchWahlMerken } = require('../../utils/konfspruch');
 
 describe('Konfisprueche: personenunabhaengige Statistik', () => {
   let db;
@@ -103,11 +108,12 @@ describe('Konfisprueche: personenunabhaengige Statistik', () => {
            FROM information_schema.table_constraints tc
            JOIN information_schema.constraint_column_usage ccu ON ccu.constraint_name = tc.constraint_name
           WHERE tc.table_name = 'konfspruch_wahlen' AND tc.constraint_type = 'FOREIGN KEY'`);
-      expect(fks.map((f) => f.ziel).sort()).toEqual(['konfsprueche', 'organizations']);
+      expect(fks.map((f) => f.ziel).sort()).toEqual(['kirchenkreise', 'konfsprueche', 'landeskirchen', 'organizations']);
       const { rows: spalten } = await db.query(
         `SELECT column_name FROM information_schema.columns WHERE table_name = 'konfspruch_wahlen' ORDER BY ordinal_position`);
       expect(spalten.map((s) => s.column_name)).toEqual([
         'id', 'organization_id', 'quelle', 'konfspruch_id', 'stelle', 'translation', 'freitext', 'freitext_referenz', 'monat',
+        'kirchenkreis_id', 'landeskirche_id',
       ]);
     });
 
@@ -156,8 +162,17 @@ describe('Konfisprueche: personenunabhaengige Statistik', () => {
         sprueche: [{ stelle: 'Josua 1,9', anzahl: 2 }, { stelle: 'Psalm 23,1', anzahl: 1 }],
         eigene: [{ freitext: 'Gott ist mein Licht', freitext_referenz: 'Ps 27,1', anzahl: 2 }],
         monate: [{ monat: null, anzahl: 1 }, { monat, anzahl: 4 }],
+        ebene: { art: 'alle', id: null },
+        auswahl: {
+          landeskirchen: [],
+          kirchenkreise: [],
+          gemeinden: [
+            { id: ORGS.andereGemeinde.id, name: 'Andere Gemeinde', kirchenkreis: null, anzahl: 1 },
+            { id: ORGS.testGemeinde.id, name: 'Test-Gemeinde St. Martin', kirchenkreis: null, anzahl: 4 },
+          ],
+        },
       });
-      // Weder Gemeinde noch Person in der Antwort.
+      // Keine Person in der Antwort (Gemeinden ja, siehe Ebenen).
       const text = JSON.stringify(res.body);
       for (const verboten of ['konfi1', 'Test Konfi', 'organization', 'user']) expect(text).not.toContain(verboten);
     });
@@ -168,7 +183,158 @@ describe('Konfisprueche: personenunabhaengige Statistik', () => {
       expect(res.body).toEqual({
         gesamt: { wahlen: 0, vorschlag: 0, eigen: 0, aus_bestand: 0 },
         uebersetzungen: [], sprueche: [], eigene: [], monate: [],
+        ebene: { art: 'alle', id: null },
+        auswahl: { landeskirchen: [], kirchenkreise: [], gemeinden: [] },
       });
+    });
+  });
+
+  describe('Ebenen: Landeskirche, Kirchenkreis, Gemeinde', () => {
+    let nordkirche;
+    let ekbo;
+    let dithmarschen;
+    let ploen;
+    let mitte;
+
+    beforeEach(async () => {
+      ({ rows: [{ id: nordkirche }] } = await db.query("INSERT INTO landeskirchen (name) VALUES ('Nordkirche') RETURNING id::int AS id"));
+      ({ rows: [{ id: ekbo }] } = await db.query("INSERT INTO landeskirchen (name) VALUES ('EKBO') RETURNING id::int AS id"));
+      ({ rows: [{ id: dithmarschen }] } = await db.query(
+        "INSERT INTO kirchenkreise (name, landeskirche_id) VALUES ('Dithmarschen', $1) RETURNING id::int AS id", [nordkirche]));
+      ({ rows: [{ id: ploen }] } = await db.query(
+        "INSERT INTO kirchenkreise (name, landeskirche_id) VALUES ('Plön-Segeberg', NULL) RETURNING id::int AS id"));
+      ({ rows: [{ id: mitte }] } = await db.query(
+        "INSERT INTO kirchenkreise (name, landeskirche_id) VALUES ('Berlin Stadtmitte', $1) RETURNING id::int AS id", [ekbo]));
+      await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [dithmarschen, ORGS.testGemeinde.id]);
+    });
+
+    const abrufen = (query) => request(app).get('/api/metrics/konfisprueche').query(query)
+      .set('Authorization', bearer('superAdmin'));
+    const anzahl = async (query) => {
+      const res = await abrufen(query);
+      expect(res.status).toBe(200);
+      return res.body.gesamt.wahlen;
+    };
+    const ebenen = async () => (await db.query(
+      'SELECT kirchenkreis_id::int AS kk, landeskirche_id::int AS lk FROM konfspruch_wahlen ORDER BY id')).rows;
+
+    it('die Wahl haelt Kirchenkreis und Landeskirche ihrer Gemeinde fest', async () => {
+      expect((await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' })).status).toBe(200);
+      expect((await spruchSetzen('konfi3', 'konfi', { konfspruch_id: josua, translation: 'bigs' })).status).toBe(200);
+      expect(await ebenen()).toEqual([{ kk: dithmarschen, lk: nordkirche }, { kk: null, lk: null }]);
+    });
+
+    it('je Ebene nur deren Sprueche, eigene im Wortlaut; die Auswahl nennt alle mit Anzahl', async () => {
+      await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [mitte, ORGS.andereGemeinde.id]);
+      await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      await spruchSetzen('teamer1', 'teamer', { konfspruch_freitext: 'Gott ist mein Licht', konfspruch_freitext_referenz: 'Ps 27,1' });
+      await spruchSetzen('konfi3', 'konfi', { konfspruch_freitext: 'Fürchte dich nicht', konfspruch_freitext_referenz: 'Jes 43,1' });
+
+      const res = await abrufen({ ebene: 'landeskirche', id: nordkirche });
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        gesamt: { wahlen: 2, vorschlag: 1, eigen: 1, aus_bestand: 0 },
+        sprueche: [{ stelle: 'Josua 1,9', anzahl: 1 }],
+        eigene: [{ freitext: 'Gott ist mein Licht', freitext_referenz: 'Ps 27,1', anzahl: 1 }],
+        ebene: { art: 'landeskirche', id: nordkirche },
+      });
+      expect(res.body.auswahl).toEqual({
+        landeskirchen: [
+          { id: ekbo, name: 'EKBO', anzahl: 1 },
+          { id: nordkirche, name: 'Nordkirche', anzahl: 2 },
+        ],
+        kirchenkreise: [
+          { id: mitte, name: 'Berlin Stadtmitte', landeskirche: 'EKBO', anzahl: 1 },
+          { id: dithmarschen, name: 'Dithmarschen', landeskirche: 'Nordkirche', anzahl: 2 },
+        ],
+        gemeinden: [
+          { id: ORGS.andereGemeinde.id, name: 'Andere Gemeinde', kirchenkreis: 'Berlin Stadtmitte', anzahl: 1 },
+          { id: ORGS.testGemeinde.id, name: 'Test-Gemeinde St. Martin', kirchenkreis: 'Dithmarschen', anzahl: 2 },
+        ],
+      });
+
+      const kreis = await abrufen({ ebene: 'kirchenkreis', id: mitte });
+      expect(kreis.body.eigene).toEqual([{ freitext: 'Fürchte dich nicht', freitext_referenz: 'Jes 43,1', anzahl: 1 }]);
+      expect(kreis.body.sprueche).toEqual([]);
+      const gemeinde = await abrufen({ ebene: 'gemeinde', id: ORGS.testGemeinde.id });
+      expect(gemeinde.body.gesamt).toEqual({ wahlen: 2, vorschlag: 1, eigen: 1, aus_bestand: 0 });
+      expect(JSON.stringify(gemeinde.body)).not.toContain('Test Konfi');
+    });
+
+    it('umgehaengte Gemeinde: die Wahl bleibt beim Kirchenkreis und der Landeskirche von damals', async () => {
+      await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [mitte, ORGS.testGemeinde.id]);
+      expect(await anzahl({ ebene: 'kirchenkreis', id: dithmarschen })).toBe(1);
+      expect(await anzahl({ ebene: 'landeskirche', id: nordkirche })).toBe(1);
+      expect(await anzahl({ ebene: 'kirchenkreis', id: mitte })).toBe(0);
+      expect(await anzahl({ ebene: 'landeskirche', id: ekbo })).toBe(0);
+      expect(await anzahl({ ebene: 'gemeinde', id: ORGS.testGemeinde.id })).toBe(1);
+    });
+
+    it('geloeschte Gemeinde: die Wahl zaehlt weiter im Kirchenkreis und in der Landeskirche', async () => {
+      const { rows: [{ id: klein }] } = await db.query(
+        `INSERT INTO organizations (name, slug, display_name, kirchenkreis_id)
+         VALUES ('Klein', 'klein', 'Kleine Gemeinde', $1) RETURNING id::int AS id`, [dithmarschen]);
+      expect(await spruchWahlMerken(db, klein, { quelle: 'eigen', freitext: 'Nur hier', referenz: 'Ps 1,1' }, null)).toBe(true);
+      await db.query('DELETE FROM organizations WHERE id = $1', [klein]);
+      expect(await anzahl({ ebene: 'kirchenkreis', id: dithmarschen })).toBe(1);
+      expect(await anzahl({ ebene: 'landeskirche', id: nordkirche })).toBe(1);
+      expect(await anzahl({ ebene: 'gemeinde', id: klein })).toBe(0);
+      expect(await anzahl({})).toBe(1);
+    });
+
+    it('beim Waehlen ohne Zuordnung: es gilt die heutige Zuordnung der Gemeinde', async () => {
+      await spruchSetzen('konfi3', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      expect(await anzahl({ ebene: 'kirchenkreis', id: mitte })).toBe(0);
+      await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [mitte, ORGS.andereGemeinde.id]);
+      expect(await anzahl({ ebene: 'kirchenkreis', id: mitte })).toBe(1);
+      expect(await anzahl({ ebene: 'landeskirche', id: ekbo })).toBe(1);
+      expect(await ebenen()).toEqual([{ kk: null, lk: null }]);
+    });
+
+    it('Kirchenkreis ohne Landeskirche beim Waehlen: es gilt dessen heutige Landeskirche', async () => {
+      await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [ploen, ORGS.andereGemeinde.id]);
+      await spruchSetzen('konfi3', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      expect(await ebenen()).toEqual([{ kk: ploen, lk: null }]);
+      expect(await anzahl({ ebene: 'landeskirche', id: nordkirche })).toBe(0);
+      await db.query('UPDATE kirchenkreise SET landeskirche_id = $1 WHERE id = $2', [nordkirche, ploen]);
+      expect(await anzahl({ ebene: 'landeskirche', id: nordkirche })).toBe(1);
+    });
+
+    it('geloeschter Kirchenkreis: die Landeskirche bleibt', async () => {
+      await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      await db.query('DELETE FROM kirchenkreise WHERE id = $1', [dithmarschen]);
+      expect(await ebenen()).toEqual([{ kk: null, lk: nordkirche }]);
+      expect(await anzahl({ ebene: 'landeskirche', id: nordkirche })).toBe(1);
+      const res = await abrufen({});
+      expect(res.body.auswahl.kirchenkreise).toEqual([]);
+    });
+
+    it('unbekannte Kennung: Nullen und leere Listen', async () => {
+      await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      const res = await abrufen({ ebene: 'gemeinde', id: 999999 });
+      expect(res.status).toBe(200);
+      expect(res.body.gesamt).toEqual({ wahlen: 0, vorschlag: 0, eigen: 0, aus_bestand: 0 });
+      expect(res.body.sprueche).toEqual([]);
+    });
+
+    it.each([
+      [{ ebene: 'bistum', id: 1 }],
+      [{ ebene: 'gemeinde' }],
+      [{ ebene: 'kirchenkreis', id: 'abc' }],
+      [{ ebene: 'landeskirche', id: '-1' }],
+    ])('ungueltige Ebene %o: 400', async (query) => {
+      const res = await abrufen(query);
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Ungültige Ebene');
+    });
+
+    it('die Gemeindeleitung bekommt auch die eigene Gemeinde hier nicht (403)', async () => {
+      const res = await request(app).get('/api/metrics/konfisprueche')
+        .query({ ebene: 'gemeinde', id: ORGS.testGemeinde.id })
+        .set('Authorization', bearer('orgAdmin1'));
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('Zugriff verweigert');
     });
   });
 });

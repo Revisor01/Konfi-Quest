@@ -21,6 +21,9 @@ Versionsüberschrift.
 - Unter Betrieb zeigt ein Reiter „Sprüche“, welche Konfisprüche über alle
   Gemeinden gewählt werden — jeder Spruch mit Anzahl, eigene im Wortlaut,
   ohne Namen; die Zahlen bleiben auch nach dem Löschen eines Kontos.
+- Der Reiter „Sprüche“ unter Betrieb wertet wahlweise je Landeskirche,
+  Kirchenkreis oder Gemeinde aus; Kirchenkreis und Landeskirche gelten, wie
+  sie beim Wählen zugeordnet waren.
 - Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
   dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
   den Challenges.

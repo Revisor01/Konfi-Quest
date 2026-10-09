@@ -419,7 +419,7 @@ Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
 | **Jahresrückblick** | Ausgaben mit Jahrgang, Zeitraum, Zahl der Rückblicke und Stand | **Konfis** und **Team** (Team nur für die Gemeindeleitung); **Neuer Rückblick** öffnet ein Fenster |
 | **Dashboard** | zwei Listen nebeneinander, für Konfis und für das Team | je Bereich ein Schalter; die Pfeile nach oben und unten ersetzen das Ziehen der App; jede Änderung gilt sofort |
 | **Einladungen** | aktive Codes mit Jahrgang, Verwendungen und Gültigkeit | Formular für einen neuen Code; rechts der QR-Code mit **Link kopieren** und **Teilen** |
-| **Betrieb** | Zustand, Fehler, Routen und Verlauf des Servers; unter „Sprüche“ die gewählten Konfisprüche über alle Gemeinden, ohne Namen | nur für Konten mit Super-Admin-Recht |
+| **Betrieb** | Zustand, Fehler, Routen und Verlauf des Servers; unter „Sprüche“ die gewählten Konfisprüche, gesamt oder je Landeskirche, Kirchenkreis und Gemeinde, eigene im Wortlaut, ohne Namen von Personen | nur für Konten mit Super-Admin-Recht |
 
 **Aktivitäten** ist der Katalog dessen, was gemeldet werden kann: eine Tabelle
 mit Aktivität und Beschreibung, Kategorien, Art — Gottesdienst oder Gemeinde —
