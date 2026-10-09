@@ -98,7 +98,9 @@ jobs:
 
     services:
       postgres:
-        image: postgres:15-alpine
+        # Über Googles Spiegel von Docker Hub (09.10.2026): Der anonyme Abruf
+        # von docker.io brach mit 429 ab, bevor der Job überhaupt anfing.
+        image: mirror.gcr.io/library/postgres:15-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -329,6 +331,20 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Der E2E-Stack baut seine Images (FROM node, nginx) und lädt Postgres
+      # von Docker Hub. Anonyme Abrufe teilen sich die Grenze je
+      # Runner-Adresse; am 09.10.2026 brach der Job zweimal mit 429 ab. Der
+      # Docker-Dienst fragt deshalb zuerst Googles Spiegel und fällt bei
+      # Fehlen auf Docker Hub zurück.
+      - name: Docker-Hub-Spiegel einrichten
+        run: |
+          d=/etc/docker/daemon.json
+          [ -f "$d" ] || echo '{}' | sudo tee "$d" >/dev/null
+          sudo jq '. + {"registry-mirrors": ["https://mirror.gcr.io"]}' "$d" | sudo tee "$d.neu" >/dev/null
+          sudo mv "$d.neu" "$d"
+          sudo systemctl restart docker
+          docker info --format '{{json .RegistryConfig.Mirrors}}'
 
       # Dieselbe Node-Linie wie alle anderen Jobs und die Images (.nvmrc,
       # 29.09.2026, Audit CI BF-11). Bis dahin lief dieser Job als einziger
