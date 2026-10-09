@@ -8,7 +8,7 @@ const { validatePassword } = require('../utils/passwordUtils');
 const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
-const { darfJahrgang } = require('../utils/jahrgangsZugriff');
+const { darfJahrgang, zuordnungsrechtFuerRolle } = require('../utils/jahrgangsZugriff');
 const { RECHTE, hatAlleRechte } = require('../utils/freigabeRechte');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
@@ -1002,7 +1002,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
   router.post('/:id/jahrgaenge', rbacVerifier, requireAdmin, userHierarchyMiddleware('update'), validateJahrgangAssignments, async (req, res) => {
     const { id: userId } = req.params;
     const organizationId = req.user.organization_id;
-    const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, can_edit }]
+    // can_edit schicken die Store-Apps 2.2.x/2.3.x weiter mit; es zaehlt
+    // nicht mehr, das Zuordnungsrecht folgt der Rolle (siehe unten).
+    const { jahrgang_assignments } = req.body; // [{ jahrgang_id, can_view, darf_* }]
 
     if (!Array.isArray(jahrgang_assignments)) {
       return res.status(400).json({ error: 'jahrgang_assignments muss ein Array sein' });
@@ -1031,13 +1033,20 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         // dasselbe Muster wie bei den Push-Empfaengern (utils/orgMitglieder.js).
         // Die Rollen-Hierarchie prueft userHierarchyMiddleware, ebenfalls ueber
         // beide Quellen und mit der Rolle DIESER Gemeinde.
+        //
+        // Die Rolle DIESER Gemeinde kommt mit (09.10.2026): Sie entscheidet
+        // das Zuordnungsrecht (can_edit) der Zuweisungen. Stamm-Gemeinde ->
+        // users.role_id, sonst user_organizations.role_id -- dieselbe
+        // Aufloesung wie POST /admin/jahrgaenge.
         const { rows: [user] } = await db.query(
-            `SELECT u.id
+            `SELECT u.id, r.name AS role_name
                FROM users u
+               LEFT JOIN user_organizations uo
+                 ON uo.user_id = u.id AND uo.organization_id = $2
+               LEFT JOIN roles r
+                 ON r.id = CASE WHEN u.organization_id = $2 THEN u.role_id ELSE uo.role_id END
               WHERE u.id = $1
-                AND (u.organization_id = $2
-                     OR EXISTS (SELECT 1 FROM user_organizations uo
-                                 WHERE uo.user_id = u.id AND uo.organization_id = $2))`,
+                AND (u.organization_id = $2 OR uo.user_id IS NOT NULL)`,
             [userId, organizationId]
         );
         if (!user) {
@@ -1158,8 +1167,17 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
             // nicht: Ohne diese Uebernahme setzte jedes Speichern im
             // Bearbeiten-Fenster einer alten App die Rechte still zurueck.
             // Neue Zuweisungen bekommen die Vorgabe true.
+            //
+            // ZUORDNUNGSRECHT (can_edit) NACH ROLLE (09.10.2026): Ein
+            // mitgeschickter Wert zaehlt nicht. Das Benutzerfenster schickte
+            // bis dahin immer can_edit: true -- auch fuer Teamer:innen --, und
+            // wer dort gespeichert wurde, bekam still das Recht, Konfis und
+            // Termine dem Jahrgang zuzuordnen. Ein Rollenwechsel im Fenster
+            // speichert danach die Zuweisungen neu und zieht das Recht so mit.
+            const canEdit = zuordnungsrechtFuerRolle(user.role_name);
             for (const assignment of einzufuegen) {
-                const { jahrgang_id, can_view = true, can_edit = false } = assignment;
+                const { jahrgang_id, can_view = true } = assignment;
+                const can_edit = canEdit;
                 const bisher = bisherigeRechte.get(Number(jahrgang_id));
                 const rechte = Object.values(RECHTE).map((feld) =>
                     (typeof assignment[feld] === 'boolean') ? assignment[feld] : (bisher ? bisher[feld] !== false : true));

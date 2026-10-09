@@ -206,6 +206,11 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Wer im Benutzerfenster gespeichert oder beim Anlegen eines Jahrgangs
+  zugewiesen wird, bekommt das Recht, Konfis und Termine diesem Jahrgang
+  zuzuordnen, nur noch als Leitung — Teamer:innen bekamen es bisher still
+  mit, und eine zur Leitung gemachte Teamer:in bekommt es beim Speichern
+  dazu.
 - Im Fenster „Benachrichtigungen“ sind die Untertitel der Schalter nicht mehr
   größer als die Titel; Zeilen und Hinweis sehen aus wie auf den übrigen
   Seiten unter Konto.

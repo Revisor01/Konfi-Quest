@@ -203,16 +203,15 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 
     // Direkt-Zuweisung nur beim Anlegen und nur, wenn jemand ausgewaehlt ist —
     // ohne Auswahl bleibt das Feld weg und der Server verhaelt sich wie bisher.
-    // view+edit wie bei der Zuweisung ueber die Benutzerverwaltung
-    // (UserManagementModal schickt dort ebenfalls beide Rechte).
+    // Nur Sehen, wie bei der Zuweisung ueber die Benutzerverwaltung: das
+    // Zuordnungsrecht (can_edit) setzt der Server nach der Rolle.
     const zugewieseneIds = Object.entries(ausgewaehlt)
       .filter(([, gewaehlt]) => gewaehlt)
       .map(([id]) => parseInt(id, 10));
     if (!jahrgang && zugewieseneIds.length > 0) {
       payload.user_assignments = zugewieseneIds.map((id) => ({
         user_id: id,
-        can_view: true,
-        can_edit: true
+        can_view: true
       }));
     }
 

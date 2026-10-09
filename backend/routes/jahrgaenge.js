@@ -5,7 +5,7 @@ const { handleValidationErrors, commonValidations } = require('../middleware/val
 const liveUpdate = require('../utils/liveUpdate');
 const emailService = require('../services/emailService');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
-const { darfJahrgang } = require('../utils/jahrgangsZugriff');
+const { darfJahrgang, zuordnungsrechtFuerRolle } = require('../utils/jahrgangsZugriff');
 const { canManageRole } = require('../utils/roleHierarchy');
 const { loescheMitteilungenZuJahrgang } = require('../utils/postfachAufraeumen');
 const { ladeLoeschumfang, materialGlobalMachen } = require('../utils/jahrgangLoeschen');
@@ -112,8 +112,9 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
   // (ausgelieferte Apps senden es nicht und duerfen nicht brechen). Wen der
   // org_admin zuweisen darf, entscheidet dieselbe Regel wie bei POST
   // /users/:id/jahrgaenge: canManageRole (roleHierarchy.js) — keine zweite
-  // Rechte-Erfindung. Defaults can_view=true/can_edit=false und assigned_by
-  // ebenfalls wie dort. Anlage + Zuweisungen laufen in EINER Transaktion:
+  // Rechte-Erfindung. Default can_view=true und assigned_by ebenfalls wie
+  // dort; can_edit folgt wie dort der Rolle (zuordnungsrechtFuerRolle,
+  // 09.10.2026), ein mitgeschickter Wert zaehlt nicht. Anlage + Zuweisungen laufen in EINER Transaktion:
   // Wird eine Zuweisung abgewiesen, bleibt kein halb angelegter Jahrgang
   // zurueck.
   router.post('/', rbacVerifier, requireOrgAdmin, validateCreateJahrgang, async (req, res) => {
@@ -190,8 +191,10 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
           return res.status(403).json({ error: `Du kannst Benutzer mit der Rolle '${verboten.role_name}' nicht bearbeiten.` });
         }
 
+        const rolleVon = new Map(zielUsers.map(u => [Number(u.id), u.role_name]));
         for (const zuweisung of zuweisungen) {
-          const { user_id, can_view = true, can_edit = false } = zuweisung;
+          const { user_id, can_view = true } = zuweisung;
+          const can_edit = zuordnungsrechtFuerRolle(rolleVon.get(Number(user_id)));
           await client.query(
             `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, assigned_by)
              VALUES ($1, $2, $3, $4, $5)`,

@@ -737,7 +737,11 @@ describe('Users Routes', () => {
       );
       expect(rows.length).toBe(1);
       expect(rows[0].jahrgang_id).toBe(JAHRGAENGE.jahrgang1.id);
-      expect(rows[0].can_edit).toBe(true);
+      // ANGEPASST 09.10.2026: Hier stand true -- die Route schrieb das
+      // mitgeschickte can_edit ungeprueft, und eine Teamer:in bekam so das
+      // Zuordnungsrecht. Es folgt jetzt der Rolle (zuordnungsrechtFuerRolle,
+      // tests/routes/zuordnungsrechtNachRolle.test.js).
+      expect(rows[0].can_edit).toBe(false);
       expect(rows[0].assigned_by).toBe(USERS.admin1.id);
     });
 

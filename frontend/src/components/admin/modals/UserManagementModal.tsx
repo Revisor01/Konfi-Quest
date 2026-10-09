@@ -359,13 +359,15 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
           userIdForAssignments = response.data.id;
         }
 
-        // Update jahrgang assignments
+        // Jahrgangs-Zuweisungen. can_edit (das Recht, Konfis und Termine dem
+        // Jahrgang zuzuordnen) geht nicht mit: Es folgt auf dem Server der
+        // Rolle (Leitung ja, Teamer:in nein). Bis 09.10.2026 stand hier
+        // can_edit: true, und jede gespeicherte Teamer:in bekam es still.
         const assignments = Object.entries(jahrgangAssignments)
           .filter(([_, isAssigned]) => isAssigned)
           .map(([jahrgangId, _]) => ({
             jahrgang_id: parseInt(jahrgangId),
             can_view: true,
-            can_edit: true,
             // Nur die Gemeindeleitung bei der Rolle Admin; sonst fehlen die
             // Felder, und der Server behaelt die bisherigen Werte.
             ...(rechteVergeben ? nurFelder(alleRechte(jahrgangRechte[parseInt(jahrgangId)]), rechteFelder) : {})
