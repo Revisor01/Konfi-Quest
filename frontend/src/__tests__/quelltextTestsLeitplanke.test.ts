@@ -66,7 +66,10 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  09.10.2026 +1: ohneTestLeitplanke.test.ts -- Leitplanke wie diese: sie
  *  liest die Testdateien, um zu sehen, ob jede Datei in utils/, hooks/ und
  *  services/ in einem Test vorkommt; rendern laesst sich dabei nichts. */
-const OBERGRENZE = 82;
+// 83 seit 10.10.2026: kopfleisteAndroid prueft wie tabLeisteAndroid eine
+// Regel in variables.css; jsdom rechnet die Kaskade der Ionic-Variablen nicht,
+// rendern zeigte nichts.
+const OBERGRENZE = 83;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -111,6 +114,7 @@ const BEKANNT: string[] = [
   '__tests__/components/rankingFeldnamen.test.ts',
   '__tests__/components/reiterUnterlaengen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
+  '__tests__/components/kopfleisteAndroid.test.ts',
   '__tests__/components/stylesheetsParsen.test.ts',
   '__tests__/components/tabLeisteAndroid.test.ts',
   '__tests__/components/tabZaehlerIos.test.ts',
