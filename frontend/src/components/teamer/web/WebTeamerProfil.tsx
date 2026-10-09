@@ -34,6 +34,7 @@ import {
   WebKontoKarte,
   WebPersonKarte,
   WebPushZeile,
+  WebKennzahlenZeile,
   WebRueckblickeKarte,
 } from '../../konfi/web/WebProfilBausteine';
 import '../../../theme/web/start.css';
@@ -111,6 +112,8 @@ const WebTeamerProfil: React.FC<WebTeamerProfilProps> = (props) => {
         <WebEinstellung icon={ICON_BUCH} titel="Bibelübersetzung" wert={props.uebersetzung} knopf="Ändern" onClick={props.onUebersetzung} />
         <WebEinstellung icon={ICON_KOMPASS} titel="App-Tour" wert="Kurze Einführung durch die App" knopf="Ansehen" onClick={props.onTour} />
         <WebPushZeile variante="teamer" presentingElement={props.presentingElement} />
+        {/* Kennzahl "Challenge-Beiträge" wie in der App (Mehr › Konto). */}
+        <WebKennzahlenZeile presentingElement={props.presentingElement} />
         <WebEinstellung icon={ICON_GALERIE} titel="Medien-Cache" wert={props.cacheLabel} knopf="Leeren" onClick={props.onCache} />
       </WebEinstellungenKarte>
 

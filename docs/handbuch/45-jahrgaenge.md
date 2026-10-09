@@ -215,9 +215,9 @@ Rollen stehen im Kapitel [Rollen und Rechte](05-rollen.md).
 | Mitteilungen und Push | nur für die eigenen Jahrgänge |
 
 An der Zuweisung hängen für die Leitung außerdem drei Rechte: Anträge
-entscheiden, Events verbuchen und Challenge-Beiträge freigeben. Die
-Gemeindeleitung setzt sie je Jahrgang; ohne sie bleibt der Vorgang sichtbar,
-nur lesend (siehe
+entscheiden, Events verbuchen und Challenge-Beiträge freigeben; für
+Teamer:innen das dritte. Die Gemeindeleitung setzt sie je Jahrgang; ohne sie
+bleibt der Vorgang sichtbar, nur lesend (siehe
 [Festlegen, wer entscheiden, verbuchen und freigeben darf](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf)).
 
 > **Der Chat sperrt in BEIDE Richtungen.** Eine Teamer:in ohne Zuweisung ist

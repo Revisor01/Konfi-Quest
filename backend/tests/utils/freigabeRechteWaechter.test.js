@@ -79,38 +79,44 @@ describe('Waechter: eine Regel-Stelle je Vorgang', () => {
       ['J1 ohne, zweiter Jahrgang mit Recht', [[J1, false], [J_ZWEI, true]]]
     ];
 
-    async function aufbauen(zuweisungen, spalte) {
+    // person: 'admin1' oder (seit 09.10.2026, nur Challenges) 'teamer1' --
+    // deren Seed-Zuweisung an J1 wird ersetzt; can_edit wie im Normalfall
+    // der Teamer:innen false.
+    async function aufbauen(zuweisungen, spalte, person = 'admin1') {
       await truncateAll(db);
       await seed(db);
       await db.query(
         `INSERT INTO jahrgaenge (id, name, organization_id, confirmation_date) VALUES ($1, 'Zweiter', $2, '2027-05-01')`,
         [J_ZWEI, ORG1]
       );
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS[person].id]);
       for (const [jg, recht] of zuweisungen) {
         await db.query(
           `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, ${spalte})
-           VALUES ($1, $2, true, true, $3)`,
-          [USERS.admin1.id, jg, recht]
+           VALUES ($1, $2, true, $4, $3)`,
+          [USERS[person].id, jg, recht, person === 'admin1']
         );
       }
       for (const u of Object.values(USERS)) invalidateUserCache(u.id);
     }
 
-    const auth = { Authorization: `Bearer ${generateToken('admin1')}` };
+    let person = 'admin1';
+    const auth = () => ({ Authorization: `Bearer ${generateToken(person)}` });
     const req = { user: null };
     async function reqUser() {
       // Derselbe req.user wie in den Routen (rbac.js), ueber /api/auth/me waere
       // es dieselbe Abfrage -- hier direkt aus der Middleware.
       const { verifyTokenRBAC } = require('../../middleware/rbac');
-      const fake = { headers: { authorization: auth.Authorization }, get: () => undefined, header: () => undefined };
+      const fake = { headers: { authorization: auth().Authorization }, get: () => undefined, header: () => undefined };
       await new Promise((resolve, reject) => {
         verifyTokenRBAC(db)(fake, { status: () => ({ json: (b) => reject(new Error(JSON.stringify(b))) }) }, resolve);
       });
       req.user = fake.user;
       return req;
     }
-    const symbol = async () => (await appIconSummenAllerGemeinden(db, [USERS.admin1.id])).get(USERS.admin1.id).jeOrganisation.get(ORG1);
-    const zaehler = async () => (await request(app).get('/api/notifications/badge-counts').set(auth)).body;
+    const symbol = async () => (await appIconSummenAllerGemeinden(db, [USERS[person].id])).get(USERS[person].id).jeOrganisation.get(ORG1);
+    const zaehler = async () => (await request(app).get('/api/notifications/badge-counts').set(auth())).body;
+    beforeEach(() => { person = 'admin1'; });
 
     for (const [lage, zuweisungen] of LAGEN) {
       for (const teamer of [false, true]) {
@@ -127,7 +133,7 @@ describe('Waechter: eine Regel-Stelle je Vorgang', () => {
              VALUES ($1, $2, '2026-06-01', 'pending', $3) RETURNING id`,
             [teamer ? USERS.teamer1.id : USERS.konfi1.id, activityId, ORG1]);
 
-          const liste = (await request(app).get('/api/admin/activities/requests?status=pending').set(auth)).body;
+          const liste = (await request(app).get('/api/admin/activities/requests?status=pending').set(auth())).body;
           const feld = (liste.find((a) => a.id === id) || {}).darf_entscheiden === true;
           const zahl = (await zaehler()).pendingRequests === 1;
           const amSymbol = (await symbol()) === 1;
@@ -148,7 +154,7 @@ describe('Waechter: eine Regel-Stelle je Vorgang', () => {
             `INSERT INTO event_bookings (user_id, event_id, status, organization_id) VALUES ($1, 501, 'confirmed', $2)`,
             [USERS.konfi1.id, ORG1]);
 
-          const feld = (await request(app).get('/api/events/501').set(auth)).body.darf_verbuchen === true;
+          const feld = (await request(app).get('/api/events/501').set(auth())).body.darf_verbuchen === true;
           const zahl = (await zaehler()).pendingEvents === 1;
           const amSymbol = (await symbol()) === 1;
           const erinnerung = (await zaehleWartendeTermineJeLeitung(db, [ORG1])).some((z) => z.user_id === USERS.admin1.id);
@@ -157,9 +163,10 @@ describe('Waechter: eine Regel-Stelle je Vorgang', () => {
         });
       }
 
-      for (const nurTeam of [false, true]) {
-        it(`Challenge ${nurTeam ? '"Nur das Team"' : 'in J1'} -- ${lage}`, async () => {
-          await aufbauen(zuweisungen, 'darf_challenges_freigeben');
+      for (const [wer, nurTeam] of [['admin1', false], ['admin1', true], ['teamer1', false], ['teamer1', true]]) {
+        it(`Challenge ${nurTeam ? '"Nur das Team"' : 'in J1'} -- ${wer === 'teamer1' ? 'Teamer:in' : 'Admin'} ${lage}`, async () => {
+          person = wer;
+          await aufbauen(zuweisungen, 'darf_challenges_freigeben', wer);
           const { rows: [c] } = await db.query(
             `INSERT INTO challenges (organization_id, title, description, audience, visibility, moderated,
                allowed_media, badge_name, created_by, starts_at, ends_at, is_draft)
@@ -170,18 +177,18 @@ describe('Waechter: eine Regel-Stelle je Vorgang', () => {
           await db.query(
             `INSERT INTO challenge_submissions (challenge_id, user_id, organization_id, media_type, text_content, moderation_status)
              VALUES ($1, $2, $3, 'text', 'B', 'pending')`,
-            [c.id, nurTeam ? USERS.teamer1.id : USERS.konfi1.id, ORG1]);
+            [c.id, nurTeam ? (wer === 'teamer1' ? USERS.admin1.id : USERS.teamer1.id) : USERS.konfi1.id, ORG1]);
           // Geoeffnet: Die Challenge selbst zaehlt dann nicht mehr als
           // Neuigkeit ("nie geoeffnet"), nur der wartende Beitrag bleibt.
           await db.query(
             `INSERT INTO challenge_read_status (challenge_id, user_id, user_type, last_read_at)
-             VALUES ($1, $2, 'admin', NOW() + interval '1 minute')`, [c.id, USERS.admin1.id]);
+             VALUES ($1, $2, $3, NOW() + interval '1 minute')`, [c.id, USERS[wer].id, wer === 'teamer1' ? 'teamer' : 'admin']);
 
-          const detail = await request(app).get(`/api/challenges/admin/${c.id}`).set(auth);
+          const detail = await request(app).get(`/api/challenges/admin/${c.id}`).set(auth());
           const feld = detail.body.darf_freigeben === true;
           const zahl = (await zaehler()).pendingChallenges === 1;
           const amSymbol = (await symbol()) === 1;
-          const empfaenger = (await ladeLeitungZumChallengeBeitrag(db, c.id, { moderiert: true })).includes(USERS.admin1.id);
+          const empfaenger = (await ladeLeitungZumChallengeBeitrag(db, c.id, { moderiert: true })).includes(USERS[wer].id);
           const pruefung = await darfChallengeFreigeben(db, await reqUser(), c.id);
           expect({ zahl, amSymbol, empfaenger, pruefung }).toEqual({ zahl: feld, amSymbol: feld, empfaenger: feld, pruefung: feld });
         });

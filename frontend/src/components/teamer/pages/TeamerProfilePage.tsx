@@ -47,6 +47,7 @@ import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
+import KennzahlenEintrag from '../../shared/KennzahlenAuswahl';
 import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
 import ChangeRoleTitleModal from '../../admin/modals/ChangeRoleTitleModal';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
@@ -640,6 +641,9 @@ const TeamerProfilePage: React.FC = () => {
                 <AbsturzberichteSchalter variante="teamer" />
                 <EinladungenKarte variante="teamer" />
                 <PushAuswahlEintrag variante="teamer" presentingRef={pageRef} />
+                {/* Kennzahl "Challenge-Beiträge" (09.10.2026): rote Zahl und
+                    Push für Freigaben an oder aus, wie bei der Leitung. */}
+                <KennzahlenEintrag presentingRef={pageRef} />
 
               </div>
             </IonCardContent>

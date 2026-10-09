@@ -180,6 +180,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Gemeindeleitung; Kennzahlen-Wahl je Leitung und Gemeinde
   ([planung/darf-freigeben.md](planung/darf-freigeben.md), Branch
   `feat/darf-freigeben`).
+- [x] 09.10.2026 — „Darf freigeben" für Teamer:innen: das Recht
+  „Challenge-Beiträge freigeben" je Jahrgang wie bei Admins, dazu ihre
+  Kennzahlen-Wahl für Challenge-Beiträge; die drei offenen Festlegungen der
+  Umsetzung bestätigt ([planung/darf-freigeben.md](planung/darf-freigeben.md#teamerinnen-09102026),
+  Branch `feat/teamer-rechte`).
 
 
 ## Offen

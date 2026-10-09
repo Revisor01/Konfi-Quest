@@ -7,7 +7,9 @@
 // Geprüft wird: das Fenster lädt (GET) und speichert je Umschalten (PUT) mit
 // genau dem einen Bereich, zeigt den Stand der Antwort, holt danach die Zähler
 // neu, meldet Fehler über den Fehlerweg der App -- und der Eintrag unter
-// "Mehr" steht nur für Leitung und Gemeindeleitung, nicht für Teamer:innen.
+// "Mehr" steht für Leitung und Gemeindeleitung. Teamer:innen haben seit
+// 09.10.2026 die Wahl nur für "Challenge-Beiträge" (Mehr › Konto im
+// Teamer-Profil); Konfis keine.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -42,8 +44,10 @@ vi.mock('../../components/shared/PushAuswahl', () => ({ default: () => null }));
 vi.mock('../../components/shared/NeuerungenBanner', () => ({ default: () => null }));
 vi.mock('../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
 
-import { KennzahlenModal } from '../../components/shared/KennzahlenAuswahl';
+import KennzahlenEintrag, { KennzahlenModal } from '../../components/shared/KennzahlenAuswahl';
 import AdminSettingsPage from '../../components/admin/pages/AdminSettingsPage';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
 const ERKLAERUNG = 'Aus heißt: keine rote Zahl am Reiter, nichts davon in der Zahl am App-Symbol und kein Push dafür. Gilt für diese Gemeinde.';
 const schalter = (name: string) => screen.getByRole('checkbox', { name }) as HTMLInputElement;
@@ -113,11 +117,45 @@ describe('Der Eintrag unter "Mehr" (App)', () => {
     expect(h.zeigeModal).toHaveBeenCalledTimes(1);
   });
 
-  it('verboten: Teamer:innen haben diese Zahlen nicht -- kein Eintrag, keine Anfrage (der Server sagte 403)', async () => {
-    h.user = { id: 4, type: 'admin', role_name: 'teamer' };
+  it('verboten: Konfis haben diese Zahlen nicht -- kein Eintrag, keine Anfrage (der Server sagt 403)', async () => {
+    h.user = { id: 4, type: 'konfi', role_name: 'konfi' };
     render(<AdminSettingsPage />);
     await act(async () => { await Promise.resolve(); });
     expect(eintrag()).toBeNull();
     expect(h.apiGet).not.toHaveBeenCalledWith('/notifications/kennzahlen');
+  });
+});
+
+describe('Teamer:innen: nur der Bereich "Challenge-Beiträge"', () => {
+  beforeEach(() => {
+    h.user = { id: 4, type: 'teamer', role_name: 'teamer' };
+    h.apiGet.mockImplementation(async (url: string) => {
+      if (url === '/notifications/kennzahlen') return { data: { antraege: true, verbuchen: true, challenges: true } };
+      throw new Error(`nicht vorgesehen: ${url}`);
+    });
+  });
+
+  it('das Fenster zeigt genau einen Schalter; Umschalten schickt nur challenges', async () => {
+    h.apiPut.mockResolvedValue({ data: { antraege: true, verbuchen: true, challenges: false } });
+    render(<KennzahlenModal onClose={vi.fn()} />);
+    await screen.findByRole('checkbox', { name: 'Challenge-Beiträge' });
+    expect(screen.queryByRole('checkbox', { name: 'Anträge' })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'Events verbuchen' })).toBeNull();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    await act(async () => { fireEvent.click(schalter('Challenge-Beiträge')); });
+    expect(h.apiPut).toHaveBeenCalledWith('/notifications/kennzahlen', { challenges: false });
+    expect(schalter('Challenge-Beiträge').checked).toBe(false);
+    expect(h.refreshAllCounts).toHaveBeenCalledTimes(1);
+  });
+
+  it('der Eintrag nennt den Stand des einen Bereichs', async () => {
+    render(<KennzahlenEintrag />);
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Kennzahlen/ })).toHaveTextContent('KennzahlenChallenge-Beiträge mit roter Zahl'));
+  });
+
+  it('der Eintrag steht im Teamer-Profil der App und der Web-Fassung', () => {
+    const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
+    expect(lies('src/components/teamer/pages/TeamerProfilePage.tsx')).toContain('<KennzahlenEintrag presentingRef={pageRef} />');
+    expect(lies('src/components/teamer/web/WebTeamerProfil.tsx')).toContain('<WebKennzahlenZeile presentingElement={props.presentingElement} />');
   });
 });
