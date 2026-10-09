@@ -5010,7 +5010,7 @@ paths:
         Ebene die Eintraege mit Wahlen und Anzahl, ungefiltert). Namen von
         Gemeinden, Kirchenkreisen und Landeskirchen, nie von Personen. Der
         Eintrag "Gemeinde wird gespeichert, aber nicht ausgegeben" ist damit
-        hinfaellig (09.10.2026).
+        hinfaellig (09.10.2026). Interne Gemeinden (organizations.intern) zaehlen nirgends mit -- weder in den Listen noch in auswahl --, wie in der Support-Ansicht.
       parameters:
         - name: ebene
           in: query

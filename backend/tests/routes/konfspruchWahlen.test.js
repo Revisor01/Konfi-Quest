@@ -310,6 +310,26 @@ describe('Konfisprueche: personenunabhaengige Statistik', () => {
       expect(res.body.auswahl.kirchenkreise).toEqual([]);
     });
 
+    it('interne Gemeinde zaehlt nirgends, die nicht-interne schon (wie die Support-Ansicht)', async () => {
+      await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [dithmarschen, ORGS.andereGemeinde.id]);
+      await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
+      await spruchSetzen('konfi3', 'konfi', { konfspruch_freitext: 'Nur intern', konfspruch_freitext_referenz: 'Ps 2,1' });
+      await db.query('UPDATE organizations SET intern = true WHERE id = $1', [ORGS.andereGemeinde.id]);
+
+      const alle = await abrufen({});
+      expect(alle.body.gesamt).toEqual({ wahlen: 1, vorschlag: 1, eigen: 0, aus_bestand: 0 });
+      expect(alle.body.eigene).toEqual([]);
+      expect(alle.body.monate.map((m) => m.anzahl)).toEqual([1]);
+      expect(alle.body.auswahl).toEqual({
+        landeskirchen: [{ id: nordkirche, name: 'Nordkirche', anzahl: 1 }],
+        kirchenkreise: [{ id: dithmarschen, name: 'Dithmarschen', landeskirche: 'Nordkirche', anzahl: 1 }],
+        gemeinden: [{ id: ORGS.testGemeinde.id, name: 'Test-Gemeinde St. Martin', kirchenkreis: 'Dithmarschen', anzahl: 1 }],
+      });
+      expect(await anzahl({ ebene: 'kirchenkreis', id: dithmarschen })).toBe(1);
+      expect(await anzahl({ ebene: 'gemeinde', id: ORGS.andereGemeinde.id })).toBe(0);
+      expect(await anzahl({ ebene: 'gemeinde', id: ORGS.testGemeinde.id })).toBe(1);
+    });
+
     it('unbekannte Kennung: Nullen und leere Listen', async () => {
       await spruchSetzen('konfi1', 'konfi', { konfspruch_id: josua, translation: 'bigs' });
       const res = await abrufen({ ebene: 'gemeinde', id: 999999 });
