@@ -103,8 +103,10 @@ Antragsliste und im Event, nur von der Person aus:
   denen die Person angemeldet ist oder auf der Warteliste steht, mit Datum
   und Stand — ohne Knopf.
 
-Danach folgen wie gewohnt die verbuchten Einträge; die Zahl in der Überschrift
-zählt nur sie. Nach dem Entscheiden oder Eintragen verschwindet der Eintrag
+Ein Tipp auf ein Event oben öffnet das Event selbst, dort gibt es auch
+Abmeldung, Notiz und alle anderen Teilnehmenden; die Knöpfe **Anwesend** und
+**Nicht anwesend** öffnen es nicht. Danach folgen wie gewohnt die verbuchten
+Einträge; die Zahl in der Überschrift zählt nur sie. Nach dem Entscheiden oder Eintragen verschwindet der Eintrag
 oben, und die Zahlen an den Reitern gehen mit zurück.
 
 Die Knöpfe erscheinen nur, wo du das auch an der anderen Stelle dürftest: bei
@@ -186,8 +188,8 @@ ihrem Stand — **Anwesend** oder **Abwesend**, sobald die Anwesenheit verbucht
 ist, vorher **Gebucht**, dazu **Warteliste** und **Abgemeldet**, wie in der
 Teilnehmerliste des Events. Über den Tabellen steht, was offen ist: über den
 Aktivitäten die gemeldeten mit **Prüfen**, über den Events die zu verbuchenden
-mit **Anwesend** und **Nicht anwesend** und die anstehenden mit ihrem Stand —
-wie in
+mit **Anwesend** und **Nicht anwesend** und die anstehenden mit ihrem Stand;
+der Name eines Events führt in das Event — wie in
 [Offenes einer Person direkt bestätigen](#offenes-einer-person-direkt-bestaetigen).
 Alle drei Tabellen haben dieselben Spalten in
 derselben Breite; wird das Fenster schmal, fällt die Spalte, wer eingetragen hat, in allen

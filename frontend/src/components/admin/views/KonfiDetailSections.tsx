@@ -165,9 +165,11 @@ interface TerminZeilenProps {
   onAnwesenheit: (termin: PersonTermin, status: AnwesenheitWahl) => void;
   /** Abstand nach der letzten Zeile (wenn darunter weitere Eintraege folgen). */
   mitAbstandUnten: boolean;
+  /** Antippen der Zeile: in den Termin (Simon, 09.10.2026). */
+  onOeffnen?: (termin: PersonTermin) => void;
 }
 
-export const TerminZeilen: React.FC<TerminZeilenProps> = ({ termine, kannVerbuchen, isOnline, onAnwesenheit, mitAbstandUnten }) => (
+export const TerminZeilen: React.FC<TerminZeilenProps> = ({ termine, kannVerbuchen, isOnline, onAnwesenheit, mitAbstandUnten, onOeffnen }) => (
   <div style={{ display: 'flex', flexDirection: 'column' }}>
     {termine.map((t, index) => {
       const offen = t.art === 'verbuchen';
@@ -192,7 +194,18 @@ export const TerminZeilen: React.FC<TerminZeilenProps> = ({ termine, kannVerbuch
               <IonIcon icon={offen ? ICON_UHRZEIT_GEFUELLT : ICON_TERMIN_GEFUELLT} style={{ color: 'white', fontSize: 'var(--app-text-sekundaer)', display: 'block' }} />
             </div>
           </div>
-          <div className="app-list-item__row">
+          {/* Antippbar ist die Zeile mit Name und Datum, nicht die ganze
+              Karte: Die Knoepfe darunter sind eigene Knoepfe und liegen
+              deshalb ausserhalb (kein Knopf im Knopf). */}
+          <div
+            className="app-list-item__row"
+            role={onOeffnen ? 'button' : undefined}
+            tabIndex={onOeffnen ? 0 : undefined}
+            aria-label={onOeffnen ? `${t.event_name} öffnen` : undefined}
+            onClick={onOeffnen ? () => onOeffnen(t) : undefined}
+            onKeyDown={onOeffnen ? tastaturKlick : undefined}
+            style={onOeffnen ? { cursor: 'pointer' } : undefined}
+          >
             <div className="app-list-item__main">
               <div className={`app-icon-circle app-icon-circle--${farbe}`}>
                 <IonIcon icon={offen ? ICON_UHRZEIT_GEFUELLT : ICON_TERMIN_GEFUELLT} />
@@ -657,6 +670,8 @@ interface EventPointsSectionProps {
   kannVerbuchen?: boolean;
   isOnline?: boolean;
   onAnwesenheit?: (termin: PersonTermin, status: AnwesenheitWahl) => void;
+  /** Antippen eines Termins oben: in den Termin. */
+  onTerminOeffnen?: (termin: PersonTermin) => void;
 }
 
 const nichtsTun = () => {};
@@ -667,7 +682,8 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
   termine = [],
   kannVerbuchen = false,
   isOnline = true,
-  onAnwesenheit = nichtsTun
+  onAnwesenheit = nichtsTun,
+  onTerminOeffnen
 }) => (
   <IonList className="app-section-inset" inset={true}>
     <IonListHeader>
@@ -679,7 +695,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
     <IonCard className="app-card">
       <IonCardContent style={{ padding: eventPoints.length === 0 && termine.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
         {termine.length > 0 && (
-          <TerminZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} mitAbstandUnten={eventPoints.length > 0} />
+          <TerminZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} mitAbstandUnten={eventPoints.length > 0} onOeffnen={onTerminOeffnen} />
         )}
         {eventPoints.length === 0 ? (
           termine.length === 0 && (
@@ -773,6 +789,8 @@ interface TeamerEventsSectionProps {
   kannVerbuchen?: boolean;
   isOnline?: boolean;
   onAnwesenheit?: (termin: PersonTermin, status: AnwesenheitWahl) => void;
+  /** Antippen eines Termins oben: in den Termin. */
+  onTerminOeffnen?: (termin: PersonTermin) => void;
 }
 
 export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
@@ -781,7 +799,8 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
   termine = [],
   kannVerbuchen = false,
   isOnline = true,
-  onAnwesenheit = nichtsTun
+  onAnwesenheit = nichtsTun,
+  onTerminOeffnen
 }) => {
   // Was oben steht, steht darunter nicht noch einmal. Der Zaehler im Kopf
   // bleibt wie bisher bei allen Events.
@@ -798,7 +817,7 @@ export const TeamerEventsSection = React.memo<TeamerEventsSectionProps>(({
     <IonCard className="app-card">
       <IonCardContent style={{ padding: teamerEvents.length === 0 && termine.length === 0 ? 'var(--app-abstand-basis)' : 'var(--app-abstand-mittel)' }}>
         {termine.length > 0 && (
-          <TerminZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} mitAbstandUnten={teamerEvents.length > 0} />
+          <TerminZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} mitAbstandUnten={teamerEvents.length > 0} onOeffnen={onTerminOeffnen} />
         )}
         {teamerEvents.length === 0 ? (
           termine.length === 0 && <EmptyState

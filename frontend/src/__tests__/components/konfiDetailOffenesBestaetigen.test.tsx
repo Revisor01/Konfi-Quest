@@ -8,7 +8,7 @@
 // Geprueft wird Verhalten in der App-Ansicht: was oben steht, welches Fenster
 // bzw. welche Route ein Tipp ausloest, und dass Knoepfe nur erscheinen, wo der
 // Server sie annimmt.
-import { zustand, api, setError, modale, zuletztGeoeffnet, konfi, zuruecksetzen, oeffne, knopf, KONFI_ID } from './gerueste/leitungKonfiDetail';
+import { zustand, api, setError, modale, zuletztGeoeffnet, konfi, zuruecksetzen, oeffne, knopf, KONFI_ID, routerPush } from './gerueste/leitungKonfiDetail';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { screen, fireEvent, act, cleanup } from '@testing-library/react';
 
@@ -87,7 +87,7 @@ describe('Events: offene Anwesenheit und anstehende Termine oben', () => {
     expect(screen.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
     expect(screen.getByText('Warteliste')).toBeInTheDocument();
     // Anstehende Termine haben keinen Knopf.
-    expect(knopf(/Laternenumzug/)).toBeNull();
+    expect(knopf(/Laternenumzug: /)).toBeNull();
   });
 
   it('"Anwesend" ruft dieselbe Route wie der Termin und laedt neu', async () => {
@@ -112,7 +112,7 @@ describe('Events: offene Anwesenheit und anstehende Termine oben', () => {
     zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, konfi({ termine: [{ ...OFFEN, darf_verbuchen: false }] }));
     await oeffne();
     expect(screen.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
-    expect(knopf(/Konfisamstag/)).toBeNull();
+    expect(knopf(/Konfisamstag: /)).toBeNull();
   });
 
   it('als Teamer:in angemeldet: keine Knoepfe, auch wenn der Termin es hergaebe', async () => {
@@ -120,7 +120,7 @@ describe('Events: offene Anwesenheit und anstehende Termine oben', () => {
     zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, konfi({ termine: [OFFEN] }));
     await oeffne();
     expect(screen.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
-    expect(knopf(/Konfisamstag/)).toBeNull();
+    expect(knopf(/Konfisamstag: /)).toBeNull();
   });
 
   it('ein Fehler der Route wird gemeldet', async () => {
@@ -154,5 +154,27 @@ describe('Events: offene Anwesenheit und anstehende Termine oben', () => {
     expect(document.querySelector('[data-termin-art]')).toBeNull();
     expect(screen.getByText('Keine Event-Punkte')).toBeInTheDocument();
     expect(modale.geoeffnet).toHaveLength(0);
+  });
+});
+
+describe('Events: Antippen fuehrt in den Termin (Simon, 09.10.2026)', () => {
+  it('zu verbuchende und anstehende Zeile oeffnen den Termin der Leitung', async () => {
+    zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, konfi({ termine: [OFFEN, BALD] }));
+    await oeffne();
+    fireEvent.click(screen.getByRole('button', { name: 'Konfisamstag öffnen' }));
+    expect(routerPush).toHaveBeenLastCalledWith('/admin/events/41', 'forward');
+    fireEvent.click(screen.getByRole('button', { name: 'Laternenumzug öffnen' }));
+    expect(routerPush).toHaveBeenLastCalledWith('/admin/events/42', 'forward');
+    expect(routerPush).toHaveBeenCalledTimes(2);
+  });
+
+  it('"Anwesend" und "Nicht anwesend" oeffnen den Termin nicht -- weder per Klick noch per Tastatur', async () => {
+    zustand.antworten.set(`/admin/konfis/${KONFI_ID}`, konfi({ termine: [OFFEN] }));
+    await oeffne();
+    await act(async () => { fireEvent.click(knopf('Konfisamstag: anwesend')!); });
+    await act(async () => { fireEvent.click(knopf('Konfisamstag: nicht anwesend')!); });
+    fireEvent.keyDown(knopf('Konfisamstag: anwesend')!, { key: 'Enter' });
+    expect(api.put).toHaveBeenCalledTimes(2);
+    expect(routerPush).not.toHaveBeenCalled();
   });
 });

@@ -21,7 +21,7 @@ import {
   ICON_TERMIN_GEFUELLT,
   ICON_UHRZEIT_GEFUELLT,
 } from '../shared/icons';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt, titelDekoration, eventEnde, kategorienText, zeigtPunkteart, punkteartText } from '../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istBegonnen, istAbgesagt, titelDekoration, eventEnde, kategorienText, zeigtPunkteart, punkteartText } from '../shared';
 import { getStatusIcon } from '../shared/StatusBadge';
 import { Event } from '../../types/event';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
@@ -267,14 +267,15 @@ const EventsView: React.FC<EventsViewProps> = ({
               // "Geschlossen". Jetzt entscheidet beides dieselbe Frage:
               // Gibt es hier ueberhaupt Buchungen, und ist davon etwas offen?
               const hatBuchungen = (event.registered_count || 0) > 0 || (event.teamer_count || 0) > 0;
-              const hasUnprocessedBookings = isPastEvent && hatBuchungen && !!event.pending_bookings_count && event.pending_bookings_count > 0;
+              // Ab BEGINN zu verbuchen, wie der Reiter (eventFormatting.ts, istBegonnen).
+              const hasUnprocessedBookings = istBegonnen(event) && hatBuchungen && !!event.pending_bookings_count && event.pending_bookings_count > 0;
               const isFullyProcessed = isPastEvent && hatBuchungen && (!event.pending_bookings_count || event.pending_bookings_count === 0);
               const shouldGrayOut = isPastEvent && !hasUnprocessedBookings;
 
               // Farbe basierend auf Status - Konfirmation in Lila!
               const statusColor = (() => {
                 if (isCancelled) return 'var(--app-color-danger)';
-                if (event.mandatory && isPastEvent && hasUnprocessedBookings) return 'var(--app-color-info)';
+                if (event.mandatory && hasUnprocessedBookings) return 'var(--app-color-info)';
                 if (event.mandatory && isPastEvent) return 'var(--app-color-neutral)';
                 // KEIN pauschales Rot für Pflicht-Events: Pflicht ist ein eigenes
                 // Badge. Die Farbe richtet sich nach dem Anmeldestatus (offen=gruen,

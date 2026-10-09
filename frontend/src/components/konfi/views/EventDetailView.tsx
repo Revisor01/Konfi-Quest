@@ -54,7 +54,7 @@ import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import { SectionHeader, AbsageBlock, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt } from '../../shared';
+import { SectionHeader, AbsageBlock, formatEventTime as formatTime, zeitraumText, istVergangen, istBegonnen, anwesenheitAusstehend, istAbgesagt } from '../../shared';
 import UnregisterModal from '../modals/UnregisterModal';
 import QRScannerModal from '../modals/QRScannerModal';
 import { Event } from '../../../types/event';
@@ -537,7 +537,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const isPastEvent = istVergangen(eventData);
     const isKonfi = isKonfirmationEvent(eventData);
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
-    const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
+    // Ab BEGINN (shared/eventFormatting.ts, anwesenheitAusstehend).
+    const isBegonnen = istBegonnen(eventData);
+    const isAusstehend = anwesenheitAusstehend(eventData);
 
     if (istAbgesagt(eventData)) return danger;
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return events;
@@ -545,8 +547,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // 26.09.2026 kannte die Kette den Wert nicht und fiel auf "Offen".
     if (eventData.booking_status === 'excused' && !isPastEvent) return events;
     if (isKonfi && !isPastEvent) return info; // Konfirmation = blau (analog Admin)
-    if (isPastEvent && eventData.attendance_status === 'present') return success;
-    if (isPastEvent && eventData.attendance_status === 'absent') return danger;
+    if (isBegonnen && eventData.attendance_status === 'present') return success;
+    if (isBegonnen && eventData.attendance_status === 'absent') return danger;
     if (isAusstehend) return bonus;
     if (isOnWaitlist) return bonus;
     if (eventData.is_registered && !isPastEvent) return info;
@@ -564,14 +566,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const isPastEvent = istVergangen(eventData);
     const isKonfi = isKonfirmationEvent(eventData);
     const isOnWaitlist = eventData.booking_status === 'waitlist' || eventData.booking_status === 'pending';
-    const isAusstehend = isPastEvent && eventData.is_registered && !isOnWaitlist && !eventData.attendance_status;
+    // Ab BEGINN (shared/eventFormatting.ts, anwesenheitAusstehend).
+    const isBegonnen = istBegonnen(eventData);
+    const isAusstehend = anwesenheitAusstehend(eventData);
 
     if (istAbgesagt(eventData)) return 'Abgesagt';
     if (eventData.is_opted_out || eventData.booking_status === 'opted_out') return 'Abgemeldet';
     if (eventData.booking_status === 'excused' && !isPastEvent) return 'Abgemeldet';
     if (isKonfi && !isPastEvent) return eventData.is_registered ? 'Angemeldet' : 'Konfirmation';
-    if (isPastEvent && eventData.attendance_status === 'present') return 'Verbucht';
-    if (isPastEvent && eventData.attendance_status === 'absent') return 'Verpasst';
+    if (isBegonnen && eventData.attendance_status === 'present') return 'Verbucht';
+    if (isBegonnen && eventData.attendance_status === 'absent') return 'Verpasst';
     if (isAusstehend) return 'Ausstehend';
     if (isOnWaitlist) return `Warteliste (${eventData.waitlist_position || '?'})`;
     if (eventData.is_registered && !isPastEvent) return 'Angemeldet';

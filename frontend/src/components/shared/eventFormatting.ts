@@ -45,6 +45,33 @@ export const istVergangen = (
   jetzt: Date = new Date()
 ): boolean => eventEnde(event) < jetzt;
 
+// Hat der Termin begonnen? Der START, nicht das Ende.
+//
+// AB BEGINN gilt eine Anwesenheit als offen (Simon, 09.10.2026: "Zu
+// verbuchen / Ausstehend gilt ab Beginn fuer alle Ansichten"). Der Reiter
+// "Verbuchen", seine rote Zahl (backend utils/terminLeitungSicht.js,
+// terminWartetAufVerbuchungSql) und die Detailansicht einer Person rechneten
+// schon so; die Konfi- und Team-Ansichten zeigten "Ausstehend" erst nach dem
+// ENDE -- waehrend des Konfisamstags stand dort noch "Dabei", obwohl die
+// Leitung schon verbuchen sollte. Zu- und Absagen des Teams sperrt der
+// Server ohnehin ab Beginn (bookingUtils.js, setzeTeamerZusage).
+export const istBegonnen = (
+  event: { event_date: string },
+  jetzt: Date = new Date()
+): boolean => new Date(event.event_date) < jetzt;
+
+// Steht die Anwesenheit der eigenen Buchung aus? Begonnen, angemeldet (nicht
+// auf der Warteliste), noch kein Anwesenheits-Stand. EINE Regel fuer Konfi-
+// und Team-Ansichten in App und Web (utils/termineWeb.ts) -- Abgesagtes
+// pruefen die Aufrufer vorher selbst.
+export const anwesenheitAusstehend = (
+  event: { event_date: string; is_registered?: boolean; attendance_status?: string | null; booking_status?: string | null },
+  jetzt: Date = new Date()
+): boolean => istBegonnen(event, jetzt)
+  && !!event.is_registered
+  && event.booking_status !== 'waitlist' && event.booking_status !== 'pending'
+  && !event.attendance_status;
+
 // Der Kalendertag eines Datums als 'JJJJ-MM-TT', in der Zone des Geraets.
 //
 // NICHT `toISOString().split('T')[0]` benutzen: Das liefert IMMER den
@@ -304,7 +331,7 @@ export const aktuelleTermine = <T extends ReiterTermin>(offen: T[], abgesagt: T[
 // den Altbestand aendert sich also nichts.
 export const zuVerbuchendeTermine = <T extends ReiterTermin>(offen: T[]): T[] =>
   offen
-    .filter(e => new Date(e.event_date) < new Date() && hatOffeneBuchungen(e) && e.registration_status !== 'cancelled')
+    .filter(e => istBegonnen(e) && hatOffeneBuchungen(e) && e.registration_status !== 'cancelled')
     .sort(nachDatumAbsteigend);
 
 // Reiter "Vergangen": beendete Termine ohne offene Buchungen (fertig

@@ -40,7 +40,7 @@ import { absageZuruecknehmenFragen } from '../../../utils/absageZuruecknehmen';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
 import { detailMerken, detailVergessen, gemerktesDetail } from '../../../services/detailSpeicher';
 import api from '../../../services/api';
-import { SectionHeader, AbsageBlock, EmptyState, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt } from '../../shared';
+import { SectionHeader, AbsageBlock, EmptyState, formatEventDateLong as formatDate, formatEventTime as formatTime, istVergangen, istBegonnen, istAbgesagt } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import EventModal from '../modals/EventModal';
 import ParticipantManagementModal from '../modals/ParticipantManagementModal';
@@ -764,7 +764,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // bis zum 15.09.2026 nicht "Abgesagt", obwohl der rote Kasten darunter
     // schon dastand.
     const isCancelledStatus = istAbgesagt(eventData);
-    const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
+    // Ab BEGINN zu verbuchen, wie der Reiter (eventFormatting.ts, istBegonnen).
+    const hasUnprocessedBookings = istBegonnen(eventData) && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
     if (isCancelledStatus) return danger;
@@ -797,7 +798,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // bis zum 15.09.2026 nicht "Abgesagt", obwohl der rote Kasten darunter
     // schon dastand.
     const isCancelledStatus = istAbgesagt(eventData);
-    const hasUnprocessedBookings = isPastEvent && eventData.registered_count > 0 &&
+    // Ab BEGINN zu verbuchen, wie der Reiter (eventFormatting.ts, istBegonnen).
+    const hasUnprocessedBookings = istBegonnen(eventData) && eventData.registered_count > 0 &&
       participants.some(p => p.status === 'confirmed' && !p.attendance_status);
 
     if (isCancelledStatus) return 'Abgesagt';

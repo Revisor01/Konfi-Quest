@@ -23,7 +23,8 @@ import {
   IonCard,
   IonCardContent,
   useIonModal,
-  useIonAlert
+  useIonAlert,
+  useIonRouter
 } from '@ionic/react';
 import api from '../../../services/api';
 import NachweisFoto from '../../shared/NachweisFoto';
@@ -120,6 +121,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const { setSuccess, setError, isOnline, user } = useApp();
   const { triggerRefresh } = useLiveUpdate();
   const [presentAlert] = useIonAlert();
+  const router = useIonRouter();
   // Im Browser ab 992 px eine zweispaltige Seite (web/leitung/WebKonfiDetail.tsx);
   // Daten, Fenster und Rueckfragen dieser Ansicht bleiben dieselben.
   const breit = useBreitesLayout();
@@ -823,6 +825,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     }
   };
 
+  // Antippen eines Termins oben in der Eventliste: in den Termin, auf dem
+  // Weg, den der Termin selbst fuer Serien-Termine nimmt (EventDetailView,
+  // router.push '/admin/events/:id').
+  const handleTerminOeffnen = (termin: PersonTermin) => {
+    router.push(`/admin/events/${termin.event_id}`, 'forward');
+  };
+
   const handleAssignCertificate = () => {
     if (offlineBlockiert(isOnline, setError)) return;
 
@@ -1154,6 +1163,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             kannVerbuchen={kannVerbuchen}
             isOnline={isOnline}
             onAnwesenheit={handleAnwesenheit}
+            onTerminOeffnen={handleTerminOeffnen}
           />
         )}
 
@@ -1167,6 +1177,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
             kannVerbuchen={kannVerbuchen}
             isOnline={isOnline}
             onAnwesenheit={handleAnwesenheit}
+            onTerminOeffnen={handleTerminOeffnen}
           />
         )}
 

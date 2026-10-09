@@ -66,7 +66,7 @@ import { detailLaden } from '../../../services/detailSpeicher';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import { removeDeliveredForEvents } from '../../../services/notifications';
-import { SectionHeader, ListSection, EmptyState, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EmptyState, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, zeitraumText, istVergangen, istBegonnen, anwesenheitAusstehend, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import QRScannerModal from '../../konfi/modals/QRScannerModal';
@@ -801,7 +801,9 @@ const TeamerEventsPage: React.FC = () => {
     if (istAbgesagt(event)) {
       statusColor = C.danger;
       statusText = 'Abgesagt';
-    } else if (isPastEvent && event.is_registered) {
+    } else if (istBegonnen(event) && event.is_registered) {
+      // Ab BEGINN der Anwesenheits-Stand (Simon, 09.10.2026;
+      // shared/eventFormatting.ts, istBegonnen).
       if (event.attendance_status === 'present') {
         statusColor = C.success;
         statusText = 'Anwesend';
@@ -911,9 +913,9 @@ const TeamerEventsPage: React.FC = () => {
     // Event, zu dem sich der Teamer NICHT anmelden kann, wird NICHT gruen, sondern
     // neutral ("Nur Info"), damit keine Anmeldung suggeriert wird.
     if (istAbgesagt(event)) return danger;
-    if (isPastEvent && event.attendance_status === 'present') return success;
-    if (isPastEvent && event.attendance_status === 'absent') return danger;
-    if (isPastEvent && event.is_registered && !event.attendance_status) return bonus;
+    if (istBegonnen(event) && event.attendance_status === 'present') return success;
+    if (istBegonnen(event) && event.attendance_status === 'absent') return danger;
+    if (anwesenheitAusstehend(event)) return bonus;
     if (isOnWaitlist) return bonus;
     if (event.is_registered && !isPastEvent) return info; // angemeldet = blau
     if (isPastEvent) return past;
@@ -931,9 +933,9 @@ const TeamerEventsPage: React.FC = () => {
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
 
     if (istAbgesagt(event)) return 'Abgesagt';
-    if (isPastEvent && event.attendance_status === 'present') return 'Anwesend';
-    if (isPastEvent && event.attendance_status === 'absent') return 'Abwesend';
-    if (isPastEvent && event.is_registered && !event.attendance_status) return 'Ausstehend';
+    if (istBegonnen(event) && event.attendance_status === 'present') return 'Anwesend';
+    if (istBegonnen(event) && event.attendance_status === 'absent') return 'Abwesend';
+    if (anwesenheitAusstehend(event)) return 'Ausstehend';
     if (isOnWaitlist) return 'Warteliste';
     if (event.is_registered && !isPastEvent) return 'Dabei';
     if (isPastEvent) return 'Vergangen';
@@ -961,7 +963,10 @@ const TeamerEventsPage: React.FC = () => {
   // hideBackButton blendet den Zurück-Button im Split-View aus (Liste sichtbar).
   const renderDetail = (hideBackButton?: boolean) => {
     if (!selectedEvent) return null;
-    const isPast = istVergangen(selectedEvent);
+    // Ab BEGINN steht statt der Zusage-Knoepfe der Anwesenheits-Stand; der
+    // Server nimmt Zu- und Absagen ab Beginn ohnehin nicht mehr an
+    // (bookingUtils.js, setzeTeamerZusage).
+    const isPast = istBegonnen(selectedEvent);
     const isTeamerEvent = selectedEvent.teamer_needed || selectedEvent.teamer_only;
 
     return (

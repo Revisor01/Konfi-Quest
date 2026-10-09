@@ -125,7 +125,9 @@ Bei Events, für die Teamer:innen gesucht werden, antwortest du unter **„Bist
 du dabei?"** mit **„Dabei"** oder **„Nicht dabei"**. Solange du nichts gewählt
 hast, stehen beide Knöpfe da; danach nur noch der Weg zurück — nach einer
 Zusage **„Nicht mehr dabei"**, nach einer Absage **„Doch dabei"**. Ändern
-lässt es sich jederzeit. Es gibt ein eigenes
+lässt es sich, bis das Event beginnt. Ab Beginn steht statt der Knöpfe dein
+Stand: **Anwesend**, **Abwesend** oder **Anwesenheit ausstehend**, solange
+die Leitung noch nicht verbucht hat — in der Liste kurz **Ausstehend**. Es gibt ein eigenes
 [Kontingent für das Team](70-termine.md#das-teamer-kontingent-verwalten), getrennt von den
 Plätzen der Konfis.
 
@@ -135,8 +137,8 @@ eine Warteliste offen, sagt die Meldung, dass du auf der Warteliste stehst und
 automatisch nachrückst, sobald ein Platz frei wird.
 
 Ist ein Event **abgesagt**, steht statt der Knöpfe der Hinweis, dass es nicht
-stattfindet — zusagen kannst du dann nicht mehr. Bei einem vergangenen Event,
-an dem du nicht teilgenommen hast, entfällt der Abschnitt ganz.
+stattfindet — zusagen kannst du dann nicht mehr. Bei einem begonnenen Event,
+zu dem du nicht zugesagt hast, entfällt der Abschnitt ganz.
 
 Beim Absagen fragt die App nach einem Grund — nach einer vorherigen Zusage ist
 er Pflicht, sonst freiwillig. Warum das so ist und was danach mit dem Platz
