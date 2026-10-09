@@ -205,6 +205,9 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Speichert die Gemeindeleitung die Angaben ihrer Gemeinde mit einer älteren
+  App, verliert der Kurzname der Gemeinde seine Umlaute nicht mehr
+  („Travemuende" wurde zu „Travemnde").
 - Wer im Benutzerfenster gespeichert oder beim Anlegen eines Jahrgangs
   zugewiesen wird, bekommt das Recht, Konfis und Termine diesem Jahrgang
   zuzuordnen, nur noch als Leitung — Teamer:innen bekamen es bisher still

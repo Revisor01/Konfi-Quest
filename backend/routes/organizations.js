@@ -15,7 +15,7 @@ const { kontenDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinrei
 const { kontoSperreAufheben } = require('../utils/kontoSperre');
 const { pruefeKonfiOderTeam } = require('../utils/konfiOderTeam');
 const { MITGLIEDSCHAFTEN_SQL } = require('../utils/orgMitglieder');
-const { systemnameFuerNeueGemeinde } = require('../utils/gemeindeSystemname');
+const { systemnameFuerNeueGemeinde, systemnameBeimBearbeiten } = require('../utils/gemeindeSystemname');
 const { benutzernameSperrenUndPruefen, MELDUNG_VERGEBEN } = require('../utils/benutzernameSperre');
 const { gemeindeAnlegen, konfiLimitLesen, laufzeitLesen, fehlerAlsAntwort } = require('../utils/gemeindeAnlegen');
 const { kirchenkreisFinden, kirchenkreisIdGueltig, MELDUNG_KIRCHENKREIS_FEHLT } = require('../utils/kirchenkreisZuordnung');
@@ -460,6 +460,19 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         }
       }
 
+      // SYSTEMNAME (name, slug) wie die App ab 2.3.0 ihn bildet
+      // (utils/gemeindeSystemname.js, systemnameBeimBearbeiten, 09.10.2026):
+      // Die Store-App 2.2.x schickt ihn bei jedem Speichern neu und ohne
+      // Umlaute; sonst stuende nach dem Speichern `travemnde` statt
+      // `travemuende` da.
+      const { rows: [bisher] } = await db.query(
+        'SELECT name, slug, display_name FROM organizations WHERE id = $1', [id]
+      );
+      const systemName = systemnameBeimBearbeiten(name, display_name,
+        bisher ? { wert: bisher.name, anzeigename: bisher.display_name } : null);
+      const systemSlug = systemnameBeimBearbeiten(slug, display_name,
+        bisher ? { wert: bisher.slug, anzeigename: bisher.display_name } : null);
+
       // Basis-Felder (von super_admin UND org_admin editierbar)
       const setClauses = [
         'name = $1', 'slug = $2', 'display_name = $3', 'description = $4',
@@ -467,7 +480,7 @@ module.exports = (db, rbacVerifier, { requireSuperAdmin, requireTeamer }) => {
         'website_url = $9', 'kirchenkreis = $10', 'updated_at = NOW()'
       ];
       const params = [
-        name, slug, display_name, description, contact_name || null, contact_email, contact_phone,
+        systemName, systemSlug, display_name, description, contact_name || null, contact_email, contact_phone,
         address, website_url, kirchenkreisText
       ];
 
