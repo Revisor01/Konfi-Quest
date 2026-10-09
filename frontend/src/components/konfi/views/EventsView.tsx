@@ -28,7 +28,7 @@ import {
   ICON_UNENDLICH,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
+import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istBegonnen, anwesenheitAusstehend, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
 
@@ -150,7 +150,10 @@ const EventsView: React.FC<EventsViewProps> = ({
     // Diese Stelle war bis zum 27.08.2026 die EINZIGE, die das richtig machte
     // (Befund N6) — jetzt rechnen alle elf ueber istVergangen().
     const isPastEvent = istVergangen(event);
-    const isParticipated = isPastEvent && event.is_registered;
+    // Der Anwesenheits-Stand gilt AB BEGINN (Simon, 09.10.2026;
+    // shared/eventFormatting.ts, istBegonnen / anwesenheitAusstehend).
+    const isBegonnen = istBegonnen(event);
+    const isParticipated = isBegonnen && event.is_registered;
     const attendanceStatus = event.attendance_status;
     // Warteliste: booking_status kann 'waitlist' oder 'pending' sein (Backend sendet beides)
     const isOnWaitlist = event.booking_status === 'waitlist' || event.booking_status === 'pending';
@@ -159,8 +162,8 @@ const EventsView: React.FC<EventsViewProps> = ({
     // dieselbe sein wie in Leitung und Team.
     const isCancelled = istAbgesagt(event);
     const isKonfirmationEvent = event.is_konfirmation;
-    // Ausstehend: vergangen, angemeldet (confirmed), aber noch keine attendance
-    const isAusstehend = isPastEvent && event.is_registered && !isOnWaitlist && !attendanceStatus;
+    // Ausstehend: begonnen, angemeldet (confirmed), aber noch keine attendance
+    const isAusstehend = anwesenheitAusstehend(event);
 
     // Pflicht-Events: eigene Status-Logik
     const isMandatory = event.mandatory;
@@ -184,9 +187,9 @@ const EventsView: React.FC<EventsViewProps> = ({
     if (isCancelled) statusColor = C.danger;
     else if (isMandatory && isOptedOut) statusColor = C.events;
     else if (isExcused) statusColor = C.events;
-    else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusColor = C.success;
-    else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusColor = C.danger;
-    else if (isMandatory && isPastEvent) statusColor = C.bonus;
+    else if (isMandatory && isBegonnen && attendanceStatus === 'present') statusColor = C.success;
+    else if (isMandatory && isBegonnen && attendanceStatus === 'absent') statusColor = C.danger;
+    else if (isMandatory && isBegonnen) statusColor = C.bonus;
     // Pflicht-Event (Backend: registration_status='mandatory'): wer (auto-)
     // angemeldet ist, sieht BLAU (wie "angemeldet"); sonst nach Kapazität
     // gruen/orange/rot. Pflicht selbst ist zusaetzlich ein eigenes Badge.
@@ -212,9 +215,9 @@ const EventsView: React.FC<EventsViewProps> = ({
     if (isCancelled) statusText = 'Abgesagt';
     else if (isMandatory && isOptedOut) statusText = 'Abgemeldet';
     else if (isExcused) statusText = 'Abgemeldet';
-    else if (isMandatory && isPastEvent && attendanceStatus === 'present') statusText = 'Anwesend';
-    else if (isMandatory && isPastEvent && attendanceStatus === 'absent') statusText = 'Gefehlt';
-    else if (isMandatory && isPastEvent) statusText = 'Ausstehend';
+    else if (isMandatory && isBegonnen && attendanceStatus === 'present') statusText = 'Anwesend';
+    else if (isMandatory && isBegonnen && attendanceStatus === 'absent') statusText = 'Gefehlt';
+    else if (isMandatory && isBegonnen) statusText = 'Ausstehend';
     else if (isMandatory) statusText = 'Angemeldet'; // Pflicht-Event: Konfi ist automatisch angemeldet
     else if (isKonfirmationEvent && !isPastEvent && event.is_registered) statusText = 'Angemeldet';
     else if (isKonfirmationEvent && !isPastEvent) statusText = 'Offen';

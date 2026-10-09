@@ -16,7 +16,8 @@ Versionsüberschrift.
   Eventliste mit „Anwesend" und „Nicht anwesend" — die Knöpfe erscheinen nur
   mit dem passenden Recht.
 - Die Eventliste in der Detailansicht einer Person zeigt oben auch die
-  kommenden Events, zu denen sie angemeldet ist oder auf der Warteliste steht.
+  kommenden Events, zu denen sie angemeldet ist oder auf der Warteliste steht;
+  ein Tipp darauf öffnet das Event.
 - Unter Betrieb zeigt ein Reiter „Sprüche“, welche Konfisprüche über alle
   Gemeinden gewählt werden — jeder Spruch mit Anzahl, eigene im Wortlaut,
   ohne Namen; die Zahlen bleiben auch nach dem Löschen eines Kontos.
@@ -124,6 +125,11 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 
 ### Geändert
+- Die Anwesenheit steht ab Beginn eines Events aus, nicht erst nach seinem
+  Ende: Konfis und Team sehen während des Events „Ausstehend“ statt
+  „Angemeldet“ oder „Dabei“, und die Leitung sieht „Verbuchen“, wie schon im
+  Reiter „Verbuchen“. Das Team sieht ab Beginn keine Zusage-Knöpfe mehr, die
+  ohnehin nicht mehr angenommen wurden.
 - Der Punkte-Verlauf im Browser zeigt alle Einträge auf einmal; ein Klick auf
   einen Spaltenkopf ordnet die ganze Liste.
 - Hinweistexte in Hinweis-Kästen (etwa unter „E-Mail ändern“,

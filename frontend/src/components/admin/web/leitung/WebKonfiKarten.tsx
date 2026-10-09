@@ -37,6 +37,7 @@ import { personTerminStand, type Activity, type AnwesenheitWahl, type Konfi, typ
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
+import WebLink from '../../../web/WebLink';
 import WebAngaben from '../../../web/WebAngaben';
 import { ANGABE_SYMBOLE } from '../../../web/angabeSymbole';
 import { WebLeer } from '../../../web/WebZustaende';
@@ -143,7 +144,8 @@ const OffeneTermineZeilen: React.FC<{
       return (
         <li key={t.booking_id} className="web-feed__zeile" data-termin-art={t.art}>
           <div className="web-feed__haupt">
-            <span className="web-feed__titel">{t.event_name}</span>
+            {/* In den Termin -- derselbe Link wie in der Terminliste (WebEventsTabelle). */}
+            <WebLink href={`/admin/events/${t.event_id}`} className="web-feed__titel web-link--text">{t.event_name}</WebLink>
             <span className="web-feed__meta"><span>{datumKurz(t.event_date)}</span></span>
           </div>
           <div className="web-feed__rechts">

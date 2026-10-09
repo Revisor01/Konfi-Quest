@@ -358,3 +358,27 @@ describe('ohneKommentare() trennt Code von Kommentar', () => {
     expect(ohneKommentare(quelle)).toContain('Kein Grund zur Absage angegeben.');
   });
 });
+
+// Dieselbe Gegenrichtung fuer "Ausstehend" / "zu verbuchen" (09.10.2026,
+// Simon: "gilt ab Beginn fuer alle Ansichten"). Das Verhalten pruefen
+// utils/anwesenheitAbBeginn.test.ts (termineWeb.ts, aufgerufen) und
+// konfiDetailOffenesBestaetigen.test.tsx; hier steht, dass die App-Ansichten,
+// die den Stand noch selbst zusammensetzen, die Regel-Stelle fragen
+// (shared/eventFormatting.ts, istBegonnen / anwesenheitAusstehend) statt
+// wieder das Ende zu nehmen.
+describe('Ausstehend ab Beginn: die Ansichten fragen die Regel-Stelle', () => {
+  const lies = (p: string) => ohneKommentare(readFileSync(resolve(process.cwd(), p), 'utf8'));
+  it.each([
+    'src/components/konfi/views/EventsView.tsx',
+    'src/components/konfi/views/EventDetailView.tsx',
+    'src/components/teamer/pages/TeamerEventsPage.tsx',
+    'src/components/admin/EventsView.tsx',
+    'src/components/admin/views/EventDetailView.tsx',
+    'src/utils/termineWeb.ts',
+  ])('%s', (datei) => {
+    const quelle = lies(datei);
+    expect(quelle).toMatch(/istBegonnen\(/);
+    expect(quelle).not.toMatch(/(isPastEvent|vorbei) && (event|eventData)\??\.is_registered && !/);
+    expect(quelle).not.toMatch(/const (hasUnprocessedBookings|zuVerbuchen) = (isPastEvent|vorbei) &&/);
+  });
+});

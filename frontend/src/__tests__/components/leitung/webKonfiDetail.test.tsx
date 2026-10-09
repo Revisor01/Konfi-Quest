@@ -474,6 +474,9 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(oben.getByText('Warteliste')).toBeInTheDocument();
     // Anstehende Termine haben keinen Knopf.
     expect(oben.queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
+    // Der Name fuehrt in den Termin -- derselbe Link wie in der Terminliste.
+    expect(oben.getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', '/admin/events/41');
+    expect(oben.getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', '/admin/events/42');
     // Der Untertitel zaehlt weiter nur die Event-Punkte.
     expect(ev).toHaveTextContent('3 Punkte aus 2 Events');
     await act(async () => { fireEvent.click(oben.getByRole('button', { name: 'Konfisamstag: anwesend' })); });

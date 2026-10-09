@@ -568,8 +568,12 @@ Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
 
 ## Die Anwesenheit verbuchen
 
-Nach dem Event trägst du ein, wer da war. Es gibt drei Wege: einzeln, alle auf
-einmal, oder die Leute checken sich selbst per QR-Code ein.
+Ab Beginn des Events trägst du ein, wer da war — schon während es läuft, etwa
+am Konfisamstag. Ab Beginn steht das Event unter **Verbuchen**, und bei
+Konfis und Team steht ihre Anmeldung auf **Ausstehend**, bis du eingetragen
+hast. Es gibt drei Wege: einzeln, alle auf einmal, oder die Leute checken
+sich selbst per QR-Code ein. Einzeln geht es auch aus der
+[Detailansicht einer Person](30-leitung.md#offenes-einer-person-direkt-bestaetigen).
 
 Verbuchen darf die Leitung an den Events der Jahrgänge, in denen ihr die
 Gemeindeleitung das Recht

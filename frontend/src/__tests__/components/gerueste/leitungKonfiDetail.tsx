@@ -26,6 +26,7 @@ export const api = { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() 
 export const setSuccess = vi.fn();
 export const setError = vi.fn();
 export const presentAlert = vi.fn();
+export const routerPush = vi.fn();
 export const cacheGet = vi.fn();
 export const modale = {
   angemeldet: new Set<string>(),
@@ -126,7 +127,7 @@ vi.mock('@ionic/react', () => {
     useIonAlert: () => [presentAlert, vi.fn()],
     useIonPopover: () => [vi.fn(), vi.fn()],
     useIonActionSheet: () => [vi.fn(), vi.fn()],
-    useIonRouter: () => ({ push: vi.fn() }),
+    useIonRouter: () => ({ push: routerPush }),
   };
 });
 
@@ -150,7 +151,7 @@ export const zuruecksetzen = () => {
     ['/admin/jahrgaenge', [{ id: 3, name: 'Jahrgang 2026' }, { id: 4, name: 'Jahrgang 2027' }]],
   ]);
   zustand.cache = new Map();
-  for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, presentAlert, cacheGet]) f.mockReset();
+  for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, presentAlert, cacheGet, routerPush]) f.mockReset();
   modale.angemeldet.clear();
   modale.geoeffnet.length = 0;
   api.get.mockImplementation(async (pfad: string) => {

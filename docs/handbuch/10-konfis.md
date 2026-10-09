@@ -148,6 +148,11 @@ angemeldet; abmelden geht trotzdem, du wirst dabei nach einem Grund gefragt.
 Hat ein Event [Zeitfenster](70-termine.md#zeitfenster-einrichten), wählst du
 beim Anmelden eines aus.
 
+Sobald ein Event beginnt, zu dem du angemeldet bist, steht es auf
+**Ausstehend**, bis die Leitung deine Anwesenheit eingetragen hat; danach auf
+**Verbucht** oder **Verpasst** (bei Pflicht-Events **Anwesend** oder
+**Gefehlt**).
+
 Oben rechts findest du den **QR-Scanner**. Damit trägst du dich vor Ort selbst
 als anwesend ein — wann das geht, steht unter
 [QR-Check-in](70-termine.md#den-qr-check-in-nutzen).

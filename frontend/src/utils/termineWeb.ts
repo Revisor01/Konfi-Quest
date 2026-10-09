@@ -21,7 +21,9 @@
 
 import type { Event, EventMaterial, Participant } from '../types/event';
 import {
+  anwesenheitAusstehend,
   istAbgesagt,
+  istBegonnen,
   istVergangen,
   kategorienText,
   punkteartText,
@@ -102,7 +104,8 @@ export function leitungListeStatus(event: Event, jetzt: Date = new Date()): Leit
   // Befund 3 (25.08.2026): Karte und Verbuchen-Reiter fragen dasselbe -- gibt
   // es hier Buchungen, und ist davon etwas offen?
   const hatBuchungen = (event.registered_count || 0) > 0 || (event.teamer_count || 0) > 0;
-  const zuVerbuchen = vorbei && hatBuchungen && !!event.pending_bookings_count && event.pending_bookings_count > 0;
+  // Ab BEGINN zu verbuchen, wie der Reiter (eventFormatting.ts, istBegonnen).
+  const zuVerbuchen = istBegonnen(event, jetzt) && hatBuchungen && !!event.pending_bookings_count && event.pending_bookings_count > 0;
   const verbucht = vorbei && hatBuchungen && (!event.pending_bookings_count || event.pending_bookings_count === 0);
   const gedaempft = vorbei && !zuVerbuchen;
   const reg = event.registration_status;
@@ -111,7 +114,7 @@ export function leitungListeStatus(event: Event, jetzt: Date = new Date()): Leit
 
   let farbe: StatusFarbe;
   if (abgesagt) farbe = STATUS_FARBE.danger;
-  else if (event.mandatory && vorbei && zuVerbuchen) farbe = STATUS_FARBE.info;
+  else if (event.mandatory && zuVerbuchen) farbe = STATUS_FARBE.info;
   else if (event.mandatory && vorbei) farbe = STATUS_FARBE.vorbei;
   else if (konfirmation && !vorbei) farbe = STATUS_FARBE.konfis;
   else if (verbucht) farbe = STATUS_FARBE.vorbei;
@@ -158,7 +161,7 @@ export function leitungDetailStatus(
   const vorbei = istVergangen(event, jetzt);
   const konfirmation = event.is_konfirmation;
   const abgesagt = istAbgesagt(event);
-  const zuVerbuchen = vorbei && event.registered_count > 0
+  const zuVerbuchen = istBegonnen(event, jetzt) && event.registered_count > 0
     && teilnehmende.some((p) => p.status === 'confirmed' && !p.attendance_status);
   const reg = leitungAnmeldeStatus(event);
   const voll = istVoll(event);
@@ -206,13 +209,15 @@ export interface KonfiListeStatus extends TerminStatus {
 
 export function konfiListeStatus(event: Event, hatKonfirmationGebucht: boolean, jetzt: Date = new Date()): KonfiListeStatus {
   const vorbei = istVergangen(event, jetzt);
-  const teilgenommen = vorbei && !!event.is_registered;
+  // Der Anwesenheits-Stand gilt AB BEGINN (eventFormatting.ts, istBegonnen).
+  const begonnen = istBegonnen(event, jetzt);
+  const teilgenommen = begonnen && !!event.is_registered;
   const anwesenheit = event.attendance_status;
   // Warteliste: booking_status kann 'waitlist' oder 'pending' sein.
   const aufWarteliste = event.booking_status === 'waitlist' || event.booking_status === 'pending';
   const abgesagt = istAbgesagt(event);
   const konfirmation = event.is_konfirmation;
-  const ausstehend = vorbei && !!event.is_registered && !aufWarteliste && !anwesenheit;
+  const ausstehend = anwesenheitAusstehend(event, jetzt);
   const pflicht = event.mandatory;
   const abgemeldet = !!event.is_opted_out || event.booking_status === 'opted_out';
   // Von der Leitung abgemeldet (Migration 153).
@@ -224,9 +229,9 @@ export function konfiListeStatus(event: Event, hatKonfirmationGebucht: boolean, 
   if (abgesagt) farbe = STATUS_FARBE.danger;
   else if (pflicht && abgemeldet) farbe = STATUS_FARBE.events;
   else if (ausgetragen) farbe = STATUS_FARBE.events;
-  else if (pflicht && vorbei && anwesenheit === 'present') farbe = STATUS_FARBE.success;
-  else if (pflicht && vorbei && anwesenheit === 'absent') farbe = STATUS_FARBE.danger;
-  else if (pflicht && vorbei) farbe = STATUS_FARBE.bonus;
+  else if (pflicht && begonnen && anwesenheit === 'present') farbe = STATUS_FARBE.success;
+  else if (pflicht && begonnen && anwesenheit === 'absent') farbe = STATUS_FARBE.danger;
+  else if (pflicht && begonnen) farbe = STATUS_FARBE.bonus;
   else if (pflicht && !vorbei && (event.is_registered || teilgenommen)) farbe = STATUS_FARBE.info;
   else if (pflicht && !vorbei && voll && event.waitlist_enabled) farbe = STATUS_FARBE.bonus;
   else if (pflicht && !vorbei && voll) farbe = STATUS_FARBE.danger;
@@ -248,9 +253,9 @@ export function konfiListeStatus(event: Event, hatKonfirmationGebucht: boolean, 
   if (abgesagt) text = 'Abgesagt';
   else if (pflicht && abgemeldet) text = 'Abgemeldet';
   else if (ausgetragen) text = 'Abgemeldet';
-  else if (pflicht && vorbei && anwesenheit === 'present') text = 'Anwesend';
-  else if (pflicht && vorbei && anwesenheit === 'absent') text = 'Gefehlt';
-  else if (pflicht && vorbei) text = 'Ausstehend';
+  else if (pflicht && begonnen && anwesenheit === 'present') text = 'Anwesend';
+  else if (pflicht && begonnen && anwesenheit === 'absent') text = 'Gefehlt';
+  else if (pflicht && begonnen) text = 'Ausstehend';
   else if (pflicht) text = 'Angemeldet';
   else if (konfirmation && !vorbei && event.is_registered) text = 'Angemeldet';
   else if (konfirmation && !vorbei) text = 'Offen';
@@ -281,7 +286,8 @@ export function konfiDetailStatus(event: Event, jetzt: Date = new Date()): Termi
   const vorbei = istVergangen(event, jetzt);
   const konfirmation = event.is_konfirmation === true;
   const aufWarteliste = event.booking_status === 'waitlist' || event.booking_status === 'pending';
-  const ausstehend = vorbei && !!event.is_registered && !aufWarteliste && !event.attendance_status;
+  const begonnen = istBegonnen(event, jetzt);
+  const ausstehend = anwesenheitAusstehend(event, jetzt);
   const voll = istVoll(event);
   const reg = event.registration_status;
 
@@ -290,8 +296,8 @@ export function konfiDetailStatus(event: Event, jetzt: Date = new Date()): Termi
   else if (event.is_opted_out || event.booking_status === 'opted_out') farbe = STATUS_FARBE.events;
   else if (event.booking_status === 'excused' && !vorbei) farbe = STATUS_FARBE.events;
   else if (konfirmation && !vorbei) farbe = STATUS_FARBE.info;
-  else if (vorbei && event.attendance_status === 'present') farbe = STATUS_FARBE.success;
-  else if (vorbei && event.attendance_status === 'absent') farbe = STATUS_FARBE.danger;
+  else if (begonnen && event.attendance_status === 'present') farbe = STATUS_FARBE.success;
+  else if (begonnen && event.attendance_status === 'absent') farbe = STATUS_FARBE.danger;
   else if (ausstehend) farbe = STATUS_FARBE.bonus;
   else if (aufWarteliste) farbe = STATUS_FARBE.bonus;
   else if (event.is_registered && !vorbei) farbe = STATUS_FARBE.info;
@@ -307,8 +313,8 @@ export function konfiDetailStatus(event: Event, jetzt: Date = new Date()): Termi
   else if (event.is_opted_out || event.booking_status === 'opted_out') text = 'Abgemeldet';
   else if (event.booking_status === 'excused' && !vorbei) text = 'Abgemeldet';
   else if (konfirmation && !vorbei) text = event.is_registered ? 'Angemeldet' : 'Konfirmation';
-  else if (vorbei && event.attendance_status === 'present') text = 'Verbucht';
-  else if (vorbei && event.attendance_status === 'absent') text = 'Verpasst';
+  else if (begonnen && event.attendance_status === 'present') text = 'Verbucht';
+  else if (begonnen && event.attendance_status === 'absent') text = 'Verpasst';
   else if (ausstehend) text = 'Ausstehend';
   else if (aufWarteliste) text = `Warteliste (${event.waitlist_position || '?'})`;
   else if (event.is_registered && !vorbei) text = 'Angemeldet';
@@ -343,7 +349,8 @@ export function teamListeStatus(event: Event, jetzt: Date = new Date()): TeamLis
   // neutral ("Nur Info"), damit keine Anmeldung nahegelegt wird.
   let status: TerminStatus = mitTon('Nur Info', STATUS_FARBE.neutral);
   if (istAbgesagt(event)) status = mitTon('Abgesagt', STATUS_FARBE.danger);
-  else if (vorbei && event.is_registered) {
+  else if (istBegonnen(event, jetzt) && event.is_registered) {
+    // Ab BEGINN der Anwesenheits-Stand (eventFormatting.ts, istBegonnen).
     if (event.attendance_status === 'present') status = mitTon('Anwesend', STATUS_FARBE.success);
     else if (event.attendance_status === 'absent') status = mitTon('Abwesend', STATUS_FARBE.danger);
     else status = mitTon('Ausstehend', STATUS_FARBE.bonus);
@@ -370,12 +377,13 @@ export function teamDetailStatus(event: Event, jetzt: Date = new Date()): Termin
   const vorbei = istVergangen(event, jetzt);
   const aufWarteliste = event.booking_status === 'waitlist' || event.booking_status === 'pending';
   const kannAnmelden = teamKannSichAnmelden(event);
+  const begonnen = istBegonnen(event, jetzt);
 
   let farbe: StatusFarbe;
   if (istAbgesagt(event)) farbe = STATUS_FARBE.danger;
-  else if (vorbei && event.attendance_status === 'present') farbe = STATUS_FARBE.success;
-  else if (vorbei && event.attendance_status === 'absent') farbe = STATUS_FARBE.danger;
-  else if (vorbei && event.is_registered && !event.attendance_status) farbe = STATUS_FARBE.bonus;
+  else if (begonnen && event.attendance_status === 'present') farbe = STATUS_FARBE.success;
+  else if (begonnen && event.attendance_status === 'absent') farbe = STATUS_FARBE.danger;
+  else if (anwesenheitAusstehend(event, jetzt)) farbe = STATUS_FARBE.bonus;
   else if (aufWarteliste) farbe = STATUS_FARBE.bonus;
   else if (event.is_registered && !vorbei) farbe = STATUS_FARBE.info;
   else if (vorbei) farbe = STATUS_FARBE.vorbei;
@@ -385,9 +393,9 @@ export function teamDetailStatus(event: Event, jetzt: Date = new Date()): Termin
 
   let text: string;
   if (istAbgesagt(event)) text = 'Abgesagt';
-  else if (vorbei && event.attendance_status === 'present') text = 'Anwesend';
-  else if (vorbei && event.attendance_status === 'absent') text = 'Abwesend';
-  else if (vorbei && event.is_registered && !event.attendance_status) text = 'Ausstehend';
+  else if (begonnen && event.attendance_status === 'present') text = 'Anwesend';
+  else if (begonnen && event.attendance_status === 'absent') text = 'Abwesend';
+  else if (anwesenheitAusstehend(event, jetzt)) text = 'Ausstehend';
   else if (aufWarteliste) text = 'Warteliste';
   else if (event.is_registered && !vorbei) text = 'Dabei';
   else if (vorbei) text = 'Vergangen';
@@ -976,7 +984,9 @@ export function teamZusageZustand(event: Event, jetzt: Date = new Date()): TeamZ
   if (istAbgesagt(event)) {
     return { hinweis: { text: 'Dieses Event ist abgesagt', art: 'info' }, zusageMoeglich: false, zeigtKnoepfe: false };
   }
-  if (istVergangen(event, jetzt)) {
+  // Ab BEGINN zaehlt der Anwesenheits-Stand; Zu- und Absagen sperrt der
+  // Server ab Beginn ohnehin (setzeTeamerZusage).
+  if (istBegonnen(event, jetzt)) {
     if (!event.is_registered) return null;
     if (event.attendance_status === 'present') return { hinweis: { text: 'Anwesend', art: 'erfolg' }, zusageMoeglich: false, zeigtKnoepfe: false };
     if (event.attendance_status === 'absent') return { hinweis: { text: 'Abwesend', art: 'fehler' }, zusageMoeglich: false, zeigtKnoepfe: false };
