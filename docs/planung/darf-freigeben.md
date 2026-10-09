@@ -11,6 +11,57 @@ sechs Fragen unter „Was zu entscheiden ist" sind die nächsten Schritte.
 **Verschoben 08.10.2026:** Simon: „machen wir viel später". Nicht in 2.4.0;
 die sechs Fragen bleiben offen, bis das Thema wieder aufgenommen wird.
 
+**Wieder aufgenommen 09.10.2026:** Simon hat die sechs Fragen beantwortet
+(Abschnitt „Entschieden 09.10.2026"), dazu eine Kennzahlen-Wahl für jede
+Leitung. Gebaut für 2.4.0.
+
+## Entschieden 09.10.2026
+
+1. **Welche Vorgänge:** drei Rechte, je einzeln festlegbar — *Anträge
+   entscheiden*, *Events verbuchen*, *Challenge-Beiträge freigeben*.
+2. **Je Jahrgang**, an der Jahrgangs-Zuweisung wie `can_edit`: drei neue
+   Felder an `user_jahrgang_assignments`, additiv per Migration.
+3. **Org-Admin** hat alle drei Rechte immer; er kann sie nicht abgeben.
+4. **Sehen ohne Recht:** Die Liste bleibt sichtbar, nur lesend. Die Knöpfe
+   zum Entscheiden, Verbuchen und Freigeben fehlen; der Server antwortet
+   mit 403. Wer einen Vorgang nicht freigeben darf, bekommt dafür weder Push
+   noch Postfach-Eintrag noch Zahl.
+5. **Vorgabe für bestehende Konten:** Alle behalten alle drei Rechte (Spalten
+   mit Vorgabe `true`); niemand bekommt nach dem Deploy weniger.
+6. **Wo einstellen:** an der Jahrgangs-Zuweisung bei „Benutzer:innen", in App
+   und Web-Fassung. Vergeben darf nur der Org-Admin.
+
+Dazu, ohne Frage-Nummer:
+
+- **Kennzahlen-Wahl für jede Leitung** (Admin und Org-Admin): eine persönliche
+  Einstellung am eigenen Konto, je Gemeinde. Je Bereich — Anträge, Events
+  verbuchen, Challenge-Beiträge — an oder aus. Aus heißt: keine rote Zahl am
+  Reiter, nichts davon in der Zahl am App-Symbol und kein Push dafür. Vorgabe:
+  alles an, wie bisher.
+- **Teamer:innen** behalten ihr Verhalten: Sie moderieren Challenges für
+  „Nur das Team" und ihre Jahrgänge; die Rechte an der Zuweisung gelten für
+  die Rolle Admin.
+
+### Umsetzung (09.10.2026)
+
+- Migration 204: `user_jahrgang_assignments.darf_antraege_entscheiden`,
+  `darf_events_verbuchen`, `darf_challenges_freigeben` (Vorgabe `true`) und
+  die Tabelle `leitung_kennzahlen` (Person × Gemeinde, drei Schalter,
+  Vorgabe: keine Zeile = alles an).
+- Vorgänge ohne Jahrgang (Anträge von Teamer:innen, Termine „Nur Team" und
+  ohne Jahrgang, Challenges „Nur das Team"): Ein Admin darf sie, wenn er das
+  Recht in mindestens einem seiner Jahrgänge hat — oder gar keinem Jahrgang
+  zugewiesen ist (dann gibt es nichts, woran es fehlen könnte; so bekommt
+  niemand nach dem Deploy weniger).
+- Regel-Stellen: die Mechanik in `backend/utils/freigabeRechte.js`, je
+  Vorgang die Bedingung in `antragLeitungSicht.js`, `terminLeitungSicht.js`
+  und `challengeLeitungSicht.js`; die Kennzahlen in
+  `backend/utils/leitungKennzahlen.js`. Liste (Feld `darf_…`), Zähler,
+  App-Symbol, Push-Empfänger, Postfach und Server-Prüfung lesen sie.
+- Kennzahlen-Abwahl nimmt Zahl und Push, nicht den Postfach-Eintrag (Simon
+  nannte für die Abwahl „Push und Zahl", für das fehlende Recht zusätzlich das
+  Postfach).
+
 ## Anlass
 
 Rückmeldung aus dem Gerätetest (Build 130/236): Am App-Symbol stand 52,
