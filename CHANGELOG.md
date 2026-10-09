@@ -23,7 +23,7 @@ Versionsüberschrift.
   ohne Namen; die Zahlen bleiben auch nach dem Löschen eines Kontos.
 - Der Reiter „Sprüche“ unter Betrieb wertet wahlweise je Landeskirche,
   Kirchenkreis oder Gemeinde aus; Kirchenkreis und Landeskirche gelten, wie
-  sie beim Wählen zugeordnet waren.
+  sie beim Wählen zugeordnet waren. Interne Gemeinden zählen dort nicht mit.
 - Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
   dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
   den Challenges.

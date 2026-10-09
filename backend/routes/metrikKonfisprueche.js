@@ -22,6 +22,13 @@
 // (der Kirchenkreis hatte damals keine), gilt dessen heutige Landeskirche.
 // Ein geloeschter Kirchenkreis laesst die Landeskirche stehen.
 //
+// INTERNE GEMEINDEN (organizations.intern, Migration 194) zaehlen nirgends
+// mit -- nicht in den Listen, nicht in den Summen, nicht in der Auswahl;
+// Kirchenkreise und Landeskirchen zaehlen nur Wahlen nicht-interner
+// Gemeinden. Dieselbe Regel wie die Support-Ansicht (routes/supportUebersicht.js,
+// routes/support.js: `NOT o.intern`), hier in WAHLEN_MIT_EBENEN, aus der alle
+// Abfragen lesen. Eine Wahl, deren Gemeinde geloescht ist, zaehlt weiter.
+//
 // Gezaehlt werden WAHLEN, nicht Personen: Wer seinen Spruch wechselt, steht
 // mit beiden in der Liste. Der heutige Stand je Person liegt in
 // konfi_profiles und verschwindet mit dem Konto; diese Zahlen bleiben.
@@ -46,6 +53,7 @@ const WAHLEN_MIT_EBENEN = `
       LEFT JOIN organizations o ON o.id = kw.organization_id
       LEFT JOIN kirchenkreise kk_wahl ON kk_wahl.id = kw.kirchenkreis_id
       LEFT JOIN kirchenkreise kk_heute ON kk_heute.id = o.kirchenkreis_id
+     WHERE NOT COALESCE(o.intern, false)
   )`;
 
 // Nur die Wahlen der gewaehlten Ebene; $1 Ebene (NULL = alle), $2 Kennung.

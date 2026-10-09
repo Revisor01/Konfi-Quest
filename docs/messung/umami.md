@@ -450,7 +450,9 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   Bestand bekam beim Einspielen die heutige Zuordnung. Ansicht: Betrieb ›
   „Sprüche" mit Wahl der Ebene (Alle, Landeskirche, Kirchenkreis, Gemeinde)
   und des Eintrags (`GET /api/metrics/konfisprueche?ebene=…&id=…`). Keine
-  Namen von Personen.
+  Namen von Personen. Interne Gemeinden (`organizations.intern`) zählen
+  nirgends mit, wie in der Support-Ansicht (Simon, 09.10.2026); Wahlen ohne
+  Zuordnung stehen nur unter „Alle“, ohne eigene Zeile.
 
 ### S2 — Anträge-Ansicht der Leitung
 
