@@ -1179,11 +1179,17 @@ ion-modal.wrapped-modal-fullscreen {
 }
 
 /* Wer Bewegung reduziert haben will, bekommt die Bilder ruhig gestellt.
-   Die Drift ist Zierde, kein Inhalt. */
+   Die Drift ist Zierde, kein Inhalt. Ebenso das Konfetti der Seite „Über
+   das Ziel": es fiel endlos weiter (bis 09.10.2026) -- es entfaellt ganz,
+   stehende Schnipsel waeren nur Flecken. */
 @media (prefers-reduced-motion: reduce) {
   .wrapped-bg-form--oben,
   .wrapped-bg-form--unten {
     animation: none;
+  }
+  .konfetti-piece {
+    animation: none !important;
+    display: none;
   }
 }
 

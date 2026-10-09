@@ -230,6 +230,9 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Ist im System „Bewegung reduzieren" eingeschaltet, stehen die Punkte-Ringe
+  und die Zahlen im Rückblick sofort auf ihrem Wert, statt sich aufzubauen;
+  der Rückblick springt von Seite zu Seite, und das Konfetti fällt weg.
 - Mitteilungen im Postfach vom 21. bis 23.08.2026 zeigen ihre richtige
   Uhrzeit statt einer zwei Stunden späteren.
 - Zwischen Mitternacht und 2 Uhr nachts gilt auch auf dem Server schon der neue

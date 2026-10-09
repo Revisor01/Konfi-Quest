@@ -412,8 +412,10 @@ Ist im System „Bewegung reduzieren" eingeschaltet (iOS: Bedienungshilfen ›
 Bewegung; Android: Bedienungshilfen › Animationen entfernen), verzichtet die
 App auf Seitenübergänge, das Schütteln bei falscher Anmeldung, pulsierende
 Ladepunkte und Badges, gleitende Karten und den Wisch durch die
-Einführung — alles erscheint sofort. Der Jahresrückblick zeigt seine Bilder
-dann ruhig, ohne Drift.
+Einführung — alles erscheint sofort. Die Punkte-Ringe stehen gleich auf ihrem
+Stand, statt sich zu zeichnen. Der Jahresrückblick zeigt seine Bilder dann
+ruhig, ohne Drift, nennt jede Zahl sofort, statt hochzuzählen, wechselt die
+Seiten ohne Schwung und lässt das Konfetti weg.
 
 ## Nachlesen, was sich geändert hat
 

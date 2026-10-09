@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { RING_FARBEN } from '../../../theme/colors';
+import { bewegungReduziert } from '../../../utils/bewegung';
 
 interface ActivityRingsProps {
   totalPoints: number;
@@ -14,7 +15,8 @@ interface ActivityRingsProps {
 
 /**
  * Apple Health-Style Activity Rings mit Zeichnen-Animation
- * Die Ringe "zeichnen" sich von 0 bis zum Zielwert
+ * Die Ringe "zeichnen" sich von 0 bis zum Zielwert -- bei „Bewegung
+ * reduzieren" stehen sie sofort auf dem Endstand.
  */
 const ActivityRings: React.FC<ActivityRingsProps> = ({
   totalPoints,
@@ -36,17 +38,6 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
   if (gemeindeEnabled) activeTypes.push('gemeinde');
   const showTotal = activeTypes.length === 2;
 
-  // Animierte Werte (starten bei 0)
-  const [animatedValues, setAnimatedValues] = useState({
-    total: 0,
-    gottesdienst: 0,
-    gemeinde: 0
-  });
-
-  // Ref für Animation Frame
-  const animationRef = useRef<number | null>(null);
-  const startTimeRef = useRef<number | null>(null);
-
   // Zielwerte berechnen
   const effectiveGottesdienstGoal = gottesdienstGoal > 0 ? gottesdienstGoal : 10;
   const effectiveGemeindeGoal = gemeindeGoal > 0 ? gemeindeGoal : 10;
@@ -58,8 +49,26 @@ const ActivityRings: React.FC<ActivityRingsProps> = ({
     gemeinde: gemeindeEnabled ? Math.min((gemeindePoints / effectiveGemeindeGoal) * 100, 300) : 0
   };
 
+  // Animierte Werte: starten bei 0, bei „Bewegung reduzieren" gleich am Ziel
+  const [animatedValues, setAnimatedValues] = useState(() =>
+    bewegungReduziert() ? targetPercents : { total: 0, gottesdienst: 0, gemeinde: 0 }
+  );
+
+  // Ref für Animation Frame
+  const animationRef = useRef<number | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+
   // Animation starten wenn Werte sich ändern
   useEffect(() => {
+    if (bewegungReduziert()) {
+      setAnimatedValues({
+        total: targetPercents.total,
+        gottesdienst: targetPercents.gottesdienst,
+        gemeinde: targetPercents.gemeinde
+      });
+      return;
+    }
+
     // Reset auf 0
     setAnimatedValues({ total: 0, gottesdienst: 0, gemeinde: 0 });
     startTimeRef.current = null;

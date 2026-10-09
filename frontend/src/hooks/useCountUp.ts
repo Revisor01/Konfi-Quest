@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { bewegungReduziert } from '../utils/bewegung';
 
 /**
  * Animierter Count-up Hook mit requestAnimationFrame.
  * Startet nur wenn isActive true ist (Swiper onSlideChange).
  * Ease-out cubic für natuerliches Gefuehl, ~1.5s Dauer.
+ * Bei „Bewegung reduzieren" steht sofort der Endstand da, ohne Hochzählen.
  */
 export function useCountUp(target: number, isActive: boolean, duration = 1500): number {
   const [value, setValue] = useState(0);
@@ -11,6 +13,11 @@ export function useCountUp(target: number, isActive: boolean, duration = 1500): 
   useEffect(() => {
     if (!isActive || target <= 0) {
       setValue(0);
+      return;
+    }
+
+    if (bewegungReduziert()) {
+      setValue(target);
       return;
     }
 

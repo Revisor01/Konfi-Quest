@@ -187,20 +187,15 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ausgeliefert) wieder entfernt: Mit Recht kommen rote Zahl, App-Symbol und
   Push, ohne Recht nichts davon (Simon, [planung/darf-freigeben.md](planung/darf-freigeben.md#abgebaut-09102026-nur-das-recht-entscheidet),
   Migration 205, Branch `refactor/kennzahlen-abbau`).
+- [x] 09.10.2026 — Ringe und Zähler beachten „Bewegung reduzieren": Punkte-Ringe
+  und hochzählende Zahlen sofort auf dem Endstand, dazu der Wisch durch den
+  Rückblick und sein Konfetti (Branch `fix/bewegung-randlos-dunkelmodus-ci`).
 
 
 ## Offen
 
 ### Code
 
-- **Ringe und Zähler beachten „Bewegung reduzieren" nicht.**
-  `frontend/src/components/admin/views/ActivityRings.tsx` und
-  `frontend/src/hooks/useCountUp.ts` animieren auch, wenn das System
-  „Bewegung reduzieren" verlangt; beide Dateien fragen die Einstellung nicht
-  ab (geprüft 08.10.2026). Das Handbuch
-  ([03-bedienung.md](handbuch/03-bedienung.md#bewegung-reduzieren)) nennt
-  sie nicht unter dem, was dann ruhig bleibt; die Angabe „Bewegung
-  reduzieren" bei Apple setzt die Korrektur voraus ([Release](#release)).
 - **Doppelter Code Konfi/Team.** `backend/routes/teamer.js` führt eine eigene
   Liste `KONFSPRUCH_TRANSLATIONS` und ein eigenes `loadKonfspruch` (um Zeile
   979 und 983), obwohl es beides aus `utils/konfspruch.js` importiert — die
@@ -304,9 +299,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 ### Release
 
 - **Barrierefreiheitsangaben im App Store.** Apple fragt je Gerät ab, welche
-  Bedienungshilfen die App unterstützt. Heute angebbar: Dunkelmodus und
-  „Nicht nur über Farbe". „Bewegung reduzieren" erst, wenn Ringe und Zähler
-  sie beachten ([Code](#code)). Kontrast im Hellmodus nicht: 25 von 51
+  Bedienungshilfen die App unterstützt. Heute angebbar: Dunkelmodus, „Nicht
+  nur über Farbe" und „Bewegung reduzieren" (Ringe und Zähler seit
+  09.10.2026, [Handbuch](handbuch/03-bedienung.md#bewegung-reduzieren)). Kontrast im Hellmodus nicht: 25 von 51
   Text-Tokens mit festem Farbwert im Hellmodus
   (`frontend/src/theme/variables.css`) bleiben auf Weiß unter 4,5:1
   (gemessen 08.10.2026; siehe [Zurückgestellt](#zurückgestellt), „Kontrast
