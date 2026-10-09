@@ -106,8 +106,9 @@ Ebenfalls im Stand `dac246ebcbb0a190ab1e53646c1b1d61105ff424`:
   [betrieb/routinen.md](betrieb/routinen.md).
 - **Aufträge 13–15** (02.–08.10.2026: Store-Freigabe 2.3.0 und alte
   Branches, Postfächer für die Support-Ansicht, Support-Probelauf) — 14 im Stand
-  `48f5c197^`, 13 und 15 im Stand `8ef310f3`; der offene Rest von 15 steht in
-  [Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md).
+  `48f5c197^`, 13 und 15 im Stand `8ef310f3`.
+- **Auftrag 16** (06.–10.10.2026: Support-Probelauf mit Vorgängen, führt 15
+  fort) — im Stand `95adea23`.
 - **Die alte Liste `docs/offene-befunde.md`** mit den Nummern 1–16
   (02.09.–02.10.2026). Verweise wie „offene-befunde Nr. 3" meinen diese
   Fassung.

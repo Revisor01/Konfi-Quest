@@ -288,6 +288,12 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 
 ## Offen
 
+- **Support-Ansicht auf Handy und im Web übersichtlicher** (Simon,
+  10.10.2026, nach dem Probelauf): „Die gesamte Support-Ansicht ist auf dem
+  Handy mega unübersichtlich, im Web auch; das machen wir während des
+  Web-Umbaus gleich mit. Vieles ist aber schon sehr gut." Gehört in den
+  Web-Umbau; Pläne der Ansicht: [support-web.md](support-web.md),
+  [support-vorgaenge.md](support-vorgaenge.md).
 - **Gruppe „Verwaltung" in der Leiste** (Entscheidung 23): Die Unterseiten
   von „Mehr" (Benutzer:innen, Badges, Material, Jahrgänge …) stehen im
   breiten Fenster direkt in der Leiste, als eigene Gruppe.
