@@ -115,7 +115,7 @@ Im Einzelnen gilt für die Leitung:
 ## Festlegen, wer entscheiden, verbuchen und freigeben darf
 
 Sehen und entscheiden sind zweierlei. Die Gemeindeleitung legt für jede
-Person der Leitung **je Jahrgang** fest, ob sie dort
+Person der Leitung und für jede Teamer:in **je Jahrgang** fest, ob sie dort
 
 - **Anträge entscheiden** darf — gemeldete Aktivitäten genehmigen, ablehnen
   und eine Entscheidung zurücknehmen,
@@ -124,17 +124,27 @@ Person der Leitung **je Jahrgang** fest, ob sie dort
 - **Challenge-Beiträge freigeben** darf — Beiträge freigeben, ausblenden,
   wieder einblenden und anonym stellen.
 
-Die drei Rechte stehen an der Jahrgangs-Zuweisung unter
+Die Rechte stehen an der Jahrgangs-Zuweisung unter
 **[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)**: Person
-öffnen, unter „Jahrgang-Zuweisungen" je Jahrgang die drei Schalter setzen,
+öffnen, unter „Jahrgang-Zuweisungen" je Jahrgang die Schalter setzen,
 speichern. Das geht in der App und im Browser gleich. Vergeben kann sie nur
-die Gemeindeleitung; die Leitung sieht die Schalter nicht. Neu zugewiesene
-Jahrgänge haben alle drei Rechte an, und wer schon zugewiesen war, behält sie,
-bis die Gemeindeleitung eines ausschaltet.
+die Gemeindeleitung; die Leitung sieht die Schalter nicht, auch nicht bei
+Teamer:innen ihrer Jahrgänge. Neu zugewiesene Jahrgänge haben alle Rechte
+an, und wer schon zugewiesen war, behält sie, bis die Gemeindeleitung eines
+ausschaltet.
 
-**Die Gemeindeleitung hat alle drei Rechte immer**, in jedem Jahrgang. Für
-Teamer:innen gelten die Schalter nicht: Sie begleiten Challenges ihrer
-Jahrgänge und „Nur das Team" wie bisher.
+**Die Gemeindeleitung hat alle drei Rechte immer**, in jedem Jahrgang.
+
+**Bei Teamer:innen** steht an jedem Jahrgang nur der Schalter
+„Challenge-Beiträge freigeben". Anträge entscheiden und Events verbuchen
+gehören nicht zu ihren Aufgaben; daran ändert kein Schalter etwas. Mit dem
+Recht begleiten sie die Beiträge der Challenges dieses Jahrgangs, ohne das
+Recht lesen sie nur mit. Für „Nur das Team" gilt dieselbe Regel wie unten für
+Vorgänge ohne Jahrgang.
+
+Das Recht kommt zur Jahrgangs-Zuweisung dazu, es ersetzt sie nicht: Wer einen
+Jahrgang nicht sieht, hat dort auch kein Recht. Ob jemand den Jahrgang selbst
+bearbeiten und Konfis darin anlegen darf, hängt nicht an diesen Schaltern.
 
 Wer ein Recht nicht hat, **sieht die Vorgänge weiter**, nur lesend: Die
 Anträge stehen in der Liste, das Event zeigt seine Teilnehmenden, die
@@ -167,7 +177,7 @@ Welche Zahlen du selbst sehen willst, wählst du unabhängig davon unter
 | Punkte vergeben | — | ja | ja | ja |
 | Anwesenheit eintragen | — | — | mit dem Recht „Events verbuchen" | ja |
 | Aktivitäts-Meldungen bestätigen | — | — | mit dem Recht „Anträge entscheiden" | ja |
-| Challenge-Beiträge freigeben | — | eigene Jahrgänge und „Nur das Team" | mit dem Recht „Challenge-Beiträge freigeben" | ja |
+| Challenge-Beiträge freigeben | — | mit dem Recht „Challenge-Beiträge freigeben" | mit dem Recht „Challenge-Beiträge freigeben" | ja |
 | Rechte zum Entscheiden, Verbuchen und Freigeben vergeben | — | — | — | ja |
 | Events, Badges, Kategorien, Level anlegen | — | — | ja | ja |
 | Events ändern, absagen und löschen | — | — | ja | ja |

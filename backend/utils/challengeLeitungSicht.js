@@ -28,8 +28,9 @@
 // stellen) darf, wer die Challenge mit den Jahrgaengen SEINES RECHTS sieht --
 // dieselbe Bedingung (leitungSiehtChallengeSql), ausgewertet mit
 // rechtFuer(user, 'challenges'); "Nur das Team", wenn das Recht fuer
-// Vorgaenge ohne Jahrgang besteht. Org-Admin immer; Teamer:innen wie bisher
-// nach ihrer Sicht. Daran haengen:
+// Vorgaenge ohne Jahrgang besteht. Org-Admin immer; Admins UND Teamer:innen
+// nach dem Recht an ihren Jahrgaengen (Teamer:innen seit 09.10.2026, Simon:
+// "dasselbe Rechtemanagement je Jahrgang"). Daran haengen:
 //   - Server-Pruefung: PUT /challenges/admin/submissions/:id/moderate
 //     (darfChallengeFreigeben, 403 ohne Recht)
 //   - Feld darf_freigeben an der Challenge (GET /challenges/admin/:id)
@@ -37,7 +38,8 @@
 //     App-Symbol, Gemeinde-Umschalter (utils/appIconBadge.js)
 //   - Push "Neuer Challenge-Beitrag" (ladeLeitungZumChallengeBeitrag): bei
 //     moderierten Challenges an, wer freigeben darf; dazu die
-//     Kennzahlen-Wahl der Leitung (Bereich 'challenges')
+//     Kennzahlen-Wahl (Bereich 'challenges'), die Leitung und Teamer:innen
+//     gleich haben
 // Liste, Galerie und Neuigkeiten bleiben bei der Sicht.
 
 /** Teilnahmekreis, den das ganze Team ohne Jahrgang sieht. */
@@ -198,11 +200,10 @@ async function darfChallengeFreigeben(db, req, challengeId) {
 /**
  * Wer die Mitteilung "Neuer Challenge-Beitrag" bekommt (Push).
  *
- *   org_admin   immer
- *   admin       moderierte Challenge: wer freigeben darf; sonst wer sieht
- *   teamer      wer sieht (unveraendert)
- * Die Leitung (admin, org_admin) zusaetzlich nur mit Kennzahl 'challenges'
- * an (utils/leitungKennzahlen.js) -- das filtert die Aufrufstelle nicht,
+ *   org_admin        immer
+ *   admin, teamer    moderierte Challenge: wer freigeben darf; sonst wer sieht
+ * Alle zusaetzlich nur mit Kennzahl 'challenges' an
+ * (utils/leitungKennzahlen.js) -- das filtert die Aufrufstelle nicht,
  * sondern diese Funktion, damit Push und Zahl nicht auseinanderlaufen.
  *
  * Beide Quellen der Zugehoerigkeit ueber ladeMitgliederDerOrganisation.
@@ -241,30 +242,33 @@ async function ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert = fal
     return rows.map((r) => r.id);
   };
 
+  // Admins und Teamer:innen nach derselben Regel: bei moderierten
+  // Challenges die Jahrgaenge des Rechts, sonst die der Sicht.
+  const nachRegel = (rolle) => (moderiert
+    ? {
+        rolle,
+        jahrgaenge: rechtJahrgaengeSql('challenges', 'u.id'),
+        ohneJahrgang: rechtOhneJahrgangSql('challenges', 'u.id', 'c.organization_id')
+      }
+    : { rolle, jahrgaenge: SICHT, ohneJahrgang: 'true' });
   const [adminsMit, teamerMit] = await abfragenBuendeln(db, [
-    () => filtern(admins, moderiert
-      ? {
-          rolle: 'admin',
-          jahrgaenge: rechtJahrgaengeSql('challenges', 'u.id'),
-          ohneJahrgang: rechtOhneJahrgangSql('challenges', 'u.id', 'c.organization_id')
-        }
-      : { rolle: 'admin', jahrgaenge: SICHT, ohneJahrgang: 'true' }),
-    () => filtern(teamer, { rolle: 'teamer', jahrgaenge: SICHT, ohneJahrgang: 'true' })
+    () => filtern(admins, nachRegel('admin')),
+    () => filtern(teamer, nachRegel('teamer'))
   ]);
 
-  // Kennzahlen-Wahl der Leitung (Teamer:innen haben keine).
-  const leitung = [...new Set([...orgAdmins, ...adminsMit].map(Number))];
-  const { rows: abgewaehlt } = leitung.length > 0
+  // Kennzahlen-Wahl (Bereich 'challenges') -- Leitung und Teamer:innen.
+  const kandidaten = [...new Set([...orgAdmins, ...adminsMit, ...teamerMit].map(Number))];
+  const { rows: abgewaehlt } = kandidaten.length > 0
     ? await db.query(
         `SELECT user_id FROM leitung_kennzahlen
           WHERE organization_id = $1 AND user_id = ANY($2::bigint[]) AND challenges = false`,
-        [orgId, leitung]
+        [orgId, kandidaten]
       )
     : { rows: [] };
   const aus = new Set(abgewaehlt.map((r) => Number(r.user_id)));
 
   const empfaenger = new Set();
-  for (const id of [...leitung.filter((x) => !aus.has(x)), ...teamerMit.map(Number)]) {
+  for (const id of kandidaten.filter((x) => !aus.has(x))) {
     if (ausser != null && id === Number(ausser)) continue;
     empfaenger.add(id);
   }

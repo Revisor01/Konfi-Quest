@@ -10,7 +10,7 @@
 //
 // Je Vorgang der erlaubte UND der verbotene Fall, dazu die Vorgaenge ohne
 // Jahrgang (Teamer-Antraege, Termine ohne Jahrgang, "Nur das Team") und die
-// Teamer:innen (unveraendert).
+// Teamer:innen (seit 09.10.2026 dasselbe Recht fuer Challenge-Beitraege).
 //
 // Seed: admin1 (Rolle admin, Org 1) ohne Jahrgang, konfi1 in Jahrgang 1,
 // teamer1 Jahrgang 1 zugewiesen, orgAdmin1 org_admin in Org 1.
@@ -409,17 +409,143 @@ describe('Darf freigeben: Antraege, Verbuchen, Challenge-Beitraege', () => {
       expect(res.status).toBe(200);
       await warteAufNachwehen(app);
     });
+  });
 
-    it('Teamer:innen: unveraendert -- die Spalte wirkt fuer sie nicht', async () => {
-      await db.query('UPDATE user_jahrgang_assignments SET darf_challenges_freigeben = false WHERE user_id = $1', [USERS.teamer1.id]);
+  // ==================================================================
+  // Teamer:innen (Simon, 09.10.2026: "dasselbe Rechtemanagement je
+  // Jahrgang ... bezogen auf Challenges"). Gemessen vorher: Von den drei
+  // Handlungen konnten Teamer:innen nur Challenge-Beitraege moderieren
+  // (requireTeamer); Antraege entscheiden und Verbuchen sind requireAdmin.
+  // Seed: teamer1 an J1 mit can_view = true, can_edit = false.
+  // ==================================================================
+  describe('Teamer:innen: Challenge-Beitraege freigeben', () => {
+    const teamerRecht = async (jahrgangId, wert) => {
+      await db.query(
+        'UPDATE user_jahrgang_assignments SET darf_challenges_freigeben = $3 WHERE user_id = $1 AND jahrgang_id = $2',
+        [USERS.teamer1.id, jahrgangId, wert]
+      );
+      invalidateUserCache(USERS.teamer1.id);
+    };
+
+    it('erlaubt: mit Recht (Vorgabe) sieht, zaehlt, bekommt und moderiert sie -- can_edit braucht es nicht', async () => {
+      const { rows: [z] } = await db.query(
+        'SELECT can_view, can_edit, darf_challenges_freigeben FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      expect(z).toEqual({ can_view: true, can_edit: false, darf_challenges_freigeben: true });
+      const { challengeId, submissionId } = await challengeMitBeitrag();
+
+      expect((await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'))).body.darf_freigeben).toBe(true);
+      const z1 = await zaehler('teamer1');
+      expect([z1.pendingChallenges, z1.challengeApprovals.total]).toEqual([1, 1]);
+      expect(await appSymbol('teamer1')).toBe(1);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.konfi1.id }))
+        .toContain(USERS.teamer1.id);
+
+      const res = await request(app).put(`/api/challenges/admin/submissions/${submissionId}/moderate`).set(auth('teamer1'))
+        .send({ action: 'approve' });
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+    });
+
+    it('verboten: ohne Recht bleibt die Challenge lesbar, ohne Zahl, ohne Push und mit 403', async () => {
+      await teamerRecht(J1, false);
+      const { challengeId, submissionId } = await challengeMitBeitrag();
+
+      const detail = await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'));
+      expect(detail.status).toBe(200);
+      expect(detail.body.darf_freigeben).toBe(false);
+      expect((await request(app).get(`/api/challenges/admin/${challengeId}/submissions`).set(auth('teamer1'))).status).toBe(200);
+      const z = await zaehler('teamer1');
+      expect([z.pendingChallenges, z.challengeApprovals.total]).toEqual([0, 0]);
+      expect(await appSymbol('teamer1')).toBe(0);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.konfi1.id }))
+        .toEqual([USERS.orgAdmin1.id, USERS.orgAdminSuper.id].sort((a, b) => a - b));
+
+      const PushService = require('../../services/pushService');
+      await PushService.sendChallengeSubmissionToLeadership(db, ORG1, challengeId, 'Runde', 'Konfi', true, USERS.konfi1.id);
+      expect(pushTokens('challenge_submission')).toEqual(['token-orgAdmin1']);
+
+      for (const action of ['approve', 'hide', 'unhide', 'anonymize']) {
+        const res = await request(app).put(`/api/challenges/admin/submissions/${submissionId}/moderate`).set(auth('teamer1'))
+          .send({ action });
+        expect(res.status).toBe(403);
+      }
+      const { rows: [s] } = await db.query('SELECT moderation_status FROM challenge_submissions WHERE id = $1', [submissionId]);
+      expect(s.moderation_status).toBe('pending');
+    });
+
+    it('unmoderierte Challenge: den Hinweis auf den neuen Beitrag bekommt sie weiter, weil sie sieht', async () => {
+      await teamerRecht(J1, false);
+      const { challengeId } = await challengeMitBeitrag({ moderated: false });
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: false, ausser: USERS.konfi1.id }))
+        .toContain(USERS.teamer1.id);
+    });
+
+    it('ohne Sicht kein Recht: eine Zuweisung ohne can_view gibt das Recht nicht', async () => {
+      await db.query('UPDATE user_jahrgang_assignments SET can_view = false WHERE user_id = $1', [USERS.teamer1.id]);
       invalidateUserCache(USERS.teamer1.id);
       const { challengeId, submissionId } = await challengeMitBeitrag();
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(0);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.konfi1.id }))
+        .not.toContain(USERS.teamer1.id);
+      const res = await request(app).put(`/api/challenges/admin/submissions/${submissionId}/moderate`).set(auth('teamer1'))
+        .send({ action: 'approve' });
+      expect(res.status).toBe(403);
+    });
+
+    it('"Nur das Team": verboten, wenn das Recht in keinem ihrer Jahrgaenge besteht', async () => {
+      await teamerRecht(J1, false);
+      const { challengeId, submissionId } = await challengeMitBeitrag({ audience: 'nur_team', jahrgang: null, einreicher: USERS.admin1.id });
+      expect((await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'))).body.darf_freigeben).toBe(false);
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(0);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.admin1.id }))
+        .not.toContain(USERS.teamer1.id);
+      const res = await request(app).put(`/api/challenges/admin/submissions/${submissionId}/moderate`).set(auth('teamer1'))
+        .send({ action: 'approve' });
+      expect(res.status).toBe(403);
+    });
+
+    it('"Nur das Team": erlaubt mit Recht in mindestens einem Jahrgang', async () => {
+      await teamerRecht(J1, false);
+      await db.query(
+        `INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, darf_challenges_freigeben)
+         VALUES ($1, $2, true, false, true)`, [USERS.teamer1.id, J_ZWEI]);
+      invalidateUserCache(USERS.teamer1.id);
+      const { challengeId, submissionId } = await challengeMitBeitrag({ audience: 'nur_team', jahrgang: null, einreicher: USERS.admin1.id });
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(1);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.admin1.id }))
+        .toContain(USERS.teamer1.id);
+      const res = await request(app).put(`/api/challenges/admin/submissions/${submissionId}/moderate`).set(auth('teamer1'))
+        .send({ action: 'approve' });
+      expect(res.status).toBe(200);
+      await warteAufNachwehen(app);
+    });
+
+    it('"Nur das Team": erlaubt ohne jede Zuweisung (wie bisher)', async () => {
+      await db.query('DELETE FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      invalidateUserCache(USERS.teamer1.id);
+      const { challengeId, submissionId } = await challengeMitBeitrag({ audience: 'nur_team', jahrgang: null, einreicher: USERS.admin1.id });
       expect((await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'))).body.darf_freigeben).toBe(true);
       expect((await zaehler('teamer1')).pendingChallenges).toBe(1);
       const res = await request(app).put(`/api/challenges/admin/submissions/${submissionId}/moderate`).set(auth('teamer1'))
         .send({ action: 'approve' });
       expect(res.status).toBe(200);
       await warteAufNachwehen(app);
+    });
+
+    it('keine neue Befugnis: Antraege entscheiden und Verbuchen bleiben trotz gesetzter Rechte verboten', async () => {
+      const { rows: [z] } = await db.query(
+        'SELECT darf_antraege_entscheiden AS a, darf_events_verbuchen AS v FROM user_jahrgang_assignments WHERE user_id = $1', [USERS.teamer1.id]);
+      expect(z).toEqual({ a: true, v: true });
+      const id = await antrag();
+      const entscheiden = await request(app).put(`/api/admin/activities/requests/${id}`).set(auth('teamer1')).send({ status: 'approved' });
+      expect(entscheiden.status).toBe(403);
+      const buchung = await vergangenesEvent(420);
+      const verbuchen = await request(app).put(`/api/events/420/participants/${buchung}/attendance`).set(auth('teamer1'))
+        .send({ attendance_status: 'present' });
+      expect(verbuchen.status).toBe(403);
+      const { rows: [b] } = await db.query('SELECT attendance_status FROM event_bookings WHERE id = $1', [buchung]);
+      expect(b.attendance_status).toBe(null);
+      expect((await request(app).get('/api/events/420').set(auth('teamer1'))).body.darf_verbuchen).toBe(false);
     });
   });
 
@@ -455,6 +581,29 @@ describe('Darf freigeben: Antraege, Verbuchen, Challenge-Beitraege', () => {
       });
       expect(res.status).toBe(403);
       expect(await rechte('teamer1')).toEqual([[J1, true, true, true]]);
+    });
+
+    it('erlaubt: die Gemeindeleitung setzt das Recht einer Teamer:in; es wirkt sofort', async () => {
+      const { challengeId } = await challengeMitBeitrag();
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(1);
+      const res = await request(app).post(`/api/users/${USERS.teamer1.id}/jahrgaenge`).set(auth('orgAdmin1')).send({
+        jahrgang_assignments: [{ jahrgang_id: J1, can_view: true, can_edit: false, darf_challenges_freigeben: false }]
+      });
+      expect(res.status).toBe(200);
+      expect(await rechte('teamer1')).toEqual([[J1, true, true, false]]);
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(0);
+      expect((await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'))).body.darf_freigeben).toBe(false);
+    });
+
+    it('Store-App ohne die Felder: das Recht einer Teamer:in bleibt stehen', async () => {
+      await db.query('UPDATE user_jahrgang_assignments SET darf_challenges_freigeben = false WHERE user_id = $1', [USERS.teamer1.id]);
+      // Ein Admin ordnet die Teamer:in neu zu -- so, wie es jede App schickt.
+      await zuweisen('admin1', J1);
+      const res = await request(app).post(`/api/users/${USERS.teamer1.id}/jahrgaenge`).set(auth('admin1')).send({
+        jahrgang_assignments: [{ jahrgang_id: J1, can_view: true, can_edit: true }]
+      });
+      expect(res.status).toBe(200);
+      expect(await rechte('teamer1')).toEqual([[J1, true, true, false]]);
     });
 
     it('Store-App ohne die Felder: Speichern laesst gesetzte Rechte stehen', async () => {
@@ -501,11 +650,38 @@ describe('Darf freigeben: Antraege, Verbuchen, Challenge-Beitraege', () => {
       }
     });
 
-    it('verboten: Teamer:innen und Konfis haben keine Kennzahlen-Wahl', async () => {
-      for (const schluessel of ['teamer1', 'konfi1']) {
-        expect((await request(app).get('/api/notifications/kennzahlen').set(auth(schluessel))).status).toBe(403);
-        expect((await request(app).put('/api/notifications/kennzahlen').set(auth(schluessel)).send({ antraege: false })).status).toBe(403);
+    it('verboten: Konfis haben keine Kennzahlen-Wahl', async () => {
+      expect((await request(app).get('/api/notifications/kennzahlen').set(auth('konfi1'))).status).toBe(403);
+      expect((await request(app).put('/api/notifications/kennzahlen').set(auth('konfi1')).send({ challenges: false })).status).toBe(403);
+    });
+
+    it('Teamer:innen: dieselbe Form, waehlbar nur Challenge-Beitraege', async () => {
+      const get = await request(app).get('/api/notifications/kennzahlen').set(auth('teamer1'));
+      expect(get.status).toBe(200);
+      expect(get.body).toEqual({ antraege: true, verbuchen: true, challenges: true });
+      for (const fremd of [{ antraege: false }, { verbuchen: false }, { antraege: false, challenges: false }]) {
+        expect((await request(app).put('/api/notifications/kennzahlen').set(auth('teamer1')).send(fremd)).status).toBe(400);
       }
+      const { rows } = await db.query('SELECT 1 FROM leitung_kennzahlen WHERE user_id = $1', [USERS.teamer1.id]);
+      expect(rows.length).toBe(0);
+      const put = await request(app).put('/api/notifications/kennzahlen').set(auth('teamer1')).send({ challenges: false });
+      expect(put.status).toBe(200);
+      expect(put.body).toEqual({ antraege: true, verbuchen: true, challenges: false });
+    });
+
+    it('Teamer:innen: Challenge-Beitraege abgewaehlt -- keine Zahl, nicht am App-Symbol, kein Push', async () => {
+      const { challengeId } = await challengeMitBeitrag();
+      expect((await zaehler('teamer1')).pendingChallenges).toBe(1);
+      await request(app).put('/api/notifications/kennzahlen').set(auth('teamer1')).send({ challenges: false }).expect(200);
+      const z = await zaehler('teamer1');
+      expect([z.pendingChallenges, z.challengeApprovals.total, z.challengeUpdates.total]).toEqual([0, 0, 0]);
+      expect(await appSymbol('teamer1')).toBe(0);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: true, ausser: USERS.konfi1.id }))
+        .not.toContain(USERS.teamer1.id);
+      expect(await ladeLeitungZumChallengeBeitrag(db, challengeId, { moderiert: false, ausser: USERS.konfi1.id }))
+        .not.toContain(USERS.teamer1.id);
+      // Das Recht bleibt: Moderieren geht weiter.
+      expect((await request(app).get(`/api/challenges/admin/${challengeId}`).set(auth('teamer1'))).body.darf_freigeben).toBe(true);
     });
 
     it('verboten: unbekannte Werte und leere Anfrage', async () => {

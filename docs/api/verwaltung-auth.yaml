@@ -4277,7 +4277,7 @@ paths:
                         description: "Anwesenheit an Events des Jahrgangs eintragen. Wie darf_antraege_entscheiden."
                       darf_challenges_freigeben:
                         type: boolean
-                        description: "Challenge-Beitraege moderieren. Wie darf_antraege_entscheiden. Wirkt fuer die Rolle admin; Teamer:innen moderieren unveraendert nach ihrer Sicht."
+                        description: "Challenge-Beitraege moderieren. Wie darf_antraege_entscheiden. Wirkt fuer die Rollen admin und (seit 09.10.2026) teamer. Fuer teamer ist es das einzige wirksame der drei Felder -- Antraege entscheiden und Verbuchen sind requireAdmin; die beiden anderen Felder werden gespeichert, bleiben fuer sie aber ohne Folge."
       responses:
         "200": { description: "Zuweisungen gesetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert. assignments_count zaehlt die uebergebenen Zuweisungen (Antwortform unveraendert)" }
         "400": { description: "Jahrgang nicht in eigener Org, oder ein darf_-Feld ist kein Wahrheitswert" }

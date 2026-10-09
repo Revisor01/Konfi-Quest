@@ -598,7 +598,10 @@ App-Symbol stellen sich dabei gleich auf das Neue ein.
 
 Leitung und Gemeindeleitung wählen selbst, welche roten Zahlen sie bekommen.
 In der App unter *Mehr → Konto → Kennzahlen*, im Browser unter *Profil →
-Konto-Einstellungen → Kennzahlen → Auswählen* stehen drei Schalter:
+Konto-Einstellungen → Kennzahlen → Auswählen* stehen drei Schalter.
+Teamer:innen finden in ihrem [Profil](20-teamer.md#dein-profil-oeffnen),
+in der App wie im Browser, unter **Kennzahlen** nur den Schalter
+„Challenge-Beiträge" — die anderen beiden Zahlen haben sie nicht.
 
 | Schalter | Was dann fehlt |
 |---|---|
@@ -613,7 +616,7 @@ da, du kannst sie öffnen und erledigen. Ein neuer Antrag landet auch weiter
 im [Postfach](#mitteilungen-im-postfach-nachlesen).
 
 Die Wahl gilt für die Gemeinde, in der du gerade arbeitest, und für alle
-deine Geräte. Wer in mehreren Gemeinden leitet, stellt sie je Gemeinde ein.
+deine Geräte. Wer in mehreren Gemeinden mitarbeitet, stellt sie je Gemeinde ein.
 Neue Konten haben alles an.
 
 Unabhängig davon legt die Gemeindeleitung fest, wer überhaupt entscheiden,

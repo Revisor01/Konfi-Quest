@@ -1187,12 +1187,12 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
         <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip r-konfi">Konfi</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>validateDeviceToken</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Token wird immer dem eigenen User zugeordnet</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/notifications/kennzahlen</code></div>
-        <p class="summary">Kennzahlen-Wahl der Leitung lesen (je aktiver Gemeinde)</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur das eigene Konto (req.user.id) in der aktiven Gemeinde; keine Parameter</div>
+        <p class="summary">Kennzahlen-Wahl lesen (je aktiver Gemeinde; Leitung und Team)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur das eigene Konto (req.user.id) in der aktiven Gemeinde; keine Parameter</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#b45309">PUT</span><code class="pfad">/api/notifications/kennzahlen</code></div>
-        <p class="summary">Kennzahlen-Wahl der Leitung setzen</p>
-        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur das eigene Konto in der aktiven Gemeinde</div>
+        <p class="summary">Kennzahlen-Wahl setzen (Leitung und Team)</p>
+        <div class="zugriff"><span class="chip r-leitung">Leitung</span><span class="chip r-admin">Admin</span><span class="chip r-teamer">Teamer:in</span><span class="chip org-ja">org-getrennt</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Nur das eigene Konto in der aktiven Gemeinde</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/notifications/postfach</code></div>
         <p class="summary">Postfach lesen (eigene Mitteilungen, alle Gemeinden)</p>

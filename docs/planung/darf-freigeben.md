@@ -38,9 +38,10 @@ Dazu, ohne Frage-Nummer:
   verbuchen, Challenge-Beiträge — an oder aus. Aus heißt: keine rote Zahl am
   Reiter, nichts davon in der Zahl am App-Symbol und kein Push dafür. Vorgabe:
   alles an, wie bisher.
-- **Teamer:innen** behalten ihr Verhalten: Sie moderieren Challenges für
+- ~~**Teamer:innen** behalten ihr Verhalten: Sie moderieren Challenges für
   „Nur das Team" und ihre Jahrgänge; die Rechte an der Zuweisung gelten für
-  die Rolle Admin.
+  die Rolle Admin.~~ Abgelöst am selben Tag, siehe „Teamer:innen
+  (09.10.2026)".
 
 ### Umsetzung (09.10.2026)
 
@@ -65,6 +66,47 @@ Dazu, ohne Frage-Nummer:
 - Nicht am Recht hängen: die Termin-Meldungen an die Leitung (Abmeldungen,
   Zu- und Absagen) und das Erzeugen des QR-Codes zum Selbst-Check-in — sie
   folgen weiter der Sicht.
+
+### Bestätigt 09.10.2026
+
+Simon hat die drei Festlegungen aus der Umsetzung bestätigt:
+
+1. **Vorgänge ohne Jahrgang:** Wer in keinem Jahrgang zugewiesen ist oder das
+   Recht in mindestens einem seiner Jahrgänge hat, darf sie — bestätigt.
+2. **Postfach-Eintrag „Neuer Antrag"** bleibt bei abgewählter Kennzahl —
+   bestätigt.
+3. **Notizen, Abmelden, QR-Code und Löschen** hängen an keinem der drei
+   Rechte — bestätigt.
+
+### Teamer:innen (09.10.2026)
+
+Simon: Teamer:innen bekommen dasselbe Rechtemanagement je Jahrgang, „bezogen
+auf Challenges".
+
+- **Gemessen vorher** (Routen): Von den drei Handlungen durften
+  Teamer:innen nur Challenge-Beiträge moderieren
+  (`PUT /challenges/admin/submissions/:id/moderate`, `requireTeamer`).
+  Anträge entscheiden (`PUT /admin/activities/requests/:id` und `/reset`)
+  und Verbuchen (`PUT /events/:id/participants/…/attendance` und
+  `/attendance-all`) sind `requireAdmin` — das bleibt so, keine neue
+  Befugnis.
+- **Das Recht „Challenge-Beiträge freigeben"** gilt für Teamer:innen wie für
+  Admins: je Jahrgang an der Zuweisung, „Nur das Team" nach Regel 1 oben.
+  Dieselbe Regel-Stelle (`backend/utils/freigabeRechte.js`) liest Server-
+  Prüfung, Feld `darf_freigeben`, Zähler, App-Symbol und die Empfänger von
+  „Neuer Challenge-Beitrag".
+- **can_view und can_edit** bleiben, wie sie sind: Das Recht zählt nur an
+  Zuweisungen mit `can_view`; `can_edit` (bei Teamer:innen meist `false`)
+  spielt dafür keine Rolle.
+- **Kennzahlen-Wahl:** Teamer:innen bekommen Zahl und Push für
+  Challenge-Beiträge und deshalb dieselbe Wahl, nur für diesen einen
+  Bereich (`GET/PUT /notifications/kennzahlen`, Profil in App und Browser).
+- **Oberfläche:** Im Benutzerfenster setzt die Gemeindeleitung an der
+  Zuweisung einer Teamer:in nur den Schalter „Challenge-Beiträge freigeben";
+  nur dieses Feld geht mit. Alte Apps schicken kein Feld — der bisherige Wert
+  bleibt.
+- **Vorgabe:** Spalte steht bei allen Zuweisungen auf `true`; nach dem Deploy
+  darf jede Teamer:in, was sie vorher durfte.
 
 ## Anlass
 

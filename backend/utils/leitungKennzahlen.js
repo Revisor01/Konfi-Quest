@@ -1,6 +1,7 @@
 // Kennzahlen-Wahl der Leitung (Simon, 09.10.2026; docs/planung/
 // darf-freigeben.md): Jede Leitungsperson -- Admin und Org-Admin --
-// entscheidet je Gemeinde selbst, welche Zahlen sie sieht.
+// entscheidet je Gemeinde selbst, welche Zahlen sie sieht; Teamer:innen
+// fuer die Challenge-Beitraege (unten).
 //
 //   antraege    pendingRequests (Reiter "Antraege")
 //   verbuchen   pendingEvents   (Reiter "Events", Abschnitt "Verbuchen")
@@ -21,7 +22,12 @@
 // Keine Zeile in leitung_kennzahlen heisst "alles an" (Migration 204) -- so
 // zaehlt fuer alle bestehenden Konten nach dem Deploy alles wie vorher.
 //
-// Teamer:innen und Konfis haben keine Wahl: Fuer sie gilt immer "an".
+// Teamer:innen (seit 09.10.2026) haben die Wahl fuer den einen Bereich, in
+// dem sie eine Zahl und Pushes zum Handeln bekommen: "challenges" (offene
+// Freigaben und Challenge-Neuigkeiten, Push "Neuer Challenge-Beitrag"). Die
+// Zeile in leitung_kennzahlen hat dieselbe Form; antraege und verbuchen
+// bleiben fuer sie true und ohne Folge. Konfis haben keine Wahl: Fuer sie
+// gilt immer "an".
 
 const BEREICHE = Object.freeze(['antraege', 'verbuchen', 'challenges']);
 
@@ -31,9 +37,16 @@ function pruefeBereich(bereich) {
   if (!BEREICHE.includes(bereich)) throw new Error(`Unbekannter Bereich: ${bereich}`);
 }
 
+/** Die Bereiche, die diese Rolle waehlen kann (leer: keine Wahl). */
+function kennzahlBereicheFuer(rolle) {
+  if (rolle === 'org_admin' || rolle === 'admin') return BEREICHE;
+  if (rolle === 'teamer') return ['challenges'];
+  return [];
+}
+
 /** Hat diese Rolle eine Kennzahlen-Wahl? */
 function hatKennzahlenWahl(rolle) {
-  return rolle === 'org_admin' || rolle === 'admin';
+  return kennzahlBereicheFuer(rolle).length > 0;
 }
 
 /**
@@ -112,6 +125,7 @@ async function speichereKennzahlen(db, userId, organizationId, wahl) {
 module.exports = {
   BEREICHE,
   ALLES_AN,
+  kennzahlBereicheFuer,
   hatKennzahlenWahl,
   ladeKennzahlenVieler,
   ladeKennzahlen,

@@ -24,14 +24,27 @@
 //   admin                     je zugewiesenem Jahrgang (nur Zuweisungen mit
 //                             can_view: ein Jahrgang, den die Person nicht
 //                             sieht, kann ihr kein Recht geben)
-//   teamer                    unveraendert wie bisher: Teamer:innen moderieren
-//                             Challenges ihrer Jahrgaenge und "Nur das Team";
-//                             die Spalten wirken fuer sie nicht. Antraege und
-//                             Verbuchen sind ohnehin Leitungssache
-//                             (requireAdmin).
+//   teamer                    je zugewiesenem Jahrgang wie admin (Simon,
+//                             09.10.2026: "dasselbe Rechtemanagement je
+//                             Jahrgang ... bezogen auf Challenges"). Wirksam
+//                             ist fuer sie nur "challenges": Antraege
+//                             entscheiden und Verbuchen duerfen Teamer:innen
+//                             gar nicht (requireAdmin an
+//                             routes/activities.js PUT /requests/:id und
+//                             /reset, routes/events/anwesenheit.js) -- daran
+//                             aendert das Recht nichts, es gibt keine neue
+//                             Befugnis. Die beiden Spalten stehen an ihren
+//                             Zuweisungen mit der Vorgabe true und bleiben
+//                             ohne Folge.
+//
+// CAN_VIEW UND CAN_EDIT: Das Recht kommt OBENDRAUF. Es zaehlt nur an
+// Zuweisungen mit can_view (ohne Sicht kein Recht); can_edit spielt keine
+// Rolle -- es steuert weiter nur das Zuordnen und Bearbeiten an Jahrgang und
+// Konfis (utils/jahrgangsZugriff.js) und ist bei Teamer:innen meist false.
 //
 // VORGAENGE OHNE JAHRGANG (Antraege von Teamer:innen, Termine "Nur Team" und
-// ohne Jahrgang, Challenges "Nur das Team"): Ein Admin darf sie, wenn er das
+// ohne Jahrgang, Challenges "Nur das Team"): Ein Admin -- und ebenso eine
+// Teamer:in bei "Nur das Team" -- darf sie, wenn er das
 // Recht in MINDESTENS EINEM seiner Jahrgaenge hat -- oder keinem Jahrgang
 // zugewiesen ist. Dann gibt es nichts, woran es fehlen koennte, und er
 // behaelt, was er heute darf (Vorgabe: niemand bekommt nach dem Deploy
@@ -83,10 +96,8 @@ function rechtFuer(user, recht) {
   if (hatAlleRechte(user)) {
     return { voll: true, jahrgaenge: sichtbar.map((j) => Number(j.id)), ohneJahrgang: true };
   }
-  // Teamer:innen: unveraendert (siehe oben) -- ihre Sicht ist ihr Recht.
-  const mitRecht = (user && user.role_name === 'teamer')
-    ? sichtbar
-    : sichtbar.filter((j) => j[feld] !== false);
+  // admin und teamer: die Zuweisungen mit Sicht UND Recht (siehe oben).
+  const mitRecht = sichtbar.filter((j) => j[feld] !== false);
   return {
     voll: false,
     jahrgaenge: mitRecht.map((j) => Number(j.id)),

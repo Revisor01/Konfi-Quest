@@ -1928,7 +1928,7 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         // Darf freigeben (09.10.2026, utils/challengeLeitungSicht.js): Sehen
         // genuegt nicht -- moderieren darf, wer das Recht am Jahrgang der
         // Challenge hat (bei "Nur das Team": das Recht ohne Jahrgang).
-        // Teamer:innen unveraendert nach ihrer Sicht.
+        // Fuer Admins und Teamer:innen gleich (Teamer:innen seit 09.10.2026).
         if (!(await darfChallengeFreigeben(db, req, submission.challenge_id))) {
           return res.status(403).json({ error: 'Du darfst bei dieser Challenge keine Beiträge freigeben. Das Recht vergibt die Gemeindeleitung.' });
         }

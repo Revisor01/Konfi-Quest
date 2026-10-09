@@ -285,7 +285,7 @@ function spalten(personen) {
 /**
  * Das Recht je Person (utils/freigabeRechte.js) als zwei Spalten fuer
  * `unnest`: die Jahrgaenge des Rechts (Text-Array-Literal) und ob Vorgaenge
- * ohne Jahrgang zaehlen. Teamer:innen bekommen ihre Sicht (unveraendert).
+ * ohne Jahrgang zaehlen. Fuer Teamer:innen dieselbe Regel (seit 09.10.2026).
  */
 function rechtSpalten(personen, recht) {
   const rechte = personen.map((p) => rechtFuer({
@@ -494,13 +494,14 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     // Challenge-Neuigkeiten fuer Leitung und Team (27.09.2026) -- dieselbe
     // SQL-Fassung wie badge-counts.challengeUpdates fuer diese Rollen.
     () => challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer]),
-    // Kennzahlen-Wahl der Leitung je Gemeinde (09.10.2026).
-    () => ladeKennzahlenVieler(db, leitung)
+    // Kennzahlen-Wahl je Gemeinde (09.10.2026): Leitung und Teamer:innen
+    // (diese nur fuer 'challenges', utils/leitungKennzahlen.js).
+    () => ladeKennzahlenVieler(db, [...leitung, ...teamer])
   ]);
 
-  // Zaehlt der Bereich fuer diesen Eintrag? Nur die Leitung hat eine Wahl;
-  // Teamer:innen und Konfis zaehlen immer.
-  const leitungsSchluessel = new Set(leitung.map((p) => schluessel(p.id, p.type)));
+  // Zaehlt der Bereich fuer diesen Eintrag? Leitung und Teamer:innen haben
+  // eine Wahl; Konfis zaehlen immer.
+  const leitungsSchluessel = new Set([...leitung, ...teamer].map((p) => schluessel(p.id, p.type)));
   const zaehlt = (userId, userType, orgId, bereich) =>
     !leitungsSchluessel.has(schluessel(userId, userType)) || bereichAn(kennzahlen, userId, orgId, bereich);
 
