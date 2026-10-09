@@ -75,7 +75,7 @@ registriereArt('antrag_entschieden', async (db, p, k) => {
 });
 // Wer welchen Antrag sieht: EINE Regel fuer Liste, Zaehler und die Empfaenger
 // von "Neuer Antrag eingegangen" (27.09.2026).
-const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
+const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql, darfAntragEntscheidenSpalte, darfAntragEntscheiden } = require('../utils/antragLeitungSicht');
 
 // Aktivitäten: Teamer darf ansehen und Punkte vergeben, Admin darf bearbeiten
 // Requests: NUR Admin (Datenschutz!)
@@ -394,14 +394,22 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Ort, damit GET /requests/:id genau die Form eines Listeneintrags hat
   // (28.09.2026). An der Liste ist die Form ein Vertrag: Store-Apps 2.2.x und
   // 2.3.0 oeffnen einen Antrag, indem sie ihn per .find() aus ihr heraussuchen.
-  const ANTRAG_AUSWAHL = `
+  // darf_entscheiden (09.10.2026, "Darf freigeben"): additives Feld je Antrag
+  // -- ob der Aufrufer genehmigen und ablehnen darf (utils/antragLeitungSicht.js,
+  // darfAntragEntscheidenSpalte). Ohne Recht bleibt der Antrag in der Liste,
+  // die App blendet die Knoepfe aus; die Store-Apps kennen das Feld nicht und
+  // bekommen beim Entscheiden 403.
+  const antragAuswahl = (darfSpalte) => `
         SELECT ar.*, u_konfi.display_name as konfi_name, a.name as activity_name, a.points as activity_points, a.type as activity_type,
                a.target_role as activity_target_role,
-               u_approved.display_name as approved_by_name
+               u_approved.display_name as approved_by_name,
+               (${darfSpalte}) AS darf_entscheiden
         FROM activity_requests ar
         JOIN users u_konfi ON ar.user_id = u_konfi.id
         JOIN activities a ON ar.activity_id = a.id
         LEFT JOIN users u_approved ON ar.approved_by = u_approved.id`;
+
+  const ANTRAG_OHNE_RECHT = 'Du darfst über diesen Antrag nicht entscheiden. Das Recht vergibt die Gemeindeleitung.';
 
   // Die can_view-Jahrgaenge eines jahrgangsgebundenen Admins -- Eingabe fuer
   // gebundeneLeitungSiehtAntragSql (utils/antragLeitungSicht.js).
@@ -485,7 +493,8 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         jahrgangFilter = ` AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: `$${params.length}::int[]` })}`;
       }
 
-      const query = `${ANTRAG_AUSWAHL}
+      const darfSpalte = darfAntragEntscheidenSpalte(req.user, params);
+      const query = `${antragAuswahl(darfSpalte)}
         WHERE a.organization_id = $1${statusFilter}${personFilter}${jahrgangFilter}
         ORDER BY ar.created_at DESC
       `;
@@ -505,7 +514,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
   // Additiv: Der Antragsdialog der Leitung lud vorher die ganze Liste (ohne
   // LIMIT, genehmigte Antraege werden nie geloescht) und suchte den einen
   // Antrag per .find() heraus. Die Antwort ist genau ein Listeneintrag
-  // (ANTRAG_AUSWAHL), die Sichtregel dieselbe wie in der Liste
+  // (antragAuswahl), die Sichtregel dieselbe wie in der Liste
   // (utils/antragLeitungSicht.js):
   //   - fremde Gemeinde oder unbekannte Id: 404 -- ob es den Antrag
   //     anderswo gibt, verraet die Route nicht;
@@ -517,10 +526,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
     async (req, res) => {
       const requestId = req.params.id;
       try {
+        const einzelParams = [req.user.organization_id, requestId];
+        const darfSpalte = darfAntragEntscheidenSpalte(req.user, einzelParams);
         const { rows: [antrag] } = await db.query(
-          `${ANTRAG_AUSWAHL}
+          `${antragAuswahl(darfSpalte)}
           WHERE a.organization_id = $1 AND ar.id = $2`,
-          [req.user.organization_id, requestId]
+          einzelParams
         );
         if (!antrag) return res.status(404).json({ error: 'Antrag nicht gefunden' });
 
@@ -636,6 +647,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
       }
 
+      // Darf freigeben (09.10.2026): Zuruecksetzen nimmt eine Entscheidung
+      // zurueck -- dasselbe Recht wie das Entscheiden.
+      if (!(await darfAntragEntscheiden(db, req, requestId))) {
+        return res.status(403).json({ error: ANTRAG_OHNE_RECHT });
+      }
+
       const client = await db.getClient();
       try {
         await client.query('BEGIN');
@@ -745,6 +762,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         if (!zugriff.erlaubt) {
           return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
         }
+      }
+
+      // Darf freigeben (09.10.2026, utils/antragLeitungSicht.js): Sehen
+      // genuegt nicht, entscheiden darf nur, wer das Recht am Jahrgang des
+      // Konfis hat (bei Teamer-Antraegen: das Recht ohne Jahrgang).
+      if (!(await darfAntragEntscheiden(db, req, requestId))) {
+        return res.status(403).json({ error: ANTRAG_OHNE_RECHT });
       }
 
       // Guard: Bei Genehmigung prüfen ob Punkte-Typ aktiviert ist (nur für Konfi-Activities)

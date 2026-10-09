@@ -237,7 +237,11 @@ describe('Abzeichen-Lauf: nur veraenderte Personen pruefen', () => {
     // 28.09.2026: 21 -> 20. Das Postfach zaehlt am App-Symbol nicht mehr mit
     // (Entscheidung Simon); die Abfrage postfachZaehler entfaellt aus der
     // Zaehlrunde (jetzt zehn Bausteine): 1 + 2 + 10 + 7 = 20.
-    expect(z.stand()).toBe(20);
+    // 09.10.2026: 20 -> 21. Die Kennzahlen-Wahl der Leitung
+    // (utils/leitungKennzahlen.js, "Darf freigeben") kam als elfter Baustein
+    // in die Zaehlrunde -- EINE Abfrage fuer alle Leitungs-Konten aller
+    // Gemeinden zusammen. Konstant, nicht je Person: 1 + 2 + 11 + 7 = 21.
+    expect(z.stand()).toBe(21);
   });
 
   it('wer eine neue Aktivitaet bekommt, wird geprueft — und sonst niemand', async () => {

@@ -8,6 +8,9 @@ const liveUpdate = require('../../utils/liveUpdate');
 const { checkPointTypeEnabled } = require('../../utils/pointTypeGuard');
 const { registriereArt, einreihen } = require('../../utils/warteschlange');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
+const { darfTerminVerbuchen } = require('../../utils/terminLeitungSicht');
+
+const VERBUCHEN_OHNE_RECHT = 'Du darfst an diesem Event nicht verbuchen. Das Recht vergibt die Gemeindeleitung.';
 const { rueckeNach } = require('../../utils/bookingUtils');
 const { meldeNachrueckern } = require('../../utils/nachrueckMeldung');
 
@@ -102,6 +105,10 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       const zugriff = await darfTermin(client, req, eventId);
       if (!zugriff.erlaubt) {
         return res.status(403).json({ error: 'Kein Zugriff auf dieses Event' });
+      }
+      // Darf freigeben (09.10.2026): verbuchen nur mit dem Recht am Jahrgang.
+      if (!(await darfTerminVerbuchen(client, req, eventId))) {
+        return res.status(403).json({ error: VERBUCHEN_OHNE_RECHT });
       }
 
       await client.query('BEGIN');
@@ -332,6 +339,11 @@ module.exports = (db, rbacVerifier, { requireAdmin }, checkAndAwardBadges) => {
       if (!zugriff.erlaubt) {
         await client.query('ROLLBACK');
         fruehAntwort = { status: 403, body: { error: 'Kein Zugriff auf dieses Event' } };
+      } else if (!(await darfTerminVerbuchen(client, req, eventId))) {
+        // Darf freigeben (09.10.2026, utils/terminLeitungSicht.js): Sehen
+        // genuegt nicht -- verbuchen darf, wer das Recht am Jahrgang hat.
+        await client.query('ROLLBACK');
+        fruehAntwort = { status: 403, body: { error: VERBUCHEN_OHNE_RECHT } };
       } else {
 
       // Punkte gibt es NUR für Konfis. Teamer:innen nehmen zwar teil (Anwesenheit

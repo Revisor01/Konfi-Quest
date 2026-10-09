@@ -96,6 +96,14 @@ Versionsüberschrift.
 - Auf konfi-quest.de gibt es ein Formular „Hilfe und Support" mit Art,
   Bereich und Dringlichkeit zum Auswählen; unter „Mehr" führt „Hilfe und
   Support" für Gemeindeleitung und Leitung dorthin.
+- Die Gemeindeleitung legt je Jahrgang fest, wer aus der Leitung dort
+  Anträge entscheiden, Events verbuchen und Challenge-Beiträge freigeben darf.
+  Ohne das Recht bleiben die Vorgänge sichtbar, aber ohne Knöpfe, ohne Push,
+  ohne Postfach-Eintrag und ohne rote Zahl; bisher Zugewiesene behalten alle
+  drei Rechte.
+- Leitung und Gemeindeleitung wählen unter „Kennzahlen" je Gemeinde selbst,
+  ob Anträge, Events zum Verbuchen und Challenge-Beiträge eine rote Zahl am
+  Reiter und am App-Symbol bekommen und einen Push auslösen.
 
 ### Geändert
 - In der Event-Liste im Browser steht vor jedem Event ein farbiger Kreis mit

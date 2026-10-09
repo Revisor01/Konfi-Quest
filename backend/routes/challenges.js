@@ -114,7 +114,7 @@ const CONTENT_TYPES = {
 // braucht und der ueber pushService geladen wird, bevor diese Datei fertig
 // ist. Hier weiterhin re-exportiert (siehe module.exports unten).
 const { PUBLIC_SUBMISSION_SQL } = require('../utils/challengeSichtbarkeit');
-const { leitungSiehtChallengeSql, teamMachtMitSql, TEAM_MACHT_MIT_AUDIENCES } = require('../utils/challengeLeitungSicht');
+const { leitungSiehtChallengeSql, teamMachtMitSql, TEAM_MACHT_MIT_AUDIENCES, darfChallengeFreigeben, darfFreigebenBedingung } = require('../utils/challengeLeitungSicht');
 const { MITGLIEDSCHAFTEN_SQL, istMitgliedDerOrganisation, ladeMitgliedschaftenMitSperre, waehleGemeinde } = require('../utils/orgMitglieder');
 const { registriereArt, einreihen } = require('../utils/warteschlange');
 
@@ -1367,9 +1367,17 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
       params.push(nurChallengeId);
       filter += ` AND c.id = $${params.length}`;
     }
+    // darf_freigeben (09.10.2026, "Darf freigeben"): ADDITIV -- darf der
+    // Aufrufer Beitraege dieser Challenge moderieren? Dieselbe Bedingung wie
+    // die Server-Pruefung (utils/challengeLeitungSicht.js). Die Store-Apps
+    // kennen das Feld nicht; ohne Recht antwortet die Moderation mit 403.
+    const darfSpalte = req.user.role_name === 'org_admin'
+      ? 'true'
+      : darfFreigebenBedingung(req.user, params);
 
     const { rows } = await db.query(
       `SELECT c.*,
+              (${darfSpalte}) AS darf_freigeben,
               COALESCE(au.display_name, c.author_freetext) AS author_name,
               au.display_name AS author_display_name,
               (SELECT COUNT(*) FROM challenge_submissions s WHERE s.challenge_id = c.id) AS submission_count,
@@ -1916,6 +1924,13 @@ module.exports = (db, rbacVerifier, roleHelpers, uploadsDir, challengeUpload) =>
         }
         if (!(await leadershipMayAccess(req, submission.challenge_id))) {
           return res.status(403).json({ error: 'Kein Zugriff auf diesen Beitrag' });
+        }
+        // Darf freigeben (09.10.2026, utils/challengeLeitungSicht.js): Sehen
+        // genuegt nicht -- moderieren darf, wer das Recht am Jahrgang der
+        // Challenge hat (bei "Nur das Team": das Recht ohne Jahrgang).
+        // Teamer:innen unveraendert nach ihrer Sicht.
+        if (!(await darfChallengeFreigeben(db, req, submission.challenge_id))) {
+          return res.status(403).json({ error: 'Du darfst bei dieser Challenge keine Beiträge freigeben. Das Recht vergibt die Gemeindeleitung.' });
         }
 
         // Anonymisieren betrifft NUR den Konsens, nicht den Freigabe-Status.

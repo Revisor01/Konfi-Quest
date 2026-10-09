@@ -60,7 +60,11 @@ Dazu, ohne Frage-Nummer:
   App-Symbol, Push-Empfänger, Postfach und Server-Prüfung lesen sie.
 - Kennzahlen-Abwahl nimmt Zahl und Push, nicht den Postfach-Eintrag (Simon
   nannte für die Abwahl „Push und Zahl", für das fehlende Recht zusätzlich das
-  Postfach).
+  Postfach). Ausnahme: Die tägliche Verbuchen-Erinnerung ist selbst eine Zahl
+  und entfällt mit der Abwahl ganz, auch im Postfach.
+- Nicht am Recht hängen: die Termin-Meldungen an die Leitung (Abmeldungen,
+  Zu- und Absagen) und das Erzeugen des QR-Codes zum Selbst-Check-in — sie
+  folgen weiter der Sicht.
 
 ## Anlass
 

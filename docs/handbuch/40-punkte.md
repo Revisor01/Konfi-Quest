@@ -168,9 +168,12 @@ und entscheiden dürfen:
 
 - **Die Gemeindeleitung** bekommt jeden Antrag der Gemeinde.
 - **Die Leitung** bekommt die Anträge der Konfis aus
-  [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert)
-  und alle Anträge von Teamer:innen. Wer als Leitung keinen Jahrgang hat,
-  bekommt also nur die Anträge des Teams.
+  [ihren Jahrgängen](45-jahrgaenge.md#nachvollziehen-was-die-jahrgangs-zuweisung-steuert),
+  in denen sie [Anträge entscheiden darf](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf),
+  und die Anträge von Teamer:innen, wenn sie dieses Recht in mindestens einem
+  Jahrgang hat. Wer als Leitung keinen Jahrgang hat, bekommt nur die Anträge
+  des Teams. Ohne das Recht steht der Antrag in der Liste, aber ohne Knöpfe,
+  ohne Push und ohne Postfach-Eintrag.
 - **Ein Konfi ohne Jahrgang** meldet sich nur bei der Gemeindeleitung — nur
   sie sieht seinen Antrag.
 - **Teamer:innen** bekommen keine Meldung über neue Anträge; die Antragsliste
@@ -180,7 +183,9 @@ und entscheiden dürfen:
 
 Die Zahl am Reiter, am
 [Gemeinde-Umschalter](05-rollen.md#sehen-wo-etwas-offen-ist) und am
-App-Symbol zählt nach derselben Regel. Wer in mehreren Gemeinden mitarbeitet,
+App-Symbol zählt nach derselben Regel. Wer Anträge bei den
+[Kennzahlen](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst) abgewählt hat,
+bekommt dazu weder Zahl noch Push, wohl aber den Postfach-Eintrag. Wer in mehreren Gemeinden mitarbeitet,
 bekommt die Anträge jeder Gemeinde nach der Rolle und den Jahrgängen, die er
 dort hat.
 

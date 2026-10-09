@@ -43,8 +43,28 @@
 // gebundenen (Begruendung dort: in Produktion tragen es nur
 // org_admin-Konten, gemessen 31.08.2026).
 
+// DARF ENTSCHEIDEN (09.10.2026, "Darf freigeben", utils/freigabeRechte.js):
+// Wer einen Antrag sieht, darf ueber ihn noch nicht entscheiden. Entscheiden
+// darf, wer ihn mit den Jahrgaengen SEINES RECHTS sieht -- dieselbe Bedingung
+// unten (gebundeneLeitungSiehtAntragSql), ausgewertet mit
+// rechtFuer(user, 'antraege'): Konfi-Antraege ueber den Jahrgang des Konfis,
+// Teamer-Antraege, wenn das Recht fuer Vorgaenge ohne Jahrgang besteht.
+// Die Org-Leitung darf immer. Daran haengen:
+//   - Server-Pruefung: PUT /admin/activities/requests/:id und /:id/reset
+//     (darfAntragEntscheiden, 403 ohne Recht)
+//   - Liste und Einzelabruf: Feld darf_entscheiden je Antrag
+//     (darfAntragEntscheidenSpalte) -- additiv, die Store-Apps ignorieren es
+//   - Zaehler: badge-counts.pendingRequests, App-Symbol und
+//     Gemeinde-Umschalter (utils/appIconBadge.js)
+//   - Empfaenger von "Neuer Antrag eingegangen", Postfach und Push
+//     (ladeLeitungZumAntrag); den Push filtert zusaetzlich die
+//     Kennzahlen-Wahl (utils/leitungKennzahlen.js, Bereich 'antraege')
+// Die LISTE selbst bleibt bei der Sicht: Wer nicht entscheiden darf, sieht
+// die Antraege weiter, nur lesend.
+
 const { ladeMitgliederDerOrganisation } = require('./orgMitglieder');
 const { abfragenBuendeln } = require('./abfragenBuendeln');
+const { rechtFuer, rechtJahrgaengeSql, rechtOhneJahrgangSql } = require('./freigabeRechte');
 
 /**
  * Sieht diese Person ALLE Antraege ihrer aktiven Gemeinde?
@@ -70,13 +90,17 @@ function leitungSiehtAlleAntraege(user) {
  *
  * @param {object} opt
  * @param {string} opt.jahrgaenge  SQL-Ausdruck fuer die can_view-Jahrgaenge als int[]
+ *   (fuer "darf entscheiden": die Jahrgaenge des Rechts)
+ * @param {string} [opt.ohneJahrgang='true']  SQL-Ausdruck (boolean): zaehlen
+ *   Antraege ohne Jahrgang (Teamer-Antraege)? Fuer die Sicht immer true, fuer
+ *   "darf entscheiden" das Recht ohne Jahrgang (utils/freigabeRechte.js)
  * @param {string} [opt.a='a']     Alias der activities-Tabelle
  * @param {string} [opt.ar='ar']   Alias der activity_requests-Tabelle
  * @returns {string}
  */
-function gebundeneLeitungSiehtAntragSql({ jahrgaenge, a = 'a', ar = 'ar' }) {
+function gebundeneLeitungSiehtAntragSql({ jahrgaenge, ohneJahrgang = 'true', a = 'a', ar = 'ar' }) {
   return `(
-    ${a}.target_role = 'teamer'
+    (${a}.target_role = 'teamer' AND ${ohneJahrgang})
     OR EXISTS (
       SELECT 1 FROM konfi_profiles kp_sicht
        WHERE kp_sicht.user_id = ${ar}.user_id
@@ -86,8 +110,9 @@ function gebundeneLeitungSiehtAntragSql({ jahrgaenge, a = 'a', ar = 'ar' }) {
 }
 
 /**
- * Die Leitung, die diesen Antrag sieht -- die Empfaenger von "Neuer Antrag
- * eingegangen" (Postfach und Push).
+ * Die Leitung, die ueber diesen Antrag entscheiden darf -- die Empfaenger von
+ * "Neuer Antrag eingegangen" (Postfach und Push; den Push filtert die
+ * Aufrufstelle zusaetzlich nach der Kennzahlen-Wahl).
  *
  * Beide Quellen der Zugehoerigkeit (users.organization_id UND
  * user_organizations, Rolle je Gemeinde) ueber ladeMitgliederDerOrganisation
@@ -115,10 +140,12 @@ async function ladeLeitungZumAntrag(db, antragId) {
     () => ladeMitgliederDerOrganisation(db, antrag.organization_id, ['admin'])
   ]);
 
-  // Die Rolle admin durch DIESELBE Bedingung wie Liste und Zaehler: das
-  // Merkmal is_super_admin wie org_admin, sonst die can_view-Jahrgaenge der
-  // Person (ein Jahrgang gehoert genau einer Gemeinde -- eine Zuweisung aus
-  // einer anderen Gemeinde trifft den Konfi-Jahrgang nie).
+  // Die Rolle admin durch DIESELBE Bedingung wie Zaehler und
+  // Server-Pruefung: das Merkmal is_super_admin wie org_admin, sonst die
+  // Jahrgaenge, an denen die Person ENTSCHEIDEN darf (seit 09.10.2026, vorher
+  // die can_view-Jahrgaenge -- mit der Vorgabe true dieselben). Ein Jahrgang
+  // gehoert genau einer Gemeinde -- eine Zuweisung aus einer anderen Gemeinde
+  // trifft den Konfi-Jahrgang nie.
   let gebunden = [];
   if (admins.length > 0) {
     const { rows } = await db.query(
@@ -130,8 +157,8 @@ async function ladeLeitungZumAntrag(db, antragId) {
           AND (
             u.is_super_admin IS TRUE
             OR ${gebundeneLeitungSiehtAntragSql({
-              jahrgaenge: `ARRAY(SELECT uja.jahrgang_id FROM user_jahrgang_assignments uja
-                                  WHERE uja.user_id = u.id AND uja.can_view = true)`
+              jahrgaenge: rechtJahrgaengeSql('antraege', 'u.id'),
+              ohneJahrgang: rechtOhneJahrgangSql('antraege', 'u.id', 'a.organization_id')
             })}
           )`,
       [admins, antragId]
@@ -148,4 +175,53 @@ async function ladeLeitungZumAntrag(db, antragId) {
   return [...empfaenger].sort((x, y) => x - y);
 }
 
-module.exports = { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql, ladeLeitungZumAntrag };
+/**
+ * SQL-Ausdruck (boolean) "der Aufrufer darf ueber Antrag <ar> entscheiden"
+ * -- fuer das Feld darf_entscheiden in Liste und Einzelabruf. Haengt die
+ * Parameter an `params` an (die Abfrage muss activities als `a` und
+ * activity_requests als `ar` fuehren).
+ *
+ * @param {object} user    req.user
+ * @param {Array} params   Parameterliste der Abfrage (wird erweitert)
+ * @returns {string}
+ */
+function darfAntragEntscheidenSpalte(user, params) {
+  if (leitungSiehtAlleAntraege(user)) return 'true';
+  const recht = rechtFuer(user, 'antraege');
+  params.push(recht.jahrgaenge);
+  const jahrgaenge = `$${params.length}::int[]`;
+  return gebundeneLeitungSiehtAntragSql({ jahrgaenge, ohneJahrgang: recht.ohneJahrgang ? 'true' : 'false' });
+}
+
+/**
+ * Darf der Aufrufer ueber diesen Antrag entscheiden? Server-Pruefung fuer
+ * Genehmigen, Ablehnen und Zuruecksetzen. Dieselbe Bedingung wie das Feld
+ * darf_entscheiden und die Zaehler.
+ *
+ * @param {object} db
+ * @param {object} req
+ * @param {number|string} antragId
+ * @returns {Promise<boolean>}
+ */
+async function darfAntragEntscheiden(db, req, antragId) {
+  if (leitungSiehtAlleAntraege(req.user)) return true;
+  const params = [antragId, req.user.organization_id];
+  const bedingung = darfAntragEntscheidenSpalte(req.user, params);
+  const { rows: [treffer] } = await db.query(
+    `SELECT 1
+       FROM activity_requests ar
+       JOIN activities a ON a.id = ar.activity_id
+      WHERE ar.id = $1 AND a.organization_id = $2
+        AND ${bedingung}`,
+    params
+  );
+  return !!treffer;
+}
+
+module.exports = {
+  leitungSiehtAlleAntraege,
+  gebundeneLeitungSiehtAntragSql,
+  ladeLeitungZumAntrag,
+  darfAntragEntscheidenSpalte,
+  darfAntragEntscheiden
+};

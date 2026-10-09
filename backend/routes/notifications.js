@@ -7,6 +7,8 @@ const { appIconSummenAllerGemeinden } = require('../utils/appIconBadge');
 const { leitungSiehtChallengeSql } = require('../utils/challengeLeitungSicht');
 const { leitungSiehtAlleAntraege, gebundeneLeitungSiehtAntragSql } = require('../utils/antragLeitungSicht');
 const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('../utils/terminLeitungSicht');
+const { rechtFuer } = require('../utils/freigabeRechte');
+const { ladeKennzahlen, speichereKennzahlen, hatKennzahlenWahl, ALLES_AN, BEREICHE } = require('../utils/leitungKennzahlen');
 const { kennwortFuersProtokoll, diagnoseHinweisFuersProtokoll } = require('../utils/protokoll');
 const { wegAusAnmeldung, startbildschirmAusAnmeldung } = require('../utils/appSymbolWeg');
 
@@ -96,14 +98,27 @@ module.exports = (db, verifyTokenRBAC) => {
       // Konfis) nennen den Grund bereits ueber ihre eigenen Routen.
       const istGebundenerAdmin = req.user.role_name === 'admin' && !req.user.is_super_admin;
 
+      // "Darf freigeben" und Kennzahlen-Wahl (09.10.2026,
+      // docs/planung/darf-freigeben.md): Die drei Leitungs-Zahlen zaehlen nur,
+      // was die Person entscheiden, verbuchen bzw. freigeben DARF
+      // (utils/freigabeRechte.js, rechtFuer -- dieselbe Regel wie Server-
+      // Pruefung, Push-Empfaenger und App-Symbol), und nur, wenn sie den
+      // Bereich bei den Kennzahlen nicht abgewaehlt hat
+      // (utils/leitungKennzahlen.js). Die FORM der Antwort bleibt: eine
+      // abgewaehlte Zahl ist 0 -- so zeigen auch die Store-Apps 2.2.x/2.3.x
+      // keine Zahl, ohne das neue Feld zu kennen.
+      const kennzahlen = (isAdminType && hatKennzahlenWahl(req.user.role_name))
+        ? await ladeKennzahlen(db, userId, organizationId)
+        : ALLES_AN;
+      const antragRecht = rechtFuer(req.user, 'antraege');
+      const verbuchenRecht = rechtFuer(req.user, 'verbuchen');
+      const freigabeRecht = rechtFuer(req.user, 'challenges');
+
       // Offene Challenge-Freigaben: org_admin org-weit; Teamer und gebundene
       // Admins nur für Challenges ihrer zugewiesenen Jahrgänge (gleiche
       // Grenze wie viewableJahrgangIds in routes/challenges.js — niemand soll
       // auf Freigaben gestupst werden, deren Challenge er gar nicht oeffnen
-      // darf).
-      const eigeneJahrgangIds = (userType === 'teamer' || istGebundenerAdmin)
-        ? (req.user.assigned_jahrgaenge || []).filter(j => j.can_view).map(j => j.id)
-        : [];
+      // darf). Die Jahrgaenge kommen seit 09.10.2026 aus freigabeRecht (oben).
       // JE CHALLENGE gruppiert (25.09.2026, Simon: "Auf der Challenge muss
       // auch ein Badge sein wie bei den Chats"): Die Summe speist weiter
       // pendingChallenges (Alt-App-Vertrag, Zahl bleibt Zahl), die Zeilen
@@ -112,7 +127,9 @@ module.exports = (db, verifyTokenRBAC) => {
       // Beitraege als offen gelten und wessen Challenges zaehlen, aendert
       // sich hier NICHT: dieselben WHERE-Bedingungen wie zuvor.
       let challengesPromise = Promise.resolve({ rows: [] });
-      if (isAdminType && !istGebundenerAdmin) {
+      if (isAdminType && !kennzahlen.challenges) {
+        // Kennzahl abgewaehlt: keine Freigaben-Zahl (bleibt leer).
+      } else if (isAdminType && !istGebundenerAdmin) {
         challengesPromise = db.query(
           `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
@@ -135,15 +152,17 @@ module.exports = (db, verifyTokenRBAC) => {
         // Team-Runde moderieren, wurde aber nie per Reiter-Zaehler darauf
         // gestossen (Befund H4).
         // Seit 27.09.2026 ueber die gemeinsame Regel (utils/challengeLeitungSicht.js).
+        // Seit 09.10.2026 mit den Jahrgaengen des Rechts "challenges"
+        // (Teamer:innen: unveraendert ihre Sicht, utils/freigabeRechte.js).
         challengesPromise = db.query(
           `SELECT cs.challenge_id, COUNT(*)::int AS c
            FROM challenge_submissions cs
            JOIN challenges c ON cs.challenge_id = c.id
            WHERE c.organization_id = $1
              AND cs.moderation_status = 'pending'
-             AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$2::int[]' })}
+             AND ${leitungSiehtChallengeSql({ rolle: '$3', jahrgaenge: '$2::int[]', ohneJahrgang: freigabeRecht.ohneJahrgang ? 'true' : 'false' })}
            GROUP BY cs.challenge_id`,
-          [organizationId, eigeneJahrgangIds, req.user.role_name]
+          [organizationId, freigabeRecht.jahrgaenge, req.user.role_name]
         );
       }
 
@@ -181,7 +200,9 @@ module.exports = (db, verifyTokenRBAC) => {
       // nach der auch die Empfaenger von "Neuer Antrag eingegangen" bestimmt
       // werden.
       let requestsPromise = zero;
-      if (isAdminType && leitungSiehtAlleAntraege(req.user)) {
+      if (isAdminType && !kennzahlen.antraege) {
+        // Kennzahl abgewaehlt: 0.
+      } else if (isAdminType && leitungSiehtAlleAntraege(req.user)) {
         requestsPromise = db.query(
           `SELECT COUNT(*)::int AS c
            FROM activity_requests ar
@@ -195,8 +216,8 @@ module.exports = (db, verifyTokenRBAC) => {
            FROM activity_requests ar
            JOIN activities a ON ar.activity_id = a.id
            WHERE a.organization_id = $1 AND ar.status = 'pending'
-             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: '$2::int[]' })}`,
-          [organizationId, eigeneJahrgangIds]
+             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: '$2::int[]', ohneJahrgang: antragRecht.ohneJahrgang ? 'true' : 'false' })}`,
+          [organizationId, antragRecht.jahrgaenge]
         );
       }
 
@@ -222,13 +243,14 @@ module.exports = (db, verifyTokenRBAC) => {
       // BF-11). Und Buchungen geloeschter Konten zaehlen nicht mehr, wie in
       // der Liste (utils/buchungszahlen.js).
       let eventsPromise = zero;
-      if (isAdminType) {
+      if (isAdminType && kennzahlen.verbuchen) {
+        // Seit 09.10.2026: nur Termine, an denen die Person verbuchen darf.
         const gebunden = !leitungSiehtAlleTermine(req.user);
         const eventSichtFilter = gebunden
-          ? `AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: '$2::int[]' })}`
+          ? `AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: '$2::int[]', ohneJahrgang: verbuchenRecht.ohneJahrgang ? 'true' : 'false' })}`
           : '';
         const eventParams = gebunden
-          ? [organizationId, eigeneJahrgangIds]
+          ? [organizationId, verbuchenRecht.jahrgaenge]
           : [organizationId];
         eventsPromise = db.query(
           `SELECT COUNT(*)::int AS c
@@ -254,9 +276,13 @@ module.exports = (db, verifyTokenRBAC) => {
       // (2.2.x) lesen challengeUpdates nur im Konfi-Zweig und ignorieren
       // das Feld fuer Leitung und Team; die Antwortform bleibt.
       // Admins mit Super-Admin-Merkmal zaehlen wie oben org-weit.
+      // Kennzahl "challenges" abgewaehlt: auch keine Neuigkeiten-Zahlen der
+      // Leitung (dieselbe Wahl wie am App-Symbol, utils/appIconBadge.js).
       const neuigkeitenPromise = (userType === 'konfi')
         ? challengeNeuigkeitenJeChallenge(db, [{ id: userId, type: userType, organization_id: organizationId }])
-        : challengeNeuigkeitenLeitungJeChallenge(db, [{
+        : (isAdminType && !kennzahlen.challenges)
+          ? Promise.resolve([])
+          : challengeNeuigkeitenLeitungJeChallenge(db, [{
             id: userId,
             type: userType,
             organization_id: organizationId,
@@ -607,6 +633,55 @@ module.exports = (db, verifyTokenRBAC) => {
       res.json({ success: true, id, read_at: vorhanden[0].read_at });
     } catch (err) {
       console.error('Database error in PUT /notifications/postfach/:id/gelesen:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // KENNZAHLEN-WAHL DER LEITUNG (09.10.2026, docs/planung/darf-freigeben.md)
+  //
+  // Jede Leitungsperson (admin, org_admin) entscheidet fuer die AKTIVE
+  // Gemeinde, welche Zahlen sie sieht: antraege, verbuchen, challenges. Aus
+  // heisst: keine Zahl am Reiter (badge-counts liefert 0), nichts in der Zahl
+  // am App-Symbol, kein Push dafuer. Der Postfach-Eintrag bleibt.
+  // Regel-Stelle: utils/leitungKennzahlen.js.
+  //
+  // Nur das eigene Konto (req.user.id) und nur die aktive Gemeinde aus dem
+  // Token -- keine Parameter, mit denen sich etwas Fremdes setzen liesse.
+  // Teamer:innen und Konfis: 403 (sie haben keine dieser Zahlen).
+  router.get('/kennzahlen', verifyTokenRBAC, async (req, res) => {
+    if (!hatKennzahlenWahl(req.user.role_name)) {
+      return res.status(403).json({ error: 'Die Kennzahlen-Wahl gibt es für die Leitung.' });
+    }
+    try {
+      res.json(await ladeKennzahlen(db, req.user.id, req.user.organization_id));
+    } catch (err) {
+      console.error('Database error in GET /notifications/kennzahlen:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
+  // Setzt einen oder mehrere Bereiche; nicht genannte bleiben. Antwort: die
+  // ganze Wahl danach, in derselben Form wie GET.
+  router.put('/kennzahlen', verifyTokenRBAC, [
+    ...BEREICHE.map((b) => body(b).optional().isBoolean().withMessage(`${b} muss true oder false sein`)),
+    handleValidationErrors
+  ], async (req, res) => {
+    if (!hatKennzahlenWahl(req.user.role_name)) {
+      return res.status(403).json({ error: 'Die Kennzahlen-Wahl gibt es für die Leitung.' });
+    }
+    const wahl = {};
+    for (const b of BEREICHE) {
+      if (typeof req.body[b] === 'boolean') wahl[b] = req.body[b];
+    }
+    if (Object.keys(wahl).length === 0) {
+      return res.status(400).json({ error: `Mindestens einer von ${BEREICHE.join(', ')} ist erforderlich` });
+    }
+    try {
+      const ergebnis = await speichereKennzahlen(db, req.user.id, req.user.organization_id, wahl);
+      // Die App holt danach ihre Zaehler selbst neu (BadgeContext).
+      res.json(ergebnis);
+    } catch (err) {
+      console.error('Database error in PUT /notifications/kennzahlen:', err);
       res.status(500).json({ error: 'Datenbankfehler' });
     }
   });

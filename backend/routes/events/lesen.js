@@ -8,7 +8,7 @@ const express = require('express');
 const { anmeldeStatusSql, kapazitaetSql, ZEITFENSTER_SQL } = require('../../utils/terminAnmeldeStatus');
 const { buchungszahlenJeTerminSql } = require('../../utils/buchungszahlen');
 const { darfTermin } = require('../../utils/jahrgangsZugriff');
-const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTermin } = require('../../utils/terminLeitungSicht');
+const { leitungSiehtAlleTermine, gebundeneLeitungSiehtTermin, darfTerminVerbuchen } = require('../../utils/terminLeitungSicht');
 const { wartelistenRangSql } = require('../../utils/bookingUtils');
 
 module.exports = (db, rbacVerifier, { requireTeamer }) => {
@@ -937,6 +937,14 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
       const istKonfi = req.user.type === 'konfi';
       const { qr_token, ...eventOhneToken } = event;
 
+      // darf_verbuchen (09.10.2026, "Darf freigeben"): ADDITIV -- darf der
+      // Aufrufer an diesem Termin Anwesenheit eintragen? Dieselbe Pruefung
+      // wie die Anwesenheits-Routen (utils/terminLeitungSicht.js). Nur die
+      // Leitung verbucht (requireAdmin); fuer alle anderen false.
+      const darfVerbuchen = req.user.type === 'admin'
+        ? await darfTerminVerbuchen(db, req, eventId)
+        : false;
+
       res.json({
         ...(istKonfi ? eventOhneToken : event),
         participants: istKonfi ? [] : participants,
@@ -953,7 +961,8 @@ module.exports = (db, rbacVerifier, { requireTeamer }) => {
         available_spots: totalCapacity - registeredCount,
         booking_status: ownBooking ? ownBooking.status : null,
         is_registered: ownBooking ? ownBooking.status === 'confirmed' : false,
-        chat_room_id: eventChat?.id || null
+        chat_room_id: eventChat?.id || null,
+        darf_verbuchen: darfVerbuchen
       });
       
     } catch (err) {

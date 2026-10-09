@@ -66,8 +66,6 @@ Nichts.
 - **DSGVO- und EKD-Unterlagen vor der Ausrollung** — Simon, 08.10.2026:
   „machen wir später" ([Zurückgestellt](#zurückgestellt), „Rechenschaft vor
   der EKD-Ausrollung").
-- **„Darf freigeben"** — Simon, 08.10.2026: „machen wir viel später"
-  ([planung/darf-freigeben.md](planung/darf-freigeben.md)).
 - **Tablet-Fassung über die Web-Version** — Simon, 08.10.2026: „bisher nur
   hochformat, aber die web version … könnte eine tablet version werden". Die
   Apps bleiben im Hochformat; der Play-Hinweis „feste Ausrichtung" bleibt
@@ -176,6 +174,13 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Team", `/team-jahre`), Teilnehmende in der Konfi-Sicht, Hintergrundlauf
   bei gesperrter Stamm-Gemeinde, Schutz der Gemeindeleitung im
   Jahrgangs-Chat mit Sperre je Gemeinde (`fix/stamm-rolle-weitere-stellen`).
+- [x] 09.10.2026 — „Darf freigeben" gebaut nach Simons Entscheidungen vom
+  selben Tag: drei Rechte je Jahrgang (Anträge entscheiden, Events verbuchen,
+  Challenge-Beiträge freigeben, Migration 204, Vorgabe an), vergeben von der
+  Gemeindeleitung; Kennzahlen-Wahl je Leitung und Gemeinde
+  ([planung/darf-freigeben.md](planung/darf-freigeben.md), Branch
+  `feat/darf-freigeben`).
+
 
 ## Offen
 
@@ -412,11 +417,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Auskunft genügt, ist offen. Geplant als E-21 „Selbstauskunft"
   (Sicherheit, „Unklar: Auskunftsroute"). Simon, 08.10.2026: „machen wir
   später" — vor der Ausrollung wieder aufnehmen.
-- **„Darf freigeben".** Ein Recht, Anträge zu entscheiden, Events zu
-  verbuchen und Beiträge freizugeben, statt dass jede Leitung alles in die
-  Zahl bekommt; sechs Fragen offen:
-  [planung/darf-freigeben.md](planung/darf-freigeben.md). Simon, 08.10.2026:
-  „machen wir viel später".
 - **Tablets und Querformat.** Die Apps sind auf beiden Plattformen auf
   Hochformat gesperrt (Simon, 19.09.2026: „Will ich nicht auf phones"; UI
   BF-06). Simon, 08.10.2026: Die Apps bleiben so; eine Tablet-Fassung käme

@@ -39,10 +39,11 @@ const TEAMER_AKTIVITAET = 301;
 
 // Die Felder eines Listeneintrags (ar.* + Namen). Steht hier ausgeschrieben,
 // damit eine Aenderung an der Form der Liste auffaellt -- alte Apps lesen sie.
+// darf_entscheiden seit 09.10.2026 (Darf freigeben), additiv.
 const LISTENFELDER = [
   'activity_id', 'activity_name', 'activity_points', 'activity_target_role',
   'activity_type', 'admin_comment', 'approved_by', 'approved_by_name',
-  'client_id', 'comment', 'created_at', 'id', 'konfi_name', 'organization_id',
+  'client_id', 'comment', 'created_at', 'darf_entscheiden', 'id', 'konfi_name', 'organization_id',
   'photo_filename', 'requested_date', 'status', 'updated_at', 'user_id',
 ];
 

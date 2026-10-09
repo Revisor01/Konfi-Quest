@@ -39,8 +39,25 @@
 // Leitungs-Meldungen aber nicht (F-10): Abmeldungen und Zusagen zu
 // verwalten ist Sache der Leitung.
 
+// DARF VERBUCHEN (09.10.2026, "Darf freigeben", utils/freigabeRechte.js):
+// Verbuchen darf, wer den Termin mit den Jahrgaengen SEINES RECHTS sieht --
+// dieselbe Bedingung (gebundeneLeitungSiehtTerminSql), ausgewertet mit
+// rechtFuer(user, 'verbuchen'); Termine "Nur Team" und ohne Jahrgang, wenn
+// das Recht fuer Vorgaenge ohne Jahrgang besteht. Die Org-Leitung immer.
+// Daran haengen:
+//   - Server-Pruefung: PUT /events/:id/participants/:pid/attendance und
+//     /attendance-all (darfTerminVerbuchen, 403 ohne Recht)
+//   - Feld darf_verbuchen am Termin (GET /events/:id, Leitung)
+//   - Zaehler: badge-counts.pendingEvents, App-Symbol, Gemeinde-Umschalter
+//   - die Verbuchen-Erinnerung um 09:00 (zaehleWartendeTermineJeLeitung),
+//     zusaetzlich nach der Kennzahlen-Wahl (Bereich 'verbuchen')
+// Die Terminliste bleibt bei der Sicht, ebenso die Termin-Meldungen an die
+// Leitung (ladeLeitungZumTermin: Abmeldungen, Zu- und Absagen) -- sie
+// betreffen den Termin, nicht das Verbuchen.
+
 const { ladeMitgliederDerOrganisation } = require('./orgMitglieder');
 const { abfragenBuendeln } = require('./abfragenBuendeln');
+const { rechtFuer, rechtJahrgaengeSql, rechtOhneJahrgangSql } = require('./freigabeRechte');
 
 /**
  * Sieht diese Person ALLE Termine ihrer aktiven Gemeinde?
@@ -66,12 +83,17 @@ function leitungSiehtAlleTermine(user) {
  * @param {boolean} termin.teamerOnly     events.teamer_only
  * @param {number[]} termin.jahrgangIds   Jahrgaenge des Termins
  * @param {number[]} sichtbareJahrgaenge  can_view-Jahrgaenge der Person
+ *   (fuer "darf verbuchen": die Jahrgaenge des Rechts)
+ * @param {object} [opt]
+ * @param {boolean} [opt.ohneJahrgang=true]  zaehlen Termine "Nur Team" und
+ *   ohne Jahrgang? Fuer die Sicht immer, fuer "darf verbuchen" das Recht
+ *   ohne Jahrgang
  * @returns {boolean}
  */
-function gebundeneLeitungSiehtTermin({ teamerOnly, jahrgangIds }, sichtbareJahrgaenge) {
-  if (teamerOnly) return true;
+function gebundeneLeitungSiehtTermin({ teamerOnly, jahrgangIds }, sichtbareJahrgaenge, { ohneJahrgang = true } = {}) {
+  if (teamerOnly) return ohneJahrgang;
   const ids = (jahrgangIds || []).map(Number);
-  if (ids.length === 0) return true;
+  if (ids.length === 0) return ohneJahrgang;
   const eigene = new Set((sichtbareJahrgaenge || []).map(Number));
   return ids.some((id) => eigene.has(id));
 }
@@ -81,15 +103,21 @@ function gebundeneLeitungSiehtTermin({ teamerOnly, jahrgangIds }, sichtbareJahrg
  *
  * @param {object} opt
  * @param {string} opt.jahrgaenge  SQL-Ausdruck fuer die can_view-Jahrgaenge als int[]
+ *   (fuer "darf verbuchen": die Jahrgaenge des Rechts)
+ * @param {string} [opt.ohneJahrgang='true']  SQL-Ausdruck (boolean), siehe
+ *   gebundeneLeitungSiehtTermin
  * @param {string} [opt.e='e']     Alias der events-Tabelle
  * @returns {string}
  */
-function gebundeneLeitungSiehtTerminSql({ jahrgaenge, e = 'e' }) {
+function gebundeneLeitungSiehtTerminSql({ jahrgaenge, ohneJahrgang = 'true', e = 'e' }) {
   return `(
-    ${e}.teamer_only IS TRUE
-    OR NOT EXISTS (
-      SELECT 1 FROM event_jahrgang_assignments eja_sicht
-       WHERE eja_sicht.event_id = ${e}.id
+    (
+      (${e}.teamer_only IS TRUE
+       OR NOT EXISTS (
+         SELECT 1 FROM event_jahrgang_assignments eja_sicht
+          WHERE eja_sicht.event_id = ${e}.id
+       ))
+      AND ${ohneJahrgang}
     )
     OR EXISTS (
       SELECT 1 FROM event_jahrgang_assignments eja_sicht
@@ -247,6 +275,9 @@ async function zaehleWartendeTermineJeLeitung(db, orgIds) {
   }
   if (personen.length === 0) return [];
 
+  // Seit 09.10.2026 zaehlt die Erinnerung nur Termine, die die Person
+  // VERBUCHEN darf (Jahrgaenge ihres Rechts), und nur, wenn sie den Bereich
+  // bei den Kennzahlen nicht abgewaehlt hat -- dieselbe Zahl wie ihr Reiter.
   const { rows } = await db.query(
     `SELECT z.user_id, z.organization_id, COUNT(e.id)::int AS anzahl
        FROM unnest($1::bigint[], $2::int[], $3::boolean[]) AS z(user_id, organization_id, voll)
@@ -257,8 +288,16 @@ async function zaehleWartendeTermineJeLeitung(db, orgIds) {
         AND (
           z.voll
           OR u.is_super_admin IS TRUE
-          OR ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: SICHTBARE_JAHRGAENGE_VON_U })}
+          OR ${gebundeneLeitungSiehtTerminSql({
+            jahrgaenge: rechtJahrgaengeSql('verbuchen', 'u.id'),
+            ohneJahrgang: rechtOhneJahrgangSql('verbuchen', 'u.id', 'z.organization_id')
+          })}
         )
+      WHERE NOT EXISTS (
+        SELECT 1 FROM leitung_kennzahlen lk
+         WHERE lk.user_id = z.user_id AND lk.organization_id = z.organization_id
+           AND lk.verbuchen = false
+      )
       GROUP BY z.user_id, z.organization_id
       ORDER BY z.organization_id, z.user_id`,
     [personen.map((p) => p.id), personen.map((p) => p.orgId), personen.map((p) => p.voll)]
@@ -270,7 +309,44 @@ async function zaehleWartendeTermineJeLeitung(db, orgIds) {
   }));
 }
 
+/**
+ * Das Recht "verbuchen" des Aufrufers als Eingabe fuer
+ * gebundeneLeitungSiehtTerminSql: SQL-Fragmente, Parameter an `params`.
+ */
+function darfVerbuchenBedingung(user, params, { e = 'e' } = {}) {
+  if (leitungSiehtAlleTermine(user)) return 'true';
+  const recht = rechtFuer(user, 'verbuchen');
+  params.push(recht.jahrgaenge);
+  return gebundeneLeitungSiehtTerminSql({
+    jahrgaenge: `$${params.length}::int[]`,
+    ohneJahrgang: recht.ohneJahrgang ? 'true' : 'false',
+    e
+  });
+}
+
+/**
+ * Darf der Aufrufer an diesem Termin verbuchen? Server-Pruefung der
+ * Anwesenheits-Routen und Feld darf_verbuchen. Ein unbekannter Termin ergibt
+ * false -- die Routen pruefen Existenz und Gemeinde vorher selbst.
+ *
+ * @param {object} db
+ * @param {object} req
+ * @param {number|string} eventId
+ * @returns {Promise<boolean>}
+ */
+async function darfTerminVerbuchen(db, req, eventId) {
+  const params = [eventId];
+  const bedingung = darfVerbuchenBedingung(req.user, params);
+  const { rows: [treffer] } = await db.query(
+    `SELECT 1 FROM events e WHERE e.id = $1 AND ${bedingung}`,
+    params
+  );
+  return !!treffer;
+}
+
 module.exports = {
+  darfVerbuchenBedingung,
+  darfTerminVerbuchen,
   leitungSiehtAlleTermine,
   gebundeneLeitungSiehtTermin,
   gebundeneLeitungSiehtTerminSql,

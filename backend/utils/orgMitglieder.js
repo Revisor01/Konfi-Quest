@@ -422,7 +422,8 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
       [ids]
     ),
     () => db.query(
-      `SELECT uja.user_id, uja.jahrgang_id AS id, uja.can_view, uja.can_edit, j.organization_id
+      `SELECT uja.user_id, uja.jahrgang_id AS id, uja.can_view, uja.can_edit, j.organization_id,
+              uja.darf_antraege_entscheiden, uja.darf_events_verbuchen, uja.darf_challenges_freigeben
          FROM user_jahrgang_assignments uja
          JOIN jahrgaenge j ON j.id = uja.jahrgang_id
         WHERE uja.user_id = ANY($1::bigint[])`,
@@ -436,7 +437,17 @@ async function ladeMitgliedschaftenVieler(db, userIds) {
   for (const j of jahrgaenge) {
     const k = `${Number(j.user_id)}_${j.organization_id}`;
     if (!jahrgaengeJe.has(k)) jahrgaengeJe.set(k, []);
-    jahrgaengeJe.get(k).push({ id: j.id, can_view: j.can_view, can_edit: j.can_edit });
+    // Die drei Rechte (Migration 204) reisen mit: die Zahl am App-Symbol
+    // zaehlt je Gemeinde nur, was die Person dort freigeben darf
+    // (utils/freigabeRechte.js).
+    jahrgaengeJe.get(k).push({
+      id: j.id,
+      can_view: j.can_view,
+      can_edit: j.can_edit,
+      darf_antraege_entscheiden: j.darf_antraege_entscheiden,
+      darf_events_verbuchen: j.darf_events_verbuchen,
+      darf_challenges_freigeben: j.darf_challenges_freigeben
+    });
   }
 
   for (const z of zeilen) {

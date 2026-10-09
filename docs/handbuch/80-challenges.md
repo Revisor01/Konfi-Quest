@@ -314,6 +314,13 @@ Ist der Schalter „Beiträge erst nach Freigabe zeigen" an (Voreinstellung),
 wartet jeder neue Beitrag auf euer Ja. Ist er aus, ist jeder Beitrag sofort
 freigegeben.
 
+Freigeben, ausblenden, wieder einblenden und anonym stellen darf die Leitung
+in den Jahrgängen, in denen ihr die Gemeindeleitung das Recht
+[„Challenge-Beiträge freigeben"](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf)
+gelassen hat; die Gemeindeleitung immer, Teamer:innen in ihren Jahrgängen und
+bei „Nur das Team". Ohne das Recht siehst du die Beiträge, aber nicht die
+Knöpfe dazu, und wartende Beiträge zählen für dich nicht als offene Freigabe.
+
 Jeder Beitrag hat genau einen von drei Zuständen:
 
 | Zustand | Bedeutung | In der Galerie |
@@ -646,8 +653,13 @@ Ein Tipp auf eine dieser Mitteilungen öffnet die Challenge selbst, siehe
 - **Wer die Challenge verwaltet**, bekommt eine Mitteilung bei jedem neuen
   Beitrag, auch wenn er ohne Moderation sofort in der Galerie steht: die
   Gemeindeleitung immer, Leitung und Teamer:innen für die Challenges ihrer
-  Jahrgänge und die Challenges nur fürs Team. Wer selbst etwas einreicht,
-  bekommt über den eigenen Beitrag keine Mitteilung.
+  Jahrgänge und die Challenges nur fürs Team. Wartet der Beitrag auf
+  Freigabe, bekommt die Leitung die Mitteilung nur, wenn sie
+  [freigeben darf](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf).
+  Wer Challenge-Beiträge bei den
+  [Kennzahlen](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst) abgewählt hat,
+  bekommt keine. Wer selbst etwas einreicht, bekommt über den eigenen Beitrag
+  keine Mitteilung.
 - **Die einreichende Person** bekommt eine Mitteilung, sobald sie den Stempel
   erhält, und eine, wenn ihr Beitrag ausgeblendet wird — mit eurer Begründung,
   falls ihr eine eingetragen habt.

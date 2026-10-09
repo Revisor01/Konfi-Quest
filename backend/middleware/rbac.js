@@ -249,7 +249,8 @@ const verifyTokenRBAC = (db) => {
       let assignedJahrgaenge = [];
       if (user.organization_id) {
         const jahrgaengeQuery = `
-          SELECT j.id, j.name, uja.can_view, uja.can_edit
+          SELECT j.id, j.name, uja.can_view, uja.can_edit,
+                 uja.darf_antraege_entscheiden, uja.darf_events_verbuchen, uja.darf_challenges_freigeben
           FROM user_jahrgang_assignments uja
           JOIN jahrgaenge j ON uja.jahrgang_id = j.id
           WHERE uja.user_id = $1 AND j.organization_id = $2

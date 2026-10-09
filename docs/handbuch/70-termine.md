@@ -571,6 +571,13 @@ Ein Badge, das durch diese Punkte ausgelöst wurde, bleibt bestehen —
 Nach dem Event trägst du ein, wer da war. Es gibt drei Wege: einzeln, alle auf
 einmal, oder die Leute checken sich selbst per QR-Code ein.
 
+Verbuchen darf die Leitung an den Events der Jahrgänge, in denen ihr die
+Gemeindeleitung das Recht
+[„Events verbuchen"](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf)
+gelassen hat; die Gemeindeleitung immer. Ohne das Recht zeigt das Event seine
+Teilnehmenden, aber keine Knöpfe zum Verbuchen, und es zählt nicht in der
+Zahl unter „Verbuchen" und nicht in der täglichen Erinnerung.
+
 Bei Pflicht-Events stehen die Konfis in der Teilnehmerliste nach Vornamen
 sortiert, wie in der Konfi-Ansicht — so findest du jemanden schnell, etwa
 beim Abgleich mit einer Liste auf Papier oder beim Nachtragen einer

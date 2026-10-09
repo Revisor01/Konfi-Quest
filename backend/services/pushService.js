@@ -12,7 +12,7 @@ const { formatUhrzeit, formatDatum } = require('../utils/zeitformat');
 // wer mehrere Gemeinden betreut, bekam aus den anderen nichts.
 const { ladeLeitungDerOrganisation, ladeMitgliederDerOrganisation, ladeMitgliedschaftenVieler } = require('../utils/orgMitglieder');
 const { abfragenBuendeln } = require('../utils/abfragenBuendeln');
-const { TEAM_ORGWEITE_AUDIENCES, ladeTeamDasMitmacht } = require('../utils/challengeLeitungSicht');
+const { ladeTeamDasMitmacht, ladeLeitungZumChallengeBeitrag } = require('../utils/challengeLeitungSicht');
 const { ladeKonfisDieTerminSehen } = require('../utils/konfiTerminSicht');
 // Postfach (25.09.2026): Welche Arten neben dem Push auch einen Eintrag in
 // der Tabelle notifications bekommen, steht in EINER Positivliste
@@ -2607,37 +2607,15 @@ class PushService {
       //   org_admin       immer
       //   admin, teamer   bei 'nur_team' immer, sonst ueber einen Jahrgang
       //                   der Challenge
-      // Beide Quellen der Zugehoerigkeit (ladeMitgliederDerOrganisation).
-      const { rows: [challengeZeile] } = await db.query(
-        'SELECT audience FROM challenges WHERE id = $1',
-        [challengeId]
-      );
-      const audience = challengeZeile?.audience || 'konfis';
-      const { rows: jahrgaenge } = await db.query(
-        'SELECT jahrgang_id FROM challenge_jahrgang_assignments WHERE challenge_id = $1',
-        [challengeId]
-      );
-      const jahrgangIds = jahrgaenge.map(j => j.jahrgang_id);
-
-      const orgWeit = TEAM_ORGWEITE_AUDIENCES.includes(audience);
-      const [orgAdmins, team] = await abfragenBuendeln(db, [
-        () => ladeMitgliederDerOrganisation(db, organizationId, ['org_admin']),
-        () => orgWeit
-          ? ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'])
-          : ladeMitgliederDerOrganisation(db, organizationId, ['admin', 'teamer'], { jahrgangIds })
-      ]);
-
-      // Ohne Doppelte, und ohne die Person, die selbst eingereicht hat --
-      // wie im Chat die eigene Nachricht (bei Team-Challenges reicht die
-      // Leitung selbst ein).
-      const empfaenger = [];
-      const gesehen = new Set();
-      for (const id of [...orgAdmins, ...team]) {
-        const k = String(id);
-        if (gesehen.has(k) || (einreicherId != null && k === String(einreicherId))) continue;
-        gesehen.add(k);
-        empfaenger.push(id);
-      }
+      // Seit 09.10.2026 ("Darf freigeben"): bei moderierten Challenges nur
+      // die Admins, die freigeben duerfen, und die Leitung nur mit Kennzahl
+      // 'challenges' an -- ladeLeitungZumChallengeBeitrag. Ohne Doppelte
+      // und ohne die Person, die selbst eingereicht hat (wie im Chat die
+      // eigene Nachricht; bei Team-Challenges reicht die Leitung selbst ein).
+      const empfaenger = await ladeLeitungZumChallengeBeitrag(db, challengeId, {
+        moderiert: Boolean(moderated),
+        ausser: einreicherId
+      });
 
       if (empfaenger.length > 0) {
         await this.sendToMultipleUsers(db, empfaenger, notification);

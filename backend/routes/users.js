@@ -9,6 +9,7 @@ const { generateUniqueUsername } = require('../utils/usernameGenerator');
 const { invalidateUserCache } = require('../middleware/rbac');
 const { syncJahrgangChat } = require('../utils/jahrgangChat');
 const { darfJahrgang } = require('../utils/jahrgangsZugriff');
+const { RECHTE, hatAlleRechte } = require('../utils/freigabeRechte');
 const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { kontoDatenLoeschen, kontoDateienLoeschen, meldeNachKontoLoeschungEinreihen } = require('../utils/kontoLoeschen');
@@ -231,6 +232,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
     // GET /:id/jahrgaenge filtert seit jeher ueber j.organization_id.
     const jahrgaengeQuery = `
       SELECT j.id, j.name, uja.can_view, uja.can_edit, uja.assigned_at,
+             uja.darf_antraege_entscheiden, uja.darf_events_verbuchen, uja.darf_challenges_freigeben,
              assigner.display_name as assigned_by_name
       FROM user_jahrgang_assignments uja
       JOIN jahrgaenge j ON uja.jahrgang_id = j.id
@@ -1006,6 +1008,21 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
       return res.status(400).json({ error: 'jahrgang_assignments muss ein Array sein' });
     }
 
+    // Die Rechte "darf freigeben" vergibt nur die Gemeindeleitung
+    // (org_admin; super_admin erreicht die Route nicht, requireAdmin).
+    // Werte muessen Wahrheitswerte sein -- ein Tippfehler darf kein Recht
+    // still auf "an" lassen.
+    const schicktRechte = jahrgang_assignments.some(a => a && Object.values(RECHTE).some(f => a[f] !== undefined));
+    if (schicktRechte) {
+      if (!hatAlleRechte(req.user)) {
+        return res.status(403).json({ error: 'Die Rechte zum Entscheiden, Verbuchen und Freigeben vergibt die Gemeindeleitung.' });
+      }
+      const ungueltig = jahrgang_assignments.some(a => a && Object.values(RECHTE).some(f => a[f] !== undefined && typeof a[f] !== 'boolean'));
+      if (ungueltig) {
+        return res.status(400).json({ error: `${Object.values(RECHTE).join(', ')} müssen true oder false sein` });
+      }
+    }
+
     try {
         // Gehoert die Person zu dieser Gemeinde? BEIDE Quellen (26.09.2026):
         // Stamm-Gemeinde am Konto ODER Zusatzzugehoerigkeit ueber
@@ -1035,10 +1052,14 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
         await client.query('BEGIN');
 
         // Get current assignments to determine chat changes
+        // Die Rechte "darf freigeben" (Migration 204) kommen mit: Wer sie
+        // nicht mitschickt (Store-Apps 2.2.x/2.3.x, Admins), behaelt sie.
         const { rows: currentAssignments } = await client.query(
-            "SELECT jahrgang_id FROM user_jahrgang_assignments WHERE user_id = $1",
+            `SELECT jahrgang_id, ${Object.values(RECHTE).join(', ')}
+               FROM user_jahrgang_assignments WHERE user_id = $1`,
             [userId]
         );
+        const bisherigeRechte = new Map(currentAssignments.map(a => [Number(a.jahrgang_id), a]));
         const currentJahrgangIds = currentAssignments.map(a => a.jahrgang_id);
         const newJahrgangIds = jahrgang_assignments.map(a => parseInt(a.jahrgang_id, 10));
 
@@ -1128,13 +1149,26 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
                 fruehAntwort = { status: 400, body: { error: 'Mindestens eine Jahrgangs-ID ist ungültig oder gehört nicht zu dieser Gemeinde.' } };
             } else {
             // Now, insert all new assignments
+            // DARF FREIGEBEN (09.10.2026, docs/planung/darf-freigeben.md):
+            // die drei Rechte je Zuweisung. Vergeben darf sie nur die
+            // Gemeindeleitung (Simon: "vergeben darf nur der Org-Admin");
+            // schickt jemand anderes sie mit, ist das ein 403 (oben). Fehlt
+            // ein Feld, bleibt der bisherige Wert der Zuweisung -- die Route
+            // loescht und schreibt neu, und die Store-Apps kennen die Felder
+            // nicht: Ohne diese Uebernahme setzte jedes Speichern im
+            // Bearbeiten-Fenster einer alten App die Rechte still zurueck.
+            // Neue Zuweisungen bekommen die Vorgabe true.
             for (const assignment of einzufuegen) {
                 const { jahrgang_id, can_view = true, can_edit = false } = assignment;
+                const bisher = bisherigeRechte.get(Number(jahrgang_id));
+                const rechte = Object.values(RECHTE).map((feld) =>
+                    (typeof assignment[feld] === 'boolean') ? assignment[feld] : (bisher ? bisher[feld] !== false : true));
                 const insertQuery = `
-                    INSERT INTO user_jahrgang_assignments (user_id, jahrgang_id, can_view, can_edit, assigned_by)
-                    VALUES ($1, $2, $3, $4, $5)
+                    INSERT INTO user_jahrgang_assignments
+                      (user_id, jahrgang_id, can_view, can_edit, assigned_by, ${Object.values(RECHTE).join(', ')})
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 `;
-                await client.query(insertQuery, [userId, jahrgang_id, can_view, can_edit, req.user.id]);
+                await client.query(insertQuery, [userId, jahrgang_id, can_view, can_edit, req.user.id, ...rechte]);
             }
             }
         }
@@ -1194,6 +1228,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
     const query = `
       SELECT j.id, j.name, uja.can_view, uja.can_edit, uja.assigned_at,
+             uja.darf_antraege_entscheiden, uja.darf_events_verbuchen, uja.darf_challenges_freigeben,
              assigner.display_name as assigned_by_name
       FROM user_jahrgang_assignments uja
       JOIN jahrgaenge j ON uja.jahrgang_id = j.id
@@ -1221,6 +1256,7 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin }, io) => {
 
     const query = `
       SELECT j.id, j.name, uja.can_view, uja.can_edit, uja.assigned_at,
+             uja.darf_antraege_entscheiden, uja.darf_events_verbuchen, uja.darf_challenges_freigeben,
              assigner.display_name as assigned_by_name
       FROM user_jahrgang_assignments uja
       JOIN jahrgaenge j ON uja.jahrgang_id = j.id

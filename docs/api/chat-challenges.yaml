@@ -1758,8 +1758,16 @@ paths:
         GEAENDERT 2026-09-27 (Simon): Die Regel steht einmal in
         utils/challengeLeitungSicht.js -- org_admin alles; admin und teamer
         'nur_team' org-weit, 'konfis_und_team' und 'konfis' nur ueber einen
-        zugewiesenen Jahrgang der Challenge. Sie gilt ebenso fuer die
-        Sichtpruefung (submissions, moderate, export, delete), die
+        zugewiesenen Jahrgang der Challenge.
+        NEU 2026-10-09 (Darf freigeben, Migration 204): additives Feld
+        darf_freigeben je Challenge -- ob der Aufrufer Beitraege moderieren
+        darf. Die Rolle admin braucht das Recht darf_challenges_freigeben an
+        einem Jahrgang der Challenge (bei 'nur_team' in mindestens einem
+        ihrer Jahrgaenge oder ohne jede Zuweisung); org_admin immer;
+        teamer unveraendert nach ihrer Sicht. Regel-Stelle:
+        backend/utils/challengeLeitungSicht.js (darfFreigebenBedingung).
+        Die Liste selbst bleibt bei der Sicht. Die Sichtregel gilt ebenso
+        fuer die Sichtpruefung (submissions, moderate, export, delete), die
         Datei-Auslieferung, badge-counts.pendingChallenges und
         challengeUpdates, die App-Icon-Zahl und die Empfaenger der Mitteilung
         'challenge_submission'. Dort vorher: jeder admin der Gemeinde (auch
@@ -1916,7 +1924,7 @@ paths:
         rollen: [org_admin, admin, teamer]
         middleware: [rbacVerifier, requireTeamer]
         org-scope: true
-        objekt-pruefung: "Dieselbe Abfrage wie GET /api/challenges/admin mit zusaetzlichem c.id-Filter (leitungsChallenges): 200 genau dann, wenn die Liste die Challenge fuehrt (Test challengeLeitungDetail.test.js)"
+        objekt-pruefung: "Dieselbe Abfrage wie GET /api/challenges/admin mit zusaetzlichem c.id-Filter (leitungsChallenges): 200 genau dann, wenn die Liste die Challenge fuehrt (Test challengeLeitungDetail.test.js). Traegt seit 09.10.2026 wie die Liste das Feld darf_freigeben."
     put:
       tags: ["Challenges (Leitung)"]
       summary: Challenge bearbeiten (Konsens-Felder nach Start eingefroren)
@@ -2013,6 +2021,14 @@ paths:
         einreichende Person (challenge_submission_hidden, nicht beim eigenen
         Beitrag), bei approve der Abzeichen-Push (challenge_badge_earned),
         wenn es der erste freigegebene Beitrag der Person ist.
+        DARF FREIGEBEN seit 2026-10-09 (Migration 204): Die Rolle admin
+        braucht zusaetzlich zur Sicht das Recht darf_challenges_freigeben
+        (wie das Feld darf_freigeben in GET /api/challenges/admin), fuer alle
+        vier Aktionen; sonst 403 "Du darfst bei dieser Challenge keine
+        Beiträge freigeben." Teamer:innen unveraendert. Vorgabe des Rechts
+        true -- fuer bestehende Konten aendert sich nichts, bis die
+        Gemeindeleitung es entzieht. Store-Apps zeigen die Knoepfe weiter und
+        bekommen dann 403.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Beitrags" }
       requestBody:
@@ -2028,7 +2044,7 @@ paths:
       responses:
         '200': { description: "Neuer Status (id, moderation_status, moderation_note bzw. konfi_consent)" }
         '400': { description: Ungueltige Aktion oder reason laenger als 500 Zeichen (Validator) }
-        '403': { description: requireTeamer / leadershipMayAccess }
+        '403': { description: "requireTeamer / leadershipMayAccess / seit 09.10.2026 ohne das Recht darf_challenges_freigeben" }
         '404': { description: Beitrag nicht in eigener Org }
         '409': { description: "anonymize unzulaessig (private-Zusage, bereits anonym)" }
         '500': { description: Datenbankfehler }
@@ -2217,6 +2233,21 @@ paths:
         an der nur wartende Beitraege neu sind, erscheint in
         challengeUpdates.byChallenge nicht. Die App-Icon-Summe
         (utils/appIconBadge.js) liest challengeNeueBeitraege nicht.
+        GEAENDERT 2026-10-09 (Darf freigeben und Kennzahlen-Wahl,
+        docs/planung/darf-freigeben.md, Migration 204): Nur Werte, die
+        Antwortform bleibt. (1) pendingRequests, pendingEvents und
+        pendingChallenges/challengeApprovals zaehlen fuer die Rolle admin nur,
+        was sie entscheiden, verbuchen bzw. freigeben DARF (Rechte an der
+        Jahrgangs-Zuweisung; Vorgaenge ohne Jahrgang mit dem Recht in
+        mindestens einem Jahrgang oder ohne jede Zuweisung). Teamer:innen
+        und org_admin unveraendert. (2) Hat die Person (admin, org_admin) einen
+        Bereich bei den Kennzahlen abgewaehlt (GET/PUT
+        /api/notifications/kennzahlen), liefert das Feld 0 bzw. leer --
+        antraege: pendingRequests; verbuchen: pendingEvents; challenges:
+        pendingChallenges, challengeApprovals, challengeUpdates und
+        challengeNeueBeitraege. So zeigen auch Store-Apps 2.2.x/2.3.x keine
+        Zahl, ohne die Wahl zu kennen. Dieselbe Rechnung gilt am App-Symbol
+        und am Gemeinde-Umschalter (utils/appIconBadge.js).
       responses:
         '200':
           description: Zähler
@@ -2676,6 +2707,69 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Meldet nur ueber das eigene Geraet; nichts wird gespeichert"
+
+  /api/notifications/kennzahlen:
+    get:
+      tags: ["Benachrichtigungen"]
+      summary: Kennzahlen-Wahl der Leitung lesen (je aktiver Gemeinde)
+      description: >
+        NEU 2026-10-09 (docs/planung/darf-freigeben.md, Migration 204): Jede
+        Leitungsperson (admin, org_admin) entscheidet fuer die aktive
+        Gemeinde, welche Zahlen sie sieht. Aus heisst: badge-counts liefert
+        fuer den Bereich 0, die Zahl am App-Symbol und am Gemeinde-Umschalter
+        zaehlt ihn nicht, und die Pushes dazu gehen nicht an die Person
+        ("Neuer Antrag", "Neuer Challenge-Beitrag", die Verbuchen-Erinnerung).
+        Postfach-Eintraege zu einzelnen Vorgaengen bleiben; die
+        Verbuchen-Erinnerung ist selbst eine Zahl und entfaellt ganz.
+        Vorgabe ohne gespeicherte Wahl: alles an. Regel-Stelle:
+        backend/utils/leitungKennzahlen.js. Store-Apps kennen die Route nicht.
+      responses:
+        '200':
+          description: Die Wahl
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  antraege: { type: boolean, description: "pendingRequests und der Push zu neuen Antraegen" }
+                  verbuchen: { type: boolean, description: "pendingEvents und die Verbuchen-Erinnerung" }
+                  challenges: { type: boolean, description: "pendingChallenges, challengeApprovals, Challenge-Neuigkeiten der Leitung und der Push zu neuen Beitraegen" }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: "Teamer:innen und Konfis (keine Kennzahlen-Wahl)" }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur das eigene Konto (req.user.id) in der aktiven Gemeinde; keine Parameter"
+    put:
+      tags: ["Benachrichtigungen"]
+      summary: Kennzahlen-Wahl der Leitung setzen
+      description: >
+        Setzt einen oder mehrere Bereiche; nicht genannte bleiben. Antwort in
+        derselben Form wie GET.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                antraege: { type: boolean }
+                verbuchen: { type: boolean }
+                challenges: { type: boolean }
+      responses:
+        '200': { description: "Die ganze Wahl danach (antraege, verbuchen, challenges)" }
+        '400': { description: "Kein Bereich genannt oder ein Wert ist kein Wahrheitswert" }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { description: "Teamer:innen und Konfis" }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: "Nur das eigene Konto in der aktiven Gemeinde"
 
   /api/notifications/preferences:
     get:

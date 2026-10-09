@@ -4227,7 +4227,7 @@ paths:
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer }, description: "User-ID" }
       responses:
-        "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name)" }
+        "200": { description: "Array (jahrgang, can_view, can_edit, assigned_by_name; seit 09.10.2026 additiv darf_antraege_entscheiden, darf_events_verbuchen, darf_challenges_freigeben)" }
         "403": { description: "Hierarchie: Ziel-Rolle nicht einsehbar (canManageRole)" }
         "404": { description: "Ziel-User arbeitet nicht in der aktiven Organisation" }
       x-berechtigung:
@@ -4269,10 +4269,19 @@ paths:
                       jahrgang_id: { type: integer }
                       can_view: { type: boolean, default: true }
                       can_edit: { type: boolean, default: false }
+                      darf_antraege_entscheiden:
+                        type: boolean
+                        description: "Darf freigeben (09.10.2026, Migration 204): Antraege genehmigen, ablehnen, zuruecksetzen. Nur org_admin darf es mitschicken. Fehlt es, bleibt der bisherige Wert der Zuweisung (neue Zuweisung: true)."
+                      darf_events_verbuchen:
+                        type: boolean
+                        description: "Anwesenheit an Events des Jahrgangs eintragen. Wie darf_antraege_entscheiden."
+                      darf_challenges_freigeben:
+                        type: boolean
+                        description: "Challenge-Beitraege moderieren. Wie darf_antraege_entscheiden. Wirkt fuer die Rolle admin; Teamer:innen moderieren unveraendert nach ihrer Sicht."
       responses:
         "200": { description: "Zuweisungen gesetzt; Jahrgangs-Chats aller betroffenen Jahrgaenge synchronisiert. assignments_count zaehlt die uebergebenen Zuweisungen (Antwortform unveraendert)" }
-        "400": { description: "Jahrgang nicht in eigener Org" }
-        "403": { description: "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole) ODER ein Jahrgang liegt ausserhalb der eigenen Zuweisungen" }
+        "400": { description: "Jahrgang nicht in eigener Org, oder ein darf_-Feld ist kein Wahrheitswert" }
+        "403": { description: "Hierarchie: Ziel-Rolle nicht verwaltbar (canManageRole) ODER ein Jahrgang liegt ausserhalb der eigenen Zuweisungen ODER ein admin schickt eines der darf_-Felder (vergeben darf nur die Gemeindeleitung)" }
         "404": { $ref: "#/components/responses/NotFound" }
       x-berechtigung:
         rollen: [org_admin, admin]
@@ -4304,14 +4313,22 @@ paths:
           zaehlen beide Quellen (dasselbe Muster wie utils/orgMitglieder.js
           bei den Push-Empfaengern). Die Zuweisungen der ANDEREN Gemeinden
           bleiben dabei unberuehrt: Das DELETE ist seit 31.08.2026 an die
-          Organisation gebunden."
+          Organisation gebunden.
+          NEU 09.10.2026 (Darf freigeben, docs/planung/darf-freigeben.md):
+          drei Rechte je Zuweisung, additiv. Vergeben darf sie nur
+          org_admin; ein admin, der eines mitschickt, bekommt 403 (auch fuer
+          Teamer:innen). Die Route loescht und schreibt die Zuweisungen neu --
+          fehlt ein Feld (Store-Apps 2.2.x/2.3.x kennen sie nicht), uebernimmt
+          sie den bisherigen Wert; ein Speichern in einer alten App setzt die
+          Rechte also nicht zurueck. Der Rechte-Cache wird wie bisher geleert,
+          ein entzogenes Recht wirkt sofort."
 
   /api/users/me/jahrgaenge:
     get:
       tags: ["Benutzer & Rollen"]
       summary: Eigene Jahrgangs-Zuweisungen (für Teamer-UI)
       responses:
-        "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt)" }
+        "200": { description: "Array der eigenen Zuweisungen (auf aktive Org gescopt); seit 09.10.2026 additiv mit den drei darf_-Feldern" }
         "401": { $ref: "#/components/responses/Unauthorized" }
       x-berechtigung:
         rollen: [alle authentifizierten]

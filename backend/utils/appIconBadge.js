@@ -34,6 +34,17 @@ const { gebundeneLeitungSiehtAntragSql } = require('./antragLeitungSicht');
 const { ladeMitgliedschaftenVieler } = require('./orgMitglieder');
 const { gebundeneLeitungSiehtTerminSql, terminWartetAufVerbuchungSql } = require('./terminLeitungSicht');
 const { abfragenBuendeln } = require('./abfragenBuendeln');
+const { rechtFuer } = require('./freigabeRechte');
+const { ladeKennzahlenVieler, bereichAn } = require('./leitungKennzahlen');
+
+// "DARF FREIGEBEN" UND KENNZAHLEN-WAHL (09.10.2026, docs/planung/
+// darf-freigeben.md): Die drei Leitungs-Zahlen -- offene Antraege, Termine
+// zum Verbuchen, offene Challenge-Freigaben -- zaehlen je Gemeinde nur, was
+// die Person dort entscheiden, verbuchen bzw. freigeben DARF (Jahrgaenge des
+// Rechts, utils/freigabeRechte.js; dieselbe Regel wie badge-counts und die
+// Server-Pruefung), und nur, wenn sie den Bereich bei den Kennzahlen nicht
+// abgewaehlt hat (utils/leitungKennzahlen.js). Der Bereich "challenges"
+// nimmt auch die Challenge-Neuigkeiten der Leitung mit -- wie badge-counts.
 
 /**
  * Die Bausteine der Summe -- jeder als EINE Abfrage ueber viele
@@ -140,15 +151,15 @@ async function antragZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
     `SELECT z.user_id, z.user_type, z.organization_id, COUNT(ar.id)::int AS c
-       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
-              AS z(user_id, user_type, organization_id, jahrgaenge)
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::boolean[])
+              AS z(user_id, user_type, organization_id, jahrgaenge, ohne_jahrgang)
        LEFT JOIN activities a ON a.organization_id = z.organization_id
        LEFT JOIN activity_requests ar
               ON ar.activity_id = a.id
              AND ar.status = 'pending'
-             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: 'z.jahrgaenge::int[]' })}
+             AND ${gebundeneLeitungSiehtAntragSql({ jahrgaenge: 'z.jahrgaenge::int[]', ohneJahrgang: 'z.ohne_jahrgang' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
-    [...spalten(personen), jahrgangsSpalte(personen)]
+    [...spalten(personen), ...rechtSpalten(personen, 'antraege')]
   )).rows;
 }
 
@@ -165,14 +176,14 @@ async function terminZaehlerGebunden(db, personen) {
   if (personen.length === 0) return [];
   return (await db.query(
     `SELECT z.user_id, z.user_type, z.organization_id, COUNT(e.id)::int AS c
-       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[])
-              AS z(user_id, user_type, organization_id, jahrgaenge)
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::boolean[])
+              AS z(user_id, user_type, organization_id, jahrgaenge, ohne_jahrgang)
        LEFT JOIN events e
               ON e.organization_id = z.organization_id
              AND ${terminWartetAufVerbuchungSql()}
-             AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: 'z.jahrgaenge::int[]' })}
+             AND ${gebundeneLeitungSiehtTerminSql({ jahrgaenge: 'z.jahrgaenge::int[]', ohneJahrgang: 'z.ohne_jahrgang' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
-    [...spalten(personen), jahrgangsSpalte(personen)]
+    [...spalten(personen), ...rechtSpalten(personen, 'verbuchen')]
   )).rows;
 }
 
@@ -201,19 +212,19 @@ async function freigabeZaehlerProOrg(db, orgIds) {
 // die Rolle geht je Person mit in die Abfrage (org_admin sieht alles).
 async function teamerFreigabeZaehler(db, teamer) {
   if (teamer.length === 0) return [];
-  const jahrgangsListen = jahrgangsSpalte(teamer);
+  const [jahrgangsListen, ohneJahrgang] = rechtSpalten(teamer, 'challenges');
   return (await db.query(
     `SELECT z.user_id, z.user_type, z.organization_id, COUNT(cs.id)::int AS c
-       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::text[])
-              AS z(user_id, user_type, organization_id, jahrgaenge, rolle)
+       FROM unnest($1::int[], $2::text[], $3::int[], $4::text[], $5::text[], $6::boolean[])
+              AS z(user_id, user_type, organization_id, jahrgaenge, rolle, ohne_jahrgang)
        LEFT JOIN challenges c
               ON c.organization_id = z.organization_id
        LEFT JOIN challenge_submissions cs
               ON cs.challenge_id = c.id
              AND cs.moderation_status = 'pending'
-             AND ${leitungSiehtChallengeSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]' })}
+             AND ${leitungSiehtChallengeSql({ rolle: 'z.rolle', jahrgaenge: 'z.jahrgaenge::int[]', ohneJahrgang: 'z.ohne_jahrgang' })}
       GROUP BY z.user_id, z.user_type, z.organization_id`,
-    [...spalten(teamer), jahrgangsListen, rollenSpalte(teamer)]
+    [...spalten(teamer), jahrgangsListen, rollenSpalte(teamer), ohneJahrgang]
   )).rows;
 }
 
@@ -271,11 +282,20 @@ function spalten(personen) {
   ];
 }
 
-/** Die can_view-Jahrgaenge je Person als Text-Array-Literal fuer `unnest`. */
-function jahrgangsSpalte(personen) {
-  return personen.map((p) =>
-    `{${(p.assigned_jahrgaenge || []).filter((j) => j.can_view).map((j) => j.id).join(',')}}`
-  );
+/**
+ * Das Recht je Person (utils/freigabeRechte.js) als zwei Spalten fuer
+ * `unnest`: die Jahrgaenge des Rechts (Text-Array-Literal) und ob Vorgaenge
+ * ohne Jahrgang zaehlen. Teamer:innen bekommen ihre Sicht (unveraendert).
+ */
+function rechtSpalten(personen, recht) {
+  const rechte = personen.map((p) => rechtFuer({
+    role_name: p.role_name || (p.type === 'teamer' ? 'teamer' : 'admin'),
+    assigned_jahrgaenge: p.assigned_jahrgaenge
+  }, recht));
+  return [
+    rechte.map((r) => `{${r.jahrgaenge.join(',')}}`),
+    rechte.map((r) => r.ohneJahrgang)
+  ];
 }
 
 /** Die Rolle je Person; Teamer:innen ohne role_name gelten als 'teamer'. */
@@ -456,7 +476,7 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   // Team seit 27.09.2026 mit der schlankeren aus challengeNeuigkeiten.js.
   const konfis = empfaenger.filter((p) => p.type === 'konfi');
 
-  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, leitungsNeuigkeiten] = await abfragenBuendeln(db, [
+  const [chat, antraege, termine, freigaben, gebundeneFreigaben, gebundeneAntraege, gebundeneTermine, abzeichen, neuigkeiten, leitungsNeuigkeiten, kennzahlen] = await abfragenBuendeln(db, [
     () => chatZaehler(db, empfaenger),
     () => antragZaehlerProOrg(db, leitungsOrgs),
     () => terminZaehlerProOrg(db, leitungsOrgs),
@@ -473,8 +493,16 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
     // Kein Postfach mehr (28.09.2026, siehe "POSTFACH ZAEHLT NICHT MIT").
     // Challenge-Neuigkeiten fuer Leitung und Team (27.09.2026) -- dieselbe
     // SQL-Fassung wie badge-counts.challengeUpdates fuer diese Rollen.
-    () => challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer])
+    () => challengeNeuigkeitenLeitungJeChallenge(db, [...leitung, ...teamer]),
+    // Kennzahlen-Wahl der Leitung je Gemeinde (09.10.2026).
+    () => ladeKennzahlenVieler(db, leitung)
   ]);
+
+  // Zaehlt der Bereich fuer diesen Eintrag? Nur die Leitung hat eine Wahl;
+  // Teamer:innen und Konfis zaehlen immer.
+  const leitungsSchluessel = new Set(leitung.map((p) => schluessel(p.id, p.type)));
+  const zaehlt = (userId, userType, orgId, bereich) =>
+    !leitungsSchluessel.has(schluessel(userId, userType)) || bereichAn(kennzahlen, userId, orgId, bereich);
 
   // Zwei Summen in einem Durchgang (27.09.2026, Kompatibilitaet mit den
   // Store-Apps 2.2.x): `summen` ist die volle Zahl, `alteApps` die Rechnung
@@ -492,9 +520,15 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   };
 
   for (const r of chat) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  for (const r of gebundeneFreigaben) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  for (const r of gebundeneAntraege) addiere(r.user_id, r.user_type, r.organization_id, r.c);
-  for (const r of gebundeneTermine) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  for (const r of gebundeneFreigaben) {
+    if (zaehlt(r.user_id, r.user_type, r.organization_id, 'challenges')) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  }
+  for (const r of gebundeneAntraege) {
+    if (zaehlt(r.user_id, r.user_type, r.organization_id, 'antraege')) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  }
+  for (const r of gebundeneTermine) {
+    if (zaehlt(r.user_id, r.user_type, r.organization_id, 'verbuchen')) addiere(r.user_id, r.user_type, r.organization_id, r.c);
+  }
   for (const r of abzeichen) addiere(r.user_id, r.user_type, r.organization_id, r.c);
   // Challenge-Neuigkeiten nur in die volle Summe (siehe oben).
   for (const r of neuigkeiten) {
@@ -505,16 +539,23 @@ async function summenBerechnen(db, empfaenger, schluesselVon) {
   // Beitraege mit, die hier schon als Freigabe stehen; sie gehoert nicht aufs
   // Symbol. Zeilen mit c = 0 (nur wartende neu) fallen heraus.
   for (const r of leitungsNeuigkeiten) {
-    if (r.c > 0) addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
+    if (r.c > 0 && zaehlt(r.user_id, r.user_type, r.organization_id, 'challenges')) {
+      addiere(r.user_id, r.user_type, r.organization_id, r.c, false);
+    }
   }
 
   // Die org-weiten Zahlen auf jede ORG-WEITE Leitung dieser Organisation
   // verteilen (gebundene Admins haben ihre Zahlen oben schon bekommen).
-  const proOrg = new Map();
-  for (const reihe of [antraege, termine, freigaben]) {
-    for (const r of reihe) proOrg.set(r.organization_id, (proOrg.get(r.organization_id) || 0) + r.c);
+  // Je Bereich, weil jede Person ihre eigene Kennzahlen-Wahl hat (09.10.2026).
+  const jeOrg = (reihe) => new Map(reihe.map((r) => [r.organization_id, r.c]));
+  const proOrg = { antraege: jeOrg(antraege), verbuchen: jeOrg(termine), challenges: jeOrg(freigaben) };
+  for (const p of leitungOrgWeit) {
+    for (const bereich of Object.keys(proOrg)) {
+      if (zaehlt(p.id, p.type, p.organization_id, bereich)) {
+        addiere(p.id, p.type, p.organization_id, proOrg[bereich].get(p.organization_id) || 0);
+      }
+    }
   }
-  for (const p of leitungOrgWeit) addiere(p.id, p.type, p.organization_id, proOrg.get(p.organization_id) || 0);
 
   for (const [k, wert] of summen) summen.set(k, Math.max(0, wert));
   for (const [k, wert] of alteApps) alteApps.set(k, Math.max(0, wert));

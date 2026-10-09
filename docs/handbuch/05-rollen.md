@@ -56,6 +56,9 @@ Verantwortet die ganze Gemeinde. Kann alles, was die Leitung kann, und
 zusätzlich:
 
 - **Benutzer:innen verwalten** — anlegen, Rollen vergeben, Jahrgänge zuweisen
+  und je Jahrgang festlegen, wer dort Anträge entscheidet, Events verbucht und
+  Challenge-Beiträge freigibt (siehe
+  [Festlegen, wer entscheiden, verbuchen und freigeben darf](#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf))
 - **Jahrgänge anlegen** und dabei gleich auswählen, welche Personen der Leitung
   und welche Teamer:innen den neuen Jahrgang sehen und bearbeiten dürfen
 - **Gemeinde-Einstellungen** — Dashboard, Einladungscode, Konfis einladen
@@ -109,6 +112,51 @@ Im Einzelnen gilt für die Leitung:
   Auch ein neues Passwort für eine Teamer:in kann sie erzeugen, ohne mit ihr
   einen Jahrgang zu teilen.
 
+## Festlegen, wer entscheiden, verbuchen und freigeben darf
+
+Sehen und entscheiden sind zweierlei. Die Gemeindeleitung legt für jede
+Person der Leitung **je Jahrgang** fest, ob sie dort
+
+- **Anträge entscheiden** darf — gemeldete Aktivitäten genehmigen, ablehnen
+  und eine Entscheidung zurücknehmen,
+- **Events verbuchen** darf — die Anwesenheit eintragen, einzeln wie alle auf
+  einmal, und Abmeldungen nachtragen,
+- **Challenge-Beiträge freigeben** darf — Beiträge freigeben, ausblenden,
+  wieder einblenden und anonym stellen.
+
+Die drei Rechte stehen an der Jahrgangs-Zuweisung unter
+**[Mehr › Benutzer:innen](30-leitung.md#verwaltung-nur-gemeindeleitung)**: Person
+öffnen, unter „Jahrgang-Zuweisungen" je Jahrgang die drei Schalter setzen,
+speichern. Das geht in der App und im Browser gleich. Vergeben kann sie nur
+die Gemeindeleitung; die Leitung sieht die Schalter nicht. Neu zugewiesene
+Jahrgänge haben alle drei Rechte an, und wer schon zugewiesen war, behält sie,
+bis die Gemeindeleitung eines ausschaltet.
+
+**Die Gemeindeleitung hat alle drei Rechte immer**, in jedem Jahrgang. Für
+Teamer:innen gelten die Schalter nicht: Sie begleiten Challenges ihrer
+Jahrgänge und „Nur das Team" wie bisher.
+
+Wer ein Recht nicht hat, **sieht die Vorgänge weiter**, nur lesend: Die
+Anträge stehen in der Liste, das Event zeigt seine Teilnehmenden, die
+Challenge ihre Beiträge — aber die Knöpfe zum Entscheiden, Verbuchen und
+Freigeben fehlen, und ein Hinweis nennt den Grund. Für diese Vorgänge gibt es
+dann **weder Push noch Postfach-Eintrag noch rote Zahl**; sie gehen an die,
+die entscheiden dürfen.
+
+Manche Vorgänge hängen an keinem Jahrgang: Anträge von Teamer:innen, Events
+„Nur Team" und Events ohne Jahrgang, Challenges „Nur das Team". Sie darf
+entscheiden, wer das Recht in **mindestens einem** seiner Jahrgänge hat — oder
+gar keinem Jahrgang zugewiesen ist. Wer das Recht also in allen seinen
+Jahrgängen abgegeben hat, bekommt auch diese Vorgänge nicht mehr.
+
+> **In einer älteren App-Fassung** sind die Knöpfe noch zu sehen. Wer ein Recht
+> nicht hat, bekommt beim Antippen eine Fehlermeldung — eingetragen wird
+> nichts. Ein Speichern im Benutzer-Fenster einer älteren Fassung lässt die
+> gesetzten Rechte stehen.
+
+Welche Zahlen du selbst sehen willst, wählst du unabhängig davon unter
+[Auswählen, welche Zahlen du siehst](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst).
+
 ## Nachschlagen, wer was darf
 
 | | Konfi | Teamer:in | Leitung | Gemeindeleitung |
@@ -117,8 +165,10 @@ Im Einzelnen gilt für die Leitung:
 | Aktivitäten melden | ja | ja | ja | ja |
 | Zu Events anmelden | ja | ja | ja | ja |
 | Punkte vergeben | — | ja | ja | ja |
-| Anwesenheit eintragen | — | — | ja | ja |
-| Aktivitäts-Meldungen bestätigen | — | — | ja | ja |
+| Anwesenheit eintragen | — | — | mit dem Recht „Events verbuchen" | ja |
+| Aktivitäts-Meldungen bestätigen | — | — | mit dem Recht „Anträge entscheiden" | ja |
+| Challenge-Beiträge freigeben | — | eigene Jahrgänge und „Nur das Team" | mit dem Recht „Challenge-Beiträge freigeben" | ja |
+| Rechte zum Entscheiden, Verbuchen und Freigeben vergeben | — | — | — | ja |
 | Events, Badges, Kategorien, Level anlegen | — | — | ja | ja |
 | Events ändern, absagen und löschen | — | — | ja | ja |
 | Personen an einem Event ein- und austragen | — | — | ja | ja |
@@ -395,8 +445,12 @@ Chats; als Teamer:in wartende Beiträge, Chats und neue Badges. Ungelesene
 Mitteilungen im [Postfach](03-bedienung.md#mitteilungen-im-postfach-nachlesen)
 zählen hier nicht mit — sie zeigt der blaue Punkt an der Glocke (siehe
 [Ungelesene Mitteilungen an der Glocke erkennen](03-bedienung.md#ungelesene-mitteilungen-an-der-glocke-erkennen)).
-Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst. Eine
-Gemeinde ohne Zahl hat nichts Offenes.
+Bist du an Jahrgänge gebunden, zählt nur, was du dort auch sehen darfst —
+und bei Anträgen, Verbuchen und Freigaben nur, was du dort
+[entscheiden darfst](#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf).
+Was du unter
+[Auswählen, welche Zahlen du siehst](03-bedienung.md#auswaehlen-welche-zahlen-du-siehst)
+abgewählt hast, zählt nicht mit. Eine Gemeinde ohne Zahl hat nichts Offenes.
 
 **Die Zahlen der Liste zusammengezählt ergeben die Zahl am App-Symbol.** Das
 Symbol zeigt immer die Summe aller deiner Gemeinden, jede mit der Rolle, die

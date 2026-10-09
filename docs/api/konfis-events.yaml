@@ -1728,7 +1728,7 @@ paths:
           aus ihrer bereits gefilterten Liste auf; die liefern weiterhin 200.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id, registration_status, teamer_registration_status" }
+        "200": { description: "Event-Objekt + participants[], timeslots[], series_events[], jahrgaenge[], categories[], unregistrations[], Zaehler, booking_status, is_registered, chat_room_id, registration_status, teamer_registration_status; seit 09.10.2026 additiv darf_verbuchen (boolean: darf der Aufrufer Anwesenheit eintragen -- dieselbe Pruefung wie PUT .../attendance; fuer Konfis und Teamer:innen false)" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { description: "teamer/admin ohne gemeinsamen can_view-Jahrgang: { error: 'Kein Zugriff auf dieses Event', error_code: 'jahrgang_nicht_zugewiesen' } -- kein Feld des Termins, keine participants[]" }
         "404": { $ref: '#/components/responses/NotFound' }
@@ -2561,6 +2561,17 @@ paths:
           abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne
           Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und
           super_admin sind ausgenommen.
+        darf-freigeben: >
+          NEU 09.10.2026 (docs/planung/darf-freigeben.md, Migration 204):
+          Sehen genuegt nicht. Die Rolle admin verbucht nur mit dem Recht
+          darf_events_verbuchen an einem Jahrgang des Termins; Termine "Nur
+          Team" und ohne Jahrgang, wenn sie das Recht in mindestens einem
+          ihrer Jahrgaenge hat oder keinem zugewiesen ist. Sonst 403 "Du
+          darfst an diesem Event nicht verbuchen." org_admin/super_admin immer.
+          Regel-Stelle: backend/utils/terminLeitungSicht.js
+          (darfTerminVerbuchen). Vorgabe des Rechts ist true -- fuer
+          bestehende Konten aendert sich nichts, bis die Gemeindeleitung es
+          entzieht.
         hinweis: >
           Punkte-Vergabe-Weg f) der Analyse.
           BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — die Sammelbuchung
@@ -2705,11 +2716,24 @@ paths:
           abgewiesen. Reine Teamer-Termine (teamer_only) und Termine ohne
           Jahrgangszuordnung bleiben allen Leitungsrollen offen; org_admin und
           super_admin sind ausgenommen.
+        darf-freigeben: >
+          NEU 09.10.2026 (docs/planung/darf-freigeben.md, Migration 204):
+          Sehen genuegt nicht. Die Rolle admin verbucht nur mit dem Recht
+          darf_events_verbuchen an einem Jahrgang des Termins; Termine "Nur
+          Team" und ohne Jahrgang, wenn sie das Recht in mindestens einem
+          ihrer Jahrgaenge hat oder keinem zugewiesen ist. Sonst 403 "Du
+          darfst an diesem Event nicht verbuchen." org_admin/super_admin immer.
+          Regel-Stelle: backend/utils/terminLeitungSicht.js
+          (darfTerminVerbuchen). Vorgabe des Rechts ist true -- fuer
+          bestehende Konten aendert sich nichts, bis die Gemeindeleitung es
+          entzieht.
         hinweis: >
           Punkte-Wege e) und k) der Analyse.
           BEHOBEN 14.09.2026: Vorher kein Jahrgang-Check — Anwesenheit,
           Punktegutschrift und Punkteentzug waren an jedem Termin der
           Organisation moeglich, obwohl die Liste ihn ausblendet.
+          403 seit 09.10.2026 auch ohne das Recht darf_events_verbuchen
+          (siehe darf-freigeben).
       parameters:
         - { $ref: '#/components/parameters/pathId' }
         - name: participantId
@@ -3390,9 +3414,20 @@ paths:
           "Neuer Antrag eingegangen" bekommt (POST /api/konfi/requests, POST
           /api/teamer/requests) -- wer einen Antrag hier nicht sieht, bekommt
           keine Mitteilung dazu. Antwortform und Filter unveraendert.
+          NEU 09.10.2026 (Darf freigeben, Migration 204): additives Feld
+          darf_entscheiden je Antrag -- ob der Aufrufer genehmigen und
+          ablehnen darf (Recht darf_antraege_entscheiden am Jahrgang der
+          Konfi; Teamer-Antraege mit dem Recht in mindestens einem Jahrgang
+          oder ohne jede Zuweisung; org_admin immer). Die Liste selbst bleibt
+          bei der Sichtregel: Wer nicht entscheiden darf, sieht die Antraege
+          weiter, nur lesend. Die Empfaenger von "Neuer Antrag eingegangen"
+          (Postfach und Push) sind seitdem, wer entscheiden darf; den Push
+          filtert zusaetzlich die Kennzahlen-Wahl (GET/PUT
+          /api/notifications/kennzahlen). Regel-Stelle:
+          backend/utils/antragLeitungSicht.js.
       responses:
         "200":
-          description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name)"
+          description: "Array von Antraegen (ar.* + konfi_name, activity_name, activity_points, activity_type, activity_target_role, approved_by_name; seit 09.10.2026 darf_entscheiden)"
           headers:
             X-Kein-Jahrgang-Zugewiesen:
               schema: { type: string, enum: ["true"] }
@@ -3417,6 +3452,7 @@ paths:
         activity_points, activity_type, activity_target_role,
         approved_by_name). Der Antragsdialog der Leitung lud vorher die ganze
         Liste und suchte den Antrag per .find() heraus.
+        Seit 09.10.2026 additiv darf_entscheiden, wie in der Liste.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -3463,6 +3499,7 @@ paths:
           Antrag über JOIN activities auf die eigene Organisation eingegrenzt;
           nur status=pending aenderbar.
           JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
+          DARF FREIGEBEN seit 09.10.2026 (Migration 204): Zusaetzlich braucht die Rolle admin das Recht darf_antraege_entscheiden am Jahrgang der Konfi; bei Teamer-Antraegen in mindestens einem ihrer Jahrgaenge (oder keine Zuweisung). Sonst 403 "Du darfst über diesen Antrag nicht entscheiden." Vorgabe des Rechts true -- fuer bestehende Konten aendert sich nichts, bis die Gemeindeleitung es entzieht. Store-Apps 2.2.x/2.3.x zeigen den Knopf weiter und bekommen dann 403.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       requestBody:
         required: true
@@ -3532,6 +3569,8 @@ paths:
         objekt-pruefung: >
           Antrag über JOIN activities org-gescopt; bereits ausstehende Anträge
           ergeben 400.
+          DARF FREIGEBEN seit 09.10.2026: dasselbe Recht wie beim Entscheiden
+          (darf_antraege_entscheiden), sonst 403.
           JAHRGANGS-BINDUNG seit 2026-08-31: Die Rolle admin darf dies nur fuer Konfis ihrer can_view-Jahrgaenge (403 "Kein Zugriff auf diesen Konfi"); org_admin/super_admin sind ausgenommen. Antraege zu Teamer-Aktivitaeten (target_role='teamer') sind ausgenommen.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
