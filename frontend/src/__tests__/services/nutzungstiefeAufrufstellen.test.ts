@@ -90,6 +90,69 @@ const STELLEN: Array<{
     datei: 'src/components/konfi/modals/KonfispruchSelectModal.tsx',
     handlung: 'konfispruch-gespeichert',
     vorher: 'api.patch(`${apiBasePath}/profile`'
+  },
+  // Simon, 09.10.2026: „Go" für S2–S17 (docs/messung/umami.md). Hier die
+  // Stellen, die an einer Server-Antwort hängen; die übrigen (Ansehen,
+  // Postfach, Suche) prüft messungVorschlaege.test.ts.
+  {
+    datei: 'src/components/admin/modals/BadgeManagementModal.tsx',
+    handlung: 'badge-angelegt',
+    vorher: "api.post('/admin/badges', badgeData)"
+  },
+  {
+    datei: 'src/components/admin/modals/ChallengeManageModal.tsx',
+    handlung: 'challenge-angelegt',
+    vorher: "await api.post('/challenges/admin', payload)"
+  },
+  {
+    datei: 'src/components/konfi/views/EventDetailView.tsx',
+    handlung: 'event-abgemeldet',
+    vorher: 'api.post(`/konfi/events/${eventData.id}/opt-out`'
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerEventsPage.tsx',
+    handlung: 'event-abgemeldet',
+    vorher: 'const res = versand.ergebnis;'
+  },
+  {
+    datei: 'src/components/admin/views/EventDetailView.tsx',
+    handlung: 'event-abgemeldet',
+    vorher: 'const res = await api.post(`/teamer/events/${eventData.id}/zusage`, body)'
+  },
+  {
+    datei: 'src/components/shared/PushAuswahl.tsx',
+    handlung: 'push-gruppe-umgeschaltet',
+    vorher: "await api.put('/notifications/preferences', aenderung)"
+  },
+  {
+    datei: 'src/components/admin/modals/EinladungModal.tsx',
+    handlung: 'einladung-gesendet',
+    vorher: "await api.post('/einladungen', { kennung: kennung.trim(), role_id: rolleId })"
+  },
+  {
+    datei: 'src/components/shared/EinladungenKarte.tsx',
+    handlung: 'einladung-beantwortet',
+    vorher: 'await api.post(`/einladungen/${id}/${weg}`)'
+  },
+  {
+    datei: 'src/components/konfi/views/DashboardView.tsx',
+    handlung: 'losung-bibel',
+    vorher: "await api.put('/konfi/bible-translation', { translation: code })"
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerDashboardPage.tsx',
+    handlung: 'losung-bibel',
+    vorher: "await api.put('/teamer/bible-translation', { translation: code })"
+  },
+  {
+    datei: 'src/components/konfi/views/ProfileView.tsx',
+    handlung: 'losung-bibel',
+    vorher: "api.put('/konfi/bible-translation', { translation })"
+  },
+  {
+    datei: 'src/components/teamer/pages/TeamerProfilePage.tsx',
+    handlung: 'losung-bibel',
+    vorher: "api.put('/teamer/bible-translation', { translation })"
   }
 ];
 
@@ -97,7 +160,7 @@ describe('Gemessen wird erst nach der erfolgreichen Antwort', () => {
   it.each(STELLEN)('$datei misst $handlung', ({ datei, handlung }) => {
     const quelle = lies(datei);
     expect(quelle).toContain(`trackHandlung('${handlung}'`);
-    expect(quelle).toContain("from '../../../services/analytics'");
+    expect(quelle).toMatch(/from '(\.\.\/)+services\/analytics'/);
   });
 
   it.each(STELLEN)('$datei misst NACH dem Server-Aufruf', ({ datei, vorher, handlung }) => {
@@ -155,9 +218,13 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
     // `event-angemeldet` und `challenge-beitrag` gibt es seit August. Wuerden
     // sie zusaetzlich als Handlung gezaehlt, staende dieselbe Tat zweimal in
     // den Zahlen.
+    //
+    // Seit 09.10.2026 steht in derselben Datei `event-abgemeldet` (S4) als
+    // Handlung -- ein anderes Ereignis. Geprüft wird deshalb, dass die
+    // Anmeldung nicht ZUSÄTZLICH als Handlung gezählt wird.
     const anmeldung = lies('src/components/konfi/views/EventDetailView.tsx');
     expect(anmeldung).toContain("track('event-angemeldet'");
-    expect(anmeldung).not.toContain('trackHandlung(');
+    expect(anmeldung).not.toContain("trackHandlung('event-angemeldet'");
 
     const beitrag = lies('src/components/konfi/modals/ChallengeSubmitModal.tsx');
     expect(beitrag).toContain("track('challenge-beitrag'");
@@ -198,7 +265,20 @@ describe('Die Ereignisnamen und Merkmale stehen fest', () => {
     'antrag-entschieden',
     'material-angesehen',
     'material-abgerufen',
-    'konfispruch-gespeichert'
+    'konfispruch-gespeichert',
+    'badge-angelegt',
+    'challenge-angelegt',
+    'event-abgemeldet',
+    'wrapped-angesehen',
+    'neuigkeiten-angesehen',
+    'postfach-angesehen',
+    'mitteilung-angetippt',
+    'push-gruppe-umgeschaltet',
+    'push-erlaubnis',
+    'einladung-gesendet',
+    'einladung-beantwortet',
+    'losung-bibel',
+    'suche-genutzt'
   ];
   const MERKMALE = [
     'aktivitaet',
@@ -226,7 +306,23 @@ describe('Die Ereignisnamen und Merkmale stehen fest', () => {
     'luther',
     'gute-nachricht',
     'bigs',
-    'elberfelder'
+    'elberfelder',
+    'true',
+    'false',
+    'offen',
+    'konfi-entscheidet',
+    'privat',
+    'team',
+    'erteilt',
+    'org-admin',
+    'niv',
+    'segond',
+    'material',
+    'konfis',
+    'konfi-chat',
+    'konfi-termine',
+    'konfi-fortschritt',
+    'konfi-verwaltung'
   ];
 
   it('alle Namen und Merkmale stehen so in analytics.ts', () => {
@@ -245,7 +341,12 @@ describe('Die Ereignisnamen und Merkmale stehen fest', () => {
     // Weg der Punktevergabe und haette als `aktivität` einen Umlaut im
     // Schluessel. Er ist hier namentlich ausgenommen, damit die Regel nicht
     // still aufweicht.
-    const ausnahme = new Set(['aktivitaet']);
+    //
+    // `true` ist die zweite (09.10.2026): kein umschriebenes deutsches Wort,
+    // sondern der Wahrheitswert -- dieselbe Schreibweise, in der die
+    // Ereignisse ausserhalb der Handlungen (`mit_foto`, `mit_zeitfenster`)
+    // ihn schon senden, damit Umami beide gleich zeigt.
+    const ausnahme = new Set(['aktivitaet', 'true']);
     for (const wert of [...NAMEN, ...MERKMALE]) {
       if (ausnahme.has(wert)) continue;
       // Echtes Doppel-s ("erfasst") ist erlaubt, eine ss-Umschreibung eines

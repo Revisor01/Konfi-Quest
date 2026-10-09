@@ -16,6 +16,7 @@ import {
   IonIcon,
 } from '@ionic/react';
 import api from '../../services/api';
+import { trackHandlung, serverSchluesselMesswert } from '../../services/analytics';
 import { useApp } from '../../contexts/AppContext';
 import { useBadge } from '../../contexts/BadgeContext';
 import { useWartendeVorgaenge } from '../../hooks/useWartendeVorgaenge';
@@ -170,6 +171,8 @@ const PostfachModal: React.FC = () => {
     const auf = () => {
       setPraesentiertVon(postfachPraesentationsElement());
       setOffen(true);
+      // Anonyme Messung (docs/messung/umami.md, S8): wird die Glocke genutzt?
+      trackHandlung('postfach-angesehen');
     };
     window.addEventListener(POSTFACH_OEFFNEN_EVENT, auf);
     return () => window.removeEventListener(POSTFACH_OEFFNEN_EVENT, auf);
@@ -208,6 +211,9 @@ const PostfachModal: React.FC = () => {
   };
 
   const antippen = async (eintrag: PostfachEintrag) => {
+    // Anonyme Messung (S8): nur die ART der Mitteilung aus einer festen Liste
+    // -- kein Titel, kein Inhalt, keine Kennung, keine Gemeinde.
+    trackHandlung('mitteilung-angetippt', { art: serverSchluesselMesswert(eintrag.type) });
     if (!eintrag.read_at) {
       // Optimistisch: sofort als gelesen zeigen, der Server zieht nach. Geht
       // der PUT schief (offline), steht die Mitteilung beim naechsten Laden

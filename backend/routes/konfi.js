@@ -119,7 +119,7 @@ const { anmeldeStatusSql, kapazitaetSql, ladeZeitfenster } = require('../utils/t
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { berechneLevelFortschritt } = require('../utils/levelFortschritt');
-const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, loeseKonfspruchAuf } = require('../utils/konfspruch');
+const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, loeseKonfspruchAuf, spruchStandLesen, spruchWahlMerken } = require('../utils/konfspruch');
 const { loescheMitteilungenZuAntraegen } = require('../utils/postfachAufraeumen');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -2264,13 +2264,17 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         // Listen-Wahl setzen, Freitext löschen (Exklusivitaet).
         // konfspruch_translation ist die DEDIZIERTE Spalte - bible_translation (Tageslosung)
         // wird hier bewusst NICHT angefasst.
-        await db.query(
+        const vorher = await spruchStandLesen(db, konfiId);
+        const { rowCount } = await db.query(
           `UPDATE konfi_profiles
            SET konfspruch_id = $1, konfspruch_translation = $2,
                konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL
            WHERE user_id = $3`,
           [spruchId, translation, konfiId]
         );
+        // Personenunabhaengige Statistik (Migration 207): nur, wenn wirklich
+        // ein Profil geaendert wurde.
+        if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'vorschlag', spruchId, translation }, vorher);
         return res.json({
           success: true,
           konfspruch: { source: 'liste', id: spruchId, translation }
@@ -2301,13 +2305,15 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         }
         // Freitext setzen, Listen-Wahl löschen (Exklusivitaet).
         // konfspruch_translation bleibt unverändert (Freitext hat keine Uebersetzungs-Tabs).
-        await db.query(
+        const vorher = await spruchStandLesen(db, konfiId);
+        const { rowCount } = await db.query(
           `UPDATE konfi_profiles
            SET konfspruch_freitext = $1, konfspruch_freitext_referenz = $2,
                konfspruch_id = NULL
            WHERE user_id = $3`,
           [freitext, referenz, konfiId]
         );
+        if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'eigen', freitext, referenz }, vorher);
         return res.json({
           success: true,
           konfspruch: { source: 'freitext', text: freitext, reference: referenz }

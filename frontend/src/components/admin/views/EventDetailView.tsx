@@ -63,7 +63,7 @@ import AnwesenheitNotizModal from '../modals/AnwesenheitNotizModal';
 import AbmeldungNachtragenModal from '../modals/AbmeldungNachtragenModal';
 import TerminAbsagenModal from '../modals/TerminAbsagenModal';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { trackHandlung } from '../../../services/analytics';
+import { track, trackHandlung } from '../../../services/analytics';
 import { datumLang } from '../../../utils/dateUtils';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebTerminDetailLeitung from '../web/termine/WebTerminDetailLeitung';
@@ -225,7 +225,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setZusageLaeuft(true);
     const body = grund && grund.trim() ? { dabei, reason: grund.trim() } : { dabei };
     try {
-      await api.post(`/teamer/events/${eventData.id}/zusage`, body);
+      const res = await api.post(`/teamer/events/${eventData.id}/zusage`, body);
+      // Anonyme Messung wie beim Team (docs/messung/umami.md, S3/S4).
+      if (dabei) {
+        track('event-angemeldet', {
+          status: res.data?.status === 'waitlist' ? 'warteliste' : 'bestaetigt',
+          mit_zeitfenster: false
+        });
+      } else {
+        trackHandlung('event-abgemeldet', { pflicht: eventData.mandatory ? 'true' : 'false' });
+      }
       setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
       loadEventData();
     } catch (err) {

@@ -119,8 +119,27 @@ export function trackSitzungsstart(): void {
     url: '/app',
     language: 'de',
     screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
-    ...(aktuelleRolle ? { data: { rolle: aktuelleRolle } } : {})
+    data: { ...(aktuelleRolle ? { rolle: aktuelleRolle } : {}), dunkel: istDunkelmodus() }
   });
+}
+
+/**
+ * Steht das Geraet auf Dunkel? Die App folgt der Einstellung des Systems
+ * (theme/variables.css, prefers-color-scheme) und hat keinen eigenen
+ * Schalter -- deshalb genuegt die Medienabfrage (docs/messung/umami.md, S11).
+ *
+ * Bewusst NUR der Dunkelmodus: „Bewegung reduzieren", grosse Schrift oder
+ * erhoehter Kontrast koennen auf eine Beeintraechtigung hindeuten
+ * (Gesundheitsdaten) und werden nicht gelesen.
+ */
+export function istDunkelmodus(): boolean {
+  try {
+    return typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+  } catch {
+    return false;
+  }
 }
 
 /** Aufruf eines Bereichs (Tab, Hauptansicht). */
@@ -291,6 +310,28 @@ export function istGueltigeArt(art: string): boolean {
  *                           ist oeffentlich und machte die Sitzung einer Konfi
  *                           wiedererkennbar (docs/messung/umami.md, S1).
  *
+ * Dazu die Vorschlaege S2–S17 (Simon, 09.10.2026: „Go"; Bestand in
+ * docs/messung/umami.md, Messpunkte). Nicht alle sind Arbeit im engen Sinn --
+ * sie laufen trotzdem hier durch, weil ihre Werte ebenfalls aus Formularen,
+ * Einstellungen oder Serverantworten stammen und deshalb dieselbe
+ * Positivliste brauchen:
+ *
+ *  - `badge-angelegt`, `challenge-angelegt`  Gemeinden pflegen Eigenes.
+ *  - `event-abgemeldet`     Abmeldung bzw. Absage, mit Pflicht-Kennzeichen.
+ *  - `wrapped-angesehen`, `neuigkeiten-angesehen`  Beim Schliessen, mit
+ *                           `bis_ende` -- „angesehen" ist keine Arbeit, aber
+ *                           eine eigene Frage, kein Handlungszaehler.
+ *  - `postfach-angesehen`, `mitteilung-angetippt`  Mit der ART der Mitteilung,
+ *                           nie Inhalt, Event oder Name.
+ *  - `push-gruppe-umgeschaltet`, `push-erlaubnis`  Push-Auswahl und -Erlaubnis.
+ *  - `einladung-gesendet`, `einladung-beantwortet`  Nie die eingegebene Kennung.
+ *  - `losung-bibel`         Uebersetzung der Tageslosung.
+ *  - `suche-genutzt`        Einmal je Oeffnen der Seite, NIE der Suchbegriff.
+ *
+ * `nachgesendet: 'true'` (S14) traegt eine Handlung, die offline eingereiht
+ * war und erst beim Nachsenden der Warteschlange gelungen ist
+ * (services/nachgesendetMessung.ts).
+ *
  * NICHT dabei und bewusst nicht: Chat-Nachrichten (Zahl sagt ueber die
  * paedagogische Nutzung nichts aus und liegt inhaltlich zu nah an den
  * Beteiligten), Jahresrueckblick-Aufrufe (wird an sechs Stellen geoeffnet,
@@ -307,7 +348,103 @@ export type Handlung =
   | 'antrag-entschieden'
   | 'material-angesehen'
   | 'material-abgerufen'
-  | 'konfispruch-gespeichert';
+  | 'konfispruch-gespeichert'
+  | 'badge-angelegt'
+  | 'challenge-angelegt'
+  | 'event-abgemeldet'
+  | 'wrapped-angesehen'
+  | 'neuigkeiten-angesehen'
+  | 'postfach-angesehen'
+  | 'mitteilung-angetippt'
+  | 'push-gruppe-umgeschaltet'
+  | 'push-erlaubnis'
+  | 'einladung-gesendet'
+  | 'einladung-beantwortet'
+  | 'losung-bibel'
+  | 'suche-genutzt';
+
+/** Kennzeichen einer offline eingereihten, spaeter nachgesendeten Handlung (S14). */
+const NACHGESENDET = ['true'] as const;
+
+/**
+ * Arten der Mitteilungen im Postfach, so wie der Server sie schreibt
+ * (backend/utils/postfachArten.js: POSTFACH_ARTEN und die vier Arten, die
+ * ihre Routen selbst schreiben), Unterstrich als Bindestrich. Feste Liste
+ * statt Muster: eine Art, die neu dazukommt, zaehlt ohne Merkmal, bis sie
+ * hier steht. `messungVorschlaege.test.ts` vergleicht beide Listen.
+ */
+export const MITTEILUNGS_ARTEN = [
+  'badge-earned',
+  'new-activity-request',
+  'activity-request-submitted',
+  'activity-request-decision',
+  'event-attendance',
+  'bonus-points',
+  'activity-assigned',
+  'level-up',
+  'challenge-badge-earned',
+  'waitlist-promotion',
+  'event-cancelled',
+  'event-changed',
+  'event-reactivated',
+  'event-registered',
+  'event-unregistered',
+  'event-removed',
+  'event-waitlisted',
+  'challenge-submission-hidden',
+  'event-unregistration',
+  'teamer-event-booking',
+  'teamer-event-cancellation',
+  'events-pending-approval',
+  'new-konfi-registration',
+  'challenge-submission',
+  'jahrgang-deletion-warning',
+  'gemeinde-einladung',
+  'event-opt-out',
+  'event-opt-in',
+  'gemeinde-einladung-beantwortet',
+  'wrapped',
+  'certificate'
+] as const;
+
+/**
+ * Push-Gruppen des Servers (backend/utils/pushGruppen.js), Unterstrich als
+ * Bindestrich; `alle` ist der Hauptschalter „Mitteilungen aufs Handy".
+ */
+export const PUSH_GRUPPEN = ['konfi-chat', 'konfi-termine', 'konfi-fortschritt', 'konfi-verwaltung', 'alle'] as const;
+
+/**
+ * Kuerzel der Tageslosung (BibleTranslationModal) -> Messwert. Dieselben
+ * Namen wie beim Konfispruch, damit Luther hier wie dort `luther` heisst.
+ */
+const LOSUNG_BIBEL_MESSWERT: Record<string, string> = {
+  LUT: 'luther',
+  ELB: 'elberfelder',
+  GNB: 'gute-nachricht',
+  BIGS: 'bigs',
+  NIV: 'niv',
+  LSG: 'segond'
+};
+
+/** Messwert der Losungs-Uebersetzung; ein unbekanntes Kuerzel faellt heraus. */
+export function losungBibelMesswert(code: string | null | undefined): string | undefined {
+  return code ? LOSUNG_BIBEL_MESSWERT[code] : undefined;
+}
+
+/** Server-Schluessel (`event_cancelled`) -> Messwert (`event-cancelled`). */
+export function serverSchluesselMesswert(schluessel: string | null | undefined): string | undefined {
+  return typeof schluessel === 'string' ? schluessel.replace(/_/g, '-') : undefined;
+}
+
+/**
+ * Sichtbarkeit einer Challenge (types/challenges.ts) -> Messwert, ASCII ohne
+ * Unterstrich und ohne Umlaut-Umschreibung.
+ */
+export const CHALLENGE_SICHTBARKEIT_MESSWERT: Record<string, string> = {
+  public: 'offen',
+  konfi_choice: 'konfi-entscheidet',
+  private: 'privat'
+};
 
 /**
  * Erlaubte Auspraegungen je Handlung. Diese Liste ist die harte Grenze: was
@@ -325,7 +462,8 @@ const ERLAUBTE_MERKMALE: Record<Handlung, Record<string, readonly string[]>> = {
     // Aktivitaet aus der Liste oder frei vergebene Bonuspunkte.
     weg: ['aktivitaet', 'bonus'],
     // Punkteart des Jahrgangs. 'ohne' = Teamer-Aktivitaet ohne Punkteart.
-    punkteart: ['gottesdienst', 'gemeinde', 'ohne']
+    punkteart: ['gottesdienst', 'gemeinde', 'ohne'],
+    nachgesendet: NACHGESENDET
   },
   'anwesenheit-erfasst': {
     // Einzeln abgehakt oder der ganze Termin auf einmal.
@@ -339,16 +477,19 @@ const ERLAUBTE_MERKMALE: Record<Handlung, Record<string, readonly string[]>> = {
   'termin-angelegt': {
     // Einzeltermin oder Serie — zeigt, ob laufende Arbeit geplant wird.
     form: ['einzeln', 'serie'],
-    zielgruppe: ['konfi', 'teamer']
+    zielgruppe: ['konfi', 'teamer'],
+    nachgesendet: NACHGESENDET
   },
   'material-bereitgestellt': {
-    inhalt: ['datei', 'link', 'beides', 'nur-text']
+    inhalt: ['datei', 'link', 'beides', 'nur-text'],
+    nachgesendet: NACHGESENDET
   },
   'antrag-entschieden': {
     entscheidung: ['angenommen', 'abgelehnt'],
     // Wer den Antrag gestellt hat — aus der Zielgruppe der Aktivitaet, nie
     // die Person. Kein Grund, keine Aktivitaet, keine Punktzahl.
-    antrag_von: ['konfi', 'teamer']
+    antrag_von: ['konfi', 'teamer'],
+    nachgesendet: NACHGESENDET
   },
   'material-angesehen': {
     // Dieselben Werte wie beim Bereitstellen (materialInhalt), damit sich
@@ -362,6 +503,53 @@ const ERLAUBTE_MERKMALE: Record<Handlung, Record<string, readonly string[]>> = {
   'konfispruch-gespeichert': {
     quelle: ['vorschlag', 'eigen'],
     bibel: ['luther', 'gute-nachricht', 'bigs', 'elberfelder']
+  },
+  // ---- S2–S17 (09.10.2026) ----
+  'badge-angelegt': {
+    zielgruppe: ['konfi', 'teamer'],
+    nachgesendet: NACHGESENDET
+  },
+  'challenge-angelegt': {
+    sichtbarkeit: ['offen', 'konfi-entscheidet', 'privat'],
+    // Beitraege brauchen eine Freigabe (moderated).
+    freigabe: ['true', 'false']
+  },
+  'event-abgemeldet': {
+    // Pflicht-Event (Opt-out) oder freiwillige Anmeldung. Kein Grund, kein Event.
+    pflicht: ['true', 'false'],
+    nachgesendet: NACHGESENDET
+  },
+  'wrapped-angesehen': {
+    art: ['konfi', 'team'],
+    bis_ende: ['true', 'false']
+  },
+  'neuigkeiten-angesehen': {
+    bis_ende: ['true', 'false']
+  },
+  'postfach-angesehen': {},
+  'mitteilung-angetippt': {
+    art: MITTEILUNGS_ARTEN
+  },
+  'push-gruppe-umgeschaltet': {
+    gruppe: PUSH_GRUPPEN,
+    an: ['true', 'false']
+  },
+  'push-erlaubnis': {
+    ergebnis: ['erteilt', 'abgelehnt']
+  },
+  'einladung-gesendet': {
+    // Feste Rollennamen, Unterstrich als Bindestrich -- nie die Kennung.
+    rolle_ziel: ['konfi', 'teamer', 'admin', 'org-admin']
+  },
+  'einladung-beantwortet': {
+    antwort: ['angenommen', 'abgelehnt']
+  },
+  'losung-bibel': {
+    bibel: ['luther', 'elberfelder', 'gute-nachricht', 'bigs', 'niv', 'segond'],
+    nachgesendet: NACHGESENDET
+  },
+  'suche-genutzt': {
+    bereich: ['material', 'konfis', 'team']
   }
 };
 
@@ -420,4 +608,24 @@ export function trackHandlung(
   } catch {
     /* Messung darf nie stoeren */
   }
+}
+
+/**
+ * Die Uebersicht „Was ist neu?" nach dem Update ist geschlossen worden
+ * (docs/messung/umami.md, S16). Gerufen von OnboardingTour ueber
+ * `beimSchliessen`, nur aus den drei Aenderungsanzeigen -- nicht aus der
+ * Begruessungstour beim ersten Start.
+ */
+export function trackNeuigkeitenAngesehen(bisEnde: boolean): void {
+  trackHandlung('neuigkeiten-angesehen', { bis_ende: bisEnde ? 'true' : 'false' });
+}
+
+/**
+ * Antwort auf die Push-Frage des Systems (docs/messung/umami.md, S9). Nur
+ * gerufen, wenn die Frage wirklich gestellt wurde (Status `prompt`); ein
+ * anderer Stand als erteilt/abgelehnt wird nicht gemeldet.
+ */
+export function trackPushErlaubnis(antwort: string | null | undefined): void {
+  if (antwort === 'granted') trackHandlung('push-erlaubnis', { ergebnis: 'erteilt' });
+  else if (antwort === 'denied') trackHandlung('push-erlaubnis', { ergebnis: 'abgelehnt' });
 }

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { IonButton, IonCard, IonCardContent, IonIcon, IonList, IonListHeader, IonLabel } from '@ionic/react';
 import api from '../../services/api';
+import { trackHandlung } from '../../services/analytics';
 import { useApp } from '../../contexts/AppContext';
 import { fehlerText } from '../../utils/fehler';
 import { rollenName } from '../../utils/rollenNamen';
@@ -61,6 +62,8 @@ export const useEinladungen = () => {
     setLaeuft(id);
     try {
       const res = await api.post(`/einladungen/${id}/${weg}`);
+      // Anonyme Messung (docs/messung/umami.md, S10): angenommen oder abgelehnt.
+      trackHandlung('einladung-beantwortet', { antwort: weg === 'annehmen' ? 'angenommen' : 'abgelehnt' });
       if (weg === 'annehmen') {
         const name = res.data?.organization?.display_name || 'die Gemeinde';
         // Die Zugehoerigkeit haengt am Anmeldetoken -- ohne Neuladen zeigt der

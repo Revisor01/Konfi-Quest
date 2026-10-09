@@ -1456,6 +1456,10 @@ BEHOBEN 26.09.2026: Die Teamer-Auswahl filterte nicht auf deleted_at (anders als
         <p class="summary">Gespeicherte APM-Historie (nur super_admin)</p>
         <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div>
       </article><article class="route">
+        <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/metrics/konfisprueche</code></div>
+        <p class="summary">Gewaehlte Konfisprueche ueber alle Gemeinden (nur super_admin)</p>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div>
+      </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#0369a1">GET</span><code class="pfad">/api/metrics/local</code></div>
         <p class="summary">APM-Rohdaten nur dieser Replica (nur super_admin)</p>
         <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Inline: req.user.is_super_admin, sonst 403</div>

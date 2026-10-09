@@ -56,4 +56,4 @@ export interface BetriebsAnsicht extends BetriebsSnapshot {
   cspMeldungen?: BetriebsCspMeldungen;
 }
 
-export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf';
+export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf' | 'sprueche';

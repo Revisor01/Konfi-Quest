@@ -94,7 +94,7 @@ import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 // der genauere — er kennt Teamer-Antraege ohne Punkte und ohne Typ.
 import type { ActivityRequest } from '../../konfi/modals/RequestDetailModal';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { trackMitmachenAnsicht } from '../../../services/analytics';
+import { track, trackHandlung, trackMitmachenAnsicht } from '../../../services/analytics';
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
@@ -618,6 +618,17 @@ const TeamerEventsPage: React.FC = () => {
         setSuccess('Wird gesendet, sobald du wieder online bist');
       } else {
         const res = versand.ergebnis;
+        // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
+        // S3 und S4): dieselben Ereignisse wie bei Konfis. Kein Event, kein Grund.
+        // Offline eingereiht zaehlt erst beim Nachsenden (nachgesendetMessung).
+        if (dabei) {
+          track('event-angemeldet', {
+            status: res.data?.status === 'waitlist' ? 'warteliste' : 'bestaetigt',
+            mit_zeitfenster: false
+          });
+        } else {
+          trackHandlung('event-abgemeldet', { pflicht: event.mandatory ? 'true' : 'false' });
+        }
         // Termin UND Teilnehmerliste frisch aus der Detailantwort -- die
         // Liste (GET /events) traegt keine `participants`, und ein blosser
         // Objekttausch liess den Lade-Effekt kalt (Begruendung oben bei

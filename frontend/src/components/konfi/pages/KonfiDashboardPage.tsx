@@ -33,7 +33,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import { mergeSectionOrder, DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
 import { TrialBanner, StoreUpdateBanner, istVergangen } from '../../shared';
 import WartungsHinweis from '../../shared/WartungsHinweis';
-import { track } from '../../../services/analytics';
+import { useScrollTiefeMessung } from '../../../hooks/useScrollTiefeMessung';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import { getFirstName, getGreeting } from '../views/DashboardSections';
@@ -123,25 +123,9 @@ const KonfiDashboardPage: React.FC = () => {
   // Browser ab 992 px: die Web-Fassung (web/WebKonfiStart); sonst die App.
   const breit = useBreitesLayout();
 
-  // Anonyme Messung der Scroll-Tiefe: Sehen die Konfis die unteren Abschnitte
-  // des Dashboards überhaupt? Je Sitzung wird jede Marke NUR EINMAL gemeldet
-  // (Ref statt State, damit das Scrollen kein Rendern ausloest).
-  const scrollMarken = useRef<Set<number>>(new Set());
-  const handleScrollTiefe = useCallback((ev: CustomEvent) => {
-    const el = ev.target as HTMLIonContentElement & { scrollHeight?: number; clientHeight?: number };
-    // ion-content liefert im scroll-Ereignis { scrollTop, scrollLeft };
-    // ein eigener Ionic-Typ dafuer ist nicht exportiert.
-    const detail = (ev.detail || {}) as { scrollTop?: number };
-    const hoehe = (el?.scrollHeight || 0) - (el?.clientHeight || 0);
-    if (hoehe <= 0) return;
-    const anteil = Math.round(((detail.scrollTop || 0) / hoehe) * 100);
-    for (const marke of [25, 50, 75, 100]) {
-      if (anteil >= marke && !scrollMarken.current.has(marke)) {
-        scrollMarken.current.add(marke);
-        track('dashboard-gescrollt', { tiefe: marke });
-      }
-    }
-  }, []);
+  // Anonyme Messung der Scroll-Tiefe (hooks/useScrollTiefeMessung): Sehen
+  // die Konfis die unteren Abschnitte des Dashboards ueberhaupt?
+  const handleScrollTiefe = useScrollTiefeMessung();
 
   // --- useOfflineQuery: Dashboard ---
   const { data: dashboardData, loading: dashLoading, refresh: refreshDashboard, refreshLive: refreshDashboardLive } = useOfflineQuery<DashboardData>(

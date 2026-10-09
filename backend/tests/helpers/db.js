@@ -103,6 +103,7 @@ const TRUNCATE_SQL = `TRUNCATE
     user_activities, activity_requests, activity_categories,
     user_badges, bonus_points,
     konfspruch_uebersetzungen,
+    konfspruch_wahlen,
     konfsprueche,
     konfi_profiles, user_jahrgang_assignments,
     material_links, material_files, material_jahrgaenge, material_events, materials,

@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- Unter Betrieb zeigt ein Reiter „Sprüche“, welche Konfisprüche über alle
+  Gemeinden gewählt werden — jeder Spruch mit Anzahl, eigene im Wortlaut,
+  ohne Namen; die Zahlen bleiben auch nach dem Löschen eines Kontos.
 - Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
   dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
   den Challenges.
@@ -360,6 +363,9 @@ Versionsüberschrift.
 
 ### Sonstiges
 - Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
+- Die anonyme Nutzungsmessung erfasst weitere Funktionen — etwa Abmeldungen,
+  Postfach, Push-Auswahl, Einladungen, Suche, Jahresrückblick und offline
+  Erledigtes —, weiterhin ohne Namen, Inhalte und Suchbegriffe.
 - Die Statusabfrage des Servers meldet zusätzlich, wie viele Mitteilungen
   hängen oder endgültig gescheitert sind.
 - Eine automatische Prüfung stellt sicher, dass Zeitgeber und Horcher mit

@@ -8,6 +8,7 @@ import {
   ICON_TACHO,
 } from '../../shared/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
+import { trackNeuigkeitenAngesehen } from '../../../services/analytics';
 
 interface Props {
   onClose: () => void;
@@ -71,7 +72,7 @@ export const SLIDES: OnboardingSlide[] = [
 ];
 
 const AdminUpdate230WalkthroughModal: React.FC<Props> = ({ onClose }) => (
-  <OnboardingTour slides={SLIDES} onClose={onClose} />
+  <OnboardingTour slides={SLIDES} onClose={onClose} beimSchliessen={trackNeuigkeitenAngesehen} />
 );
 
 export default AdminUpdate230WalkthroughModal;

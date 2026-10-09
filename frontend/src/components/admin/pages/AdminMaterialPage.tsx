@@ -48,6 +48,7 @@ import EmptyState from '../../shared/EmptyState';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader } from '../../shared';
 import MaterialFormModal from '../modals/MaterialFormModal';
+import { useSucheMessung } from '../../../hooks/useSucheMessung';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { darfMaterialBearbeiten } from '../../../utils/materialRechte';
@@ -91,6 +92,8 @@ const AdminMaterialPage: React.FC = () => {
   const breit = useBreitesLayout();
 
   const [search, setSearch] = useState('');
+  // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
+  useSucheMessung('material', search);
   // Der Jahrgangs-Filter kennt drei Zustaende: alle, ein Jahrgang, oder
   // "nur globales Material". Letzteres filtert die Oberflaeche selbst --
   // die Route kennt dafuer keinen Parameter.

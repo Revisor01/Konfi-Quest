@@ -65,6 +65,7 @@ import WebKonfiKacheln from './WebKonfiKacheln';
 import WebTeamTabelle from './WebTeamTabelle';
 import WebTeamKacheln from './WebTeamKacheln';
 import { WebFilterAuswahl } from './WebLeitungBausteine';
+import { useSucheMessung } from '../../../../hooks/useSucheMessung';
 
 export type KonfisAnsicht = 'konfis' | 'team';
 const ANSICHTEN: readonly KonfisAnsicht[] = ['konfis', 'team'];
@@ -143,6 +144,8 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
 
   const [ansicht, setAnsicht] = useFilterAusAdresse<KonfisAnsicht>('/admin/konfis', ANSICHTEN, 'konfis');
   const [suche, setSuche] = useState('');
+  // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
+  useSucheMessung(ansicht === 'team' ? 'team' : 'konfis', suche);
   const [jahrgang, setJahrgang] = useState('alle');
   const [konfiSortierung, setKonfiSortierung] = useState<WebSortierung>({ schluessel: 'name', richtung: 'auf' });
   const [teamSortierung, setTeamSortierung] = useState<WebSortierung>({ schluessel: 'name', richtung: 'auf' });

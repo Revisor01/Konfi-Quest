@@ -64,7 +64,7 @@ vi.mock('../../services/api', () => ({
   },
 }));
 vi.mock('../../components/shared/OfflinePlatzhalter', () => ({ default: () => null }));
-vi.mock('../../services/analytics', () => ({ track: vi.fn() }));
+vi.mock('../../services/analytics', () => ({ track: vi.fn(), trackHandlung: vi.fn() }));
 vi.mock('../../services/writeQueue', () => ({ writeQueue: { enqueue: vi.fn() } }));
 vi.mock('../../services/networkMonitor', () => ({ networkMonitor: { isOnline: true } }));
 vi.mock('../../components/common/LoadingSpinner', () => ({ default: () => null }));

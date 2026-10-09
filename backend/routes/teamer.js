@@ -14,7 +14,7 @@ const { deletePhotoFile } = require('../utils/photoStorage');
 const { getPunkteHistorie } = require('../utils/punkteHistorie');
 const { ladeKonfiHistorie, konfiBadgesAusKopie } = require('../utils/konfiHistorie');
 const { findeAntragZuClientId, behandleClientIdRace } = require('../utils/antragIdempotenz');
-const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch } = require('../utils/konfspruch');
+const { BIBEL_UEBERSETZUNGEN, KONFSPRUCH_TRANSLATIONS, ladeSpruchliste, ladeKonfspruch, spruchStandLesen, spruchWahlMerken } = require('../utils/konfspruch');
 const { heuteBerlin, HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL } = require('../utils/zeitformat');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
@@ -1194,6 +1194,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         if (!spruch) {
           return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
         }
+        const vorher = await spruchStandLesen(db, userId);
         await db.query(
           `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_id, konfspruch_translation)
            VALUES ($1, $2, $3, $4)
@@ -1203,6 +1204,8 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                konfspruch_freitext = NULL, konfspruch_freitext_referenz = NULL`,
           [userId, orgId, spruchId, translation]
         );
+        // Personenunabhaengige Statistik (Migration 207).
+        await spruchWahlMerken(db, orgId, { quelle: 'vorschlag', spruchId, translation }, vorher);
         return res.json({
           success: true,
           konfspruch: { source: 'liste', id: spruchId, translation }
@@ -1229,6 +1232,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         if (freitext.length > 1000) {
           return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
         }
+        const vorher = await spruchStandLesen(db, userId);
         await db.query(
           `INSERT INTO konfi_profiles (user_id, organization_id, konfspruch_freitext, konfspruch_freitext_referenz)
            VALUES ($1, $2, $3, $4)
@@ -1238,6 +1242,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
                konfspruch_id = NULL`,
           [userId, orgId, freitext, referenz]
         );
+        await spruchWahlMerken(db, orgId, { quelle: 'eigen', freitext, referenz }, vorher);
         return res.json({
           success: true,
           konfspruch: { source: 'freitext', text: freitext, reference: referenz }
