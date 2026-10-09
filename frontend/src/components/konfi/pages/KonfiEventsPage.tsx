@@ -21,7 +21,6 @@ import {
 // useLocation für die Auswertung von ?segment=... (React Router v5 API)
 import { ICON_HINZUFUEGEN_GEFUELLT, ICON_SCANNEN } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import { zaehltAlsMeiner } from '../../shared';
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
@@ -48,7 +47,9 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { trackMitmachenAnsicht } from '../../../services/analytics';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
-import { mitgliedSegmentAusAdresse } from '../../shared/web/termine/terminFilter';
+import { mitgliedSegmentAusAdresse, type EigenerAntragFilter, type KonfiEventFilter } from '../../shared/web/termine/terminFilter';
+import { wahlVon } from '../../../seiten/beschreibung';
+import { EIGENE_ANTRAEGE_START, KONFI_EVENTS, MITGLIED_BEREICHE } from '../../../seiten/mitmachenMitglied';
 import WebKonfiEvents from '../web/termine/WebKonfiEvents';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten sind aus ihrem eigenen
@@ -126,10 +127,10 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   });
 
   // State
-  const [activeTab, setActiveTab] = useState<'meine' | 'alle' | 'konfirmation'>('meine');
+  const [activeTab, setActiveTab] = useState<KonfiEventFilter>('meine');
 
   // --- Aktivitäten-State ---
-  const [requestsTab, setRequestsTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  const [requestsTab, setRequestsTab] = useState<EigenerAntragFilter>(EIGENE_ANTRAEGE_START.konfi.app);
   const [selectedRequest, setSelectedRequest] = useState<ActivityRequest | null>(null);
   // Die Warteschlange meldet ihre Aenderungen jetzt selbst — vorher aktuali-
   // sierte sich die Anzeige nur, wenn die Antragsliste neu lud. Leerte sich
@@ -184,20 +185,6 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
     return datumKurz(dateString);
   };
 
-  const getFilteredRequests = () => {
-    const allRequests = requests || [];
-    switch (requestsTab) {
-      case 'pending':
-        return allRequests.filter(r => r.status === 'pending');
-      case 'approved':
-        return allRequests.filter(r => r.status === 'approved');
-      case 'rejected':
-        return allRequests.filter(r => r.status === 'rejected');
-      default:
-        return allRequests;
-    }
-  };
-
   const handleDeleteRequest = (request: ActivityRequest) => {
     if (!isOnline) {
       setError('Löschen nicht möglich — du bist offline');
@@ -237,34 +224,14 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
     const now = new Date();
     const allEvents = events || [];
 
-    let filteredEvents;
-    switch (activeTab) {
-      case 'meine':
-        // Persönliche Event-Historie: alle Events mit eigener Buchung, egal in
-        // welchem Zustand (bestätigt, Warteliste, selbst abgemeldet, abgesagt).
-        //
-        // zaehltAlsMeiner() statt einer eigenen Regel: Die Regel stand hier,
-        // in EventsView und in TeamerEventsPage in drei Varianten nebeneinander
-        // — und genau dadurch fehlte an jeder Stelle etwas anderes. Hier war es
-        // die Warteliste: Das Backend setzt is_registered nur bei 'confirmed',
-        // ein Wartelistenplatz fiel damit aus dem Reiter heraus.
-        filteredEvents = allEvents.filter(zaehltAlsMeiner);
-        break;
-      case 'alle':
-        // NUR zukünftige Events (keine vergangenen), keine Konfirmation
-        filteredEvents = allEvents.filter(event =>
-          new Date(event.event_date) >= now &&
-          !event.is_konfirmation
-        );
-        break;
-      case 'konfirmation':
-        filteredEvents = allEvents.filter(event =>
-          event.is_konfirmation
-        );
-        break;
-      default:
-        filteredEvents = allEvents;
-    }
+    // Die Reiter rechnen aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts).
+    // „Meine": jede eigene Buchung, egal in welchem Zustand (zaehltAlsMeiner --
+    // vorher stand die Regel hier, in EventsView und in TeamerEventsPage in drei
+    // Varianten, und an jeder Stelle fehlte etwas anderes). „Alle": was noch
+    // kommt, ohne Konfirmation; bis 09.10.2026 fiel hier ein laufendes
+    // mehrtaegiges Event schon nach seinem ersten Tag heraus (event_date statt
+    // istVergangen), im Browser nicht.
+    const filteredEvents = allEvents.filter((e) => wahlVon(KONFI_EVENTS, activeTab).passt?.(e) ?? true);
 
     // Sort events: nächstes Event immer oben
     return filteredEvents.sort((a, b) => {
@@ -316,12 +283,11 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
           value={mainSegment}
           onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
-          <IonSegmentButton value="events">
-            <IonLabel>Events</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="antraege">
-            <IonLabel>Aktivitäten</IonLabel>
-          </IonSegmentButton>
+          {MITGLIED_BEREICHE.map((b) => (
+            <IonSegmentButton key={b.schluessel} value={b.schluessel}>
+              <IonLabel>{b.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -345,7 +311,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
         eventsLaden={loading}
         antraege={requests || []}
         antraegeLaden={requestsLoading}
-        standardFilterAntraege="offen"
+        standardFilterAntraege={EIGENE_ANTRAEGE_START.konfi.web}
         wartend={wartend}
         gescheitert={gescheitert}
         onVergessen={(id) => { void vergessen(id); }}
@@ -404,7 +370,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
             <LoadingSpinner message="Aktivitäten werden geladen..." />
           ) : (
             <RequestsView
-              requests={getFilteredRequests()}
+              requests={requests || []}
               onDeleteRequest={handleDeleteRequest}
               onSelectRequest={handleSelectRequest}
               activeTab={requestsTab}

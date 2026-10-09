@@ -53,21 +53,16 @@ import WebEventAktionen from './WebEventAktionen';
 import WebEventsKacheln from './WebEventsKacheln';
 import { ZEIT_FILTER, type TerminAktionen, type ZeitFilter } from './typen';
 import '../../../../theme/web/termine.css';
+import { inFassung, leerVon } from '../../../../seiten/beschreibung';
+import {
+  JAHRGANG_FILTER,
+  KATEGORIE_FILTER,
+  LEITUNG_ART,
+  LEITUNG_EVENTS_LEER_TITEL,
+  LEITUNG_ZEITRAUM,
+  LEITUNG_ZEITRAUM_BESCHRIFTUNG,
+} from '../../../../seiten/mitmachenLeitung';
 import { terminStatusRang } from '../../../../utils/statusReihenfolge';
-
-const LEER_TEXT: Record<ZeitFilter, string> = {
-  aktuell: 'Keine anstehenden Events',
-  verbuchen: 'Keine Events zum Verbuchen',
-  vergangen: 'Keine vergangenen Events',
-  abgesagt: 'Keine abgesagten Events',
-};
-
-const ART_OPTIONEN: Array<{ wert: ArtFilter; label: string }> = [
-  { wert: 'alle', label: 'Alle Arten' },
-  { wert: 'pflicht', label: 'Pflicht-Events' },
-  { wert: 'konfirmation', label: 'Konfirmation' },
-  { wert: 'team', label: 'Nur Team' },
-];
 
 export interface WebEventsTabelleProps {
   /** GET /events ohne die abgesagten. */
@@ -238,36 +233,40 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
     <>
       <div className="web-werkzeuge">
         <WebChips<ZeitFilter>
-          beschriftung="Events nach Zeitraum"
+          beschriftung={LEITUNG_ZEITRAUM_BESCHRIFTUNG}
           wert={zeit}
           onWert={setZeit}
-          chips={[
-            { wert: 'aktuell', label: 'Aktuell', zahl: listen.aktuell.length },
-            { wert: 'verbuchen', label: 'Verbuchen', zahl: listen.verbuchen.length, rot: true, zahlText: 'zum Verbuchen' },
-            { wert: 'vergangen', label: 'Vergangen', zahl: listen.vergangen.length },
-            { wert: 'abgesagt', label: 'Abgesagt', zahl: listen.abgesagt.length },
-          ]}
+          // Reiter aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts).
+          // Im Browser zaehlt jeder Chip seine Liste nach allen Filtern; rot
+          // ist die Zahl, hinter der Arbeit wartet (Verbuchen).
+          chips={inFassung(LEITUNG_ZEITRAUM, 'web').map((r) => ({
+            wert: r.schluessel,
+            label: r.label,
+            zahl: listen[r.schluessel].length,
+            rot: r.zahlText !== undefined,
+            zahlText: r.zahlText?.(listen[r.schluessel].length),
+          }))}
         />
       </div>
 
       <div className="web-filter">
         {jahrgaenge.length > 0 && (
           <WebAuswahl
-            label="Jahrgang"
+            label={JAHRGANG_FILTER.label}
             wert={jahrgang}
             onWert={setJahrgang}
-            optionen={[{ wert: 'alle', label: 'Alle Jahrgänge' }, ...jahrgaenge.map((j) => ({ wert: String(j.id), label: j.name }))]}
+            optionen={[{ wert: 'alle', label: JAHRGANG_FILTER.alle }, ...jahrgaenge.map((j) => ({ wert: String(j.id), label: j.name }))]}
           />
         )}
         {kategorien.length > 0 && (
           <WebAuswahl
-            label="Kategorie"
+            label={KATEGORIE_FILTER.label}
             wert={kategorie}
             onWert={setKategorie}
-            optionen={[{ wert: 'alle', label: 'Alle Kategorien' }, ...kategorien.map((k) => ({ wert: k, label: k }))]}
+            optionen={[{ wert: 'alle', label: KATEGORIE_FILTER.alle }, ...kategorien.map((k) => ({ wert: k, label: k }))]}
           />
         )}
-        <WebAuswahl label="Art" wert={art} onWert={(w) => setArt(w as ArtFilter)} optionen={ART_OPTIONEN} />
+        <WebAuswahl label="Art" wert={art} onWert={(w) => setArt(w as ArtFilter)} optionen={LEITUNG_ART.map((a) => ({ wert: a.schluessel, label: a.label }))} />
         <div className="web-werkzeuge__rechts">
           {gefiltert && (
             <WebKnopf art="text" klein onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf>
@@ -281,8 +280,8 @@ const WebEventsTabelle: React.FC<WebEventsTabelleProps> = ({ events, abgesagte, 
         <div className="web-karte">
           <WebLeer
             icon={ICON_TERMIN}
-            titel={gefiltert ? 'Keine Treffer' : 'Keine Events gefunden'}
-            text={gefiltert ? 'Zu diesen Filtern gibt es hier kein Event.' : LEER_TEXT[zeit]}
+            titel={gefiltert ? 'Keine Treffer' : LEITUNG_EVENTS_LEER_TITEL}
+            text={gefiltert ? 'Zu diesen Filtern gibt es hier kein Event.' : leerVon(LEITUNG_ZEITRAUM, zeit)}
             aktion={gefiltert ? <WebKnopf onClick={zuruecksetzen}>Filter zurücksetzen</WebKnopf> : undefined}
           />
         </div>

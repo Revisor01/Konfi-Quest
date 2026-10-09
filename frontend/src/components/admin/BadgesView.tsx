@@ -37,7 +37,16 @@ import { getCriteriaIcon as getCriteriaTypeIcon } from '../../utils/badgeCriteri
 import type { BadgeKriteriumExtra } from '../../utils/badgeCriteria';
 import { punkteText } from '../../utils/punkteText';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
-import WebAdminBadges, { type WebBadgeFilter } from './web/start/WebAdminBadges';
+import WebAdminBadges from './web/start/WebAdminBadges';
+import { inFassung, wahlVon } from '../../seiten/beschreibung';
+import {
+  BADGES_GRUPPE,
+  LEITUNG_BADGES_LEER,
+  LEITUNG_BADGES_STATUS,
+  LEITUNG_BADGES_TITEL,
+  LEITUNG_BADGES_UNTERTITEL,
+  type LeitungBadgesStatus,
+} from '../../seiten/badgesLeitung';
 
 
 
@@ -72,7 +81,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   onRoleChange
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState('alle');
+  const [selectedFilter, setSelectedFilter] = useState<LeitungBadgesStatus>('alle');
   // Browser ab 992 px: die Web-Fassung (web/start/WebAdminBadges) als Tabelle.
   const breit = useBreitesLayout();
 
@@ -98,14 +107,9 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   const filteredAndSortedBadges = (() => {
     let result = filterBySearchTerm(badges, searchTerm, ['name', 'description']);
     
-    // Filter by status
-    if (selectedFilter === 'aktiv') {
-      result = result.filter(badge => badge.is_active && !badge.is_hidden);
-    } else if (selectedFilter === 'versteckt') {
-      result = result.filter(badge => badge.is_hidden);
-    } else if (selectedFilter === 'inaktiv') {
-      result = result.filter(badge => !badge.is_active);
-    }
+    // Stand aus der gemeinsamen Beschreibung (seiten/badgesLeitung.ts).
+    const stand = wahlVon(LEITUNG_BADGES_STATUS, selectedFilter);
+    result = result.filter((badge) => stand.passt?.(badge) ?? true);
     
     // Sort by criteria_type first, then by name.
     // NULL-SICHER: custom_badges.criteria_type und .name duerfen laut Schema
@@ -246,7 +250,7 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         gefiltert={filteredAndSortedBadges}
         suche={searchTerm}
         onSuche={setSearchTerm}
-        filter={selectedFilter as WebBadgeFilter}
+        filter={selectedFilter}
         onFilter={setSelectedFilter}
         gruppe={targetRole}
         onGruppe={onRoleChange}
@@ -261,8 +265,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Badges"
-        subtitle="Auszeichnungen und Erfolge"
+        title={LEITUNG_BADGES_TITEL}
+        subtitle={LEITUNG_BADGES_UNTERTITEL}
         icon={ICON_ABZEICHEN_GEFUELLT}
         preset="badges"
         stats={[
@@ -281,12 +285,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           onIonChange={(e) => onRoleChange(e.detail.value as 'konfi' | 'teamer')}
           style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)', maxWidth: 'calc(100% - 32px)' }}
         >
-          <IonSegmentButton value="konfi">
-            <IonLabel>Konfis</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="teamer">
-            <IonLabel>Team</IonLabel>
-          </IonSegmentButton>
+          {inFassung(BADGES_GRUPPE, 'app').map((g) => (
+            <IonSegmentButton key={g.schluessel} value={g.schluessel}>
+              <IonLabel>{g.kurz ?? g.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       )}
 
@@ -314,20 +317,13 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={selectedFilter}
-          onIonChange={(e) => setSelectedFilter(e.detail.value as string)}
+          onIonChange={(e) => setSelectedFilter(e.detail.value as LeitungBadgesStatus)}
         >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="aktiv">
-            <IonLabel>Aktiv</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="versteckt">
-            <IonLabel>Geheim</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="inaktiv">
-            <IonLabel>Inaktiv</IonLabel>
-          </IonSegmentButton>
+          {inFassung(LEITUNG_BADGES_STATUS, 'app').map((w) => (
+            <IonSegmentButton key={w.schluessel} value={w.schluessel}>
+              <IonLabel>{w.kurz ?? w.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -339,8 +335,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
           count={0}
           iconColorClass="badges"
           emptyIcon={ICON_ABZEICHEN}
-          emptyTitle="Keine Badges gefunden"
-          emptyMessage="Erstelle deinen ersten Badge!"
+          emptyTitle={LEITUNG_BADGES_LEER.titel}
+          emptyMessage={badges.length === 0 ? LEITUNG_BADGES_LEER.ohneBadges : LEITUNG_BADGES_LEER.ohneTreffer}
           emptyIconColor="var(--app-color-badges)"
         >
           <></>

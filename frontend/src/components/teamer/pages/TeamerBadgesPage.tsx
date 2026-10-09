@@ -15,6 +15,7 @@ import { useBadge } from '../../../contexts/BadgeContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import BadgesView from '../../konfi/views/BadgesView';
+import type { BadgesStatus } from '../../../seiten/badgesKonfi';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
@@ -51,7 +52,7 @@ interface TeamerBadgeResponse {
 
 const TeamerBadgesPage: React.FC = () => {
   const { user } = useApp();
-  const [selectedFilter, setSelectedFilter] = useState('alle');
+  const [selectedFilter, setSelectedFilter] = useState<BadgesStatus>('alle');
   // Browser ab 992 px: die Web-Fassung (BadgesView -> konfi/web/WebBadgesRaster).
   const breit = useBreitesLayout();
 

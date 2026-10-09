@@ -18,6 +18,8 @@ import type { AnfrageStatus, MailEingangEintrag } from '../types/support';
 import type { LizenzSchluessel } from './lizenzen';
 import { datumKurz } from './dateUtils';
 import { tageBis } from '../components/shared/eventFormatting';
+import { schluesselIn, wahlVon } from '../seiten/beschreibung';
+import { POSTEINGANG_FILTER, type PosteingangFilter } from '../seiten/supportPosteingang';
 
 // --- Kleine Helfer ---------------------------------------------------------------
 
@@ -583,10 +585,10 @@ const zeitpunkt = (iso: string | null | undefined): number => {
  * Alle, Ungelesen, je Postfach -- und „Archiv", die archivierten Mails (eigener
  * Abruf, GET /support/mail/eingang?archiv=1).
  */
-export type EingangFilter = 'alle' | 'ungelesen' | 'moin' | 'support' | 'archiv';
+export type EingangFilter = PosteingangFilter;
 
-/** Alle Filter des Posteingangs -- die Werte, die `?filter=` in der Adresse annimmt. */
-export const EINGANG_FILTER: readonly EingangFilter[] = ['alle', 'ungelesen', 'moin', 'support', 'archiv'];
+/** Alle Filter des Posteingangs -- die Werte, die `?filter=` in der Adresse annimmt (seiten/supportPosteingang.ts). */
+export const EINGANG_FILTER: readonly EingangFilter[] = schluesselIn(POSTEINGANG_FILTER, 'web');
 
 /** Ist die Mail keiner Anfrage, keiner Gemeinde und keinem Vorgang zugeordnet? */
 export const istNichtZugeordnet = (m: Pick<MailEingangWeb, 'anfrage_id' | 'organization_id' | 'vorgang_id'>): boolean =>
@@ -594,21 +596,14 @@ export const istNichtZugeordnet = (m: Pick<MailEingangWeb, 'anfrage_id' | 'organ
 
 /** Zahl je Filter der Liste des Posteingangs (ohne Archiv: das ist eine andere Liste). */
 export function eingangZaehlen(mails: readonly MailEingangWeb[]): Record<Exclude<EingangFilter, 'archiv'>, number> {
-  return {
-    alle: mails.length,
-    ungelesen: mails.filter((m) => !m.gelesen_am).length,
-    moin: mails.filter((m) => m.postfach === 'moin').length,
-    support: mails.filter((m) => m.postfach === 'support').length,
-  };
+  const zahl = (f: Exclude<EingangFilter, 'archiv'>) => mails.filter((m) => wahlVon(POSTEINGANG_FILTER, f).passt?.(m) ?? true).length;
+  return { alle: zahl('alle'), ungelesen: zahl('ungelesen'), moin: zahl('moin'), support: zahl('support') };
 }
 
+/** Die Mails eines Filters; das Archiv ist eine eigene Liste und kommt hier ungefiltert durch. */
 export function eingangFiltern(mails: readonly MailEingangWeb[], filter: EingangFilter): MailEingangWeb[] {
-  switch (filter) {
-    case 'ungelesen': return mails.filter((m) => !m.gelesen_am);
-    case 'moin': return mails.filter((m) => m.postfach === 'moin');
-    case 'support': return mails.filter((m) => m.postfach === 'support');
-    default: return [...mails];
-  }
+  const passt = wahlVon(POSTEINGANG_FILTER, filter).passt;
+  return passt ? mails.filter((m) => passt(m)) : [...mails];
 }
 
 /** Die Mails nach Sendezeit, die neueste zuerst; bei gleicher Zeit die mit der hoeheren Kennung. */

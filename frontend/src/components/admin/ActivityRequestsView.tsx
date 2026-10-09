@@ -27,6 +27,15 @@ import { datumKurz } from '../../utils/dateUtils';
 import SegmentZahl from '../shared/SegmentZahl';
 import WeitereEintraege from '../shared/WeitereEintraege';
 import { useSchrittweiseListe } from '../../hooks/useSchrittweiseListe';
+import { inFassung, leerVon, wahlVon } from '../../seiten/beschreibung';
+import {
+  LEITUNG_ANTRAEGE_LEER_TITEL,
+  LEITUNG_ANTRAEGE_TITEL,
+  LEITUNG_ANTRAEGE_UNTERTITEL,
+  LEITUNG_ANTRAG_STATUS,
+  OHNE_JAHRGANG,
+} from '../../seiten/mitmachenLeitung';
+import type { AntragFilter } from './web/termine/typen';
 
 interface ActivityRequest {
   id: number;
@@ -86,21 +95,13 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   // Defensive: bei kaputten/gecachten Responses (Object statt Array) auf [] fallen
   const requests: ActivityRequest[] = Array.isArray(requestsRaw) ? requestsRaw : [];
 
-  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
+  // Die Stände aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts);
+  // „Alle" gibt es nur im Browser.
+  const [statusFilter, setStatusFilter] = useState<AntragFilter>('offen');
 
-  const filteredAndSortedRequests = (() => {
-    let result = [...requests];
-
-    if (statusFilter !== 'all') {
-      result = result.filter(r => r.status === statusFilter);
-    }
-
-    result = result.sort((a, b) => {
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    });
-
-    return result;
-  })();
+  const filteredAndSortedRequests = requests
+    .filter((r) => wahlVon(LEITUNG_ANTRAG_STATUS, statusFilter).passt?.(r) ?? true)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
   // Schrittweise rendern (Leitung BF-14): "Verbucht" waechst ueber das Jahr
   // auf hunderte Zeilen; 416 davon kosteten gedrosselt 10,5 s, jetzt 1,1 s. Zaehler und
@@ -108,9 +109,9 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   const { sichtbar: sichtbareAntraege, weitere: weitereAntraege, mehrZeigen: mehrAntraege } =
     useSchrittweiseListe(filteredAndSortedRequests, statusFilter);
 
-  const getPendingCount = () => requests.filter(r => r.status === 'pending').length;
-  const getApprovedCount = () => requests.filter(r => r.status === 'approved').length;
-  const getRejectedCount = () => requests.filter(r => r.status === 'rejected').length;
+  const anzahl = (schluessel: AntragFilter): number =>
+    requests.filter((r) => wahlVon(LEITUNG_ANTRAG_STATUS, schluessel).passt?.(r) ?? true).length;
+  const reiter = inFassung(LEITUNG_ANTRAG_STATUS, 'app');
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '';
@@ -130,16 +131,17 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Aktivitäten"
-        subtitle="Gemeldete Aktivitäten verwalten"
+        title={LEITUNG_ANTRAEGE_TITEL}
+        subtitle={LEITUNG_ANTRAEGE_UNTERTITEL}
         icon={ICON_TEXTDOKUMENT}
         preset="activities"
-        stats={[
-          // Die Kacheln entsprechen den drei Filter-Reitern und schalten dorthin.
-          { value: getPendingCount(), label: 'Offen', onClick: () => setStatusFilter('pending'), active: statusFilter === 'pending' },
-          { value: getApprovedCount(), label: 'Verbucht', onClick: () => setStatusFilter('approved'), active: statusFilter === 'approved' },
-          { value: getRejectedCount(), label: 'Abgelehnt', onClick: () => setStatusFilter('rejected'), active: statusFilter === 'rejected' }
-        ]}
+        // Die Kacheln entsprechen den Reitern und schalten dorthin.
+        stats={reiter.map((r) => ({
+          value: anzahl(r.schluessel),
+          label: r.label,
+          onClick: () => setStatusFilter(r.schluessel),
+          active: statusFilter === r.schluessel,
+        }))}
       />
 
       {headerSlot}
@@ -148,17 +150,16 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
       <div style={{ margin: 'var(--app-abstand-basis) var(--app-abstand-basis) var(--app-abstand-eng) var(--app-abstand-basis)' }}>
         <IonSegment
           value={statusFilter}
-          onIonChange={(e) => setStatusFilter(e.detail.value as 'all' | 'pending' | 'approved' | 'rejected')}
+          onIonChange={(e) => setStatusFilter(e.detail.value as AntragFilter)}
         >
-          <IonSegmentButton value="pending">
-            <IonLabel>Offen<SegmentZahl anzahl={offeneAntraege} label={offeneAntraege === 1 ? 'Antrag wartet auf Entscheidung' : 'Anträge warten auf Entscheidung'} /></IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="approved">
-            <IonLabel>Verbucht</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="rejected">
-            <IonLabel>Abgelehnt</IonLabel>
-          </IonSegmentButton>
+          {reiter.map((r) => (
+            <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+              <IonLabel>
+                {r.kurz ?? r.label}
+                {r.zahlText && <SegmentZahl anzahl={offeneAntraege} label={r.zahlText(offeneAntraege)} />}
+              </IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
       {/* Aktivitäten-Liste */}
@@ -169,15 +170,17 @@ const ActivityRequestsView: React.FC<ActivityRequestsViewProps> = ({
         iconColorClass="success"
         isEmpty={filteredAndSortedRequests.length === 0}
         emptyIcon={ICON_TEXTDOKUMENT}
-        emptyTitle={ohneJahrgang ? 'Kein Jahrgang zugewiesen' : 'Keine Aktivitäten vorhanden'}
+        // „Kein Jahrgang zugewiesen" nur, wenn die Liste ganz leer ist: Team-Meldungen
+        // bleiben sichtbar, ein leerer Reiter hat dann seinen eigenen Grund (wie im Browser).
+        emptyTitle={ohneJahrgang && requests.length === 0 ? OHNE_JAHRGANG.titel : LEITUNG_ANTRAEGE_LEER_TITEL}
         emptyMessage={
-          ohneJahrgang
+          ohneJahrgang && requests.length === 0
             // Der Server hat Konfi-Antraege wegen fehlender Jahrgangs-Zuweisung
             // ausgeblendet (Header X-Kein-Jahrgang-Zugewiesen) — das ist kein
             // Fehler, sondern Simons Regel vom 31.08.2026. Teamer-Meldungen
             // bleiben sichtbar, deshalb spricht der Text nur von Konfis.
-            ? 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du keine Meldungen von Konfis. Die Gemeindeleitung kann das in den Einstellungen ändern.'
-            : 'Konfirmand:innen können Aktivitäten beantragen'
+            ? OHNE_JAHRGANG.text
+            : leerVon(LEITUNG_ANTRAG_STATUS, statusFilter)
         }
         emptyIconColor="var(--app-color-success-strong)"
       >

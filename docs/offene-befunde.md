@@ -187,6 +187,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ausgeliefert) wieder entfernt: Mit Recht kommen rote Zahl, App-Symbol und
   Push, ohne Recht nichts davon (Simon, [planung/darf-freigeben.md](planung/darf-freigeben.md#abgebaut-09102026-nur-das-recht-entscheidet),
   Migration 205, Branch `refactor/kennzahlen-abbau`).
+- [x] 09.10.2026 — Reiter, Filter und Leertexte je Seite an einer Stelle für
+  App und Web-Fassung (Simon: „Filter ja"): `frontend/src/seiten/`, beschrieben
+  in [wissen/gestaltung.md](wissen/gestaltung.md#reiter-filter-und-leertexte-einer-seite);
+  dabei gefundene Abweichungen zwischen App und Browser behoben (Branch
+  `refactor/seitenbeschreibung-app-web`).
 
 
 ## Offen
@@ -341,15 +346,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-- **Beschriftungen, Reiter und Filter an einer Stelle für App und
-  Web-Fassung?** Laden, Rechte und Zähler teilen sich beide Fassungen; die
-  Darstellung ist doppelt. Die Web-Fassung hat 130 Dateien mit rund 18.700
-  Zeilen TSX und 6.700 Zeilen CSS neben rund 78.100 Zeilen
-  App-Komponenten; an 54 Stellen wählt eine Weiche zwischen beiden
-  (gezählt 06.10.2026). Ein neuer Filter oder ein umbenannter Reiter muss
-  heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
-  gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
-  Web-Fassung lesen. Umsetzen?
 - **Konfisprüche: Gemeinde und Wortlaut zusammen?** Die Statistik
   `konfspruch_wahlen` (Migration 207, ohne Personenbezug) speichert je Wahl
   die Gemeinde und den Monat, bei eigenen Sprüchen den Wortlaut. In einer

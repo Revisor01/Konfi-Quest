@@ -1,3 +1,5 @@
+import { materialLeitungLeer } from '../../seiten/materialLeitung';
+import { RUECKBLICK_LEER_TITEL, RUECKBLICK_OHNE_JAHRGANG, rueckblickLeerText } from '../../seiten/rueckblick';
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from '@testing-library/react';
@@ -140,22 +142,34 @@ describe('AdminMaterialPage: Leerzustand erklaert fehlenden Jahrgang', () => {
     expect(seite).toContain("res.headers?.['x-kein-jahrgang-zugewiesen'] === 'true'");
   });
 
-  it('mit Header-Grund: Hinweis statt "Keine Materialien"', () => {
-    expect(seite).toContain('Kein Jahrgang zugewiesen');
-    expect(seite).toContain('Dir ist noch kein Jahrgang zugewiesen');
+  // Die Texte stehen seit 09.10.2026 in seiten/materialLeitung.ts, App und
+  // Browser lesen sie dort -- geprueft wird die Funktion, nicht der Quelltext.
+  it('mit Header-Grund: Hinweis statt "Keine Materialien" -- in beiden Fassungen', () => {
+    for (const fassung of ['app', 'web'] as const) {
+      expect(materialLeitungLeer({ ohneJahrgang: true, suche: '', filter: 'alle' }, fassung)).toEqual({
+        titel: 'Kein Jahrgang zugewiesen',
+        text: 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Gemeindeleitung kann das in den Einstellungen ändern.',
+      });
+    }
+    expect(seite).toContain('materialLeitungLeer({');
   });
 
   it('eigene Filter behalten ihren eigenen Text', () => {
     // Gegenprobe: Leert die Suche oder der "nur global"-Filter die Liste,
     // erklaert der Filter die Leere -- nicht der Jahrgang.
-    expect(seite).toContain('ohneJahrgang && !search && !nurGlobal');
+    const treffer = { titel: 'Keine Materialien', text: 'Versuche andere Suchbegriffe oder einen anderen Jahrgang.' };
+    expect(materialLeitungLeer({ ohneJahrgang: true, suche: 'Advent', filter: 'alle' }, 'app')).toEqual(treffer);
+    expect(materialLeitungLeer({ ohneJahrgang: true, suche: '', filter: 'global' }, 'app')).toEqual(treffer);
+    expect(materialLeitungLeer({ ohneJahrgang: false, suche: '', filter: '7' }, 'web')).toEqual(treffer);
   });
 
   it('der urspruengliche Text bleibt fuer den echten Leerfall', () => {
-    // Gegenprobe: Ohne Header-Grund (wirklich kein Material, oder
-    // Zuweisung vorhanden) bleibt der bisherige Leerzustand stehen.
-    expect(seite).toContain("'Keine Materialien'");
-    expect(seite).toContain("'Erstelle dein erstes Material mit dem + Button'");
+    // Gegenprobe: Ohne Header-Grund und ohne Filter bleibt der bisherige
+    // Leerzustand -- je Fassung mit ihrem Knopf zum Anlegen.
+    expect(materialLeitungLeer({ ohneJahrgang: false, suche: '', filter: 'alle' }, 'app'))
+      .toEqual({ titel: 'Keine Materialien', text: 'Erstelle dein erstes Material mit dem + Button' });
+    expect(materialLeitungLeer({ ohneJahrgang: false, suche: '', filter: 'alle' }, 'web'))
+      .toEqual({ titel: 'Keine Materialien', text: 'Lege das erste Material mit „Neues Material“ an.' });
   });
 
   it('der Server setzt den Header in der Material-Liste', () => {
@@ -178,16 +192,19 @@ describe('AdminWrappedPage: Leerzustand erklaert fehlenden Jahrgang', () => {
     expect(seite).toContain("a.headers?.['x-kein-jahrgang-zugewiesen'] === 'true'");
   });
 
+  // Die Texte stehen seit 09.10.2026 in seiten/rueckblick.ts; App und Browser
+  // lesen sie dort. Gerendert prueft es __tests__/seiten/rueckblick.test.tsx.
   it('mit Header-Grund: Hinweis statt "Noch kein Rueckblick"', () => {
-    expect(seite).toContain("'Kein Jahrgang zugewiesen'");
-    expect(seite).toContain('Dir ist noch kein Jahrgang zugewiesen');
+    expect(RUECKBLICK_OHNE_JAHRGANG.titel).toBe('Kein Jahrgang zugewiesen');
+    expect(RUECKBLICK_OHNE_JAHRGANG.text).toContain('Dir ist noch kein Jahrgang zugewiesen');
+    expect(seite).toContain('ohneJahrgang ? RUECKBLICK_OHNE_JAHRGANG.titel : RUECKBLICK_LEER_TITEL');
   });
 
   it('der urspruengliche Text bleibt fuer den echten Leerfall', () => {
     // Gegenprobe: Wer eine Zuweisung hat und wirklich keinen Rueckblick,
     // bekommt weiter die Anleitung zum Anlegen.
-    expect(seite).toContain("'Noch kein Rückblick'");
-    expect(seite).toContain('Über das Plus oben legst du einen an');
+    expect(RUECKBLICK_LEER_TITEL).toBe('Noch kein Rückblick');
+    expect(rueckblickLeerText('app', 'konfi', true)).toContain('Über das Plus oben legst du einen an');
   });
 
   it('der Server setzt den Header in der Ausgabenliste', () => {

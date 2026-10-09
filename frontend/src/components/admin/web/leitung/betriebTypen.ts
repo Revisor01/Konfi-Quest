@@ -3,6 +3,7 @@
 // Sie laedt und rechnet die Urteile, die Web-Fassung stellt sie dar.
 
 import type { BetriebsSnapshot } from '../../../../utils/betriebsKennzahlen';
+import type { BetriebsReiterSchluessel } from '../../../../seiten/betrieb';
 
 export interface BetriebsFehlerGruppe {
   route: string;
@@ -56,4 +57,4 @@ export interface BetriebsAnsicht extends BetriebsSnapshot {
   cspMeldungen?: BetriebsCspMeldungen;
 }
 
-export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf' | 'sprueche';
+export type BetriebsReiter = BetriebsReiterSchluessel;

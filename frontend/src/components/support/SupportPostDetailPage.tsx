@@ -36,13 +36,10 @@ import api from '../../services/api';
 import type { MailAntwortDaten } from '../../types/support';
 import { POSTFACH_INFO, gemeindeName } from '../../utils/supportMail';
 import { datumUhrzeit } from '../../utils/dateUtils';
-import { suchTreffer, suchbegriff } from '../../utils/supportWeb';
 import {
   ARTEN,
   BEREICHE,
   DRINGLICHKEITEN,
-  VORGANG_STATUS,
-  artKurz,
   bereichIstPflicht,
   type Dringlichkeit,
   type VorgangArt,
@@ -56,6 +53,8 @@ import { useBreitesLayout } from '../../navigation/breitesLayout';
 import WebPostDetail from './web/WebPostDetail';
 import { usePostDetail } from './usePostDetail';
 import { useEinsortieren, type EinsortierenModus } from './useEinsortieren';
+import { inFassung } from '../../seiten/beschreibung';
+import { EINSORTIEREN_IN, EINSORTIEREN_IN_BESCHRIFTUNG, vorgangEintrag, vorgangPasstZurSuche } from '../../seiten/supportEinsortieren';
 
 interface Props {
   nachrichtId: number;
@@ -70,9 +69,7 @@ const EinsortierenAbschnitt: React.FC<{ mail: { id: number; betreff: string | nu
   const [suche, setSuche] = useState('');
   const treffer = useMemo(() => {
     const liste = z.vorgaenge ?? [];
-    return suchbegriff(suche)
-      ? liste.filter((v) => [String(v.id), v.betreff, v.gemeinde_name ?? ''].some((t) => suchTreffer(t, suche).length > 0))
-      : liste;
+    return liste.filter((v) => vorgangPasstZurSuche(v, suche));
   }, [z.vorgaenge, suche]);
   const pflicht = bereichIstPflicht(z.neu.art);
 
@@ -82,9 +79,10 @@ const EinsortierenAbschnitt: React.FC<{ mail: { id: number; betreff: string | nu
         Der ganze Faden geht mit — auch spätere Antworten darauf ordnet der Server dann selbst zu.
       </p>
       {z.fehler && <p role="alert" style={{ margin: '0 0 var(--app-abstand-eng)', color: 'var(--app-text-fehler)' }}>{z.fehler}</p>}
-      <IonSegment value={z.modus} aria-label="Einsortieren in" onIonChange={(e) => z.setModus((e.detail.value as EinsortierenModus) ?? 'bestehend')}>
-        <IonSegmentButton value="bestehend"><IonLabel>Bestehender Vorgang</IonLabel></IonSegmentButton>
-        <IonSegmentButton value="neu"><IonLabel>Neuer Vorgang</IonLabel></IonSegmentButton>
+      <IonSegment value={z.modus} aria-label={EINSORTIEREN_IN_BESCHRIFTUNG} onIonChange={(e) => z.setModus((e.detail.value as EinsortierenModus) ?? 'bestehend')}>
+        {inFassung(EINSORTIEREN_IN, 'app').map((m) => (
+          <IonSegmentButton key={m.schluessel} value={m.schluessel}><IonLabel>{m.kurz ?? m.label}</IonLabel></IonSegmentButton>
+        ))}
       </IonSegment>
 
       {z.modus === 'bestehend' ? (
@@ -98,7 +96,7 @@ const EinsortierenAbschnitt: React.FC<{ mail: { id: number; betreff: string | nu
               <IonSelectOption value="">Bitte wählen</IonSelectOption>
               {treffer.map((v) => (
                 <IonSelectOption key={v.id} value={String(v.id)}>
-                  {`Nr. ${v.id} · ${v.betreff || '(ohne Betreff)'} · ${v.gemeinde_name ?? 'Keine Gemeinde'} · ${artKurz(v.art)} · ${VORGANG_STATUS[v.status].kurz}`}
+                  {`${vorgangEintrag(v).titel} · ${vorgangEintrag(v).beschreibung}`}
                 </IonSelectOption>
               ))}
             </IonSelect>

@@ -8,6 +8,7 @@ import {
   ICON_PERSON_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
 } from '../shared/icons';
+import { CHAT_REITER } from '../../seiten/chats';
 
 /**
  * Die Regeln der Raumliste (beim Anlegen der Web-Fassung des Chats aus
@@ -124,6 +125,10 @@ export const bereinigeRaeume = (raw: ChatRoomOverview[]): ChatRoomOverview[] => 
     }));
 };
 
+/** Ungelesene eines Raums: die Zahl des Kontexts, sonst die des Servers -- dieselbe wie die rote Zahl am Raum. */
+export const ungelesenVonRaum = (room: Pick<ChatRoomOverview, 'id' | 'unread_count'>, ungelesen: Record<number, number>): number =>
+  ungelesen[room.id] ?? room.unread_count ?? 0;
+
 const zeitpunkt = (iso: string | undefined): number =>
   iso ? new Date(iso).getTime() : 0;
 
@@ -144,11 +149,11 @@ export const raeumeFiltern = (
   raeume
     .filter(room => {
       if (!(room.name || '').toLowerCase().includes(suche.toLowerCase())) return false;
-      if (filter === 'alle') return true;
-      if (filter === 'ungelesen') return (ungelesen[room.id] || 0) > 0;
-      if (filter === 'konfis') return (room.type === 'jahrgang' || room.type === 'group') && !istTeamChat(room);
-      if (filter === 'team') return istTeamChat(room);
-      return true;
+      // Die Praedikate stehen am Reiter (seiten/chats.ts). "Ungelesen" zaehlt
+      // wie die rote Zahl am Raum: der Kontext, sonst die Zahl des Servers --
+      // bis 09.10.2026 nur der Kontext, ein Raum mit roter Zahl fehlte dann im Reiter.
+      const reiter = CHAT_REITER.find((r) => r.schluessel === filter);
+      return reiter?.passt?.({ type: room.type, ungelesen: ungelesenVonRaum(room, ungelesen), teamChat: istTeamChat(room) }) ?? true;
     })
     .sort((a, b) => zeitpunkt(b.last_message?.created_at) - zeitpunkt(a.last_message?.created_at));
 

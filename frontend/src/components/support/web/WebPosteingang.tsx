@@ -37,22 +37,14 @@ import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../web/useFilterAusAdresse';
 import WebEinsortieren from './WebEinsortieren';
 import '../../../theme/web/support.css';
-
-const LEER_TEXT: Record<EingangFilter, string> = {
-  alle: 'Alles ist einsortiert. Neue Mails, die zu keinem Vorgang passen, erscheinen hier.',
-  ungelesen: 'Alle Mails sind gelesen.',
-  moin: `Keine Mails an ${POSTFACH_INFO.moin.kurz}, die noch einsortiert werden müssen.`,
-  support: `Keine Mails an ${POSTFACH_INFO.support.kurz}, die noch einsortiert werden müssen.`,
-  archiv: 'Archivierte Mails liegen hier und werden nach 180 Tagen gelöscht.',
-};
-
-const LEER_TITEL: Record<EingangFilter, string> = {
-  alle: 'Nichts einzusortieren',
-  ungelesen: 'Nichts Ungelesenes',
-  moin: 'Keine Mails',
-  support: 'Keine Mails',
-  archiv: 'Das Archiv ist leer',
-};
+import { inFassung, leerVon } from '../../../seiten/beschreibung';
+import {
+  POSTEINGANG_FILTER,
+  POSTEINGANG_FILTER_BESCHRIFTUNG,
+  POSTEINGANG_LEER_TITEL,
+  POSTEINGANG_TITEL,
+  ZUGANGSDATEN_FEHLEN,
+} from '../../../seiten/supportPosteingang';
 
 /** Der Zustand eines Postfachs: eingerichtet, zuletzt abgeholt, Fehler, "auf diesem Server aus". */
 const PostfachStatus: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
@@ -72,6 +64,10 @@ const PostfachStatus: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
         <span>{p.abgeholt_am ? `zuletzt abgeholt ${zeitpunktText(p.abgeholt_am)}` : 'noch nicht abgeholt'}</span>
       </div>
       {aus && <div className="web-status__meta"><span>{SERVER_AUS_HINWEIS}</span></div>}
+      {/* Wie in der App: Ohne Zugangsdaten wird das Postfach nicht gelesen (bis 09.10.2026 stand im Browser nur die Marke). */}
+      {!p.eingerichtet && !aus && (
+        <div className="web-status__meta"><span>{ZUGANGSDATEN_FEHLEN.titel}: {ZUGANGSDATEN_FEHLEN.text}</span></div>
+      )}
       {p.fehler && (
         <div className="web-status__meta">
           <span>Fehler beim Abholen: {p.fehler}{p.fehler_am ? ` (${datumUhrzeit(p.fehler_am)})` : ''}</span>
@@ -246,16 +242,22 @@ const WebPosteingang: React.FC = () => {
         </div>
 
         <WebChips<EingangFilter>
-          beschriftung="Mails filtern"
+          beschriftung={POSTEINGANG_FILTER_BESCHRIFTUNG}
           wert={filter}
           onWert={setFilter}
-          chips={[
-            { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
-            { wert: 'ungelesen', label: 'Ungelesen', zahl: ungelesenZahl, rot: true, zahlText: 'ungelesen' },
-            { wert: 'moin', label: POSTFACH_INFO.moin.kurz, zahl: zaehlen.moin },
-            { wert: 'support', label: POSTFACH_INFO.support.kurz, zahl: zaehlen.support },
-            { wert: 'archiv', label: 'Archiv', zahl: eingang.archivAnzahl ?? undefined },
-          ]}
+          // Filter aus der gemeinsamen Beschreibung (seiten/supportPosteingang.ts).
+          chips={inFassung(POSTEINGANG_FILTER, 'web').map((f) => {
+            const zahl = f.schluessel === 'archiv'
+              ? eingang.archivAnzahl ?? undefined
+              : f.schluessel === 'ungelesen' ? ungelesenZahl : zaehlen[f.schluessel];
+            return {
+              wert: f.schluessel,
+              label: f.label,
+              zahl,
+              rot: f.zahlText !== undefined,
+              zahlText: zahl === undefined ? undefined : f.zahlText?.(zahl),
+            };
+          })}
         />
 
         {sichtbar.length > 0 && (
@@ -304,7 +306,7 @@ const WebPosteingang: React.FC = () => {
               fest
             />
           ) : (
-            <WebLeer icon={ICON_MAIL} titel={LEER_TITEL[filter]} text={LEER_TEXT[filter]} />
+            <WebLeer icon={archiv ? ICON_ARCHIV : ICON_MAIL} titel={POSTEINGANG_LEER_TITEL[filter]} text={leerVon(POSTEINGANG_FILTER, filter)} />
           )}
         </div>
       </>
@@ -318,7 +320,7 @@ const WebPosteingang: React.FC = () => {
   return (
     <WebSeite
       bereich="Support"
-      titel="Posteingang"
+      titel={POSTEINGANG_TITEL}
       untertitel={untertitel}
       aktionen={(
         <WebKnopf onClick={() => { void neuLaden(); }}>

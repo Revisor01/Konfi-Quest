@@ -28,6 +28,15 @@ import {
 } from '../shared/icons';
 import { filterBySearchTerm } from '../../utils/helpers';
 import { SectionHeader, ListSection } from '../shared';
+import { inFassung, wahlVon } from '../../seiten/beschreibung';
+import {
+  KATALOG_ART,
+  KATALOG_LEER,
+  KATALOG_ROLLE,
+  KATALOG_TITEL,
+  katalogUntertitel,
+  type KatalogArt,
+} from '../../seiten/aktivitaetenKatalog';
 import { closeOpenSlidingItems } from '../../utils/slidingItems';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
@@ -65,15 +74,18 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   onRoleChange
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('alle');
+  const [selectedType, setSelectedType] = useState<KatalogArt>('alle');
+  const team = targetRole === 'teamer';
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   const filteredAndSortedActivities = (() => {
     let result = filterBySearchTerm(activities, searchTerm, ['name', 'description']);
     
-    // Filter by type
-    if (selectedType !== 'alle') {
-      result = result.filter(activity => activity.type === selectedType);
+    // Nach Art -- nur bei den Konfis (seiten/aktivitaetenKatalog.ts). Beim Team
+    // gibt es keine Art; bis 09.10.2026 filterte die App nach einem Wechsel
+    // zu „Team" weiter nach der zuletzt gewaehlten Art, die Liste war leer.
+    if (!team) {
+      result = result.filter((activity) => wahlVon(KATALOG_ART, selectedType).passt?.(activity) ?? true);
     }
     
     // Sort by name
@@ -82,13 +94,7 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
     return result;
   })();
 
-  const getGottesdienstActivities = () => {
-    return activities.filter(activity => activity.type === 'gottesdienst');
-  };
-
-  const getGemeindeActivities = () => {
-    return activities.filter(activity => activity.type === 'gemeinde');
-  };
+  const anzahl = (art: KatalogArt) => activities.filter((a) => wahlVon(KATALOG_ART, art).passt?.(a) ?? true).length;
 
 
 
@@ -119,18 +125,21 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
   return (
     <>
       <SectionHeader
-        title="Aktivitäten"
-        subtitle={targetRole === 'teamer' ? 'Aktivitäten fürs Team' : 'Punkte und Aufgaben'}
+        title={KATALOG_TITEL}
+        subtitle={katalogUntertitel(targetRole)}
         icon={ICON_AKTION_GEFUELLT}
         preset="activities"
         stats={targetRole === 'teamer' ? [
           // Teamer:innen haben keinen Typ-Filter -> Kachel bleibt reine Anzeige.
           { value: activities.length, label: 'Gesamt' }
         ] : [
-          // Die Kacheln entsprechen den drei Reitern des Typ-Filters.
-          { value: activities.length, label: 'Gesamt', onClick: () => setSelectedType('alle'), active: selectedType === 'alle' },
-          { value: getGemeindeActivities().length, label: 'Gemeinde', onClick: () => setSelectedType('gemeinde'), active: selectedType === 'gemeinde' },
-          { value: getGottesdienstActivities().length, label: 'Godi', onClick: () => setSelectedType('gottesdienst'), active: selectedType === 'gottesdienst' }
+          // Die Kacheln entsprechen den drei Reitern des Typ-Filters; „Alle" heisst an der Kachel „Gesamt".
+          ...inFassung(KATALOG_ART, 'app').map((r) => ({
+            value: anzahl(r.schluessel),
+            label: r.schluessel === 'alle' ? 'Gesamt' : r.kurz ?? r.label,
+            onClick: () => setSelectedType(r.schluessel),
+            active: selectedType === r.schluessel,
+          })),
         ]}
       />
 
@@ -141,12 +150,11 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
           onIonChange={(e) => onRoleChange(e.detail.value as 'konfi' | 'teamer')}
           style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)', maxWidth: 'calc(100% - 32px)' }}
         >
-          <IonSegmentButton value="konfi">
-            <IonLabel>Konfis</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="teamer">
-            <IonLabel>Team</IonLabel>
-          </IonSegmentButton>
+          {inFassung(KATALOG_ROLLE, 'app').map((r) => (
+            <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+              <IonLabel>{r.kurz ?? r.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       )}
 
@@ -179,17 +187,13 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={selectedType}
-          onIonChange={(e) => setSelectedType(e.detail.value as string)}
+          onIonChange={(e) => setSelectedType(e.detail.value as KatalogArt)}
         >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="gemeinde">
-            <IonLabel>Gemeinde</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="gottesdienst">
-            <IonLabel>GoDi</IonLabel>
-          </IonSegmentButton>
+          {inFassung(KATALOG_ART, 'app').map((r) => (
+            <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+              <IonLabel>{r.kurz ?? r.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
       )}
@@ -202,8 +206,8 @@ const ActivitiesView: React.FC<ActivitiesViewProps> = ({
         iconColorClass="activities"
         isEmpty={filteredAndSortedActivities.length === 0}
         emptyIcon={ICON_AKTION_GEFUELLT}
-        emptyTitle="Keine Aktivitäten gefunden"
-        emptyMessage="Noch keine Aktivitäten angelegt"
+        emptyTitle={KATALOG_LEER.titel}
+        emptyMessage={searchTerm.trim() ? KATALOG_LEER.suche : KATALOG_LEER.text}
         emptyIconColor="var(--app-color-success-strong)"
       >
         {filteredAndSortedActivities.map((activity, index) => {

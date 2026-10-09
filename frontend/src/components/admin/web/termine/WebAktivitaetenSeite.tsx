@@ -9,6 +9,7 @@ import WebSeite from '../../../web/WebSeite';
 import { WebFehler, WebLaden } from '../../../web/WebZustaende';
 import type { useAktivitaetenVerwaltung } from '../../useAktivitaetenVerwaltung';
 import { WebAktivitaetenTabelle } from './WebAktivitaeten';
+import { KATALOG_TITEL, katalogUntertitel } from '../../../../seiten/aktivitaetenKatalog';
 
 const ZURUECK = { href: '/admin/settings', text: 'Mehr' };
 
@@ -17,7 +18,7 @@ const WebAktivitaetenSeite: React.FC<{
   verwaltung: ReturnType<typeof useAktivitaetenVerwaltung>;
 }> = ({ pageRef, verwaltung: v }) => {
   return (
-    <WebSeite bereich="Verwaltung" titel="Aktivitäten" untertitel="Hier legst du fest, wofür es Punkte gibt" zurueck={ZURUECK} pageRef={pageRef}>
+    <WebSeite bereich="Verwaltung" titel={KATALOG_TITEL} untertitel={katalogUntertitel(v.rolle)} zurueck={ZURUECK} pageRef={pageRef}>
       {v.loading ? (
         <WebLaden karten={1} text="Die Aktivitäten werden geladen." />
       ) : !v.aktivitaeten ? (

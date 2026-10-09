@@ -42,7 +42,15 @@ import { datumUhrzeit } from '../../utils/dateUtils';
 import { tastaturKlick } from '../../utils/tastatur';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { mailsText } from '../../utils/supportVorgaenge';
-import { EINGANG_FILTER, type EingangFilter } from '../../utils/supportWeb';
+import type { EingangFilter } from '../../utils/supportWeb';
+import { inFassung, leerVon } from '../../seiten/beschreibung';
+import {
+  POSTEINGANG_FILTER,
+  POSTEINGANG_FILTER_BESCHRIFTUNG,
+  POSTEINGANG_LEER_TITEL,
+  POSTEINGANG_TITEL,
+  ZUGANGSDATEN_FEHLEN,
+} from '../../seiten/supportPosteingang';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { Hinweis } from './SupportMailTeile';
@@ -50,22 +58,6 @@ import { useSupportZurueck } from './useSupportZurueck';
 import { usePosteingang } from './usePosteingang';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
 import WebPosteingang from './web/WebPosteingang';
-
-const FILTER_NAME: Record<EingangFilter, string> = {
-  alle: 'Alle',
-  ungelesen: 'Ungelesen',
-  moin: POSTFACH_INFO.moin.kurz,
-  support: POSTFACH_INFO.support.kurz,
-  archiv: 'Archiv',
-};
-
-const LEER_TEXT: Record<EingangFilter, string> = {
-  alle: 'Alles ist einsortiert. Neue Mails, die zu keinem Vorgang passen, erscheinen hier.',
-  ungelesen: 'Alle Mails sind gelesen.',
-  moin: `Keine Mails an ${POSTFACH_INFO.moin.kurz}, die noch einsortiert werden müssen.`,
-  support: `Keine Mails an ${POSTFACH_INFO.support.kurz}, die noch einsortiert werden müssen.`,
-  archiv: 'Archivierte Mails liegen hier und werden nach 180 Tagen gelöscht.',
-};
 
 /** Der Zustand eines Postfachs: eingerichtet, zuletzt abgeholt, Fehler. */
 const PostfachZustand: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
@@ -88,8 +80,8 @@ const PostfachZustand: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
         <Hinweis art="warnung" titel={SERVER_AUS_HINWEIS} />
       )}
       {!p.eingerichtet && aufDiesemServer(p) && (
-        <Hinweis art="hinweis" titel="Zugangsdaten fehlen">
-          Ohne Benutzer, Passwort und IMAP-Server auf dem Server wird dieses Postfach nicht gelesen.
+        <Hinweis art="hinweis" titel={ZUGANGSDATEN_FEHLEN.titel}>
+          {ZUGANGSDATEN_FEHLEN.text}
         </Hinweis>
       )}
       {p.fehler && (
@@ -110,9 +102,9 @@ const Posteingang: React.FC = () => {
 
   return (
     <IonPage>
-      <AppKopfzeile titel="Posteingang" onZurueck={zurueck} gemeindeUmschalter={false} />
+      <AppKopfzeile titel={POSTEINGANG_TITEL} onZurueck={zurueck} gemeindeUmschalter={false} />
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Posteingang" />
+        <AppKopfzeileGross titel={POSTEINGANG_TITEL} />
         <IonRefresher slot="fixed" onIonRefresh={(e) => { void neuLaden().finally(() => e.detail.complete()); }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
@@ -132,10 +124,11 @@ const Posteingang: React.FC = () => {
         </Abschnitt>
 
         <div style={{ margin: 'var(--app-abstand-basis)' }}>
-          <IonSegment scrollable value={filter} aria-label="Mails filtern" onIonChange={(e) => setFilter((e.detail.value as EingangFilter) ?? 'alle')}>
-            {EINGANG_FILTER.map((f) => (
-              <IonSegmentButton key={f} value={f}>
-                <IonLabel>{FILTER_NAME[f]}{f !== 'archiv' ? ` ${zaehlen[f]}` : ''}</IonLabel>
+          <IonSegment scrollable value={filter} aria-label={POSTEINGANG_FILTER_BESCHRIFTUNG} onIonChange={(e) => setFilter((e.detail.value as EingangFilter) ?? 'alle')}>
+            {/* Filter aus der gemeinsamen Beschreibung (seiten/supportPosteingang.ts). */}
+            {inFassung(POSTEINGANG_FILTER, 'app').map((f) => (
+              <IonSegmentButton key={f.schluessel} value={f.schluessel}>
+                <IonLabel>{f.kurz ?? f.label}{f.schluessel !== 'archiv' ? ` ${zaehlen[f.schluessel]}` : ''}</IonLabel>
               </IonSegmentButton>
             ))}
           </IonSegment>
@@ -146,7 +139,7 @@ const Posteingang: React.FC = () => {
         ) : fehler ? (
           <Ladefehler text="Der Posteingang konnte nicht geladen werden." onErneut={() => { void neuLaden(); }} />
         ) : sichtbar.length === 0 ? (
-          <EmptyState icon={archiv ? ICON_ARCHIV : ICON_MAIL} title={archiv ? 'Das Archiv ist leer' : 'Nichts einzusortieren'} message={LEER_TEXT[filter]} />
+          <EmptyState icon={archiv ? ICON_ARCHIV : ICON_MAIL} title={POSTEINGANG_LEER_TITEL[filter]} message={leerVon(POSTEINGANG_FILTER, filter)} />
         ) : (
           <Abschnitt icon={archiv ? ICON_ARCHIV : ICON_MAIL} titel={`${mailsText(sichtbar.length)} ${archiv ? 'im Archiv' : 'zum Einsortieren'}`} farbe="organizations">
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -222,7 +215,7 @@ const Posteingang: React.FC = () => {
 // Darstellung der App.
 const SupportPosteingangPage: React.FC = () => {
   const breit = useBreitesLayout();
-  return <NurSupport titel="Posteingang">{breit ? <WebPosteingang /> : <Posteingang />}</NurSupport>;
+  return <NurSupport titel={POSTEINGANG_TITEL}>{breit ? <WebPosteingang /> : <Posteingang />}</NurSupport>;
 };
 
 export default SupportPosteingangPage;

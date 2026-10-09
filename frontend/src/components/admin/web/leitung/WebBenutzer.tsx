@@ -30,8 +30,17 @@ import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
 import { WebAvatar, WebRolleMarke, WebZeilenKnopf, type AvatarFarbe } from './WebLeitungBausteine';
 import WebOffeneEinladungen from './WebOffeneEinladungen';
 import { kontoStatusRang } from '../../../../utils/statusReihenfolge';
+import { inFassung, wahlVon } from '../../../../seiten/beschreibung';
+import {
+  BENUTZER_FILTER,
+  BENUTZER_FILTER_BESCHRIFTUNG,
+  BENUTZER_LEER,
+  BENUTZER_TITEL,
+  BENUTZER_UNTERTITEL,
+  type BenutzerFilterSchluessel,
+} from '../../../../seiten/benutzer';
 
-export type BenutzerFilter = 'alle' | 'aktiv' | 'admin' | 'teamer';
+export type BenutzerFilter = BenutzerFilterSchluessel;
 
 export interface WebBenutzerProps {
   users: readonly AdminUser[];
@@ -48,7 +57,6 @@ export interface WebBenutzerProps {
 }
 
 const ROLLEN_REIHENFOLGE: Record<string, number> = { org_admin: 1, admin: 2, teamer: 3 };
-const istLeitung = (u: AdminUser) => u.role_name === 'admin' || u.role_name === 'org_admin';
 
 const jahrgaengeText = (u: AdminUser): React.ReactNode => {
   // Die Gemeindeleitung sieht alle Jahrgaenge ihrer Gemeinde, ohne Zuweisung.
@@ -64,18 +72,14 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
   const [suche, setSuche] = useState('');
   const sucht = suchbegriff(suche) !== '';
 
-  const zahlen = useMemo(() => ({
-    alle: users.length,
-    aktiv: users.filter((u) => u.is_active).length,
-    admin: users.filter(istLeitung).length,
-    teamer: users.filter((u) => u.role_name === 'teamer').length,
-  }), [users]);
+  // Zahl je Filter mit dem Prädikat der gemeinsamen Beschreibung (seiten/benutzer.ts).
+  const zahlen = useMemo(() => Object.fromEntries(
+    BENUTZER_FILTER.map((w) => [w.schluessel, users.filter((u) => w.passt?.(u) ?? true).length]),
+  ) as Record<BenutzerFilter, number>, [users]);
 
   const sichtbar = useMemo(() => {
     const gefiltert = users.filter((u) => {
-      if (filter === 'aktiv' && !u.is_active) return false;
-      if (filter === 'admin' && !istLeitung(u)) return false;
-      if (filter === 'teamer' && u.role_name !== 'teamer') return false;
+      if (!(wahlVon(BENUTZER_FILTER, filter).passt?.(u) ?? true)) return false;
       return !sucht || [u.display_name, u.username, u.email, u.role_title, u.role_display_name, rollenName(u.role_name)]
         .some((t) => !!t && suchTreffer(t, suche).length > 0);
     });
@@ -196,18 +200,13 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
     },
   ];
 
-  const chips = [
-    { wert: 'alle' as const, label: 'Alle', zahl: zahlen.alle },
-    { wert: 'aktiv' as const, label: 'Aktiv', zahl: zahlen.aktiv },
-    { wert: 'admin' as const, label: 'Leitung', zahl: zahlen.admin },
-    { wert: 'teamer' as const, label: 'Team', zahl: zahlen.teamer },
-  ];
+  const chips = inFassung(BENUTZER_FILTER, 'web').map((w) => ({ wert: w.schluessel, label: w.label, zahl: zahlen[w.schluessel] }));
 
   return (
     <WebSeite
       bereich="Verwaltung"
-      titel="Benutzer:innen"
-      untertitel="Leitung, Team und Rollen"
+      titel={BENUTZER_TITEL}
+      untertitel={BENUTZER_UNTERTITEL}
       aktionen={aktionen}
       pageRef={pageRef}
       wartung
@@ -219,7 +218,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       </div>
 
       <div className="web-werkzeuge">
-        <WebChips<BenutzerFilter> beschriftung="Ansicht" chips={chips} wert={filter} onWert={setFilter} />
+        <WebChips<BenutzerFilter> beschriftung={BENUTZER_FILTER_BESCHRIFTUNG} chips={chips} wert={filter} onWert={setFilter} />
         <WebSuche beschriftung="Benutzer:in suchen" platzhalter="Name, Benutzername, E-Mail …" wert={suche} onWert={setSuche} />
         {(sucht || filter !== 'alle') && (
           <span className="web-gedaempft web-werkzeuge__zahl" role="status">{sichtbar.length} von {users.length}</span>
@@ -230,8 +229,8 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
         {sichtbar.length === 0 ? (
           <WebLeer
             icon={ICON_PERSON}
-            titel="Keine Benutzer:innen gefunden"
-            text={sucht || filter !== 'alle' ? 'Versuche andere Suchbegriffe oder einen anderen Filter.' : 'Noch keine Teammitglieder angelegt.'}
+            titel={BENUTZER_LEER.titel}
+            text={sucht || filter !== 'alle' ? BENUTZER_LEER.keineTreffer : BENUTZER_LEER.niemand}
           />
         ) : (
           <WebSortTabelle

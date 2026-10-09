@@ -268,7 +268,7 @@ describe('Betrieb (Web): Ueberblick', () => {
 describe('Betrieb (Web): Fehler, Routen und Verlauf', () => {
   it('Fehler: der Reiter traegt die Zahl der Gruppen; die Tabelle nach Route und Art, dann die Einzelfaelle', async () => {
     await oeffnen();
-    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2\s*Fehlerarten seit dem letzten Neustart$/ }));
     expect(spaltenkoepfe('Fehler nach Route und Art')).toEqual(['Route', 'Art', 'Anzahl', 'Erstmals', 'Zuletzt', 'Zuletzt aufgerufen', ]);
     const z = zeilen('Fehler nach Route und Art');
     expect(z).toHaveLength(2);
@@ -306,7 +306,7 @@ describe('Betrieb (Web): Fehler, Routen und Verlauf', () => {
     };
     h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? { ...SNAP, cspMeldungen: csp } : { snapshots: HISTORIE } }));
     await oeffnen();
-    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2\s*Fehlerarten seit dem letzten Neustart$/ }));
     expect(spaltenkoepfe('Vom Browser blockiert')).toEqual(['Regel', 'Blockiert', 'Seite', 'Anzahl', 'Erstmals', 'Zuletzt']);
     const z = zeilen('Vom Browser blockiert');
     expect(z).toHaveLength(2);
@@ -333,7 +333,7 @@ describe('Betrieb (Web): Fehler, Routen und Verlauf', () => {
 
     h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? SNAP : { snapshots: [] } }));
     await oeffnen();
-    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Fehler\s*2\s*Fehlerarten seit dem letzten Neustart$/ }));
     expect(screen.queryByText('Vom Browser blockiert')).toBeNull();
   });
 

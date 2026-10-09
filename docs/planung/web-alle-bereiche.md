@@ -23,7 +23,10 @@ und der Web-Fassung der Support-Ansicht ([support-web.md](support-web.md)) auf.
    Aktionen kommen aus denselben Hooks bzw. Funktionen wie in der App. Wo eine
    Seite ihre Logik noch im Render hat, wird sie zuerst in einen Hook gezogen
    (Vorbild: `components/support/use*.ts`) — ohne die App-Darstellung zu
-   ändern.
+   ändern. Reiter, Filter und Leertexte beschreibt je Seite eine Datei unter
+   `frontend/src/seiten/`, aus der beide lesen (Simon, 09.10.2026; wie man
+   einen Filter hinzufügt:
+   [Gestaltung](../wissen/gestaltung.md#reiter-filter-und-leertexte-einer-seite)).
 3. **Bausteine:** `components/web/` (Seite, Karte, Kachel, Tabelle, Pill,
    Chips, Suche, Akkordeon, Link, Knopf, Dialog, Feld, Auswahl, Spalten,
    Diagramme, Zustände). Neue allgemeine Bausteine eines Bereichs entstehen

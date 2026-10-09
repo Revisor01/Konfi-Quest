@@ -44,7 +44,6 @@ import {
   ARTEN,
   BEREICHE,
   DRINGLICHKEITEN,
-  VORGANG_FILTER,
   VORGANG_STATUS,
   artKurz,
   bereichIstPflicht,
@@ -64,6 +63,17 @@ import { useVorgangsliste } from './useVorgangsliste';
 import { useVorgangsAuswahl } from './useVorgangsAuswahl';
 import { useNeuerVorgang } from './useNeuerVorgang';
 import WebVorgaenge from './web/WebVorgaenge';
+import { suchbegriff } from '../../utils/supportWeb';
+import { inFassung, leerVon } from '../../seiten/beschreibung';
+import {
+  ALLE_ARTEN,
+  ALLE_GEMEINDEN,
+  VORGAENGE_TITEL,
+  VORGANG_KEINE_TREFFER,
+  VORGANG_LEER_TITEL,
+  VORGANG_STAENDE,
+  VORGANG_STAENDE_BESCHRIFTUNG,
+} from '../../seiten/supportVorgaenge';
 
 /** Farbe der Marke je Status -- dieselben Farben wie die Marken der Web-Fassung. */
 const STATUS_FARBE: Record<VorgangStatus, string> = {
@@ -71,22 +81,6 @@ const STATUS_FARBE: Record<VorgangStatus, string> = {
   in_arbeit: 'var(--app-color-info)',
   wartet: 'var(--app-color-neutral)',
   erledigt: 'var(--app-color-success)',
-};
-
-const FILTER_NAME: Record<VorgangFilter, string> = {
-  offen: 'Offen',
-  neu: VORGANG_STATUS.neu.kurz,
-  in_arbeit: VORGANG_STATUS.in_arbeit.kurz,
-  wartet: VORGANG_STATUS.wartet.kurz,
-  archiv: 'Archiv',
-};
-
-const LEER_TEXT: Record<VorgangFilter, string> = {
-  offen: 'Es gibt keinen offenen Vorgang. Neue Anfragen, Formulare und Mails erscheinen hier.',
-  neu: 'Alle Vorgänge sind schon in Arbeit.',
-  in_arbeit: 'Gerade ist kein Vorgang in Arbeit.',
-  wartet: 'Kein Vorgang wartet auf eine Rückmeldung.',
-  archiv: 'Erledigte und archivierte Vorgänge liegen hier.',
 };
 
 /** Neuer Vorgang als Abschnitt der Seite (die App hat dafuer keinen Dialog). */
@@ -163,16 +157,17 @@ const NeuerVorgangAbschnitt: React.FC<{ organizationId: string; onSchliessen: ()
 const Vorgaenge: React.FC = () => {
   const router = useIonRouter();
   const zurueck = useSupportZurueck(SUPPORT_START);
-  const { auswahl, setFilter, setArt, setGemeinde, setSuche } = useVorgangsAuswahl();
+  const { auswahl, setFilter, setArt, setGemeinde, setSuche, zuruecksetzen } = useVorgangsAuswahl();
   const liste = useVorgangsliste(auswahl);
   const { sichtbar, gemeinden, laedt, fehler, neuLaden, zaehlen } = liste;
   const [neuOffen, setNeuOffen] = useState(false);
   const mitGemeinde = auswahl.gemeinde !== 'alle';
+  const eingegrenzt = suchbegriff(auswahl.suche) !== '' || auswahl.art !== 'alle' || mitGemeinde;
 
   return (
     <IonPage>
       <AppKopfzeile
-        titel="Vorgänge"
+        titel={VORGAENGE_TITEL}
         onZurueck={zurueck}
         gemeindeUmschalter={false}
         rechts={(
@@ -182,7 +177,7 @@ const Vorgaenge: React.FC = () => {
         )}
       />
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Vorgänge" />
+        <AppKopfzeileGross titel={VORGAENGE_TITEL} />
         <IonRefresher slot="fixed" onIonRefresh={(e) => { void neuLaden().finally(() => e.detail.complete()); }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />
         </IonRefresher>
@@ -190,10 +185,11 @@ const Vorgaenge: React.FC = () => {
         {neuOffen && <NeuerVorgangAbschnitt organizationId={mitGemeinde ? auswahl.gemeinde : ''} onSchliessen={() => setNeuOffen(false)} />}
 
         <div style={{ margin: 'var(--app-abstand-basis)' }}>
-          <IonSegment scrollable value={auswahl.filter} aria-label="Stand" onIonChange={(e) => setFilter((e.detail.value as VorgangFilter) ?? 'offen')}>
-            {VORGANG_FILTER.map((f) => (
-              <IonSegmentButton key={f} value={f}>
-                <IonLabel>{FILTER_NAME[f]}{f !== 'archiv' && zaehlen ? ` ${zaehlen[f]}` : ''}</IonLabel>
+          <IonSegment scrollable value={auswahl.filter} aria-label={VORGANG_STAENDE_BESCHRIFTUNG} onIonChange={(e) => setFilter((e.detail.value as VorgangFilter) ?? 'offen')}>
+            {/* Stände aus der gemeinsamen Beschreibung (seiten/supportVorgaenge.ts). */}
+            {inFassung(VORGANG_STAENDE, 'app').map((f) => (
+              <IonSegmentButton key={f.schluessel} value={f.schluessel}>
+                <IonLabel>{f.kurz ?? f.label}{f.schluessel !== 'archiv' && zaehlen ? ` ${zaehlen[f.schluessel]}` : ''}</IonLabel>
               </IonSegmentButton>
             ))}
           </IonSegment>
@@ -204,7 +200,7 @@ const Vorgaenge: React.FC = () => {
             <IonLabel position="stacked">Art</IonLabel>
             <IonSelect aria-label="Art filtern" interface="popover" value={auswahl.art}
               onIonChange={(e) => setArt(String(e.detail.value ?? 'alle') as VorgangArt | 'alle')}>
-              <IonSelectOption value="alle">Alle Arten</IonSelectOption>
+              <IonSelectOption value="alle">{ALLE_ARTEN}</IonSelectOption>
               {ARTEN.map((a) => <IonSelectOption key={a.wert} value={a.wert}>{a.label}</IonSelectOption>)}
             </IonSelect>
           </IonItem>
@@ -212,7 +208,7 @@ const Vorgaenge: React.FC = () => {
             <IonLabel position="stacked">Gemeinde</IonLabel>
             <IonSelect aria-label="Gemeinde filtern" interface="popover" value={auswahl.gemeinde}
               onIonChange={(e) => setGemeinde(String(e.detail.value ?? 'alle'))}>
-              <IonSelectOption value="alle">Alle Gemeinden</IonSelectOption>
+              <IonSelectOption value="alle">{ALLE_GEMEINDEN}</IonSelectOption>
               {gemeinden.map((g) => <IonSelectOption key={g.id} value={String(g.id)}>{g.name}</IonSelectOption>)}
             </IonSelect>
           </IonItem>
@@ -224,7 +220,17 @@ const Vorgaenge: React.FC = () => {
         ) : fehler ? (
           <Ladefehler text="Die Vorgänge konnten nicht geladen werden." onErneut={() => { void neuLaden(); }} />
         ) : sichtbar.length === 0 ? (
-          <EmptyState icon={ICON_LISTE} title="Keine Vorgänge" message={LEER_TEXT[auswahl.filter]} />
+          // Grenzen Art, Gemeinde oder Suche ein, sagt der Leerzustand das -- wie im Browser.
+          eingegrenzt ? (
+            <>
+              <EmptyState icon={ICON_LISTE} title={VORGANG_KEINE_TREFFER.titel} message={VORGANG_KEINE_TREFFER.text(auswahl.suche)} />
+              <div style={{ margin: '0 var(--app-abstand-basis)' }}>
+                <IonButton expand="block" fill="outline" onClick={zuruecksetzen}>{VORGANG_KEINE_TREFFER.zuruecksetzen}</IonButton>
+              </div>
+            </>
+          ) : (
+            <EmptyState icon={ICON_LISTE} title={VORGANG_LEER_TITEL[auswahl.filter]} message={leerVon(VORGANG_STAENDE, auswahl.filter)} />
+          )
         ) : (
           <Abschnitt icon={ICON_LISTE} titel={vorgaengeText(sichtbar.length)} farbe="organizations">
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -283,7 +289,7 @@ const Vorgaenge: React.FC = () => {
 // Darstellung der App.
 const SupportVorgaengePage: React.FC = () => {
   const breit = useBreitesLayout();
-  return <NurSupport titel="Vorgänge">{breit ? <WebVorgaenge /> : <Vorgaenge />}</NurSupport>;
+  return <NurSupport titel={VORGAENGE_TITEL}>{breit ? <WebVorgaenge /> : <Vorgaenge />}</NurSupport>;
 };
 
 export default SupportVorgaengePage;

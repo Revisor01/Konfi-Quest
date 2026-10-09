@@ -43,6 +43,15 @@ import BadgePopoverContent, { BadgePopoverData } from '../../shared/BadgePopover
 import { FARBEN } from '../../../theme/colors';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebBadgesRaster from '../web/WebBadgesRaster';
+import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
+import {
+  BADGES_KEINE_TREFFER,
+  BADGES_LEER_TITEL,
+  BADGES_STATUS,
+  BADGES_TITEL,
+  BADGES_UNTERTITEL,
+  type BadgesStatus,
+} from '../../../seiten/badgesKonfi';
 
 
 
@@ -54,8 +63,9 @@ interface BadgesViewProps {
     totalVisible: number;
     totalSecret: number;
   };
-  selectedFilter: string;
-  onFilterChange: (filter: string) => void;
+  /** Stand der Liste, Schlüssel aus seiten/badgesKonfi.ts. */
+  selectedFilter: BadgesStatus;
+  onFilterChange: (filter: BadgesStatus) => void;
 }
 
 const BadgesView: React.FC<BadgesViewProps> = ({
@@ -71,18 +81,10 @@ const BadgesView: React.FC<BadgesViewProps> = ({
 
   // Badges nach Kategorien gruppieren. Ohne Angaben gelten Filter und Suche der
   // App-Ansicht; die Web-Fassung fragt ungefiltert und filtert selbst.
-  const getBadgeCategories = (filter: string = selectedFilter, suche: string = searchText) => {
-    let filtered: Badge[];
-    switch (filter) {
-      case 'nicht_erhalten':
-        filtered = badges.filter(badge => !badge.is_earned);
-        break;
-      case 'in_arbeit':
-        filtered = badges.filter(badge => !badge.is_earned && badge.progress_percentage && badge.progress_percentage > 0);
-        break;
-      default:
-        filtered = badges;
-    }
+  const getBadgeCategories = (filter: BadgesStatus = selectedFilter, suche: string = searchText) => {
+    // Prädikat des Stands aus der gemeinsamen Beschreibung (seiten/badgesKonfi.ts).
+    const stand = wahlVon(BADGES_STATUS, filter);
+    let filtered: Badge[] = badges.filter((b) => stand.passt?.(b) ?? true);
 
     // Suchtext-Filter
     if (suche.trim()) {
@@ -159,8 +161,8 @@ const BadgesView: React.FC<BadgesViewProps> = ({
   return (
     <div>
       <SectionHeader
-        title="Deine Badges"
-        subtitle="Sammle alle Erfolge!"
+        title={BADGES_TITEL}
+        subtitle={BADGES_UNTERTITEL}
         // Band wie im Tab und im Onboarding (Simon, 05.09.2026): Die Sache
         // trug vier Zeichen -- Stern im Tab, Pokal hier, Band bei Teamer und
         // Leitung. Ein Konfi sah fuer dasselbe Stern UND Pokal.
@@ -194,10 +196,11 @@ const BadgesView: React.FC<BadgesViewProps> = ({
       </IonList>
 
       <div className="app-segment-wrapper">
-        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as string)}>
-          <IonSegmentButton value="alle"><IonLabel>Alle</IonLabel></IonSegmentButton>
-          <IonSegmentButton value="nicht_erhalten"><IonLabel>Offen</IonLabel></IonSegmentButton>
-          <IonSegmentButton value="in_arbeit"><IonLabel>In Arbeit</IonLabel></IonSegmentButton>
+        <IonSegment value={selectedFilter} onIonChange={(e) => onFilterChange(e.detail.value as BadgesStatus)}>
+          {/* Reiter aus der gemeinsamen Beschreibung (seiten/badgesKonfi.ts). */}
+          {inFassung(BADGES_STATUS, 'app').map((w) => (
+            <IonSegmentButton key={w.schluessel} value={w.schluessel}><IonLabel>{w.kurz ?? w.label}</IonLabel></IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -212,28 +215,15 @@ const BadgesView: React.FC<BadgesViewProps> = ({
         {badgeCategories.length === 0 ? (
           <IonCard className="app-card">
             <IonCardContent>
-              {selectedFilter === 'nicht_erhalten' ? (
-                <EmptyState
-                  icon={ICON_ZUSAGE_GEFUELLT}
-                  title="Alle Badges erreicht!"
-                  message="Du hast alle sichtbaren Badges eingesammelt."
-                  iconColor="var(--app-color-badges)"
-                />
-              ) : selectedFilter === 'in_arbeit' ? (
-                <EmptyState
-                  icon={ICON_POKAL}
-                  title="Keine Badges in Arbeit"
-                  message="Sammle Punkte, um den Fortschritt bei Badges zu starten!"
-                  iconColor="var(--app-color-badges)"
-                />
-              ) : (
-                <EmptyState
-                  icon={ICON_POKAL}
-                  title="Keine Badges gefunden"
-                  message="Sammle Punkte für deine ersten Badges!"
-                  iconColor="var(--app-color-badges)"
-                />
-              )}
+              {/* Findet die Suche nichts, sagt das der Leertext -- bis 09.10.2026
+                  stand dann je nach Reiter etwa „Alle Badges erreicht!" (im
+                  Browser hatte die Suche schon Vorrang). */}
+              <EmptyState
+                icon={selectedFilter === 'offen' && !searchText.trim() ? ICON_ZUSAGE_GEFUELLT : ICON_POKAL}
+                title={searchText.trim() ? BADGES_KEINE_TREFFER.titel : BADGES_LEER_TITEL[selectedFilter]}
+                message={searchText.trim() ? BADGES_KEINE_TREFFER.text : leerVon(BADGES_STATUS, selectedFilter)}
+                iconColor="var(--app-color-badges)"
+              />
             </IonCardContent>
           </IonCard>
         ) : (

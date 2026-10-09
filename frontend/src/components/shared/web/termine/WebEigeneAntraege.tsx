@@ -23,12 +23,8 @@ import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { EIGENER_ANTRAG_FILTER, type EigenerAntragFilter } from './terminFilter';
 import '../../../../theme/web/termine.css';
 import { antragStatusRang } from '../../../../utils/statusReihenfolge';
-
-const STATUS_VON_FILTER: Record<Exclude<EigenerAntragFilter, 'alle'>, ActivityRequest['status']> = {
-  offen: 'pending',
-  angerechnet: 'approved',
-  abgelehnt: 'rejected',
-};
+import { inFassung, wahlVon } from '../../../../seiten/beschreibung';
+import { EIGENE_ANTRAEGE_LEER, EIGENE_ANTRAG_STATUS, EIGENE_ANTRAG_STATUS_BESCHRIFTUNG } from '../../../../seiten/mitmachenMitglied';
 
 // Die Konfi-Antragsliste sagt "Angerechnet" (Reiter und Marke gleich).
 const STATUS: Record<ActivityRequest['status'], { text: string; ton: PillTon }> = {
@@ -60,15 +56,13 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
   const [filter, setFilter] = useFilterAusAdresse<EigenerAntragFilter>(pfad, EIGENER_ANTRAG_FILTER, standardFilter);
   const [suche, setSuche] = useState('');
 
-  const zaehlen = useMemo(() => ({
-    offen: antraege.filter((a) => a.status === 'pending').length,
-    angerechnet: antraege.filter((a) => a.status === 'approved').length,
-    abgelehnt: antraege.filter((a) => a.status === 'rejected').length,
-    alle: antraege.length,
-  }), [antraege]);
+  // Zahl je Stand, ohne die Suche -- Prädikate aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts).
+  const zaehlen = useMemo(() => Object.fromEntries(
+    EIGENE_ANTRAG_STATUS.map((w) => [w.schluessel, antraege.filter((a) => w.passt?.(a) ?? true).length]),
+  ) as Record<EigenerAntragFilter, number>, [antraege]);
 
   const sichtbar = useMemo(() => antraege
-    .filter((a) => (filter === 'alle' ? true : a.status === STATUS_VON_FILTER[filter]))
+    .filter((a) => wahlVon(EIGENE_ANTRAG_STATUS, filter).passt?.(a) ?? true)
     .filter((a) => !suchbegriff(suche) || suchTreffer(a.activity_name || '', suche).length > 0),
   [antraege, filter, suche]);
 
@@ -157,15 +151,10 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
     <>
       <div className="web-werkzeuge">
         <WebChips<EigenerAntragFilter>
-          beschriftung="Aktivitäten nach Status"
+          beschriftung={EIGENE_ANTRAG_STATUS_BESCHRIFTUNG}
           wert={filter}
           onWert={setFilter}
-          chips={[
-            { wert: 'offen', label: 'Offen', zahl: zaehlen.offen },
-            { wert: 'angerechnet', label: 'Angerechnet', zahl: zaehlen.angerechnet },
-            { wert: 'abgelehnt', label: 'Abgelehnt', zahl: zaehlen.abgelehnt },
-            { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
-          ]}
+          chips={inFassung(EIGENE_ANTRAG_STATUS, 'web').map((w) => ({ wert: w.schluessel, label: w.label, zahl: zaehlen[w.schluessel] }))}
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Aktivitäten durchsuchen" platzhalter="Aktivität suchen" wert={suche} onWert={setSuche} />
@@ -185,8 +174,8 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
         ) : (
           <WebLeer
             icon={ICON_TEXTDOKUMENT}
-            titel={sucht ? 'Keine Treffer' : 'Keine Aktivitäten gefunden'}
-            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl keine Aktivität.` : 'Noch keine Aktivitäten gemeldet'}
+            titel={sucht ? 'Keine Treffer' : EIGENE_ANTRAEGE_LEER.titel}
+            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl keine Aktivität.` : EIGENE_ANTRAEGE_LEER.text}
             aktion={sucht ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf> : undefined}
           />
         )}

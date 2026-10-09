@@ -125,6 +125,11 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 
 ### Geändert
+- Im Browser heißen die Reiter der Challenges wie in der App **Aktuell** und
+  **Archiv**.
+- Bei den eigenen Aktivitäten stehen in der App die Reiter über der Suche, wie
+  bei den Events; das Team beginnt dort bei **Offen**.
+- Im Browser stehen in der Chat-Liste die Reiter über der Suche, wie in der App.
 - Die Anwesenheit steht ab Beginn eines Events aus, nicht erst nach seinem
   Ende: Konfis und Team sehen während des Events „Ausstehend“ statt
   „Angemeldet“ oder „Dabei“, und die Leitung sieht „Verbuchen“, wie schon im
@@ -230,6 +235,28 @@ Versionsüberschrift.
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
 
 ### Behoben
+- Bei den Konfis bleibt ein laufendes mehrtägiges Event in der App unter
+  **Alle**, bis es zu Ende ist, und die Suche findet Events auch über ihren
+  Namen.
+- Die Zahlen über den eigenen Aktivitäten zählen in der App jeden Stand, nicht
+  nur den gewählten Reiter; die Kachel heißt wie der Reiter **Angerechnet**.
+- Beim Team zählt ein laufendes mehrtägiges Event in der App nicht schon als
+  vergangen.
+- Ein leerer Reiter bei den gemeldeten Aktivitäten der Leitung sagt in der App,
+  was fehlt, statt immer denselben Satz.
+- Im Katalog der Aktivitäten zeigt die App nach dem Wechsel zu **Team** die
+  Team-Aktivitäten, auch wenn vorher eine Art gewählt war; die Kachel heißt
+  wie der Reiter **GoDi**, und im Browser passt der Untertitel zur Rolle.
+- Findet eine Suche nichts, sagt die App das, statt „Noch keine … angelegt“
+  oder „Alle Badges erreicht!“ — bei Badges, Konfis, Benutzer:innen,
+  Aktivitäten, Vorgängen und Material.
+- Ein gewählter Jahrgang ohne Konfis sagt in der App „In diesem Jahrgang gibt
+  es noch keine Konfis.“
+- Unter **Ungelesen** im Chat steht jeder Raum mit roter Zahl.
+- Im Posteingang des Browsers steht wie in der App, wenn einem Postfach die
+  Zugangsdaten fehlen; in der App sagt ein leerer Filter, was fehlt.
+- Die Suche im Material des Teams übergeht Leerzeichen am Rand und findet
+  „mueller“ auch als „Müller“.
 - Mitteilungen im Postfach vom 21. bis 23.08.2026 zeigen ihre richtige
   Uhrzeit statt einer zwei Stunden späteren.
 - Zwischen Mitternacht und 2 Uhr nachts gilt auch auf dem Server schon der neue
@@ -375,6 +402,8 @@ Versionsüberschrift.
   Namen der Gemeinde, in die sie zurückwechselt.
 
 ### Sonstiges
+- Reiter, Filter und Leertexte jeder Seite stehen für App und Browser an
+  einer Stelle; ein neuer Filter erscheint so in beiden zugleich.
 - Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
 - Die anonyme Nutzungsmessung erfasst weitere Funktionen — etwa Abmeldungen,
   Postfach, Push-Auswahl, Einladungen, Suche, Jahresrückblick und offline

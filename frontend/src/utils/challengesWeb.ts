@@ -8,13 +8,17 @@
 // Server (backend/utils/challengeLeitungSicht.js, Liste und Zaehler lesen
 // dieselbe Regel); die Web-Fassung filtert nur, was ihr der Server schickt.
 // Ebenso bleibt die Einteilung in Aktuell/Geplant/Archiv der App
-// (teileChallengesAuf) die einzige: Die Web-Fassung ordnet danach.
+// (teileChallengesAuf) die einzige: Die Web-Fassung ordnet danach. Namen,
+// Leertexte und Praedikate der Reiter stehen in seiten/challengesLeitung.ts.
 
 import type { AdminChallenge, ChallengeAudience, ChallengeBase, ChallengeJahrgang, ChallengeMediaType, ChallengeStatus } from '../types/challenges';
 import { getChallengeStatus, teileChallengesAuf } from '../components/admin/views/ChallengesManageView';
 import { kugelTextAmEintrag, kugelTextNeueBeitraege } from './challengeTexte';
 import { suchTreffer, type PillTon } from './supportWeb';
 import { datumKurz } from './dateUtils';
+import { schluesselIn, wahlVon } from '../seiten/beschreibung';
+import { CHALLENGES_LEITUNG_REITER, type ChallengesLeitungReiter } from '../seiten/challengesLeitung';
+import { CHALLENGES_KONFI_REITER } from '../seiten/challengesKonfi';
 
 /**
  * Eine Challenge, wie die Karte sie braucht. Die Leitungsliste
@@ -38,24 +42,21 @@ export interface ListenEintrag<T extends ListenChallenge = ListenChallenge> {
   wartend?: number;
 }
 
-/** 'wartet': Challenges mit Beitraegen, die auf Freigabe warten -- ueber alle Zustaende. */
-export type ListenFilter = 'laufend' | 'geplant' | 'beendet' | 'alle' | 'wartet';
+/**
+ * Die Filter der Listen -- Schluessel, Beschriftung, Leertext und Praedikat
+ * stehen in der gemeinsamen Beschreibung (seiten/challengesLeitung.ts,
+ * seiten/challengesKonfi.ts), aus der auch die App liest. 'wartet':
+ * Challenges mit Beitraegen, die auf Freigabe warten -- ueber alle Zustaende.
+ */
+export type ListenFilter = ChallengesLeitungReiter;
 
-/** Die Filter der Liste von Team und Leitung. */
-export const LISTEN_FILTER: readonly ListenFilter[] = ['laufend', 'geplant', 'beendet', 'alle', 'wartet'];
+/** Die Filter der Liste von Team und Leitung im Browser. */
+export const LISTEN_FILTER: readonly ListenFilter[] = schluesselIn(CHALLENGES_LEITUNG_REITER, 'web');
 
-/** Die Filter der Konfi-Liste: Geplantes bekommen Konfis nie zu sehen. */
-export const KONFI_LISTEN_FILTER: readonly ListenFilter[] = ['laufend', 'beendet', 'alle'];
+/** Die Filter der Konfi-Liste im Browser: Geplantes bekommen Konfis nie zu sehen. */
+export const KONFI_LISTEN_FILTER: readonly ListenFilter[] = schluesselIn(CHALLENGES_KONFI_REITER, 'web');
 
-export const FILTER_TEXT: Record<ListenFilter, string> = {
-  laufend: 'Laufend',
-  geplant: 'Geplant',
-  beendet: 'Beendet',
-  alle: 'Alle',
-  wartet: 'Wartet auf Freigabe',
-};
-
-/** Der Status als Wort auf der Marke: dasselbe Wort wie der Filter ("Laufend"), als Zustand ("Läuft"). */
+/** Der Status als Wort auf der Marke: der Zustand der Challenge ("Läuft"), nicht der Name des Reiters ("Aktuell"). */
 export const STATUS_WORT: Record<ChallengeStatus, string> = {
   draft: 'Entwurf',
   scheduled: 'Geplant',
@@ -120,13 +121,9 @@ export function konfiEintraege<T extends ListenChallenge>(active: readonly T[], 
   ];
 }
 
-/** Gehoert der Eintrag zum Filter? */
+/** Gehoert der Eintrag zum Filter? Das Praedikat steht am Reiter der Beschreibung (seiten/challengesLeitung.ts). */
 export function passtZumFilter(eintrag: Pick<ListenEintrag, 'status' | 'wartend'>, filter: ListenFilter): boolean {
-  if (filter === 'alle') return true;
-  if (filter === 'wartet') return (eintrag.wartend ?? 0) > 0;
-  if (filter === 'laufend') return eintrag.status === 'active';
-  if (filter === 'beendet') return eintrag.status === 'ended';
-  return eintrag.status === 'scheduled' || eintrag.status === 'draft';
+  return wahlVon(CHALLENGES_LEITUNG_REITER, filter).passt?.(eintrag) ?? true;
 }
 
 /** Zielgruppe der Challenge; fehlt sie (Altdaten), gilt 'konfis' wie im Typ beschrieben. */
@@ -194,9 +191,9 @@ export function challengesZaehlen<T extends ListenChallenge>(
 ): Record<ListenFilter, number> {
   const rest = ohneStatusFiltern(eintraege, auswahl);
   return {
-    laufend: rest.filter((e) => passtZumFilter(e, 'laufend')).length,
+    aktuell: rest.filter((e) => passtZumFilter(e, 'aktuell')).length,
     geplant: rest.filter((e) => passtZumFilter(e, 'geplant')).length,
-    beendet: rest.filter((e) => passtZumFilter(e, 'beendet')).length,
+    archiv: rest.filter((e) => passtZumFilter(e, 'archiv')).length,
     alle: rest.length,
     wartet: rest.reduce((summe, e) => summe + (e.wartend ?? 0), 0),
   };

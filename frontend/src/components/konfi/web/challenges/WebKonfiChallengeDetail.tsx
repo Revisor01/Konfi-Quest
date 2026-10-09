@@ -65,6 +65,12 @@ import {
 } from '../../../../utils/challengesWeb';
 import type { KonfiChallenge, KonfiChallengeDetail } from '../../../../types/challenges';
 import '../../../../theme/web/challenges.css';
+import {
+  CHALLENGE_DETAIL_KONFI_BESCHRIFTUNG,
+  CHALLENGE_DETAIL_KONFI_REITER,
+  konfiDetailLeer,
+  konfiDetailUeberschrift,
+} from '../../../../seiten/challengeDetailKonfi';
 
 export interface WebKonfiChallengeDetailProps {
   /** Die Challenge; solange es keine gibt (laedt, Hinweis), steht der Hinweis. */
@@ -116,13 +122,13 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
     const gallery = detail?.gallery ?? [];
     const privat = current.visibility === 'private';
 
-    const chips: Array<WebChallengeChip<KonfiReiter>> = [
-      { wert: 'feed', label: 'Feed', zahl: gallery.length },
-      { wert: 'meins', label: 'Meins', zahl: ownSubmissions.length },
-    ];
-    const ueberschrift = effektiverReiter === 'meins'
-      ? (ownSubmissions.length === 1 ? 'Dein Beitrag' : 'Deine Beiträge')
-      : 'Aus deiner Gruppe';
+    // Reiter aus der gemeinsamen Beschreibung (seiten/challengeDetailKonfi.ts).
+    const chips: Array<WebChallengeChip<KonfiReiter>> = CHALLENGE_DETAIL_KONFI_REITER.map((r) => ({
+      wert: r.schluessel,
+      label: r.label,
+      zahl: r.schluessel === 'feed' ? gallery.length : ownSubmissions.length,
+    }));
+    const ueberschrift = konfiDetailUeberschrift(effektiverReiter, ownSubmissions.length);
 
     // Hat die Person den Stempel schon? Ein freigegebener eigener Beitrag bringt ihn.
     const hatStempel = ownSubmissions.some((b) => b.moderation_status === 'approved');
@@ -175,7 +181,7 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
                 <h2 id={beitraegeId} className="web-karte__titel">{ueberschrift}</h2>
                 {/* Bei "nur Leitung" gibt es keine Gruppen-Galerie -- dann bleibt nur "Meins", ohne Reiter. */}
                 {!privat && (
-                  <WebChallengeChips<KonfiReiter> beschriftung="Beiträge" chips={chips} wert={effektiverReiter} onWert={setReiter} />
+                  <WebChallengeChips<KonfiReiter> beschriftung={CHALLENGE_DETAIL_KONFI_BESCHRIFTUNG} chips={chips} wert={effektiverReiter} onWert={setReiter} />
                 )}
               </div>
 
@@ -190,16 +196,14 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
                   {effektiverReiter === 'meins' ? (
                     <WebLeer
                       icon={ICON_TEXTDOKUMENT}
-                      titel="Noch kein Beitrag von dir"
-                      text={isActive ? 'Reiche oben rechts über „Beitrag einreichen“ deinen Beitrag ein.' : 'Diese Challenge ist beendet — du hattest nichts eingereicht.'}
+                      titel={konfiDetailLeer('meins', isActive, 'web').titel}
+                      text={konfiDetailLeer('meins', isActive, 'web').text}
                     />
                   ) : (
                     <WebLeer
                       icon={ICON_GRUPPE}
-                      titel="Noch keine geteilten Beiträge"
-                      text={isActive
-                        ? 'Sobald jemand aus deiner Gruppe etwas veröffentlicht, findest du es hier. Vielleicht machst du ja den Anfang.'
-                        : 'Aus dieser Challenge hat niemand aus deiner Gruppe etwas veröffentlicht.'}
+                      titel={konfiDetailLeer('feed', isActive, 'web').titel}
+                      text={konfiDetailLeer('feed', isActive, 'web').text}
                     />
                   )}
                 </div>

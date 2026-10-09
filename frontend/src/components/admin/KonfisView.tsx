@@ -25,6 +25,8 @@ import type { TeamerListenEintrag } from '../../types/user';
 import { konfiPunkte, initialen } from '../../utils/konfiListe';
 import { useTeamerListe } from './useTeamerListe';
 import { useSucheMessung } from '../../hooks/useSucheMessung';
+import { inFassung } from '../../seiten/beschreibung';
+import { KONFIS_ANSICHT, KONFIS_JAHRGANG_FILTER, TEAM_LEER, konfisLeerText } from '../../seiten/konfisLeitung';
 
 interface Konfi {
   id: number;
@@ -131,6 +133,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
     return result;
   })();
 
+  const konfisLeer = konfisLeerText({ sucht: !!searchTerm, ohneJahrgang, jahrgangGewaehlt: selectedJahrgang !== 'alle' });
+
   // Schrittweise rendern (Leitung BF-14): 150 Konfis kosteten gedrosselt
   // 3,1 s bis zur letzten Zeile, jetzt 1,7 s (Zahlen im Hook).
   // Suche, Jahrgang und Sortierung laufen weiter ueber alle; ein neuer
@@ -203,12 +207,13 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         }}
         style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)', maxWidth: 'calc(100% - 32px)' }}
       >
-        <IonSegmentButton value="konfis">
-          <IonLabel>Konfis</IonLabel>
-        </IonSegmentButton>
-        <IonSegmentButton value="teamer">
-          <IonLabel>Team</IonLabel>
-        </IonSegmentButton>
+        {/* Reiter aus der gemeinsamen Beschreibung (seiten/konfisLeitung.ts);
+            die App führt „Team" intern als `teamer`. */}
+        {inFassung(KONFIS_ANSICHT, 'app').map((a) => (
+          <IonSegmentButton key={a.schluessel} value={a.schluessel === 'team' ? 'teamer' : a.schluessel}>
+            <IonLabel>{a.kurz ?? a.label}</IonLabel>
+          </IonSegmentButton>
+        ))}
       </IonSegment>
 
       {/* Suche & Filter */}
@@ -241,7 +246,7 @@ const KonfisView: React.FC<KonfisViewProps> = ({
                 placeholder="Jahrgang"
                 style={{ width: '100%' }}
               >
-                <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
+                <IonSelectOption value="alle">{KONFIS_JAHRGANG_FILTER.alle}</IonSelectOption>
                 {jahrgaenge.map(jg => (
                   <IonSelectOption key={jg.id} value={jg.name}>{jg.name}</IonSelectOption>
                 ))}
@@ -285,8 +290,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
           iconColorClass="teamer"
           isEmpty={filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).length === 0}
           emptyIcon={ICON_ABZEICHEN_GEFUELLT}
-          emptyTitle="Niemand im Team gefunden"
-          emptyMessage={searchTerm ? 'Versuche andere Suchbegriffe' : 'Noch niemand im Team'}
+          emptyTitle={TEAM_LEER.titel}
+          emptyMessage={searchTerm ? TEAM_LEER.keineTreffer : TEAM_LEER.keinTeam}
           emptyIconColor="var(--app-color-teamer)"
         >
           {filterBySearchTerm(teamers, searchTerm, ['name', 'display_name', 'username']).map((teamer, index, arr) => (
@@ -380,17 +385,11 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         iconColorClass="primary"
         isEmpty={filteredAndSortedKonfis.length === 0}
         emptyIcon={ICON_GRUPPE}
-        emptyTitle={ohneJahrgang && !searchTerm ? 'Kein Jahrgang zugewiesen' : 'Keine Konfis gefunden'}
-        emptyMessage={
-          searchTerm
-            ? 'Versuche andere Suchbegriffe'
-            : ohneJahrgang
-              // Befund Rollen-Bericht: Vorher stand hier "Noch keine Konfis
-              // angelegt" -- was schlicht falsch war. Es gibt Konfis, dieser
-              // Zugang darf sie nur nicht sehen.
-              ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
-              : 'Noch keine Konfis angelegt'
-        }
+        // Dieselben Sätze wie im Browser (seiten/konfisLeitung.ts). Ein leerer
+        // Jahrgang sagt das selbst -- bis 09.10.2026 stand hier dann „Noch keine
+        // Konfis angelegt", obwohl es Konfis gab.
+        emptyTitle={konfisLeer.titel}
+        emptyMessage={konfisLeer.text}
         emptyIconColor="var(--app-color-konfis)"
       >
         {sichtbareKonfis.map((konfi, index) => {

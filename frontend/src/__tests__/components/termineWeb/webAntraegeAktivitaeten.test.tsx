@@ -85,7 +85,8 @@ describe('Anträge: Reiter und Tabelle', () => {
   it('Standard "Offen": die offenen Anträge, neueste zuerst; die Chips zählen alle Status', async () => {
     await oeffneReiter('antraege');
     expect(spalte('Gemeldete Aktivitäten', 1)).toEqual(['Mia Muster', 'Tim Teamer']);
-    expect(chip(/^Offen/)).toHaveTextContent(/^Offen2 warten auf Entscheidung$/);
+    // Derselbe Vorlesesatz wie an der orangen Zahl der App (seiten/mitmachenLeitung.ts, 09.10.2026).
+    expect(chip(/^Offen/)).toHaveTextContent(/^Offen2 Anträge warten auf Entscheidung$/);
     expect(chip(/^Verbucht/)).toHaveTextContent(/^Verbucht1$/);
     expect(chip(/^Abgelehnt/)).toHaveTextContent(/^Abgelehnt1$/);
     expect(chip(/^Alle/)).toHaveTextContent(/^Alle4$/);

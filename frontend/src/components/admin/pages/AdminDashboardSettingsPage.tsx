@@ -32,6 +32,8 @@ import { safeUUID } from '../../../utils/uuid';
 import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebDashboardEinstellungen from '../web/leitung/WebDashboardEinstellungen';
+import { inFassung } from '../../../seiten/beschreibung';
+import { DASHBOARD_FUER, DASHBOARD_LISTE_TITEL, type DashboardFuer } from '../../../seiten/dashboardEinstellungen';
 import {
   mergeSectionOrder,
   DEFAULT_KONFI_SECTION_ORDER,
@@ -313,14 +315,14 @@ const AdminDashboardSettingsPage: React.FC = () => {
         <div className="app-segment-wrapper">
           <IonSegment
             value={dashboardSegment}
-            onIonChange={(e) => setDashboardSegment(e.detail.value as 'konfi' | 'teamer')}
+            onIonChange={(e) => setDashboardSegment(e.detail.value as DashboardFuer)}
           >
-            <IonSegmentButton value="konfi">
-              <IonLabel>Konfi</IonLabel>
-            </IonSegmentButton>
-            <IonSegmentButton value="teamer">
-              <IonLabel>Team</IonLabel>
-            </IonSegmentButton>
+            {/* Reiter aus der gemeinsamen Beschreibung (seiten/dashboardEinstellungen.ts). */}
+            {inFassung(DASHBOARD_FUER, 'app').map((r) => (
+              <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+                <IonLabel>{r.kurz ?? r.label}</IonLabel>
+              </IonSegmentButton>
+            ))}
           </IonSegment>
         </div>
 
@@ -330,7 +332,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
               <div className="app-section-icon app-section-icon--settings">
                 <IonIcon icon={ICON_APPS} />
               </div>
-              <IonLabel>Konfi-Dashboard</IonLabel>
+              <IonLabel>{DASHBOARD_LISTE_TITEL.konfi}</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>
@@ -372,7 +374,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
               <div className="app-section-icon app-section-icon--settings">
                 <IonIcon icon={ICON_APPS} />
               </div>
-              <IonLabel>Team-Dashboard</IonLabel>
+              <IonLabel>{DASHBOARD_LISTE_TITEL.teamer}</IonLabel>
             </IonListHeader>
             <IonCard className="app-card">
               <IonCardContent>

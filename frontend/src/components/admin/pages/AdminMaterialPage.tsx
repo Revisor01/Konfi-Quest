@@ -54,7 +54,9 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { darfMaterialBearbeiten } from '../../../utils/materialRechte';
 import { materialStats } from '../../../utils/materialStats';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
-import WebMaterialVerwaltung from '../web/leitung/WebMaterialVerwaltung';
+import WebMaterialVerwaltung from '../web/leitung/WebMaterialVerwaltung';import { wahlVon } from '../../../seiten/beschreibung';
+import { MATERIAL_LEITUNG_FILTER, MATERIAL_LEITUNG_TITEL, MATERIAL_LEITUNG_UNTERTITEL, materialLeitungLeer } from '../../../seiten/materialLeitung';
+
 
 
 interface Material {
@@ -148,8 +150,14 @@ const AdminMaterialPage: React.FC = () => {
   // "Nur globales Material" filtert die Oberflaeche. Ein gecachter Eintrag
   // ohne das Feld gilt als nicht global.
   const filteredMaterials = nurGlobal
-    ? (materials || []).filter(m => m.ist_global === true)
+    ? (materials || []).filter((m) => wahlVon(MATERIAL_LEITUNG_FILTER, 'global').passt?.(m) ?? true)
     : (materials || []);
+  // Der Leerzustand aus der gemeinsamen Beschreibung (seiten/materialLeitung.ts).
+  const leer = materialLeitungLeer({
+    ohneJahrgang,
+    suche: search,
+    filter: nurGlobal ? 'global' : activeJahrgangId ? String(activeJahrgangId) : 'alle',
+  }, 'app');
 
   const handleDelete = (material: Material) => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -241,7 +249,7 @@ const AdminMaterialPage: React.FC = () => {
   return (
     <IonPage ref={pageRef}>
       <AppKopfzeile
-        titel="Material verwalten"
+        titel={MATERIAL_LEITUNG_TITEL}
         onZurueck={() => window.history.back()}
         gemeindeUmschalter={false}
         rechts={(
@@ -252,7 +260,7 @@ const AdminMaterialPage: React.FC = () => {
       />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Material verwalten" />
+        <AppKopfzeileGross titel={MATERIAL_LEITUNG_TITEL} />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refreshMaterial();
@@ -267,7 +275,7 @@ const AdminMaterialPage: React.FC = () => {
           <>
             <SectionHeader
               title="Material"
-              subtitle="Dokumente und Dateien"
+              subtitle={MATERIAL_LEITUNG_UNTERTITEL}
               icon={ICON_DATEI_GEFUELLT}
               colors={{ primary: 'var(--app-color-material)', secondary: 'var(--app-color-material-dunkel)' }}
               stats={(() => {
@@ -317,8 +325,9 @@ const AdminMaterialPage: React.FC = () => {
                       placeholder="Jahrgang"
                       style={{ width: '100%' }}
                     >
-                      <IonSelectOption value="alle">Alle Jahrgänge</IonSelectOption>
-                      <IonSelectOption value="global">Nur globales Material</IonSelectOption>
+                      {MATERIAL_LEITUNG_FILTER.map((f) => (
+                        <IonSelectOption key={f.schluessel} value={f.schluessel}>{f.label}</IonSelectOption>
+                      ))}
                       {(jahrgaenge || []).map(jg => (
                         <IonSelectOption key={jg.id} value={jg.id}>{jg.name}</IonSelectOption>
                       ))}
@@ -341,18 +350,9 @@ const AdminMaterialPage: React.FC = () => {
                   {filteredMaterials.length === 0 ? (
                     <EmptyState
                       icon={ICON_DATEI}
-                      // Der Jahrgangs-Hinweis nur, wenn der Server die Leere
-                      // damit begruendet hat UND kein eigener Filter die
-                      // Liste geleert haben kann: Bei aktiver Suche erklaert
-                      // die Suche die Leere, bei "nur globales Material"
-                      // der Filter -- der Jahrgangs-Hinweis waere dort
-                      // falsch (Muster wie KonfisView, 01.09.2026).
-                      title={ohneJahrgang && !search && !nurGlobal ? 'Kein Jahrgang zugewiesen' : 'Keine Materialien'}
-                      message={
-                        ohneJahrgang && !search && !nurGlobal
-                          ? 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Gemeindeleitung kann das in den Einstellungen ändern.'
-                          : 'Erstelle dein erstes Material mit dem + Button'
-                      }
+                      // Jahrgangs-Hinweis, Treffer oder echter Leerfall: seiten/materialLeitung.ts.
+                      title={leer.titel}
+                      message={leer.text}
                       iconColor="var(--app-color-material)"
                     />
                   ) : (

@@ -31,11 +31,15 @@ import {
 import { SectionHeader, ListSection, EventLegendModal, EventCornerBadges, AbsageBlock, formatEventDate as formatDate, formatEventTime as formatTime, istVergangen, istBegonnen, anwesenheitAusstehend, istAbgesagt, titelDekoration, zaehltAlsMeiner, kategorienText, zeigtPunkteart, punkteartText } from '../../shared';
 import { getStatusIcon } from '../../shared/StatusBadge';
 import { Event } from '../../../types/event';
+import { terminSuchtTreffer } from '../../../utils/termineWeb';
+import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
+import { KONFI_EVENTS, KONFI_EVENTS_LEER_TITEL, KONFI_EVENTS_TITEL_APP, MITGLIED_EVENTS_UNTERTITEL } from '../../../seiten/mitmachenMitglied';
+import type { KonfiEventFilter } from '../../shared/web/termine/terminFilter';
 
 interface EventsViewProps {
   events: Event[];
-  activeTab: 'meine' | 'alle' | 'konfirmation';
-  onTabChange: (tab: 'meine' | 'alle' | 'konfirmation') => void;
+  activeTab: KonfiEventFilter;
+  onTabChange: (tab: KonfiEventFilter) => void;
   onSelectEvent: (event: Event) => void;
   // Für Card-Modal-Optik (Sheet über der Seite statt Vollbild).
   presentingElement?: HTMLElement | null;
@@ -241,36 +245,23 @@ const EventsView: React.FC<EventsViewProps> = ({
     return { statusColor, statusText, statusIcon, isPastEvent, shouldGrayOut, isParticipated, isKonfirmationEvent };
   };
 
-  // Filtere Events basierend auf aktivem Tab
-  const getFilteredEvents = () => {
-    switch (activeTab) {
-      case 'meine':
-        return events.filter(zaehltAlsMeiner);
-      case 'alle':
-        // ABGESAGTE BLEIBEN AN IHRER DATUMSPOSITION (Simon, 16.09.2026).
-        // Der Server liefert nach event_date aufsteigend; hier wird bewusst
-        // nicht umsortiert. Ausfuehrliche Begruendung in shared/eventFormatting.ts.
-        return nonKonfirmationEvents.filter(e => !istVergangen(e));
-      case 'konfirmation':
-        return konfirmationEvents;
-      default:
-        return events;
-    }
-  };
-
-  const filteredEvents = getFilteredEvents().filter(event => {
-    if (!searchText.trim()) return true;
-    const q = searchText.toLowerCase();
-    return (event.title || '').toLowerCase().includes(q) ||
-           (event.location || '').toLowerCase().includes(q) ||
-           (event.description || '').toLowerCase().includes(q);
-  });
+  // Der Reiter aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts).
+  // ABGESAGTE BLEIBEN AN IHRER DATUMSPOSITION (Simon, 16.09.2026): Der Server
+  // liefert nach event_date aufsteigend; hier wird bewusst nicht umsortiert.
+  // Ausfuehrliche Begruendung in shared/eventFormatting.ts.
+  //
+  // Die Suche wie im Browser und beim Team: Name, Ort, Beschreibung, Umlaute
+  // austauschbar (terminSuchtTreffer). Bis 09.10.2026 suchte die App der Konfis
+  // nicht im Namen -- ein Event liess sich nicht ueber seinen Namen finden.
+  const filteredEvents = events
+    .filter((e) => wahlVon(KONFI_EVENTS, activeTab).passt?.(e) ?? true)
+    .filter((e) => terminSuchtTreffer(e, searchText, true));
 
   return (
     <div>
       <SectionHeader
-        title="Deine Events"
-        subtitle="Gottesdienste, Konfi-Tage und Fahrten"
+        title={KONFI_EVENTS_TITEL_APP}
+        subtitle={MITGLIED_EVENTS_UNTERTITEL}
         icon={ICON_TERMIN_GEFUELLT}
         preset="events"
         stats={statsMitSprung}
@@ -284,17 +275,13 @@ const EventsView: React.FC<EventsViewProps> = ({
       <div className="app-segment-wrapper">
         <IonSegment
           value={activeTab}
-          onIonChange={(e) => onTabChange(e.detail.value as 'meine' | 'alle' | 'konfirmation')}
+          onIonChange={(e) => onTabChange(e.detail.value as KonfiEventFilter)}
         >
-          <IonSegmentButton value="alle">
-            <IonLabel>Alle</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="meine">
-            <IonLabel>Meine</IonLabel>
-          </IonSegmentButton>
-          <IonSegmentButton value="konfirmation">
-            <IonLabel>Konfi</IonLabel>
-          </IonSegmentButton>
+          {inFassung(KONFI_EVENTS, 'app').map((r) => (
+            <IonSegmentButton key={r.schluessel} value={r.schluessel}>
+              <IonLabel>{r.kurz ?? r.label}</IonLabel>
+            </IonSegmentButton>
+          ))}
         </IonSegment>
       </div>
 
@@ -326,14 +313,8 @@ const EventsView: React.FC<EventsViewProps> = ({
         iconColorClass="events"
         isEmpty={filteredEvents.length === 0}
         emptyIcon={ICON_TERMIN}
-        emptyTitle="Keine Events gefunden"
-        emptyMessage={
-          activeTab === 'meine'
-            ? 'Du bist noch für keine Events angemeldet'
-            : activeTab === 'konfirmation'
-            ? 'Keine Konfirmationstermine verfügbar'
-            : 'Keine anstehenden Events'
-        }
+        emptyTitle={KONFI_EVENTS_LEER_TITEL}
+        emptyMessage={leerVon(KONFI_EVENTS, activeTab)}
         emptyIconColor="var(--app-color-events)"
       >
         {filteredEvents.map((event, index) => {

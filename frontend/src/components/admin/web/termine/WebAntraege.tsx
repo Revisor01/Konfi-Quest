@@ -36,12 +36,13 @@ import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { ANTRAG_FILTER, type AntragAktionen, type AntragFilter, type AntragZeile } from './typen';
 import '../../../../theme/web/termine.css';
 import { antragStatusRang } from '../../../../utils/statusReihenfolge';
-
-const STATUS_VON_FILTER: Record<Exclude<AntragFilter, 'alle'>, AntragZeile['status']> = {
-  offen: 'pending',
-  verbucht: 'approved',
-  abgelehnt: 'rejected',
-};
+import { inFassung, leerVon, wahlVon } from '../../../../seiten/beschreibung';
+import {
+  LEITUNG_ANTRAEGE_LEER_TITEL,
+  LEITUNG_ANTRAG_STATUS,
+  LEITUNG_ANTRAG_STATUS_BESCHRIFTUNG,
+  OHNE_JAHRGANG,
+} from '../../../../seiten/mitmachenLeitung';
 
 // "Verbucht" statt "Genehmigt" (Entscheidung 28.08.2026): Es beschreibt, was
 // passiert ist -- die Punkte sind gutgeschrieben --, nicht einen Verwaltungsakt.
@@ -64,13 +65,6 @@ const zeitpunkt = (wert?: string | null): number | null => {
   return Number.isNaN(ms) ? null : ms;
 };
 
-const LEER_TEXT: Record<AntragFilter, string> = {
-  offen: 'Keine Aktivitäten warten auf eine Entscheidung.',
-  verbucht: 'Noch keine Aktivität verbucht.',
-  abgelehnt: 'Keine abgelehnte Aktivität.',
-  alle: 'Konfirmand:innen können Aktivitäten beantragen.',
-};
-
 export interface WebAntraegeProps {
   antraege: readonly AntragZeile[];
   /**
@@ -88,12 +82,10 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
   const [suche, setSuche] = useState('');
   const [ansicht, setAnsicht] = useAnsicht('antraege', 'liste');
 
-  const zaehlen = useMemo(() => ({
-    offen: antraege.filter((a) => a.status === 'pending').length,
-    verbucht: antraege.filter((a) => a.status === 'approved').length,
-    abgelehnt: antraege.filter((a) => a.status === 'rejected').length,
-    alle: antraege.length,
-  }), [antraege]);
+  // Zahl je Stand, ohne die Suche -- Prädikate aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts).
+  const zaehlen = useMemo(() => Object.fromEntries(
+    LEITUNG_ANTRAG_STATUS.map((w) => [w.schluessel, antraege.filter((a) => w.passt?.(a) ?? true).length]),
+  ) as Record<AntragFilter, number>, [antraege]);
 
   // Neueste zuerst.
   const sichtbar = useMemo(() => {
@@ -101,7 +93,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       || suchTreffer(a.konfi_name || '', suche).length > 0
       || suchTreffer(a.activity_name || '', suche).length > 0;
     return antraege
-      .filter((a) => (filter === 'alle' ? true : a.status === STATUS_VON_FILTER[filter]))
+      .filter((a) => wahlVon(LEITUNG_ANTRAG_STATUS, filter).passt?.(a) ?? true)
       .filter(passtZurSuche)
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [antraege, filter, suche]);
@@ -218,21 +210,22 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
   return (
     <>
       {ohneJahrgang && (
-        <WebHinweis art="hinweis" titel="Kein Jahrgang zugewiesen">
-          Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du keine Meldungen von Konfis. Die Gemeindeleitung kann das in den Einstellungen ändern.
+        <WebHinweis art="hinweis" titel={OHNE_JAHRGANG.titel}>
+          {OHNE_JAHRGANG.text}
         </WebHinweis>
       )}
       <div className="web-werkzeuge">
         <WebChips<AntragFilter>
-          beschriftung="Aktivitäten nach Status"
+          beschriftung={LEITUNG_ANTRAG_STATUS_BESCHRIFTUNG}
           wert={filter}
           onWert={setFilter}
-          chips={[
-            { wert: 'offen', label: 'Offen', zahl: zaehlen.offen, rot: true, zahlText: 'warten auf Entscheidung' },
-            { wert: 'verbucht', label: 'Verbucht', zahl: zaehlen.verbucht },
-            { wert: 'abgelehnt', label: 'Abgelehnt', zahl: zaehlen.abgelehnt },
-            { wert: 'alle', label: 'Alle', zahl: zaehlen.alle },
-          ]}
+          chips={inFassung(LEITUNG_ANTRAG_STATUS, 'web').map((w) => ({
+            wert: w.schluessel,
+            label: w.label,
+            zahl: zaehlen[w.schluessel],
+            rot: w.zahlText !== undefined,
+            zahlText: w.zahlText?.(zaehlen[w.schluessel]),
+          }))}
         />
         <div className="web-werkzeuge__rechts">
           <WebSuche beschriftung="Aktivitäten durchsuchen" platzhalter="Person oder Aktivität suchen" wert={suche} onWert={setSuche} />
@@ -303,8 +296,8 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
         ) : (
           <WebLeer
             icon={ICON_TEXTDOKUMENT}
-            titel={ohneJahrgang && antraege.length === 0 ? 'Kein Jahrgang zugewiesen' : sucht ? 'Keine Treffer' : 'Keine Aktivitäten vorhanden'}
-            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl keine Aktivität.` : LEER_TEXT[filter]}
+            titel={ohneJahrgang && antraege.length === 0 ? OHNE_JAHRGANG.titel : sucht ? 'Keine Treffer' : LEITUNG_ANTRAEGE_LEER_TITEL}
+            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl keine Aktivität.` : leerVon(LEITUNG_ANTRAG_STATUS, filter)}
             aktion={sucht ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf> : undefined}
           />
         )}

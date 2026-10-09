@@ -23,7 +23,8 @@ import WebPill from '../../../web/WebPill';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { WebFilterAuswahl, WebSymbol, WebZeilenAktionen, WebZeilenKnopf } from './WebLeitungBausteine';
-import type { MaterialEintrag } from './verwaltungTypen';
+import type { MaterialEintrag } from './verwaltungTypen';import { MATERIAL_LEITUNG_FILTER, MATERIAL_LEITUNG_TITEL, MATERIAL_LEITUNG_UNTERTITEL, materialLeitungLeer } from '../../../../seiten/materialLeitung';
+
 
 /** "alle", "global" (nur Material fuer alle) oder die Nummer eines Jahrgangs. */
 export type MaterialFilter = string;
@@ -144,17 +145,14 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
     },
   ];
 
-  const leer = p.ohneJahrgang && p.suche === '' && p.filter !== 'global'
-    ? { titel: 'Kein Jahrgang zugewiesen', text: 'Dir ist noch kein Jahrgang zugewiesen — du siehst nur Material, das für alle freigegeben ist. Die Gemeindeleitung kann das in den Einstellungen ändern.' }
-    : sucht
-      ? { titel: 'Keine Materialien', text: 'Versuche andere Suchbegriffe oder einen anderen Jahrgang.' }
-      : { titel: 'Keine Materialien', text: 'Lege das erste Material mit „Neues Material“ an.' };
+  // Der Leerzustand aus der gemeinsamen Beschreibung (seiten/materialLeitung.ts).
+  const leer = materialLeitungLeer({ ohneJahrgang: p.ohneJahrgang, suche: p.suche, filter: p.filter }, 'web');
 
   return (
     <WebSeite
       bereich="Verwaltung"
-      titel="Material verwalten"
-      untertitel="Dokumente und Dateien"
+      titel={MATERIAL_LEITUNG_TITEL}
+      untertitel={MATERIAL_LEITUNG_UNTERTITEL}
       aktionen={(
         <WebKnopf art="primaer" onClick={p.onAnlegen}>
           <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
@@ -178,8 +176,7 @@ const WebMaterialVerwaltung: React.FC<WebMaterialVerwaltungProps> = (p) => {
             wert={p.filter}
             onWert={p.onFilter}
             optionen={[
-              { wert: 'alle', label: 'Alle Jahrgänge' },
-              { wert: 'global', label: 'Nur globales Material' },
+              ...MATERIAL_LEITUNG_FILTER.map((f) => ({ wert: f.schluessel, label: f.label })),
               ...p.jahrgaenge.map((j) => ({ wert: String(j.id), label: j.name })),
             ]}
           />

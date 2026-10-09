@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { BADGES_TITEL } from '../../seiten/badgesKonfi';
 
 // Angeglichene Rollen-Unterschiede (Simon, 05.09.2026).
 //
@@ -47,9 +48,11 @@ describe('Abzeichen tragen ueberall dasselbe Zeichen', () => {
 
   it('die Konfi-Badges-Seite nutzt das Band statt des Pokals', () => {
     const seite = lies('src/components/konfi/views/BadgesView.tsx');
-    // Die Ueberschriften der Seite.
-    expect(seite).toContain('title="Deine Badges"');
-    const kopf = seite.slice(seite.indexOf('title="Deine Badges"'));
+    // Die Ueberschriften der Seite -- der Text steht seit 09.10.2026 in
+    // seiten/badgesKonfi.ts (App und Browser lesen ihn dort).
+    expect(BADGES_TITEL).toBe('Deine Badges');
+    expect(seite).toContain('title={BADGES_TITEL}');
+    const kopf = seite.slice(seite.indexOf('title={BADGES_TITEL}'));
     expect(kopf.slice(0, 400)).toContain('ICON_ABZEICHEN_GEFUELLT');
     // Der Pokal bleibt fuer die Kategorie "Punkte-Sammler" -- das ist eine
     // Abzeichenart, keine Ueberschrift fuer Abzeichen insgesamt.
@@ -261,10 +264,11 @@ describe('Chat: erst filtern, dann suchen', () => {
   });
 
   it('die Reiter heissen Alle, Ungelesen, Konfis und Team', () => {
+    // Seit 09.10.2026 aus der gemeinsamen Beschreibung (seiten/chats.ts); dass
+    // App und Browser genau diese Reiter zeigen, prueft __tests__/seiten/chats.test.tsx gerendert.
     const seite = lies('src/components/chat/ChatOverview.tsx');
-    for (const wert of ['alle', 'ungelesen', 'konfis', 'team']) {
-      expect(seite).toContain(`<IonSegmentButton value="${wert}">`);
-    }
+    expect(seite).toContain("from '../../seiten/chats'");
+    expect(seite).toContain('chatReiterFuer(gehoertZumTeam).map(');
   });
 });
 

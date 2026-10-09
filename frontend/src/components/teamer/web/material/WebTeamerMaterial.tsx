@@ -25,6 +25,7 @@ import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { WebFilterAuswahl, WebSymbol, WebZeilenKnopf } from '../../../admin/web/leitung/WebLeitungBausteine';
 import WebMaterialInhalt from './WebMaterialInhalt';
+import { MATERIAL_ALLE_JAHRGAENGE, MATERIAL_TEAM_TITEL_WEB, MATERIAL_TEAM_UNTERTITEL, materialTeamLeer } from '../../../../seiten/materialTeam';
 import type { LadendeDatei, MaterialDatei, MaterialDetailDaten, MaterialListeneintrag } from './materialTypen';
 
 export interface WebTeamerMaterialProps {
@@ -90,7 +91,7 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
 
   if (p.laedt) {
     return (
-      <WebSeite bereich="Material" titel="Material fürs Team">
+      <WebSeite bereich="Material" titel={MATERIAL_TEAM_TITEL_WEB}>
         <WebLaden kacheln={3} karten={1} text="Die Materialien werden geladen." />
       </WebSeite>
     );
@@ -136,7 +137,7 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
   const stats = materialStats(alle);
 
   return (
-    <WebSeite bereich="Material" titel="Material fürs Team" untertitel="Dokumente und Dateien">
+    <WebSeite bereich="Material" titel={MATERIAL_TEAM_TITEL_WEB} untertitel={MATERIAL_TEAM_UNTERTITEL}>
       <div className="web-raster web-raster--kacheln">
         <WebKachel label="Material" wert={String(stats.material)} />
         <WebKachel label="Dateien" wert={String(stats.dateien)} />
@@ -150,7 +151,7 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
             label="Jahrgang"
             wert={p.jahrgangId === undefined ? 'alle' : String(p.jahrgangId)}
             onWert={(w) => p.onJahrgang(w === 'alle' ? undefined : Number(w))}
-            optionen={[{ wert: 'alle', label: 'Alle Jahrgänge' }, ...p.jahrgaenge.map((j) => ({ wert: String(j.id), label: j.name }))]}
+            optionen={[{ wert: 'alle', label: MATERIAL_ALLE_JAHRGAENGE }, ...p.jahrgaenge.map((j) => ({ wert: String(j.id), label: j.name }))]}
           />
         )}
         {(sucht || p.jahrgangId !== undefined) && (
@@ -162,8 +163,8 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
         <WebKarte titel="Material">
           <WebLeer
             icon={ICON_DATEI}
-            titel="Keine Materialien"
-            text={sucht || p.jahrgangId !== undefined ? 'Versuche andere Suchbegriffe oder einen anderen Jahrgang.' : 'Noch keine Materialien vorhanden.'}
+            titel={materialTeamLeer(sucht || p.jahrgangId !== undefined).titel}
+            text={materialTeamLeer(sucht || p.jahrgangId !== undefined).text}
           />
         </WebKarte>
       ) : (

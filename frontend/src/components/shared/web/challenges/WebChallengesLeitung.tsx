@@ -5,7 +5,8 @@
 // Challenges als Tabelle. Der Umschalter Liste | Kacheln steht rechts neben
 // der Suche; der Browser merkt sich die Wahl, beim ersten Oeffnen startet die
 // Leitung mit der Liste, das Team mit Kacheln (components/web/useAnsicht).
-// Filter (laufend, geplant, beendet, wartet auf Freigabe), Zielgruppe,
+// Filter (Aktuell, Geplant, Archiv, Alle, Wartet auf Freigabe -- aus
+// seiten/challengesLeitung.ts, wie die Reiter der App), Zielgruppe,
 // Jahrgang und eine Live-Suche gelten in beiden Ansichten gleich; "Neue
 // Challenge" oeffnet das Formular der App (useChallengeFormular ->
 // ChallengeManageModal).
@@ -40,25 +41,18 @@ import {
   leitungEintraege,
   zielgruppeVon,
   type ListenAuswahl,
-  type ListenFilter,
 } from '../../../../utils/challengesWeb';
 import { suchbegriff } from '../../../../utils/supportWeb';
 import type { AdminChallenge, ChallengeAudience, ChallengeMark, OffenerStempel } from '../../../../types/challenges';
 import '../../../../theme/web/challenges.css';
-
-/** Wortgleich mit der Liste der App (ChallengesManageView): derselbe Grund, dieselben Worte. */
-const OHNE_JAHRGANG = {
-  titel: 'Kein Jahrgang zugewiesen',
-  text: 'Dir ist noch kein Jahrgang zugewiesen, deshalb siehst du hier keine Challenges. Die Gemeindeleitung kann das in den Einstellungen ändern.',
-};
-
-const LEER: Record<ListenFilter, { titel: string; text: string }> = {
-  laufend: { titel: 'Gerade läuft keine Challenge', text: 'Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können' },
-  geplant: { titel: 'Nichts in Planung', text: 'Entwürfe und Challenges mit einem Startdatum in der Zukunft erscheinen hier' },
-  beendet: { titel: 'Noch nichts im Archiv', text: 'Beendete Challenges sammeln sich hier — mit allen Beiträgen zum Nachlesen' },
-  alle: { titel: 'Noch keine Challenge', text: 'Lege eine Challenge an, damit deine Konfis eigene Beiträge einreichen können' },
-  wartet: { titel: 'Nichts wartet auf Freigabe', text: 'Beiträge, die du freigeben sollst, erscheinen hier — mit der Challenge, zu der sie gehören.' },
-};
+import { leerVon, zahlTextVon } from '../../../../seiten/beschreibung';
+import {
+  CHALLENGES_LEITUNG_LEER_TITEL,
+  CHALLENGES_LEITUNG_REITER,
+  CHALLENGES_LEITUNG_TITEL,
+  CHALLENGES_LEITUNG_UNTERTITEL,
+  CHALLENGES_OHNE_JAHRGANG,
+} from '../../../../seiten/challengesLeitung';
 
 const ZIELGRUPPEN_REIHE: readonly ChallengeAudience[] = ['konfis', 'konfis_und_team', 'nur_team'];
 
@@ -101,7 +95,7 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
   const { user } = useApp();
   const darfLoeschen = darfChallengesLoeschen(user);
   const [ansicht, setAnsicht] = useAnsicht('challenges-leitung', ansichtVorgabe(user?.role_name));
-  const [auswahl, setAuswahl] = useState<ListenAuswahl>({ ...OHNE_AUSWAHL, filter: 'laufend' });
+  const [auswahl, setAuswahl] = useState<ListenAuswahl>({ ...OHNE_AUSWAHL, filter: 'aktuell' });
 
   // Defensive wie die Liste der App: kaputte oder gecachte Antworten als leer behandeln.
   const liste = useMemo(() => (Array.isArray(challenges) ? challenges : []), [challenges]);
@@ -140,17 +134,20 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
   if (loading) {
     inhalt = <WebLaden karten={3} text="Challenges werden geladen..." />;
   } else {
+    // Titel, Leertexte und Reiter aus der gemeinsamen Beschreibung (seiten/challengesLeitung.ts).
     const leer = ohneJahrgang && liste.length === 0
-      ? OHNE_JAHRGANG
+      ? CHALLENGES_OHNE_JAHRGANG
       : filtertEin
         ? { titel: 'Keine Treffer', text: 'In dieser Auswahl gibt es keine Challenge. Ändere den Filter oder die Suche.' }
-        : LEER[auswahl.filter];
+        : { titel: CHALLENGES_LEITUNG_LEER_TITEL[auswahl.filter], text: leerVon(CHALLENGES_LEITUNG_REITER, auswahl.filter) };
     inhalt = (
       <>
         {liste.length > 0 && (
           <WebChallengeFilter
+            // Nur am Chip "Wartet auf Freigabe" zaehlt die Zahl Wartendes (orange);
+            // an den uebrigen zaehlt sie Challenges, ihr Vorlesesatz gilt der App.
             chips={LISTEN_FILTER.map((wert) => (wert === 'wartet'
-              ? { wert, zahl: zaehlen[wert], ton: 'orange' as const, zahlText: 'Beiträge warten auf Freigabe' }
+              ? { wert, zahl: zaehlen[wert], ton: 'orange' as const, zahlText: zahlTextVon(CHALLENGES_LEITUNG_REITER, wert, zaehlen[wert]) }
               : { wert, zahl: zaehlen[wert] }))}
             filter={auswahl.filter}
             onFilter={(filter) => setAuswahl((a) => ({ ...a, filter }))}
@@ -251,8 +248,8 @@ const WebChallengesLeitung: React.FC<WebChallengesLeitungProps> = ({
   return (
     <WebSeite
       bereich="Challenges"
-      titel="Challenges"
-      untertitel={liste.length > 0 ? untertitel : 'Anlegen, begleiten, mitmachen'}
+      titel={CHALLENGES_LEITUNG_TITEL}
+      untertitel={liste.length > 0 ? untertitel : CHALLENGES_LEITUNG_UNTERTITEL}
       pageRef={pageRef}
       aktionen={(
         <WebKnopf art="primaer" onClick={onNeu}>

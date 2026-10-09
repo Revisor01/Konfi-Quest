@@ -156,13 +156,17 @@ describe('Vorgänge (App): Filter, Auswahl, Suche', () => {
 
   it('ein Filter ohne Vorgänge: eigener Hinweis', async () => {
     await zeigen();
+    // Leer durch die Suche: Das sagt der Hinweis, mit dem Weg zurück (wie im Browser, seit 09.10.2026).
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: 'gibt es nicht' } });
-    expect(screen.getByText('Keine Vorgänge')).toBeInTheDocument();
+    expect(screen.getByText('Keine Treffer')).toBeInTheDocument();
+    expect(screen.getByText('In dieser Auswahl gibt es keinen Vorgang zu „gibt es nicht“.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Auswahl zurücksetzen' })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Suche'), { target: { value: '' } });
     fireEvent.click(segment('Neu 2'));
     server.stand.vorgaenge.forEach((v) => { v.status = 'in_arbeit'; });
     await act(async () => { (await import('../../../utils/supportAktualisieren')).meldeSupportGeaendert(); });
     await waitFor(() => expect(screen.getByText('Alle Vorgänge sind schon in Arbeit.')).toBeInTheDocument());
+    expect(screen.getByText('Nichts Neues')).toBeInTheDocument();
   });
 
   it('?filter=neu und ?art=lizenz aus der Adresse stellen die Auswahl ein; die alte Anfragen-Liste führt auf die Art „Neue Gemeinde“', async () => {

@@ -23,6 +23,13 @@ import WebLegendeKnopf from './WebLegendeKnopf';
 import WebEigeneAntraege from './WebEigeneAntraege';
 import type { EigenerAntragFilter, MitgliedSegment } from './terminFilter';
 import '../../../../theme/web/termine.css';
+import { labelVon } from '../../../../seiten/beschreibung';
+import {
+  MITGLIED_ANTRAEGE_UNTERTITEL,
+  MITGLIED_BEREICHE,
+  MITGLIED_BEREICHE_BESCHRIFTUNG,
+  MITGLIED_EVENTS_UNTERTITEL,
+} from '../../../../seiten/mitmachenMitglied';
 
 export interface WebMitmachenMitgliedProps {
   rolle: 'konfi' | 'team';
@@ -120,17 +127,20 @@ const WebMitmachenMitglied: React.FC<WebMitmachenMitgliedProps> = (p) => {
   return (
     <WebSeite
       bereich="Mitmachen"
-      titel={antraege ? 'Aktivitäten' : 'Events'}
-      untertitel={antraege ? 'Was du gemeldet hast' : 'Gottesdienste, Konfi-Tage und Fahrten'}
+      titel={labelVon(MITGLIED_BEREICHE, antraege ? 'antraege' : 'events')}
+      untertitel={antraege ? MITGLIED_ANTRAEGE_UNTERTITEL : MITGLIED_EVENTS_UNTERTITEL}
       aktionen={aktionen}
       pageRef={p.pageRef}
     >
       <WebReiter
-        beschriftung="Bereiche von Mitmachen"
-        eintraege={[
-          { schluessel: 'events', label: 'Events', href: p.basisPfad, aktiv: !antraege },
-          { schluessel: 'antraege', label: 'Aktivitäten', href: `${p.basisPfad}?segment=antraege`, aktiv: antraege },
-        ]}
+        beschriftung={MITGLIED_BEREICHE_BESCHRIFTUNG}
+        // Bereiche aus der gemeinsamen Beschreibung (seiten/mitmachenMitglied.ts).
+        eintraege={MITGLIED_BEREICHE.map((b) => ({
+          schluessel: b.schluessel,
+          label: b.label,
+          href: b.schluessel === 'antraege' ? `${p.basisPfad}?segment=antraege` : p.basisPfad,
+          aktiv: (b.schluessel === 'antraege') === antraege,
+        }))}
       />
       {inhalt}
     </WebSeite>

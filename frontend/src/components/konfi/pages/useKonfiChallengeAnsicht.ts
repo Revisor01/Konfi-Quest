@@ -22,6 +22,7 @@ import type {
   ChallengeSubmission,
   ChallengeMediaType
 } from '../../../types/challenges';
+import type { ChallengeDetailKonfiReiter } from '../../../seiten/challengeDetailKonfi';
 
 // Was die Challenge-Seite der Konfis ableitet -- laeuft sie noch, wer darf
 // einreichen, was steht unter welchem Reiter, wie lautet die Sichtbarkeit --
@@ -31,7 +32,7 @@ import type {
 // an der Darstellung zu aendern.
 
 /** Reiter im Challenge-Detail: Gruppen-Feed oder eigene Beitraege. */
-export type KonfiReiter = 'feed' | 'meins';
+export type KonfiReiter = ChallengeDetailKonfiReiter;
 
 export const MEDIA_ICON: Record<ChallengeMediaType, string> = {
   text: ICON_TEXTDOKUMENT,

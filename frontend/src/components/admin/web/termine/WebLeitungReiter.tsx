@@ -6,6 +6,7 @@
 import React from 'react';
 import { WebReiter } from '../../../shared/web/termine/WebTerminBausteine';
 import type { LeitungSegment } from './typen';
+import { LEITUNG_BEREICHE, LEITUNG_BEREICHE_BESCHRIFTUNG } from '../../../../seiten/mitmachenLeitung';
 
 const WebLeitungReiter: React.FC<{
   segment: LeitungSegment;
@@ -15,25 +16,19 @@ const WebLeitungReiter: React.FC<{
   wartendeAntraege: number;
 }> = ({ segment, wartendVerbuchen, wartendeAntraege }) => (
   <WebReiter
-    beschriftung="Bereiche von Mitmachen"
-    eintraege={[
-      {
-        schluessel: 'events',
-        label: 'Events',
-        href: '/admin/events',
-        aktiv: segment === 'events',
-        zahl: wartendVerbuchen,
-        zahlText: wartendVerbuchen === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung',
-      },
-      {
-        schluessel: 'antraege',
-        label: 'Aktivitäten',
-        href: '/admin/events?segment=antraege',
-        aktiv: segment === 'antraege',
-        zahl: wartendeAntraege,
-        zahlText: wartendeAntraege === 1 ? 'Antrag wartet auf Entscheidung' : 'Anträge warten auf Entscheidung',
-      },
-    ]}
+    beschriftung={LEITUNG_BEREICHE_BESCHRIFTUNG}
+    // Beschriftung, Reihenfolge und Vorlesesatz aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts).
+    eintraege={LEITUNG_BEREICHE.map((b) => {
+      const zahl = b.schluessel === 'events' ? wartendVerbuchen : wartendeAntraege;
+      return {
+        schluessel: b.schluessel,
+        label: b.label,
+        href: b.schluessel === 'events' ? '/admin/events' : '/admin/events?segment=antraege',
+        aktiv: segment === b.schluessel,
+        zahl,
+        zahlText: b.zahlText?.(zahl),
+      };
+    })}
   />
 );
 

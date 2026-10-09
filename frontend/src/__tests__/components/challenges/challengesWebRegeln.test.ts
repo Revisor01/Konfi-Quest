@@ -1,6 +1,7 @@
+import { labelVon } from '../../../seiten/beschreibung';
+import { CHALLENGES_LEITUNG_REITER } from '../../../seiten/challengesLeitung';
 import { describe, it, expect } from 'vitest';
 import {
-  FILTER_TEXT,
   KONFI_LISTEN_FILTER,
   LISTEN_FILTER,
   OHNE_AUSWAHL,
@@ -95,9 +96,9 @@ describe('Filter nach Zustand', () => {
   const eintraege = leitungEintraege(ALLE, JETZT, { 1: 2, 5: 1 });
 
   it('laufend, geplant (mit Entwuerfen), beendet, alle', () => {
-    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'laufend' }))).sort()).toEqual([1, 2]);
+    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'aktuell' }))).sort()).toEqual([1, 2]);
     expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'geplant' }))).sort()).toEqual([3, 4]);
-    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'beendet' })))).toEqual([5]);
+    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'archiv' })))).toEqual([5]);
     expect(challengesFiltern(eintraege, auswahl({ filter: 'alle' }))).toHaveLength(5);
   });
 
@@ -106,20 +107,20 @@ describe('Filter nach Zustand', () => {
   });
 
   it('die Zahl an den Chips: Challenges je Zustand, an "Wartet" die wartenden Beitraege', () => {
-    expect(challengesZaehlen(eintraege, auswahl())).toEqual({ laufend: 2, geplant: 2, beendet: 1, alle: 5, wartet: 3 });
+    expect(challengesZaehlen(eintraege, auswahl())).toEqual({ aktuell: 2, geplant: 2, archiv: 1, alle: 5, wartet: 3 });
   });
 
   it('passtZumFilter: nur ein Entwurf ist "geplant", nur ein beendeter "beendet"', () => {
     expect(passtZumFilter({ status: 'draft' }, 'geplant')).toBe(true);
-    expect(passtZumFilter({ status: 'draft' }, 'laufend')).toBe(false);
-    expect(passtZumFilter({ status: 'ended' }, 'beendet')).toBe(true);
+    expect(passtZumFilter({ status: 'draft' }, 'aktuell')).toBe(false);
+    expect(passtZumFilter({ status: 'ended' }, 'archiv')).toBe(true);
     expect(passtZumFilter({ status: 'active', wartend: 0 }, 'wartet')).toBe(false);
   });
 
   it('die Filterlisten: Team und Leitung haben "wartet", Konfis weder "geplant" noch "wartet"', () => {
-    expect(LISTEN_FILTER).toEqual(['laufend', 'geplant', 'beendet', 'alle', 'wartet']);
-    expect(KONFI_LISTEN_FILTER).toEqual(['laufend', 'beendet', 'alle']);
-    expect(FILTER_TEXT.wartet).toBe('Wartet auf Freigabe');
+    expect(LISTEN_FILTER).toEqual(['aktuell', 'geplant', 'archiv', 'alle', 'wartet']);
+    expect(KONFI_LISTEN_FILTER).toEqual(['aktuell', 'archiv', 'alle']);
+    expect(labelVon(CHALLENGES_LEITUNG_REITER, 'wartet')).toBe('Wartet auf Freigabe');
   });
 });
 
@@ -166,12 +167,12 @@ describe('Zielgruppe, Jahrgang und Suche', () => {
 
   it('Zaehler an den Chips folgen Zielgruppe und Suche, nicht dem Zustand', () => {
     const z = challengesZaehlen(eintraege, auswahl({ suche: 'fuerbitten' }));
-    expect(z).toMatchObject({ laufend: 1, geplant: 0, beendet: 0, alle: 1 });
+    expect(z).toMatchObject({ aktuell: 1, geplant: 0, archiv: 0, alle: 1 });
   });
 
   it('alles zusammen: laufend UND Zielgruppe UND Suche', () => {
-    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'laufend', zielgruppe: 'konfis_und_team', suche: 'bitte' })))).toEqual([1]);
-    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'beendet', zielgruppe: 'konfis_und_team', suche: 'bitte' })))).toEqual([]);
+    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'aktuell', zielgruppe: 'konfis_und_team', suche: 'bitte' })))).toEqual([1]);
+    expect(ids(challengesFiltern(eintraege, auswahl({ filter: 'archiv', zielgruppe: 'konfis_und_team', suche: 'bitte' })))).toEqual([]);
   });
 });
 

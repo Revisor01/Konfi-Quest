@@ -66,9 +66,11 @@ import WebTeamTabelle from './WebTeamTabelle';
 import WebTeamKacheln from './WebTeamKacheln';
 import { WebFilterAuswahl } from './WebLeitungBausteine';
 import { useSucheMessung } from '../../../../hooks/useSucheMessung';
+import { inFassung, schluesselIn } from '../../../../seiten/beschreibung';
+import { KONFIS_ANSICHT, KONFIS_ANSICHT_BESCHRIFTUNG, KONFIS_JAHRGANG_FILTER, TEAM_LEER, konfisLeerText, type KonfisAnsichtSchluessel } from '../../../../seiten/konfisLeitung';
 
-export type KonfisAnsicht = 'konfis' | 'team';
-const ANSICHTEN: readonly KonfisAnsicht[] = ['konfis', 'team'];
+export type KonfisAnsicht = KonfisAnsichtSchluessel;
+const ANSICHTEN: readonly KonfisAnsicht[] = schluesselIn(KONFIS_ANSICHT, 'web');
 
 export interface WebKonfisProps {
   konfis: readonly KonfiListenEintrag[];
@@ -230,10 +232,12 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
 
   // Die Zahl am Reiter "Team" steht erst da, wenn die Liste einmal geladen ist.
   const teamGeladen = team.geladen && !team.fehler;
-  const chips = [
-    { wert: 'konfis' as const, label: 'Konfis', zahl: konfis.length },
-    { wert: 'team' as const, label: 'Team', zahl: teamGeladen ? team.teamers.length : undefined },
-  ];
+  // Reiter aus der gemeinsamen Beschreibung (seiten/konfisLeitung.ts).
+  const chips = inFassung(KONFIS_ANSICHT, 'web').map((a) => ({
+    wert: a.schluessel,
+    label: a.label,
+    zahl: a.schluessel === 'konfis' ? konfis.length : teamGeladen ? team.teamers.length : undefined,
+  }));
 
   const kacheln = istTeam ? (
     <>
@@ -267,8 +271,8 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
       inhalt = (
         <WebLeer
           icon={ICON_GRUPPE}
-          titel="Niemand im Team gefunden"
-          text={sucht ? 'Versuche andere Suchbegriffe.' : 'Noch niemand im Team.'}
+          titel={TEAM_LEER.titel}
+          text={sucht ? TEAM_LEER.keineTreffer : TEAM_LEER.keinTeam}
         />
       );
     } else {
@@ -290,16 +294,13 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
     }
   } else if (sichtbareKonfis.length === 0) {
     const keinJahrgang = ohneJahrgang && !sucht;
+    // Dieselben Sätze wie in der App (seiten/konfisLeitung.ts).
+    const leer = konfisLeerText({ sucht, ohneJahrgang, jahrgangGewaehlt: jahrgang !== 'alle' });
     inhalt = (
       <WebLeer
         icon={ICON_GRUPPE}
-        titel={keinJahrgang ? 'Kein Jahrgang zugewiesen' : 'Keine Konfis gefunden'}
-        text={sucht
-          ? 'Versuche andere Suchbegriffe.'
-          : keinJahrgang
-            // Derselbe Wortlaut wie in der App: Es gibt Konfis, dieser Zugang darf sie nur nicht sehen.
-            ? 'Dir ist noch kein Jahrgang zugewiesen. Die Gemeindeleitung kann das in den Einstellungen ändern.'
-            : jahrgang !== 'alle' ? 'In diesem Jahrgang gibt es noch keine Konfis.' : 'Noch keine Konfis angelegt.'}
+        titel={leer.titel}
+        text={leer.text}
         aktion={!sucht && !keinJahrgang && darfVerwalten && konfis.length === 0
           ? <WebKnopf art="primaer" onClick={onKonfiAnlegen}>Konfi anlegen</WebKnopf>
           : undefined}
@@ -332,7 +333,7 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
       <div className="web-raster web-raster--kacheln">{kacheln}</div>
 
       <div className={`web-werkzeuge${inhaltIstKacheln ? ' web-werkzeuge--kacheln' : ''}`}>
-        <WebChips<KonfisAnsicht> beschriftung="Konfis oder Team" chips={chips} wert={ansicht} onWert={(a) => { setAnsicht(a); setSuche(''); }} />
+        <WebChips<KonfisAnsicht> beschriftung={KONFIS_ANSICHT_BESCHRIFTUNG} chips={chips} wert={ansicht} onWert={(a) => { setAnsicht(a); setSuche(''); }} />
         <WebSuche
           beschriftung={istTeam ? 'Im Team suchen' : 'Konfi suchen'}
           platzhalter={istTeam ? 'Im Team suchen …' : 'Name oder Benutzername …'}
@@ -344,7 +345,7 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
             label="Jahrgang"
             wert={jahrgang}
             onWert={setJahrgang}
-            optionen={[{ wert: 'alle', label: 'Alle Jahrgänge' }, ...meineJahrgaenge.map((j) => ({ wert: j.name, label: j.name }))]}
+            optionen={[{ wert: 'alle', label: KONFIS_JAHRGANG_FILTER.alle }, ...meineJahrgaenge.map((j) => ({ wert: j.name, label: j.name }))]}
           />
         )}
         <div className="web-werkzeuge__rechts">

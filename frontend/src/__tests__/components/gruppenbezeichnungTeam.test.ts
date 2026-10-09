@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { BENUTZER_FILTER, BENUTZER_UNTERTITEL } from '../../seiten/benutzer';
+import { KONFIS_ANSICHT, TEAM_LEER } from '../../seiten/konfisLeitung';
+import { DASHBOARD_FUER, DASHBOARD_LISTE_TITEL } from '../../seiten/dashboardEinstellungen';
 
 // Die GRUPPE heisst in der Oberflaeche "Team", die EINZELPERSON bleibt
 // "Teamer:in". Frueher stand an denselben Stellen mal das eine, mal das
@@ -15,13 +18,17 @@ const lies = (pfad: string): string =>
   readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
 describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
+  // Reiter, Untertitel und Leertexte stehen seit 09.10.2026 in der gemeinsamen
+  // Beschreibung unter seiten/ (App und Browser lesen sie dort); gerendert
+  // prueft das __tests__/seiten/. Hier bleiben die Kacheln und Listenkoepfe,
+  // die noch in der Komponente stehen.
   it('UsersView nennt Kachel und Segment gleich', () => {
     const quelle = lies('src/components/admin/UsersView.tsx');
     expect(quelle).toContain("label: 'Team'");
     // Leitung und Org-Leitung zusammen heissen "Leitung" (Simon, 28.09.2026).
-    expect(quelle).toContain('subtitle="Leitung, Team und Rollen"');
+    expect(BENUTZER_UNTERTITEL).toBe('Leitung, Team und Rollen');
     expect(quelle).toContain("label: 'Leitung'");
-    expect(quelle).toContain('<IonLabel>Leitung</IonLabel>');
+    expect(BENUTZER_FILTER.map((w) => w.label)).toEqual(['Alle', 'Aktiv', 'Leitung', 'Team']);
     expect(quelle).not.toContain("label: 'Teamer:in'");
   });
 
@@ -29,7 +36,8 @@ describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
     const quelle = lies('src/components/admin/KonfisView.tsx');
     expect(quelle).toContain("viewMode === 'teamer' ? 'Team' : 'Konfis'");
     expect(quelle).toContain('title="Team"');
-    expect(quelle).toContain("'Noch niemand im Team'");
+    expect(KONFIS_ANSICHT.map((a) => a.label)).toEqual(['Konfis', 'Team']);
+    expect(TEAM_LEER.keinTeam).toBe('Noch niemand im Team.');
     expect(quelle).toContain("'Im Team suchen...'");
     // Die Einzelperson bleibt: Loeschen betrifft genau eine Person.
     expect(quelle).toContain('aria-label="Teamer:in löschen"');
@@ -38,8 +46,8 @@ describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
   it('Dashboard-Einstellungen nennen Kachel und Reiter gleich', () => {
     const quelle = lies('src/components/admin/pages/AdminDashboardSettingsPage.tsx');
     expect(quelle).toContain("label: 'Team'");
-    expect(quelle).toContain('<IonLabel>Team</IonLabel>');
-    expect(quelle).toContain('<IonLabel>Team-Dashboard</IonLabel>');
+    expect(DASHBOARD_FUER.map((r) => r.label)).toEqual(['Konfi', 'Team']);
+    expect(DASHBOARD_LISTE_TITEL.teamer).toBe('Team-Dashboard');
     expect(quelle).not.toContain('<IonLabel>Teamer:innen</IonLabel>');
   });
 
