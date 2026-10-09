@@ -236,6 +236,9 @@ Versionsüberschrift.
   Chat-Nachrichten mehr aufs Handy; aus den anderen Gemeinden weiter.
 - Löscht die Leitung eine Konfi, deren Konto noch zu einer weiteren Gemeinde
   gehört, endet nur die Mitgliedschaft in der eigenen Gemeinde.
+- Auf Android reicht die App auf jeder Systemversion bis unter die
+  durchsichtige Status- und Navigationsleiste, wie es ab Android 15 ohnehin
+  gilt.
 
 ### Behoben
 - Mitteilungen zu Anträgen, die schon vor dem Aufräumen beim Löschen
@@ -262,6 +265,9 @@ Versionsüberschrift.
   Zugangsdaten fehlen; in der App sagt ein leerer Filter, was fehlt.
 - Die Suche im Material des Teams übergeht Leerzeichen am Rand und findet
   „mueller“ auch als „Müller“.
+- Ist im System „Bewegung reduzieren" eingeschaltet, stehen die Punkte-Ringe
+  und die Zahlen im Rückblick sofort auf ihrem Wert, statt sich aufzubauen;
+  der Rückblick springt von Seite zu Seite, und das Konfetti fällt weg.
 - Mitteilungen im Postfach vom 21. bis 23.08.2026 zeigen ihre richtige
   Uhrzeit statt einer zwei Stunden späteren.
 - Zwischen Mitternacht und 2 Uhr nachts gilt auch auf dem Server schon der neue
@@ -409,6 +415,8 @@ Versionsüberschrift.
 ### Sonstiges
 - Reiter, Filter und Leertexte jeder Seite stehen für App und Browser an
   einer Stelle; ein neuer Filter erscheint so in beiden zugleich.
+- Die automatischen Prüfungen messen den Dunkelmodus im Browser nach, sobald
+  sich Farben oder das Erscheinungsbild ändern.
 - Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
 - Die anonyme Nutzungsmessung erfasst weitere Funktionen — etwa Abmeldungen,
   Postfach, Push-Auswahl, Einladungen, Suche, Jahresrückblick und offline

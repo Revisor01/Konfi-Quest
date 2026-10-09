@@ -56,6 +56,7 @@ import './share/ShareCard.css';
 import { punkteText } from '../../utils/punkteText';
 import { useBisEndeMessung } from '../../hooks/useBisEndeMessung';
 import { trackHandlung } from '../../services/analytics';
+import { bewegungReduziert } from '../../utils/bewegung';
 
 interface WrappedModalProps {
   onClose: () => void;
@@ -717,7 +718,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
             next: { translate: ['120%', 0, -500], rotate: [0, 0, 5], scale: 0.8, opacity: 0 },
           }}
           onSlideChange={handleSlideChange}
-          speed={500}
+          speed={bewegungReduziert() ? 0 : 500}
           className="wrapped-swiper"
         >
           {slides.map((slide) => (

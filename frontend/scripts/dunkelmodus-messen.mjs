@@ -32,9 +32,11 @@
  * Warum als Skript: dunkelmodus.test.ts liest das Stylesheet als Text und
  * kann weder Spezifitaet gegen das Theme noch das Zusammenspiel von Farbe,
  * Grund und Shadow-DOM im Browser sehen (Audit BF-09: 104 Verstoesse bei
- * gruenen Tests). Kein CI-Anschluss: Die Pipeline hat keinen laufenden Stack.
- * Lokal laufen lassen, bevor eine Farbaenderung committet wird, und die Zahlen
- * in die Commit-Nachricht schreiben.
+ * gruenen Tests). In der CI laeuft es im Job "dunkelmodus" (ci.yml) gegen den
+ * E2E-Stack, wenn sich Stylesheets, Theme oder die Messung aendern; die
+ * Testdaten legt scripts/dunkelmodus-daten.mjs an. Trotzdem lokal laufen
+ * lassen, bevor eine Farbaenderung committet wird, und die Zahlen in die
+ * Commit-Nachricht schreiben.
  *
  * Voraussetzungen:
  *   - Backend gegen eine Datenbank mit dem Test-Seed

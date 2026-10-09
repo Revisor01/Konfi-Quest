@@ -82,6 +82,43 @@ const config: CapacitorConfig = {
     '@capawesome/capacitor-badge',
     '@capgo/capacitor-native-biometric',
   ],
+  // ANDROID OHNE @capacitor/status-bar (09.10.2026, Play Console: "eingestellte
+  // APIs Window.get/setStatusBarColor").
+  //
+  // Die App ruft das Plugin nirgends auf (kein StatusBar.* in src/). Auf
+  // Android tut es trotzdem etwas: Sein load() baut beim Start die Klasse
+  // StatusBar, und deren Konstruktor ruft getStatusBarColor() und ueber
+  // setOverlaysWebView(false) setStatusBarColor() -- ohne Versionspruefung,
+  // bei jedem Start. Ab Android 15 sind beide wirkungslos (randlose Anzeige
+  // ist dort Pflicht), die Console zaehlt sie trotzdem. Eine neuere Fassung
+  // hilft nicht: 8.0.4 hat denselben Android-Code, 9.0.0-alpha.2 ruft die
+  // APIs weiterhin (und verlangt Capacitor 9).
+  //
+  // Farbe der Leisten-Symbole und Insets kommen auf Android ohnehin vom
+  // eingebauten SystemBars-Plugin (plugins.SystemBars unten). iOS behaelt das
+  // Plugin (oben in der allgemeinen Liste). Diese Liste ERSETZT die
+  // allgemeine fuer Android: Wer oben ein Plugin eintraegt, traegt es auch
+  // hier ein -- androidOhneStatusBar.test.ts faellt sonst.
+  android: {
+    includePlugins: [
+      '@capacitor-community/file-opener',
+      '@capacitor-firebase/crashlytics',
+      '@capacitor-firebase/messaging',
+      '@capacitor/app',
+      '@capacitor/device',
+      '@capacitor/file-viewer',
+      '@capacitor/filesystem',
+      '@capacitor/haptics',
+      '@capacitor/keyboard',
+      '@capacitor/network',
+      '@capacitor/preferences',
+      '@capacitor/push-notifications',
+      '@capacitor/share',
+      '@capawesome/capacitor-background-task',
+      '@capawesome/capacitor-badge',
+      '@capgo/capacitor-native-biometric',
+    ],
+  },
   server: {
     androidScheme: 'https',
     ...(process.env.CAP_LIVE_URL

@@ -186,4 +186,15 @@ describe('Rueckblick achtet auf "Bewegung reduzieren"', () => {
     expect(bloecke.some(b => b.includes('.wrapped-bg-form--oben'))).toBe(true);
     expect(bloecke.some(b => b.includes('.moment-polaroid'))).toBe(true);
   });
+
+  it('das Konfetti faellt nicht endlos weiter, es entfaellt ganz', () => {
+    // Bis 09.10.2026 stand .konfetti-piece in keinem der Bloecke: 30
+    // Schnipsel fielen mit `infinite` weiter, auch bei reduzierter Bewegung.
+    const treffer = bewegungsBloecke().filter(b => b.includes('.konfetti-piece'));
+    expect(treffer).toHaveLength(1);
+    const regel = treffer[0].match(/\.konfetti-piece\s*\{([^}]*)\}/);
+    expect(regel).not.toBeNull();
+    expect((regel as RegExpMatchArray)[1]).toMatch(/animation:\s*none\s*!important/);
+    expect((regel as RegExpMatchArray)[1]).toMatch(/display:\s*none/);
+  });
 });

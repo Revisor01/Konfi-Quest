@@ -456,6 +456,109 @@ jobs:
         working-directory: frontend/android
         run: ./gradlew testDebugUnitTest
 
+  dunkelmodus:
+    # Dunkelmodus gerendert nachmessen (09.10.2026, offene Befunde "Dunkelmodus-
+    # Messung nicht in der CI", Dunkelmodus-Audit BF-09). dunkelmodus.test.ts
+    # und farbTokens.test.ts lesen das Stylesheet nur als Text; ob eine Regel
+    # gegen das Ionic-Theme greift, sieht erst der Browser. Das Skript laeuft
+    # in Chromium ueber 188 Zustaende (47 Seiten, hell und dunkel, iOS- und
+    # Android-Kennung) und endet mit Exit 1 bei Kontrast unter der Grenze
+    # ausserhalb der Restliste, heller Flaeche im Dunkeln oder gefallener
+    # Auflage (docs/wissen/dunkelmodus-pruefen.md).
+    #
+    # EIGENER JOB MIT PFADFILTER, nicht ein Schritt in frontend-test: Der
+    # volle Lauf braucht rund 10 Minuten (606 s, lokal gemessen 09.10.2026)
+    # plus den Aufbau des E2E-Stacks -- zu lang fuer jeden Commit.
+    # Er misst deshalb nur, wenn der gepushte Bereich (bzw. der Pull Request)
+    # Stylesheets, das Theme oder die Messung selbst aendert, und immer beim
+    # Handstart. Sonst laufen nur Checkout und Filter, und der Job ist gruen.
+    # Ein Job-`if` waere "skipped"; so bleibt der Lauf fuer das Release-Tor
+    # eindeutig.
+    #
+    # Gegen den E2E-Stack (docker-compose.e2e.yml): gebaute Oberflaeche hinter
+    # nginx auf Port 5556, Backend auf 5555, Datenbank mit Schema und
+    # Migrationen. Die Testdaten spielt scripts/dunkelmodus-daten.mjs ein.
+    #
+    # NICHT in den needs von build-and-push, wie android-test: Eine
+    # Farbabweichung haelt den Web-Deploy nicht an. Rot wird trotzdem der
+    # ganze Lauf, das Release-Tor sperrt die Store-Builds, und "CI-Meldung"
+    # legt das Issue an.
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Volle Historie fuer den Diff ueber den ganzen gepushten Bereich
+          # (wie die Backend-Diff-Erkennung im deploy-Job).
+          fetch-depth: 0
+
+      - name: Farben oder Theme geaendert?
+        id: filter
+        env:
+          EREIGNIS: ${{ github.event_name }}
+          VORHER: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          MUSTER='^frontend/src/.*\.css$|^frontend/src/theme/|^frontend/scripts/dunkelmodus-'
+          if [ "$EREIGNIS" = "workflow_dispatch" ]; then
+            echo "betroffen=1" >> "$GITHUB_OUTPUT"; echo "Handstart -> Messung laeuft"; exit 0
+          fi
+          if [ -z "$VORHER" ] || [ "$VORHER" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$VORHER^{commit}" 2>/dev/null; then
+            BEREICH="HEAD~1 HEAD"
+          else
+            BEREICH="$VORHER HEAD"
+          fi
+          echo "Bereich: $BEREICH"
+          if git diff --name-only $BEREICH | grep -E "$MUSTER"; then
+            echo "betroffen=1" >> "$GITHUB_OUTPUT"; echo "-> Messung laeuft"
+          else
+            echo "betroffen=0" >> "$GITHUB_OUTPUT"; echo "Keine Stylesheets, kein Theme -> keine Messung"
+          fi
+
+      - name: Setup Node.js
+        if: steps.filter.outputs.betroffen == '1'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      # Wurzel: Playwright und pg. Backend: seed.js verlangt bcrypt (wie im
+      # E2E-Job, --ignore-scripts reicht dort ebenso).
+      - name: Abhaengigkeiten
+        if: steps.filter.outputs.betroffen == '1'
+        run: |
+          npm ci
+          npm --prefix backend ci --ignore-scripts
+
+      - name: Playwright-Browser
+        if: steps.filter.outputs.betroffen == '1'
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E-Stack starten
+        if: steps.filter.outputs.betroffen == '1'
+        run: docker compose -f docker-compose.e2e.yml up -d --build --wait
+
+      - name: Testdaten
+        if: steps.filter.outputs.betroffen == '1'
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5444/postgres
+        run: node frontend/scripts/dunkelmodus-daten.mjs
+
+      - name: Dunkelmodus messen
+        if: steps.filter.outputs.betroffen == '1'
+        working-directory: frontend
+        run: node scripts/dunkelmodus-messen.mjs --url http://localhost:5556 --out "$RUNNER_TEMP/dunkelmodus-messung.json"
+
+      - name: Messung sichern
+        if: always() && steps.filter.outputs.betroffen == '1'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dunkelmodus-messung
+          path: ${{ runner.temp }}/dunkelmodus-messung.json
+          if-no-files-found: ignore
+          retention-days: 7
+
   build-and-push:
     needs: [backend-test, frontend-test, e2e-test]
     # KEIN always() — Build+Deploy laufen NUR wenn backend-test, frontend-test

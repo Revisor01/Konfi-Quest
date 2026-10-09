@@ -210,20 +210,23 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   in [wissen/gestaltung.md](wissen/gestaltung.md#reiter-filter-und-leertexte-einer-seite);
   dabei gefundene Abweichungen zwischen App und Browser behoben (Branch
   `refactor/seitenbeschreibung-app-web`).
+- [x] 09.10.2026 — Ringe und Zähler beachten „Bewegung reduzieren": Punkte-Ringe
+  und hochzählende Zahlen sofort auf dem Endstand, dazu der Wisch durch den
+  Rückblick und sein Konfetti (Branch `fix/bewegung-randlos-dunkelmodus-ci`).
+- [x] 09.10.2026 — Android randlos auf jeder Systemversion, ohne
+  `@capacitor/status-bar` und dessen eingestellte Farb-APIs (Play Console
+  Punkte 1 und 2, im Repo; Gerätetest offen, siehe [Release](#release);
+  Branch `fix/bewegung-randlos-dunkelmodus-ci`).
+- [x] 09.10.2026 — Dunkelmodus-Messung in der CI: eigener Job, misst bei
+  Änderungen an Stylesheets, Theme oder Messung gegen den E2E-Stack
+  ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md), Branch
+  `fix/bewegung-randlos-dunkelmodus-ci`).
 
 
 ## Offen
 
 ### Code
 
-- **Ringe und Zähler beachten „Bewegung reduzieren" nicht.**
-  `frontend/src/components/admin/views/ActivityRings.tsx` und
-  `frontend/src/hooks/useCountUp.ts` animieren auch, wenn das System
-  „Bewegung reduzieren" verlangt; beide Dateien fragen die Einstellung nicht
-  ab (geprüft 08.10.2026). Das Handbuch
-  ([03-bedienung.md](handbuch/03-bedienung.md#bewegung-reduzieren)) nennt
-  sie nicht unter dem, was dann ruhig bleibt; die Angabe „Bewegung
-  reduzieren" bei Apple setzt die Korrektur voraus ([Release](#release)).
 - **Doppelter Code Konfi/Team.** `backend/routes/teamer.js` führt eine eigene
   Liste `KONFSPRUCH_TRANSLATIONS` und ein eigenes `loadKonfspruch` (um Zeile
   979 und 983), obwohl es beides aus `utils/konfspruch.js` importiert — die
@@ -248,11 +251,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Tests und CI
 
-- **Dunkelmodus-Messung nicht in der CI.** `npm run dunkelmodus:messen`
-  ([wissen/dunkelmodus-pruefen.md](wissen/dunkelmodus-pruefen.md)) läuft nur
-  von Hand gegen eine lokale Vorschau; die CI prüft das Stylesheet als Text.
-  Eine Farbänderung kann den Dunkelmodus zurückwerfen, ohne dass die CI rot
-  wird. Seit 27.09.2026 (Dunkelmodus-Audit BF-09, Rest).
 - **Quelltext-Tests.** 117 Frontend-Testdateien lesen Quelltext statt
   Verhalten (Stand 30.09.2026, Leitplanke
   `frontend/src/__tests__/quelltextTestsLeitplanke.test.ts` lässt keine neuen
@@ -313,9 +311,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 ### Release
 
 - **Barrierefreiheitsangaben im App Store.** Apple fragt je Gerät ab, welche
-  Bedienungshilfen die App unterstützt. Heute angebbar: Dunkelmodus und
-  „Nicht nur über Farbe". „Bewegung reduzieren" erst, wenn Ringe und Zähler
-  sie beachten ([Code](#code)). Kontrast im Hellmodus nicht: 25 von 51
+  Bedienungshilfen die App unterstützt. Heute angebbar: Dunkelmodus, „Nicht
+  nur über Farbe" und „Bewegung reduzieren" (Ringe und Zähler seit
+  09.10.2026, [Handbuch](handbuch/03-bedienung.md#bewegung-reduzieren)). Kontrast im Hellmodus nicht: 25 von 51
   Text-Tokens mit festem Farbwert im Hellmodus
   (`frontend/src/theme/variables.css`) bleiben auf Weiß unter 4,5:1
   (gemessen 08.10.2026; siehe [Zurückgestellt](#zurückgestellt), „Kontrast
@@ -325,10 +323,23 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   2.3.0, abgelesen von Simon am 07.10.2026). Am Code geprüft:
   1. *Randlose Anzeige ab Android 15:* Die App zielt auf SDK 36; Google rät,
      die randlose Anzeige zu testen bzw. `EdgeToEdge.enable()` zu rufen.
+     **Im Repo erledigt (09.10.2026, Branch
+     `fix/bewegung-randlos-dunkelmodus-ci`):** `MainActivity` ruft
+     `EdgeToEdge.enable` nach `super.onCreate`, randlos auf jeder
+     Android-Version; die Insets trägt das eingebaute SystemBars-Plugin als
+     CSS-Variablen. Offen: Gerätetest Malte (Leisten oben/unten, Dunkel- und
+     Hellmodus, Tastatur, Datumsauswahl).
   2. *Eingestellte APIs* `Window.get/setStatusBarColor`, `setNavigationBarColor`
      — aufgerufen aus `@capacitor/status-bar` (v8) und dem Material-Datepicker,
-     nicht aus eigenem Code. Fix: Plugin-Update bzw. Status-Bar-Farbe nicht mehr
-     setzen; vorher am Gerät (Malte) die Systemleiste prüfen.
+     nicht aus eigenem Code. **Im Repo erledigt (09.10.2026, selber Branch):**
+     `@capacitor/status-bar` ist auf Android nicht mehr eingebunden
+     (`android.includePlugins` in `capacitor.config.ts`; iOS behält es). Auch
+     8.0.4 ruft die APIs bei jedem Start, ein Update half nicht. Übrig im
+     Bytecode, zur Laufzeit ab Android 11 nicht gerufen: `androidx.activity`
+     (EdgeToEdge, nur Android 6–10) und Materials `EdgeToEdgeUtils` (nur in
+     dessen eigenen Dialogen, die die App nicht öffnet; 1.9 bis 1.13 gleich).
+     Die Console kann beide weiter nennen. Offen: Gerätetest Malte, danach der
+     Haken in der Console.
   3. *Feste Ausrichtung:* `android:screenOrientation="portrait"` in
      `android/app/src/main/AndroidManifest.xml`; ab Android 16 ignoriert das
      System sie auf Tablets und Foldables. **Bewusst offen** (Simon,

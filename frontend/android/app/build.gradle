@@ -72,6 +72,10 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    // EdgeToEdge.enable in MainActivity (09.10.2026): ausdruecklich
+    // eingetragen statt still ueber appcompat mitgezogen; dieselbe Fassung
+    // aus variables.gradle wie bei Capacitor, damit es eine bleibt.
+    implementation "androidx.activity:activity:$androidxActivityVersion"
     implementation project(':capacitor-android')
     // Zahl am App-Symbol und eigener Push-Dienst (29.09.2026):
     // KonfiMessagingService ueberschreibt onMessageReceived(RemoteMessage),
