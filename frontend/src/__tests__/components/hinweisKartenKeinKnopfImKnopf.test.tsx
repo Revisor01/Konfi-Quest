@@ -24,6 +24,8 @@ vi.mock('../../services/updateCheck', () => ({
   pruefeStoreUpdate: async () => ({ version: '2.4.0', url: 'https://apps.apple.com/de/app/konfi-quest/id6748016619' }),
   istHinweisWeggeklickt: async () => false,
   merkeHinweisWeggeklickt: vi.fn(),
+  holeUpdateImHintergrund: async () => ({ zustand: 'nicht_moeglich', schluessel: null }),
+  installiereGeladenesUpdate: async () => false,
 }));
 
 import UpdateHinweisKarte from '../../components/shared/UpdateHinweisKarte';

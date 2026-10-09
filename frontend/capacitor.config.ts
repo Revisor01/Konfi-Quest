@@ -128,4 +128,15 @@ const config: CapacitorConfig = {
   }
 };
 
+// NUR AUF ANDROID: Googles In-App-Updates (09.10.2026, services/updateCheck.ts).
+// android.includePlugins ersetzt fuer Android die gemeinsame Liste oben; iOS
+// bindet das Plugin nicht ein und bleibt unveraendert (kein neuer Pod).
+// Bewusst hier unten und als Ergaenzung eines etwaigen android-Blocks oben,
+// nicht als zweite Liste: Neue gemeinsame Plugins gelten so von selbst auch
+// fuer Android. Test: androidInAppUpdate.test.ts.
+config.android = {
+  ...config.android,
+  includePlugins: [...(config.includePlugins ?? []), '@capawesome/capacitor-app-update'],
+};
+
 export default config;

@@ -39,8 +39,8 @@ const entfernt = new Set(
     .map((s) => s.getAttributeNS(ANDROID_NS, 'name')!),
 );
 
-/** FCM-Dienste aller nativ eingebundenen Plugins (includePlugins). */
-const ausPlugins = (capacitorConfig.includePlugins ?? []).flatMap((paket) => {
+/** FCM-Dienste aller auf Android nativ eingebundenen Plugins (android.includePlugins). */
+const ausPlugins = (capacitorConfig.android?.includePlugins ?? capacitorConfig.includePlugins ?? []).flatMap((paket) => {
   const pfad = join(FRONTEND, 'node_modules', paket, 'android/src/main/AndroidManifest.xml');
   return existsSync(pfad) ? fcmDienste(xml(pfad)).map((dienst) => ({ paket, dienst })) : [];
 });

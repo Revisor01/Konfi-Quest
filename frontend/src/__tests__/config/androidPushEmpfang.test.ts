@@ -51,7 +51,7 @@ const istEntfernt = (dienst: Element) => dienst.getAttributeNS(TOOLS_NS, 'node')
 
 /** Alle Push-Dienste, die die eingebundenen Plugins mitbringen. */
 const pushDiensteDerPlugins = (): string[] =>
-  config.includePlugins!.flatMap((plugin) => {
+  (config.android?.includePlugins ?? config.includePlugins!).flatMap((plugin) => {
     const pfad = join(process.cwd(), 'node_modules', plugin, 'android/src/main/AndroidManifest.xml');
     if (!existsSync(pfad)) return [];
     return dienste(parse(readFileSync(pfad, 'utf8')))

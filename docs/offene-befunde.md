@@ -193,6 +193,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   umgestellt, das 28 bis 35 Tage reicht ([api/ABRISS.md](api/ABRISS.md));
   Zählungen „Wer bekommt was" und Bestand gemessen
   (Branch `chore/betrieb-compose-logfenster-zaehlungen`).
+- [x] 09.10.2026 — Android holt Updates über Googles In-App-Updates:
+  sofort unter der Mindestversion, sonst im Hintergrund mit „Neustarten
+  zum Aktualisieren" (Branch `feat/android-in-app-update`).
 
 
 ## Offen

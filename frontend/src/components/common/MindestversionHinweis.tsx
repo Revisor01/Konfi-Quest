@@ -7,6 +7,7 @@ import {
   merkeMindestversionHinweisGezeigt,
 } from '../../services/betriebsstatus';
 import { linkOeffnen } from '../../services/systemDialoge';
+import { versucheSofortUpdate } from '../../services/updateCheck';
 
 interface Props {
   /**
@@ -69,6 +70,14 @@ interface Props {
  * dem Schloss und zoege Fokus und Vorlesehilfe von dort weg. Deshalb wartet
  * er (`zurueckhalten`) und erscheint nach dem Entsperren.
  *
+ * ANDROID: ZUERST GOOGLES SOFORT-UPDATE (Simon, 09.10.2026). Auf Android
+ * startet hier statt des Dialogs Googles Vollbild-Update (versucheSofortUpdate
+ * in services/updateCheck.ts): Es laedt und installiert, die App startet neu.
+ * Schliesst die Nutzerin das Vollbild, gilt das als "Später" fuer diesen
+ * Start — kein zweiter Dialog hinterher. Kann Google nicht (App nicht aus
+ * Play installiert, kein Play-Dienst, Fehler), erscheint der Dialog wie
+ * bisher. Auf iOS bleibt es beim Dialog.
+ *
  * Ob der Fall ueberhaupt vorliegt, entscheidet services/betriebsstatus.ts:
  * nur nativ, nur mit Antwort des Servers, nie im Browser, nie ohne Netz.
  * Die Komponente selbst rendert nichts in den Baum.
@@ -84,8 +93,9 @@ const MindestversionHinweis: React.FC<Props> = ({ zurueckhalten = false }) => {
     // oeffnen. Offen heisst ohnehin, dass er gleich geschlossen wird.
     merkeMindestversionHinweisGezeigt();
 
-    const store = Capacitor.getPlatform() === 'android' ? 'bei Google Play' : 'im App Store';
-    void zeigeDialog({
+    const android = Capacitor.getPlatform() === 'android';
+    const store = android ? 'bei Google Play' : 'im App Store';
+    const zeigeHinweis = () => zeigeDialog({
       header: 'Bitte aktualisiere Konfi Quest',
       message: `Diese Version wird nicht mehr unterstützt. Die aktuelle Version liegt ${store} bereit.`,
       buttons: [
@@ -98,6 +108,13 @@ const MindestversionHinweis: React.FC<Props> = ({ zurueckhalten = false }) => {
           handler: () => { linkOeffnen(aktualisierenUrl); },
         },
       ],
+    });
+    if (!android) {
+      void zeigeHinweis();
+      return;
+    }
+    void versucheSofortUpdate().then((ergebnis) => {
+      if (ergebnis === 'nicht_moeglich') void zeigeHinweis();
     });
   }, [aktualisierenUrl, zurueckhalten, zeigeDialog]);
 

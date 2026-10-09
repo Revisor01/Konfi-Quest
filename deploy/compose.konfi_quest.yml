@@ -240,7 +240,8 @@ services:
       #     sonst bittet die App um ein Update, das es fuer das Geraet noch
       #     gar nicht gibt. Ungueltige Werte ("2.3", "v2.3.0") gelten als
       #     nicht gesetzt und stehen einmal im Log. Apps 2.2.x und aelter
-      #     kennen die Angabe nicht.
+      #     kennen die Angabe nicht. Android ab 2.4.0 startet darunter zuerst
+      #     Googles Vollbild-Update (docs/betrieb/mindestversion.md).
       #   WARTUNG_HINWEIS: Klartext, erscheint auf den Startseiten aller
       #     Rollen und auf der Anmeldeseite, bis die Variable wieder leer ist.
       APP_MIN_VERSION_IOS: ${APP_MIN_VERSION_IOS:-}
