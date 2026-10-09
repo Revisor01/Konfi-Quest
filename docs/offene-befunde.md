@@ -53,7 +53,12 @@ Nichts.
 - [ ] **Release 2.4.0** — ausliefern ([Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md),
   Schritt 5), danach die Haken in der Play Console prüfen ([Release](#release),
   „Play Console empfiehlt vier Änderungen"); Ablauf in
-  [betrieb/release.md](betrieb/release.md).
+  [betrieb/release.md](betrieb/release.md). Sobald 2.4.0 in beiden Stores
+  live ist: `APP_MIN_VERSION_IOS` und `APP_MIN_VERSION_ANDROID` als
+  Stack-Variablen auf `2.4.0` (Simon, 10.10.2026;
+  [betrieb/mindestversion.md](betrieb/mindestversion.md)). Vorher das
+  Play-Bildschirmfoto `konfi-challenge-feed` nach dem Deploy der deckenden
+  Kopfleiste neu ziehen.
 - [ ] **Web-Version: was noch fehlt** — Leiste „Verwaltung", Rückweg ohne
   Gemeinde, Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
