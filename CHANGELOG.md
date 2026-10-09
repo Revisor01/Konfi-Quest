@@ -107,6 +107,8 @@ Versionsüberschrift.
   Zugewiesene behalten das Recht.
 
 ### Geändert
+- Der Punkte-Verlauf im Browser zeigt alle Einträge auf einmal; ein Klick auf
+  einen Spaltenkopf ordnet die ganze Liste.
 - Hinweistexte in Hinweis-Kästen (etwa unter „E-Mail ändern“,
   „Funktionsbeschreibung“ und „Benachrichtigungen“) sind auf iPhone und
   Android gleich groß und kleiner als die Zeilentitel; auf dem iPhone waren

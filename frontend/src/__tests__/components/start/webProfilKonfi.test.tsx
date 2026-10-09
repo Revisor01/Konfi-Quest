@@ -293,7 +293,7 @@ describe('Profil der Konfis (Web): Verlauf', () => {
     const tabelle = await screen.findByRole('table', { name: 'Punkte-Verlauf' });
     const zeilen = within(tabelle).getAllByRole('row').slice(1);
     // Das Konfi-Samstag-Event wurde am 02.10. verbucht, fand aber am 26.09. statt.
-    expect(zeilen).toHaveLength(8);
+    expect(zeilen).toHaveLength(10);
     expect(within(zeilen[0]).getAllByRole('cell')[0]).toHaveTextContent('27.09.2026');
     expect(zeilen[0]).toHaveTextContent('Gottesdienst am Sonntag');
     expect(within(zeilen[1]).getAllByRole('cell')[0]).toHaveTextContent('26.09.2026');
@@ -306,17 +306,14 @@ describe('Profil der Konfis (Web): Verlauf', () => {
     expect(zeilen[3]).toHaveTextContent('Bonus');
   });
 
-  it('zeigt zuerst acht Eintraege; ein Knopf klappt alle auf und wieder zu', async () => {
+  it('zeigt alle Eintraege auf einmal, ohne Knopf zum Aufklappen (Simon, 09.10.2026)', async () => {
     await zeige();
     const tabelle = await screen.findByRole('table', { name: 'Punkte-Verlauf' });
-    expect(within(tabelle).getAllByRole('row')).toHaveLength(9);
+    expect(within(tabelle).getAllByRole('row')).toHaveLength(11);
     const verlauf = karte('Punkte-Verlauf');
     expect(verlauf).toHaveTextContent('10 Einträge');
-    fireEvent.click(within(verlauf).getByRole('button', { name: 'Alle 10 Einträge anzeigen' }));
-    expect(within(tabelle).getAllByRole('row')).toHaveLength(11);
     expect(within(tabelle).getByText('Erntedank')).toBeInTheDocument();
-    fireEvent.click(within(verlauf).getByRole('button', { name: 'Weniger anzeigen' }));
-    expect(within(tabelle).getAllByRole('row')).toHaveLength(9);
+    expect(within(verlauf).queryByRole('button', { name: /anzeigen$/ })).toBeNull();
   });
 
   it('ohne Eintraege sagt die Karte es', async () => {

@@ -256,29 +256,27 @@ export interface WebPunkteVerlaufProps {
   gottesdienstAktiv: boolean;
   gemeindeAktiv: boolean;
   titel?: string;
-  /** So viele Einträge stehen zuerst da; der Rest klappt mit einem Knopf auf. */
-  zuerst?: number;
 }
 
 /**
  * Der Verlauf aller Punkte als Tabelle -- dieselbe Route und dieselbe Ordnung
  * wie die Punkte-Übersicht der App (neueste zuerst nach dem angezeigten Datum),
- * abgeschaltete Punktearten fehlen.
+ * abgeschaltete Punktearten fehlen. Alle Einträge stehen da, ohne Kürzen
+ * (Simon, 09.10.2026): Die Route liefert ohnehin den ganzen Verlauf, und ein
+ * Klick auf einen Spaltenkopf ordnet so immer die ganze Liste.
  */
-export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, gottesdienstAktiv, gemeindeAktiv, titel = 'Punkte-Verlauf', zuerst = 8 }) => {
+export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, gottesdienstAktiv, gemeindeAktiv, titel = 'Punkte-Verlauf' }) => {
   const lader = useCallback(async (): Promise<PunkteEintrag[]> => {
     const antwort = await api.get(endpunkt);
     return Array.isArray(antwort.data?.history) ? antwort.data.history : [];
   }, [endpunkt]);
   const { daten, laedt, fehler, neuLaden } = useWebDaten(lader);
-  const [alle, setAlle] = useState(false);
 
   const eintraege = useMemo(() => nachAnzeigeDatumAbsteigend(daten ?? []).filter((e) => {
     if (e.category === 'gottesdienst' && !gottesdienstAktiv) return false;
     if (e.category === 'gemeinde' && !gemeindeAktiv) return false;
     return true;
   }), [daten, gottesdienstAktiv, gemeindeAktiv]);
-  const gezeigt = alle ? eintraege : eintraege.slice(0, zuerst);
 
   if (laedt) return <WebKarte titel={titel}><WebLaden karten={0} kacheln={0} text="Der Verlauf wird geladen." /></WebKarte>;
   if (!daten) {
@@ -296,49 +294,40 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
       {eintraege.length === 0 ? (
         <WebLeer icon={ICON_UHRZEIT} titel="Noch keine Einträge" text="Hier erscheinen die Punkte, sobald es welche gibt." />
       ) : (
-        <>
-          <WebTabelle<PunkteEintrag>
-            beschriftung={titel}
-            zeilen={gezeigt}
-            zeileSchluessel={(e) => `${e.source_type}-${e.id}`}
-            spalten={[
-              { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (e) => zeitpunkt(punkteAnzeigeDatum(e)), zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
-              {
-                schluessel: 'titel',
-                kopf: 'Wofür',
-                sortWert: (e) => e.title,
-                zelle: (e) => (
-                  <>
-                    <span className="web-zelle-titel">{e.title}</span>
-                    {e.comment && <span className="web-zelle-leise">{e.comment}</span>}
-                  </>
-                ),
-              },
-              {
-                schluessel: 'art',
-                kopf: 'Art',
-                breite: '190px',
-                sortWert: (e) => artText(e),
-                zelle: (e) => (
-                  <span className="web-pillreihe">
-                    {e.category === 'gottesdienst' && <WebPill ton="info">Gottesdienst</WebPill>}
-                    {e.category === 'gemeinde' && <WebPill ton="erfolg">Gemeinde</WebPill>}
-                    {e.source_type === 'event' && <WebPill>Event</WebPill>}
-                    {e.source_type === 'bonus' && <WebPill ton="warnung">Bonus</WebPill>}
-                  </span>
-                ),
-              },
-              { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (e) => e.points, zelle: (e) => <strong title={punkteText(e.points)}>+{e.points}</strong> },
-            ]}
-          />
-          {eintraege.length > zuerst && (
-            <div className="web-verlauf-mehr">
-              <WebKnopf klein onClick={() => setAlle(!alle)}>
-                {alle ? 'Weniger anzeigen' : `Alle ${eintraege.length} Einträge anzeigen`}
-              </WebKnopf>
-            </div>
-          )}
-        </>
+        <WebTabelle<PunkteEintrag>
+          beschriftung={titel}
+          zeilen={eintraege}
+          zeileSchluessel={(e) => `${e.source_type}-${e.id}`}
+          spalten={[
+            { schluessel: 'datum', kopf: 'Datum', breite: '110px', sortWert: (e) => zeitpunkt(punkteAnzeigeDatum(e)), zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
+            {
+              schluessel: 'titel',
+              kopf: 'Wofür',
+              sortWert: (e) => e.title,
+              zelle: (e) => (
+                <>
+                  <span className="web-zelle-titel">{e.title}</span>
+                  {e.comment && <span className="web-zelle-leise">{e.comment}</span>}
+                </>
+              ),
+            },
+            {
+              schluessel: 'art',
+              kopf: 'Art',
+              breite: '190px',
+              sortWert: (e) => artText(e),
+              zelle: (e) => (
+                <span className="web-pillreihe">
+                  {e.category === 'gottesdienst' && <WebPill ton="info">Gottesdienst</WebPill>}
+                  {e.category === 'gemeinde' && <WebPill ton="erfolg">Gemeinde</WebPill>}
+                  {e.source_type === 'event' && <WebPill>Event</WebPill>}
+                  {e.source_type === 'bonus' && <WebPill ton="warnung">Bonus</WebPill>}
+                </span>
+              ),
+            },
+            { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: '90px', sortWert: (e) => e.points, zelle: (e) => <strong title={punkteText(e.points)}>+{e.points}</strong> },
+          ]}
+        />
       )}
     </WebKarte>
   );

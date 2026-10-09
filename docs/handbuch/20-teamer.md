@@ -277,7 +277,8 @@ Profil. Oben links führt **Profil** zurück, oben rechts öffnet
 **Punkte-Übersicht** dieselbe Aufstellung wie in der App; unter dem Titel steht
 dein damaliger Jahrgang. Vier Kacheln nennen **Punkte gesamt**,
 **Gottesdienst**, **Gemeinde** und **Badges** aus der Konfi-Zeit. Links steht der
-**Punkte-Verlauf** als Tabelle — beide Punktearten zählen hier immer —, darunter,
+**Punkte-Verlauf** als Tabelle mit allen Einträgen — beide Punktearten zählen
+hier immer —, darunter,
 wenn es sie gibt, die **Events der Konfi-Zeit** mit Datum, Stand und Punkten.
 Rechts stehen, wenn es ihn gibt, der **Konfi-Rückblick** mit **Rückblick
 ansehen** und die **Konfi-Badges** als Raster, das neueste zuerst; ein Klick auf

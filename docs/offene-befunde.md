@@ -344,9 +344,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-- **Punkte-Verlauf im Profil und in der Konfi-Zeit sortiert nur, was sichtbar
-  ist** (die ersten acht, bis „Alle anzeigen“). Auf der Personenseite der
-  Leitung wird schon vor dem Kürzen sortiert; hier genauso?
 - **Zeitspalten ohne Zeitzone.** 24 Spalten stehen auf `timestamp without
   time zone`, Produktion schreibt UTC; Stellen mit `CURRENT_DATE` nehmen
   zwischen 0 und 2 Uhr Berliner Zeit den Vortag. Ob sie sich eindeutig auf
