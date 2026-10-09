@@ -33,9 +33,12 @@ Nichts.
 
 ### Wartet auf Gerät oder Simon
 
-- [ ] **Maltes Gerätetest Android versionCode 135** (interner Testtrack seit
-  08.10.2026) — Rückmeldung je Prüfpunkt aus
-  [Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md), Schritt 4.
+- [ ] **Maltes Gerätetest Android versionCode 138** (interner Testtrack seit
+  10.10.2026) — Rückmeldung je Prüfpunkt aus
+  [Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md), Schritt 4,
+  dazu Systemleisten oben und unten (hell, dunkel, Gesten und drei Knöpfe,
+  Tastatur, Datumsauswahl) und das In-App-Update
+  ([betrieb/mindestversion.md](betrieb/mindestversion.md)).
 - [ ] **VoiceOver, Sprachsteuerung und größte Schrift am iPhone** —
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
@@ -44,8 +47,6 @@ Nichts.
   gelöscht; weiter, wenn die Stack-Variablen zurück sind
   ([Betrieb](#betrieb), „Support-Mail seit 08.10.2026 aus"),
   [Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md).
-- [ ] **Simons offene Fragen** — unten unter
-  [Bei Simon zu entscheiden](#bei-simon-zu-entscheiden).
 
 ### Als Nächstes
 
@@ -380,24 +381,7 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-- **Beschriftungen, Reiter und Filter an einer Stelle für App und
-  Web-Fassung?** Laden, Rechte und Zähler teilen sich beide Fassungen; die
-  Darstellung ist doppelt. Die Web-Fassung hat 130 Dateien mit rund 18.700
-  Zeilen TSX und 6.700 Zeilen CSS neben rund 78.100 Zeilen
-  App-Komponenten; an 54 Stellen wählt eine Weiche zwischen beiden
-  (gezählt 06.10.2026). Ein neuer Filter oder ein umbenannter Reiter muss
-  heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
-  gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
-  Web-Fassung lesen. Umsetzen?
-- **Konfisprüche: Gemeinde und Wortlaut zusammen?** Die Statistik
-  `konfspruch_wahlen` (Migration 207, ohne Personenbezug) speichert je Wahl
-  die Gemeinde und den Monat, bei eigenen Sprüchen den Wortlaut. In einer
-  kleinen Gemeinde ist ein eigener Spruch mit Gemeinde und Monat einer
-  bestimmten Konfi zuzuordnen — der Spruch steht auf der Urkunde und oft im
-  Gemeindebrief; das gilt auch nach dem Löschen des Kontos. Die Ansicht
-  unter Betrieb zeigt die Gemeinde nicht. Gemeinde weiter speichern,
-  weglassen oder vergröbern (etwa Landeskirche)?
-  ([messung/umami.md](messung/umami.md), S1)
+Nichts.
 
 ## Geplant
 
