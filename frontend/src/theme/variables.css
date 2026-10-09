@@ -2183,6 +2183,21 @@ ion-card-content.app-card-content {
   --ion-toolbar-color: var(--app-schwarz);
 }
 
+/* ANDROID DECKEND, AUCH IM HELLEN (10.10.2026): Das Glas oben gilt auf `:root`
+   und damit auch im md-Look -- dort legt aber kein Theme einen Weichzeichner
+   darunter, und 72 % Deckkraft ohne Blur heisst: Der Inhalt scheint beim
+   Rollen scharf durch die Kopfleiste. Sichtbar auf dem Play-Bildschirmfoto
+   der Challenge-Seite, wo die Reiter Feed/Meins ueber dem Plus-Knopf lagen.
+   Dieselbe Luecke, die die Tab-Leiste am 25.09.2026 hatte (ion-tab-bar.md).
+   Im Dunkelmodus stand die deckende Regel schon (Dunkelblock, html:root.md),
+   im Hellen fehlte sie. Ton: --app-glasleiste-rgb, hell #f7f7f7, dunkel
+   #1c1c1e -- dieselbe Regel traegt beide Modi.
+   `html:root.md` (0,2,1) schlaegt `:root` (0,1,0) und Ionics `:root.md`
+   (0,2,0) aus der Dunkel-Palette, unabhaengig von der Ladereihenfolge. */
+html:root.md {
+  --ion-toolbar-background: rgb(var(--app-glasleiste-rgb));
+}
+
 /* === Condense-Toolbar (transparenter Large-Title Header) === */
 ion-toolbar.app-condense-toolbar {
   --background: transparent;
@@ -4244,7 +4259,10 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
     /* Die md-Palette setzt die Kopfleiste deckend auf #1f1f1f und schlaegt
        damit die :root-Regel (Glas mit 72 % Deckkraft). Auf Android gibt es
        keinen Blur, die Leiste MUSS deckend sein -- aber im Leisten-Ton der
-       App (#1c1c1e), nicht in Ionics. */
+       App (#1c1c1e), nicht in Ionics. Dieselbe Regel steht fuer den
+       Hellmodus ausserhalb dieses Blocks (bei der :root-Glasregel); hier
+       bleibt sie, weil dunkelmodus.test.ts jede Bindung des Dunkelblocks
+       gegen Ionics Palette nachrechnet. */
     --ion-toolbar-background: rgb(var(--app-glasleiste-rgb));
     /* Meldungen und Aktionsblaetter: Ionic nimmt auf md step-100 (#2a2a2a),
        ein weiterer Ton. Sie sind Karten ueber einem abgedunkelten Grund und

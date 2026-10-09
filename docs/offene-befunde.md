@@ -250,6 +250,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 10.10.2026 — Konfis ohne Jahrgang stehen beim Sortieren nach
   Jahrgang in der Web-Fassung in beiden Richtungen unten, wie im Team und in
   jeder Tabelle (Branch `fix/sortierung-ohne-jahrgang`).
+- [x] 10.10.2026 — Android: Kopfleiste auch im hellen Modus deckend, der
+  Inhalt scheint beim Rollen nicht mehr durch (Branch
+  `fix/android-kopfleiste-deckend`; Play-Bildschirmfoto `konfi-challenge-feed`
+  nach dem Deploy neu ziehen).
 
 
 ## Offen
