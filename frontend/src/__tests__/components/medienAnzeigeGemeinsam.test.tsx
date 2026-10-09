@@ -283,8 +283,10 @@ describe('Video: dieselbe Vorschau für Chat und Challenges', () => {
       const { container, unmount } = render(<VideoPreview filePath="vv66" fileName="clip.mp4" />);
       await waitFor(() => expect(container.querySelector('video')).not.toBeNull());
       // Das Hilfs-Video haengt nie im Dokument; das sichtbare Video schon.
+      // Es entsteht in einem eigenen Effekt nach dem sichtbaren -- auf einem
+      // langsamen Rechner (CI) erst einen Augenblick spaeter, darauf warten.
+      await waitFor(() => expect(hilfsVideos.filter((v) => !v.isConnected)).toHaveLength(1));
       const hilfsVideo = hilfsVideos.filter((v) => !v.isConnected);
-      expect(hilfsVideo).toHaveLength(1);
       const [hilfs] = hilfsVideo;
       expect(hilfs.getAttribute('src')).toMatch(/^blob:/);
 
@@ -310,8 +312,8 @@ describe('Video: dieselbe Vorschau für Chat und Challenges', () => {
     try {
       const { container } = render(<VideoPreview filePath="vv77" fileName="clip.mp4" />);
       await waitFor(() => expect(container.querySelector('video')).not.toBeNull());
+      await waitFor(() => expect(hilfsVideos.filter((v) => !v.isConnected)).toHaveLength(1));
       const hilfs = hilfsVideos.filter((v) => !v.isConnected);
-      expect(hilfs).toHaveLength(1);
       // jsdom zeichnet nicht (getContext ohne canvas-Paket): leer zurueck, still.
       const leinwand = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
       hilfs[0].dispatchEvent(new Event('seeked'));
