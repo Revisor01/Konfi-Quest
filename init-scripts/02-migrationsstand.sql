@@ -122,5 +122,10 @@ INSERT INTO schema_migrations (name) VALUES
     ('174_settings_primaerschluessel.sql'),
     ('175_doppelte_indizes.sql'),
     ('176_kein_klartext_passwort.sql'),
-    ('177_zeitstempel_statt_text.sql')
+    ('177_zeitstempel_statt_text.sql'),
+    ('178_sequenzen_nach_tabellen.sql'),
+    ('185_push_tokens_app_symbol_weg.sql'),
+    ('186_refresh_tokens_obergrenze.sql'),
+    ('187_password_plain_entfernen.sql'),
+    ('188_postfach_altbestand_ohne_kennung.sql')
 ON CONFLICT (name) DO NOTHING;

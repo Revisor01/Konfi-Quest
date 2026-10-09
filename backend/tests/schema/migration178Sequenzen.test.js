@@ -7,38 +7,33 @@
 // dem Tabellennamen sucht (setval nach einem Import, pg_dump-Auswertung),
 // fand sie nicht. Keine Code-Stelle nennt die alten Namen; der Default
 // verweist per OID und zeigt nach dem Umbenennen von selbst den neuen.
-const {
-  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
-} = require('../helpers/schemaAufbau');
+//
+// Seit 09.10.2026 steht 178 im Schema-Dump (tests/schema/prod-schema.sql),
+// die Datei ist aus backend/migrations/ entfernt; der Test der Migration auf
+// dem Stand davor (Umbenennen, Zaehlerstand, zweiter Lauf) liegt in der
+// Git-Historie. Geprueft wird hier, dass der Dump die neuen Namen traegt.
+const { dbAnlegen, dbWegraeumen, produktionAufbauen } = require('../helpers/schemaAufbau');
 const { getTestPool, closePool } = require('../helpers/db');
 
-const MIGRATION = '178_sequenzen_nach_tabellen.sql';
 const DB = 'konfi_test_mig178';
 
 const SEQUENZ_DER_SPALTE = `
   SELECT pg_get_serial_sequence('user_badges', 'id') AS badges,
          pg_get_serial_sequence('user_activities', 'id') AS aktivitaeten`;
 
-describe('Migration 178 auf dem Stand, auf den sie beim Deploy trifft', () => {
+describe('Migration 178 im Schema-Dump', () => {
   let pool;
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: MIGRATION });
+    await produktionAufbauen(pool, { vor: '189_dateinamen_utf8_reparieren.sql' });
   }, 180000);
 
   afterAll(async () => {
     await dbWegraeumen(pool, DB);
   }, 120000);
 
-  it('Ausgangslage: die alten Namen', async () => {
-    const { rows: [r] } = await pool.query(SEQUENZ_DER_SPALTE);
-    expect(r).toEqual({ badges: 'public.konfi_badges_id_seq', aktivitaeten: 'public.konfi_activities_id_seq' });
-  });
-
-  it('danach die Namen der Tabellen -- Besitz und Default folgen', async () => {
-    await pool.query("SELECT setval('konfi_badges_id_seq', 41)");
-    await pool.query(migrationLesen(MIGRATION));
+  it('die Sequenzen tragen die Namen der Tabellen -- Besitz und Default folgen', async () => {
     const { rows: [r] } = await pool.query(SEQUENZ_DER_SPALTE);
     expect(r).toEqual({ badges: 'public.user_badges_id_seq', aktivitaeten: 'public.user_activities_id_seq' });
     const { rows } = await pool.query(`
@@ -50,20 +45,11 @@ describe('Migration 178 auf dem Stand, auf den sie beim Deploy trifft', () => {
     ]);
   });
 
-  it('der Zaehlerstand bleibt: die naechste ID laeuft weiter', async () => {
-    const { rows: [{ n }] } = await pool.query("SELECT nextval('user_badges_id_seq')::int AS n");
-    expect(n).toBe(42);
-  });
-
   it('die alten Namen gibt es nicht mehr', async () => {
     const { rows } = await pool.query(`
       SELECT relname FROM pg_class
       WHERE relkind = 'S' AND relname IN ('konfi_badges_id_seq', 'konfi_activities_id_seq')`);
     expect(rows).toEqual([]);
-  });
-
-  it('ein zweiter Lauf scheitert nicht', async () => {
-    await expect(pool.query(migrationLesen(MIGRATION))).resolves.toBeDefined();
   });
 });
 
