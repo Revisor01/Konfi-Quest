@@ -373,6 +373,8 @@ Versionsüberschrift.
   Gemeinde.
 - Wird einer Person eine Gemeinde entzogen, zeigt die App sofort Rolle und
   Namen der Gemeinde, in die sie zurückwechselt.
+- In den Terminlisten stehen die Kategorien eines Termins ohne doppelte
+  Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
 
 ### Sonstiges
 - Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
