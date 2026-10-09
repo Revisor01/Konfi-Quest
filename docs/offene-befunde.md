@@ -39,6 +39,11 @@ Nichts.
 - [ ] **VoiceOver, Sprachsteuerung und größte Schrift am iPhone** —
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
+- [ ] **Support-Probelauf mit Vorgängen** — angehalten nach Schritt 1
+  (10.10.2026): Die Support-Mail ist aus, und die Probe-Anfrage 1 ist
+  gelöscht; weiter, wenn die Stack-Variablen zurück sind
+  ([Betrieb](#betrieb), „Support-Mail seit 08.10.2026 aus"),
+  [Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md).
 - [ ] **Simons offene Fragen** — unten unter
   [Bei Simon zu entscheiden](#bei-simon-zu-entscheiden).
 
@@ -50,8 +55,6 @@ Nichts.
   Schritt 5), danach die Haken in der Play Console prüfen ([Release](#release),
   „Play Console empfiehlt vier Änderungen"); Ablauf in
   [betrieb/release.md](betrieb/release.md).
-- [ ] **Support-Probelauf mit Vorgängen** —
-  [Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md).
 - [ ] **Web-Version: was noch fehlt** — Leiste „Verwaltung", Rückweg ohne
   Gemeinde, Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
@@ -271,6 +274,20 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Betrieb
 
+- **Support-Mail seit 08.10.2026 aus.** Der Live-Stack hat in Portainer
+  keine Variablen mehr; in beiden Backends sind die Zugänge der Postfächer
+  und `MAIL_IMAP_HOST` leer. Seit 08.10.2026 12:09 holt der Server keine
+  Mails, Antworten aus der Support-Ansicht scheitern, die Bestätigung eines
+  Anliegens entfällt still. Die Abholung endete mit dem ersten Deploy nach
+  dem Neustart von Portainer am selben Morgen; `deploy/rollend.sh` schickt die
+  Variablen mit, die Portainer meldet — eine leere Liste bleibt leer. Die
+  Variablen im Stack wiederherstellen und klären, warum sie fehlen; der Deploy
+  prüft heute nicht, ob sie da sind (gemessen 10.10.2026, Auftrag 16).
+- **Probe-Anfrage 1 gelöscht.** Anfrage, Vorgang 1 und die Mails 1–6 sind
+  nach der Übernahme am 06.10.2026 aus der Datenbank verschwunden (Statistik
+  je Tabelle: so viele Löschungen wie Einfügungen); wer gelöscht hat, ist
+  nicht mehr feststellbar. War es Simon, ist nichts zu tun — sonst den Weg
+  suchen, der Anfragen löscht (gemessen 10.10.2026, Auftrag 16).
 - **Aufbewahrung der Sicherungen.** Am Host bleiben 14 tägliche Dumps; die
   Wochen- und Jahresstände aus
   [betrieb/sicherung.md](betrieb/sicherung.md#rhythmus-und-aufbewahrung)
