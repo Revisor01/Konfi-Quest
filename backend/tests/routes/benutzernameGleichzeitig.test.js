@@ -20,6 +20,7 @@ const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
 const { seed, ORGS, ROLES, JAHRGAENGE } = require('../helpers/seed');
 const { generateToken } = require('../helpers/auth');
+const { systemrolleAnlegen } = require('../helpers/kontoOhneGemeinde');
 
 const VERGEBEN = { error: 'Benutzername existiert bereits (muss systemweit eindeutig sein)' };
 
@@ -333,6 +334,32 @@ describe('Benutzernamen bei gleichzeitiger Anlage', () => {
         expect(r.body).toEqual(VERGEBEN);
       }
       expect(await kontenMitNamen('quer.name')).toBe(1);
+    });
+
+    // Support-Konten (Konten ohne Gemeinde) nehmen dieselbe Sperre
+    // (09.10.2026 nachgezogen: bis dahin ohne Test fuer den gleichzeitigen Fall).
+    it('Support-Konto und neues Teammitglied mit demselben Namen gleichzeitig: einer 201, einer 409', async () => {
+      await systemrolleAnlegen(db);
+      const antworten = await Promise.all([
+        request(app)
+          .post('/api/organizations/support-konten')
+          .set('Authorization', `Bearer ${superAdminToken}`)
+          .send({ username: 'Support.Quer', display_name: 'Support Quer', password: 'Sicher!Passwort1' }),
+        teamerAnlegen(orgAdmin1Token, 'support.quer', ROLES.teamer.id),
+      ]);
+      await genauEinerDurch(antworten, 'support.quer');
+    });
+
+    it('zwei Support-Konten mit verschiedenen Namen gleichzeitig: beide 201', async () => {
+      const support = (username) => request(app)
+        .post('/api/organizations/support-konten')
+        .set('Authorization', `Bearer ${superAdminToken}`)
+        .send({ username, display_name: `Support ${username}`, password: 'Sicher!Passwort1' });
+      await systemrolleAnlegen(db);
+      const antworten = await Promise.all([support('support.eins'), support('support.zwei')]);
+      expect(antworten.map((r) => r.status)).toEqual([201, 201]);
+      expect(await kontenMitNamen('support.eins')).toBe(1);
+      expect(await kontenMitNamen('support.zwei')).toBe(1);
     });
   });
 });
