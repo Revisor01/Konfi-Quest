@@ -512,7 +512,9 @@ describe('Vorgang (Web): Archivieren, Wiederherstellen, Löschen', () => {
   it('ohne Netz sind Archivieren und Löschen gesperrt', async () => {
     h.online = false;
     await oeffnen();
-    expect(screen.getByRole('button', { name: 'Archivieren' })).toBeDisabled();
+    // findBy: Der Titel steht schon, bevor die Knopfleiste nachkommt; im
+    // vollen CI-Lauf fiel getBy deshalb einmal (09.10.2026).
+    expect(await screen.findByRole('button', { name: 'Archivieren' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Löschen' })).toBeDisabled();
   });
 });
