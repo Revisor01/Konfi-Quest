@@ -10,6 +10,9 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- Die Seite „Betrieb" zeigt im Überblick, wann jede Aufgabe des Servers im
+  Hintergrund zuletzt lief, wie lange sie brauchte und ob sie geklappt hat,
+  dazu die Dauer des Push-Versands.
 - In der Detailansicht einer Person lässt sich Offenes direkt bestätigen:
   Ein Tipp auf eine gemeldete Aktivität öffnet das Prüfen mit Genehmigen und
   Ablehnen, und Events mit ausstehender Anwesenheit stehen oben in der

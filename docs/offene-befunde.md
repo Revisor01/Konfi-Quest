@@ -191,6 +191,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   und löschen, Abzeichen als gesehen markieren; Antworten per
   Charakterisierungstest festgehalten
   (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
+- [x] 09.10.2026 — Laufzeiten im Hintergrund sichtbar (Betrieb BF-10 Rest):
+  je Job letzter Start, Dauer und Ergebnis in `/api/metrics`, Dauer des
+  Push-Versands, Protokollzeile mit Dauer, Karte „Hintergrund" auf der Seite
+  „Betrieb"; Begrüßungsstunde des Teams nach Berliner Zeit
+  (Branch `fix/backend-doppelcode-begruessung-laufzeiten`).
 
 
 ## Offen
@@ -205,11 +210,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ([03-bedienung.md](handbuch/03-bedienung.md#bewegung-reduzieren)) nennt
   sie nicht unter dem, was dann ruhig bleibt; die Angabe „Bewegung
   reduzieren" bei Apple setzt die Korrektur voraus ([Release](#release)).
-- **Laufzeiten im Hintergrund nicht sichtbar.** `/api/metrics/local` zeigt den
-  Cron-Leader, aber nicht, wann welcher Job zuletzt lief und wie lange; auch
-  die Dauer eines Push-Versands und des Zähler-Laufs steht in keiner
-  Log-Zeile (01.10.2026: „nicht messbar ohne Code"). Seit 27.09.2026
-  (Betrieb BF-10, Rest).
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird

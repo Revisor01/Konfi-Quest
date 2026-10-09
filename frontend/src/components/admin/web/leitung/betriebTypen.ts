@@ -39,6 +39,41 @@ export interface BetriebsCspMeldungen {
   gruppen: BetriebsCspGruppe[];
 }
 
+/** Ein Hintergrund-Job des Servers (utils/hintergrundLaeufe.js). */
+export interface BetriebsHintergrundJob {
+  name: string;
+  bezeichnung: string;
+  takt: string | null;
+  letzterStart: string | null;
+  letztesEnde: string | null;
+  /** Dauer des letzten abgeschlossenen Laufs. */
+  dauerMs: number | null;
+  ergebnis: 'ok' | 'fehler' | 'laeuft' | null;
+  fehler: string | null;
+  anzahl: number;
+  fehlerAnzahl: number;
+  maxDauerMs: number;
+  mittelDauerMs: number | null;
+}
+
+export interface BetriebsPushWeg {
+  anzahl: number;
+  fehler: number;
+  empfaenger: number;
+  maxDauerMs: number;
+  mittelDauerMs: number | null;
+  letzteDauerMs: number | null;
+  zuletzt: string | null;
+}
+
+export interface BetriebsHintergrund {
+  jobs: BetriebsHintergrundJob[];
+  pushVersand: {
+    jeWeg: { einzeln: BetriebsPushWeg; viele: BetriebsPushWeg; chat: BetriebsPushWeg };
+    langsamster: { weg: string; art: string | null; empfaenger: number; dauerMs: number; zeit: string } | null;
+  };
+}
+
 export interface BetriebsAnsicht extends BetriebsSnapshot {
   uptimeSeconds: number;
   totalRequests: number;
@@ -54,6 +89,8 @@ export interface BetriebsAnsicht extends BetriebsSnapshot {
   fehlerGruppen?: BetriebsFehlerGruppe[];
   /** Fehlt bei einem Server vor dem 09.10.2026. */
   cspMeldungen?: BetriebsCspMeldungen;
+  /** Hintergrund-Jobs und Push-Versand; fehlt bei einem Server vor dem 09.10.2026. */
+  hintergrund?: BetriebsHintergrund;
 }
 
 export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf' | 'sprueche';

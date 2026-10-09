@@ -11,6 +11,7 @@
 // der BackgroundService via snapshot() -> apm_snapshots-Tabelle.
 
 const { stand: cspStand, zusammenfuehren: cspZusammenfuehren } = require('./cspMeldungen');
+const { stand: hintergrundStand, zusammenfuehren: hintergrundZusammenfuehren } = require('./hintergrundLaeufe');
 
 const SLOW_MS = 1000;          // Schwelle fuer "langsamer Request" (Log-Warnung)
 const MAX_SAMPLES = 200;       // rollierende Dauer-Stichproben pro Route (p95)
@@ -660,6 +661,10 @@ function snapshot() {
     // (utils/cspMeldungen.js, 09.10.2026). Feld ist neu; aeltere
     // App-Fassungen lesen es nicht.
     cspMeldungen: cspStand(),
+    // Hintergrund-Jobs (letzter Start, Dauer, Ergebnis) und Dauer des
+    // Push-Versands (utils/hintergrundLaeufe.js, 09.10.2026). Feld ist neu;
+    // aeltere App-Fassungen lesen es nicht.
+    hintergrund: hintergrundStand(),
   };
 }
 
@@ -872,6 +877,9 @@ function mergeSnapshots(snaps) {
     // CSP-Meldungen ueber die Replicas: Anzahl addieren, fruehestes "seit"
     // und spaetestes "zuletzt" behalten (utils/cspMeldungen.js).
     cspMeldungen: cspZusammenfuehren(valid.map(x => x.cspMeldungen)),
+    // Hintergrund: je Job der juengste Lauf (der Cron-Leader kann gewechselt
+    // haben), Push-Versand je Weg addiert (utils/hintergrundLaeufe.js).
+    hintergrund: hintergrundZusammenfuehren(valid.map(x => ({ replica: x.replica, stand: x.hintergrund }))),
   };
 }
 

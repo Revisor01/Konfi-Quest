@@ -14,7 +14,7 @@ import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_PULS } from '../../../shared/icons';
 import { datumUhrzeit, uhrzeit } from '../../../../utils/dateUtils';
-import { fmtDauer, fmtSeit, fmtUptime, fmtZahl, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../../utils/betriebsFormat';
+import { PUSH_WEGE, fmtDauer, fmtSeit, fmtUptime, fmtZahl, laufErgebnisFarbe, laufErgebnisText, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../../utils/betriebsFormat';
 import { METRIK_AMPEL } from '../../../../theme/colors';
 import type { HistorieDelta, RoutenSortierung, RoutenZeile, Tagesbilanz, vergleichHeuteGegenVortage } from '../../../../utils/betriebsKennzahlen';
 import WebSeite from '../../../web/WebSeite';
@@ -27,7 +27,7 @@ import WebPill from '../../../web/WebPill';
 import WebSchalter from '../../../web/WebSchalter';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
-import type { BetriebsAnsicht, BetriebsCspGruppe, BetriebsEinzelfehler, BetriebsFehlerGruppe, BetriebsReiter } from './betriebTypen';
+import type { BetriebsAnsicht, BetriebsCspGruppe, BetriebsEinzelfehler, BetriebsFehlerGruppe, BetriebsHintergrundJob, BetriebsPushWeg, BetriebsReiter } from './betriebTypen';
 
 export interface WebBetriebProps {
   snap: BetriebsAnsicht | null;
@@ -173,6 +173,64 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
             <div className="web-karte__fuss web-gedaempft">{fmtZahl(csp.verworfen)} weitere Meldungen nicht aufgeschlüsselt (mehr als {fmtZahl(csp.grenze)} verschiedene).</div>
           )}
         </>
+      )}
+    </WebKarte>
+  ) : null;
+
+  // --- Hintergrund: Aufgaben des Servers und Push-Versand ---
+  const hintergrund = snap.hintergrund;
+  const jobSpalten: Array<WebSpalte<BetriebsHintergrundJob>> = [
+    {
+      schluessel: 'aufgabe',
+      kopf: 'Aufgabe',
+      sortWert: (j) => j.bezeichnung,
+      zelle: (j) => (
+        <span>
+          {j.bezeichnung}
+          {j.takt && <span className="web-zelle-leise"> · {j.takt}</span>}
+          {j.ergebnis === 'fehler' && j.fehler && <span className="web-zelle-leise web-einzeilig" style={{ display: 'block' }}>{j.fehler}</span>}
+        </span>
+      ),
+    },
+    { schluessel: 'zuletzt', kopf: 'Zuletzt', breite: '120px', sortWert: (j) => (j.letzterStart ? new Date(j.letzterStart) : 0), zelle: (j) => (j.letzterStart ? fmtSeit(j.letzterStart) : '–') },
+    { schluessel: 'dauer', kopf: 'Dauer', zahl: true, breite: '100px', sortWert: (j) => j.dauerMs ?? -1, zelle: (j) => (j.dauerMs === null ? '–' : <span style={{ color: msColor(j.dauerMs) }}>{fmtDauer(j.dauerMs)}</span>) },
+    {
+      schluessel: 'ergebnis',
+      kopf: 'Ergebnis',
+      breite: '100px',
+      sortWert: (j) => j.ergebnis ?? '',
+      zelle: (j) => <span style={{ color: laufErgebnisFarbe(j.ergebnis), fontWeight: 'var(--app-schrift-halbfett)' }}>{laufErgebnisText(j.ergebnis)}</span>,
+    },
+    { schluessel: 'laeufe', kopf: 'Läufe', zahl: true, breite: '110px', optional: true, sortWert: (j) => j.anzahl, zelle: (j) => (j.fehlerAnzahl > 0 ? `${fmtZahl(j.anzahl)} (${fmtZahl(j.fehlerAnzahl)} Fehler)` : fmtZahl(j.anzahl)) },
+    { schluessel: 'laengster', kopf: 'Längster', zahl: true, breite: '100px', optional: true, sortWert: (j) => j.maxDauerMs, zelle: (j) => fmtDauer(j.maxDauerMs) },
+  ];
+  type PushZeile = BetriebsPushWeg & { name: string };
+  const pushZeilen: PushZeile[] = hintergrund
+    ? PUSH_WEGE.map((w) => ({ ...hintergrund.pushVersand.jeWeg[w.schluessel], name: w.name }))
+    : [];
+  const pushSpalten: Array<WebSpalte<PushZeile>> = [
+    { schluessel: 'weg', kopf: 'Versand', sortWert: (z) => z.name, zelle: (z) => z.name },
+    { schluessel: 'anzahl', kopf: 'Versände', zahl: true, breite: '100px', sortWert: (z) => z.anzahl, zelle: (z) => fmtZahl(z.anzahl) },
+    { schluessel: 'empfaenger', kopf: 'Empfänger:innen', zahl: true, breite: '140px', optional: true, sortWert: (z) => z.empfaenger, zelle: (z) => fmtZahl(z.empfaenger) },
+    { schluessel: 'mittel', kopf: 'Mittel', zahl: true, breite: '100px', sortWert: (z) => z.mittelDauerMs ?? -1, zelle: (z) => (z.mittelDauerMs === null ? '–' : fmtDauer(z.mittelDauerMs)) },
+    { schluessel: 'laengster', kopf: 'Längster', zahl: true, breite: '100px', sortWert: (z) => z.maxDauerMs, zelle: (z) => (z.anzahl === 0 ? '–' : <span style={{ color: msColor(z.maxDauerMs) }}>{fmtDauer(z.maxDauerMs)}</span>) },
+  ];
+  const hintergrundKarte = hintergrund ? (
+    <WebKarte
+      titel="Hintergrund"
+      untertitel="Was der Server von selbst erledigt, seit dem letzten Neustart: wann es zuletzt lief, wie lange es brauchte und ob es geklappt hat. Die Aufgaben fährt nur eine Instanz; Pushes gehen von jeder hinaus."
+      bund={hintergrund.jobs.length > 0}
+    >
+      {hintergrund.jobs.length === 0 ? (
+        <WebLeer icon={ICON_PULS} titel="Noch kein Lauf" text="Seit dem letzten Neustart hat noch keine Aufgabe im Hintergrund gearbeitet." />
+      ) : (
+        <WebTabelle beschriftung="Aufgaben im Hintergrund" spalten={jobSpalten} zeilen={hintergrund.jobs} zeileSchluessel={(j) => j.name} mittig />
+      )}
+      <WebTabelle beschriftung="Push-Versand" spalten={pushSpalten} zeilen={pushZeilen} zeileSchluessel={(z) => z.name} mittig />
+      {hintergrund.pushVersand.langsamster && (
+        <div className="web-karte__fuss web-gedaempft">
+          Längster Versand: {fmtDauer(hintergrund.pushVersand.langsamster.dauerMs)} an {fmtZahl(hintergrund.pushVersand.langsamster.empfaenger)} Empfänger:innen, {fmtSeit(hintergrund.pushVersand.langsamster.zeit)}.
+        </div>
       )}
     </WebKarte>
   ) : null;
@@ -367,6 +425,8 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
           )}
         </WebKarte>
       )}
+
+      {hintergrundKarte}
     </div>
   );
 

@@ -45,6 +45,7 @@ zeigt es `SELECT current_setting('TimeZone')` über den Pool des Backends.
 | Stand prüfen | nach jedem Deploy | [Nach jedem Deploy](#nach-jedem-deploy) |
 | Notfall-Deploy | wenn ein gebauter Fix sofort raus muss oder zurückgerollt wird | [Notfall-Deploy](#notfall-deploy) |
 | Nachlauf-Warteschlange prüfen | nach jedem Deploy, bei Meldungen „Push kam nicht an" | [Nachlauf-Warteschlange](#nachlauf-warteschlange) |
+| Hintergrund-Jobs prüfen | nach jedem Deploy, bei Meldungen „Erinnerung kam nicht", „Zahl am App-Symbol stimmt nicht" | [Hintergrund-Jobs](#hintergrund-jobs) |
 | Apple-Zertifikat erneuern | jährlich, jetzt vor dem 28.11.2026 | [release.md](release.md#8-das-apple-zertifikat-jährlich-erneuern) |
 
 ## Umami bereinigen
@@ -158,6 +159,9 @@ Migrationen); zuletzt am 01.10.2026: gleich, bis auf die Erweiterung
 
 - Nachlauf-Warteschlange: `nachlauf` in `/api/status` zeigt
   `haengend: 0`; Einzelheiten mit der Abfrage im nächsten Abschnitt.
+- Hintergrund-Jobs: Nach rund fünf Minuten stehen auf der Seite „Betrieb"
+  (Überblick, Karte „Hintergrund") der Zähler-Lauf und die Event-Erinnerungen
+  mit „ok"; Einzelheiten im Abschnitt [Hintergrund-Jobs](#hintergrund-jobs).
 
 ## Nachlauf-Warteschlange
 
@@ -239,6 +243,37 @@ Grund. Einen fehlgeschlagenen Auftrag erneut anstoßen (ändert
 Produktionsdaten, nur nach Rücksprache): `status = 'offen'`,
 `versuche = 0`, `faellig_ab = NOW()` setzen; Schritte in
 `erledigte_schritte` laufen dabei nicht noch einmal.
+
+## Hintergrund-Jobs
+
+Die zeitgesteuerten Aufgaben (Zähler am App-Symbol, Abzeichen-Prüfung,
+Event-Erinnerungen, Aufräumen, Testphase, Mails abholen …) fährt nur der
+Cron-Leader (`checks.cron_leader` in `/api/status`). Je Job steht in
+`GET /api/metrics` unter `hintergrund.jobs` (Seite „Betrieb", Karte
+„Hintergrund"): letzter Start, Dauer des letzten Laufs, Ergebnis (`ok`,
+`fehler` mit Text, `laeuft`), Zahl der Läufe und Fehler, längster Lauf.
+Darunter `hintergrund.pushVersand`: je Weg (an eine Person, an viele, Chat)
+Zahl, Mittel und längste Dauer des Versands, gemessen vom Aufruf bis zum
+letzten Gerät — von jeder Replica, nicht nur vom Leader. Alles im Speicher der
+Replica (`backend/utils/hintergrundLaeufe.js`); ein Neustart leert es, der
+nächste Lauf füllt es.
+
+**Im Protokoll** schreibt jeder Lauf der stündlichen und täglichen Jobs und
+der Zähler-Lauf (alle 5 Minuten) eine Zeile
+`Hintergrund: <Aufgabe> in <n> ms, ok (…)`, der Zähler-Lauf mit „x von y
+Zählern gesetzt, z geprüft". Jobs im Minutentakt (Push „Anmeldung möglich",
+Challenge-Start, Mails abholen, Kennzahlen sichern) schreiben nur ab einer
+Sekunde oder bei einem Fehler. Ein Fehler erscheint zusätzlich als Warnung mit
+Dauer; die Fehlerzeile selbst schreibt der Job wie bisher. Ein Versand an viele
+schreibt `Push <art>: <n> Empfänger:innen in <ms> ms` erst ab fünf Sekunden.
+
+**Prüfen:** Steht ein Job auf `fehler`, sagt `fehler` den Grund und das
+Protokoll des Leaders zur Uhrzeit von `letzterStart` den Rest. Fehlt ein Job,
+der laut Takt hätte laufen müssen, ist der Leader seit dem letzten Start
+noch nicht so weit (tägliche Jobs erst zu ihrer Uhrzeit) — oder es gibt
+keinen Leader: dann zeigt `checks.cron_leader` `fehlt`. Ein Zähler-Lauf über
+10 s heißt, dass er an seine Obergrenze kommt (800 Personen je Lauf,
+`backgroundService.ABZEICHEN_MAX_JE_LAUF`).
 
 ## Notfall-Deploy
 

@@ -16,6 +16,9 @@ const liveUpdate = require('../utils/liveUpdate');
 const { loescheMitteilungenZuErledigtenEinladungen } = require('../utils/postfachAufraeumen');
 const { WOANDERS_MITGLIED_SQL } = require('../utils/konfiOderTeam');
 const mailAbholung = require('./mailAbholung');
+// Laufzeiten im Hintergrund (letzter Start, Dauer, Ergebnis) fuer
+// /api/metrics und das Protokoll (09.10.2026, Betrieb BF-10 Rest).
+const { messeLauf, laufFehler } = require('../utils/hintergrundLaeufe');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -213,10 +216,17 @@ class BackgroundService {
     // Abfragen insgesamt statt zehntausender.
     const FUENF_MINUTEN = 5 * 60 * 1000;
     const EINE_STUNDE = 60 * 60 * 1000;
+    // Fuer die Protokollzeile: wie viele Zaehler gesetzt, wie viele Personen
+    // auf Abzeichen geprueft wurden.
+    const zaehlerZusatz = (r) => {
+      if (!r) return null;
+      if (r.uebersprungen) return 'übersprungen, Vorgänger lief noch';
+      return `${r.updated} von ${r.total} Zählern gesetzt, ${r.geprueft || 0} geprüft`;
+    };
 
     this.badgeUpdateInterval = setInterval(async () => {
       try {
-        await this.updateAllUserBadges(db, { nurZaehler: true });
+        await messeLauf('zaehler', () => this.updateAllUserBadges(db, { nurZaehler: true }), { zusatz: zaehlerZusatz });
       } catch (error) {
         console.error('Background badge update failed:', error);
       }
@@ -224,7 +234,7 @@ class BackgroundService {
 
     this.badgeCheckInterval = setInterval(async () => {
       try {
-        await this.updateAllUserBadges(db);
+        await messeLauf('abzeichen', () => this.updateAllUserBadges(db), { zusatz: zaehlerZusatz });
       } catch (error) {
         console.error('Background badge check failed:', error);
       }
@@ -651,12 +661,12 @@ class BackgroundService {
     // Prozess beenden — und mit `restart: unless-stopped` eine Neustartschleife
     // ausloesen, die von aussen unsichtbar bleibt (nur die Cron-Leader-Replica
     // startet die Hintergrund-Jobs, die API antwortet weiter).
-    this.sendEventReminders(db).catch(err =>
+    messeLauf('erinnerungen', () => this.sendEventReminders(db)).catch(err =>
       console.error('Event reminder (initial) failed:', err));
 
     this.eventReminderCronTask = cron.schedule(ERINNERUNG_TAKT, async () => {
       try {
-        await this.sendEventReminders(db);
+        await messeLauf('erinnerungen', () => this.sendEventReminders(db));
       } catch (error) {
         console.error('Event reminder service failed:', error);
       }
@@ -688,13 +698,13 @@ class BackgroundService {
     // (sonst Race: Spalte registration_open_notified evtl. noch nicht vorhanden).
     // Danach alle 5 Minuten (feinkoernig, da Anmeldestart sekundengenau wirkt).
     setTimeout(() => {
-      this.sendRegistrationOpenPushes(db).catch(err =>
+      messeLauf('anmeldung_offen', () => this.sendRegistrationOpenPushes(db)).catch(err =>
         console.error('Registration-open push (initial) failed:', err));
     }, 30 * 1000);
     const ONE_MINUTE = 60 * 1000;
     this.registrationOpenInterval = setInterval(async () => {
       try {
-        await this.sendRegistrationOpenPushes(db);
+        await messeLauf('anmeldung_offen', () => this.sendRegistrationOpenPushes(db));
       } catch (error) {
         console.error('Registration-open push service failed:', error);
       }
@@ -766,6 +776,7 @@ class BackgroundService {
       }
     } catch (error) {
       console.error('sendRegistrationOpenPushes error:', error);
+      laufFehler('anmeldung_offen', error);
     }
   }
 
@@ -785,14 +796,14 @@ class BackgroundService {
     // Erstlauf verzoegert (30s), damit beim Boot zuerst die Migrations durch
     // sind (sonst Race: Tabelle challenges evtl. noch nicht vorhanden).
     setTimeout(() => {
-      this.sendChallengeStartPushes(db).catch(err =>
+      messeLauf('challenge_start', () => this.sendChallengeStartPushes(db)).catch(err =>
         console.error('Challenge-Start-Push (initial) failed:', err));
     }, 30 * 1000);
 
     const FIVE_MINUTES = 5 * 60 * 1000;
     this.challengeStartInterval = setInterval(async () => {
       try {
-        await this.sendChallengeStartPushes(db);
+        await messeLauf('challenge_start', () => this.sendChallengeStartPushes(db));
       } catch (error) {
         console.error('Challenge-Start-Push-Service failed:', error);
       }
@@ -840,6 +851,7 @@ class BackgroundService {
       }
     } catch (error) {
       console.error('sendChallengeStartPushes error:', error);
+      laufFehler('challenge_start', error);
     }
   }
 
@@ -1101,7 +1113,7 @@ class BackgroundService {
     // '0 9 * * *' = täglich um 09:00 Uhr
     this.pendingEventsCronTask = cron.schedule('0 9 * * *', async () => {
       try {
-        await this.checkPendingEvents(db);
+        await messeLauf('offene_verbuchung', () => this.checkPendingEvents(db));
       } catch (error) {
         console.error('Pending events check failed:', error);
       }
@@ -1205,20 +1217,20 @@ class BackgroundService {
     // Sofort einmal ausfuehren. .catch() ist Pflicht — cleanupStaleTokens wirft
     // den Fehler weiter (rethrow), ein nackter Aufruf wuerde den Prozess ueber
     // eine unhandled rejection beenden (siehe startEventReminderService).
-    this.cleanupStaleTokens(db).catch(err =>
+    messeLauf('push_tokens', () => this.cleanupStaleTokens(db)).catch(err =>
       console.error('Token cleanup (initial) failed:', err));
-    this.cleanupRefreshTokens(db).catch(err =>
+    messeLauf('refresh_tokens', () => this.cleanupRefreshTokens(db)).catch(err =>
       console.error('Refresh-Token cleanup (initial) failed:', err));
 
     const SIX_HOURS = 6 * 60 * 60 * 1000;
     this.tokenCleanupInterval = setInterval(async () => {
       try {
-        await this.cleanupStaleTokens(db);
+        await messeLauf('push_tokens', () => this.cleanupStaleTokens(db));
       } catch (error) {
         console.error('Token cleanup service failed:', error);
       }
       try {
-        await this.cleanupRefreshTokens(db);
+        await messeLauf('refresh_tokens', () => this.cleanupRefreshTokens(db));
       } catch (error) {
         console.error('Refresh-Token cleanup failed:', error);
       }
@@ -1333,7 +1345,7 @@ class BackgroundService {
     this.wrappedCronTask = cron.schedule('0 6 6 1 *', async () => {
       console.log('Wrapped-Cron: Ausfuehrung gestartet (jaehrlich am 6.1.)');
       try {
-        await this.checkWrappedTriggers(db);
+        await messeLauf('rueckblick', () => this.checkWrappedTriggers(db));
       } catch (error) {
         console.error('Wrapped-Cron service failed:', error);
       }
@@ -1436,12 +1448,12 @@ class BackgroundService {
       // ERST warnen (7 Tage vor Löschung), DANN löschen — beides im selben
       // 02:00-Lauf, aber getrennt fehler-isoliert.
       try {
-        await this.runJahrgangDeletionReminders(db);
+        await messeLauf('loesch_erinnerung', () => this.runJahrgangDeletionReminders(db));
       } catch (e) {
         console.error('Jahrgang-Loesch-Reminder-Cron failed:', e);
       }
       try {
-        await this.runAutoDeletion(db);
+        await messeLauf('auto_loeschung', () => this.runAutoDeletion(db));
       } catch (e) {
         console.error('Auto-Deletion-Cron failed:', e);
       }
@@ -1449,7 +1461,7 @@ class BackgroundService {
       // Postfach-Mitteilungen. Ein Fehler hier darf die Konto-Loeschung
       // oben nicht beruehren und umgekehrt.
       try {
-        await this.cleanupAlteMitteilungen(db);
+        await messeLauf('mitteilungen_aufraeumen', () => this.cleanupAlteMitteilungen(db));
       } catch (e) {
         console.error('Mitteilungs-Aufraeum-Cron failed:', e);
       }
@@ -1458,7 +1470,7 @@ class BackgroundService {
       // Ablauf-Job fuer Einladungen gibt es nicht -- sie laufen still ab
       // (utils/postfachAufraeumen.js).
       try {
-        const n = await loescheMitteilungenZuErledigtenEinladungen(db);
+        const n = await messeLauf('einladungen_aufraeumen', () => loescheMitteilungenZuErledigtenEinladungen(db));
         if (n > 0) {
           console.log(`Mitteilungs-Aufraeumen: ${n} Einladungs-Mitteilungen ohne offene Einladung geloescht`);
         }
@@ -1468,22 +1480,24 @@ class BackgroundService {
       // Fuenfter Schritt (03.10.2026): abgelehnte und unbewegte Anfragen
       // vom Formular.
       try {
-        await this.cleanupAbgelehnteAnfragen(db);
-        await this.cleanupUnbewegteAnfragen(db);
+        await messeLauf('anfragen_aufraeumen', async () => {
+          await this.cleanupAbgelehnteAnfragen(db);
+          await this.cleanupUnbewegteAnfragen(db);
+        });
       } catch (e) {
         console.error('Anfragen aufraeumen failed:', e.code || '', e.message);
       }
       // Sechster Schritt (03.10.2026): nicht zugeordnete Mails der
       // Support-Mail nach 180 Tagen.
       try {
-        await this.cleanupNichtZugeordneteMails(db);
+        await messeLauf('mails_aufraeumen', () => this.cleanupNichtZugeordneteMails(db));
       } catch (e) {
         console.error('Mails aufraeumen failed:', e.code || '', e.message);
       }
       // Siebter Schritt (03.10.2026): archivierte Support-Vorgaenge 730 Tage
       // nach dem Archivieren.
       try {
-        await this.cleanupArchivierteVorgaenge(db);
+        await messeLauf('vorgaenge_aufraeumen', () => this.cleanupArchivierteVorgaenge(db));
       } catch (e) {
         console.error('Vorgaenge aufraeumen failed:', e.code || '', e.message);
       }
@@ -1657,14 +1671,14 @@ class BackgroundService {
     // '0 3 * * *' = täglich um 03:00 Uhr (nach Auto-Deletion um 02:00)
     this.trialExpiryCronTask = cron.schedule('0 3 * * *', async () => {
       try {
-        await this.runTrialExpiry(db);
+        await messeLauf('testphase', () => this.runTrialExpiry(db));
       } catch (e) {
         console.error('Trial-Expiry-Cron failed:', e);
       }
       try {
         // Lizenz-Erinnerung (bezahlte Lizenzen ~14 Tage vor Ablauf) — läuft NACH
         // der Sperrung, damit gerade abgelaufene Orgs nicht mehr erinnert werden.
-        await this.runLicenseReminders(db);
+        await messeLauf('lizenz_erinnerung', () => this.runLicenseReminders(db));
       } catch (e) {
         console.error('Lizenz-Erinnerung-Cron failed:', e);
       }
@@ -1704,6 +1718,7 @@ class BackgroundService {
       return { locked: rows.length };
     } catch (error) {
       console.error('Trial-Expiry: Sperrung fehlgeschlagen:', error.message);
+      laufFehler('testphase', error);
       return { locked: 0 };
     }
   }
@@ -1789,6 +1804,7 @@ class BackgroundService {
       return { sent };
     } catch (error) {
       console.error('Lizenz-Erinnerung fehlgeschlagen:', error.message);
+      laufFehler('lizenz_erinnerung', error);
       return { sent: 0 };
     }
   }
@@ -1948,6 +1964,7 @@ class BackgroundService {
       return { sent };
     } catch (error) {
       console.error('Jahrgang-Loesch-Reminder fehlgeschlagen:', error.message);
+      laufFehler('loesch_erinnerung', error);
       return { sent: 0 };
     }
   }
@@ -1969,6 +1986,7 @@ class BackgroundService {
       jahrgaenge = res.rows;
     } catch (error) {
       console.error('Auto-Deletion: Jahrgaenge konnten nicht geladen werden:', error.message);
+      laufFehler('auto_loeschung', error);
       return { soft: 0, hard: 0 };
     }
 
@@ -2137,28 +2155,33 @@ class BackgroundService {
     const FIVE_MINUTES = 5 * 60 * 1000;
     const write = async () => {
       try {
-        const s = apm.persistSummary();
-        await db.query(
-          `INSERT INTO apm_snapshots (total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [s.totalRequests, s.totalErrors, s.maxInFlight, s.worstP95Ms, s.worstRoute]
-        );
-        // Aufräumen: die letzten zwei Jahre behalten — bewusst grosszügig,
-        // damit sich das Wachstum überhaupt erst beobachten lässt und danach
-        // mit Zahlen entschieden werden kann.
-        //
-        // Gemessen am 14.09.2026: 276 Zeilen und 1,8 MB je 30 Tage. Zwei Jahre
-        // sind damit rund 201.000 Zeilen und 44 MB, bei einer Datenbank von
-        // 21 MB und einem Speicherlimit von 1 GB. Die Snapshots entstehen
-        // zeitgesteuert (alle fünf Minuten), NICHT je Nutzer:in — die Zeilenzahl
-        // wächst also nicht mit der Gemeindegrösse, sondern nur mit der Anzahl
-        // schreibender Replicas (heute eine von dreien).
-        await db.query("DELETE FROM apm_snapshots WHERE captured_at < NOW() - INTERVAL '2 years'");
+        await messeLauf('kennzahlen_sichern', () => this.kennzahlenSichern(db));
       } catch (error) {
         console.error('APM-Snapshot fehlgeschlagen:', error.message);
       }
     };
     this.apmSnapshotInterval = setInterval(write, FIVE_MINUTES);
+  }
+
+  /** Ein Schnappschuss der Kennzahlen in apm_snapshots, Altes weg. */
+  static async kennzahlenSichern(db) {
+    const s = apm.persistSummary();
+    await db.query(
+      `INSERT INTO apm_snapshots (total_requests, total_errors, max_in_flight, worst_p95_ms, worst_route)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [s.totalRequests, s.totalErrors, s.maxInFlight, s.worstP95Ms, s.worstRoute]
+    );
+    // Aufräumen: die letzten zwei Jahre behalten — bewusst grosszügig,
+    // damit sich das Wachstum überhaupt erst beobachten lässt und danach
+    // mit Zahlen entschieden werden kann.
+    //
+    // Gemessen am 14.09.2026: 276 Zeilen und 1,8 MB je 30 Tage. Zwei Jahre
+    // sind damit rund 201.000 Zeilen und 44 MB, bei einer Datenbank von
+    // 21 MB und einem Speicherlimit von 1 GB. Die Snapshots entstehen
+    // zeitgesteuert (alle fünf Minuten), NICHT je Nutzer:in — die Zeilenzahl
+    // wächst also nicht mit der Gemeindegrösse, sondern nur mit der Anzahl
+    // schreibender Replicas (heute eine von dreien).
+    await db.query("DELETE FROM apm_snapshots WHERE captured_at < NOW() - INTERVAL '2 years'");
   }
 
   static stopApmSnapshotService() {
@@ -2201,7 +2224,7 @@ class BackgroundService {
     if (this.mailAbholungLaeuft) return null;
     this.mailAbholungLaeuft = true;
     try {
-      return await mailAbholung.alleAbholen(db);
+      return await messeLauf('mail_abholung', () => mailAbholung.alleAbholen(db));
     } catch (error) {
       console.error('Mail-Abholung failed:', error.code || '', error.message);
       return null;
