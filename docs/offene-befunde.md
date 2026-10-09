@@ -42,11 +42,9 @@ Nichts.
 - [ ] **VoiceOver, Sprachsteuerung und größte Schrift am iPhone** —
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
-- [ ] **Support-Probelauf mit Vorgängen** — angehalten nach Schritt 1
-  (10.10.2026): Die Support-Mail ist aus, und die Probe-Anfrage 1 ist
-  gelöscht; weiter, wenn die Stack-Variablen zurück sind
-  ([Betrieb](#betrieb), „Support-Mail seit 08.10.2026 aus"),
-  [Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md).
+- [ ] **Support-Probelauf mit Vorgängen** — Schritte 1–5 erledigt
+  (10.10.2026); Simon sieht sich die Probe-Vorgänge an, dann Schritt 6
+  ([Auftrag 16](auftraege/lokaler-agent/16-support-vorgaenge-probelauf.md)).
 
 ### Als Nächstes
 
@@ -259,6 +257,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Inhalt scheint beim Rollen nicht mehr durch (Branch
   `fix/android-kopfleiste-deckend`; Play-Bildschirmfoto `konfi-challenge-feed`
   nach dem Deploy neu ziehen).
+- [x] 10.10.2026 — Support-Mail wieder an: Sie war seit 08.10.2026 12:10
+  aus, weil der Live-Stack keine Variablen mehr hatte; Variablen
+  wiederhergestellt, beide Postfächer holen wieder ab (Auftrag 16, Branch
+  `docs/auftrag-16-probelauf`).
 
 
 ## Offen
@@ -288,20 +290,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Betrieb
 
-- **Support-Mail seit 08.10.2026 aus.** Der Live-Stack hat in Portainer
-  keine Variablen mehr; in beiden Backends sind die Zugänge der Postfächer
-  und `MAIL_IMAP_HOST` leer. Seit 08.10.2026 12:09 holt der Server keine
-  Mails, Antworten aus der Support-Ansicht scheitern, die Bestätigung eines
-  Anliegens entfällt still. Die Abholung endete mit dem ersten Deploy nach
-  dem Neustart von Portainer am selben Morgen; `deploy/rollend.sh` schickt die
-  Variablen mit, die Portainer meldet — eine leere Liste bleibt leer. Die
-  Variablen im Stack wiederherstellen und klären, warum sie fehlen; der Deploy
-  prüft heute nicht, ob sie da sind (gemessen 10.10.2026, Auftrag 16).
-- **Probe-Anfrage 1 gelöscht.** Anfrage, Vorgang 1 und die Mails 1–6 sind
-  nach der Übernahme am 06.10.2026 aus der Datenbank verschwunden (Statistik
-  je Tabelle: so viele Löschungen wie Einfügungen); wer gelöscht hat, ist
-  nicht mehr feststellbar. War es Simon, ist nichts zu tun — sonst den Weg
-  suchen, der Anfragen löscht (gemessen 10.10.2026, Auftrag 16).
 - **Aufbewahrung der Sicherungen.** Am Host bleiben 14 tägliche Dumps; die
   Wochen- und Jahresstände aus
   [betrieb/sicherung.md](betrieb/sicherung.md#rhythmus-und-aufbewahrung)
