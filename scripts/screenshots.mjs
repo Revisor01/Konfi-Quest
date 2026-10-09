@@ -248,7 +248,15 @@ async function zumFeedScrollen(page) {
     }
     const banner = inhalt.querySelector('.app-header-banner') || inhalt.firstElementChild;
     const bannerHoehe = banner ? banner.getBoundingClientRect().height + 16 : 0;
-    const versatz = kopf.getBoundingClientRect().top - flaeche.getBoundingClientRect().top;
+    // Die Seite nutzt "fullscreen": Die Rollflaeche beginnt am oberen
+    // Bildrand, die Kopfleiste liegt darueber. Gemessen ab der Oberkante der
+    // Rollflaeche landete die Ueberschrift deshalb UNTER der Leiste und schien
+    // im Play-Bild (10.10.2026) halbtransparent durch. Angesetzt wird darum
+    // an der Unterkante der sichtbaren Kopfleiste derselben Seite.
+    const leiste = inhalt.closest('.ion-page')?.querySelector('ion-header');
+    const leistenUnterkante = leiste ? leiste.getBoundingClientRect().bottom : 0;
+    const oben = Math.max(flaeche.getBoundingClientRect().top, leistenUnterkante);
+    const versatz = kopf.getBoundingClientRect().top - oben;
     const gewuenscht = flaeche.scrollTop + versatz - 24;
     const moeglich = flaeche.scrollHeight - flaeche.clientHeight;
     // Reicht der Weg nicht, um den Farbbanner ganz hinauszuschieben, dann
