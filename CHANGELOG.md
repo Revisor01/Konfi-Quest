@@ -414,6 +414,8 @@ Versionsüberschrift.
 - Konfispruch, Bibelübersetzung, eigene Anträge und das Markieren gesehener
   Abzeichen laufen für Konfis und Team über dieselbe Stelle im Server; die
   Antworten bleiben unverändert.
+- Der Server meldet der Startseite des Teams die Tageszeit nach deutscher Zeit
+  statt nach seiner eigenen Uhr; die App begrüßt nach der Uhr des Geräts.
 
 ## [2.3.0] - 2026-10-02
 

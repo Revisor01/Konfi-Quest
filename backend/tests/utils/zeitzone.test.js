@@ -17,7 +17,7 @@
 // Ergebnis sich nicht aendert -- sonst haengt die Richtigkeit wieder an einer
 // Umgebungsvariablen, die beim naechsten Umzug verlorengeht.
 
-const { formatUhrzeit, formatDatum, heuteBerlin, BERLIN } = require('../../utils/zeitformat');
+const { formatUhrzeit, formatDatum, heuteBerlin, stundeBerlin, BERLIN } = require('../../utils/zeitformat');
 const { getTestPool, truncateAll } = require('../helpers/db');
 const { seed, USERS, EVENTS, ORGS } = require('../helpers/seed');
 
@@ -121,6 +121,35 @@ describe('heuteBerlin: der Kalendertag der App', () => {
     try {
       process.env.TZ = 'UTC';
       expect(heuteBerlin(new Date('2026-09-01T22:30:00Z'))).toBe('2026-09-02');
+    } finally {
+      process.env.TZ = vorher;
+    }
+  });
+});
+
+describe('stundeBerlin: die Stunde fuer die Begruessung (09.10.2026)', () => {
+  // getHours() rechnet in der Zone des Prozesses -- in Produktion UTC. Um
+  // 23:30 UTC im Sommer ist es in Berlin 1:30; die Begruessung des Teams
+  // bekam bis dahin 23.
+  it('Sommer: 23:30 UTC ist 1 Uhr in Berlin', () => {
+    expect(stundeBerlin(new Date('2026-07-15T23:30:00Z'))).toBe(1);
+  });
+
+  it('Winter: 23:30 UTC ist 0 Uhr in Berlin, 22:30 UTC ist 23 Uhr', () => {
+    expect(stundeBerlin(new Date('2026-12-01T23:30:00Z'))).toBe(0);
+    expect(stundeBerlin(new Date('2026-12-01T22:30:00Z'))).toBe(23);
+  });
+
+  it('liefert eine Zahl von 0 bis 23, Mitternacht als 0', () => {
+    expect(stundeBerlin(new Date('2026-07-15T22:00:00Z'))).toBe(0);
+    expect(stundeBerlin(new Date('2026-07-15T21:59:00Z'))).toBe(23);
+  });
+
+  it('bleibt richtig, auch wenn der Prozess in UTC laeuft', () => {
+    const vorher = process.env.TZ;
+    try {
+      process.env.TZ = 'UTC';
+      expect(stundeBerlin(new Date('2026-07-15T23:30:00Z'))).toBe(1);
     } finally {
       process.env.TZ = vorher;
     }

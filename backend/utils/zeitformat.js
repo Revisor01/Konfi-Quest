@@ -71,6 +71,24 @@ function heuteBerlin(wert = new Date()) {
 }
 
 /**
+ * Die Stunde (0-23) eines Zeitpunkts in Berliner Zeit.
+ *
+ * ERSATZ FUER `new Date().getHours()`. Das rechnet in der Zone des
+ * Prozesses -- in Produktion UTC. Die Begruessung des Teams
+ * (GET /teamer/dashboard, greeting.hour) meldete um 1:30 Berliner
+ * Sommerzeit deshalb 23 (09.10.2026).
+ *
+ * `hourCycle: 'h23'` statt `hour12: false`: Letzteres liefert in manchen
+ * Laufzeiten Mitternacht als "24".
+ *
+ * @param {Date|string|number} [wert] Zeitpunkt; ohne Angabe: jetzt
+ * @returns {number} 0-23
+ */
+function stundeBerlin(wert = new Date()) {
+  return Number(new Date(wert).toLocaleString('en-GB', { hour: 'numeric', hourCycle: 'h23', timeZone: ZONE }));
+}
+
+/**
  * SQL: der heutige Kalendertag in Berliner Zeit (Typ date).
  *
  * ERSATZ FUER `CURRENT_DATE`. Das rechnet in der Zone der Datenbank-Sitzung,
@@ -102,7 +120,7 @@ const TAGESBEGINN_BERLIN_SQL = tagesbeginnBerlinSql();
 const tagBerlinSql = (platzhalter) => `((${platzhalter})::timestamptz AT TIME ZONE '${ZONE}')::date`;
 
 module.exports = {
-  BERLIN, formatUhrzeit, formatDatum, heuteBerlin,
+  BERLIN, formatUhrzeit, formatDatum, heuteBerlin, stundeBerlin,
   HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL, tagBerlinSql,
   heuteBerlinSql, tagesbeginnBerlinSql,
 };

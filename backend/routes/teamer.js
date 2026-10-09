@@ -16,7 +16,7 @@ const { behandleClientIdRace } = require('../utils/antragIdempotenz');
 const { ladeSpruchliste, ladeKonfspruch, beantworteKonfspruchSetzen, beantworteBibelUebersetzung } = require('../utils/konfspruch');
 const { stelleEigenenAntrag, nimmEigenenAntragZurueck } = require('../utils/eigeneAntraege');
 const { markiereAbzeichenGesehen } = require('../utils/abzeichenGesehen');
-const { HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL } = require('../utils/zeitformat');
+const { HEUTE_BERLIN_SQL, TAGESBEGINN_BERLIN_SQL, stundeBerlin } = require('../utils/zeitformat');
 // Empfaenger von "Neuer Antrag eingegangen": die Leitung, die den Antrag in
 // ihrer Liste sieht (27.09.2026, Regel in utils/antragLeitungSicht.js).
 const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
@@ -851,10 +851,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       const orgId = req.user.organization_id;
 
       // 1. Greeting
-      const now = new Date();
+      // Stunde in Berliner Zeit: getHours() rechnete in der Zone des
+      // Prozesses (Produktion: UTC) und meldete um 1:30 Uhr Sommerzeit 23.
       const greeting = {
         display_name: req.user.display_name,
-        hour: now.getHours(),
+        hour: stundeBerlin(),
         // ADDITIV 01.10.2026: die Selbstbezeichnung fuer die Zeile unter dem
         // Gruss -- wie im Profil, sonst "Teamer:in" (App, rollenNamen.ts).
         role_title: req.user.role_title || null

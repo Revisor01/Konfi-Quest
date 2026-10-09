@@ -16830,7 +16830,7 @@
                   "properties": {
                     "greeting": {
                       "type": "object",
-                      "description": "display_name, hour; ADDITIV 01.10.2026: role_title (Selbstbezeichnung, null ohne Eintrag)"
+                      "description": "display_name, hour (0-23, Stunde in Berliner Zeit; bis 09.10.2026 in der Zone des Servers, behoben 09.10.2026); ADDITIV 01.10.2026: role_title (Selbstbezeichnung, null ohne Eintrag)"
                     },
                     "certificates": {
                       "type": "array",
