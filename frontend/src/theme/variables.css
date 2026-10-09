@@ -1806,6 +1806,29 @@ ion-item {
   line-height: 1.5;
   margin: 0;
 }
+/* Schrift der Box gegen beide Themes durchsetzen (09.10.2026, Simon: "ja
+   kleiner"). Die Box steht fast immer als <IonCardContent className=
+   "app-info-box"> in einer Karte, der Text in einem <p> darin. Gemessen kam
+   statt --app-text-basis (14,4 px) heraus:
+   - iOS 16 px: ionic-theme-ios27 setzt `ion-card.ios:not(.ios-theme-disabled,
+     .ios26-disabled)>ion-card-content:not(...)` auf 1rem bei Zeilenhoehe
+     1.29, Spezifitaet (0,3,2) gegen (0,1,0) von .app-info-box; das <p>
+     darin erbt das. Damit war der Hinweis groesser als die Zeilentitel
+     (15,2 px).
+   - Android 14 px: Ionics `.card-content-md p` setzt 0.875rem, (0,1,1).
+   Mit der Modus-Klasse an der Wurzel steht die Regel bei (0,4,0) bzw. (0,4,1)
+   und gewinnt unabhaengig von der Ladereihenfolge -- dasselbe Muster wie die
+   Kartenregel oben. Das <p> bekommt dasselbe Token ausdruecklich (nicht
+   `inherit`: variables.css setzt Schriftgroessen nur ueber Tokens). Nur
+   direkte <p>: Formularzeilen in der Box (IonItem, IonLabel) behalten ihre
+   eigene Groesse. Vertrag: hinweisBoxSchrift.test.ts. */
+:root.ios .app-info-box:not(.ios-theme-disabled),
+:root.md .app-info-box:not(.ios-theme-disabled),
+:root.ios .app-info-box:not(.ios-theme-disabled) > p,
+:root.md .app-info-box:not(.ios-theme-disabled) > p {
+  font-size: var(--app-text-basis);
+  line-height: 1.5;
+}
 .app-info-box--blue {
   background: rgba(var(--app-color-info-rgb), 0.08);
   border: 1px solid rgba(var(--app-color-info-rgb), 0.2);
