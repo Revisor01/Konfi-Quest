@@ -344,34 +344,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-- **Zuordnungsrecht an alten Teamer-Zuweisungen bereinigen?** Seit dem
-  09.10.2026 setzt der Server `can_edit` an einer Jahrgangs-Zuweisung nach
-  der Rolle (Leitung ja, Teamer:in nein); vorher schrieb das Benutzerfenster
-  immer `true`. In Produktion tragen 18 von 21 Teamer-Zuweisungen
-  (18 Personen) noch `true` (gemessen 09.10.2026, nur gelesen). Heute ohne
-  Folge: Jede Stelle, die das Recht prüft, ist der Leitung vorbehalten, und
-  beim nächsten Speichern im Fenster fällt es weg. Einmal gerade ziehen,
-  damit der Bestand der Regel entspricht (trifft 18 Zeilen)?
-
-  ```sql
-  WITH rolle AS (
-    SELECT uja.id, r.name AS rolle
-      FROM user_jahrgang_assignments uja
-      JOIN jahrgaenge j ON j.id = uja.jahrgang_id
-      JOIN users u ON u.id = uja.user_id
-      LEFT JOIN user_organizations uo
-        ON uo.user_id = u.id AND uo.organization_id = j.organization_id
-      LEFT JOIN roles r
-        ON r.id = CASE WHEN u.organization_id = j.organization_id
-                       THEN u.role_id ELSE uo.role_id END
-  )
-  UPDATE user_jahrgang_assignments uja
-     SET can_edit = false
-    FROM rolle
-   WHERE rolle.id = uja.id AND uja.can_edit
-     AND rolle.rolle NOT IN ('admin', 'org_admin');
-  ```
-
 - **Punkte-Verlauf im Profil und in der Konfi-Zeit sortiert nur, was sichtbar
   ist** (die ersten acht, bis „Alle anzeigen“). Auf der Personenseite der
   Leitung wird schon vor dem Kürzen sortiert; hier genauso?
