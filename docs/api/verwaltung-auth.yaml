@@ -4808,6 +4808,17 @@ paths:
           nicht die Summe. Der Wert steht bewusst NICHT in /api/health: der
           Pfad ist oeffentlich und dient Traefik als Gesundheitspruefung.
 
+        ERWEITERT (09.10.2026) — rein additiv:
+
+        * `cspMeldungen` — {gesamt, verworfen, gruppenAnzahl, grenze, gruppen}.
+          Vom Browser gemeldete Verstöße gegen die Content-Security-Policy der
+          Web-Fassung (POST /api/csp-meldung). `gruppen` (höchstens 30, die
+          häufigsten zuerst) fasst nach direktive, blockiert und seite zusammen,
+          mit anzahl, seit und zuletzt. Je Replica höchstens `grenze` (200)
+          Gruppen; was darüber kommt, zählt in `verworfen`. Über mehrere
+          Replicas werden gesamt, verworfen und die Anzahl je Gruppe addiert,
+          `gruppenAnzahl` ist das Maximum. Im Speicher, ein Neustart leert es.
+
         BEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine
         Route, die sowohl in routesSlowest als auch in routesBusiest stand,
         doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen
@@ -4820,7 +4831,7 @@ paths:
         behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst,
         weil die Ziffern-Regel vor der UUID-Regel lief.
       responses:
-        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen und routeSchluessel" }
+        "200": { description: "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen, routeSchluessel und cspMeldungen" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
       x-berechtigung:
@@ -4832,6 +4843,80 @@ paths:
           Bewusst org-uebergreifend — die Daten sind organisationsunabhaengige
           Betriebskennzahlen. Der Authorization-Header wird an die Peers
           weitergereicht.
+
+  /api/csp-meldung:
+    post:
+      tags: ["System & Monitoring"]
+      summary: Meldung eines Verstosses gegen die CSP der Web-Fassung (OEFFENTLICH, ohne Anmeldung)
+      description: >
+        NEU 09.10.2026. Hierhin meldet der Browser, was die
+        Content-Security-Policy der Web-Fassung blockiert hat. Die Policy
+        (frontend/nginx.conf) nennt die Adresse als `report-uri
+        /api/csp-meldung` und als `report-to csp` mit der Kopfzeile
+        `Reporting-Endpoints: csp="/api/csp-meldung"`. Die Apps im Store laden
+        ihre Dateien aus dem Paket und tragen keine Policy -- sie melden
+        nichts.
+
+        FORMATE: `application/csp-report` (ein Objekt mit `csp-report`),
+        `application/reports+json` (Reporting API: ein Array von Berichten;
+        nur `type: csp-violation` zaehlt, hoechstens 20 je Sendung) und
+        `application/json` (aeltere Firefox-Fassungen).
+
+        GESPEICHERT wird, im Speicher der Replica und zusammengefasst
+        (utils/cspMeldungen.js): die Direktive, die blockierte Adresse ohne
+        Abfrage und Anker (Herkunft und Pfad; bei data:, blob: und
+        Erweiterungen nur das Schema; Schluesselwoerter wie inline und eval
+        unveraendert), der Pfad der Seite ohne Abfrage, Kennungen im Pfad als
+        :id/:uuid/:datei, erstes und letztes Auftreten, Anzahl. NICHT
+        gespeichert: Client-Adresse, Browserkennung, Codeauszug, Zeile und
+        Spalte. Die erste Meldung jeder neuen Gruppe steht als eine Zeile
+        `[CSP] <direktive> blockiert <adresse> auf <seite>` im
+        Container-Protokoll. Zu sehen in GET /api/metrics (`cspMeldungen`).
+
+        GRENZEN: hoechstens 16 KiB je Sendung (auch als application/json --
+        die Route steht vor dem allgemeinen JSON-Leser); 120 Sendungen je
+        Stunde und Client-IP (clientIp: X-Real-IP nur aus dem Docker-Netz;
+        Zaehler im gemeinsamen Store beider Replicas), jede Sendung zaehlt.
+      requestBody:
+        required: true
+        content:
+          application/csp-report:
+            schema:
+              type: object
+              required: [csp-report]
+              properties:
+                csp-report:
+                  type: object
+                  properties:
+                    document-uri: { type: string }
+                    blocked-uri: { type: string }
+                    effective-directive: { type: string }
+                    violated-directive: { type: string }
+          application/reports+json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  type: { type: string, description: "nur csp-violation zaehlt" }
+                  url: { type: string }
+                  body:
+                    type: object
+                    properties:
+                      documentURL: { type: string }
+                      blockedURL: { type: string }
+                      effectiveDirective: { type: string }
+      responses:
+        "204": { description: "Angenommen (auch wenn keine der Berichte eine CSP-Meldung war); kein Inhalt" }
+        "400": { description: "{ error: 'Meldung nicht lesbar.' } (kein JSON) oder { error: 'Keine CSP-Meldung.' } -- nichts gezaehlt" }
+        "413": { description: "{ error: 'Meldung zu groß.' } -- ueber 16 KiB, nichts gelesen" }
+        "415": { description: "{ error } -- anderer Content-Type" }
+        "429": { description: "{ error: 'Zu viele Meldungen.' } -- mehr als 120 Sendungen je Stunde von dieser Adresse" }
+      x-berechtigung:
+        rollen: [oeffentlich]
+        middleware: [grenze (je Client-IP), express.json (16 KiB)]
+        org-scope: false
+        objekt-pruefung: "keine; Tests: backend/tests/routes/cspMeldung.test.js, frontend/src/__tests__/betrieb/sicherheitsHeader.test.ts"
 
   /api/metrics/local:
     get:

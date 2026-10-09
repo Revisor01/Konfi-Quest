@@ -276,7 +276,7 @@ Gottesdienst und Gemeinde), **Badges**, **Challenges** (gesammelte Stempel),
 jeweiligen Bereich —, die Karte **So setzen sich deine Punkte zusammen** mit dem
 Anteil von Gottesdienst und Gemeinde und, wenn es welche gibt, dem Bonus, und
 der **Punkte-Verlauf**. Er ist die Punkte-Übersicht als Tabelle mit Datum,
-„Wofür", Art und Punkten, zuerst die neuesten acht; **Alle … Einträge
-anzeigen** klappt den Rest auf, der Knopf **Punkte-Übersicht** öffnet dasselbe
-Fenster wie in der App. Darunter stehen, wenn es welche gibt, **Meine
+„Wofür", Art und Punkten, mit allen Einträgen, die neuesten zuerst; ein
+Klick auf einen Spaltenkopf ordnet die ganze Liste danach. Der Knopf
+**Punkte-Übersicht** öffnet dasselbe Fenster wie in der App. Darunter stehen, wenn es welche gibt, **Meine
 Rückblicke**, jeder mit **Ansehen**.

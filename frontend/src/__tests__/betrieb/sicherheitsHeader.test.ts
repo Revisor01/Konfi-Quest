@@ -116,6 +116,25 @@ describe('nginx: Content-Security-Policy der Web-App', () => {
     expect(direktive('frame-src')).toContain('blob:');
   });
 
+  it('meldet Verstoesse an POST /api/csp-meldung: report-uri und report-to mit Reporting-Endpoints (09.10.2026)', () => {
+    expect(direktive('report-uri')).toEqual(['/api/csp-meldung']);
+    expect(direktive('report-to')).toEqual(['csp']);
+    // Der Name in report-to muss in Reporting-Endpoints derselben Antwort stehen.
+    expect(app.rumpf).toContain(`add_header Reporting-Endpoints 'csp="/api/csp-meldung"' always;`);
+    // Nur dort, wo die Policy gilt.
+    for (const l of locations().filter((x) => x.kopf !== '/')) {
+      expect(l.rumpf, l.kopf).not.toMatch(/Reporting-Endpoints/);
+    }
+  });
+
+  it('die Meldungen aendern an der Policy sonst nichts (Store-Apps und Web-App blockieren wie vorher)', () => {
+    expect(cspApp.split(';').map((d) => d.trim().split(/\s+/)[0])).toEqual([
+      'default-src', 'script-src', 'style-src', 'font-src', 'img-src', 'media-src', 'connect-src', 'worker-src',
+      'frame-src', 'manifest-src', 'object-src', 'base-uri', 'form-action', 'frame-ancestors', 'report-uri', 'report-to',
+    ]);
+    expect(nginx).not.toMatch(/Content-Security-Policy-Report-Only/);
+  });
+
   it('jede fremde Adresse, die die App laedt, steht in der passenden Direktive', () => {
     const index = readFileSync(join(wurzel, 'frontend/index.html'), 'utf-8');
     const variablen = readFileSync(join(wurzel, 'frontend/src/theme/variables.css'), 'utf-8');

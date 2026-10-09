@@ -43,6 +43,7 @@ import { datumUhrzeit, uhrzeit } from '../../../utils/dateUtils';
 import { fmtDauer, fmtSeit, fmtUptime, fmtZahl, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../utils/betriebsFormat';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebBetrieb from '../web/leitung/WebBetrieb';
+import type { BetriebsCspMeldungen } from '../web/leitung/betriebTypen';
 
 interface RouteRow {
   route: string;
@@ -95,6 +96,8 @@ interface Snapshot extends BetriebsSnapshot {
   nutzer?: { fensterMinuten: number; aktiv: number; betroffen: number };
   routesPotenzial?: RouteRow[];
   fehlerGruppen?: FehlerGruppe[];
+  // Seit dem 09.10.2026: vom Browser gemeldete CSP-Verstoesse der Web-Fassung.
+  cspMeldungen?: BetriebsCspMeldungen;
 }
 interface HistorySnap {
   captured_at: string;
@@ -561,6 +564,7 @@ const AdminMetricsPage: React.FC = () => {
 
             {/* 4. Fehler: was, wie oft, seit wann */}
             {tab === 'fehler' && <FehlerListe gruppen={snap.fehlerGruppen ?? []} letzte={snap.recentErrors} />}
+            {tab === 'fehler' && snap.cspMeldungen && <CspListe csp={snap.cspMeldungen} />}
 
             {/* 5. Wo geht die Zeit hin? Eine Liste, zwei Sortierungen. */}
             {tab === 'routen' && (
@@ -667,6 +671,32 @@ const FehlerListe: React.FC<{ gruppen: FehlerGruppe[]; letzte: ErrorRow[] }> = (
     </>
   );
 };
+
+// Vom Browser blockiert: Meldungen der Sicherheitsregeln (CSP) der Web-Fassung.
+const CspListe: React.FC<{ csp: BetriebsCspMeldungen }> = ({ csp }) => (
+  <div style={{ background: 'var(--app-surface-card)', borderRadius: 'var(--app-radius-weich)', overflow: 'hidden', boxShadow: 'var(--app-schatten-fein)', marginTop: 'var(--app-abstand-basis)' }}>
+    <div style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', borderBottom: '1px solid var(--app-surface-dim)', lineHeight: 1.4 }}>
+      Vom Browser blockiert — Meldungen der Sicherheitsregeln (CSP) der
+      Web-Fassung seit dem letzten Neustart.
+    </div>
+    {csp.gruppen.length === 0 ? (
+      <div style={{ padding: 'var(--app-abstand-gross)', color: 'var(--app-text-system)', fontSize: 'var(--app-text-sekundaer)', textAlign: 'center' }}>Keine Meldung.</div>
+    ) : csp.gruppen.map((g, i) => (
+      <div key={`${g.direktive}|${g.blockiert}|${g.seite}`} style={{ padding: 'var(--app-abstand-schmal) var(--app-abstand-mittel)', borderTop: i ? '1px solid var(--app-surface-dim)' : 'none' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--app-abstand-eng)' }}>
+          <span style={{ fontFamily: 'ui-monospace, monospace', fontSize: 'var(--app-text-hinweis)', color: 'var(--app-text-emphasis)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{g.blockiert}</span>
+          <span style={{ fontWeight: 'var(--app-schrift-fett)', fontSize: 'var(--app-text-sekundaer)', flexShrink: 0 }}>{fmtZahl(g.anzahl)}×</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--app-abstand-mittel)', marginTop: 'var(--app-abstand-mini)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
+          <span style={{ fontFamily: 'ui-monospace, monospace' }}>{g.direktive}</span>
+          <span>auf {g.seite}</span>
+          <span>erstmals {fmtSeit(g.seit)}</span>
+          <span>zuletzt {fmtSeit(g.zuletzt)}</span>
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 // Verlauf: erst die Tagesbilanz, darunter die Fünf-Minuten-Schritte.
 const VerlaufListe: React.FC<{

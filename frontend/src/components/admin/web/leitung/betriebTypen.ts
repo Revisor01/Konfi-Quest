@@ -21,6 +21,24 @@ export interface BetriebsEinzelfehler {
   at: string;
 }
 
+/** Vom Browser gemeldete Verstoesse gegen die CSP der Web-App (POST /api/csp-meldung). */
+export interface BetriebsCspGruppe {
+  direktive: string;
+  blockiert: string;
+  seite: string;
+  anzahl: number;
+  seit: string;
+  zuletzt: string;
+}
+
+export interface BetriebsCspMeldungen {
+  gesamt: number;
+  verworfen: number;
+  gruppenAnzahl: number;
+  grenze: number;
+  gruppen: BetriebsCspGruppe[];
+}
+
 export interface BetriebsAnsicht extends BetriebsSnapshot {
   uptimeSeconds: number;
   totalRequests: number;
@@ -34,6 +52,8 @@ export interface BetriebsAnsicht extends BetriebsSnapshot {
   statusKlassen?: { erfolg: number; ausDemCache: number; umleitung: number; nichtGefunden: number; abgelehnt: number; serverfehler: number };
   nutzer?: { fensterMinuten: number; aktiv: number; betroffen: number };
   fehlerGruppen?: BetriebsFehlerGruppe[];
+  /** Fehlt bei einem Server vor dem 09.10.2026. */
+  cspMeldungen?: BetriebsCspMeldungen;
 }
 
 export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf';

@@ -341,4 +341,31 @@ describe('Konfi-Zeit und Punkte-Verlauf (WebKonfiHistorie, WebPunkteVerlauf)', (
     pruefeSortierung(tabelle, 'Punkte', NAMEN, ['Sonntagsgottesdienst', 'Gemeindefest', 'Aufräumen']);
     pruefeSortierung(tabelle, 'Datum', NAMEN, ['Aufräumen', 'Gemeindefest', 'Sonntagsgottesdienst']);
   });
+
+  it('Punkte-Verlauf: zeigt alle Einträge ohne Kürzen, ein Klick auf den Kopf ordnet die ganze Liste', async () => {
+    // Zwölf Einträge, neueste zuerst. Bis zum 09.10.2026 standen nur die
+    // ersten acht da, und ein Klick ordnete nur diese -- der älteste Eintrag
+    // mit den meisten Punkten blieb unter "Alle anzeigen" verborgen.
+    const eintraege = Array.from({ length: 12 }, (_, i) => ({
+      id: i + 1,
+      source_type: 'activity',
+      title: `Eintrag ${String(i + 1).padStart(2, '0')}`,
+      points: i === 11 ? 50 : i + 1,
+      category: 'gemeinde',
+      date: `2026-09-${String(28 - i).padStart(2, '0')}`,
+    }));
+    h.api.get.mockResolvedValue({ data: { history: eintraege } });
+    render(<WebPunkteVerlauf endpunkt="/konfi/points-history" gottesdienstAktiv gemeindeAktiv />);
+    for (let i = 0; i < 3; i += 1) await act(async () => { await Promise.resolve(); });
+    const NAMEN = eintraege.map((e) => e.title);
+    const tabelle = () => screen.getByRole('table', { name: 'Punkte-Verlauf' });
+    expect(reihenfolge(tabelle(), NAMEN)).toEqual(NAMEN);
+    expect(screen.queryByRole('button', { name: /anzeigen$/ })).toBeNull();
+
+    sortiere(tabelle(), 'Punkte');
+    const zelle = sortiere(tabelle(), 'Punkte');
+    expect(zelle).toHaveAttribute('aria-sort', 'descending');
+    expect(reihenfolge(tabelle(), NAMEN)).toEqual([...NAMEN].reverse());
+    expect(reihenfolge(tabelle(), NAMEN)[0]).toBe('Eintrag 12');
+  });
 });

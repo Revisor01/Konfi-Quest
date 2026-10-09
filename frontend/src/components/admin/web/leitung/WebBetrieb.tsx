@@ -26,7 +26,7 @@ import WebPill from '../../../web/WebPill';
 import WebSchalter from '../../../web/WebSchalter';
 import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
-import type { BetriebsAnsicht, BetriebsEinzelfehler, BetriebsFehlerGruppe, BetriebsReiter } from './betriebTypen';
+import type { BetriebsAnsicht, BetriebsCspGruppe, BetriebsEinzelfehler, BetriebsFehlerGruppe, BetriebsReiter } from './betriebTypen';
 
 export interface WebBetriebProps {
   snap: BetriebsAnsicht | null;
@@ -146,6 +146,35 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
     { schluessel: 'zeit', kopf: 'Uhrzeit', breite: '120px', sortWert: (e) => new Date(e.at), zelle: (e) => `${uhrzeit(e.at)} Uhr` },
     { schluessel: 'dauer', kopf: 'Dauer', zahl: true, breite: '100px', sortWert: (e) => e.durationMs, zelle: (e) => `${e.durationMs} ms` },
   ];
+
+  // --- Meldungen der Sicherheitsregeln (CSP) ---
+  const csp = snap.cspMeldungen;
+  const cspSpalten: Array<WebSpalte<BetriebsCspGruppe>> = [
+    { schluessel: 'direktive', kopf: 'Regel', breite: '150px', sortWert: (g) => g.direktive, zelle: (g) => <span className="web-mono">{g.direktive}</span> },
+    { schluessel: 'blockiert', kopf: 'Blockiert', sortWert: (g) => g.blockiert, zelle: (g) => <span className="web-mono web-einzeilig">{g.blockiert}</span> },
+    { schluessel: 'seite', kopf: 'Seite', breite: '180px', optional: true, sortWert: (g) => g.seite, zelle: (g) => <span className="web-mono web-einzeilig web-gedaempft">{g.seite}</span> },
+    { schluessel: 'anzahl', kopf: 'Anzahl', zahl: true, breite: '100px', sortWert: (g) => g.anzahl, zelle: (g) => `${fmtZahl(g.anzahl)}×` },
+    { schluessel: 'seit', kopf: 'Erstmals', breite: '120px', optional: true, sortWert: (g) => new Date(g.seit), zelle: (g) => fmtSeit(g.seit) },
+    { schluessel: 'zuletzt', kopf: 'Zuletzt', breite: '120px', sortWert: (g) => new Date(g.zuletzt), zelle: (g) => fmtSeit(g.zuletzt) },
+  ];
+  const cspKarte = csp ? (
+    <WebKarte
+      titel="Vom Browser blockiert"
+      untertitel="Meldungen der Sicherheitsregeln (CSP) der Web-Fassung seit dem letzten Neustart. Ein Eintrag heißt: Der Browser hat etwas nicht geladen — meist fehlt eine Adresse in den Regeln, manchmal stammt es von einer Browser-Erweiterung."
+      bund={csp.gruppen.length > 0}
+    >
+      {csp.gruppen.length === 0 ? (
+        <WebLeer icon={ICON_PULS} titel="Keine Meldung" text="Der Browser hat seit dem letzten Neustart nichts blockiert." />
+      ) : (
+        <>
+          <WebTabelle beschriftung="Vom Browser blockiert" spalten={cspSpalten} zeilen={csp.gruppen} zeileSchluessel={(g) => `${g.direktive}|${g.blockiert}|${g.seite}`} mittig />
+          {csp.verworfen > 0 && (
+            <div className="web-karte__fuss web-gedaempft">{fmtZahl(csp.verworfen)} weitere Meldungen nicht aufgeschlüsselt (mehr als {fmtZahl(csp.grenze)} verschiedene).</div>
+          )}
+        </>
+      )}
+    </WebKarte>
+  ) : null;
 
   // --- Routen ---
   const routenSpalten: Array<WebSpalte<RoutenZeile>> = [
@@ -340,9 +369,12 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
   );
 
   const fehlerReiter = gruppen.length === 0 ? (
-    <WebKarte titel="Fehler">
-      <WebLeer icon={ICON_PULS} titel="Kein Fehler" text="Kein Fehler seit dem letzten Neustart." />
-    </WebKarte>
+    <>
+      <WebKarte titel="Fehler">
+        <WebLeer icon={ICON_PULS} titel="Kein Fehler" text="Kein Fehler seit dem letzten Neustart." />
+      </WebKarte>
+      {cspKarte}
+    </>
   ) : (
     <>
       <WebKarte
@@ -357,6 +389,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
           <WebTabelle beschriftung="Die letzten Einzelfälle" spalten={einzelSpalten} zeilen={snap.recentErrors.slice(0, 15)} zeileSchluessel={(e) => `${e.at}|${e.url}|${e.status}`} mittig />
         </WebKarte>
       )}
+      {cspKarte}
     </>
   );
 

@@ -1114,13 +1114,6 @@
   gap: var(--app-abstand-eng);
 }
 
-.web-verlauf-mehr {
-  display: flex;
-  justify-content: center;
-  padding: var(--app-abstand-mittel);
-  border-top: 1px solid var(--web-linie-leise);
-}
-
 /* Kennzahlen des Profils: drei in der Reihe, so viele Reihen wie nötig */
 .web-profil-kacheln {
   display: grid;

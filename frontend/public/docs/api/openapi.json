@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n326 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n327 Operationen."
   },
   "servers": [
     {
@@ -7233,10 +7233,10 @@
           "System & Monitoring"
         ],
         "summary": "APM-Kennzahlen aller Replicas (nur super_admin)",
-        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\nERWEITERT (22.09.2026) — rein additiv, alle bisherigen Felder bleiben mit unveränderten Namen und Typen erhalten. Neu sind:\n* `apdex` — {wert, zufrieden, toleriert, frustriert, schwelleMs,\n  toleriertBisMs}. Eine Zahl zwischen 0 und 1 für \"waren die Anfragen\n  schnell genug\", gemessen an der SERVERZEIT (ohne Warten auf die\n  Leitung). Schwelle 500 ms, frustriert ab 2000 ms; 5xx zählen immer\n  als frustriert. Ohne Anfragen ist `wert` null, nicht 0.\n* `ueber1s` — {anzahl, quote, schwelleMs}. Anfragen, deren GESAMTZEIT\n  inklusive Leitung über einer Sekunde lag: das gefühlte Warten.\n* `statusKlassen` — {erfolg, ausDemCache, umleitung, nichtGefunden,\n  abgelehnt, serverfehler}. Die Summe entspricht totalRequests.\n* `nutzer` — {fensterMinuten, aktiv, betroffen, schluessel,\n  betroffeneSchluessel}. Verschiedene angemeldete Konten der letzten\n  60 Minuten; `betroffen` sind die mit Warten über 1 s oder einem\n  Serverfehler. Gespeichert werden gekürzte Hashes, keine Konto-IDs;\n  sie stehen in der Antwort, damit über mehrere Replicas die\n  Vereinigung statt der Summe gebildet werden kann.\n* `routesPotenzial` — dieselben Route-Zeilen, sortiert nach GESAMTER\n  Serverzeit (Aufrufe × Dauer) statt nach p95.\n* `fehlerGruppen` — Fehler nach Route und Status zusammengefasst, mit\n  anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte\n  Laufzeit, während recentErrors nach 50 Einträgen überläuft.\n\nBEHOBEN (29.09.2026, Audit Leitung BF-12): `recentErrors[].url` und `fehlerGruppen[].beispielUrl` hielten die rohe Anfrage-URL — mit Suchbegriff (`search-users?q=`), Benutzername (`check-username/`) und dem Anmeldeschlüssel aus `?token=`. Beide sind weiter Strings, aber geschwärzt (utils/apm.js, urlFuersAnzeige): Query nur mit den Namen der Parameter (`?q=***`), Namen, Einladungscodes, Dateinamen und UUIDs im Pfad als Platzhalter; Zahlen-Kennungen bleiben. Dieselbe Fassung schreibt das Langsam-Log.\nDie Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage), `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.\nERWEITERT (24.09.2026) — ebenfalls rein additiv:\n* `routeSchluessel` — {anzahl, grenze, verworfen}. Wie viele\n  Route-Schlüssel gemessen werden und wie viele die Obergrenze\n  verworfen hat. `verworfen` gehört bei 0 zu stehen; ein Ausschlag\n  heißt, dass ein Pfad mit freiem Text oder einem Zufallsnamen nicht\n  auf einen Platzhalter abgebildet wird. Über mehrere Replicas ist\n  `anzahl` das Maximum (alle sehen dieselben Routen), `verworfen` die\n  Summe (jede räumt für sich).\n* `dbPool` — {gesamt, frei, wartend, max}. Zustand des\n  Datenbank-Verbindungspools. `wartend` ist die Zahl, auf die es\n  ankommt: Anfragen stehen an, weil alle Plaetze belegt sind. Ein\n  Konfi-Dashboard-Aufruf belegt allein zehn Plaetze (neun parallele\n  Abfragen plus die aeussere Verbindung). Bei mehreren Replicas ist\n  `dbPool` die Summe und `replicas[].dbPool` der Zustand je Replica —\n  jede hat ihren EIGENEN Pool, und es blockiert der einzelne volle,\n  nicht die Summe. Der Wert steht bewusst NICHT in /api/health: der\n  Pfad ist oeffentlich und dient Traefik als Gesundheitspruefung.\n\nBEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine Route, die sowohl in routesSlowest als auch in routesBusiest stand, doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen Stand nachgemessen.\nBEHOBEN (24.09.2026): Die Normalisierung der Pfade fasste drei Pfadarten nicht zusammen — die Namensprüfung beim Registrieren, den Einladungscode und die Dateinamen in Chat, Material und Challenges. Jede Variante war ein eigener, nie aufgeräumter Schlüssel. Ebenfalls behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst, weil die Ziffern-Regel vor der UUID-Regel lief.\n",
+        "description": "Aggregierte Laufzeitdaten: langsamste und meistgenutzte Routen, parallele Requests, Live-Verlauf, letzte Fehler. Ist METRICS_PEERS gesetzt, werden alle Peers über /metrics/local abgefragt und zu einem Gesamtbild inklusive Lastverteilung gemergt.\nERWEITERT (22.09.2026) — rein additiv, alle bisherigen Felder bleiben mit unveränderten Namen und Typen erhalten. Neu sind:\n* `apdex` — {wert, zufrieden, toleriert, frustriert, schwelleMs,\n  toleriertBisMs}. Eine Zahl zwischen 0 und 1 für \"waren die Anfragen\n  schnell genug\", gemessen an der SERVERZEIT (ohne Warten auf die\n  Leitung). Schwelle 500 ms, frustriert ab 2000 ms; 5xx zählen immer\n  als frustriert. Ohne Anfragen ist `wert` null, nicht 0.\n* `ueber1s` — {anzahl, quote, schwelleMs}. Anfragen, deren GESAMTZEIT\n  inklusive Leitung über einer Sekunde lag: das gefühlte Warten.\n* `statusKlassen` — {erfolg, ausDemCache, umleitung, nichtGefunden,\n  abgelehnt, serverfehler}. Die Summe entspricht totalRequests.\n* `nutzer` — {fensterMinuten, aktiv, betroffen, schluessel,\n  betroffeneSchluessel}. Verschiedene angemeldete Konten der letzten\n  60 Minuten; `betroffen` sind die mit Warten über 1 s oder einem\n  Serverfehler. Gespeichert werden gekürzte Hashes, keine Konto-IDs;\n  sie stehen in der Antwort, damit über mehrere Replicas die\n  Vereinigung statt der Summe gebildet werden kann.\n* `routesPotenzial` — dieselben Route-Zeilen, sortiert nach GESAMTER\n  Serverzeit (Aufrufe × Dauer) statt nach p95.\n* `fehlerGruppen` — Fehler nach Route und Status zusammengefasst, mit\n  anzahl, seit, zuletzt und beispielUrl. Zählt über die gesamte\n  Laufzeit, während recentErrors nach 50 Einträgen überläuft.\n\nBEHOBEN (29.09.2026, Audit Leitung BF-12): `recentErrors[].url` und `fehlerGruppen[].beispielUrl` hielten die rohe Anfrage-URL — mit Suchbegriff (`search-users?q=`), Benutzername (`check-username/`) und dem Anmeldeschlüssel aus `?token=`. Beide sind weiter Strings, aber geschwärzt (utils/apm.js, urlFuersAnzeige): Query nur mit den Namen der Parameter (`?q=***`), Namen, Einladungscodes, Dateinamen und UUIDs im Pfad als Platzhalter; Zahlen-Kennungen bleiben. Dieselbe Fassung schreibt das Langsam-Log.\nDie Route-Zeilen (routesSlowest/routesBusiest/routesPotenzial) haben zusätzlich `p50Ms`, `serverP50Ms` (Median = die typische Anfrage), `langsam`, `langsamQuote`, `serverZeitGesamtMs` und `apdex`.\nERWEITERT (24.09.2026) — ebenfalls rein additiv:\n* `routeSchluessel` — {anzahl, grenze, verworfen}. Wie viele\n  Route-Schlüssel gemessen werden und wie viele die Obergrenze\n  verworfen hat. `verworfen` gehört bei 0 zu stehen; ein Ausschlag\n  heißt, dass ein Pfad mit freiem Text oder einem Zufallsnamen nicht\n  auf einen Platzhalter abgebildet wird. Über mehrere Replicas ist\n  `anzahl` das Maximum (alle sehen dieselben Routen), `verworfen` die\n  Summe (jede räumt für sich).\n* `dbPool` — {gesamt, frei, wartend, max}. Zustand des\n  Datenbank-Verbindungspools. `wartend` ist die Zahl, auf die es\n  ankommt: Anfragen stehen an, weil alle Plaetze belegt sind. Ein\n  Konfi-Dashboard-Aufruf belegt allein zehn Plaetze (neun parallele\n  Abfragen plus die aeussere Verbindung). Bei mehreren Replicas ist\n  `dbPool` die Summe und `replicas[].dbPool` der Zustand je Replica —\n  jede hat ihren EIGENEN Pool, und es blockiert der einzelne volle,\n  nicht die Summe. Der Wert steht bewusst NICHT in /api/health: der\n  Pfad ist oeffentlich und dient Traefik als Gesundheitspruefung.\n\nERWEITERT (09.10.2026) — rein additiv:\n* `cspMeldungen` — {gesamt, verworfen, gruppenAnzahl, grenze, gruppen}.\n  Vom Browser gemeldete Verstöße gegen die Content-Security-Policy der\n  Web-Fassung (POST /api/csp-meldung). `gruppen` (höchstens 30, die\n  häufigsten zuerst) fasst nach direktive, blockiert und seite zusammen,\n  mit anzahl, seit und zuletzt. Je Replica höchstens `grenze` (200)\n  Gruppen; was darüber kommt, zählt in `verworfen`. Über mehrere\n  Replicas werden gesamt, verworfen und die Anzahl je Gruppe addiert,\n  `gruppenAnzahl` ist das Maximum. Im Speicher, ein Neustart leert es.\n\nBEHOBEN (22.09.2026): Beim Zusammenführen mehrerer Replicas wurde eine Route, die sowohl in routesSlowest als auch in routesBusiest stand, doppelt addiert — aus 200 Anfragen wurden 400. Gegen den vorherigen Stand nachgemessen.\nBEHOBEN (24.09.2026): Die Normalisierung der Pfade fasste drei Pfadarten nicht zusammen — die Namensprüfung beim Registrieren, den Einladungscode und die Dateinamen in Chat, Material und Challenges. Jede Variante war ein eigener, nie aufgeräumter Schlüssel. Ebenfalls behoben: UUIDs mit führender Ziffer wurden gar nicht zusammengefasst, weil die Ziffern-Regel vor der UUID-Regel lief.\n",
         "responses": {
           "200": {
-            "description": "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen und routeSchluessel"
+            "description": "Zusammengefuehrter APM-Snapshot inkl. replicas, dbPool, apdex, ueber1s, statusKlassen, nutzer, routesPotenzial, fehlerGruppen, routeSchluessel und cspMeldungen"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -7255,6 +7255,106 @@
           "org-scope": false,
           "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403",
           "hinweis": "Bewusst org-uebergreifend — die Daten sind organisationsunabhaengige Betriebskennzahlen. Der Authorization-Header wird an die Peers weitergereicht.\n"
+        }
+      }
+    },
+    "/api/csp-meldung": {
+      "post": {
+        "tags": [
+          "System & Monitoring"
+        ],
+        "summary": "Meldung eines Verstosses gegen die CSP der Web-Fassung (OEFFENTLICH, ohne Anmeldung)",
+        "description": "NEU 09.10.2026. Hierhin meldet der Browser, was die Content-Security-Policy der Web-Fassung blockiert hat. Die Policy (frontend/nginx.conf) nennt die Adresse als `report-uri /api/csp-meldung` und als `report-to csp` mit der Kopfzeile `Reporting-Endpoints: csp=\"/api/csp-meldung\"`. Die Apps im Store laden ihre Dateien aus dem Paket und tragen keine Policy -- sie melden nichts.\nFORMATE: `application/csp-report` (ein Objekt mit `csp-report`), `application/reports+json` (Reporting API: ein Array von Berichten; nur `type: csp-violation` zaehlt, hoechstens 20 je Sendung) und `application/json` (aeltere Firefox-Fassungen).\nGESPEICHERT wird, im Speicher der Replica und zusammengefasst (utils/cspMeldungen.js): die Direktive, die blockierte Adresse ohne Abfrage und Anker (Herkunft und Pfad; bei data:, blob: und Erweiterungen nur das Schema; Schluesselwoerter wie inline und eval unveraendert), der Pfad der Seite ohne Abfrage, Kennungen im Pfad als :id/:uuid/:datei, erstes und letztes Auftreten, Anzahl. NICHT gespeichert: Client-Adresse, Browserkennung, Codeauszug, Zeile und Spalte. Die erste Meldung jeder neuen Gruppe steht als eine Zeile `[CSP] <direktive> blockiert <adresse> auf <seite>` im Container-Protokoll. Zu sehen in GET /api/metrics (`cspMeldungen`).\nGRENZEN: hoechstens 16 KiB je Sendung (auch als application/json -- die Route steht vor dem allgemeinen JSON-Leser); 120 Sendungen je Stunde und Client-IP (clientIp: X-Real-IP nur aus dem Docker-Netz; Zaehler im gemeinsamen Store beider Replicas), jede Sendung zaehlt.\n",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/csp-report": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "csp-report"
+                ],
+                "properties": {
+                  "csp-report": {
+                    "type": "object",
+                    "properties": {
+                      "document-uri": {
+                        "type": "string"
+                      },
+                      "blocked-uri": {
+                        "type": "string"
+                      },
+                      "effective-directive": {
+                        "type": "string"
+                      },
+                      "violated-directive": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "application/reports+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "nur csp-violation zaehlt"
+                    },
+                    "url": {
+                      "type": "string"
+                    },
+                    "body": {
+                      "type": "object",
+                      "properties": {
+                        "documentURL": {
+                          "type": "string"
+                        },
+                        "blockedURL": {
+                          "type": "string"
+                        },
+                        "effectiveDirective": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Angenommen (auch wenn keine der Berichte eine CSP-Meldung war); kein Inhalt"
+          },
+          "400": {
+            "description": "{ error: 'Meldung nicht lesbar.' } (kein JSON) oder { error: 'Keine CSP-Meldung.' } -- nichts gezaehlt"
+          },
+          "413": {
+            "description": "{ error: 'Meldung zu groß.' } -- ueber 16 KiB, nichts gelesen"
+          },
+          "415": {
+            "description": "{ error } -- anderer Content-Type"
+          },
+          "429": {
+            "description": "{ error: 'Zu viele Meldungen.' } -- mehr als 120 Sendungen je Stunde von dieser Adresse"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "oeffentlich"
+          ],
+          "middleware": [
+            "grenze (je Client-IP)",
+            "express.json (16 KiB)"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "keine; Tests: backend/tests/routes/cspMeldung.test.js, frontend/src/__tests__/betrieb/sicherheitsHeader.test.ts"
         }
       }
     },

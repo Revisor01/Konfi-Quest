@@ -133,6 +133,12 @@ function createApp(db, options = {}) {
   const { apmMiddleware, snapshot: apmSnapshot, mergeSnapshots: apmMerge, REPLICA_ID: apmReplicaId } = require('./utils/apm');
   app.use(apmMiddleware);
 
+  // Meldungen der Content-Security-Policy -- OEFFENTLICH, ohne Anmeldung, mit
+  // eigener Groessengrenze und eigener Grenze je Client-Adresse
+  // (routes/cspMeldung.js). Steht VOR dem allgemeinen JSON-Leser, sonst laese
+  // der application/json bis 100 KB, bevor die Route ihre 16 KB pruefen kann.
+  app.use('/api/csp-meldung', require('./routes/cspMeldung')(db));
+
   app.use(express.json());
 
   // Express 5: req.body ist bei fehlendem/leerem Body undefined (in Express 4
