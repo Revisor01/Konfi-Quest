@@ -127,5 +127,6 @@ INSERT INTO schema_migrations (name) VALUES
     ('185_push_tokens_app_symbol_weg.sql'),
     ('186_refresh_tokens_obergrenze.sql'),
     ('187_password_plain_entfernen.sql'),
-    ('188_postfach_altbestand_ohne_kennung.sql')
+    ('188_postfach_altbestand_ohne_kennung.sql'),
+    ('189_dateinamen_utf8_reparieren.sql')
 ON CONFLICT (name) DO NOTHING;

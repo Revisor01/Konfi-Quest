@@ -15,6 +15,9 @@
 //    Primaerschluessel ab Migration 068 sind bigint; 55 Fremdschluessel
 //    zeigen als integer darauf, zuletzt 159 (`INTEGER REFERENCES users(id)`).
 //    Funktional folgenlos, aber jede neue Tabelle setzte die Mischung fort.
+//    Seit Migration 211 (10.10.2026) ist keiner mehr integer; den Stand des
+//    Schemas -- auch fuer `ADD CONSTRAINT ... FOREIGN KEY`, das dieser
+//    Textwaechter nicht sieht -- haelt migration211FremdschluesselBigint.test.js.
 //
 // Die aelteren Migrationen (064 bis 173) stehen seit dem 02.10.2026 nur noch
 // im Schema-Dump; im Verzeichnis liegt nichts mehr, das vor diesen Regeln

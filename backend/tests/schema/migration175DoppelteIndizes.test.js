@@ -53,7 +53,10 @@ const BLEIBT = [
   'daily_verses_date_translation_key',
   'idx_25067_sqlite_autoindex_password_resets_1',
   'idx_25109_sqlite_autoindex_konfi_profiles_1',
-  'idx_chat_poll_votes_poll_id',
+  // idx_chat_poll_votes_poll_id blieb hier stehen; seit Migration 210
+  // (10.10.2026) faellt er, weil der eindeutige Index ueber (poll_id, ...)
+  // dieselbe Suche traegt (migration210PraefixIndizes.test.js).
+  'idx_24967_sqlite_autoindex_chat_poll_votes_1',
   'idx_chat_polls_message_id',
   'idx_notifications_user_id',
   'levels_organization_id_points_required_key',

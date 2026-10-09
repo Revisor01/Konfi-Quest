@@ -26,7 +26,7 @@ describe('Migration 178 im Schema-Dump', () => {
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: '189_dateinamen_utf8_reparieren.sql' });
+    await produktionAufbauen(pool, { vor: '190_konto_ohne_gemeinde.sql' });
   }, 180000);
 
   afterAll(async () => {

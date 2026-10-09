@@ -436,6 +436,9 @@ Versionsüberschrift.
 - Die automatischen Prüfungen messen den Dunkelmodus im Browser nach, sobald
   sich Farben oder das Erscheinungsbild ändern.
 - Alle Zeitangaben der Datenbank tragen jetzt eine Zeitzone.
+- Die Datenbank ist vor der landesweiten Ausrollung aufgeräumt: doppelt
+  geführte Suchverzeichnisse sind entfernt, und alle Verweise zwischen
+  Tabellen haben dieselbe, große Zahlenbreite.
 - Die anonyme Nutzungsmessung erfasst weitere Funktionen — etwa Abmeldungen,
   Postfach, Push-Auswahl, Einladungen, Suche, Jahresrückblick und offline
   Erledigtes —, weiterhin ohne Namen, Inhalte und Suchbegriffe.

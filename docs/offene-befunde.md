@@ -271,6 +271,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   länger als 30 Minuten nicht abgeholt wurde (Anlass: 46 Stunden ohne
   Support-Mail nach verlorenen Stack-Variablen am 08.10.2026; Branch
   `fix/deploy-stackvariablen-pruefen`).
+- [x] 10.10.2026 — Datenbank vor der EKD-Ausrollung aufgeräumt (BF-09 und
+  BF-12, Rest): 24 Einzelspalten-Indizes, die ein längerer Index mitträgt,
+  entfernt; alle Fremdschlüssel und die sieben Schlüssel, auf die sie
+  zeigen, sind bigint; Wächter für beides im Test-Schema
+  (Branch `refactor/db-indizes-fremdschluessel`).
 
 
 ## Offen
@@ -286,6 +291,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Tests und CI
 
+- **Schema-Dump an der Grenze.** Über dem Dump liegen seit 10.10.2026 genau
+  20 Migrationen (190–211), die nächste macht `dumpAktualitaet` rot. 190 und
+  191 legen Datenzeilen an (Rolle `super_admin`, Kirchenkreise), ein reiner
+  Schema-Dump verlöre sie. Vor der nächsten Migration den Dump mit diesen
+  Daten falten (Weg in [betrieb/routinen.md](betrieb/routinen.md)).
 - **Komponenten ohne eigenen Test.** 123 von 422 Dateien unter
   `frontend/src/components/` kommen in keiner Testdatei als Pfad vor
   (09.10.2026, 86 davon Web-Fassung; viele laufen in gerenderten
@@ -464,13 +474,3 @@ Nichts.
   als „tolerable risk" geschlossen. Wieder prüfen, sobald Ionic react-router 7
   zulässt oder ein Navigationsziel aus Nutzereingaben, API-Antworten oder
   Push-Daten gebaut wird.
-- **Präfix-redundante Indizes.** 33 Einzelspalten-Indizes neben einem
-  längeren hatten am 01.10.2026 keinen einzigen Zugriff — bei 169 Konten liest
-  der Planer kleine Tabellen aber ohnehin ganz. Bei deutlich größerem Bestand
-  `pg_stat_user_indexes.idx_scan` neu messen, dann entscheiden (Datenbank
-  BF-09, Rest).
-- **Fremdschlüssel `integer` statt `bigint`.** 55 Fremdschlüssel bleiben: Die
-  Umstellung schriebe große Tabellen unter Sperre neu, ohne dass eine App
-  oder Abfrage es merkt; neue Migrationen nehmen `BIGINT` (Wächter
-  `migrationenKonventionen.test.js`). Wieder aufnehmen, falls ein Wert 2³¹
-  nahekommt (Datenbank BF-12, Rest).

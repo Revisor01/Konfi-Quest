@@ -2498,7 +2498,7 @@ describe('Wrapped Routes', () => {
         );
         await db.query(
           `ALTER TABLE challenge_submissions
-             ADD COLUMN IF NOT EXISTS approved_by INTEGER,
+             ADD COLUMN IF NOT EXISTS approved_by BIGINT,
              ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE`
         );
         await db.query(
