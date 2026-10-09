@@ -24,6 +24,7 @@ import { closeOpenSlidingItems } from '../../utils/slidingItems';
 import type { TeamerListenEintrag } from '../../types/user';
 import { konfiPunkte, initialen } from '../../utils/konfiListe';
 import { useTeamerListe } from './useTeamerListe';
+import { useSucheMessung } from '../../hooks/useSucheMessung';
 
 interface Konfi {
   id: number;
@@ -91,6 +92,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [selectedJahrgang, setSelectedJahrgang] = useState('alle');
   const [sortBy, setSortBy] = useState('name');
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
+  // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
+  useSucheMessung(viewMode === 'teamer' ? 'team' : 'konfis', searchTerm);
   // Die Team-Liste laedt erst, wenn das Segment "Team" gewaehlt ist (Hook
   // geteilt mit der Web-Fassung, useTeamerListe.ts).
   const { teamers, laedt: teamerLoading, laden: loadTeamers } = useTeamerListe(viewMode === 'teamer');

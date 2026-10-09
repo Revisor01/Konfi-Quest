@@ -7,6 +7,7 @@ import { toastController } from '@ionic/core';
 import { networkMonitor } from './networkMonitor';
 import { getUser } from './tokenStore';
 import api from './api';
+import { nachgesendetMelden } from './nachgesendetMessung';
 
 // --- Interfaces ---
 
@@ -618,6 +619,8 @@ async function flush(): Promise<FlushResult> {
         // Erfolg: lokale Datei aufräumen, dann Item entfernen
         await cleanupLocalFile(item);
         if (item.metadata.type === 'chat') await forgetFailedChat(item.metadata.clientId);
+        // Offline Erledigtes nachzaehlen (S14): erst jetzt ist es gelungen.
+        nachgesendetMelden(item);
         result.succeeded.push(item);
         items.shift();
         await _save(items);
@@ -702,6 +705,8 @@ async function flushTextOnly(): Promise<FlushResult> {
 
         if (zwischenzeitlichGeleert()) break;
         if (item.metadata.type === 'chat') await forgetFailedChat(item.metadata.clientId);
+        // Offline Erledigtes nachzaehlen (S14): erst jetzt ist es gelungen.
+        nachgesendetMelden(item);
         result.succeeded.push(item);
         items.splice(i, 1);
         await _save(items);

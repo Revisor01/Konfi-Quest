@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n326 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n327 Operationen."
   },
   "servers": [
     {
@@ -7335,6 +7335,139 @@
         }
       }
     },
+    "/api/metrics/konfisprueche": {
+      "get": {
+        "tags": [
+          "System & Monitoring"
+        ],
+        "summary": "Gewaehlte Konfisprueche ueber alle Gemeinden (nur super_admin)",
+        "description": "Neu am 09.10.2026 (docs/messung/umami.md, S1). Wertet konfspruch_wahlen aus (Migration 207): je Wahl eine Zeile OHNE Person, Konto oder Profil, geschrieben von PATCH /api/konfi/profile und PATCH /api/teamer/profile; die Zeilen bleiben beim Loeschen eines Kontos. Jeder Spruch mit Anzahl, auch Einzelnennungen, eigene Sprueche im Wortlaut mit Stellenangabe -- keine Schwelle (Simon, 09.10.2026). Gezaehlt werden Wahlen, nicht Personen: Wer wechselt, steht mit beiden in der Liste. Die Gemeinde ist gespeichert, wird hier aber nicht ausgegeben. Der uebernommene Bestand traegt keinen Monat (`monat: null`). Nichts davon geht an die Nutzungsmessung.\n",
+        "responses": {
+          "200": {
+            "description": "Auswertung",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "gesamt": {
+                      "type": "object",
+                      "properties": {
+                        "wahlen": {
+                          "type": "integer"
+                        },
+                        "vorschlag": {
+                          "type": "integer"
+                        },
+                        "eigen": {
+                          "type": "integer"
+                        },
+                        "aus_bestand": {
+                          "type": "integer",
+                          "description": "Zeilen aus dem Bestand vor der Migration, ohne Monat"
+                        }
+                      }
+                    },
+                    "uebersetzungen": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "translation": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "anzahl": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "sprueche": {
+                      "type": "array",
+                      "description": "je Stelle aus den Vorschlaegen, absteigend nach Anzahl",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "stelle": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "anzahl": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "eigene": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "freitext": {
+                            "type": "string"
+                          },
+                          "freitext_referenz": {
+                            "type": [
+                              "string",
+                              "null"
+                            ]
+                          },
+                          "anzahl": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    },
+                    "monate": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "monat": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "description": "JJJJ-MM, null = Bestand"
+                          },
+                          "anzahl": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "super_admin"
+          ],
+          "middleware": [
+            "verifyTokenRBAC"
+          ],
+          "org-scope": false,
+          "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403"
+        }
+      }
+    },
     "/api/konfi/dashboard": {
       "get": {
         "tags": [
@@ -7578,7 +7711,7 @@
           "Konfi-Profil & Dashboard"
         ],
         "summary": "Eigenen Konfispruch setzen (Listen-Wahl oder Freitext)",
-        "description": "Setzt den Konfispruch: entweder konfspruch_id + translation (luther2017 | bigs | gute_nachricht | elberfelder) aus der kuratierten Liste ODER konfspruch_freitext + konfspruch_freitext_referenz (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.\n",
+        "description": "Setzt den Konfispruch: entweder konfspruch_id + translation (luther2017 | bigs | gute_nachricht | elberfelder) aus der kuratierten Liste ODER konfspruch_freitext + konfspruch_freitext_referenz (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.\nSTATISTIK OHNE PERSONENBEZUG (09.10.2026, Migration 207): Jede geaenderte Wahl schreibt zusaetzlich eine Zeile in konfspruch_wahlen (Gemeinde, Monat, Spruch und Uebersetzung bzw. eigener Spruch im Wortlaut) -- ohne Verweis auf Person oder Konto; unveraendert erneut gespeichert zaehlt nicht. Antwort unveraendert. Auswertung: GET /api/metrics/konfisprueche.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -15674,7 +15807,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenen Konfispruch setzen (Listen-Wahl ODER Freitext)",
-        "description": "Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder konfspruch_id + translation (kuratierte Liste, org-gescopt und is_active geprüft) oder konfspruch_freitext + konfspruch_freitext_referenz (Referenz Pflicht, max. 100 Zeichen; Text max. 1000 Zeichen). Genau eine Quelle bleibt aktiv, die jeweils andere wird geleert. Anders als bei Konfis wird die konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt: direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.\n",
+        "description": "Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder konfspruch_id + translation (kuratierte Liste, org-gescopt und is_active geprüft) oder konfspruch_freitext + konfspruch_freitext_referenz (Referenz Pflicht, max. 100 Zeichen; Text max. 1000 Zeichen). Genau eine Quelle bleibt aktiv, die jeweils andere wird geleert. Anders als bei Konfis wird die konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt: direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.\nSTATISTIK OHNE PERSONENBEZUG (09.10.2026, Migration 207): Jede geaenderte Wahl schreibt zusaetzlich eine Zeile in konfspruch_wahlen (Gemeinde, Monat, Spruch und Uebersetzung bzw. eigener Spruch im Wortlaut) -- ohne Verweis auf Person oder Konto; unveraendert erneut gespeichert zaehlt nicht. Antwort unveraendert. Auswertung: GET /api/metrics/konfisprueche.\n",
         "requestBody": {
           "content": {
             "application/json": {

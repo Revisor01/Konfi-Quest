@@ -5,6 +5,7 @@ import {
   IonTitle, IonToolbar
 } from '@ionic/react';
 import api from '../../../services/api';
+import { trackHandlung, serverSchluesselMesswert } from '../../../services/analytics';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import { fehlerText } from '../../../utils/fehler';
@@ -81,6 +82,11 @@ const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
     if (!istGueltig) return;
     try {
       const res = await api.post('/einladungen', { kennung: kennung.trim(), role_id: rolleId });
+      // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
+      // S10): nur die feste Zielrolle -- nie die eingegebene Kennung.
+      trackHandlung('einladung-gesendet', {
+        rolle_ziel: serverSchluesselMesswert(rollen.find((r) => r.id === rolleId)?.name)
+      });
       setSuccess(`${res.data.display_name} wurde eingeladen und entscheidet jetzt selbst.`);
       onSuccess();
     } catch (err) {

@@ -144,10 +144,75 @@ async function ladeKonfspruch(db, userId, organizationId) {
   return loeseKonfspruchAuf(db, profil, organizationId);
 }
 
+// ------------------------------------------------------------------
+// Personenunabhaengige Spruch-Statistik (Migration 207, S1)
+// ------------------------------------------------------------------
+
+/**
+ * Der gespeicherte Spruch einer Person VOR dem Speichern -- damit ein
+ * unveraendertes erneutes Speichern keine zweite Wahl zaehlt.
+ *
+ * @returns {Promise<object|null>} Zeile oder null ohne Profil
+ */
+async function spruchStandLesen(db, userId) {
+  const { rows: [stand] } = await db.query(
+    `SELECT konfspruch_id, konfspruch_translation, konfspruch_freitext, konfspruch_freitext_referenz
+       FROM konfi_profiles WHERE user_id = $1`,
+    [userId]
+  );
+  return stand || null;
+}
+
+/**
+ * Eine Wahl in konfspruch_wahlen festhalten -- OHNE Person, Konto oder
+ * Profil: Gemeinde, Monat und der Spruch selbst (Simon, 09.10.2026: „volle
+ * Speicherung ... personenunabhängig"). Die Zeile bleibt bei einer
+ * Kontoloeschung stehen; sie hat keinen Verweis auf users.
+ *
+ * Unveraendert erneut gespeichert zaehlt nicht. Ein Fehler hier darf das
+ * Speichern des Spruchs nie scheitern lassen -- er wird nur protokolliert.
+ *
+ * @param {object} db
+ * @param {number} organizationId  Gemeinde, in der gewaehlt wurde
+ * @param {{quelle:'vorschlag', spruchId:number, translation:string}
+ *        |{quelle:'eigen', freitext:string, referenz:string}} wahl
+ * @param {object|null} vorher  Ergebnis von spruchStandLesen
+ * @returns {Promise<boolean>} true, wenn eine Zeile geschrieben wurde
+ */
+async function spruchWahlMerken(db, organizationId, wahl, vorher) {
+  try {
+    if (wahl.quelle === 'vorschlag') {
+      if (vorher && Number(vorher.konfspruch_id) === Number(wahl.spruchId)
+        && vorher.konfspruch_translation === wahl.translation) return false;
+      await db.query(
+        `INSERT INTO konfspruch_wahlen (organization_id, quelle, konfspruch_id, stelle, translation, monat)
+         VALUES ($1, 'vorschlag', $2::bigint, (SELECT reference FROM konfsprueche WHERE id = $2::bigint), $3,
+                 date_trunc('month', NOW())::date)`,
+        [organizationId, wahl.spruchId, wahl.translation]
+      );
+      return true;
+    }
+    if (vorher && vorher.konfspruch_id == null
+      && vorher.konfspruch_freitext === wahl.freitext
+      && vorher.konfspruch_freitext_referenz === wahl.referenz) return false;
+    await db.query(
+      `INSERT INTO konfspruch_wahlen (organization_id, quelle, freitext, freitext_referenz, monat)
+       VALUES ($1, 'eigen', $2, $3, date_trunc('month', NOW())::date)`,
+      [organizationId, wahl.freitext, wahl.referenz]
+    );
+    return true;
+  } catch (err) {
+    console.error('Konfispruch-Statistik nicht geschrieben:', err.message);
+    return false;
+  }
+}
+
 module.exports = {
   BIBEL_UEBERSETZUNGEN,
   KONFSPRUCH_TRANSLATIONS,
   ladeSpruchliste,
   loeseKonfspruchAuf,
   ladeKonfspruch,
+  spruchStandLesen,
+  spruchWahlMerken,
 };

@@ -28,6 +28,7 @@ import {
 } from './icons';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
+import { trackHandlung, serverSchluesselMesswert } from '../../services/analytics';
 import { fehlerText } from '../../utils/fehler';
 import { tastaturKlick } from '../../utils/tastatur';
 
@@ -189,7 +190,12 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const speichern = useCallback(async (aenderung: { push_enabled?: boolean; stumm?: string[] }) => {
+  // `messung`: welche Gruppe umgeschaltet wurde, fuer die anonyme Messung
+  // (docs/messung/umami.md, S9) -- gemeldet erst nach der Antwort des Servers.
+  const speichern = useCallback(async (
+    aenderung: { push_enabled?: boolean; stumm?: string[] },
+    messung?: { gruppe: string; an: boolean }
+  ) => {
     if (!einstellungen) return;
     setSpeichert(true);
     try {
@@ -202,6 +208,12 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
       };
       setEinstellungen(neu);
       onGeaendert?.(neu);
+      if (messung) {
+        trackHandlung('push-gruppe-umgeschaltet', {
+          gruppe: serverSchluesselMesswert(messung.gruppe),
+          an: messung.an ? 'true' : 'false'
+        });
+      }
     } catch (err) {
       setError(fehlerText(err, 'Einstellung konnte nicht gespeichert werden'));
     } finally {
@@ -214,7 +226,7 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
     const stumm = an
       ? einstellungen.stumm.filter((g) => g !== id)
       : [...einstellungen.stumm.filter((g) => g !== id), id];
-    speichern({ stumm });
+    speichern({ stumm }, { gruppe: id, an });
   };
 
   const erlaubt = pushNotificationsPermission === 'granted';
@@ -279,7 +291,7 @@ export const PushAuswahlModal: React.FC<ModalProps> = ({ onClose, variante, onGe
                     ariaLabel="Mitteilungen aufs Handy"
                     an={einstellungen.push_enabled}
                     gesperrt={speichert}
-                    onSchalten={(an) => speichern({ push_enabled: an })}
+                    onSchalten={(an) => speichern({ push_enabled: an }, { gruppe: 'alle', an })}
                   />
                   {einstellungen.gruppen.map((g) => (
                     <SchalterZeile

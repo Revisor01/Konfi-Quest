@@ -7,6 +7,7 @@ import {
   ICON_CHALLENGE_GEFUELLT,
 } from '../../shared/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
+import { trackNeuigkeitenAngesehen } from '../../../services/analytics';
 
 interface Props {
   onClose: () => void;
@@ -68,7 +69,7 @@ export const SLIDES: OnboardingSlide[] = [
 ];
 
 const KonfiUpdate230WalkthroughModal: React.FC<Props> = ({ onClose }) => (
-  <OnboardingTour slides={SLIDES} onClose={onClose} />
+  <OnboardingTour slides={SLIDES} onClose={onClose} beimSchliessen={trackNeuigkeitenAngesehen} />
 );
 
 export default KonfiUpdate230WalkthroughModal;

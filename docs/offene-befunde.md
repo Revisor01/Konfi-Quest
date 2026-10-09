@@ -376,9 +376,15 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   heute an zwei Stellen nachgezogen werden. Vorschlag: je Seite eine
   gemeinsame Beschreibung von Texten, Reitern und Filtern, aus der App und
   Web-Fassung lesen. Umsetzen?
-- **Nutzungsmessung.** Die Vorschläge S1–S17 in
-  [messung/umami.md](messung/umami.md#vorschläge--simon-entscheidet) warten
-  auf Simons Entscheidung.
+- **Konfisprüche: Gemeinde und Wortlaut zusammen?** Die Statistik
+  `konfspruch_wahlen` (Migration 207, ohne Personenbezug) speichert je Wahl
+  die Gemeinde und den Monat, bei eigenen Sprüchen den Wortlaut. In einer
+  kleinen Gemeinde ist ein eigener Spruch mit Gemeinde und Monat einer
+  bestimmten Konfi zuzuordnen — der Spruch steht auf der Urkunde und oft im
+  Gemeindebrief; das gilt auch nach dem Löschen des Kontos. Die Ansicht
+  unter Betrieb zeigt die Gemeinde nicht. Gemeinde weiter speichern,
+  weglassen oder vergröbern (etwa Landeskirche)?
+  ([messung/umami.md](messung/umami.md), S1)
 
 ## Geplant
 

@@ -218,7 +218,30 @@ const MaterialFormModal: React.FC<MaterialFormModalProps> = ({ material, nurLese
     fehlerOrt: 'material-admin-formular',
   });
 
-  const openFile = (file: MaterialFile) => dateiOeffnen(file.stored_name, file.original_name, file.mime_type);
+  // LESE-ANSICHT DER VERWALTUNG (docs/messung/umami.md, S17): Material, das
+  // diese Person nicht bearbeiten darf, ist ein Abruf wie im Material-Reiter
+  // des Teams (U2) -- dieselben Ereignisse. Das eigene Material zum
+  // Bearbeiten zu oeffnen, zaehlt nicht. Das Modal oeffnet erst, nachdem
+  // AdminMaterialPage GET /material/:id erfolgreich geladen hat; deshalb
+  // genuegt hier das Einhaengen, einmal je Oeffnen.
+  const angesehenGemeldet = useRef(false);
+  useEffect(() => {
+    if (!nurLesen || !material || angesehenGemeldet.current) return;
+    angesehenGemeldet.current = true;
+    trackHandlung('material-angesehen', {
+      inhalt: materialInhalt(
+        (material.files?.length ?? 0) > 0,
+        (material.links?.length ?? 0) > 0 || !!material.link_url
+      )
+    });
+  }, [nurLesen, material]);
+
+  // Datei: erst gezaehlt, wenn sie wirklich geladen ist (nativ oder im
+  // Betrachter -- beide Wege laufen durch dateiOeffnen und melden true).
+  const openFile = async (file: MaterialFile) => {
+    const geladen = await dateiOeffnen(file.stored_name, file.original_name, file.mime_type);
+    if (geladen && nurLesen) trackHandlung('material-abgerufen', { inhalt: 'datei' });
+  };
 
   // Eine gewählte Datei vorbereiten wie in Chat und Challenges: Fotos
   // verkleinern, dann gegen die Grenze des Servers prüfen (20 MB je Datei).

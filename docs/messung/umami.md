@@ -1,6 +1,6 @@
 # Anonyme Nutzungsmessung (Umami) — Bestand und Messkonzept
 
-Stand: 27.09.2026. Anlass: Simon, 27.09.2026 — „Aktivitäten wäre auch gut: wie
+Stand: 09.10.2026 (S1–S17 umgesetzt, Simon: „Go"). Anlass: Simon, 27.09.2026 — „Aktivitäten wäre auch gut: wie
 oft abgelehnt wird. Und auch hier Teamer, Konfi — gibt's ja für beide. Material
 hinterlegt, abgerufen auch bitte. Konfi-Sprüche später auch verfolgen: welche
 Sprüche, welche Übersetzung, eigene. Also da sollten wir nochmal schauen, was
@@ -30,7 +30,8 @@ jeden neuen Messpunkt unverändert:
   sie in `utils/bekannteFehlertexte.ts` stehen (B1).
 - **Erst nach der erfolgreichen Server-Antwort melden, nie beim Klick.** Ein
   Klick, der in einem Fehler endet, ist keine Nutzung. Offline eingereihte
-  Schreibvorgänge zählen deshalb heute nicht.
+  Schreibvorgänge zählen deshalb erst, wenn sie beim Nachsenden gelingen —
+  dann mit `nachgesendet` (S14).
 - **Die Messung stört nie.** Versand ohne Warten (`keepalive`), jeder Fehler
   wird verschluckt, in der Entwicklung ist sie aus (`import.meta.env.PROD`).
 - **Keine echten Routen.** Jedes Ereignis trägt dieselbe feste Adresse `/app`;
@@ -62,19 +63,24 @@ verbinden. Siehe Befund B4 zum Salz.
 
 ## Messpunkte heute
 
-Stand des Codes am 27.09.2026 (vollständig: alle Aufrufe von `track(`,
-`trackBereich(`, `trackHandlung(`, `trackFehler(`, `trackSitzungsstart(` und
-`trackMitmachenAnsicht(` unter `frontend/src/`).
+Stand des Codes am 09.10.2026 (vollständig: alle Aufrufe von `track(`,
+`trackBereich(`, `trackHandlung(`, `trackFehler(`, `trackSitzungsstart(`,
+`trackMitmachenAnsicht(`, `trackNeuigkeitenAngesehen`, `trackPushErlaubnis(`
+und der Hooks `useScrollTiefeMessung`, `useSucheMessung`, `useBisEndeMessung`
+unter `frontend/src/`). Was am 09.10.2026 dazukam, steht mit „(S…)" in der
+Zeile.
 
 | Ereignis | Merkmale (erlaubte Werte) | Rolle(n) | Aufrufstelle | Wann gemeldet |
 |---|---|---|---|---|
-| *(Seitenaufruf, ohne Namen)* | nur `rolle` | alle | `contexts/AppContext.tsx` (`trackSitzungsstart`) | sobald eine Rolle feststeht: nach der Anmeldung, beim Start mit gespeicherter Anmeldung, beim Gemeindewechsel mit anderer Rolle. Ohne ihn zählt Umami keine Besuche. |
+| *(Seitenaufruf, ohne Namen)* | `rolle`; `dunkel`: `true` \| `false` (S11, `prefers-color-scheme`) | alle | `contexts/AppContext.tsx` (`trackSitzungsstart`) | sobald eine Rolle feststeht: nach der Anmeldung, beim Start mit gespeicherter Anmeldung, beim Gemeindewechsel mit anderer Rolle. Ohne ihn zählt Umami keine Besuche. |
 | `bereich-geoeffnet` | `bereich`: zweiter Pfadteil, Unterseiten des Profils unter ihrem eigenen Namen, nur Kleinbuchstaben und Bindestriche (`bereichAusPfad`). Leitung: `konfis`, `chat`, `activities` (Aktivitäten-Verwaltung), `events`, `settings`, `badges`, `challenges`, `users`, `organizations`, `material`, `wrapped`, `profile`, `metrics`, `support` (Support-Ansicht, nur Super-Admin; auch das Support-Konto ohne Gemeinde). Team: `dashboard`, `chat`, `events`, `challenges`, `material`, `badges`, `konfi-stats`, `profile`. Konfi: `dashboard`, `events`, `challenges`, `badges`, `chat`, `profile` | alle | `components/layout/MainTabs.tsx` | bei jedem Pfadwechsel, auch ohne Tab-Leiste (Detailseiten zählen unter ihrem Bereich) |
 | `bereich-geoeffnet` (über `trackMitmachenAnsicht`) | `bereich`: `events` \| `activities` | konfi, teamer | `konfi/pages/KonfiEventsPage.tsx`, `teamer/pages/TeamerEventsPage.tsx` | beim Umschalten der Leiste „Events \| Aktivitäten" und beim Einstieg mit `?segment=antraege` |
+| `bereich-geoeffnet` (S2) | `bereich`: `requests` \| `events` | admin | `admin/pages/AdminEventsPage.tsx` | beim Umschalten der Leiste „Events \| Aktivitäten" unter „Mitmachen" und bei jedem `?segment=antraege` (Einstieg per Link, Reiter der Web-Fassung). `activities` bleibt die Aktivitäten-Verwaltung |
 | `aktivitaet-eingereicht` | `mit_foto`: `true` \| `false` | konfi, teamer | `konfi/modals/ActivityRequestModal.tsx`, `teamer/modals/TeamerActivityRequestModal.tsx` | nach erfolgreichem `POST /konfi/requests` bzw. `/teamer/requests`; offline eingereiht zählt nicht |
-| `event-angemeldet` | `status`: `bestaetigt` \| `warteliste`; `mit_zeitfenster`: `true` \| `false` | konfi | `konfi/views/EventDetailView.tsx` | nach erfolgreichem `POST /konfi/events/:id/register` |
+| `event-angemeldet` | `status`: `bestaetigt` \| `warteliste`; `mit_zeitfenster`: `true` \| `false`; `nachgesendet`: `true` (S14) | konfi; teamer, admin (S3) | `konfi/views/EventDetailView.tsx`; `teamer/pages/TeamerEventsPage.tsx` und `admin/views/EventDetailView.tsx` (eigene Zusage, `mit_zeitfenster` immer `false`) | nach erfolgreichem `POST /konfi/events/:id/register` bzw. `POST /teamer/events/:id/zusage` mit `dabei: true` |
+| `event-abgemeldet` (S4) | `pflicht`: `true` \| `false`; `nachgesendet`: `true` | konfi, teamer, admin | `konfi/views/EventDetailView.tsx` (Opt-out = Pflicht, Abmeldung = freiwillig), `teamer/pages/TeamerEventsPage.tsx`, `admin/views/EventDetailView.tsx` (Absage, `pflicht` aus `event.mandatory`) | nach erfolgreichem `POST …/opt-out`, `DELETE …/register` bzw. Zusage mit `dabei: false`. Kein Grund, kein Event |
 | `challenge-beitrag` | `medium`: `text` \| `photo` \| `audio` \| `video` \| `link`; `sichtbarkeit`: `publish` \| `private` \| `anonymous` | konfi, teamer, admin | `konfi/modals/ChallengeSubmitModal.tsx` (auch aus dem Challenge-Detail von Team und Leitung) | nach erfolgreichem `POST /challenges/konfi/:id/submissions` |
-| `dashboard-gescrollt` | `tiefe`: `25` \| `50` \| `75` \| `100` | konfi | `konfi/pages/KonfiDashboardPage.tsx` | beim Scrollen, jede Marke einmal, solange die Seite besteht |
+| `dashboard-gescrollt` | `tiefe`: `25` \| `50` \| `75` \| `100` | konfi, teamer (S13) | `konfi/pages/KonfiDashboardPage.tsx`, `teamer/pages/TeamerDashboardPage.tsx` (beide über `hooks/useScrollTiefeMessung.ts`) | beim Scrollen, jede Marke einmal, solange die Seite besteht |
 | `punkte-vergeben` | `weg`: `aktivitaet` \| `bonus`; `punkteart`: `gottesdienst` \| `gemeinde` \| `ohne` | admin | `admin/modals/ActivityModal.tsx`, `admin/modals/BonusModal.tsx` | nach erfolgreichem `POST /admin/konfis/:id/activities` bzw. `/bonus-points`; offline zählt nicht |
 | `anwesenheit-erfasst` | `umfang`: `einzeln` \| `alle`; `gruppe`: `konfi` \| `teamer` | admin | `admin/views/EventDetailView.tsx` | nach erfolgreichem `PUT …/attendance` bzw. `…/attendance-all` |
 | `beitrag-moderiert` | `entscheidung`: `freigegeben` \| `ausgeblendet` \| `wieder-sichtbar` \| `anonymisiert` | teamer, admin | `admin/views/ChallengeLeitungView.tsx` | nach erfolgreichem `PUT /challenges/admin/submissions/:id/moderate` |
@@ -83,7 +89,21 @@ Stand des Codes am 27.09.2026 (vollständig: alle Aufrufe von `track(`,
 | `antrag-entschieden` | `entscheidung`: `angenommen` \| `abgelehnt`; `antrag_von`: `konfi` \| `teamer` | admin | `admin/modals/ActivityRequestModal.tsx` | nach erfolgreichem `PUT /admin/activities/requests/:id`; offline eingereiht zählt nicht |
 | `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
 | `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
-| `konfispruch-gespeichert` | `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`; unverändert gespeichert zählt nicht |
+| `konfispruch-gespeichert` | `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`; unverändert gespeichert zählt nicht. Welcher Spruch: nicht hier, sondern in der Datenbank (S1) |
+| `material-angesehen`, `material-abgerufen` (S17) | wie oben (`inhalt`) | admin | `admin/modals/MaterialFormModal.tsx`, nur mit `nurLesen` | Lese-Ansicht der Material-Verwaltung: angesehen beim Öffnen (nach erfolgreichem `GET /material/:id` in `AdminMaterialPage`), Datei erst nach dem Laden. Eigenes Material zum Bearbeiten zählt nicht |
+| `badge-angelegt` (S5) | `zielgruppe`: `konfi` \| `teamer`; `nachgesendet` | admin | `admin/modals/BadgeManagementModal.tsx` | nach erfolgreichem `POST /admin/badges`; Bearbeiten zählt nicht |
+| `challenge-angelegt` (S6) | `sichtbarkeit`: `offen` \| `konfi-entscheidet` \| `privat` (aus `public`, `konfi_choice`, `private`); `freigabe`: `true` \| `false` | admin | `admin/modals/ChallengeManageModal.tsx` | nach erfolgreichem `POST /challenges/admin`; Bearbeiten zählt nicht |
+| `wrapped-angesehen` (S7) | `art`: `konfi` \| `team`; `bis_ende`: `true` \| `false` | alle | `wrapped/WrappedModal.tsx` (`hooks/useBisEndeMessung.ts`) | einmal beim Schliessen des Rückblicks, wenn Folien zu sehen waren |
+| `postfach-angesehen` (S8) | — | alle | `common/PostfachModal.tsx` | beim Öffnen des Postfachs |
+| `mitteilung-angetippt` (S8) | `art`: Mitteilungsart des Servers mit Bindestrich (`event-cancelled` …), Positivliste `MITTEILUNGS_ARTEN` | alle | `common/PostfachModal.tsx` | beim Antippen einer Mitteilung |
+| `push-gruppe-umgeschaltet` (S9) | `gruppe`: `konfi-chat` \| `konfi-termine` \| `konfi-fortschritt` \| `konfi-verwaltung` \| `alle` (Hauptschalter); `an`: `true` \| `false` | alle | `shared/PushAuswahl.tsx` | nach erfolgreichem `PUT /notifications/preferences` |
+| `push-erlaubnis` (S9) | `ergebnis`: `erteilt` \| `abgelehnt` | alle | `contexts/AppContext.tsx` (`trackPushErlaubnis`) | nach der Antwort auf die Systemfrage (`requestPermissions`), nur wenn sie gestellt wurde |
+| `einladung-gesendet` (S10) | `rolle_ziel`: `konfi` \| `teamer` \| `admin` \| `org-admin` | admin | `admin/modals/EinladungModal.tsx` | nach erfolgreichem `POST /einladungen`; nie die Kennung |
+| `einladung-beantwortet` (S10) | `antwort`: `angenommen` \| `abgelehnt` | alle | `shared/EinladungenKarte.tsx` (`useEinladungen`, App und Web) | nach erfolgreichem `POST /einladungen/:id/annehmen\|ablehnen` |
+| `losung-bibel` (S12) | `bibel`: `luther` \| `elberfelder` \| `gute-nachricht` \| `bigs` \| `niv` \| `segond`; `nachgesendet` | konfi, teamer | `konfi/views/DashboardView.tsx`, `konfi/views/ProfileView.tsx`, `teamer/pages/TeamerDashboardPage.tsx`, `teamer/pages/TeamerProfilePage.tsx` | nach erfolgreichem `PUT …/bible-translation`, nur bei geänderter Wahl |
+| `suche-genutzt` (S15) | `bereich`: `material` \| `konfis` \| `team` | teamer, admin | `admin/KonfisView.tsx`, `admin/web/leitung/WebKonfis.tsx`, `teamer/pages/TeamerMaterialPage.tsx`, `admin/pages/AdminMaterialPage.tsx` (`hooks/useSucheMessung.ts`) | beim ersten Zeichen im Suchfeld, einmal je Öffnen der Seite und Bereich; nie der Begriff |
+| `neuigkeiten-angesehen` (S16) | `bis_ende`: `true` \| `false` | alle | `shared/OnboardingTour.tsx` über `beimSchliessen`, nur aus den drei `…Update230WalkthroughModal` | einmal beim Schliessen der Übersicht nach dem Update |
+| *(Nachgesendet, S14)* | die Handlung mit `nachgesendet: true` | alle | `services/nachgesendetMessung.ts`, gerufen aus `services/writeQueue.ts` (`flush`, `flushTextOnly`) | wenn ein offline eingereihter Vorgang beim Nachsenden gelingt; feste Zuordnung über Methode und Adresse, nie über die Beschriftung. Gemeldet: Aktivität eingereicht, Punkte, Antrag entschieden, Termin, Material, Badge, Ab- und Anmeldung, Losungs-Übersetzung. Kein Chat |
 | `fehler` | `stelle`: die angezeigte Meldung nur, wenn sie auf der Positivliste steht (`utils/bekannteFehlertexte.ts`: 203 Texte der App, 19 Server-Texte der Event-An- und -Abmeldung), Ziffern durch `#` ersetzt, höchstens 80 Zeichen; ein anderer Text vom Server wird durch den Ersatztext der Aufrufstelle aus `fehlerText(err, 'Ersatz')` ersetzt, alles Übrige durch `andere-meldung` (`fehlerStelle`); `art`: `http-<Status>` \| `netz` \| `timeout` \| `abbruch` \| `intern` — aus dem Fehlerobjekt der Diagnose oder, bei einem ersetzten Server-Text, aus der Antwort; `ort`: festes Kürzel (`[a-z0-9-]`, höchstens 40 Zeichen) | alle | `contexts/AppContext.tsx` (`setError`) | wenn eine Fehlermeldung angezeigt wird; derselbe Wert geht als Wegmarke ins Absturzprotokoll (Crashlytics, nur iOS und Android) |
 | `fehler` (Schritte beim Hochladen) | `stelle`: `andere-meldung`; `art` wie oben; `ort`: `dateiauswahl-nicht-lesbar` \| `dateiauswahl-nicht-gefunden` \| `dateiauswahl-kein-zugriff` \| `dateiauswahl-lesefehler` (Dokument ließ sich nach der Auswahl nicht in den Speicher lesen; der Name des Browser-Fehlers wählt den Ort) \| `chat-datei-direkt` (Versand mit Datei ohne Ablehnung durch den Server gescheitert) \| `chat-datei-sichern` (Datei ließ sich nicht für die Warteschlange sichern) \| `chat-datei-warteschlange` (Warteschlange gibt auf, `art` aus ihrem Status, 0 = `netz`) | alle | `services/uploadDiagnose.ts`, gerufen aus `services/systemDialoge.ts` und `components/chat/ChatRoom.tsx`; das Material meldet über `setError` mit `ort` `material-dateien-hochladen` bzw. `material-speichern` | wenn ein Schritt beim Hochladen einer Datei scheitert, auch ohne angezeigte Meldung (im Chat steht die Nachricht dann nur mit „!“). Kein Dateiname, keine Größe, kein Typ. Eingeführt am 01.10.2026, um den Android-Befund (Word/PDF kommen nicht an, am Server keine Anfrage) einem Schritt zuzuordnen |
 
@@ -94,9 +114,12 @@ Hinweise zur Tabelle:
 - `beitrag-moderiert` kommt auch vom Team: Teamer:innen dürfen Beiträge
   durchsehen (`requireTeamer` an der Route).
 - Die Leitung hat unter „Mitmachen" ebenfalls die Leiste „Events |
-  Aktivitäten" (`admin/pages/AdminEventsPage.tsx`), meldet das Umschalten
-  aber nicht. Der Bereich `activities` der Leitung ist die
+  Aktivitäten" (`admin/pages/AdminEventsPage.tsx`); die Anträge zählen dort
+  als `requests` (S2). Der Bereich `activities` der Leitung ist die
   Aktivitäten-**Verwaltung** (`/admin/activities`), nicht die Anträge.
+- Wahrheitswerte aus `trackHandlung` gehen als Text `true`/`false`, die
+  älteren Ereignisse (`mit_foto`, `mit_zeitfenster`) als echte
+  Wahrheitswerte; Umami zeigt beide gleich.
 - Die Datenschutzerklärung (Abschnitt 9a) zählt die Arten von Handlungen
   einzeln auf. Wer ein Ereignis ergänzt, zieht sie im selben Commit nach.
 - Die Startseite `konfi-quest.de` misst mit einer **eigenen** Kennung
@@ -108,20 +131,26 @@ Hinweise zur Tabelle:
 | Frage | Heute | Womit |
 |---|---|---|
 | Wie viele Sitzungen gibt es, je Rolle? | ja | Seitenaufruf mit `rolle` (Sitzungen, nicht Personen) |
-| Welche Bereiche werden geöffnet, von wem? | ja; die Aktivitäten der Leitung unter „Mitmachen" nicht (S2) | `bereich-geoeffnet` |
+| Welche Bereiche werden geöffnet, von wem? | ja, auch die Anträge der Leitung unter „Mitmachen" (S2) | `bereich-geoeffnet` |
 | Werden unter „Mitmachen" Events oder Aktivitäten angesehen? | ja, Konfi und Team | `trackMitmachenAnsicht` |
 | Wie viele Aktivitäten werden eingereicht — von Konfis, vom Team, mit Foto? | ja | `aktivitaet-eingereicht` mit `rolle` und `mit_foto` |
 | **Wie viele Anträge werden angenommen, wie viele abgelehnt — von Konfis, vom Team?** | **ja** (U1) | `antrag-entschieden` |
 | Kommen Anmeldungen der Konfis durch oder landen sie auf der Warteliste? | ja | `event-angemeldet` |
-| Meldet sich das Team zu Events an? | nein | siehe S3 |
+| Meldet sich das Team zu Events an? | ja (S3) | `event-angemeldet` mit `rolle` |
+| Wie oft wird abgesagt, bei Pflicht-Events? | ja (S4) | `event-abgemeldet` |
 | Welche Medien werden bei Challenges eingereicht, wie wird die Sichtbarkeit gewählt? | ja | `challenge-beitrag` |
 | Arbeitet die Leitung mit der App (Punkte, Anwesenheit, Moderation, Events, Material)? | ja | `trackHandlung` |
 | **Wird hinterlegtes Material angesehen, werden Dateien und Links geöffnet?** | **ja** (U2) | `material-angesehen`, `material-abgerufen`, daneben `material-bereitgestellt` |
-| **Welche Konfisprüche, welche Übersetzung, wie viele eigene?** | **Übersetzung und eigene ja** (U3); welche Sprüche nicht (S1) | `konfispruch-gespeichert` |
-| Wird der Jahresrückblick angesehen? | nur als Bereich `wrapped` der Leitung | siehe S7 |
-| Wird das Postfach genutzt? | nein | siehe S8 |
-| Welche Mitteilungen schalten Leute ab? | nein | siehe S9 |
-| Wie viele nutzen den Dunkelmodus? | nein | siehe S11 |
+| **Welche Konfisprüche, welche Übersetzung, wie viele eigene?** | **ja** — Übersetzung und Anteil eigener in Umami (U3), welche Sprüche und eigene im Wortlaut in den Betreiber-Kennzahlen (S1) | `konfispruch-gespeichert`; Reiter „Sprüche" unter Betrieb |
+| Wird der Jahresrückblick angesehen, bis zum Ende? | ja (S7) | `wrapped-angesehen` |
+| Wird das Postfach genutzt? | ja (S8) | `postfach-angesehen`, `mitteilung-angetippt` |
+| Welche Mitteilungen schalten Leute ab? | ja (S9) | `push-gruppe-umgeschaltet`, `push-erlaubnis` |
+| Wie viele nutzen den Dunkelmodus? | ja (S11) | Seitenaufruf mit `dunkel` |
+| Pflegen Gemeinden eigene Badges und Challenges? | ja (S5, S6) | `badge-angelegt`, `challenge-angelegt` |
+| Werden Einladungen genutzt und angenommen? | ja (S10) | `einladung-gesendet`, `einladung-beantwortet` |
+| Wie viel Arbeit geschieht ohne Netz? | ja (S14) | Merkmal `nachgesendet` |
+| Wird die Suche gebraucht? | ja (S15) | `suche-genutzt` |
+| Wird „Was ist neu?" gelesen? | ja (S16) | `neuigkeiten-angesehen` |
 | Wo und warum treten Fehler auf? | ja; Server-Texte nur bei der Event-An- und -Abmeldung im Wortlaut (B1) | `fehler` |
 | Wie viele Punkte, Badges, Level haben Konfis? | nein, und bleibt so | Punktzahlen und Stände wären Fingerabdrücke |
 
@@ -349,12 +378,21 @@ weniger Ortsangaben oder eine richtiggestellte Erklärung, entscheidet Simon.
   `messungAntragMaterialSpruch.test.ts`. Den geänderten eigenen Spruch prüft
   nur der Quelltext-Test: Texteingaben erreichen React in jsdom nicht.
 
-## Vorschläge — Simon entscheidet
+## Vorschläge S1–S17 — umgesetzt am 09.10.2026
+
+Simon, 09.10.2026: „Go". Alle siebzehn sind umgesetzt; die Messpunkte stehen
+oben in der Tabelle. Unter jedem Vorschlag steht, wie — und wo davon
+abgewichen wurde. Tests: `messungVorschlaege.test.ts` (Nutzlast,
+Positivliste, Listen gegen den Server, Nachsenden, Hooks, Aufrufstellen),
+`nutzungstiefeAufrufstellen.test.ts` (Messung hinter der Server-Antwort, nie
+im catch), `messungEinladungBeantwortet.test.tsx` (gerendert),
+`konfispruchAuswertung.test.tsx` und im Backend `konfspruchWahlen.test.js`,
+`migration207KonfspruchWahlen.test.js` (S1).
 
 Aufwand: **klein** = eine Aufrufstelle und Tests, **mittel** = mehrere
 Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 
-### S1 — Bibelstelle des Konfispruchs: nicht in Umami (Frage an Simon)
+### S1 — Bibelstelle des Konfispruchs: nicht in Umami
 
 - **Frage:** Welche Sprüche werden gewählt?
 - **Warum nicht in Umami:** Ein Konfirmationsspruch ist öffentlich — er wird
@@ -378,6 +416,28 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   Stelle trotz der Bedenken nach Umami — dann nur mit Positivliste aus den 32
   festen Stellen und nach Klärung von B4?
 - **Aufwand:** Auswertung mittel (Route, Kennzahlen-Seite, Tests).
+- **Umgesetzt am 09.10.2026 — nicht in Umami, sondern volle Speicherung
+  ohne Personenbezug** (Simon, 09.10.2026: „Für die Sprüche will ich
+  tatsächlich eine volle Auswertung, auch wenn sie einzeln sind,
+  insbesondere die, die selbst eingetragen werden. Bitte macht da eine volle
+  Speicherung. Das bleibt personenunabhängig, aber ich will die Daten
+  haben."). Die zuerst empfohlene Fünfer-Schwelle entfällt damit.
+  Migration 207 legt `konfspruch_wahlen` an: je Wahl Gemeinde, Quelle,
+  Spruch-Kennung und Stelle, Übersetzung oder eigener Spruch im Wortlaut
+  mit Stellenangabe, Monat — **kein** Verweis auf Person, Konto oder Profil;
+  der Bestand aus `konfi_profiles` kam einmal herüber (ohne Monat).
+  Geschrieben an beiden Stellen, an denen ein Spruch gespeichert wird
+  (`PATCH /konfi/profile`, `PATCH /teamer/profile`; die Leitung kann keinen
+  Spruch setzen), unverändert gespeichert zählt nicht. Die Zeilen bleiben
+  beim Löschen eines Kontos. Auswertung: Betrieb › Reiter „Sprüche"
+  (`GET /api/metrics/konfisprueche`, nur super_admin) — jeder Spruch mit
+  Anzahl, eigene im Wortlaut, Übersetzungen, je Monat; gezählt werden
+  Wahlen, nicht Personen.
+- **Offen bei Simon:** In kleinen Gemeinden macht ein eigener Spruch im
+  Wortlaut zusammen mit Gemeinde und Monat eine Person wiedererkennbar —
+  der Spruch steht auf der Urkunde und oft im Gemeindebrief. Die Ansicht
+  zeigt die Gemeinde nicht, gespeichert ist sie (Eintrag in
+  [offene-befunde.md](../offene-befunde.md)).
 
 ### S2 — Anträge-Ansicht der Leitung
 
@@ -387,6 +447,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   Leiste und beim Einstieg mit `?segment=antraege` (`AdminEventsPage.tsx`),
   wie bei Konfi und Team.
 - **Datenschutz:** nur ein Bereichsname. **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026** wie beschrieben (`AdminEventsPage.tsx`); `?segment=antraege` deckt auch die Reiter der Web-Fassung ab.
 
 ### S3 — Anmeldung des Teams zu Events
 
@@ -394,6 +455,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - **Ereignis:** `event-angemeldet` auch aus `TeamerEventsPage.tsx`, dieselben
   Merkmale wie bei Konfis.
 - **Datenschutz:** wie bei Konfis. **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026**, dazu die eigene Zusage der Leitung (`admin/views/EventDetailView.tsx`). `mit_zeitfenster` ist beim Team immer `false` — die Zusage kennt keine Zeitfenster.
 
 ### S4 — Abmeldung von Events
 
@@ -401,6 +463,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - **Ereignis:** `event-abgemeldet`, Merkmal `pflicht`: `true` \| `false`.
   Kein Grund, kein Event.
 - **Datenschutz:** unbedenklich. **Aufwand:** klein (Konfi und Team).
+- **Umgesetzt am 09.10.2026** über `trackHandlung` (Positivliste), bei Konfis: Opt-out = Pflicht, Abmeldung = freiwillig; beim Team aus `event.mandatory`.
 
 ### S5 — Badges angelegt
 
@@ -408,6 +471,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - **Ereignis:** `trackHandlung('badge-angelegt')`, Merkmal `zielgruppe`:
   `konfi` \| `teamer`. Kein Name, keine Bedingung.
 - **Datenschutz:** unbedenklich. **Aufwand:** klein (`BadgeManagementModal.tsx`).
+- **Umgesetzt am 09.10.2026** wie beschrieben.
 
 ### S6 — Challenges angelegt
 
@@ -418,6 +482,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - **Datenschutz:** unbedenklich. **Aufwand:** klein (`ChallengeManageModal.tsx`).
 - Stempel brauchen nichts Eigenes: Sie hängen am Beitrag, der schon als
   `challenge-beitrag` zählt.
+- **Umgesetzt am 09.10.2026.** Die Werte der App (`public`, `konfi_choice`, `private`) gehen als `offen`, `konfi-entscheidet`, `privat` — Schlüssel bleiben ASCII ohne Unterstrich.
 
 ### S7 — Jahresrückblick angesehen
 
@@ -429,6 +494,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - `analytics.ts` schließt den Rückblick bewusst aus den **Handlungen** aus
   („angesehen ist keine Arbeit"); als eigenes Ereignis widerspricht das dem
   nicht.
+- **Umgesetzt am 09.10.2026**, gemeldet einmal beim Schliessen (`hooks/useBisEndeMessung.ts`): Erst dann steht fest, wie weit geblättert wurde; zwei Meldungen zählten dieselbe Ansicht doppelt.
 
 ### S8 — Postfach
 
@@ -439,6 +505,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   Event, kein Name). **Aufwand:** mittel — die Positivliste muss den
   Mitteilungsarten des Servers folgen; das Postfach wird gerade parallel
   überarbeitet.
+- **Umgesetzt am 09.10.2026** — mit abweichenden Namen: `postfach-angesehen` und `mitteilung-angetippt`, weil `geoeffnet` eine Umlaut-Umschreibung ist (Grundsätze). Die Positivliste `MITTEILUNGS_ARTEN` vergleicht ein Test mit `backend/utils/postfachArten.js`; eine neue Art zählt bis zum Nachtrag ohne Merkmal.
 
 ### S9 — Push-Auswahl
 
@@ -449,6 +516,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   `erteilt` \| `abgelehnt`.
 - **Datenschutz:** unbedenklich. **Aufwand:** klein (`PushAuswahl.tsx`, eine
   gemeinsame Komponente für alle Rollen).
+- **Umgesetzt am 09.10.2026**, dazu der Hauptschalter als `gruppe: alle`. Die Gruppen vergleicht ein Test mit `backend/utils/pushGruppen.js`.
 
 ### S10 — Einladungen
 
@@ -459,6 +527,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   `angenommen` \| `abgelehnt`.
 - **Datenschutz:** unbedenklich; nie die Kennung, die eingegeben wurde.
   **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026**; `einladung-beantwortet` ebenfalls über die Positivliste.
 
 ### S11 — Dunkelmodus (und warum keine Barrierefreiheits-Einstellungen)
 
@@ -471,6 +540,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   (Gesundheitsdaten), und in einer kleinen Gemeinde ist „die Konfi mit
   reduzierter Bewegung" schnell eine Person. Die Schriftgröße liest die App
   zudem gar nicht aus.
+- **Umgesetzt am 09.10.2026** (`istDunkelmodus`, `prefers-color-scheme`); die übrigen Einstellungen bleiben ungelesen.
 
 ### S12 — Übersetzung der Tageslosung
 
@@ -478,12 +548,14 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 - **Ereignis:** `losung-bibel` mit `bibel` aus der festen Liste
   (`BibleTranslationModal.tsx`).
 - **Datenschutz:** unbedenklich (sechs Werte). **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026** an allen vier Stellen der Auswahl (Startseite und Profil, Konfi und Team), nur bei geänderter Wahl. `LSG` heißt `segond`, `NIV` `niv`.
 
 ### S13 — Scrolltiefe der Team-Startseite
 
 - **Frage:** Sieht das Team die unteren Abschnitte seiner Startseite?
 - **Ereignis:** `dashboard-gescrollt` auch aus `TeamerDashboardPage.tsx`.
 - **Datenschutz:** wie bei Konfis. **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026**; Konfi und Team teilen sich `hooks/useScrollTiefeMessung.ts`.
 
 ### S14 — Offline Erledigtes nachzählen
 
@@ -492,6 +564,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   erfolgreichen Nachsenden die passende Handlung — über eine feste Zuordnung
   der Einträge, nicht über deren Beschriftung.
 - **Datenschutz:** unbedenklich. **Aufwand:** mittel.
+- **Umgesetzt am 09.10.2026** (`services/nachgesendetMessung.ts`), Merkmal `nachgesendet`. Was die Warteschlange nicht kennt, bleibt ohne Merkmal (etwa die Punkteart einer Aktivität oder die Warteliste einer Team-Zusage).
 
 ### S15 — Suche genutzt
 
@@ -500,12 +573,14 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   **Nie der Suchbegriff.**
 - **Datenschutz:** unbedenklich, solange der Begriff draußen bleibt.
   **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026** für Material (Team und Leitung) und Konfis (Leitung, App und Web); die Team-Liste der Leitung zählt als `team`.
 
 ### S16 — Übersicht „Was ist neu?"
 
 - **Frage:** Wird die Übersicht nach dem Update gelesen?
 - **Ereignis:** `neuigkeiten-angesehen` mit `bis_ende`: `true` \| `false`.
 - **Datenschutz:** unbedenklich. **Aufwand:** klein.
+- **Umgesetzt am 09.10.2026** über `OnboardingTour` (`beimSchliessen`), nur aus den Änderungsanzeigen — die Begrüßungstour beim ersten Start meldet nichts.
 
 ### S17 — Lese-Ansicht der Material-Verwaltung
 
@@ -516,6 +591,7 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   Material zu öffnen, um es zu bearbeiten, ist kein Abruf.
 - **Datenschutz:** wie U2. **Aufwand:** klein bis mittel (die Datei-Öffnung
   im Formular hat zwei Wege, nativ und Rückfall).
+- **Umgesetzt am 09.10.2026** wie beschrieben; Links stehen in der Lese-Ansicht nur als schreibgeschützte Felder und zählen deshalb nicht.
 
 ### Bewusst nicht
 
@@ -534,7 +610,7 @@ Ereignisname ein Ziel vom Typ **Ereignis** an. Ein Ziel zählt den
 Ereignisnamen; die Aufteilung nach einem Merkmal (etwa `entscheidung:
 abgelehnt`) steht in der Auswertung der Ereignis-Eigenschaften.
 
-Für die beauftragten Messpunkte (U1–U3):
+Für die beauftragten Messpunkte (U1–U3) und die Vorschläge (S2–S17):
 
 | Ziel (Ereignisname) | Aufteilen nach |
 |---|---|
@@ -542,6 +618,19 @@ Für die beauftragten Messpunkte (U1–U3):
 | `material-angesehen` | `inhalt`, `rolle` |
 | `material-abgerufen` | `inhalt`, `rolle` |
 | `konfispruch-gespeichert` | `quelle`, `bibel`, `rolle` |
+| `event-abgemeldet` | `pflicht`, `rolle` |
+| `badge-angelegt` | `zielgruppe` |
+| `challenge-angelegt` | `sichtbarkeit`, `freigabe` |
+| `wrapped-angesehen` | `art`, `bis_ende` |
+| `neuigkeiten-angesehen` | `bis_ende`, `rolle` |
+| `postfach-angesehen` | `rolle` |
+| `mitteilung-angetippt` | `art`, `rolle` |
+| `push-gruppe-umgeschaltet` | `gruppe`, `an` |
+| `push-erlaubnis` | `ergebnis`, `rolle` |
+| `einladung-gesendet` | `rolle_ziel` |
+| `einladung-beantwortet` | `antwort` |
+| `losung-bibel` | `bibel`, `rolle` |
+| `suche-genutzt` | `bereich`, `rolle` |
 
 Die neuen Ereignisse kommen erst mit der nächsten ausgelieferten Fassung an
 (Web nach dem Deploy, iOS und Android mit dem nächsten Store-Build). Ältere

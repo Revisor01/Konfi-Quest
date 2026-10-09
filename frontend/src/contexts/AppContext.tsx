@@ -18,7 +18,7 @@ import { logout as performLogout } from '../services/auth';
 import { clearAuth } from '../services/tokenStore';
 import { BackgroundTask } from '@capawesome/capacitor-background-task';
 import { BaseUser } from '../types/user';
-import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt, fehlerStelle } from '../services/analytics';
+import { setAnalyticsRole, trackFehler, trackSitzungsstart, istGueltigeArt, istGueltigerOrt, fehlerStelle, trackPushErlaubnis } from '../services/analytics';
 import { diagnoseMerkmaleSetzen, wegmarke } from '../services/absturzdiagnose';
 import { ermittleAppVersion } from '../utils/appVersion';
 import { fehlerArt, fehlerFuersProtokoll, herkunftDesFehlertexts } from '../utils/fehler';
@@ -896,6 +896,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (permStatus.receive === 'prompt') {
         // Request permissions
         const permResult = await PushNotifications.requestPermissions();
+        trackPushErlaubnis(permResult.receive);
         setPushNotificationsPermission(permResult.receive);
 
         if (permResult.receive === 'granted') {
@@ -1271,6 +1272,7 @@ useEffect(() => {
           await PushNotifications.register();
         } else if (permStatus.receive === 'prompt') {
           const result = await PushNotifications.requestPermissions();
+          trackPushErlaubnis(result.receive);
           setPushNotificationsPermission(result.receive);
           if (result.receive === 'granted') {
             await PushNotifications.register();

@@ -7,6 +7,7 @@ import {
   ICON_GEMEINDE_GEFUELLT,
 } from '../../shared/icons';
 import OnboardingTour, { OnboardingSlide } from '../../shared/OnboardingTour';
+import { trackNeuigkeitenAngesehen } from '../../../services/analytics';
 
 interface Props {
   onClose: () => void;
@@ -65,7 +66,7 @@ export const SLIDES: OnboardingSlide[] = [
 ];
 
 const TeamerUpdate230WalkthroughModal: React.FC<Props> = ({ onClose }) => (
-  <OnboardingTour slides={SLIDES} onClose={onClose} />
+  <OnboardingTour slides={SLIDES} onClose={onClose} beimSchliessen={trackNeuigkeitenAngesehen} />
 );
 
 export default TeamerUpdate230WalkthroughModal;

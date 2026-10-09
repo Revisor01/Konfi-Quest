@@ -43,6 +43,7 @@ import { datumUhrzeit, uhrzeit } from '../../../utils/dateUtils';
 import { fmtDauer, fmtSeit, fmtUptime, fmtZahl, msColor, statusBezeichnung, statusColor, vergleichAnzeige } from '../../../utils/betriebsFormat';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebBetrieb from '../web/leitung/WebBetrieb';
+import KonfispruchAuswertung from '../KonfispruchAuswertung';
 
 interface RouteRow {
   route: string;
@@ -262,7 +263,7 @@ const AdminMetricsPage: React.FC = () => {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [history, setHistory] = useState<HistorySnap[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tab, setTab] = useState<'ueberblick' | 'fehler' | 'routen' | 'verlauf'>('ueberblick');
+  const [tab, setTab] = useState<'ueberblick' | 'fehler' | 'routen' | 'verlauf' | 'sprueche'>('ueberblick');
   const [autoRefresh, setAutoRefresh] = useState(true);
   // Standard: die langsamsten zuerst, gemessen an der Zeit pro Anfrage.
   const [routenSicht, setRoutenSicht] = useState<RoutenSortierung>('langsam');
@@ -420,6 +421,7 @@ const AdminMetricsPage: React.FC = () => {
               <IonSegmentButton value="fehler"><IonLabel>Fehler{(snap.fehlerGruppen?.length ?? 0) > 0 ? ` (${snap.fehlerGruppen!.length})` : ''}</IonLabel></IonSegmentButton>
               <IonSegmentButton value="routen"><IonLabel>Routen</IonLabel></IonSegmentButton>
               <IonSegmentButton value="verlauf"><IonLabel>Verlauf</IonLabel></IonSegmentButton>
+              <IonSegmentButton value="sprueche"><IonLabel>Sprüche</IonLabel></IonSegmentButton>
             </IonSegment>
 
             {tab === 'ueberblick' && (
@@ -584,6 +586,9 @@ const AdminMetricsPage: React.FC = () => {
             )}
 
             {tab === 'verlauf' && <VerlaufListe tage={tage} deltas={historyDeltas} />}
+
+            {/* 6. Welche Konfisprüche gewählt werden (personenunabhängig, S1). */}
+            {tab === 'sprueche' && <KonfispruchAuswertung />}
           </div>
         ) : null}
       </IonContent>

@@ -26,6 +26,7 @@ import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBAC
 import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
+import { trackHandlung } from '../../../services/analytics';
 
 
 
@@ -361,6 +362,11 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         setSuccess(isEditMode
           ? 'Badge wird aktualisiert sobald du wieder online bist'
           : 'Badge wird erstellt sobald du wieder online bist');
+      } else if (!isEditMode) {
+        // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
+        // S5): Pflegen Gemeinden eigene Badges? Kein Name, keine Bedingung.
+        // Bearbeiten zaehlt nicht, offline Angelegtes erst beim Nachsenden.
+        trackHandlung('badge-angelegt', { zielgruppe: formData.target_role });
       }
 
       setIsDirty(false);

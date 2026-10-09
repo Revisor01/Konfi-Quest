@@ -169,6 +169,11 @@ Die gesammelten Sprüche eines Jahrgangs kannst du dir als Übersicht anzeigen
 und dir per E-Mail zuschicken lassen — praktisch für Urkunden und den
 Konfirmationsablauf.
 
+Jede Wahl hält Konfi Quest außerdem **ohne Namen** in einer Statistik fest:
+welcher Spruch in welcher Übersetzung oder welcher eigene Text, die Gemeinde
+und den Monat. Diese Einträge bleiben, wenn ein Konto gelöscht wird; der
+Betrieb von Konfi Quest sieht sie zusammengefasst über alle Gemeinden.
+
 ## Nachvollziehen, was die Jahrgangs-Zuweisung steuert
 
 Leitung und Teamer:innen werden einzelnen Jahrgängen zugewiesen. Diese

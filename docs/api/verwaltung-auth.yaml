@@ -4895,3 +4895,55 @@ paths:
         middleware: [verifyTokenRBAC]
         org-scope: false
         objekt-pruefung: "Inline: req.user.is_super_admin, sonst 403"
+
+  /api/metrics/konfisprueche:
+    get:
+      tags: ["System & Monitoring"]
+      summary: Gewaehlte Konfisprueche ueber alle Gemeinden (nur super_admin)
+      description: >
+        Neu am 09.10.2026 (docs/messung/umami.md, S1). Wertet
+        konfspruch_wahlen aus (Migration 207): je Wahl eine Zeile OHNE
+        Person, Konto oder Profil, geschrieben von PATCH /api/konfi/profile
+        und PATCH /api/teamer/profile; die Zeilen bleiben beim Loeschen eines
+        Kontos. Jeder Spruch mit Anzahl, auch Einzelnennungen, eigene
+        Sprueche im Wortlaut mit Stellenangabe -- keine Schwelle (Simon,
+        09.10.2026). Gezaehlt werden Wahlen, nicht Personen: Wer wechselt,
+        steht mit beiden in der Liste. Die Gemeinde ist gespeichert, wird
+        hier aber nicht ausgegeben. Der uebernommene Bestand traegt keinen
+        Monat (`monat: null`). Nichts davon geht an die Nutzungsmessung.
+      responses:
+        "200":
+          description: Auswertung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gesamt:
+                    type: object
+                    properties:
+                      wahlen: { type: integer }
+                      vorschlag: { type: integer }
+                      eigen: { type: integer }
+                      aus_bestand: { type: integer, description: "Zeilen aus dem Bestand vor der Migration, ohne Monat" }
+                  uebersetzungen:
+                    type: array
+                    items: { type: object, properties: { translation: { type: [string, "null"] }, anzahl: { type: integer } } }
+                  sprueche:
+                    type: array
+                    description: "je Stelle aus den Vorschlaegen, absteigend nach Anzahl"
+                    items: { type: object, properties: { stelle: { type: [string, "null"] }, anzahl: { type: integer } } }
+                  eigene:
+                    type: array
+                    items: { type: object, properties: { freitext: { type: string }, freitext_referenz: { type: [string, "null"] }, anzahl: { type: integer } } }
+                  monate:
+                    type: array
+                    items: { type: object, properties: { monat: { type: [string, "null"], description: "JJJJ-MM, null = Bestand" }, anzahl: { type: integer } } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [super_admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: false
+        objekt-pruefung: "Inline: req.user.is_super_admin, sonst 403"

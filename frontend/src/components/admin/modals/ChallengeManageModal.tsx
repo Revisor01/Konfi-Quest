@@ -58,6 +58,7 @@ import {
 } from '../../../utils/challengeForm';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
+import { trackHandlung, CHALLENGE_SICHTBARKEIT_MESSWERT } from '../../../services/analytics';
 
 // Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
 // Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
@@ -298,6 +299,12 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           await api.put(`/challenges/admin/${challenge.id}`, payload);
         } else {
           await api.post('/challenges/admin', payload);
+          // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
+          // S6): welche Formen Gemeinden nutzen. Kein Titel, kein Jahrgang.
+          trackHandlung('challenge-angelegt', {
+            sichtbarkeit: CHALLENGE_SICHTBARKEIT_MESSWERT[formData.visibility],
+            freigabe: formData.moderated ? 'true' : 'false'
+          });
         }
         setIsDirty(false);
         // Dirty-Stand SYNCHRON melden, bevor onSuccess() über canDismiss schließt

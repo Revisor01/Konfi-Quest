@@ -19,6 +19,7 @@ import { METRIK_AMPEL } from '../../../../theme/colors';
 import type { HistorieDelta, RoutenSortierung, RoutenZeile, Tagesbilanz, vergleichHeuteGegenVortage } from '../../../../utils/betriebsKennzahlen';
 import WebSeite from '../../../web/WebSeite';
 import WebKarte from '../../../web/WebKarte';
+import KonfispruchAuswertung from '../../KonfispruchAuswertung';
 import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
 import WebChips from '../../../web/WebChips';
@@ -238,6 +239,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
     { wert: 'fehler' as const, label: 'Fehler', ...(gruppen.length > 0 ? { zahl: gruppen.length, rot: true } : {}) },
     { wert: 'routen' as const, label: 'Routen' },
     { wert: 'verlauf' as const, label: 'Verlauf' },
+    { wert: 'sprueche' as const, label: 'Sprüche' },
   ];
 
   const { apdex, statusKlassen, replicas, ueber1s, nutzer } = snap;
@@ -444,6 +446,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
       {p.tab === 'fehler' && fehlerReiter}
       {p.tab === 'routen' && routenReiter}
       {p.tab === 'verlauf' && verlaufReiter}
+      {p.tab === 'sprueche' && <KonfispruchAuswertung />}
     </WebSeite>
   );
 };

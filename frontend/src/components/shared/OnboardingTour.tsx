@@ -6,6 +6,7 @@ import { Pagination } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 import { ICON_PFEIL_WEITER_GEFUELLT, ICON_ZUSAGE_GEFUELLT } from './icons';
 import { bewegungReduziert } from '../../utils/bewegung';
+import { useBisEndeMessung } from '../../hooks/useBisEndeMessung';
 import 'swiper/css';
 import 'swiper/css/pagination';
 
@@ -27,6 +28,9 @@ interface OnboardingTourProps {
   // Optionaler Name, der auf der ERSTEN Slide vor den Text gestellt wird
   // ("Hallo <Name>! ...").
   displayName?: string;
+  // Optional: beim Schliessen einmal gerufen, mit der Angabe, ob die letzte
+  // Folie erreicht wurde (anonyme Messung, hooks/useBisEndeMessung).
+  beimSchliessen?: (bisEnde: boolean) => void;
 }
 
 // Wechselnde Positionen für das grosse Ghost-Logo (Lutherrose) — eine je Slide.
@@ -64,9 +68,10 @@ const BUBBLE_SETS: React.CSSProperties[][] = [
 // Generische Onboarding-Tour (Vollbild-Overlay, KEIN Modal). Stil identisch zur
 // urspruenglichen Konfi-Tour: farbiger Vollbild-Gradient pro Slide, wandernde
 // Lutherrose + Bubbles, weisser Aktions-Button mit Schrift in Slide-Farbe.
-const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displayName }) => {
+const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displayName, beimSchliessen }) => {
   const swiperRef = useRef<SwiperType | null>(null);
   const [index, setIndex] = useState(0);
+  useBisEndeMessung(beimSchliessen, slides.length, index);
   const isLast = index === slides.length - 1;
 
   const next = useCallback(() => {

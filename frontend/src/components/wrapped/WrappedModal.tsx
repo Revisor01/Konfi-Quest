@@ -54,6 +54,8 @@ import 'swiper/css/effect-creative';
 import './WrappedModal.css';
 import './share/ShareCard.css';
 import { punkteText } from '../../utils/punkteText';
+import { useBisEndeMessung } from '../../hooks/useBisEndeMessung';
+import { trackHandlung } from '../../services/analytics';
 
 interface WrappedModalProps {
   onClose: () => void;
@@ -605,6 +607,18 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
   };
 
   const slides = data ? buildSlides() : [];
+
+  // Anonyme Messung beim Schliessen (docs/messung/umami.md, S7): angesehen,
+  // und bis zum Ende durchgeblaettert? Gemeldet hier im Rueckblick selbst,
+  // nicht an den sechs Stellen, die ihn oeffnen. Keine Zahl, kein Jahr.
+  useBisEndeMessung(
+    (bisEnde) => trackHandlung('wrapped-angesehen', {
+      art: wrappedType === 'teamer' ? 'team' : 'konfi',
+      bis_ende: bisEnde ? 'true' : 'false'
+    }),
+    slides.length,
+    activeIndex
+  );
 
   // Motive EINMAL fuer den ganzen Rueckblick verteilen, damit sich keines
   // wiederholt (Simon, 03.09.2026). useMemo: Die Verteilung darf sich beim

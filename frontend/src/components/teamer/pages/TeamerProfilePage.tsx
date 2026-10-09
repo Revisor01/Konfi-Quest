@@ -38,6 +38,7 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
+import { trackHandlung, losungBibelMesswert } from '../../../services/analytics';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -129,6 +130,7 @@ const TeamerProfilePage: React.FC = () => {
   }, [profile?.user?.bible_translation]);
 
   const handleTranslationChange = async (translation: string) => {
+    const vorher = selectedTranslation;
     // Befund M5: Offline stand hier nur ein `return` nach dem optimistischen
     // Setzen — die Auswahl sah uebernommen aus, war beim naechsten Start aber
     // wieder weg. Das Konfi-Profil reiht sie seit jeher in die Warteschlange
@@ -152,6 +154,8 @@ const TeamerProfilePage: React.FC = () => {
           metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Bibelübersetzung' },
         }),
       });
+      // Anonyme Messung (docs/messung/umami.md, S12): Uebersetzung der Tageslosung, nur wenn sie sich aendert.
+      if (weg === 'gesendet' && translation !== vorher) trackHandlung('losung-bibel', { bibel: losungBibelMesswert(translation) });
       if (weg === 'gesendet') refresh();
     } catch (err) {
       setError(fehlerText(err, 'Fehler beim Ändern der Bibelübersetzung'));

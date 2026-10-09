@@ -33,6 +33,8 @@ import { Preferences } from '@capacitor/preferences';
 import { useApp } from '../../../contexts/AppContext';
 import { selbstbezeichnung } from '../../../utils/rollenNamen';
 import api from '../../../services/api';
+import { useScrollTiefeMessung } from '../../../hooks/useScrollTiefeMessung';
+import { trackHandlung, losungBibelMesswert } from '../../../services/analytics';
 import type { KonfiChallenge } from '../../../types/challenges';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -228,6 +230,8 @@ const TeamerDashboardPage: React.FC = () => {
   // Browser ab 992 px: die Web-Fassung (web/WebTeamerStart); sonst die App.
   const breit = useBreitesLayout();
   const { user, setError } = useApp();
+  // Anonyme Messung der Scroll-Tiefe wie bei den Konfis (docs/messung/umami.md, S13).
+  const handleScrollTiefe = useScrollTiefeMessung();
   const [showLosung] = useState(() => Math.random() > 0.5);
   // „Moin" statt Tageszeit in rund jedem fünften Aufruf — EINMAL beim Öffnen
   // gewürfelt. Bis 29.09.2026 stand Math.random() im Render, und jedes
@@ -365,6 +369,8 @@ const TeamerDashboardPage: React.FC = () => {
   const handleTranslationChange = async (code: string) => {
     try {
       await api.put('/teamer/bible-translation', { translation: code });
+      // Anonyme Messung (docs/messung/umami.md, S12): Uebersetzung der Tageslosung, nur wenn sie sich aendert.
+      if (code !== selectedTranslation) trackHandlung('losung-bibel', { bibel: losungBibelMesswert(code) });
       setSelectedTranslation(code);
       await refreshVerse();
     } catch (err) {
@@ -627,7 +633,7 @@ const TeamerDashboardPage: React.FC = () => {
         )}
       />
 
-      <IonContent className="app-gradient-background" fullscreen>
+      <IonContent className="app-gradient-background" fullscreen scrollEvents={true} onIonScroll={handleScrollTiefe}>
         <AppKopfzeileGross titel="Konfi Quest" />
 
         <IonRefresher

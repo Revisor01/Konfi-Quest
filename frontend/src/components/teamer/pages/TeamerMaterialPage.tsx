@@ -41,6 +41,7 @@ import { useLocation } from 'react-router-dom';
 import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
+import { useSucheMessung } from '../../../hooks/useSucheMessung';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
 import { CACHE_TTL } from '../../../services/offlineCache';
@@ -121,6 +122,8 @@ const TeamerMaterialPage: React.FC = () => {
   const istEigenerTab = pfad.startsWith('/teamer/profile/material');
 
   const [search, setSearch] = useState('');
+  // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
+  useSucheMessung('material', search);
   const [activeJahrgangId, setActiveJahrgangId] = useState<number | undefined>();
   const [selectedMaterial, setSelectedMaterial] = useState<MaterialDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);

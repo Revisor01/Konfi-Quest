@@ -516,6 +516,13 @@ paths:
         konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt:
         direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende
         Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.
+
+        STATISTIK OHNE PERSONENBEZUG (09.10.2026, Migration 207): Jede
+        geaenderte Wahl schreibt zusaetzlich eine Zeile in konfspruch_wahlen
+        (Gemeinde, Monat, Spruch und Uebersetzung bzw. eigener Spruch im
+        Wortlaut) -- ohne Verweis auf Person oder Konto; unveraendert erneut
+        gespeichert zaehlt nicht. Antwort unveraendert. Auswertung:
+        GET /api/metrics/konfisprueche.
       requestBody:
         content:
           application/json:

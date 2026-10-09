@@ -34,6 +34,7 @@ import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
 import { segmentAusAdresse } from '../web/termine/typen';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
+import { trackBereich } from '../../../services/analytics';
 
 /**
  * 409-Antwort beim Löschen eines Termins (events/verwaltung.js).
@@ -97,6 +98,13 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Oberste Segment-Ebene: Events oder Aktivitäten.
   const [mainSegment, setMainSegment] = useState<'events' | 'antraege'>('events');
+  // Die Anträge unter „Mitmachen" zählen als eigener Bereich `requests`
+  // (docs/messung/umami.md, S2): Events und Anträge haben denselben Pfad,
+  // und `activities` ist bei der Leitung schon die Aktivitäten-Verwaltung.
+  const mitmachenAnsichtWechseln = (ansicht: 'events' | 'antraege') => {
+    if (ansicht !== mainSegment) trackBereich(ansicht === 'antraege' ? 'requests' : 'events');
+    setMainSegment(ansicht);
+  };
 
   // Query-Parameter ?segment=antraege auswerten — kommt vom Redirect der alten
   // Route /admin/requests und damit aus bestehenden Deep-Links.
@@ -104,6 +112,8 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     const segment = new URLSearchParams(routerLocation.search).get('segment');
     if (segment === 'antraege') {
       setMainSegment('antraege');
+      // Einstieg per Link und die Reiter der Web-Fassung (?segment=antraege).
+      trackBereich('requests');
     } else if (segment === 'events') {
       setMainSegment('events');
     }
@@ -763,7 +773,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
       <div className="app-segment-wrapper">
         <IonSegment
           value={mainSegment}
-          onIonChange={(e) => setMainSegment(e.detail.value as 'events' | 'antraege')}
+          onIonChange={(e) => mitmachenAnsichtWechseln(e.detail.value as 'events' | 'antraege')}
         >
           <IonSegmentButton value="events">
             <IonLabel>Events<SegmentZahl anzahl={pendingEventsCount} label={pendingEventsCount === 1 ? 'Event wartet auf Verbuchung' : 'Events warten auf Verbuchung'} /></IonLabel>

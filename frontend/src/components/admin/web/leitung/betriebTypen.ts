@@ -36,4 +36,4 @@ export interface BetriebsAnsicht extends BetriebsSnapshot {
   fehlerGruppen?: BetriebsFehlerGruppe[];
 }
 
-export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf';
+export type BetriebsReiter = 'ueberblick' | 'fehler' | 'routen' | 'verlauf' | 'sprueche';

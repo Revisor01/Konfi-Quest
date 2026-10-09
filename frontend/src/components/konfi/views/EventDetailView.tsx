@@ -48,7 +48,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import api from '../../../services/api';
 import type { ActionSheetButton } from '@ionic/core';
 import OfflinePlatzhalter from '../../shared/OfflinePlatzhalter';
-import { track } from '../../../services/analytics';
+import { track, trackHandlung } from '../../../services/analytics';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import LoadingSpinner from '../../common/LoadingSpinner';
@@ -164,6 +164,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
         return;
       }
+      // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
+      // S4): Abmeldung von einem Pflicht-Event. Kein Grund, kein Event.
+      trackHandlung('event-abgemeldet', { pflicht: 'true' });
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
@@ -224,6 +227,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
         return;
       }
+      // Anonyme Messung (S4): Abmeldung von einem freiwilligen Event.
+      trackHandlung('event-abgemeldet', { pflicht: 'false' });
 
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();

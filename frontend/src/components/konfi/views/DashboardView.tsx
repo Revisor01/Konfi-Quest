@@ -26,6 +26,7 @@ import { kalendertag } from '../../shared/eventFormatting';
 import { BadgePopoverData } from '../../shared/BadgePopoverContent';
 import type { KonfiChallenge } from '../../../types/challenges';
 import api from '../../../services/api';
+import { trackHandlung, losungBibelMesswert } from '../../../services/analytics';
 import { useApp } from '../../../contexts/AppContext';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import { DEFAULT_KONFI_SECTION_ORDER } from '../../../utils/sectionOrder';
@@ -214,6 +215,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const handleTranslationChange = async (code: string) => {
     try {
       await api.put('/konfi/bible-translation', { translation: code });
+      // Anonyme Messung (docs/messung/umami.md, S12): Uebersetzung der Tageslosung, nur wenn sie sich aendert.
+      if (code !== selectedTranslation) trackHandlung('losung-bibel', { bibel: losungBibelMesswert(code) });
       setSelectedTranslation(code);
       await reloadTageslosung();
     } catch (err) {

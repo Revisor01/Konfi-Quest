@@ -17,6 +17,7 @@ import {
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
+import { trackHandlung, losungBibelMesswert } from '../../../services/analytics';
 import type { ChallengeMark } from '../../../types/challenges';
 import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
@@ -172,6 +173,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   }, []);
 
   const handleTranslationChange = async (translation: string) => {
+    const vorher = selectedTranslation;
     // Offline -- oder online, aber das Netz reisst ab: Auswahl uebernehmen
     // und in die Warteschlange (fire-and-forget; Audit Grundgeruest BF-01,
     // utils/sendenOderEinreihen.ts). PUT ist wiederholbar.
@@ -190,6 +192,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         }),
       });
       setSelectedTranslation(translation);
+      // Anonyme Messung (docs/messung/umami.md, S12): Uebersetzung der Tageslosung, nur wenn sie sich aendert.
+      if (weg === 'gesendet' && translation !== vorher) trackHandlung('losung-bibel', { bibel: losungBibelMesswert(translation) });
       // Update profile to reflect the change
       if (weg === 'gesendet') await onReload();
     } catch (err) {
