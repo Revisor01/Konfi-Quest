@@ -242,6 +242,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 - [x] 09.10.2026 — Android holt Updates über Googles In-App-Updates:
   sofort unter der Mindestversion, sonst im Hintergrund mit „Neustarten
   zum Aktualisieren" (Branch `feat/android-in-app-update`).
+- [x] 10.10.2026 — Android: Kopfleiste auch im hellen Modus deckend, der
+  Inhalt scheint beim Rollen nicht mehr durch (Branch
+  `fix/android-kopfleiste-deckend`; Play-Bildschirmfoto `konfi-challenge-feed`
+  nach dem Deploy neu ziehen).
 
 
 ## Offen

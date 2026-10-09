@@ -248,6 +248,8 @@ Versionsüberschrift.
   gilt.
 
 ### Behoben
+- Auf Android ist die Kopfleiste auch im hellen Modus deckend; beim Rollen
+  scheint der Inhalt nicht mehr durch sie hindurch.
 - Mitteilungen zu Anträgen, die schon vor dem Aufräumen beim Löschen
   gelöscht wurden, verschwinden aus dem Postfach; die rote Zahl stimmt wieder.
 - Bei den Konfis bleibt ein laufendes mehrtägiges Event in der App unter
