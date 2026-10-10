@@ -132,6 +132,8 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 
 ### Geändert
+- Im Browser zeigt die Startseite der Konfis dieselben Farbkacheln wie die
+  App, in zwei Spalten nebeneinander.
 - Auf der Startseite von Teamer:innen stehen unter „Events" nur noch Events,
   zu denen sie selbst zugesagt haben oder auf deren Warteliste sie stehen.
   Bisher kamen alle Team-Events und alle Events mit „Teamer:innen gesucht"

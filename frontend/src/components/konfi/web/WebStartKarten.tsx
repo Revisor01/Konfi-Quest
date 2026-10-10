@@ -4,12 +4,16 @@
 // der Gestalt. Deshalb liegen die Karten hier an einer Stelle, und die beiden
 // Seiten (WebKonfiStart, teamer/web/WebTeamerStart) setzen sie zusammen.
 //
-// Jede Karte ist ein Bereich mit Überschrift (WebKarte), die Zeilen sind echte
-// Links (Mittelklick öffnet einen neuen Tab), Abzeichen sind Knöpfe, die den
-// Dialog mit den Einzelheiten öffnen. Welche Karten erscheinen und in welcher
-// Reihenfolge, entscheidet die Seite nach den Einstellungen der Leitung.
+// Jede Karte ist eine Farbkachel wie in der App (WebFarbKarte): derselbe
+// Farbverlauf je Abschnitt, dasselbe blasse Wort im Hintergrund, weiße Schrift
+// und Glasflächen darin. Die Verläufe kommen aus den Klassen der App
+// (`app-dashboard-section--<abschnitt>` in theme/variables.css) -- eine Quelle
+// für beide Darstellungen. Die Zeilen sind echte Links (Mittelklick öffnet
+// einen neuen Tab), Abzeichen sind Knöpfe, die den Dialog mit den
+// Einzelheiten öffnen. Welche Karten erscheinen und in welcher Reihenfolge,
+// entscheidet die Seite nach den Einstellungen der Leitung.
 
-import React from 'react';
+import React, { useId } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_ANKUENDIGUNG,
@@ -28,14 +32,101 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { punkteText } from '../../../utils/punkteText';
 import { challengeRestzeit, datumsBlock, naehe, type StartEvent } from '../../../utils/webStart';
 import type { RankingZeile } from '../../../types/dashboard';
-import WebKarte from '../../web/WebKarte';
 import WebLink from '../../web/WebLink';
 import WebKnopf from '../../web/WebKnopf';
 import WebPill from '../../web/WebPill';
 import { WebLeer } from '../../web/WebZustaende';
 import WebBadgeSymbol from './WebBadgeSymbol';
 import WebFortschritt from './WebFortschritt';
+import { START_SYMBOL, START_WASSERZEICHEN, type StartFarbe } from './startFarben';
 import '../../../theme/web/start.css';
+
+// --- Farbkachel und Farbkopf ------------------------------------------------
+
+export interface WebFarbKarteProps {
+  farbe: StartFarbe;
+  titel: string;
+  /** Eigenes Symbol im Kopf statt START_SYMBOL[farbe]. */
+  symbol?: string;
+  untertitel?: React.ReactNode;
+  /** Meist ein Link: „Alle Events →". */
+  aktion?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+/**
+ * Eine Farbkachel der Startseite: ein Bereich (<section>), benannt nach seiner
+ * Überschrift, auf dem Farbverlauf der App. Darin gelten die Glas-Tokens von
+ * `.web-auf-farbe` (theme/web/start.css): Schrift, Linien und Flächen werden
+ * weiß bzw. durchscheinend, sodass die Bausteine darin ohne eigene Farben
+ * lesbar bleiben -- hell wie dunkel.
+ */
+export const WebFarbKarte: React.FC<WebFarbKarteProps> = ({ farbe, titel, symbol, untertitel, aktion, children }) => {
+  const titelId = useId();
+  const [oben, unten] = START_WASSERZEICHEN[farbe];
+  return (
+    <section
+      className={`web-farbkarte web-auf-farbe app-dashboard-section app-dashboard-section--${farbe}`}
+      aria-labelledby={titelId}
+      data-farbe={farbe}
+    >
+      <div className="app-dashboard-section__bg-text web-farbkarte__wasserzeichen" aria-hidden="true">
+        <span className="app-dashboard-section__bg-label web-farbkarte__wasserzeile">{oben}</span>
+        <span className="app-dashboard-section__bg-label web-farbkarte__wasserzeile">{unten}</span>
+      </div>
+      <header className="web-farbkarte__kopf">
+        <span className="web-farbkarte__symbol" aria-hidden="true">
+          <IonIcon icon={symbol ?? START_SYMBOL[farbe]} />
+        </span>
+        <div className="web-farbkarte__titelblock">
+          <h2 id={titelId} className="web-farbkarte__titel">{titel}</h2>
+          {untertitel && <p className="web-farbkarte__untertitel">{untertitel}</p>}
+        </div>
+        {aktion && <div className="web-farbkarte__aktion">{aktion}</div>}
+      </header>
+      <div className="web-farbkarte__inhalt">{children}</div>
+    </section>
+  );
+};
+
+export interface WebFarbKopfProps {
+  /** Konfi: der violette Kopf der App; Team: der Teamer-Verlauf. */
+  rolle: 'konfi' | 'team';
+  /** Mit Titel ist der Kopf ein benannter Bereich mit Überschrift. */
+  titel?: string;
+  untertitel?: React.ReactNode;
+  /** Ohne Titel: der Name des Bereichs für Vorleseprogramme. */
+  'aria-label'?: string;
+  children: React.ReactNode;
+}
+
+/**
+ * Der Kopf der Startseite auf dem Verlauf der App (`app-dashboard-header`,
+ * beim Team mit `--app-gradient-teamer` wie in der App), mit den hellen Kreisen.
+ */
+export const WebFarbKopf: React.FC<WebFarbKopfProps> = ({ rolle, titel, untertitel, 'aria-label': ariaLabel, children }) => {
+  const titelId = useId();
+  return (
+    <section
+      className={`web-farbkopf web-farbkopf--${rolle} web-auf-farbe app-dashboard-header`}
+      aria-labelledby={titel ? titelId : undefined}
+      aria-label={titel ? undefined : ariaLabel}
+    >
+      <span className="app-dashboard-header__circle web-farbkopf__kreis web-farbkopf__kreis--gross" aria-hidden="true" />
+      <span className="app-dashboard-header__circle web-farbkopf__kreis web-farbkopf__kreis--mittel" aria-hidden="true" />
+      <span className="app-dashboard-header__circle web-farbkopf__kreis web-farbkopf__kreis--klein" aria-hidden="true" />
+      <div className="web-farbkopf__inhalt">
+        {titel && (
+          <header className="web-farbkopf__kopf">
+            <h2 id={titelId} className="web-farbkarte__titel">{titel}</h2>
+            {untertitel && <p className="web-farbkarte__untertitel">{untertitel}</p>}
+          </header>
+        )}
+        {children}
+      </div>
+    </section>
+  );
+};
 
 // --- Events ---------------------------------------------------------------
 
@@ -50,9 +141,9 @@ export interface WebEventsKarteProps {
 }
 
 export const WebEventsKarte: React.FC<WebEventsKarteProps> = ({ events, eventHref, alleHref, leer, titel = 'Deine Events' }) => (
-  <WebKarte
+  <WebFarbKarte
+    farbe="events"
     titel={titel}
-    bund={events.length > 0}
     aktion={<WebLink href={alleHref}>Alle Events →</WebLink>}
   >
     {events.length === 0 ? (
@@ -112,7 +203,7 @@ export const WebEventsKarte: React.FC<WebEventsKarteProps> = ({ events, eventHre
         })}
       </ul>
     )}
-  </WebKarte>
+  </WebFarbKarte>
 );
 
 // --- Challenges -----------------------------------------------------------
@@ -144,7 +235,7 @@ export interface WebChallengesKarteProps {
 export const WebChallengesKarte: React.FC<WebChallengesKarteProps> = ({ challenges, challengeHref, alleHref, leer }) => {
   if (challenges.length === 0 && !leer) return null;
   return (
-    <WebKarte titel="Laufende Challenges" bund={challenges.length > 0} aktion={<WebLink href={alleHref}>Alle Challenges →</WebLink>}>
+    <WebFarbKarte farbe="challenges" titel="Laufende Challenges" aktion={<WebLink href={alleHref}>Alle Challenges →</WebLink>}>
       {challenges.length === 0 && leer ? (
         <WebLeer icon={ICON_CHALLENGE} titel={leer.titel} text={leer.text} aktion={<WebKnopf href={alleHref}>Challenges ansehen</WebKnopf>} />
       ) : (
@@ -172,14 +263,17 @@ export const WebChallengesKarte: React.FC<WebChallengesKarteProps> = ({ challeng
           ))}
         </ul>
       )}
-    </WebKarte>
+    </WebFarbKarte>
   );
 };
 
 // --- Zitate: Tageslosung und Konfispruch -----------------------------------
 
 export interface WebZitatKarteProps {
+  /** Konfispruch oder Tageslosung -- bestimmt den Farbverlauf. */
+  farbe: 'konfispruch' | 'tageslosung';
   titel: string;
+  /** Symbol im Kopf der Kachel. */
   symbol: string;
   /** Der Text des Verses; ohne Text steht `leer` da. */
   text?: string | null;
@@ -192,13 +286,12 @@ export interface WebZitatKarteProps {
   leer?: { text: string; aktion: string };
 }
 
-export const WebZitatKarte: React.FC<WebZitatKarteProps> = ({ titel, symbol, text, quelle, fussnote, aktion, leer }) => {
+export const WebZitatKarte: React.FC<WebZitatKarteProps> = ({ farbe, titel, symbol, text, quelle, fussnote, aktion, leer }) => {
   const hatText = Boolean(text?.trim());
   return (
-    <WebKarte titel={titel}>
+    <WebFarbKarte farbe={farbe} titel={titel} symbol={symbol}>
       {hatText || quelle ? (
         <figure className="web-zitat">
-          <IonIcon icon={symbol} className="web-zitat__symbol" aria-hidden="true" />
           <blockquote className="web-zitat__text">{hatText ? `„${text!.trim()}“` : null}</blockquote>
           {quelle && <figcaption className="web-zitat__quelle">{quelle}</figcaption>}
           {fussnote && <p className="web-zitat__fussnote">{fussnote}</p>}
@@ -210,7 +303,6 @@ export const WebZitatKarte: React.FC<WebZitatKarteProps> = ({ titel, symbol, tex
         </figure>
       ) : (
         <div className="web-zitat web-zitat--leer">
-          <IonIcon icon={symbol} className="web-zitat__symbol" aria-hidden="true" />
           <p className="web-zitat__text">{leer?.text}</p>
           {leer && aktion && (
             <div className="web-zitat__aktion">
@@ -219,7 +311,7 @@ export const WebZitatKarte: React.FC<WebZitatKarteProps> = ({ titel, symbol, tex
           )}
         </div>
       )}
-    </WebKarte>
+    </WebFarbKarte>
   );
 };
 
@@ -258,7 +350,7 @@ export const WebBadgesKarte: React.FC<WebBadgesKarteProps> = ({
   const prozent = gesamt > 0 ? Math.round((erreicht / gesamt) * 100) : 0;
   const geheimOffen = Math.max(0, geheimGesamt - geheimErreicht);
   return (
-    <WebKarte titel="Deine Badges" aktion={<WebLink href={alleHref}>Alle Badges →</WebLink>}>
+    <WebFarbKarte farbe="badges" titel="Deine Badges" aktion={<WebLink href={alleHref}>Alle Badges →</WebLink>}>
       <div className="web-start-badgekopf">
         <p className="web-start-badgezahl">
           <strong>{erreicht}</strong> von {gesamt} erreicht
@@ -291,7 +383,7 @@ export const WebBadgesKarte: React.FC<WebBadgesKarteProps> = ({
           ))}
         </ul>
       )}
-    </WebKarte>
+    </WebFarbKarte>
   );
 };
 
@@ -306,7 +398,7 @@ export interface WebRangKarteProps {
 }
 
 export const WebRangKarte: React.FC<WebRangKarteProps> = ({ zeilen, platz, gesamt, jahrgang, konfiId }) => (
-  <WebKarte titel="Deine Rangliste" untertitel={jahrgang}>
+  <WebFarbKarte farbe="ranking" titel="Deine Rangliste" untertitel={jahrgang}>
     <div className="web-rang-kopf">
       <span className="web-rang-kopf__platz">{platz}</span>
       <span className="web-rang-kopf__von">von {gesamt}</span>
@@ -336,7 +428,7 @@ export const WebRangKarte: React.FC<WebRangKarteProps> = ({ zeilen, platz, gesam
         );
       })}
     </ol>
-  </WebKarte>
+  </WebFarbKarte>
 );
 
 // --- Hinweis auf den Rückblick ---------------------------------------------
@@ -383,7 +475,8 @@ export const WebZertifikateKarte: React.FC<WebZertifikateKarteProps> = ({ zertif
   const abgelaufen = zertifikate.some((z) => z.status === 'expired');
   const gueltig = zertifikate.filter((z) => z.status === 'valid').length;
   return (
-    <WebKarte
+    <WebFarbKarte
+      farbe="zertifikate"
       titel="Deine Zertifikate"
       untertitel={abgelaufen ? `${gueltig} von ${zertifikate.length} gültig` : `${zertifikate.length} erhalten`}
     >
@@ -405,7 +498,7 @@ export const WebZertifikateKarte: React.FC<WebZertifikateKarteProps> = ({ zertif
           </li>
         ))}
       </ul>
-    </WebKarte>
+    </WebFarbKarte>
   );
 };
 

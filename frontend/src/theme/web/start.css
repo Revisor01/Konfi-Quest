@@ -44,12 +44,13 @@
   min-width: 0;
 }
 
-/* Das Raster der Karten: zwei Spalten, jede Karte so hoch wie ihr Inhalt. */
+/* Das Raster der Farbkacheln: zwei Spalten; die Kacheln einer Reihe sind
+   gleich hoch, damit die Farbflächen ein ruhiges Raster bilden. */
 .web-start-raster {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr));
   gap: var(--app-abstand-basis);
-  align-items: start;
+  align-items: stretch;
 }
 
 /* --- Hinweise über dem Raster (Testphase, Neuerungen, Rückblick) --- */
@@ -429,11 +430,6 @@
   flex-direction: column;
   gap: var(--app-abstand-mittel);
   margin: 0;
-}
-
-.web-zitat__symbol {
-  color: var(--web-akzent);
-  font-size: var(--app-anzeige-basis);
 }
 
 .web-zitat__text {
@@ -1248,4 +1244,250 @@
   display: flex;
   justify-content: flex-end;
   gap: var(--app-abstand-eng);
+}
+
+/* ===================================================================
+   Farbkacheln der Startseiten (Konfi und Team) -- wie in der App
+   (Simon, 10.10.2026: "die dashboards der konfis bitte in den gleichen
+   farbkacheln bauen wie in der daschboards der app. auch bei teamern.")
+
+   Die Farbverläufe stehen hier NICHT: Die Kachel trägt die Klasse der App
+   (app-dashboard-section--<abschnitt>, app-dashboard-header aus
+   theme/variables.css), damit es eine Quelle für beide Darstellungen gibt.
+   Hier stehen nur die Anordnung im Raster und die Glas-Tokens: Innerhalb von
+   .web-auf-farbe werden Schrift, Linien und Flächen weiß bzw. durchscheinend
+   weiß. Die Bausteine darin (Zeilen, Knöpfe, Balken, Ringe) lesen diese
+   Tokens und brauchen keine eigene Farbe. --app-weiss ist in beiden Modi
+   Weiß; die Verläufe sind im Dunkeln dieselben Flächen wie in der App.
+   =================================================================== */
+.web-auf-farbe {
+  --web-text: var(--app-weiss);
+  --web-text-leise: color-mix(in srgb, var(--app-weiss) 82%, transparent);
+  --web-linie: color-mix(in srgb, var(--app-weiss) 32%, transparent);
+  --web-linie-leise: color-mix(in srgb, var(--app-weiss) 20%, transparent);
+  --web-hover: color-mix(in srgb, var(--app-weiss) 12%, transparent);
+  --web-karte: color-mix(in srgb, var(--app-weiss) 15%, transparent);
+  --web-akzent: var(--app-weiss);
+  --web-akzent-flaeche: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+  color: var(--web-text);
+}
+
+/* --- Die Kachel eines Abschnitts --- */
+.web-farbkarte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Im Raster ohne den Abstand nach unten, den die App-Spalte braucht. */
+.web-start-raster > .web-farbkarte {
+  margin: 0;
+}
+
+/* Das blasse Wort steht unten rechts statt oben links: Oben steht der Kopf
+   mit der Überschrift, die das Web zusätzlich zeigt. */
+.web-farbkarte .web-farbkarte__wasserzeichen {
+  top: auto;
+  right: var(--app-abstand-gross);
+  bottom: calc(-1 * var(--app-abstand-eng));
+  left: auto;
+  text-align: right;
+}
+
+.web-farbkarte__wasserzeile {
+  display: block;
+}
+
+.web-farbkarte__kopf {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-gross) var(--app-abstand-gross) var(--app-abstand-mittel);
+}
+
+.web-farbkarte__symbol {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--web-akzent-flaeche);
+  color: var(--app-weiss);
+  font-size: var(--app-text-untertitel);
+}
+
+.web-farbkarte__titelblock {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.web-farbkarte__titel {
+  margin: 0;
+  color: var(--app-weiss);
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-titel);
+  font-weight: var(--app-schrift-extrafett);
+  letter-spacing: -0.01em;
+}
+
+.web-farbkarte__untertitel {
+  margin: var(--app-abstand-winzig) 0 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-farbkarte__aktion {
+  flex: 0 0 auto;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  white-space: nowrap;
+}
+
+.web-farbkarte__inhalt {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  padding: 0 var(--app-abstand-gross) var(--app-abstand-gross);
+}
+
+/* --- Der Kopf der Startseite (Punkte bzw. Kennzahlen) --- */
+.web-start > .web-farbkopf {
+  margin: 0;
+  padding: var(--app-abstand-weit) var(--app-abstand-extraweit);
+}
+
+/* Das Team trägt den Teamer-Verlauf -- wie der Kopf in der App, aus derselben Variablen. */
+.web-start > .web-farbkopf--team {
+  background: var(--app-gradient-teamer);
+  box-shadow: 0 10px 40px color-mix(in srgb, var(--app-color-teamer) 35%, transparent);
+}
+
+.web-farbkopf__kreis--gross {
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+}
+
+.web-farbkopf__kreis--mittel {
+  top: 60px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+}
+
+.web-farbkopf__kreis--klein {
+  bottom: -30px;
+  left: -30px;
+  width: 100px;
+  height: 100px;
+}
+
+.web-farbkopf__inhalt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-basis);
+}
+
+.web-farbkopf__kopf {
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Bausteine auf der Farbe: Links, Fokus, Glaszeilen --- */
+.web-auf-farbe .web-link {
+  color: var(--app-weiss);
+}
+
+.web-auf-farbe .web-link:focus-visible,
+.web-auf-farbe .web-knopf:focus-visible,
+.web-auf-farbe .web-abzeichen-knopf:focus-visible,
+.web-auf-farbe a.web-kachel:focus-visible,
+.web-auf-farbe .web-link--zeile:focus-visible::after {
+  outline-color: var(--app-weiss);
+}
+
+/* Events und Challenges als Glaskarten untereinander, wie in der App. */
+.web-farbkarte .web-feed {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-farbkarte .web-feed__zeile {
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border-top: 0;
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+}
+
+.web-farbkarte .web-feed__zeile:last-child {
+  border-radius: var(--app-radius-karte);
+}
+
+.web-farbkarte .web-feed__zeile:hover {
+  background: var(--web-akzent-flaeche);
+}
+
+.web-auf-farbe .web-start-symbol--challenges {
+  background: var(--web-akzent-flaeche);
+}
+
+/* Kennzahlen im Kopf des Teams: Glaskacheln ohne eigenen Schatten. */
+.web-auf-farbe .web-kachel {
+  box-shadow: none;
+}
+
+/* Punkte-Ringe, Balken und Level auf dem Kopf. */
+.web-auf-farbe .web-ring__spur {
+  stroke: color-mix(in srgb, var(--app-weiss) 15%, transparent);
+}
+
+.web-auf-farbe .web-fortschritt {
+  background: color-mix(in srgb, var(--app-weiss) 22%, transparent);
+}
+
+/* Der Balken der Badges läge orange auf Orange: auf der Kachel weiß. */
+.web-farbkarte .web-fortschritt__fuellung {
+  background: var(--app-weiss);
+}
+
+.web-auf-farbe .web-stufe__symbol {
+  border-color: color-mix(in srgb, var(--app-weiss) 35%, transparent);
+  color: color-mix(in srgb, var(--app-weiss) 60%, transparent);
+}
+
+.web-auf-farbe .web-stufe--erreicht .web-stufe__symbol {
+  color: var(--app-weiss);
+}
+
+/* Erreichte Badges tragen ihre eigene Farbe; der helle Rand hebt sie vom Verlauf ab. */
+.web-auf-farbe .web-abzeichen-symbol {
+  border-color: color-mix(in srgb, var(--app-weiss) 35%, transparent);
+}
+
+/* Rangliste: Glaszeilen; Gold, Silber und Bronze bleiben. */
+.web-auf-farbe .web-rang__zeile {
+  background: var(--web-hover);
+}
+
+.web-auf-farbe .web-rang__zeile--eigen {
+  border-color: color-mix(in srgb, var(--app-weiss) 55%, transparent);
+  background: var(--web-akzent-flaeche);
+}
+
+.web-auf-farbe .web-rang__platz--n,
+.web-auf-farbe .web-rang__initialen {
+  background: var(--web-akzent-flaeche);
+  color: var(--app-weiss);
+}
+
+.web-auf-farbe .web-rang-kopf__pokal {
+  color: var(--app-weiss);
 }

@@ -1,10 +1,14 @@
-// Die Startseite der Konfis in der Web-Fassung (Browser ab 992 px): ein Raster
-// aus Karten statt einer Spalte aus Farbverläufen.
+// Die Startseite der Konfis in der Web-Fassung (Browser ab 992 px): dieselben
+// Farbkacheln wie in der App, nur als Raster statt als eine Spalte (Simon,
+// 10.10.2026: „die dashboards der konfis bitte in den gleichen farbkacheln
+// bauen wie in der dashboards der app").
 //
-//   oben     Deine Punkte -- Ringe, Fortschritt gegen die Ziele, Level
-//   darunter die Karten, die die Leitung in den Startseiten-Einstellungen
+//   oben     Deine Punkte -- auf dem violetten Kopf der App: Ringe,
+//            Fortschritt gegen die Ziele, Level
+//   darunter die Farbkacheln, die die Leitung in den Startseiten-Einstellungen
 //            einschaltet, in deren Reihenfolge: Konfirmation, Challenges,
-//            Konfispruch, Events, Losung, Badges, Rangliste
+//            Konfispruch, Events, Losung, Badges, Rangliste -- jede in ihrem
+//            Verlauf aus der App (WebStartKarten, WebFarbKarte)
 //
 // Die Seite lädt nichts selbst. Daten und Handgriffe (Punkte-Verlauf,
 // Konfispruch wählen, Bibelübersetzung) reicht die App-Fassung durch
@@ -22,7 +26,6 @@ import { punkteText } from '../../../utils/punkteText';
 import { rangAuswahl, zielProzent, type StartEvent } from '../../../utils/webStart';
 import type { ApiBadge, RankingEntry } from '../../../types/dashboard';
 import { getBadgeColor } from '../../shared/BadgePopoverContent';
-import WebKarte from '../../web/WebKarte';
 import WebPunkteRinge from './WebPunkteRinge';
 import WebFortschritt from './WebFortschritt';
 import WebBadgeDialog from './WebBadgeDialog';
@@ -32,6 +35,8 @@ import {
   WebBadgesKarte,
   WebChallengesKarte,
   WebEventsKarte,
+  WebFarbKarte,
+  WebFarbKopf,
   WebRangKarte,
   WebZitatKarte,
   type StartBadge,
@@ -104,7 +109,7 @@ export interface WebKonfiStartProps {
 }
 
 /**
- * Die Karte „Deine Punkte": Ringe, Balken gegen die Ziele, Level mit Stufen.
+ * Die Karte „Deine Punkte" auf dem Kopf der App: Ringe, Balken gegen die Ziele, Level mit Stufen.
  * Den Platz im Jahrgang nennt sie nur, wenn die Gemeindeleitung das Ranking
  * zeigt -- wie die App, die ihn allein in der Rangliste hat.
  */
@@ -123,7 +128,7 @@ const PunkteKarte: React.FC<Pick<WebKonfiStartProps, 'punkte' | 'levelInfo' | 'r
   if (p.gemeindeAktiv) zeilen.push({ art: 'gemeinde', name: 'Gemeinde', wert: p.gemeinde, ziel: ziel(p.zielGemeinde) });
 
   return (
-    <WebKarte titel="Deine Punkte" untertitel={mitPlatz && rang.platz > 0 && rang.gesamt > 0 ? `Platz ${rang.platz} von ${rang.gesamt} im Jahrgang` : undefined}>
+    <WebFarbKopf rolle="konfi" titel="Deine Punkte" untertitel={mitPlatz && rang.platz > 0 && rang.gesamt > 0 ? `Platz ${rang.platz} von ${rang.gesamt} im Jahrgang` : undefined}>
       <div className={level ? 'web-punkte' : 'web-punkte web-punkte--ohne-level'}>
         <div className="web-punkte__ringe">
           <WebPunkteRinge
@@ -208,7 +213,7 @@ const PunkteKarte: React.FC<Pick<WebKonfiStartProps, 'punkte' | 'levelInfo' | 'r
           </div>
         )}
       </div>
-    </WebKarte>
+    </WebFarbKopf>
   );
 };
 
@@ -216,7 +221,7 @@ const PunkteKarte: React.FC<Pick<WebKonfiStartProps, 'punkte' | 'levelInfo' | 'r
 const KonfirmationKarte: React.FC<{ k: WebKonfirmation }> = ({ k }) => {
   const tage = k.tage;
   return (
-    <WebKarte titel="Deine Konfirmation">
+    <WebFarbKarte farbe="konfirmation" titel="Deine Konfirmation">
       <div className="web-konfirmation">
         <p className="web-konfirmation__zahl">
           {tage !== null ? tage : k.zeitBis}
@@ -237,7 +242,7 @@ const KonfirmationKarte: React.FC<{ k: WebKonfirmation }> = ({ k }) => {
           {k.ort && <span className="web-start-meta"><IonIcon icon={ICON_ORT_GEFUELLT} aria-hidden="true" />{k.ort}</span>}
         </div>
       </div>
-    </WebKarte>
+    </WebFarbKarte>
   );
 };
 
@@ -289,6 +294,7 @@ const WebKonfiStart: React.FC<WebKonfiStartProps> = (props) => {
       return (
         <WebZitatKarte
           key="konfispruch"
+          farbe="konfispruch"
           titel="Dein Konfispruch"
           symbol={SYMBOL_SPRUCH}
           text={spruch?.text}
@@ -313,6 +319,7 @@ const WebKonfiStart: React.FC<WebKonfiStartProps> = (props) => {
       ? (
         <WebZitatKarte
           key="losung"
+          farbe="tageslosung"
           titel="Tageslosung"
           symbol={SYMBOL_LOSUNG}
           text={props.losung.text}
