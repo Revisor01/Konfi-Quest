@@ -72,6 +72,14 @@ beforeEach(() => {
   server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
 });
 
+/** Ab zwei Filtern stehen sie hinter dem Knopf "Filter" und klappen in einer
+ *  Leiste unter der Werkzeugzeile auf (WebListenSeite, 10.10.2026). */
+const filterKnopf = () => screen.getByRole('button', { name: /^Filter(, \d+ aktiv)?$/ });
+const filterAufklappen = () => {
+  const knopf = filterKnopf();
+  if (knopf.getAttribute('aria-expanded') === 'false') fireEvent.click(knopf);
+};
+
 const zeigen = async () => {
   render(<SupportVorgaengePage />);
   await screen.findByRole('table', { name: 'Vorgänge' });
@@ -209,6 +217,7 @@ describe('Vorgänge (Web): Filter-Chips', () => {
 describe('Vorgänge (Web): Art, Gemeinde und Suche', () => {
   it('Art grenzt ein, die Auswahl nennt alle acht Arten', async () => {
     await zeigen();
+    filterAufklappen();
     const art = screen.getByLabelText('Art') as HTMLSelectElement;
     expect([...art.options].map((o) => o.textContent)).toEqual([
       'Alle Arten', 'Neue Gemeinde', 'Frage zur Bedienung', 'Fehler melden', 'Wunsch oder Idee', 'Zugang und Konten', 'Lizenz und Abrechnung', 'Datenschutz', 'Sonstiges',
@@ -220,6 +229,7 @@ describe('Vorgänge (Web): Art, Gemeinde und Suche', () => {
   it('Gemeinde grenzt ein; die Auswahl bietet alle Gemeinden', async () => {
     await zeigen();
     const gemeinde = await waitFor(() => {
+      filterAufklappen();
       const el = screen.getByLabelText('Gemeinde') as HTMLSelectElement;
       expect(el.options.length).toBe(3);
       return el;
@@ -256,6 +266,7 @@ describe('Vorgänge (Web): Auswahl aus der Adresse', () => {
     h.standort = { pathname: '/admin/support/vorgaenge', search: '?art=neue_gemeinde', state: null };
     await zeigen();
     expect(nummern()).toEqual(['3']);
+    filterAufklappen();
     expect((screen.getByLabelText('Art') as HTMLSelectElement).value).toBe('neue_gemeinde');
   });
 

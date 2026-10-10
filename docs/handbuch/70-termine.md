@@ -1354,8 +1354,8 @@ Team und Warteliste, die Punkte und den Status samt Merkmalen wie Pflicht,
 Konfirmation, Nur Team, Team gesucht und Serie. In den **Kacheln** trägt jedes
 Event dieselben Angaben auf einer Karte. Darüber wählst du den Zeitraum —
 **Aktuell**, **Verbuchen**, **Vergangen** oder **Abgesagt**, mit der Zahl der
-Events am Knopf —, grenzt mit **Jahrgang**, **Kategorie** und **Art** ein und
-suchst nach Name oder Ort; Umlaute darfst du umschreiben („buesum" findet
+Events am Knopf —, grenzt unter **Filter** mit **Jahrgang**, **Kategorie** und
+**Art** ein und suchst nach Name oder Ort; Umlaute darfst du umschreiben („buesum" findet
 „Büsum"). **Filter zurücksetzen** nimmt alles zurück. Vergangene Events, bei
 denen nichts mehr zu verbuchen ist, stehen blass da.
 

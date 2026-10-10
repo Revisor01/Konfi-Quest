@@ -118,6 +118,12 @@ einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
 Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
 Klick auf eine Zeile oder Karte öffnet den Eintrag.
 
+Hat eine Seite zwei oder mehr Filter, stehen sie hinter dem Knopf **Filter**;
+ein Klick klappt sie in einer Leiste unter der Zeile auf, ein zweiter wieder
+zu. Ist ein Filter gesetzt, ist der Knopf farbig und trägt die Zahl der
+gesetzten Filter — auch zugeklappt filtert er weiter. Ist beim Öffnen der
+Seite schon ein Filter gesetzt, steht die Leiste offen.
+
 In der Liste der Events steht vor jedem Namen ein farbiger Kreis mit dem
 Stand: Kalender für offen, Uhr für bald, Schild für Pflicht, Liste für
 Warteliste, Schloss für ausgebucht oder geschlossen, Sanduhr für zu

@@ -114,6 +114,14 @@ const titel = () => karten().map((k) => within(k).getByRole('heading', { level: 
 // Die Chips des Zustands -- "Alle" gibt es auch bei der Zielgruppe.
 const chip = (name: RegExp | string) => within(screen.getByRole('group', { name: 'Challenges nach Zustand' })).getByRole('button', { name });
 const waehle = (name: RegExp | string) => fireEvent.click(chip(name));
+/** Ab zwei Filtern stehen sie hinter dem Knopf "Filter" und klappen in einer
+ *  Leiste unter der Werkzeugzeile auf (WebListenSeite, 10.10.2026). */
+const filterKnopf = () => screen.getByRole('button', { name: /^Filter(, \d+ aktiv)?$/ });
+const filterAufklappen = () => {
+  const knopf = filterKnopf();
+  if (knopf.getAttribute('aria-expanded') === 'false') fireEvent.click(knopf);
+};
+
 const zeigen = (seite: React.ReactElement = <AdminChallengesPage />) => render(seite);
 
 beforeEach(() => {
@@ -271,6 +279,7 @@ describe('Challenges (Web): Filter, Zielgruppe, Jahrgang und Suche', () => {
   it('die Zielgruppe filtert; die Reihe steht nur, wenn es mehr als eine gibt', () => {
     zeigen();
     waehle(/^Alle/);
+    filterAufklappen();
     const gruppe = screen.getByRole('group', { name: 'Zielgruppe' });
     expect(within(gruppe).getAllByRole('button').map((b) => b.textContent)).toEqual(['Alle', 'Nur Konfis', 'Konfis und Team', 'Nur Team']);
     fireEvent.click(within(gruppe).getByRole('button', { name: 'Nur Team' }));
@@ -289,6 +298,7 @@ describe('Challenges (Web): Filter, Zielgruppe, Jahrgang und Suche', () => {
   it('der Jahrgang filtert die Challenges, die ihm zugeordnet sind', () => {
     zeigen();
     waehle(/^Alle/);
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
     expect(titel()).toEqual(['Fürbitten zum Erntedank']);
   });
@@ -534,8 +544,14 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       const zeile = screen.getByRole('search').parentElement!;
       expect(zeile).toHaveClass('web-werkzeuge');
       expect(within(zeile).getByRole('group', { name: 'Challenges nach Zustand' })).toBeInTheDocument();
-      expect(within(zeile).getByRole('group', { name: 'Zielgruppe' })).toBeInTheDocument();
-      expect(within(zeile).getByLabelText('Jahrgang')).toBeInTheDocument();
+      // Zielgruppe und Jahrgang (zwei Filter) stehen hinter dem Knopf "Filter"
+      // und klappen unter der Zeile auf -- vorher brach die Zeile um (10.10.2026).
+      expect(within(zeile).queryByRole('group', { name: 'Zielgruppe' })).toBeNull();
+      fireEvent.click(within(zeile).getByRole('button', { name: 'Filter' }));
+      const leiste = screen.getByRole('group', { name: 'Filter' });
+      expect(leiste.previousElementSibling).toBe(zeile);
+      expect(within(leiste).getByRole('group', { name: 'Zielgruppe' })).toBeInTheDocument();
+      expect(within(leiste).getByLabelText('Jahrgang')).toBeInTheDocument();
       const rechts = umschalter().parentElement!;
       expect(rechts).toHaveClass('web-werkzeuge__rechts');
       expect(rechts.parentElement).toBe(zeile);
@@ -586,15 +602,19 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(titel().sort()).toEqual(['Bibelvers des Monats', 'Weihnachtskarten']);
 
       waehle(/^Alle/);
+      filterAufklappen();
       fireEvent.click(within(screen.getByRole('group', { name: 'Zielgruppe' })).getByRole('button', { name: 'Nur Team' }));
       expect(titel()).toEqual(['Team-Runde Camp']);
       waehleAnsicht('Liste');
       expect(zeilenTitel()).toEqual(['Team-Runde Camp']);
 
+      filterAufklappen();
       fireEvent.click(within(screen.getByRole('group', { name: 'Zielgruppe' })).getByRole('button', { name: 'Alle' }));
+      filterAufklappen();
       fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
       expect(zeilenTitel()).toEqual(['Fürbitten zum Erntedank']);
 
+      filterAufklappen();
       fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: 'alle' } });
       fireEvent.change(screen.getByRole('searchbox', { name: 'Challenges durchsuchen' }), { target: { value: 'fotograf' } });
       expect(zeilenTitel()).toEqual(['Mein Lieblingsplatz']);

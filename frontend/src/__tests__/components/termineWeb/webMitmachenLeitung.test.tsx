@@ -60,6 +60,14 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); });
 
+/** Ab zwei Filtern stehen sie hinter dem Knopf "Filter" und klappen in einer
+ *  Leiste unter der Werkzeugzeile auf (WebListenSeite, 10.10.2026). */
+const filterKnopf = () => screen.getByRole('button', { name: /^Filter(, \d+ aktiv)?$/ });
+const filterAufklappen = () => {
+  const knopf = filterKnopf();
+  if (knopf.getAttribute('aria-expanded') === 'false') fireEvent.click(knopf);
+};
+
 const oeffneEvents = (nutzer: 'leitung' | 'admin' | 'teamer' = 'leitung', suche = '', events = EVENTS) => {
   richteEin({ nutzer, pfad: '/admin/events', suche, daten: { ...DATEN, 'admin:events:': events } });
   return oeffne('leitung');
@@ -183,16 +191,19 @@ describe('Events: Zeitraum', () => {
 describe('Events: Filter und Suche', () => {
   it('Jahrgang: nur Events dieses Jahrgangs; "Filter zurücksetzen" nimmt alles zurück', async () => {
     await oeffneEvents();
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
     expect(namenInTabelle()).toEqual(['Konfi-Tag']);
     fireEvent.click(screen.getByRole('button', { name: 'Filter zurücksetzen' }));
     expect(namenInTabelle()).toHaveLength(4);
+    filterAufklappen();
     expect(screen.getByLabelText('Jahrgang')).toHaveValue('alle');
     expect(screen.queryByRole('button', { name: 'Filter zurücksetzen' })).toBe(null);
   });
 
   it('Kategorie: die Auswahl nennt nur vorhandene Kategorien; sie filtert', async () => {
     await oeffneEvents();
+    filterAufklappen();
     const auswahl = screen.getByLabelText('Kategorie');
     expect(within(auswahl).getAllByRole('option').map((o) => o.textContent)).toEqual(['Alle Kategorien', 'Gottesdienst']);
     fireEvent.change(auswahl, { target: { value: 'Gottesdienst' } });
@@ -201,8 +212,10 @@ describe('Events: Filter und Suche', () => {
 
   it('Art: Pflicht-Events und Nur Team', async () => {
     await oeffneEvents();
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'pflicht' } });
     expect(namenInTabelle()).toEqual(['Konfi-Tag']);
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'team' } });
     expect(namenInTabelle()).toEqual(['Teamabend']);
   });
@@ -367,19 +380,36 @@ describe('Ansicht: Liste und Kacheln', () => {
     await oeffneEvents();
     const zeile = screen.getByRole('search').parentElement!;
     expect(zeile).toHaveClass('web-werkzeuge');
-    // Zeitraum, Suche, Jahrgang, Kategorie und Art stehen in derselben Zeile.
+    // Zeitraum, Suche und der Knopf "Filter" stehen in der Zeile; Jahrgang,
+    // Kategorie und Art (drei Filter) klappen darunter in einer Leiste auf --
+    // vorher brach die Zeile um (10.10.2026).
     expect(within(zeile).getByRole('group', { name: 'Events nach Zeitraum' })).toBeInTheDocument();
-    expect(within(zeile).getByLabelText('Jahrgang')).toBeInTheDocument();
-    expect(within(zeile).getByLabelText('Kategorie')).toBeInTheDocument();
-    expect(within(zeile).getByLabelText('Art')).toBeInTheDocument();
+    expect(within(zeile).queryByLabelText('Jahrgang')).toBeNull();
+    const knopf = within(zeile).getByRole('button', { name: 'Filter' });
+    expect(knopf).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
+    fireEvent.click(knopf);
+    expect(knopf).toHaveAttribute('aria-expanded', 'true');
+    const leiste = screen.getByRole('group', { name: 'Filter' });
+    expect(knopf).toHaveAttribute('aria-controls', leiste.id);
+    expect(leiste.previousElementSibling).toBe(zeile);
+    for (const name of ['Jahrgang', 'Kategorie', 'Art']) expect(within(leiste).getByLabelText(name)).toBeInTheDocument();
     const rechts = umschalter().parentElement!;
     expect(rechts).toHaveClass('web-werkzeuge__rechts');
     expect(rechts.parentElement).toBe(zeile);
     expect(rechts.lastElementChild).toBe(umschalter());
     // Auch mit "Filter zurücksetzen" bleibt er das letzte Element.
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
     expect(rechts.firstElementChild).toHaveTextContent('Filter zurücksetzen');
     expect(rechts.lastElementChild).toBe(umschalter());
+    // Der Knopf zaehlt die aktiven Filter.
+    expect(knopf).toHaveAccessibleName('Filter, 1 aktiv');
+    fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'team' } });
+    expect(knopf).toHaveAccessibleName('Filter, 2 aktiv');
+    expect(knopf).toHaveClass('web-filterknopf--aktiv');
+    fireEvent.click(knopf);
+    expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
   });
 
   it('"Kacheln": Karten statt Tabelle, dieselben Events in derselben Reihenfolge; die Wahl steht im Browser', async () => {
@@ -424,15 +454,20 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(kartenNamen()).toEqual(['Fahrradtour']);
     fireEvent.click(chip(/^Aktuell/));
 
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
     expect(kartenNamen()).toEqual(['Konfi-Tag']);
     fireEvent.click(screen.getByRole('button', { name: 'Filter zurücksetzen' }));
     expect(kartenNamen()).toHaveLength(4);
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'team' } });
     expect(kartenNamen()).toEqual(['Teamabend']);
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'alle' } });
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Kategorie'), { target: { value: 'Gottesdienst' } });
     expect(kartenNamen()).toEqual(['Sonntagsgottesdienst']);
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Kategorie'), { target: { value: 'alle' } });
     fireEvent.change(screen.getByRole('searchbox', { name: 'Events durchsuchen' }), { target: { value: 'buesum' } });
     expect(kartenNamen()).toEqual(['Konfi-Tag']);
@@ -441,10 +476,12 @@ describe('Ansicht: Liste und Kacheln', () => {
   it('beim Umschalten bleiben Zeitraum, Filter und Suche stehen', async () => {
     await oeffneEvents();
     fireEvent.click(chip(/^Vergangen/));
+    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '1' } });
     expect(namenInTabelle()).toEqual(['Erntedank-Gottesdienst']);
     waehle('Kacheln');
     expect(chip(/^Vergangen/)).toHaveAttribute('aria-pressed', 'true');
+    filterAufklappen();
     expect(screen.getByLabelText('Jahrgang')).toHaveValue('1');
     expect(kartenNamen()).toEqual(['Erntedank-Gottesdienst']);
     fireEvent.change(screen.getByRole('searchbox', { name: 'Events durchsuchen' }), { target: { value: 'zzz' } });

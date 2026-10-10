@@ -277,7 +277,9 @@ Darüber filterst du und suchst:
   Freigabe warten — auch beendete. Die orange Zahl daran ist die Zahl dieser
   Beiträge.
 - **Zielgruppe** und **Jahrgang** erscheinen nur, wenn die Liste mehr als eine
-  Zielgruppe oder mehr als einen Jahrgang enthält.
+  Zielgruppe oder mehr als einen Jahrgang enthält. Gibt es beide, stehen sie
+  hinter dem Knopf **Filter** (siehe
+  [Liste und Kacheln](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen)).
 - Die **Suche** findet in Titel, Aufgabe, Stempel, „Gestellt von" und
   Jahrgang. Umlaute darfst du umschreiben: „fuerbitten" findet „Fürbitten".
   Die Escape-Taste leert das Feld.

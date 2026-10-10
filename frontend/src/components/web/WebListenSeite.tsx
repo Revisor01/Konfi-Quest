@@ -32,7 +32,9 @@
 // Werkzeugzeile und Inhalt steht (Leiste fuer die Auswahl mehrerer Zeilen),
 // bringt `vorInhalt` mit.
 
-import React, { useMemo, useState } from 'react';
+import React, { useId, useMemo, useState } from 'react';
+import { IonIcon } from '@ionic/react';
+import { ICON_FILTER } from '../shared/icons';
 import WebSeite, { type WebSeiteProps } from './WebSeite';
 import WebKachel, { type WebKachelProps } from './WebKachel';
 import WebChips from './WebChips';
@@ -156,6 +158,11 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
   const darstellung: WebAnsicht = kacheln ? gemerkt : 'liste';
   // Je Reiter eine Ordnung: Wer im Team nach Badges sortiert, findet die Konfis unveraendert.
   const [sortierungen, setSortierungen] = useState<Record<string, WebSortierung>>({});
+  const filterLeisteId = useId();
+  // Sind beim Laden schon Filter gesetzt (gemerkt, aus der Adresse), steht
+  // die Leiste offen -- sonst filterte etwas, das man nicht sieht.
+  const [filterOffen, setFilterOffen] = useState(() =>
+    (filter ?? []).some((f) => f && f.wert !== f.wahlen[0]?.schluessel));
   const reiterSchluessel = reiter?.wert ?? '';
   const aktuelleSortierung = sortierung ? sortierungen[reiterSchluessel] ?? sortierung.start : undefined;
   const setzeSortierung = (s: WebSortierung) => setSortierungen((alt) => ({ ...alt, [reiterSchluessel]: s }));
@@ -209,6 +216,38 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
   const zahl = zaehlzeile && (sucht || gefiltert) ? zaehlzeile(sichtbar.length, eintraege.length) : undefined;
   const chipFilter = filterListe.filter((f) => (f.darstellung ?? 'chips') === 'chips');
   const auswahlFilter = filterListe.filter((f) => f.darstellung === 'auswahl');
+  // Ab zwei Filtern stehen sie hinter einem Knopf "Filter" und klappen in
+  // einer eigenen Leiste unter der Werkzeugzeile auf (Simon, 10.10.2026: die
+  // Zeile der Events brach mit Reitern, Suche und drei Auswahlen um, die der
+  // Challenges mit zwei Chip-Reihen). Der Knopf zaehlt die aktiven Filter.
+  const filterHinterKnopf = filterListe.length >= 2;
+  const aktiveFilter = filterListe.filter((f) => f.wert !== f.wahlen[0]?.schluessel).length;
+  const filterElemente = (
+    <>
+      {chipFilter.map((f) => (
+        <WebChips<string>
+          key={f.beschriftung}
+          beschriftung={f.beschriftung}
+          wert={f.wert}
+          onWert={f.onWert}
+          chips={inFassung(f.wahlen, 'web').map((w) => ({
+            wert: w.schluessel,
+            label: w.label,
+            zahl: f.zahlen ? eintraege.filter((e) => w.passt?.(e) ?? true).length : undefined,
+          }))}
+        />
+      ))}
+      {auswahlFilter.map((f) => (
+        <WebFilterAuswahl
+          key={f.beschriftung}
+          label={f.beschriftung}
+          wert={f.wert}
+          onWert={f.onWert}
+          optionen={inFassung(f.wahlen, 'web').map((w) => ({ wert: w.schluessel, label: w.label }))}
+        />
+      ))}
+    </>
+  );
   // Eine Liste ohne Reiter, Filter, Suche, Knoepfe und Kacheln braucht keine Werkzeugzeile.
   const mitWerkzeugen = Boolean(reiter || filterListe.length > 0 || suche || werkzeuge || zaehlzeile || kacheln);
 
@@ -240,29 +279,23 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
               })}
             />
           )}
-          {chipFilter.map((f) => (
-            <WebChips<string>
-              key={f.beschriftung}
-              beschriftung={f.beschriftung}
-              wert={f.wert}
-              onWert={f.onWert}
-              chips={inFassung(f.wahlen, 'web').map((w) => ({
-                wert: w.schluessel,
-                label: w.label,
-                zahl: f.zahlen ? eintraege.filter((e) => w.passt?.(e) ?? true).length : undefined,
-              }))}
-            />
-          ))}
+          {!filterHinterKnopf && chipFilter.length > 0 && filterElemente}
           {suche && <WebSuche beschriftung={suche.beschriftung} platzhalter={suche.platzhalter} wert={suche.wert} onWert={suche.onWert} />}
-          {auswahlFilter.map((f) => (
-            <WebFilterAuswahl
-              key={f.beschriftung}
-              label={f.beschriftung}
-              wert={f.wert}
-              onWert={f.onWert}
-              optionen={inFassung(f.wahlen, 'web').map((w) => ({ wert: w.schluessel, label: w.label }))}
-            />
-          ))}
+          {filterHinterKnopf && (
+            <button
+              type="button"
+              className={`web-knopf web-filterknopf${aktiveFilter > 0 ? ' web-filterknopf--aktiv' : ''}`}
+              aria-expanded={filterOffen}
+              aria-controls={filterLeisteId}
+              aria-label={aktiveFilter > 0 ? `Filter, ${aktiveFilter} aktiv` : 'Filter'}
+              onClick={() => setFilterOffen((o) => !o)}
+            >
+              <IonIcon icon={ICON_FILTER} aria-hidden="true" />
+              Filter
+              {aktiveFilter > 0 && <span className="web-filterknopf__zahl" aria-hidden="true">{aktiveFilter}</span>}
+            </button>
+          )}
+          {!filterHinterKnopf && auswahlFilter.length > 0 && filterElemente}
           <div className="web-werkzeuge__rechts">
             {zahl && <span className="web-gedaempft web-werkzeuge__zahl" role="status">{zahl}</span>}
             {werkzeuge}
@@ -280,6 +313,12 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
             {/* Der Umschalter steht immer ganz rechts -- wenn es Kacheln gibt. */}
             {kacheln && <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />}
           </div>
+        </div>
+      )}
+
+      {filterHinterKnopf && filterOffen && !ohneWerkzeugzeile && (
+        <div id={filterLeisteId} className="web-filterleiste" role="group" aria-label="Filter">
+          {filterElemente}
         </div>
       )}
 

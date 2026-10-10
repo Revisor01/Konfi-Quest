@@ -144,6 +144,9 @@ Versionsüberschrift.
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
 
 ### Geändert
+- Im Browser stehen zwei oder mehr Filter einer Liste hinter dem Knopf
+  „Filter"; sie klappen darunter auf, und die Zeile mit Reitern und Suche
+  bricht nicht mehr um.
 - Im Browser zeigt die Startseite der Konfis dieselben Farbkacheln wie die
   App, in zwei Spalten nebeneinander.
 - Auch für Teamer:innen zeigt die Startseite im Browser die Farbkacheln der

@@ -416,6 +416,67 @@ describe('WebListenSeite: Filter aus der Seitenbeschreibung', () => {
   });
 });
 
+const ART = wahlen([
+  { schluessel: 'alle', label: 'Alle Arten', passt: () => true },
+  { schluessel: 'b', label: 'Mit B', passt: (p: Person) => p.name.startsWith('B') },
+]);
+
+/** Zwei Filter: Gruppe (Chips) und Art (Auswahl); `artStart` setzt Art vorab. */
+const SeiteZweiFilter: React.FC<{ artStart?: string }> = ({ artStart = 'alle' }) => {
+  const [gruppe, setGruppe] = useState('alle');
+  const [art, setArt] = useState(artStart);
+  return (
+    <Seite filter={[
+      { beschriftung: 'Gruppe', wahlen: GRUPPE, wert: gruppe, onWert: setGruppe },
+      { beschriftung: 'Art', darstellung: 'auswahl', wahlen: ART, wert: art, onWert: setArt },
+    ]} />
+  );
+};
+
+// Simon, 10.10.2026: Die Werkzeugzeile der Events (Reiter, Suche, drei
+// Auswahlen) und der Challenges (zwei Chip-Reihen) brach um. Ab zwei Filtern
+// stehen sie hinter einem Knopf "Filter" und klappen darunter auf.
+describe('WebListenSeite: ab zwei Filtern hinter dem Knopf "Filter"', () => {
+  it('ein Filter bleibt in der Zeile, ohne Knopf', () => {
+    render(<Seite />);
+    expect(screen.queryByRole('button', { name: /^Filter/ })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Gruppe' }).closest('.web-werkzeuge')).not.toBeNull();
+  });
+
+  it('zwei Filter: Knopf in der Zeile, Leiste klappt darunter auf und zu; Filter wirken darin wie sonst', () => {
+    render(<SeiteZweiFilter />);
+    const zeile = screen.getByRole('search').parentElement!;
+    const knopf = within(zeile).getByRole('button', { name: 'Filter' });
+    expect(within(zeile).queryByRole('group', { name: 'Gruppe' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Art' })).toBeNull();
+    expect(knopf).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(knopf);
+    const leiste = screen.getByRole('group', { name: 'Filter' });
+    expect(knopf).toHaveAttribute('aria-expanded', 'true');
+    expect(knopf).toHaveAttribute('aria-controls', leiste.id);
+    expect(leiste.previousElementSibling).toBe(zeile);
+    fireEvent.change(within(leiste).getByRole('combobox', { name: 'Art' }), { target: { value: 'b' } });
+    expect(namen()).toEqual(['Bea']);
+    expect(knopf).toHaveAccessibleName('Filter, 1 aktiv');
+    fireEvent.click(within(within(leiste).getByRole('group', { name: 'Gruppe' })).getByRole('button', { name: /^Blau/ }));
+    expect(screen.getByText('Niemand gefunden')).toBeInTheDocument();
+    expect(knopf).toHaveAccessibleName('Filter, 2 aktiv');
+
+    // Zugeklappt filtert es weiter -- der Knopf sagt, dass etwas aktiv ist.
+    fireEvent.click(knopf);
+    expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
+    expect(screen.getByText('Niemand gefunden')).toBeInTheDocument();
+    expect(knopf).toHaveClass('web-filterknopf--aktiv');
+  });
+
+  it('ist beim Laden schon ein Filter gesetzt, steht die Leiste offen', () => {
+    render(<SeiteZweiFilter artStart="b" />);
+    expect(screen.getByRole('button', { name: 'Filter, 1 aktiv' })).toHaveAttribute('aria-expanded', 'true');
+    expect(within(screen.getByRole('group', { name: 'Filter' })).getByRole('combobox', { name: 'Art' })).toHaveValue('b');
+  });
+});
+
 describe('WebListenSeite: Liste oder Kacheln', () => {
   it('Vorgabe aus `ansicht`, Wechsel zeigt dieselben Eintraege als Karten, die Wahl wird je Seite gemerkt', () => {
     const { unmount } = render(<Seite />);

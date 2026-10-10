@@ -558,6 +558,39 @@ a.web-kachel:focus-visible {
   gap: var(--app-abstand-mittel) var(--app-abstand-basis);
 }
 
+/* Ab zwei Filtern: Knopf "Filter" in der Werkzeugzeile, die Filter in einer
+   eigenen Leiste darunter (WebListenSeite). */
+.web-filterknopf {
+  gap: var(--app-abstand-kompakt);
+}
+
+.web-filterknopf--aktiv {
+  border-color: var(--ion-color-primary);
+  color: var(--ion-color-primary);
+}
+
+.web-filterknopf__zahl {
+  min-width: 20px;
+  padding: 0 var(--app-abstand-kompakt);
+  border-radius: var(--app-radius-gross);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  text-align: center;
+}
+
+.web-filterleiste {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-mittel) var(--app-abstand-basis);
+  padding: var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-weich);
+  background: var(--web-karte);
+}
+
 .web-werkzeuge__rechts {
   display: flex;
   align-items: center;
