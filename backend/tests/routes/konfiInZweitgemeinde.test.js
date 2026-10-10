@@ -18,10 +18,12 @@
 // rbacVerifier loest sie laengst auf (req.user.role_name) -- die Abfragen
 // lasen das Ergebnis nur nicht.
 //
-// NICHT betroffen und bewusst unveraendert: die Jahrgangslisten
-// (konfi.js:144/160/530). Sie zaehlen die Konfis EINES Jahrgangs; dort ist
-// die Rolle am Konto die richtige Quelle, weil ein Jahrgang zu genau einer
-// Gemeinde gehoert.
+// Die Jahrgangslisten (Rangliste und Rang in Dashboard und Profil) blieben
+// hier zunaechst unveraendert, mit der Begruendung, ein Jahrgang gehoere zu
+// genau einer Gemeinde. Das stimmt, aber die Rolle am Konto ist trotzdem die
+// falsche Quelle: Sie gilt nur fuer die Stamm-Gemeinde, und genau dieses
+// Konto fiel deshalb aus der Rangliste (10.10.2026, behoben, siehe
+// konfiRanglisteMischkonto.test.js).
 
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');

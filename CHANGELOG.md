@@ -255,6 +255,9 @@ Versionsüberschrift.
   gilt.
 
 ### Behoben
+- Konfis, die in einer anderen Gemeinde zur Leitung gehören, stehen in der
+  Rangliste ihres Jahrgangs auf dem richtigen Platz; bisher fehlten sie dort,
+  und ihre Startseite zeigte „1/1".
 - Konfis ohne Jahrgang stehen beim Sortieren nach Jahrgang im Browser
   unten, in beiden Richtungen — wie beim Team; bisher standen sie bei A–Z
   ganz oben.

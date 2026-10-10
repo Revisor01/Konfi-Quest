@@ -340,6 +340,15 @@ paths:
   # (Ausnahme upload-photo: konfi ODER teamer). Immer nur EIGENE Daten.
   # ===================================================================
   /api/konfi/dashboard:
+    # BEHOBEN 10.10.2026 (in Produktion gemessen): Rangliste, Rang und Zahl im
+    # Jahrgang zaehlten nur Konten, die am KONTO (users.role_id) Konfi sind.
+    # Ein Mischkonto (Stamm-Gemeinde Leitung, in der Gemeinde des Jahrgangs
+    # ueber user_organizations Konfi) fehlte in ranking[] und
+    # total_in_jahrgang, und rank_in_jahrgang wurde ueber Punktgleichheit
+    # gesucht und kam als null (die App zeigt dafuer "1/1"). Jetzt zaehlt,
+    # wer in der Gemeinde des Jahrgangs Konfi ist (beide Quellen,
+    # utils/orgMitglieder.js istKonfiInGemeindeSql); der eigene Rang haengt an
+    # der eigenen user_id. Antwortform unveraendert.
     get:
       tags: ["Konfi-Profil & Dashboard"]
       summary: Konfi-Dashboard (eigene Punkte, Level, Ranking, Badges, Termine)
@@ -390,6 +399,10 @@ paths:
         "500": { $ref: '#/components/responses/ServerError' }
 
   /api/konfi/profile:
+    # BEHOBEN 10.10.2026: rank_in_jahrgang und total_in_jahrgang wie bei
+    # GET /api/konfi/dashboard -- Konfi des Jahrgangs ist, wer es in dessen
+    # Gemeinde ist (beide Quellen), der Rang haengt an der eigenen user_id.
+    # Antwortform unveraendert.
     get:
       tags: ["Konfi-Profil & Dashboard"]
       summary: Eigenes Konfi-Profil
