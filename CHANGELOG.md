@@ -278,6 +278,8 @@ Versionsüberschrift.
   neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
+- Bei Umfragen in der App überdeckt eine lange Antwort nicht mehr die
+  Stimmenzahl; reicht der Platz nicht, rutscht die Zahl in die nächste Zeile.
 - Konfis, die in einer anderen Gemeinde zur Leitung gehören, stehen in der
   Rangliste ihres Jahrgangs auf dem richtigen Platz; bisher fehlten sie dort,
   und ihre Startseite zeigte „1/1".

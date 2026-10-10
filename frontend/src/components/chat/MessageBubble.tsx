@@ -499,14 +499,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     }} />
                   )}
 
+                  {/* Antwort und Zahl stehen nebeneinander; reicht der Platz
+                      nicht (grosse Schrift, langes Wort), rutscht die Zahl in
+                      die naechste Zeile statt ueber die Antwort (10.10.2026). */}
                   <div style={{
                     position: 'relative',
                     zIndex: 1,
                     display: 'flex',
+                    flexWrap: 'wrap',
                     justifyContent: 'space-between',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    columnGap: 'var(--app-abstand-mittel)',
+                    rowGap: 'var(--app-abstand-mini)'
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', minWidth: 0, maxWidth: '100%' }}>
                       {markiert && (
                         <div style={{
                           width: '18px',
@@ -524,7 +530,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       <span style={{
                         fontWeight: markiert ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
                         color: 'var(--app-text-emphasis)',
-                        fontSize: 'var(--app-text-basis)'
+                        fontSize: 'var(--app-text-basis)',
+                        overflowWrap: 'anywhere'
                       }}>
                         {opt.text}
                       </span>
@@ -537,7 +544,8 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                       display: 'flex',
                       alignItems: 'center',
                       gap: 'var(--app-abstand-mini)',
-                      flexShrink: 0
+                      flexShrink: 0,
+                      marginLeft: 'auto'
                     }}>
                       {isExclusive ? (
                         // Exklusiv: Status statt Prozent
@@ -616,8 +624,11 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
             <div style={{
               marginTop: 'var(--app-abstand-eng)',
               display: 'flex',
+              flexWrap: 'wrap',
               justifyContent: 'space-between',
               alignItems: 'center',
+              columnGap: 'var(--app-abstand-mittel)',
+              rowGap: 'var(--app-abstand-mini)',
               fontSize: 'var(--app-text-klein)',
               color: 'var(--app-text-system)'
             }}>
