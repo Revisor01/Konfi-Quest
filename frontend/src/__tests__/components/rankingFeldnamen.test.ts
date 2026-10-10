@@ -34,7 +34,10 @@ describe('Ranking-Feldnamen', () => {
   it('das Backend liefert genau diese Felder', () => {
     const sql = route.slice(route.indexOf('const rankingSql'), route.indexOf('const rankingSql') + 600);
     expect(sql).toContain('SELECT u.id, u.display_name');
-    expect(sql).toContain(') as points');
+    // Seit 10.10.2026 steht die Punktsumme als JAHRGANG_PUNKTE_SQL davor;
+    // geprueft wird der Feldname, den die App liest.
+    expect(sql).toMatch(/\s+as points\b/);
+    expect(sql).not.toMatch(/as total_points\b/);
   });
 
   it('die Trennzeile ist ein eigener Fall statt eines luecken Eintrags', () => {
