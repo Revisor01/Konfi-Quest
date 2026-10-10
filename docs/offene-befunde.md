@@ -291,6 +291,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   an der Person statt an der Punktzahl (Anlass: „1/1" bei einem Konto, das
   zuhause Leitung und in der Testgemeinde Konfi ist; Branch
   `fix/rangliste-mischkonto`).
+- [x] 10.10.2026 — Web: gemeinsame Bausteine für Listen-Seiten (WebListenSeite
+  mit Kennzahlen, Werkzeugzeile aus der Seitenbeschreibung, Liste/Kacheln;
+  WebListe als die eine sortierbare Tabelle, WebKacheln, WebKreis);
+  Aktivitäten-Katalog und Konfis/Team darauf umgestellt
+  (Branch `refactor/web-bausteine`).
 
 
 ## Offen
