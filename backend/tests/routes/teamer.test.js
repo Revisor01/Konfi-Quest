@@ -1192,11 +1192,11 @@ describe('Teamer Routes', () => {
       }
     });
 
-    // Befund H2 (26.08.2026): Die Events-Abfrage hatte zusaetzlich
-    // `AND eb.id IS NOT NULL` und machte damit aus dem LEFT JOIN auf die
-    // eigene Buchung faktisch einen INNER JOIN -- es erschienen nur Termine,
-    // fuer die man schon gebucht war. Termine mit "Teamer:innen gesucht", auf
-    // die jemand reagieren soll, kamen auf der Startseite nie an.
+    // Die Startseite zeigt NUR eigene Zusagen (Simon, 10.10.2026). Bis dahin
+    // standen dort auch alle "Nur Team"- und "Teamer:innen gesucht"-Termine
+    // der Gemeinde -- ohne Blick auf den Jahrgang. Ein Teamer ohne Jahrgang
+    // in Kirchspiel West sah so Termine fremder Jahrgaenge unter "DEINE
+    // EVENTS". Gesuchte Termine findet man im Reiter Events.
     describe('Events auf der Startseite', () => {
       const terminAnlegen = async (spalten) => {
         const { rows } = await db.query(
@@ -1220,31 +1220,55 @@ describe('Teamer Routes', () => {
         return res.body.events.map((e) => e.title);
       };
 
-      it('zeigt Termine mit "Teamer:innen gesucht" auch ohne eigene Buchung', async () => {
+      const buchen = (eventId, status) => db.query(
+        `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
+         VALUES ($1, $2, $3, $4)`,
+        [eventId, USERS.teamer1.id, status, ORGS.testGemeinde.id]
+      );
+
+      it('zeigt Termine mit "Teamer:innen gesucht" ohne eigene Buchung NICHT', async () => {
         await terminAnlegen({ name: 'Teamer gesucht Termin', teamer_needed: true });
-        expect(await titel()).toContain('Teamer gesucht Termin');
+        expect(await titel()).not.toContain('Teamer gesucht Termin');
       });
 
-      it('zeigt reine Team-Termine auch ohne eigene Buchung', async () => {
+      it('zeigt reine Team-Termine ohne eigene Buchung NICHT', async () => {
         await terminAnlegen({ name: 'Nur Team Termin', teamer_only: true });
-        expect(await titel()).toContain('Nur Team Termin');
+        expect(await titel()).not.toContain('Nur Team Termin');
+      });
+
+      it('zeigt Team-Termine mit eigener Zusage', async () => {
+        const eventId = await terminAnlegen({ name: 'Nur Team zugesagt', teamer_only: true });
+        await buchen(eventId, 'confirmed');
+        expect(await titel()).toContain('Nur Team zugesagt');
+      });
+
+      it('zeigt Termine, auf deren Warteliste man steht', async () => {
+        const eventId = await terminAnlegen({ name: 'Warteliste Termin', teamer_needed: true });
+        await buchen(eventId, 'waitlist');
+        expect(await titel()).toContain('Warteliste Termin');
+      });
+
+      it('zeigt Termine NICHT, von denen man abgemeldet ist', async () => {
+        const abgemeldet = await terminAnlegen({ name: 'Abgemeldet Termin', teamer_needed: true });
+        await buchen(abgemeldet, 'opted_out');
+        const entschuldigt = await terminAnlegen({ name: 'Entschuldigt Termin', teamer_only: true });
+        await buchen(entschuldigt, 'excused');
+        const liste = await titel();
+        expect(liste).not.toContain('Abgemeldet Termin');
+        expect(liste).not.toContain('Entschuldigt Termin');
       });
 
       it('zeigt eigene Buchungen weiterhin, auch bei reinen Konfi-Terminen', async () => {
         // Gegenprobe: Der Umbau darf den bisher funktionierenden Fall nicht
         // mitnehmen.
         const eventId = await terminAnlegen({ name: 'Konfi-Termin mit Buchung' });
-        await db.query(
-          `INSERT INTO event_bookings (event_id, user_id, status, organization_id)
-           VALUES ($1, $2, 'confirmed', $3)`,
-          [eventId, USERS.teamer1.id, ORGS.testGemeinde.id]
-        );
+        await buchen(eventId, 'confirmed');
         expect(await titel()).toContain('Konfi-Termin mit Buchung');
       });
 
       it('zeigt reine Konfi-Termine ohne eigene Buchung NICHT', async () => {
         // Sonst stuenden auf der Teamer-Startseite Termine, die sie nichts
-        // angehen. Dieser Filter fehlte vorher ganz.
+        // angehen.
         await terminAnlegen({ name: 'Reiner Konfi-Termin' });
         expect(await titel()).not.toContain('Reiner Konfi-Termin');
       });
@@ -1311,8 +1335,8 @@ describe('Teamer Routes', () => {
     // stattfindet, ist keine.
     // ==============================================================
     describe('Abgesagte Termine', () => {
-      // teamer_needed, damit der Termin OHNE Buchung ueberhaupt in die Liste
-      // koennte -- sonst bewiese der Gegenprobe-Test nichts.
+      // teamer_needed wie bei einem typischen gesuchten Termin; in die Liste
+      // kommt er trotzdem nur mit eigener Zusage (10.10.2026).
       async function termin({ abgesagt = false, grund = null, absagenderId = null } = {}) {
         const { rows: [event] } = await db.query(
           `INSERT INTO events (name, event_date, organization_id, teamer_needed,
@@ -1385,23 +1409,23 @@ describe('Teamer Routes', () => {
       });
 
       it('VERBOTEN: ein abgesagter Termin OHNE eigene Buchung steht NICHT drin', async () => {
-        // Die Gegenprobe zur Regel. Der Termin hat teamer_needed = true und
-        // stuende ohne die Absage sehr wohl in der Liste (naechster Test) --
-        // es ist also wirklich die Absage, die ihn heraushaelt, nicht ein
-        // fehlender Filter.
+        // Seit 10.10.2026 stehen ohne eigene Zusage gar keine Termine mehr
+        // auf der Startseite; die Gegenprobe (naechster Test) zeigt, dass
+        // derselbe abgesagte Termin MIT Zusage drinsteht.
         const eventId = await termin({ abgesagt: true, grund: 'Sturm' });
 
         const eintrag = (await startseite()).find(e => e.id === eventId);
         expect(eintrag).toBeUndefined();
       });
 
-      it('GEGENPROBE: derselbe Termin OHNE Absage steht ohne Buchung sehr wohl drin', async () => {
-        const eventId = await termin();
+      it('GEGENPROBE: derselbe abgesagte Termin MIT eigener Zusage steht drin', async () => {
+        const eventId = await termin({ abgesagt: true, grund: 'Sturm' });
+        await bucht(eventId);
 
         const eintrag = (await startseite()).find(e => e.id === eventId);
         expect(eintrag).toBeDefined();
-        expect(eintrag.cancelled).toBe(false);
-        expect(eintrag.is_registered).toBe(false);
+        expect(eintrag.cancelled).toBe(true);
+        expect(eintrag.is_registered).toBe(true);
       });
 
       it('die bisherigen Felder bleiben unveraendert (Alt-App-Vertrag)', async () => {

@@ -23,13 +23,12 @@ Challenge, steht sie oben. Ist dein
 [Jahresrückblick](95-wrapped.md#den-team-rueckblick-anlegen-oder-ihn-laufen-lassen)
 freigegeben, erscheint hier ein Banner dafür.
 
-Unter **Events** stehen die nächsten Events: die, zu denen du zugesagt hast,
-und die, für die noch Team gesucht wird. **Fällt eines deiner Events aus,
-steht es weiter da — als abgesagt, mit dem Grund** und darunter, wer abgesagt
-hat. Genau dafür ist die Startseite da: Ein Event, das einfach verschwindet,
-sagt „nichts los" statt „fällt aus". Events, für die Team gesucht wurde und
-die dann abgesagt wurden, verschwinden dagegen — dort hattest du nichts
-zugesagt.
+Unter **Events** stehen nur die nächsten Events, zu denen du selbst
+zugesagt hast oder auf deren Warteliste du stehst. Events, für die noch Team
+gesucht wird, findest du im Reiter **Events**. **Fällt eines deiner Events
+aus, steht es weiter da — als abgesagt, mit dem Grund** und darunter, wer
+abgesagt hat. Genau dafür ist die Startseite da: Ein Event, das einfach
+verschwindet, sagt „nichts los" statt „fällt aus".
 
 ### Im Browser die Startseite als Karten lesen
 

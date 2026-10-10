@@ -132,6 +132,10 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 
 ### Geändert
+- Auf der Startseite von Teamer:innen stehen unter „Events" nur noch Events,
+  zu denen sie selbst zugesagt haben oder auf deren Warteliste sie stehen.
+  Bisher kamen alle Team-Events und alle Events mit „Teamer:innen gesucht"
+  dazu, auch aus Jahrgängen, die ihnen nicht zugewiesen sind.
 - Im Browser tragen die Kennzahlen bei Konfis, Team, in der Detailseite einer
   Person und in der Konfi-Historie das Symbol ihrer Kennzahl in der Farbe
   ihres Bereichs; Badges und Zertifikate sind in der Liste so farbig wie in

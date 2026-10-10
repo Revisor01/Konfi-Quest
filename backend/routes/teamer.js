@@ -883,37 +883,24 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       `;
       const { rows: certificates } = await db.query(certificatesQuery, [userId, orgId]);
 
-      // 3. Events: Naechste anstehende Termine, die Teamer:innen betreffen --
-      // eigene Buchungen UND Termine, fuer die Teamer:innen gesucht werden.
+      // 3. Events: die naechsten Termine, zu denen die Teamer:in SELBST
+      // zugesagt hat -- bestaetigt oder auf der Warteliste (Simon, 10.10.2026:
+      // "Das Dashboard zeigt immer nur selbst eingebuchte Termine").
       //
-      // Bis 27.08.2026 stand hier zusaetzlich `AND eb.id IS NOT NULL`. Das
-      // machte aus dem LEFT JOIN auf die eigene Buchung faktisch einen INNER
-      // JOIN: Es erschienen ausschliesslich Termine, fuer die man schon
-      // gebucht war. Genau die Termine mit "Teamer:innen gesucht", auf die
-      // jemand reagieren soll, kamen auf der Startseite nie an -- entgegen dem
-      // Kommentar, der hier immer schon etwas anderes behauptete (Befund H2).
+      // Bis dahin standen hier zusaetzlich alle "Nur Team"- und "Teamer:innen
+      // gesucht"-Termine der Gemeinde, ohne jeden Blick auf den Jahrgang. Ein
+      // Teamer ohne Jahrgang sah so unter "DEINE EVENTS" Termine fremder
+      // Jahrgaenge. Gesuchte Termine stehen im Reiter Events, dort gilt die
+      // Jahrgangsregel; die Startseite ist die eigene Liste.
       //
-      // Der Filter auf teamer_only/teamer_needed fehlte ebenfalls ganz; ohne
-      // ihn stuenden auch reine Konfi-Termine auf der Teamer-Startseite.
-      // ABGESAGTE TERMINE STEHEN HIER -- ABER NUR FUER DIE EIGENE BUCHUNG
-      // (15.09.2026).
+      // Abgemeldet (opted_out) und entschuldigt (excused) zaehlen nicht: Wer
+      // abgesagt hat, hat dort nichts mehr vor.
       //
-      // Der Befund: `AND (e.cancelled IS NOT TRUE)` warf sie restlos heraus,
-      // und die Spaltenliste holte zwar e.cancelled, aber weder den Grund noch
-      // die Namen. Der cancelled-Zweig der Teamer-Startseite konnte also gar
-      // nicht greifen -- toter Code, der aussah, als waere der Fall behandelt.
-      //
-      // WARUM SIE HINEINGEHOEREN: Wer fuer morgen zugesagt hat, muss auf der
-      // Startseite sehen, dass der Termin ausfaellt. Genau dafuer schaut man
-      // dort hin. Ein Termin, der still aus der Liste verschwindet, sagt
-      // "nichts los" statt "faellt aus" -- und die Zusage bleibt im Kopf.
-      //
-      // WARUM NUR MIT EIGENER BUCHUNG: Dieselbe Regel wie in der Konfi-Liste
-      // (routes/konfi.js: `e.cancelled IS NOT TRUE OR eb_konfi.id IS NOT
-      // NULL`, Entscheidung Simon 27.08.2026). Ein abgesagter Termin ist keine
-      // Einladung mehr: "Teamer:innen gesucht" fuer etwas, das nicht
-      // stattfindet, waere eine Aufforderung ins Leere. Nur wer selbst
-      // zugesagt hatte, hat dort noch etwas zu erfahren.
+      // ABGESAGTE TERMINE (15.09.2026): Ein abgesagter Termin mit eigener
+      // Zusage bleibt stehen -- wer fuer morgen zugesagt hat, muss auf der
+      // Startseite sehen, dass er ausfaellt. Ein Termin, der still aus der
+      // Liste verschwindet, sagt "nichts los" statt "faellt aus". Da nur noch
+      // eigene Zusagen hier stehen, braucht es dafuer keinen eigenen Filter.
       //
       // Die drei Absage-Felder kommen ADDITIV dazu, Muster und LEFT JOINs wie
       // in events/lesen.js: Termine, die vor Migration 150/152 abgesagt
@@ -934,12 +921,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         LEFT JOIN users u_grund ON e.cancelled_reason_set_by = u_grund.id
         WHERE e.organization_id = $2
           AND e.event_date >= ${TAGESBEGINN_BERLIN_SQL}
-          AND (e.cancelled IS NOT TRUE OR eb.id IS NOT NULL)
-          AND (
-            eb.id IS NOT NULL          -- eigene Buchung: immer zeigen
-            OR e.teamer_only = true    -- reiner Team-Termin
-            OR e.teamer_needed = true  -- "Teamer:innen gesucht"
-          )
+          AND eb.status IN ('confirmed', 'waitlist')
         ORDER BY e.event_date ASC
         LIMIT 5
       `;

@@ -1082,7 +1082,10 @@ paths:
         Liefert Begruessung, alle aktiven Zertifikat-Typen der Organisation mit
         eigenem Status (valid | expired | not_earned), die nächsten bis zu
         fuenf zukuenftigen Termine, für die die Teamer:in selbst gebucht ist
-        oder für die Team gesucht wird, die letzten drei erreichten Teamer-Abzeichen mit
+        (status confirmed oder waitlist; GEAENDERT 10.10.2026, vorher kamen
+        alle teamer_only- und teamer_needed-Termine der Gemeinde dazu, ohne
+        Jahrgangsprüfung -- ein Teamer ohne Jahrgang sah so Termine fremder
+        Jahrgaenge; Form unveraendert, nur weniger Eintraege), die letzten drei erreichten Teamer-Abzeichen mit
         Zaehlern sowie die Dashboard-Konfiguration der Organisation
         (show_zertifikate, show_challenges, show_konfispruch, show_events,
         show_badges, show_losung und section_order aus den
