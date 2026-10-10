@@ -7,6 +7,9 @@
 // ueber den Kennzahlen. Links breit die Beschreibung und wer dabei ist, rechts
 // schmal die Angaben.
 //
+// Rahmen, Angaben-Karte und Zustaende stellt WebDetailSeite (10.10.2026); vor
+// dem Titel steht der Kreis der Liste mit dem Stand des Events.
+//
 // Die Ansicht (konfi/views/EventDetailView) laedt, besitzt die Funktionen
 // (Anmelden mit Zeitfenster-Wahl und Konfirmations-Pruefung, Abmelden mit Grund,
 // Einchecken) und reicht beides herein. Welcher Knopf wann dasteht, entscheidet
@@ -30,8 +33,8 @@ import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import WebHinweis from '../../../web/WebHinweis';
-import { WebFehler, WebLaden } from '../../../web/WebZustaende';
-import { WebAbsage, WebTerminAngaben, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
+import { WebAbsage, WebTerminMarken, WebTerminSymbol } from '../../../shared/web/termine/WebTerminBausteine';
+import { terminWebAngaben } from '../../../shared/web/termine/terminDetailAngaben';
 import '../../../../theme/web/termine.css';
 
 export interface KonfiDetailAktionen {
@@ -79,21 +82,15 @@ const AKTION_ZU_FUNKTION: Record<AnmeldeAktion, keyof Pick<KonfiDetailAktionen, 
 const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
   const { eventData, aktionen, isOnline } = p;
 
-  if (p.laedt) {
+  if (p.laedt || !eventData) {
     return (
-      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
-        zustand={(
-          <WebLaden karten={2} text="Das Event wird geladen." />
-        )}
-      />
-    );
-  }
-  if (!eventData) {
-    return (
-      <WebDetailSeite bereich="Mitmachen" titel="Event nicht gefunden" zurueck={ZURUECK} pageRef={p.pageRef}
-        zustand={(
-          <WebFehler text="Dieses Event gibt es nicht (mehr) oder du siehst es nicht." onErneut={aktionen.neuLaden} />
-        )}
+      <WebDetailSeite
+        bereich="Mitmachen"
+        titel={p.laedt ? 'Event' : 'Event nicht gefunden'}
+        zurueck={ZURUECK}
+        pageRef={p.pageRef}
+        laden={p.laedt ? 'Das Event wird geladen.' : undefined}
+        fehler={{ text: 'Dieses Event gibt es nicht (mehr) oder du siehst es nicht.', onErneut: aktionen.neuLaden }}
       />
     );
   }
@@ -176,21 +173,12 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
     </>
   );
 
-  // Rechts, schmal: die Angaben.
-  const seite = (
-    <WebKarte titel="Angaben">
-      {eventData.has_timeslots && p.zeitfenster.length === 0 && !isOnline && !p.gemerkt?.zeitfenster && (
-        <WebHinweis art="hinweis">Die Zeitfenster-Auswahl ist offline nicht verfügbar.</WebHinweis>
-      )}
-      <WebTerminAngaben angaben={angaben} />
-    </WebKarte>
-  );
-
   return (
     <WebDetailSeite
       bereich="Mitmachen"
       zurueck={ZURUECK}
       titel={eventData.name}
+      kreis={<WebTerminSymbol status={status} event={eventData} gross />}
       kennzeichen={(
         <span className="web-pillreihe">
           <WebTerminMarken status={status} event={eventData} teamZeigen={false} />
@@ -201,7 +189,11 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
       hinweis={hinweis}
       kennzahlen={konfiKennzahlen(eventData).map((k) => ({ label: k.label, wert: k.wert }))}
       haupt={haupt}
-      seite={seite}
+      angaben={terminWebAngaben(angaben)}
+      angabenBeschriftung="Angaben zum Event"
+      angabenVorspann={eventData.has_timeslots && p.zeitfenster.length === 0 && !isOnline && !p.gemerkt?.zeitfenster
+        ? <WebHinweis art="hinweis">Die Zeitfenster-Auswahl ist offline nicht verfügbar.</WebHinweis>
+        : undefined}
       pageRef={p.pageRef}
     />
   );
