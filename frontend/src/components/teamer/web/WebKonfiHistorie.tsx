@@ -20,6 +20,7 @@ import type { WrappedHistoryEntry } from '../../../types/wrapped';
 import { getBadgeColor } from '../../shared/BadgePopoverContent';
 import WebKarte from '../../web/WebKarte';
 import WebKachel from '../../web/WebKachel';
+import { KENNZAHL_SYMBOL } from '../../web/kennzahlSymbole';
 import WebKnopf from '../../web/WebKnopf';
 import WebSpalten from '../../web/WebSpalten';
 import WebTabelle from '../../web/WebTabelle';
@@ -124,10 +125,10 @@ const WebKonfiHistorie: React.FC<WebKonfiHistorieProps> = ({ punkte, badges, ter
   return (
     <div className="web-start web-rolle web-rolle--team">
       <div className="web-raster web-raster--kacheln">
-        <WebKachel label="Punkte gesamt" wert={String(punkte.gesamt)} zusatz={[punkteText(punkte.gesamt)]} />
-        <WebKachel label="Gottesdienst" wert={String(punkte.gottesdienst)} zusatz={['Gottesdienst-Punkte']} />
-        <WebKachel label="Gemeinde" wert={String(punkte.gemeinde)} zusatz={['Gemeinde-Punkte']} />
-        <WebKachel label="Badges" wert={String(badges.length)} zusatz={['aus der Konfi-Zeit']} />
+        <WebKachel symbol={KENNZAHL_SYMBOL.punkte} label="Punkte gesamt" wert={String(punkte.gesamt)} zusatz={[punkteText(punkte.gesamt)]} />
+        <WebKachel symbol={KENNZAHL_SYMBOL.gottesdienst} label="Gottesdienst" wert={String(punkte.gottesdienst)} zusatz={['Gottesdienst-Punkte']} />
+        <WebKachel symbol={KENNZAHL_SYMBOL.gemeinde} label="Gemeinde" wert={String(punkte.gemeinde)} zusatz={['Gemeinde-Punkte']} />
+        <WebKachel symbol={KENNZAHL_SYMBOL.badges} label="Badges" wert={String(badges.length)} zusatz={['aus der Konfi-Zeit']} />
       </div>
       <WebSpalten haupt={haupt} seite={seite} seiteBeschriftung="Rückblick und Badges" />
       {gewaehlt && (

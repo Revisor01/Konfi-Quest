@@ -132,6 +132,12 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 
 ### Geändert
+- Im Browser tragen die Kennzahlen bei Konfis, Team, in der Detailseite einer
+  Person und in der Konfi-Historie das Symbol ihrer Kennzahl in der Farbe
+  ihres Bereichs; Badges und Zertifikate sind in der Liste so farbig wie in
+  den Kacheln.
+- Im Kopf der Detailansicht einer Teamer:in steht ihre eigene
+  Funktionsbeschreibung, im Browser wie in der App.
 - Im Browser heißen die Reiter der Challenges wie in der App **Aktuell** und
   **Archiv**.
 - Bei den eigenen Aktivitäten stehen in der App die Reiter über der Suche, wie

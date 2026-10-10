@@ -244,6 +244,21 @@ a.web-kachel:hover {
   color: var(--web-text-leise);
 }
 
+/* Symbol vor dem Etikett (WebKachel `symbol`): Farbe kommt als Bereichsfarbe
+   aus KENNZAHL_SYMBOL, hier nur Groesse und Abstand. */
+.web-kachel__titel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  min-width: 0;
+}
+
+.web-kachel__symbol {
+  flex: none;
+  font-size: var(--app-text-standard);
+  color: var(--web-text-leise);
+}
+
 .web-kachel__wert {
   /* Grosse Zahl: proportionale Ziffern, kein tabular-nums -- erst in Spalten. */
   font-family: var(--app-schriftart-ueberschrift);

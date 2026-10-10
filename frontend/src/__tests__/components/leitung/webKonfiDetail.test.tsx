@@ -556,6 +556,20 @@ describe('Teamer-Detail (Web)', () => {
     expect(screen.queryByRole('button', { name: 'Zur Teamer:in befördern' })).toBeNull();
   });
 
+  it('Selbstbeschreibung im Kopf: statt "Teamer:in" steht, was sie im eigenen Profil eingetragen hat', async () => {
+    h.antworten.set(`/admin/konfis/${ID}`, { ...TEAMER, role_title: 'Diakonin in Ausbildung' });
+    await oeffnen();
+    expect(kopf().getByText('Diakonin in Ausbildung')).toBeInTheDocument();
+    expect(kopf().queryByText('Teamer:in')).toBeNull();
+    expect(kopf().getByText(/@robin\.probe/)).toBeInTheDocument();
+  });
+
+  it('Selbstbeschreibung leer oder nur Leerzeichen: wie bisher "Teamer:in"', async () => {
+    h.antworten.set(`/admin/konfis/${ID}`, { ...TEAMER, role_title: '   ' });
+    await oeffnen();
+    expect(kopf().getByText('Teamer:in')).toBeInTheDocument();
+  });
+
   it('Aktivitaeten ohne Punkte-Spalten; Zertifikate mit "Abgelaufen" und Entfernen mit Rueckfrage', async () => {
     await oeffnen();
     expect(within(screen.getByRole('table', { name: 'Aktivitäten' })).getAllByRole('columnheader').map((c) => c.textContent))
@@ -641,6 +655,30 @@ describe('Teamer-Detail in der App (schmal): Stand der Events aus der Anwesenhei
       return within(zeile).getByRole('img').getAttribute('aria-label');
     });
     expect(staende).toEqual(['Anwesend', 'Warteliste', 'Abwesend', 'Gebucht']);
+  });
+});
+
+describe('Teamer-Detail in der App (schmal): Selbstbeschreibung im Kopf', () => {
+  it('vor dem Benutzernamen steht die Selbstbeschreibung', async () => {
+    h.breit = false;
+    h.antworten.set(`/admin/konfis/${ID}`, { ...TEAMER, role_title: 'Diakonin in Ausbildung' });
+    await oeffnen();
+    expect(screen.getByText('Diakonin in Ausbildung - @robin.probe')).toBeInTheDocument();
+  });
+
+  it('ohne Selbstbeschreibung: wie bisher nur der Benutzername', async () => {
+    h.breit = false;
+    h.antworten.set(`/admin/konfis/${ID}`, { ...TEAMER, role_title: null });
+    await oeffnen();
+    expect(screen.getByText('@robin.probe')).toBeInTheDocument();
+    expect(screen.queryByText(/Diakonin/)).toBeNull();
+  });
+
+  it('eine Konfi zeigt weiter ihren Jahrgang, auch mit role_title am Konto', async () => {
+    h.breit = false;
+    h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, role_title: 'Irgendwas' });
+    await oeffnen();
+    expect(screen.getByText('Jahrgang 2026 - @anna.mueller')).toBeInTheDocument();
   });
 });
 

@@ -7,7 +7,8 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ABZEICHEN, ICON_DATEI, ICON_GRUPPE, ICON_LOESCHEN } from '../../../shared/icons';
+import { ICON_GRUPPE, ICON_LOESCHEN } from '../../../shared/icons';
+import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
 import WebKnopf from '../../../web/WebKnopf';
 import WebBildKarte, { WebBildKarteSymbol } from '../../../web/WebBildKarte';
 import WebTreffer from '../../../web/WebTreffer';
@@ -40,8 +41,8 @@ const WebTeamKacheln: React.FC<WebTeamKachelnProps> = ({ team, suche, onLoeschen
             unterzeile={t.username ? <WebTreffer text={t.username} suche={suche} /> : undefined}
             angaben={[
               { icon: ICON_GRUPPE, inhalt: t.jahrgang_name || 'Kein Jahrgang' },
-              { icon: ICON_ABZEICHEN, inhalt: mitEinheit(badges, 'Badge', 'Badges'), farbe: 'var(--app-color-badges)' },
-              { icon: ICON_DATEI, inhalt: mitEinheit(zertifikate, 'Zertifikat', 'Zertifikate') },
+              { ...KENNZAHL_SYMBOL.badges, inhalt: mitEinheit(badges, 'Badge', 'Badges') },
+              { ...KENNZAHL_SYMBOL.zertifikate, inhalt: mitEinheit(zertifikate, 'Zertifikat', 'Zertifikate') },
             ]}
             fuss={onLoeschen ? (
               <WebKnopf klein art="gefahr" vorn onClick={() => onLoeschen(t)} aria-label={`${teamerName(t)} löschen`}>

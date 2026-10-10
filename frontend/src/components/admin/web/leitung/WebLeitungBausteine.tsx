@@ -11,6 +11,7 @@ import { ICON_AUFKLAPPEN, ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_HAKEN_GEFUE
 import WebKnopf from '../../../web/WebKnopf';
 import { linkOeffnen } from '../../../../services/systemDialoge';
 import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
+import type { KennzahlSymbol } from '../../../web/kennzahlSymbole';
 import '../../../../theme/web/leitung.css';
 
 // --- Kreis mit Initialen ----------------------------------------------------------
@@ -227,6 +228,20 @@ export const WebSymbol: React.FC<{ icon: string; ton?: SymbolTon; farbe?: string
     aria-hidden="true"
   >
     <IonIcon icon={icon} />
+  </span>
+);
+
+// --- Zahl mit Symbol in einer Tabellenzelle -----------------------------------------------
+
+/**
+ * Eine Zahl mit dem Symbol ihrer Kennzahl (Badges, Zertifikate) in einer
+ * Tabellenzelle -- dasselbe Symbol in derselben Bereichsfarbe wie auf der
+ * Karte und der Kennzahl-Kachel (KENNZAHL_SYMBOL).
+ */
+export const WebZahlMitSymbol: React.FC<{ symbol: KennzahlSymbol; zahl: number; title: string }> = ({ symbol, zahl, title }) => (
+  <span className="web-zahl-mit-symbol" title={title}>
+    <IonIcon icon={symbol.icon} className="web-zahl-mit-symbol__symbol" style={{ color: symbol.farbe }} aria-hidden="true" />
+    {zahl}
   </span>
 );
 

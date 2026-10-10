@@ -85,6 +85,8 @@ export interface Konfi {
   role_name?: string;
   user_type?: string;
   teamer_since?: string;
+  /** Selbstbeschreibung einer Teamer:in (im eigenen Profil gesetzt), je Gemeinde. */
+  role_title?: string | null;
   konfspruch?: {
     source: 'liste' | 'freitext';
     id?: number;
@@ -362,9 +364,12 @@ export const KonfiHeaderCard = React.memo<KonfiHeaderCardProps>(({
         fontSize: 'var(--app-text-sekundaer)'
       }}
     >
-      {currentKonfi?.jahrgang_name || currentKonfi?.jahrgang
-        ? `${currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - `
-        : ''}@{currentKonfi?.username}
+      {/* Bei einer Teamer:in vorn ihre Selbstbeschreibung (Simon, 10.10.2026). */}
+      {isTeamer && currentKonfi?.role_title?.trim()
+        ? `${currentKonfi.role_title.trim()} - `
+        : currentKonfi?.jahrgang_name || currentKonfi?.jahrgang
+          ? `${currentKonfi?.jahrgang_name || currentKonfi?.jahrgang} - `
+          : ''}@{currentKonfi?.username}
     </div>
 
     {/* Teamer: Aktiv seit */}

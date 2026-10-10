@@ -6,14 +6,15 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ABZEICHEN, ICON_LOESCHEN } from '../../../shared/icons';
+import { ICON_LOESCHEN } from '../../../shared/icons';
+import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
 import WebLink from '../../../web/WebLink';
 import WebKnopf from '../../../web/WebKnopf';
 import WebTreffer from '../../../web/WebTreffer';
 import { datumKurz } from '../../../../utils/dateUtils';
 import { jahrgangVon, konfiPunkte, initialen, type KonfiListenEintrag } from '../../../../utils/konfiListe';
 import WebSortTabelle, { type WebSortSpalte, type WebSortierung } from './WebSortTabelle';
-import { WebAvatar, WebFortschritt } from './WebLeitungBausteine';
+import { WebAvatar, WebFortschritt, WebZahlMitSymbol } from './WebLeitungBausteine';
 
 export interface WebKonfiTabelleProps {
   konfis: readonly KonfiListenEintrag[];
@@ -93,12 +94,7 @@ const WebKonfiTabelle: React.FC<WebKonfiTabelleProps> = ({ konfis, suche, sortie
       zahl: true,
       breite: '92px',
       optional: true,
-      zelle: (k) => (
-        <span className="web-zahl-mit-symbol" title={`${k.badgeCount || 0} Badges`}>
-          <IonIcon icon={ICON_ABZEICHEN} className="web-zahl-mit-symbol__symbol" aria-hidden="true" />
-          {k.badgeCount || 0}
-        </span>
-      ),
+      zelle: (k) => <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.badges} zahl={k.badgeCount || 0} title={`${k.badgeCount || 0} Badges`} />,
     },
     ...(mitAktivitaet ? [{
       schluessel: 'aktivitaet',
