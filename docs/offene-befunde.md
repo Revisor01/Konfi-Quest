@@ -308,6 +308,19 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   zwischen Rechteprüfung und Schreiben gelöscht (Fremdschlüssel), oder ein
   Deadlock bzw. Verbindungs-Timeout. Beim nächsten Auftreten das Log der
   Replica zur Uhrzeit lesen.
+- **Abstimmen per Nachrichten-ID kann die falsche Umfrage treffen.**
+  `POST /api/chat/polls/:pollId/vote` sucht erst eine Umfrage mit dieser
+  ID und erst dann eine zur Nachricht mit dieser ID; alle Apps schicken die
+  Nachrichten-ID. Gleicht die Nachrichten-ID zufällig der ID einer anderen
+  Umfrage, landet die Stimme dort — bei einer einmaligen Antwort wäre sie
+  dann auch noch fest. Ungefährlich, solange es weit weniger Umfragen als
+  Nachrichten gibt; sauber wäre, dass neue Apps `poll_id` schicken bzw. die
+  Route `/messages/:id/vote` nur per Nachricht sucht (10.10.2026).
+- **Aufdecken nach Ablauf kommt nicht live.** Bei „Namen erst später
+  aufdecken" mit Ablaufdatum sind die Namen nach dem Ende aufgedeckt, das
+  rechnet das Backend beim Lesen aus. Ein `pollUpdated` geht dabei nicht
+  hinaus; wer den Chat offen hat, sieht die Namen erst beim nächsten Laden
+  (10.10.2026).
 
 ### Tests und CI
 

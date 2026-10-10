@@ -10,6 +10,14 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- Umfragen im Chat lassen sich auf eine einzige Antwort festlegen: Wer
+  abgestimmt hat, kann die Stimme danach nicht mehr ändern — etwa für ein
+  Quiz. Bei Mehrfachauswahl wird erst ausgewählt und dann „Antwort abgeben"
+  getippt.
+- Umfragen mit Namen können die Namen erst später aufdecken: Bis die Leitung
+  sie aufdeckt oder die Umfrage endet, sieht niemand, wer was gewählt hat.
+- Jede Umfrage zeigt in kurzen Zeilen, was für sie gilt — wie viele Antworten
+  möglich sind, ob man sie ändern kann und wer die Namen sieht.
 - Im Browser lassen sich Benutzer:innen, Jahrgänge, Kategorien, Level und
   Zertifikate wie Konfis und Events als Liste oder als Kacheln ansehen.
 - Die Seite „Betrieb" zeigt im Überblick, wann jede Aufgabe des Servers im

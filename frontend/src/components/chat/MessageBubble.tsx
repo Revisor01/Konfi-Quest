@@ -29,12 +29,16 @@ import { rollenName } from '../../utils/rollenNamen';
 import { sendeFehlerText } from './sendeFehler';
 import { useZeitgeber } from '../../hooks/useZeitgeber';
 import {
+  darfNamenAufdecken,
   getMimeFromFileName,
   linkifyText,
   nachrichtZeit,
   reaktionenGruppieren,
   umfrageAblauf,
+  umfrageGesperrt,
+  umfrageMitAbgabeSchritt,
   umfrageOptionen,
+  umfrageRegeln,
 } from './chatNachricht';
 
 interface MessageBubbleUser {
@@ -57,7 +61,10 @@ interface MessageBubbleProps {
   onDelete: (messageId: number) => void;
   onToggleReaction: (messageId: number, emoji: string) => void;
   onOpenReactionPicker: (message: Message) => void;
-  onVoteInPoll: (messageId: number, optionIndex: number) => void;
+  /** Eine Antwort (Antippen) oder die ganze Antwort ("Antwort abgeben"). */
+  onVoteInPoll: (messageId: number, auswahl: number | number[]) => void;
+  /** Namen einer "Namen später"-Umfrage aufdecken (mit der Umfrage-ID). */
+  onNamenAufdecken?: (pollId: number) => void;
   onFileClick: (filePath: string, fileName: string, mimeType: string) => void;
   // Die gerade geladene Datei und ihr Fortschritt (null = Groesse unbekannt,
   // die Anzeige laeuft dann unbestimmt). Ohne Rueckmeldung sieht man beim
@@ -86,6 +93,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   onToggleReaction,
   onOpenReactionPicker,
   onVoteInPoll,
+  onNamenAufdecken,
   onFileClick,
   ladendeDatei,
   uploadFortschritt,
@@ -122,6 +130,18 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
   // das native 'contextmenu'); ohne diese Sperre hob der zweite Aufruf den
   // ersten sofort wieder auf, weil onLongPress ein Toggle ist.
   const longPressFiredRef = React.useRef(false);
+  // Auswahl vor dem Abgeben einer Umfrage (nur bei einmaliger Antwort mit
+  // Mehrfachauswahl, chatNachricht.umfrageMitAbgabeSchritt).
+  const [umfrageAuswahl, setUmfrageAuswahl] = React.useState<number[]>([]);
+  const umfrageZu = message.message_type === 'poll' && umfrageGesperrt(message, user);
+  const umfrageAbgabe = message.message_type === 'poll' && umfrageMitAbgabeSchritt(message) && !umfrageZu;
+  const umfrageAntippen = (index: number) => {
+    if (umfrageAbgabe) {
+      setUmfrageAuswahl((vorher) => vorher.includes(index) ? vorher.filter((i) => i !== index) : [...vorher, index]);
+      return;
+    }
+    onVoteInPoll(message.id, index);
+  };
   // Langes Druecken, Hervorhebung der beantworteten Nachricht und Fokus ins
   // Eingabefeld enden mit der Blase: Verschwindet sie (Raum verlassen,
   // Nachricht geloescht), oeffnet kein spaeter Zeitgeber mehr das Menue.
@@ -420,26 +440,45 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
               );
             })()}
 
+            {/* Was fuer die Umfrage gilt -- kurze Zeilen fuer Kinder */}
+            <ul aria-label="Was für diese Umfrage gilt" style={{
+              listStyle: 'none',
+              margin: '0 0 var(--app-abstand-mittel) 0',
+              padding: 'var(--app-abstand-eng) var(--app-abstand-mittel)',
+              background: 'rgba(var(--app-color-chat-rgb), 0.08)',
+              borderRadius: 'var(--app-radius-klein)',
+              fontSize: 'var(--app-text-hinweis)',
+              color: 'var(--app-text-emphasis)',
+              lineHeight: 1.4,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--app-abstand-mini)'
+            }}>
+              {umfrageRegeln(message, user).map((zeile) => <li key={zeile}>{zeile}</li>)}
+            </ul>
+
             {/* Optionen */}
             {umfrageOptionen(message, user).map((opt) => {
               const isExclusive = !!message.exclusive_options;
+              const markiert = opt.gewaehlt || (umfrageAbgabe && umfrageAuswahl.includes(opt.index));
+              const zu = opt.vergebenAnAndere || umfrageZu;
 
               return (
-                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={opt.gewaehlt} aria-disabled={opt.vergebenAnAndere}
+                <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={markiert} aria-disabled={zu}
                   key={opt.index}
-                  onClick={() => { if (!opt.vergebenAnAndere) onVoteInPoll(message.id, opt.index); }}
+                  onClick={() => { if (!zu) umfrageAntippen(opt.index); }}
                   style={{
                     // Flaechen und Rahmen aus Tokens (27.09.2026): 'white' mit
                     // Schrift aus --app-text-emphasis war im Dunkeln Weiss auf
                     // Weiss; Schwarz mit Deckkraft (vergeben, Rahmen)
                     // verschwindet auf dunklem Grund. Hell tragen die Tokens
                     // dieselben Toene wie vorher (#fff, #f5f5f5, #eee).
-                    background: opt.gewaehlt ? 'rgba(var(--app-color-chat-rgb), 0.12)' : opt.vergebenAnAndere ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',
-                    border: opt.gewaehlt ? '2px solid var(--app-color-chat)' : '1px solid var(--app-border-soft)',
+                    background: markiert ? 'rgba(var(--app-color-chat-rgb), 0.12)' : opt.vergebenAnAndere ? 'var(--app-surface-muted)' : 'var(--app-surface-card)',
+                    border: markiert ? '2px solid var(--app-color-chat)' : '1px solid var(--app-border-soft)',
                     borderRadius: 'var(--app-radius-knopf)',
                     padding: 'var(--app-abstand-mittel)',
                     marginBottom: 'var(--app-abstand-eng)',
-                    cursor: opt.vergebenAnAndere ? 'not-allowed' : 'pointer',
+                    cursor: opt.vergebenAnAndere ? 'not-allowed' : zu ? 'default' : 'pointer',
                     opacity: opt.vergebenAnAndere ? 0.7 : 1,
                     position: 'relative',
                     overflow: 'hidden',
@@ -468,7 +507,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                     alignItems: 'center'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', minWidth: 0 }}>
-                      {opt.gewaehlt && (
+                      {markiert && (
                         <div style={{
                           width: '18px',
                           height: '18px',
@@ -483,7 +522,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                         </div>
                       )}
                       <span style={{
-                        fontWeight: opt.gewaehlt ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
+                        fontWeight: markiert ? 'var(--app-schrift-halbfett)' : 'var(--app-schrift-mittel)',
                         color: 'var(--app-text-emphasis)',
                         fontSize: 'var(--app-text-basis)'
                       }}>
@@ -528,6 +567,50 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({
                 </div>
               );
             })}
+
+            {/* Antwort abgeben (einmalige Antwort mit Mehrfachauswahl) */}
+            {umfrageAbgabe && (
+              <button
+                type="button"
+                disabled={umfrageAuswahl.length === 0}
+                onClick={() => onVoteInPoll(message.id, [...umfrageAuswahl].sort((a, b) => a - b))}
+                style={{
+                  marginTop: 'var(--app-abstand-eng)',
+                  width: '100%',
+                  padding: 'var(--app-abstand-mittel)',
+                  border: 'none',
+                  borderRadius: 'var(--app-radius-knopf)',
+                  background: 'var(--app-color-chat)',
+                  color: 'white',
+                  fontWeight: 'var(--app-schrift-halbfett)',
+                  fontSize: 'var(--app-text-basis)',
+                  opacity: umfrageAuswahl.length === 0 ? 0.5 : 1
+                }}
+              >
+                Antwort abgeben
+              </button>
+            )}
+
+            {/* Namen aufdecken (Ersteller:in oder Leitung) */}
+            {onNamenAufdecken && message.poll_id != null && darfNamenAufdecken(message, user) && (
+              <button
+                type="button"
+                onClick={() => onNamenAufdecken(message.poll_id as number)}
+                style={{
+                  marginTop: 'var(--app-abstand-eng)',
+                  width: '100%',
+                  padding: 'var(--app-abstand-mittel)',
+                  border: '1px solid var(--app-color-chat)',
+                  borderRadius: 'var(--app-radius-knopf)',
+                  background: 'transparent',
+                  color: 'var(--app-text-chat)',
+                  fontWeight: 'var(--app-schrift-halbfett)',
+                  fontSize: 'var(--app-text-basis)'
+                }}
+              >
+                Namen aufdecken
+              </button>
+            )}
 
             {/* Info Footer */}
             <div style={{

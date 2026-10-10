@@ -58,6 +58,11 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
   const [multipleChoice, setMultipleChoice] = useState(false);
   const [anonymous, setAnonymous] = useState(true);
   const [exclusiveOptions, setExclusiveOptions] = useState(false);
+  // Einmalige Antwort und "Namen später" (10.10.2026). "Namen später" gibt
+  // es nur bei einer Umfrage mit Namen -- anonym und später schliessen sich
+  // aus (das Backend lehnt die Kombination auch ab).
+  const [einmaligeAntwort, setEinmaligeAntwort] = useState(false);
+  const [namenSpaeter, setNamenSpaeter] = useState(false);
   const [hasExpiration, setHasExpiration] = useState(false);
   const [expirationHours, setExpirationHours] = useState(24);
   const { isSubmitting: creating, guard } = useActionGuard();
@@ -68,6 +73,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
     setMultipleChoice(false);
     setAnonymous(true);
     setExclusiveOptions(false);
+    setEinmaligeAntwort(false);
+    setNamenSpaeter(false);
     setHasExpiration(false);
     setExpirationHours(24);
   };
@@ -113,6 +120,8 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
           multiple_choice: exclusiveOptions ? false : multipleChoice,
           anonymous,
           exclusive_options: exclusiveOptions,
+          einmalige_antwort: einmaligeAntwort,
+          namen_spaeter: !anonymous && namenSpaeter,
           expires_in_hours: hasExpiration ? expirationHours : null
         };
 
@@ -256,15 +265,52 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonLabel>
                   <h3 className="app-toggle-item__title">Namen anzeigen</h3>
                   <p className="app-toggle-item__hint">
-                    Sichtbar machen, wer welche Antwort gewählt hat
+                    {anonymous
+                      ? 'Aus: anonym – niemand sieht, wer was gewählt hat'
+                      : 'An: alle sehen, wer welche Antwort gewählt hat'}
                   </p>
                 </IonLabel>
                 <IonToggle aria-label="Namen anzeigen"
                   slot="end"
                   className="app-toggle--chat"
                   checked={!anonymous}
-                  onIonChange={(e) => setAnonymous(!e.detail.checked)}
+                  onIonChange={(e) => {
+                    setAnonymous(!e.detail.checked);
+                    if (!e.detail.checked) setNamenSpaeter(false);
+                  }}
                  
+                />
+              </IonItem>
+
+              {!anonymous && (
+                <IonItem>
+                  <IonLabel>
+                    <h3 className="app-toggle-item__title">Namen erst später aufdecken</h3>
+                    <p className="app-toggle-item__hint">
+                      Bis du sie aufdeckst, sieht niemand die Namen – auch du nicht. Endet die Umfrage, werden sie von selbst aufgedeckt.
+                    </p>
+                  </IonLabel>
+                  <IonToggle aria-label="Namen erst später aufdecken"
+                    slot="end"
+                    className="app-toggle--chat"
+                    checked={namenSpaeter}
+                    onIonChange={(e) => setNamenSpaeter(e.detail.checked)}
+                  />
+                </IonItem>
+              )}
+
+              <IonItem>
+                <IonLabel>
+                  <h3 className="app-toggle-item__title">Nur einmal antworten</h3>
+                  <p className="app-toggle-item__hint">
+                    Wer abgestimmt hat, kann die Antwort danach nicht mehr ändern – gut für ein Quiz
+                  </p>
+                </IonLabel>
+                <IonToggle aria-label="Nur einmal antworten"
+                  slot="end"
+                  className="app-toggle--chat"
+                  checked={einmaligeAntwort}
+                  onIonChange={(e) => setEinmaligeAntwort(e.detail.checked)}
                 />
               </IonItem>
 

@@ -60,7 +60,7 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
     dateiWaehlen, dateiUebernehmen, clearSelectedFile,
     showReactionPicker, reactionTargetMessage, auswahlAufheben,
     deleteMessage, nachrichtErneutSenden, nachrichtVerwerfen,
-    toggleReaction, openReactionPicker, voteInPoll, handleFileClick, ladendeDatei, handleShareMessage,
+    toggleReaction, openReactionPicker, voteInPoll, namenAufdecken, handleFileClick, ladendeDatei, handleShareMessage,
     openPollModal, openMembersModal, getDisplayRoomName,
     canLeaveChat, istLeitung, darfTeamChatLeeren, handleClearChat, handleExportChat, handleLeaveChat,
   } = chat;
@@ -227,6 +227,7 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
           onPickerOeffnen={openReactionPicker}
           onPickerSchliessen={auswahlAufheben}
           onAbstimmen={voteInPoll}
+          onNamenAufdecken={namenAufdecken}
           onDatei={handleFileClick}
           onError={setError}
           onErneutSenden={(message) => { void nachrichtErneutSenden(message); }}

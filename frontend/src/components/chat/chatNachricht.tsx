@@ -156,6 +156,89 @@ export const umfrageAblauf = (
   };
 };
 
+/** Hat die betrachtende Person in dieser Umfrage schon eine Stimme? */
+export const umfrageAbgestimmt = (message: Message, betrachter: Betrachter | null): boolean =>
+  !!betrachter && !!message.votes?.some(v => v.user_id === betrachter.id && v.user_type === betrachter.type);
+
+/**
+ * Ist die Umfrage fuer diese Person zu? Ja, wenn sie beendet ist oder wenn
+ * die Antwort einmalig ist und schon abgegeben wurde. Das Backend lehnt
+ * dann ohnehin ab (403); die Oberflaeche bietet das Antippen gar nicht an.
+ */
+export const umfrageGesperrt = (message: Message, betrachter: Betrachter | null, jetzt: Date = new Date()): boolean =>
+  !!umfrageAblauf(message.expires_at, jetzt)?.beendet
+  || (!!message.einmalige_antwort && umfrageAbgestimmt(message, betrachter));
+
+/**
+ * Wird die Antwort in einem eigenen Schritt abgegeben ("Antwort abgeben")?
+ * Nur bei einmaliger Antwort mit Mehrfachauswahl: Dort waere sonst schon die
+ * erste angetippte Antwort die ganze Abgabe. Bei Einzelauswahl gibt ein Tipp
+ * die Stimme direkt ab -- ohne Rueckfrage, die Regelzeile sagt es vorher
+ * (Simon, 10.10.2026).
+ */
+export const umfrageMitAbgabeSchritt = (message: Message): boolean =>
+  !!message.einmalige_antwort && !!message.multiple_choice && !message.exclusive_options;
+
+/**
+ * Darf diese Person die Namen aufdecken? Wer die Umfrage erstellt hat und die
+ * Leitung (Typ 'admin') -- dieselbe Regel wie im Backend
+ * (POST /chat/polls/:id/aufdecken), das sie ohnehin noch einmal prueft.
+ */
+export const darfNamenAufdecken = (message: Message, betrachter: Betrachter | null): boolean => {
+  if (!betrachter || !message.namen_spaeter || message.namen_aufgedeckt) return false;
+  const ersteller = message.sender_id === betrachter.id && message.sender_type === betrachter.type;
+  return ersteller || betrachter.type === 'admin';
+};
+
+/**
+ * Was fuer diese Umfrage gilt, in kurzen Zeilen fuer Kinder (Simon,
+ * 10.10.2026: "wir brauchen unbedingt, dass wir schreiben was jeweils fuer
+ * eine umfrage gilt, damit das die kinder wissen"). Steht in App und Web
+ * ueber den Antworten. Das Ende der Umfrage zeigt die Ablaufzeile darueber.
+ */
+export const umfrageRegeln = (message: Message, betrachter: Betrachter | null, jetzt: Date = new Date()): string[] => {
+  const zeilen: string[] = [];
+  const beendet = !!umfrageAblauf(message.expires_at, jetzt)?.beendet;
+
+  if (!beendet) {
+    if (message.exclusive_options) {
+      zeilen.push('Du kannst nur eine Antwort wählen – und jede Antwort nur eine Person.');
+    } else if (message.multiple_choice) {
+      zeilen.push('Du kannst mehrere Antworten wählen.');
+    } else {
+      zeilen.push('Du kannst nur eine Antwort wählen.');
+    }
+
+    if (message.einmalige_antwort) {
+      if (umfrageAbgestimmt(message, betrachter)) {
+        zeilen.push('Du hast geantwortet – deine Antwort ist jetzt fest.');
+      } else if (umfrageMitAbgabeSchritt(message)) {
+        zeilen.push('Du kannst nur einmal antworten – danach ist deine Antwort fest. Wähle alles aus und tippe dann auf „Antwort abgeben“.');
+      } else {
+        zeilen.push('Du kannst nur einmal antworten – danach ist deine Antwort fest.');
+      }
+    } else {
+      zeilen.push('Du kannst deine Antwort jederzeit ändern.');
+    }
+  }
+
+  if (message.namen_spaeter) {
+    if (message.namen_aufgedeckt) {
+      zeilen.push('Die Namen sind aufgedeckt – alle sehen, wer was gewählt hat.');
+    } else if (message.expires_at) {
+      zeilen.push('Namen werden später aufgedeckt, spätestens wenn die Umfrage endet. Dann sehen alle, wer was gewählt hat.');
+    } else {
+      zeilen.push('Namen werden später aufgedeckt. Dann sehen alle, wer was gewählt hat.');
+    }
+  } else if (message.anonymous === false) {
+    zeilen.push('Alle sehen, wer was gewählt hat.');
+  } else {
+    zeilen.push('Anonym – niemand sieht, was du gewählt hast.');
+  }
+
+  return zeilen;
+};
+
 /** Was die Antwortzeile ueber der Eingabe und in der Blase von der beantworteten Nachricht zeigt. */
 export const antwortVorschau = (
   art: string | undefined,

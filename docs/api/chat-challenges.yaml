@@ -327,19 +327,39 @@ components:
         question: { type: [string, "null"] }
         options: { type: [array, "null"], items: { type: string } }
         multiple_choice: { type: boolean }
-        anonymous: { type: boolean }
+        anonymous:
+          type: boolean
+          description: >
+            WIRKSAME Anonymitaet. Bei namen_spaeter=true bis zum Aufdecken
+            true -- dieselbe Form wie eine anonyme Umfrage, damit Store-Apps
+            ohne die neuen Felder keine Namen erwarten (ADDITIV 10.10.2026).
         exclusive_options: { type: boolean }
         expires_at: { type: [string, "null"], format: date-time }
+        einmalige_antwort:
+          type: boolean
+          description: "ADDITIV 10.10.2026: Wer abgestimmt hat, kann die Stimme nicht mehr aendern oder zuruecknehmen."
+        namen_spaeter:
+          type: boolean
+          description: "ADDITIV 10.10.2026: Namen erst nach dem Aufdecken (von Hand oder mit dem Ablauf). Schliesst eine anonyme Umfrage aus."
+        namen_aufgedeckt:
+          type: boolean
+          description: "ADDITIV 10.10.2026: namen_spaeter und aufgedeckt (namen_aufgedeckt_at gesetzt ODER expires_at vorbei, beim Lesen berechnet). Sonst false."
+        namen_aufgedeckt_at:
+          type: [string, "null"]
+          format: date-time
+          description: "ADDITIV 10.10.2026: Zeitpunkt des Aufdeckens; nach Ablauf ohne Aufdecken von Hand gleich expires_at."
         votes:
           type: array
           description: >
-            Stimmen der Umfrage. Bei anonymous=true fehlt user_name —
-            user_id/user_type sind aber enthalten (siehe LUECKE 2 im Kopf).
+            Stimmen der Umfrage. Bei anonymous=true (auch bei namen_spaeter vor
+            dem Aufdecken) fehlt user_name, und fremde Stimmen kommen mit
+            user_id=null und user_type=null -- nur die eigene behaelt ihre
+            Kennung (siehe LUECKE 2 im Kopf, BEHOBEN 2026-08-23).
           items:
             type: object
             properties:
-              user_id: { type: integer }
-              user_type: { type: string }
+              user_id: { type: [integer, "null"] }
+              user_type: { type: [string, "null"] }
               option_index: { type: integer }
               user_name: { type: [string, "null"] }
     Reaction:
@@ -1208,7 +1228,12 @@ paths:
       description: >
         Legt eine Poll-Nachricht an. exclusive_options (jede Option max. 1
         Person) erzwingt Einzelauswahl. anonymous default true. Verteilung
-        via WebSocket und Push wie normale Nachrichten.
+        via WebSocket und Push wie normale Nachrichten. ADDITIV 10.10.2026:
+        einmalige_antwort und namen_spaeter (frei kombinierbar; namen_spaeter
+        zusammen mit ausdruecklich anonymous=true -> 400). Bei namen_spaeter
+        speichert die Datenbank anonymous=true (sicher fuer jeden Leser, der
+        die neuen Spalten nicht kennt); die Antwort meldet anonymous=true und
+        namen_aufgedeckt=false.
       parameters:
         - { name: roomId, in: path, required: true, schema: { type: integer }, description: "ID des Chatraums" }
       requestBody:
@@ -1225,10 +1250,16 @@ paths:
                 expires_in_hours: { type: number }
                 anonymous: { type: boolean, default: true }
                 exclusive_options: { type: boolean, default: false }
+                einmalige_antwort: { type: boolean, default: false, description: "ADDITIV 10.10.2026" }
+                namen_spaeter: { type: boolean, default: false, description: "ADDITIV 10.10.2026; nicht zusammen mit anonymous=true" }
       responses:
         '201':
-          description: Erstellte Umfrage (id, message_id, options, votes=[])
-        '400': { description: Frage/Optionen fehlen oder ungueltig }
+          description: >
+            Erstellte Umfrage (id, message_id, question, options,
+            multiple_choice, anonymous, exclusive_options, expires_at,
+            votes=[]; ADDITIV 10.10.2026 dazu einmalige_antwort,
+            namen_spaeter, namen_aufgedeckt, namen_aufgedeckt_at)
+        '400': { description: "Frage/Optionen fehlen oder ungueltig; anonym und namen_spaeter zugleich ('Eine Umfrage ist entweder anonym oder deckt die Namen später auf, nicht beides')" }
         '403': { description: Aufrufer ist kein Admin-Typ }
         '404': { description: "Raum nicht in eigener Org ODER darf nicht geoeffnet werden (darfRaumBetreten; 404 statt 403, damit fremde Raeume nicht bestaetigt werden)" }
         '500': { description: Datenbankfehler }
@@ -1247,6 +1278,14 @@ paths:
         Toggle-Semantik: erneutes Abstimmen auf dieselbe Option entfernt die
         Stimme. Einzelauswahl ersetzt vorhandene Stimme. Bei
         exclusive_options ist eine belegte Option gesperrt (409).
+        ADDITIV 10.10.2026: option_indices (statt option_index) gibt die
+        ganze Antwort in einem Schritt ab und ersetzt die eigenen Stimmen
+        ("Antwort abgeben" bei Mehrfachauswahl). Bei einmalige_antwort
+        lehnt die Route jede weitere Abgabe ab, sobald eine Stimme steht
+        (aendern, zuruecknehmen, ergaenzen) -- 403 mit action 'locked'.
+        403 statt 409, weil die Store-Apps 2.2.x/2.3.0 auf 409 fest
+        "Diese Option ist bereits vergeben" zeigen; auf 403 zeigen sie
+        "Fehler beim Abstimmen", ihr Stand bleibt richtig.
       parameters:
         - { name: pollId, in: path, required: true, schema: { type: integer }, description: Poll-ID; Fallback-Lookup per message_id }
       requestBody:
@@ -1255,13 +1294,22 @@ paths:
           application/json:
             schema:
               type: object
-              required: [option_index]
+              description: Genau eines von option_index oder option_indices.
               properties:
                 option_index: { type: integer }
+                option_indices:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items: { type: integer }
+                  description: "ADDITIV 10.10.2026: ganze Antwort; bei Einzelauswahl genau ein Eintrag"
       responses:
-        '200': { description: "Stimme gesetzt/entfernt (action: added|removed)" }
-        '400': { description: option_index fehlt/ungueltig ODER Umfrage abgelaufen }
-        '403': { description: Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft) }
+        '200':
+          description: >
+            Stimme gesetzt/entfernt (message, poll_id, option_index, user_id,
+            action: added|removed; ADDITIV 10.10.2026 dazu option_indices)
+        '400': { description: "option_index fehlt/ungueltig, option_indices leer/doppelt/ausserhalb oder bei Einzelauswahl mehr als einer ('Bei dieser Umfrage kannst du nur eine Antwort wählen'), ODER Umfrage abgelaufen" }
+        '403': { description: "Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft) ODER einmalige Antwort schon abgegeben (action 'locked', 'Du hast schon geantwortet. Deine Antwort steht fest und lässt sich nicht mehr ändern.')" }
         '404': { description: Umfrage nicht gefunden }
         '409': { description: Exklusive Option bereits vergeben }
         '500': { description: Datenbankfehler }
@@ -1285,9 +1333,12 @@ paths:
       tags: ["Chat"]
       summary: Abstimmen per Message-ID (Frontend-Kompatibilitaet)
       description: >
-        Aeltere Adressform derselben Route. Seit 2026-08-23 teilen sich beide
-        denselben Handler — Toggle-Semantik, Einzelauswahl-Ersetzung und
-        exclusive_options gelten hier genauso.
+        Aeltere Adressform derselben Route (Store-Apps 2.2.x/2.3.0). Seit
+        2026-08-23 teilen sich beide denselben Handler — Toggle-Semantik,
+        Einzelauswahl-Ersetzung, exclusive_options und (seit 10.10.2026) die
+        Sperre der einmaligen Antwort gelten hier genauso. Bei
+        Mehrfachauswahl mit einmaliger Antwort ist hier die erste angetippte
+        Option die ganze Abgabe.
       parameters:
         - { name: messageId, in: path, required: true, schema: { type: integer }, description: "ID der Nachricht" }
       requestBody:
@@ -1302,7 +1353,7 @@ paths:
       responses:
         '200': { description: Stimme abgegeben }
         '400': { description: option_index fehlt/ungueltig ODER Umfrage abgelaufen }
-        '403': { description: Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft) }
+        '403': { description: "Kein Zugriff auf den Raum (wird VOR Ablauf und Options-Index geprueft) ODER einmalige Antwort schon abgegeben (action 'locked')" }
         '404': { description: Keine Umfrage zu dieser Nachricht }
         '409': { description: Exklusive Option bereits vergeben }
         '500': { description: Datenbankfehler }
@@ -1314,6 +1365,48 @@ paths:
           Identisch zu /polls/{pollId}/vote — darfRaumOeffnen (seit 27.09.2026 nach Jahrgang, s. dort; Teilnehmer oder
           Leitung der eigenen Gemeinde, ausser in fremden Direktchats).
         hinweis: "Reicht an denselben Handler weiter wie /polls/{pollId}/vote"
+
+  /api/chat/polls/{pollId}/aufdecken:
+    post:
+      tags: ["Chat"]
+      summary: Namen einer "Namen später"-Umfrage aufdecken (NEU 10.10.2026)
+      description: >
+        Setzt namen_aufgedeckt_at (beim ersten Mal; danach bleibt der
+        Zeitpunkt). Danach liefern GET /rooms/:roomId/messages und
+        pollUpdated anonymous=false und die Namen. Der neue Stand geht per
+        Socket 'pollUpdated' an den Raum, wie nach einer Stimme -- KEIN Push
+        (ein neuer Push-Typ liefe bei den Store-Apps ins Leere). Nach
+        Ablauf (expires_at) gelten die Namen auch ohne diese Route als
+        aufgedeckt; das wird beim Lesen berechnet. Vor dem Aufdecken
+        liefert das Backend die Namen an niemanden aus, auch nicht an die
+        Leitung oder an die Person, die die Umfrage erstellt hat.
+      parameters:
+        - { name: pollId, in: path, required: true, schema: { type: integer }, description: "Poll-ID (kein Fallback per message_id)" }
+      responses:
+        '200':
+          description: Aufgedeckt (auch wenn schon vorher aufgedeckt)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  poll_id: { type: integer }
+                  message_id: { type: integer }
+                  namen_aufgedeckt: { type: boolean }
+                  namen_aufgedeckt_at: { type: [string, "null"], format: date-time }
+        '400': { description: "Ungueltige ID ODER die Umfrage hat kein namen_spaeter ('Bei dieser Umfrage werden keine Namen aufgedeckt')" }
+        '403': { description: "Kein Zugriff auf den Raum ('Zugriff auf diesen Raum verweigert') ODER weder Ersteller:in noch Leitung ('Die Namen kann nur aufdecken, wer die Umfrage erstellt hat, oder die Leitung')" }
+        '404': { description: Umfrage nicht gefunden }
+        '500': { description: Datenbankfehler }
+      x-berechtigung:
+        rollen: [org_admin, admin]
+        middleware: [verifyTokenRBAC]
+        org-scope: true
+        objekt-pruefung: >
+          darfRaumOeffnen wie beim Abstimmen; dann Ersteller:in der Umfrage
+          (chat_messages.user_id/user_type) ODER type='admin' -- dieselbe
+          Regel wie beim Loeschen fremder Nachrichten. Teamer:innen und
+          Konfis nicht.
 
   /api/chat/messages/{messageId}/reactions:
     post:

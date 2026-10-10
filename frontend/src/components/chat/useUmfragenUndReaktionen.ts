@@ -1,4 +1,4 @@
-import { fehlerStatus } from '../../utils/fehler';
+import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import { useState } from 'react';
 import { haptik, ImpactStyle } from '../../utils/haptics';
 import { useApp } from '../../contexts/AppContext';
@@ -33,7 +33,12 @@ export function useUmfragenUndReaktionen({
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   const [reactionTargetMessage, setReactionTargetMessage] = useState<Message | null>(null);
 
-  const voteInPoll = async (messageId: number, optionIndex: number) => {
+  // `auswahl`: eine Antwort (Antippen) oder die ganze Antwort auf einmal
+  // ("Antwort abgeben" bei einmaliger Antwort mit Mehrfachauswahl). Die ganze
+  // Antwort geht als option_indices an dieselbe Route (chat.js votePoll).
+  const voteInPoll = async (messageId: number, auswahl: number | number[]) => {
+    const indizes = Array.isArray(auswahl) ? auswahl : [auswahl];
+    const rumpf = Array.isArray(auswahl) ? { option_indices: auswahl } : { option_index: auswahl };
     // Offline: Optimistic UI + Queue-Fallback (fire-and-forget)
     if (!networkMonitor.isOnline) {
       setShouldAutoScroll(false);
@@ -45,12 +50,12 @@ export function useUmfragenUndReaktionen({
           // eigenen Wert. Wurde hier 'admin' angenommen, erkannte die Anzeige
           // (MessageBubble prüft vote.user_type === user.type) die eigene
           // Stimme einer Teamer:in offline nicht als gesetzt.
-          const newVote: PollVote = {
+          const neueStimmen: PollVote[] = indizes.map(optionIndex => ({
             user_id: user?.id ?? 0,
             user_type: (user?.type ?? 'konfi') as PollVote['user_type'],
             option_index: optionIndex,
-          };
-          return { ...m, votes: [...m.votes, newVote] };
+          }));
+          return { ...m, votes: [...m.votes, ...neueStimmen] };
         }
         return m;
       }));
@@ -68,10 +73,10 @@ export function useUmfragenUndReaktionen({
       await writeQueue.enqueue({
         method: 'POST',
         url: `/chat/polls/${messageId}/vote`,
-        body: { option_index: optionIndex },
+        body: rumpf,
         maxRetries: 3,
         hasFileUpload: false,
-        metadata: { type: 'chat-aktion', clientId: `poll-${messageId}-${optionIndex}-${safeUUID()}`, label: 'Abstimmung' },
+        metadata: { type: 'chat-aktion', clientId: `poll-${messageId}-${indizes.join('_')}-${safeUUID()}`, label: 'Abstimmung' },
       });
 
       zeitgeber.nach(1000, () => setShouldAutoScroll(true));
@@ -80,7 +85,7 @@ export function useUmfragenUndReaktionen({
 
     try {
       setShouldAutoScroll(false); // Prevent auto-scroll when voting
-      await api.post(`/chat/polls/${messageId}/vote`, { option_index: optionIndex });
+      await api.post(`/chat/polls/${messageId}/vote`, rumpf);
       await loadMessages();
       // Re-enable auto-scroll after a short delay
       zeitgeber.nach(1000, () => setShouldAutoScroll(true));
@@ -89,11 +94,28 @@ export function useUmfragenUndReaktionen({
       if (fehlerStatus(err) === 409) {
         setError('Diese Option ist bereits vergeben');
         await loadMessages(); // aktuellen Stand (Belegung) nachziehen
+      } else if (fehlerStatus(err) === 403) {
+        // Einmalige Antwort schon abgegeben (action 'locked') oder kein
+        // Zugriff: den Satz des Servers zeigen und den Stand neu laden.
+        setError(fehlerText(err, 'Fehler beim Abstimmen'));
+        await loadMessages();
       } else {
         setError('Fehler beim Abstimmen');
         console.error('Error voting in poll:', err);
       }
       setShouldAutoScroll(true); // Re-enable on error
+    }
+  };
+
+  // Namen einer "Namen später"-Umfrage aufdecken (Ersteller:in oder
+  // Leitung). Der neue Stand kommt per 'pollUpdated' an alle im Raum; hier
+  // zusaetzlich neu laden, falls der Socket gerade nicht verbunden ist.
+  const namenAufdecken = async (pollId: number) => {
+    try {
+      await api.post(`/chat/polls/${pollId}/aufdecken`);
+      await loadMessages();
+    } catch (err) {
+      setError(fehlerText(err, 'Die Namen ließen sich nicht aufdecken'));
     }
   };
 
@@ -205,6 +227,7 @@ export function useUmfragenUndReaktionen({
     reactionTargetMessage,
     setReactionTargetMessage,
     voteInPoll,
+    namenAufdecken,
     toggleReaction,
     openReactionPicker,
   };

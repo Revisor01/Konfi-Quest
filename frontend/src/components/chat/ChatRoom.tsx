@@ -60,6 +60,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
     toggleReaction,
     openReactionPicker,
     voteInPoll,
+    namenAufdecken,
     handleFileClick,
     ladendeDatei,
     auswahlAufheben,
@@ -228,6 +229,7 @@ const ChatRoom: React.FC<ChatRoomComponentProps> = ({ room, onBack, presentingEl
           onToggleReaction={toggleReaction}
           onOpenReactionPicker={openReactionPicker}
           onVoteInPoll={voteInPoll}
+          onNamenAufdecken={namenAufdecken}
           onFileClick={handleFileClick}
           ladendeDatei={ladendeDatei}
           uploadFortschritt={uploadFortschritt}

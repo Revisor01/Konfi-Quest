@@ -89,6 +89,12 @@ export interface PollStand {
   exclusive_options: boolean;
   expires_at: string | null;
   votes: PollVote[];
+  /** Ab 2.4.0: Wer abgestimmt hat, kann die Stimme nicht mehr ändern. */
+  einmalige_antwort?: boolean;
+  /** Ab 2.4.0: Namen erst nach dem Aufdecken (bis dahin anonymous: true). */
+  namen_spaeter?: boolean;
+  namen_aufgedeckt?: boolean;
+  namen_aufgedeckt_at?: string | null;
 }
 
 export interface Message {
@@ -117,6 +123,10 @@ export interface Message {
   exclusive_options?: boolean;
   expires_at?: string;
   poll_id?: number;
+  einmalige_antwort?: boolean;
+  namen_spaeter?: boolean;
+  namen_aufgedeckt?: boolean;
+  namen_aufgedeckt_at?: string | null;
   // Reply-Daten
   reply_to?: number;
   reply_to_id?: number;

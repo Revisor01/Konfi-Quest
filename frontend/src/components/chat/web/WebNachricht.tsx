@@ -68,7 +68,10 @@ export interface WebNachrichtProps {
   onReaktion: (messageId: number, emoji: string) => void;
   onPickerOeffnen: (message: Message) => void;
   onPickerSchliessen: () => void;
-  onAbstimmen: (messageId: number, optionIndex: number) => void;
+  /** Eine Antwort (Antippen) oder die ganze Antwort ("Antwort abgeben"). */
+  onAbstimmen: (messageId: number, auswahl: number | number[]) => void;
+  /** Namen einer "Namen später"-Umfrage aufdecken (mit der Umfrage-ID). */
+  onNamenAufdecken?: (pollId: number) => void;
   onDatei: (filePath: string, fileName: string, mimeType: string) => void;
   onError: (error: string) => void;
   onErneutSenden: (message: Message) => void;
@@ -78,7 +81,7 @@ export interface WebNachrichtProps {
 const WebNachricht: React.FC<WebNachrichtProps> = ({
   message, room, user, fortsetzung, pickerOffen, ladendeDatei, uploadFortschritt, kannTeilen,
   onAntworten, onKopieren, onTeilen, onLoeschen, onReaktion, onPickerOeffnen, onPickerSchliessen,
-  onAbstimmen, onDatei, onError, onErneutSenden, onVerwerfen,
+  onAbstimmen, onNamenAufdecken, onDatei, onError, onErneutSenden, onVerwerfen,
 }) => {
   // Die Hervorhebung der beantworteten Nachricht endet nach 1,5 s -- oder
   // sofort, wenn diese Nachricht vorher verschwindet (sonst bliebe sie stehen).
@@ -134,7 +137,7 @@ const WebNachricht: React.FC<WebNachrichtProps> = ({
       return <div className="web-chat-text web-chat-text--geloescht">{message.content}</div>;
     }
     if (message.message_type === 'poll' && message.question && message.options) {
-      return <WebUmfrage message={message} user={user} onAbstimmen={onAbstimmen} />;
+      return <WebUmfrage message={message} user={user} onAbstimmen={onAbstimmen} onNamenAufdecken={onNamenAufdecken} />;
     }
     if (message.file_path) {
       const pfad = message.file_path;
