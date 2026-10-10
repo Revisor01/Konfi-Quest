@@ -93,6 +93,9 @@ const oeffnen = async (id = 1, titel?: RegExp) => {
     const t = document.querySelector('.web-titel');
     expect(t).not.toBeNull();
     if (titel) expect(t!.textContent).toMatch(titel);
+    // Die Knopfleiste kommt nach dem Titel; im vollen CI-Lauf fanden Tests
+    // „Löschen“ bzw. „Archivieren“ sonst einmal nicht (09./10.10.2026).
+    expect(screen.queryByRole('button', { name: 'Löschen' })).not.toBeNull();
   });
   return ergebnis;
 };
