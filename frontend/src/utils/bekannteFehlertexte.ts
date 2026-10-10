@@ -106,6 +106,7 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Die Einladung konnte nicht zurückgezogen werden',
   'Die Kennzahlen konnten nicht geladen werden.',
   'Die Nachricht wurde nicht angenommen.',
+  'Die Namen ließen sich nicht aufdecken',
   'Die neuen Passwörter stimmen nicht überein',
   'Die Passwörter stimmen nicht überein',
   'Die Zeitfenster konnten nicht geladen werden — die Kopie hat keine.',

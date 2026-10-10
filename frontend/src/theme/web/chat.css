@@ -1019,6 +1019,57 @@ a.web-chat-zeile:focus-visible {
   cursor: not-allowed;
 }
 
+/* Antwort steht fest (einmalige Antwort abgegeben) oder Umfrage beendet. */
+.web-chat-option--fest {
+  cursor: default;
+}
+
+.web-chat-option--fest:hover {
+  background: var(--web-karte);
+}
+
+/* Was fuer die Umfrage gilt -- kurze Zeilen fuer Kinder. */
+.web-chat-umfrage__regeln {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  margin: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  background: color-mix(in srgb, var(--app-color-chat) 8%, var(--web-karte));
+  color: var(--web-text);
+  font-size: var(--app-text-hinweis);
+  list-style: none;
+}
+
+.web-chat-umfrage__aktion {
+  align-self: flex-start;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 0;
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-color-chat-dunkel);
+  color: var(--app-weiss);
+  font: inherit;
+  font-weight: var(--app-schrift-halbfett);
+  cursor: pointer;
+}
+
+.web-chat-umfrage__aktion:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.web-chat-umfrage__aktion:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-chat-umfrage__aktion--leise {
+  border: 1px solid var(--app-color-chat);
+  background: transparent;
+  color: var(--app-text-chat);
+}
+
 /* Anteil der Stimmen als Balken hinter dem Text (die Breite setzt die Antwort). */
 .web-chat-option__balken {
   position: absolute;

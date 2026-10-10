@@ -25,19 +25,23 @@ vi.mock('../../services/api', () => ({
 
 const HINTS = [
   'Mehrere Antworten erlauben',
-  'Sichtbar machen, wer welche Antwort gewählt hat',
+  // Namen anzeigen ist aus (Voreinstellung): der Hinweis sagt, was das heisst.
+  'Aus: anonym – niemand sieht, wer was gewählt hat',
+  'Wer abgestimmt hat, kann die Antwort danach nicht mehr ändern – gut für ein Quiz',
   'Jede Option kann nur von einer Person gewählt werden',
   'Umfrage automatisch schließen'
 ];
 
 describe('PollModal Einstellungen', () => {
-  it('alle vier Erklärungstexte tragen die globale Mehrzeilen-Klasse', () => {
+  it('alle fünf Erklärungstexte tragen die globale Mehrzeilen-Klasse', () => {
     const { container } = render(
       <PollModal onClose={() => {}} onSuccess={() => {}} roomId={1} />
     );
 
     const hints = Array.from(container.querySelectorAll('p.app-toggle-item__hint'));
-    expect(hints.length).toBe(4);
+    // Der sechste Schalter ("Namen erst später aufdecken") erscheint erst mit
+    // "Namen anzeigen" (chatUmfrageRegeln.test.tsx).
+    expect(hints.length).toBe(5);
     const texte = hints.map((el) => el.textContent?.trim());
     for (const hint of HINTS) {
       expect(texte).toContain(hint);
@@ -51,7 +55,7 @@ describe('PollModal Einstellungen', () => {
 
     const titel = Array.from(container.querySelectorAll('h3.app-toggle-item__title'));
     expect(titel.map((el) => el.textContent)).toEqual([
-      'Mehrfachauswahl', 'Namen anzeigen', 'Exklusive Optionen', 'Ablaufdatum'
+      'Mehrfachauswahl', 'Namen anzeigen', 'Nur einmal antworten', 'Exklusive Optionen', 'Ablaufdatum'
     ]);
 
     // Jeder Titel sitzt in einem ion-item, dessen Toggle rechts (slot=end) steht —

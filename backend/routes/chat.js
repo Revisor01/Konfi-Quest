@@ -18,6 +18,7 @@ const { syncTeamChat } = require('../utils/teamChat');
 const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { registriereArt, einreihen } = require('../utils/warteschlange');
+const { umfrageFelder, namenAufgedeckt } = require('../utils/umfrageRegeln');
 
 // Push zu einer neuen Chat-Nachricht (oder Umfrage) als Auftrag der
 // dauerhaften Warteschlange (utils/warteschlange.js): Ein Neustart direkt
@@ -213,7 +214,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     try {
       const { rows: [poll] } = await db.query(
         `SELECT p.id, p.message_id, p.question, p.options, p.multiple_choice,
-                p.anonymous, p.exclusive_options, p.expires_at
+                p.anonymous, p.exclusive_options, p.expires_at,
+                p.einmalige_antwort, p.namen_spaeter, p.namen_aufgedeckt_at
          FROM chat_polls p WHERE p.id = $1`,
         [pollDbId]
       );
@@ -229,7 +231,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
       let parsedOptions = [];
       try { parsedOptions = JSON.parse(poll.options); } catch (e) { parsedOptions = []; }
-      const isAnonymous = Boolean(poll.anonymous);
+      // Wirksame Anonymitaet: Bei "Namen spaeter" bis zum Aufdecken anonym
+      // (utils/umfrageRegeln.js) -- auch im Live-Update keine Namen.
+      const felder = umfrageFelder(poll);
+      const isAnonymous = felder.anonymous;
 
       const pollPayload = {
         poll_id: poll.id,
@@ -240,6 +245,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         anonymous: isAnonymous,
         exclusive_options: Boolean(poll.exclusive_options),
         expires_at: poll.expires_at,
+        einmalige_antwort: felder.einmalige_antwort,
+        namen_spaeter: felder.namen_spaeter,
+        namen_aufgedeckt: felder.namen_aufgedeckt,
+        namen_aufgedeckt_at: felder.namen_aufgedeckt_at,
         // Broadcast an den ganzen Raum: Es gibt keinen einzelnen Empfaenger,
         // also kann hier keine "eigene" Stimme markiert werden. Bei anonymen
         // Umfragen fallen alle Kennungen weg; der Client holt seine eigene
@@ -1193,6 +1202,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               u.username as sender_username,
               p.question, p.options, p.expires_at, p.multiple_choice,
               p.anonymous, p.exclusive_options,
+              p.einmalige_antwort, p.namen_spaeter, p.namen_aufgedeckt_at,
               p.id as poll_id,
               CASE
                 WHEN m.deleted_at IS NOT NULL THEN 'Diese Nachricht wurde gelöscht'
@@ -1313,7 +1323,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
               msg.options = [];
             }
             msg.multiple_choice = Boolean(msg.multiple_choice);
-            msg.anonymous = Boolean(msg.anonymous);
+            // Wirksame Anonymitaet und die neuen Felder aus EINER Stelle
+            // (utils/umfrageRegeln.js): Bei "Namen spaeter" meldet anonymous
+            // bis zum Aufdecken true -- dieselbe Form wie eine anonyme
+            // Umfrage, auch fuer die Store-Apps.
+            Object.assign(msg, umfrageFelder(msg));
             msg.exclusive_options = Boolean(msg.exclusive_options);
             // Votes anreichern: voter_name -> user_name. Bei anonymen Umfragen die
             // Namen NICHT ausliefern (nur Zählung), damit niemand sehen kann, wer
@@ -2169,6 +2183,16 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     // Exklusive Optionen (jede Option max 1 Person) sind immer Einzelauswahl —
     // Mehrfachauswahl ergibt dabei keinen Sinn.
     const isMultipleChoice = exclusive_options ? false : Boolean(multiple_choice);
+    // Einmalige Antwort und "Namen spaeter" (10.10.2026, utils/umfrageRegeln.js).
+    // Beide fehlen bei Store-Apps 2.2.x/2.3.0 -> false, alles wie bisher.
+    const einmaligeAntwort = Boolean(req.body.einmalige_antwort);
+    const namenSpaeter = Boolean(req.body.namen_spaeter);
+    // "Namen spaeter" ist das Gegenteil von anonym. anonymous hat den Default
+    // true, deshalb zaehlt nur ein ausdruecklich mitgeschicktes true als
+    // Widerspruch. Gespeichert wird bei "Namen spaeter" anonymous = true
+    // (Begruendung in Migration 213).
+    const anonymAusdruecklich = req.body.anonymous !== undefined && Boolean(req.body.anonymous);
+    const anonymGespeichert = namenSpaeter ? true : Boolean(anonymous);
 
 
     // Only admins can create polls
@@ -2188,6 +2212,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     const validOptions = options.filter(opt => opt && opt.trim());
     if (validOptions.length < 2) {
       return res.status(400).json({ error: 'Mindestens 2 gültige Optionen sind erforderlich' });
+    }
+
+    if (namenSpaeter && anonymAusdruecklich) {
+      return res.status(400).json({ error: 'Eine Umfrage ist entweder anonym oder deckt die Namen später auf, nicht beides' });
     }
     
     try {
@@ -2227,9 +2255,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
 
         // Then create the poll
         const pollQuery = `
-          INSERT INTO chat_polls (message_id, question, options, multiple_choice, expires_at, anonymous, exclusive_options, created_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-          RETURNING id
+          INSERT INTO chat_polls (message_id, question, options, multiple_choice, expires_at, anonymous, exclusive_options,
+                                  einmalige_antwort, namen_spaeter, created_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          RETURNING id, anonymous, expires_at, einmalige_antwort, namen_spaeter, namen_aufgedeckt_at
         `;
         const { rows: [poll] } = await client.query(pollQuery, [
           messageId,
@@ -2237,8 +2266,10 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           JSON.stringify(validOptions),
           isMultipleChoice,
           expiresAt,
-          Boolean(anonymous),
-          Boolean(exclusive_options)
+          anonymGespeichert,
+          Boolean(exclusive_options),
+          einmaligeAntwort,
+          namenSpaeter
         ]);
         newPoll = poll;
 
@@ -2252,6 +2283,9 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         client.release();
       }
 
+      // Was fuer die Umfrage gilt, aus derselben Stelle wie beim Lesen.
+      const felder = umfrageFelder(newPoll);
+
       // Return the created poll
       res.status(201).json({
         id: newPoll.id,
@@ -2259,10 +2293,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         question: question,
         options: validOptions,
         multiple_choice: isMultipleChoice,
-        anonymous: Boolean(anonymous),
+        anonymous: felder.anonymous,
         exclusive_options: Boolean(exclusive_options),
         expires_at: expiresAt,
-        votes: []
+        votes: [],
+        ...felder,
       });
 
       // WebSocket + Push: Umfrage wie eine normale Nachricht live verteilen.
@@ -2294,11 +2329,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           question: question,
           options: validOptions,
           multiple_choice: isMultipleChoice,
-          anonymous: Boolean(anonymous),
+          anonymous: felder.anonymous,
           exclusive_options: Boolean(exclusive_options),
           expires_at: expiresAt,
           votes: [],
-          reactions: []
+          reactions: [],
+          ...felder,
         };
 
         // Broadcast und Push exakt nach dem Muster des Nachrichten-Handlers.
@@ -2319,17 +2355,42 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
   });
 
   // Vote for a poll (by poll ID)
+  //
+  // Zwei Formen im Rumpf:
+  //   { option_index }    Antippen einer Antwort (alle Apps). Normale
+  //                       Umfrage: setzen, wechseln (Einzelauswahl) oder
+  //                       zuruecknehmen (erneut antippen).
+  //   { option_indices }  Die ganze Antwort in einem Schritt (neue Apps,
+  //                       "Antwort abgeben" bei Mehrfachauswahl mit
+  //                       einmaliger Antwort). Ersetzt die eigenen Stimmen.
+  //
+  // EINMALIGE ANTWORT (10.10.2026): Wer schon eine Stimme hat, bekommt 403
+  // mit action 'locked' -- fuer jede Form, also auch fuer das Zuruecknehmen
+  // und das Ergaenzen bei Mehrfachauswahl. Die erste Abgabe ist die Antwort.
+  // Store-Apps 2.2.x/2.3.0 kennen keinen Abgabe-Schritt und schicken je
+  // Antippen eine Option: Bei Mehrfachauswahl steht dort die erste
+  // angetippte Antwort fest. 403 statt 409: Auf 409 zeigen die Store-Apps
+  // fest "Diese Option ist bereits vergeben" (useUmfragenUndReaktionen am
+  // Tag 2.3.0) -- das waere hier falsch. Auf 403 zeigen sie "Fehler beim
+  // Abstimmen"; ihr Stand bleibt richtig, weil sie online nicht optimistisch
+  // abstimmen.
   const votePoll = async (req, res) => {
     const pollId = req.params.pollId;
-    const { option_index } = req.body;
+    const { option_index, option_indices } = req.body;
     const userId = req.user.id;
     const userType = req.user.type;
-    
-    
-    if (option_index === undefined || option_index === null) {
+    const ganzeAntwort = option_indices !== undefined;
+
+    if (ganzeAntwort) {
+      if (!Array.isArray(option_indices) || option_indices.length === 0
+        || !option_indices.every(i => Number.isInteger(i))
+        || new Set(option_indices).size !== option_indices.length) {
+        return res.status(400).json({ error: 'Ungültige Antwort' });
+      }
+    } else if (option_index === undefined || option_index === null) {
       return res.status(400).json({ error: 'Option-Index ist erforderlich' });
     }
-    
+
     try {
       // Get the poll - try by poll_id first, then by message_id (frontend compatibility)
       let getPollQuery = `
@@ -2338,7 +2399,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         WHERE p.id = $1
       `;
       let { rows: [poll] } = await db.query(getPollQuery, [pollId]);
-      
+
       // If not found by poll_id, try by message_id (frontend might be sending message_id)
       if (!poll) {
         getPollQuery = `
@@ -2349,7 +2410,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
         const result = await db.query(getPollQuery, [pollId]);
         poll = result.rows[0];
       }
-      
+
       if (!poll) {
         return res.status(404).json({ error: 'Umfrage nicht gefunden' });
       }
@@ -2374,7 +2435,7 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (poll.expires_at && new Date(poll.expires_at) < new Date()) {
         return res.status(400).json({ error: 'Umfrage ist abgelaufen' });
       }
-      
+
       // Parse options and validate option_index
       let parsedOptions;
       try {
@@ -2383,36 +2444,56 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
  console.error('Failed to parse poll options:', poll.options);
         return res.status(500).json({ error: 'Ungültige Umfragedaten' });
       }
-      
-      if (option_index < 0 || option_index >= parsedOptions.length) {
+
+      const indizes = ganzeAntwort ? option_indices : [option_index];
+      if (indizes.some(i => i < 0 || i >= parsedOptions.length)) {
         return res.status(400).json({ error: 'Ungültiger Option-Index' });
       }
-      
+      if (ganzeAntwort && !poll.multiple_choice && indizes.length > 1) {
+        return res.status(400).json({ error: 'Bei dieser Umfrage kannst du nur eine Antwort wählen' });
+      }
+
       const client = await db.getClient();
       // Use the actual poll.id from database, not the request pollId (which might be message_id)
       const actualPollId = poll.id;
+      const einmalig = Boolean(poll.einmalige_antwort);
       // Im try steht NUR die Transaktion. Das Live-Update und die Antwort
       // folgen hinter dem finally — sonst kann ein Fehler daraus ein ROLLBACK
       // auf einer laengst weitergereichten Verbindung ausloesen.
-      let aktion = null; // 'removed' | 'added' | 'taken'
+      let aktion = null; // 'removed' | 'added' | 'taken' | 'locked'
       try {
         await client.query('BEGIN');
 
         // Bei exklusiven Umfragen die Poll-Zeile sperren (FOR UPDATE), damit zwei
         // gleichzeitige Votes auf dieselbe Option serialisiert werden -> kein Race,
-        // bei dem beide dieselbe Option ergattern.
+        // bei dem beide dieselbe Option ergattern. Bei einmaliger Antwort ebenso:
+        // Zwei schnelle Abgaben derselben Person duerfen nicht beide durchgehen.
         const isExclusive = Boolean(poll.exclusive_options);
-        if (isExclusive) {
+        if (isExclusive || einmalig) {
           await client.query("SELECT 1 FROM chat_polls WHERE id = $1 FOR UPDATE", [actualPollId]);
         }
 
-        // Check if user already voted for this specific option
-        const { rows: [existingVote] } = await client.query(
+        // Einmalige Antwort: Wer schon abgestimmt hat, aendert nichts mehr.
+        let schonAbgestimmt = false;
+        if (einmalig) {
+          const { rows: [eigene] } = await client.query(
+            "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 LIMIT 1",
+            [actualPollId, userId, userType]
+          );
+          schonAbgestimmt = Boolean(eigene);
+        }
+
+        // Check if user already voted for this specific option (nur beim
+        // Antippen einer normalen Umfrage: dann heisst es zuruecknehmen).
+        const existingVote = !einmalig && !ganzeAntwort && (await client.query(
           "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3 AND option_index = $4",
           [actualPollId, userId, userType, option_index]
-        );
+        )).rows.length > 0;
 
-        if (existingVote) {
+        if (schonAbgestimmt) {
+          await client.query('ROLLBACK');
+          aktion = 'locked';
+        } else if (existingVote) {
           // If already voted for this option, remove the vote (toggle off).
           // Gilt auch für exklusive Umfragen: die eigene Wahl wieder freigeben.
           await client.query(
@@ -2427,8 +2508,11 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           let vergeben = false;
           if (isExclusive) {
             const { rows: [taken] } = await client.query(
-              "SELECT 1 FROM chat_poll_votes WHERE poll_id = $1 AND option_index = $2 LIMIT 1",
-              [actualPollId, option_index]
+              `SELECT 1 FROM chat_poll_votes
+               WHERE poll_id = $1 AND option_index = ANY($2::int[])
+                 AND NOT (user_id = $3 AND user_type = $4)
+               LIMIT 1`,
+              [actualPollId, indizes, userId, userType]
             );
             vergeben = Boolean(taken);
           }
@@ -2439,19 +2523,22 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
           } else {
             // Einzelauswahl (auch exklusiv): vorhandene Stimme(n) des Nutzers entfernen,
             // bevor die neue gesetzt wird. So wechselt man bei exklusiven Umfragen die
-            // Option und gibt die alte automatisch wieder frei.
-            if (!poll.multiple_choice) {
+            // Option und gibt die alte automatisch wieder frei. Die ganze Antwort
+            // (option_indices) ersetzt die eigenen Stimmen immer.
+            if (!poll.multiple_choice || ganzeAntwort) {
               await client.query(
                 "DELETE FROM chat_poll_votes WHERE poll_id = $1 AND user_id = $2 AND user_type = $3",
                 [actualPollId, userId, userType]
               );
             }
 
-            // Add the new vote
-            await client.query(
-              "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
-              [actualPollId, userId, userType, option_index]
-            );
+            // Add the new vote(s)
+            for (const index of indizes) {
+              await client.query(
+                "INSERT INTO chat_poll_votes (poll_id, user_id, user_type, option_index, created_at) VALUES ($1, $2, $3, $4, NOW())",
+                [actualPollId, userId, userType, index]
+              );
+            }
 
             await client.query('COMMIT');
             aktion = 'added';
@@ -2468,6 +2555,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       if (aktion === 'taken') {
         return res.status(409).json({ error: 'Diese Option ist bereits vergeben', action: 'taken' });
       }
+      if (aktion === 'locked') {
+        return res.status(403).json({
+          error: 'Du hast schon geantwortet. Deine Antwort steht fest und lässt sich nicht mehr ändern.',
+          action: 'locked',
+        });
+      }
 
       // Live-Update: aktualisierten Poll-Stand an den Raum senden.
       await emitPollUpdate(actualPollId, poll.room_id);
@@ -2475,7 +2568,8 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       return res.json({
         message: aktion === 'removed' ? 'Stimme erfolgreich entfernt' : 'Stimme erfolgreich abgegeben',
         poll_id: actualPollId,
-        option_index: option_index,
+        option_index: indizes[0],
+        option_indices: indizes,
         user_id: userId,
         action: aktion
       });
@@ -2486,6 +2580,66 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
     }
   };
   router.post('/polls/:pollId/vote', verifyTokenRBAC, votePoll);
+
+  // Namen einer "Namen spaeter"-Umfrage aufdecken (10.10.2026).
+  //
+  // Wer darf: wer die Umfrage erstellt hat, und die Leitung (Typ 'admin') in
+  // einem Raum, den sie oeffnen darf -- dieselbe Regel wie beim Loeschen
+  // fremder Nachrichten (DELETE /messages/:id). Teamer:innen und Konfis
+  // nicht; sie legen auch keine Umfragen an.
+  //
+  // Danach geht der neue Stand per 'pollUpdated' an den Raum, wie nach einer
+  // Stimme. KEIN Push: Ein neuer Push-Typ liefe bei den Store-Apps ins Leere.
+  // Mehrfaches Aufdecken ist harmlos (200, Zeitpunkt bleibt der erste).
+  router.post('/polls/:pollId/aufdecken', verifyTokenRBAC, async (req, res) => {
+    const pollId = parseInt(req.params.pollId, 10);
+    if (!Number.isInteger(pollId) || pollId < 1) {
+      return res.status(400).json({ error: 'Ungültige Umfrage-ID' });
+    }
+    try {
+      const { rows: [poll] } = await db.query(
+        `SELECT p.*, m.room_id, m.user_id AS ersteller_id, m.user_type AS ersteller_typ
+         FROM chat_polls p JOIN chat_messages m ON p.message_id = m.id
+         WHERE p.id = $1`,
+        [pollId]
+      );
+      if (!poll) {
+        return res.status(404).json({ error: 'Umfrage nicht gefunden' });
+      }
+      if (!await darfRaumOeffnen(poll.room_id, req.user)) {
+        return res.status(403).json({ error: 'Zugriff auf diesen Raum verweigert' });
+      }
+      if (!poll.namen_spaeter) {
+        return res.status(400).json({ error: 'Bei dieser Umfrage werden keine Namen aufgedeckt' });
+      }
+      const ersteller = Number(poll.ersteller_id) === Number(req.user.id) && poll.ersteller_typ === req.user.type;
+      if (!ersteller && req.user.type !== 'admin') {
+        return res.status(403).json({ error: 'Die Namen kann nur aufdecken, wer die Umfrage erstellt hat, oder die Leitung' });
+      }
+
+      let stand = poll;
+      if (!namenAufgedeckt(poll)) {
+        const { rows: [neu] } = await db.query(
+          `UPDATE chat_polls SET namen_aufgedeckt_at = COALESCE(namen_aufgedeckt_at, NOW())
+           WHERE id = $1 RETURNING *`,
+          [pollId]
+        );
+        stand = neu;
+        await emitPollUpdate(pollId, poll.room_id);
+      }
+
+      const felder = umfrageFelder(stand);
+      return res.json({
+        poll_id: pollId,
+        message_id: poll.message_id,
+        namen_aufgedeckt: felder.namen_aufgedeckt,
+        namen_aufgedeckt_at: felder.namen_aufgedeckt_at,
+      });
+    } catch (err) {
+      console.error('Database error in POST /polls/:pollId/aufdecken:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
 
   // Delete message (soft delete)
   router.delete('/messages/:messageId', verifyTokenRBAC, async (req, res) => {

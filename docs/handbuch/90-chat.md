@@ -418,9 +418,36 @@ Unter „Neue Umfrage" stehen:
 | **Frage** | Pflicht, höchstens 500 Zeichen |
 | **Antwortmöglichkeiten** | mindestens 2, höchstens 10, je höchstens 200 Zeichen |
 | **Mehrfachauswahl** | „Mehrere Antworten erlauben" |
-| **Namen anzeigen** | „Sichtbar machen, wer welche Antwort gewählt hat" |
+| **Namen anzeigen** | aus: „anonym – niemand sieht, wer was gewählt hat"; an: „alle sehen, wer welche Antwort gewählt hat" |
+| **Namen erst später aufdecken** | nur bei „Namen anzeigen": „Bis du sie aufdeckst, sieht niemand die Namen – auch du nicht. Endet die Umfrage, werden sie von selbst aufgedeckt." |
+| **Nur einmal antworten** | „Wer abgestimmt hat, kann die Antwort danach nicht mehr ändern – gut für ein Quiz" |
 | **Exklusive Optionen** | „Jede Option kann nur von einer Person gewählt werden" |
 | **Ablaufdatum** | aus, oder 1 Stunde / 8 Stunden / 1 Tag / 7 Tage |
+
+Alle Schalter lassen sich frei kombinieren; nur anonym und „Namen erst später
+aufdecken" schließen sich aus.
+
+### Lesen, was für eine Umfrage gilt
+
+Jede Umfrage zeigt über ihren Antworten in kurzen Zeilen, was für sie gilt —
+so wissen auch die Konfis vor dem ersten Tipp, worauf sie sich einlassen. Je
+nach Einstellung stehen dort:
+
+| Einstellung | Zeile in der Umfrage |
+|---|---|
+| Einzelauswahl | „Du kannst nur eine Antwort wählen." |
+| Mehrfachauswahl | „Du kannst mehrere Antworten wählen." |
+| Exklusive Optionen | „Du kannst nur eine Antwort wählen – und jede Antwort nur eine Person." |
+| normale Umfrage | „Du kannst deine Antwort jederzeit ändern." |
+| Nur einmal antworten | „Du kannst nur einmal antworten – danach ist deine Antwort fest." (bei Mehrfachauswahl dazu: „Wähle alles aus und tippe dann auf „Antwort abgeben“.") |
+| … nach der eigenen Antwort | „Du hast geantwortet – deine Antwort ist jetzt fest." |
+| anonym | „Anonym – niemand sieht, was du gewählt hast." |
+| Namen anzeigen | „Alle sehen, wer was gewählt hat." |
+| Namen erst später | „Namen werden später aufgedeckt. Dann sehen alle, wer was gewählt hat." (mit Ablaufdatum: „…, spätestens wenn die Umfrage endet. …") |
+| … nach dem Aufdecken | „Die Namen sind aufgedeckt – alle sehen, wer was gewählt hat." |
+
+Das Ende steht wie gewohnt darüber („Endet:" bzw. „Beendet"). Ist eine Umfrage
+beendet, bleibt nur die Zeile zu den Namen.
 
 ### Mehrfachauswahl einstellen
 
@@ -438,6 +465,24 @@ ist abgelaufen"*). Das Ergebnis bleibt im Chat lesbar.
 Ohne Ablaufdatum bleibt die Umfrage dauerhaft offen. Von Hand schließen oder
 bearbeiten lässt sie sich nicht — wenn das nötig wird, hilft nur, die Nachricht
 zu löschen und eine neue Umfrage zu stellen.
+
+### Nur eine Antwort zulassen
+
+Mit **„Nur einmal antworten"** gilt die erste Abgabe: Wer abgestimmt hat, kann
+die Stimme weder ändern noch zurücknehmen — gedacht für ein Quiz oder eine
+verbindliche Wahl. Das prüft der Server; auch ein zweiter Versuch von einem
+älteren Gerät wird abgelehnt (*„Du hast schon geantwortet. Deine Antwort steht
+fest und lässt sich nicht mehr ändern."*).
+
+- **Einzelauswahl:** Ein Tipp auf eine Antwort gibt die Stimme direkt ab, ohne
+  Rückfrage. Die Zeile in der Umfrage sagt es vorher.
+- **Mehrfachauswahl:** Erst alle passenden Antworten antippen, dann
+  **„Antwort abgeben"**. Erst dieser Knopf gibt ab.
+- Danach sind die Antworten nicht mehr antippbar.
+
+> **Achtung:** Auf einem Gerät mit einer App-Version vor 2.4.0 fehlt der Knopf
+> „Antwort abgeben". Dort gilt bei Mehrfachauswahl schon die erste angetippte
+> Antwort als ganze Abgabe.
 
 ### Namen zeigen oder anonym bleiben
 
@@ -457,6 +502,23 @@ Stimme kommt gekennzeichnet zurück, damit man die eigene Wahl markiert sieht.
 > mit drei Teilnehmenden ist auch die anonymste Abstimmung nicht wirklich
 > anonym. Bei heiklen Fragen in kleinen Runden hilft nur, sie gar nicht erst als
 > Umfrage zu stellen.
+
+### Namen später aufdecken
+
+Ist „Namen anzeigen" an, erscheint **„Namen erst später aufdecken"**. Dann ist
+die Umfrage nicht anonym, die Namen bleiben aber verborgen, bis sie aufgedeckt
+werden — für alle gleich: auch die Leitung und wer die Umfrage gestellt hat,
+sehen bis dahin nur Zahlen und die eigene Wahl. Bei einem Quiz verrät so
+niemand vorzeitig, wer richtig lag.
+
+- **Von Hand aufdecken** kann, wer die Umfrage gestellt hat, und die Leitung im
+  Chat: der Knopf **„Namen aufdecken"** unter der Umfrage. Teamer:innen und
+  Konfis sehen ihn nicht. Aufgedeckt bleibt aufgedeckt.
+- **Von selbst aufgedeckt** werden die Namen, sobald ein gesetztes Ablaufdatum
+  erreicht ist.
+- Nach dem Aufdecken stehen die Namen bei allen im Chat unter den Antworten,
+  ohne dass jemand neu laden muss. Eine Mitteilung aufs Handy gibt es dafür
+  nicht.
 
 ### Aufgaben mit exklusiven Optionen verteilen
 

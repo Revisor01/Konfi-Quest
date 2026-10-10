@@ -509,6 +509,7 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     reactionTargetMessage,
     setReactionTargetMessage,
     voteInPoll,
+    namenAufdecken,
     toggleReaction,
     openReactionPicker,
   } = useUmfragenUndReaktionen({ setMessages, setShouldAutoScroll, loadMessages });
@@ -831,6 +832,7 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     toggleReaction,
     openReactionPicker,
     voteInPoll,
+    namenAufdecken,
     handleFileClick,
     ladendeDatei,
     auswahlAufheben,

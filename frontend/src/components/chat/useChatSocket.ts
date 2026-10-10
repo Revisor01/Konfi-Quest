@@ -197,6 +197,10 @@ export function useChatSocket({
             expires_at: poll.expires_at ?? m.expires_at,
             poll_id: poll.poll_id ?? m.poll_id,
             votes: poll.votes ?? m.votes,
+            einmalige_antwort: poll.einmalige_antwort ?? m.einmalige_antwort,
+            namen_spaeter: poll.namen_spaeter ?? m.namen_spaeter,
+            namen_aufgedeckt: poll.namen_aufgedeckt ?? m.namen_aufgedeckt,
+            namen_aufgedeckt_at: poll.namen_aufgedeckt_at ?? m.namen_aufgedeckt_at,
           };
         }));
       }));

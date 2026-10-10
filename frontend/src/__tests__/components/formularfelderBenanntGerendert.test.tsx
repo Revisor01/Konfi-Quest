@@ -12,7 +12,8 @@ import { render, cleanup } from '@testing-library/react';
 //
 //   - Termin-Formular der Leitung: Grunddaten (Name, Beschreibung, Ort, ...)
 //     und die Karte „Konfis" (Schalter und Schieberegler).
-//   - Umfrage im Chat: Frage, Optionen, vier Schalter.
+//   - Umfrage im Chat: Frage, Optionen, fünf Schalter (der sechste,
+//     „Namen erst später aufdecken", erscheint erst mit „Namen anzeigen").
 // ---------------------------------------------------------------------------
 
 vi.mock('../../contexts/AppContext', () => ({
@@ -77,12 +78,12 @@ describe('Gerenderte Formulare: jedes Feld hat einen Namen (UI BF-01)', () => {
     expect(felder.filter((f) => f.tag === 'ion-range').length).toBeGreaterThanOrEqual(3);
   });
 
-  it('Umfrage im Chat: Frage, Optionen und die vier Schalter', () => {
+  it('Umfrage im Chat: Frage, Optionen und die fünf Schalter', () => {
     const { container } = render(<PollModal onClose={() => {}} onSuccess={() => {}} roomId={1} />);
     const felder = namen(container);
     expect(felder.filter((f) => !f.name)).toEqual([]);
     expect(felder.map((f) => f.name)).toEqual(expect.arrayContaining([
-      'Frage', 'Option 1', 'Option 2', 'Mehrfachauswahl', 'Namen anzeigen', 'Exklusive Optionen', 'Ablaufdatum',
+      'Frage', 'Option 1', 'Option 2', 'Mehrfachauswahl', 'Namen anzeigen', 'Nur einmal antworten', 'Exklusive Optionen', 'Ablaufdatum',
     ]));
   });
 });
