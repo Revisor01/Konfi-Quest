@@ -15,7 +15,7 @@ import { zeitspanneKurz, type Fakt, type TerminStatus } from '../../../../utils/
 import type { Event } from '../../../../types/event';
 import type { WebAnsicht } from '../../../web/useAnsicht';
 import WebLink from '../../../web/WebLink';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebListe, { type WebSpalte } from '../../../web/WebListe';
 import { WebTerminSymbol, WebAbsageZeile, WebFakten, WebTerminMarken } from './WebTerminBausteine';
 import WebTerminKarte from './WebTerminKarte';
 import '../../../../theme/web/termine.css';
@@ -145,7 +145,7 @@ const WebTerminAnsicht: React.FC<WebTerminAnsichtProps> = ({ eintraege, ansicht,
   if (ansicht === 'liste') {
     return (
       <div className="web-karte">
-        <WebTabelle
+        <WebListe
           beschriftung="Events"
           spalten={spaltenFuer(teamZeigen)}
           zeilen={eintraege}
