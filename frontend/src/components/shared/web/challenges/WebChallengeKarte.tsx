@@ -17,7 +17,7 @@ import {
   ICON_PERSON,
   ICON_TERMIN,
 } from '../../icons';
-import WebBildKarte from '../../../web/WebBildKarte';
+import WebBildKarte, { type WebBildKarteProps } from '../../../web/WebBildKarte';
 import WebPill from '../../../web/WebPill';
 import WebTreffer from '../../../web/WebTreffer';
 import { WebChallengeSymbol, WebEingereichtPill } from './WebChallengeBausteine';
@@ -55,7 +55,12 @@ export interface WebChallengeKarteProps {
   fuss?: React.ReactNode;
 }
 
-const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
+/**
+ * Was auf der Karte einer Challenge steht -- alles ausser dem Fuss. Die
+ * Leitung legt ihre Challenges damit in WebKacheln (Bearbeiten und Loeschen im
+ * Fuss); Konfis nehmen die fertige Karte im eigenen Raster (WebChallengeKarte).
+ */
+export function challengeKarte({
   challenge,
   status,
   href,
@@ -64,51 +69,51 @@ const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({
   wartend = 0,
   eingereicht = false,
   mitBeitraegen = false,
-  fuss,
-}) => {
+}: Omit<WebChallengeKarteProps, 'fuss'>): Omit<WebBildKarteProps, 'fuss'> {
   const autor = getAuthorLabel(challenge as Parameters<typeof getAuthorLabel>[0]) ?? challenge.author_name?.trim() ?? null;
   const zielgruppe = challenge.audience ? AUDIENCE_LABEL[challenge.audience] : undefined;
   const jahrgaenge = challenge.jahrgaenge ?? [];
   const rest = status === 'active' ? restzeitText(formatRemaining(challenge.ends_at)) : '';
   const modifikator = STATUS_MODIFIKATOR[status];
 
-  return (
-    <li className="web-challenge-raster__eintrag">
-      <WebBildKarte
-        akzent={modifikator === 'geplant' ? 'var(--app-color-info)' : 'var(--app-color-challenges)'}
-        akzentDunkel="var(--app-color-challenges-dunkel)"
-        gedaempft={modifikator === 'entwurf' || modifikator === 'beendet'}
-        klasse={`web-challenge-karte--${modifikator}`}
-        symbol={<WebChallengeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} kugel={kugel} />}
-        label="Stempel"
-        name={challenge.badge_name}
-        marken={(
-          <>
-            <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
-            {wartend > 0 && <WebPill ton="warnung" title={wartenAufFreigabe(wartend)}>{wartenAufFreigabe(wartend)}</WebPill>}
-            {eingereicht && <WebEingereichtPill />}
-          </>
-        )}
-        titel={<WebTreffer text={challenge.title} suche={suche} />}
-        href={href}
-        text={challenge.description || undefined}
-        angaben={[
-          { icon: ICON_TERMIN, inhalt: [zeitraumText(challenge, status), rest].filter(Boolean).join(' · ') },
-          mitBeitraegen && {
-            icon: ICON_ALBEN,
-            inhalt: `${anzahlBeitraege(challenge.submission_count ?? 0)} · ${VISIBILITY_LABEL[challenge.visibility] ?? challenge.visibility}`,
-          },
-          (zielgruppe || jahrgaenge.length > 0) && {
-            icon: ICON_GRUPPE,
-            inhalt: [zielgruppe, jahrgangText(jahrgaenge)].filter(Boolean).join(' · '),
-            titel: jahrgaenge.map((j) => j.name).join(', ') || undefined,
-          },
-          autor && { icon: ICON_PERSON, inhalt: `Gestellt von ${autor}` },
-        ]}
-        fuss={fuss}
-      />
-    </li>
-  );
-};
+  return {
+    akzent: modifikator === 'geplant' ? 'var(--app-color-info)' : 'var(--app-color-challenges)',
+    akzentDunkel: 'var(--app-color-challenges-dunkel)',
+    gedaempft: modifikator === 'entwurf' || modifikator === 'beendet',
+    klasse: `web-challenge-karte--${modifikator}`,
+    symbol: <WebChallengeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} kugel={kugel} />,
+    label: 'Stempel',
+    name: challenge.badge_name,
+    marken: (
+      <>
+        <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
+        {wartend > 0 && <WebPill ton="warnung" title={wartenAufFreigabe(wartend)}>{wartenAufFreigabe(wartend)}</WebPill>}
+        {eingereicht && <WebEingereichtPill />}
+      </>
+    ),
+    titel: <WebTreffer text={challenge.title} suche={suche} />,
+    href,
+    text: challenge.description || undefined,
+    angaben: [
+      { icon: ICON_TERMIN, inhalt: [zeitraumText(challenge, status), rest].filter(Boolean).join(' · ') },
+      mitBeitraegen && {
+        icon: ICON_ALBEN,
+        inhalt: `${anzahlBeitraege(challenge.submission_count ?? 0)} · ${VISIBILITY_LABEL[challenge.visibility] ?? challenge.visibility}`,
+      },
+      (zielgruppe || jahrgaenge.length > 0) && {
+        icon: ICON_GRUPPE,
+        inhalt: [zielgruppe, jahrgangText(jahrgaenge)].filter(Boolean).join(' · '),
+        titel: jahrgaenge.map((j) => j.name).join(', ') || undefined,
+      },
+      autor && { icon: ICON_PERSON, inhalt: `Gestellt von ${autor}` },
+    ],
+  };
+}
+
+const WebChallengeKarte: React.FC<WebChallengeKarteProps> = ({ fuss, ...karte }) => (
+  <li className="web-challenge-raster__eintrag">
+    <WebBildKarte {...challengeKarte(karte)} fuss={fuss} />
+  </li>
+);
 
 export default WebChallengeKarte;

@@ -345,6 +345,23 @@ describe('WebListenSeite: Suche ohne `felder`', () => {
   });
 });
 
+describe('WebListenSeite: ohne Werkzeugzeile', () => {
+  it('`ohneWerkzeugzeile`: keine Reiter, keine Suche, kein Umschalter -- Liste und Kennzahlen bleiben', () => {
+    render(<Seite ohneWerkzeugzeile />);
+    expect(document.querySelector('.web-werkzeuge')).toBeNull();
+    expect(screen.queryByRole('searchbox')).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Ansicht' })).toBeNull();
+    expect(screen.getByRole('group', { name: 'Leute: 3' })).toBeInTheDocument();
+    expect(namen()).toEqual(['Bea', 'Änne', 'Carl']);
+  });
+
+  it('ohne die Prop steht die Werkzeugzeile da', () => {
+    render(<Seite />);
+    expect(document.querySelector('.web-werkzeuge')).not.toBeNull();
+    expect(screen.getByRole('group', { name: 'Ansicht' })).toBeInTheDocument();
+  });
+});
+
 describe('WebListenSeite: Filter aus der Seitenbeschreibung', () => {
   it('Chips: nur die Wahlen der Web-Fassung, mit Zahl je Wahl; Klick filtert und zeigt die Zaehlzeile', () => {
     render(<Seite />);

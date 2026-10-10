@@ -1,7 +1,7 @@
 // Challenges von Team und Leitung (/admin/challenges, /teamer/challenges): die Liste.
 // App: components/admin/views/ChallengesManageView.tsx (über shared/ChallengesPage.tsx).
-// Web: components/shared/web/challenges/WebChallengesLeitung.tsx mit
-// WebChallengeFilter.tsx; die Regeln dazu in utils/challengesWeb.ts
+// Web: components/shared/web/challenges/WebChallengesLeitung.tsx (auf
+// WebListenSeite); die Regeln dazu in utils/challengesWeb.ts
 // (LISTEN_FILTER, passtZumFilter, challengesZaehlen lesen von hier).
 //
 // Aktuell, Geplant und Archiv sind in beiden Fassungen dieselben Mengen

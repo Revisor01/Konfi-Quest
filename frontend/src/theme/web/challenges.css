@@ -67,7 +67,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* --- Filter: Chips, Zielgruppe, Jahrgang, Suche --- */
+/* --- Filter der Konfi-Liste: Chips und Suche (die Leitung nutzt WebListenSeite) --- */
 .web-challenge-filter {
   display: flex;
   flex-direction: column;
@@ -95,15 +95,6 @@
 
 .web-challenge-filter__zeile > .web-werkzeuge__rechts > .web-suche {
   flex: 1 1 200px;
-  min-width: 200px;
-}
-
-/* Zielgruppe und Jahrgang: Beschriftung ueber dem Feld, beide auf einer Linie unten. */
-.web-challenge-filter__zeile--unten {
-  align-items: flex-end;
-}
-
-.web-challenge-filter__auswahl {
   min-width: 200px;
 }
 
@@ -374,11 +365,3 @@
   display: inline-block;
 }
 
-/* Am Zeilenende die Knoepfe der Karte als Symbole, auf einer Linie und rechts. */
-.web-challenge-spalte-aktionen {
-  text-align: right;
-}
-
-.web-challenge-zeile__aktionen {
-  flex-wrap: nowrap;
-}

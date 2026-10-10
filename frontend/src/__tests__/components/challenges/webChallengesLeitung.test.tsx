@@ -529,13 +529,17 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(zeilenTitel().sort()).toEqual(['Fürbitten zum Erntedank', 'Mein Lieblingsplatz', 'Team-Runde Camp']);
     });
 
-    it('der Umschalter steht als letztes Element rechts, direkt neben der Suche, in der Zeile mit den Filter-Chips', () => {
+    it('eine Werkzeugzeile wie auf allen Listen-Seiten: Zustand, Zielgruppe, Suche, Jahrgang -- der Umschalter ganz rechts', () => {
       zeigen();
-      const rechts = screen.getByRole('searchbox', { name: 'Challenges durchsuchen' }).closest('.web-werkzeuge__rechts')!;
-      expect([...rechts.children].map((k) => k.getAttribute('role'))).toEqual(['search', 'group']);
+      const zeile = screen.getByRole('search').parentElement!;
+      expect(zeile).toHaveClass('web-werkzeuge');
+      expect(within(zeile).getByRole('group', { name: 'Challenges nach Zustand' })).toBeInTheDocument();
+      expect(within(zeile).getByRole('group', { name: 'Zielgruppe' })).toBeInTheDocument();
+      expect(within(zeile).getByLabelText('Jahrgang')).toBeInTheDocument();
+      const rechts = umschalter().parentElement!;
+      expect(rechts).toHaveClass('web-werkzeuge__rechts');
+      expect(rechts.parentElement).toBe(zeile);
       expect(rechts.lastElementChild).toBe(umschalter());
-      // Dieselbe Zeile wie die Chips des Zustands.
-      expect(rechts.parentElement).toBe(screen.getByRole('group', { name: 'Challenges nach Zustand' }).parentElement);
     });
 
     it('ohne Challenges gibt es nichts umzuschalten: keine Werkzeugleiste, kein Umschalter', () => {

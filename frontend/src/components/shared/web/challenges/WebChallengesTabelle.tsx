@@ -4,9 +4,10 @@
 // derselben Reihenfolge; Filter, Suche und Zaehler gelten fuer beide
 // Ansichten gleich, sie stehen darueber und kommen von der Seite.
 //
-// Zwei Gesichter, eine Tabelle: Team und Leitung sehen Beitraege, Wartendes,
-// Zielgruppe und am Zeilenende die Aktionen der Karte (Bearbeiten, Loeschen --
-// mit den Funktionen und Rechten der Seite); Konfis sehen ihren eigenen Stand.
+// Zwei Gesichter, eine Tabelle: Team und Leitung sehen Beitraege, Wartendes
+// und Zielgruppe; Konfis sehen ihren eigenen Stand. Die Leitung legt die
+// Spalten (challengeSpalten) in WebListenSeite, Bearbeiten und Loeschen am
+// Zeilenende kommen dort aus WebListe; Konfis nehmen die fertige Tabelle.
 // Eine Zeile oeffnet die Challenge (echter Link, Mittelklick geht auch).
 // Die rote Zahl sitzt wie auf der Karte am Stempel.
 
@@ -45,8 +46,6 @@ export interface WebChallengesTabelleProps<T extends ListenChallenge> {
   kugel: (id: number) => { anzahl: number; text: string; wartend?: number };
   /** Du hast schon eingereicht. */
   eingereicht: (challenge: T) => boolean;
-  /** Am Zeilenende: die Knoepfe der Karte (Bearbeiten, Loeschen), als Symbole. Nur Team und Leitung. */
-  aktionen?: (challenge: T) => React.ReactNode;
 }
 
 /** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
@@ -55,15 +54,18 @@ const zeitpunkt = (wert?: string | null): number | null => {
   return Number.isNaN(ms) ? null : ms;
 };
 
-function WebChallengesTabelle<T extends ListenChallenge>({
-  eintraege,
+/**
+ * Die Spalten der Liste -- ohne die Aktionen am Zeilenende. Die Leitung legt
+ * sie in WebListenSeite (Bearbeiten und Loeschen aus WebListe), Konfis
+ * nehmen die fertige Tabelle (WebChallengesTabelle).
+ */
+export function challengeSpalten<T extends ListenChallenge>({
   suche = '',
   fuer,
   href,
   kugel,
   eingereicht,
-  aktionen,
-}: WebChallengesTabelleProps<T>): React.ReactElement {
+}: Omit<WebChallengesTabelleProps<T>, 'eintraege'>): Array<WebSpalte<ListenEintrag<T>>> {
   const leitung = fuer === 'leitung';
 
   const spalten: Array<WebSpalte<ListenEintrag<T>>> = [
@@ -173,16 +175,6 @@ function WebChallengesTabelle<T extends ListenChallenge>({
         },
       },
     );
-    if (aktionen) {
-      spalten.push({
-        schluessel: 'aktionen',
-        kopf: 'Aktionen',
-        kopfVersteckt: true,
-        breite: '108px',
-        klasse: 'web-challenge-spalte-aktionen',
-        zelle: ({ challenge: c }) => <div className="web-zeilenaktionen web-challenge-zeile__aktionen">{aktionen(c)}</div>,
-      });
-    }
   } else {
     spalten.push({
       schluessel: 'stand',
@@ -191,14 +183,22 @@ function WebChallengesTabelle<T extends ListenChallenge>({
       zelle: ({ challenge: c }) => (eingereicht(c) ? <WebEingereichtPill /> : <span className="web-gedaempft">–</span>),
     });
   }
+  return spalten;
+}
 
+/** Die Zeilenklasse nach dem Stand der Challenge (laufend, geplant, beendet ...). */
+export const challengeZeileKlasse = ({ status }: Pick<ListenEintrag, 'status'>): string =>
+  `web-challenge-zeile web-challenge-zeile--${STATUS_MODIFIKATOR[status]}`;
+
+function WebChallengesTabelle<T extends ListenChallenge>({ eintraege, ...rest }: WebChallengesTabelleProps<T>): React.ReactElement {
+  const spalten = challengeSpalten<T>(rest);
   return (
     <WebTabelle
       beschriftung="Challenges"
       spalten={spalten}
       zeilen={eintraege}
       zeileSchluessel={({ challenge }) => challenge.id}
-      zeileKlasse={({ status }) => `web-challenge-zeile web-challenge-zeile--${STATUS_MODIFIKATOR[status]}`}
+      zeileKlasse={challengeZeileKlasse}
       mittig
       fest
     />
