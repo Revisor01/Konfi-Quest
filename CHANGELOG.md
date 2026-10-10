@@ -281,6 +281,8 @@ Versionsüberschrift.
   neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
+- In den Einführungen ist „Überspringen" auf dem farbigen Grund weiß und
+  damit lesbar.
 - Bei Umfragen in der App überdeckt eine lange Antwort nicht mehr die
   Stimmenzahl; reicht der Platz nicht, rutscht die Zahl in die nächste Zeile.
 - Konfis, die in einer anderen Gemeinde zur Leitung gehören, stehen in der

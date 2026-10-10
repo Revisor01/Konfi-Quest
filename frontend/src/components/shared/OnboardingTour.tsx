@@ -130,8 +130,10 @@ const OnboardingTour: React.FC<OnboardingTourProps> = ({ slides, onClose, displa
         paddingBottom: 'env(safe-area-inset-bottom, 0px)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', padding: 'var(--app-abstand-mittel) var(--app-abstand-basis) 0' }}>
+          {/* Weiss wie Titel und Text der Folie: auf dem farbigen Verlauf war
+              das Grau der Systemschrift nicht zu lesen (Simon, 10.10.2026). */}
           {!isLast && (
-            <IonButton fill="clear" size="small" onClick={onClose} style={{ '--color': 'var(--app-text-system)' }}>
+            <IonButton fill="clear" size="small" onClick={onClose} style={{ '--color': 'white', textShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
               Überspringen
             </IonButton>
           )}
