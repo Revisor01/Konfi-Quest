@@ -1,7 +1,8 @@
-// Die Startseite des Teams in der Web-Fassung (Browser ab 992 px): oben eine
-// Reihe Kennzahlen (anstehende Events, laufende Challenges, Badges,
-// Zertifikate), darunter die Karten, die die Leitung in den
-// Startseiten-Einstellungen einschaltet -- in deren Reihenfolge.
+// Die Startseite des Teams in der Web-Fassung (Browser ab 992 px): oben auf
+// dem Teamer-Verlauf der App eine Reihe Kennzahlen (anstehende Events,
+// laufende Challenges, Badges, Zertifikate), darunter dieselben Farbkacheln
+// wie in der App, die die Leitung in den Startseiten-Einstellungen
+// einschaltet -- in deren Reihenfolge (Simon, 10.10.2026: „auch bei teamern").
 //
 // Die Seite lädt nichts selbst: Daten und Handgriffe (Konfispruch,
 // Bibelübersetzung) reicht die App-Fassung durch
@@ -21,6 +22,7 @@ import {
   WebBadgesKarte,
   WebChallengesKarte,
   WebEventsKarte,
+  WebFarbKopf,
   WebZertifikateKarte,
   WebZitatKarte,
   type StartBadge,
@@ -101,6 +103,7 @@ const WebTeamerStart: React.FC<WebTeamerStartProps> = (props) => {
       ? (
         <WebZitatKarte
           key="konfispruch"
+          farbe="konfispruch"
           titel="Dein Konfispruch"
           symbol={SYMBOL_SPRUCH}
           text={props.konfispruch?.text}
@@ -125,6 +128,7 @@ const WebTeamerStart: React.FC<WebTeamerStartProps> = (props) => {
       ? (
         <WebZitatKarte
           key="losung"
+          farbe="tageslosung"
           titel="Tageslosung"
           symbol={SYMBOL_LOSUNG}
           text={props.losung.text}
@@ -153,43 +157,48 @@ const WebTeamerStart: React.FC<WebTeamerStartProps> = (props) => {
 
   const sichtbar = sectionOrder.map((schluessel) => karten[schluessel]?.()).filter(Boolean);
   const naechstes = events.find((e) => e.status !== 'abgesagt');
+  const kennzahlenDa = config.show_events || config.show_challenges || badgeKarteDa || (config.show_zertifikate && zertifikate.length > 0);
 
   return (
     <div className="web-start web-rolle web-rolle--team">
-      <div className="web-raster web-raster--kacheln">
-        {config.show_events && (
-          <WebKachel
-            label="Anstehende Events"
-            wert={String(events.length)}
-            zusatz={[naechstes ? `Das nächste: ${naehe(naechstes.tage)}` : 'Nichts gebucht']}
-            href="/teamer/events"
-          />
-        )}
-        {config.show_challenges && (
-          <WebKachel
-            label="Laufende Challenges"
-            wert={String(challenges.length)}
-            zusatz={[challenges.length > 0 ? 'Jetzt mitmachen und begleiten' : 'Gerade läuft keine']}
-            href="/teamer/challenges"
-          />
-        )}
-        {badgeKarteDa && (
-          <WebKachel
-            label="Badges erreicht"
-            wert={String(props.badgeZahlen.erreicht)}
-            zusatz={[`von ${props.badgeZahlen.gesamt} sichtbaren`, neueSichtbar > 0 ? `${neueSichtbar} ${neueSichtbar === 1 ? 'neues' : 'neue'}` : null]}
-            href="/teamer/profile/badges"
-          />
-        )}
-        {config.show_zertifikate && zertifikate.length > 0 && (
-          <WebKachel
-            label="Zertifikate gültig"
-            wert={String(gueltig)}
-            zusatz={[abgelaufen > 0 ? `${abgelaufen} abgelaufen` : 'Alle in Ordnung']}
-            achtung={abgelaufen > 0}
-          />
-        )}
-      </div>
+      {kennzahlenDa && (
+        <WebFarbKopf rolle="team" aria-label="Auf einen Blick">
+          <div className="web-raster web-raster--kacheln">
+            {config.show_events && (
+              <WebKachel
+                label="Anstehende Events"
+                wert={String(events.length)}
+                zusatz={[naechstes ? `Das nächste: ${naehe(naechstes.tage)}` : 'Nichts gebucht']}
+                href="/teamer/events"
+              />
+            )}
+            {config.show_challenges && (
+              <WebKachel
+                label="Laufende Challenges"
+                wert={String(challenges.length)}
+                zusatz={[challenges.length > 0 ? 'Jetzt mitmachen und begleiten' : 'Gerade läuft keine']}
+                href="/teamer/challenges"
+              />
+            )}
+            {badgeKarteDa && (
+              <WebKachel
+                label="Badges erreicht"
+                wert={String(props.badgeZahlen.erreicht)}
+                zusatz={[`von ${props.badgeZahlen.gesamt} sichtbaren`, neueSichtbar > 0 ? `${neueSichtbar} ${neueSichtbar === 1 ? 'neues' : 'neue'}` : null]}
+                href="/teamer/profile/badges"
+              />
+            )}
+            {config.show_zertifikate && zertifikate.length > 0 && (
+              <WebKachel
+                label="Zertifikate gültig"
+                wert={String(gueltig)}
+                zusatz={[abgelaufen > 0 ? `${abgelaufen} abgelaufen` : 'Alle in Ordnung']}
+                achtung={abgelaufen > 0}
+              />
+            )}
+          </div>
+        </WebFarbKopf>
+      )}
       {sichtbar.length > 0 && <div className="web-start-raster">{sichtbar}</div>}
       {gewaehlt && (
         <WebBadgeDialog

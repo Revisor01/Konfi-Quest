@@ -36,8 +36,8 @@ Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
 992 Pixeln, siehe
 [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
 — begrüßt dich die Startseite mit deinem Vornamen, darunter steht deine
-Funktionsbeschreibung („Teamer:in", wenn du keine eigene hast). Oben stehen bis
-zu vier Kennzahlen: **Anstehende Events** mit dem nächsten, **Laufende
+Funktionsbeschreibung („Teamer:in", wenn du keine eigene hast). Oben stehen auf
+dem rosaroten Feld, das in der App die Begrüßung trägt, bis zu vier Kennzahlen: **Anstehende Events** mit dem nächsten, **Laufende
 Challenges** und **Badges erreicht** mit der Zahl der neuen — sie führen in den
 jeweiligen Bereich — und **Zertifikate gültig** mit dem Hinweis auf
 abgelaufene; ein Zertifikat gilt bis einschließlich seines Ablaufdatums. Ist dein Jahresrückblick freigegeben, steht über den Karten ein
@@ -46,7 +46,8 @@ farbiges Feld mit **Rückblick ansehen** und **Hinweis ausblenden**.
 Darunter folgen die Karten, die die Gemeindeleitung einschaltet, in ihrer
 Reihenfolge: **Deine Zertifikate**, **Laufende Challenges**, **Dein
 Konfispruch**, **Deine Events**, **Tageslosung** und **Deine Badges**. Sie
-sind dieselben Karten wie bei den Konfis, siehe
+tragen dieselben Farben wie in der App — **Deine Zertifikate** im Rosarot des
+Teams — und sind sonst dieselben Karten wie bei den Konfis, siehe
 [Im Browser die Startseite als Karten lesen](10-konfis.md#im-browser-die-startseite-als-karten-lesen);
 die Events öffnen sich in deiner Event-Liste. Anders als bei den Konfis steht
 die Karte **Laufende Challenges** auch dann da, wenn gerade keine läuft — als

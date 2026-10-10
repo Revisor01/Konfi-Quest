@@ -50,7 +50,14 @@ Antippen der Ringe in der App. Ist dein Jahresrückblick freigegeben, steht übe
 den Karten ein farbiges Feld mit **Rückblick ansehen** und **Hinweis
 ausblenden**.
 
-Die Karte **Deine Punkte** steht immer ganz oben: die Ringe, daneben je
+Die Karten tragen dieselben Farben wie die Startseite in der App: Jeder
+Bereich hat seinen eigenen Farbverlauf mit weißer Schrift — Konfirmation
+dunkelblau, Challenges indigo, Konfispruch violett, Events rot, Tageslosung
+türkis, Badges orange, Rangliste grün. Im Browser stehen sie in zwei Spalten
+nebeneinander statt untereinander; im Dunkelmodus behalten sie ihre Farben.
+
+Die Karte **Deine Punkte** steht immer ganz oben, auf demselben violetten
+Feld wie der Kopf der App: die Ringe, daneben je
 Punkteart ein Balken mit „8 von 10" und dem Abstand zum Ziel — „Noch 2 Punkte
 bis zum Ziel", dann „Ziel erreicht", darüber hinaus die Prozent und die Punkte
 darüber. Darunter stehen dein Level mit allen Stufen und der Weg zum nächsten.

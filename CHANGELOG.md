@@ -136,6 +136,10 @@ Versionsüberschrift.
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
 
 ### Geändert
+- Im Browser zeigt die Startseite der Konfis dieselben Farbkacheln wie die
+  App, in zwei Spalten nebeneinander.
+- Auch für Teamer:innen zeigt die Startseite im Browser die Farbkacheln der
+  App; die Kennzahlen oben stehen auf dem Farbfeld des Teams.
 - Auf der Startseite von Teamer:innen stehen unter „Events" nur noch Events,
   zu denen sie selbst zugesagt haben oder auf deren Warteliste sie stehen.
   Bisher kamen alle Team-Events und alle Events mit „Teamer:innen gesucht"
