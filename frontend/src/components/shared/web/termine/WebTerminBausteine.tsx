@@ -1,6 +1,7 @@
 // Bausteine der Web-Fassung von Mitmachen (Events), 03.10.2026 -- fuer alle drei
-// Rollen: Reiter oben, Marken, Zahlen mit Symbol, Angaben, Absage, Hinweise
-// der Teilnehmerliste und der Link nach draussen.
+// Rollen: Reiter oben, Marken, Zahlen mit Symbol, Material, Absage und Hinweise
+// der Teilnehmerliste. Die Angaben der Detailseite und der Sprung zum Material
+// stehen in terminDetailAngaben.tsx, der Link nach draussen in WebExternLink.
 //
 // Sie kennen keine Rolle und laden nichts; was sie zeigen, kommt aus
 // utils/termineWeb.ts. Die Seiten der Rollen setzen sie zusammen
@@ -28,8 +29,7 @@ import SegmentZahl from '../../SegmentZahl';
 import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
 import WebKarte from '../../../web/WebKarte';
-import { MATERIAL_ANKER, terminWebAngaben } from './terminDetailAngaben';
-import WebAngaben from '../../../web/WebAngaben';
+import { MATERIAL_ANKER } from './terminDetailAngaben';
 import {
   absageUrheberZeile,
   absagegrundUrheberZeile,
@@ -38,12 +38,12 @@ import {
   urheberZeile,
 } from '../../../../utils/anwesenheitUrheber';
 import { teilnahmeDarstellung } from '../../../../utils/teilnahmeStatus';
-import type { Fakt, FaktArt, TerminAngabe, TerminStatus } from '../../../../utils/termineWeb';
+import type { Fakt, FaktArt, TerminStatus } from '../../../../utils/termineWeb';
 import type { Event, Participant } from '../../../../types/event';
 import type { PillTon } from '../../../../utils/supportWeb';
 import '../../../../theme/web/termine.css';
 
-// --- Link nach draussen und Angaben: in terminDetailAngaben.tsx -------------
+// --- Link nach draussen (WebExternLink.tsx) ---------------------------------
 
 export { default as WebExternLink } from './WebExternLink';
 
@@ -208,18 +208,6 @@ export const WebFakten: React.FC<{ fakten: readonly Fakt[]; gedaempft?: boolean;
     </ul>
   );
 };
-
-// --- Angaben --------------------------------------------------------------------
-
-// --- Angaben (bis alle Detailseiten die Angaben-Karte von WebDetailSeite nehmen) ---
-
-export const WebTerminAngaben: React.FC<{
-  angaben: readonly TerminAngabe[];
-  beschriftung?: string;
-  onMaterial?: () => void;
-}> = ({ angaben, beschriftung = 'Angaben zum Event', onMaterial }) => (
-  <WebAngaben beschriftung={beschriftung} angaben={terminWebAngaben(angaben, onMaterial)} />
-);
 
 // --- Material ---------------------------------------------------------------------
 
