@@ -163,21 +163,21 @@ describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
   it('erste Wahl eines Vorschlags: genau diese Felder, dazu die Rolle', async () => {
     const a = await ladeMitProd();
     a.setAnalyticsRole('konfi');
-    a.trackKonfispruchWahl(JOSUA, null, 'Kirchengemeinde Heide');
+    a.trackKonfispruchWahl(JOSUA, null, { gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche' });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const p = nutzlast(fetchMock.mock.calls[0]);
     expect(p.name).toBe('konfispruch-erste-wahl');
     expect(p.data).toEqual({
       quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther',
-      gemeinde: 'Kirchengemeinde Heide', rolle: 'konfi',
+      gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche', rolle: 'konfi',
     });
   });
 
   it('erste Wahl eines eigenen Spruchs: Wortlaut und Stellenangabe', async () => {
     const a = await ladeMitProd();
     a.setAnalyticsRole('teamer');
-    a.trackKonfispruchWahl(EIGEN, null, 'Kirchengemeinde Heide');
+    a.trackKonfispruchWahl(EIGEN, null, { gemeinde: 'Kirchengemeinde Heide', kirchenkreis: null, landeskirche: null });
 
     const p = nutzlast(fetchMock.mock.calls[0]);
     expect(p.name).toBe('konfispruch-erste-wahl');
@@ -189,14 +189,14 @@ describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
 
   it('gleicher Spruch erneut gespeichert: kein Ereignis', async () => {
     const a = await ladeMitProd();
-    a.trackKonfispruchWahl(JOSUA, { ...JOSUA }, 'G');
-    a.trackKonfispruchWahl(EIGEN, { ...EIGEN, text: '  Ich bin\nbei dir ' }, 'G');
+    a.trackKonfispruchWahl(JOSUA, { ...JOSUA }, { gemeinde: 'G' });
+    a.trackKonfispruchWahl(EIGEN, { ...EIGEN, text: '  Ich bin\nbei dir ' }, { gemeinde: 'G' });
     expect(fetchMock).toHaveBeenCalledTimes(0);
   });
 
   it('Wechsel: ein Ereignis gewechselt mit dem neuen Spruch und den vorher-Feldern', async () => {
     const a = await ladeMitProd();
-    a.trackKonfispruchWahl(EIGEN, JOSUA, 'G');
+    a.trackKonfispruchWahl(EIGEN, JOSUA, { gemeinde: 'G', kirchenkreis: 'K', landeskirche: 'L' });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const p = nutzlast(fetchMock.mock.calls[0]);
@@ -204,13 +204,13 @@ describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
     expect(p.data).toEqual({
       quelle: 'eigen', spruch: 'Ich bin bei dir', stelle: 'Mt 28,20',
       vorher_quelle: 'vorschlag', vorher_spruch: 'Josua 1,9', vorher_spruch_id: '11', vorher_bibel: 'luther',
-      gemeinde: 'G',
+      gemeinde: 'G', kirchenkreis: 'K', landeskirche: 'L',
     });
   });
 
   it('andere Übersetzung desselben Spruchs ist ein Wechsel', async () => {
     const a = await ladeMitProd();
-    a.trackKonfispruchWahl({ ...JOSUA, bibel: 'bigs' }, JOSUA, 'G');
+    a.trackKonfispruchWahl({ ...JOSUA, bibel: 'bigs' }, JOSUA, { gemeinde: 'G' });
     const p = nutzlast(fetchMock.mock.calls[0]);
     expect(p.name).toBe('konfispruch-gewechselt');
     expect(p.data).toEqual({
@@ -233,7 +233,7 @@ describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
   it('säubert und kürzt: Steuerzeichen und Umbrüche zu Leerzeichen, höchstens 500 Zeichen', async () => {
     const a = await ladeMitProd();
     const lang = `Zeile eins\n\nZeile\tzwei\u0007 ${'x'.repeat(600)}`;
-    a.trackKonfispruchWahl({ quelle: 'eigen', text: lang, stelle: ' Ps 1 ' }, null, ' G ');
+    a.trackKonfispruchWahl({ quelle: 'eigen', text: lang, stelle: ' Ps 1 ' }, null, { gemeinde: ' G ' });
     const d = nutzlast(fetchMock.mock.calls[0]).data as Record<string, string>;
     expect(d.spruch.length).toBe(500);
     expect(d.spruch.startsWith('Zeile eins Zeile zwei x')).toBe(true);
@@ -244,7 +244,7 @@ describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
 
   it('eine unbekannte Übersetzung und eine unsinnige Kennung fallen heraus', async () => {
     const a = await ladeMitProd();
-    a.trackKonfispruchWahl({ quelle: 'vorschlag', id: 0, stelle: 'Josua 1,9', bibel: 'luther2017' }, null, '');
+    a.trackKonfispruchWahl({ quelle: 'vorschlag', id: 0, stelle: 'Josua 1,9', bibel: 'luther2017' }, null, { gemeinde: '' });
     expect(nutzlast(fetchMock.mock.calls[0]).data).toEqual({ quelle: 'vorschlag', spruch: 'Josua 1,9' });
   });
 
@@ -461,12 +461,14 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
 
   it('Konfispruch: der Vorher-Stand kommt aus der Anzeige, die Gemeinde aus dem Konto -- nie eine Person', () => {
     const quelle = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
+    expect(quelle).toContain('kirchenkreis: aktiveGemeinde?.kirchenkreis,');
+    expect(quelle).toContain('landeskirche: aktiveGemeinde?.landeskirche,');
     expect(quelle.match(/const vorher = wahlAusAnzeige\(current\);/g)?.length).toBe(2);
     const messungen = quelle.match(/trackKonfispruchWahl\([\s\S]*?\);/g) || [];
     expect(messungen.length).toBe(2);
     for (const m of messungen) {
       expect(m).toContain('vorher');
-      expect(m).toContain('user?.organization');
+      expect(m).toMatch(/vorher,\s*ort\s*\)/);
       expect(m).not.toMatch(/display_name|username|user\.id|user\?\.id|jahrgang/);
     }
     expect(quelle).not.toContain('trackHandlung(');

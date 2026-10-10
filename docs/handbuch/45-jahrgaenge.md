@@ -171,8 +171,8 @@ Konfirmationsablauf.
 
 Welche Sprüche gewählt werden, fließt **ohne Namen** in die anonyme
 Nutzungsmessung ein: beim ersten Eintragen und bei jedem Wechsel der Spruch
-in seiner Übersetzung oder der eigene Text mit Stellenangabe und die
-Gemeinde. Wird derselbe Spruch noch einmal gespeichert, zählt das nicht. In
+in seiner Übersetzung oder der eigene Text mit Stellenangabe, dazu die
+Gemeinde mit Kirchenkreis und Landeskirche. Wird derselbe Spruch noch einmal gespeichert, zählt das nicht. In
 Konfi Quest selbst gibt es dazu keine Auswertung.
 
 ## Nachvollziehen, was die Jahrgangs-Zuweisung steuert

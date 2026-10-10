@@ -12,7 +12,8 @@
  * taugt, nicht was einzelne Personen tun. Bewusst auch KEINE Organisation:
  * bei einer Gemeinde mit drei Teamern wäre das faktisch personenbezogen.
  * EINE Ausnahme, von Simon so entschieden (10.10.2026): die Wahl des
- * Konfispruchs traegt Spruch und Gemeinde (`trackKonfispruchWahl` unten).
+ * Konfispruchs traegt Spruch, Gemeinde, Kirchenkreis und Landeskirche
+ * (`trackKonfispruchWahl` unten).
  *
  * Umami setzt keine Cookies und speichert keine IP-Adressen. Die Zuordnung
  * einer Sitzung passiert serverseitig über einen Hash aus IP-Adresse,
@@ -653,9 +654,9 @@ export function trackPushErlaubnis(antwort: string | null | undefined): void {
  * eingetragen werden ... personenunabhängig"). Deshalb gehen diese Felder
  * NUR ueber diese Funktion und nur fuer diese zwei Ereignisse raus,
  * gesaeubert (`spruchWert`). Keine Kennung einer Person, kein Name, kein
- * Jahrgang; die Rolle haengt `track` an wie ueberall. Kirchenkreis und
- * Landeskirche kennt die App ohne eigenen Abruf nicht; sie fehlen, bis ein
- * Abruf der App sie mitliefert (docs/messung/umami.md, S1).
+ * Jahrgang; die Rolle haengt `track` an wie ueberall. Gemeinde, Kirchenkreis
+ * und Landeskirche (seit 10.10.2026) sind die Namen der aktiven Gemeinde aus
+ * GET /auth/my-organizations; ohne Zuordnung fehlt das Feld.
  */
 export type KonfispruchWahl =
   | { quelle: 'vorschlag'; id: number; stelle: string; bibel: string }
@@ -704,23 +705,34 @@ export function gleicheWahl(a: KonfispruchWahl | null, b: KonfispruchWahl | null
   return false;
 }
 
+/** Wo gewaehlt wurde: Namen der aktiven Gemeinde und ihrer Zuordnung. */
+export interface KonfispruchOrt {
+  gemeinde?: string | null;
+  kirchenkreis?: string | null;
+  landeskirche?: string | null;
+}
+
 /**
  * Nach dem GELUNGENEN Speichern rufen. `vorher` ist der Spruch, den die App
- * vor dem Speichern anzeigte (kein eigener Abruf), `gemeinde` der Name der
- * aktiven Gemeinde.
+ * vor dem Speichern anzeigte (kein eigener Abruf), `ort` die aktive Gemeinde
+ * mit Kirchenkreis und Landeskirche.
  */
 export function trackKonfispruchWahl(
   neu: KonfispruchWahl,
   vorher: KonfispruchWahl | null,
-  gemeinde?: string | null
+  ort?: KonfispruchOrt | null
 ): void {
   try {
     if (gleicheWahl(neu, vorher)) return;
-    const ort = spruchWert(gemeinde);
+    const ebenen: Record<string, string> = {};
+    for (const ebene of ['gemeinde', 'kirchenkreis', 'landeskirche'] as const) {
+      const wert = spruchWert(ort?.[ebene]);
+      if (wert) ebenen[ebene] = wert;
+    }
     const daten: Record<string, string> = {
       ...spruchFelder(neu),
       ...(vorher ? spruchFelder(vorher, 'vorher_') : {}),
-      ...(ort ? { gemeinde: ort } : {})
+      ...ebenen
     };
     track(vorher ? 'konfispruch-gewechselt' : 'konfispruch-erste-wahl', daten);
   } catch {

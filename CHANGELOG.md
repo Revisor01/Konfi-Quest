@@ -27,7 +27,7 @@ Versionsüberschrift.
   ein Tipp darauf öffnet das Event.
 - Welche Konfisprüche gewählt werden, fließt anonym in die Nutzungsmessung
   ein: beim ersten Eintragen und bei jedem Wechsel der Spruch oder der eigene
-  Wortlaut mit der Gemeinde, ohne Namen.
+  Wortlaut mit Gemeinde, Kirchenkreis und Landeskirche, ohne Namen.
 - Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
   dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
   den Challenges.

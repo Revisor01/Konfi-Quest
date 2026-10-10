@@ -323,6 +323,9 @@ export interface UserOrganization {
   is_active?: boolean;
   /** Die Stamm-Gemeinde des Kontos (GET /auth/my-organizations, seit 03.10.2026). */
   is_primary?: boolean;
+  /** Namen der Zuordnung, null ohne (seit 10.10.2026; aeltere Server liefern sie nicht). */
+  kirchenkreis?: string | null;
+  landeskirche?: string | null;
 }
 
 /**

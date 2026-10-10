@@ -35,7 +35,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { trackKonfispruchWahl, type KonfispruchWahl } from '../../../services/analytics';
+import { trackKonfispruchWahl, type KonfispruchOrt, type KonfispruchWahl } from '../../../services/analytics';
 
 type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
 
@@ -122,7 +122,17 @@ function wahlAusAnzeige(current?: CurrentKonfspruch | null): KonfispruchWahl | n
 }
 
 const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose, onSuccess, current, apiBasePath = '/konfi', variant = 'konfi' }) => {
-  const { isOnline, user } = useApp();
+  const { isOnline, user, organizations, activeOrgId } = useApp();
+  // Wo gewaehlt wird: die aktive Gemeinde aus GET /auth/my-organizations,
+  // sonst die Stamm-Gemeinde; der Name notfalls aus dem Konto (aeltere
+  // Server oder Liste noch nicht geladen).
+  const aktiveGemeinde = (organizations || []).find((o) => o.id === (activeOrgId ?? user?.organization_id))
+    ?? (organizations || []).find((o) => o.is_primary);
+  const ort: KonfispruchOrt = {
+    gemeinde: aktiveGemeinde?.display_name || aktiveGemeinde?.name || user?.organization,
+    kirchenkreis: aktiveGemeinde?.kirchenkreis,
+    landeskirche: aktiveGemeinde?.landeskirche,
+  };
   const { isSubmitting, guard } = useActionGuard();
   const [presentToast] = useIonToast();
 
@@ -194,7 +204,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           trackKonfispruchWahl(
             { quelle: 'vorschlag', id: selectedSpruchId, stelle: spruch?.reference || '', bibel: BIBEL_MESSWERT[translation] },
             vorher,
-            user?.organization
+            ort
           );
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
@@ -229,7 +239,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
           // Eigener Spruch im Wortlaut mit Stellenangabe (Simon, 09.10.2026:
           // „insbesondere die, die selbst eingetragen werden"), gesaeubert
           // und gekuerzt in services/analytics.ts.
-          trackKonfispruchWahl({ quelle: 'eigen', text, stelle: referenz }, vorher, user?.organization);
+          trackKonfispruchWahl({ quelle: 'eigen', text, stelle: referenz }, vorher, ort);
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
         } catch (err) {

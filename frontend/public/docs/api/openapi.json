@@ -706,7 +706,7 @@
         "summary": "Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle",
         "responses": {
           "200": {
-            "description": "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber. Seit 08.10.2026 fehlen Gemeinden, in denen die Person gesperrt ist (Migration 196) — wie eine entzogene Mitgliedschaft."
+            "description": "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber. Seit 08.10.2026 fehlen Gemeinden, in denen die Person gesperrt ist (Migration 196) — wie eine entzogene Mitgliedschaft. ERGAENZT 10.10.2026, additiv: kirchenkreis und landeskirche (string|null) — die Namen der Zuordnung der Gemeinde, null ohne Zuordnung (Kirchenkreis ohne Landeskirche: nur landeskirche null). Die App sendet sie mit der Wahl des Konfispruchs an die Nutzungsmessung (docs/messung/umami.md, S1). Alle bisherigen Felder unveraendert."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"

@@ -20,7 +20,7 @@ import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-libra
 const h = vi.hoisted(() => {
   // Vor dem Laden von services/analytics: Die Messung ist nur in PROD an.
   vi.stubEnv('PROD', true);
-  return { fetch: vi.fn() };
+  return { fetch: vi.fn(), aktiv: null as number | null };
 });
 vi.stubGlobal('fetch', h.fetch);
 
@@ -37,6 +37,12 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({
     isOnline: true,
     user: { id: 4711, display_name: 'Emilia Mustermann', username: 'emilia', organization: 'Kirchengemeinde Heide', organization_id: 3 },
+    // GET /auth/my-organizations: Stamm-Gemeinde 3 mit Zuordnung, dazu eine zweite.
+    activeOrgId: h.aktiv,
+    organizations: [
+      { id: 3, name: 'heide', display_name: 'Kirchengemeinde Heide', role_name: 'konfi', is_primary: true, kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche' },
+      { id: 9, name: 'andere', display_name: 'Andere', role_name: 'konfi', is_primary: false, kirchenkreis: 'Plön', landeskirche: 'Nordkirche' },
+    ],
   }),
 }));
 
@@ -110,6 +116,7 @@ beforeEach(() => {
   mockApiGet.mockReset().mockResolvedValue({ data: SPRUECHE });
   mockApiPatch.mockReset();
   h.fetch.mockReset().mockResolvedValue({ ok: true });
+  h.aktiv = null;
 });
 
 afterAll(() => {
@@ -131,7 +138,7 @@ describe('Konfispruch aus den Vorschlägen', () => {
 
     expect(gesendet()).toEqual([
       ['konfispruch-erste-wahl', {
-        quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther', gemeinde: 'Kirchengemeinde Heide',
+        quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther', gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche',
       }],
     ]);
     expect(onSuccess).toHaveBeenCalledTimes(1);
@@ -163,7 +170,7 @@ describe('Konfispruch aus den Vorschlägen', () => {
       ['konfispruch-gewechselt', {
         quelle: 'vorschlag', spruch: 'Psalm 23,1', spruch_id: '12', bibel: 'gute-nachricht',
         vorher_quelle: 'vorschlag', vorher_spruch: 'Josua 1,9', vorher_spruch_id: '11', vorher_bibel: 'gute-nachricht',
-        gemeinde: 'Kirchengemeinde Heide',
+        gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche',
       }],
     ]);
   });
@@ -190,7 +197,25 @@ describe('Konfispruch aus den Vorschlägen', () => {
     expect(mockApiPatch.mock.calls[0][0]).toBe('/teamer/profile');
     expect(gesendet()).toEqual([
       ['konfispruch-erste-wahl', {
-        quelle: 'vorschlag', spruch: 'Psalm 23,1', spruch_id: '12', bibel: 'luther', gemeinde: 'Kirchengemeinde Heide',
+        quelle: 'vorschlag', spruch: 'Psalm 23,1', spruch_id: '12', bibel: 'luther', gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche',
+      }],
+    ]);
+  });
+});
+
+describe('Gemeinde, Kirchenkreis und Landeskirche', () => {
+  it('kommen aus der AKTIVEN Gemeinde, nicht aus der Stamm-Gemeinde', async () => {
+    h.aktiv = 9;
+    mockApiPatch.mockResolvedValue({ data: {} });
+    await zeigen();
+    await act(async () => { fireEvent.click(screen.getByText('Josua 1,9')); });
+    await speichern();
+
+    await waitFor(() => expect(h.fetch).toHaveBeenCalledTimes(1));
+    expect(gesendet()).toEqual([
+      ['konfispruch-erste-wahl', {
+        quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther',
+        gemeinde: 'Andere', kirchenkreis: 'Plön', landeskirche: 'Nordkirche',
       }],
     ]);
   });
@@ -226,7 +251,7 @@ describe('Eigener Konfispruch', () => {
       ['konfispruch-gewechselt', {
         quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther',
         vorher_quelle: 'eigen', vorher_spruch: 'Ich bin bei dir', vorher_stelle: 'Mt 28,20',
-        gemeinde: 'Kirchengemeinde Heide',
+        gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche',
       }],
     ]);
   });

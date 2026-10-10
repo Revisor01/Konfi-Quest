@@ -21,7 +21,8 @@ jeden neuen Messpunkt unverändert:
   Freitexte, keine Punktzahlen und keine Anzahlen — bei einer Gemeinde mit drei
   Teamer:innen wäre schon eine Anzahl ein Fingerabdruck. **Eine Ausnahme**,
   von Simon entschieden (10.10.2026): Die Wahl des Konfispruchs trägt den
-  Spruch (bei einem eigenen den Wortlaut) und den Namen der Gemeinde (S1).
+  Spruch (bei einem eigenen den Wortlaut) und die Namen von Gemeinde,
+  Kirchenkreis und Landeskirche (S1).
 - **Die Rolle ist das einzige Personenmerkmal** (`konfi`, `teamer`, `admin`;
   `org_admin` zählt als `admin`, alles andere als `sonstige`). `track` hängt
   sie an jedes Ereignis.
@@ -91,7 +92,7 @@ Zeile.
 | `antrag-entschieden` | `entscheidung`: `angenommen` \| `abgelehnt`; `antrag_von`: `konfi` \| `teamer` | admin | `admin/modals/ActivityRequestModal.tsx` | nach erfolgreichem `PUT /admin/activities/requests/:id`; offline eingereiht zählt nicht |
 | `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
 | `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
-| `konfispruch-erste-wahl` (S1, ab 2.4.0) | `quelle`: `vorschlag` \| `eigen`; `spruch`: Bibelstelle des Vorschlags bzw. Wortlaut des eigenen Spruchs; `spruch_id` und `bibel` (`luther` \| `gute-nachricht` \| `bigs` \| `elberfelder`) nur beim Vorschlag; `stelle` (Stellenangabe) nur beim eigenen; `gemeinde`: Name der aktiven Gemeinde | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` (`trackKonfispruchWahl`) | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`, wenn vorher kein Spruch angezeigt war |
+| `konfispruch-erste-wahl` (S1, ab 2.4.0) | `quelle`: `vorschlag` \| `eigen`; `spruch`: Bibelstelle des Vorschlags bzw. Wortlaut des eigenen Spruchs; `spruch_id` und `bibel` (`luther` \| `gute-nachricht` \| `bigs` \| `elberfelder`) nur beim Vorschlag; `stelle` (Stellenangabe) nur beim eigenen; `gemeinde`, `kirchenkreis`, `landeskirche`: Namen der aktiven Gemeinde und ihrer Zuordnung, ohne Zuordnung fehlt das Feld | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` (`trackKonfispruchWahl`) | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`, wenn vorher kein Spruch angezeigt war |
 | `konfispruch-gewechselt` (S1, ab 2.4.0) | dieselben Felder für den neuen Spruch, dazu `vorher_quelle`, `vorher_spruch` und je nach Quelle `vorher_spruch_id`, `vorher_bibel` bzw. `vorher_stelle` für den alten | konfi, teamer | dieselbe Stelle | nach erfolgreichem `PATCH`, wenn ein anderer Spruch (oder derselbe in anderer Übersetzung) den angezeigten ersetzt; derselbe erneut gespeichert meldet nichts |
 | `konfispruch-gespeichert` (bis 2.3.x) | `quelle`; `bibel` beim Vorschlag | konfi, teamer | ältere App-Fassungen | senden die Store-Apps bis 2.3.x weiter; ohne Spruch und Gemeinde, zählt jede Wahl, auch Wechsel |
 | `material-angesehen`, `material-abgerufen` (S17) | wie oben (`inhalt`) | admin | `admin/modals/MaterialFormModal.tsx`, nur mit `nurLesen` | Lese-Ansicht der Material-Verwaltung: angesehen beim Öffnen (nach erfolgreichem `GET /material/:id` in `AdminMaterialPage`), Datei erst nach dem Laden. Eigenes Material zum Bearbeiten zählt nicht |
@@ -484,20 +485,20 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
     geladen, gilt die Wahl als erste.
 - **Felder:** `quelle`, `spruch` (Bibelstelle des Vorschlags bzw. Wortlaut des
   eigenen Spruchs), beim Vorschlag `spruch_id` und `bibel`, beim eigenen
-  `stelle`, dazu `gemeinde` (Name der aktiven Gemeinde aus dem Konto) und wie
+  `stelle`, dazu `gemeinde`, `kirchenkreis` und `landeskirche` (Namen der
+  aktiven Gemeinde und ihrer Zuordnung aus `GET /auth/my-organizations`,
+  dort seit 10.10.2026 additiv; ohne Zuordnung fehlt das Feld) und wie
   überall `rolle`. Texte werden gesäubert (Steuerzeichen und Zeilenumbrüche
   zu Leerzeichen, Leerraum zusammengezogen) und nach 500 Zeichen
   abgeschnitten: Umami speichert Ereignisdaten als Zeichenkette mit höchstens
-  500 Zeichen (`event_data.string_value`). Kirchenkreis und Landeskirche
-  fehlen: Die Konfi- und Team-Oberfläche kennt sie nicht, nur die
-  Support-Ansicht; dafür müsste ein Abruf der App sie mitliefern (etwa
-  zusätzliche Felder an `GET /auth/my-organizations`). Keine Namen,
-  Benutzernamen oder Kennungen von Personen.
+  500 Zeichen (`event_data.string_value`). Keine Namen, Benutzernamen oder
+  Kennungen von Personen.
 - **Ausnahme von der Positivliste:** Spruch, Stellenangabe und Gemeinde
   stammen aus Datenbank und Eingabe, nicht aus dem Quelltext. Sie gehen
   deshalb nur über `trackKonfispruchWahl` und nur für diese zwei Ereignisse
   raus; `trackHandlung` kennt `konfispruch-gespeichert` nicht mehr.
-- **Auswertung:** Aktuell gewählt ist je Spruch (und je Gemeinde)
+- **Auswertung:** Aktuell gewählt ist je Spruch (und je Gemeinde, Kirchenkreis
+  oder Landeskirche)
   `erste-wahl + gewechselt(neu) − gewechselt(vorher)`: also die Zahl der
   `konfispruch-erste-wahl` mit diesem `spruch`, plus die
   `konfispruch-gewechselt` mit diesem `spruch`, minus die
@@ -693,8 +694,8 @@ Für die beauftragten Messpunkte (U1–U3) und die Vorschläge (S2–S17):
 | `antrag-entschieden` | `entscheidung`, `antrag_von` |
 | `material-angesehen` | `inhalt`, `rolle` |
 | `material-abgerufen` | `inhalt`, `rolle` |
-| `konfispruch-erste-wahl` | `spruch`, `quelle`, `bibel`, `gemeinde` |
-| `konfispruch-gewechselt` | `spruch`, `vorher_spruch`, `quelle`, `gemeinde` |
+| `konfispruch-erste-wahl` | `spruch`, `quelle`, `bibel`, `gemeinde`, `kirchenkreis`, `landeskirche` |
+| `konfispruch-gewechselt` | `spruch`, `vorher_spruch`, `quelle`, `gemeinde`, `kirchenkreis`, `landeskirche` |
 | `konfispruch-gespeichert` (bis 2.3.x) | `quelle`, `bibel`, `rolle` |
 | `event-abgemeldet` | `pflicht`, `rolle` |
 | `badge-angelegt` | `zielgruppe` |

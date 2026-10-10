@@ -209,8 +209,8 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   (Simon: „Raus aus der App. Nur Umami!"): Reiter „Sprüche", Route
   `GET /api/metrics/konfisprueche` und Tabelle `konfspruch_wahlen`
   (Migration 212) entfallen; die Wahl geht ab 2.4.0 als
-  `konfispruch-erste-wahl` bzw. `konfispruch-gewechselt` mit Spruch und
-  Gemeinde an Umami ([messung/umami.md](messung/umami.md), S1). Dazu den
+  `konfispruch-erste-wahl` bzw. `konfispruch-gewechselt` mit Spruch,
+  Gemeinde, Kirchenkreis und Landeskirche an Umami ([messung/umami.md](messung/umami.md), S1). Dazu den
   Schema-Dump bis 208 gefaltet, samt den Datenzeilen aus 190 und 193
   (Branch `revert/konfisprueche-nur-umami`).
 - [x] 09.10.2026 — Reiter, Filter und Leertexte je Seite an einer Stelle für
