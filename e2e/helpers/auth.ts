@@ -24,6 +24,14 @@ export const LAUFENDE_VERSION: string = JSON.parse(
 // Version (utils/neuerungenGate.ts).
 export const GESEHENE_MINOR: string = LAUFENDE_VERSION.split('.').slice(0, 2).join('.');
 
+// Erster Aufruf der Anmeldeseite (10.10.2026): Zweimal an einem Tag fiel
+// der allererste Test des Laufs (aenderungsanzeige.spec.ts, alphabetisch
+// vorn) daran, dass das Eingabefeld nicht binnen 10 s erschien -- der
+// Container ist dann noch kalt, die Seite selbst rendert einwandfrei (die
+// Wiederholung lief jeweils grün). Kein Fehler der App, deshalb mehr Zeit
+// statt eines wegretryten Tests.
+const ANMELDESEITE_MS = 30_000;
+
 /**
  * Login-Helper für E2E Tests.
  *
@@ -50,7 +58,7 @@ export async function loginAs(page: Page, username: string, password = 'testpass
   const usernameInput = page.locator('input[placeholder="Dein Nutzername"]');
   const passwordInput = page.locator('input[placeholder="Dein Passwort"]');
 
-  await usernameInput.waitFor({ state: 'visible', timeout: 10_000 });
+  await usernameInput.waitFor({ state: 'visible', timeout: ANMELDESEITE_MS });
   await usernameInput.fill(username);
   await passwordInput.fill(password);
 
@@ -74,7 +82,7 @@ export async function loginOhneMarker(page: Page, username: string, password = '
   await page.goto('/login');
   const usernameInput = page.locator('input[placeholder="Dein Nutzername"]');
   const passwordInput = page.locator('input[placeholder="Dein Passwort"]');
-  await usernameInput.waitFor({ state: 'visible', timeout: 10_000 });
+  await usernameInput.waitFor({ state: 'visible', timeout: ANMELDESEITE_MS });
   await usernameInput.fill(username);
   await passwordInput.fill(password);
   await page.locator('ion-button.app-auth-button').click();
