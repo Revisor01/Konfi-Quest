@@ -2,7 +2,7 @@
 // soll eine kachel-, liste-, details-logik haben für alle seiten"):
 // - WebKreis: Initialen oder Symbol im Kreis;
 // - WebListe: die EINE sortierbare Tabelle (WebTabelle und WebSortTabelle
-//   reichen hierher durch) mit Namenszelle, Aktionen und Leerzustand;
+//   sind darin aufgegangen) mit Namenszelle, Aktionen und Leerzustand;
 // - WebKacheln: Raster und Karte mit Bearbeiten/Loeschen im Fuss;
 // - WebListenSeite: Kennzahlen, Werkzeugzeile aus der Seitenbeschreibung,
 //   Suche, Umschalter Liste | Kacheln, Laden, Fehler, leer.
@@ -20,10 +20,10 @@ vi.mock('@ionic/react', async () => ({
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('../support/ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
 
+import fs from 'node:fs';
+import path from 'node:path';
 import WebKreis from '../../../components/web/WebKreis';
 import WebListe, { WebNameZelle, type WebSpalte } from '../../../components/web/WebListe';
-import WebTabelle from '../../../components/web/WebTabelle';
-import WebSortTabelle from '../../../components/admin/web/leitung/WebSortTabelle';
 import WebKacheln from '../../../components/web/WebKacheln';
 import WebListenSeite, { type WebListenSeiteProps } from '../../../components/web/WebListenSeite';
 import { WebBildKarteSymbol } from '../../../components/web/WebBildKarte';
@@ -109,9 +109,20 @@ describe('WebListe: Sortieren', () => {
     expect(namen()).toEqual(['Bea', 'Änne', 'Carl']);
   });
 
-  it('WebTabelle und WebSortTabelle sind dieselbe Tabelle (sie reichen nur durch)', () => {
-    expect(WebTabelle).toBe(WebListe);
-    expect(WebSortTabelle).toBe(WebListe);
+  it('es gibt nur noch WebListe: die alten Tabellen-Namen sind weg und niemand importiert sie', () => {
+    const wurzel = path.resolve(__dirname, '../../..');
+    expect(fs.existsSync(path.join(wurzel, 'components/web/WebTabelle.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(wurzel, 'components/admin/web/leitung/WebSortTabelle.tsx'))).toBe(false);
+    const treffer: string[] = [];
+    const durchsuche = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const voll = path.join(dir, e.name);
+        if (e.isDirectory()) { if (e.name !== '__tests__') durchsuche(voll); }
+        else if (/\.tsx?$/.test(e.name) && /from '[^']*\/(WebTabelle|WebSortTabelle)'/.test(fs.readFileSync(voll, 'utf8'))) treffer.push(voll);
+      }
+    };
+    durchsuche(wurzel);
+    expect(treffer).toEqual([]);
   });
 });
 

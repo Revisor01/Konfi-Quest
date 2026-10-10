@@ -1,4 +1,4 @@
-// WebTabelle sortiert selbst: eine Spalte mit sortWert hat einen anklickbaren
+// WebListe sortiert selbst: eine Spalte mit sortWert hat einen anklickbaren
 // Kopf, erst auf-, dann absteigend; aria-sort steht am Kopf.
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
@@ -6,7 +6,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react';
 
 vi.mock('@ionic/react', () => ({ IonIcon: () => null }));
 
-import WebTabelle, { type WebSpalte } from '../../components/web/WebTabelle';
+import WebListe, { type WebSpalte } from '../../components/web/WebListe';
 
 interface Z { id: number; name: string; punkte: number }
 const ZEILEN: Z[] = [{ id: 1, name: 'Ben', punkte: 3 }, { id: 2, name: 'Anna', punkte: 12 }, { id: 3, name: 'Carla', punkte: 7 }];
@@ -17,9 +17,9 @@ const SPALTEN: Array<WebSpalte<Z>> = [
 ];
 const reihe = () => screen.getAllByRole('row').slice(1).map((r) => within(r).getAllByRole('cell')[0].textContent);
 
-describe('WebTabelle: nach Spalte sortieren', () => {
+describe('WebListe: nach Spalte sortieren', () => {
   it('bis zum ersten Klick die Reihenfolge der Seite; Klick auf- und absteigend; aria-sort folgt', () => {
-    render(<WebTabelle beschriftung="Test" spalten={SPALTEN} zeilen={ZEILEN} zeileSchluessel={(z) => z.id} />);
+    render(<WebListe beschriftung="Test" spalten={SPALTEN} zeilen={ZEILEN} zeileSchluessel={(z) => z.id} />);
     expect(reihe()).toEqual(['Ben', 'Anna', 'Carla']);
     const kopfName = screen.getByRole('columnheader', { name: /Name/ });
     expect(kopfName).toHaveAttribute('aria-sort', 'none');
@@ -35,7 +35,7 @@ describe('WebTabelle: nach Spalte sortieren', () => {
   });
 
   it('eine Spalte ohne sortWert hat keinen Knopf und kein aria-sort', () => {
-    render(<WebTabelle beschriftung="Test" spalten={SPALTEN} zeilen={ZEILEN} zeileSchluessel={(z) => z.id} />);
+    render(<WebListe beschriftung="Test" spalten={SPALTEN} zeilen={ZEILEN} zeileSchluessel={(z) => z.id} />);
     const notiz = screen.getByRole('columnheader', { name: 'Notiz' });
     expect(within(notiz).queryByRole('button')).toBeNull();
     expect(notiz).not.toHaveAttribute('aria-sort');

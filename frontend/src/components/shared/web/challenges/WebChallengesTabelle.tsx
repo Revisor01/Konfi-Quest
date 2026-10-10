@@ -12,7 +12,7 @@
 // Die rote Zahl sitzt wie auf der Karte am Stempel.
 
 import React from 'react';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebListe, { type WebSpalte } from '../../../web/WebListe';
 import WebLink from '../../../web/WebLink';
 import WebPill from '../../../web/WebPill';
 import WebTreffer from '../../../web/WebTreffer';
@@ -193,7 +193,7 @@ export const challengeZeileKlasse = ({ status }: Pick<ListenEintrag, 'status'>):
 function WebChallengesTabelle<T extends ListenChallenge>({ eintraege, ...rest }: WebChallengesTabelleProps<T>): React.ReactElement {
   const spalten = challengeSpalten<T>(rest);
   return (
-    <WebTabelle
+    <WebListe
       beschriftung="Challenges"
       spalten={spalten}
       zeilen={eintraege}

@@ -25,7 +25,7 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebChips from '../../../web/WebChips';
 import WebPill from '../../../web/WebPill';
 import WebSchalter from '../../../web/WebSchalter';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebListe, { type WebSpalte } from '../../../web/WebListe';
 import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { inFassung } from '../../../../seiten/beschreibung';
 import { BETRIEB_REITER, BETRIEB_REITER_BESCHRIFTUNG, ROUTEN_SORTIERUNG, ROUTEN_SORTIERUNG_BESCHRIFTUNG } from '../../../../seiten/betrieb';
@@ -172,7 +172,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
         <WebLeer icon={ICON_PULS} titel="Keine Meldung" text="Der Browser hat seit dem letzten Neustart nichts blockiert." />
       ) : (
         <>
-          <WebTabelle beschriftung="Vom Browser blockiert" spalten={cspSpalten} zeilen={csp.gruppen} zeileSchluessel={(g) => `${g.direktive}|${g.blockiert}|${g.seite}`} mittig />
+          <WebListe beschriftung="Vom Browser blockiert" spalten={cspSpalten} zeilen={csp.gruppen} zeileSchluessel={(g) => `${g.direktive}|${g.blockiert}|${g.seite}`} mittig />
           {csp.verworfen > 0 && (
             <div className="web-karte__fuss web-gedaempft">{fmtZahl(csp.verworfen)} weitere Meldungen nicht aufgeschlüsselt (mehr als {fmtZahl(csp.grenze)} verschiedene).</div>
           )}
@@ -228,9 +228,9 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
       {hintergrund.jobs.length === 0 ? (
         <WebLeer icon={ICON_PULS} titel="Noch kein Lauf" text="Seit dem letzten Neustart hat noch keine Aufgabe im Hintergrund gearbeitet." />
       ) : (
-        <WebTabelle beschriftung="Aufgaben im Hintergrund" spalten={jobSpalten} zeilen={hintergrund.jobs} zeileSchluessel={(j) => j.name} mittig />
+        <WebListe beschriftung="Aufgaben im Hintergrund" spalten={jobSpalten} zeilen={hintergrund.jobs} zeileSchluessel={(j) => j.name} mittig />
       )}
-      <WebTabelle beschriftung="Push-Versand" spalten={pushSpalten} zeilen={pushZeilen} zeileSchluessel={(z) => z.name} mittig />
+      <WebListe beschriftung="Push-Versand" spalten={pushSpalten} zeilen={pushZeilen} zeileSchluessel={(z) => z.name} mittig />
       {hintergrund.pushVersand.langsamster && (
         <div className="web-karte__fuss web-gedaempft">
           Längster Versand: {fmtDauer(hintergrund.pushVersand.langsamster.dauerMs)} an {fmtZahl(hintergrund.pushVersand.langsamster.empfaenger)} Empfänger:innen, {fmtSeit(hintergrund.pushVersand.langsamster.zeit)}.
@@ -449,11 +449,11 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
         untertitel="Nur Serverfehler (500er) sind eine Störung — der Rest sagt meist, dass eine App etwas anfragt, das es nicht gibt oder das ihr nicht zusteht."
         bund
       >
-        <WebTabelle beschriftung="Fehler nach Route und Art" spalten={fehlerSpalten} zeilen={gruppen} zeileSchluessel={(g) => `${g.route}|${g.status}`} mittig />
+        <WebListe beschriftung="Fehler nach Route und Art" spalten={fehlerSpalten} zeilen={gruppen} zeileSchluessel={(g) => `${g.route}|${g.status}`} mittig />
       </WebKarte>
       {snap.recentErrors.length > 0 && (
         <WebKarte titel="Die letzten Einzelfälle" bund>
-          <WebTabelle beschriftung="Die letzten Einzelfälle" spalten={einzelSpalten} zeilen={snap.recentErrors.slice(0, 15)} zeileSchluessel={(e) => `${e.at}|${e.url}|${e.status}`} mittig />
+          <WebListe beschriftung="Die letzten Einzelfälle" spalten={einzelSpalten} zeilen={snap.recentErrors.slice(0, 15)} zeileSchluessel={(e) => `${e.at}|${e.url}|${e.status}`} mittig />
         </WebKarte>
       )}
       {cspKarte}
@@ -474,7 +474,7 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
         {p.routenZeilen.length === 0 ? (
           <WebLeer icon={ICON_PULS} titel="Keine Daten" text="Es sind noch keine Routen gemessen." />
         ) : (
-          <WebTabelle beschriftung="Routen" spalten={routenSpalten} zeilen={p.routenZeilen} zeileSchluessel={(r) => r.route} mittig />
+          <WebListe beschriftung="Routen" spalten={routenSpalten} zeilen={p.routenZeilen} zeileSchluessel={(r) => r.route} mittig />
         )}
       </WebKarte>
       <p className="web-karte__text">
@@ -489,14 +489,14 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
         {tageNeuesteZuerst.length === 0 ? (
           <WebLeer icon={ICON_PULS} titel="Noch keine Aufzeichnung" text="Der erste Eintrag kommt nach etwa 5 Min." />
         ) : (
-          <WebTabelle beschriftung="Je Tag" spalten={tagSpalten} zeilen={tageNeuesteZuerst} zeileSchluessel={(t) => t.tag} mittig />
+          <WebListe beschriftung="Je Tag" spalten={tagSpalten} zeilen={tageNeuesteZuerst} zeileSchluessel={(t) => t.tag} mittig />
         )}
       </WebKarte>
       <WebKarte titel="In Fünf-Minuten-Schritten" untertitel="Die letzten 60 Einträge" bund={p.schritte.length > 0}>
         {p.schritte.length === 0 ? (
           <WebLeer icon={ICON_PULS} titel="Noch keine Aufzeichnung" text="Noch keine Einträge in Fünf-Minuten-Schritten." />
         ) : (
-          <WebTabelle beschriftung="In Fünf-Minuten-Schritten" spalten={schrittSpalten} zeilen={[...p.schritte].reverse().slice(0, 60)} zeileSchluessel={(d) => d.at} mittig />
+          <WebListe beschriftung="In Fünf-Minuten-Schritten" spalten={schrittSpalten} zeilen={[...p.schritte].reverse().slice(0, 60)} zeileSchluessel={(d) => d.at} mittig />
         )}
       </WebKarte>
     </>

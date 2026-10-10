@@ -21,7 +21,7 @@ import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
 import WebSuche from '../../../web/WebSuche';
 import WebPill from '../../../web/WebPill';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebListe, { type WebSpalte } from '../../../web/WebListe';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
 import { WebFilterAuswahl, WebSymbol, WebZeilenKnopf } from '../../../admin/web/leitung/WebLeitungBausteine';
 import WebMaterialInhalt from './WebMaterialInhalt';
@@ -129,7 +129,7 @@ const WebTeamerMaterial: React.FC<WebTeamerMaterialProps> = (p) => {
 
   const tabelle = (titel: string, zeilen: readonly MaterialListeneintrag[], beschriftung: string) => (
     <WebKarte titel={titel} untertitel={mitEinheit(zeilen.length, 'Material', 'Materialien')} bund>
-      <WebTabelle beschriftung={beschriftung} spalten={spalten} zeilen={zeilen} zeileSchluessel={(m) => m.id} mittig fest />
+      <WebListe beschriftung={beschriftung} spalten={spalten} zeilen={zeilen} zeileSchluessel={(m) => m.id} mittig fest />
     </WebKarte>
   );
 

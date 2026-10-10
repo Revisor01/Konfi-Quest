@@ -22,8 +22,7 @@
 // Der Zustand steht als aria-sort am Kopf, der Pfeil daneben ist Zierde.
 //
 // Bis 10.10.2026 gab es zwei Tabellen: WebTabelle (sortiert selbst) und
-// WebSortTabelle (Ordnung von der Seite). Beide reichen jetzt hierher durch,
-// bis keine Seite sie mehr nutzt.
+// WebSortTabelle (Ordnung von der Seite). Beide sind in dieser aufgegangen.
 
 import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';

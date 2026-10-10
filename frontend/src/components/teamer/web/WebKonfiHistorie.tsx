@@ -23,7 +23,7 @@ import WebKachel from '../../web/WebKachel';
 import { KENNZAHL_SYMBOL } from '../../web/kennzahlSymbole';
 import WebKnopf from '../../web/WebKnopf';
 import WebSpalten from '../../web/WebSpalten';
-import WebTabelle from '../../web/WebTabelle';
+import WebListe from '../../web/WebListe';
 import WebPill from '../../web/WebPill';
 import WebBadgeDialog from '../../konfi/web/WebBadgeDialog';
 import WebBadgeSymbol from '../../konfi/web/WebBadgeSymbol';
@@ -67,7 +67,7 @@ const WebKonfiHistorie: React.FC<WebKonfiHistorieProps> = ({ punkte, badges, ter
 
       {termine.length > 0 && (
         <WebKarte titel="Events der Konfi-Zeit" untertitel={`${termine.length} ${termine.length === 1 ? 'Event' : 'Events'}`} bund>
-          <WebTabelle<KonfiZeitTermin>
+          <WebListe<KonfiZeitTermin>
             beschriftung="Events der Konfi-Zeit"
             zeilen={termine}
             zeileSchluessel={(t) => t.event_id}

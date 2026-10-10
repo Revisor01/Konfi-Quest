@@ -35,7 +35,7 @@ import WebKarte from '../../web/WebKarte';
 import WebKnopf from '../../web/WebKnopf';
 import WebPill from '../../web/WebPill';
 import WebAngaben, { type WebAngabe } from '../../web/WebAngaben';
-import WebTabelle from '../../web/WebTabelle';
+import WebListe from '../../web/WebListe';
 import { WebLeer, WebFehler, WebLaden } from '../../web/WebZustaende';
 import { useWebDaten } from '../../web/useWebDaten';
 import '../../../theme/web/start.css';
@@ -294,7 +294,7 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
       {eintraege.length === 0 ? (
         <WebLeer icon={ICON_UHRZEIT} titel="Noch keine Einträge" text="Hier erscheinen die Punkte, sobald es welche gibt." />
       ) : (
-        <WebTabelle<PunkteEintrag>
+        <WebListe<PunkteEintrag>
           beschriftung={titel}
           zeilen={eintraege}
           zeileSchluessel={(e) => `${e.source_type}-${e.id}`}

@@ -2429,7 +2429,7 @@ a.web-auszeichnung__knopf {
   text-decoration: none;
 }
 
-/* --- Sortierbarer Spaltenkopf (WebTabelle, WebSortTabelle) --- */
+/* --- Sortierbarer Spaltenkopf (WebListe) --- */
 .web-sortkopf {
   display: inline-flex;
   align-items: center;

@@ -16,7 +16,7 @@ import WebChips from '../../../web/WebChips';
 import WebSuche from '../../../web/WebSuche';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebListe, { type WebSpalte } from '../../../web/WebListe';
 import WebTreffer from '../../../web/WebTreffer';
 import { WebLeer } from '../../../web/WebZustaende';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
@@ -163,7 +163,7 @@ const WebEigeneAntraege: React.FC<WebEigeneAntraegeProps> = ({ antraege: roh, pf
 
       <div className="web-karte">
         {sichtbar.length > 0 ? (
-          <WebTabelle
+          <WebListe
             beschriftung="Deine Aktivitäten"
             spalten={spalten}
             zeilen={sichtbar}

@@ -16,7 +16,7 @@ import WebBalkenListe from '../../../components/web/WebBalkenListe';
 import WebSpark from '../../../components/web/WebSpark';
 import WebChips from '../../../components/web/WebChips';
 import WebAkkordeon from '../../../components/web/WebAkkordeon';
-import WebTabelle from '../../../components/web/WebTabelle';
+import WebListe from '../../../components/web/WebListe';
 import WebPill from '../../../components/web/WebPill';
 import WebKachel from '../../../components/web/WebKachel';
 import { monatKurz, monatLang } from '../../../utils/supportWeb';
@@ -277,10 +277,10 @@ describe('WebAkkordeon', () => {
   });
 });
 
-describe('WebTabelle', () => {
+describe('WebListe', () => {
   it('Kopfzeile mit scope, Zahlen rechts, optionale Spalten markiert, verborgener Kopf nur fuer Vorleseprogramme', () => {
     render(
-      <WebTabelle<{ id: number; name: string; n: number }>
+      <WebListe<{ id: number; name: string; n: number }>
         beschriftung="Beispiel"
         zeileSchluessel={(z) => z.id}
         zeileKlasse={(z) => (z.n > 5 ? 'web-zeile--ungelesen' : undefined)}

@@ -18,7 +18,7 @@ import WebKachel from '../../../web/WebKachel';
 import WebChips from '../../../web/WebChips';
 import WebSuche from '../../../web/WebSuche';
 import WebAuswahl from '../../../web/WebAuswahl';
-import WebTabelle from '../../../web/WebTabelle';
+import WebListe from '../../../web/WebListe';
 import WebPill from '../../../web/WebPill';
 import WebKnopf from '../../../web/WebKnopf';
 import WebTreffer from '../../../web/WebTreffer';
@@ -137,7 +137,7 @@ function WebAdminBadges<T extends WebAdminBadge>(p: WebAdminBadgesProps<T>): Rea
             text={p.badges.length === 0 ? LEITUNG_BADGES_LEER.ohneBadges : LEITUNG_BADGES_LEER.ohneTreffer}
           />
         ) : (
-          <WebTabelle<T>
+          <WebListe<T>
             beschriftung="Badges"
             mittig
             zeilen={zeilen}
