@@ -117,8 +117,10 @@ describe('Konfi-Mischkonto: mit der Mitgliedschaft gehen die Konfi-Daten dieser 
     await db.query(
       `INSERT INTO konfi_historie (user_id, organization_id, anlass, daten) VALUES ($1, $2, 'befoerderung', '{}')`, [K.id, org]);
     await db.query(
-      `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data) VALUES ($1, $2, 'konfi', 2024 + $2, '{}')`,
-      [K.id, org]);
+      `INSERT INTO wrapped_snapshots (user_id, organization_id, wrapped_type, year, data) VALUES ($1, $2, 'konfi', $3, '{}')`,
+      // Eigener Platzhalter fuer das Jahr: organization_id ist bigint, year
+      // integer -- ein gemeinsamer $2 ist fuer Postgres widerspruechlich.
+      [K.id, org, 2024 + org]);
     await db.query(
       `INSERT INTO user_certificates (user_id, certificate_type_id, organization_id, issued_date, admin_id)
        VALUES ($1, $2, $3, CURRENT_DATE, $4)`, [K.id, zertifikat.id, org, leitung]);
