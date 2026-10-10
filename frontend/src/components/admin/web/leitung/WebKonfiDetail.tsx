@@ -2,7 +2,8 @@
 // (Browser ab 992 px). Aufbau wie jede Detailseite (WebDetailSeite; Simon,
 // 06.10.2026: „Person gleich auch noch erledigen"):
 //
-//   Kopf      Name, darunter Jahrgang bzw. "Teamer:in" und Benutzername;
+//   Kopf      Name, darunter Jahrgang bzw. die Selbstbeschreibung der
+//             Teamer:in (sonst "Teamer:in") und Benutzername;
 //             alle Aktionen als Knoepfe oben rechts
 //   Kennzahl  Gottesdienst, Gemeinde, Gesamt, Badges -- bei einer Teamer:in
 //             Zertifikate, Events, Badges
@@ -39,6 +40,7 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebAngaben from '../../../web/WebAngaben';
 import WebHinweis from '../../../web/WebHinweis';
 import type { WebKachelProps } from '../../../web/WebKachel';
+import { KENNZAHL_SYMBOL, type KennzahlSymbol } from '../../../web/kennzahlSymbole';
 import { WebFehler, WebLaden } from '../../../web/WebZustaende';
 import WebKonfiBadges from './WebKonfiBadges';
 import {
@@ -93,31 +95,35 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
 
   // Eine abgeschaltete Punkteart zaehlt nicht mit; die Kachel sagt das, statt
   // eine Null zu zeigen.
-  const punkteKachel = (label: string, wert: number, ziel: number, an: boolean): WebKachelProps => (an
-    ? { label, wert: `${wert} / ${ziel}`, zusatz: [wert >= ziel ? 'Ziel erreicht' : `noch ${ziel - wert}`] }
-    : { label, wert: '–', zusatz: ['im Jahrgang abgeschaltet'], 'aria-label': `${label}: im Jahrgang abgeschaltet` });
+  const punkteKachel = (label: string, symbol: KennzahlSymbol, wert: number, ziel: number, an: boolean): WebKachelProps => (an
+    ? { label, symbol, wert: `${wert} / ${ziel}`, zusatz: [wert >= ziel ? 'Ziel erreicht' : `noch ${ziel - wert}`] }
+    : { label, symbol, wert: '–', zusatz: ['im Jahrgang abgeschaltet'], 'aria-label': `${label}: im Jahrgang abgeschaltet` });
 
   const kennzahlen: WebKachelProps[] = istTeamer
     ? [
-      { label: 'Zertifikate', wert: String(p.zertifikate.length) },
-      { label: 'Events', wert: String(p.teamerEvents.length) },
-      { label: 'Badges', wert: String(konfi.badgeCount || 0) },
+      { label: 'Zertifikate', symbol: KENNZAHL_SYMBOL.zertifikate, wert: String(p.zertifikate.length) },
+      { label: 'Events', symbol: KENNZAHL_SYMBOL.events, wert: String(p.teamerEvents.length) },
+      { label: 'Badges', symbol: KENNZAHL_SYMBOL.badges, wert: String(konfi.badgeCount || 0) },
     ]
     : [
-      punkteKachel('Gottesdienst', gesamt.gottesdienst, gesamt.zielGottesdienst, gesamt.gottesdienstAn),
-      punkteKachel('Gemeinde', gesamt.gemeinde, gesamt.zielGemeinde, gesamt.gemeindeAn),
+      punkteKachel('Gottesdienst', KENNZAHL_SYMBOL.gottesdienst, gesamt.gottesdienst, gesamt.zielGottesdienst, gesamt.gottesdienstAn),
+      punkteKachel('Gemeinde', KENNZAHL_SYMBOL.gemeinde, gesamt.gemeinde, gesamt.zielGemeinde, gesamt.gemeindeAn),
       {
         label: 'Gesamt',
+        symbol: KENNZAHL_SYMBOL.punkte,
         wert: `${gesamt.gesamt} / ${gesamt.zielGesamt}`,
         zusatz: [gesamt.erreicht ? 'Ziel erreicht' : `${gesamt.prozentGesamt} %`],
         achtung: gesamt.erreicht,
       },
-      { label: 'Badges', wert: String(konfi.badgeCount || 0) },
+      { label: 'Badges', symbol: KENNZAHL_SYMBOL.badges, wert: String(konfi.badgeCount || 0) },
     ];
 
+  // Bei einer Teamer:in steht vorn ihre Selbstbeschreibung (role_title, im
+  // eigenen Profil gesetzt; Simon, 10.10.2026), ohne Eintrag "Teamer:in".
+  const selbstbeschreibung = istTeamer ? konfi.role_title?.trim() : '';
   const kennzeichen = (
     <>
-      <span>{istTeamer ? 'Teamer:in' : (jahrgang || 'Kein Jahrgang')}</span>
+      <span>{istTeamer ? (selbstbeschreibung || 'Teamer:in') : (jahrgang || 'Kein Jahrgang')}</span>
       {konfi.username && <span> · @{konfi.username}</span>}
       {istTeamer && konfi.teamer_since && <span> · seit {datumKurz(konfi.teamer_since)}</span>}
     </>

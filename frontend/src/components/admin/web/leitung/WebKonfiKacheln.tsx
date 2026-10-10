@@ -9,7 +9,8 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ABZEICHEN, ICON_LOESCHEN, ICON_UHRZEIT } from '../../../shared/icons';
+import { ICON_LOESCHEN, ICON_UHRZEIT } from '../../../shared/icons';
+import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
 import WebKnopf from '../../../web/WebKnopf';
 import WebBildKarte, { WebBildKarteSymbol } from '../../../web/WebBildKarte';
 import WebTreffer from '../../../web/WebTreffer';
@@ -43,7 +44,7 @@ const WebKonfiKacheln: React.FC<WebKonfiKachelnProps> = ({ konfis, suche, onLoes
             href={`/admin/konfis/${k.id}`}
             unterzeile={k.username ? <WebTreffer text={k.username} suche={suche} /> : undefined}
             angaben={[
-              { icon: ICON_ABZEICHEN, inhalt: mitEinheit(badges, 'Badge', 'Badges'), farbe: 'var(--app-color-badges)' },
+              { ...KENNZAHL_SYMBOL.badges, inhalt: mitEinheit(badges, 'Badge', 'Badges') },
               k.letzte_aktivitaet && { icon: ICON_UHRZEIT, inhalt: `Zuletzt aktiv ${datumKurz(k.letzte_aktivitaet)}` },
             ]}
             fuss={onLoeschen ? (

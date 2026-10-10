@@ -137,7 +137,9 @@ Anwesenheits-Matrix), **Konfi anlegen** beziehungsweise **Teamer:in anlegen**
 und, für die Gemeindeleitung in der Konfi-Ansicht, **Konfis einladen**. Vier
 Kacheln fassen zusammen: bei den Konfis die Zahl der Konfis und Jahrgänge, die
 Punkte gesamt und wie viele ihr Ziel erreicht haben; beim Team die Zahl der
-Personen, der Zertifikate und der Badges.
+Personen, der Zertifikate und der Badges. Jede Kachel trägt das Symbol ihrer
+Kennzahl in der Farbe ihres Bereichs; Badges und Zertifikate stehen in Liste
+und Kacheln mit demselben farbigen Symbol.
 
 Darüber wechselst du mit **Konfis** und **Team** zwischen den beiden Gruppen —
 die Zahl am Knopf zählt die Personen —, suchst nach Name und Benutzername und
@@ -171,14 +173,17 @@ Alles aus
 gibt es auch hier, nur anders verteilt; **Alle Konfis** beziehungsweise **Alle
 im Team** führt zurück in die Liste.
 
-Unter dem Namen stehen der Jahrgang — bei einer Teamer:in „Teamer:in" und seit
-wann — und der Benutzername. Oben rechts stehen die Aktionen: **Passwort
+Unter dem Namen stehen der Jahrgang — bei einer Teamer:in ihre
+[Funktionsbeschreibung](20-teamer.md#dein-profil-oeffnen) (ohne eigene „Teamer:in") und
+seit wann — und der Benutzername; in der App steht die Funktionsbeschreibung
+ebenso vor dem Benutzernamen. Oben rechts stehen die Aktionen: **Passwort
 zurücksetzen**, **Konfi bearbeiten**, **Bonuspunkte vergeben** und als
 Hauptknopf **Aktivität eintragen**; bei einer Teamer:in **Zertifikat
 zuweisen** statt Bonuspunkten und Bearbeiten. Die Kennzahlen zeigen bei einer
 Konfi Gottesdienst, Gemeinde und Gesamt mit dem Ziel — eine Punkteart, die der
 Jahrgang abgeschaltet hat, steht dort als abgeschaltet — und die Badges, bei
-einer Teamer:in Zertifikate, Events und Badges.
+einer Teamer:in Zertifikate, Events und Badges — jede Kennzahl mit ihrem
+Symbol in der Farbe ihres Bereichs, wie in den Listen und Karten.
 
 Links folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
 eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen —, darunter

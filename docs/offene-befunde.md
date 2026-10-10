@@ -282,6 +282,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   entfernt; alle Fremdschlüssel und die sieben Schlüssel, auf die sie
   zeigen, sind bigint; Wächter für beides im Test-Schema
   (Branch `refactor/db-indizes-fremdschluessel`).
+- [x] 10.10.2026 — Web Konfis/Team: Kennzahl-Kacheln mit Symbol und
+  Bereichsfarbe, Badges und Zertifikate in der Liste farbig wie in den
+  Kacheln, Funktionsbeschreibung der Teamer:in im Kopf der Detailansicht
+  (Web und App) (Branch `feat/web-konfis-kacheln-icons`).
 
 
 ## Offen

@@ -5,14 +5,15 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ABZEICHEN, ICON_DATEI, ICON_LOESCHEN } from '../../../shared/icons';
+import { ICON_LOESCHEN } from '../../../shared/icons';
+import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
 import WebLink from '../../../web/WebLink';
 import WebKnopf from '../../../web/WebKnopf';
 import WebTreffer from '../../../web/WebTreffer';
 import { initialen, teamerName } from '../../../../utils/konfiListe';
 import type { TeamerListenEintrag } from '../../../../types/user';
 import WebSortTabelle, { type WebSortSpalte, type WebSortierung } from './WebSortTabelle';
-import { WebAvatar } from './WebLeitungBausteine';
+import { WebAvatar, WebZahlMitSymbol } from './WebLeitungBausteine';
 
 export interface WebTeamTabelleProps {
   team: readonly TeamerListenEintrag[];
@@ -53,12 +54,7 @@ const WebTeamTabelle: React.FC<WebTeamTabelleProps> = ({ team, suche, sortierung
       sortierbar: true,
       zahl: true,
       breite: '96px',
-      zelle: (t) => (
-        <span className="web-zahl-mit-symbol" title={`${t.badge_count || 0} Badges`}>
-          <IonIcon icon={ICON_ABZEICHEN} className="web-zahl-mit-symbol__symbol" aria-hidden="true" />
-          {t.badge_count || 0}
-        </span>
-      ),
+      zelle: (t) => <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.badges} zahl={t.badge_count || 0} title={`${t.badge_count || 0} Badges`} />,
     },
     {
       schluessel: 'zertifikate',
@@ -66,12 +62,7 @@ const WebTeamTabelle: React.FC<WebTeamTabelleProps> = ({ team, suche, sortierung
       sortierbar: true,
       zahl: true,
       breite: '112px',
-      zelle: (t) => (
-        <span className="web-zahl-mit-symbol" title={`${t.cert_count || 0} Zertifikate`}>
-          <IonIcon icon={ICON_DATEI} className="web-zahl-mit-symbol__symbol" aria-hidden="true" />
-          {t.cert_count || 0}
-        </span>
-      ),
+      zelle: (t) => <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.zertifikate} zahl={t.cert_count || 0} title={`${t.cert_count || 0} Zertifikate`} />,
     },
     {
       schluessel: 'seit',

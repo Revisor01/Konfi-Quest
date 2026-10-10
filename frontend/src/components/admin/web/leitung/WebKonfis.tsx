@@ -53,6 +53,7 @@ import { useTeamerListe } from '../../useTeamerListe';
 import WebSeite from '../../../web/WebSeite';
 import WebKnopf from '../../../web/WebKnopf';
 import WebKachel from '../../../web/WebKachel';
+import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
 import WebChips from '../../../web/WebChips';
 import WebSuche from '../../../web/WebSuche';
 import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
@@ -241,20 +242,21 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
 
   const kacheln = istTeam ? (
     <>
-      <WebKachel label="Team" wert={zahl(team.teamers.length)} />
-      <WebKachel label="Zertifikate" wert={zahl(team.teamers.reduce((s, t) => s + (t.cert_count || 0), 0))} />
-      <WebKachel label="Badges" wert={zahl(team.teamers.reduce((s, t) => s + (t.badge_count || 0), 0))} />
+      <WebKachel symbol={KENNZAHL_SYMBOL.team} label="Team" wert={zahl(team.teamers.length)} />
+      <WebKachel symbol={KENNZAHL_SYMBOL.zertifikate} label="Zertifikate" wert={zahl(team.teamers.reduce((s, t) => s + (t.cert_count || 0), 0))} />
+      <WebKachel symbol={KENNZAHL_SYMBOL.badges} label="Badges" wert={zahl(team.teamers.reduce((s, t) => s + (t.badge_count || 0), 0))} />
     </>
   ) : (
     <>
-      <WebKachel label="Konfis" wert={zahl(konfis.length)} zusatz={[mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgänge')]} />
-      <WebKachel label="Punkte gesamt" wert={zahl(konfiKennzahlen.punkteSumme)} />
+      <WebKachel symbol={KENNZAHL_SYMBOL.konfis} label="Konfis" wert={zahl(konfis.length)} zusatz={[mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgänge')]} />
+      <WebKachel symbol={KENNZAHL_SYMBOL.punkte} label="Punkte gesamt" wert={zahl(konfiKennzahlen.punkteSumme)} />
       <WebKachel
+        symbol={KENNZAHL_SYMBOL.zielErreicht}
         label="Ziel erreicht"
         wert={zahl(konfiKennzahlen.erreicht)}
         zusatz={[konfis.length > 0 ? `von ${zahl(konfis.length)} Konfis` : 'noch niemand']}
       />
-      <WebKachel label="Jahrgänge" wert={zahl(meineJahrgaenge.length)} />
+      <WebKachel symbol={KENNZAHL_SYMBOL.jahrgaenge} label="Jahrgänge" wert={zahl(meineJahrgaenge.length)} />
     </>
   );
 
