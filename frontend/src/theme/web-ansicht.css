@@ -532,6 +532,13 @@ a.web-kachel:focus-visible {
   color: var(--app-weiss);
 }
 
+/* Die orange Zahl: etwas wartet auf andere (Beitraege auf Freigabe), wie am
+   Reiter der App. Rot steht fuer Neues bzw. eigene Arbeit; beide mischen sich nicht. */
+.web-chip__zahl--orange {
+  background: var(--app-color-warning);
+  color: var(--app-weiss);
+}
+
 /* --- Werkzeugleiste: Suche, Chips, Aktionen --- */
 .web-werkzeuge {
   display: flex;

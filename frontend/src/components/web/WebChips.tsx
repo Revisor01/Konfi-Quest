@@ -1,6 +1,7 @@
 // Filter-Chips mit Zahl der Web-Fassung. Genau einer ist gewaehlt
 // (aria-pressed); eine rote Zahl (`rot`) zeigt etwas, das Arbeit macht
-// (ungelesene, nicht zugeordnete Mails).
+// (ungelesene, nicht zugeordnete Mails), eine orange (`orange`) etwas, das
+// wartet (Beitraege auf Freigabe, wie am Reiter der App).
 
 import React from 'react';
 
@@ -11,6 +12,8 @@ export interface WebChip<W extends string> {
   zahl?: number;
   /** Die Zahl in Rot, wenn sie groesser als 0 ist. */
   rot?: boolean;
+  /** Die Zahl in Orange, wenn sie groesser als 0 ist (Wartendes); `rot` geht vor. */
+  orange?: boolean;
   /** Satz fuer Vorleseprogramme, z. B. "3 ungelesen". */
   zahlText?: string;
 }
@@ -22,6 +25,12 @@ export interface WebChipsProps<W extends string> {
   wert: W;
   onWert: (wert: W) => void;
 }
+
+const zahlKlasse = (c: { zahl?: number; rot?: boolean; orange?: boolean }): string => {
+  if (!c.zahl || c.zahl <= 0) return 'web-chip__zahl';
+  if (c.rot) return 'web-chip__zahl web-chip__zahl--rot';
+  return c.orange ? 'web-chip__zahl web-chip__zahl--orange' : 'web-chip__zahl';
+};
 
 function WebChips<W extends string>({ beschriftung, chips, wert, onWert }: WebChipsProps<W>): React.ReactElement {
   return (
@@ -36,7 +45,7 @@ function WebChips<W extends string>({ beschriftung, chips, wert, onWert }: WebCh
         >
           {c.label}
           {c.zahl !== undefined && (
-            <span className={c.rot && c.zahl > 0 ? 'web-chip__zahl web-chip__zahl--rot' : 'web-chip__zahl'}>
+            <span className={zahlKlasse(c)}>
               {c.zahl}
               {c.zahlText && c.zahl > 0 && <span className="web-nur-vorlesen"> {c.zahlText}</span>}
             </span>

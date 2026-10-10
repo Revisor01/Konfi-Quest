@@ -47,6 +47,18 @@ export interface WebListenReiter<R extends string> {
   onWert: (wert: R) => void;
   /** Zahl je Reiter; fehlt sie, steht keine Zahl da (z. B. noch nicht geladen). */
   zahlen?: Partial<Record<R, number>>;
+  /**
+   * Farbe der Zahl je Reiter, wenn sie groesser als 0 ist: rot fuer Arbeit
+   * (Verbuchen, offene Antraege), orange fuer Wartendes (Beitraege auf
+   * Freigabe). Ohne Eintrag ist die Zahl grau.
+   */
+  farbe?: Partial<Record<R, 'rot' | 'orange'>>;
+  /**
+   * Satz fuer Vorleseprogramme hinter der Zahl je Reiter. Fehlt das Feld,
+   * gilt `zahlText` der Wahl; ist es gesetzt, gilt nur, was hier steht (die
+   * Vorlesesaetze der App passen nicht immer zur Zahl im Browser).
+   */
+  zahlTexte?: Partial<Record<R, string>>;
 }
 
 /** Ein Filter der Werkzeugzeile: Chips (Vorgabe) oder eine Auswahl. Die erste Wahl ist "alle". */
@@ -66,8 +78,12 @@ export interface WebListenSuche<T> {
   platzhalter?: string;
   wert: string;
   onWert: (wert: string) => void;
-  /** Die Texte eines Eintrags, in denen gesucht wird. */
-  felder: (eintrag: T) => ReadonlyArray<string | null | undefined>;
+  /**
+   * Die Texte eines Eintrags, in denen gesucht wird. Fehlt es, filtert die
+   * Huelle nicht: Die Seite sucht selbst (Material fragt den Server) und
+   * reicht nur die Treffer herein.
+   */
+  felder?: (eintrag: T) => ReadonlyArray<string | null | undefined>;
 }
 
 export interface WebListenSortierung<T> {
@@ -132,7 +148,7 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
   const sichtbar = useMemo(() => {
     const passend = eintraege.filter((e) =>
       filterListe.every((f) => f.wahlen.find((w) => w.schluessel === f.wert)?.passt?.(e) ?? true)
-      && (!suche || !sucht || suche.felder(e).some((t) => !!t && suchTreffer(t, suche.wert).length > 0)));
+      && (!suche?.felder || !sucht || suche.felder(e).some((t) => !!t && suchTreffer(t, suche.wert).length > 0)));
     return sortierung && aktuelleSortierung ? sortierung.sortiere(passend, aktuelleSortierung) : passend;
   }, [eintraege, filterListe, suche, sucht, sortierung, aktuelleSortierung]);
 
@@ -193,7 +209,9 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
             onWert={reiter.onWert}
             chips={inFassung(reiter.wahlen, 'web').map((w) => {
               const n = reiter.zahlen?.[w.schluessel];
-              return { wert: w.schluessel, label: w.label, zahl: n, zahlText: n === undefined ? undefined : w.zahlText?.(n) };
+              const zahlText = reiter.zahlTexte ? reiter.zahlTexte[w.schluessel] : n === undefined ? undefined : w.zahlText?.(n);
+              const farbe = reiter.farbe?.[w.schluessel];
+              return { wert: w.schluessel, label: w.label, zahl: n, zahlText, rot: farbe === 'rot', orange: farbe === 'orange' };
             })}
           />
         )}

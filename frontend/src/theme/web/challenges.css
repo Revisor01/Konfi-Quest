@@ -107,12 +107,6 @@
   min-width: 200px;
 }
 
-/* Die orange Zahl: so viele Beitraege warten auf Freigabe (wie am Reiter der App). */
-.web-chip__zahl--orange {
-  background: var(--app-color-warning);
-  color: var(--app-weiss);
-}
-
 /* --- Seite einer Challenge: Aufgabe --- */
 .web-challenge-aufgabe {
   margin: 0;

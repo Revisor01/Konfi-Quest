@@ -17,7 +17,8 @@ export type WebAnsichtSeite =
   | 'challenges-mitglied'
   | 'konfis'
   | 'aktivitaeten'
-  | 'antraege';
+  | 'antraege'
+  | 'material';
 
 const LEITUNG = new Set(['admin', 'org_admin', 'super_admin']);
 

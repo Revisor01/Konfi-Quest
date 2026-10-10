@@ -294,6 +294,57 @@ describe('WebListenSeite: Kopf und Kennzahlen', () => {
   });
 });
 
+describe('WebListenSeite: Farbe und Vorlesesatz der Reiter-Zahl', () => {
+  const MIT_SATZ = wahlen([
+    { schluessel: 'leute', label: 'Leute', zahlText: (n: number) => `${n} warten (Satz der App)` },
+    { schluessel: 'team', label: 'Team' },
+  ]);
+  const zahlAn = (name: RegExp) => within(screen.getByRole('group', { name: 'Leute oder Team' })).getByRole('button', { name }).querySelector('.web-chip__zahl')!;
+
+  it('ohne `farbe` und `zahlTexte`: graue Zahl, Vorlesesatz aus der Wahl', () => {
+    render(<Seite reiter={{ beschriftung: 'Leute oder Team', wahlen: MIT_SATZ, wert: 'leute', onWert: () => {}, zahlen: { leute: 3, team: 2 } }} />);
+    expect(zahlAn(/^Leute/).className).toBe('web-chip__zahl');
+    expect(zahlAn(/^Leute/)).toHaveTextContent('3 3 warten (Satz der App)');
+    expect(zahlAn(/^Team/)).toHaveTextContent(/^2$/);
+  });
+
+  it('`farbe`: rot oder orange je Reiter, nur solange die Zahl groesser als 0 ist', () => {
+    render(<Seite reiter={{
+      beschriftung: 'Leute oder Team', wahlen: REITER, wert: 'leute', onWert: () => {},
+      zahlen: { leute: 3, team: 0 }, farbe: { leute: 'orange', team: 'rot' },
+    }} />);
+    expect(zahlAn(/^Leute/).className).toBe('web-chip__zahl web-chip__zahl--orange');
+    expect(zahlAn(/^Team/).className).toBe('web-chip__zahl');
+  });
+
+  it('rot an einer Zahl groesser als 0', () => {
+    render(<Seite reiter={{ beschriftung: 'Leute oder Team', wahlen: REITER, wert: 'leute', onWert: () => {}, zahlen: { team: 4 }, farbe: { team: 'rot' } }} />);
+    expect(zahlAn(/^Team/).className).toBe('web-chip__zahl web-chip__zahl--rot');
+  });
+
+  it('`zahlTexte` ersetzt den Satz der Wahl ganz: wo er fehlt, steht keiner', () => {
+    render(<Seite reiter={{
+      beschriftung: 'Leute oder Team', wahlen: MIT_SATZ, wert: 'leute', onWert: () => {},
+      zahlen: { leute: 3, team: 2 }, zahlTexte: { team: '2 Beiträge warten' },
+    }} />);
+    expect(zahlAn(/^Leute/)).toHaveTextContent(/^3$/);
+    expect(zahlAn(/^Team/)).toHaveTextContent('2 2 Beiträge warten');
+  });
+});
+
+describe('WebListenSeite: Suche ohne `felder`', () => {
+  it('die Seite sucht selbst: die Huelle filtert nicht, zeigt aber die Zaehlzeile', () => {
+    const Gesucht: React.FC = () => {
+      const [suche, setSuche] = useState('');
+      return <Seite suche={{ beschriftung: 'Person suchen', wert: suche, onWert: setSuche }} />;
+    };
+    render(<Gesucht />);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Person suchen' }), { target: { value: 'zzz' } });
+    expect(namen()).toEqual(['Bea', 'Änne', 'Carl']);
+    expect(screen.getByRole('status')).toHaveTextContent('3 von 3 Leuten');
+  });
+});
+
 describe('WebListenSeite: Filter aus der Seitenbeschreibung', () => {
   it('Chips: nur die Wahlen der Web-Fassung, mit Zahl je Wahl; Klick filtert und zeigt die Zaehlzeile', () => {
     render(<Seite />);
