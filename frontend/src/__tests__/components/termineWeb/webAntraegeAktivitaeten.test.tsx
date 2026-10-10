@@ -288,6 +288,14 @@ describe('Aktivitäten: Tabelle', () => {
     expect(geoeffnet('ActivityManagementModal')).toHaveLength(2);
   });
 
+  it('"Neue Aktivität" steht im Seitenkopf neben der Überschrift, nicht in der Werkzeugzeile', async () => {
+    await oeffneReiter('aktivitaeten');
+    const knopf = screen.getByRole('button', { name: 'Neue Aktivität anlegen' });
+    const kopf = screen.getByRole('heading', { level: 1, name: 'Aktivitäten' }).closest('header') as HTMLElement;
+    expect(kopf.querySelector('.web-kopf__aktionen')).toContainElement(knopf);
+    expect(document.querySelector('.web-werkzeuge')).not.toContainElement(knopf);
+  });
+
   it('Löschen fragt nach und ruft erst nach "Löschen" DELETE', async () => {
     await oeffneReiter('aktivitaeten');
     const zeile = screen.getByRole('button', { name: 'Adventsmarkt bearbeiten' }).closest('tr')!;

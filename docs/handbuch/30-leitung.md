@@ -431,8 +431,9 @@ Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
 mit Aktivität und Beschreibung, Kategorien, Art — Gottesdienst oder Gemeinde —
 und Punkten. **Konfis** und **Team** wechseln die Liste, die Aktivitäten des
 Teams tragen keine Punkte; **Alle**, **Gemeinde** und **Gottesdienst** filtern
-nach der Art, die Suche liest Name und Beschreibung. **Neue Aktivität** legt
-eine an, Bearbeiten und Löschen stehen in der Zeile. Die gemeldeten Aktivitäten
+nach der Art, die Suche liest Name und Beschreibung. **Neue Aktivität** oben
+rechts neben der Überschrift legt eine an, Bearbeiten und Löschen stehen in
+der Zeile. Die gemeldeten Aktivitäten
 stehen dagegen unter Mitmachen, siehe
 [Gemeldete Aktivitäten in der Tabelle entscheiden](70-termine.md#gemeldete-aktivitaeten-in-der-tabelle-entscheiden).
 

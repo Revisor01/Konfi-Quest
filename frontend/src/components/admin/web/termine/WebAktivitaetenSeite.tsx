@@ -6,7 +6,8 @@
 //
 // Tabelle oder Kacheln (07.10.2026), Reiter Konfis und Team (die
 // Team-Aktivitaeten tragen keine Punkte und keine Art), Filter nach Art,
-// Suche in Name und Beschreibung. Rahmen, Werkzeugzeile und Zustaende stellt
+// Suche in Name und Beschreibung; "Neue Aktivitaet" steht im Kopf rechts
+// neben der Ueberschrift wie der Anlegen-Knopf bei Konfis und Team. Rahmen, Werkzeugzeile und Zustaende stellt
 // WebListenSeite (10.10.2026, die erste Seite darauf); hier stehen nur
 // Spalten, Karte und Daten. Reiter, Filter und Leertexte kommen aus der
 // gemeinsamen Beschreibung (seiten/aktivitaetenKatalog.ts).
@@ -132,6 +133,13 @@ const WebAktivitaetenSeite: React.FC<{
       untertitel={katalogUntertitel(v.rolle)}
       zurueck={ZURUECK}
       pageRef={pageRef}
+      // Anlegen steht im Kopf wie bei Konfis und Team; die Werkzeugzeile bleibt eine Zeile.
+      aktionen={v.darfAnlegen ? (
+        <WebKnopf art="primaer" onClick={v.anlegen} aria-label="Neue Aktivität anlegen">
+          <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
+          Neue Aktivität
+        </WebKnopf>
+      ) : undefined}
       laden={v.loading ? { text: 'Die Aktivitäten werden geladen.' } : undefined}
       fehler={!v.loading && !v.aktivitaeten ? { text: 'Die Aktivitäten konnten nicht geladen werden.', onErneut: () => { void v.refresh(); } } : undefined}
       reiter={{
@@ -149,12 +157,6 @@ const WebAktivitaetenSeite: React.FC<{
         onWert: setSuche,
         felder: (a) => [a.name, a.description],
       }}
-      werkzeuge={v.darfAnlegen ? (
-        <WebKnopf art="primaer" onClick={v.anlegen} aria-label="Neue Aktivität anlegen">
-          <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
-          Neue Aktivität
-        </WebKnopf>
-      ) : undefined}
       // Leitung startet mit der Liste wie Events, Challenges und Konfis.
       ansicht={{ seite: 'aktivitaeten', vorgabe: 'liste' }}
       eintraege={aktivitaeten}

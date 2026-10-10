@@ -253,6 +253,8 @@ Versionsüberschrift.
 - Auf Android reicht die App auf jeder Systemversion bis unter die
   durchsichtige Status- und Navigationsleiste, wie es ab Android 15 ohnehin
   gilt.
+- Im Browser steht „Neue Aktivität" im Katalog der Aktivitäten oben rechts
+  neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
 - Konfis, die in einer anderen Gemeinde zur Leitung gehören, stehen in der
