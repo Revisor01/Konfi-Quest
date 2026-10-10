@@ -1,23 +1,28 @@
 /**
- * „Konfi-Sprüche später auch verfolgen: welche Sprüche, welche Übersetzung,
- * eigene" (Simon, 27.09.2026).
+ * Welche Konfisprüche gewählt werden -- über die Nutzungsmessung, nicht über
+ * die App (Simon, 10.10.2026: „Raus aus der App. Nur Umami!" und „Aber nicht
+ * doppelt zählen."). docs/messung/umami.md, S1.
  *
- * Gemessen wird `konfispruch-gespeichert` mit
- *   - `quelle`: vorschlag | eigen
- *   - `bibel` (nur beim Vorschlag): luther | gute-nachricht | bigs | elberfelder
+ *   - `konfispruch-erste-wahl`  vorher stand kein Spruch da;
+ *   - `konfispruch-gewechselt`   ein anderer Spruch ersetzt den alten, mit
+ *                               `vorher_*` für den alten;
+ *   - unverändert erneut gespeichert: nichts.
  *
- * NICHT gemessen wird die Bibelstelle — auch nicht aus der Vorschlagsliste.
- * Ein Konfirmationsspruch ist öffentlich (Gottesdienst, Urkunde,
- * Gemeindebrief) und macht in einer kleinen Gemeinde die ganze Sitzung einer
- * Konfi wiedererkennbar. Begründung und Frage an Simon: docs/messung/umami.md,
- * S1.
- *
- * Gerendert geprüft: erst nach der Antwort des PATCH, nichts bei einem
- * Fehler, nichts bei unverändertem Speichern, nie Stelle oder Text.
+ * Gerendert geprüft, bis an den Versand: Die echte Messung läuft (PROD an,
+ * fetch abgefangen), geprüft wird die Nutzlast, die an Umami ginge -- erst
+ * nach der Antwort des PATCH, nichts bei einem Fehler, Konfi und Team über
+ * dieselbe Stelle, der Vorher-Stand aus der Anzeige (kein eigener Abruf).
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
+
+const h = vi.hoisted(() => {
+  // Vor dem Laden von services/analytics: Die Messung ist nur in PROD an.
+  vi.stubEnv('PROD', true);
+  return { fetch: vi.fn() };
+});
+vi.stubGlobal('fetch', h.fetch);
 
 const mockApiGet = vi.fn();
 const mockApiPatch = vi.fn();
@@ -28,14 +33,27 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
-const mockTrackHandlung = vi.fn();
-vi.mock('../../services/analytics', () => ({
-  trackHandlung: (...args: unknown[]) => mockTrackHandlung(...args),
+vi.mock('../../contexts/AppContext', () => ({
+  useApp: () => ({
+    isOnline: true,
+    user: { id: 4711, display_name: 'Emilia Mustermann', username: 'emilia', organization: 'Kirchengemeinde Heide', organization_id: 3 },
+  }),
 }));
 
-vi.mock('../../contexts/AppContext', () => ({
-  useApp: () => ({ isOnline: true }),
-}));
+// JSDOM reicht ionChange nicht an React durch (siehe pushAuswahl.test.tsx):
+// die Leisten werden durch schlichte Knoepfe mit denselben Props ersetzt.
+vi.mock('@ionic/react', async () => {
+  const echt = await vi.importActual<typeof import('@ionic/react')>('@ionic/react');
+  const R = await vi.importActual<typeof import('react')>('react');
+  type Knopf = { value: string; children?: React.ReactNode; waehlen?: () => void };
+  const IonSegmentButton = (p: Knopf) => R.createElement('button', { type: 'button', 'data-segment': p.value, onClick: p.waehlen }, p.children);
+  const IonSegment = (p: { onIonChange?: (e: { detail: { value: string } }) => void; children?: React.ReactNode }) =>
+    R.createElement('div', null, R.Children.map(p.children, (kind) =>
+      R.isValidElement<Knopf>(kind)
+        ? R.cloneElement(kind, { waehlen: () => p.onIonChange?.({ detail: { value: kind.props.value } }) })
+        : kind));
+  return { ...echt, IonSegment, IonSegmentButton };
+});
 
 vi.mock('../../hooks/useActionGuard', () => ({
   useActionGuard: () => ({ isSubmitting: false, guard: (fn: () => unknown) => fn() }),
@@ -45,32 +63,21 @@ import KonfispruchSelectModal from '../../components/konfi/modals/KonfispruchSel
 
 const SPRUECHE = [
   {
-    id: 11,
-    reference: 'Josua 1,9',
-    book: 'Josua',
-    chapter: 1,
-    verse: 9,
-    uebersetzungen: {
-      luther2017: 'Sei getrost und unverzagt.',
-      gute_nachricht: 'Sei mutig und entschlossen!',
-      bigs: '',
-      elberfelder: '',
-    },
+    id: 11, reference: 'Josua 1,9', book: 'Josua', chapter: 1, verse: 9,
+    uebersetzungen: { luther2017: 'Sei getrost und unverzagt.', gute_nachricht: 'Sei mutig und entschlossen!', bigs: '', elberfelder: '' },
   },
   {
-    id: 12,
-    reference: 'Psalm 23,1',
-    book: 'Psalm',
-    chapter: 23,
-    verse: 1,
-    uebersetzungen: {
-      luther2017: 'Der HERR ist mein Hirte.',
-      gute_nachricht: 'Der HERR ist mein Hirt.',
-      bigs: '',
-      elberfelder: '',
-    },
+    id: 12, reference: 'Psalm 23,1', book: 'Psalm', chapter: 23, verse: 1,
+    uebersetzungen: { luther2017: 'Der HERR ist mein Hirte.', gute_nachricht: 'Der HERR ist mein Hirt.', bigs: '', elberfelder: '' },
   },
 ];
+
+/** Die Ereignisse, die an Umami gegangen wären: [name, data]. */
+const gesendet = (): Array<[string, Record<string, string>]> =>
+  h.fetch.mock.calls.map((c) => {
+    const p = (JSON.parse((c[1] as { body: string }).body) as { payload: { name: string; data: Record<string, string> } }).payload;
+    return [p.name, p.data];
+  });
 
 /** Ein PATCH, dessen Antwort der Test selbst freigibt. */
 const offenerPatch = () => {
@@ -91,7 +98,10 @@ const speichern = async () => {
 const zeigen = async (props: Record<string, unknown> = {}) => {
   const onSuccess = vi.fn();
   render(<KonfispruchSelectModal onClose={vi.fn()} onSuccess={onSuccess} {...props} />);
-  await screen.findByText('Josua 1,9');
+  await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
+  if (props.current === undefined || (props.current as { source?: string })?.source !== 'freitext') {
+    await screen.findByText('Josua 1,9');
+  }
   return { onSuccess };
 };
 
@@ -99,55 +109,63 @@ beforeEach(() => {
   cleanup();
   mockApiGet.mockReset().mockResolvedValue({ data: SPRUECHE });
   mockApiPatch.mockReset();
-  mockTrackHandlung.mockReset();
+  h.fetch.mockReset().mockResolvedValue({ ok: true });
+});
+
+afterAll(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
 });
 
 describe('Konfispruch aus den Vorschlägen', () => {
-  it('erst nach der Antwort: quelle vorschlag, bibel luther', async () => {
+  it('erste Wahl: genau ein Ereignis, erst nach der Antwort, mit Spruch und Gemeinde', async () => {
     const patch = offenerPatch();
     const { onSuccess } = await zeigen();
     await act(async () => { fireEvent.click(screen.getByText('Josua 1,9')); });
     await speichern();
 
-    expect(mockApiPatch).toHaveBeenCalledTimes(1);
-    expect(mockApiPatch.mock.calls[0]).toEqual([
-      '/konfi/profile',
-      { konfspruch_id: 11, translation: 'luther2017' },
-    ]);
-    expect(mockTrackHandlung).not.toHaveBeenCalled();
+    expect(mockApiPatch.mock.calls[0]).toEqual(['/konfi/profile', { konfspruch_id: 11, translation: 'luther2017' }]);
+    expect(h.fetch).not.toHaveBeenCalled();
 
     await act(async () => { patch.antworten(); });
 
-    expect(mockTrackHandlung.mock.calls).toEqual([
-      ['konfispruch-gespeichert', { quelle: 'vorschlag', bibel: 'luther' }],
+    expect(gesendet()).toEqual([
+      ['konfispruch-erste-wahl', {
+        quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther', gemeinde: 'Kirchengemeinde Heide',
+      }],
     ]);
     expect(onSuccess).toHaveBeenCalledTimes(1);
-    // Weder Stelle noch Text noch Kennung.
-    expect(JSON.stringify(mockTrackHandlung.mock.calls)).not.toMatch(/Josua|getrost|11|luther2017/);
+    // Nichts von der Person: weder Name noch Benutzername noch Kennung.
+    const rumpf = h.fetch.mock.calls.map((c) => (c[1] as { body: string }).body).join('\n');
+    for (const verboten of ['Emilia', 'Mustermann', 'emilia', '4711', 'organization_id']) {
+      expect(rumpf, `${verboten} steht im Rumpf`).not.toContain(verboten);
+    }
   });
 
-  it('die gespeicherte Übersetzung wird zum Messwert (gute_nachricht -> gute-nachricht)', async () => {
+  it('gleicher Spruch erneut gespeichert: kein Ereignis', async () => {
     mockApiPatch.mockResolvedValue({ data: {} });
-    await zeigen({ current: { source: 'liste', id: 11, translation: 'gute_nachricht' } });
-    // Anderer Spruch, dieselbe Übersetzung: eine echte Änderung.
-    await act(async () => { fireEvent.click(screen.getByText('Psalm 23,1')); });
-    await speichern();
-
-    await waitFor(() => expect(mockTrackHandlung).toHaveBeenCalledTimes(1));
-    expect(mockTrackHandlung.mock.calls[0]).toEqual([
-      'konfispruch-gespeichert',
-      { quelle: 'vorschlag', bibel: 'gute-nachricht' },
-    ]);
-  });
-
-  it('unverändert gespeichert zählt nicht', async () => {
-    mockApiPatch.mockResolvedValue({ data: {} });
-    const { onSuccess } = await zeigen({ current: { source: 'liste', id: 11, translation: 'luther2017' } });
+    const { onSuccess } = await zeigen({ current: { source: 'liste', id: 11, reference: 'Josua 1,9', translation: 'luther2017' } });
     await speichern();
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
     expect(mockApiPatch).toHaveBeenCalledTimes(1);
-    expect(mockTrackHandlung).not.toHaveBeenCalled();
+    expect(gesendet()).toEqual([]);
+  });
+
+  it('Wechsel: genau ein Ereignis gewechselt, mit dem alten Spruch in vorher_*', async () => {
+    mockApiPatch.mockResolvedValue({ data: {} });
+    const { onSuccess } = await zeigen({ current: { source: 'liste', id: 11, reference: 'Josua 1,9', translation: 'gute_nachricht' } });
+    await act(async () => { fireEvent.click(screen.getByText('Psalm 23,1')); });
+    await speichern();
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+    expect(gesendet()).toEqual([
+      ['konfispruch-gewechselt', {
+        quelle: 'vorschlag', spruch: 'Psalm 23,1', spruch_id: '12', bibel: 'gute-nachricht',
+        vorher_quelle: 'vorschlag', vorher_spruch: 'Josua 1,9', vorher_spruch_id: '11', vorher_bibel: 'gute-nachricht',
+        gemeinde: 'Kirchengemeinde Heide',
+      }],
+    ]);
   });
 
   it('scheitert das Speichern, wird nichts gemeldet', async () => {
@@ -159,39 +177,29 @@ describe('Konfispruch aus den Vorschlägen', () => {
     await act(async () => { patch.scheitern({ response: { status: 404, data: {} } }); });
 
     expect(onSuccess).not.toHaveBeenCalled();
-    expect(mockTrackHandlung).not.toHaveBeenCalled();
+    expect(gesendet()).toEqual([]);
   });
 
-  it('beim Team gilt dasselbe (PATCH /teamer/profile)', async () => {
+  it('beim Team dieselbe Stelle (PATCH /teamer/profile), dasselbe Ereignis', async () => {
     mockApiPatch.mockResolvedValue({ data: {} });
     await zeigen({ apiBasePath: '/teamer', variant: 'teamer' });
     await act(async () => { fireEvent.click(screen.getByText('Psalm 23,1')); });
     await speichern();
 
-    await waitFor(() => expect(mockTrackHandlung).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(h.fetch).toHaveBeenCalledTimes(1));
     expect(mockApiPatch.mock.calls[0][0]).toBe('/teamer/profile');
-    expect(mockTrackHandlung.mock.calls[0]).toEqual([
-      'konfispruch-gespeichert',
-      { quelle: 'vorschlag', bibel: 'luther' },
+    expect(gesendet()).toEqual([
+      ['konfispruch-erste-wahl', {
+        quelle: 'vorschlag', spruch: 'Psalm 23,1', spruch_id: '12', bibel: 'luther', gemeinde: 'Kirchengemeinde Heide',
+      }],
     ]);
   });
 });
 
 describe('Eigener Konfispruch', () => {
-  it('unverändert gespeichert zählt nicht — und nie Text oder Stelle', async () => {
+  it('unverändert gespeichert: kein Ereignis', async () => {
     mockApiPatch.mockResolvedValue({ data: {} });
-    const { onSuccess } = await (async () => {
-      const onSuccess = vi.fn();
-      render(
-        <KonfispruchSelectModal
-          onClose={vi.fn()}
-          onSuccess={onSuccess}
-          current={{ source: 'freitext', text: 'Ich bin bei dir', reference: 'Mt 28,20' }}
-        />
-      );
-      await waitFor(() => expect(mockApiGet).toHaveBeenCalled());
-      return { onSuccess };
-    })();
+    const { onSuccess } = await zeigen({ current: { source: 'freitext', text: 'Ich bin bei dir', reference: 'Mt 28,20' } });
     await speichern();
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
@@ -199,6 +207,27 @@ describe('Eigener Konfispruch', () => {
       '/konfi/profile',
       { konfspruch_freitext: 'Ich bin bei dir', konfspruch_freitext_referenz: 'Mt 28,20' },
     ]);
-    expect(mockTrackHandlung).not.toHaveBeenCalled();
+    expect(gesendet()).toEqual([]);
+  });
+
+  it('vom eigenen Spruch zurück zu einem Vorschlag: gewechselt mit dem Wortlaut in vorher_spruch', async () => {
+    mockApiPatch.mockResolvedValue({ data: {} });
+    const { onSuccess } = await zeigen({ current: { source: 'freitext', text: 'Ich bin bei dir', reference: 'Mt 28,20' } });
+    // Umschalten auf „Aus der Liste" und einen Vorschlag wählen.
+    const liste = document.body.querySelector('button[data-segment="liste"]');
+    expect(liste).not.toBeNull();
+    await act(async () => { fireEvent.click(liste as HTMLElement); });
+    await screen.findByText('Josua 1,9');
+    await act(async () => { fireEvent.click(screen.getByText('Josua 1,9')); });
+    await speichern();
+
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledTimes(1));
+    expect(gesendet()).toEqual([
+      ['konfispruch-gewechselt', {
+        quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther',
+        vorher_quelle: 'eigen', vorher_spruch: 'Ich bin bei dir', vorher_stelle: 'Mt 28,20',
+        gemeinde: 'Kirchengemeinde Heide',
+      }],
+    ]);
   });
 });

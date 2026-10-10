@@ -37,9 +37,10 @@ describe('Lizenzen', () => {
   });
 
   it('der CHECK der Migration 192 nennt genau diese Schlüssel', () => {
-    const sql = lies('backend', 'migrations', '192_anfrage_wunschlizenz.sql');
-    const liste = sql.match(/wunsch_lizenz IN \(([^)]*)\)/)[1];
-    expect([...liste.matchAll(/'([a-z]+)'/g)].map((m) => m[1])).toEqual(LIZENZ_SCHLUESSEL);
+    // 192 steht seit 10.10.2026 im Schema-Dump; geprueft wird dessen Fassung.
+    const sql = lies('backend', 'tests', 'schema', 'prod-schema.sql');
+    const liste = sql.match(/gemeinde_anfragen_wunsch_lizenz_gueltig CHECK \(\(\(wunsch_lizenz IS NULL\) OR \(wunsch_lizenz = ANY \(ARRAY\[([^\]]*)\]/)[1];
+    expect([...liste.matchAll(/'([a-z]+)'::text/g)].map((m) => m[1])).toEqual(LIZENZ_SCHLUESSEL);
   });
 
   it('die Preisübersicht der Startseite nennt dieselben Namen, Grenzen und Preise', () => {

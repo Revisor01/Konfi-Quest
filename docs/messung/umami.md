@@ -1,6 +1,6 @@
 # Anonyme Nutzungsmessung (Umami) — Bestand und Messkonzept
 
-Stand: 09.10.2026 (S1–S17 umgesetzt, Simon: „Go"). Anlass: Simon, 27.09.2026 — „Aktivitäten wäre auch gut: wie
+Stand: 10.10.2026 (S1–S17 umgesetzt, Simon: „Go"; S1 seit 10.10.2026 über Umami). Anlass: Simon, 27.09.2026 — „Aktivitäten wäre auch gut: wie
 oft abgelehnt wird. Und auch hier Teamer, Konfi — gibt's ja für beide. Material
 hinterlegt, abgerufen auch bitte. Konfi-Sprüche später auch verfolgen: welche
 Sprüche, welche Übersetzung, eigene. Also da sollten wir nochmal schauen, was
@@ -19,7 +19,9 @@ jeden neuen Messpunkt unverändert:
 - **Anonym.** Keine Namen, keine Nutzer-, Event-, Material- oder
   Gemeinde-Kennung, kein Jahrgang, keine Titel, keine Dateinamen, keine
   Freitexte, keine Punktzahlen und keine Anzahlen — bei einer Gemeinde mit drei
-  Teamer:innen wäre schon eine Anzahl ein Fingerabdruck.
+  Teamer:innen wäre schon eine Anzahl ein Fingerabdruck. **Eine Ausnahme**,
+  von Simon entschieden (10.10.2026): Die Wahl des Konfispruchs trägt den
+  Spruch (bei einem eigenen den Wortlaut) und den Namen der Gemeinde (S1).
 - **Die Rolle ist das einzige Personenmerkmal** (`konfi`, `teamer`, `admin`;
   `org_admin` zählt als `admin`, alles andere als `sonstige`). `track` hängt
   sie an jedes Ereignis.
@@ -89,7 +91,9 @@ Zeile.
 | `antrag-entschieden` | `entscheidung`: `angenommen` \| `abgelehnt`; `antrag_von`: `konfi` \| `teamer` | admin | `admin/modals/ActivityRequestModal.tsx` | nach erfolgreichem `PUT /admin/activities/requests/:id`; offline eingereiht zählt nicht |
 | `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
 | `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
-| `konfispruch-gespeichert` | `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`; unverändert gespeichert zählt nicht. Welcher Spruch: nicht hier, sondern in der Datenbank (S1) |
+| `konfispruch-erste-wahl` (S1, ab 2.4.0) | `quelle`: `vorschlag` \| `eigen`; `spruch`: Bibelstelle des Vorschlags bzw. Wortlaut des eigenen Spruchs; `spruch_id` und `bibel` (`luther` \| `gute-nachricht` \| `bigs` \| `elberfelder`) nur beim Vorschlag; `stelle` (Stellenangabe) nur beim eigenen; `gemeinde`: Name der aktiven Gemeinde | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` (`trackKonfispruchWahl`) | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`, wenn vorher kein Spruch angezeigt war |
+| `konfispruch-gewechselt` (S1, ab 2.4.0) | dieselben Felder für den neuen Spruch, dazu `vorher_quelle`, `vorher_spruch` und je nach Quelle `vorher_spruch_id`, `vorher_bibel` bzw. `vorher_stelle` für den alten | konfi, teamer | dieselbe Stelle | nach erfolgreichem `PATCH`, wenn ein anderer Spruch (oder derselbe in anderer Übersetzung) den angezeigten ersetzt; derselbe erneut gespeichert meldet nichts |
+| `konfispruch-gespeichert` (bis 2.3.x) | `quelle`; `bibel` beim Vorschlag | konfi, teamer | ältere App-Fassungen | senden die Store-Apps bis 2.3.x weiter; ohne Spruch und Gemeinde, zählt jede Wahl, auch Wechsel |
 | `material-angesehen`, `material-abgerufen` (S17) | wie oben (`inhalt`) | admin | `admin/modals/MaterialFormModal.tsx`, nur mit `nurLesen` | Lese-Ansicht der Material-Verwaltung: angesehen beim Öffnen (nach erfolgreichem `GET /material/:id` in `AdminMaterialPage`), Datei erst nach dem Laden. Eigenes Material zum Bearbeiten zählt nicht |
 | `badge-angelegt` (S5) | `zielgruppe`: `konfi` \| `teamer`; `nachgesendet` | admin | `admin/modals/BadgeManagementModal.tsx` | nach erfolgreichem `POST /admin/badges`; Bearbeiten zählt nicht |
 | `challenge-angelegt` (S6) | `sichtbarkeit`: `offen` \| `konfi-entscheidet` \| `privat` (aus `public`, `konfi_choice`, `private`); `freigabe`: `true` \| `false` | admin | `admin/modals/ChallengeManageModal.tsx` | nach erfolgreichem `POST /challenges/admin`; Bearbeiten zählt nicht |
@@ -141,7 +145,8 @@ Hinweise zur Tabelle:
 | Welche Medien werden bei Challenges eingereicht, wie wird die Sichtbarkeit gewählt? | ja | `challenge-beitrag` |
 | Arbeitet die Leitung mit der App (Punkte, Anwesenheit, Moderation, Events, Material)? | ja | `trackHandlung` |
 | **Wird hinterlegtes Material angesehen, werden Dateien und Links geöffnet?** | **ja** (U2) | `material-angesehen`, `material-abgerufen`, daneben `material-bereitgestellt` |
-| **Welche Konfisprüche, welche Übersetzung, wie viele eigene?** | **ja** — Übersetzung und Anteil eigener in Umami (U3), welche Sprüche und eigene im Wortlaut in den Betreiber-Kennzahlen (S1) | `konfispruch-gespeichert`; Reiter „Sprüche" unter Betrieb |
+| **Welche Konfisprüche, welche Übersetzung, wie viele eigene?** | **ja**, ab 2.4.0 in Umami mit Spruch, eigenem Wortlaut und Gemeinde (S1); davor nur Übersetzung und Anteil eigener (U3) | `konfispruch-erste-wahl`, `konfispruch-gewechselt`; bis 2.3.x `konfispruch-gespeichert` |
+| **Wie oft wird der Spruch gewechselt?** | **ja**, ab 2.4.0 (S1) | `konfispruch-gewechselt` im Verhältnis zu `konfispruch-erste-wahl` |
 | Wird der Jahresrückblick angesehen, bis zum Ende? | ja (S7) | `wrapped-angesehen` |
 | Wird das Postfach genutzt? | ja (S8) | `postfach-angesehen`, `mitteilung-angetippt` |
 | Welche Mitteilungen schalten Leute ab? | ja (S9) | `push-gruppe-umgeschaltet`, `push-erlaubnis` |
@@ -377,6 +382,8 @@ weniger Ortsangaben oder eine richtiggestellte Erklärung, entscheidet Simon.
   Fehler, nichts bei unverändertem Speichern, Konfi und Team),
   `messungAntragMaterialSpruch.test.ts`. Den geänderten eigenen Spruch prüft
   nur der Quelltext-Test: Texteingaben erreichen React in jsdom nicht.
+- **Abgelöst ab 2.4.0** durch die zwei Ereignisse aus S1. Ältere App-Fassungen
+  senden `konfispruch-gespeichert` weiter, bis sie nicht mehr im Umlauf sind.
 
 ## Vorschläge S1–S17 — umgesetzt am 09.10.2026
 
@@ -386,13 +393,13 @@ abgewichen wurde. Tests: `messungVorschlaege.test.ts` (Nutzlast,
 Positivliste, Listen gegen den Server, Nachsenden, Hooks, Aufrufstellen),
 `nutzungstiefeAufrufstellen.test.ts` (Messung hinter der Server-Antwort, nie
 im catch), `messungEinladungBeantwortet.test.tsx` (gerendert),
-`konfispruchAuswertung.test.tsx` und im Backend `konfspruchWahlen.test.js`,
-`migration207KonfspruchWahlen.test.js` (S1).
+`messungKonfispruch.test.tsx` und `messungAntragMaterialSpruch.test.ts` (S1,
+seit 10.10.2026 über Umami).
 
 Aufwand: **klein** = eine Aufrufstelle und Tests, **mittel** = mehrere
 Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
 
-### S1 — Bibelstelle des Konfispruchs: nicht in Umami
+### S1 — Welcher Konfispruch gewählt wird: über Umami (seit 10.10.2026)
 
 - **Frage:** Welche Sprüche werden gewählt?
 - **Warum nicht in Umami:** Ein Konfirmationsspruch ist öffentlich — er wird
@@ -453,6 +460,60 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   Namen von Personen. Interne Gemeinden (`organizations.intern`) zählen
   nirgends mit, wie in der Support-Ansicht (Simon, 09.10.2026); Wahlen ohne
   Zuordnung stehen nur unter „Alle“, ohne eigene Zeile.
+
+- **Zurückgebaut am 10.10.2026 — die Auswertung läuft über Umami.** Simon:
+  „Die Auswertung der Konfisprüche gehört nicht in die App" und „Raus aus der
+  App. Nur Umami!", dazu „Aber nicht doppelt zählen." Migration 212 entfernt
+  `konfspruch_wahlen` samt Daten, die Route `GET /api/metrics/konfisprueche`
+  und der Reiter „Sprüche" unter Betrieb entfallen; beim Speichern schreibt
+  das Backend nur noch das Profil. Der Abschnitt darüber beschreibt den Weg
+  bis dahin.
+- **Ereignisse ab 2.4.0** (`services/analytics.ts`, `trackKonfispruchWahl`;
+  gerufen in `konfi/modals/KonfispruchSelectModal.tsx`, das Konfi- und
+  Team-Startseite gemeinsam nutzen):
+  - `konfispruch-erste-wahl` — vorher stand kein Spruch da.
+  - `konfispruch-gewechselt` — ein angezeigter Spruch wird durch einen
+    anderen ersetzt (oder derselbe in anderer Übersetzung); dazu `vorher_*`
+    für den alten. Simon hatte `konfispruch-geaendert` vorgeschlagen; der
+    Name folgt der Regel ohne Umlaut-Umschreibung (siehe Grundsätze).
+  - Derselbe Spruch erneut gespeichert: kein Ereignis. Einen Spruch ganz
+    entfernen kann man in der App nicht (`PATCH …/profile` verlangt einen
+    Vorschlag oder einen eigenen Spruch); dafür gibt es deshalb kein Ereignis.
+  - Den Vorher-Stand nimmt die App aus dem, was sie vor dem Speichern
+    anzeigt — kein eigener Abruf. Ist das Profil beim Öffnen noch nicht
+    geladen, gilt die Wahl als erste.
+- **Felder:** `quelle`, `spruch` (Bibelstelle des Vorschlags bzw. Wortlaut des
+  eigenen Spruchs), beim Vorschlag `spruch_id` und `bibel`, beim eigenen
+  `stelle`, dazu `gemeinde` (Name der aktiven Gemeinde aus dem Konto) und wie
+  überall `rolle`. Texte werden gesäubert (Steuerzeichen und Zeilenumbrüche
+  zu Leerzeichen, Leerraum zusammengezogen) und nach 500 Zeichen
+  abgeschnitten: Umami speichert Ereignisdaten als Zeichenkette mit höchstens
+  500 Zeichen (`event_data.string_value`). Kirchenkreis und Landeskirche
+  fehlen: Die Konfi- und Team-Oberfläche kennt sie nicht, nur die
+  Support-Ansicht; dafür müsste ein Abruf der App sie mitliefern (etwa
+  zusätzliche Felder an `GET /auth/my-organizations`). Keine Namen,
+  Benutzernamen oder Kennungen von Personen.
+- **Ausnahme von der Positivliste:** Spruch, Stellenangabe und Gemeinde
+  stammen aus Datenbank und Eingabe, nicht aus dem Quelltext. Sie gehen
+  deshalb nur über `trackKonfispruchWahl` und nur für diese zwei Ereignisse
+  raus; `trackHandlung` kennt `konfispruch-gespeichert` nicht mehr.
+- **Auswertung:** Aktuell gewählt ist je Spruch (und je Gemeinde)
+  `erste-wahl + gewechselt(neu) − gewechselt(vorher)`: also die Zahl der
+  `konfispruch-erste-wahl` mit diesem `spruch`, plus die
+  `konfispruch-gewechselt` mit diesem `spruch`, minus die
+  `konfispruch-gewechselt` mit diesem `vorher_spruch`. So zählt niemand
+  doppelt, der seinen Spruch wechselt, und ein gelöschtes Konto nimmt seine
+  Wahl nicht mit — deshalb Umami und nicht `konfi_profiles`. **Wie oft
+  gewechselt wird:** `konfispruch-gewechselt` im Verhältnis zu
+  `konfispruch-erste-wahl`. Wahlen aus Fassungen bis 2.3.x
+  (`konfispruch-gespeichert`) tragen keinen Spruch und gehen in diese
+  Rechnung nicht ein.
+- **Tests:** `messungKonfispruch.test.tsx` (gerendert bis an den Versand:
+  erste Wahl genau ein Ereignis, gleicher Spruch keins, Wechsel genau eins mit
+  `vorher_*`, nichts bei Fehler, Konfi und Team, nichts von der Person),
+  `messungAntragMaterialSpruch.test.ts` (Nutzlast, Säubern und Kürzen,
+  Aufrufstelle). Gegenprobe: ohne die Gleich-Prüfung fallen drei Tests, ohne
+  die Unterscheidung erste Wahl/Wechsel vier.
 
 ### S2 — Anträge-Ansicht der Leitung
 
@@ -632,7 +693,9 @@ Für die beauftragten Messpunkte (U1–U3) und die Vorschläge (S2–S17):
 | `antrag-entschieden` | `entscheidung`, `antrag_von` |
 | `material-angesehen` | `inhalt`, `rolle` |
 | `material-abgerufen` | `inhalt`, `rolle` |
-| `konfispruch-gespeichert` | `quelle`, `bibel`, `rolle` |
+| `konfispruch-erste-wahl` | `spruch`, `quelle`, `bibel`, `gemeinde` |
+| `konfispruch-gewechselt` | `spruch`, `vorher_spruch`, `quelle`, `gemeinde` |
+| `konfispruch-gespeichert` (bis 2.3.x) | `quelle`, `bibel`, `rolle` |
 | `event-abgemeldet` | `pflicht`, `rolle` |
 | `badge-angelegt` | `zielgruppe` |
 | `challenge-angelegt` | `sichtbarkeit`, `freigabe` |

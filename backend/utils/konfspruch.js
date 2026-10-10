@@ -145,77 +145,6 @@ async function ladeKonfspruch(db, userId, organizationId) {
 }
 
 // ------------------------------------------------------------------
-// Personenunabhaengige Spruch-Statistik (Migration 207, S1)
-// ------------------------------------------------------------------
-
-/**
- * Der gespeicherte Spruch einer Person VOR dem Speichern -- damit ein
- * unveraendertes erneutes Speichern keine zweite Wahl zaehlt.
- *
- * @returns {Promise<object|null>} Zeile oder null ohne Profil
- */
-async function spruchStandLesen(db, userId) {
-  const { rows: [stand] } = await db.query(
-    `SELECT konfspruch_id, konfspruch_translation, konfspruch_freitext, konfspruch_freitext_referenz
-       FROM konfi_profiles WHERE user_id = $1`,
-    [userId]
-  );
-  return stand || null;
-}
-
-// Kirchenkreis und Landeskirche der Gemeinde ($1) beim Waehlen (Migration
-// 208): der Stand zu diesem Zeitpunkt, damit die Zahl auf diesen Ebenen
-// bleibt, wenn die Gemeinde geht oder umgehaengt wird. Ohne Zuordnung NULL.
-const EBENEN_DER_GEMEINDE = `
-  (SELECT o.kirchenkreis_id FROM organizations o WHERE o.id = $1),
-  (SELECT k.landeskirche_id FROM organizations o JOIN kirchenkreise k ON k.id = o.kirchenkreis_id WHERE o.id = $1)`;
-
-/**
- * Eine Wahl in konfspruch_wahlen festhalten -- OHNE Person, Konto oder
- * Profil: Gemeinde mit Kirchenkreis und Landeskirche, Monat und der Spruch
- * selbst (Simon, 09.10.2026: „volle
- * Speicherung ... personenunabhängig"). Die Zeile bleibt bei einer
- * Kontoloeschung stehen; sie hat keinen Verweis auf users.
- *
- * Unveraendert erneut gespeichert zaehlt nicht. Ein Fehler hier darf das
- * Speichern des Spruchs nie scheitern lassen -- er wird nur protokolliert.
- *
- * @param {object} db
- * @param {number} organizationId  Gemeinde, in der gewaehlt wurde
- * @param {{quelle:'vorschlag', spruchId:number, translation:string}
- *        |{quelle:'eigen', freitext:string, referenz:string}} wahl
- * @param {object|null} vorher  Ergebnis von spruchStandLesen
- * @returns {Promise<boolean>} true, wenn eine Zeile geschrieben wurde
- */
-async function spruchWahlMerken(db, organizationId, wahl, vorher) {
-  try {
-    if (wahl.quelle === 'vorschlag') {
-      if (vorher && Number(vorher.konfspruch_id) === Number(wahl.spruchId)
-        && vorher.konfspruch_translation === wahl.translation) return false;
-      await db.query(
-        `INSERT INTO konfspruch_wahlen (organization_id, kirchenkreis_id, landeskirche_id, quelle, konfspruch_id, stelle, translation, monat)
-         VALUES ($1, ${EBENEN_DER_GEMEINDE}, 'vorschlag', $2::bigint, (SELECT reference FROM konfsprueche WHERE id = $2::bigint), $3,
-                 date_trunc('month', NOW())::date)`,
-        [organizationId, wahl.spruchId, wahl.translation]
-      );
-      return true;
-    }
-    if (vorher && vorher.konfspruch_id == null
-      && vorher.konfspruch_freitext === wahl.freitext
-      && vorher.konfspruch_freitext_referenz === wahl.referenz) return false;
-    await db.query(
-      `INSERT INTO konfspruch_wahlen (organization_id, kirchenkreis_id, landeskirche_id, quelle, freitext, freitext_referenz, monat)
-       VALUES ($1, ${EBENEN_DER_GEMEINDE}, 'eigen', $2, $3, date_trunc('month', NOW())::date)`,
-      [organizationId, wahl.freitext, wahl.referenz]
-    );
-    return true;
-  } catch (err) {
-    console.error('Konfispruch-Statistik nicht geschrieben:', err.message);
-    return false;
-  }
-}
-
-// ------------------------------------------------------------------
 // Routen-Kerne, geteilt von routes/konfi.js und routes/teamer.js
 // ------------------------------------------------------------------
 //
@@ -307,11 +236,7 @@ async function beantworteKonfspruchSetzen(db, req, res, { anlegen, ort }) {
       if (!spruch) {
         return res.status(404).json({ error: 'Konfispruch nicht gefunden' });
       }
-      const vorher = await spruchStandLesen(db, userId);
-      const { rowCount } = await db.query(SCHREIBEN.liste[art], werte(spruchId, translation));
-      // Personenunabhaengige Statistik (Migration 207): nur, wenn wirklich
-      // ein Profil geschrieben wurde.
-      if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'vorschlag', spruchId, translation }, vorher);
+      await db.query(SCHREIBEN.liste[art], werte(spruchId, translation));
       return res.json({
         success: true,
         konfspruch: { source: 'liste', id: spruchId, translation }
@@ -340,9 +265,7 @@ async function beantworteKonfspruchSetzen(db, req, res, { anlegen, ort }) {
       if (freitext.length > 1000) {
         return res.status(400).json({ error: 'Der Spruchtext ist zu lang' });
       }
-      const vorher = await spruchStandLesen(db, userId);
-      const { rowCount } = await db.query(SCHREIBEN.freitext[art], werte(freitext, referenz));
-      if (rowCount > 0) await spruchWahlMerken(db, orgId, { quelle: 'eigen', freitext, referenz }, vorher);
+      await db.query(SCHREIBEN.freitext[art], werte(freitext, referenz));
       return res.json({
         success: true,
         konfspruch: { source: 'freitext', text: freitext, reference: referenz }
@@ -382,8 +305,6 @@ module.exports = {
   ladeSpruchliste,
   loeseKonfspruchAuf,
   ladeKonfspruch,
-  spruchStandLesen,
-  spruchWahlMerken,
   beantworteKonfspruchSetzen,
   beantworteBibelUebersetzung,
 };

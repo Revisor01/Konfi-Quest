@@ -62,10 +62,12 @@ einzige ehrliche Startpunkt.
 
 ## Was in `backend/migrations/` liegt — und was nicht
 
-Der Dump steht auf **Stand 173** (`173_einladungscode_ohne_urheber.sql`) und
-ist die **einzige Quelle** fuer eine neue Datenbank. `backend/migrations/`
-haelt nur die Aenderungen **danach** (ab `174`); was der Dump enthaelt, liegt
-dort nicht noch einmal als Datei.
+Der Dump steht auf **Stand 208** (`208_konfspruch_wahlen_ebenen.sql`,
+gefaltet am 10.10.2026) und ist die **einzige Quelle** fuer eine neue
+Datenbank. `backend/migrations/` haelt nur die Aenderungen **danach** (ab
+`209`); was der Dump enthaelt, liegt dort nicht noch einmal als Datei. Die
+Dateien `174` bis `208` stehen in der Git-Historie, zuletzt im Commit
+`3b935178b46f212faaf8e52baa13bd4f847e98e7`.
 
 - **Die alten Dateien** `064` bis `173` (102 Stueck) sind am 02.10.2026
   entfernt worden. Sie stehen in der Git-Historie, zuletzt im Commit
@@ -80,14 +82,20 @@ dort nicht noch einmal als Datei.
   psql -At -c "SELECT name FROM schema_migrations" | LC_ALL=C sort \
     | LC_ALL=C comm -13 - backend/tests/schema/prod-migrations.txt
   ```
-- **Eine Datenbank aelter als Stand 173** laesst sich mit diesem Repo nicht
+- **Eine Datenbank aelter als Stand 208** laesst sich mit diesem Repo nicht
   mehr hochziehen — es gibt keinen Weg mehr von einem aelteren Stand. Sie
-  wird aus einer Sicherung ab Stand 173 wiederhergestellt
+  wird aus einer Sicherung ab Stand 208 wiederhergestellt
   (`deploy/wiederherstellung.sh`; die juengste Migration einer Sicherung
   nennt das Skript). Wer doch einmal einen aelteren Stand nachziehen muss,
   holt die fehlenden Dateien aus dem Commit oben und spielt sie von Hand in
   ihrer Reihenfolge ein.
-- **Stammdaten** sind nicht Teil des Dumps (`--schema-only`). Die 32
+- **Datenzeilen der Migrationen** stehen seit dem 10.10.2026 hinter dem
+  Schema im Dump: Was eine eingefaltete Migration selbst anlegt (190: die
+  Systemrolle `super_admin`, ohne die die Ersteinrichtung nicht geht; 193:
+  Textbausteine und Einstellungen der Support-Mail), schreibt
+  `schema-erneuern.sh` als INSERT mit. Es sind nur Zeilen aus dem
+  Wegwerf-Container, nie Daten der Produktion.
+- **Stammdaten aus aelteren Migrationen** sind nicht Teil des Dumps. Die 32
   Konfisprueche samt Luther- und Gute-Nachricht-Texten, die die Migrationen
   093 und 134 in die Produktion brachten, hat eine neue Instanz deshalb nicht
   — das war schon so, seit sie aus dem Dump entsteht. Die Quelle steht im

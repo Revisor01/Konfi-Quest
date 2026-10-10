@@ -47,7 +47,6 @@ import { PUSH_WEGE, fmtDauer, fmtSeit, fmtUptime, fmtZahl, laufErgebnisFarbe, la
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebBetrieb from '../web/leitung/WebBetrieb';
 import type { BetriebsCspMeldungen, BetriebsHintergrund } from '../web/leitung/betriebTypen';
-import KonfispruchAuswertung from '../KonfispruchAuswertung';
 import { inFassung } from '../../../seiten/beschreibung';
 import { BETRIEB_REITER, ROUTEN_SORTIERUNG, type BetriebsReiterSchluessel } from '../../../seiten/betrieb';
 
@@ -623,8 +622,6 @@ const AdminMetricsPage: React.FC = () => {
 
             {tab === 'verlauf' && <VerlaufListe tage={tage} deltas={historyDeltas} />}
 
-            {/* 6. Welche Konfisprüche gewählt werden (personenunabhängig, S1). */}
-            {tab === 'sprueche' && <KonfispruchAuswertung />}
           </div>
         ) : null}
       </IonContent>

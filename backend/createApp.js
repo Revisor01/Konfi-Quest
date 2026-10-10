@@ -557,9 +557,6 @@ function createApp(db, options = {}) {
     res.json(await mitSupportMail(merged));
   });
 
-  // Welche Konfisprueche gewaehlt werden -- personenunabhaengig, ueber alle
-  // Gemeinden (Migration 207, routes/metrikKonfisprueche.js). Nur super_admin.
-  app.use('/api/metrics/konfisprueche', require('./routes/metrikKonfisprueche')(db, rbacVerifier));
 
   // Persistente APM-Historie (über Deploys hinweg). Liefert die gespeicherten
   // Snapshots der letzten N Tage; das Dashboard bildet daraus Deltas pro Intervall.

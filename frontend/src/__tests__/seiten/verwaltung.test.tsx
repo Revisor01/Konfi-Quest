@@ -118,6 +118,21 @@ describe('Betrieb: eine Beschreibung', () => {
     expect(fehler).toHaveTextContent('2 Fehlerarten seit dem letzten Neustart');
   });
 
+  // Simon, 10.10.2026: Die Auswertung der Konfisprüche gehört nicht in den
+  // Betrieb. Die Reiter stehen hier ausdrücklich, damit „Sprüche“ nicht still
+  // zurückkommt -- weder in der App noch im Browser.
+  it('Betrieb hat genau Überblick, Fehler, Routen und Verlauf -- keinen Reiter „Sprüche“', async () => {
+    h.breit = false;
+    const { unmount } = render(<AdminMetricsPage />);
+    await warten();
+    expect(appReiter(screen.getAllByRole('tablist')[0])).toEqual(['Überblick', 'Fehler (2)', 'Routen', 'Verlauf']);
+    unmount();
+    h.breit = true;
+    render(<AdminMetricsPage />);
+    await warten();
+    expect(webChips(BETRIEB_REITER_BESCHRIFTUNG)).toEqual(['Überblick', 'Fehler', 'Routen', 'Verlauf']);
+  });
+
   it('die Sortierung der Routen: dieselben zwei Wahlen in beiden Fassungen', async () => {
     h.breit = false;
     const app = render(<AdminMetricsPage />);

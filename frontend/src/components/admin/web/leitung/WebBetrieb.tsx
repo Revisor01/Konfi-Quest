@@ -1,7 +1,7 @@
 // Betrieb in der Web-Fassung, /admin/metrics (Browser ab 992 px;
 // docs/planung/web-alle-bereiche.md, Entscheidung 6): zuerst das Urteil "Laeuft
 // gerade alles?", dann die Kennzahlen und die Reiter -- Ueberblick, Fehler,
-// Routen, Verlauf, Sprueche (seiten/betrieb.ts) -- mit Karten und Tabellen
+// Routen, Verlauf (seiten/betrieb.ts) -- mit Karten und Tabellen
 // statt langer Listen.
 //
 // Laden, Aktualisieren (alle 5 Sekunden) und alle Urteile kommen von der Seite
@@ -20,7 +20,6 @@ import { METRIK_AMPEL } from '../../../../theme/colors';
 import type { HistorieDelta, RoutenSortierung, RoutenZeile, Tagesbilanz, vergleichHeuteGegenVortage } from '../../../../utils/betriebsKennzahlen';
 import WebSeite from '../../../web/WebSeite';
 import WebKarte from '../../../web/WebKarte';
-import KonfispruchAuswertung from '../../KonfispruchAuswertung';
 import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
 import WebChips from '../../../web/WebChips';
@@ -555,7 +554,6 @@ const WebBetrieb: React.FC<WebBetriebProps> = (p) => {
       {p.tab === 'fehler' && fehlerReiter}
       {p.tab === 'routen' && routenReiter}
       {p.tab === 'verlauf' && verlaufReiter}
-      {p.tab === 'sprueche' && <KonfispruchAuswertung web />}
     </WebSeite>
   );
 };

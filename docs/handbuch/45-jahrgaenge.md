@@ -169,11 +169,11 @@ Die gesammelten Sprüche eines Jahrgangs kannst du dir als Übersicht anzeigen
 und dir per E-Mail zuschicken lassen — praktisch für Urkunden und den
 Konfirmationsablauf.
 
-Jede Wahl hält Konfi Quest außerdem **ohne Namen** in einer Statistik fest:
-welcher Spruch in welcher Übersetzung oder welcher eigene Text, die Gemeinde
-mit ihrem Kirchenkreis und ihrer Landeskirche und den Monat. Diese Einträge
-bleiben, wenn ein Konto gelöscht wird; der Betrieb von Konfi Quest sieht sie
-gesamt oder je Landeskirche, Kirchenkreis und Gemeinde.
+Welche Sprüche gewählt werden, fließt **ohne Namen** in die anonyme
+Nutzungsmessung ein: beim ersten Eintragen und bei jedem Wechsel der Spruch
+in seiner Übersetzung oder der eigene Text mit Stellenangabe und die
+Gemeinde. Wird derselbe Spruch noch einmal gespeichert, zählt das nicht. In
+Konfi Quest selbst gibt es dazu keine Auswertung.
 
 ## Nachvollziehen, was die Jahrgangs-Zuweisung steuert
 

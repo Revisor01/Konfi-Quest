@@ -264,9 +264,10 @@ describe('9d E-Mails an moin@ und support@: der Text folgt dem Code', () => {
   });
 
   it('zugeordnete Mails gehen mit Anfrage und Gemeinde (ON DELETE CASCADE)', () => {
-    const sql = backend('migrations/193_support_mail.sql');
-    expect(sql).toContain('anfrage_id BIGINT REFERENCES gemeinde_anfragen(id) ON DELETE CASCADE');
-    expect(sql).toContain('organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE');
+    // Migration 193 steht seit 10.10.2026 im Schema-Dump; geprueft wird dessen Fassung.
+    const sql = backend('tests/schema/prod-schema.sql');
+    expect(sql).toContain('mail_nachrichten_anfrage_id_fkey FOREIGN KEY (anfrage_id) REFERENCES public.gemeinde_anfragen(id) ON DELETE CASCADE;');
+    expect(sql).toContain('mail_nachrichten_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;');
     expect(text).toContain('bleibt so lange gespeichert wie diese und wird mit ihr gelöscht');
   });
 
@@ -292,7 +293,10 @@ describe('9e Support-Formular: der Text folgt dem Code', () => {
   const backend = (p: string) => readFileSync(join(process.cwd(), '..', 'backend', p), 'utf8');
   const route = backend('routes/anliegen.js');
   const vorgaenge = backend('utils/supportVorgaenge.js');
-  const migration = backend('migrations/195_support_vorgaenge.sql');
+  // Die Tabelle aus Migration 195, wie sie seit 10.10.2026 im Schema-Dump steht.
+  const dump = backend('tests/schema/prod-schema.sql');
+  const tabelleAb = dump.indexOf('CREATE TABLE public.support_vorgaenge (');
+  const migration = dump.slice(tabelleAb, dump.indexOf('\n);', tabelleAb));
   const dienst = backend('services/backgroundService.js');
   // Abschnitt 9e allein, damit Treffer in 9c und 9d nichts vortaeuschen.
   const abschnitt = text.slice(text.indexOf('9e. Support-Formular auf unserer Website'), text.indexOf('10. Wie lange werden Ihre Daten gespeichert?'));
@@ -319,7 +323,8 @@ describe('9e Support-Formular: der Text folgt dem Code', () => {
     // Dazu Art, Bereich und Dringlichkeit (Auswahl) und der Zeitpunkt der Einwilligung.
     for (const feld of ['art:', 'bereich:', 'dringlichkeit:']) expect(route).toContain(`${feld} req.body.${feld.slice(0, -1)}`);
     expect(route).toContain('einwilligungAm: new Date()');
-    expect(migration).toContain('einwilligung_am TIMESTAMPTZ');
+    expect(tabelleAb).toBeGreaterThan(-1);
+    expect(migration).toContain('einwilligung_am timestamp with time zone');
     expect(abschnitt).toContain('Art, Bereich und Dringlichkeit Ihres Anliegens, die Sie aus Listen wählen');
     expect(abschnitt).toContain('den Zeitpunkt Ihrer Einwilligung');
   });
@@ -391,7 +396,7 @@ describe('9e Support-Formular: der Text folgt dem Code', () => {
   });
 
   it('erledigt heißt Archiv; eine neue E-Mail holt ein Anliegen aus dem Archiv zurück', () => {
-    expect(migration).toContain('CONSTRAINT support_vorgaenge_erledigt_archiviert CHECK (status <> \'erledigt\' OR archiviert_am IS NOT NULL)');
+    expect(migration).toContain("CONSTRAINT support_vorgaenge_erledigt_archiviert CHECK (((status <> 'erledigt'::text) OR (archiviert_am IS NOT NULL)))");
     const zurueck = vorgaenge.slice(vorgaenge.indexOf('async function mailImVorgang'), vorgaenge.indexOf('async function vorgaengeArchivieren'));
     expect(zurueck).toContain("status = CASE WHEN archiviert_am IS NOT NULL THEN 'in_arbeit' ELSE status END");
     expect(zurueck).toContain('archiviert_am = NULL');
@@ -400,8 +405,8 @@ describe('9e Support-Formular: der Text folgt dem Code', () => {
   });
 
   it('mit der Gemeinde gehen ihre Anliegen, mit dem Anliegen seine E-Mails (ON DELETE CASCADE)', () => {
-    expect(migration).toContain('organization_id BIGINT REFERENCES organizations(id) ON DELETE CASCADE');
-    expect(migration).toContain('ADD COLUMN IF NOT EXISTS vorgang_id BIGINT REFERENCES support_vorgaenge(id) ON DELETE CASCADE');
+    expect(dump).toContain('support_vorgaenge_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;');
+    expect(dump).toContain('mail_nachrichten_vorgang_id_fkey FOREIGN KEY (vorgang_id) REFERENCES public.support_vorgaenge(id) ON DELETE CASCADE;');
     expect(abschnitt).toContain('samt den zugehörigen E-Mails in Konfi Quest');
     expect(abschnitt).toContain('Mit einer Gemeinde gehen ihre Anliegen');
   });

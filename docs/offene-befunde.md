@@ -203,10 +203,16 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Render-Test an der Seite (Branch `fix/einladung-schleife-altmitteilungen`).
 - [x] 09.10.2026 — Konfisprüche: Gemeinde und Wortlaut zusammen? Simon:
   Auswertung nach Gemeinde, Kirchenkreis und Landeskirche, vollständig und
-  personenunabhängig; je Wahl Kirchenkreis und Landeskirche vom Zeitpunkt
-  der Wahl (Migration 208), Ebene wählbar unter Betrieb › „Sprüche"
-  ([messung/umami.md](messung/umami.md), S1; Branch
-  `feat/konfspruch-auswertung-ebenen`).
+  personenunabhängig (Branch `feat/konfspruch-auswertung-ebenen`). Am
+  10.10.2026 zurückgebaut, siehe unten.
+- [x] 10.10.2026 — Auswertung der Konfisprüche aus App und Betrieb entfernt
+  (Simon: „Raus aus der App. Nur Umami!"): Reiter „Sprüche", Route
+  `GET /api/metrics/konfisprueche` und Tabelle `konfspruch_wahlen`
+  (Migration 212) entfallen; die Wahl geht ab 2.4.0 als
+  `konfispruch-erste-wahl` bzw. `konfispruch-gewechselt` mit Spruch und
+  Gemeinde an Umami ([messung/umami.md](messung/umami.md), S1). Dazu den
+  Schema-Dump bis 208 gefaltet, samt den Datenzeilen aus 190 und 193
+  (Branch `revert/konfisprueche-nur-umami`).
 - [x] 09.10.2026 — Reiter, Filter und Leertexte je Seite an einer Stelle für
   App und Web-Fassung (Simon: „Filter ja"): `frontend/src/seiten/`, beschrieben
   in [wissen/gestaltung.md](wissen/gestaltung.md#reiter-filter-und-leertexte-einer-seite);
@@ -291,11 +297,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Tests und CI
 
-- **Schema-Dump an der Grenze.** Über dem Dump liegen seit 10.10.2026 genau
-  20 Migrationen (190–211), die nächste macht `dumpAktualitaet` rot. 190 und
-  191 legen Datenzeilen an (Rolle `super_admin`, Kirchenkreise), ein reiner
-  Schema-Dump verlöre sie. Vor der nächsten Migration den Dump mit diesen
-  Daten falten (Weg in [betrieb/routinen.md](betrieb/routinen.md)).
 - **Komponenten ohne eigenen Test.** 123 von 422 Dateien unter
   `frontend/src/components/` kommen in keiner Testdatei als Pfad vor
   (09.10.2026, 86 davon Web-Fassung; viele laufen in gerenderten
