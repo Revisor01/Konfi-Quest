@@ -67,6 +67,14 @@ function getDb() {
 }
 
 // Nur fuer Tests: zurueck auf den Ausgangszustand.
+/**
+ * Die Socket.IO-Instanz fuer Hintergrund-Laeufe, die an einen Chat-Raum
+ * senden (utils/umfrageStand.js); null, solange init nicht gerufen ist.
+ */
+function holeIo() {
+  return _io;
+}
+
 function _reset() {
   _io = null;
   _db = null;
@@ -393,6 +401,7 @@ function raeumeGeaendert(ziele) {
 module.exports = {
   init,
   _reset,
+  holeIo,
   sendToUser,
   disconnectUserSockets,
   raeumeGeaendert,

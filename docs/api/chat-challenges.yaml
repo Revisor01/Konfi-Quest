@@ -1377,7 +1377,11 @@ paths:
         Socket 'pollUpdated' an den Raum, wie nach einer Stimme -- KEIN Push
         (ein neuer Push-Typ liefe bei den Store-Apps ins Leere). Nach
         Ablauf (expires_at) gelten die Namen auch ohne diese Route als
-        aufgedeckt; das wird beim Lesen berechnet. Vor dem Aufdecken
+        aufgedeckt; das wird beim Lesen berechnet. Seit 10.10.2026 deckt
+        zusaetzlich ein Hintergrund-Lauf (jede Minute, Job umfrage_namen)
+        abgelaufene Umfragen auf (namen_aufgedeckt_at = expires_at) und
+        sendet 'pollUpdated' an den Raum -- offene Chats sehen die Namen
+        ohne Neuladen, auch die Store-Apps. Vor dem Aufdecken
         liefert das Backend die Namen an niemanden aus, auch nicht an die
         Leitung oder an die Person, die die Umfrage erstellt hat.
       parameters:

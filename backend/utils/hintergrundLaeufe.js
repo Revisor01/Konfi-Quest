@@ -30,6 +30,7 @@ const JOBS = {
   erinnerungen: { bezeichnung: 'Event-Erinnerungen', takt: 'alle 15 Minuten', protokoll: 'immer' },
   anmeldung_offen: { bezeichnung: 'Push „Anmeldung möglich“', takt: 'jede Minute', protokoll: 'auffaellig' },
   challenge_start: { bezeichnung: 'Push zum Challenge-Start', takt: 'alle 5 Minuten', protokoll: 'auffaellig' },
+  umfrage_namen: { bezeichnung: 'Namen abgelaufener Umfragen aufdecken', takt: 'jede Minute', protokoll: 'auffaellig' },
   offene_verbuchung: { bezeichnung: 'Hinweis auf offene Verbuchungen', takt: 'täglich 9 Uhr', protokoll: 'immer' },
   push_tokens: { bezeichnung: 'Push-Geräte aufräumen', takt: 'alle 6 Stunden', protokoll: 'immer' },
   refresh_tokens: { bezeichnung: 'Anmeldungen aufräumen', takt: 'alle 6 Stunden', protokoll: 'immer' },

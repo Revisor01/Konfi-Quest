@@ -19,6 +19,7 @@ const chatSyncCache = require('../utils/chatSyncCache');
 const { nachAntwort } = require('../utils/nachAntwort');
 const { registriereArt, einreihen } = require('../utils/warteschlange');
 const { umfrageFelder, namenAufgedeckt } = require('../utils/umfrageRegeln');
+const { stimmenAufbereiten, umfrageStandSenden } = require('../utils/umfrageStand');
 
 // Push zu einer neuen Chat-Nachricht (oder Umfrage) als Auftrag der
 // dauerhaften Warteschlange (utils/warteschlange.js): Ein Neustart direkt
@@ -173,98 +174,12 @@ module.exports = (db, rbacMiddleware, uploadsDir, chatUpload, io) => {
       }, { req, bezeichnung: 'Chat-Push' });
     }, 'Chat-Broadcast');
 
-  // Hilfsfunktion: Nach einem Vote den aktuellen Poll-Stand einsammeln und per
-  // 'pollUpdated' an den Raum senden, damit alle offenen Chats die neuen Votes
-  // live sehen (Audit Achse 2, Luecke 10b). Die Poll-/Votes-Struktur ist
-  // identisch zu GET /messages: options als Array, anonymitaets-bewusste Votes
-  // (bei anonymen Umfragen ohne user_name). messageId ist die message_id der
-  // Poll-Nachricht, damit der Client die richtige Nachricht im State findet.
-  // Stimmen einer Umfrage für die Auslieferung aufbereiten.
-  //
-  // Bei anonymen Umfragen wurde bisher nur der Name weggelassen, user_id und
-  // user_type aber weiterhin je Stimme mitgeliefert. Über die Teilnehmerliste
-  // (GET /rooms/:id/participants) liess sich daraus aufloesen, wer was gewählt
-  // hat — die zugesagte Anonymitaet war nur kosmetisch (Befund 23.08.2026).
-  //
-  // Das Frontend braucht die Kennung ausschliesslich, um die EIGENE Stimme zu
-  // markieren (MessageBubble: vote.user_id === user.id && vote.user_type ===
-  // user.type). Deshalb wird bei anonymen Umfragen nur noch die eigene Stimme
-  // mit Kennung ausgeliefert; fremde zählen anonym mit.
-  const stimmenAufbereiten = (rawVotes, anonym, empfaengerId, empfaengerTyp) =>
-    rawVotes.map(v => {
-      const eigene = v.user_id === empfaengerId && v.user_type === empfaengerTyp;
-      if (!anonym) {
-        return {
-          user_id: v.user_id,
-          user_type: v.user_type,
-          option_index: v.option_index,
-          user_name: v.voter_name,
-        };
-      }
-      return {
-        user_id: eigene ? v.user_id : null,
-        user_type: eigene ? v.user_type : null,
-        option_index: v.option_index,
-        user_name: undefined,
-      };
-    });
-
-  const emitPollUpdate = async (pollDbId, roomId) => {
-    if (!io) return; // io-defensiv: in Tests kein Socket -> No-op
-    try {
-      const { rows: [poll] } = await db.query(
-        `SELECT p.id, p.message_id, p.question, p.options, p.multiple_choice,
-                p.anonymous, p.exclusive_options, p.expires_at,
-                p.einmalige_antwort, p.namen_spaeter, p.namen_aufgedeckt_at
-         FROM chat_polls p WHERE p.id = $1`,
-        [pollDbId]
-      );
-      if (!poll) return;
-
-      const { rows: rawVotes } = await db.query(
-        `SELECT v.user_id, v.user_type, v.option_index, u.display_name as voter_name
-         FROM chat_poll_votes v
-         LEFT JOIN users u ON v.user_id = u.id
-         WHERE v.poll_id = $1`,
-        [pollDbId]
-      );
-
-      let parsedOptions = [];
-      try { parsedOptions = JSON.parse(poll.options); } catch (e) { parsedOptions = []; }
-      // Wirksame Anonymitaet: Bei "Namen spaeter" bis zum Aufdecken anonym
-      // (utils/umfrageRegeln.js) -- auch im Live-Update keine Namen.
-      const felder = umfrageFelder(poll);
-      const isAnonymous = felder.anonymous;
-
-      const pollPayload = {
-        poll_id: poll.id,
-        message_id: poll.message_id,
-        question: poll.question,
-        options: parsedOptions,
-        multiple_choice: Boolean(poll.multiple_choice),
-        anonymous: isAnonymous,
-        exclusive_options: Boolean(poll.exclusive_options),
-        expires_at: poll.expires_at,
-        einmalige_antwort: felder.einmalige_antwort,
-        namen_spaeter: felder.namen_spaeter,
-        namen_aufgedeckt: felder.namen_aufgedeckt,
-        namen_aufgedeckt_at: felder.namen_aufgedeckt_at,
-        // Broadcast an den ganzen Raum: Es gibt keinen einzelnen Empfaenger,
-        // also kann hier keine "eigene" Stimme markiert werden. Bei anonymen
-        // Umfragen fallen alle Kennungen weg; der Client holt seine eigene
-        // Markierung über GET /rooms/:id/messages.
-        votes: stimmenAufbereiten(rawVotes, isAnonymous, null, null),
-      };
-
-      io.to(`room_${roomId}`).emit('pollUpdated', {
-        roomId: parseInt(roomId),
-        messageId: poll.message_id,
-        poll: pollPayload,
-      });
-    } catch (emitErr) {
-      console.error('Failed to emit pollUpdated:', emitErr);
-    }
-  };
+  // Nach einer Stimme oder dem Aufdecken den aktuellen Stand per
+  // 'pollUpdated' an den Raum senden, damit alle offenen Chats ihn live sehen
+  // (Audit Achse 2, Luecke 10b). Form und Anonymitaet stehen an EINER Stelle
+  // (utils/umfrageStand.js), die auch der Hintergrund-Lauf nutzt, der Namen
+  // nach dem Ablauf aufdeckt.
+  const emitPollUpdate = (pollDbId, roomId) => umfrageStandSenden(io, db, pollDbId, roomId);
 
   // Hilfsfunktion: 'roomsChanged' an die persoenlichen User-Räume der
   // betroffenen Nutzer senden, damit deren ChatOverview die Raumliste neu laedt

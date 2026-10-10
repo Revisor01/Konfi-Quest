@@ -515,7 +515,7 @@ niemand vorzeitig, wer richtig lag.
   Chat: der Knopf **„Namen aufdecken"** unter der Umfrage. Teamer:innen und
   Konfis sehen ihn nicht. Aufgedeckt bleibt aufgedeckt.
 - **Von selbst aufgedeckt** werden die Namen, sobald ein gesetztes Ablaufdatum
-  erreicht ist.
+  erreicht ist — spätestens eine Minute danach auch in jedem offenen Chat.
 - Nach dem Aufdecken stehen die Namen bei allen im Chat unter den Antworten,
   ohne dass jemand neu laden muss. Eine Mitteilung aufs Handy gibt es dafür
   nicht.

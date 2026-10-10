@@ -19,6 +19,7 @@ const mailAbholung = require('./mailAbholung');
 // Laufzeiten im Hintergrund (letzter Start, Dauer, Ergebnis) fuer
 // /api/metrics und das Protokoll (09.10.2026, Betrieb BF-10 Rest).
 const { messeLauf, laufFehler } = require('../utils/hintergrundLaeufe');
+const { abgelaufeneNamenAufdecken } = require('../utils/umfrageStand');
 
 // Vorlauf für die Lizenz-Ablauf-Erinnerung (Tage vor trial_ends_at)
 const LICENSE_REMINDER_DAYS = 14;
@@ -101,6 +102,7 @@ class BackgroundService {
   static trialExpiryCronTask = null;
   static apmSnapshotInterval = null;
   static challengeStartInterval = null;
+  static umfrageNamenInterval = null;
   static mailAbholInterval = null;
   static mailAbholStart = null;
   // Laeuft gerade ein Abholen? Dann faellt der naechste Takt aus, statt
@@ -814,6 +816,33 @@ class BackgroundService {
     if (this.challengeStartInterval) {
       clearInterval(this.challengeStartInterval);
       this.challengeStartInterval = null;
+    }
+  }
+
+  /**
+   * Deckt jede Minute die Namen der Umfragen auf, deren Ablauf vorbei ist,
+   * und sendet den neuen Stand an den Raum (utils/umfrageStand.js). Ohne den
+   * Lauf sah ein offener Chat die Namen erst nach dem Neuladen.
+   */
+  static startUmfrageNamenService(db) {
+    if (this.umfrageNamenInterval) return;
+    const lauf = () => messeLauf('umfrage_namen', () => abgelaufeneNamenAufdecken(db, liveUpdate.holeIo()));
+    setTimeout(() => {
+      lauf().catch(err => console.error('Umfrage-Namen aufdecken (initial) failed:', err));
+    }, 30 * 1000);
+    this.umfrageNamenInterval = setInterval(async () => {
+      try {
+        await lauf();
+      } catch (error) {
+        console.error('Umfrage-Namen aufdecken failed:', error);
+      }
+    }, 60 * 1000);
+  }
+
+  static stopUmfrageNamenService() {
+    if (this.umfrageNamenInterval) {
+      clearInterval(this.umfrageNamenInterval);
+      this.umfrageNamenInterval = null;
     }
   }
 
@@ -2247,6 +2276,7 @@ class BackgroundService {
     this.startTrialExpiryCron(db);
     this.startApmSnapshotService(db);
     this.startChallengeStartService(db);
+    this.startUmfrageNamenService(db);
     this.startMailAbholService(db);
   }
 
@@ -2264,6 +2294,7 @@ class BackgroundService {
     this.stopTrialExpiryCron();
     this.stopApmSnapshotService();
     this.stopChallengeStartService();
+    this.stopUmfrageNamenService();
     this.stopMailAbholService();
   }
 }

@@ -284,7 +284,8 @@ nächste Lauf füllt es.
 der Zähler-Lauf (alle 5 Minuten) eine Zeile
 `Hintergrund: <Aufgabe> in <n> ms, ok (…)`, der Zähler-Lauf mit „x von y
 Zählern gesetzt, z geprüft". Jobs im Minutentakt (Push „Anmeldung möglich",
-Challenge-Start, Mails abholen, Kennzahlen sichern) schreiben nur ab einer
+Challenge-Start, Namen abgelaufener Umfragen aufdecken, Mails abholen,
+Kennzahlen sichern) schreiben nur ab einer
 Sekunde oder bei einem Fehler. Ein Fehler erscheint zusätzlich als Warnung mit
 Dauer; die Fehlerzeile selbst schreibt der Job wie bisher. Ein Versand an viele
 schreibt `Push <art>: <n> Empfänger:innen in <ms> ms` erst ab fünf Sekunden.
