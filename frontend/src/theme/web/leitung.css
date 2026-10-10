@@ -11,67 +11,6 @@
    Bewegung, kein Eingriff in Ionic, sichtbarer Fokus an allem Bedienbaren.
    =================================================================== */
 
-/* --- Kreis mit Initialen ---
-   Heisst web-initialen und nicht web-avatar: theme/web/start.css setzt dafuer
-   eine eigene Regel fuer das Profil der Konfis (64 px, Grund --web-akzent-flaeche).
-   Beide Dateien liegen im selben Buendel; unter einem Namen schluckte der
-   Profil-Kreis den der Liste (zu gross und ohne Grund: eine leere Flaeche vor
-   dem Namen). Eine Klasse gehoert genau einer Stylesheet-Datei
-   (__tests__/components/webCssKlassen.test.ts). */
-.web-initialen {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--app-radius-kreis);
-  background: var(--app-color-konfis);
-  color: var(--app-weiss);
-  font-size: var(--app-text-hinweis);
-  font-weight: var(--app-schrift-halbfett);
-  line-height: 1;
-}
-
-.web-initialen--gross {
-  width: 56px;
-  height: 56px;
-  font-size: var(--app-text-gross);
-}
-
-.web-initialen--erreicht {
-  background: var(--app-color-success-strong);
-}
-
-.web-initialen--teamer {
-  background: var(--app-color-teamer);
-}
-
-.web-initialen--users {
-  background: var(--app-color-users);
-}
-
-.web-initialen--leitung {
-  background: var(--app-color-leitung);
-}
-
-.web-initialen--neutral {
-  background: var(--app-color-neutral);
-}
-
-.web-person-zelle {
-  display: flex;
-  align-items: center;
-  gap: var(--app-abstand-mittel);
-  min-width: 0;
-}
-
-.web-person-zelle__text {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-}
-
 /* --- Rolle als Marke: Farbe der Rolle (Gemeindeleitung, Leitung, Teamer:in), Wort immer dabei ---
    Heisst web-rollenmarke und nicht web-rolle: start.css setzt web-rolle als
    Rollenfarbe der ganzen Startseite; im gemeinsamen Buendel trug sonst jede
@@ -225,29 +164,6 @@
   color: var(--web-text-leise);
 }
 
-/* --- Werkzeugleiste: Auswahl neben der Suche --- */
-.web-filterauswahl {
-  flex: 0 0 auto;
-  min-width: 220px;
-}
-
-.web-werkzeuge__zahl {
-  margin-left: auto;
-  font-size: var(--app-text-hinweis);
-}
-
-/* Mit der Auswahl "Sortieren" neben dem Umschalter (Ansicht "Kacheln") braucht die
-   Zeile mehr Platz: Suche und Auswahlen beginnen schmaler und wachsen in die Breite,
-   die ein grosses Fenster uebrig laesst. */
-.web-werkzeuge--kacheln .web-suche {
-  flex-basis: 260px;
-  min-width: 220px;
-}
-
-.web-werkzeuge--kacheln .web-filterauswahl {
-  min-width: 190px;
-}
-
 /* --- Zeile, die per Knopf ein Fenster oeffnet: das Netz spannt sich ueber die Zeile --- */
 .web-zeilenknopf {
   display: block;
@@ -301,10 +217,6 @@
 
 .web-spalte-aktionen-breit {
   width: 200px;
-}
-
-.web-spalte-aktionen-schmal {
-  width: 72px;
 }
 
 .web-extern-symbol {
@@ -528,35 +440,6 @@
 .web-pflicht--schwach {
   color: var(--app-text-fehler);
 }
-
-/* --- Symbol im farbigen Kreis (Kategorie, Level, Jahrgang, Zertifikat ...) --- */
-.web-symbol {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--app-radius-kreis);
-  background: var(--app-color-neutral);
-  color: var(--app-weiss);
-  font-size: var(--app-text-gross);
-}
-
-.web-symbol--gross {
-  width: 48px;
-  height: 48px;
-  font-size: var(--app-text-ueberschrift-gross);
-}
-
-.web-symbol--categories { background: var(--app-color-categories); }
-.web-symbol--level { background: var(--app-color-level); }
-.web-symbol--jahrgang { background: var(--app-color-jahrgang); }
-.web-symbol--teamer { background: var(--app-color-teamer); }
-.web-symbol--material { background: var(--app-color-material); }
-.web-symbol--wrapped { background: var(--app-color-wrapped); }
-.web-symbol--users { background: var(--app-color-users); }
-.web-symbol--erfolg { background: var(--app-color-success-strong); }
 
 /* --- Kacheln in einer Karte (Zertifikate) --- */
 .web-kachelliste {

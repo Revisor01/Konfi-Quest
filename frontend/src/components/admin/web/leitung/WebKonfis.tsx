@@ -7,12 +7,17 @@
 //     erreichen -- die Detailseite einer Teamer:in fuehrt dorthin zurueck);
 //   - Suche (Umlaute wie in der Support-Ansicht: "mueller" findet "Müller"),
 //     Jahrgang-Filter und Sortierung ueber die Spaltenkoepfe;
-//   - der Umschalter Liste | Kacheln als letztes Element der Werkzeugzeile
-//     (useAnsicht, eine Wahl fuer beide Reiter; die Leitung startet mit der
-//     Liste): die Liste ist die Tabelle mit allen Zeilen als Links auf die
-//     Detailseite, die Kacheln sind je eine Karte im Raster. Filter, Suche und
-//     Sortierung gelten fuer beide; die Kacheln haben keine Spaltenkoepfe und
-//     bekommen dafuer eine Auswahl "Sortieren", die dieselbe Sortierung setzt.
+//   - der Umschalter Liste | Kacheln (eine Wahl fuer beide Reiter; die
+//     Leitung startet mit der Liste): die Liste ist die Tabelle mit allen
+//     Zeilen als Links auf die Detailseite, die Kacheln sind je eine Karte im
+//     Raster. Filter, Suche und Sortierung gelten fuer beide; die Kacheln
+//     haben keine Spaltenkoepfe und bekommen dafuer eine Auswahl "Sortieren",
+//     die dieselbe Sortierung setzt.
+//
+// Rahmen, Werkzeugzeile, Sortierung und Zustaende stellt WebListenSeite
+// (10.10.2026); hier stehen nur Spalten, Karten und Daten -- bis dahin lagen
+// Tabelle und Kacheln je Reiter in eigenen Dateien (WebKonfiTabelle,
+// WebKonfiKacheln, WebTeamTabelle, WebTeamKacheln).
 //
 // Punkte (Aktivitaet, Bonus) vergibt man auf der Detailseite der Konfi, nicht
 // in der Liste (Simon, 06.10.2026).
@@ -30,13 +35,16 @@ import {
   ICON_GRUPPE,
   ICON_HINZUFUEGEN,
   ICON_QRCODE,
+  ICON_UHRZEIT,
 } from '../../../shared/icons';
 import { useApp } from '../../../../contexts/AppContext';
 import TrialBanner from '../../../shared/TrialBanner';
-import { suchTreffer, suchbegriff } from '../../../../utils/supportWeb';
+import { suchbegriff } from '../../../../utils/supportWeb';
 import { mitEinheit } from '../../../../utils/supportStatistik';
+import { datumKurz } from '../../../../utils/dateUtils';
 import {
   ERSTE_RICHTUNG,
+  initialen,
   jahrgangVon,
   konfiPunkte,
   sichtbareJahrgaenge,
@@ -50,25 +58,26 @@ import {
 } from '../../../../utils/konfiListe';
 import type { TeamerListenEintrag } from '../../../../types/user';
 import { useTeamerListe } from '../../useTeamerListe';
-import WebSeite from '../../../web/WebSeite';
 import WebKnopf from '../../../web/WebKnopf';
-import WebKachel from '../../../web/WebKachel';
+import WebKreis from '../../../web/WebKreis';
+import WebTreffer from '../../../web/WebTreffer';
+import { WebBildKarteSymbol } from '../../../web/WebBildKarte';
 import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
-import WebChips from '../../../web/WebChips';
-import WebSuche from '../../../web/WebSuche';
-import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
-import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
+import WebListenSeite, { type WebListenSeiteProps, type WebListenSortierung } from '../../../web/WebListenSeite';
+import { WebNameZelle, type WebSpalte } from '../../../web/WebListe';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
-import { ansichtVorgabe, useAnsicht } from '../../../web/useAnsicht';
-import type { WebSortierung } from './WebSortTabelle';
-import WebKonfiTabelle from './WebKonfiTabelle';
-import WebKonfiKacheln from './WebKonfiKacheln';
-import WebTeamTabelle from './WebTeamTabelle';
-import WebTeamKacheln from './WebTeamKacheln';
-import { WebFilterAuswahl } from './WebLeitungBausteine';
+import { ansichtVorgabe } from '../../../web/useAnsicht';
+import { WebFortschritt, WebZahlMitSymbol } from './WebLeitungBausteine';
 import { useSucheMessung } from '../../../../hooks/useSucheMessung';
-import { inFassung, schluesselIn } from '../../../../seiten/beschreibung';
-import { KONFIS_ANSICHT, KONFIS_ANSICHT_BESCHRIFTUNG, KONFIS_JAHRGANG_FILTER, TEAM_LEER, konfisLeerText, type KonfisAnsichtSchluessel } from '../../../../seiten/konfisLeitung';
+import { schluesselIn } from '../../../../seiten/beschreibung';
+import {
+  KONFIS_ANSICHT,
+  KONFIS_ANSICHT_BESCHRIFTUNG,
+  KONFIS_JAHRGANG_FILTER,
+  TEAM_LEER,
+  konfisLeerText,
+  type KonfisAnsichtSchluessel,
+} from '../../../../seiten/konfisLeitung';
 
 export type KonfisAnsicht = KonfisAnsichtSchluessel;
 const ANSICHTEN: readonly KonfisAnsicht[] = schluesselIn(KONFIS_ANSICHT, 'web');
@@ -95,9 +104,9 @@ const zahl = (n: number): string => n.toLocaleString('de-DE');
 
 /**
  * Die Sortierungen, die sich ueber die Spaltenkoepfe der Tabelle einstellen
- * lassen -- als Auswahl fuer die Kacheln, die keine Spaltenkoepfe haben. Der
- * Wert ist "schluessel:richtung"; jede Stellung der Koepfe steht hier, damit
- * die Auswahl nach einem Wechsel zwischen Liste und Kacheln dasselbe zeigt.
+ * lassen -- als Auswahl fuer die Kacheln, die keine Spaltenkoepfe haben. Jede
+ * Stellung der Koepfe steht hier, damit die Auswahl nach einem Wechsel
+ * zwischen Liste und Kacheln dasselbe zeigt.
  */
 const KONFI_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 'ab'; label: string }> = [
   { schluessel: 'name', richtung: 'auf', label: 'Name A–Z' },
@@ -130,7 +139,185 @@ const TEAM_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | '
   { schluessel: 'seit', richtung: 'auf', label: 'Am längsten im Team' },
 ];
 
-const sortierWert = (s: { schluessel: string; richtung: 'auf' | 'ab' }): string => `${s.schluessel}:${s.richtung}`;
+const START = { schluessel: 'name', richtung: 'auf' } as const;
+const TEAM_SORTIERUNG: WebListenSortierung<TeamerListenEintrag> = {
+  start: START,
+  sortiere: (liste, s) => sortiereTeam(liste, s.schluessel as TeamSortierSchluessel, s.richtung),
+  ersteRichtung: (s) => TEAM_ERSTE_RICHTUNG[s as TeamSortierSchluessel] ?? 'auf',
+  auswahl: TEAM_SORTIERUNGEN,
+};
+
+// --- Spalten und Karten -------------------------------------------------------------
+
+/** Die Spalten der Konfi-Liste; "Letzte Aktivität" nur, wenn die Liste sie liefert. */
+const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<KonfiListenEintrag>> => [
+  {
+    schluessel: 'name',
+    kopf: 'Name',
+    sortierbar: true,
+    zelle: (k) => (
+      <WebNameZelle
+        kreis={<WebKreis text={initialen(k.name)} ton={konfiPunkte(k).erreicht ? 'erreicht' : 'konfis'} />}
+        titel={<WebTreffer text={k.name} suche={suche} />}
+        href={`/admin/konfis/${k.id}`}
+        unterzeile={k.username ? <WebTreffer text={k.username} suche={suche} /> : undefined}
+      />
+    ),
+  },
+  {
+    schluessel: 'jahrgang',
+    kopf: 'Jahrgang',
+    sortierbar: true,
+    breite: '14%',
+    zelle: (k) => jahrgangVon(k) || <span className="web-gedaempft">Kein Jahrgang</span>,
+  },
+  {
+    schluessel: 'gottesdienst',
+    kopf: 'Gottesdienst',
+    sortierbar: true,
+    breite: '160px',
+    optional: true,
+    zelle: (k) => {
+      const p = konfiPunkte(k);
+      return <WebFortschritt wert={p.gottesdienst} ziel={p.zielGottesdienst} art="gottesdienst" name="Gottesdienst-Punkte" abgeschaltet={!p.gottesdienstAn} />;
+    },
+  },
+  {
+    schluessel: 'gemeinde',
+    kopf: 'Gemeinde',
+    sortierbar: true,
+    breite: '160px',
+    optional: true,
+    zelle: (k) => {
+      const p = konfiPunkte(k);
+      return <WebFortschritt wert={p.gemeinde} ziel={p.zielGemeinde} art="gemeinde" name="Gemeinde-Punkte" abgeschaltet={!p.gemeindeAn} />;
+    },
+  },
+  {
+    schluessel: 'punkte',
+    kopf: 'Gesamt',
+    sortierbar: true,
+    breite: '184px',
+    zelle: (k) => {
+      const p = konfiPunkte(k);
+      return <WebFortschritt wert={p.gesamt} ziel={p.zielGesamt} art="gesamt" name="Punkte gesamt" prozent={p.prozentGesamt} />;
+    },
+  },
+  {
+    schluessel: 'badges',
+    kopf: 'Badges',
+    sortierbar: true,
+    zahl: true,
+    breite: '92px',
+    optional: true,
+    zelle: (k) => <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.badges} zahl={k.badgeCount || 0} title={`${k.badgeCount || 0} Badges`} />,
+  },
+  ...(mitAktivitaet ? [{
+    schluessel: 'aktivitaet',
+    kopf: 'Letzte Aktivität',
+    sortierbar: true,
+    breite: '128px',
+    optional: true,
+    zelle: (k: KonfiListenEintrag) => (k.letzte_aktivitaet ? datumKurz(k.letzte_aktivitaet) : <span className="web-gedaempft">–</span>),
+  }] : []),
+];
+
+/**
+ * Die Karte einer Konfi, gebaut wie die Challenge-Karte (Simon, 07.10.2026):
+ * im Kopf Initialen, Jahrgang und Name -- gruen, wenn das Punkteziel erreicht
+ * ist --, darunter Benutzername, die drei Balken, Badges und letzte Aktivitaet.
+ */
+const konfiKarte = (suche: string) => (k: KonfiListenEintrag) => {
+  const p = konfiPunkte(k);
+  return {
+    akzent: p.erreicht ? 'var(--app-color-success)' : 'var(--app-color-konfis)',
+    akzentDunkel: p.erreicht ? 'var(--app-color-success-strong)' : 'var(--app-color-konfis-dunkel)',
+    symbol: <WebBildKarteSymbol text={initialen(k.name)} />,
+    // Name im Kopf (Simon, 07.10.2026: „konfi name in den kopf").
+    label: [jahrgangVon(k) || 'Kein Jahrgang', p.erreicht ? 'Ziel erreicht' : ''].filter(Boolean).join(' · '),
+    titelImKopf: true,
+    titel: <WebTreffer text={k.name} suche={suche} />,
+    href: `/admin/konfis/${k.id}`,
+    unterzeile: k.username ? <WebTreffer text={k.username} suche={suche} /> : undefined,
+    angaben: [
+      { ...KENNZAHL_SYMBOL.badges, inhalt: mitEinheit(k.badgeCount || 0, 'Badge', 'Badges') },
+      k.letzte_aktivitaet && { icon: ICON_UHRZEIT, inhalt: `Zuletzt aktiv ${datumKurz(k.letzte_aktivitaet)}` },
+    ],
+    children: (
+      <div className="web-personenkachel__balken">
+        <WebFortschritt beschriftung="Gottesdienst" name="Gottesdienst-Punkte" art="gottesdienst" wert={p.gottesdienst} ziel={p.zielGottesdienst} abgeschaltet={!p.gottesdienstAn} />
+        <WebFortschritt beschriftung="Gemeinde" name="Gemeinde-Punkte" art="gemeinde" wert={p.gemeinde} ziel={p.zielGemeinde} abgeschaltet={!p.gemeindeAn} />
+        <WebFortschritt beschriftung="Gesamt" name="Punkte gesamt" art="gesamt" wert={p.gesamt} ziel={p.zielGesamt} prozent={p.prozentGesamt} />
+      </div>
+    ),
+  };
+};
+
+const teamSpalten = (suche: string): Array<WebSpalte<TeamerListenEintrag>> => [
+  {
+    schluessel: 'name',
+    kopf: 'Name',
+    sortierbar: true,
+    zelle: (t) => (
+      <WebNameZelle
+        kreis={<WebKreis text={initialen(teamerName(t)) || '??'} ton="teamer" />}
+        titel={<WebTreffer text={teamerName(t)} suche={suche} />}
+        href={`/admin/konfis/${t.id}`}
+        unterzeile={t.username ? <WebTreffer text={t.username} suche={suche} /> : undefined}
+      />
+    ),
+  },
+  {
+    schluessel: 'jahrgaenge',
+    kopf: 'Jahrgänge',
+    sortierbar: true,
+    breite: '24%',
+    zelle: (t) => t.jahrgang_name || <span className="web-gedaempft">Kein Jahrgang</span>,
+  },
+  {
+    schluessel: 'badges',
+    kopf: 'Badges',
+    sortierbar: true,
+    zahl: true,
+    breite: '96px',
+    zelle: (t) => <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.badges} zahl={t.badge_count || 0} title={`${t.badge_count || 0} Badges`} />,
+  },
+  {
+    schluessel: 'zertifikate',
+    kopf: 'Zertifikate',
+    sortierbar: true,
+    zahl: true,
+    breite: '112px',
+    zelle: (t) => <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.zertifikate} zahl={t.cert_count || 0} title={`${t.cert_count || 0} Zertifikate`} />,
+  },
+  {
+    schluessel: 'seit',
+    kopf: 'Im Team seit',
+    sortierbar: true,
+    breite: '120px',
+    optional: true,
+    zelle: (t) => (t.teamer_since ? String(new Date(t.teamer_since).getFullYear()) : <span className="web-gedaempft">–</span>),
+  },
+];
+
+/** Die Karte einer Teamer:in: was die Team-Tabelle zeigt, im Kopf "im Team seit". */
+const teamKarte = (suche: string) => (t: TeamerListenEintrag) => ({
+  akzent: 'var(--app-color-teamer)',
+  akzentDunkel: 'var(--app-color-teamer-dunkel)',
+  symbol: <WebBildKarteSymbol text={initialen(teamerName(t)) || '??'} />,
+  label: t.teamer_since ? `Teamer:in · im Team seit ${new Date(t.teamer_since).getFullYear()}` : 'Teamer:in',
+  titelImKopf: true,
+  titel: <WebTreffer text={teamerName(t)} suche={suche} />,
+  href: `/admin/konfis/${t.id}`,
+  unterzeile: t.username ? <WebTreffer text={t.username} suche={suche} /> : undefined,
+  angaben: [
+    { icon: ICON_GRUPPE, inhalt: t.jahrgang_name || 'Kein Jahrgang' },
+    { ...KENNZAHL_SYMBOL.badges, inhalt: mitEinheit(t.badge_count || 0, 'Badge', 'Badges') },
+    { ...KENNZAHL_SYMBOL.zertifikate, inhalt: mitEinheit(t.cert_count || 0, 'Zertifikat', 'Zertifikate') },
+  ],
+});
+
+// --- Seite -----------------------------------------------------------------------------
 
 const WebKonfis: React.FC<WebKonfisProps> = ({
   konfis, jahrgaenge, laedt, ohneJahrgang, pageRef,
@@ -150,55 +337,27 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
   useSucheMessung(ansicht === 'team' ? 'team' : 'konfis', suche);
   const [jahrgang, setJahrgang] = useState('alle');
-  const [konfiSortierung, setKonfiSortierung] = useState<WebSortierung>({ schluessel: 'name', richtung: 'auf' });
-  const [teamSortierung, setTeamSortierung] = useState<WebSortierung>({ schluessel: 'name', richtung: 'auf' });
-  // Liste oder Kacheln: eine Wahl fuer beide Reiter, im Browser gemerkt; die Leitung beginnt mit der Liste.
-  const [darstellung, setDarstellung] = useAnsicht('konfis', ansichtVorgabe(rolle));
 
   const team = useTeamerListe(ansicht === 'team');
 
   // Die Jahrgaenge dieses Kontos: die Gemeindeleitung alle, eine Leitung ihre zugewiesenen.
   const meineJahrgaenge = useMemo(() => sichtbareJahrgaenge(jahrgaenge, user), [jahrgaenge, user]);
-
   const sucht = suchbegriff(suche) !== '';
+  const istTeam = ansicht === 'team';
 
-  // --- Konfis ---------------------------------------------------------------------
-  const sichtbareKonfis = useMemo(() => {
-    const gefiltert = konfis.filter((k) =>
-      (jahrgang === 'alle' || jahrgangVon(k) === jahrgang)
-      && (!sucht || [k.name, k.username].some((t) => !!t && suchTreffer(t, suche).length > 0)));
-    return sortiereKonfis(gefiltert, konfiSortierung.schluessel as KonfiSortierSchluessel, konfiSortierung.richtung);
-  }, [konfis, jahrgang, suche, sucht, konfiSortierung]);
-
-  const konfiKennzahlen = useMemo(() => {
-    const punkteSumme = konfis.reduce((s, k) => s + konfiPunkte(k).gesamt, 0);
-    const erreicht = konfis.filter((k) => konfiPunkte(k).erreicht).length;
-    return { punkteSumme, erreicht };
-  }, [konfis]);
-
-  // --- Team -----------------------------------------------------------------------
-  const sichtbaresTeam = useMemo(() => {
-    const gefiltert = team.teamers.filter((t) => !sucht || [teamerName(t), t.name, t.username].some((x) => !!x && suchTreffer(x, suche).length > 0));
-    return sortiereTeam(gefiltert, teamSortierung.schluessel as TeamSortierSchluessel, teamSortierung.richtung);
-  }, [team.teamers, suche, sucht, teamSortierung]);
-
-  const sortieren = (
-    aktuell: WebSortierung,
-    setzen: (s: WebSortierung) => void,
-    ersteRichtung: (schluessel: string) => 'auf' | 'ab',
-  ) => (schluessel: string) => {
-    if (aktuell.schluessel === schluessel) setzen({ schluessel, richtung: aktuell.richtung === 'auf' ? 'ab' : 'auf' });
-    else setzen({ schluessel, richtung: ersteRichtung(schluessel) });
-  };
-  const sortiereKonfisNach = sortieren(konfiSortierung, setKonfiSortierung, (s) => ERSTE_RICHTUNG[s as KonfiSortierSchluessel] ?? 'auf');
-  const sortiereTeamNach = sortieren(teamSortierung, setTeamSortierung, (s) => TEAM_ERSTE_RICHTUNG[s as TeamSortierSchluessel] ?? 'auf');
+  const konfiKennzahlen = useMemo(() => ({
+    punkteSumme: konfis.reduce((s, k) => s + konfiPunkte(k).gesamt, 0),
+    erreicht: konfis.filter((k) => konfiPunkte(k).erreicht).length,
+  }), [konfis]);
 
   // "Letzte Aktivitaet" gibt es als Spalte nur, wenn die Liste sie liefert -- dann auch in der Auswahl.
   const mitAktivitaet = konfis.some((k) => !!k.letzte_aktivitaet);
-  const konfiSortierungen = mitAktivitaet ? KONFI_SORTIERUNGEN : KONFI_SORTIERUNGEN.filter((s) => s.schluessel !== 'aktivitaet');
-
-  const istTeam = ansicht === 'team';
-  const titel = istTeam ? 'Team' : 'Konfis';
+  const konfiSortierung = useMemo<WebListenSortierung<KonfiListenEintrag>>(() => ({
+    start: START,
+    sortiere: (liste, s) => sortiereKonfis(liste, s.schluessel as KonfiSortierSchluessel, s.richtung),
+    ersteRichtung: (s) => ERSTE_RICHTUNG[s as KonfiSortierSchluessel] ?? 'auf',
+    auswahl: mitAktivitaet ? KONFI_SORTIERUNGEN : KONFI_SORTIERUNGEN.filter((s) => s.schluessel !== 'aktivitaet'),
+  }), [mitAktivitaet]);
 
   const aktionen = darfVerwalten ? (
     <>
@@ -223,155 +382,106 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
     ? (team.laedt && team.teamers.length === 0 ? 'Das Team wird geladen' : `${mitEinheit(team.teamers.length, 'Person', 'Personen')} im Team`)
     : `${mitEinheit(konfis.length, 'Konfi', 'Konfis')} in ${mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgängen')}`;
 
-  if (laedt) {
-    return (
-      <WebSeite bereich="Verwaltung" titel="Konfis" pageRef={pageRef} wartung>
-        <WebLaden kacheln={4} karten={1} text="Die Konfis werden geladen." />
-      </WebSeite>
-    );
-  }
-
   // Die Zahl am Reiter "Team" steht erst da, wenn die Liste einmal geladen ist.
   const teamGeladen = team.geladen && !team.fehler;
-  // Reiter aus der gemeinsamen Beschreibung (seiten/konfisLeitung.ts).
-  const chips = inFassung(KONFIS_ANSICHT, 'web').map((a) => ({
-    wert: a.schluessel,
-    label: a.label,
-    zahl: a.schluessel === 'konfis' ? konfis.length : teamGeladen ? team.teamers.length : undefined,
-  }));
 
-  const kacheln = istTeam ? (
-    <>
-      <WebKachel symbol={KENNZAHL_SYMBOL.team} label="Team" wert={zahl(team.teamers.length)} />
-      <WebKachel symbol={KENNZAHL_SYMBOL.zertifikate} label="Zertifikate" wert={zahl(team.teamers.reduce((s, t) => s + (t.cert_count || 0), 0))} />
-      <WebKachel symbol={KENNZAHL_SYMBOL.badges} label="Badges" wert={zahl(team.teamers.reduce((s, t) => s + (t.badge_count || 0), 0))} />
-    </>
-  ) : (
-    <>
-      <WebKachel symbol={KENNZAHL_SYMBOL.konfis} label="Konfis" wert={zahl(konfis.length)} zusatz={[mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgänge')]} />
-      <WebKachel symbol={KENNZAHL_SYMBOL.punkte} label="Punkte gesamt" wert={zahl(konfiKennzahlen.punkteSumme)} />
-      <WebKachel
-        symbol={KENNZAHL_SYMBOL.zielErreicht}
-        label="Ziel erreicht"
-        wert={zahl(konfiKennzahlen.erreicht)}
-        zusatz={[konfis.length > 0 ? `von ${zahl(konfis.length)} Konfis` : 'noch niemand']}
-      />
-      <WebKachel symbol={KENNZAHL_SYMBOL.jahrgaenge} label="Jahrgänge" wert={zahl(meineJahrgaenge.length)} />
-    </>
-  );
+  // Was beide Reiter gemeinsam haben: Kopf, Reiter, Ansicht.
+  const gemeinsam = {
+    bereich: 'Verwaltung',
+    titel: laedt ? 'Konfis' : istTeam ? 'Team' : 'Konfis',
+    untertitel: laedt ? undefined : untertitel,
+    aktionen: laedt ? undefined : aktionen,
+    pageRef,
+    wartung: true,
+    laden: laedt ? { text: 'Die Konfis werden geladen.', kacheln: 4, karten: 1 } : undefined,
+    oben: <><TrialBanner style={{ margin: 0 }} />{banner}</>,
+    reiter: {
+      beschriftung: KONFIS_ANSICHT_BESCHRIFTUNG,
+      wahlen: KONFIS_ANSICHT,
+      wert: ansicht,
+      onWert: (a: KonfisAnsicht) => { setAnsicht(a); setSuche(''); },
+      zahlen: { konfis: konfis.length, team: teamGeladen ? team.teamers.length : undefined },
+    },
+    // Liste oder Kacheln: eine Wahl fuer beide Reiter, im Browser gemerkt; die Leitung beginnt mit der Liste.
+    ansicht: { seite: 'konfis', vorgabe: ansichtVorgabe(rolle) },
+    children: overlays,
+  } satisfies Partial<WebListenSeiteProps<unknown, KonfisAnsicht>>;
 
-  // --- Inhalt unter der Werkzeugzeile ------------------------------------------------
-  let inhalt: React.ReactNode;
-  // Wahr, sobald Karten im Raster zu sehen sind (nicht Laden, Fehler oder Leerzustand).
-  let inhaltIstKacheln = false;
   if (istTeam) {
-    if (team.laedt && team.teamers.length === 0) {
-      inhalt = <WebLaden karten={1} text="Das Team wird geladen." />;
-    } else if (team.fehler && team.teamers.length === 0) {
-      inhalt = <WebFehler text="Das Team konnte nicht geladen werden." onErneut={() => { void team.laden(); }} />;
-    } else if (sichtbaresTeam.length === 0) {
-      inhalt = (
-        <WebLeer
-          icon={ICON_GRUPPE}
-          titel={TEAM_LEER.titel}
-          text={sucht ? TEAM_LEER.keineTreffer : TEAM_LEER.keinTeam}
-        />
-      );
-    } else {
-      const teamLoeschen = darfTeamLoeschen
-        ? async (t: TeamerListenEintrag) => { await onTeamerLoeschen(t); await team.laden(); }
-        : undefined;
-      inhalt = darstellung === 'kacheln' ? (
-        <WebTeamKacheln team={sichtbaresTeam} suche={suche} onLoeschen={teamLoeschen} />
-      ) : (
-        <WebTeamTabelle
-          team={sichtbaresTeam}
-          suche={suche}
-          sortierung={teamSortierung}
-          onSortieren={sortiereTeamNach}
-          onLoeschen={teamLoeschen}
-        />
-      );
-      inhaltIstKacheln = darstellung === 'kacheln';
-    }
-  } else if (sichtbareKonfis.length === 0) {
-    const keinJahrgang = ohneJahrgang && !sucht;
-    // Dieselben Sätze wie in der App (seiten/konfisLeitung.ts).
-    const leer = konfisLeerText({ sucht, ohneJahrgang, jahrgangGewaehlt: jahrgang !== 'alle' });
-    inhalt = (
-      <WebLeer
-        icon={ICON_GRUPPE}
-        titel={leer.titel}
-        text={leer.text}
-        aktion={!sucht && !keinJahrgang && darfVerwalten && konfis.length === 0
-          ? <WebKnopf art="primaer" onClick={onKonfiAnlegen}>Konfi anlegen</WebKnopf>
-          : undefined}
+    const loeschen = darfTeamLoeschen ? {
+      onKlick: async (t: TeamerListenEintrag) => { await onTeamerLoeschen(t); await team.laden(); },
+      beschriftung: (t: TeamerListenEintrag) => `${teamerName(t)} löschen`,
+      titel: () => 'Teamer:in löschen',
+    } : undefined;
+    return (
+      <WebListenSeite<TeamerListenEintrag, KonfisAnsicht>
+        {...gemeinsam}
+        kennzahlen={[
+          { symbol: KENNZAHL_SYMBOL.team, label: 'Team', wert: zahl(team.teamers.length) },
+          { symbol: KENNZAHL_SYMBOL.zertifikate, label: 'Zertifikate', wert: zahl(team.teamers.reduce((s, t) => s + (t.cert_count || 0), 0)) },
+          { symbol: KENNZAHL_SYMBOL.badges, label: 'Badges', wert: zahl(team.teamers.reduce((s, t) => s + (t.badge_count || 0), 0)) },
+        ]}
+        suche={{ beschriftung: 'Im Team suchen', platzhalter: 'Im Team suchen …', wert: suche, onWert: setSuche, felder: (t) => [teamerName(t), t.name, t.username] }}
+        zaehlzeile={(n, gesamt) => `${n} von ${gesamt} im Team`}
+        eintraege={team.teamers}
+        sortierung={TEAM_SORTIERUNG}
+        liste={{ beschriftung: 'Team', spalten: teamSpalten(suche), zeileSchluessel: (t) => t.id, mittig: true, fest: true, loeschen }}
+        kacheln={{ beschriftung: 'Team', schluessel: (t) => t.id, karte: teamKarte(suche), loeschen }}
+        leer={{ icon: ICON_GRUPPE, titel: TEAM_LEER.titel, text: sucht ? TEAM_LEER.keineTreffer : TEAM_LEER.keinTeam }}
+        inhaltLaden={team.laedt && team.teamers.length === 0 ? 'Das Team wird geladen.' : undefined}
+        inhaltFehler={team.fehler && team.teamers.length === 0 ? { text: 'Das Team konnte nicht geladen werden.', onErneut: () => { void team.laden(); } } : undefined}
       />
     );
-  } else {
-    inhalt = darstellung === 'kacheln' ? (
-      <WebKonfiKacheln konfis={sichtbareKonfis} suche={suche} onLoeschen={darfVerwalten ? onKonfiLoeschen : undefined} />
-    ) : (
-      <WebKonfiTabelle
-        konfis={sichtbareKonfis}
-        suche={suche}
-        sortierung={konfiSortierung}
-        onSortieren={sortiereKonfisNach}
-        onLoeschen={darfVerwalten ? onKonfiLoeschen : undefined}
-      />
-    );
-    inhaltIstKacheln = darstellung === 'kacheln';
   }
 
-  const zaehlzeile = istTeam
-    ? (sucht ? `${sichtbaresTeam.length} von ${team.teamers.length} im Team` : undefined)
-    : (sucht || jahrgang !== 'alle' ? `${sichtbareKonfis.length} von ${konfis.length} Konfis` : undefined);
+  const loeschen = darfVerwalten ? {
+    onKlick: onKonfiLoeschen,
+    beschriftung: (k: KonfiListenEintrag) => `${k.name} löschen`,
+    titel: () => 'Konfi löschen',
+  } : undefined;
+  const keinJahrgang = ohneJahrgang && !sucht;
+  // Dieselben Saetze wie in der App (seiten/konfisLeitung.ts).
+  const leer = konfisLeerText({ sucht, ohneJahrgang, jahrgangGewaehlt: jahrgang !== 'alle' });
 
   return (
-    <WebSeite bereich="Verwaltung" titel={titel} untertitel={untertitel} aktionen={aktionen} pageRef={pageRef} wartung>
-      <TrialBanner style={{ margin: 0 }} />
-      {banner}
-
-      <div className="web-raster web-raster--kacheln">{kacheln}</div>
-
-      <div className={`web-werkzeuge${inhaltIstKacheln ? ' web-werkzeuge--kacheln' : ''}`}>
-        <WebChips<KonfisAnsicht> beschriftung={KONFIS_ANSICHT_BESCHRIFTUNG} chips={chips} wert={ansicht} onWert={(a) => { setAnsicht(a); setSuche(''); }} />
-        <WebSuche
-          beschriftung={istTeam ? 'Im Team suchen' : 'Konfi suchen'}
-          platzhalter={istTeam ? 'Im Team suchen …' : 'Name oder Benutzername …'}
-          wert={suche}
-          onWert={setSuche}
-        />
-        {!istTeam && (
-          <WebFilterAuswahl
-            label="Jahrgang"
-            wert={jahrgang}
-            onWert={setJahrgang}
-            optionen={[{ wert: 'alle', label: KONFIS_JAHRGANG_FILTER.alle }, ...meineJahrgaenge.map((j) => ({ wert: j.name, label: j.name }))]}
-          />
-        )}
-        <div className="web-werkzeuge__rechts">
-          {zaehlzeile && <span className="web-gedaempft web-werkzeuge__zahl" role="status">{zaehlzeile}</span>}
-          {inhaltIstKacheln && (
-            <WebFilterAuswahl
-              label="Sortieren"
-              wert={sortierWert(istTeam ? teamSortierung : konfiSortierung)}
-              onWert={(w) => {
-                const [schluessel, richtung] = w.split(':');
-                (istTeam ? setTeamSortierung : setKonfiSortierung)({ schluessel, richtung: richtung === 'ab' ? 'ab' : 'auf' });
-              }}
-              optionen={(istTeam ? TEAM_SORTIERUNGEN : konfiSortierungen).map((s) => ({ wert: sortierWert(s), label: s.label }))}
-            />
-          )}
-          <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />
-        </div>
-      </div>
-
-      {/* Die Kacheln stehen frei im Raster, die Tabelle und jeder Hinweis in einer Karte. */}
-      {inhaltIstKacheln ? inhalt : <div className="web-karte">{inhalt}</div>}
-
-      {overlays}
-    </WebSeite>
+    <WebListenSeite<KonfiListenEintrag, KonfisAnsicht>
+      {...gemeinsam}
+      kennzahlen={[
+        { symbol: KENNZAHL_SYMBOL.konfis, label: 'Konfis', wert: zahl(konfis.length), zusatz: [mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgänge')] },
+        { symbol: KENNZAHL_SYMBOL.punkte, label: 'Punkte gesamt', wert: zahl(konfiKennzahlen.punkteSumme) },
+        {
+          symbol: KENNZAHL_SYMBOL.zielErreicht,
+          label: 'Ziel erreicht',
+          wert: zahl(konfiKennzahlen.erreicht),
+          zusatz: [konfis.length > 0 ? `von ${zahl(konfis.length)} Konfis` : 'noch niemand'],
+        },
+        { symbol: KENNZAHL_SYMBOL.jahrgaenge, label: 'Jahrgänge', wert: zahl(meineJahrgaenge.length) },
+      ]}
+      suche={{ beschriftung: 'Konfi suchen', platzhalter: 'Name oder Benutzername …', wert: suche, onWert: setSuche, felder: (k) => [k.name, k.username] }}
+      filter={[{
+        beschriftung: KONFIS_JAHRGANG_FILTER.label,
+        darstellung: 'auswahl',
+        wahlen: [
+          { schluessel: 'alle', label: KONFIS_JAHRGANG_FILTER.alle },
+          ...meineJahrgaenge.map((j) => ({ schluessel: j.name, label: j.name, passt: (k: KonfiListenEintrag) => jahrgangVon(k) === j.name })),
+        ],
+        wert: jahrgang,
+        onWert: setJahrgang,
+      }]}
+      zaehlzeile={(n, gesamt) => `${n} von ${gesamt} Konfis`}
+      eintraege={konfis}
+      sortierung={konfiSortierung}
+      liste={{ beschriftung: 'Konfis', spalten: konfiSpalten(suche, mitAktivitaet), zeileSchluessel: (k) => k.id, mittig: true, fest: true, loeschen }}
+      kacheln={{ beschriftung: 'Konfis', schluessel: (k) => k.id, karte: konfiKarte(suche), loeschen }}
+      leer={{
+        icon: ICON_GRUPPE,
+        titel: leer.titel,
+        text: leer.text,
+        aktion: !sucht && !keinJahrgang && darfVerwalten && konfis.length === 0
+          ? <WebKnopf art="primaer" onClick={onKonfiAnlegen}>Konfi anlegen</WebKnopf>
+          : undefined,
+      }}
+    />
   );
 };
 

@@ -3,12 +3,14 @@
 // Punktebalken, Karte einer Person im Raster, Filter-Auswahl ohne sichtbare
 // Beschriftung, Zeilen, die sich per Knopf oeffnen, und der Weg nach draussen.
 // Sie gehoeren zu diesem Bereich, bis die Koordination sie nach components/web/
-// zieht.
+// zieht. Kreis und Filter-Auswahl stehen seit 10.10.2026 dort (WebKreis,
+// WebFilterAuswahl); hier bleiben ihre Namen fuer die Seiten, die sie schon nutzen.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_AUFKLAPPEN, ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_HAKEN_GEFUELLT, ICON_LOESCHEN } from '../../../shared/icons';
+import { ICON_BEARBEITEN, ICON_EXTERN_OEFFNEN, ICON_HAKEN_GEFUELLT, ICON_LOESCHEN } from '../../../shared/icons';
 import WebKnopf from '../../../web/WebKnopf';
+import WebKreis, { type WebKreisPersonTon, type WebKreisSymbolTon } from '../../../web/WebKreis';
 import { linkOeffnen } from '../../../../services/systemDialoge';
 import { rollenFarbe, rollenName } from '../../../../utils/rollenNamen';
 import type { KennzahlSymbol } from '../../../web/kennzahlSymbole';
@@ -16,11 +18,11 @@ import '../../../../theme/web/leitung.css';
 
 // --- Kreis mit Initialen ----------------------------------------------------------
 
-export type AvatarFarbe = 'konfis' | 'erreicht' | 'teamer' | 'users' | 'leitung' | 'neutral';
+export type AvatarFarbe = WebKreisPersonTon;
 
-/** Kreis mit zwei Buchstaben vor einem Namen; die Farbe ist die der Rolle bzw. des Standes. */
+/** Kreis mit zwei Buchstaben vor einem Namen (der allgemeine Baustein: components/web/WebKreis.tsx). */
 export const WebAvatar: React.FC<{ text: string; farbe?: AvatarFarbe; gross?: boolean }> = ({ text, farbe = 'konfis', gross = false }) => (
-  <span className={`web-initialen web-initialen--${farbe}${gross ? ' web-initialen--gross' : ''}`} aria-hidden="true">{text}</span>
+  <WebKreis text={text} ton={farbe} gross={gross} />
 );
 
 // --- Rolle als Marke ----------------------------------------------------------------
@@ -104,25 +106,8 @@ export const WebFortschritt: React.FC<WebFortschrittProps> = ({ wert, ziel, art,
 
 // --- Auswahl fuer die Werkzeugleiste ----------------------------------------------
 
-export interface WebFilterOption {
-  wert: string;
-  label: string;
-}
-
-/** Eine Auswahl neben der Suche: ein echtes <select>, der Name steht als aria-label (kein Beschriftungstext darueber). */
-export const WebFilterAuswahl: React.FC<{
-  label: string;
-  wert: string;
-  onWert: (wert: string) => void;
-  optionen: ReadonlyArray<WebFilterOption>;
-}> = ({ label, wert, onWert, optionen }) => (
-  <div className="web-auswahl web-filterauswahl">
-    <select className="web-eingabe web-eingabe--auswahl" aria-label={label} value={wert} onChange={(e) => onWert(e.target.value)}>
-      {optionen.map((o) => <option key={o.wert} value={o.wert}>{o.label}</option>)}
-    </select>
-    <IonIcon icon={ICON_AUFKLAPPEN} className="web-auswahl__pfeil" aria-hidden="true" />
-  </div>
-);
+// Steht seit 10.10.2026 bei den allgemeinen Bausteinen (components/web/WebFilterAuswahl.tsx).
+export { default as WebFilterAuswahl, type WebFilterOption } from '../../../web/WebFilterAuswahl';
 
 // --- Zeile, die sich per Knopf oeffnet --------------------------------------------
 
@@ -213,22 +198,15 @@ export const WebZeilenAktionen: React.FC<{
 
 // --- Symbol im farbigen Kreis ------------------------------------------------------------
 
-export type SymbolTon = 'categories' | 'level' | 'jahrgang' | 'teamer' | 'material' | 'wrapped' | 'users' | 'erfolg' | 'neutral';
+export type SymbolTon = WebKreisSymbolTon;
 
 /**
- * Das Symbol einer Zeile im farbigen Kreis (wie der Kreis der Liste in der App).
- * Die Farbe ist ein Ton der App; nur wo sie aus den Daten kommt (die Farbe eines
- * Levels), steht sie als CSS-Wert in `farbe`. Das Symbol ist Zierde: Der Name
- * steht immer daneben.
+ * Das Symbol einer Zeile im farbigen Kreis (der allgemeine Baustein:
+ * components/web/WebKreis.tsx). Die Farbe ist ein Ton der App; nur wo sie aus
+ * den Daten kommt (die Farbe eines Levels), steht sie als CSS-Wert in `farbe`.
  */
 export const WebSymbol: React.FC<{ icon: string; ton?: SymbolTon; farbe?: string; gross?: boolean }> = ({ icon, ton = 'neutral', farbe, gross = false }) => (
-  <span
-    className={`web-symbol web-symbol--${ton}${gross ? ' web-symbol--gross' : ''}`}
-    style={farbe ? { background: farbe } : undefined}
-    aria-hidden="true"
-  >
-    <IonIcon icon={icon} />
-  </span>
+  <WebKreis icon={icon} ton={ton} farbe={farbe} gross={gross} />
 );
 
 // --- Zahl mit Symbol in einer Tabellenzelle -----------------------------------------------

@@ -7,8 +7,15 @@ import { IonIcon } from '@ionic/react';
 import { ICON_WARNHINWEIS } from '../shared/icons';
 import WebKnopf from './WebKnopf';
 
+export interface WebLeerProps {
+  icon: string;
+  titel: string;
+  text: string;
+  aktion?: React.ReactNode;
+}
+
 /** Leerer Zustand: Symbol, Titel, ein Satz -- optional mit Aktion. */
-export const WebLeer: React.FC<{ icon: string; titel: string; text: string; aktion?: React.ReactNode }> = ({ icon, titel, text, aktion }) => (
+export const WebLeer: React.FC<WebLeerProps> = ({ icon, titel, text, aktion }) => (
   <div className="web-leer">
     <IonIcon icon={icon} className="web-leer__symbol" aria-hidden="true" />
     <h3 className="web-leer__titel">{titel}</h3>

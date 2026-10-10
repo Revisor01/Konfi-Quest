@@ -1,7 +1,7 @@
 // Der Katalog der Aktivitäten unter Mehr (/admin/activities): die Vorlagen,
 // für die es Punkte gibt.
 // App: components/admin/pages/AdminActivitiesPage.tsx mit admin/ActivitiesView.tsx.
-// Web: components/admin/web/termine/WebAktivitaetenSeite.tsx und WebAktivitaeten.tsx.
+// Web: components/admin/web/termine/WebAktivitaetenSeite.tsx (auf WebListenSeite).
 
 import { wahlen } from './beschreibung';
 

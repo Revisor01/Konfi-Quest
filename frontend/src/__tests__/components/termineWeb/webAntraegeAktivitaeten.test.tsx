@@ -13,7 +13,7 @@ import {
 } from './geruestWeb';
 import WebAntraege from '../../../components/admin/web/termine/WebAntraege';
 import type { AntragZeile } from '../../../components/admin/web/termine/typen';
-import { WebAktivitaetenTabelle, type AktivitaetZeile } from '../../../components/admin/web/termine/WebAktivitaeten';
+import WebAktivitaetenSeite, { type AktivitaetZeile } from '../../../components/admin/web/termine/WebAktivitaetenSeite';
 
 const antrag = (id: number, zusatz: Partial<AntragZeile>): AntragZeile => ({
   id, konfi_id: id + 10, konfi_name: 'Mia Muster', jahrgang_name: 'Jahrgang 2026', activity_id: 3,
@@ -382,18 +382,24 @@ const KATALOG: AktivitaetZeile[] = [
   { id: 4, name: 'Adventsmarkt', points: 3, type: 'gemeinde', categories: [] },
 ] as unknown as AktivitaetZeile[];
 
+// Die Seite des Katalogs mit einer nachgestellten Verwaltung (useAktivitaetenVerwaltung):
+// Laden, Rechte und Aktionen kommen sonst aus dem Hook der Seite der App.
 const zeigeKatalog = (rolle: 'konfi' | 'teamer' = 'konfi') => {
   const aufrufe = { onBearbeiten: vi.fn(), onLoeschen: vi.fn(), onAnlegen: vi.fn(), onRolle: vi.fn() };
-  const r = render(
-    <WebAktivitaetenTabelle
-      aktivitaeten={rolle === 'konfi' ? KATALOG : (AKTIVITAETEN_TEAM as unknown as AktivitaetZeile[])}
-      rolle={rolle}
-      darfAnlegen
-      darfBearbeiten
-      darfLoeschen
-      {...aufrufe}
-    />,
-  );
+  const verwaltung = {
+    aktivitaeten: rolle === 'konfi' ? KATALOG : (AKTIVITAETEN_TEAM as unknown as AktivitaetZeile[]),
+    loading: false,
+    refresh: vi.fn(),
+    rolle,
+    setRolle: aufrufe.onRolle,
+    darfAnlegen: true,
+    darfBearbeiten: true,
+    darfLoeschen: true,
+    anlegen: aufrufe.onAnlegen,
+    bearbeiten: aufrufe.onBearbeiten,
+    loeschen: aufrufe.onLoeschen,
+  };
+  const r = render(<WebAktivitaetenSeite pageRef={{ current: null }} verwaltung={verwaltung as never} />);
   return { ...r, aufrufe };
 };
 
