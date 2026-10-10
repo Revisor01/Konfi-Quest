@@ -437,6 +437,9 @@ Versionsüberschrift.
   Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
 
 ### Sonstiges
+- Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,
+  Kennzahlen, Inhalt und Angaben; Laden, Fehler und „nicht gefunden" sehen
+  auf jeder Detailseite gleich aus.
 - Im Browser stehen die Listen-Seiten auf einem gemeinsamen Gerüst aus
   Kennzahlen, Werkzeugzeile und Liste oder Kacheln; bei den Aktivitäten steht
   die Suche dadurch wie bei Konfis und Team links neben den Filtern.
