@@ -537,6 +537,34 @@ async function ladeRolleInGemeinde(db, userId, organizationId) {
 }
 
 /**
+ * SQL-Bedingung: Die Person (Alias `u`) hat in der Gemeinde `org` die Rolle
+ * Konfi -- dieselbe Regel wie ladeRolleInGemeinde, als Baustein fuer
+ * Abfragen ueber viele Personen (10.10.2026, Rangliste des Jahrgangs).
+ * In der Stamm-Gemeinde gilt users.role_id (auch wenn user_organizations
+ * sie noch einmal fuehrt), in jeder weiteren user_organizations.role_id.
+ *
+ * Fuer "die Konfis eines Jahrgangs" ist `org` die Gemeinde des Jahrgangs
+ * (jahrgaenge.organization_id). Vorher filterten solche Abfragen
+ * `r.name = 'konfi'` ueber users.role_id: Ein Mischkonto (Stamm-Gemeinde
+ * Leitung, hier Konfi) fiel heraus, eine Person, die nur in ihrer
+ * Stamm-Gemeinde Konfi ist, zaehlte mit.
+ *
+ * @param {string} u    Alias der users-Tabelle
+ * @param {string} org  SQL-Ausdruck der Gemeinde (Parameter oder Spalte)
+ */
+function istKonfiInGemeindeSql(u, org) {
+  return `(CASE WHEN ${u}.organization_id = ${org}
+                THEN EXISTS (SELECT 1 FROM roles r_kg
+                              WHERE r_kg.id = ${u}.role_id AND r_kg.name = 'konfi')
+                ELSE EXISTS (SELECT 1 FROM user_organizations uo_kg
+                               JOIN roles r_kg ON r_kg.id = uo_kg.role_id
+                              WHERE uo_kg.user_id = ${u}.id
+                                AND uo_kg.organization_id = ${org}
+                                AND r_kg.name = 'konfi')
+           END)`;
+}
+
+/**
  * In welchen Gemeinden ist diese Person die LETZTE aktive Gemeindeleitung
  * (org_admin)? Ueber beide Quellen (Simon, 08.10.2026): Die eigene Rolle je
  * Gemeinde kommt aus ladeMitgliedschaftenMitSperre, die anderen Leitungen aus
@@ -684,6 +712,7 @@ module.exports = {
   STATISTIK_ROLLEN,
   istMitgliedDerOrganisation,
   ladeRolleInGemeinde,
+  istKonfiInGemeindeSql,
   gemeindenOhneWeitereLeitung,
   ladeMitgliederDerOrganisation,
   ladeLeitungDerOrganisation,

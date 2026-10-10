@@ -17,6 +17,37 @@ const { ladeLeitungZumAntrag } = require('../utils/antragLeitungSicht');
 // (27.09.2026, Regel in utils/terminLeitungSicht.js).
 const { ladeLeitungZumTermin } = require('../utils/terminLeitungSicht');
 const { registriereArt, einreihen } = require('../utils/warteschlange');
+const { istKonfiInGemeindeSql } = require('../utils/orgMitglieder');
+
+// RANGLISTE DES JAHRGANGS (10.10.2026, in Produktion gemessen): Konfi des
+// Jahrgangs ist, wer in der Gemeinde des Jahrgangs die Rolle Konfi hat --
+// ueber user_organizations oder als Stamm (utils/orgMitglieder.js). Vorher
+// filterten Dashboard und Profil ueber die Rolle am KONTO: Ein Mischkonto
+// (Stamm-Gemeinde Leitung, hier Konfi) fehlte in Top 3 und Zaehlung, und
+// weil der eigene Rang ueber Punktgleichheit (`total_points = $2`) gesucht
+// wurde, kam null zurueck -- die App zeigt dafuer "1/1".
+//
+// Antwortform unveraendert: rank_in_jahrgang und total_in_jahrgang bleiben
+// bigint wie bisher (RANK() und COUNT(*)), die Rangliste behaelt ihre Felder.
+const JAHRGANG_PUNKTE_SQL = `(CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
+              + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END)`;
+const JAHRGANG_KONFIS_FROM_SQL = `
+        FROM users u
+        JOIN konfi_profiles kp ON u.id = kp.user_id
+        JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+        WHERE kp.jahrgang_id = $1 AND u.deleted_at IS NULL
+          AND ${istKonfiInGemeindeSql('u', 'j.organization_id')}`;
+// $1 = Jahrgang, $2 = die eigene Person. Eine Zeile oder keine.
+const EIGENER_RANG_SQL = `
+        WITH rangliste AS (
+          SELECT u.id AS user_id,
+                 RANK() OVER (ORDER BY ${JAHRGANG_PUNKTE_SQL} DESC) AS rank_in_jahrgang,
+                 COUNT(*) OVER () AS total_in_jahrgang
+          ${JAHRGANG_KONFIS_FROM_SQL}
+        )
+        SELECT rank_in_jahrgang, total_in_jahrgang
+        FROM rangliste
+        WHERE user_id = $2`;
 
 // ARBEIT NACH DER ANTWORT ALS AUFTRAG DER DAUERHAFTEN WARTESCHLANGE
 // (utils/warteschlange.js): Postfach-Eintrag und Push ueberstehen einen
@@ -201,7 +232,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       }
 
       // Total points: nur aktive Punkte-Typen summieren. Wird VOR dem Promise.all
-      // gebraucht, weil die userRanking-Query totalPoints als Parameter nutzt.
+      // gebraucht (Level-Fortschritt); der eigene Rang haengt seit dem
+      // 10.10.2026 an der eigenen Person, nicht mehr an dieser Zahl.
       // Bonus ist bereits in konfi_profiles enthalten, daher NICHT nochmal addieren.
       const totalPoints = (konfi.gottesdienst_enabled ? (konfi.gottesdienst_points || 0) : 0)
                         + (konfi.gemeinde_enabled ? (konfi.gemeinde_points || 0) : 0);
@@ -228,42 +260,13 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
           ORDER BY kb.awarded_date DESC
           LIMIT 3
         `;
+      // Konfis des Jahrgangs und eigener Rang: Regel oben bei
+      // JAHRGANG_KONFIS_FROM_SQL (10.10.2026).
       const rankingSql = `
-        SELECT u.id, u.display_name,
-               (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
-               + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as points
-        FROM users u
-        JOIN konfi_profiles kp ON u.id = kp.user_id
-        JOIN roles r ON u.role_id = r.id
-        JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-        WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
+        SELECT u.id, u.display_name, ${JAHRGANG_PUNKTE_SQL} as points
+        ${JAHRGANG_KONFIS_FROM_SQL}
         ORDER BY points DESC
         LIMIT 3
-      `;
-      const userRankingSql = `
-        WITH MyRank AS (
-          SELECT
-            (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
-            + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as total_points,
-            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY
-              (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
-              + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) DESC) as rank_in_jahrgang
-          FROM users u
-          JOIN konfi_profiles kp ON u.id = kp.user_id
-          JOIN roles r ON u.role_id = r.id
-          JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
-        ), TotalCount AS (
-           SELECT COUNT(*) as total_in_jahrgang
-           FROM users u2
-           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id
-           JOIN roles r2 ON u2.role_id = r2.id
-           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi' AND u2.deleted_at IS NULL
-        )
-        SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
-        FROM MyRank r, TotalCount tc
-        WHERE r.total_points = $2
-        LIMIT 1;
       `;
       const eventCountSql =
         'SELECT COUNT(*) as count FROM event_bookings WHERE user_id = $1 AND organization_id = $2';
@@ -344,7 +347,7 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
         db.query(badgeCountSql, [konfiId, req.user.organization_id]),
         db.query(badgesSql, [konfiId, req.user.organization_id]),
         db.query(rankingSql, [konfi.jahrgang_id]),
-        db.query(userRankingSql, [konfi.jahrgang_id, totalPoints]),
+        db.query(EIGENER_RANG_SQL, [konfi.jahrgang_id, konfiId]),
         db.query(eventCountSql, [konfiId, req.user.organization_id]),
         db.query(recentEventsSql, [konfiId]),
         db.query(allLevelsSql, [req.user.organization_id]),
@@ -613,32 +616,8 @@ module.exports = (db, rbacMiddleware, requestUpload) => {
       const gemeindePoints = parseInt(konfi.gemeinde_points || 0);
       const totalPoints = (konfi.gottesdienst_enabled ? gottesdienstPoints : 0)
                         + (konfi.gemeinde_enabled ? gemeindePoints : 0);
-      const rankingQuery = `
-        WITH MyRank AS (
-          SELECT
-            (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
-            + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) as total_points,
-            RANK() OVER (PARTITION BY kp.jahrgang_id ORDER BY
-              (CASE WHEN j.gottesdienst_enabled THEN kp.gottesdienst_points ELSE 0 END
-              + CASE WHEN j.gemeinde_enabled THEN kp.gemeinde_points ELSE 0 END) DESC) as rank_in_jahrgang
-          FROM users u
-          JOIN konfi_profiles kp ON u.id = kp.user_id
-          JOIN roles r ON u.role_id = r.id
-          JOIN jahrgaenge j ON kp.jahrgang_id = j.id
-          WHERE kp.jahrgang_id = $1 AND r.name = 'konfi' AND u.deleted_at IS NULL
-        ), TotalCount AS (
-           SELECT COUNT(*) as total_in_jahrgang
-           FROM users u2
-           JOIN konfi_profiles kp2 ON u2.id = kp2.user_id
-           JOIN roles r2 ON u2.role_id = r2.id
-           WHERE kp2.jahrgang_id = $1 AND r2.name = 'konfi' AND u2.deleted_at IS NULL
-        )
-        SELECT r.rank_in_jahrgang, tc.total_in_jahrgang
-        FROM MyRank r, TotalCount tc
-        WHERE r.total_points = $2
-        LIMIT 1;
-      `;
-      const { rows: [ranking] } = await db.query(rankingQuery, [konfi.jahrgang_id, totalPoints]);
+      // Eigener Rang: dieselbe Abfrage wie im Dashboard (EIGENER_RANG_SQL).
+      const { rows: [ranking] } = await db.query(EIGENER_RANG_SQL, [konfi.jahrgang_id, konfiId]);
 
       // Mock progress overview
       const progressOverview = {

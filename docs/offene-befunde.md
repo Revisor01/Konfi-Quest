@@ -286,6 +286,11 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Bereichsfarbe, Badges und Zertifikate in der Liste farbig wie in den
   Kacheln, Funktionsbeschreibung der Teamer:in im Kopf der Detailansicht
   (Web und App) (Branch `feat/web-konfis-kacheln-icons`).
+- [x] 10.10.2026 — Rangliste des Jahrgangs mit Mischkonten: Konfi ist, wer
+  es in der Gemeinde des Jahrgangs ist (beide Quellen); der eigene Rang hängt
+  an der Person statt an der Punktzahl (Anlass: „1/1" bei einem Konto, das
+  zuhause Leitung und in der Testgemeinde Konfi ist; Branch
+  `fix/rangliste-mischkonto`).
 
 
 ## Offen
