@@ -95,8 +95,9 @@ describe('Stylesheets der Web-Fassungen: eine Klasse, eine Datei', () => {
     expect(alle.get('web-rollenmarke--leitung')).toEqual(['web/leitung.css']);
   });
 
-  it('der Fehler vom 06.10.2026: Kreis und Balken der Konfi-Liste gehoeren leitung.css, das Profil und der Balken der Konfi-Seite start.css', () => {
-    expect(alle.get('web-initialen')).toEqual(['web/leitung.css']);
+  it('der Fehler vom 06.10.2026: Kreis und Balken der Konfi-Liste gehoeren je einer Datei, das Profil und der Balken der Konfi-Seite start.css', () => {
+    // Der Kreis ist seit 10.10.2026 ein allgemeiner Baustein (WebKreis) und steht in web-ansicht.css.
+    expect(alle.get('web-initialen')).toEqual(['web-ansicht.css']);
     expect(alle.get('web-punktebalken')).toEqual(['web/leitung.css']);
     expect(alle.get('web-avatar')).toEqual(['web/start.css']);
     expect(alle.get('web-fortschritt')).toEqual(['web/start.css']);
