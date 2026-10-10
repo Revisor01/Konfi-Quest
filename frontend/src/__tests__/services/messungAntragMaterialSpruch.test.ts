@@ -9,7 +9,8 @@
  *   - `antrag-entschieden`     Die Leitung nimmt einen Antrag an oder lehnt ihn ab.
  *   - `material-angesehen`     Die Detailansicht eines Materials ist geöffnet.
  *   - `material-abgerufen`     Eine Datei oder ein Link daraus ist geöffnet.
- *   - `konfispruch-gespeichert` Vorschlag oder eigener Spruch, mit Übersetzung.
+ *   - `konfispruch-erste-wahl` / `konfispruch-gewechselt` (seit 10.10.2026,
+ *     trackKonfispruchWahl) Spruch, Übersetzung, Gemeinde; beim Wechsel der alte.
  *
  * Geprüft wird hier:
  *   1. Name und Merkmale kommen EXAKT so an (keine weiteren Felder).
@@ -154,51 +155,107 @@ describe('material-angesehen und material-abgerufen: Name und Merkmale', () => {
   });
 });
 
-describe('konfispruch-gespeichert: Name und Merkmale', () => {
-  it.each(['luther', 'gute-nachricht', 'bigs', 'elberfelder'])(
-    'Vorschlag in der Übersetzung %s',
-    async (bibel) => {
-      const a = await ladeMitProd();
-      a.setAnalyticsRole('konfi');
-      a.trackHandlung('konfispruch-gespeichert', { quelle: 'vorschlag', bibel });
+describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
+  const JOSUA = { quelle: 'vorschlag' as const, id: 11, stelle: 'Josua 1,9', bibel: 'luther' };
+  const PSALM = { quelle: 'vorschlag' as const, id: 12, stelle: 'Psalm 23,1', bibel: 'bigs' };
+  const EIGEN = { quelle: 'eigen' as const, text: 'Ich bin bei dir', stelle: 'Mt 28,20' };
 
-      const p = nutzlast(fetchMock.mock.calls[0]);
-      expect(p.name).toBe('konfispruch-gespeichert');
-      expect(p.data).toEqual({ quelle: 'vorschlag', bibel, rolle: 'konfi' });
-    }
-  );
-
-  it('eigener Spruch: nur die Quelle', async () => {
+  it('erste Wahl eines Vorschlags: genau diese Felder, dazu die Rolle', async () => {
     const a = await ladeMitProd();
     a.setAnalyticsRole('konfi');
-    a.trackHandlung('konfispruch-gespeichert', { quelle: 'eigen' });
+    a.trackKonfispruchWahl(JOSUA, null, { gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche' });
 
-    expect(nutzlast(fetchMock.mock.calls[0]).data).toEqual({ quelle: 'eigen', rolle: 'konfi' });
-  });
-
-  it('verwirft Bibelstelle, Spruchtext, eigene Stellenangabe und die Rohschlüssel der App', async () => {
-    const a = await ladeMitProd();
-    a.trackHandlung('konfispruch-gespeichert', {
-      // Rohschlüssel der Auswahl statt des Messwerts: fällt heraus.
-      quelle: 'freitext',
-      bibel: 'luther2017',
-      stelle: 'Josua 1,9',
-      reference: 'Josua 1,9',
-      text: 'Sei mutig und stark',
-      konfspruch_freitext_referenz: 'Joh 3,16',
-      konfspruch_id: '11',
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const p = nutzlast(fetchMock.mock.calls[0]);
+    expect(p.name).toBe('konfispruch-erste-wahl');
+    expect(p.data).toEqual({
+      quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'luther',
+      gemeinde: 'Kirchengemeinde Heide', kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche', rolle: 'konfi',
     });
-
-    expect(nutzlast(fetchMock.mock.calls[0]).data).toEqual({});
-    const rumpf = rumpfText(fetchMock.mock.calls[0]);
-    for (const verboten of ['freitext', 'luther2017', 'Josua', 'mutig', 'Joh 3']) {
-      expect(rumpf, `${verboten} steht im Rumpf`).not.toContain(verboten);
-    }
   });
 
-  it('die Positivliste der Übersetzungen ist genau die Auswahl der App', () => {
-    // Vier Übersetzungen bietet die Auswahl an (TRANSLATION_KEYS im Modal);
-    // jede hat genau einen Messwert, und die Messwerte sind die Liste.
+  it('erste Wahl eines eigenen Spruchs: Wortlaut und Stellenangabe', async () => {
+    const a = await ladeMitProd();
+    a.setAnalyticsRole('teamer');
+    a.trackKonfispruchWahl(EIGEN, null, { gemeinde: 'Kirchengemeinde Heide', kirchenkreis: null, landeskirche: null });
+
+    const p = nutzlast(fetchMock.mock.calls[0]);
+    expect(p.name).toBe('konfispruch-erste-wahl');
+    expect(p.data).toEqual({
+      quelle: 'eigen', spruch: 'Ich bin bei dir', stelle: 'Mt 28,20',
+      gemeinde: 'Kirchengemeinde Heide', rolle: 'teamer',
+    });
+  });
+
+  it('gleicher Spruch erneut gespeichert: kein Ereignis', async () => {
+    const a = await ladeMitProd();
+    a.trackKonfispruchWahl(JOSUA, { ...JOSUA }, { gemeinde: 'G' });
+    a.trackKonfispruchWahl(EIGEN, { ...EIGEN, text: '  Ich bin\nbei dir ' }, { gemeinde: 'G' });
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('Wechsel: ein Ereignis gewechselt mit dem neuen Spruch und den vorher-Feldern', async () => {
+    const a = await ladeMitProd();
+    a.trackKonfispruchWahl(EIGEN, JOSUA, { gemeinde: 'G', kirchenkreis: 'K', landeskirche: 'L' });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const p = nutzlast(fetchMock.mock.calls[0]);
+    expect(p.name).toBe('konfispruch-gewechselt');
+    expect(p.data).toEqual({
+      quelle: 'eigen', spruch: 'Ich bin bei dir', stelle: 'Mt 28,20',
+      vorher_quelle: 'vorschlag', vorher_spruch: 'Josua 1,9', vorher_spruch_id: '11', vorher_bibel: 'luther',
+      gemeinde: 'G', kirchenkreis: 'K', landeskirche: 'L',
+    });
+  });
+
+  it('andere Übersetzung desselben Spruchs ist ein Wechsel', async () => {
+    const a = await ladeMitProd();
+    a.trackKonfispruchWahl({ ...JOSUA, bibel: 'bigs' }, JOSUA, { gemeinde: 'G' });
+    const p = nutzlast(fetchMock.mock.calls[0]);
+    expect(p.name).toBe('konfispruch-gewechselt');
+    expect(p.data).toEqual({
+      quelle: 'vorschlag', spruch: 'Josua 1,9', spruch_id: '11', bibel: 'bigs',
+      vorher_quelle: 'vorschlag', vorher_spruch: 'Josua 1,9', vorher_spruch_id: '11', vorher_bibel: 'luther',
+      gemeinde: 'G',
+    });
+  });
+
+  it('Wechsel zwischen zwei Vorschlägen', async () => {
+    const a = await ladeMitProd();
+    a.trackKonfispruchWahl(PSALM, JOSUA, null);
+    const p = nutzlast(fetchMock.mock.calls[0]);
+    expect(p.data).toEqual({
+      quelle: 'vorschlag', spruch: 'Psalm 23,1', spruch_id: '12', bibel: 'bigs',
+      vorher_quelle: 'vorschlag', vorher_spruch: 'Josua 1,9', vorher_spruch_id: '11', vorher_bibel: 'luther',
+    });
+  });
+
+  it('säubert und kürzt: Steuerzeichen und Umbrüche zu Leerzeichen, höchstens 500 Zeichen', async () => {
+    const a = await ladeMitProd();
+    const lang = `Zeile eins\n\nZeile\tzwei\u0007 ${'x'.repeat(600)}`;
+    a.trackKonfispruchWahl({ quelle: 'eigen', text: lang, stelle: ' Ps 1 ' }, null, { gemeinde: ' G ' });
+    const d = nutzlast(fetchMock.mock.calls[0]).data as Record<string, string>;
+    expect(d.spruch.length).toBe(500);
+    expect(d.spruch.startsWith('Zeile eins Zeile zwei x')).toBe(true);
+    expect(d.stelle).toBe('Ps 1');
+    expect(d.gemeinde).toBe('G');
+    expect(a.UMAMI_TEXT_HOECHSTENS).toBe(500);
+  });
+
+  it('eine unbekannte Übersetzung und eine unsinnige Kennung fallen heraus', async () => {
+    const a = await ladeMitProd();
+    a.trackKonfispruchWahl({ quelle: 'vorschlag', id: 0, stelle: 'Josua 1,9', bibel: 'luther2017' }, null, { gemeinde: '' });
+    expect(nutzlast(fetchMock.mock.calls[0]).data).toEqual({ quelle: 'vorschlag', spruch: 'Josua 1,9' });
+  });
+
+  it('das alte Ereignis konfispruch-gespeichert geht nicht mehr raus', async () => {
+    const a = await ladeMitProd();
+    // Nicht mehr in der Liste der Handlungen: trackHandlung verwirft es ganz.
+    (a.trackHandlung as (h: string, m?: Record<string, string>) => void)('konfispruch-gespeichert', { quelle: 'eigen' });
+    expect(fetchMock).toHaveBeenCalledTimes(0);
+  });
+
+  it('die Übersetzungen sind genau die Auswahl der App', () => {
     const modal = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
     expect(modal).toContain(
       "const TRANSLATION_KEYS: Translation[] = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];"
@@ -207,9 +264,7 @@ describe('konfispruch-gespeichert: Name und Merkmale', () => {
       /BIBEL_MESSWERT: Record<Translation, string> = \{\s*luther2017: 'luther',\s*bigs: 'bigs',\s*gute_nachricht: 'gute-nachricht',\s*elberfelder: 'elberfelder'\s*\}/
     );
     const analytics = lies('src/services/analytics.ts');
-    expect(analytics).toMatch(
-      /'konfispruch-gespeichert': \{\s*quelle: \['vorschlag', 'eigen'\],\s*bibel: \['luther', 'gute-nachricht', 'bigs', 'elberfelder'\]\s*\}/
-    );
+    expect(analytics).toContain("const ERLAUBTE_BIBEL = ['luther', 'gute-nachricht', 'bigs', 'elberfelder'];");
   });
 });
 
@@ -392,24 +447,31 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
   });
 
   it.each([
-    ["api.patch(`${apiBasePath}/profile`, {\n            konfspruch_id: selectedSpruchId,", 'vorschlag'],
-    ["api.patch(`${apiBasePath}/profile`, {\n            konfspruch_freitext: text,", 'eigen'],
-  ])('Konfispruch (%#): gespeichert nach dem PATCH, vor dem catch', (aufruf, quelle) => {
+    ["api.patch(`${apiBasePath}/profile`, {\n            konfspruch_id: selectedSpruchId,", "trackKonfispruchWahl(\n            { quelle: 'vorschlag'"],
+    ["api.patch(`${apiBasePath}/profile`, {\n            konfspruch_freitext: text,", "trackKonfispruchWahl({ quelle: 'eigen'"],
+  ])('Konfispruch (%#): gemessen nach dem PATCH, vor dem catch', (aufruf, messung) => {
     hinterAufrufVorCatch(
       'src/components/konfi/modals/KonfispruchSelectModal.tsx',
       `await ${aufruf}`,
-      `quelle: '${quelle}'`
+      messung
     );
+    const quelle = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
+    expect(catchRumpf(quelle, quelle.indexOf('} catch', quelle.indexOf(aufruf)))).not.toContain('trackKonfispruchWahl(');
   });
 
-  it('Konfispruch: eigener Spruch geht ohne Stelle, ohne Text', () => {
+  it('Konfispruch: der Vorher-Stand kommt aus der Anzeige, die Gemeinde aus dem Konto -- nie eine Person', () => {
     const quelle = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
-    expect(quelle).toContain("trackHandlung('konfispruch-gespeichert', { quelle: 'eigen' });");
-    // Keine Stelle, kein Text, keine Kennung wandert in eine Messung.
-    const messungen = quelle.match(/trackHandlung\('konfispruch-gespeichert'[^;]*;/g) || [];
+    expect(quelle).toContain('kirchenkreis: aktiveGemeinde?.kirchenkreis,');
+    expect(quelle).toContain('landeskirche: aktiveGemeinde?.landeskirche,');
+    expect(quelle.match(/const vorher = wahlAusAnzeige\(current\);/g)?.length).toBe(2);
+    const messungen = quelle.match(/trackKonfispruchWahl\([\s\S]*?\);/g) || [];
     expect(messungen.length).toBe(2);
     for (const m of messungen) {
-      expect(m).not.toMatch(/reference|referenz|freitext|text|selectedSpruchId|spruch\.id/);
+      expect(m).toContain('vorher');
+      expect(m).toMatch(/vorher,\s*ort\s*\)/);
+      expect(m).not.toMatch(/display_name|username|user\.id|user\?\.id|jahrgang/);
     }
+    expect(quelle).not.toContain('trackHandlung(');
   });
+
 });

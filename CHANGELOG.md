@@ -25,12 +25,9 @@ Versionsüberschrift.
 - Die Eventliste in der Detailansicht einer Person zeigt oben auch die
   kommenden Events, zu denen sie angemeldet ist oder auf der Warteliste steht;
   ein Tipp darauf öffnet das Event.
-- Unter Betrieb zeigt ein Reiter „Sprüche“, welche Konfisprüche über alle
-  Gemeinden gewählt werden — jeder Spruch mit Anzahl, eigene im Wortlaut,
-  ohne Namen; die Zahlen bleiben auch nach dem Löschen eines Kontos.
-- Der Reiter „Sprüche“ unter Betrieb wertet wahlweise je Landeskirche,
-  Kirchenkreis oder Gemeinde aus; Kirchenkreis und Landeskirche gelten, wie
-  sie beim Wählen zugeordnet waren. Interne Gemeinden zählen dort nicht mit.
+- Welche Konfisprüche gewählt werden, fließt anonym in die Nutzungsmessung
+  ein: beim ersten Eintragen und bei jedem Wechsel der Spruch oder der eigene
+  Wortlaut mit Gemeinde, Kirchenkreis und Landeskirche, ohne Namen.
 - Gibt es eine Challenge nicht mehr oder gehört sie zu einem Jahrgang, der
   dir nicht zugewiesen ist, sagt ihre Seite das und bietet den Weg zurück zu
   den Challenges.

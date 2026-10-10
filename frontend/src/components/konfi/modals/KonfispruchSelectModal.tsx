@@ -35,7 +35,7 @@ import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { trackHandlung } from '../../../services/analytics';
+import { trackKonfispruchWahl, type KonfispruchOrt, type KonfispruchWahl } from '../../../services/analytics';
 
 type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
 
@@ -50,8 +50,8 @@ const TRANSLATION_KEYS: Translation[] = ['luther2017', 'bigs', 'gute_nachricht',
 
 // Messwert je Uebersetzung fuer die anonyme Nutzungsmessung (Simon,
 // 27.09.2026: „welche Übersetzung"). Eigene, feste Werte statt der Schluessel:
-// Umami-Merkmale bleiben Kleinbuchstaben mit Bindestrich, und die
-// Positivliste in services/analytics.ts nennt genau diese vier.
+// Umami-Merkmale bleiben Kleinbuchstaben mit Bindestrich, und
+// services/analytics.ts (trackKonfispruchWahl) laesst genau diese vier durch.
 const BIBEL_MESSWERT: Record<Translation, string> = {
   luther2017: 'luther',
   bigs: 'bigs',
@@ -105,8 +105,34 @@ interface KonfispruchSelectModalProps {
 const isTranslation = (value?: string): value is Translation =>
   value === 'luther2017' || value === 'bigs' || value === 'gute_nachricht' || value === 'elberfelder';
 
+/**
+ * Der Spruch, den die App vor dem Speichern anzeigt, in der Form der Messung
+ * (docs/messung/umami.md, S1) -- kein eigener Abruf. Ohne gespeicherten
+ * Spruch null: Dann ist die naechste Wahl die erste.
+ */
+function wahlAusAnzeige(current?: CurrentKonfspruch | null): KonfispruchWahl | null {
+  if (current?.source === 'liste' && current.id) {
+    const t = isTranslation(current.translation) ? current.translation : 'luther2017';
+    return { quelle: 'vorschlag', id: current.id, stelle: current.reference || '', bibel: BIBEL_MESSWERT[t] };
+  }
+  if (current?.source === 'freitext' && (current.text || '').trim()) {
+    return { quelle: 'eigen', text: current.text || '', stelle: current.reference || '' };
+  }
+  return null;
+}
+
 const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose, onSuccess, current, apiBasePath = '/konfi', variant = 'konfi' }) => {
-  const { isOnline } = useApp();
+  const { isOnline, user, organizations, activeOrgId } = useApp();
+  // Wo gewaehlt wird: die aktive Gemeinde aus GET /auth/my-organizations,
+  // sonst die Stamm-Gemeinde; der Name notfalls aus dem Konto (aeltere
+  // Server oder Liste noch nicht geladen).
+  const aktiveGemeinde = (organizations || []).find((o) => o.id === (activeOrgId ?? user?.organization_id))
+    ?? (organizations || []).find((o) => o.is_primary);
+  const ort: KonfispruchOrt = {
+    gemeinde: aktiveGemeinde?.display_name || aktiveGemeinde?.name || user?.organization,
+    kirchenkreis: aktiveGemeinde?.kirchenkreis,
+    landeskirche: aktiveGemeinde?.landeskirche,
+  };
   const { isSubmitting, guard } = useActionGuard();
   const [presentToast] = useIonToast();
 
@@ -164,23 +190,22 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
         showError('Bitte wähle einen Spruch aus der Liste aus');
         return;
       }
-      // Unverändert erneut gespeichert ist keine Wahl — zählt nicht.
-      const unveraendert = current?.source === 'liste'
-        && current.id === selectedSpruchId
-        && current.translation === translation;
+      const vorher = wahlAusAnzeige(current);
       await guard(async () => {
         try {
           await api.patch(`${apiBasePath}/profile`, {
             konfspruch_id: selectedSpruchId,
             translation
           });
-          // Anonyme Messung NACH der erfolgreichen Antwort: Vorschlag und
-          // Uebersetzung. Bewusst OHNE Bibelstelle und ohne Kennung — der
-          // Spruch ist oeffentlich und machte die Sitzung einer Konfi
-          // wiedererkennbar (docs/messung/umami.md, S1).
-          if (!unveraendert) {
-            trackHandlung('konfispruch-gespeichert', { quelle: 'vorschlag', bibel: BIBEL_MESSWERT[translation] });
-          }
+          // Anonyme Messung NACH der erfolgreichen Antwort: Spruch, Uebersetzung
+          // und Gemeinde, nie die Person (docs/messung/umami.md, S1).
+          // Unveraendert erneut gespeichert meldet nichts.
+          const spruch = sprueche.find((s) => s.id === selectedSpruchId);
+          trackKonfispruchWahl(
+            { quelle: 'vorschlag', id: selectedSpruchId, stelle: spruch?.reference || '', bibel: BIBEL_MESSWERT[translation] },
+            vorher,
+            ort
+          );
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
         } catch (err) {
@@ -204,20 +229,17 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
         showError('Bitte gib die Stellenangabe an');
         return;
       }
-      const unveraendert = current?.source === 'freitext'
-        && (current.text || '').trim() === text
-        && (current.reference || '').trim() === referenz;
+      const vorher = wahlAusAnzeige(current);
       await guard(async () => {
         try {
           await api.patch(`${apiBasePath}/profile`, {
             konfspruch_freitext: text,
             konfspruch_freitext_referenz: referenz
           });
-          // Eigener Spruch: nur DASS es ein eigener ist — weder Text noch
-          // Stellenangabe verlassen das Gerät.
-          if (!unveraendert) {
-            trackHandlung('konfispruch-gespeichert', { quelle: 'eigen' });
-          }
+          // Eigener Spruch im Wortlaut mit Stellenangabe (Simon, 09.10.2026:
+          // „insbesondere die, die selbst eingetragen werden"), gesaeubert
+          // und gekuerzt in services/analytics.ts.
+          trackKonfispruchWahl({ quelle: 'eigen', text, stelle: referenz }, vorher, ort);
           presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
           onSuccess();
         } catch (err) {

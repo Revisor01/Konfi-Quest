@@ -441,12 +441,12 @@ paths:
         Liste ODER konfspruch_freitext + konfspruch_freitext_referenz
         (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.
 
-        STATISTIK OHNE PERSONENBEZUG (09.10.2026, Migration 207): Jede
-        geaenderte Wahl schreibt zusaetzlich eine Zeile in konfspruch_wahlen
-        (Gemeinde, Monat, Spruch und Uebersetzung bzw. eigener Spruch im
-        Wortlaut) -- ohne Verweis auf Person oder Konto; unveraendert erneut
-        gespeichert zaehlt nicht. Antwort unveraendert. Auswertung:
-        GET /api/metrics/konfisprueche.
+        STATISTIK OHNE PERSONENBEZUG: Vom 09.10.2026 bis 10.10.2026 schrieb
+        jede geaenderte Wahl zusaetzlich eine Zeile in konfspruch_wahlen
+        (Migration 207). ENTFERNT am 10.10.2026 (Migration 212): Das
+        Speichern schreibt nur noch das Profil; welcher Spruch gewaehlt wird,
+        misst die App ueber die Nutzungsmessung (docs/messung/umami.md, S1).
+        Antwort unveraendert.
       x-berechtigung:
         rollen: [konfi]
         middleware: [verifyTokenRBAC]

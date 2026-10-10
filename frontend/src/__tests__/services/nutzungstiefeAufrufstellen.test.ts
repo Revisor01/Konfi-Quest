@@ -90,11 +90,9 @@ const STELLEN: Array<{
     handlung: 'material-abgerufen',
     vorher: 'await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)'
   },
-  {
-    datei: 'src/components/konfi/modals/KonfispruchSelectModal.tsx',
-    handlung: 'konfispruch-gespeichert',
-    vorher: 'api.patch(`${apiBasePath}/profile`'
-  },
+  // Der Konfispruch misst seit 10.10.2026 ueber trackKonfispruchWahl, nicht
+  // ueber trackHandlung; seine Aufrufstelle pruefen
+  // messungAntragMaterialSpruch.test.ts und messungKonfispruch.test.tsx.
   // Simon, 09.10.2026: „Go" für S2–S17 (docs/messung/umami.md). Hier die
   // Stellen, die an einer Server-Antwort hängen; die übrigen (Ansehen,
   // Postfach, Suche) prüft messungVorschlaege.test.ts.
@@ -281,7 +279,8 @@ describe('Die Ereignisnamen und Merkmale stehen fest', () => {
     'antrag-entschieden',
     'material-angesehen',
     'material-abgerufen',
-    'konfispruch-gespeichert',
+    'konfispruch-erste-wahl',
+    'konfispruch-gewechselt',
     'badge-angelegt',
     'challenge-angelegt',
     'event-abgemeldet',

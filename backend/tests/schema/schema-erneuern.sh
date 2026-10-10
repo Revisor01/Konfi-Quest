@@ -87,6 +87,30 @@ KOPF
     | grep -v '^\\restrict' \
     | grep -v '^\\unrestrict' \
     | grep -v "set_config('search_path'"
+  # DATENZEILEN DER MIGRATIONEN (seit 10.10.2026): Der Wegwerf-Container
+  # enthaelt keine Daten der Produktion -- nur die Zeilen, die Migrationen
+  # selbst anlegen (190: Systemrolle super_admin, 193: Textbausteine und
+  # Einstellungen der Support-Mail). Ein reiner Schema-Dump verloere sie;
+  # eine neue Instanz und die Ersteinrichtung brauchen sie. Deshalb hinter
+  # dem Schema alle Zeilen dieses Containers als INSERT (kein COPY: die Tests
+  # spielen den Dump ueber node-postgres ein, das kein COPY FROM stdin
+  # kann). schema_migrations steht in prod-migrations.txt. Gefiltert wird
+  # nur, was auch beim Schema wegfaellt -- Leerzeilen und "--" koennen
+  # mitten in einem Text stehen (die Textbausteine haben Absaetze).
+  cat <<DATEN
+
+-- ====================================================================
+-- Datenzeilen, die die eingefalteten Migrationen anlegen (keine Daten der
+-- Produktion). Ohne sie fehlte einer neuen Instanz etwa die Rolle
+-- super_admin aus Migration 190.
+-- ====================================================================
+
+DATEN
+  docker exec "$C" pg_dump -U postgres -d schema --data-only --column-inserts --no-owner --no-privileges --no-comments \
+      --exclude-table=schema_migrations \
+    | grep -v '^\\restrict' \
+    | grep -v '^\\unrestrict' \
+    | grep -v "set_config('search_path'"
 } > "$SCHEMA.neu"
 psql_c -At -c "SELECT name FROM schema_migrations ORDER BY name" > "$STAND.neu"
 

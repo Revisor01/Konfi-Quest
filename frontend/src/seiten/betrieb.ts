@@ -17,7 +17,6 @@ export const BETRIEB_REITER = wahlen([
   { schluessel: 'fehler', label: 'Fehler', zahlText: zahlwort('Fehlerart seit dem letzten Neustart', 'Fehlerarten seit dem letzten Neustart') },
   { schluessel: 'routen', label: 'Routen' },
   { schluessel: 'verlauf', label: 'Verlauf' },
-  { schluessel: 'sprueche', label: 'Sprüche' },
 ]);
 export type BetriebsReiterSchluessel = (typeof BETRIEB_REITER)[number]['schluessel'];
 export const BETRIEB_REITER_BESCHRIFTUNG = 'Ansicht';

@@ -1,18 +1,17 @@
 // MIGRATION 192: Wunschlizenz in der Anfrage vom Formular (Simon, 03.10.2026).
 //
-// Geprueft auf dem Stand, auf den die Migration beim Deploy trifft (nach 191,
-// mit einer vorhandenen Anfrage): die Spalte kommt nullbar dazu, die
-// vorhandene Anfrage behaelt NULL, der CHECK laesst genau die Schluessel aus
-// utils/lizenzen.js zu, und ein zweiter Lauf aendert nichts.
-const {
-  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
-} = require('../helpers/schemaAufbau');
+// Seit 10.10.2026 steht 192 im Schema-Dump (tests/schema/prod-schema.sql),
+// die Datei ist aus backend/migrations/ entfernt; der Test der Migration auf
+// dem Stand davor (vorhandene Anfrage behaelt NULL, zweiter Lauf) liegt in
+// der Git-Historie (zuletzt Commit 3b935178). Geprueft wird hier auf einer
+// Wegwerf-Datenbank aus dem Dump: die Spalte ist nullbar, und der CHECK
+// laesst genau die Schluessel aus utils/lizenzen.js zu.
+const { dbAnlegen, dbWegraeumen, produktionAufbauen } = require('../helpers/schemaAufbau');
 const { LIZENZ_SCHLUESSEL } = require('../../utils/lizenzen');
 
-const MIGRATION = '192_anfrage_wunschlizenz.sql';
 const DB = 'konfi_test_mig192';
 
-describe('Migration 192 auf dem Stand, auf den sie beim Deploy trifft', () => {
+describe('Migration 192 im Schema-Dump', () => {
   let pool;
 
   const anfrage = (gemeinde, lizenz) => pool.query(
@@ -21,30 +20,22 @@ describe('Migration 192 auf dem Stand, auf den sie beim Deploy trifft', () => {
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: MIGRATION });
-    await pool.query(
-      `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am)
-       VALUES ('vorher', 'K', 'k@example.test', NOW())`);
+    await produktionAufbauen(pool);
   }, 180000);
 
   afterAll(async () => {
     await dbWegraeumen(pool, DB);
   }, 120000);
 
-  it('Ausgangslage: keine Spalte wunsch_lizenz', async () => {
-    const { rows } = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM information_schema.columns
-        WHERE table_name = 'gemeinde_anfragen' AND column_name = 'wunsch_lizenz'`);
-    expect(rows[0].n).toBe(0);
-  });
-
-  it('legt die Spalte nullbar an; die vorhandene Anfrage behält NULL', async () => {
-    await pool.query(migrationLesen(MIGRATION));
+  it('die Spalte ist text und nullbar; ohne Angabe bleibt sie NULL', async () => {
     const { rows: [spalte] } = await pool.query(
       `SELECT data_type, is_nullable FROM information_schema.columns
         WHERE table_name = 'gemeinde_anfragen' AND column_name = 'wunsch_lizenz'`);
     expect(spalte).toEqual({ data_type: 'text', is_nullable: 'YES' });
-    const { rows } = await pool.query("SELECT wunsch_lizenz FROM gemeinde_anfragen WHERE gemeinde = 'vorher'");
+    await pool.query(
+      `INSERT INTO gemeinde_anfragen (gemeinde, kontakt_name, email, einwilligung_am)
+       VALUES ('ohne', 'K', 'k@example.test', NOW())`);
+    const { rows } = await pool.query("SELECT wunsch_lizenz FROM gemeinde_anfragen WHERE gemeinde = 'ohne'");
     expect(rows).toEqual([{ wunsch_lizenz: null }]);
   });
 
@@ -55,14 +46,8 @@ describe('Migration 192 auf dem Stand, auf den sie beim Deploy trifft', () => {
   });
 
   it.each(['unbegrenzt', 'Standard', ''])('weist %j ab (verboten, CHECK)', async (wert) => {
-    await expect(anfrage('falsch', wert)).rejects.toMatchObject({ code: '23514' });
-  });
-
-  it('ein zweiter Lauf ändert nichts', async () => {
-    await pool.query(migrationLesen(MIGRATION));
-    const { rows } = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM pg_constraint
-        WHERE conrelid = 'public.gemeinde_anfragen'::regclass AND conname = 'gemeinde_anfragen_wunsch_lizenz_gueltig'`);
-    expect(rows[0].n).toBe(1);
+    await expect(anfrage('falsch', wert)).rejects.toMatchObject({
+      code: '23514', constraint: 'gemeinde_anfragen_wunsch_lizenz_gueltig',
+    });
   });
 });

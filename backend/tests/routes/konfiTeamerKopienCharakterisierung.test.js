@@ -131,7 +131,7 @@ describe('Konfi/Team: zusammengelegte Kopien behalten ihre Antworten', () => {
   });
 
   describe('PATCH /profile: bewusste Unterschiede zwischen Konfi und Team', () => {
-    it('Konfi ohne Profilzeile: 200, aber keine Zeile angelegt und keine Statistik', async () => {
+    it('Konfi ohne Profilzeile: 200, aber keine Zeile angelegt', async () => {
       await db.query('DELETE FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
       const res = await request(app).patch('/api/konfi/profile')
         .set('Authorization', auth('konfi1')).send({ konfspruch_id: josua, translation: 'bigs' });
@@ -139,11 +139,9 @@ describe('Konfi/Team: zusammengelegte Kopien behalten ihre Antworten', () => {
       expect(res.body).toEqual({ success: true, konfspruch: { source: 'liste', id: Number(josua), translation: 'bigs' } });
       const { rows } = await db.query('SELECT 1 FROM konfi_profiles WHERE user_id = $1', [USERS.konfi1.id]);
       expect(rows).toHaveLength(0);
-      const { rows: [{ n }] } = await db.query('SELECT COUNT(*)::int AS n FROM konfspruch_wahlen');
-      expect(n).toBe(0);
     });
 
-    it('Team ohne Profilzeile: die Zeile wird angelegt, die Wahl gezaehlt', async () => {
+    it('Team ohne Profilzeile: die Zeile wird angelegt', async () => {
       await db.query('DELETE FROM konfi_profiles WHERE user_id = $1', [USERS.teamer1.id]);
       const res = await request(app).patch('/api/teamer/profile')
         .set('Authorization', auth('teamer1')).send({ konfspruch_freitext: 'Mein Spruch', konfspruch_freitext_referenz: 'Ps 1' });
@@ -153,8 +151,6 @@ describe('Konfi/Team: zusammengelegte Kopien behalten ihre Antworten', () => {
         [USERS.teamer1.id]
       );
       expect(kp).toEqual({ konfspruch_freitext: 'Mein Spruch', org: ORGS.testGemeinde.id });
-      const { rows: [{ n }] } = await db.query('SELECT COUNT(*)::int AS n FROM konfspruch_wahlen');
-      expect(n).toBe(1);
     });
 
     it('fremde Rolle: 403 mit dem Text des jeweiligen Wegs', async () => {

@@ -132,7 +132,12 @@ Release-Zweig fortschreiben und das Ergebnis mitcommitten:
 bash backend/tests/schema/schema-erneuern.sh <letzte Migration der Produktion>
 ```
 
-Das Skript braucht Docker und keinen Zugang zur Produktion. Der Test
+Das Skript braucht Docker und keinen Zugang zur Produktion. Hinter das
+Schema schreibt es die Datenzeilen, die die eingefalteten Migrationen selbst
+anlegen (etwa die Rolle `super_admin` aus 190, die Textbausteine der
+Support-Mail aus 193) -- ein reiner Schema-Dump verlöre sie, und eine neue
+Instanz käme ohne Rolle nicht durch die Ersteinrichtung. Zuletzt gefaltet am
+10.10.2026 bis 208. Der Test
 `backend/tests/schema/dumpAktualitaet.test.js` schlägt an, wenn mehr als 20
 Migrationen über dem Dump liegen. Ob die Produktion dem Repo entspricht,
 misst der Betrieb mit `backend/scripts/schemaVergleich.js` (`erfassen` in der
@@ -166,7 +171,7 @@ auf die kein Fremdschlüssel zeigt.
   Dienste neu, auch Postgres).
 - In den Logs beider Backends `Migration FAILED`: erwartet 0.
 - `migrationen.gesamt` zählt die Dateien in `backend/migrations/` — seit dem
-  Dump-Stand 173 nur die danach (ab `174`), nicht alle, die die Datenbank je
+  Dump-Stand 208 nur die danach (ab `209`), nicht alle, die die Datenbank je
   bekommen hat. Eine kleine Zahl ist also kein Fehler. Ob die Datenbank
   vollständig ist, zeigt der Abgleich mit `schema_migrations` in
   [`init-scripts/README.md`](../../init-scripts/README.md#was-in-backendmigrations-liegt--und-was-nicht).

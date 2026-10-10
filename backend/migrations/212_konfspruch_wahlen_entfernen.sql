@@ -1,0 +1,25 @@
+-- 212: Tabelle konfspruch_wahlen entfernen (10.10.2026)
+--
+-- Simon, 10.10.2026: „Raus aus der App. Nur Umami!" Die Auswertung, welche
+-- Konfisprueche gewaehlt werden, gehoert nicht in die App und nicht in den
+-- Betrieb. Sie laeuft jetzt ueber die anonyme Nutzungsmessung: die
+-- Ereignisse `konfispruch-erste-wahl` und `konfispruch-geaendert`
+-- (docs/messung/umami.md, S1). Die Tabelle aus den Migrationen 207 und 208,
+-- die je Wahl Gemeinde, Kirchenkreis, Landeskirche und den Spruch festhielt,
+-- und die Route GET /api/metrics/konfisprueche entfallen; die Zeilen werden
+-- nicht gebraucht und nicht uebernommen.
+--
+-- WER LIEST SIE NOCH: niemand. Geschrieben wurde sie nur von
+-- utils/konfspruch.js beim Speichern eines Spruchs (gekapselt, ein Fehler
+-- liess das Speichern nie scheitern), gelesen nur von der Super-Admin-Route
+-- der neuen Oberflaeche. Keine Store-App (2.2.0, 2.3.0) ruft die Route; die
+-- Antworten von PATCH /konfi/profile und /teamer/profile bleiben gleich
+-- (tests/routes/konfiTeamerKopienCharakterisierung.test.js). Ein alter
+-- Backend-Container, der waehrend des rollenden Deploys noch schreibt, trifft
+-- auf die fehlende Tabelle und protokolliert nur.
+--
+-- CASCADE: nimmt Indizes, Fremdschluessel und die Sequenz der Tabelle mit;
+-- keine andere Tabelle verweist auf sie.
+-- IDEMPOTENT: IF EXISTS.
+
+DROP TABLE IF EXISTS konfspruch_wahlen CASCADE;

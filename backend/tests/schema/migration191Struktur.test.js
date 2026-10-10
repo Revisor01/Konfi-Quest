@@ -2,18 +2,19 @@
 // die Anfragen vom Formular (Simon, 02.10.2026; docs/planung/web-version.md,
 // Entscheidungen 3, 4 und 6).
 //
-// Geprueft auf dem Stand, auf den die Migration beim Deploy trifft: Gemeinden
-// mit Freitext im Kirchenkreis (verschiedene Schreibweisen, leer, ohne),
-// danach die Uebernahme, die Eindeutigkeit, das Verhalten beim Loeschen und
-// ein zweiter Lauf.
-const {
-  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
-} = require('../helpers/schemaAufbau');
+// Seit 10.10.2026 steht 191 im Schema-Dump (tests/schema/prod-schema.sql),
+// die Datei ist aus backend/migrations/ entfernt; der Test der Migration auf
+// dem Stand davor (Uebernahme der Freitexte als Kirchenkreise, zweiter Lauf)
+// liegt in der Git-Historie (zuletzt Commit 3b935178). Die Migration legte
+// Kirchenkreise nur aus vorhandenen Freitexten an -- auf einer neuen Instanz
+// keine, der Datenteil des Dumps hat deshalb keine Zeile dafuer. Geprueft
+// wird hier auf einer Wegwerf-Datenbank aus dem Dump: Eindeutigkeit,
+// Verhalten beim Loeschen und die Anfragen vom Formular.
+const { dbAnlegen, dbWegraeumen, produktionAufbauen } = require('../helpers/schemaAufbau');
 
-const MIGRATION = '191_landeskirchen_kirchenkreise_anfragen.sql';
 const DB = 'konfi_test_mig191';
 
-describe('Migration 191 auf dem Stand, auf den sie beim Deploy trifft', () => {
+describe('Migration 191 im Schema-Dump', () => {
   let pool;
   const ids = {};
 
@@ -23,24 +24,12 @@ describe('Migration 191 auf dem Stand, auf den sie beim Deploy trifft', () => {
       [slug, kirchenkreis]);
     ids[slug] = Number(id);
   };
-  const zuordnung = async () => {
-    const { rows } = await pool.query(
-      `SELECT o.slug, o.kirchenkreis AS text, k.name AS kirchenkreis, k.landeskirche_id
-         FROM organizations o LEFT JOIN kirchenkreise k ON k.id = o.kirchenkreis_id
-        ORDER BY o.id`);
-    return rows;
-  };
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: MIGRATION });
-    // So stehen die Freitexte in Produktion: frei getippt, mal mit Leerraum,
-    // mal klein, mal leer.
+    await produktionAufbauen(pool);
     await gemeinde('west', 'Dithmarschen');
-    await gemeinde('hennstedt', ' dithmarschen ');
     await gemeinde('dom', 'Mecklenburg');
-    await gemeinde('leer', '   ');
-    await gemeinde('ohne', null);
     await gemeinde('nord', 'Nordfriesland');
   }, 180000);
 
@@ -48,34 +37,26 @@ describe('Migration 191 auf dem Stand, auf den sie beim Deploy trifft', () => {
     await dbWegraeumen(pool, DB);
   }, 120000);
 
-  it('Ausgangslage: keine Tabellen, keine Spalte kirchenkreis_id', async () => {
+  it('der Dump kennt beide Tabellen, die Spalte kirchenkreis_id und die Anfragen', async () => {
     const { rows } = await pool.query(
-      `SELECT to_regclass('public.landeskirchen') AS l, to_regclass('public.kirchenkreise') AS k,
-              to_regclass('public.gemeinde_anfragen') AS a,
+      `SELECT to_regclass('public.landeskirchen')::text AS l, to_regclass('public.kirchenkreise')::text AS k,
+              to_regclass('public.gemeinde_anfragen')::text AS a,
               (SELECT COUNT(*)::int FROM information_schema.columns
                 WHERE table_name = 'organizations' AND column_name = 'kirchenkreis_id') AS spalte`);
-    expect(rows[0]).toEqual({ l: null, k: null, a: null, spalte: 0 });
+    expect(rows[0]).toEqual({ l: 'landeskirchen', k: 'kirchenkreise', a: 'gemeinde_anfragen', spalte: 1 });
   });
 
-  it('übernimmt jeden Freitext als Kirchenkreis ohne Landeskirche, gleiche Schreibweisen als einen', async () => {
-    await pool.query(migrationLesen(MIGRATION));
-    const { rows } = await pool.query('SELECT name, landeskirche_id FROM kirchenkreise ORDER BY name');
-    expect(rows).toEqual([
-      { name: 'Dithmarschen', landeskirche_id: null },
-      { name: 'Mecklenburg', landeskirche_id: null },
-      { name: 'Nordfriesland', landeskirche_id: null },
-    ]);
-  });
-
-  it('verknüpft die Gemeinden; der Freitext bleibt, wie er war', async () => {
-    expect(await zuordnung()).toEqual([
-      { slug: 'west', text: 'Dithmarschen', kirchenkreis: 'Dithmarschen', landeskirche_id: null },
-      { slug: 'hennstedt', text: ' dithmarschen ', kirchenkreis: 'Dithmarschen', landeskirche_id: null },
-      { slug: 'dom', text: 'Mecklenburg', kirchenkreis: 'Mecklenburg', landeskirche_id: null },
-      { slug: 'leer', text: '   ', kirchenkreis: null, landeskirche_id: null },
-      { slug: 'ohne', text: null, kirchenkreis: null, landeskirche_id: null },
-      { slug: 'nord', text: 'Nordfriesland', kirchenkreis: 'Nordfriesland', landeskirche_id: null },
-    ]);
+  it('eine neue Instanz hat keine Kirchenkreise und keine Landeskirchen', async () => {
+    const { rows } = await pool.query(
+      'SELECT (SELECT COUNT(*)::int FROM kirchenkreise) AS k, (SELECT COUNT(*)::int FROM landeskirchen) AS l');
+    expect(rows[0]).toEqual({ k: 0, l: 0 });
+    // Kirchenkreise legt sonst die Oberflaeche an; hier von Hand, ohne
+    // Landeskirche, und an die Gemeinden gehaengt.
+    for (const name of ['Dithmarschen', 'Mecklenburg']) {
+      const { rows: [{ id }] } = await pool.query(
+        'INSERT INTO kirchenkreise (name) VALUES ($1) RETURNING id', [name]);
+      await pool.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE kirchenkreis = $2', [id, name]);
+    }
   });
 
   it('verboten: zwei Landeskirchen gleichen Namens (ohne Groß/klein) -> 23505', async () => {
@@ -94,14 +75,6 @@ describe('Migration 191 auf dem Stand, auf den sie beim Deploy trifft', () => {
     await pool.query("INSERT INTO kirchenkreise (name, landeskirche_id) VALUES ('Dithmarschen', $1)", [lk]);
     await expect(pool.query("INSERT INTO kirchenkreise (name, landeskirche_id) VALUES ('dithmarschen', $1)", [lk]))
       .rejects.toMatchObject({ code: '23505' });
-  });
-
-  it('ein zweiter Lauf scheitert nicht, legt nichts doppelt an und ändert keine Zuordnung', async () => {
-    const vorher = await zuordnung();
-    await expect(pool.query(migrationLesen(MIGRATION))).resolves.toBeDefined();
-    expect(await zuordnung()).toEqual(vorher);
-    const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM kirchenkreise');
-    expect(rows[0].n).toBe(4);
   });
 
   it('Landeskirche weg: der Kirchenkreis bleibt ohne; Kirchenkreis weg: die Gemeinde bleibt ohne Zuordnung', async () => {

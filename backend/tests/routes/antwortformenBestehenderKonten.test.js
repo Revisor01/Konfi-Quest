@@ -109,8 +109,41 @@ describe('Antwortformen bestehender Konten bleiben, wie sie sind', () => {
         // Hinzugefuegt am 03.10.2026 (Stamm-Gemeinde fuer den Umschalter);
         // ein neues Feld ist erlaubt, die alten bleiben.
         is_primary: 'boolean',
+        // Hinzugefuegt am 10.10.2026 (Konfispruch-Messung, umami.md S1):
+        // Namen der Zuordnung, null ohne -- die Seed-Gemeinden haben keine.
+        kirchenkreis: 'null',
+        landeskirche: 'null',
       });
     }
+  });
+
+  it('GET /auth/my-organizations: Kirchenkreis und Landeskirche als Namen, null ohne Zuordnung; alte Felder gleich', async () => {
+    const vorher = (await request(app).get('/api/auth/my-organizations')
+      .set('Authorization', `Bearer ${generateToken('orgAdmin1')}`)).body;
+    const { rows: [lk] } = await db.query("INSERT INTO landeskirchen (name) VALUES ('Nordkirche') RETURNING id");
+    const { rows: [kk] } = await db.query(
+      "INSERT INTO kirchenkreise (name, landeskirche_id) VALUES ('Dithmarschen', $1) RETURNING id", [lk.id]);
+    const { rows: [ohneLk] } = await db.query("INSERT INTO kirchenkreise (name) VALUES ('Ohne Landeskirche') RETURNING id");
+    await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [kk.id, ORGS.testGemeinde.id]);
+    await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+      [USERS.orgAdmin1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+
+    const res = await request(app).get('/api/auth/my-organizations').set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+    expect(res.status).toBe(200);
+    const je = Object.fromEntries(res.body.map((e) => [e.id, e]));
+    expect([je[ORGS.testGemeinde.id].kirchenkreis, je[ORGS.testGemeinde.id].landeskirche]).toEqual(['Dithmarschen', 'Nordkirche']);
+    expect([je[ORGS.andereGemeinde.id].kirchenkreis, je[ORGS.andereGemeinde.id].landeskirche]).toEqual([null, null]);
+    // Die bisherigen Felder der Stamm-Gemeinde sind Wert fuer Wert dieselben.
+    const { kirchenkreis: _k, landeskirche: _l, ...alt } = je[ORGS.testGemeinde.id];
+    const { kirchenkreis: _k0, landeskirche: _l0, ...altVorher } = vorher.find((e) => e.id === ORGS.testGemeinde.id);
+    expect(alt).toEqual(altVorher);
+
+    // Kirchenkreis ohne Landeskirche: Kreis ja, Landeskirche null.
+    await db.query('UPDATE organizations SET kirchenkreis_id = $1 WHERE id = $2', [ohneLk.id, ORGS.testGemeinde.id]);
+    const res2 = await request(app).get('/api/auth/my-organizations').set('Authorization', `Bearer ${generateToken('orgAdmin1')}`);
+    const stamm = res2.body.find((e) => e.id === ORGS.testGemeinde.id);
+    expect([stamm.kirchenkreis, stamm.landeskirche]).toEqual(['Ohne Landeskirche', null]);
+    expect(res2.body).toHaveLength(2);
   });
 
   it('GET /organizations/:id/members: is_primary ist immer ein Boolean', async () => {

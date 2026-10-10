@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n328 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n327 Operationen."
   },
   "servers": [
     {
@@ -706,7 +706,7 @@
         "summary": "Alle Organisationen des Users (Primaer-Org + Multi-Org-Mappings) mit Rolle",
         "responses": {
           "200": {
-            "description": "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber. Seit 08.10.2026 fehlen Gemeinden, in denen die Person gesperrt ist (Migration 196) — wie eine entzogene Mitgliedschaft."
+            "description": "Array (id, name, slug, display_name, role_name, role_display_name, is_active, is_primary); nur aktive Orgs, dedupliziert. is_primary (seit 03.10.2026) kennzeichnet die Stamm-Gemeinde — Login und /me liefern deren Kennung nicht, der Gemeinde-Umschalter findet die aktive Gemeinde darüber. Seit 08.10.2026 fehlen Gemeinden, in denen die Person gesperrt ist (Migration 196) — wie eine entzogene Mitgliedschaft. ERGAENZT 10.10.2026, additiv: kirchenkreis und landeskirche (string|null) — die Namen der Zuordnung der Gemeinde, null ohne Zuordnung (Kirchenkreis ohne Landeskirche: nur landeskirche null). Die App sendet sie mit der Wahl des Konfispruchs an die Nutzungsmessung (docs/messung/umami.md, S1). Alle bisherigen Felder unveraendert."
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -7435,258 +7435,6 @@
         }
       }
     },
-    "/api/metrics/konfisprueche": {
-      "get": {
-        "tags": [
-          "System & Monitoring"
-        ],
-        "summary": "Gewaehlte Konfisprueche, gesamt oder je Landeskirche, Kirchenkreis, Gemeinde (nur super_admin)",
-        "description": "Neu am 09.10.2026 (docs/messung/umami.md, S1). Wertet konfspruch_wahlen aus (Migration 207): je Wahl eine Zeile OHNE Person, Konto oder Profil, geschrieben von PATCH /api/konfi/profile und PATCH /api/teamer/profile; die Zeilen bleiben beim Loeschen eines Kontos. Jeder Spruch mit Anzahl, auch Einzelnennungen, eigene Sprueche im Wortlaut mit Stellenangabe -- keine Schwelle (Simon, 09.10.2026). Gezaehlt werden Wahlen, nicht Personen: Wer wechselt, steht mit beiden in der Liste. Der uebernommene Bestand traegt keinen Monat (`monat: null`). Nichts davon geht an die Nutzungsmessung.\n\nERGAENZT 09.10.2026, additiv (Simon: Auswertung nach Gemeinde, Kirchenkreis und Landeskirche): Ohne Parameter wie bisher ueber alle Wahlen. Mit `ebene` und `id` zaehlen alle Listen nur die Wahlen dieses Eintrags. Kirchenkreis und Landeskirche einer Wahl sind die vom Zeitpunkt der Wahl (Migration 208: konfspruch_wahlen.kirchenkreis_id, landeskirche_id, je ON DELETE SET NULL); fehlen beide, gilt die heutige Zuordnung der Gemeinde, fehlt nur die Landeskirche, die heutige des Kirchenkreises. Neue Felder `ebene` und `auswahl` (je Ebene die Eintraege mit Wahlen und Anzahl, ungefiltert). Namen von Gemeinden, Kirchenkreisen und Landeskirchen, nie von Personen. Der Eintrag \"Gemeinde wird gespeichert, aber nicht ausgegeben\" ist damit hinfaellig (09.10.2026). Interne Gemeinden (organizations.intern) zaehlen nirgends mit -- weder in den Listen noch in auswahl --, wie in der Support-Ansicht.\n",
-        "parameters": [
-          {
-            "name": "ebene",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "enum": [
-                "landeskirche",
-                "kirchenkreis",
-                "gemeinde"
-              ]
-            },
-            "description": "Ohne = alle Wahlen. Mit ebene ist id Pflicht."
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "description": "Kennung der Landeskirche, des Kirchenkreises oder der Gemeinde. Unbekannt = Nullen und leere Listen."
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Auswertung",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "gesamt": {
-                      "type": "object",
-                      "properties": {
-                        "wahlen": {
-                          "type": "integer"
-                        },
-                        "vorschlag": {
-                          "type": "integer"
-                        },
-                        "eigen": {
-                          "type": "integer"
-                        },
-                        "aus_bestand": {
-                          "type": "integer",
-                          "description": "Zeilen aus dem Bestand vor der Migration, ohne Monat"
-                        }
-                      }
-                    },
-                    "uebersetzungen": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "translation": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "anzahl": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    },
-                    "sprueche": {
-                      "type": "array",
-                      "description": "je Stelle aus den Vorschlaegen, absteigend nach Anzahl",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "stelle": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "anzahl": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    },
-                    "eigene": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "freitext": {
-                            "type": "string"
-                          },
-                          "freitext_referenz": {
-                            "type": [
-                              "string",
-                              "null"
-                            ]
-                          },
-                          "anzahl": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    },
-                    "monate": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "monat": {
-                            "type": [
-                              "string",
-                              "null"
-                            ],
-                            "description": "JJJJ-MM, null = Bestand"
-                          },
-                          "anzahl": {
-                            "type": "integer"
-                          }
-                        }
-                      }
-                    },
-                    "ebene": {
-                      "type": "object",
-                      "description": "seit 09.10.2026: die ausgewertete Ebene",
-                      "properties": {
-                        "art": {
-                          "type": "string",
-                          "enum": [
-                            "alle",
-                            "landeskirche",
-                            "kirchenkreis",
-                            "gemeinde"
-                          ]
-                        },
-                        "id": {
-                          "type": [
-                            "integer",
-                            "null"
-                          ]
-                        }
-                      }
-                    },
-                    "auswahl": {
-                      "type": "object",
-                      "description": "seit 09.10.2026: je Ebene die Eintraege mit mindestens einer Wahl, nach Name; Zusatz = heutige Landeskirche des Kirchenkreises bzw. heutiger Kirchenkreis der Gemeinde",
-                      "properties": {
-                        "landeskirchen": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "integer"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "anzahl": {
-                                "type": "integer"
-                              }
-                            }
-                          }
-                        },
-                        "kirchenkreise": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "integer"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "landeskirche": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "anzahl": {
-                                "type": "integer"
-                              }
-                            }
-                          }
-                        },
-                        "gemeinden": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "properties": {
-                              "id": {
-                                "type": "integer"
-                              },
-                              "name": {
-                                "type": "string"
-                              },
-                              "kirchenkreis": {
-                                "type": [
-                                  "string",
-                                  "null"
-                                ]
-                              },
-                              "anzahl": {
-                                "type": "integer"
-                              }
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Ungueltige Ebene oder fehlende/ungueltige id (error: Ungültige Ebene)"
-          },
-          "401": {
-            "$ref": "#/components/responses/Unauthorized"
-          },
-          "403": {
-            "$ref": "#/components/responses/Forbidden"
-          },
-          "500": {
-            "$ref": "#/components/responses/ServerError"
-          }
-        },
-        "x-berechtigung": {
-          "rollen": [
-            "super_admin"
-          ],
-          "middleware": [
-            "verifyTokenRBAC"
-          ],
-          "org-scope": false,
-          "objekt-pruefung": "Inline: req.user.is_super_admin, sonst 403"
-        }
-      }
-    },
     "/api/konfi/dashboard": {
       "get": {
         "tags": [
@@ -7930,7 +7678,7 @@
           "Konfi-Profil & Dashboard"
         ],
         "summary": "Eigenen Konfispruch setzen (Listen-Wahl oder Freitext)",
-        "description": "Setzt den Konfispruch: entweder konfspruch_id + translation (luther2017 | bigs | gute_nachricht | elberfelder) aus der kuratierten Liste ODER konfspruch_freitext + konfspruch_freitext_referenz (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.\nSTATISTIK OHNE PERSONENBEZUG (09.10.2026, Migration 207): Jede geaenderte Wahl schreibt zusaetzlich eine Zeile in konfspruch_wahlen (Gemeinde, Monat, Spruch und Uebersetzung bzw. eigener Spruch im Wortlaut) -- ohne Verweis auf Person oder Konto; unveraendert erneut gespeichert zaehlt nicht. Antwort unveraendert. Auswertung: GET /api/metrics/konfisprueche.\n",
+        "description": "Setzt den Konfispruch: entweder konfspruch_id + translation (luther2017 | bigs | gute_nachricht | elberfelder) aus der kuratierten Liste ODER konfspruch_freitext + konfspruch_freitext_referenz (Pflicht, max 100 Zeichen; Freitext max 1000). Genau eine Quelle aktiv.\nSTATISTIK OHNE PERSONENBEZUG: Vom 09.10.2026 bis 10.10.2026 schrieb jede geaenderte Wahl zusaetzlich eine Zeile in konfspruch_wahlen (Migration 207). ENTFERNT am 10.10.2026 (Migration 212): Das Speichern schreibt nur noch das Profil; welcher Spruch gewaehlt wird, misst die App ueber die Nutzungsmessung (docs/messung/umami.md, S1). Antwort unveraendert.\n",
         "x-berechtigung": {
           "rollen": [
             "konfi"
@@ -16026,7 +15774,7 @@
           "Teamer:innen"
         ],
         "summary": "Eigenen Konfispruch setzen (Listen-Wahl ODER Freitext)",
-        "description": "Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder konfspruch_id + translation (kuratierte Liste, org-gescopt und is_active geprüft) oder konfspruch_freitext + konfspruch_freitext_referenz (Referenz Pflicht, max. 100 Zeichen; Text max. 1000 Zeichen). Genau eine Quelle bleibt aktiv, die jeweils andere wird geleert. Anders als bei Konfis wird die konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt: direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.\nSTATISTIK OHNE PERSONENBEZUG (09.10.2026, Migration 207): Jede geaenderte Wahl schreibt zusaetzlich eine Zeile in konfspruch_wahlen (Gemeinde, Monat, Spruch und Uebersetzung bzw. eigener Spruch im Wortlaut) -- ohne Verweis auf Person oder Konto; unveraendert erneut gespeichert zaehlt nicht. Antwort unveraendert. Auswertung: GET /api/metrics/konfisprueche.\n",
+        "description": "Gegenstueck zu PATCH /api/konfi/profile für Teamer:innen. Entweder konfspruch_id + translation (kuratierte Liste, org-gescopt und is_active geprüft) oder konfspruch_freitext + konfspruch_freitext_referenz (Referenz Pflicht, max. 100 Zeichen; Text max. 1000 Zeichen). Genau eine Quelle bleibt aktiv, die jeweils andere wird geleert. Anders als bei Konfis wird die konfi_profiles-Zeile per Upsert (ON CONFLICT user_id) angelegt: direkt als Teamer:in angelegte Accounts haben noch keine. Bestehende Zeilen befoerderter Konfis behalten ihre eingefrorenen Punkte.\nSTATISTIK OHNE PERSONENBEZUG: Vom 09.10.2026 bis 10.10.2026 schrieb jede geaenderte Wahl zusaetzlich eine Zeile in konfspruch_wahlen (Migration 207). ENTFERNT am 10.10.2026 (Migration 212): Das Speichern schreibt nur noch das Profil; welcher Spruch gewaehlt wird, misst die App ueber die Nutzungsmessung (docs/messung/umami.md, S1). Antwort unveraendert.\n",
         "requestBody": {
           "content": {
             "application/json": {

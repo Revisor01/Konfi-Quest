@@ -11,6 +11,9 @@
  * sind ueberwiegend minderjaehrig — die Zahlen sollen zeigen, was die App
  * taugt, nicht was einzelne Personen tun. Bewusst auch KEINE Organisation:
  * bei einer Gemeinde mit drei Teamern wäre das faktisch personenbezogen.
+ * EINE Ausnahme, von Simon so entschieden (10.10.2026): die Wahl des
+ * Konfispruchs traegt Spruch, Gemeinde, Kirchenkreis und Landeskirche
+ * (`trackKonfispruchWahl` unten).
  *
  * Umami setzt keine Cookies und speichert keine IP-Adressen. Die Zuordnung
  * einer Sitzung passiert serverseitig über einen Hash aus IP-Adresse,
@@ -305,10 +308,10 @@ export function istGueltigeArt(art: string): boolean {
  *  - `antrag-entschieden`   Die Leitung nimmt einen Antrag an oder lehnt ihn ab.
  *  - `material-angesehen`   Die Detailansicht eines Materials ist geoeffnet.
  *  - `material-abgerufen`   Eine Datei oder ein Link daraus ist geoeffnet.
- *  - `konfispruch-gespeichert` Ein Spruch aus den Vorschlaegen oder ein eigener.
- *                           Bewusst OHNE Bibelstelle: ein Konfirmationsspruch
- *                           ist oeffentlich und machte die Sitzung einer Konfi
- *                           wiedererkennbar (docs/messung/umami.md, S1).
+ *
+ * Der Konfispruch lief bis 2.3.x als `konfispruch-gespeichert` hier durch;
+ * seit dem 10.10.2026 hat er eigene Ereignisse mit Spruch und Gemeinde
+ * (`trackKonfispruchWahl` unten, docs/messung/umami.md, S1).
  *
  * Dazu die Vorschlaege S2–S17 (Simon, 09.10.2026: „Go"; Bestand in
  * docs/messung/umami.md, Messpunkte). Nicht alle sind Arbeit im engen Sinn --
@@ -348,7 +351,6 @@ export type Handlung =
   | 'antrag-entschieden'
   | 'material-angesehen'
   | 'material-abgerufen'
-  | 'konfispruch-gespeichert'
   | 'badge-angelegt'
   | 'challenge-angelegt'
   | 'event-abgemeldet'
@@ -500,10 +502,6 @@ const ERLAUBTE_MERKMALE: Record<Handlung, Record<string, readonly string[]>> = {
     // Was geoeffnet wurde — nie Dateiname, Dateityp oder Adresse.
     inhalt: ['datei', 'link']
   },
-  'konfispruch-gespeichert': {
-    quelle: ['vorschlag', 'eigen'],
-    bibel: ['luther', 'gute-nachricht', 'bigs', 'elberfelder']
-  },
   // ---- S2–S17 (09.10.2026) ----
   'badge-angelegt': {
     zielgruppe: ['konfi', 'teamer'],
@@ -628,4 +626,116 @@ export function trackNeuigkeitenAngesehen(bisEnde: boolean): void {
 export function trackPushErlaubnis(antwort: string | null | undefined): void {
   if (antwort === 'granted') trackHandlung('push-erlaubnis', { ergebnis: 'erteilt' });
   else if (antwort === 'denied') trackHandlung('push-erlaubnis', { ergebnis: 'abgelehnt' });
+}
+
+/* ------------------------------------------------------------------ *
+ * Konfispruch: welcher Spruch gewaehlt wird (docs/messung/umami.md, S1)
+ * ------------------------------------------------------------------ */
+
+/**
+ * Simon, 10.10.2026: „Raus aus der App. Nur Umami!" -- und „Aber nicht
+ * doppelt zählen." Die Auswertung, welche Sprueche gewaehlt werden, laeuft
+ * ueber zwei Ereignisse statt ueber eine Tabelle im Backend:
+ *
+ *  - `konfispruch-erste-wahl`  vorher stand kein Spruch da;
+ *  - `konfispruch-gewechselt`   ein Spruch ersetzt einen anderen, mit
+ *                              `vorher_quelle`/`vorher_spruch` (und
+ *                              `vorher_bibel` beim Vorschlag) fuer den alten.
+ *
+ * Aktuell gewaehlt ist damit je Spruch: erste-wahl + gewechselt(neu) −
+ * gewechselt(vorher). Unveraendert erneut gespeichert meldet nichts. Ein
+ * geloeschtes Konto nimmt seine Ereignisse nicht mit -- genau deshalb Umami
+ * und nicht konfi_profiles.
+ *
+ * DIE AUSNAHME VON DER POSITIVLISTE: Spruch, Stellenangabe und Gemeinde sind
+ * keine Werte aus dem Quelltext, sondern aus der Datenbank bzw. der Eingabe
+ * einer Konfi -- bei einem eigenen Spruch der Wortlaut. Das ist gewollt
+ * (Simon, 09.10.2026: „volle Auswertung ... insbesondere die, die selbst
+ * eingetragen werden ... personenunabhängig"). Deshalb gehen diese Felder
+ * NUR ueber diese Funktion und nur fuer diese zwei Ereignisse raus,
+ * gesaeubert (`spruchWert`). Keine Kennung einer Person, kein Name, kein
+ * Jahrgang; die Rolle haengt `track` an wie ueberall. Gemeinde, Kirchenkreis
+ * und Landeskirche (seit 10.10.2026) sind die Namen der aktiven Gemeinde aus
+ * GET /auth/my-organizations; ohne Zuordnung fehlt das Feld.
+ */
+export type KonfispruchWahl =
+  | { quelle: 'vorschlag'; id: number; stelle: string; bibel: string }
+  | { quelle: 'eigen'; text: string; stelle: string };
+
+/**
+ * Hoechstlaenge eines Textwerts: Umami legt Ereignisdaten als Zeichenkette
+ * in `event_data.string_value` ab, VARCHAR(500). Laenger wuerde die Zeile
+ * beim Speichern verworfen; gekuerzt bleibt der Anfang lesbar.
+ */
+export const UMAMI_TEXT_HOECHSTENS = 500;
+
+/** Steuerzeichen raus, Zeilenumbrueche und Folgen von Leerraum zu einem Leerzeichen, gekuerzt. */
+export function spruchWert(text: string | null | undefined): string {
+  return String(text ?? '')
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, UMAMI_TEXT_HOECHSTENS);
+}
+
+const ERLAUBTE_BIBEL = ['luther', 'gute-nachricht', 'bigs', 'elberfelder'];
+
+/** Die Felder eines Spruchs, mit Vorsatz (`vorher_`) fuer den alten. */
+function spruchFelder(wahl: KonfispruchWahl, vorsatz = ''): Record<string, string> {
+  const felder: Record<string, string> = { [`${vorsatz}quelle`]: wahl.quelle };
+  if (wahl.quelle === 'vorschlag') {
+    felder[`${vorsatz}spruch`] = spruchWert(wahl.stelle);
+    if (Number.isInteger(wahl.id) && wahl.id > 0) felder[`${vorsatz}spruch_id`] = String(wahl.id);
+    if (ERLAUBTE_BIBEL.includes(wahl.bibel)) felder[`${vorsatz}bibel`] = wahl.bibel;
+  } else {
+    felder[`${vorsatz}spruch`] = spruchWert(wahl.text);
+    felder[`${vorsatz}stelle`] = spruchWert(wahl.stelle);
+  }
+  return felder;
+}
+
+/** Gleiche Wahl? Beim Vorschlag zaehlt auch die Uebersetzung, beim eigenen Spruch Wortlaut und Stelle (gesaeubert). */
+export function gleicheWahl(a: KonfispruchWahl | null, b: KonfispruchWahl | null): boolean {
+  if (!a || !b) return a === b;
+  if (a.quelle === 'vorschlag' && b.quelle === 'vorschlag') return a.id === b.id && a.bibel === b.bibel;
+  if (a.quelle === 'eigen' && b.quelle === 'eigen') {
+    return spruchWert(a.text) === spruchWert(b.text) && spruchWert(a.stelle) === spruchWert(b.stelle);
+  }
+  return false;
+}
+
+/** Wo gewaehlt wurde: Namen der aktiven Gemeinde und ihrer Zuordnung. */
+export interface KonfispruchOrt {
+  gemeinde?: string | null;
+  kirchenkreis?: string | null;
+  landeskirche?: string | null;
+}
+
+/**
+ * Nach dem GELUNGENEN Speichern rufen. `vorher` ist der Spruch, den die App
+ * vor dem Speichern anzeigte (kein eigener Abruf), `ort` die aktive Gemeinde
+ * mit Kirchenkreis und Landeskirche.
+ */
+export function trackKonfispruchWahl(
+  neu: KonfispruchWahl,
+  vorher: KonfispruchWahl | null,
+  ort?: KonfispruchOrt | null
+): void {
+  try {
+    if (gleicheWahl(neu, vorher)) return;
+    const ebenen: Record<string, string> = {};
+    for (const ebene of ['gemeinde', 'kirchenkreis', 'landeskirche'] as const) {
+      const wert = spruchWert(ort?.[ebene]);
+      if (wert) ebenen[ebene] = wert;
+    }
+    const daten: Record<string, string> = {
+      ...spruchFelder(neu),
+      ...(vorher ? spruchFelder(vorher, 'vorher_') : {}),
+      ...ebenen
+    };
+    track(vorher ? 'konfispruch-gewechselt' : 'konfispruch-erste-wahl', daten);
+  } catch {
+    /* Messung darf nie stoeren */
+  }
 }

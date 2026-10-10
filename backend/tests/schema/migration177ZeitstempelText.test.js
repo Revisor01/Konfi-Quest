@@ -30,9 +30,10 @@ describe('Migration 177 im Schema-Dump', () => {
     pool = await dbAnlegen(DB);
     await produktionAufbauen(pool, { vor: '178_sequenzen_nach_tabellen.sql' });
     await pool.query(`INSERT INTO organizations (id, name, slug) VALUES (1, 'A', 'a')`);
-    await pool.query(`INSERT INTO roles (id, name, display_name, organization_id) VALUES (1, 'konfi', 'Konfi', 1)`);
+    await pool.query(`INSERT INTO roles (id, name, display_name, organization_id) VALUES (2, 'konfi', 'Konfi', 1)`);
+    // Rolle 2: Die 1 traegt seit 10.10.2026 die Systemrolle super_admin aus dem Datenteil des Dumps (Migration 190).
     await pool.query(`INSERT INTO users (id, username, display_name, password_hash, role_id, organization_id)
-                      SELECT g, 'k' || g, 'K ' || g, 'x', 1, 1 FROM generate_series(1, 3) g`);
+                      SELECT g, 'k' || g, 'K ' || g, 'x', 2, 1 FROM generate_series(1, 3) g`);
     await pool.query(`INSERT INTO events (id, name, event_date, organization_id) VALUES (1, 'T', NOW(), 1)`);
   }, 180000);
 

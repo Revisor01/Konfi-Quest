@@ -20,7 +20,7 @@
 -- ERZEUGT, NICHT VON HAND GEPFLEGT: bash backend/tests/schema/schema-erneuern.sh
 -- Grundlage ist der zuletzt mit refresh-schema.sh aus der Produktion geholte
 -- Dump, darauf alle Migrationen bis einschliesslich
--- 189_dateinamen_utf8_reparieren.sql -- also der Stand, den die Produktion nach
+-- 208_konfspruch_wahlen_ebenen.sql -- also der Stand, den die Produktion nach
 -- diesen Migrationen hat, sofern dort nichts von Hand geaendert wurde. Den
 -- Abgleich mit der Produktion misst backend/scripts/schemaVergleich.js.
 -- ====================================================================
@@ -253,9 +253,10 @@ CREATE TABLE public.bonus_points (
     type text,
     description text,
     admin_id bigint,
-    completed_date date DEFAULT CURRENT_DATE,
+    completed_date date DEFAULT ((now() AT TIME ZONE 'Europe/Berlin'::text))::date,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    organization_id bigint
+    organization_id bigint,
+    client_id uuid
 );
 
 
@@ -321,7 +322,7 @@ CREATE TABLE public.certificate_types (
     icon character varying(50) DEFAULT 'ribbon'::character varying,
     organization_id integer,
     is_active boolean DEFAULT true,
-    created_at timestamp without time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now()
 );
 
 
@@ -497,7 +498,7 @@ CREATE TABLE public.chat_message_reactions (
     user_id integer NOT NULL,
     user_type character varying(10) NOT NULL,
     emoji character varying(10) NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chat_message_reactions_user_type_check CHECK (((user_type)::text = ANY (ARRAY[('admin'::character varying)::text, ('teamer'::character varying)::text, ('konfi'::character varying)::text])))
 );
 
@@ -786,7 +787,7 @@ CREATE TABLE public.daily_verses (
     date date NOT NULL,
     translation character varying(10) NOT NULL,
     verse_data jsonb NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -867,7 +868,7 @@ CREATE TABLE public.roles (
 
 CREATE TABLE public.users (
     id bigint NOT NULL,
-    organization_id bigint NOT NULL,
+    organization_id bigint,
     username text,
     email text,
     display_name text,
@@ -881,11 +882,13 @@ CREATE TABLE public.users (
     is_super_admin boolean DEFAULT false,
     teamer_since date,
     token_invalidated_at timestamp with time zone,
-    deleted_at timestamp without time zone,
-    archived_at timestamp without time zone,
+    deleted_at timestamp with time zone,
+    archived_at timestamp with time zone,
     push_enabled boolean DEFAULT true NOT NULL,
     bible_translation character varying(10) DEFAULT 'LUT'::character varying NOT NULL,
-    push_gruppen_stumm text[] DEFAULT '{}'::text[] NOT NULL
+    push_gruppen_stumm text[] DEFAULT '{}'::text[] NOT NULL,
+    client_id uuid,
+    CONSTRAINT users_gemeinde_oder_super_admin CHECK (((organization_id IS NOT NULL) OR (is_super_admin IS TRUE)))
 );
 
 
@@ -1039,7 +1042,7 @@ CREATE TABLE public.event_reminders (
     event_id integer NOT NULL,
     user_id integer NOT NULL,
     reminder_type character varying(20) NOT NULL,
-    sent_at timestamp without time zone DEFAULT now(),
+    sent_at timestamp with time zone DEFAULT now(),
     CONSTRAINT event_reminders_reminder_type_check CHECK (((reminder_type)::text = ANY (ARRAY[('1_day'::character varying)::text, ('1_hour'::character varying)::text])))
 );
 
@@ -1175,6 +1178,7 @@ CREATE TABLE public.events (
     cancelled_by integer,
     cancelled_reason_set_by integer,
     cancelled_reason_set_at timestamp with time zone,
+    client_id uuid,
     CONSTRAINT events_max_participants_check CHECK ((max_participants >= 0)),
     CONSTRAINT events_teamer_exclusive CHECK ((NOT (teamer_needed AND teamer_only))),
     CONSTRAINT events_teamer_max_participants_check CHECK ((teamer_max_participants >= 0)),
@@ -1202,6 +1206,56 @@ ALTER SEQUENCE public.events_id_seq OWNED BY public.events.id;
 
 
 --
+-- Name: gemeinde_anfragen; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.gemeinde_anfragen (
+    id bigint NOT NULL,
+    gemeinde text NOT NULL,
+    kirchenkreis text,
+    landeskirche text,
+    kontakt_name text NOT NULL,
+    funktion text,
+    email text NOT NULL,
+    mobil text,
+    anzahl_konfis integer,
+    anzahl_teamer integer,
+    nachricht text,
+    einwilligung_am timestamp with time zone NOT NULL,
+    status text DEFAULT 'neu'::text NOT NULL,
+    status_seit timestamp with time zone DEFAULT now() NOT NULL,
+    notiz text,
+    organization_id bigint,
+    bearbeitet_von bigint,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    wunsch_lizenz text,
+    CONSTRAINT gemeinde_anfragen_anzahlen_check CHECK ((((anzahl_konfis IS NULL) OR (anzahl_konfis >= 0)) AND ((anzahl_teamer IS NULL) OR (anzahl_teamer >= 0)))),
+    CONSTRAINT gemeinde_anfragen_status_check CHECK ((status = ANY (ARRAY['neu'::text, 'in_arbeit'::text, 'angelegt'::text, 'abgelehnt'::text]))),
+    CONSTRAINT gemeinde_anfragen_wunsch_lizenz_gueltig CHECK (((wunsch_lizenz IS NULL) OR (wunsch_lizenz = ANY (ARRAY['klein'::text, 'standard'::text, 'plus'::text, 'gross'::text, 'verbund'::text]))))
+);
+
+
+--
+-- Name: gemeinde_anfragen_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.gemeinde_anfragen_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: gemeinde_anfragen_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.gemeinde_anfragen_id_seq OWNED BY public.gemeinde_anfragen.id;
+
+
+--
 -- Name: invite_codes; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1213,7 +1267,7 @@ CREATE TABLE public.invite_codes (
     created_by integer,
     expires_at timestamp with time zone NOT NULL,
     used_at timestamp with time zone,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -1251,9 +1305,9 @@ CREATE TABLE public.jahrgaenge (
     gemeinde_enabled boolean DEFAULT true,
     target_gottesdienst integer DEFAULT 10,
     target_gemeinde integer DEFAULT 10,
-    wrapped_released_at timestamp without time zone,
+    wrapped_released_at timestamp with time zone,
     konfspruch_enabled boolean DEFAULT true NOT NULL,
-    deletion_reminder_sent_at timestamp without time zone
+    deletion_reminder_sent_at timestamp with time zone
 );
 
 
@@ -1274,6 +1328,37 @@ CREATE SEQUENCE public.jahrgaenge_id_seq
 --
 
 ALTER SEQUENCE public.jahrgaenge_id_seq OWNED BY public.jahrgaenge.id;
+
+
+--
+-- Name: kirchenkreise; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.kirchenkreise (
+    id bigint NOT NULL,
+    name text NOT NULL,
+    landeskirche_id bigint,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: kirchenkreise_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.kirchenkreise_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: kirchenkreise_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.kirchenkreise_id_seq OWNED BY public.kirchenkreise.id;
 
 
 --
@@ -1387,6 +1472,46 @@ ALTER SEQUENCE public.konfspruch_uebersetzungen_id_seq OWNED BY public.konfspruc
 
 
 --
+-- Name: konfspruch_wahlen; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.konfspruch_wahlen (
+    id bigint NOT NULL,
+    organization_id bigint,
+    quelle character varying(10) NOT NULL,
+    konfspruch_id bigint,
+    stelle character varying(100),
+    translation character varying(30),
+    freitext text,
+    freitext_referenz character varying(100),
+    monat date,
+    kirchenkreis_id bigint,
+    landeskirche_id bigint,
+    CONSTRAINT konfspruch_wahlen_quelle_check CHECK (((quelle)::text = ANY ((ARRAY['vorschlag'::character varying, 'eigen'::character varying])::text[]))),
+    CONSTRAINT konfspruch_wahlen_quelle_passt CHECK (((((quelle)::text = 'vorschlag'::text) AND (freitext IS NULL)) OR (((quelle)::text = 'eigen'::text) AND (freitext IS NOT NULL))))
+);
+
+
+--
+-- Name: konfspruch_wahlen_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.konfspruch_wahlen_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: konfspruch_wahlen_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.konfspruch_wahlen_id_seq OWNED BY public.konfspruch_wahlen.id;
+
+
+--
 -- Name: konfsprueche; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1399,7 +1524,7 @@ CREATE TABLE public.konfsprueche (
     organization_id integer,
     is_active boolean DEFAULT true,
     sort_order integer DEFAULT 0,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -1424,6 +1549,36 @@ ALTER SEQUENCE public.konfsprueche_id_seq OWNED BY public.konfsprueche.id;
 
 
 --
+-- Name: landeskirchen; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.landeskirchen (
+    id bigint NOT NULL,
+    name text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: landeskirchen_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.landeskirchen_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: landeskirchen_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.landeskirchen_id_seq OWNED BY public.landeskirchen.id;
+
+
+--
 -- Name: levels; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1440,8 +1595,8 @@ CREATE TABLE public.levels (
     reward_value text,
     is_active boolean DEFAULT true,
     created_by integer,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     sort_order integer DEFAULT 0,
     CONSTRAINT levels_points_required_check CHECK ((points_required >= 0))
 );
@@ -1468,6 +1623,122 @@ ALTER SEQUENCE public.levels_id_seq OWNED BY public.levels.id;
 
 
 --
+-- Name: mail_abholstand; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mail_abholstand (
+    postfach text NOT NULL,
+    uidvalidity bigint,
+    letzte_uid bigint,
+    abgeholt_am timestamp with time zone,
+    fehler text,
+    fehler_am timestamp with time zone,
+    CONSTRAINT mail_abholstand_postfach_check CHECK ((postfach = ANY (ARRAY['moin'::text, 'support'::text])))
+);
+
+
+--
+-- Name: mail_bausteine; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mail_bausteine (
+    id bigint NOT NULL,
+    titel text NOT NULL,
+    betreff text,
+    text text NOT NULL,
+    postfach text,
+    sortierung integer DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    bearbeitet_von bigint,
+    CONSTRAINT mail_bausteine_postfach_check CHECK (((postfach IS NULL) OR (postfach = ANY (ARRAY['moin'::text, 'support'::text]))))
+);
+
+
+--
+-- Name: mail_bausteine_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.mail_bausteine_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mail_bausteine_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.mail_bausteine_id_seq OWNED BY public.mail_bausteine.id;
+
+
+--
+-- Name: mail_einstellungen; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mail_einstellungen (
+    schluessel text NOT NULL,
+    wert text NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    bearbeitet_von bigint,
+    CONSTRAINT mail_einstellungen_schluessel_check CHECK ((schluessel = ANY (ARRAY['fusszeile'::text, 'absendername'::text])))
+);
+
+
+--
+-- Name: mail_nachrichten; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.mail_nachrichten (
+    id bigint NOT NULL,
+    postfach text NOT NULL,
+    richtung text NOT NULL,
+    anfrage_id bigint,
+    organization_id bigint,
+    message_id text NOT NULL,
+    in_reply_to text,
+    referenzen text[] DEFAULT '{}'::text[] NOT NULL,
+    von_adresse text,
+    von_name text,
+    an_adressen text[] DEFAULT '{}'::text[] NOT NULL,
+    betreff text DEFAULT ''::text NOT NULL,
+    text text DEFAULT ''::text NOT NULL,
+    anhaenge jsonb DEFAULT '[]'::jsonb NOT NULL,
+    gesendet_am timestamp with time zone DEFAULT now() NOT NULL,
+    gelesen_am timestamp with time zone,
+    verfasst_von bigint,
+    imap_uid bigint,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    vorgang_id bigint,
+    archiviert_am timestamp with time zone,
+    CONSTRAINT mail_nachrichten_eine_zuordnung CHECK (((anfrage_id IS NULL) OR (organization_id IS NULL))),
+    CONSTRAINT mail_nachrichten_postfach_check CHECK ((postfach = ANY (ARRAY['moin'::text, 'support'::text]))),
+    CONSTRAINT mail_nachrichten_richtung_check CHECK ((richtung = ANY (ARRAY['ein'::text, 'aus'::text]))),
+    CONSTRAINT mail_nachrichten_text_laenge CHECK ((char_length(text) <= 50000))
+);
+
+
+--
+-- Name: mail_nachrichten_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.mail_nachrichten_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: mail_nachrichten_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.mail_nachrichten_id_seq OWNED BY public.mail_nachrichten.id;
+
+
+--
 -- Name: material_events; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1488,7 +1759,7 @@ CREATE TABLE public.material_files (
     stored_name character varying(100) NOT NULL,
     mime_type character varying(100),
     file_size integer,
-    created_at timestamp without time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now()
 );
 
 
@@ -1530,7 +1801,7 @@ CREATE TABLE public.material_links (
     id integer NOT NULL,
     material_id integer NOT NULL,
     url text NOT NULL,
-    created_at timestamp without time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now()
 );
 
 
@@ -1566,8 +1837,8 @@ CREATE TABLE public.materials (
     jahrgang_id integer,
     organization_id integer,
     created_by integer,
-    created_at timestamp without time zone DEFAULT now(),
-    updated_at timestamp without time zone DEFAULT now(),
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now(),
     link_url text,
     ist_global boolean DEFAULT false NOT NULL
 );
@@ -1594,6 +1865,49 @@ ALTER SEQUENCE public.materials_id_seq OWNED BY public.materials.id;
 
 
 --
+-- Name: nachlauf_auftraege; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.nachlauf_auftraege (
+    id bigint NOT NULL,
+    art text NOT NULL,
+    parameter jsonb DEFAULT '{}'::jsonb NOT NULL,
+    bezeichnung text,
+    schluessel text,
+    status text DEFAULT 'offen'::text NOT NULL,
+    versuche integer DEFAULT 0 NOT NULL,
+    max_versuche integer DEFAULT 5 NOT NULL,
+    erledigte_schritte jsonb DEFAULT '[]'::jsonb NOT NULL,
+    faellig_ab timestamp with time zone DEFAULT now() NOT NULL,
+    gesperrt_bis timestamp with time zone,
+    gesperrt_von text,
+    letzter_fehler text,
+    erstellt_am timestamp with time zone DEFAULT now() NOT NULL,
+    erledigt_am timestamp with time zone,
+    CONSTRAINT nachlauf_auftraege_status_check CHECK ((status = ANY (ARRAY['offen'::text, 'laeuft'::text, 'erledigt'::text, 'fehlgeschlagen'::text])))
+);
+
+
+--
+-- Name: nachlauf_auftraege_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.nachlauf_auftraege_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: nachlauf_auftraege_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.nachlauf_auftraege_id_seq OWNED BY public.nachlauf_auftraege.id;
+
+
+--
 -- Name: notifications; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1603,10 +1917,10 @@ CREATE TABLE public.notifications (
     title character varying(255) NOT NULL,
     message text,
     type character varying(50) DEFAULT 'info'::character varying,
-    read_at timestamp without time zone,
+    read_at timestamp with time zone,
     data jsonb,
     organization_id integer NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -1691,7 +2005,9 @@ CREATE TABLE public.organizations (
     trial_ends_at timestamp with time zone,
     is_trial boolean DEFAULT false NOT NULL,
     contact_name text,
-    license_reminder_sent_at timestamp without time zone
+    license_reminder_sent_at timestamp with time zone,
+    kirchenkreis_id bigint,
+    intern boolean DEFAULT false NOT NULL
 );
 
 
@@ -1842,9 +2158,9 @@ CREATE TABLE public.refresh_tokens (
     id integer NOT NULL,
     user_id integer NOT NULL,
     token_hash character varying(64) NOT NULL,
-    expires_at timestamp without time zone NOT NULL,
-    created_at timestamp without time zone DEFAULT now(),
-    revoked_at timestamp without time zone,
+    expires_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT now(),
+    revoked_at timestamp with time zone,
     ersetzt_durch integer,
     gnade_genutzt_at timestamp with time zone,
     device_id text
@@ -1974,6 +2290,62 @@ ALTER SEQUENCE public.socket_io_attachments_id_seq OWNED BY public.socket_io_att
 
 
 --
+-- Name: support_vorgaenge; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.support_vorgaenge (
+    id bigint NOT NULL,
+    art text NOT NULL,
+    bereich text,
+    dringlichkeit text DEFAULT 'normal'::text NOT NULL,
+    status text DEFAULT 'neu'::text NOT NULL,
+    status_seit timestamp with time zone DEFAULT now() NOT NULL,
+    betreff text NOT NULL,
+    beschreibung text,
+    quelle text NOT NULL,
+    organization_id bigint,
+    anfrage_id bigint,
+    erstellt_von bigint,
+    kontakt_name text,
+    kontakt_email text,
+    kontakt_funktion text,
+    gemeinde_angabe text,
+    einwilligung_am timestamp with time zone,
+    notiz text,
+    archiviert_am timestamp with time zone,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT support_vorgaenge_art_check CHECK ((art = ANY (ARRAY['neue_gemeinde'::text, 'frage'::text, 'fehler'::text, 'wunsch'::text, 'zugang'::text, 'lizenz'::text, 'datenschutz'::text, 'sonstiges'::text]))),
+    CONSTRAINT support_vorgaenge_bereich_check CHECK (((bereich IS NULL) OR (bereich = ANY (ARRAY['konfis'::text, 'termine'::text, 'punkte'::text, 'challenges'::text, 'chat'::text, 'badges'::text, 'material'::text, 'konten'::text, 'einstellungen'::text, 'sonstiges'::text])))),
+    CONSTRAINT support_vorgaenge_betreff_check CHECK (((btrim(betreff) <> ''::text) AND (char_length(betreff) <= 300))),
+    CONSTRAINT support_vorgaenge_dringlichkeit_check CHECK ((dringlichkeit = ANY (ARRAY['normal'::text, 'dringend'::text]))),
+    CONSTRAINT support_vorgaenge_erledigt_archiviert CHECK (((status <> 'erledigt'::text) OR (archiviert_am IS NOT NULL))),
+    CONSTRAINT support_vorgaenge_quelle_check CHECK ((quelle = ANY (ARRAY['anfrage'::text, 'formular'::text, 'mail'::text, 'support'::text]))),
+    CONSTRAINT support_vorgaenge_status_check CHECK ((status = ANY (ARRAY['neu'::text, 'in_arbeit'::text, 'wartet'::text, 'erledigt'::text]))),
+    CONSTRAINT support_vorgaenge_text_laenge CHECK ((((beschreibung IS NULL) OR (char_length(beschreibung) <= 5000)) AND ((notiz IS NULL) OR (char_length(notiz) <= 5000)) AND ((kontakt_name IS NULL) OR (char_length(kontakt_name) <= 200)) AND ((kontakt_email IS NULL) OR (char_length(kontakt_email) <= 254)) AND ((kontakt_funktion IS NULL) OR (char_length(kontakt_funktion) <= 200)) AND ((gemeinde_angabe IS NULL) OR (char_length(gemeinde_angabe) <= 200))))
+);
+
+
+--
+-- Name: support_vorgaenge_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.support_vorgaenge_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: support_vorgaenge_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.support_vorgaenge_id_seq OWNED BY public.support_vorgaenge.id;
+
+
+--
 -- Name: user_activities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1982,11 +2354,12 @@ CREATE TABLE public.user_activities (
     user_id bigint,
     activity_id bigint,
     admin_id bigint,
-    completed_date date DEFAULT CURRENT_DATE,
+    completed_date date DEFAULT ((now() AT TIME ZONE 'Europe/Berlin'::text))::date,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     comment text,
     organization_id bigint,
-    points bigint
+    points bigint,
+    type text
 );
 
 
@@ -2054,7 +2427,7 @@ CREATE TABLE public.user_certificates (
     issued_date date NOT NULL,
     expiry_date date,
     admin_id integer,
-    created_at timestamp without time zone DEFAULT now()
+    created_at timestamp with time zone DEFAULT now()
 );
 
 
@@ -2089,7 +2462,10 @@ CREATE TABLE public.user_jahrgang_assignments (
     can_view boolean DEFAULT true,
     can_edit boolean DEFAULT false,
     assigned_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
-    assigned_by bigint
+    assigned_by bigint,
+    darf_antraege_entscheiden boolean DEFAULT true NOT NULL,
+    darf_events_verbuchen boolean DEFAULT true NOT NULL,
+    darf_challenges_freigeben boolean DEFAULT true NOT NULL
 );
 
 
@@ -2121,7 +2497,10 @@ CREATE TABLE public.user_organizations (
     user_id integer NOT NULL,
     organization_id integer NOT NULL,
     role_id integer NOT NULL,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    role_title text,
+    teamer_since date,
+    is_active boolean DEFAULT true NOT NULL
 );
 
 
@@ -2442,6 +2821,13 @@ ALTER TABLE ONLY public.events ALTER COLUMN id SET DEFAULT nextval('public.event
 
 
 --
+-- Name: gemeinde_anfragen id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gemeinde_anfragen ALTER COLUMN id SET DEFAULT nextval('public.gemeinde_anfragen_id_seq'::regclass);
+
+
+--
 -- Name: invite_codes id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2453,6 +2839,13 @@ ALTER TABLE ONLY public.invite_codes ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.jahrgaenge ALTER COLUMN id SET DEFAULT nextval('public.jahrgaenge_id_seq'::regclass);
+
+
+--
+-- Name: kirchenkreise id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.kirchenkreise ALTER COLUMN id SET DEFAULT nextval('public.kirchenkreise_id_seq'::regclass);
 
 
 --
@@ -2477,6 +2870,13 @@ ALTER TABLE ONLY public.konfspruch_uebersetzungen ALTER COLUMN id SET DEFAULT ne
 
 
 --
+-- Name: konfspruch_wahlen id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfspruch_wahlen ALTER COLUMN id SET DEFAULT nextval('public.konfspruch_wahlen_id_seq'::regclass);
+
+
+--
 -- Name: konfsprueche id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -2484,10 +2884,31 @@ ALTER TABLE ONLY public.konfsprueche ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: landeskirchen id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.landeskirchen ALTER COLUMN id SET DEFAULT nextval('public.landeskirchen_id_seq'::regclass);
+
+
+--
 -- Name: levels id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.levels ALTER COLUMN id SET DEFAULT nextval('public.levels_id_seq'::regclass);
+
+
+--
+-- Name: mail_bausteine id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_bausteine ALTER COLUMN id SET DEFAULT nextval('public.mail_bausteine_id_seq'::regclass);
+
+
+--
+-- Name: mail_nachrichten id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten ALTER COLUMN id SET DEFAULT nextval('public.mail_nachrichten_id_seq'::regclass);
 
 
 --
@@ -2509,6 +2930,13 @@ ALTER TABLE ONLY public.material_links ALTER COLUMN id SET DEFAULT nextval('publ
 --
 
 ALTER TABLE ONLY public.materials ALTER COLUMN id SET DEFAULT nextval('public.materials_id_seq'::regclass);
+
+
+--
+-- Name: nachlauf_auftraege id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.nachlauf_auftraege ALTER COLUMN id SET DEFAULT nextval('public.nachlauf_auftraege_id_seq'::regclass);
 
 
 --
@@ -2579,6 +3007,13 @@ ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_
 --
 
 ALTER TABLE ONLY public.socket_io_attachments ALTER COLUMN id SET DEFAULT nextval('public.socket_io_attachments_id_seq'::regclass);
+
+
+--
+-- Name: support_vorgaenge id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.support_vorgaenge ALTER COLUMN id SET DEFAULT nextval('public.support_vorgaenge_id_seq'::regclass);
 
 
 --
@@ -2779,6 +3214,14 @@ ALTER TABLE ONLY public.event_reminders
 
 ALTER TABLE ONLY public.event_unregistrations
     ADD CONSTRAINT event_unregistrations_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: gemeinde_anfragen gemeinde_anfragen_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gemeinde_anfragen
+    ADD CONSTRAINT gemeinde_anfragen_pkey PRIMARY KEY (id);
 
 
 --
@@ -3038,6 +3481,14 @@ ALTER TABLE ONLY public.invite_codes
 
 
 --
+-- Name: kirchenkreise kirchenkreise_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.kirchenkreise
+    ADD CONSTRAINT kirchenkreise_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: konfi_historie konfi_historie_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3062,11 +3513,27 @@ ALTER TABLE ONLY public.konfspruch_uebersetzungen
 
 
 --
+-- Name: konfspruch_wahlen konfspruch_wahlen_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfspruch_wahlen
+    ADD CONSTRAINT konfspruch_wahlen_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: konfsprueche konfsprueche_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.konfsprueche
     ADD CONSTRAINT konfsprueche_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: landeskirchen landeskirchen_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.landeskirchen
+    ADD CONSTRAINT landeskirchen_pkey PRIMARY KEY (id);
 
 
 --
@@ -3091,6 +3558,46 @@ ALTER TABLE ONLY public.levels
 
 ALTER TABLE ONLY public.levels
     ADD CONSTRAINT levels_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mail_abholstand mail_abholstand_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_abholstand
+    ADD CONSTRAINT mail_abholstand_pkey PRIMARY KEY (postfach);
+
+
+--
+-- Name: mail_bausteine mail_bausteine_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_bausteine
+    ADD CONSTRAINT mail_bausteine_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: mail_einstellungen mail_einstellungen_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_einstellungen
+    ADD CONSTRAINT mail_einstellungen_pkey PRIMARY KEY (schluessel);
+
+
+--
+-- Name: mail_nachrichten mail_nachrichten_message_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten
+    ADD CONSTRAINT mail_nachrichten_message_id_key UNIQUE (message_id);
+
+
+--
+-- Name: mail_nachrichten mail_nachrichten_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten
+    ADD CONSTRAINT mail_nachrichten_pkey PRIMARY KEY (id);
 
 
 --
@@ -3131,6 +3638,14 @@ ALTER TABLE ONLY public.material_links
 
 ALTER TABLE ONLY public.materials
     ADD CONSTRAINT materials_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: nachlauf_auftraege nachlauf_auftraege_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.nachlauf_auftraege
+    ADD CONSTRAINT nachlauf_auftraege_pkey PRIMARY KEY (id);
 
 
 --
@@ -3195,6 +3710,22 @@ ALTER TABLE ONLY public.settings
 
 ALTER TABLE ONLY public.socket_io_attachments
     ADD CONSTRAINT socket_io_attachments_id_key UNIQUE (id);
+
+
+--
+-- Name: support_vorgaenge support_vorgaenge_anfrage_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.support_vorgaenge
+    ADD CONSTRAINT support_vorgaenge_anfrage_key UNIQUE (anfrage_id);
+
+
+--
+-- Name: support_vorgaenge support_vorgaenge_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.support_vorgaenge
+    ADD CONSTRAINT support_vorgaenge_pkey PRIMARY KEY (id);
 
 
 --
@@ -3418,6 +3949,13 @@ CREATE INDEX idx_bewahrte_stempel_person ON public.bewahrte_stempel USING btree 
 --
 
 CREATE INDEX idx_bonus_points_konfi_id ON public.bonus_points USING btree (konfi_id);
+
+
+--
+-- Name: idx_bonus_points_org_client_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_bonus_points_org_client_id ON public.bonus_points USING btree (organization_id, client_id) WHERE (client_id IS NOT NULL);
 
 
 --
@@ -3757,6 +4295,13 @@ CREATE INDEX idx_event_unregistrations_user ON public.event_unregistrations USIN
 
 
 --
+-- Name: idx_events_org_client_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_events_org_client_id ON public.events USING btree (organization_id, client_id) WHERE (client_id IS NOT NULL);
+
+
+--
 -- Name: idx_events_organization_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3778,6 +4323,20 @@ CREATE INDEX idx_events_teamer ON public.events USING btree (teamer_needed, team
 
 
 --
+-- Name: idx_gemeinde_anfragen_organization; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_gemeinde_anfragen_organization ON public.gemeinde_anfragen USING btree (organization_id);
+
+
+--
+-- Name: idx_gemeinde_anfragen_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_gemeinde_anfragen_status ON public.gemeinde_anfragen USING btree (status, created_at DESC);
+
+
+--
 -- Name: idx_invite_codes_expires; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3796,6 +4355,13 @@ CREATE INDEX idx_invite_codes_organization_id ON public.invite_codes USING btree
 --
 
 CREATE INDEX idx_jahrgaenge_organization_id ON public.jahrgaenge USING btree (organization_id);
+
+
+--
+-- Name: idx_kirchenkreise_landeskirche; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_kirchenkreise_landeskirche ON public.kirchenkreise USING btree (landeskirche_id);
 
 
 --
@@ -3834,6 +4400,34 @@ CREATE INDEX idx_konfspruch_uebersetzungen_spruch ON public.konfspruch_uebersetz
 
 
 --
+-- Name: idx_konfspruch_wahlen_kirchenkreis; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_konfspruch_wahlen_kirchenkreis ON public.konfspruch_wahlen USING btree (kirchenkreis_id);
+
+
+--
+-- Name: idx_konfspruch_wahlen_landeskirche; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_konfspruch_wahlen_landeskirche ON public.konfspruch_wahlen USING btree (landeskirche_id);
+
+
+--
+-- Name: idx_konfspruch_wahlen_monat; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_konfspruch_wahlen_monat ON public.konfspruch_wahlen USING btree (monat);
+
+
+--
+-- Name: idx_konfspruch_wahlen_organization; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_konfspruch_wahlen_organization ON public.konfspruch_wahlen USING btree (organization_id);
+
+
+--
 -- Name: idx_konfsprueche_active; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -3852,6 +4446,90 @@ CREATE INDEX idx_konfsprueche_org ON public.konfsprueche USING btree (organizati
 --
 
 CREATE INDEX idx_levels_active ON public.levels USING btree (organization_id, is_active);
+
+
+--
+-- Name: idx_mail_bausteine_bearbeitet_von; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_bausteine_bearbeitet_von ON public.mail_bausteine USING btree (bearbeitet_von) WHERE (bearbeitet_von IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_anfrage; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_anfrage ON public.mail_nachrichten USING btree (anfrage_id, gesendet_am) WHERE (anfrage_id IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_archiviert; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_archiviert ON public.mail_nachrichten USING btree (archiviert_am DESC) WHERE (archiviert_am IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_eingang; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_eingang ON public.mail_nachrichten USING btree (gesendet_am DESC) WHERE ((anfrage_id IS NULL) AND (organization_id IS NULL));
+
+
+--
+-- Name: idx_mail_nachrichten_eingang_alter; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_eingang_alter ON public.mail_nachrichten USING btree (created_at) WHERE ((anfrage_id IS NULL) AND (organization_id IS NULL));
+
+
+--
+-- Name: idx_mail_nachrichten_in_reply_to; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_in_reply_to ON public.mail_nachrichten USING btree (in_reply_to) WHERE (in_reply_to IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_organization; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_organization ON public.mail_nachrichten USING btree (organization_id, gesendet_am) WHERE (organization_id IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_referenzen; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_referenzen ON public.mail_nachrichten USING gin (referenzen);
+
+
+--
+-- Name: idx_mail_nachrichten_ungelesen; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_ungelesen ON public.mail_nachrichten USING btree (anfrage_id, organization_id) WHERE ((richtung = 'ein'::text) AND (gelesen_am IS NULL));
+
+
+--
+-- Name: idx_mail_nachrichten_verfasst_von; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_verfasst_von ON public.mail_nachrichten USING btree (verfasst_von) WHERE (verfasst_von IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_vorgang; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_vorgang ON public.mail_nachrichten USING btree (vorgang_id, gesendet_am) WHERE (vorgang_id IS NOT NULL);
+
+
+--
+-- Name: idx_mail_nachrichten_vorgang_ungelesen; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_mail_nachrichten_vorgang_ungelesen ON public.mail_nachrichten USING btree (vorgang_id) WHERE ((vorgang_id IS NOT NULL) AND (richtung = 'ein'::text) AND (gelesen_am IS NULL));
 
 
 --
@@ -3960,6 +4638,13 @@ CREATE INDEX idx_org_einladungen_user ON public.org_einladungen USING btree (use
 
 
 --
+-- Name: idx_organizations_kirchenkreis; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_organizations_kirchenkreis ON public.organizations USING btree (kirchenkreis_id);
+
+
+--
 -- Name: idx_password_resets_user_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4013,6 +4698,41 @@ CREATE INDEX idx_roles_organization_id ON public.roles USING btree (organization
 --
 
 CREATE INDEX idx_settings_organization_id ON public.settings USING btree (organization_id);
+
+
+--
+-- Name: idx_support_vorgaenge_archiv; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_support_vorgaenge_archiv ON public.support_vorgaenge USING btree (archiviert_am DESC) WHERE (archiviert_am IS NOT NULL);
+
+
+--
+-- Name: idx_support_vorgaenge_art; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_support_vorgaenge_art ON public.support_vorgaenge USING btree (art);
+
+
+--
+-- Name: idx_support_vorgaenge_erstellt_von; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_support_vorgaenge_erstellt_von ON public.support_vorgaenge USING btree (erstellt_von) WHERE (erstellt_von IS NOT NULL);
+
+
+--
+-- Name: idx_support_vorgaenge_offen; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_support_vorgaenge_offen ON public.support_vorgaenge USING btree (status, updated_at DESC) WHERE (archiviert_am IS NULL);
+
+
+--
+-- Name: idx_support_vorgaenge_organization; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_support_vorgaenge_organization ON public.support_vorgaenge USING btree (organization_id) WHERE (organization_id IS NOT NULL);
 
 
 --
@@ -4114,6 +4834,13 @@ CREATE INDEX idx_users_deleted_at ON public.users USING btree (deleted_at) WHERE
 
 
 --
+-- Name: idx_users_org_client_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_users_org_client_id ON public.users USING btree (organization_id, client_id) WHERE (client_id IS NOT NULL);
+
+
+--
 -- Name: idx_users_org_role; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4177,6 +4904,27 @@ CREATE INDEX idx_wrapped_snapshots_user ON public.wrapped_snapshots USING btree 
 
 
 --
+-- Name: nachlauf_auftraege_erledigt_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX nachlauf_auftraege_erledigt_idx ON public.nachlauf_auftraege USING btree (erledigt_am) WHERE (status = ANY (ARRAY['erledigt'::text, 'fehlgeschlagen'::text]));
+
+
+--
+-- Name: nachlauf_auftraege_faellig_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX nachlauf_auftraege_faellig_idx ON public.nachlauf_auftraege USING btree (faellig_ab) WHERE (status = ANY (ARRAY['offen'::text, 'laeuft'::text]));
+
+
+--
+-- Name: nachlauf_auftraege_schluessel_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX nachlauf_auftraege_schluessel_idx ON public.nachlauf_auftraege USING btree (schluessel) WHERE (schluessel IS NOT NULL);
+
+
+--
 -- Name: uq_activity_categories_activity_category; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -4195,6 +4943,27 @@ CREATE UNIQUE INDEX uq_categories_name_org ON public.categories USING btree (nam
 --
 
 CREATE UNIQUE INDEX uq_jahrgaenge_name_org ON public.jahrgaenge USING btree (name, organization_id);
+
+
+--
+-- Name: uq_kirchenkreise_landeskirche_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_kirchenkreise_landeskirche_name ON public.kirchenkreise USING btree (COALESCE(landeskirche_id, (0)::bigint), lower(name));
+
+
+--
+-- Name: uq_landeskirchen_name; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_landeskirchen_name ON public.landeskirchen USING btree (lower(name));
+
+
+--
+-- Name: uq_roles_name_ohne_gemeinde; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_roles_name_ohne_gemeinde ON public.roles USING btree (name) WHERE (organization_id IS NULL);
 
 
 --
@@ -4875,6 +5644,22 @@ ALTER TABLE ONLY public.user_badges
 
 
 --
+-- Name: gemeinde_anfragen gemeinde_anfragen_bearbeitet_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gemeinde_anfragen
+    ADD CONSTRAINT gemeinde_anfragen_bearbeitet_von_fkey FOREIGN KEY (bearbeitet_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: gemeinde_anfragen gemeinde_anfragen_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.gemeinde_anfragen
+    ADD CONSTRAINT gemeinde_anfragen_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL;
+
+
+--
 -- Name: invite_codes invite_codes_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -4896,6 +5681,14 @@ ALTER TABLE ONLY public.invite_codes
 
 ALTER TABLE ONLY public.invite_codes
     ADD CONSTRAINT invite_codes_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: kirchenkreise kirchenkreise_landeskirche_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.kirchenkreise
+    ADD CONSTRAINT kirchenkreise_landeskirche_id_fkey FOREIGN KEY (landeskirche_id) REFERENCES public.landeskirchen(id) ON DELETE SET NULL;
 
 
 --
@@ -5027,6 +5820,38 @@ ALTER TABLE ONLY public.konfspruch_uebersetzungen
 
 
 --
+-- Name: konfspruch_wahlen konfspruch_wahlen_kirchenkreis_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfspruch_wahlen
+    ADD CONSTRAINT konfspruch_wahlen_kirchenkreis_id_fkey FOREIGN KEY (kirchenkreis_id) REFERENCES public.kirchenkreise(id) ON DELETE SET NULL;
+
+
+--
+-- Name: konfspruch_wahlen konfspruch_wahlen_konfspruch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfspruch_wahlen
+    ADD CONSTRAINT konfspruch_wahlen_konfspruch_id_fkey FOREIGN KEY (konfspruch_id) REFERENCES public.konfsprueche(id) ON DELETE SET NULL;
+
+
+--
+-- Name: konfspruch_wahlen konfspruch_wahlen_landeskirche_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfspruch_wahlen
+    ADD CONSTRAINT konfspruch_wahlen_landeskirche_id_fkey FOREIGN KEY (landeskirche_id) REFERENCES public.landeskirchen(id) ON DELETE SET NULL;
+
+
+--
+-- Name: konfspruch_wahlen konfspruch_wahlen_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.konfspruch_wahlen
+    ADD CONSTRAINT konfspruch_wahlen_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE SET NULL;
+
+
+--
 -- Name: konfsprueche konfsprueche_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5048,6 +5873,54 @@ ALTER TABLE ONLY public.levels
 
 ALTER TABLE ONLY public.levels
     ADD CONSTRAINT levels_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mail_bausteine mail_bausteine_bearbeitet_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_bausteine
+    ADD CONSTRAINT mail_bausteine_bearbeitet_von_fkey FOREIGN KEY (bearbeitet_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: mail_einstellungen mail_einstellungen_bearbeitet_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_einstellungen
+    ADD CONSTRAINT mail_einstellungen_bearbeitet_von_fkey FOREIGN KEY (bearbeitet_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: mail_nachrichten mail_nachrichten_anfrage_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten
+    ADD CONSTRAINT mail_nachrichten_anfrage_id_fkey FOREIGN KEY (anfrage_id) REFERENCES public.gemeinde_anfragen(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mail_nachrichten mail_nachrichten_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten
+    ADD CONSTRAINT mail_nachrichten_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: mail_nachrichten mail_nachrichten_verfasst_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten
+    ADD CONSTRAINT mail_nachrichten_verfasst_von_fkey FOREIGN KEY (verfasst_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: mail_nachrichten mail_nachrichten_vorgang_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.mail_nachrichten
+    ADD CONSTRAINT mail_nachrichten_vorgang_id_fkey FOREIGN KEY (vorgang_id) REFERENCES public.support_vorgaenge(id) ON DELETE CASCADE;
 
 
 --
@@ -5163,6 +6036,14 @@ ALTER TABLE ONLY public.org_einladungen
 
 
 --
+-- Name: organizations organizations_kirchenkreis_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.organizations
+    ADD CONSTRAINT organizations_kirchenkreis_id_fkey FOREIGN KEY (kirchenkreis_id) REFERENCES public.kirchenkreise(id) ON DELETE SET NULL;
+
+
+--
 -- Name: refresh_tokens refresh_tokens_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5200,6 +6081,30 @@ ALTER TABLE ONLY public.roles
 
 ALTER TABLE ONLY public.settings
     ADD CONSTRAINT settings_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id);
+
+
+--
+-- Name: support_vorgaenge support_vorgaenge_anfrage_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.support_vorgaenge
+    ADD CONSTRAINT support_vorgaenge_anfrage_id_fkey FOREIGN KEY (anfrage_id) REFERENCES public.gemeinde_anfragen(id) ON DELETE CASCADE;
+
+
+--
+-- Name: support_vorgaenge support_vorgaenge_erstellt_von_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.support_vorgaenge
+    ADD CONSTRAINT support_vorgaenge_erstellt_von_fkey FOREIGN KEY (erstellt_von) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: support_vorgaenge support_vorgaenge_organization_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.support_vorgaenge
+    ADD CONSTRAINT support_vorgaenge_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES public.organizations(id) ON DELETE CASCADE;
 
 
 --
@@ -5360,6 +6265,960 @@ ALTER TABLE ONLY public.wrapped_snapshots
 
 ALTER TABLE ONLY public.wrapped_snapshots
     ADD CONSTRAINT wrapped_snapshots_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
+
+
+-- ====================================================================
+-- Datenzeilen, die die eingefalteten Migrationen anlegen (keine Daten der
+-- Produktion). Ohne sie fehlte einer neuen Instanz etwa die Rolle
+-- super_admin aus Migration 190.
+-- ====================================================================
+
+--
+-- PostgreSQL database dump
+--
+
+
+-- Dumped from database version 15.19
+-- Dumped by pg_dump version 15.19
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Data for Name: landeskirchen; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: kirchenkreise; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: organizations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: activities; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: categories; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: activity_categories; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.roles (id, organization_id, name, display_name, description, is_system_role, is_active, created_at, updated_at) VALUES (1, NULL, 'super_admin', 'Super-Admin', 'Betrieb und Support aller Gemeinden; Konto ohne eigene Gemeinde', true, true, '2026-10-10 00:17:40.153917+00', '2026-10-10 00:17:40.153917+00');
+
+
+--
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: activity_requests; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: apm_snapshots; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: challenges; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: bewahrte_stempel; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: bonus_points; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: certificate_types; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: jahrgaenge; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: challenge_jahrgang_assignments; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: challenge_read_status; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: challenge_submissions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: events; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_rooms; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_messages; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_message_reactions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_participants; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_polls; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_poll_votes; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: chat_read_status; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: custom_badges; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: daily_verses; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_timeslots; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_bookings; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_categories; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_jahrgang_assignments; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_points; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_reminders; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: event_unregistrations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: gemeinde_anfragen; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: invite_codes; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: konfi_historie; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: konfsprueche; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: levels; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: konfi_profiles; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: konfspruch_uebersetzungen; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: konfspruch_wahlen; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: mail_abholstand; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: mail_bausteine; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.mail_bausteine (id, titel, betreff, text, postfach, sortierung, updated_at, bearbeitet_von) VALUES (1, 'Eingang bestätigt / Rückfrage', NULL, 'Hallo {{name}},
+
+vielen Dank für eure Anfrage für {{gemeinde}}! Sie ist bei uns angekommen, und wir melden uns in den nächsten Tagen mit allem, was ihr für den Start braucht.
+
+Vorab haben wir noch eine Frage: …
+
+Viele Grüße
+{{absender}}', 'moin', 10, '2026-10-10 00:17:40.749938+00', NULL);
+INSERT INTO public.mail_bausteine (id, titel, betreff, text, postfach, sortierung, updated_at, bearbeitet_von) VALUES (2, 'Zugangsdaten unterwegs', NULL, 'Hallo {{name}},
+
+eure Gemeinde {{gemeinde}} ist in Konfi Quest eingerichtet. Der Benutzername für eure Gemeindeleitung lautet: {{benutzername}}
+
+Das Passwort schicken wir euch nicht per Mail, sondern auf einem anderen Weg. Nach der ersten Anmeldung könnt ihr es in der App selbst ändern.
+
+Die Testphase läuft bis zum {{testphase_bis}}. Die ersten Schritte stehen im Handbuch: konfi-quest.de/docs
+
+Viele Grüße
+{{absender}}', 'moin', 20, '2026-10-10 00:17:40.749938+00', NULL);
+INSERT INTO public.mail_bausteine (id, titel, betreff, text, postfach, sortierung, updated_at, bearbeitet_von) VALUES (3, 'Testphase endet bald', NULL, 'Hallo {{name}},
+
+die Testphase von Konfi Quest für {{gemeinde}} endet am {{testphase_bis}}. Danach ist die Anmeldung gesperrt, bis eine Lizenz eingetragen ist.
+
+Wollt ihr weitermachen, gebt uns kurz Bescheid, welche Lizenz zu euch passt. Gewünscht hattet ihr: {{lizenz}}
+
+Habt ihr Fragen, antwortet einfach auf diese Mail.
+
+Viele Grüße
+{{absender}}', 'support', 30, '2026-10-10 00:17:40.749938+00', NULL);
+INSERT INTO public.mail_bausteine (id, titel, betreff, text, postfach, sortierung, updated_at, bearbeitet_von) VALUES (4, 'Lizenzangebot', NULL, 'Hallo {{name}},
+
+gern machen wir euch ein Angebot für Konfi Quest in {{gemeinde}}:
+
+{{lizenz}}
+
+Sagt uns einfach Bescheid, dann tragen wir die Lizenz für euch ein.
+
+Viele Grüße
+{{absender}}', NULL, 40, '2026-10-10 00:17:40.749938+00', NULL);
+INSERT INTO public.mail_bausteine (id, titel, betreff, text, postfach, sortierung, updated_at, bearbeitet_von) VALUES (5, 'Absage', NULL, 'Hallo {{name}},
+
+vielen Dank für euer Interesse an Konfi Quest. Leider können wir eure Anfrage für {{gemeinde}} im Moment nicht annehmen.
+
+Für eure Konfi-Arbeit wünschen wir euch alles Gute und Gottes Segen.
+
+Viele Grüße
+{{absender}}', 'moin', 50, '2026-10-10 00:17:40.749938+00', NULL);
+
+
+--
+-- Data for Name: mail_einstellungen; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+INSERT INTO public.mail_einstellungen (schluessel, wert, updated_at, bearbeitet_von) VALUES ('fusszeile', 'Konfi Quest · Digitale Konfi-Arbeit
+konfi-quest.de · Handbuch: konfi-quest.de/docs · Datenschutz: konfi-quest.de/datenschutz', '2026-10-10 00:17:40.749938+00', NULL);
+INSERT INTO public.mail_einstellungen (schluessel, wert, updated_at, bearbeitet_von) VALUES ('absendername', 'Konfi Quest', '2026-10-10 00:17:40.749938+00', NULL);
+
+
+--
+-- Data for Name: support_vorgaenge; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: mail_nachrichten; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: materials; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: material_events; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: material_files; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: material_jahrgaenge; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: material_links; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: nachlauf_auftraege; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: org_einladungen; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: password_resets; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: permissions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: push_tokens; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: rate_limit_zaehler; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: refresh_tokens; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: role_permissions; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: settings; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: socket_io_attachments; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: user_activities; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: user_badges; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: user_certificates; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: user_jahrgang_assignments; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: user_organizations; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: wrapped_ausgaben; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Data for Name: wrapped_snapshots; Type: TABLE DATA; Schema: public; Owner: -
+--
+
+
+
+--
+-- Name: activities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.activities_id_seq', 1, false);
+
+
+--
+-- Name: activity_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.activity_categories_id_seq', 1, false);
+
+
+--
+-- Name: activity_requests_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.activity_requests_id_seq', 1, false);
+
+
+--
+-- Name: apm_snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.apm_snapshots_id_seq', 1, false);
+
+
+--
+-- Name: bewahrte_stempel_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.bewahrte_stempel_id_seq', 1, false);
+
+
+--
+-- Name: bonus_points_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.bonus_points_id_seq', 1, false);
+
+
+--
+-- Name: categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.categories_id_seq', 1, false);
+
+
+--
+-- Name: certificate_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.certificate_types_id_seq', 1, false);
+
+
+--
+-- Name: challenge_jahrgang_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.challenge_jahrgang_assignments_id_seq', 1, false);
+
+
+--
+-- Name: challenge_submissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.challenge_submissions_id_seq', 1, false);
+
+
+--
+-- Name: challenges_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.challenges_id_seq', 1, false);
+
+
+--
+-- Name: chat_message_reactions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_message_reactions_id_seq', 1, false);
+
+
+--
+-- Name: chat_messages_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_messages_id_seq', 1, false);
+
+
+--
+-- Name: chat_participants_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_participants_id_seq', 1, false);
+
+
+--
+-- Name: chat_poll_votes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_poll_votes_id_seq', 1, false);
+
+
+--
+-- Name: chat_polls_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_polls_id_seq', 1, false);
+
+
+--
+-- Name: chat_read_status_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_read_status_id_seq', 1, false);
+
+
+--
+-- Name: chat_rooms_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.chat_rooms_id_seq', 1, false);
+
+
+--
+-- Name: custom_badges_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.custom_badges_id_seq', 1, false);
+
+
+--
+-- Name: daily_verses_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.daily_verses_id_seq', 1, false);
+
+
+--
+-- Name: event_bookings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_bookings_id_seq', 1, false);
+
+
+--
+-- Name: event_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_categories_id_seq', 1, false);
+
+
+--
+-- Name: event_jahrgang_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_jahrgang_assignments_id_seq', 1, false);
+
+
+--
+-- Name: event_points_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_points_id_seq', 1, false);
+
+
+--
+-- Name: event_reminders_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_reminders_id_seq', 1, false);
+
+
+--
+-- Name: event_timeslots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_timeslots_id_seq', 1, false);
+
+
+--
+-- Name: event_unregistrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.event_unregistrations_id_seq', 1, false);
+
+
+--
+-- Name: events_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.events_id_seq', 1, false);
+
+
+--
+-- Name: gemeinde_anfragen_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.gemeinde_anfragen_id_seq', 1, false);
+
+
+--
+-- Name: invite_codes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.invite_codes_id_seq', 1, false);
+
+
+--
+-- Name: jahrgaenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.jahrgaenge_id_seq', 1, false);
+
+
+--
+-- Name: kirchenkreise_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.kirchenkreise_id_seq', 1, false);
+
+
+--
+-- Name: konfi_historie_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.konfi_historie_id_seq', 1, false);
+
+
+--
+-- Name: konfi_profiles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.konfi_profiles_id_seq', 1, false);
+
+
+--
+-- Name: konfspruch_uebersetzungen_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.konfspruch_uebersetzungen_id_seq', 1, false);
+
+
+--
+-- Name: konfspruch_wahlen_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.konfspruch_wahlen_id_seq', 1, false);
+
+
+--
+-- Name: konfsprueche_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.konfsprueche_id_seq', 1, false);
+
+
+--
+-- Name: landeskirchen_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.landeskirchen_id_seq', 1, false);
+
+
+--
+-- Name: levels_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.levels_id_seq', 1, false);
+
+
+--
+-- Name: mail_bausteine_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.mail_bausteine_id_seq', 5, true);
+
+
+--
+-- Name: mail_nachrichten_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.mail_nachrichten_id_seq', 1, false);
+
+
+--
+-- Name: material_files_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.material_files_id_seq', 1, false);
+
+
+--
+-- Name: material_links_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.material_links_id_seq', 1, false);
+
+
+--
+-- Name: materials_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.materials_id_seq', 1, false);
+
+
+--
+-- Name: nachlauf_auftraege_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.nachlauf_auftraege_id_seq', 1, false);
+
+
+--
+-- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.notifications_id_seq', 1, false);
+
+
+--
+-- Name: org_einladungen_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.org_einladungen_id_seq', 1, false);
+
+
+--
+-- Name: organizations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.organizations_id_seq', 1, false);
+
+
+--
+-- Name: password_resets_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.password_resets_id_seq', 1, false);
+
+
+--
+-- Name: permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.permissions_id_seq', 1, false);
+
+
+--
+-- Name: push_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.push_tokens_id_seq', 1, false);
+
+
+--
+-- Name: refresh_tokens_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.refresh_tokens_id_seq', 1, false);
+
+
+--
+-- Name: role_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.role_permissions_id_seq', 1, false);
+
+
+--
+-- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.roles_id_seq', 1, true);
+
+
+--
+-- Name: socket_io_attachments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.socket_io_attachments_id_seq', 1, false);
+
+
+--
+-- Name: support_vorgaenge_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.support_vorgaenge_id_seq', 1, false);
+
+
+--
+-- Name: user_activities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.user_activities_id_seq', 1, false);
+
+
+--
+-- Name: user_badges_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.user_badges_id_seq', 1, false);
+
+
+--
+-- Name: user_certificates_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.user_certificates_id_seq', 1, false);
+
+
+--
+-- Name: user_jahrgang_assignments_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.user_jahrgang_assignments_id_seq', 1, false);
+
+
+--
+-- Name: user_organizations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.user_organizations_id_seq', 1, false);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 1, false);
+
+
+--
+-- Name: wrapped_ausgaben_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.wrapped_ausgaben_id_seq', 1, false);
+
+
+--
+-- Name: wrapped_snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.wrapped_snapshots_id_seq', 1, false);
 
 
 --

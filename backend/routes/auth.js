@@ -994,7 +994,8 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
       const { rows } = await db.query(`
         SELECT DISTINCT ON (m.id)
                m.id, m.name, m.slug, m.display_name,
-               m.role_name, m.role_display_name, m.is_active, m.is_primary
+               m.role_name, m.role_display_name, m.is_active, m.is_primary,
+               k.name AS kirchenkreis, l.name AS landeskirche
         FROM (
           SELECT o.id, o.name, o.slug, o.display_name,
                  r.name as role_name, r.display_name as role_display_name,
@@ -1016,8 +1017,16 @@ module.exports = (db, verifyToken, transporter, SMTP_CONFIG, rateLimiters = {}, 
           WHERE uo.user_id = $1 AND COALESCE(o.is_active, true) = true
             AND uo.is_active = true
         ) m
+        JOIN organizations o2 ON o2.id = m.id
+        LEFT JOIN kirchenkreise k ON k.id = o2.kirchenkreis_id
+        LEFT JOIN landeskirchen l ON l.id = k.landeskirche_id
         ORDER BY m.id, m.is_primary DESC
       `, [userId]);
+      // kirchenkreis, landeskirche (zusaetzlich seit 10.10.2026, additiv):
+      // die Namen der Zuordnung der Gemeinde, null ohne Zuordnung. Die App
+      // schickt sie mit der Wahl des Konfispruchs an die Nutzungsmessung
+      // (docs/messung/umami.md, S1). Alle bisherigen Felder unveraendert --
+      // die Store-Apps lesen die Antwort.
       // Gemeinden, in denen die Person gesperrt ist, fehlen (08.10.2026,
       // Migration 196): Sie tauchen fuer sie nicht mehr auf, wie eine
       // entzogene Mitgliedschaft.

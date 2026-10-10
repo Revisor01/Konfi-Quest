@@ -1,40 +1,30 @@
 // MIGRATION 202: Warteschlange fuer die Arbeit nach der Antwort
 // (utils/warteschlange.js).
 //
-// Geprueft auf dem Stand, auf den die Migration beim Deploy trifft: Die
-// Tabelle kommt dazu, mit den Vorgaben, die der Arbeiter voraussetzt; der
-// Status ist auf die vier Werte begrenzt, ein Schluessel ist eindeutig (ohne
-// Schluessel beliebig oft), und ein zweiter Lauf aendert nichts -- auch keine
-// vorhandene Zeile.
-const {
-  dbAnlegen, dbWegraeumen, produktionAufbauen, migrationLesen,
-} = require('../helpers/schemaAufbau');
+// Seit 10.10.2026 steht 202 im Schema-Dump (tests/schema/prod-schema.sql),
+// die Datei ist aus backend/migrations/ entfernt; der Test der Migration auf
+// dem Stand davor (Ausgangslage, zweiter Lauf) liegt in der Git-Historie
+// (zuletzt Commit 3b935178). Geprueft wird hier auf einer Wegwerf-Datenbank
+// aus dem Dump: die Tabelle hat die Vorgaben, die der Arbeiter voraussetzt;
+// der Status ist auf die vier Werte begrenzt, ein Schluessel ist eindeutig
+// (ohne Schluessel beliebig oft).
+const { dbAnlegen, dbWegraeumen, produktionAufbauen } = require('../helpers/schemaAufbau');
 
-const MIGRATION = '202_nachlauf_warteschlange.sql';
 const DB = 'konfi_test_mig202';
 
-describe('Migration 202 auf dem Stand, auf den sie beim Deploy trifft', () => {
+describe('Migration 202 im Schema-Dump', () => {
   let pool;
-
-  const tabelle = async () => (await pool.query(
-    "SELECT to_regclass('public.nachlauf_auftraege') IS NOT NULL AS da")).rows[0].da;
 
   beforeAll(async () => {
     pool = await dbAnlegen(DB);
-    await produktionAufbauen(pool, { vor: MIGRATION });
+    await produktionAufbauen(pool);
   }, 180000);
 
   afterAll(async () => {
     await dbWegraeumen(pool, DB);
   }, 120000);
 
-  it('Ausgangslage: keine Tabelle', async () => {
-    expect(await tabelle()).toBe(false);
-  });
-
-  it('legt die Tabelle mit den Vorgaben des Arbeiters an', async () => {
-    await pool.query(migrationLesen(MIGRATION));
-    expect(await tabelle()).toBe(true);
+  it('die Tabelle hat die Vorgaben des Arbeiters, alle Zeitspalten mit Zone', async () => {
     const { rows: [z] } = await pool.query(
       "INSERT INTO nachlauf_auftraege (art) VALUES ('x') RETURNING status, versuche, max_versuche, parameter, erledigte_schritte, faellig_ab IS NOT NULL AS faellig, gesperrt_bis");
     expect(z).toEqual({
@@ -57,6 +47,7 @@ describe('Migration 202 auf dem Stand, auf den sie beim Deploy trifft', () => {
     for (const s of ['laeuft', 'erledigt', 'fehlgeschlagen']) {
       await pool.query("INSERT INTO nachlauf_auftraege (art, status) VALUES ('x', $1)", [s]);
     }
+    expect((await pool.query('SELECT count(*)::int AS n FROM nachlauf_auftraege')).rows[0].n).toBe(4);
   });
 
   it('Schluessel eindeutig, ohne Schluessel beliebig oft', async () => {
@@ -64,13 +55,6 @@ describe('Migration 202 auf dem Stand, auf den sie beim Deploy trifft', () => {
     await expect(pool.query("INSERT INTO nachlauf_auftraege (art, schluessel) VALUES ('x', 'k1')"))
       .rejects.toMatchObject({ code: '23505' });
     await pool.query("INSERT INTO nachlauf_auftraege (art) VALUES ('x'), ('x')");
-  });
-
-  it('ein zweiter Lauf aendert nichts: kein Fehler, vorhandene Zeilen bleiben', async () => {
-    const vorher = (await pool.query('SELECT count(*)::int AS n FROM nachlauf_auftraege')).rows[0].n;
-    await pool.query(migrationLesen(MIGRATION));
-    const nachher = (await pool.query('SELECT count(*)::int AS n FROM nachlauf_auftraege')).rows[0].n;
-    expect(nachher).toBe(vorher);
-    expect(nachher).toBe(7);
+    expect((await pool.query('SELECT count(*)::int AS n FROM nachlauf_auftraege')).rows[0].n).toBe(7);
   });
 });
