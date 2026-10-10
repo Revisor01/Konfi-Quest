@@ -33,7 +33,7 @@ Nichts.
 
 ### Wartet auf Gerät oder Simon
 
-- [ ] **Maltes Gerätetest Android versionCode 138** (interner Testtrack seit
+- [ ] **Maltes Gerätetest Android versionCode 139** (interner Testtrack seit
   10.10.2026) — Rückmeldung je Prüfpunkt aus
   [Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md), Schritt 4,
   dazu Systemleisten oben und unten (hell, dunkel, Gesten und drei Knöpfe,
