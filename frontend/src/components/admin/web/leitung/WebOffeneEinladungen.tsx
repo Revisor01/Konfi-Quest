@@ -2,7 +2,8 @@
 // Benutzerliste -- Person, Rolle, eingeladen am (von wem), gueltig bis und
 // "Zurueckziehen". Laden und Zurueckziehen mit Rueckfrage ist dieselbe Logik wie
 // in der App (components/admin/useOffeneEinladungen.ts). Nur fuer die
-// Gemeindeleitung; ohne offene Einladung steht nichts da.
+// Gemeindeleitung; ohne offene Einladung steht nichts da. Die Tabelle ist
+// WebListe (10.10.2026), "Zurueckziehen" steht als weiterer Knopf am Ende.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
@@ -15,26 +16,25 @@ import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import { useOffeneEinladungen } from '../../useOffeneEinladungen';
 import type { OffeneEinladungDerGemeinde } from '../../useOffeneEinladungen';
-import WebSortTabelle, { type WebSortSpalte } from './WebSortTabelle';
-import { WebAvatar, WebRolleMarke } from './WebLeitungBausteine';
+import WebKreis from '../../../web/WebKreis';
+import WebListe, { WebNameZelle, type WebSpalte } from '../../../web/WebListe';
+import { WebRolleMarke } from './WebLeitungBausteine';
 
 const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisierung }) => {
   const { einladungen, laeuft, zurueckziehen } = useOffeneEinladungen(aktualisierung);
   if (einladungen.length === 0) return null;
 
-  const spalten: Array<WebSortSpalte<OffeneEinladungDerGemeinde>> = [
+  const spalten: Array<WebSpalte<OffeneEinladungDerGemeinde>> = [
     {
       schluessel: 'person',
       kopf: 'Person',
       sortWert: (e) => e.display_name,
       zelle: (e) => (
-        <span className="web-person-zelle">
-          <WebAvatar text={initialen(e.display_name) || '??'} farbe={rollenFarbe(e.role_name)} />
-          <span className="web-person-zelle__text">
-            <span className="web-zelle-titel web-einzeilig">{e.display_name}</span>
-            <span className="web-zelle-leise web-einzeilig">@{e.username}</span>
-          </span>
-        </span>
+        <WebNameZelle
+          kreis={<WebKreis text={initialen(e.display_name) || '??'} ton={rollenFarbe(e.role_name)} />}
+          titel={e.display_name}
+          unterzeile={`@${e.username}`}
+        />
       ),
     },
     {
@@ -64,20 +64,6 @@ const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisie
       sortWert: (e) => new Date(e.expires_at),
       zelle: (e) => datumKurz(e.expires_at),
     },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      klasse: 'web-spalte-aktionen-breit',
-      zelle: (e) => (
-        <div className="web-zeilenaktionen">
-          <WebKnopf klein art="gefahr" disabled={laeuft === e.id} onClick={() => zurueckziehen(e)} aria-label={`Einladung an ${e.display_name} zurückziehen`}>
-            <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-            <span className="web-knopf__text">Zurückziehen</span>
-          </WebKnopf>
-        </div>
-      ),
-    },
   ];
 
   return (
@@ -86,12 +72,19 @@ const WebOffeneEinladungen: React.FC<{ aktualisierung: number }> = ({ aktualisie
       untertitel={`${mitEinheit(einladungen.length, 'Person hat', 'Personen haben')} noch nicht geantwortet`}
       bund
     >
-      <WebSortTabelle
+      <WebListe
         beschriftung="Offene Einladungen"
         spalten={spalten}
         zeilen={einladungen}
         zeileSchluessel={(e) => e.id}
         mittig
+        aktionenBreite="200px"
+        weitere={(e) => (
+          <WebKnopf klein art="gefahr" disabled={laeuft === e.id} onClick={() => zurueckziehen(e)} aria-label={`Einladung an ${e.display_name} zurückziehen`}>
+            <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+            <span className="web-knopf__text">Zurückziehen</span>
+          </WebKnopf>
+        )}
       />
     </WebKarte>
   );

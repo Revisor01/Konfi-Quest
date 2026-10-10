@@ -109,10 +109,11 @@ auf Handy und Tablet bleibt es immer bei der Reiterleiste.
 
 ### Im Browser zwischen Liste und Kacheln wählen
 
-Events, Challenges, die Konfis der Leitung, die Aktivitäten und **Material
-verwalten** unter **Mehr** und die gemeldeten Aktivitäten unter **Mitmachen**
-lassen sich im Browser als **Liste** oder als **Kacheln** ansehen. Die Wahl
-steht in der Zeile mit Reitern, Filtern und Suche ganz rechts. Die Liste ist eine Tabelle mit
+Events, Challenges, die Konfis der Leitung, die Aktivitäten unter **Mehr**,
+die gemeldeten Aktivitäten unter **Mitmachen** sowie unter **Mehr** **Material
+verwalten**, Benutzer:innen, Jahrgänge, Kategorien, Level und Zertifikate lassen
+sich im Browser als **Liste** oder als **Kacheln** ansehen. Die Wahl steht in der
+Zeile mit Reitern, Filtern und Suche ganz rechts. Die Liste ist eine Tabelle mit
 einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
 Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
 Klick auf eine Zeile oder Karte öffnet den Eintrag.
@@ -140,7 +141,7 @@ als Marken, die Angaben mit Symbolen und unten die Knöpfe. Der Kopf einer Konfi
 erreicht hat; der eines Events trägt die Farbe seines Stands.
 
 Beim ersten Öffnen beginnt die Leitung mit der Liste, Konfis und Team mit den
-Kacheln. Der Browser merkt sich deine Wahl für jede Seite einzeln; in einem
+Kacheln; die Zertifikate stehen auch für die Leitung zuerst als Kacheln. Der Browser merkt sich deine Wahl für jede Seite einzeln; in einem
 privaten Fenster gilt sie nur, bis du die Seite neu lädst. In der App gibt es
 die Wahl nicht.
 

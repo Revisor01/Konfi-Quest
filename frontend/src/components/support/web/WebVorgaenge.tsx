@@ -12,6 +12,9 @@
 //
 // Die Logik (laden, filtern, Sammelaktionen, Aktualisieren bei Änderungen)
 // steht in components/support/useVorgangsliste.ts, dieselbe wie in der App.
+// Rahmen, Werkzeugzeile (Stände, Suche, Art, Gemeinde in einer Zeile), Liste
+// und Zustände stellt WebListenSeite (10.10.2026) -- ohne Kacheln. Filter und
+// Suche rechnet der Hook; die Hülle nimmt die Liste, wie sie kommt.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -33,20 +36,17 @@ import {
 } from '../../../utils/supportVorgaenge';
 import { useVorgangsliste } from '../useVorgangsliste';
 import { useVorgangsAuswahl } from '../useVorgangsAuswahl';
-import WebSeite from '../../web/WebSeite';
 import WebKnopf from '../../web/WebKnopf';
 import WebLink from '../../web/WebLink';
-import WebChips from '../../web/WebChips';
-import WebSuche from '../../web/WebSuche';
 import WebAuswahl from '../../web/WebAuswahl';
-import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import WebListenSeite from '../../web/WebListenSeite';
+import { type WebSpalte } from '../../web/WebListe';
 import WebTreffer from '../../web/WebTreffer';
-import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import WebNeuerVorgang from './WebNeuerVorgang';
 import { DringlichPill, StatusPill } from './WebVorgangTeile';
 import '../../../theme/web/support.css';
 import { vorgangStatusRang } from '../../../utils/statusReihenfolge';
-import { inFassung, leerVon } from '../../../seiten/beschreibung';
+import { leerVon } from '../../../seiten/beschreibung';
 import {
   ALLE_ARTEN,
   ALLE_GEMEINDEN,
@@ -98,12 +98,12 @@ const WebVorgaenge: React.FC = () => {
   const gemeindeName = auswahl.gemeinde !== 'alle'
     ? gemeinden.find((g) => String(g.id) === auswahl.gemeinde)?.name ?? `Gemeinde ${auswahl.gemeinde}`
     : null;
-  const gemeindeOptionen = [
-    { wert: 'alle', label: ALLE_GEMEINDEN },
-    ...gemeinden.map((g) => ({ wert: String(g.id), label: g.name })),
+  const gemeindeWahlen = [
+    { schluessel: 'alle', label: ALLE_GEMEINDEN },
+    ...gemeinden.map((g) => ({ schluessel: String(g.id), label: g.name })),
     // Eine Gemeinde aus der Adresse, die in der Liste fehlt, bleibt auswaehlbar.
     ...(auswahl.gemeinde !== 'alle' && !gemeinden.some((g) => String(g.id) === auswahl.gemeinde)
-      ? [{ wert: auswahl.gemeinde, label: `Gemeinde ${auswahl.gemeinde}` }] : []),
+      ? [{ schluessel: auswahl.gemeinde, label: `Gemeinde ${auswahl.gemeinde}` }] : []),
   ];
 
   const spalten: Array<WebSpalte<Vorgang>> = [
@@ -204,115 +204,6 @@ const WebVorgaenge: React.FC = () => {
     },
   ];
 
-  let inhalt: React.ReactNode;
-  if (laedt) {
-    inhalt = <WebLaden karten={2} text="Die Vorgänge werden geladen." />;
-  } else if (fehler) {
-    inhalt = <WebFehler text="Die Vorgänge konnten nicht geladen werden." onErneut={() => { void neuLaden(); }} />;
-  } else {
-    inhalt = (
-      <>
-        <WebChips<VorgangFilter>
-          beschriftung={VORGANG_STAENDE_BESCHRIFTUNG}
-          wert={auswahl.filter}
-          onWert={setFilter}
-          // Stände aus der gemeinsamen Beschreibung (seiten/supportVorgaenge.ts); rot ist „Neu".
-          chips={inFassung(VORGANG_STAENDE, 'web').map((f) => {
-            const zahl = f.schluessel === 'archiv' ? liste.archivAnzahl ?? undefined : zaehlen?.[f.schluessel];
-            return {
-              wert: f.schluessel,
-              label: f.label,
-              zahl,
-              rot: f.schluessel === 'neu',
-              zahlText: zahl === undefined ? undefined : f.zahlText?.(zahl),
-            };
-          })}
-        />
-
-        <div className="web-werkzeuge">
-          <div className="web-werkzeuge__links">
-            <WebAuswahl
-              label="Art"
-              wert={auswahl.art}
-              onWert={(w) => setArt(w as VorgangArt | 'alle')}
-              optionen={[{ wert: 'alle', label: ALLE_ARTEN }, ...ARTEN.map((a) => ({ wert: a.wert, label: a.label }))]}
-            />
-            <WebAuswahl label="Gemeinde" wert={auswahl.gemeinde} onWert={setGemeinde} optionen={gemeindeOptionen} />
-          </div>
-          <div className="web-werkzeuge__rechts">
-            <WebSuche
-              beschriftung="Vorgänge durchsuchen"
-              platzhalter="Nr., Betreff oder Gemeinde"
-              wert={auswahl.suche}
-              onWert={setSuche}
-            />
-          </div>
-        </div>
-
-        {sichtbar.length > 0 && (
-          <div className="web-sammelleiste" role="group" aria-label="Auswahl">
-            <label className="web-sammelleiste__alle">
-              <input ref={alleKasten} type="checkbox" className="web-kontrollkasten" checked={alleAn} onChange={alleUmschalten} />
-              {ausgewaehlt.size > 0 ? `${vorgaengeText(ausgewaehlt.size)} ausgewählt` : 'Alle auswählen'}
-            </label>
-            {ausgewaehlt.size > 0 && (
-              <div className="web-sammelleiste__aktionen">
-                {archiv ? (
-                  <WebKnopf klein disabled={!isOnline} onClick={() => { void liste.sammeln(ids, 'wiederherstellen').then(nachAktion); }}>
-                    <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-                    Wiederherstellen
-                  </WebKnopf>
-                ) : (
-                  <WebKnopf klein disabled={!isOnline} onClick={() => { void sammeln(ids, 'archivieren').then(nachAktion); }}>
-                    <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-                    Archivieren
-                  </WebKnopf>
-                )}
-                <div className="web-sammelleiste__status">
-                  <WebAuswahl
-                    label="Status setzen"
-                    wert=""
-                    deaktiviert={!isOnline}
-                    onWert={(w) => { if (w) void sammeln(ids, 'status', w as VorgangStatus).then(nachAktion); }}
-                    optionen={[
-                      { wert: '', label: 'Status setzen …' },
-                      ...STATUS_REIHE.map((s) => ({ wert: s, label: s === 'erledigt' ? 'Erledigt (ins Archiv)' : VORGANG_STATUS[s].label })),
-                    ]}
-                  />
-                </div>
-                <WebKnopf klein art="gefahr" disabled={!isOnline} onClick={() => loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
-                  <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-                  Löschen
-                </WebKnopf>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="web-karte">
-          {sichtbar.length > 0 ? (
-            <WebTabelle
-              beschriftung="Vorgänge"
-              spalten={spalten}
-              zeilen={sichtbar}
-              zeileSchluessel={(v) => v.id}
-              zeileKlasse={(v) => (v.ungelesen > 0 || v.status === 'neu' ? 'web-zeile--ungelesen' : undefined)}
-              mittig
-              fest
-            />
-          ) : (
-            <WebLeer
-              icon={ICON_LISTE}
-              titel={eingegrenzt ? VORGANG_KEINE_TREFFER.titel : VORGANG_LEER_TITEL[auswahl.filter]}
-              text={eingegrenzt ? VORGANG_KEINE_TREFFER.text(auswahl.suche) : leerVon(VORGANG_STAENDE, auswahl.filter)}
-              aktion={eingegrenzt ? <WebKnopf onClick={zuruecksetzen}>{VORGANG_KEINE_TREFFER.zuruecksetzen}</WebKnopf> : undefined}
-            />
-          )}
-        </div>
-      </>
-    );
-  }
-
   const gesamt = archiv ? liste.quelle?.length ?? 0 : zaehlen?.offen ?? 0;
   const inAuswahl = sichtbar.length !== gesamt ? ` · ${vorgaengeText(sichtbar.length)} in dieser Auswahl` : '';
   const untertitel = !liste.quelle
@@ -321,8 +212,49 @@ const WebVorgaenge: React.FC = () => {
       ? `Vorgänge von ${gemeindeName} · ${vorgaengeText(sichtbar.length)} in dieser Auswahl`
       : `${vorgaengeText(gesamt)} ${archiv ? 'im Archiv' : 'offen'}${inAuswahl}`;
 
+  // Die Leiste fuer mehrere ausgewaehlte Zeilen steht zwischen Werkzeugzeile und Liste.
+  const sammelleiste = !laedt && !fehler && sichtbar.length > 0 ? (
+    <div className="web-sammelleiste" role="group" aria-label="Auswahl">
+      <label className="web-sammelleiste__alle">
+        <input ref={alleKasten} type="checkbox" className="web-kontrollkasten" checked={alleAn} onChange={alleUmschalten} />
+        {ausgewaehlt.size > 0 ? `${vorgaengeText(ausgewaehlt.size)} ausgewählt` : 'Alle auswählen'}
+      </label>
+      {ausgewaehlt.size > 0 && (
+        <div className="web-sammelleiste__aktionen">
+          {archiv ? (
+            <WebKnopf klein disabled={!isOnline} onClick={() => { void liste.sammeln(ids, 'wiederherstellen').then(nachAktion); }}>
+              <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+              Wiederherstellen
+            </WebKnopf>
+          ) : (
+            <WebKnopf klein disabled={!isOnline} onClick={() => { void sammeln(ids, 'archivieren').then(nachAktion); }}>
+              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+              Archivieren
+            </WebKnopf>
+          )}
+          <div className="web-sammelleiste__status">
+            <WebAuswahl
+              label="Status setzen"
+              wert=""
+              deaktiviert={!isOnline}
+              onWert={(w) => { if (w) void sammeln(ids, 'status', w as VorgangStatus).then(nachAktion); }}
+              optionen={[
+                { wert: '', label: 'Status setzen …' },
+                ...STATUS_REIHE.map((s) => ({ wert: s, label: s === 'erledigt' ? 'Erledigt (ins Archiv)' : VORGANG_STATUS[s].label })),
+              ]}
+            />
+          </div>
+          <WebKnopf klein art="gefahr" disabled={!isOnline} onClick={() => loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
+            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+            Löschen
+          </WebKnopf>
+        </div>
+      )}
+    </div>
+  ) : undefined;
+
   return (
-    <WebSeite
+    <WebListenSeite<Vorgang, VorgangFilter>
       bereich="Support"
       titel={VORGAENGE_TITEL}
       untertitel={untertitel}
@@ -338,8 +270,53 @@ const WebVorgaenge: React.FC = () => {
           </WebKnopf>
         </>
       )}
+      laden={laedt ? { text: 'Die Vorgänge werden geladen.', karten: 2 } : undefined}
+      fehler={!laedt && fehler ? { text: 'Die Vorgänge konnten nicht geladen werden.', onErneut: () => { void neuLaden(); } } : undefined}
+      // Stände aus der gemeinsamen Beschreibung (seiten/supportVorgaenge.ts); rot ist „Neu".
+      reiter={{
+        beschriftung: VORGANG_STAENDE_BESCHRIFTUNG,
+        wahlen: VORGANG_STAENDE,
+        wert: auswahl.filter,
+        onWert: setFilter,
+        zahlen: {
+          ...(zaehlen ?? {}),
+          ...(liste.archivAnzahl !== null ? { archiv: liste.archivAnzahl } : {}),
+        },
+        rot: (f) => f === 'neu',
+      }}
+      suche={{
+        beschriftung: 'Vorgänge durchsuchen',
+        platzhalter: 'Nr., Betreff oder Gemeinde',
+        wert: auswahl.suche,
+        onWert: setSuche,
+      }}
+      filter={[
+        {
+          beschriftung: 'Art',
+          darstellung: 'auswahl',
+          wahlen: [{ schluessel: 'alle', label: ALLE_ARTEN }, ...ARTEN.map((a) => ({ schluessel: a.wert, label: a.label }))],
+          wert: auswahl.art,
+          onWert: (w) => setArt(w as VorgangArt | 'alle'),
+        },
+        { beschriftung: 'Gemeinde', darstellung: 'auswahl', wahlen: gemeindeWahlen, wert: auswahl.gemeinde, onWert: setGemeinde },
+      ]}
+      vorInhalt={sammelleiste}
+      eintraege={sichtbar}
+      liste={{
+        beschriftung: 'Vorgänge',
+        spalten,
+        zeileSchluessel: (v) => v.id,
+        zeileKlasse: (v) => (v.ungelesen > 0 || v.status === 'neu' ? 'web-zeile--ungelesen' : undefined),
+        mittig: true,
+        fest: true,
+      }}
+      leer={{
+        icon: ICON_LISTE,
+        titel: eingegrenzt ? VORGANG_KEINE_TREFFER.titel : VORGANG_LEER_TITEL[auswahl.filter],
+        text: eingegrenzt ? VORGANG_KEINE_TREFFER.text(auswahl.suche) : leerVon(VORGANG_STAENDE, auswahl.filter),
+        aktion: eingegrenzt ? <WebKnopf onClick={zuruecksetzen}>{VORGANG_KEINE_TREFFER.zuruecksetzen}</WebKnopf> : undefined,
+      }}
     >
-      {inhalt}
       {neuOffen && (
         <WebNeuerVorgang
           schreiben={gemeindeName !== null}
@@ -347,7 +324,7 @@ const WebVorgaenge: React.FC = () => {
           onSchliessen={() => setNeuOffen(false)}
         />
       )}
-    </WebSeite>
+    </WebListenSeite>
   );
 };
 

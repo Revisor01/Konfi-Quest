@@ -10,6 +10,8 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- Im Browser lassen sich Benutzer:innen, Jahrgänge, Kategorien, Level und
+  Zertifikate wie Konfis und Events als Liste oder als Kacheln ansehen.
 - Die Seite „Betrieb" zeigt im Überblick, wann jede Aufgabe des Servers im
   Hintergrund zuletzt lief, wie lange sie brauchte und ob sie geklappt hat,
   dazu die Dauer des Push-Versands.
@@ -447,6 +449,9 @@ Versionsüberschrift.
 - Auch Events und gemeldete Aktivitäten unter Mitmachen und die Challenges
   von Team und Leitung stehen im Browser auf diesem Gerüst; ihre Filter
   stehen dadurch in derselben Zeile wie Reiter und Suche.
+- Auch die übrigen Listen im Browser — Verwaltung unter Mehr und Support —
+  folgen diesem Gerüst: Bearbeiten und Löschen stehen als Symbole am Ende der
+  Zeile, Filter und Suche in einer Zeile.
 - Ein Deploy bricht ab, bevor er etwas ändert, wenn auf dem Server die
   Zugangsdaten der Support-Mail fehlen, und nennt die fehlenden Einträge.
 - Die Seite „Betrieb" warnt, wenn die Support-Mail aus ist oder länger als

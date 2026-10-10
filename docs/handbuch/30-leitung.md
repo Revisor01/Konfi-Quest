@@ -409,9 +409,14 @@ steht nicht im Profil, sondern unten in der Leiste.
 ### Im Browser Verwaltungsseiten als Tabellen nutzen
 
 Die Seiten, die du über **Mehr** erreichst, sind im Browser Tabellen mit
-Kennzahlen darüber. Oben links führt **Mehr** zurück, oben rechts legst du Neues
-an, in der Zeile bearbeitest und löschst du — mit denselben Fenstern und
-Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
+Kennzahlen darüber. Oben links führt **Mehr** zurück, oben rechts neben der
+Überschrift legst du Neues an, darunter stehen in einer Zeile Filter, Suche und
+die Wahl zwischen Liste und Kacheln. Am Ende jeder Zeile bzw. unten auf jeder
+Kachel bearbeitest und löschst du — mit denselben Fenstern und Rückfragen wie in
+der App; ein Klick auf den Namen öffnet ebenfalls das Bearbeiten. Liste und
+Kacheln gibt es bei Benutzer:innen, Jahrgängen, Kategorien, Level und
+Zertifikaten, siehe
+[Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen). Wer was darf, gilt wie dort, siehe
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
 | Seite | Was die Seite zeigt | Außerdem |
@@ -419,7 +424,7 @@ Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
 | **Benutzer:innen** | Name, Rolle, Jahrgänge, Status und letzte Anmeldung | Knöpfe **Alle**, **Aktiv**, **Leitung** und **Team**, Suche nach Name, Benutzername und E-Mail; **Person einladen**, **Benutzer:in anlegen** und die Tabelle **Offene Einladungen** mit **Zurückziehen** nur für die Gemeindeleitung; wer aus einer anderen Gemeinde kommt, trägt **Gast** |
 | **Kategorien** | Name und Beschreibung | |
 | **Level** | Symbol und Titel, Beschreibung, ab wie vielen Punkten | |
-| **Zertifikate** | Kacheln mit Symbol und Name statt einer Tabelle | Bearbeiten und Löschen an der Kachel |
+| **Zertifikate** | Symbol und Name, zuerst als Kacheln | Bearbeiten und Löschen an der Kachel bzw. in der Zeile |
 | **Jahrgänge** | Konfis, Punkteziele, Konfispruch frei oder gesperrt, Rückblick | Kennzahlen darüber; **Neuer Jahrgang** nur für die Gemeindeleitung |
 | **Material verwalten** | Titel mit Beschreibung, für wen sichtbar, was daran hängt, wer es angelegt hat; auch als Kacheln | Suche, Auswahl **Jahrgang** oder **Nur globales Material**; fremdes Material steht auf **Ansehen** |
 | **Jahresrückblick** | Ausgaben mit Jahrgang, Zeitraum, Zahl der Rückblicke und Stand | **Konfis** und **Team** (Team nur für die Gemeindeleitung); **Neuer Rückblick** öffnet ein Fenster |

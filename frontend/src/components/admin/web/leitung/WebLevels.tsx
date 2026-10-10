@@ -1,6 +1,10 @@
 // Level der Gemeinde in der Web-Fassung, /admin/settings/levels (Browser ab
-// 992 px; docs/planung/web-alle-bereiche.md, Entscheidung 6): eine Tabelle mit
-// Symbol in der Farbe des Levels, Titel, Beschreibung und den noetigen Punkten.
+// 992 px; docs/planung/web-alle-bereiche.md, Entscheidung 6): Liste mit
+// Symbol in der Farbe des Levels, Titel, Beschreibung und den noetigen
+// Punkten -- oder dieselben Level als Kacheln.
+//
+// Rahmen, Umschalter Liste | Kacheln und Zustaende stellt WebListenSeite
+// (10.10.2026); hier stehen nur Spalten, Karte und Daten.
 //
 // Daten und Fenster kommen von der Seite (AdminLevelsPage): Das Formular ist
 // dasselbe Fenster wie in der App (LevelManagementModal), das Loeschen fragt
@@ -12,12 +16,11 @@ import { IonIcon } from '@ionic/react';
 import { ICON_HINZUFUEGEN, ICON_POKAL_GEFUELLT } from '../../../shared/icons';
 import { getIconFromString } from '../../../../utils/badgeIcons';
 import { mitEinheit } from '../../../../utils/supportStatistik';
-import WebSeite from '../../../web/WebSeite';
-import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
-import { WebLaden, WebLeer } from '../../../web/WebZustaende';
-import { WebSymbol, WebZeilenAktionen, WebZeilenKnopf } from './WebLeitungBausteine';
+import WebKreis from '../../../web/WebKreis';
+import { WebBildKarteSymbol } from '../../../web/WebBildKarte';
+import WebListenSeite from '../../../web/WebListenSeite';
+import { WebNameZelle, type WebAktion, type WebSpalte } from '../../../web/WebListe';
 import type { LevelEintrag } from './verwaltungTypen';
 
 export interface WebLevelsProps {
@@ -29,16 +32,13 @@ export interface WebLevelsProps {
   onLoeschen: (level: LevelEintrag) => void;
 }
 
-const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen, onBearbeiten, onLoeschen }) => {
-  const zurueck = { href: '/admin/settings', text: 'Mehr' };
+const ZURUECK = { href: '/admin/settings', text: 'Mehr' };
 
-  if (laedt) {
-    return (
-      <WebSeite bereich="Verwaltung" titel="Level" zurueck={zurueck} pageRef={pageRef}>
-        <WebLaden karten={1} text="Die Level werden geladen." />
-      </WebSeite>
-    );
-  }
+const symbolVon = (l: LevelEintrag): string => getIconFromString(l.icon || 'trophy');
+
+const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen, onBearbeiten, onLoeschen }) => {
+  const bearbeiten: WebAktion<LevelEintrag> = { onKlick: onBearbeiten, beschriftung: (l) => `${l.title} bearbeiten`, titel: () => 'Bearbeiten' };
+  const loeschen: WebAktion<LevelEintrag> = { onKlick: onLoeschen, beschriftung: (l) => `${l.title} löschen`, titel: () => 'Level löschen' };
 
   const spalten: Array<WebSpalte<LevelEintrag>> = [
     {
@@ -47,10 +47,12 @@ const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen
       breite: '30%',
       sortWert: (l) => l.title,
       zelle: (l) => (
-        <span className="web-person-zelle">
-          <WebSymbol icon={getIconFromString(l.icon || 'trophy')} ton="level" farbe={l.color || undefined} />
-          <WebZeilenKnopf onClick={() => onBearbeiten(l)} aria-label={`${l.title} bearbeiten`}>{l.title}</WebZeilenKnopf>
-        </span>
+        <WebNameZelle
+          kreis={<WebKreis icon={symbolVon(l)} ton="level" farbe={l.color || undefined} />}
+          titel={l.title}
+          onKlick={() => onBearbeiten(l)}
+          beschriftung={`${l.title} bearbeiten`}
+        />
       ),
     },
     {
@@ -69,50 +71,45 @@ const WebLevels: React.FC<WebLevelsProps> = ({ levels, laedt, pageRef, onAnlegen
       sortWert: (l) => l.points_required,
       zelle: (l) => <span className="web-zelle-titel">{l.points_required}</span>,
     },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      klasse: 'web-spalte-aktionen-breit',
-      zelle: (l) => (
-        <WebZeilenAktionen
-          name={l.title}
-          onBearbeiten={() => onBearbeiten(l)}
-          onLoeschen={() => onLoeschen(l)}
-          loeschenTitel="Level löschen"
-        />
-      ),
-    },
   ];
 
   return (
-    <WebSeite
+    <WebListenSeite<LevelEintrag>
       bereich="Verwaltung"
       titel="Level"
-      untertitel="Punkte-Level und Belohnungen"
-      aktionen={(
+      untertitel={laedt ? undefined : `Punkte-Level und Belohnungen · ${mitEinheit(levels.length, 'Level', 'Level')}`}
+      aktionen={laedt ? undefined : (
         <WebKnopf art="primaer" onClick={onAnlegen}>
           <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
           Neues Level
         </WebKnopf>
       )}
-      zurueck={zurueck}
+      zurueck={ZURUECK}
       pageRef={pageRef}
-    >
-      <WebKarte titel="Level" untertitel={mitEinheit(levels.length, 'Level', 'Level')} bund={levels.length > 0}>
-        {levels.length === 0 ? (
-          <WebLeer icon={ICON_POKAL_GEFUELLT} titel="Keine Level gefunden" text="Noch keine Level angelegt." />
-        ) : (
-          <WebTabelle
-            beschriftung="Level"
-            spalten={spalten}
-            zeilen={levels}
-            zeileSchluessel={(l) => l.id}
-            mittig
-          />
-        )}
-      </WebKarte>
-    </WebSeite>
+      laden={laedt ? { text: 'Die Level werden geladen.' } : undefined}
+      ansicht={{ seite: 'levels', vorgabe: 'liste' }}
+      eintraege={levels}
+      liste={{ beschriftung: 'Level', spalten, zeileSchluessel: (l) => l.id, mittig: true, bearbeiten, loeschen }}
+      kacheln={{
+        beschriftung: 'Level',
+        schluessel: (l) => l.id,
+        bearbeiten,
+        loeschen,
+        karte: (l) => ({
+          // Die Farbe des Levels aus den Daten; ohne sie die Bereichsfarbe.
+          akzent: l.color || 'var(--app-color-level)',
+          akzentDunkel: l.color || 'var(--app-color-level-dunkel)',
+          symbol: <WebBildKarteSymbol icon={symbolVon(l)} />,
+          label: `Ab ${l.points_required} ${l.points_required === 1 ? 'Punkt' : 'Punkten'}`,
+          titelImKopf: true,
+          titel: l.title,
+          onTitel: () => onBearbeiten(l),
+          titelBeschriftung: `${l.title} bearbeiten`,
+          text: l.description || 'Keine Beschreibung',
+        }),
+      }}
+      leer={{ icon: ICON_POKAL_GEFUELLT, titel: 'Keine Level gefunden', text: 'Noch keine Level angelegt.' }}
+    />
   );
 };
 

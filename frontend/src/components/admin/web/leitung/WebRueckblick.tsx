@@ -8,6 +8,8 @@
 // dieselben Routen, dieselben Rueckfragen, dieselben Rechte. Die Ausgaben fuers
 // Team gibt es nur fuer die Gemeindeleitung; eine Leitung sieht und legt nur
 // Ausgaben ihrer Jahrgaenge an (der Server liefert nur diese).
+//
+// Die Tabelle ist WebListe (10.10.2026), Loeschen steht am Ende der Zeile.
 
 import React, { useEffect, useMemo } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -23,9 +25,9 @@ import WebAuswahl from '../../../web/WebAuswahl';
 import WebFeld from '../../../web/WebFeld';
 import WebHinweis from '../../../web/WebHinweis';
 import WebDialog from '../../../web/WebDialog';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebKreis from '../../../web/WebKreis';
+import WebListe, { WebNameZelle, type WebSpalte } from '../../../web/WebListe';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
-import { WebSymbol, WebZeilenAktionen } from './WebLeitungBausteine';
 import type { RueckblickAusgabe, TeamJahr } from './verwaltungTypen';
 import { inFassung } from '../../../../seiten/beschreibung';
 import { RUECKBLICK_FUER, RUECKBLICK_FUER_BESCHRIFTUNG, RUECKBLICK_LEER_TITEL, RUECKBLICK_NUR_LEITUNG, RUECKBLICK_OHNE_JAHRGANG, RUECKBLICK_TITEL, RUECKBLICK_UNTERTITEL, rueckblickLeerText, type RueckblickFuer } from '../../../../seiten/rueckblick';
@@ -97,10 +99,7 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
       kopf: 'Name',
       sortWert: (a) => a.titel,
       zelle: (a) => (
-        <span className="web-person-zelle">
-          <WebSymbol icon={a.typ === 'teamer' ? ICON_GRUPPE_GEFUELLT : ICON_FUNKELN_GEFUELLT} ton="wrapped" />
-          <span className="web-zelle-titel web-einzeilig">{a.titel}</span>
-        </span>
+        <WebNameZelle kreis={<WebKreis icon={a.typ === 'teamer' ? ICON_GRUPPE_GEFUELLT : ICON_FUNKELN_GEFUELLT} ton="wrapped" />} titel={a.titel} />
       ),
     },
     ...(reiter === 'konfi' ? [{
@@ -135,13 +134,6 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
       zelle: (a) => (a.freigegeben
         ? <WebPill ton="erfolg" punkt>Freigegeben{a.freigegeben_at ? ` ${datumKurz(a.freigegeben_at)}` : ''}</WebPill>
         : <WebPill punkt>Nicht freigegeben</WebPill>),
-    },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      klasse: 'web-spalte-aktionen-schmal',
-      zelle: (a) => <WebZeilenAktionen name={a.titel} onLoeschen={() => onLoeschen(a)} loeschenTitel="Ausgabe löschen" />,
     },
   ];
 
@@ -187,12 +179,13 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
             text={leerText}
           />
         ) : (
-          <WebTabelle
+          <WebListe
             beschriftung={reiter === 'konfi' ? 'Ausgaben für Konfis' : 'Ausgaben fürs Team'}
             spalten={spalten}
             zeilen={sichtbar}
             zeileSchluessel={(a) => a.id}
             mittig
+            loeschen={{ onKlick: onLoeschen, beschriftung: (a) => `${a.titel} löschen`, titel: () => 'Ausgabe löschen' }}
           />
         )}
       </WebKarte>

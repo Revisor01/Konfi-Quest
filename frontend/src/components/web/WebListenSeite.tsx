@@ -23,6 +23,14 @@
 // eine -- und dieselbe Ordnung gilt fuer Liste und Kacheln; die Kacheln
 // haben keine Spaltenkoepfe und bekommen dafuer die Auswahl "Sortieren"
 // (`auswahl`), die dieselbe Sortierung setzt.
+//
+// Ohne `kacheln` ist die Seite nur eine Liste: kein Umschalter, nichts wird
+// gemerkt (Support-Konten, Vorgaenge, Posteingang). Rechnet die Seite Filter
+// und Suche selbst -- beim Server oder in einem Hook --, laesst sie `passt`
+// an den Wahlen und `felder` an der Suche weg; die Huelle zeigt dann nur die
+// Werkzeuge und nimmt die Eintraege, wie sie kommen. Was zwischen
+// Werkzeugzeile und Inhalt steht (Leiste fuer die Auswahl mehrerer Zeilen),
+// bringt `vorInhalt` mit.
 
 import React, { useMemo, useState } from 'react';
 import WebSeite, { type WebSeiteProps } from './WebSeite';
@@ -59,6 +67,8 @@ export interface WebListenReiter<R extends string> {
    * Vorlesesaetze der App passen nicht immer zur Zahl im Browser).
    */
   zahlTexte?: Partial<Record<R, string>>;
+  /** Die Zahl dieses Reiters in Rot (etwas, das Arbeit macht: neu, ungelesen). */
+  rot?: (wert: R) => boolean;
 }
 
 /** Ein Filter der Werkzeugzeile: Chips (Vorgabe) oder eine Auswahl. Die erste Wahl ist "alle". */
@@ -113,12 +123,15 @@ export interface WebListenSeiteProps<T, R extends string = string> extends Omit<
   ohneWerkzeugzeile?: boolean;
   /** "2 von 5 Konfis" -- steht nur da, wenn gesucht oder gefiltert wird. */
   zaehlzeile?: (sichtbar: number, gesamt: number) => string;
-  /** Welche Seite (die Wahl Liste/Kacheln wird je Seite gemerkt) und womit sie startet. */
-  ansicht: { seite: WebAnsichtSeite; vorgabe: WebAnsicht };
+  /** Welche Seite (die Wahl Liste/Kacheln wird je Seite gemerkt) und womit sie startet; nur mit `kacheln`. */
+  ansicht?: { seite: WebAnsichtSeite; vorgabe: WebAnsicht };
   eintraege: readonly T[];
   sortierung?: WebListenSortierung<T>;
   liste: Omit<WebListeProps<T>, 'zeilen' | 'leer' | 'sortierung' | 'onSortieren'>;
-  kacheln: Omit<WebKachelnProps<T>, 'eintraege'>;
+  /** Die Ansicht Kacheln; fehlt sie, ist die Seite nur eine Liste (ohne Umschalter). */
+  kacheln?: Omit<WebKachelnProps<T>, 'eintraege'>;
+  /** Zwischen Werkzeugzeile und Inhalt (Leiste fuer mehrere ausgewaehlte Zeilen). */
+  vorInhalt?: React.ReactNode;
   /** Steht statt Liste und Kacheln, wenn nach Suche und Filtern nichts bleibt. */
   leer: WebLeerProps;
   /** Die ganze Seite laedt: nur Platzhalter unter dem Kopf. */
@@ -136,10 +149,11 @@ const sortierWert = (s: { schluessel: string; richtung: 'auf' | 'ab' }): string 
 
 function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps<T, R>): React.ReactElement {
   const {
-    oben, kennzahlen, reiter, filter, suche, werkzeuge, ohneWerkzeugzeile = false, zaehlzeile, ansicht, eintraege, sortierung, liste, kacheln, leer,
+    oben, kennzahlen, reiter, filter, suche, werkzeuge, ohneWerkzeugzeile = false, zaehlzeile, ansicht, eintraege, sortierung, liste, kacheln, vorInhalt, leer,
     laden, fehler, inhaltLaden, inhaltFehler, children, ...seite
   } = props;
-  const [darstellung, setDarstellung] = useAnsicht(ansicht.seite, ansicht.vorgabe);
+  const [gemerkt, setDarstellung] = useAnsicht(kacheln && ansicht ? ansicht.seite : null, ansicht?.vorgabe ?? 'liste');
+  const darstellung: WebAnsicht = kacheln ? gemerkt : 'liste';
   // Je Reiter eine Ordnung: Wer im Team nach Badges sortiert, findet die Konfis unveraendert.
   const [sortierungen, setSortierungen] = useState<Record<string, WebSortierung>>({});
   const reiterSchluessel = reiter?.wert ?? '';
@@ -182,7 +196,7 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
     inhalt = <WebFehler text={inhaltFehler.text} onErneut={inhaltFehler.onErneut} />;
   } else if (sichtbar.length === 0) {
     inhalt = <WebLeer {...leer} />;
-  } else if (darstellung === 'kacheln') {
+  } else if (darstellung === 'kacheln' && kacheln) {
     inhalt = <WebKacheln {...kacheln} eintraege={sichtbar} />;
     kachelnSichtbar = true;
   } else {
@@ -195,6 +209,8 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
   const zahl = zaehlzeile && (sucht || gefiltert) ? zaehlzeile(sichtbar.length, eintraege.length) : undefined;
   const chipFilter = filterListe.filter((f) => (f.darstellung ?? 'chips') === 'chips');
   const auswahlFilter = filterListe.filter((f) => f.darstellung === 'auswahl');
+  // Eine Liste ohne Reiter, Filter, Suche, Knoepfe und Kacheln braucht keine Werkzeugzeile.
+  const mitWerkzeugen = Boolean(reiter || filterListe.length > 0 || suche || werkzeuge || zaehlzeile || kacheln);
 
   return (
     <WebSeite {...seite}>
@@ -206,7 +222,7 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
         </div>
       )}
 
-      {!ohneWerkzeugzeile && (
+      {mitWerkzeugen && !ohneWerkzeugzeile && (
         <div className={`web-werkzeuge${mitSortierAuswahl ? ' web-werkzeuge--kacheln' : ''}`}>
           {reiter && (
             <WebChips<R>
@@ -217,7 +233,10 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
                 const n = reiter.zahlen?.[w.schluessel];
                 const zahlText = reiter.zahlTexte ? reiter.zahlTexte[w.schluessel] : n === undefined ? undefined : w.zahlText?.(n);
                 const farbe = reiter.farbe?.[w.schluessel];
-                return { wert: w.schluessel, label: w.label, zahl: n, zahlText, rot: farbe === 'rot', orange: farbe === 'orange' };
+                return {
+                  wert: w.schluessel, label: w.label, zahl: n, zahlText,
+                  rot: farbe === 'rot' || Boolean(reiter.rot?.(w.schluessel)), orange: farbe === 'orange',
+                };
               })}
             />
           )}
@@ -258,11 +277,13 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
                 optionen={sortierung.auswahl.map((s) => ({ wert: sortierWert(s), label: s.label }))}
               />
             )}
-            {/* Der Umschalter steht immer ganz rechts. */}
-            <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />
+            {/* Der Umschalter steht immer ganz rechts -- wenn es Kacheln gibt. */}
+            {kacheln && <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />}
           </div>
         </div>
       )}
+
+      {vorInhalt}
 
       {/* Die Kacheln stehen frei im Raster, die Tabelle und jeder Hinweis in einer Karte. */}
       {kachelnSichtbar ? inhalt : <div className="web-karte">{inhalt}</div>}

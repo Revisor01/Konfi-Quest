@@ -68,8 +68,10 @@ const EINLADUNGEN = [
 const tabelle = (name = 'Benutzer:innen') => screen.getByRole('table', { name });
 const zeilen = (name = 'Benutzer:innen') => within(tabelle(name)).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
-const namen = () => zeilen().map((z) => zelle(z, 0).querySelector('.web-zeilenknopf, .web-zelle-titel')!.textContent);
-const zeileVon = (name: string) => zeilen().find((z) => zelle(z, 0).querySelector('.web-zeilenknopf, .web-zelle-titel')!.textContent === name)!;
+// Der Name steht als Knopf (darf bearbeiten) oder als Text in der Namenszelle (WebNameZelle).
+const NAME = '.web-link--zeile, .web-zelle-titel';
+const namen = () => zeilen().map((z) => zelle(z, 0).querySelector(NAME)!.textContent);
+const zeileVon = (name: string) => zeilen().find((z) => zelle(z, 0).querySelector(NAME)!.textContent === name)!;
 
 beforeEach(() => {
   vi.clearAllMocks();
