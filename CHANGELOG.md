@@ -132,8 +132,11 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 
 ### Geändert
-- Im Browser steht auf der Detailseite eines Events vor dem Titel derselbe
-  Kreis wie in der Liste, mit dem Stand des Events in Farbe und Symbol.
+- Im Browser steht auf der Detailseite eines Events und einer Person vor dem
+  Titel derselbe Kreis wie in der Liste: der Stand des Events in Farbe und
+  Symbol, bei einer Person ihre Initialen.
+- Im Browser klappt die Konfi-Historie einer Teamer:in wie die übrigen
+  Tabellen mit „Alle … anzeigen" auf.
 - Auf der Startseite von Teamer:innen stehen unter „Events" nur noch Events,
   zu denen sie selbst zugesagt haben oder auf deren Warteliste sie stehen.
   Bisher kamen alle Team-Events und alle Events mit „Teamer:innen gesucht"

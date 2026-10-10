@@ -150,8 +150,8 @@ Jedes Event und jede Challenge hat im Browser eine eigene Seite, für die
 Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
 
 - **Oben** stehen der Weg zurück zur Liste, der Titel und darunter Status und
-  Zeit. Bei einem Event steht vor dem Titel derselbe Kreis wie in der Liste:
-  sein Stand in Farbe und Symbol. Rechts daneben stehen **alle Aktionen** als Knöpfe; die wichtigste ist
+  Zeit. Vor dem Titel steht derselbe Kreis wie in der Liste: bei einem Event
+  sein Stand in Farbe und Symbol, bei einer Person ihre Initialen. Rechts daneben stehen **alle Aktionen** als Knöpfe; die wichtigste ist
   farbig hinterlegt, etwa **Anmelden** oder **Beitrag einreichen**.
 - **Darunter** steht ein Hinweis, wenn einer gilt — das Event ist abgesagt, die
   Abmeldefrist ist vorbei, ohne Netz geht es nicht —, und eine Reihe
@@ -170,6 +170,10 @@ Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
 Merkmale eines Events wie **Pflicht**, **Nur Team**, **Team gesucht**,
 **Konfirmation** und **Serie** stehen als farbige Marken mit Symbol, in
 denselben Farben wie die Zeichen in der App.
+
+Lange Tabellen zeigen zuerst nur ihre ersten Zeilen; **Alle … anzeigen**
+darunter klappt den Rest auf, **Weniger anzeigen** wieder zu. Ein Klick auf
+einen Spaltenkopf sortiert dabei immer die ganze Tabelle.
 
 Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
 

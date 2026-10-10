@@ -18,6 +18,10 @@
 // Antraege in den Aktivitaeten (Pruefen), zu verbuchende und anstehende
 // Termine in den Events (Anwesend / Nicht anwesend).
 //
+// Rahmen, Angaben-Karte und Zustaende stellt WebDetailSeite, die Tabellen
+// WebDetailListe (WebKonfiKarten; 10.10.2026). Vor dem Namen steht derselbe
+// Kreis wie in der Liste (WebKonfis): Initialen, gruen bei erreichtem Ziel.
+//
 // Daten und Aktionen kommen von der Seite (KonfiDetailView): Sie laedt, haelt
 // den Zustand und oeffnet dieselben Fenster und Rueckfragen wie in der App
 // (Aktivitaet, Bonus, Zertifikat, Bearbeiten, Passwort, Foto, Rueckblick).
@@ -32,16 +36,16 @@ import {
   ICON_SCHLUESSEL,
 } from '../../../shared/icons';
 import { datumKurz } from '../../../../utils/dateUtils';
-import { konfiPunkte } from '../../../../utils/konfiListe';
+import { initialen, konfiPunkte } from '../../../../utils/konfiListe';
 import { mitEinheit } from '../../../../utils/supportStatistik';
 import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
-import WebAngaben from '../../../web/WebAngaben';
+import type { WebAngabe } from '../../../web/WebAngaben';
+import WebKreis from '../../../web/WebKreis';
 import WebHinweis from '../../../web/WebHinweis';
 import type { WebKachelProps } from '../../../web/WebKachel';
 import { KENNZAHL_SYMBOL, type KennzahlSymbol } from '../../../web/kennzahlSymbole';
-import { WebFehler, WebLaden } from '../../../web/WebZustaende';
 import WebKonfiBadges from './WebKonfiBadges';
 import {
   AktivitaetenKarte,
@@ -66,21 +70,15 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
   const platzhalter = istTeamer ? 'Teamer:in' : 'Konfi';
   const name = konfi?.display_name || konfi?.name || platzhalter;
 
-  if (p.laedt) {
+  if (p.laedt || !konfi) {
     return (
-      <WebDetailSeite bereich="Verwaltung" titel={platzhalter} zurueck={zurueck} pageRef={p.pageRef}
-        zustand={(
-          <WebLaden karten={2} text={istTeamer ? 'Die Teamer:in wird geladen.' : 'Die Konfi wird geladen.'} />
-        )}
-      />
-    );
-  }
-  if (!konfi) {
-    return (
-      <WebDetailSeite bereich="Verwaltung" titel={platzhalter} zurueck={zurueck} pageRef={p.pageRef}
-        zustand={(
-          <WebFehler text="Diese Person konnte nicht geladen werden." onErneut={p.onNeuLaden} />
-        )}
+      <WebDetailSeite
+        bereich="Verwaltung"
+        titel={platzhalter}
+        zurueck={zurueck}
+        pageRef={p.pageRef}
+        laden={p.laedt ? (istTeamer ? 'Die Teamer:in wird geladen.' : 'Die Konfi wird geladen.') : undefined}
+        fehler={{ text: 'Diese Person konnte nicht geladen werden.', onErneut: p.onNeuLaden }}
       />
     );
   }
@@ -129,22 +127,16 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
     </>
   );
 
-  const angaben = (
-    <WebKarte titel="Angaben">
-      <WebAngaben
-        angaben={istTeamer
-          ? [
-            { label: 'Benutzername', wert: konfi.username ? `@${konfi.username}` : null },
-            { label: 'Rolle', wert: 'Teamer:in' },
-          ]
-          : [
-            { label: 'Jahrgang', wert: jahrgang || null },
-            { label: 'Benutzername', wert: konfi.username ? `@${konfi.username}` : null },
-            { label: 'Bonuspunkte', wert: mitEinheit(p.punkte.bonus, 'Punkt', 'Punkte') },
-          ]}
-      />
-    </WebKarte>
-  );
+  const angaben: WebAngabe[] = istTeamer
+    ? [
+      { label: 'Benutzername', wert: konfi.username ? `@${konfi.username}` : null },
+      { label: 'Rolle', wert: 'Teamer:in' },
+    ]
+    : [
+      { label: 'Jahrgang', wert: jahrgang || null },
+      { label: 'Benutzername', wert: konfi.username ? `@${konfi.username}` : null },
+      { label: 'Bonuspunkte', wert: mitEinheit(p.punkte.bonus, 'Punkt', 'Punkte') },
+    ];
 
   const aktionen = (
     <>
@@ -230,7 +222,6 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
 
   const seite = (
     <>
-      {angaben}
       {mitKonfirmation && <KonfirmationKarte konfi={konfi} anwesenheit={p.anwesenheit} onMatrix={p.onMatrix} />}
       {teamerSeit}
       <WebKonfiBadges konfiId={p.konfiId} rolle={istTeamer ? 'teamer' : 'konfi'} />
@@ -245,11 +236,15 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
       bereich="Verwaltung"
       zurueck={zurueck}
       titel={name}
+      kreis={istTeamer
+        ? <WebKreis text={initialen(name) || '??'} ton="teamer" gross />
+        : <WebKreis text={initialen(konfi.name || name)} ton={gesamt.erreicht ? 'erreicht' : 'konfis'} gross />}
       kennzeichen={kennzeichen}
       aktionen={aktionen}
       hinweis={hinweis}
       kennzahlen={kennzahlen}
       haupt={haupt}
+      angaben={angaben}
       seite={seite}
       pageRef={p.pageRef}
     />
