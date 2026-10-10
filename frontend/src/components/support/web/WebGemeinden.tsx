@@ -20,9 +20,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
-  ICON_BEARBEITEN,
   ICON_HINZUFUEGEN,
-  ICON_LOESCHEN,
   ICON_MAIL,
   ICON_ORGANISATION,
 } from '../../shared/icons';
@@ -50,7 +48,7 @@ import WebKnopf from '../../web/WebKnopf';
 import WebPill from '../../web/WebPill';
 import WebSuche from '../../web/WebSuche';
 import WebAkkordeon from '../../web/WebAkkordeon';
-import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import WebListe, { WebNameZelle, type WebSpalte } from '../../web/WebListe';
 import WebTreffer from '../../web/WebTreffer';
 import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import { useSupportDaten } from '../useSupportDaten';
@@ -135,12 +133,7 @@ const Tabelle: React.FC<{
       kopf: 'Gemeinde',
       breite: '20%',
       sortWert: (g) => g.display_name,
-      zelle: (g) => (
-        <>
-          <span className="web-zelle-titel"><WebTreffer text={g.display_name} suche={suche} /></span>
-          <span className="web-zelle-leise">angelegt {datumKurz(g.created_at)}</span>
-        </>
-      ),
+      zelle: (g) => <WebNameZelle titel={<WebTreffer text={g.display_name} suche={suche} />} unterzeile={`angelegt ${datumKurz(g.created_at)}`} />,
     },
     {
       schluessel: 'status',
@@ -193,36 +186,25 @@ const Tabelle: React.FC<{
       zelle: (g) => lizenzFinden(g.wunsch_lizenz)?.name ?? <span className="web-gedaempft">–</span>,
     },
     { schluessel: 'leitung', kopf: 'Gemeindeleitung', sortWert: (g) => g.leitung[0]?.display_name, zelle: (g) => <Leitung gemeinde={g} suche={suche} /> },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      klasse: 'web-spalte-aktionen',
-      kopfVersteckt: true,
-      zelle: (g) => (
-        <div className="web-aktionen">
-          <WebKnopf klein onClick={() => onBearbeiten(g)} aria-label={`${g.display_name} bearbeiten`}>
-            <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
-            <span className="web-knopf__text">Bearbeiten</span>
-          </WebKnopf>
-          <WebKnopf klein href={`/admin/support/post/gemeinde/${g.id}`} aria-label={`Schriftwechsel mit ${g.display_name}, schreiben`}>
-            <IonIcon icon={ICON_MAIL} aria-hidden="true" />
-            <span className="web-knopf__text">Schreiben</span>
-          </WebKnopf>
-          <WebKnopf klein symbol art="gefahr" onClick={() => onLoeschen(g)} aria-label={`${g.display_name} löschen`} title="Gemeinde löschen">
-            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-          </WebKnopf>
-        </div>
-      ),
-    },
   ];
   return (
-    <WebTabelle
+    <WebListe
       beschriftung={gruppe.name ? `Gemeinden im ${gruppe.name}` : 'Gemeinden ohne Zuordnung'}
       spalten={spalten}
       zeilen={gruppe.gemeinden}
       zeileSchluessel={(g) => g.id}
       zeileKlasse={(g) => (g.is_active ? undefined : 'web-zeile--gesperrt')}
       fest
+      aktionenBreite="184px"
+      // Schreiben fuehrt in den Schriftwechsel der Gemeinde, davor Bearbeiten und Loeschen wie ueberall.
+      weitere={(g) => (
+        <WebKnopf klein vorn href={`/admin/support/post/gemeinde/${g.id}`} aria-label={`Schriftwechsel mit ${g.display_name}, schreiben`}>
+          <IonIcon icon={ICON_MAIL} aria-hidden="true" />
+          <span className="web-knopf__text">Schreiben</span>
+        </WebKnopf>
+      )}
+      bearbeiten={{ onKlick: onBearbeiten, beschriftung: (g) => `${g.display_name} bearbeiten`, titel: () => 'Gemeinde bearbeiten' }}
+      loeschen={{ onKlick: onLoeschen, beschriftung: (g) => `${g.display_name} löschen`, titel: () => 'Gemeinde löschen' }}
     />
   );
 };

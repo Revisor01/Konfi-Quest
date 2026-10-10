@@ -442,7 +442,8 @@ Versionsüberschrift.
 - Im Browser stehen die Listen-Seiten auf einem gemeinsamen Gerüst aus
   Kennzahlen, Werkzeugzeile und Liste oder Kacheln; bei den Aktivitäten steht
   die Suche dadurch wie bei Konfis und Team links neben den Filtern.
-- Auch die Verwaltungsseiten unter Mehr folgen im Browser diesem Gerüst: Bearbeiten und Löschen stehen als Symbole am Ende der
+- Auch die übrigen Listen im Browser — Verwaltung unter Mehr und Support —
+  folgen diesem Gerüst: Bearbeiten und Löschen stehen als Symbole am Ende der
   Zeile, Filter und Suche in einer Zeile.
 - Ein Deploy bricht ab, bevor er etwas ändert, wenn auf dem Server die
   Zugangsdaten der Support-Mail fehlen, und nennt die fehlenden Einträge.

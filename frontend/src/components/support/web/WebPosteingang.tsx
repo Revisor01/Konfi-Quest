@@ -13,7 +13,8 @@
 // Die rote Zahl am Filter „Ungelesen" ist dieselbe wie die der Leiste
 // (navigation/supportMailZaehler.ts). Die Logik steht in
 // components/support/usePosteingang.ts und useMailAktionen.ts, dieselbe wie in
-// der App.
+// der App. Rahmen, Filter, Liste und Zustände stellt WebListenSeite
+// (10.10.2026) -- ohne Kacheln; den Filter rechnet der Hook.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -27,17 +28,15 @@ import { EINGANG_FILTER, type EingangFilter, type MailEingangWeb } from '../../.
 import { useSupportMailZaehler } from '../../../navigation/supportMailZaehler';
 import { usePosteingang } from '../usePosteingang';
 import { useMailAktionen } from '../useMailAktionen';
-import WebSeite from '../../web/WebSeite';
 import WebKnopf from '../../web/WebKnopf';
 import WebLink from '../../web/WebLink';
 import WebPill from '../../web/WebPill';
-import WebChips from '../../web/WebChips';
-import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import WebListenSeite from '../../web/WebListenSeite';
+import { type WebSpalte } from '../../web/WebListe';
 import { useFilterAusAdresse } from '../../web/useFilterAusAdresse';
 import WebEinsortieren from './WebEinsortieren';
 import '../../../theme/web/support.css';
-import { inFassung, leerVon } from '../../../seiten/beschreibung';
+import { leerVon } from '../../../seiten/beschreibung';
 import {
   POSTEINGANG_FILTER,
   POSTEINGANG_FILTER_BESCHRIFTUNG,
@@ -193,132 +192,73 @@ const WebPosteingang: React.FC = () => {
       sortWert: (m) => Date.parse(m.gesendet_am),
       zelle: (m) => <span title={datumUhrzeit(m.gesendet_am)}>{zeitpunktText(m.gesendet_am)}</span>,
     },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      breite: '232px',
-      klasse: 'web-spalte-aktionen',
-      zelle: (m) => {
-        const titel = m.betreff?.trim() || '(ohne Betreff)';
-        return (
-          <span className="web-zeilenaktionen">
-            {archiv ? (
-              <WebKnopf klein vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen([m.id]); }} aria-label={`Wiederherstellen: ${titel}`}>
-                <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-                Wiederherstellen
-              </WebKnopf>
-            ) : (
-              <>
-                <WebKnopf klein art="primaer" vorn onClick={() => setEinsortieren(m)} aria-label={`Einsortieren: ${titel}`}>Einsortieren</WebKnopf>
-                <WebKnopf klein symbol vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren([m.id]); }} aria-label={`Archivieren: ${titel}`} title="Archivieren">
-                  <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-                </WebKnopf>
-              </>
-            )}
-            <WebKnopf klein symbol art="gefahr" vorn disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen([m.id])} aria-label={`Löschen: ${titel}`} title="Löschen">
-              <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-            </WebKnopf>
-          </span>
-        );
-      },
-    },
   ];
-
-  let inhalt: React.ReactNode;
-  if (laedt) {
-    inhalt = <WebLaden karten={2} text="Der Posteingang wird geladen." />;
-  } else if (fehler) {
-    inhalt = <WebFehler text="Der Posteingang konnte nicht geladen werden." onErneut={() => { void neuLaden(); }} />;
-  } else {
-    inhalt = (
-      <>
-        <div className="web-statuszeile">
-          {status
-            ? (status.length > 0
-              ? status.map((p) => <PostfachStatus key={p.postfach} p={p} />)
-              : <div className="web-status">Der Server meldet keine Postfächer.</div>)
-            : <div className="web-status web-status--fehler" role="status">Der Zustand der Postfächer konnte nicht geladen werden.</div>}
-        </div>
-
-        <WebChips<EingangFilter>
-          beschriftung={POSTEINGANG_FILTER_BESCHRIFTUNG}
-          wert={filter}
-          onWert={setFilter}
-          // Filter aus der gemeinsamen Beschreibung (seiten/supportPosteingang.ts).
-          chips={inFassung(POSTEINGANG_FILTER, 'web').map((f) => {
-            const zahl = f.schluessel === 'archiv'
-              ? eingang.archivAnzahl ?? undefined
-              : f.schluessel === 'ungelesen' ? ungelesenZahl : zaehlen[f.schluessel];
-            return {
-              wert: f.schluessel,
-              label: f.label,
-              zahl,
-              rot: f.zahlText !== undefined,
-              zahlText: zahl === undefined ? undefined : f.zahlText?.(zahl),
-            };
-          })}
-        />
-
-        {sichtbar.length > 0 && (
-          <div className="web-sammelleiste" role="group" aria-label="Auswahl">
-            <label className="web-sammelleiste__alle">
-              <input
-                ref={alleKasten}
-                type="checkbox"
-                className="web-kontrollkasten"
-                checked={alleAn}
-                onChange={() => setAusgewaehlt(alleAn ? new Set() : new Set(sichtbar.map((m) => m.id)))}
-              />
-              {ausgewaehlt.size > 0 ? `${mailsText(ausgewaehlt.size)} ausgewählt` : 'Alle auswählen'}
-            </label>
-            {ausgewaehlt.size > 0 && (
-              <div className="web-sammelleiste__aktionen">
-                {archiv ? (
-                  <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen(ids).then(nachAktion); }}>
-                    <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-                    Wiederherstellen
-                  </WebKnopf>
-                ) : (
-                  <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren(ids).then(nachAktion); }}>
-                    <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-                    Archivieren
-                  </WebKnopf>
-                )}
-                <WebKnopf klein art="gefahr" disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
-                  <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-                  Löschen
-                </WebKnopf>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="web-karte">
-          {sichtbar.length > 0 ? (
-            <WebTabelle
-              beschriftung={archiv ? 'Archivierte Mails' : 'Mails im Posteingang'}
-              spalten={spalten}
-              zeilen={sichtbar}
-              zeileSchluessel={(m) => m.id}
-              zeileKlasse={(m) => (m.gelesen_am ? undefined : 'web-zeile--ungelesen')}
-              mittig
-              fest
-            />
-          ) : (
-            <WebLeer icon={archiv ? ICON_ARCHIV : ICON_MAIL} titel={POSTEINGANG_LEER_TITEL[filter]} text={leerVon(POSTEINGANG_FILTER, filter)} />
-          )}
-        </div>
-      </>
-    );
-  }
 
   const untertitel = archiv
     ? 'Archivierte Mails, die zu keinem Vorgang gehören'
     : `${mailsText(zaehlen.alle)} ${zaehlen.alle === 1 ? 'wartet' : 'warten'} darauf, einem Vorgang zugeordnet zu werden`;
 
+  const zeilenKnoepfe = (m: MailEingangWeb) => {
+    const titel = m.betreff?.trim() || '(ohne Betreff)';
+    return (
+      <>
+        {archiv ? (
+          <WebKnopf klein vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen([m.id]); }} aria-label={`Wiederherstellen: ${titel}`}>
+            <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+            Wiederherstellen
+          </WebKnopf>
+        ) : (
+          <>
+            <WebKnopf klein art="primaer" vorn onClick={() => setEinsortieren(m)} aria-label={`Einsortieren: ${titel}`}>Einsortieren</WebKnopf>
+            <WebKnopf klein symbol vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren([m.id]); }} aria-label={`Archivieren: ${titel}`} title="Archivieren">
+              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+            </WebKnopf>
+          </>
+        )}
+        <WebKnopf klein symbol art="gefahr" vorn disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen([m.id])} aria-label={`Löschen: ${titel}`} title="Löschen">
+          <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+        </WebKnopf>
+      </>
+    );
+  };
+
+  // Die Leiste fuer mehrere ausgewaehlte Mails steht zwischen Filter und Liste.
+  const sammelleiste = !laedt && !fehler && sichtbar.length > 0 ? (
+    <div className="web-sammelleiste" role="group" aria-label="Auswahl">
+      <label className="web-sammelleiste__alle">
+        <input
+          ref={alleKasten}
+          type="checkbox"
+          className="web-kontrollkasten"
+          checked={alleAn}
+          onChange={() => setAusgewaehlt(alleAn ? new Set() : new Set(sichtbar.map((m) => m.id)))}
+        />
+        {ausgewaehlt.size > 0 ? `${mailsText(ausgewaehlt.size)} ausgewählt` : 'Alle auswählen'}
+      </label>
+      {ausgewaehlt.size > 0 && (
+        <div className="web-sammelleiste__aktionen">
+          {archiv ? (
+            <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen(ids).then(nachAktion); }}>
+              <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+              Wiederherstellen
+            </WebKnopf>
+          ) : (
+            <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren(ids).then(nachAktion); }}>
+              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+              Archivieren
+            </WebKnopf>
+          )}
+          <WebKnopf klein art="gefahr" disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
+            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+            Löschen
+          </WebKnopf>
+        </div>
+      )}
+    </div>
+  ) : undefined;
+
   return (
-    <WebSeite
+    <WebListenSeite<MailEingangWeb, EingangFilter>
       bereich="Support"
       titel={POSTEINGANG_TITEL}
       untertitel={untertitel}
@@ -328,12 +268,48 @@ const WebPosteingang: React.FC = () => {
           Aktualisieren
         </WebKnopf>
       )}
+      laden={laedt ? { text: 'Der Posteingang wird geladen.', karten: 2 } : undefined}
+      fehler={!laedt && fehler ? { text: 'Der Posteingang konnte nicht geladen werden.', onErneut: () => { void neuLaden(); } } : undefined}
+      oben={(
+        <div className="web-statuszeile">
+          {status
+            ? (status.length > 0
+              ? status.map((p) => <PostfachStatus key={p.postfach} p={p} />)
+              : <div className="web-status">Der Server meldet keine Postfächer.</div>)
+            : <div className="web-status web-status--fehler" role="status">Der Zustand der Postfächer konnte nicht geladen werden.</div>}
+        </div>
+      )}
+      // Filter aus der gemeinsamen Beschreibung (seiten/supportPosteingang.ts); rot sind die, die Arbeit machen.
+      reiter={{
+        beschriftung: POSTEINGANG_FILTER_BESCHRIFTUNG,
+        wahlen: POSTEINGANG_FILTER,
+        wert: filter,
+        onWert: setFilter,
+        zahlen: {
+          ...zaehlen,
+          ungelesen: ungelesenZahl,
+          ...(eingang.archivAnzahl !== null ? { archiv: eingang.archivAnzahl } : { archiv: undefined }),
+        },
+        rot: (f) => POSTEINGANG_FILTER.find((w) => w.schluessel === f)?.zahlText !== undefined,
+      }}
+      vorInhalt={sammelleiste}
+      eintraege={sichtbar}
+      liste={{
+        beschriftung: archiv ? 'Archivierte Mails' : 'Mails im Posteingang',
+        spalten,
+        zeileSchluessel: (m) => m.id,
+        zeileKlasse: (m) => (m.gelesen_am ? undefined : 'web-zeile--ungelesen'),
+        mittig: true,
+        fest: true,
+        aktionenBreite: '232px',
+        weitere: zeilenKnoepfe,
+      }}
+      leer={{ icon: archiv ? ICON_ARCHIV : ICON_MAIL, titel: POSTEINGANG_LEER_TITEL[filter], text: leerVon(POSTEINGANG_FILTER, filter) }}
     >
-      {inhalt}
       {einsortieren && (
         <WebEinsortieren mail={{ id: einsortieren.id, betreff: einsortieren.betreff }} onSchliessen={() => setEinsortieren(null)} />
       )}
-    </WebSeite>
+    </WebListenSeite>
   );
 };
 

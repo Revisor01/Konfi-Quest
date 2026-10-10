@@ -28,7 +28,7 @@ import WebKnopf from '../../web/WebKnopf';
 import WebDialog from '../../web/WebDialog';
 import WebFeld from '../../web/WebFeld';
 import WebAuswahl from '../../web/WebAuswahl';
-import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
+import WebListe, { WebNameZelle, type WebAktion, type WebSpalte } from '../../web/WebListe';
 import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 
 const OHNE = 'ohne';
@@ -114,7 +114,7 @@ const WebStruktur: React.FC = () => {
       schluessel: 'name',
       kopf: 'Kirchenkreis',
       sortWert: (kk) => kk.name,
-      zelle: (kk) => <span className="web-zelle-titel">{kk.name}</span>,
+      zelle: (kk) => <WebNameZelle titel={kk.name} />,
     },
     {
       schluessel: 'gemeinden',
@@ -127,28 +127,21 @@ const WebStruktur: React.FC = () => {
         return n === null ? <span className="web-gedaempft">–</span> : String(n);
       },
     },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      breite: '264px',
-      zelle: (kk) => (
-        <div className="web-zeilenaktionen">
-          <WebKnopf klein onClick={() => setKkBearbeiten({ id: kk.id, name: kk.name, landeskircheId: kk.landeskirche_id })} aria-label={`${kk.name} bearbeiten`}>
-            <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
-            Bearbeiten
-          </WebKnopf>
-          <WebKnopf klein art="gefahr" onClick={() => kirchenkreisLoeschen(kk)} aria-label={`${kk.name} löschen`}>
-            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-            Löschen
-          </WebKnopf>
-        </div>
-      ),
-    },
   ];
+  // Bearbeiten und Loeschen am Ende der Zeile (WebListe, 10.10.2026).
+  const kkBearbeitenAktion: WebAktion<Kirchenkreis> = {
+    onKlick: (kk) => setKkBearbeiten({ id: kk.id, name: kk.name, landeskircheId: kk.landeskirche_id }),
+    beschriftung: (kk) => `${kk.name} bearbeiten`,
+    titel: () => 'Kirchenkreis bearbeiten',
+  };
+  const kkLoeschenAktion: WebAktion<Kirchenkreis> = {
+    onKlick: kirchenkreisLoeschen,
+    beschriftung: (kk) => `${kk.name} löschen`,
+    titel: () => 'Kirchenkreis löschen',
+  };
 
   const kreisTabelle = (beschriftung: string, kreise: readonly Kirchenkreis[]) => (
-    <WebTabelle beschriftung={beschriftung} spalten={spalten} zeilen={kreise} zeileSchluessel={(k) => k.id} mittig fest />
+    <WebListe beschriftung={beschriftung} spalten={spalten} zeilen={kreise} zeileSchluessel={(k) => k.id} mittig fest bearbeiten={kkBearbeitenAktion} loeschen={kkLoeschenAktion} />
   );
 
   const ohneLandeskirche = kirchenkreise.filter((k) => k.landeskirche_id == null);

@@ -12,14 +12,15 @@
 // 409 ab; den Satz zeigt die Seite als Hinweis, der stehen bleibt.
 //
 // Die Logik (laden, anlegen, sperren, loeschen, Passwort) ist dieselbe wie in
-// der App: components/support/useSupportKonten.ts.
+// der App: components/support/useSupportKonten.ts. Rahmen, Liste und Zustaende
+// stellt WebListenSeite (10.10.2026) -- ohne Kacheln, die wenigen Konten
+// stehen nur als Liste.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_ENTSPERRT,
   ICON_HINZUFUEGEN,
-  ICON_LOESCHEN,
   ICON_PERSON,
   ICON_SCHLUESSEL,
   ICON_SICHTBAR,
@@ -32,14 +33,13 @@ import { mitEinheit } from '../../../utils/supportStatistik';
 import { zeitpunktText } from '../../../utils/postfach';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { LEERES_KONTO, useSupportKonten } from '../useSupportKonten';
-import WebSeite from '../../web/WebSeite';
 import WebKnopf from '../../web/WebKnopf';
 import WebPill from '../../web/WebPill';
 import WebHinweis from '../../web/WebHinweis';
 import WebDialog from '../../web/WebDialog';
 import WebFeld from '../../web/WebFeld';
-import WebTabelle, { type WebSpalte } from '../../web/WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
+import WebListenSeite from '../../web/WebListenSeite';
+import { WebNameZelle, type WebSpalte } from '../../web/WebListe';
 import { kontoStatusRang } from '../../../utils/statusReihenfolge';
 
 const WebKonten: React.FC = () => {
@@ -57,21 +57,6 @@ const WebKonten: React.FC = () => {
     </WebKnopf>
   );
 
-  if (laedt && !konten) {
-    return (
-      <WebSeite bereich="Support" titel="Support-Konten">
-        <WebLaden karten={1} text="Die Support-Konten werden geladen." />
-      </WebSeite>
-    );
-  }
-  if (fehler || !konten) {
-    return (
-      <WebSeite bereich="Support" titel="Support-Konten">
-        <WebFehler text="Die Support-Konten konnten nicht geladen werden." onErneut={() => { void laden(); }} />
-      </WebSeite>
-    );
-  }
-
   const spalten: Array<WebSpalte<SupportKonto>> = [
     {
       schluessel: 'name',
@@ -79,12 +64,10 @@ const WebKonten: React.FC = () => {
       breite: '17%',
       sortWert: (k) => k.display_name,
       zelle: (k) => (
-        <>
-          <span className="web-zelle-titel">{k.display_name}{k.id === userId ? ' (du)' : ''}</span>
-          {k.gemeinden.length > 0 && (
-            <span className="web-zelle-leise">Gast in {k.gemeinden.map((g) => g.display_name || g.name).join(', ')}</span>
-          )}
-        </>
+        <WebNameZelle
+          titel={`${k.display_name}${k.id === userId ? ' (du)' : ''}`}
+          unterzeile={k.gemeinden.length > 0 ? `Gast in ${k.gemeinden.map((g) => g.display_name || g.name).join(', ')}` : undefined}
+        />
       ),
     },
     {
@@ -120,66 +103,59 @@ const WebKonten: React.FC = () => {
         ? <span title={datumUhrzeit(k.last_login_at)}>{zeitpunktText(k.last_login_at)}</span>
         : <span className="web-gedaempft">noch nie</span>),
     },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      breite: '372px',
-      zelle: (k) => (
-        <div className="web-zeilenaktionen">
-          <WebKnopf klein onClick={() => setPasswortFuer({ id: k.id, password: '', zeigen: false })} aria-label={`Passwort für ${k.username} setzen`}>
-            <IonIcon icon={ICON_SCHLUESSEL} aria-hidden="true" />
-            Passwort
-          </WebKnopf>
-          {k.id !== userId && (
-            <>
-              <WebKnopf klein onClick={() => sperrenUmschalten(k)} disabled={beschaeftigt} aria-label={`${k.display_name} ${k.is_active ? 'sperren' : 'entsperren'}`}>
+  ];
+
+  // Das eigene Konto bietet die Seite nicht zum Sperren oder Loeschen an: Wer sich selbst sperrt, ist sofort draussen.
+  const fremd = (k: SupportKonto) => k.id !== userId;
+  const seiteLaedt = laedt && !konten;
+
+  return (
+    <WebListenSeite<SupportKonto>
+      bereich="Support"
+      titel="Support-Konten"
+      untertitel={konten && !fehler ? `${mitEinheit(konten.length, 'Support-Konto', 'Support-Konten')} ohne Gemeinde` : undefined}
+      aktionen={konten && !fehler ? anlegenKnopf : undefined}
+      laden={seiteLaedt ? { text: 'Die Support-Konten werden geladen.' } : undefined}
+      fehler={!seiteLaedt && (fehler || !konten) ? { text: 'Die Support-Konten konnten nicht geladen werden.', onErneut: () => { void laden(); } } : undefined}
+      oben={(
+        <WebHinweis art="hinweis">
+          Konten ohne Gemeinde für den Support. Sie melden sich nur im Browser an und haben dieselben Rechte wie jedes
+          Super-Admin-Konto. In eine Gemeinde kommen sie nur als sichtbare Gemeindeleitung, unter Gemeinden › Mitglieder &amp; Zuweisungen.
+        </WebHinweis>
+      )}
+      eintraege={konten ?? []}
+      liste={{
+        beschriftung: 'Support-Konten',
+        spalten,
+        zeileSchluessel: (k) => k.id,
+        zeileKlasse: (k) => (k.is_active ? undefined : 'web-zeile--gesperrt'),
+        mittig: true,
+        fest: true,
+        aktionenBreite: '320px',
+        weitere: (k) => (
+          <>
+            <WebKnopf klein vorn onClick={() => setPasswortFuer({ id: k.id, password: '', zeigen: false })} aria-label={`Passwort für ${k.username} setzen`}>
+              <IonIcon icon={ICON_SCHLUESSEL} aria-hidden="true" />
+              Passwort
+            </WebKnopf>
+            {fremd(k) && (
+              <WebKnopf klein vorn onClick={() => sperrenUmschalten(k)} disabled={beschaeftigt} aria-label={`${k.display_name} ${k.is_active ? 'sperren' : 'entsperren'}`}>
                 <IonIcon icon={k.is_active ? ICON_SPERRE : ICON_ENTSPERRT} aria-hidden="true" />
                 {k.is_active ? 'Sperren' : 'Entsperren'}
               </WebKnopf>
-              <WebKnopf klein art="gefahr" onClick={() => loeschen(k)} disabled={beschaeftigt} aria-label={`${k.display_name} löschen`}>
-                <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-                Löschen
-              </WebKnopf>
-            </>
-          )}
-        </div>
-      ),
-    },
-  ];
-
-  return (
-    <WebSeite
-      bereich="Support"
-      titel="Support-Konten"
-      untertitel={`${mitEinheit(konten.length, 'Support-Konto', 'Support-Konten')} ohne Gemeinde`}
-      aktionen={anlegenKnopf}
+            )}
+          </>
+        ),
+        loeschen: {
+          onKlick: loeschen,
+          beschriftung: (k) => `${k.display_name} löschen`,
+          titel: () => 'Support-Konto löschen',
+          zeigen: fremd,
+          deaktiviert: () => beschaeftigt,
+        },
+      }}
+      leer={{ icon: ICON_PERSON, titel: 'Noch keine Support-Konten', text: 'Lege ein Konto ohne Gemeinde an.' }}
     >
-      <WebHinweis art="hinweis">
-        Konten ohne Gemeinde für den Support. Sie melden sich nur im Browser an und haben dieselben Rechte wie jedes
-        Super-Admin-Konto. In eine Gemeinde kommen sie nur als sichtbare Gemeindeleitung, unter Gemeinden › Mitglieder &amp; Zuweisungen.
-      </WebHinweis>
-
-      <div className="web-karte">
-        {konten.length === 0 ? (
-          <WebLeer
-            icon={ICON_PERSON}
-            titel="Noch keine Support-Konten"
-            text="Lege ein Konto ohne Gemeinde an."
-          />
-        ) : (
-          <WebTabelle
-            beschriftung="Support-Konten"
-            spalten={spalten}
-            zeilen={konten}
-            zeileSchluessel={(k) => k.id}
-            zeileKlasse={(k) => (k.is_active ? undefined : 'web-zeile--gesperrt')}
-            mittig
-            fest
-          />
-        )}
-      </div>
-
       {neu && (
         <WebDialog
           titel="Support-Konto anlegen"
@@ -247,7 +223,7 @@ const WebKonten: React.FC = () => {
           </div>
         </WebDialog>
       )}
-    </WebSeite>
+    </WebListenSeite>
   );
 };
 
