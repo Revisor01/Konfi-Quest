@@ -134,18 +134,26 @@ const AUFNAHMEN = {
         // laeuft, haengt am Datum, und eine abgelaufene ist aus der Liste
         // verschwunden. Frueher standen hier zwei feste Titel — als deren
         // Frist ablief, schlugen beide Aufnahmen still fehl. Genommen wird
-        // jetzt, was oben in der Liste steht.
+        // die oberste Challenge mit mindestens zwei geteilten Beitraegen:
+        // Am 10.10.2026 stand oben eine ohne Beitraege, das Detailbild zeigte
+        // nur "Noch keine geteilten Beiträge".
         name: 'challenge-detail',
         pfad: '/konfi/challenges',
-        aktion: (page) => challengeOeffnen(page, 1),
+        aktion: async (page) => {
+          detailPosition = await challengeMitBeitraegenOeffnen(page, 1, 2);
+        },
       },
       {
-        // Bewusst eine andere Challenge als beim Detail — so zeigen die
-        // beiden Bilder nicht zweimal dasselbe.
+        // Moeglichst eine andere Challenge als beim Detail — so zeigen die
+        // beiden Bilder nicht zweimal dasselbe. Hat keine weitere Beitraege
+        // (10.10.2026: drei Challenges, nur eine mit Beitraegen), dann
+        // dieselbe wie beim Detail: Das Detail zeigt ihren Kopf, dieses Bild
+        // ihre Beitraege. Ohne den Rueckfall blieb die Liste stehen.
         name: 'challenge-feed',
         pfad: '/konfi/challenges',
         aktion: async (page) => {
-          await challengeMitBeitraegenOeffnen(page, 2);
+          const pos = await challengeMitBeitraegenOeffnen(page, detailPosition + 1, 1);
+          if (pos === null) await challengeOeffnen(page, detailPosition || 1);
           await zumFeedScrollen(page);
         },
       },
@@ -205,21 +213,35 @@ async function challengeVerlassen(page) {
  * haengt am Datenstand, deshalb wird gesucht statt fest verdrahtet. Findet
  * sich keine, bleibt die letzte der Liste offen (lieber ein leeres Feed als
  * gar kein Bild).
+ *
+ * "mindestens" ist die Zahl der geteilten Beitraege, die der Feed zeigen
+ * muss. Gezaehlt wird nur auf der sichtbaren Seite der Challenge (die
+ * Beitragskarten tragen dieselbe Klasse wie die Karten der Liste dahinter).
+ * Zurueck kommt die Position der geoeffneten Challenge, oder null, wenn ab
+ * "ab" keine mehr in der Liste steht (dann ist nichts geoeffnet).
  */
-async function challengeMitBeitraegenOeffnen(page, ab) {
+let detailPosition = 0;
+
+async function beitraegeImFeed(page) {
+  return page.evaluate(() => {
+    const inhalt = [...document.querySelectorAll('ion-content')].find((c) =>
+      c.getBoundingClientRect().width > 0 &&
+      [...c.querySelectorAll('ion-list-header')].some((h) => (h.innerText || '').includes('Aus deiner Gruppe'))
+    );
+    return inhalt ? inhalt.querySelectorAll('.app-list-item--challenges').length : 0;
+  });
+}
+
+async function challengeMitBeitraegenOeffnen(page, ab, mindestens = 1) {
   const anzahl = await page.locator('.app-list-item--challenges').count();
   for (let pos = ab; pos <= anzahl; pos++) {
     await challengeOeffnen(page, pos);
-    const leer = await page
-      .getByText('Noch keine geteilten Beiträge')
-      .filter({ visible: true })
-      .first()
-      .isVisible()
-      .catch(() => false);
-    if (!leer || pos === anzahl) return;
+    if ((await beitraegeImFeed(page)) >= mindestens || pos === anzahl) return pos;
     await challengeVerlassen(page);
     await page.waitForTimeout(600);
   }
+  // Ab "ab" gab es gar keine Challenge mehr: nichts geoeffnet.
+  return null;
 }
 
 /**
