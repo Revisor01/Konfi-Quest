@@ -1,8 +1,7 @@
 import { join } from 'node:path';
 import { readFileSync } from 'node:fs';
-// @ts-expect-error -- 'plist' bringt keine eigenen Typen mit (kommt ueber
-// Capacitor als Abhaengigkeit), wie in privacyManifest.test.ts.
-import plist from 'plist';
+// plist ab 5.0 mit eigenen Typen und nur benannten Exporten (kein default).
+import * as plist from 'plist';
 import { describe, it, expect } from 'vitest';
 
 /**
