@@ -21,7 +21,8 @@
 //
 // Eine Komponente fuer ALLE Zustaende der Seite -- laedt, Hinweis ("gibt es
 // nicht mehr", "nicht deinem Jahrgang zugeordnet", ohne Netz), Challenge --
-// mit einem einzigen Rahmen. Wechselte der Rahmen beim Laden der Challenge
+// mit einer einzigen Huelle (WebDetailSeite ohne eigene IonPage; die IonPage
+// haelt ChallengeLeitungPage). Wechselte die Huelle beim Laden der Challenge
 // die Komponente, bauten sich Kopfzeile und IonContent neu auf; Ionic misst
 // den alten noch (TypeError in readDimensions).
 
@@ -29,14 +30,12 @@ import React, { useId, useState, type RefObject } from 'react';
 import { IonIcon } from '@ionic/react';
 import WebBadgeSymbol from '../../../konfi/web/WebBadgeSymbol';
 import { ICON_BEARBEITEN, ICON_HINZUFUEGEN, ICON_OFFLINE, ICON_ALBEN, ICON_TEILEN } from '../../icons';
-import WebChallengeRahmen from './WebChallengeRahmen';
-import WebChallengeHinweis from './WebChallengeHinweis';
+import { challengeZustand } from './webChallengeZustand';
 import WebChallengeChips, { type WebChallengeChip } from './WebChallengeChips';
 import WebBeitrag from './WebBeitrag';
 import WebKarte from '../../../web/WebKarte';
 import { type WebKachelProps } from '../../../web/WebKachel';
-import { WebDetailInhalt } from '../../../web/WebDetailSeite';
-import WebAngaben from '../../../web/WebAngaben';
+import WebDetailSeite, { type WebDetailSeiteProps } from '../../../web/WebDetailSeite';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
@@ -149,8 +148,8 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
     setGrund('');
   };
 
-  // Alles Weitere gibt es nur mit einer Challenge.
-  const renderChallenge = (challenge: AdminChallenge) => {
+  // Alles Weitere gibt es nur mit einer Challenge: Kennzahlen, Inhalt, Angaben.
+  const inhaltVon = (challenge: AdminChallenge): Pick<WebDetailSeiteProps, 'kennzahlen' | 'haupt' | 'angaben' | 'seite'> => {
     const zielgruppe = AUDIENCE_LABEL[zielgruppeVon(challenge)];
     const jahrgaenge = challenge.jahrgaenge ?? [];
     const autor = challenge.author_name || challenge.author_freetext || null;
@@ -191,156 +190,147 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
       { label: 'Laufzeit', wert: laufzeit.wert, zusatz: laufzeit.zusatz },
     ];
 
-    return (
-      <WebDetailInhalt
-        kennzahlen={kennzahlen}
-        haupt={(
-          <>
-            <WebKarte titel={beendet ? 'Worum ging es?' : 'Worum geht es?'}>
-              <p className="web-challenge-aufgabe">{challenge.description}</p>
-              <ul className="web-challenge-aufgabe__meta">
-                <li>{statusZeile}</li>
-                {autor && <li>Gestellt von {autor}</li>}
-              </ul>
-            </WebKarte>
+    return {
+      kennzahlen,
+      haupt: (
+        <>
+          <WebKarte titel={beendet ? 'Worum ging es?' : 'Worum geht es?'}>
+            <p className="web-challenge-aufgabe">{challenge.description}</p>
+            <ul className="web-challenge-aufgabe__meta">
+              <li>{statusZeile}</li>
+              {autor && <li>Gestellt von {autor}</li>}
+            </ul>
+          </WebKarte>
 
-            {neu && neu.anzahl > 0 && (
-              <WebHinweis art="hinweis" titel="Seit deinem letzten Besuch">
-                {neu.anzahl} {neu.text}
-              </WebHinweis>
-            )}
+          {neu && neu.anzahl > 0 && (
+            <WebHinweis art="hinweis" titel="Seit deinem letzten Besuch">
+              {neu.anzahl} {neu.text}
+            </WebHinweis>
+          )}
 
-            {!darfFreigeben && (
-              <WebHinweis art="hinweis">{HINWEIS_OHNE_FREIGABERECHT}</WebHinweis>
-            )}
+          {!darfFreigeben && (
+            <WebHinweis art="hinweis">{HINWEIS_OHNE_FREIGABERECHT}</WebHinweis>
+          )}
 
-            <section className="web-challenge-abschnitt" aria-labelledby={beitraegeId}>
-              <div className="web-challenge-abschnitt__kopf">
-                <h2 id={beitraegeId} className="web-karte__titel">{anzahlBeitraege(filtered.length)}</h2>
-                <WebChallengeChips<StatusFilter>
-                  beschriftung={CHALLENGE_DETAIL_REITER_BESCHRIFTUNG}
-                  chips={chips}
-                  wert={effectiveFilter}
-                  onWert={setStatusFilter}
+          <section className="web-challenge-abschnitt" aria-labelledby={beitraegeId}>
+            <div className="web-challenge-abschnitt__kopf">
+              <h2 id={beitraegeId} className="web-karte__titel">{anzahlBeitraege(filtered.length)}</h2>
+              <WebChallengeChips<StatusFilter>
+                beschriftung={CHALLENGE_DETAIL_REITER_BESCHRIFTUNG}
+                chips={chips}
+                wert={effectiveFilter}
+                onWert={setStatusFilter}
+              />
+            </div>
+
+            {loading ? (
+              <WebLaden karten={2} text="Die Beiträge werden geladen." />
+            ) : offlineOhneStand ? (
+              <div className="web-karte">
+                <WebLeer icon={ICON_OFFLINE} titel="Keine Verbindung" text="Die Liste der Beiträge ist offline nicht verfügbar." />
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="web-karte">
+                <WebLeer
+                  icon={ICON_ALBEN}
+                  titel={CHALLENGE_DETAIL_LEER_TITEL}
+                  text={effectiveFilter === 'feed' && counts.pending > 0
+                    ? CHALLENGE_DETAIL_FEED_WARTET
+                    : leerVon(CHALLENGE_DETAIL_LEITUNG_REITER, effectiveFilter)}
                 />
               </div>
-
-              {loading ? (
-                <WebLaden karten={2} text="Die Beiträge werden geladen." />
-              ) : offlineOhneStand ? (
-                <div className="web-karte">
-                  <WebLeer icon={ICON_OFFLINE} titel="Keine Verbindung" text="Die Liste der Beiträge ist offline nicht verfügbar." />
-                </div>
-              ) : filtered.length === 0 ? (
-                <div className="web-karte">
-                  <WebLeer
-                    icon={ICON_ALBEN}
-                    titel={CHALLENGE_DETAIL_LEER_TITEL}
-                    text={effectiveFilter === 'feed' && counts.pending > 0
-                      ? CHALLENGE_DETAIL_FEED_WARTET
-                      : leerVon(CHALLENGE_DETAIL_LEITUNG_REITER, effectiveFilter)}
-                  />
-                </div>
-              ) : (
-                <ul className="web-beitraege" aria-label="Beiträge">
-                  {filtered.map((b) => {
-                    const stand = getStatusBadge(b, challenge);
-                    const einwilligung = b.konfi_consent ? CONSENT_BADGE[b.konfi_consent] : null;
-                    const name = b.konfi_name || 'Unbekannt';
-                    const eigen = Boolean(user?.id) && b.user_id === user?.id;
-                    const beschaeftigt = busyId === b.id;
-                    return (
-                      <WebBeitrag
-                        key={b.id}
-                        name={name}
-                        wann={`${b.jahrgang_name ? `${b.jahrgang_name} · ` : ''}${datumUhrzeit(b.created_at)}`}
-                        mediaType={b.media_type}
-                        eigen={eigen}
-                        ausgeblendet={b.moderation_status === 'hidden'}
-                        text={b.text_content}
-                        link={b}
-                        datei={b.file_path ? { filePath: b.file_path, fileName: b.file_name } : undefined}
-                        onOeffnen={(pfad, dateiname) => { void dateiOeffnen(pfad, dateiname); }}
-                        grund={b.moderation_note}
-                        marken={(
-                          <>
-                            <WebPill ton={tonVonFarbe(stand.color)} punkt>{stand.label}</WebPill>
-                            {einwilligung && <WebPill ton={tonVonFarbe(einwilligung.color)}>{einwilligung.label}</WebPill>}
-                          </>
-                        )}
-                        fuss={(
-                          <>
-                            {availableActions(b).map((a) => (
-                              <WebKnopf
-                                key={a.key}
-                                klein
-                                art={a.key === 'approve' ? 'primaer' : a.role === 'destructive' ? 'gefahr' : 'sekundaer'}
-                                disabled={beschaeftigt}
-                                aria-label={`${a.text}: ${name}`}
-                                onClick={() => { if (a.key === 'hide') { setGrund(''); setAusblenden(b); } else a.run(); }}
-                              >
-                                <IonIcon icon={a.icon} aria-hidden="true" />
-                                {a.text}
-                              </WebKnopf>
-                            ))}
-                          </>
-                        )}
-                      />
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-          </>
-        )}
-        seite={(
-          <>
-            <WebKarte titel="Angaben">
-              <WebAngaben
-                angaben={[
-                  { label: 'Status', wert: <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill> },
-                  {
-                    label: 'Zeitraum',
-                    wert: (
-                      <>
-                        {zeitraumText(challenge, status)}
-                        {status === 'active' && <span className="web-zelle-leise">{restzeitText(formatRemaining(challenge.ends_at))}</span>}
-                      </>
-                    ),
-                  },
-                  { label: 'Zielgruppe', wert: zielgruppe },
-                  {
-                    label: 'Jahrgänge',
-                    wert: zielgruppeVon(challenge) === 'nur_team' ? 'Alle im Team der Gemeinde' : jahrgaenge.map((j) => j.name).join(', '),
-                  },
-                  { label: 'Sichtbarkeit', wert: VISIBILITY_LABEL[challenge.visibility] ?? challenge.visibility },
-                  ...(challenge.visibility !== 'private'
-                    ? [{ label: 'Freigabe', wert: challenge.moderated ? 'Das Team gibt Beiträge frei' : 'Beiträge sind sofort sichtbar' }]
-                    : []),
-                  { label: 'Antwort mit', wert: (challenge.allowed_media ?? []).map((m) => MEDIEN_WORT[m] ?? m).join(', ') },
-                  { label: 'Beiträge je Person', wert: challenge.allow_multiple ? 'Beliebig viele' : 'Einer' },
-                ]}
-              />
-            </WebKarte>
-
-            <WebKarte titel="Stempel">
-              <div className="web-challenge-stempelinfo">
-                {/* Derselbe Kreis wie in den Stempel-Rastern (WebAuszeichnungen). */}
-                <WebBadgeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} farbe="var(--app-color-challenges)" erreicht />
-                <div>
-                  <strong>{challenge.badge_name}</strong>
-                  <p className="web-challenge-hinweistext">
-                    {challenge.moderated
-                      ? 'Mit der Freigabe ihres ersten Beitrags bekommt eine Person diesen Stempel.'
-                      : 'Wer einen Beitrag einreicht, bekommt diesen Stempel.'}
-                  </p>
-                </div>
-              </div>
-            </WebKarte>
-          </>
-        )}
-      />
-    );
+            ) : (
+              <ul className="web-beitraege" aria-label="Beiträge">
+                {filtered.map((b) => {
+                  const stand = getStatusBadge(b, challenge);
+                  const einwilligung = b.konfi_consent ? CONSENT_BADGE[b.konfi_consent] : null;
+                  const name = b.konfi_name || 'Unbekannt';
+                  const eigen = Boolean(user?.id) && b.user_id === user?.id;
+                  const beschaeftigt = busyId === b.id;
+                  return (
+                    <WebBeitrag
+                      key={b.id}
+                      name={name}
+                      wann={`${b.jahrgang_name ? `${b.jahrgang_name} · ` : ''}${datumUhrzeit(b.created_at)}`}
+                      mediaType={b.media_type}
+                      eigen={eigen}
+                      ausgeblendet={b.moderation_status === 'hidden'}
+                      text={b.text_content}
+                      link={b}
+                      datei={b.file_path ? { filePath: b.file_path, fileName: b.file_name } : undefined}
+                      onOeffnen={(pfad, dateiname) => { void dateiOeffnen(pfad, dateiname); }}
+                      grund={b.moderation_note}
+                      marken={(
+                        <>
+                          <WebPill ton={tonVonFarbe(stand.color)} punkt>{stand.label}</WebPill>
+                          {einwilligung && <WebPill ton={tonVonFarbe(einwilligung.color)}>{einwilligung.label}</WebPill>}
+                        </>
+                      )}
+                      fuss={(
+                        <>
+                          {availableActions(b).map((a) => (
+                            <WebKnopf
+                              key={a.key}
+                              klein
+                              art={a.key === 'approve' ? 'primaer' : a.role === 'destructive' ? 'gefahr' : 'sekundaer'}
+                              disabled={beschaeftigt}
+                              aria-label={`${a.text}: ${name}`}
+                              onClick={() => { if (a.key === 'hide') { setGrund(''); setAusblenden(b); } else a.run(); }}
+                            >
+                              <IonIcon icon={a.icon} aria-hidden="true" />
+                              {a.text}
+                            </WebKnopf>
+                          ))}
+                        </>
+                      )}
+                    />
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </>
+      ),
+      angaben: [
+        { label: 'Status', wert: <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill> },
+        {
+          label: 'Zeitraum',
+          wert: (
+            <>
+              {zeitraumText(challenge, status)}
+              {status === 'active' && <span className="web-zelle-leise">{restzeitText(formatRemaining(challenge.ends_at))}</span>}
+            </>
+          ),
+        },
+        { label: 'Zielgruppe', wert: zielgruppe },
+        {
+          label: 'Jahrgänge',
+          wert: zielgruppeVon(challenge) === 'nur_team' ? 'Alle im Team der Gemeinde' : jahrgaenge.map((j) => j.name).join(', '),
+        },
+        { label: 'Sichtbarkeit', wert: VISIBILITY_LABEL[challenge.visibility] ?? challenge.visibility },
+        ...(challenge.visibility !== 'private'
+          ? [{ label: 'Freigabe', wert: challenge.moderated ? 'Das Team gibt Beiträge frei' : 'Beiträge sind sofort sichtbar' }]
+          : []),
+        { label: 'Antwort mit', wert: (challenge.allowed_media ?? []).map((m) => MEDIEN_WORT[m] ?? m).join(', ') },
+        { label: 'Beiträge je Person', wert: challenge.allow_multiple ? 'Beliebig viele' : 'Einer' },
+      ],
+      seite: (
+        <WebKarte titel="Stempel">
+          <div className="web-challenge-stempelinfo">
+            {/* Derselbe Kreis wie in den Stempel-Rastern (WebAuszeichnungen). */}
+            <WebBadgeSymbol icon={getChallengeBadgeIcon(challenge.badge_icon)} farbe="var(--app-color-challenges)" erreicht />
+            <div>
+              <strong>{challenge.badge_name}</strong>
+              <p className="web-challenge-hinweistext">
+                {challenge.moderated
+                  ? 'Mit der Freigabe ihres ersten Beitrags bekommt eine Person diesen Stempel.'
+                  : 'Wer einen Beitrag einreicht, bekommt diesen Stempel.'}
+              </p>
+            </div>
+          </div>
+        </WebKarte>
+      ),
+    };
   };
 
   // Alle Aktionen der Seite stehen im Kopf; die wichtigste -- der eigene Beitrag -- rechts und primaer.
@@ -366,10 +356,12 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
   ) : undefined;
 
   return (
-    <WebChallengeRahmen
+    <WebDetailSeite
+      ohneIonPage
+      bereich="Challenges"
       titel={challenge?.title ?? 'Challenge'}
       zurueck={{ href: listenPfad, text: 'Alle Challenges' }}
-      untertitel={challenge ? (
+      kennzeichen={challenge ? (
         <span className="web-pillreihe">
           <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill>
           <WebPill>{AUDIENCE_LABEL[zielgruppeVon(challenge)]}</WebPill>
@@ -377,9 +369,8 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
         </span>
       ) : undefined}
       aktionen={kopfAktionen}
+      {...(challenge ? inhaltVon(challenge) : challengeZustand(hinweisArt, onBack, onNochmal))}
     >
-      {challenge ? renderChallenge(challenge) : <WebChallengeHinweis art={hinweisArt} onBack={onBack} onNochmal={onNochmal} />}
-
       {ausblenden && (
         <WebDialog
           titel="Beitrag ausblenden"
@@ -396,7 +387,7 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
           <WebTextfeld label="Begründung (optional)" wert={grund} onWert={(w) => setGrund(w.slice(0, 500))} zeilen={4} hinweis="Höchstens 500 Zeichen." />
         </WebDialog>
       )}
-    </WebChallengeRahmen>
+    </WebDetailSeite>
   );
 };
 
