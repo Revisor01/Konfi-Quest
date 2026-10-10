@@ -442,6 +442,9 @@ Versionsüberschrift.
 - Im Browser stehen die Listen-Seiten auf einem gemeinsamen Gerüst aus
   Kennzahlen, Werkzeugzeile und Liste oder Kacheln; bei den Aktivitäten steht
   die Suche dadurch wie bei Konfis und Team links neben den Filtern.
+- Auch Events und gemeldete Aktivitäten unter Mitmachen stehen im Browser auf
+  diesem Gerüst; bei den Events stehen Jahrgang, Kategorie und Art dadurch in
+  derselben Zeile wie Zeitraum und Suche.
 - Ein Deploy bricht ab, bevor er etwas ändert, wenn auf dem Server die
   Zugangsdaten der Support-Mail fehlen, und nennt die fehlenden Einträge.
 - Die Seite „Betrieb" warnt, wenn die Support-Mail aus ist oder länger als

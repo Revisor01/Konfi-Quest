@@ -1,5 +1,6 @@
 // Die Antraege der Leitung als Tabelle oder Kacheln (Web-Fassung von
-// Mitmachen, 03.10.2026; Kacheln wie die Challenges seit 07.10.2026):
+// Mitmachen, 03.10.2026; Kacheln wie die Challenges seit 07.10.2026; Rahmen,
+// Werkzeugzeile und Zustaende aus WebListenSeite seit 10.10.2026):
 // was Konfis und Team als Aktivitaet gemeldet haben und auf eine Entscheidung
 // wartet. Status als Marke und als Filter (Offen, Verbucht, Abgelehnt, Alle).
 //
@@ -20,25 +21,23 @@ import {
 } from '../../../shared/icons';
 import { initialen } from '../../../../utils/konfiListe';
 import { datumKurz } from '../../../../utils/dateUtils';
-import { suchTreffer, suchbegriff, type PillTon } from '../../../../utils/supportWeb';
-import WebChips from '../../../web/WebChips';
-import WebSuche from '../../../web/WebSuche';
+import { suchbegriff, type PillTon } from '../../../../utils/supportWeb';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
 import WebTreffer from '../../../web/WebTreffer';
-import WebAnsichtUmschalter from '../../../web/WebAnsichtUmschalter';
-import WebBildKarte, { WebBildKarteSymbol } from '../../../web/WebBildKarte';
-import { useAnsicht } from '../../../web/useAnsicht';
-import { WebLeer } from '../../../web/WebZustaende';
+import { WebBildKarteSymbol, type WebBildKarteProps } from '../../../web/WebBildKarte';
+import WebListenSeite from '../../../web/WebListenSeite';
+import type { WebSpalte } from '../../../web/WebListe';
 import { useFilterAusAdresse } from '../../../web/useFilterAusAdresse';
 import { ANTRAG_FILTER, type AntragAktionen, type AntragFilter, type AntragZeile } from './typen';
 import '../../../../theme/web/termine.css';
 import { antragStatusRang } from '../../../../utils/statusReihenfolge';
-import { inFassung, leerVon, wahlVon } from '../../../../seiten/beschreibung';
+import { leerVon, wahlVon } from '../../../../seiten/beschreibung';
 import {
   LEITUNG_ANTRAEGE_LEER_TITEL,
+  LEITUNG_ANTRAEGE_TITEL,
+  LEITUNG_ANTRAEGE_UNTERTITEL,
   LEITUNG_ANTRAG_STATUS,
   LEITUNG_ANTRAG_STATUS_BESCHRIFTUNG,
   OHNE_JAHRGANG,
@@ -65,6 +64,7 @@ const zeitpunkt = (wert?: string | null): number | null => {
   return Number.isNaN(ms) ? null : ms;
 };
 
+
 export interface WebAntraegeProps {
   antraege: readonly AntragZeile[];
   /**
@@ -73,30 +73,56 @@ export interface WebAntraegeProps {
    */
   ohneJahrgang: boolean;
   aktionen: AntragAktionen;
+  /** Die Antraege werden geladen. */
+  laedt?: boolean;
+  /** Knoepfe im Kopf (Aktualisieren) -- von Mitmachen. */
+  kopfAktionen?: React.ReactNode;
+  /** Ueber der Werkzeugzeile: die Reiter von Mitmachen. */
+  oben?: React.ReactNode;
+  /** Fuer die Modale, die ueber dieser Seite aufklappen (useModalPage). */
+  pageRef?: React.Ref<HTMLElement>;
 }
 
-const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, aktionen }) => {
+/** Darf die Leitung ueber diesen offenen Antrag entscheiden? Dann "Pruefen", sonst "Ansehen". */
+const zuPruefen = (a: AntragZeile): boolean => a.status === 'pending' && a.darf_entscheiden !== false;
+
+/** Die Knoepfe eines Antrags: in der Zeile Zuruecksetzen nur als Symbol, im Fuss der Karte mit Wort. */
+const AntragKnoepfe: React.FC<{ antrag: AntragZeile; aktionen: AntragAktionen; mitText?: boolean }> = ({ antrag: a, aktionen, mitText = false }) => (
+  zuPruefen(a) ? (
+    <WebKnopf klein art="primaer" vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} prüfen`}>
+      Prüfen
+    </WebKnopf>
+  ) : (
+    <>
+      <WebKnopf klein vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} ansehen`}>
+        Ansehen
+      </WebKnopf>
+      {/* Ohne das Recht "Anträge entscheiden" kein Zurücksetzen (Server: 403). */}
+      {a.status !== 'pending' && a.darf_entscheiden !== false && (
+        <WebKnopf klein symbol={!mitText} vorn aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren" onClick={() => aktionen.zuruecksetzen(a)}>
+          <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
+          {mitText && 'Zurücksetzen'}
+        </WebKnopf>
+      )}
+    </>
+  )
+);
+
+const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, aktionen, laedt = false, kopfAktionen, oben, pageRef }) => {
   // Defensive: bei kaputten oder gecachten Antworten (Objekt statt Array) leer.
   const antraege = useMemo<AntragZeile[]>(() => (Array.isArray(roh) ? [...roh] : []), [roh]);
   const [filter, setFilter] = useFilterAusAdresse<AntragFilter>('/admin/events', ANTRAG_FILTER, 'offen');
   const [suche, setSuche] = useState('');
-  const [ansicht, setAnsicht] = useAnsicht('antraege', 'liste');
 
   // Zahl je Stand, ohne die Suche -- Prädikate aus der gemeinsamen Beschreibung (seiten/mitmachenLeitung.ts).
   const zaehlen = useMemo(() => Object.fromEntries(
     LEITUNG_ANTRAG_STATUS.map((w) => [w.schluessel, antraege.filter((a) => w.passt?.(a) ?? true).length]),
   ) as Record<AntragFilter, number>, [antraege]);
 
-  // Neueste zuerst.
-  const sichtbar = useMemo(() => {
-    const passtZurSuche = (a: AntragZeile) => !suchbegriff(suche)
-      || suchTreffer(a.konfi_name || '', suche).length > 0
-      || suchTreffer(a.activity_name || '', suche).length > 0;
-    return antraege
-      .filter((a) => wahlVon(LEITUNG_ANTRAG_STATUS, filter).passt?.(a) ?? true)
-      .filter(passtZurSuche)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [antraege, filter, suche]);
+  // Der Stand des Reiters, neueste zuerst; die Suche filtert die Huelle.
+  const imReiter = useMemo(() => antraege
+    .filter((a) => wahlVon(LEITUNG_ANTRAG_STATUS, filter).passt?.(a) ?? true)
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()), [antraege, filter]);
 
   const sucht = suchbegriff(suche) !== '';
 
@@ -183,127 +209,92 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       kopf: 'Aktionen',
       kopfVersteckt: true,
       breite: '184px',
-      zelle: (a) => (
-        <div className="web-termin-aktionen">
-          {a.status === 'pending' && a.darf_entscheiden !== false ? (
-            <WebKnopf klein art="primaer" vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} prüfen`}>
-              Prüfen
-            </WebKnopf>
-          ) : (
-            <>
-              <WebKnopf klein vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} ansehen`}>
-                Ansehen
-              </WebKnopf>
-              {/* Ohne das Recht "Anträge entscheiden" kein Zurücksetzen (Server: 403). */}
-              {a.status !== 'pending' && a.darf_entscheiden !== false && (
-                <WebKnopf klein symbol vorn aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren" onClick={() => aktionen.zuruecksetzen(a)}>
-                  <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
-                </WebKnopf>
-              )}
-            </>
-          )}
-        </div>
-      ),
+      zelle: (a) => <div className="web-termin-aktionen"><AntragKnoepfe antrag={a} aktionen={aktionen} /></div>,
     },
   ];
 
-  return (
-    <>
-      {ohneJahrgang && (
-        <WebHinweis art="hinweis" titel={OHNE_JAHRGANG.titel}>
-          {OHNE_JAHRGANG.text}
-        </WebHinweis>
-      )}
-      <div className="web-werkzeuge">
-        <WebChips<AntragFilter>
-          beschriftung={LEITUNG_ANTRAG_STATUS_BESCHRIFTUNG}
-          wert={filter}
-          onWert={setFilter}
-          chips={inFassung(LEITUNG_ANTRAG_STATUS, 'web').map((w) => ({
-            wert: w.schluessel,
-            label: w.label,
-            zahl: zaehlen[w.schluessel],
-            rot: w.zahlText !== undefined,
-            zahlText: w.zahlText?.(zaehlen[w.schluessel]),
-          }))}
-        />
-        <div className="web-werkzeuge__rechts">
-          <WebSuche beschriftung="Aktivitäten durchsuchen" platzhalter="Person oder Aktivität suchen" wert={suche} onWert={setSuche} />
-          {/* Der Umschalter steht immer ganz rechts neben der Suche. */}
-          <WebAnsichtUmschalter wert={ansicht} onWert={setAnsicht} />
-        </div>
-      </div>
+  /** Die Karte eines Antrags: Name im Kopf in der Farbe des Stands, darunter Aktivitaet, Daten, Punkte. */
+  const karte = (a: AntragZeile): Omit<WebBildKarteProps, 'fuss'> => {
+    const team = a.activity_target_role === 'teamer';
+    const art = team ? 'Team' : a.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+    return {
+      akzent: KOPF[a.status].akzent,
+      akzentDunkel: KOPF[a.status].dunkel,
+      symbol: <WebBildKarteSymbol text={initialen(a.konfi_name)} />,
+      label: [art, team ? '' : a.jahrgang_name].filter(Boolean).join(' · '),
+      titelImKopf: true,
+      titel: <WebTreffer text={a.konfi_name} suche={suche} />,
+      onTitel: () => aktionen.pruefen(a),
+      titelBeschriftung: `Aktivität von ${a.konfi_name} ${zuPruefen(a) ? 'prüfen' : 'ansehen'}`,
+      marken: <WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>,
+      text: a.comment ? `„${a.comment}“` : undefined,
+      angaben: [
+        { icon: ICON_AKTION_GEFUELLT, inhalt: <WebTreffer text={a.activity_name} suche={suche} />, farbe: 'var(--app-color-activities)' },
+        { icon: ICON_TERMIN_GEFUELLT, inhalt: `Stattgefunden am ${datumKurz(a.requested_date)} · gemeldet am ${datumKurz(a.created_at)}`, farbe: 'var(--app-color-events)' },
+        !team && a.activity_points && { icon: ICON_POKAL_GEFUELLT, inhalt: `${a.activity_points}P ${art}`, farbe: 'var(--app-color-warning)' },
+        a.photo_filename && { icon: ICON_KAMERA_GEFUELLT, inhalt: 'Mit Nachweisfoto', farbe: 'var(--app-color-konfis)' },
+        a.status === 'rejected' && a.admin_comment && { icon: ICON_ANTWORTEN, inhalt: `Grund der Ablehnung: ${a.admin_comment}`, farbe: 'var(--app-color-danger)' },
+      ],
+    };
+  };
 
-      {sichtbar.length > 0 && ansicht === 'kacheln' ? (
-        <ul className="web-bildkarten" aria-label="Gemeldete Aktivitäten">
-          {sichtbar.map((a) => {
-            const team = a.activity_target_role === 'teamer';
-            const art = team ? 'Team' : a.activity_type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
-            return (
-              <li key={a.id} className="web-bildkarten__eintrag">
-                <WebBildKarte
-                  akzent={KOPF[a.status].akzent}
-                  akzentDunkel={KOPF[a.status].dunkel}
-                  symbol={<WebBildKarteSymbol text={initialen(a.konfi_name)} />}
-                  label={[art, team ? '' : a.jahrgang_name].filter(Boolean).join(' · ')}
-                  titelImKopf
-                  titel={<WebTreffer text={a.konfi_name} suche={suche} />}
-                  onTitel={() => aktionen.pruefen(a)}
-                  titelBeschriftung={`Aktivität von ${a.konfi_name} ${a.status === 'pending' && a.darf_entscheiden !== false ? 'prüfen' : 'ansehen'}`}
-                  marken={<WebPill ton={STATUS[a.status].ton} punkt>{STATUS[a.status].text}</WebPill>}
-                  text={a.comment ? `„${a.comment}“` : undefined}
-                  angaben={[
-                    { icon: ICON_AKTION_GEFUELLT, inhalt: <WebTreffer text={a.activity_name} suche={suche} />, farbe: 'var(--app-color-activities)' },
-                    { icon: ICON_TERMIN_GEFUELLT, inhalt: `Stattgefunden am ${datumKurz(a.requested_date)} · gemeldet am ${datumKurz(a.created_at)}`, farbe: 'var(--app-color-events)' },
-                    !team && a.activity_points && { icon: ICON_POKAL_GEFUELLT, inhalt: `${a.activity_points}P ${art}`, farbe: 'var(--app-color-warning)' },
-                    a.photo_filename && { icon: ICON_KAMERA_GEFUELLT, inhalt: 'Mit Nachweisfoto', farbe: 'var(--app-color-konfis)' },
-                    a.status === 'rejected' && a.admin_comment && { icon: ICON_ANTWORTEN, inhalt: `Grund der Ablehnung: ${a.admin_comment}`, farbe: 'var(--app-color-danger)' },
-                  ]}
-                  fuss={a.status === 'pending' && a.darf_entscheiden !== false ? (
-                    <WebKnopf klein art="primaer" vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} prüfen`}>
-                      Prüfen
-                    </WebKnopf>
-                  ) : (
-                    <>
-                      <WebKnopf klein vorn onClick={() => aktionen.pruefen(a)} aria-label={`Aktivität von ${a.konfi_name} ansehen`}>
-                        Ansehen
-                      </WebKnopf>
-                      {a.status !== 'pending' && a.darf_entscheiden !== false && (
-                        <WebKnopf klein vorn onClick={() => aktionen.zuruecksetzen(a)} aria-label="Aktivität zurücksetzen" title="Zurücksetzen und wieder als offen markieren">
-                          <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
-                          Zurücksetzen
-                        </WebKnopf>
-                      )}
-                    </>
-                  )}
-                />
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-      <div className="web-karte">
-        {sichtbar.length > 0 ? (
-          <WebTabelle
-            beschriftung="Gemeldete Aktivitäten"
-            spalten={spalten}
-            zeilen={sichtbar}
-            zeileSchluessel={(a) => a.id}
-            zeileKlasse={(a) => (a.status === 'pending' ? undefined : 'web-zeile--gedaempft')}
-            mittig
-            fest
-          />
-        ) : (
-          <WebLeer
-            icon={ICON_TEXTDOKUMENT}
-            titel={ohneJahrgang && antraege.length === 0 ? OHNE_JAHRGANG.titel : sucht ? 'Keine Treffer' : LEITUNG_ANTRAEGE_LEER_TITEL}
-            text={sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl keine Aktivität.` : leerVon(LEITUNG_ANTRAG_STATUS, filter)}
-            aktion={sucht ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf> : undefined}
-          />
-        )}
-      </div>
+  return (
+    <WebListenSeite<AntragZeile, AntragFilter>
+      bereich="Mitmachen"
+      titel={LEITUNG_ANTRAEGE_TITEL}
+      untertitel={LEITUNG_ANTRAEGE_UNTERTITEL}
+      aktionen={kopfAktionen}
+      pageRef={pageRef}
+      oben={(
+        <>
+          {oben}
+          {ohneJahrgang && (
+            <WebHinweis art="hinweis" titel={OHNE_JAHRGANG.titel}>
+              {OHNE_JAHRGANG.text}
+            </WebHinweis>
+          )}
+        </>
       )}
-    </>
+      reiter={{
+        beschriftung: LEITUNG_ANTRAG_STATUS_BESCHRIFTUNG,
+        wahlen: LEITUNG_ANTRAG_STATUS,
+        wert: filter,
+        onWert: setFilter,
+        zahlen: laedt ? undefined : zaehlen,
+        // Rot ist die Zahl, hinter der eine Entscheidung wartet (Offen).
+        farbe: { offen: 'rot' },
+      }}
+      suche={{
+        beschriftung: 'Aktivitäten durchsuchen',
+        platzhalter: 'Person oder Aktivität suchen',
+        wert: suche,
+        onWert: setSuche,
+        felder: (a) => [a.konfi_name, a.activity_name],
+      }}
+      ansicht={{ seite: 'antraege', vorgabe: 'liste' }}
+      eintraege={imReiter}
+      liste={{
+        beschriftung: 'Gemeldete Aktivitäten',
+        spalten,
+        zeileSchluessel: (a) => a.id,
+        zeileKlasse: (a) => (a.status === 'pending' ? undefined : 'web-zeile--gedaempft'),
+        mittig: true,
+        fest: true,
+      }}
+      kacheln={{
+        beschriftung: 'Gemeldete Aktivitäten',
+        schluessel: (a) => a.id,
+        karte,
+        fuss: (a) => <AntragKnoepfe antrag={a} aktionen={aktionen} mitText />,
+      }}
+      leer={{
+        icon: ICON_TEXTDOKUMENT,
+        titel: ohneJahrgang && antraege.length === 0 ? OHNE_JAHRGANG.titel : sucht ? 'Keine Treffer' : LEITUNG_ANTRAEGE_LEER_TITEL,
+        text: sucht ? `Zu „${suche.trim()}“ gibt es in dieser Auswahl keine Aktivität.` : leerVon(LEITUNG_ANTRAG_STATUS, filter),
+        aktion: sucht ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf> : undefined,
+      }}
+      inhaltLaden={laedt ? 'Die Aktivitäten werden geladen.' : undefined}
+    />
   );
 };
 

@@ -11,9 +11,10 @@
 // neuen Tab, Rechtsklick kopiert die Adresse).
 //
 // Dieselbe Karte fuer Konfis, Team und Leitung (Ansicht "Kacheln", Simon,
-// 06.10.2026): Sie liest nur, was da ist. Die Leitung gibt ihre Knoepfe im Fuss
-// mit (`fuss`: Kopieren, Absagen, Loeschen) -- wie die Challenge-Karte; sie
-// liegen ueber dem Link der Karte.
+// 06.10.2026): Sie liest nur, was da ist. Die Leitung legt sie ueber
+// `terminKarte` in WebKacheln und gibt ihre Knoepfe im Fuss mit (Kopieren,
+// Absagen, Loeschen) -- wie die Challenge-Karte; sie liegen ueber dem Link
+// der Karte.
 
 import React from 'react';
 import {
@@ -22,7 +23,7 @@ import {
   ICON_ORT_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
 } from '../../icons';
-import WebBildKarte, { WebBildKarteSymbol } from '../../../web/WebBildKarte';
+import WebBildKarte, { WebBildKarteSymbol, type WebBildKarteProps } from '../../../web/WebBildKarte';
 import WebTreffer from '../../../web/WebTreffer';
 import { kategorienText, titelDekoration } from '../../eventFormatting';
 import type { Fakt, TerminStatus } from '../../../../utils/termineWeb';
@@ -57,40 +58,47 @@ export interface WebTerminKarteProps {
   fuss?: React.ReactNode;
 }
 
-const WebTerminKarte: React.FC<WebTerminKarteProps> = ({
+/**
+ * Was auf der Karte eines Events steht -- alles ausser dem Fuss. Die Leitung
+ * legt ihre Events damit in WebKacheln (Fuss mit Kopieren, Absagen, Loeschen);
+ * Konfis und Team nehmen die fertige Karte (WebTerminKarte).
+ */
+export function terminKarte({
   event, href, status, fakten, gedaempft = false, gesperrt = false, statusZeigen = true, teamZeigen, unterzeile, materialAnzahl = 0,
-  serieZeigen = false, suche = '', fuss,
-}) => {
+  serieZeigen = false, suche = '',
+}: Omit<WebTerminKarteProps, 'fuss'>): Omit<WebBildKarteProps, 'fuss'> {
   const { datum, uhrzeit } = terminDatumUhrzeit(event);
   const kategorien = kategorienText(event);
   const leise = gedaempft || gesperrt;
 
-  return (
-    <WebBildKarte
-      // Der Kopf traegt die Farbe des Status wie die Balken der App.
-      akzent={status.farbe}
-      gedaempft={leise}
-      klasse={['web-termin-karte', leise ? 'web-termin-karte--gedaempft' : ''].filter(Boolean).join(' ')}
-      symbol={<WebBildKarteSymbol icon={ICON_TERMIN_GEFUELLT} />}
-      label={kategorien ? `Event · ${kategorien}` : 'Event'}
-      titelImKopf
-      marken={<WebTerminMarken status={status} event={event} teamZeigen={teamZeigen} serieZeigen={serieZeigen} statusZeigen={statusZeigen} />}
-      titel={<WebTreffer text={event.name} suche={suche} />}
-      titelStil={{ textDecoration: titelDekoration('kachel', event) }}
-      href={href}
-      unterzeile={unterzeile}
-      angaben={[
-        { icon: ICON_TERMIN_GEFUELLT, inhalt: <><span className="web-nur-vorlesen">Datum: </span>{datum}{uhrzeit ? ` · ${uhrzeit} Uhr` : ''}</>, farbe: 'var(--app-color-events)' },
-        event.location && { icon: ICON_ORT_GEFUELLT, inhalt: <><span className="web-nur-vorlesen">Ort: </span><WebTreffer text={event.location} suche={suche} /></>, farbe: 'var(--app-color-events)' },
-        event.bring_items && { icon: ICON_MATERIAL, inhalt: <><span className="web-nur-vorlesen">Mitbringen: </span>{event.bring_items}</>, farbe: 'var(--app-color-konfis)' },
-        materialAnzahl > 0 && { icon: ICON_ANHANG, inhalt: `${materialAnzahl} ${materialAnzahl === 1 ? 'Material' : 'Materialien'}`, farbe: 'var(--app-color-material)' },
-      ]}
-      fuss={fuss}
-    >
-      <WebAbsageZeile event={event} />
-      <WebFakten fakten={fakten} gedaempft={leise} />
-    </WebBildKarte>
-  );
-};
+  return {
+    // Der Kopf traegt die Farbe des Status wie die Balken der App.
+    akzent: status.farbe,
+    gedaempft: leise,
+    klasse: ['web-termin-karte', leise ? 'web-termin-karte--gedaempft' : ''].filter(Boolean).join(' '),
+    symbol: <WebBildKarteSymbol icon={ICON_TERMIN_GEFUELLT} />,
+    label: kategorien ? `Event · ${kategorien}` : 'Event',
+    titelImKopf: true,
+    marken: <WebTerminMarken status={status} event={event} teamZeigen={teamZeigen} serieZeigen={serieZeigen} statusZeigen={statusZeigen} />,
+    titel: <WebTreffer text={event.name} suche={suche} />,
+    titelStil: { textDecoration: titelDekoration('kachel', event) },
+    href,
+    unterzeile,
+    angaben: [
+      { icon: ICON_TERMIN_GEFUELLT, inhalt: <><span className="web-nur-vorlesen">Datum: </span>{datum}{uhrzeit ? ` · ${uhrzeit} Uhr` : ''}</>, farbe: 'var(--app-color-events)' },
+      event.location && { icon: ICON_ORT_GEFUELLT, inhalt: <><span className="web-nur-vorlesen">Ort: </span><WebTreffer text={event.location} suche={suche} /></>, farbe: 'var(--app-color-events)' },
+      event.bring_items && { icon: ICON_MATERIAL, inhalt: <><span className="web-nur-vorlesen">Mitbringen: </span>{event.bring_items}</>, farbe: 'var(--app-color-konfis)' },
+      materialAnzahl > 0 && { icon: ICON_ANHANG, inhalt: `${materialAnzahl} ${materialAnzahl === 1 ? 'Material' : 'Materialien'}`, farbe: 'var(--app-color-material)' },
+    ],
+    children: (
+      <>
+        <WebAbsageZeile event={event} />
+        <WebFakten fakten={fakten} gedaempft={leise} />
+      </>
+    ),
+  };
+}
+
+const WebTerminKarte: React.FC<WebTerminKarteProps> = ({ fuss, ...karte }) => <WebBildKarte {...terminKarte(karte)} fuss={fuss} />;
 
 export default WebTerminKarte;

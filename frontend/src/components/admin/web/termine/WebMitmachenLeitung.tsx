@@ -7,17 +7,17 @@
 //
 // Die Seite (AdminEventsPage) laedt die Daten und besitzt die Funktionen
 // (Absagen, Kopieren, Loeschen, Antrag pruefen ...) -- sie reicht beides
-// herein. Hier steht nur die Darstellung.
+// herein. Hier stehen nur die Knoepfe im Kopf und die Weiche: Beide Reiter
+// sind eigene Listen-Seiten (WebListenSeite: WebEventsLeitung, WebAntraege),
+// die Reiter von Mitmachen stehen bei beiden ueber der Werkzeugzeile.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_HINZUFUEGEN } from '../../../shared/icons';
-import WebSeite from '../../../web/WebSeite';
 import WebKnopf from '../../../web/WebKnopf';
-import { WebFehler, WebLaden } from '../../../web/WebZustaende';
 import WebLegendeKnopf from '../../../shared/web/termine/WebLegendeKnopf';
 import type { Event } from '../../../../types/event';
-import WebEventsTabelle from './WebEventsTabelle';
+import WebEventsLeitung from './WebEventsLeitung';
 import WebAntraege from './WebAntraege';
 import WebLeitungReiter from './WebLeitungReiter';
 import type { AntragAktionen, AntragZeile, LeitungSegment, TerminAktionen } from './typen';
@@ -54,11 +54,6 @@ export interface WebMitmachenLeitungProps {
 const WebMitmachenLeitung: React.FC<WebMitmachenLeitungProps> = (p) => {
   const { segment } = p;
 
-  const kopf = {
-    events: { titel: 'Events', untertitel: 'Gottesdienste, Konfi-Tage und Fahrten' },
-    antraege: { titel: 'Aktivitäten', untertitel: 'Gemeldete Aktivitäten verwalten' },
-  }[segment];
-
   const aktionen = (
     <>
       {segment === 'events' && <WebLegendeKnopf variante="admin" presentingElement={p.presentingElement} />}
@@ -75,32 +70,35 @@ const WebMitmachenLeitung: React.FC<WebMitmachenLeitungProps> = (p) => {
     </>
   );
 
-  let inhalt: React.ReactNode;
+  const reiter = <WebLeitungReiter segment={segment} wartendVerbuchen={p.wartendVerbuchen} wartendeAntraege={p.wartendeAntraege} />;
+
   if (segment === 'antraege') {
-    inhalt = p.antraegeLaden
-      ? <WebLaden karten={1} text="Die Aktivitäten werden geladen." />
-      : <WebAntraege antraege={p.antraege} ohneJahrgang={p.ohneJahrgang} aktionen={p.antragAktionen} />;
-  } else if (p.eventsLaden) {
-    inhalt = <WebLaden karten={1} text="Die Events werden geladen." />;
-  } else if (p.eventsFehler) {
-    inhalt = <WebFehler text="Die Events konnten nicht geladen werden." onErneut={() => { void p.neuLaden(); }} />;
-  } else {
-    inhalt = (
-      <WebEventsTabelle
-        events={p.events}
-        abgesagte={p.abgesagte}
-        jahrgaenge={p.jahrgaenge}
-        darfVerwalten={p.darfVerwalten}
-        aktionen={p.terminAktionen}
+    return (
+      <WebAntraege
+        antraege={p.antraege}
+        ohneJahrgang={p.ohneJahrgang}
+        aktionen={p.antragAktionen}
+        laedt={p.antraegeLaden}
+        kopfAktionen={aktionen}
+        oben={reiter}
+        pageRef={p.pageRef}
       />
     );
   }
 
   return (
-    <WebSeite bereich="Mitmachen" titel={kopf.titel} untertitel={kopf.untertitel} aktionen={aktionen} pageRef={p.pageRef}>
-      <WebLeitungReiter segment={segment} wartendVerbuchen={p.wartendVerbuchen} wartendeAntraege={p.wartendeAntraege} />
-      {inhalt}
-    </WebSeite>
+    <WebEventsLeitung
+      events={p.events}
+      abgesagte={p.abgesagte}
+      jahrgaenge={p.jahrgaenge}
+      darfVerwalten={p.darfVerwalten}
+      aktionen={p.terminAktionen}
+      laedt={p.eventsLaden}
+      fehler={p.eventsFehler ? { onErneut: () => { void p.neuLaden(); } } : undefined}
+      kopfAktionen={aktionen}
+      oben={reiter}
+      pageRef={p.pageRef}
+    />
   );
 };
 

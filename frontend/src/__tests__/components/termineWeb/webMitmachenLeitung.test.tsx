@@ -129,6 +129,9 @@ describe('Events: Zeitraum', () => {
     expect(chip(/^Abgesagt/)).toHaveTextContent(/^Abgesagt1$/);
     expect(chip(/^Aktuell/)).toHaveAttribute('aria-pressed', 'true');
     expect(chip(/^Vergangen/)).toHaveAttribute('aria-pressed', 'false');
+    // Rot ist nur die Zahl, hinter der Arbeit wartet.
+    expect(chip(/^Verbuchen/).querySelector('.web-chip__zahl')).toHaveClass('web-chip__zahl--rot');
+    expect(chip(/^Aktuell/).querySelector('.web-chip__zahl')!.className).toBe('web-chip__zahl');
   });
 
   it('Klick auf "Verbuchen": nur das Event mit offenen Buchungen, Status "Verbuchen"', async () => {
@@ -360,16 +363,19 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(window.localStorage.getItem(ansichtSchluessel('events-leitung'))).toBe(null);
   });
 
-  it('der Umschalter steht als letztes Element rechts neben der Suche, in der Zeile der Filter', async () => {
+  it('eine Werkzeugzeile wie auf allen Listen-Seiten: Zeitraum, Suche, Filter -- der Umschalter ganz rechts', async () => {
     await oeffneEvents();
-    const suche = screen.getByRole('search');
-    const rechts = suche.parentElement!;
+    const zeile = screen.getByRole('search').parentElement!;
+    expect(zeile).toHaveClass('web-werkzeuge');
+    // Zeitraum, Suche, Jahrgang, Kategorie und Art stehen in derselben Zeile.
+    expect(within(zeile).getByRole('group', { name: 'Events nach Zeitraum' })).toBeInTheDocument();
+    expect(within(zeile).getByLabelText('Jahrgang')).toBeInTheDocument();
+    expect(within(zeile).getByLabelText('Kategorie')).toBeInTheDocument();
+    expect(within(zeile).getByLabelText('Art')).toBeInTheDocument();
+    const rechts = umschalter().parentElement!;
     expect(rechts).toHaveClass('web-werkzeuge__rechts');
-    expect(umschalter().previousElementSibling).toBe(suche);
+    expect(rechts.parentElement).toBe(zeile);
     expect(rechts.lastElementChild).toBe(umschalter());
-    // Dieselbe Zeile wie Jahrgang, Kategorie und Art.
-    expect(rechts.parentElement).toHaveClass('web-filter');
-    expect(within(rechts.parentElement!).getByLabelText('Jahrgang')).toBeInTheDocument();
     // Auch mit "Filter zurücksetzen" bleibt er das letzte Element.
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
     expect(rechts.firstElementChild).toHaveTextContent('Filter zurücksetzen');

@@ -91,6 +91,9 @@ describe('Anträge: Reiter und Tabelle', () => {
     expect(chip(/^Abgelehnt/)).toHaveTextContent(/^Abgelehnt1$/);
     expect(chip(/^Alle/)).toHaveTextContent(/^Alle4$/);
     expect(chip(/^Offen/)).toHaveAttribute('aria-pressed', 'true');
+    // Rot ist nur die Zahl, hinter der eine Entscheidung wartet.
+    expect(chip(/^Offen/).querySelector('.web-chip__zahl')).toHaveClass('web-chip__zahl--rot');
+    expect(chip(/^Verbucht/).querySelector('.web-chip__zahl')!.className).toBe('web-chip__zahl');
   });
 
   it('die Zeile zeigt Person, Jahrgang, Aktivität mit Kommentar, Punkte, Foto-Hinweis und Status', async () => {

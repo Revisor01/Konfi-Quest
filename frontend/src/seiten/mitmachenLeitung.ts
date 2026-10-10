@@ -1,7 +1,7 @@
 // Mitmachen der Leitung (/admin/events): Events und gemeldete Aktivitäten.
 // App: components/admin/pages/AdminEventsPage.tsx mit admin/EventsView.tsx und
 // admin/ActivityRequestsView.tsx. Web: components/admin/web/termine/
-// (WebLeitungReiter, WebEventsTabelle, WebAntraege, WebMitmachenLeitung).
+// (WebLeitungReiter, WebEventsLeitung, WebAntraege, WebMitmachenLeitung).
 //
 // Die Listen hinter den Zeitraum-Reitern rechnen beide Fassungen mit
 // denselben Funktionen aus components/shared/eventFormatting.ts

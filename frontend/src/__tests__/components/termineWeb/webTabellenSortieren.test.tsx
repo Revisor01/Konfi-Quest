@@ -8,7 +8,7 @@ import { STATUS_FARBE } from '../../../utils/termineWeb';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { h, zuruecksetzen, termin, inTagen, JETZT } from './geruestWeb';
-import WebEventsTabelle from '../../../components/admin/web/termine/WebEventsTabelle';
+import WebEventsLeitung from '../../../components/admin/web/termine/WebEventsLeitung';
 import WebTeilnehmerLeitung, { type TeilnehmerAktionen } from '../../../components/admin/web/termine/WebTeilnehmerLeitung';
 import WebChallengesTabelle from '../../../components/shared/web/challenges/WebChallengesTabelle';
 import WebEigeneAntraege from '../../../components/shared/web/termine/WebEigeneAntraege';
@@ -49,7 +49,7 @@ const pruefeSortierung = (tabelle: () => HTMLElement, kopf: string, namen: reado
   expect(reihenfolge(tabelle(), namen)).toEqual([...auf].reverse());
 };
 
-describe('Events der Leitung (WebEventsTabelle)', () => {
+describe('Events der Leitung (WebEventsLeitung)', () => {
   const EVENTS = [
     termin(1, 'Bibelabend', { event_date: inTagen(2), registered_count: 7, max_participants: 20, points: 1 }),
     termin(2, 'Adventsmarkt', { event_date: inTagen(5), registered_count: 2, max_participants: 20, points: 3 }),
@@ -57,7 +57,7 @@ describe('Events der Leitung (WebEventsTabelle)', () => {
   ];
   const NAMEN = ['Bibelabend', 'Adventsmarkt', 'Chorprobe'];
   const zeige = () => render(
-    <WebEventsTabelle
+    <WebEventsLeitung
       events={EVENTS}
       abgesagte={[]}
       jahrgaenge={[]}
@@ -86,7 +86,7 @@ describe('Events der Leitung (WebEventsTabelle)', () => {
       termin(4, 'Zeltlager', { event_date: inTagen(12), registered_count: 20, max_participants: 20 }),
     ];
     render(
-      <WebEventsTabelle
+      <WebEventsLeitung
         events={STAND}
         abgesagte={[]}
         jahrgaenge={[]}
