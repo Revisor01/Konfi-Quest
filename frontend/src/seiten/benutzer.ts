@@ -18,7 +18,11 @@ export const BENUTZER_FILTER = wahlen([
   { schluessel: 'teamer', label: 'Team', passt: (u: Konto) => u.role_name === 'teamer' },
 ]);
 export type BenutzerFilterSchluessel = (typeof BENUTZER_FILTER)[number]['schluessel'];
-export const BENUTZER_FILTER_BESCHRIFTUNG = 'Ansicht';
+/**
+ * Name der Filter-Chips für Vorleseprogramme. Bis 10.10.2026 „Ansicht" -- so
+ * heißt im Browser auch der Umschalter Liste | Kacheln daneben.
+ */
+export const BENUTZER_FILTER_BESCHRIFTUNG = 'Benutzer:innen nach Rolle und Status';
 
 /**
  * Leertext: Ohne Suche und Filter gibt es noch niemanden; sonst liegt es an

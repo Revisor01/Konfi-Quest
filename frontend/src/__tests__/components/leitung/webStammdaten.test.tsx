@@ -101,7 +101,8 @@ describe('Kategorien (Web)', () => {
     render(<AdminCategoriesPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Kategorien' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
-    expect(screen.getByText('3 Kategorien', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+    // Die Zahl steht im Untertitel der Seite (WebListenSeite).
+    expect(screen.getByText('Kategorien für Aktivitäten und Events · 3 Kategorien', { selector: '.web-untertitel' })).toBeInTheDocument();
     expect(spaltenkoepfe('Kategorien')).toEqual(['Name', 'Beschreibung', 'Aktionen']);
   });
 
@@ -180,7 +181,8 @@ describe('Level (Web)', () => {
   it('Spalten und Zeilen: Titel, Beschreibung und Punkte', () => {
     render(<AdminLevelsPage />);
     expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
-    expect(screen.getByText('3 Level', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+    // Die Zahl steht im Untertitel der Seite (WebListenSeite).
+    expect(screen.getByText('Punkte-Level und Belohnungen · 3 Level', { selector: '.web-untertitel' })).toBeInTheDocument();
     expect(spaltenkoepfe('Level')).toEqual(['Level', 'Beschreibung', 'Ab Punkten', 'Aktionen']);
     const z = zeilen('Level');
     expect(zelle(z[0], 0)).toHaveTextContent('Neu dabei');
@@ -236,20 +238,24 @@ describe('Level (Web)', () => {
 
 // ---------------------------------------------------------------------------
 describe('Zertifikate (Web)', () => {
-  it('Kacheln mit Namen und Aktionen; die Zahl steht im Kopf der Karte', () => {
+  it('Kacheln mit Namen und Aktionen; die Zahl steht im Kopf der Seite', () => {
     render(<AdminCertificatesPage />);
-    expect(screen.getByText('2 Zertifikate', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+    // Die Zahl steht im Untertitel der Seite (WebListenSeite).
+    expect(screen.getByText('Zertifikate fürs Team · 2 Zertifikate', { selector: '.web-untertitel' })).toBeInTheDocument();
     const kacheln = within(screen.getByRole('list', { name: 'Zertifikate' })).getAllByRole('listitem');
     expect(kacheln).toHaveLength(2);
     expect(kacheln[0]).toHaveTextContent('JuLeiCa');
     expect(kacheln[1]).toHaveTextContent('Erste-Hilfe-Kurs');
-    expect(within(kacheln[1]).getByRole('button', { name: 'Erste-Hilfe-Kurs bearbeiten' })).toBeInTheDocument();
+    // Name und Knopf im Fuss der Kachel.
+    expect(within(kacheln[1]).getAllByRole('button', { name: 'Erste-Hilfe-Kurs bearbeiten' })).toHaveLength(2);
     expect(within(kacheln[1]).getByRole('button', { name: 'Erste-Hilfe-Kurs löschen' })).toBeInTheDocument();
   });
 
   it('Bearbeiten und "Neues Zertifikat" oeffnen das Fenster der App mit dem Zertifikat', () => {
     render(<AdminCertificatesPage />);
-    fireEvent.click(screen.getByRole('button', { name: 'JuLeiCa bearbeiten' }));
+    // Name und Knopf der Kachel heissen gleich, beide oeffnen dasselbe Fenster.
+    expect(screen.getAllByRole('button', { name: 'JuLeiCa bearbeiten' })).toHaveLength(2);
+    fireEvent.click(erster('JuLeiCa bearbeiten'));
     expect((fenster()[0].komponente as { name: string }).name).toBe('CertificateModal');
     expect(fenster()[0].props.certificateType).toEqual(ZERTIFIKATE[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Neues Zertifikat' }));

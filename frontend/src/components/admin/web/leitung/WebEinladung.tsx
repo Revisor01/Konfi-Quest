@@ -7,6 +7,10 @@
 // Code, rechnet den QR-Code, verlaengert und loescht mit denselben
 // Rueckfragen wie in der App. Dort ist dieselbe Seite ein Fenster aus "Mehr";
 // diese Fassung gilt fuer die Seite unter /admin/settings/invite.
+//
+// Die Tabelle der aktiven Codes ist WebListe (10.10.2026): QR-Code und
+// Verlaengern stehen als weitere Knoepfe vor dem Loeschen. Eine Listen-Seite
+// mit Kacheln ist das nicht -- Formular und QR-Code gehoeren daneben.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
@@ -14,7 +18,6 @@ import {
   ICON_HINZUFUEGEN,
   ICON_JAHRGANG_GEFUELLT,
   ICON_KOPIEREN,
-  ICON_LOESCHEN,
   ICON_QRCODE,
   ICON_QRCODE_GEFUELLT,
   ICON_TEILEN,
@@ -29,9 +32,9 @@ import WebAuswahl from '../../../web/WebAuswahl';
 import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
 import WebSpalten from '../../../web/WebSpalten';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import WebKreis from '../../../web/WebKreis';
+import WebListe, { WebNameZelle, type WebSpalte } from '../../../web/WebListe';
 import { WebLaden, WebLeer } from '../../../web/WebZustaende';
-import { WebSymbol } from './WebLeitungBausteine';
 import type { EinladungsCode } from './verwaltungTypen';
 
 export interface WebEinladungProps {
@@ -82,12 +85,7 @@ const WebEinladung: React.FC<WebEinladungProps> = (p) => {
       schluessel: 'jahrgang',
       kopf: 'Jahrgang',
       sortWert: (c) => c.jahrgang_name,
-      zelle: (c) => (
-        <span className="web-person-zelle">
-          <WebSymbol icon={ICON_QRCODE_GEFUELLT} ton="erfolg" />
-          <span className="web-zelle-titel web-einzeilig">{c.jahrgang_name}</span>
-        </span>
-      ),
+      zelle: (c) => <WebNameZelle kreis={<WebKreis icon={ICON_QRCODE_GEFUELLT} ton="erfolg" />} titel={c.jahrgang_name} />,
     },
     {
       schluessel: 'code',
@@ -111,32 +109,6 @@ const WebEinladung: React.FC<WebEinladungProps> = (p) => {
       breite: '210px',
       sortWert: (c) => (c.expires_at ? new Date(c.expires_at) : null),
       zelle: (c) => <WebPill ton={ablaufTon(c.expires_at)} punkt>{p.ablaufSatz(c.expires_at)}</WebPill>,
-    },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      klasse: 'web-spalte-aktionen-breit',
-      zelle: (c) => (
-        <div className="web-zeilenaktionen">
-          <WebKnopf klein onClick={() => p.onQrZeigen(c)} aria-label={`QR-Code von ${c.invite_code} anzeigen`}>
-            <IonIcon icon={ICON_QRCODE} aria-hidden="true" />
-            <span className="web-knopf__text">QR-Code</span>
-          </WebKnopf>
-          <WebKnopf
-            klein symbol
-            onClick={() => p.onVerlaengern(c)}
-            disabled={p.verlaengertId === c.id}
-            aria-label={`Einladung ${c.invite_code} verlängern`}
-            title="Einladung verlängern"
-          >
-            <IonIcon icon={ICON_UHRZEIT_GEFUELLT} aria-hidden="true" />
-          </WebKnopf>
-          <WebKnopf klein symbol art="gefahr" onClick={() => p.onLoeschen(c)} aria-label={`Einladung ${c.invite_code} löschen`} title="Einladung löschen">
-            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-          </WebKnopf>
-        </div>
-      ),
     },
   ];
 
@@ -175,13 +147,32 @@ const WebEinladung: React.FC<WebEinladungProps> = (p) => {
         {p.codes.length === 0 ? (
           <WebLeer icon={ICON_QRCODE} titel="Keine Einladungscodes" text="Erzeuge oben einen Code für einen Jahrgang." />
         ) : (
-          <WebTabelle
+          <WebListe
             beschriftung="Aktive Einladungscodes"
             spalten={spalten}
             zeilen={p.codes}
             zeileSchluessel={(c) => c.id}
             zeileKlasse={(c) => (c.invite_code === p.inviteCode ? 'web-zeile--gewaehlt' : undefined)}
             mittig
+            aktionenBreite="200px"
+            weitere={(c) => (
+              <>
+                <WebKnopf klein vorn onClick={() => p.onQrZeigen(c)} aria-label={`QR-Code von ${c.invite_code} anzeigen`}>
+                  <IonIcon icon={ICON_QRCODE} aria-hidden="true" />
+                  <span className="web-knopf__text">QR-Code</span>
+                </WebKnopf>
+                <WebKnopf
+                  klein symbol vorn
+                  onClick={() => p.onVerlaengern(c)}
+                  disabled={p.verlaengertId === c.id}
+                  aria-label={`Einladung ${c.invite_code} verlängern`}
+                  title="Einladung verlängern"
+                >
+                  <IonIcon icon={ICON_UHRZEIT_GEFUELLT} aria-hidden="true" />
+                </WebKnopf>
+              </>
+            )}
+            loeschen={{ onKlick: p.onLoeschen, beschriftung: (c) => `Einladung ${c.invite_code} löschen`, titel: () => 'Einladung löschen' }}
           />
         )}
       </WebKarte>

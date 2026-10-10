@@ -1,6 +1,10 @@
 // Jahrgaenge der Gemeinde in der Web-Fassung, /admin/settings/jahrgaenge
-// (Browser ab 992 px; docs/planung/web-alle-bereiche.md, Entscheidung 6): eine
-// Tabelle mit Konfis, Punktezielen, Konfispruch und Rueckblick je Jahrgang.
+// (Browser ab 992 px; docs/planung/web-alle-bereiche.md, Entscheidung 6):
+// Kennzahlen, dann Liste oder Kacheln mit Konfis, Punktezielen, Konfispruch
+// und Rueckblick je Jahrgang.
+//
+// Rahmen, Umschalter Liste | Kacheln und Zustaende stellt WebListenSeite
+// (10.10.2026); hier stehen nur Spalten, Karte und Daten.
 //
 // Daten, Rechte und Fenster kommen von der Seite (AdminJahrgaengeePage): Das
 // Formular ist dasselbe Fenster wie in der App (JahrgangModal), das Loeschen
@@ -11,17 +15,16 @@
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_HINZUFUEGEN, ICON_JAHRGANG, ICON_JAHRGANG_GEFUELLT } from '../../../shared/icons';
+import { ICON_BUCH, ICON_FUNKELN, ICON_HINZUFUEGEN, ICON_JAHRGANG, ICON_JAHRGANG_GEFUELLT, ICON_POKAL } from '../../../shared/icons';
 import { datumKurz } from '../../../../utils/dateUtils';
 import { mitEinheit } from '../../../../utils/supportStatistik';
-import WebSeite from '../../../web/WebSeite';
-import WebKarte from '../../../web/WebKarte';
-import WebKachel from '../../../web/WebKachel';
 import WebKnopf from '../../../web/WebKnopf';
+import WebKreis from '../../../web/WebKreis';
 import WebPill from '../../../web/WebPill';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
-import { WebLaden, WebLeer } from '../../../web/WebZustaende';
-import { WebSymbol, WebZeilenAktionen, WebZeilenKnopf } from './WebLeitungBausteine';
+import { WebBildKarteSymbol } from '../../../web/WebBildKarte';
+import { KENNZAHL_SYMBOL } from '../../../web/kennzahlSymbole';
+import WebListenSeite from '../../../web/WebListenSeite';
+import { WebNameZelle, type WebAktion, type WebSpalte } from '../../../web/WebListe';
 import type { JahrgangEintrag } from './verwaltungTypen';
 import { konfispruchStatusRang } from '../../../../utils/statusReihenfolge';
 
@@ -38,21 +41,33 @@ export interface WebJahrgaengeProps {
   onLoeschen: (jahrgang: JahrgangEintrag) => void;
 }
 
+const ZURUECK = { href: '/admin/settings', text: 'Mehr' };
+
+const godiAn = (j: JahrgangEintrag): boolean => j.gottesdienst_enabled !== false;
+const gemeindeAn = (j: JahrgangEintrag): boolean => j.gemeinde_enabled !== false;
+const spruchFrei = (j: JahrgangEintrag): boolean => j.konfspruch_enabled !== false;
+
+/** Die Punkteziele, die gelten (ohne Wert gilt 10), als Text fuer die Karte. */
+const zieleText = (j: JahrgangEintrag): string => {
+  const teile = [
+    godiAn(j) && `Gottesdienst ${j.target_gottesdienst || 10}`,
+    gemeindeAn(j) && `Gemeinde ${j.target_gemeinde || 10}`,
+  ].filter(Boolean);
+  return teile.length > 0 ? teile.join(' · ') : 'Keine Punkte';
+};
+
 const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
   jahrgaenge, laedt, darfAnlegen, darfBearbeiten, darfLoeschen, pageRef, onAnlegen, onBearbeiten, onLoeschen,
 }) => {
-  const zurueck = { href: '/admin/settings', text: 'Mehr' };
-
-  if (laedt) {
-    return (
-      <WebSeite bereich="Verwaltung" titel="Jahrgänge" zurueck={zurueck} pageRef={pageRef}>
-        <WebLaden kacheln={2} karten={1} text="Die Jahrgänge werden geladen." />
-      </WebSeite>
-    );
-  }
-
   const konfis = jahrgaenge.reduce((summe, j) => summe + (j.konfi_count ?? 0), 0);
   const mitRueckblick = jahrgaenge.filter((j) => !!j.wrapped_released_at).length;
+
+  const bearbeiten: WebAktion<JahrgangEintrag> | undefined = darfBearbeiten
+    ? { onKlick: onBearbeiten, beschriftung: (j) => `${j.name} bearbeiten`, titel: () => 'Bearbeiten' }
+    : undefined;
+  const loeschen: WebAktion<JahrgangEintrag> | undefined = darfLoeschen
+    ? { onKlick: onLoeschen, beschriftung: (j) => `${j.name} löschen`, titel: () => 'Jahrgang löschen' }
+    : undefined;
 
   const spalten: Array<WebSpalte<JahrgangEintrag>> = [
     {
@@ -61,12 +76,12 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       breite: '20%',
       sortWert: (j) => j.name,
       zelle: (j) => (
-        <span className="web-person-zelle">
-          <WebSymbol icon={ICON_JAHRGANG_GEFUELLT} ton="jahrgang" />
-          {darfBearbeiten
-            ? <WebZeilenKnopf onClick={() => onBearbeiten(j)} aria-label={`${j.name} bearbeiten`}>{j.name}</WebZeilenKnopf>
-            : <span className="web-zelle-titel web-einzeilig">{j.name}</span>}
-        </span>
+        <WebNameZelle
+          kreis={<WebKreis icon={ICON_JAHRGANG_GEFUELLT} ton="jahrgang" />}
+          titel={j.name}
+          onKlick={darfBearbeiten ? () => onBearbeiten(j) : undefined}
+          beschriftung={`${j.name} bearbeiten`}
+        />
       ),
     },
     {
@@ -81,15 +96,13 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       schluessel: 'ziele',
       kopf: 'Punkteziele',
       // Summe der Ziele, die gelten (wie angezeigt: ohne Wert gilt 10)
-      sortWert: (j) => (j.gottesdienst_enabled !== false ? j.target_gottesdienst || 10 : 0) + (j.gemeinde_enabled !== false ? j.target_gemeinde || 10 : 0),
+      sortWert: (j) => (godiAn(j) ? j.target_gottesdienst || 10 : 0) + (gemeindeAn(j) ? j.target_gemeinde || 10 : 0),
       zelle: (j) => {
-        const godi = j.gottesdienst_enabled !== false;
-        const gemeinde = j.gemeinde_enabled !== false;
-        if (!godi && !gemeinde) return <span className="web-gedaempft">Keine Punkte</span>;
+        if (!godiAn(j) && !gemeindeAn(j)) return <span className="web-gedaempft">Keine Punkte</span>;
         return (
           <span className="web-pillreihe web-pillreihe--eine-zeile">
-            {godi && <WebPill>Gottesdienst {j.target_gottesdienst || 10}</WebPill>}
-            {gemeinde && <WebPill>Gemeinde {j.target_gemeinde || 10}</WebPill>}
+            {godiAn(j) && <WebPill>Gottesdienst {j.target_gottesdienst || 10}</WebPill>}
+            {gemeindeAn(j) && <WebPill>Gemeinde {j.target_gemeinde || 10}</WebPill>}
           </span>
         );
       },
@@ -99,8 +112,8 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
       kopf: 'Konfispruch',
       breite: '150px',
       optional: true,
-      sortWert: (j) => konfispruchStatusRang(j.konfspruch_enabled !== false),
-      zelle: (j) => (j.konfspruch_enabled !== false
+      sortWert: (j) => konfispruchStatusRang(spruchFrei(j)),
+      zelle: (j) => (spruchFrei(j)
         ? <WebPill ton="erfolg" punkt>Spruch frei</WebPill>
         : <WebPill punkt>Spruch gesperrt</WebPill>),
     },
@@ -114,56 +127,58 @@ const WebJahrgaenge: React.FC<WebJahrgaengeProps> = ({
         ? <span className="web-zelle-leise">Gestartet am {datumKurz(j.wrapped_released_at)}</span>
         : <span className="web-gedaempft">Noch kein Rückblick</span>),
     },
-    {
-      schluessel: 'aktionen',
-      kopf: 'Aktionen',
-      kopfVersteckt: true,
-      klasse: 'web-spalte-aktionen-breit',
-      zelle: (j) => (
-        <WebZeilenAktionen
-          name={j.name}
-          onBearbeiten={darfBearbeiten ? () => onBearbeiten(j) : undefined}
-          onLoeschen={darfLoeschen ? () => onLoeschen(j) : undefined}
-          loeschenTitel="Jahrgang löschen"
-        />
-      ),
-    },
   ];
 
   return (
-    <WebSeite
+    <WebListenSeite<JahrgangEintrag>
       bereich="Verwaltung"
       titel="Jahrgänge"
-      untertitel="Punkteziele und Konfisprüche verwalten"
-      aktionen={darfAnlegen ? (
+      untertitel={laedt ? undefined : 'Punkteziele und Konfisprüche verwalten'}
+      aktionen={!laedt && darfAnlegen ? (
         <WebKnopf art="primaer" onClick={onAnlegen}>
           <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
           Neuer Jahrgang
         </WebKnopf>
       ) : undefined}
-      zurueck={zurueck}
+      zurueck={ZURUECK}
       pageRef={pageRef}
-    >
-      <div className="web-raster web-raster--kacheln">
-        <WebKachel label="Jahrgänge" wert={String(jahrgaenge.length)} />
-        <WebKachel label="Konfis" wert={String(konfis)} zusatz={['in diesen Jahrgängen']} />
-        <WebKachel label="Rückblick gestartet" wert={String(mitRueckblick)} zusatz={[`von ${mitEinheit(jahrgaenge.length, 'Jahrgang', 'Jahrgängen')}`]} />
-      </div>
-
-      <WebKarte titel="Jahrgänge" untertitel={mitEinheit(jahrgaenge.length, 'Jahrgang', 'Jahrgänge')} bund={jahrgaenge.length > 0}>
-        {jahrgaenge.length === 0 ? (
-          <WebLeer icon={ICON_JAHRGANG} titel="Keine Jahrgänge gefunden" text="Noch keine Jahrgänge angelegt." />
-        ) : (
-          <WebTabelle
-            beschriftung="Jahrgänge"
-            spalten={spalten}
-            zeilen={jahrgaenge}
-            zeileSchluessel={(j) => j.id}
-            mittig
-          />
-        )}
-      </WebKarte>
-    </WebSeite>
+      laden={laedt ? { text: 'Die Jahrgänge werden geladen.', kacheln: 2, karten: 1 } : undefined}
+      kennzahlen={[
+        { symbol: KENNZAHL_SYMBOL.jahrgaenge, label: 'Jahrgänge', wert: String(jahrgaenge.length) },
+        { symbol: KENNZAHL_SYMBOL.konfis, label: 'Konfis', wert: String(konfis), zusatz: ['in diesen Jahrgängen'] },
+        { label: 'Rückblick gestartet', wert: String(mitRueckblick), zusatz: [`von ${mitEinheit(jahrgaenge.length, 'Jahrgang', 'Jahrgängen')}`] },
+      ]}
+      ansicht={{ seite: 'jahrgaenge', vorgabe: 'liste' }}
+      eintraege={jahrgaenge}
+      liste={{ beschriftung: 'Jahrgänge', spalten, zeileSchluessel: (j) => j.id, mittig: true, bearbeiten, loeschen }}
+      kacheln={{
+        beschriftung: 'Jahrgänge',
+        schluessel: (j) => j.id,
+        bearbeiten,
+        loeschen,
+        karte: (j) => ({
+          akzent: 'var(--app-color-jahrgang)',
+          akzentDunkel: 'var(--app-color-jahrgang-dunkel)',
+          symbol: <WebBildKarteSymbol icon={ICON_JAHRGANG_GEFUELLT} />,
+          label: 'Jahrgang',
+          titelImKopf: true,
+          titel: j.name,
+          onTitel: darfBearbeiten ? () => onBearbeiten(j) : undefined,
+          titelBeschriftung: `${j.name} bearbeiten`,
+          angaben: [
+            { ...KENNZAHL_SYMBOL.konfis, inhalt: mitEinheit(j.konfi_count ?? 0, 'Konfi', 'Konfis') },
+            { icon: ICON_POKAL, farbe: 'var(--app-color-warning)', inhalt: zieleText(j) },
+            { icon: ICON_BUCH, inhalt: spruchFrei(j) ? 'Spruch frei' : 'Spruch gesperrt' },
+            {
+              icon: ICON_FUNKELN,
+              farbe: 'var(--app-color-wrapped)',
+              inhalt: j.wrapped_released_at ? `Rückblick gestartet am ${datumKurz(j.wrapped_released_at)}` : 'Noch kein Rückblick',
+            },
+          ],
+        }),
+      }}
+      leer={{ icon: ICON_JAHRGANG, titel: 'Keine Jahrgänge gefunden', text: 'Noch keine Jahrgänge angelegt.' }}
+    />
   );
 };
 
