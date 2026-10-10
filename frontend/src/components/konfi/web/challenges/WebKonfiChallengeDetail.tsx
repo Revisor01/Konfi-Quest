@@ -20,8 +20,9 @@
 // (konfi/pages/KonfiChallengeDetailPage).
 //
 // Eine Komponente fuer ALLE Zustaende der Seite -- laedt, Hinweis ("gibt es
-// nicht mehr", "nicht fuer dich", ohne Netz), Challenge -- mit einem einzigen
-// Rahmen. Wechselte der Rahmen beim Laden der Challenge die Komponente,
+// nicht mehr", "nicht fuer dich", ohne Netz), Challenge -- mit einer einzigen
+// Huelle (WebDetailSeite ohne eigene IonPage; die IonPage haelt
+// KonfiChallengeDetailPage). Wechselte der Rahmen beim Laden der Challenge die Komponente,
 // bauten sich Kopfzeile und IonContent neu auf; Ionic misst den alten noch
 // (TypeError in readDimensions).
 
@@ -29,15 +30,13 @@ import React, { useId, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import WebBadgeSymbol from '../WebBadgeSymbol';
 import { ICON_HINZUFUEGEN, ICON_OFFLINE, ICON_TEXTDOKUMENT, ICON_GRUPPE } from '../../../shared/icons';
-import WebChallengeRahmen from '../../../shared/web/challenges/WebChallengeRahmen';
-import WebChallengeHinweis from '../../../shared/web/challenges/WebChallengeHinweis';
+import { challengeZustand } from '../../../shared/web/challenges/webChallengeZustand';
 import type { ChallengeHinweisArt } from '../../../shared/challengeHinweisTexte';
 import WebChallengeChips, { type WebChallengeChip } from '../../../shared/web/challenges/WebChallengeChips';
 import WebBeitrag from '../../../shared/web/challenges/WebBeitrag';
 import WebKarte from '../../../web/WebKarte';
 import type { WebKachelProps } from '../../../web/WebKachel';
-import { WebDetailInhalt } from '../../../web/WebDetailSeite';
-import WebAngaben from '../../../web/WebAngaben';
+import WebDetailSeite, { type WebDetailSeiteProps } from '../../../web/WebDetailSeite';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
@@ -115,8 +114,8 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
   if (current && neu === null) setNeu(challengeUpdatesByChallenge?.[current.id] ?? 0);
   const beitraegeId = useId();
 
-  // Alles Weitere gibt es nur mit einer Challenge.
-  const renderChallenge = (current: KonfiChallenge) => {
+  // Alles Weitere gibt es nur mit einer Challenge: Hinweis, Kennzahlen, Inhalt, Angaben.
+  const inhaltVon = (current: KonfiChallenge): Pick<WebDetailSeiteProps, 'hinweis' | 'kennzahlen' | 'haupt' | 'angaben' | 'seite'> => {
 
     const status = isActive ? 'active' : 'ended';
     const gallery = detail?.gallery ?? [];
@@ -155,130 +154,123 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
       { label: 'Stempel', wert: !beitraegeDa ? '–' : hatStempel ? 'Erhalten' : isActive ? 'Offen' : 'Nicht erhalten', zusatz: [current.badge_name] },
     ];
 
-    return (
-      <WebDetailInhalt
-        hinweis={<WebHinweis art="hinweis">{einreichenHinweis}</WebHinweis>}
-        kennzahlen={kennzahlen}
-        haupt={(
-          <>
-            <WebKarte titel={isActive ? 'Worum geht es?' : 'Worum ging es?'}>
-              <p className="web-challenge-aufgabe">{current.description}</p>
-              <ul className="web-challenge-aufgabe__meta">
-                <li>{visibilityShort}</li>
-                {moderationShort && <li>{moderationShort}</li>}
-                {author && <li>Gestellt von {author}</li>}
-              </ul>
-            </WebKarte>
+    return {
+      hinweis: <WebHinweis art="hinweis">{einreichenHinweis}</WebHinweis>,
+      kennzahlen,
+      haupt: (
+        <>
+          <WebKarte titel={isActive ? 'Worum geht es?' : 'Worum ging es?'}>
+            <p className="web-challenge-aufgabe">{current.description}</p>
+            <ul className="web-challenge-aufgabe__meta">
+              <li>{visibilityShort}</li>
+              {moderationShort && <li>{moderationShort}</li>}
+              {author && <li>Gestellt von {author}</li>}
+            </ul>
+          </WebKarte>
 
-            {neu !== null && neu > 0 && (
-              <WebHinweis art="hinweis" titel="Seit deinem letzten Besuch">
-                {neu} {neu === 1 ? 'Neuigkeit' : 'Neuigkeiten'}
-              </WebHinweis>
-            )}
+          {neu !== null && neu > 0 && (
+            <WebHinweis art="hinweis" titel="Seit deinem letzten Besuch">
+              {neu} {neu === 1 ? 'Neuigkeit' : 'Neuigkeiten'}
+            </WebHinweis>
+          )}
 
-            <section className="web-challenge-abschnitt" aria-labelledby={beitraegeId}>
-              <div className="web-challenge-abschnitt__kopf">
-                <h2 id={beitraegeId} className="web-karte__titel">{ueberschrift}</h2>
-                {/* Bei "nur Leitung" gibt es keine Gruppen-Galerie -- dann bleibt nur "Meins", ohne Reiter. */}
-                {!privat && (
-                  <WebChallengeChips<KonfiReiter> beschriftung={CHALLENGE_DETAIL_KONFI_BESCHRIFTUNG} chips={chips} wert={effektiverReiter} onWert={setReiter} />
+          <section className="web-challenge-abschnitt" aria-labelledby={beitraegeId}>
+            <div className="web-challenge-abschnitt__kopf">
+              <h2 id={beitraegeId} className="web-karte__titel">{ueberschrift}</h2>
+              {/* Bei "nur Leitung" gibt es keine Gruppen-Galerie -- dann bleibt nur "Meins", ohne Reiter. */}
+              {!privat && (
+                <WebChallengeChips<KonfiReiter> beschriftung={CHALLENGE_DETAIL_KONFI_BESCHRIFTUNG} chips={chips} wert={effektiverReiter} onWert={setReiter} />
+              )}
+            </div>
+
+            {loading ? (
+              <WebLaden karten={2} text="Die Beiträge werden geladen." />
+            ) : offlineOhneStand ? (
+              <div className="web-karte">
+                <WebLeer icon={ICON_OFFLINE} titel="Keine Verbindung" text="Die Liste der Beiträge ist offline nicht verfügbar." />
+              </div>
+            ) : sichtbareBeitraege.length === 0 ? (
+              <div className="web-karte">
+                {effektiverReiter === 'meins' ? (
+                  <WebLeer
+                    icon={ICON_TEXTDOKUMENT}
+                    titel={konfiDetailLeer('meins', isActive, 'web').titel}
+                    text={konfiDetailLeer('meins', isActive, 'web').text}
+                  />
+                ) : (
+                  <WebLeer
+                    icon={ICON_GRUPPE}
+                    titel={konfiDetailLeer('feed', isActive, 'web').titel}
+                    text={konfiDetailLeer('feed', isActive, 'web').text}
+                  />
                 )}
               </div>
-
-              {loading ? (
-                <WebLaden karten={2} text="Die Beiträge werden geladen." />
-              ) : offlineOhneStand ? (
-                <div className="web-karte">
-                  <WebLeer icon={ICON_OFFLINE} titel="Keine Verbindung" text="Die Liste der Beiträge ist offline nicht verfügbar." />
-                </div>
-              ) : sichtbareBeitraege.length === 0 ? (
-                <div className="web-karte">
-                  {effektiverReiter === 'meins' ? (
-                    <WebLeer
-                      icon={ICON_TEXTDOKUMENT}
-                      titel={konfiDetailLeer('meins', isActive, 'web').titel}
-                      text={konfiDetailLeer('meins', isActive, 'web').text}
+            ) : (
+              <ul className="web-beitraege" aria-label={ueberschrift}>
+                {sichtbareBeitraege.map((b) => {
+                  const eigener = effektiverReiter === 'meins';
+                  const stand = eigener ? getOwnStatus(b, current) : null;
+                  return (
+                    <WebBeitrag
+                      key={b.id}
+                      // Im eigenen Reiter immer "Dein Beitrag"; in der Galerie Name und
+                      // Herkunft, anonyme ohne Namen.
+                      name={eigener ? 'Dein Beitrag' : buildGalleryAuthorLabel(b)}
+                      wann={formatDateTime(b.created_at)}
+                      mediaType={b.media_type}
+                      ausgeblendet={b.moderation_status === 'hidden'}
+                      text={b.text_content}
+                      link={b}
+                      datei={b.file_path ? { filePath: b.file_path, fileName: b.file_name } : undefined}
+                      onOeffnen={(pfad, name) => { void dateiOeffnen(pfad, name); }}
+                      grund={b.moderation_note}
+                      marken={stand ? <WebPill ton={tonVonFarbe(stand.color)} punkt>{stand.label}</WebPill> : undefined}
                     />
-                  ) : (
-                    <WebLeer
-                      icon={ICON_GRUPPE}
-                      titel={konfiDetailLeer('feed', isActive, 'web').titel}
-                      text={konfiDetailLeer('feed', isActive, 'web').text}
-                    />
-                  )}
-                </div>
-              ) : (
-                <ul className="web-beitraege" aria-label={ueberschrift}>
-                  {sichtbareBeitraege.map((b) => {
-                    const eigener = effektiverReiter === 'meins';
-                    const stand = eigener ? getOwnStatus(b, current) : null;
-                    return (
-                      <WebBeitrag
-                        key={b.id}
-                        // Im eigenen Reiter immer "Dein Beitrag"; in der Galerie Name und
-                        // Herkunft, anonyme ohne Namen.
-                        name={eigener ? 'Dein Beitrag' : buildGalleryAuthorLabel(b)}
-                        wann={formatDateTime(b.created_at)}
-                        mediaType={b.media_type}
-                        ausgeblendet={b.moderation_status === 'hidden'}
-                        text={b.text_content}
-                        link={b}
-                        datei={b.file_path ? { filePath: b.file_path, fileName: b.file_name } : undefined}
-                        onOeffnen={(pfad, name) => { void dateiOeffnen(pfad, name); }}
-                        grund={b.moderation_note}
-                        marken={stand ? <WebPill ton={tonVonFarbe(stand.color)} punkt>{stand.label}</WebPill> : undefined}
-                      />
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
-          </>
-        )}
-        seite={(
-          <>
-            <WebKarte titel="Angaben">
-              <WebAngaben
-                angaben={[
-                  { label: 'Status', wert: <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill> },
-                  {
-                    label: 'Zeitraum',
-                    wert: (
-                      <>
-                        {zeitraumText(current, status)}
-                        {isActive && <span className="web-zelle-leise">{restzeitText(formatRemaining(current.ends_at))}</span>}
-                      </>
-                    ),
-                  },
-                  { label: 'Zielgruppe', wert: AUDIENCE_LABEL[zielgruppeVon(current)] },
-                  { label: 'Sichtbarkeit', wert: visibilityShort },
-                  ...(moderationShort ? [{ label: 'Freigabe', wert: moderationShort }] : []),
-                  ...(author ? [{ label: 'Gestellt von', wert: author }] : []),
-                ]}
-              />
-            </WebKarte>
-
-            <WebKarte titel="Stempel">
-              <div className="web-challenge-stempelinfo">
-                {/* Derselbe Kreis wie in den Stempel-Rastern (WebAuszeichnungen). */}
-                <WebBadgeSymbol icon={getChallengeBadgeIcon(current.badge_icon)} farbe="var(--app-color-challenges)" erreicht />
-                <div>
-                  <strong>{current.badge_name}</strong>
-                  <p className="web-challenge-hinweistext">{stempelText}</p>
-                </div>
-              </div>
-            </WebKarte>
-          </>
-        )}
-      />
-    );
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </>
+      ),
+      angaben: [
+        { label: 'Status', wert: <WebPill ton={STATUS_TON[status]} punkt>{STATUS_WORT[status]}</WebPill> },
+        {
+          label: 'Zeitraum',
+          wert: (
+            <>
+              {zeitraumText(current, status)}
+              {isActive && <span className="web-zelle-leise">{restzeitText(formatRemaining(current.ends_at))}</span>}
+            </>
+          ),
+        },
+        { label: 'Zielgruppe', wert: AUDIENCE_LABEL[zielgruppeVon(current)] },
+        { label: 'Sichtbarkeit', wert: visibilityShort },
+        ...(moderationShort ? [{ label: 'Freigabe', wert: moderationShort }] : []),
+        ...(author ? [{ label: 'Gestellt von', wert: author }] : []),
+      ],
+      seite: (
+        <WebKarte titel="Stempel">
+          <div className="web-challenge-stempelinfo">
+            {/* Derselbe Kreis wie in den Stempel-Rastern (WebAuszeichnungen). */}
+            <WebBadgeSymbol icon={getChallengeBadgeIcon(current.badge_icon)} farbe="var(--app-color-challenges)" erreicht />
+            <div>
+              <strong>{current.badge_name}</strong>
+              <p className="web-challenge-hinweistext">{stempelText}</p>
+            </div>
+          </div>
+        </WebKarte>
+      ),
+    };
   };
 
   return (
-    <WebChallengeRahmen
+    <WebDetailSeite
+      ohneIonPage
+      bereich="Challenges"
       titel={current?.title ?? 'Challenge'}
       zurueck={{ href: LISTEN_PFAD, text: 'Alle Challenges' }}
-      untertitel={current ? (
+      kennzeichen={current ? (
         <span className="web-pillreihe">
           <WebPill ton={STATUS_TON[isActive ? 'active' : 'ended']} punkt>{STATUS_WORT[isActive ? 'active' : 'ended']}</WebPill>
           <span>{zeitraumText(current, isActive ? 'active' : 'ended')}</span>
@@ -290,9 +282,8 @@ const WebKonfiChallengeDetail: React.FC<WebKonfiChallengeDetailProps> = ({
           Beitrag einreichen
         </WebKnopf>
       ) : undefined}
-    >
-      {current ? renderChallenge(current) : <WebChallengeHinweis art={hinweisArt} onBack={onBack} onNochmal={onNochmal} />}
-    </WebChallengeRahmen>
+      {...(current ? inhaltVon(current) : challengeZustand(hinweisArt, onBack, onNochmal))}
+    />
   );
 };
 

@@ -214,19 +214,3 @@ export function WebDetailListe<T>({
   );
 }
 
-// --- Uebergang ------------------------------------------------------------------
-
-/** Nur bis die Challenge-Seiten umgestellt sind: der Inhalt ohne Kopf. */
-export const WebDetailInhalt: React.FC<Pick<WebDetailSeiteProps, 'hinweis' | 'kennzahlen' | 'seiteBeschriftung'> & { haupt: React.ReactNode; seite: React.ReactNode }> = ({
-  hinweis, kennzahlen = [], haupt, seite, seiteBeschriftung = 'Angaben',
-}) => (
-  <div className="web-detail">
-    {hinweis}
-    {kennzahlen.length > 0 && (
-      <div className="web-raster web-raster--kacheln web-detail__kennzahlen">
-        {kennzahlen.map((k) => <WebKachel key={k.label} {...k} />)}
-      </div>
-    )}
-    <WebSpalten haupt={haupt} seite={seite} seiteBeschriftung={seiteBeschriftung} />
-  </div>
-);
