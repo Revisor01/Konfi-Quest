@@ -109,10 +109,10 @@ auf Handy und Tablet bleibt es immer bei der Reiterleiste.
 
 ### Im Browser zwischen Liste und Kacheln wählen
 
-Events, Challenges, die Konfis der Leitung, die Aktivitäten unter **Mehr** und
-die gemeldeten Aktivitäten unter **Mitmachen** lassen sich im Browser als
-**Liste** oder als **Kacheln** ansehen. Die Wahl steht in der Zeile mit Filtern
-und Suche ganz rechts, direkt neben der Suche. Die Liste ist eine Tabelle mit
+Events, Challenges, die Konfis der Leitung, die Aktivitäten und **Material
+verwalten** unter **Mehr** und die gemeldeten Aktivitäten unter **Mitmachen**
+lassen sich im Browser als **Liste** oder als **Kacheln** ansehen. Die Wahl
+steht in der Zeile mit Reitern, Filtern und Suche ganz rechts. Die Liste ist eine Tabelle mit
 einer Zeile je Eintrag, die Kacheln zeigen dieselben Einträge als Karten im
 Raster. Filter, Suche und Zahlen gelten in beiden Ansichten gleich, und ein
 Klick auf eine Zeile oder Karte öffnet den Eintrag.

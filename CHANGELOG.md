@@ -130,6 +130,8 @@ Versionsüberschrift.
   hattest, gehen ohne Netz wieder so auf wie zuletzt — mit Teilnehmerliste,
   Zeitfenstern, Material und Punkte-Historie statt der grauen Zeile
   „offline nicht verfügbar".
+- Im Browser lässt sich „Material verwalten" auch als Kacheln ansehen; die
+  Wahl zwischen Liste und Kacheln merkt sich der Browser.
 
 ### Geändert
 - Auf der Startseite von Teamer:innen stehen unter „Events" nur noch Events,

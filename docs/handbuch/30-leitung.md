@@ -421,7 +421,7 @@ Rückfragen wie in der App. Wer was darf, gilt wie dort, siehe
 | **Level** | Symbol und Titel, Beschreibung, ab wie vielen Punkten | |
 | **Zertifikate** | Kacheln mit Symbol und Name statt einer Tabelle | Bearbeiten und Löschen an der Kachel |
 | **Jahrgänge** | Konfis, Punkteziele, Konfispruch frei oder gesperrt, Rückblick | Kennzahlen darüber; **Neuer Jahrgang** nur für die Gemeindeleitung |
-| **Material verwalten** | Titel mit Beschreibung, für wen sichtbar, was daran hängt, wer es angelegt hat | Suche, Auswahl **Jahrgang** oder **Nur globales Material**; fremdes Material steht auf **Ansehen** |
+| **Material verwalten** | Titel mit Beschreibung, für wen sichtbar, was daran hängt, wer es angelegt hat; auch als Kacheln | Suche, Auswahl **Jahrgang** oder **Nur globales Material**; fremdes Material steht auf **Ansehen** |
 | **Jahresrückblick** | Ausgaben mit Jahrgang, Zeitraum, Zahl der Rückblicke und Stand | **Konfis** und **Team** (Team nur für die Gemeindeleitung); **Neuer Rückblick** öffnet ein Fenster |
 | **Dashboard** | zwei Listen nebeneinander, für Konfis und für das Team | je Bereich ein Schalter; die Pfeile nach oben und unten ersetzen das Ziehen der App; jede Änderung gilt sofort |
 | **Einladungen** | aktive Codes mit Jahrgang, Verwendungen und Gültigkeit | Formular für einen neuen Code; rechts der QR-Code mit **Link kopieren** und **Teilen** |

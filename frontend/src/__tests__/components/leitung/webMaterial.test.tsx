@@ -224,6 +224,30 @@ describe('Material verwalten (Web)', () => {
     expect(h.refresh).toHaveBeenCalled();
   });
 
+  it('Liste oder Kacheln: Vorgabe Liste; Kacheln zeigen dieselben Materialien mit den Knöpfen der Zeile, die Wahl bleibt gemerkt', async () => {
+    window.localStorage.clear();
+    h.user = konto('admin', [12]);
+    const { unmount } = await oeffnen();
+    const umschalter = () => within(screen.getByRole('group', { name: 'Ansicht' }));
+    expect(umschalter().getByRole('button', { name: 'Liste' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(umschalter().getByRole('button', { name: 'Kacheln' }));
+    expect(screen.queryByRole('table')).toBeNull();
+    const karten = within(screen.getByRole('list', { name: 'Materialien' })).getAllByRole('article');
+    expect(karten.map((k) => within(k).getByRole('heading', { level: 3 }).textContent)).toEqual(['Liederbuch Freizeit', 'Andacht Advent', 'Spielesammlung']);
+    expect(karten[0]).toHaveTextContent('2 Dateien · 1 Link · 1 Event');
+    // Eigenes: Bearbeiten und Löschen im Fuß; fremdes: nur Ansehen.
+    const fuss = (k: HTMLElement) => [...k.querySelector('footer')!.querySelectorAll('button')].map((b) => b.textContent);
+    expect(fuss(karten[0])).toEqual(['Bearbeiten', 'Löschen']);
+    expect(fuss(karten[1])).toEqual(['Ansehen']);
+    fireEvent.click(within(karten[2]).getByRole('button', { name: 'Spielesammlung löschen' }));
+    expect(h.stand.alert?.header).toBe('Material löschen');
+    expect(window.localStorage.getItem('konfiquest.ansicht.material')).toBe('kacheln');
+    unmount();
+    await oeffnen();
+    expect(within(screen.getByRole('group', { name: 'Ansicht' })).getByRole('button', { name: 'Kacheln' })).toHaveAttribute('aria-pressed', 'true');
+    window.localStorage.clear();
+  });
+
   describe('Suche und Filter', () => {
     beforeEach(() => { vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }); });
     afterEach(() => { vi.useRealTimers(); });
