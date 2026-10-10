@@ -68,7 +68,15 @@ export interface WebAktion<T> {
   beschriftung: (eintrag: T) => string;
   /** Text beim Darueberfahren; Vorgabe ist die Beschriftung. */
   titel?: (eintrag: T) => string;
+  /** Nur bei diesen Eintraegen steht der Knopf (Rechte je Zeile); fehlt es, bei allen. */
+  zeigen?: (eintrag: T) => boolean;
+  /** Der Knopf steht da, ist aber gesperrt (offline, laeuft gerade). */
+  deaktiviert?: (eintrag: T) => boolean;
 }
+
+/** Steht die Aktion bei diesem Eintrag da? */
+const aktionBei = <T,>(aktion: WebAktion<T> | undefined, eintrag: T): aktion is WebAktion<T> =>
+  Boolean(aktion) && (aktion?.zeigen?.(eintrag) ?? true);
 
 /** Der Kopf einer sortierbaren Spalte: der Name als Knopf, daneben der Pfeil. */
 export const WebSortKopf: React.FC<{ kopf: string; aktiv: boolean; richtung?: 'auf' | 'ab'; onKlick: () => void }> = ({ kopf, aktiv, richtung, onKlick }) => (
@@ -122,16 +130,21 @@ export const WebNameZelle: React.FC<WebNameZelleProps> = ({ titel, kreis, href, 
 };
 
 /** Die Knoepfe am Ende einer Zeile: nur Symbol, der Name steht in der Beschriftung. */
-function WebZeilenKnoepfe<T>({ eintrag, bearbeiten, loeschen }: { eintrag: T; bearbeiten?: WebAktion<T>; loeschen?: WebAktion<T> }): React.ReactElement {
+function WebZeilenKnoepfe<T>({ eintrag, bearbeiten, loeschen, weitere }: {
+  eintrag: T; bearbeiten?: WebAktion<T>; loeschen?: WebAktion<T>; weitere?: (eintrag: T) => React.ReactNode;
+}): React.ReactElement {
   return (
     <div className="web-liste-aktionen">
-      {bearbeiten && (
-        <WebKnopf klein symbol vorn aria-label={bearbeiten.beschriftung(eintrag)} title={(bearbeiten.titel ?? bearbeiten.beschriftung)(eintrag)} onClick={() => bearbeiten.onKlick(eintrag)}>
+      {weitere?.(eintrag)}
+      {aktionBei(bearbeiten, eintrag) && (
+        <WebKnopf klein symbol vorn aria-label={bearbeiten.beschriftung(eintrag)} title={(bearbeiten.titel ?? bearbeiten.beschriftung)(eintrag)}
+          disabled={bearbeiten.deaktiviert?.(eintrag)} onClick={() => bearbeiten.onKlick(eintrag)}>
           <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
         </WebKnopf>
       )}
-      {loeschen && (
-        <WebKnopf klein symbol vorn art="gefahr" aria-label={loeschen.beschriftung(eintrag)} title={(loeschen.titel ?? loeschen.beschriftung)(eintrag)} onClick={() => loeschen.onKlick(eintrag)}>
+      {aktionBei(loeschen, eintrag) && (
+        <WebKnopf klein symbol vorn art="gefahr" aria-label={loeschen.beschriftung(eintrag)} title={(loeschen.titel ?? loeschen.beschriftung)(eintrag)}
+          disabled={loeschen.deaktiviert?.(eintrag)} onClick={() => loeschen.onKlick(eintrag)}>
           <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
         </WebKnopf>
       )}
@@ -165,30 +178,34 @@ export interface WebListeProps<T> {
   bearbeiten?: WebAktion<T>;
   /** Loeschen am Ende der Zeile; fehlt es, steht der Knopf nicht da. */
   loeschen?: WebAktion<T>;
+  /** Weitere Knoepfe am Ende der Zeile, vor Bearbeiten und Loeschen (wie `fuss` bei WebKacheln). */
+  weitere?: (zeile: T) => React.ReactNode;
+  /** Breite der Spalte mit den Knoepfen, wenn `weitere` mehr Platz braucht (CSS-Wert). */
+  aktionenBreite?: string;
   /** Steht statt der Tabelle, wenn es keine Zeilen gibt. */
   leer?: WebLeerProps;
 }
 
 function WebListe<T>({
   beschriftung, spalten, zeilen, zeileSchluessel, zeileKlasse, mittig = false, fest = false, klasse,
-  sortierung, onSortieren, bearbeiten, loeschen, leer,
+  sortierung, onSortieren, bearbeiten, loeschen, weitere, aktionenBreite, leer,
 }: WebListeProps<T>): React.ReactElement {
   const aussen = Boolean(onSortieren);
   const [eigene, setEigene] = useState<TabellenSortierung | null>(null);
   const aktuell = aussen ? sortierung ?? null : eigene;
 
   const alleSpalten = useMemo<ReadonlyArray<WebSpalte<T>>>(() => {
-    if (!bearbeiten && !loeschen) return spalten;
+    if (!bearbeiten && !loeschen && !weitere) return spalten;
     const zwei = Boolean(bearbeiten && loeschen);
     return [...spalten, {
       schluessel: 'aktionen',
       kopf: 'Aktionen',
       kopfVersteckt: true,
-      breite: zwei ? '112px' : undefined,
-      klasse: zwei ? 'web-spalte-liste-aktionen' : 'web-spalte-liste-aktionen web-spalte-aktionen-schmal',
-      zelle: (z: T) => <WebZeilenKnoepfe eintrag={z} bearbeiten={bearbeiten} loeschen={loeschen} />,
+      breite: aktionenBreite ?? (zwei ? '112px' : undefined),
+      klasse: zwei || weitere ? 'web-spalte-liste-aktionen' : 'web-spalte-liste-aktionen web-spalte-aktionen-schmal',
+      zelle: (z: T) => <WebZeilenKnoepfe eintrag={z} bearbeiten={bearbeiten} loeschen={loeschen} weitere={weitere} />,
     }];
-  }, [spalten, bearbeiten, loeschen]);
+  }, [spalten, bearbeiten, loeschen, weitere, aktionenBreite]);
 
   const sortierbar = (s: WebSpalte<T>) => Boolean(s.sortWert) || (aussen && Boolean(s.sortierbar));
   const sortSpalte = !aussen && eigene ? alleSpalten.find((s) => s.schluessel === eigene.schluessel && s.sortWert) : undefined;

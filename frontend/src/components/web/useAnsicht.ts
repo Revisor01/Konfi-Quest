@@ -17,7 +17,12 @@ export type WebAnsichtSeite =
   | 'challenges-mitglied'
   | 'konfis'
   | 'aktivitaeten'
-  | 'antraege';
+  | 'antraege'
+  | 'benutzer'
+  | 'jahrgaenge'
+  | 'kategorien'
+  | 'levels'
+  | 'zertifikate';
 
 const LEITUNG = new Set(['admin', 'org_admin', 'super_admin']);
 
@@ -31,7 +36,8 @@ export const ansichtSchluessel = (seite: WebAnsichtSeite): string => `konfiquest
 // Speicher kann fehlen oder werfen (privates Fenster, gesperrte
 // Website-Daten). Dann gilt die Vorgabe, und der Umschalter wirkt bis zum
 // Neuladen -- wie bei der Leiste (layout/Seitenleiste.tsx).
-const lesen = (seite: WebAnsichtSeite): WebAnsicht | null => {
+const lesen = (seite: WebAnsichtSeite | null): WebAnsicht | null => {
+  if (!seite) return null;
   try {
     const wert = window.localStorage.getItem(ansichtSchluessel(seite));
     return wert === 'liste' || wert === 'kacheln' ? wert : null;
@@ -40,7 +46,8 @@ const lesen = (seite: WebAnsichtSeite): WebAnsicht | null => {
   }
 };
 
-const merken = (seite: WebAnsichtSeite, ansicht: WebAnsicht): void => {
+const merken = (seite: WebAnsichtSeite | null, ansicht: WebAnsicht): void => {
+  if (!seite) return;
   try {
     window.localStorage.setItem(ansichtSchluessel(seite), ansicht);
   } catch {
@@ -48,8 +55,12 @@ const merken = (seite: WebAnsichtSeite, ansicht: WebAnsicht): void => {
   }
 };
 
-/** Die gemerkte Ansicht der Seite (sonst die Vorgabe) und die Funktion, sie zu wechseln. */
-export function useAnsicht(seite: WebAnsichtSeite, vorgabe: WebAnsicht): [WebAnsicht, (a: WebAnsicht) => void] {
+/**
+ * Die gemerkte Ansicht der Seite (sonst die Vorgabe) und die Funktion, sie zu
+ * wechseln. Ohne Seite (`null`: eine Liste ohne Kacheln) wird nichts gelesen
+ * und nichts gemerkt.
+ */
+export function useAnsicht(seite: WebAnsichtSeite | null, vorgabe: WebAnsicht): [WebAnsicht, (a: WebAnsicht) => void] {
   const [ansicht, setAnsicht] = useState<WebAnsicht>(() => lesen(seite) ?? vorgabe);
   const waehlen = useCallback((a: WebAnsicht) => {
     setAnsicht(a);

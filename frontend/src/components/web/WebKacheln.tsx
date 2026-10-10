@@ -15,6 +15,10 @@ import WebBildKarte, { type WebBildKarteProps } from './WebBildKarte';
 import WebKnopf from './WebKnopf';
 import type { WebAktion } from './WebListe';
 
+/** Steht die Aktion bei diesem Eintrag da? (`zeigen`, wie in WebListe) */
+const aktionBei = <T,>(aktion: WebAktion<T> | undefined, eintrag: T): aktion is WebAktion<T> =>
+  Boolean(aktion) && (aktion?.zeigen?.(eintrag) ?? true);
+
 export interface WebKachelnProps<T> {
   /** Name der Liste fuer Vorleseprogramme ("Konfis", "Aktivitäten"). */
   beschriftung: string;
@@ -33,7 +37,9 @@ function WebKacheln<T>({ beschriftung, eintraege, schluessel, karte, bearbeiten,
     <ul className="web-bildkarten" aria-label={beschriftung}>
       {eintraege.map((e) => {
         const extra = fuss?.(e);
-        const mitFuss = Boolean(extra) || Boolean(bearbeiten) || Boolean(loeschen);
+        const mitBearbeiten = aktionBei(bearbeiten, e);
+        const mitLoeschen = aktionBei(loeschen, e);
+        const mitFuss = Boolean(extra) || mitBearbeiten || mitLoeschen;
         return (
           <li key={schluessel(e)} className="web-bildkarten__eintrag">
             <WebBildKarte
@@ -41,14 +47,14 @@ function WebKacheln<T>({ beschriftung, eintraege, schluessel, karte, bearbeiten,
               fuss={mitFuss ? (
                 <>
                   {extra}
-                  {bearbeiten && (
-                    <WebKnopf klein vorn onClick={() => bearbeiten.onKlick(e)} aria-label={bearbeiten.beschriftung(e)}>
+                  {mitBearbeiten && bearbeiten && (
+                    <WebKnopf klein vorn disabled={bearbeiten.deaktiviert?.(e)} onClick={() => bearbeiten.onKlick(e)} aria-label={bearbeiten.beschriftung(e)}>
                       <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
                       Bearbeiten
                     </WebKnopf>
                   )}
-                  {loeschen && (
-                    <WebKnopf klein vorn art="gefahr" onClick={() => loeschen.onKlick(e)} aria-label={loeschen.beschriftung(e)}>
+                  {mitLoeschen && loeschen && (
+                    <WebKnopf klein vorn art="gefahr" disabled={loeschen.deaktiviert?.(e)} onClick={() => loeschen.onKlick(e)} aria-label={loeschen.beschriftung(e)}>
                       <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
                       Löschen
                     </WebKnopf>

@@ -23,6 +23,14 @@
 // eine -- und dieselbe Ordnung gilt fuer Liste und Kacheln; die Kacheln
 // haben keine Spaltenkoepfe und bekommen dafuer die Auswahl "Sortieren"
 // (`auswahl`), die dieselbe Sortierung setzt.
+//
+// Ohne `kacheln` ist die Seite nur eine Liste: kein Umschalter, nichts wird
+// gemerkt (Support-Konten, Vorgaenge, Posteingang). Rechnet die Seite Filter
+// und Suche selbst -- beim Server oder in einem Hook --, laesst sie `passt`
+// an den Wahlen und `felder` an der Suche weg; die Huelle zeigt dann nur die
+// Werkzeuge und nimmt die Eintraege, wie sie kommen. Was zwischen
+// Werkzeugzeile und Inhalt steht (Leiste fuer die Auswahl mehrerer Zeilen),
+// bringt `vorInhalt` mit.
 
 import React, { useMemo, useState } from 'react';
 import WebSeite, { type WebSeiteProps } from './WebSeite';
@@ -47,6 +55,8 @@ export interface WebListenReiter<R extends string> {
   onWert: (wert: R) => void;
   /** Zahl je Reiter; fehlt sie, steht keine Zahl da (z. B. noch nicht geladen). */
   zahlen?: Partial<Record<R, number>>;
+  /** Die Zahl dieses Reiters in Rot (etwas, das Arbeit macht: neu, ungelesen). */
+  rot?: (wert: R) => boolean;
 }
 
 /** Ein Filter der Werkzeugzeile: Chips (Vorgabe) oder eine Auswahl. Die erste Wahl ist "alle". */
@@ -66,8 +76,8 @@ export interface WebListenSuche<T> {
   platzhalter?: string;
   wert: string;
   onWert: (wert: string) => void;
-  /** Die Texte eines Eintrags, in denen gesucht wird. */
-  felder: (eintrag: T) => ReadonlyArray<string | null | undefined>;
+  /** Die Texte eines Eintrags, in denen gesucht wird; fehlt es, sucht die Seite selbst. */
+  felder?: (eintrag: T) => ReadonlyArray<string | null | undefined>;
 }
 
 export interface WebListenSortierung<T> {
@@ -92,12 +102,15 @@ export interface WebListenSeiteProps<T, R extends string = string> extends Omit<
   werkzeuge?: React.ReactNode;
   /** "2 von 5 Konfis" -- steht nur da, wenn gesucht oder gefiltert wird. */
   zaehlzeile?: (sichtbar: number, gesamt: number) => string;
-  /** Welche Seite (die Wahl Liste/Kacheln wird je Seite gemerkt) und womit sie startet. */
-  ansicht: { seite: WebAnsichtSeite; vorgabe: WebAnsicht };
+  /** Welche Seite (die Wahl Liste/Kacheln wird je Seite gemerkt) und womit sie startet; nur mit `kacheln`. */
+  ansicht?: { seite: WebAnsichtSeite; vorgabe: WebAnsicht };
   eintraege: readonly T[];
   sortierung?: WebListenSortierung<T>;
   liste: Omit<WebListeProps<T>, 'zeilen' | 'leer' | 'sortierung' | 'onSortieren'>;
-  kacheln: Omit<WebKachelnProps<T>, 'eintraege'>;
+  /** Die Ansicht Kacheln; fehlt sie, ist die Seite nur eine Liste (ohne Umschalter). */
+  kacheln?: Omit<WebKachelnProps<T>, 'eintraege'>;
+  /** Zwischen Werkzeugzeile und Inhalt (Leiste fuer mehrere ausgewaehlte Zeilen). */
+  vorInhalt?: React.ReactNode;
   /** Steht statt Liste und Kacheln, wenn nach Suche und Filtern nichts bleibt. */
   leer: WebLeerProps;
   /** Die ganze Seite laedt: nur Platzhalter unter dem Kopf. */
@@ -115,10 +128,11 @@ const sortierWert = (s: { schluessel: string; richtung: 'auf' | 'ab' }): string 
 
 function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps<T, R>): React.ReactElement {
   const {
-    oben, kennzahlen, reiter, filter, suche, werkzeuge, zaehlzeile, ansicht, eintraege, sortierung, liste, kacheln, leer,
+    oben, kennzahlen, reiter, filter, suche, werkzeuge, zaehlzeile, ansicht, eintraege, sortierung, liste, kacheln, vorInhalt, leer,
     laden, fehler, inhaltLaden, inhaltFehler, children, ...seite
   } = props;
-  const [darstellung, setDarstellung] = useAnsicht(ansicht.seite, ansicht.vorgabe);
+  const [gemerkt, setDarstellung] = useAnsicht(kacheln && ansicht ? ansicht.seite : null, ansicht?.vorgabe ?? 'liste');
+  const darstellung: WebAnsicht = kacheln ? gemerkt : 'liste';
   // Je Reiter eine Ordnung: Wer im Team nach Badges sortiert, findet die Konfis unveraendert.
   const [sortierungen, setSortierungen] = useState<Record<string, WebSortierung>>({});
   const reiterSchluessel = reiter?.wert ?? '';
@@ -132,7 +146,7 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
   const sichtbar = useMemo(() => {
     const passend = eintraege.filter((e) =>
       filterListe.every((f) => f.wahlen.find((w) => w.schluessel === f.wert)?.passt?.(e) ?? true)
-      && (!suche || !sucht || suche.felder(e).some((t) => !!t && suchTreffer(t, suche.wert).length > 0)));
+      && (!suche?.felder || !sucht || suche.felder(e).some((t) => !!t && suchTreffer(t, suche.wert).length > 0)));
     return sortierung && aktuelleSortierung ? sortierung.sortiere(passend, aktuelleSortierung) : passend;
   }, [eintraege, filterListe, suche, sucht, sortierung, aktuelleSortierung]);
 
@@ -161,7 +175,7 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
     inhalt = <WebFehler text={inhaltFehler.text} onErneut={inhaltFehler.onErneut} />;
   } else if (sichtbar.length === 0) {
     inhalt = <WebLeer {...leer} />;
-  } else if (darstellung === 'kacheln') {
+  } else if (darstellung === 'kacheln' && kacheln) {
     inhalt = <WebKacheln {...kacheln} eintraege={sichtbar} />;
     kachelnSichtbar = true;
   } else {
@@ -174,6 +188,8 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
   const zahl = zaehlzeile && (sucht || gefiltert) ? zaehlzeile(sichtbar.length, eintraege.length) : undefined;
   const chipFilter = filterListe.filter((f) => (f.darstellung ?? 'chips') === 'chips');
   const auswahlFilter = filterListe.filter((f) => f.darstellung === 'auswahl');
+  // Eine Liste ohne Reiter, Filter, Suche, Knoepfe und Kacheln braucht keine Werkzeugzeile.
+  const mitWerkzeugen = Boolean(reiter || filterListe.length > 0 || suche || werkzeuge || zaehlzeile || kacheln);
 
   return (
     <WebSeite {...seite}>
@@ -185,59 +201,65 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
         </div>
       )}
 
-      <div className={`web-werkzeuge${mitSortierAuswahl ? ' web-werkzeuge--kacheln' : ''}`}>
-        {reiter && (
-          <WebChips<R>
-            beschriftung={reiter.beschriftung}
-            wert={reiter.wert}
-            onWert={reiter.onWert}
-            chips={inFassung(reiter.wahlen, 'web').map((w) => {
-              const n = reiter.zahlen?.[w.schluessel];
-              return { wert: w.schluessel, label: w.label, zahl: n, zahlText: n === undefined ? undefined : w.zahlText?.(n) };
-            })}
-          />
-        )}
-        {chipFilter.map((f) => (
-          <WebChips<string>
-            key={f.beschriftung}
-            beschriftung={f.beschriftung}
-            wert={f.wert}
-            onWert={f.onWert}
-            chips={inFassung(f.wahlen, 'web').map((w) => ({
-              wert: w.schluessel,
-              label: w.label,
-              zahl: f.zahlen ? eintraege.filter((e) => w.passt?.(e) ?? true).length : undefined,
-            }))}
-          />
-        ))}
-        {suche && <WebSuche beschriftung={suche.beschriftung} platzhalter={suche.platzhalter} wert={suche.wert} onWert={suche.onWert} />}
-        {auswahlFilter.map((f) => (
-          <WebFilterAuswahl
-            key={f.beschriftung}
-            label={f.beschriftung}
-            wert={f.wert}
-            onWert={f.onWert}
-            optionen={inFassung(f.wahlen, 'web').map((w) => ({ wert: w.schluessel, label: w.label }))}
-          />
-        ))}
-        <div className="web-werkzeuge__rechts">
-          {zahl && <span className="web-gedaempft web-werkzeuge__zahl" role="status">{zahl}</span>}
-          {werkzeuge}
-          {mitSortierAuswahl && sortierung?.auswahl && aktuelleSortierung && (
-            <WebFilterAuswahl
-              label="Sortieren"
-              wert={sortierWert(aktuelleSortierung)}
-              onWert={(w) => {
-                const [schluessel, richtung] = w.split(':');
-                setzeSortierung({ schluessel, richtung: richtung === 'ab' ? 'ab' : 'auf' });
-              }}
-              optionen={sortierung.auswahl.map((s) => ({ wert: sortierWert(s), label: s.label }))}
+      {mitWerkzeugen && (
+        <div className={`web-werkzeuge${mitSortierAuswahl ? ' web-werkzeuge--kacheln' : ''}`}>
+          {reiter && (
+            <WebChips<R>
+              beschriftung={reiter.beschriftung}
+              wert={reiter.wert}
+              onWert={reiter.onWert}
+              chips={inFassung(reiter.wahlen, 'web').map((w) => {
+                const n = reiter.zahlen?.[w.schluessel];
+                return {
+                  wert: w.schluessel, label: w.label, zahl: n, rot: reiter.rot?.(w.schluessel), zahlText: n === undefined ? undefined : w.zahlText?.(n),
+                };
+              })}
             />
           )}
-          {/* Der Umschalter steht immer ganz rechts. */}
-          <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />
+          {chipFilter.map((f) => (
+            <WebChips<string>
+              key={f.beschriftung}
+              beschriftung={f.beschriftung}
+              wert={f.wert}
+              onWert={f.onWert}
+              chips={inFassung(f.wahlen, 'web').map((w) => ({
+                wert: w.schluessel,
+                label: w.label,
+                zahl: f.zahlen ? eintraege.filter((e) => w.passt?.(e) ?? true).length : undefined,
+              }))}
+            />
+          ))}
+          {suche && <WebSuche beschriftung={suche.beschriftung} platzhalter={suche.platzhalter} wert={suche.wert} onWert={suche.onWert} />}
+          {auswahlFilter.map((f) => (
+            <WebFilterAuswahl
+              key={f.beschriftung}
+              label={f.beschriftung}
+              wert={f.wert}
+              onWert={f.onWert}
+              optionen={inFassung(f.wahlen, 'web').map((w) => ({ wert: w.schluessel, label: w.label }))}
+            />
+          ))}
+          <div className="web-werkzeuge__rechts">
+            {zahl && <span className="web-gedaempft web-werkzeuge__zahl" role="status">{zahl}</span>}
+            {werkzeuge}
+            {mitSortierAuswahl && sortierung?.auswahl && aktuelleSortierung && (
+              <WebFilterAuswahl
+                label="Sortieren"
+                wert={sortierWert(aktuelleSortierung)}
+                onWert={(w) => {
+                  const [schluessel, richtung] = w.split(':');
+                  setzeSortierung({ schluessel, richtung: richtung === 'ab' ? 'ab' : 'auf' });
+                }}
+                optionen={sortierung.auswahl.map((s) => ({ wert: sortierWert(s), label: s.label }))}
+              />
+            )}
+            {/* Der Umschalter steht immer ganz rechts -- wenn es Kacheln gibt. */}
+            {kacheln && <WebAnsichtUmschalter wert={darstellung} onWert={setDarstellung} />}
+          </div>
         </div>
-      </div>
+      )}
+
+      {vorInhalt}
 
       {/* Die Kacheln stehen frei im Raster, die Tabelle und jeder Hinweis in einer Karte. */}
       {kachelnSichtbar ? inhalt : <div className="web-karte">{inhalt}</div>}
