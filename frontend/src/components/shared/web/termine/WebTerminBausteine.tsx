@@ -27,8 +27,9 @@ import {
 import SegmentZahl from '../../SegmentZahl';
 import WebPill from '../../../web/WebPill';
 import WebHinweis from '../../../web/WebHinweis';
+import WebKarte from '../../../web/WebKarte';
+import { MATERIAL_ANKER, terminWebAngaben } from './terminDetailAngaben';
 import WebAngaben from '../../../web/WebAngaben';
-import { linkOeffnen } from '../../../../services/systemDialoge';
 import {
   absageUrheberZeile,
   absagegrundUrheberZeile,
@@ -42,21 +43,9 @@ import type { Event, Participant } from '../../../../types/event';
 import type { PillTon } from '../../../../utils/supportWeb';
 import '../../../../theme/web/termine.css';
 
-// --- Link nach draussen ----------------------------------------------------
+// --- Link nach draussen und Angaben: in terminDetailAngaben.tsx -------------
 
-/** Ein Link auf eine fremde Seite (Karte): ueber die Huelle der App, damit die App-Sperre nicht ausloest. */
-export const WebExternLink: React.FC<{ href: string; children: React.ReactNode; title?: string }> = ({ href, children, title }) => (
-  <a
-    href={href}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="web-link"
-    title={title}
-    onClick={(e) => { e.preventDefault(); linkOeffnen(href); }}
-  >
-    {children}
-  </a>
-);
+export { default as WebExternLink } from './WebExternLink';
 
 // --- Reiter oben -----------------------------------------------------------
 
@@ -145,13 +134,15 @@ const STAND_SYMBOL: Record<string, string> = {
 export const WebTerminSymbol: React.FC<{
   status: Pick<TerminStatus, 'text' | 'farbe'>;
   event: Pick<Event, 'is_konfirmation'>;
-}> = ({ status, event }) => {
+  /** Gross: im Kopf der Detailseite. */
+  gross?: boolean;
+}> = ({ status, event, gross = false }) => {
   const icon = event.is_konfirmation && status.text !== 'Abgesagt'
     ? ICON_FLAMME_GEFUELLT
     : STAND_SYMBOL[status.text.split(' ')[0]] ?? ICON_TERMIN_GEFUELLT;
   return (
     // Pflicht im Rot des Pflicht-Chips, nicht in der Farbe "anmeldbar".
-    <span className="web-symbol" style={{ background: status.text === 'Pflicht' ? 'var(--app-color-events)' : status.farbe }} title={status.text} aria-hidden="true" data-stand={status.text}>
+    <span className={gross ? 'web-symbol web-symbol--gross' : 'web-symbol'} style={{ background: status.text === 'Pflicht' ? 'var(--app-color-events)' : status.farbe }} title={status.text} aria-hidden="true" data-stand={status.text}>
       <IonIcon icon={icon} />
     </span>
   );
@@ -220,43 +211,43 @@ export const WebFakten: React.FC<{ fakten: readonly Fakt[]; gedaempft?: boolean;
 
 // --- Angaben --------------------------------------------------------------------
 
-/**
- * Die Angaben eines Events als Liste "Bezeichnung -- Wert". Der Ort fuehrt zur
- * Karte; das Material ruft `onMaterial` (springt zum Abschnitt oder oeffnet es).
- */
-/**
- * Die Punkteart haengt am Wert: "Typ" zeigt Kirche oder Gemeinde wie die App.
- * Alle uebrigen Angaben holen ihr Symbol aus components/web/angabeSymbole.ts.
- */
-const typSymbol = (a: TerminAngabe): { icon?: string; iconKlasse?: string } => {
-  if (a.label !== 'Typ') return {};
-  const gottesdienst = a.zeilen[0] === 'Gottesdienst';
-  return {
-    icon: gottesdienst ? ICON_GOTTESDIENST_GEFUELLT : ICON_GEMEINDE_GEFUELLT,
-    iconKlasse: gottesdienst ? 'app-icon-color--gottesdienst' : 'app-icon-color--gemeinde',
-  };
-};
+// --- Angaben (bis alle Detailseiten die Angaben-Karte von WebDetailSeite nehmen) ---
 
 export const WebTerminAngaben: React.FC<{
   angaben: readonly TerminAngabe[];
   beschriftung?: string;
   onMaterial?: () => void;
 }> = ({ angaben, beschriftung = 'Angaben zum Event', onMaterial }) => (
-  <WebAngaben
-    beschriftung={beschriftung}
-    angaben={angaben.map((a) => ({
-      label: a.label,
-      ...typSymbol(a),
-      wert: a.ortLink
-        ? <WebExternLink href={a.ortLink} title="Auf der Karte zeigen">{a.zeilen[0]}</WebExternLink>
-        : a.materialSprung && onMaterial
-          ? <button type="button" className="web-link web-link--knopf" onClick={onMaterial}>{a.zeilen[0]}</button>
-          : a.zeilen.length > 1
-            ? <>{a.zeilen.map((z) => <span key={z} className="web-angabe-zeile">{z}</span>)}</>
-            : a.zeilen[0],
-    }))}
-  />
+  <WebAngaben beschriftung={beschriftung} angaben={terminWebAngaben(angaben, onMaterial)} />
 );
+
+// --- Material ---------------------------------------------------------------------
+
+export type WebTerminMaterialEintrag = { id: number; title: string; file_count?: number; link_url?: string | null };
+
+/** Das Material am Event (Leitung und Team): je Eintrag ein Knopf, der es oeffnet, daneben Link oder Dateizahl. */
+export const WebTerminMaterial: React.FC<{ materialien: readonly WebTerminMaterialEintrag[]; onOeffnen: (id: number) => void }> = ({ materialien, onOeffnen }) => {
+  // Kommt keine Liste an (alter Stand im Speicher), steht kein Abschnitt da -- statt eines Absturzes.
+  if (!Array.isArray(materialien) || materialien.length === 0) return null;
+  return (
+    <section id={MATERIAL_ANKER} aria-label="Material">
+      <WebKarte titel={`Material (${materialien.length})`} bund>
+        <ul className="web-liste-schlicht">
+          {materialien.map((m) => (
+            <li key={m.id} className="web-liste-schlicht__zeile">
+              <button type="button" className="web-link web-link--text web-link--knopf" onClick={() => onOeffnen(m.id)}>
+                {m.title}
+              </button>
+              <span className="web-zelle-leise">
+                {m.link_url ? 'Link' : `${m.file_count || 0} ${(m.file_count || 0) === 1 ? 'Datei' : 'Dateien'}`}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </WebKarte>
+    </section>
+  );
+};
 
 // --- Absage ---------------------------------------------------------------------
 

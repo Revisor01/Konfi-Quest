@@ -150,7 +150,8 @@ Jedes Event und jede Challenge hat im Browser eine eigene Seite, für die
 Leitung auch jede Konfi und jede Teamer:in, und alle sind gleich aufgebaut:
 
 - **Oben** stehen der Weg zurück zur Liste, der Titel und darunter Status und
-  Zeit. Rechts daneben stehen **alle Aktionen** als Knöpfe; die wichtigste ist
+  Zeit. Bei einem Event steht vor dem Titel derselbe Kreis wie in der Liste:
+  sein Stand in Farbe und Symbol. Rechts daneben stehen **alle Aktionen** als Knöpfe; die wichtigste ist
   farbig hinterlegt, etwa **Anmelden** oder **Beitrag einreichen**.
 - **Darunter** steht ein Hinweis, wenn einer gilt — das Event ist abgesagt, die
   Abmeldefrist ist vorbei, ohne Netz geht es nicht —, und eine Reihe

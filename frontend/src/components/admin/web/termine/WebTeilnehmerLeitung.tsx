@@ -24,11 +24,11 @@ import { formatEventTime } from '../../../shared/eventFormatting';
 import { teilnahmeDarstellung, type TeilnahmeDarstellung } from '../../../../utils/teilnahmeStatus';
 import type { PillTon } from '../../../../utils/supportWeb';
 import type { Participant } from '../../../../types/event';
-import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebDialog from '../../../web/WebDialog';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
+import { WebDetailListe } from '../../../web/WebDetailSeite';
+import { WebNameZelle, type WebSpalte } from '../../../web/WebListe';
 import { WebTeilnahmeHinweise } from '../../../shared/web/termine/WebTerminBausteine';
 import '../../../../theme/web/termine.css';
 import { teilnahmeStatusRang } from '../../../../utils/statusReihenfolge';
@@ -93,14 +93,7 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
       kopf: 'Name',
       breite: '26%',
       sortWert: (p) => p.participant_name,
-      zelle: (p) => (
-        <>
-          <span className="web-zelle-titel">{p.participant_name}</span>
-          {istLeitung(p)
-            ? <span className="web-zelle-leise">Leitung</span>
-            : p.jahrgang_name && <span className="web-zelle-leise">{p.jahrgang_name}</span>}
-        </>
-      ),
+      zelle: (p) => <WebNameZelle titel={p.participant_name} unterzeile={istLeitung(p) ? 'Leitung' : p.jahrgang_name} />,
     },
   ];
 
@@ -262,22 +255,20 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
     );
   })();
 
+  // Oben ausgerichtet: wird der Stand zweizeilig, bleiben Name und Knoepfe auf
+  // der ersten Zeile (Simon, 07.10.2026).
   return (
-    <WebKarte titel={titel} untertitel={untertitel} aktion={kopfAktion} bund={teilnehmende.length > 0}>
-      {teilnehmende.length > 0 ? (
-        <WebTabelle
-          beschriftung={titel}
-          spalten={spalten}
-          zeilen={teilnehmende}
-          zeileSchluessel={(p) => p.id}
-          // Oben ausgerichtet: wird der Stand zweizeilig, bleiben Name und
-          // Knoepfe auf der ersten Zeile (Simon, 07.10.2026).
-        />
-      ) : (
-        <p className="web-gedaempft" role="status">{leerText ?? 'Noch niemand angemeldet.'}</p>
-      )}
+    <WebDetailListe
+      titel={titel}
+      untertitel={untertitel}
+      aktion={kopfAktion}
+      spalten={spalten}
+      zeilen={teilnehmende}
+      zeileSchluessel={(p) => p.id}
+      leer={leerText ?? 'Noch niemand angemeldet.'}
+    >
       {menue}
-    </WebKarte>
+    </WebDetailListe>
   );
 };
 
