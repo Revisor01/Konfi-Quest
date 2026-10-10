@@ -113,6 +113,17 @@ ion-content.web-inhalt {
   min-width: 0;
 }
 
+/* Detailseiten: der Kreis der Liste vor dem Titel (WebSeite, `kreis`). */
+.web-kopf__text--kreis {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-kopf__titelblock {
+  min-width: 0;
+}
+
 .web-titel {
   margin: 0;
   font-family: var(--app-schriftart-ueberschrift);

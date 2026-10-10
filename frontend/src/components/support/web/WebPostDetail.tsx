@@ -10,6 +10,11 @@
 // einem Vorgang, führt ein Link dorthin; geantwortet wird dort, damit Postfach
 // und Nummer im Betreff stimmen.
 //
+// Rahmen und Zustaende (laden, Fehler, nicht gefunden) stellt WebDetailSeite
+// wie bei jeder Detailseite (10.10.2026). Einsortieren, Archivieren und
+// Loeschen bleiben rechts in der Karte "Einsortieren" -- sie gehoeren dort zum
+// Einordnen der Mail, nicht in den Kopf.
+//
 // Die Logik (laden, als gelesen melden, einsortieren, archivieren, löschen)
 // steht in components/support/usePostDetail.ts, dieselbe wie in der App.
 
@@ -21,15 +26,13 @@ import type { MailAntwortDaten } from '../../../types/support';
 import { POSTFACH_INFO } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { usePostDetail } from '../usePostDetail';
-import WebSeite from '../../web/WebSeite';
-import WebSpalten from '../../web/WebSpalten';
+import WebDetailSeite from '../../web/WebDetailSeite';
 import WebKarte from '../../web/WebKarte';
 import WebKnopf from '../../web/WebKnopf';
 import WebHinweis from '../../web/WebHinweis';
 import WebAntwortEditor from './WebAntwortEditor';
 import WebEinsortieren from './WebEinsortieren';
 import { WebMailEintrag, WebMailVerlauf } from './WebMailVerlauf';
-import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import '../../../theme/web/support.css';
 
 const ZURUECK = { href: '/admin/support/post', text: 'Posteingang' };
@@ -42,20 +45,16 @@ const WebPostDetail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => {
   const [einsortieren, setEinsortieren] = useState(false);
   const router = useIonRouter();
 
-  if (laedt && !mail) {
-    return (
-      <WebSeite bereich="Support" titel="Mail" zurueck={ZURUECK}>
-        <WebLaden karten={2} text="Die Mail wird geladen." />
-      </WebSeite>
-    );
-  }
   if (!mail) {
     return (
-      <WebSeite bereich="Support" titel="Mail" zurueck={ZURUECK}>
-        {fehler && !nichtGefunden
-          ? <WebFehler text="Die Mail konnte nicht geladen werden." onErneut={() => { void laden(); }} />
-          : <WebLeer icon={ICON_MAIL} titel="Mail nicht gefunden" text="Diese Mail gibt es nicht (mehr) — archivierte Mails bleiben 180 Tage." />}
-      </WebSeite>
+      <WebDetailSeite
+        bereich="Support"
+        titel="Mail"
+        zurueck={ZURUECK}
+        laden={laedt ? 'Die Mail wird geladen.' : undefined}
+        fehler={fehler && !nichtGefunden ? { text: 'Die Mail konnte nicht geladen werden.', onErneut: () => { void laden(); } } : undefined}
+        leer={{ icon: ICON_MAIL, titel: 'Mail nicht gefunden', text: 'Diese Mail gibt es nicht (mehr) — archivierte Mails bleiben 180 Tage.' }}
+      />
     );
   }
 
@@ -140,13 +139,15 @@ const WebPostDetail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => {
   );
 
   return (
-    <WebSeite
+    <WebDetailSeite
       bereich="Support"
       titel="Mail"
-      untertitel={`${datumUhrzeit(mail.gesendet_am)} · ${faden.length === 1 ? 'einzelne Mail' : `Faden mit ${faden.length} Mails`}`}
+      kennzeichen={`${datumUhrzeit(mail.gesendet_am)} · ${faden.length === 1 ? 'einzelne Mail' : `Faden mit ${faden.length} Mails`}`}
       zurueck={ZURUECK}
+      haupt={haupt}
+      seite={seite}
+      seiteBeschriftung="Einsortieren"
     >
-      <WebSpalten haupt={haupt} seite={seite} seiteBeschriftung="Einsortieren" />
       {einsortieren && (
         <WebEinsortieren
           mail={{ id: mail.id, betreff: mail.betreff }}
@@ -154,7 +155,7 @@ const WebPostDetail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => {
           onFertig={(id) => { if (id) router.push(`/admin/support/vorgaenge/${id}`); }}
         />
       )}
-    </WebSeite>
+    </WebDetailSeite>
   );
 };
 

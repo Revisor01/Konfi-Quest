@@ -148,6 +148,11 @@ Versionsüberschrift.
   App, in zwei Spalten nebeneinander.
 - Auch für Teamer:innen zeigt die Startseite im Browser die Farbkacheln der
   App; die Kennzahlen oben stehen auf dem Farbfeld des Teams.
+- Im Browser steht auf der Detailseite eines Events und einer Person vor dem
+  Titel derselbe Kreis wie in der Liste: der Stand des Events in Farbe und
+  Symbol, bei einer Person ihre Initialen.
+- Im Browser klappt die Konfi-Historie einer Teamer:in wie die übrigen
+  Tabellen mit „Alle … anzeigen" auf.
 - Auf der Startseite von Teamer:innen stehen unter „Events" nur noch Events,
   zu denen sie selbst zugesagt haben oder auf deren Warteliste sie stehen.
   Bisher kamen alle Team-Events und alle Events mit „Teamer:innen gesucht"
@@ -455,6 +460,9 @@ Versionsüberschrift.
   Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
 
 ### Sonstiges
+- Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,
+  Kennzahlen, Inhalt und Angaben; Laden, Fehler und „nicht gefunden" sehen
+  auf jeder Detailseite gleich aus.
 - Im Browser stehen die Listen-Seiten auf einem gemeinsamen Gerüst aus
   Kennzahlen, Werkzeugzeile und Liste oder Kacheln; bei den Aktivitäten steht
   die Suche dadurch wie bei Konfis und Team links neben den Filtern.

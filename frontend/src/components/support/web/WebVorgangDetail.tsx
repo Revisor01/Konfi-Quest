@@ -10,6 +10,9 @@
 // anlegen", die interne Notiz. Archivieren, Wiederherstellen und Löschen
 // (mit Rückfrage) stehen im Kopf.
 //
+// Rahmen und Zustaende (laden, Fehler, nicht gefunden) stellt WebDetailSeite
+// wie bei jeder Detailseite (10.10.2026).
+//
 // Die Logik (laden, einordnen, Notiz, archivieren, löschen, Antwortweg) steht in
 // components/support/useVorgangDetail.ts, dieselbe wie in der App.
 
@@ -39,8 +42,7 @@ import {
   type Dringlichkeit,
 } from '../../../utils/supportVorgaenge';
 import { useVorgangDetail, type VorgangDetailDaten } from '../useVorgangDetail';
-import WebSeite from '../../web/WebSeite';
-import WebSpalten from '../../web/WebSpalten';
+import WebDetailSeite from '../../web/WebDetailSeite';
 import WebKarte from '../../web/WebKarte';
 import WebKnopf from '../../web/WebKnopf';
 import WebPill from '../../web/WebPill';
@@ -52,7 +54,6 @@ import WebAntwortEditor from './WebAntwortEditor';
 import { WebMailVerlauf } from './WebMailVerlauf';
 import { WebAnlegenKarte, WebGemeindeAngelegt } from './WebGemeindeAnlegen';
 import { DringlichPill, StatusPill } from './WebVorgangTeile';
-import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import '../../../theme/web/support.css';
 
 const ZURUECK = { href: '/admin/support/vorgaenge', text: 'Alle Vorgänge' };
@@ -65,20 +66,16 @@ const WebVorgangDetail: React.FC<{ vorgangId: number }> = ({ vorgangId }) => {
     loeschenFragen, archiviert, anlegen,
   } = d;
 
-  if (laedt && !vorgang) {
-    return (
-      <WebSeite bereich="Support" titel="Vorgang" zurueck={ZURUECK}>
-        <WebLaden karten={2} text="Der Vorgang wird geladen." />
-      </WebSeite>
-    );
-  }
   if (!vorgang) {
     return (
-      <WebSeite bereich="Support" titel="Vorgang" zurueck={ZURUECK}>
-        {fehler && !nichtGefunden
-          ? <WebFehler text="Der Vorgang konnte nicht geladen werden." onErneut={() => { void laden(); }} />
-          : <WebLeer icon={ICON_LISTE} titel="Vorgang nicht gefunden" text="Diesen Vorgang gibt es nicht (mehr) — vielleicht wurde er gelöscht." />}
-      </WebSeite>
+      <WebDetailSeite
+        bereich="Support"
+        titel="Vorgang"
+        zurueck={ZURUECK}
+        laden={laedt ? 'Der Vorgang wird geladen.' : undefined}
+        fehler={fehler && !nichtGefunden ? { text: 'Der Vorgang konnte nicht geladen werden.', onErneut: () => { void laden(); } } : undefined}
+        leer={{ icon: ICON_LISTE, titel: 'Vorgang nicht gefunden', text: 'Diesen Vorgang gibt es nicht (mehr) — vielleicht wurde er gelöscht.' }}
+      />
     );
   }
 
@@ -304,10 +301,10 @@ const WebVorgangDetail: React.FC<{ vorgangId: number }> = ({ vorgangId }) => {
   );
 
   return (
-    <WebSeite
+    <WebDetailSeite
       bereich="Support"
       titel={vorgang.betreff || '(ohne Betreff)'}
-      untertitel={(
+      kennzeichen={(
         <span className="web-vorgangskopf">
           <span>Vorgang {vorgang.id}</span>
           <StatusPill status={vorgang.status} />
@@ -338,9 +335,10 @@ const WebVorgangDetail: React.FC<{ vorgangId: number }> = ({ vorgangId }) => {
           </WebKnopf>
         </>
       )}
-    >
-      <WebSpalten haupt={haupt} seite={seite} seiteBeschriftung="Einordnen und Angaben" />
-    </WebSeite>
+      haupt={haupt}
+      seite={seite}
+      seiteBeschriftung="Einordnen und Angaben"
+    />
   );
 };
 

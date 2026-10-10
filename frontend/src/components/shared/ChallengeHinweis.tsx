@@ -4,9 +4,6 @@ import AppKopfzeile from './AppKopfzeile';
 import EmptyState from './EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { HINWEIS_TEXTE as TEXTE, type ChallengeHinweisArt } from './challengeHinweisTexte';
-import { useBreitesLayout } from '../../navigation/breitesLayout';
-import WebChallengeHinweis from './web/challenges/WebChallengeHinweis';
-import WebChallengeRahmen from './web/challenges/WebChallengeRahmen';
 
 export type { ChallengeHinweisArt };
 
@@ -36,17 +33,10 @@ interface ChallengeHinweisProps {
   onNochmal?: () => void;
 }
 
+// Nur die App: Im breiten Browserfenster zeigen die Web-Fassungen der Seite
+// (WebChallengeLeitungDetail, WebKonfiChallengeDetail) auch diese Zustaende
+// selbst, unter dem Kopf der Detailseite (webChallengeZustand).
 const ChallengeHinweis: React.FC<ChallengeHinweisProps> = ({ art, onBack, onNochmal }) => {
-  // Zwei Gesichter, eine Seite (docs/planung/web-alle-bereiche.md): im breiten
-  // Browserfenster die Web-Fassung, sonst die Darstellung der App.
-  const breit = useBreitesLayout();
-  if (breit) {
-    return (
-      <WebChallengeRahmen titel="Challenge">
-        <WebChallengeHinweis art={art} onBack={onBack} onNochmal={onNochmal} />
-      </WebChallengeRahmen>
-    );
-  }
   return (
     <>
       <AppKopfzeile titel="Challenge" onZurueck={onBack} gemeindeUmschalter={false} />

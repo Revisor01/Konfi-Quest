@@ -1,7 +1,7 @@
 import { ICON_CHALLENGE, ICON_JAHRGANG, ICON_OFFLINE, ICON_WARNUNG } from './icons';
 
 // Die Worte der Seite einer Challenge, solange sie keine Challenge zeigen
-// kann (ChallengeHinweis in der App, WebChallengeHinweis im Browser): fuer
+// kann (ChallengeHinweis in der App, webChallengeZustand im Browser): fuer
 // Konfis, Team und Leitung gleich. Eigene Datei, damit die App-Ansicht und
 // die Web-Fassung dieselben Texte lesen, ohne sich gegenseitig zu importieren.
 

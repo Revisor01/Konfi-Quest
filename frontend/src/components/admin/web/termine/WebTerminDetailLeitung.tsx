@@ -6,6 +6,9 @@
 // Beschreibung, Konfis, Warteliste und Team als Tabellen mit Anwesenheit und
 // die Abmeldungen; rechts schmal die Angaben, Zeitfenster, Serie und Material.
 //
+// Rahmen, Angaben-Karte und Zustaende stellt WebDetailSeite, die Tabellen
+// WebDetailListe (10.10.2026); hier stehen nur Inhalt und Aktionen.
+//
 // Die Seite (admin/views/EventDetailView) laedt die Daten und besitzt alle
 // Funktionen (Anwesenheit verbuchen, Absagen, Teilnehmende verwalten ...); sie
 // reicht beides herein. Hier steht nur die Darstellung. Was die App fragt --
@@ -31,15 +34,20 @@ import { absageBeschriftung, welcheKnoepfe, zusageBeschriftung } from '../../../
 import { datumKurz, datumUhrzeit } from '../../../../utils/dateUtils';
 import { kennzahlAnzeige, leitungDetailStatus, leitungKennzahlen, terminAngaben } from '../../../../utils/termineWeb';
 import type { Event, EventMaterial, Participant, Unregistration } from '../../../../types/event';
-import WebDetailSeite from '../../../web/WebDetailSeite';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import WebHinweis from '../../../web/WebHinweis';
 import WebLink from '../../../web/WebLink';
 import WebPill from '../../../web/WebPill';
-import WebTabelle, { type WebSpalte } from '../../../web/WebTabelle';
-import { WebFehler, WebLaden, WebLeer } from '../../../web/WebZustaende';
-import { WebAbsage, WebTerminAngaben, WebTerminMarken } from '../../../shared/web/termine/WebTerminBausteine';
+import WebDetailSeite, { WebDetailListe } from '../../../web/WebDetailSeite';
+import { WebNameZelle, type WebSpalte } from '../../../web/WebListe';
+import {
+  WebAbsage,
+  WebTerminMarken,
+  WebTerminMaterial,
+  WebTerminSymbol,
+} from '../../../shared/web/termine/WebTerminBausteine';
+import { materialSprung, terminWebAngaben } from '../../../shared/web/termine/terminDetailAngaben';
 import type { EventData } from '../../views/EventDetailSections';
 import WebTeilnehmerLeitung, { type TeilnehmerAktionen } from './WebTeilnehmerLeitung';
 import '../../../../theme/web/termine.css';
@@ -104,37 +112,22 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   const { eventData, teilnehmende, aktionen, isOnline, darfVerwalten, darfEintragen } = p;
   const darfVerbuchen = darfVerwalten && p.darfVerbuchen !== false;
 
-  if (p.laedt) {
+  // Laden, fremder Jahrgang (Push oder Link: derselbe Wortlaut wie in der App), Fehler --
+  // unter demselben Kopf wie das Event.
+  if (p.laedt || p.jahrgangFehlt || !eventData) {
     return (
-      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
-        zustand={(
-          <WebLaden karten={2} text="Das Event wird geladen." />
-        )}
-      />
-    );
-  }
-
-  // Termin aus einem fremden Jahrgang (Push oder Link): den Grund nennen -- derselbe Wortlaut wie in der App.
-  if (p.jahrgangFehlt) {
-    return (
-      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
-        zustand={(
-          <WebLeer
-            icon={ICON_JAHRGANG}
-            titel="Nicht deinem Jahrgang zugeordnet"
-            text="Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern."
-          />
-        )}
-      />
-    );
-  }
-
-  if (!eventData) {
-    return (
-      <WebDetailSeite bereich="Mitmachen" titel="Event" zurueck={ZURUECK} pageRef={p.pageRef}
-        zustand={(
-          <WebFehler text="Das Event konnte nicht geladen werden." onErneut={aktionen.neuLaden} />
-        )}
+      <WebDetailSeite
+        bereich="Mitmachen"
+        titel="Event"
+        zurueck={ZURUECK}
+        pageRef={p.pageRef}
+        laden={p.laedt ? 'Das Event wird geladen.' : undefined}
+        leer={p.jahrgangFehlt ? {
+          icon: ICON_JAHRGANG,
+          titel: 'Nicht deinem Jahrgang zugeordnet',
+          text: 'Dieses Event gehört zu einem Jahrgang, dem du nicht zugewiesen bist. Die Leitung deiner Gemeinde kann das in den Einstellungen ändern.',
+        } : undefined}
+        fehler={p.laedt || p.jahrgangFehlt ? undefined : { text: 'Das Event konnte nicht geladen werden.', onErneut: aktionen.neuLaden }}
       />
     );
   }
@@ -176,12 +169,6 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
     aktionen,
   };
 
-  // Genau ein Material: dessen Fenster; mehrere: zum Abschnitt springen (dort ist jedes einzeln waehlbar).
-  const materialHinweis = () => {
-    if (p.materialien.length === 1) { aktionen.material(p.materialien[0].id); return; }
-    document.getElementById('web-event-material')?.scrollIntoView({ block: 'start' });
-  };
-
   const angaben = terminAngaben(eventData as unknown as Event & { jahrgaenge?: Array<{ name: string }> }, {
     rolle: 'leitung',
     teilnehmende,
@@ -189,18 +176,16 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   });
 
   const zeitfenster = eventData.has_timeslots && eventData.timeslots ? eventData.timeslots : [];
-  const zeitfensterSpalten: Array<WebSpalte<(typeof zeitfenster)[number]>> = [
+  type Fenster = (typeof zeitfenster)[number] & { waitlist_count?: number };
+  const zeitfensterSpalten: Array<WebSpalte<Fenster>> = [
     { schluessel: 'zeit', kopf: 'Zeitfenster', sortWert: (s) => s.start_time || null, zelle: (s) => `${formatEventTime(s.start_time)} – ${formatEventTime(s.end_time)}` },
     { schluessel: 'belegt', kopf: 'Belegt', zahl: true, sortWert: (s) => s.registered_count || 0, zelle: (s) => `${s.registered_count || 0}/${s.max_participants}` },
     {
       schluessel: 'wartend',
       kopf: 'Warteliste',
       zahl: true,
-      sortWert: (s) => (s as { waitlist_count?: number }).waitlist_count || 0,
-      zelle: (s) => {
-        const n = (s as { waitlist_count?: number }).waitlist_count || 0;
-        return n > 0 ? n : <span className="web-gedaempft">–</span>;
-      },
+      sortWert: (s) => s.waitlist_count || 0,
+      zelle: (s) => ((s.waitlist_count || 0) > 0 ? s.waitlist_count : <span className="web-gedaempft">–</span>),
     },
     {
       schluessel: 'status',
@@ -210,6 +195,12 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
         ? <WebPill ton="fehler">Voll</WebPill>
         : <WebPill ton="erfolg">Frei</WebPill>),
     },
+  ];
+
+  const abmeldeSpalten: Array<WebSpalte<Unregistration>> = [
+    { schluessel: 'name', kopf: 'Name', breite: '28%', sortWert: (u) => u.konfi_name, zelle: (u) => <WebNameZelle titel={u.konfi_name} /> },
+    { schluessel: 'am', kopf: 'Abgemeldet am', breite: '168px', sortWert: (u) => zeitpunkt(u.unregistered_at), zelle: (u) => datumUhrzeit(u.unregistered_at) },
+    { schluessel: 'grund', kopf: 'Grund', sortWert: (u) => u.reason || null, zelle: (u) => u.reason || <span className="web-gedaempft">–</span> },
   ];
 
   const serie = eventData.is_series && eventData.series_events ? eventData.series_events : [];
@@ -340,39 +331,29 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
       )}
 
       {p.abmeldungen.length > 0 && (
-        <WebKarte titel={`Abmeldungen (${p.abmeldungen.length})`} bund>
-          <WebTabelle
-            beschriftung="Abmeldungen"
-            spalten={[
-              { schluessel: 'name', kopf: 'Name', breite: '28%', sortWert: (u) => u.konfi_name, zelle: (u) => <span className="web-zelle-titel">{u.konfi_name}</span> },
-              { schluessel: 'am', kopf: 'Abgemeldet am', breite: '168px', sortWert: (u) => zeitpunkt(u.unregistered_at), zelle: (u) => datumUhrzeit(u.unregistered_at) },
-              { schluessel: 'grund', kopf: 'Grund', sortWert: (u) => u.reason || null, zelle: (u) => u.reason || <span className="web-gedaempft">–</span> },
-            ] satisfies Array<WebSpalte<Unregistration>>}
-            zeilen={p.abmeldungen}
-            zeileSchluessel={(u) => u.id}
-          />
-        </WebKarte>
+        <WebDetailListe
+          titel={`Abmeldungen (${p.abmeldungen.length})`}
+          beschriftung="Abmeldungen"
+          spalten={abmeldeSpalten}
+          zeilen={p.abmeldungen}
+          zeileSchluessel={(u) => u.id}
+        />
       )}
     </>
   );
 
-  // Rechts, schmal: die Angaben und was zu ihnen gehoert -- Zeitfenster, Serie, Material.
+  // Rechts, schmal, unter den Angaben: Zeitfenster, Serie, Material.
   const seite = (
     <>
-      <WebKarte titel="Angaben">
-        <WebTerminAngaben angaben={angaben} onMaterial={materialHinweis} />
-      </WebKarte>
-
       {zeitfenster.length > 0 && (
-        <WebKarte titel={`Zeitfenster (${zeitfenster.length})`} bund>
-          <WebTabelle
-            beschriftung="Zeitfenster"
-            spalten={zeitfensterSpalten}
-            zeilen={zeitfenster}
-            zeileSchluessel={(s) => s.id}
-            mittig
-          />
-        </WebKarte>
+        <WebDetailListe
+          titel={`Zeitfenster (${zeitfenster.length})`}
+          beschriftung="Zeitfenster"
+          spalten={zeitfensterSpalten}
+          zeilen={zeitfenster}
+          zeileSchluessel={(s) => s.id}
+          mittig
+        />
       )}
 
       {serie.length > 0 && (
@@ -397,24 +378,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
         </WebKarte>
       )}
 
-      {p.materialien.length > 0 && (
-        <section id="web-event-material" aria-label="Material">
-          <WebKarte titel={`Material (${p.materialien.length})`} bund>
-            <ul className="web-liste-schlicht">
-              {p.materialien.map((m) => (
-                <li key={m.id} className="web-liste-schlicht__zeile">
-                  <button type="button" className="web-link web-link--text web-link--knopf" onClick={() => aktionen.material(m.id)}>
-                    {m.title}
-                  </button>
-                  <span className="web-zelle-leise">
-                    {m.link_url ? 'Link' : `${m.file_count || 0} ${(m.file_count || 0) === 1 ? 'Datei' : 'Dateien'}`}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </WebKarte>
-        </section>
-      )}
+      <WebTerminMaterial materialien={p.materialien} onOeffnen={aktionen.material} />
     </>
   );
 
@@ -423,6 +387,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
       bereich="Mitmachen"
       zurueck={ZURUECK}
       titel={eventData.name}
+      kreis={<WebTerminSymbol status={status} event={event} gross />}
       kennzeichen={(
         <span className="web-pillreihe">
           <WebTerminMarken status={status} event={event} teamZeigen serieZeigen />
@@ -433,6 +398,8 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
       hinweis={hinweis}
       kennzahlen={kennzahlen}
       haupt={haupt}
+      angaben={terminWebAngaben(angaben, materialSprung(p.materialien, aktionen.material))}
+      angabenBeschriftung="Angaben zum Event"
       seite={seite}
       pageRef={p.pageRef}
     />
