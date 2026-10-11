@@ -205,6 +205,72 @@ describe('Bearbeiten im breiten Fenster', () => {
   });
 });
 
+// Admins und Teamer:innen sehen in GET /admin/jahrgaenge nur ihre eigenen
+// Jahrgänge. Gehört ein Event auch einem fremden, zeigt der Dialog ihn nicht
+// als Haken -- er darf aber nicht still aus jahrgang_ids fallen, sobald
+// jemand an den sichtbaren Haken dreht (Gegenprüfung 11.10.2026). Die App
+// schaltet relativ zum bisherigen Stand um und behält ihn; der Server lehnt
+// dann ab, wenn der fremde Jahrgang bleibt.
+describe('Jahrgänge außerhalb der eigenen bleiben erhalten', () => {
+  const NUR_EIGENER = [{ id: 1, name: 'Jahrgang 2026' }];
+  beforeEach(() => {
+    zustand.detail = {
+      ...FREIZEIT(),
+      jahrgaenge: [{ id: 1, name: 'Jahrgang 2026' }, { id: 2, name: 'Jahrgang 2027' }],
+    };
+    api.get.mockImplementation((pfad: string) => Promise.resolve({
+      data: /^\/events\/\d+$/.test(pfad) ? zustand.detail
+        : pfad === '/admin/categories' ? KATEGORIEN
+          : pfad === '/admin/jahrgaenge' ? NUR_EIGENER
+            : [],
+    }));
+  });
+  const gruppe = (d: HTMLElement) => within(d).getByRole('group', { name: 'Jahrgänge (mehrere möglich)' });
+
+  it('der Hinweis nennt den verdeckten Jahrgang; Speichern ohne Klick schickt beide', async () => {
+    const { d } = await bearbeiten();
+    expect(within(gruppe(d)).getAllByRole('checkbox')).toHaveLength(1);
+    expect(within(gruppe(d)).getByText('2 ausgewählt, davon 1 außerhalb deiner Jahrgänge: Jahrgang 2027.')).toBeInTheDocument();
+    await speichern(d);
+    expect(api.put).toHaveBeenCalledWith('/events/7', { ...FREIZEIT_KOERPER, jahrgang_ids: [1, 2] });
+  });
+
+  it('Haken ab und wieder an: PUT /events/7 behält den fremden Jahrgang (jahrgang_ids [1, 2])', async () => {
+    const { d } = await bearbeiten();
+    await act(async () => { fireEvent.click(haken(d, 'Jahrgänge (mehrere möglich)', 'Jahrgang 2026')); });
+    expect(haken(d, 'Jahrgänge (mehrere möglich)', 'Jahrgang 2026').checked).toBe(false);
+    expect(within(gruppe(d)).getByText('1 ausgewählt, davon 1 außerhalb deiner Jahrgänge: Jahrgang 2027.')).toBeInTheDocument();
+    await act(async () => { fireEvent.click(haken(d, 'Jahrgänge (mehrere möglich)', 'Jahrgang 2026')); });
+    await speichern(d);
+    expect(api.put).toHaveBeenCalledTimes(1);
+    expect(api.put).toHaveBeenCalledWith('/events/7', { ...FREIZEIT_KOERPER, jahrgang_ids: [1, 2] });
+  });
+
+  it('nur den eigenen abgehakt: der fremde bleibt (jahrgang_ids [2]) -- wie in der App', async () => {
+    const { d } = await bearbeiten();
+    await act(async () => { fireEvent.click(haken(d, 'Jahrgänge (mehrere möglich)', 'Jahrgang 2026')); });
+    await speichern(d);
+    expect(api.put).toHaveBeenCalledWith('/events/7', { ...FREIZEIT_KOERPER, jahrgang_ids: [2] });
+  });
+
+  it('lehnt der Server den fremden Jahrgang ab, steht seine Meldung im Dialog, der offen bleibt', async () => {
+    api.put.mockRejectedValue({ response: { status: 403, data: { error: 'Kein Zugriff auf diesen Jahrgang' } } });
+    const { d, onBack } = await bearbeiten();
+    await speichern(d);
+    expect(within(d).getByRole('alert')).toHaveTextContent('Kein Zugriff auf diesen Jahrgang');
+    expect(screen.getByRole('dialog', { name: 'Event bearbeiten' })).toBe(d);
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
+  it('Kategorien: eine, die die Liste nicht kennt, bleibt beim Umschalten erhalten', async () => {
+    zustand.detail = { ...zustand.detail, categories: [{ id: 6, name: 'Freizeit' }, { id: 9, name: 'Ausflug' }] };
+    const { d } = await bearbeiten();
+    await act(async () => { fireEvent.click(haken(d, 'Kategorien (mehrere möglich)', 'Gottesdienst')); });
+    await speichern(d);
+    expect(api.put).toHaveBeenCalledWith('/events/7', { ...FREIZEIT_KOERPER, category_ids: [5, 6, 9], jahrgang_ids: [1, 2] });
+  });
+});
+
 describe('Kopieren aus der Detailseite im breiten Fenster', () => {
   it('öffnet „Event kopieren" mit der Vorlage; Speichern legt NEU an (POST /events) und führt zurück zur Liste', async () => {
     // Fester Zeitpunkt: Samstag, 03.10.2026, 10:30 Uhr -- die Kopie beginnt um 11:00.

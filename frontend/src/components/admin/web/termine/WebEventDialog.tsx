@@ -24,8 +24,8 @@ import { PUNKTEART_NAME, type Punkteart } from '../../../../utils/punktearten';
 import { datumKurz, datumLang } from '../../../../utils/dateUtils';
 import { useEventFormular } from '../../modals/useEventFormular';
 import {
-  EVENT_GRENZEN, letzterSerienTermin, lokaleZeit, mitKonfirmation, mitPflicht, mitSerie, mitSerienIntervall, mitUhrzeit,
-  nachZielgruppe, plaetzeHoechstwert, serienHoechstzahl, verfuegbarePunktearten, type TeamerZugang,
+  EVENT_GRENZEN, letzterSerienTermin, lokaleZeit, mitKonfirmation, mitPflicht, mitSerie, mitSerienIntervall, mitSichtbarerAuswahl,
+  mitUhrzeit, nachZielgruppe, plaetzeHoechstwert, serienHoechstzahl, verdeckteAuswahl, verfuegbarePunktearten, type TeamerZugang,
 } from '../../modals/eventFormularRegeln';
 import WebDialog from '../../../web/WebDialog';
 import WebFeld from '../../../web/WebFeld';
@@ -141,9 +141,20 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
     ...arten.map((a) => ({ wert: a, label: PUNKTEART_NAME[a] })),
   ];
 
-  const jahrgangHinweis = formData.mandatory
-    ? (formData.jahrgang_ids.length === 0 ? 'Pflicht bei Pflicht-Events.' : `${formData.jahrgang_ids.length} ausgewählt.`)
-    : (formData.jahrgang_ids.length === 0 ? 'Ohne Auswahl gilt das Event für die ganze Gemeinde.' : `${formData.jahrgang_ids.length} ausgewählt.`);
+  // Admins und Teamer:innen sehen nur ihre eigenen Jahrgänge als Haken. Gehört
+  // das Event auch einem fremden, bleibt er in der Auswahl (mitSichtbarerAuswahl)
+  // und der Hinweis sagt es -- sonst stünde „2 ausgewählt" neben einem Haken.
+  // Solange die Liste lädt, ist nichts verdeckt.
+  const jahrgangIds = jahrgaenge.map((j) => j.id);
+  const verdeckt = jahrgaenge.length > 0 ? verdeckteAuswahl(formData.jahrgang_ids, jahrgangIds) : [];
+  const verdecktNamen = verdeckt
+    .map((id) => event?.jahrgaenge?.find((j) => j.id === id)?.name)
+    .filter((name): name is string => !!name);
+  const verdecktText = verdeckt.length === 0 ? ''
+    : `, davon ${verdeckt.length} außerhalb deiner Jahrgänge${verdecktNamen.length === verdeckt.length ? `: ${verdecktNamen.join(', ')}` : ''}`;
+  const jahrgangHinweis = formData.jahrgang_ids.length > 0
+    ? `${formData.jahrgang_ids.length} ausgewählt${verdecktText}.`
+    : formData.mandatory ? 'Pflicht bei Pflicht-Events.' : 'Ohne Auswahl gilt das Event für die ganze Gemeinde.';
 
   const letzterTermin = letzterSerienTermin(formData);
   const serienMax = serienHoechstzahl(formData.series_interval);
@@ -207,7 +218,10 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
             label="Kategorien (mehrere möglich)"
             eintraege={categories.map((c) => ({ wert: String(c.id), titel: c.name }))}
             werte={formData.category_ids.map(String)}
-            onWerte={(werte) => { setFehler(null); setFormData((f) => ({ ...f, category_ids: werte.map(Number) })); }}
+            onWerte={(werte) => {
+              setFehler(null);
+              setFormData((f) => ({ ...f, category_ids: mitSichtbarerAuswahl(f.category_ids, categories.map((c) => c.id), werte.map(Number)) }));
+            }}
             leerText="Keine Kategorien verfügbar"
             deaktiviert={aus}
           />
@@ -217,7 +231,10 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
               pflicht={formData.mandatory}
               eintraege={jahrgaenge.map((j) => ({ wert: String(j.id), titel: j.name }))}
               werte={formData.jahrgang_ids.map(String)}
-              onWerte={(werte) => { setFehler(null); setFormData((f) => ({ ...f, jahrgang_ids: werte.map(Number) })); }}
+              onWerte={(werte) => {
+                setFehler(null);
+                setFormData((f) => ({ ...f, jahrgang_ids: mitSichtbarerAuswahl(f.jahrgang_ids, jahrgangIds, werte.map(Number)) }));
+              }}
               leerText="Keine Jahrgänge angelegt"
               hinweis={jahrgangHinweis}
               deaktiviert={aus}
