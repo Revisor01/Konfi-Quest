@@ -12,7 +12,7 @@ export interface WebFeldProps {
   onWert: (wert: string) => void;
   pflicht?: boolean;
   typ?: 'text' | 'email' | 'tel' | 'number' | 'password';
-  autocomplete?: 'off' | 'name' | 'email' | 'tel' | 'username' | 'new-password';
+  autocomplete?: 'off' | 'name' | 'email' | 'tel' | 'username' | 'new-password' | 'current-password';
   /** Erklaerung unter dem Feld. */
   hinweis?: string;
   deaktiviert?: boolean;
@@ -22,14 +22,20 @@ export interface WebFeldProps {
   min?: number;
   max?: number;
   schritt?: number;
+  /**
+   * Kennung eines Elements außerhalb des Feldes, das es zusätzlich beschreibt
+   * (aria-describedby), etwa die Anforderungen an ein neues Passwort.
+   */
+  beschriebenVon?: string;
 }
 
 const WebFeld: React.FC<WebFeldProps> = ({
   label, wert, onWert, pflicht = false, typ = 'text', autocomplete = 'off', hinweis, deaktiviert = false,
-  platzhalter, min, max, schritt,
+  platzhalter, min, max, schritt, beschriebenVon,
 }) => {
   const id = useId();
   const hinweisId = `${id}-hinweis`;
+  const beschreibung = [hinweis ? hinweisId : null, beschriebenVon ?? null].filter(Boolean).join(' ') || undefined;
   return (
     <div className="web-feld">
       <label htmlFor={id} className={pflicht ? 'web-feld__label web-feld__label--pflicht' : 'web-feld__label'}>{label}</label>
@@ -45,7 +51,7 @@ const WebFeld: React.FC<WebFeldProps> = ({
         step={schritt}
         disabled={deaktiviert}
         aria-required={pflicht ? 'true' : undefined}
-        aria-describedby={hinweis ? hinweisId : undefined}
+        aria-describedby={beschreibung}
         onChange={(e) => onWert(e.target.value)}
       />
       {hinweis && <p id={hinweisId} className="web-feld__hinweis">{hinweis}</p>}

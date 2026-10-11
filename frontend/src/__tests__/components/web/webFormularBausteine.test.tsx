@@ -123,6 +123,22 @@ describe('WebDialog breit und WebFeld mit Grenzen', () => {
     expect(feld).toHaveAttribute('placeholder', 'z. B. 2');
   });
 
+  it('WebFeld: aktuelles Passwort für Passwort-Manager; beschriebenVon hängt ein Element außerhalb an den eigenen Hinweis an (aria-describedby)', () => {
+    render(
+      <>
+        <WebFeld label="Aktuelles Passwort" typ="password" wert="" onWert={() => {}} autocomplete="current-password" />
+        <WebFeld label="Neues Passwort" typ="password" wert="" onWert={() => {}} autocomplete="new-password" hinweis="Nicht das alte." beschriebenVon="regeln" />
+        <WebFeld label="Ohne Hinweis" wert="" onWert={() => {}} beschriebenVon="regeln" />
+        <p id="regeln">Mind. 8 Zeichen</p>
+      </>,
+    );
+    expect(screen.getByLabelText('Aktuelles Passwort')).toHaveAttribute('autocomplete', 'current-password');
+    expect(screen.getByLabelText('Aktuelles Passwort')).not.toHaveAttribute('aria-describedby');
+    expect(screen.getByLabelText('Neues Passwort')).toHaveAccessibleDescription('Nicht das alte. Mind. 8 Zeichen');
+    expect(screen.getByLabelText('Ohne Hinweis')).toHaveAttribute('aria-describedby', 'regeln');
+    expect(screen.getByLabelText('Ohne Hinweis')).toHaveAccessibleDescription('Mind. 8 Zeichen');
+  });
+
   it('WebTextfeld: Platzhalter', () => {
     render(<WebTextfeld label="Beschreibung" wert="" onWert={() => {}} platzhalter="Worum geht es?" />);
     expect(screen.getByRole('textbox', { name: 'Beschreibung' })).toHaveAttribute('placeholder', 'Worum geht es?');

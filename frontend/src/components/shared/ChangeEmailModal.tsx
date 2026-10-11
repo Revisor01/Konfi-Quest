@@ -1,6 +1,4 @@
-import { fehlerStatus, fehlerText } from '../../utils/fehler';
-import React, { useState, useEffect } from 'react';
-import { useActionGuard } from '../../hooks/useActionGuard';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -26,8 +24,7 @@ import {
   ICON_OFFLINE,
   ICON_SCHLIESSEN,
 } from './icons';
-import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
+import { EMAIL_HINWEIS, useEmailAendern } from './useEmailAendern';
 
 // Farbvariante der jeweiligen Rolle — dasselbe Muster wie AppSperreSchalter:
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten, die Seiten geben
@@ -55,56 +52,10 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
   initialEmail = '',
   variante = 'purple'
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
-  const [email, setEmail] = useState(initialEmail);
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(true);
+  // Laden, Pruefen und Speichern: useEmailAendern -- dieselbe Logik wie im
+  // Dialog der Web-Fassung (web/konto/WebEmailAendern).
+  const { email, setEmail, laedt: loading, isSubmitting, isOnline, speichern: handleSave } = useEmailAendern({ initialEmail, onErfolg: onSuccess });
   const stil = KONTO_MODAL_STIL[variante];
-
-  // Aktuelle E-Mail beim Oeffnen vom Server laden
-  useEffect(() => {
-    const loadCurrentEmail = async () => {
-      try {
-        const response = await api.get('/auth/me');
-        setEmail(response.data.email || '');
-      } catch (err) {
-        console.error('Error loading email:', err);
-        // Fallback auf die initialEmail-Prop
-        setEmail(initialEmail);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCurrentEmail();
-  }, []);
-
-  const handleSave = async () => {
-    // E-Mail ist optional, aber wenn angegeben muss sie gültig sein
-    if (email.trim()) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setError('Ungültige E-Mail-Adresse');
-        return;
-      }
-    }
-
-    await guard(async () => {
-      try {
-        await api.post('/auth/update-email', {
-          email: email.trim() || null
-        });
-        setSuccess('E-Mail-Adresse erfolgreich aktualisiert');
-        onSuccess();
-      } catch (err) {
-        const errorMsg = fehlerText(err, '');
-        if (errorMsg.includes('bereits verwendet') || fehlerStatus(err) === 409) {
-          setError('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
-        } else {
-          setError(errorMsg || 'Fehler beim Aktualisieren der E-Mail-Adresse');
-        }
-      }
-    });
-  };
 
   return (
     <IonPage>
@@ -169,7 +120,7 @@ const ChangeEmailModal: React.FC<ChangeEmailModalProps> = ({
           <IonCard className={`app-card ${stil.infoBox}`}>
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
-                Diese E-Mail-Adresse wird für Passwort-Reset und Benachrichtigungen verwendet.
+                {EMAIL_HINWEIS}
               </p>
             </IonCardContent>
           </IonCard>

@@ -1,8 +1,4 @@
-import { fehlerText } from '../../utils/fehler';
-import React, { useState, useEffect } from 'react';
-import { useActionGuard } from '../../hooks/useActionGuard';
-import { setToken, setRefreshToken, getDeviceId } from '../../services/tokenStore';
-import { Capacitor } from '@capacitor/core';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -34,9 +30,8 @@ import {
   ICON_WARNHINWEIS_GEFUELLT,
   ICON_ZUSAGE_GEFUELLT,
 } from './icons';
-import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
 import { KontoModalVariante, KONTO_MODAL_STIL } from './ChangeEmailModal';
+import { PASSWORT_ANFORDERUNGEN, usePasswortAendern } from './usePasswortAendern';
 
 // EINE gemeinsame Komponente fuer alle drei Profil-Ansichten (Muster:
 // AppSperreSchalter) — vorher lag dieses Modal funktional identisch doppelt
@@ -46,14 +41,6 @@ interface ChangePasswordModalProps {
   onClose: () => void;
   onSuccess: () => void;
   variante?: KontoModalVariante;
-}
-
-interface PasswordCheck {
-  minLength: boolean;
-  hasUppercase: boolean;
-  hasLowercase: boolean;
-  hasNumber: boolean;
-  hasSpecial: boolean;
 }
 
 // Einzelner Eintrag der Passwort-Anforderungen
@@ -78,90 +65,13 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   onSuccess,
   variante = 'purple'
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
+  // Pruefen und Speichern: usePasswortAendern -- dieselbe Logik wie im
+  // Dialog der Web-Fassung (web/konto/WebPasswortAendern).
+  const {
+    werte: passwordData, setWert, sichtbar: showPasswords, sichtbarUmschalten, pruefung: passwordChecks,
+    passwordsMatch, isValid, isSubmitting, isOnline, speichern: handleSave,
+  } = usePasswortAendern({ onErfolg: onSuccess });
   const stil = KONTO_MODAL_STIL[variante];
-
-  const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    confirm_password: ''
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
-  const [passwordChecks, setPasswordChecks] = useState<PasswordCheck>({
-    minLength: false,
-    hasUppercase: false,
-    hasLowercase: false,
-    hasNumber: false,
-    hasSpecial: false
-  });
-
-  // Passwort-Anforderungen live pruefen
-  useEffect(() => {
-    const pw = passwordData.new_password;
-    setPasswordChecks({
-      minLength: pw.length >= 8,
-      hasUppercase: /[A-Z]/.test(pw),
-      hasLowercase: /[a-z]/.test(pw),
-      hasNumber: /[0-9]/.test(pw),
-      hasSpecial: /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/~`]/.test(pw)
-    });
-  }, [passwordData.new_password]);
-
-  const isPasswordValid = Object.values(passwordChecks).every(Boolean);
-  const passwordsMatch = passwordData.new_password === passwordData.confirm_password && passwordData.confirm_password.length > 0;
-
-  const handleSave = async () => {
-    if (!passwordData.current_password) {
-      setError('Bitte gib dein aktuelles Passwort ein');
-      return;
-    }
-
-    if (!isPasswordValid) {
-      setError('Das neue Passwort erfüllt nicht alle Anforderungen');
-      return;
-    }
-
-    if (!passwordsMatch) {
-      setError('Die neuen Passwörter stimmen nicht überein');
-      return;
-    }
-
-    await guard(async () => {
-      try {
-        // Geraete-Angabe mitschicken: Der Passwortwechsel beendet alle
-        // ANDEREN Sitzungen und loescht deren Push-Tokens. Nur mit device_id
-        // + platform kann der Server das EIGENE Geraet verschonen — dieselbe
-        // Quelle wie bei der Token-Registrierung (AppContext nutzt getDeviceId).
-        const res = await api.post('/auth/change-password', {
-          currentPassword: passwordData.current_password,
-          newPassword: passwordData.new_password,
-          device_id: getDeviceId() || undefined,
-          platform: Capacitor.getPlatform()
-        });
-
-        // Der Passwortwechsel beendet serverseitig ALLE Sitzungen. Die Antwort
-        // liefert dafuer ein frisches Token-Paar für diese Sitzung — ohne
-        // Uebernahme wuerde der nächste Request am invalidierten Token
-        // scheitern und sich wie ein grundloser Rauswurf anfuehlen.
-        if (res.data?.token) {
-          await setToken(res.data.token);
-          if (res.data.refresh_token) await setRefreshToken(res.data.refresh_token);
-        }
-
-        setSuccess('Passwort erfolgreich geändert');
-        onSuccess();
-      } catch (err) {
-        setError(fehlerText(err, 'Fehler beim Ändern des Passworts'));
-      }
-    });
-  };
-
-  const isValid = passwordData.current_password && isPasswordValid && passwordsMatch;
 
   return (
     <IonPage>
@@ -198,14 +108,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   <IonInput aria-label="Aktuelles Passwort" aria-required="true"
                     type={showPasswords.current ? 'text' : 'password'}
                     value={passwordData.current_password}
-                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, current_password: e.detail.value! }))}
+                    onIonInput={(e) => setWert('current_password', e.detail.value!)}
                     placeholder="Aktuelles Passwort eingeben"
                     disabled={isSubmitting}
                   />
                   <IonButton aria-label="Aktuelles Passwort anzeigen oder verbergen"
                     slot="end"
                     fill="clear"
-                    onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
+                    onClick={() => sichtbarUmschalten('current')}
                   >
                     <IonIcon icon={showPasswords.current ? ICON_VERBORGEN : ICON_SICHTBAR} />
                   </IonButton>
@@ -231,14 +141,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   <IonInput aria-label="Neues Passwort" aria-required="true"
                     type={showPasswords.new ? 'text' : 'password'}
                     value={passwordData.new_password}
-                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, new_password: e.detail.value! }))}
+                    onIonInput={(e) => setWert('new_password', e.detail.value!)}
                     placeholder="Neues Passwort eingeben"
                     disabled={isSubmitting}
                   />
                   <IonButton aria-label="Neues Passwort anzeigen oder verbergen"
                     slot="end"
                     fill="clear"
-                    onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
+                    onClick={() => sichtbarUmschalten('new')}
                   >
                     <IonIcon icon={showPasswords.new ? ICON_VERBORGEN : ICON_SICHTBAR} />
                   </IonButton>
@@ -249,14 +159,14 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
                   <IonInput aria-label="Neues Passwort bestätigen" aria-required="true"
                     type={showPasswords.confirm ? 'text' : 'password'}
                     value={passwordData.confirm_password}
-                    onIonInput={(e) => setPasswordData(prev => ({ ...prev, confirm_password: e.detail.value! }))}
+                    onIonInput={(e) => setWert('confirm_password', e.detail.value!)}
                     placeholder="Neues Passwort bestätigen"
                     disabled={isSubmitting}
                   />
                   <IonButton aria-label="Passwortbestätigung anzeigen oder verbergen"
                     slot="end"
                     fill="clear"
-                    onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
+                    onClick={() => sichtbarUmschalten('confirm')}
                   >
                     <IonIcon icon={showPasswords.confirm ? ICON_VERBORGEN : ICON_SICHTBAR} />
                   </IonButton>
@@ -277,11 +187,9 @@ const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--app-abstand-eng)' }}>
-                <PasswordCheckItem label="Mind. 8 Zeichen" checked={passwordChecks.minLength} />
-                <PasswordCheckItem label="Großbuchstabe" checked={passwordChecks.hasUppercase} />
-                <PasswordCheckItem label="Kleinbuchstabe" checked={passwordChecks.hasLowercase} />
-                <PasswordCheckItem label="Zahl" checked={passwordChecks.hasNumber} />
-                <PasswordCheckItem label="Sonderzeichen" checked={passwordChecks.hasSpecial} />
+                {PASSWORT_ANFORDERUNGEN.map(({ schluessel, label }) => (
+                  <PasswordCheckItem key={schluessel} label={label} checked={passwordChecks[schluessel]} />
+                ))}
               </div>
             </IonCardContent>
           </IonCard>

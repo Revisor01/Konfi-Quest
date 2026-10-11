@@ -8,7 +8,7 @@ import {
   ICON_TERMIN,
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonPage,
   IonContent,
@@ -29,10 +29,12 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
+import { useNeueEmailUebernehmen } from '../../shared/useEmailAendern';
+import WebEmailAendern from '../../shared/web/konto/WebEmailAendern';
+import WebPasswortAendern from '../../shared/web/konto/WebPasswortAendern';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
@@ -47,7 +49,7 @@ import WebAdminProfil from '../web/start/WebAdminProfil';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
-  const { user, setUser } = useApp();
+  const { user } = useApp();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   // Browser ab 992 px: die Web-Fassung (web/start/WebAdminProfil), zweispaltig.
   const breit = useBreitesLayout();
@@ -59,23 +61,20 @@ const AdminProfilePage: React.FC = () => {
     { ttl: CACHE_TTL.SETTINGS }
   );
 
+  // Nach einer neuen Adresse: Profil neu laden, dann die Adresse in den
+  // Context und den TokenStore (App-Modal und Web-Dialog gleich).
+  const emailUebernehmen = useNeueEmailUebernehmen(refreshProfile);
+  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail und Passwort einen
+  // eigenen Dialog statt des App-Modals.
+  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | null>(null);
+
   // Email Modal mit useIonModal Hook
   const [presentEmailModalHook, dismissEmailModalHook] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModalHook(),
     onSuccess: async () => {
       dismissEmailModalHook();
       // User-Daten im Context aktualisieren
-      await refreshProfile();
-      try {
-        const response = await api.get('/auth/me');
-        if (user) {
-          const updatedUser = { ...user, email: response.data.email };
-          await setTokenStoreUser(updatedUser);
-          setUser(updatedUser);
-        }
-      } catch {
-        // Profile bereits via refreshProfile aktualisiert
-      }
+      await emailUebernehmen();
     },
     variante: 'users'
   });
@@ -143,12 +142,22 @@ const AdminProfilePage: React.FC = () => {
           funktion={selbstbezeichnung(profileData?.role_title)}
           cacheLabel={cacheLabel}
           onFunktion={handleOpenRoleTitleModal}
-          onEmail={handleOpenEmailModal}
-          onPasswort={handleOpenPasswordModal}
+          onEmail={() => setWebDialog('email')}
+          onPasswort={() => setWebDialog('passwort')}
           onCache={handleClearMediaCache}
           onLoeschen={handleOpenDeleteAccount}
           presentingElement={() => presentingElement}
         />
+        {webDialog === 'email' && (
+          <WebEmailAendern
+            initialEmail={profileData?.email || user?.email || ''}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); void emailUebernehmen(); }}
+          />
+        )}
+        {webDialog === 'passwort' && (
+          <WebPasswortAendern onSchliessen={() => setWebDialog(null)} onGespeichert={() => setWebDialog(null)} />
+        )}
       </WebSeite>
     );
   }

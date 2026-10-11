@@ -243,12 +243,21 @@ describe('Profil des Teams (Web): Einstellungen -- dieselben Handgriffe wie in d
     expect(modal('ChangeRoleTitleModal')?.optionen?.presentingElement).toBe(h.seite);
   });
 
-  it('E-Mail, Passwort, Bibeluebersetzung und Konto loeschen oeffnen die Modale in der Farbe des Teams', async () => {
+  // Seit 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale überall")
+  // öffnen E-Mail und Passwort im Browser eigene Dialoge statt der App-Modale;
+  // Einzelheiten in start/webKontoUmschaltung und shared/webKontoDialoge.
+  it('E-Mail und Passwort öffnen die Dialoge der Web-Fassung; Bibeluebersetzung und Konto loeschen die Modale in der Farbe des Teams', async () => {
+    h.antworten['/auth/me'] = { email: 'tjark@example.org' };
     await zeigeProfil();
     fireEvent.click(knopfInZeile('E-Mail-Adresse', 'Ändern'));
-    expect(modal('ChangeEmailModal')?.props.variante).toBe('teamer');
+    const email = screen.getByRole('dialog', { name: 'E-Mail ändern' });
+    await waitFor(() => expect((within(email).getByLabelText('E-Mail-Adresse (optional)') as HTMLInputElement).value).toBe('tjark@example.org'));
+    fireEvent.click(within(email).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(knopfInZeile('Passwort', 'Ändern'));
-    expect(modal('ChangePasswordModal')?.props.variante).toBe('teamer');
+    const passwort = screen.getByRole('dialog', { name: 'Passwort ändern' });
+    fireEvent.click(within(passwort).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.modale).toEqual([]);
     fireEvent.click(knopfInZeile('Bibelübersetzung', 'Ändern'));
     expect(modal('BibleTranslationModal')?.props.currentTranslation).toBe('LUT');
     expect(modal('BibleTranslationModal')?.props.itemVariant).toBe('teamer');
