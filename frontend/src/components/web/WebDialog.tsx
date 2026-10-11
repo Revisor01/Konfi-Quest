@@ -38,7 +38,8 @@ export interface WebDialogProps {
   /**
    * Breiter (720 statt 520 px) für Formulare mit vielen Feldern, die zu
    * zweit nebeneinander stehen (Event, Material). Kurze Formulare bleiben
-   * schmal.
+   * schmal. Die Knopfleiste eines breiten Dialogs bleibt beim Scrollen unten
+   * im Bild (theme/web-ansicht.css).
    */
   breit?: boolean;
   /**

@@ -336,7 +336,7 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
       aktionen={(
         <>
           {/* Prüfung, Fehler und Sendestand stehen über den Knöpfen: Die
-              Leiste bleibt beim Scrollen unten im Bild (leitung.css). */}
+              Leiste bleibt beim Scrollen unten im Bild (web-ansicht.css). */}
           {f.fehler && (
             <div className="web-material-meldung">
               <WebHinweis art="fehler" rolle="alert">{f.fehler}</WebHinweis>

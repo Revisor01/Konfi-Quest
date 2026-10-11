@@ -274,23 +274,8 @@
   min-width: 0;
 }
 
-/* Das Formular ist lang (gemessen 11.10.2026, neues Event mit Voreinstellung:
-   1340 px Inhalt in einem 852 px hohen Dialog bei 1440 x 900, 752 px bei
-   1280 x 800): Abbrechen und Speichern bleiben unten im Bild,
-   statt erst am Ende des Formulars zu stehen -- wie der Haken oben im Modal
-   der App. Nur in diesem Dialog; die Knopfleiste selbst gehoert
-   web-ansicht.css. */
-.web-dialog__form:has(.web-event-formular) > .web-dialog__aktionen {
-  position: sticky;
-  bottom: calc(-1 * var(--app-abstand-gross));
-  z-index: 1;
-  margin: 0 calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-gross));
-  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
-  border-top: 1px solid var(--web-linie-leise);
-  background: var(--web-karte);
-}
-
-/* Eine Meldung beim Speichern steht in dieser Knopfleiste, ueber den Knoepfen. */
+/* Eine Meldung beim Speichern steht in der Knopfleiste, die beim Scrollen
+   unten im Bild bleibt (web-ansicht.css), ueber den Knoepfen. */
 .web-event-meldung {
   flex: 1 0 100%;
   min-width: 0;
