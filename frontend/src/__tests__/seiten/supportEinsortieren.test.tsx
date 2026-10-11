@@ -31,6 +31,8 @@ vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: vi.fn(), setSuccess: vi.fn(), isOnline: true }),
 }));
 vi.mock('../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
+// Im Browser steht die Mail im Lesebereich des Posteingangs; der liest seinen Filter aus der Adresse.
+vi.mock('../../navigation/useAppLocation', () => ({ useAppLocation: () => ({ pathname: '/admin/support/post/31', search: '', state: null }) }));
 
 import SupportPostDetailPage from '../../components/support/SupportPostDetailPage';
 import { supportMailZaehlerZuruecksetzen } from '../../navigation/supportMailZaehler';
@@ -55,10 +57,12 @@ beforeEach(() => {
   server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
 });
 
-/** App: der Abschnitt der Mail, sobald die offenen Vorgänge geladen sind. */
+/** App: das Modal „Einsortieren" der Mail, sobald die offenen Vorgänge geladen sind. */
 const appOeffnen = async () => {
   h.breit = false;
   render(<SupportPostDetailPage nachrichtId={31} />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Einsortieren' }));
+  await screen.findByRole('dialog', { name: 'Einsortieren' });
   await waitFor(() => expect((screen.getByLabelText('Vorgang') as HTMLSelectElement).options.length).toBe(3));
 };
 const appZeilen = () => [...(screen.getByLabelText('Vorgang') as HTMLSelectElement).options].slice(1).map((o) => o.textContent);
@@ -67,8 +71,8 @@ const appZeilen = () => [...(screen.getByLabelText('Vorgang') as HTMLSelectEleme
 const webOeffnen = async () => {
   h.breit = true;
   render(<SupportPostDetailPage nachrichtId={31} />);
-  const seite = await screen.findByRole('complementary', { name: 'Einsortieren' });
-  fireEvent.click(within(seite).getByRole('button', { name: 'Einsortieren' }));
+  const lesen = await screen.findByRole('article', { name: 'Frage zum Zugang' });
+  fireEvent.click(within(lesen).getByRole('button', { name: 'Einsortieren' }));
   const dialog = await screen.findByRole('dialog', { name: 'Mail einsortieren' });
   await waitFor(() => expect(within(dialog).queryAllByRole('radio').length).toBe(2));
   return dialog;

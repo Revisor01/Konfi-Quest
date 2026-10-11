@@ -24,7 +24,8 @@ import { useMailAktionen } from './useMailAktionen';
 /** Die zusaetzlichen Felder einer Mail seit den Vorgaengen; aeltere Server liefern sie nicht. */
 type MailMitVorgang = MailVerlauf & { vorgang_id?: number | null; archiviert_am?: string | null };
 
-export function usePostDetail(nachrichtId: number) {
+/** @param nachLoeschen Was nach dem Loeschen geschieht; ohne: zurueck in den Posteingang. */
+export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
   const router = useIonRouter();
   const aktionen = useMailAktionen();
   // Quelle des Gelesen-Meldens: Das Laden danach weckt diese Seite nicht noch einmal.
@@ -98,7 +99,7 @@ export function usePostDetail(nachrichtId: number) {
   const archivieren = () => aktionen.archivieren(mail ? [mail.id] : []);
   /** Loeschen mit Rueckfrage; danach zurueck in den Posteingang -- die Mail gibt es nicht mehr. */
   const loeschenFragen = () => {
-    if (mail) aktionen.loeschenFragen([mail.id], () => router.push(SUPPORT_POSTEINGANG, 'back', 'replace'));
+    if (mail) aktionen.loeschenFragen([mail.id], () => (nachLoeschen ? nachLoeschen() : router.push(SUPPORT_POSTEINGANG, 'back', 'replace')));
   };
 
   return {

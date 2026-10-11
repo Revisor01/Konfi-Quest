@@ -1,33 +1,32 @@
 // Vorgänge in der Web-Fassung der Support-Ansicht, /admin/support/vorgaenge
-// (docs/planung/support-vorgaenge.md, Entscheidung 7).
+// und /admin/support/vorgaenge/:id (docs/planung/support-vorgaenge.md,
+// Entscheidung 7).
 //
-// Der Eingang des Supports: jedes Anliegen -- Anfrage von der Homepage,
-// Support-Formular, Mail, vom Support angelegt -- als Zeile einer Tabelle mit
-// Nummer, Betreff, Art, Gemeinde, Status, Dringlichkeit, letzter Aktivität und
-// ungelesenen Mails. Filter-Chips mit Zahlen (Offen, Neu, In Arbeit, Wartet,
-// Archiv -- darin auch die erledigten), Auswahl nach Art und Gemeinde, Live-
-// Suche. Mehrere Zeilen lassen sich auswählen: archivieren, wiederherstellen,
-// löschen, Status setzen. „Neuer Vorgang" öffnet einen Dialog; ist eine
-// Gemeinde gewählt, heißt er „Schreiben".
+// Wie ein Mailprogramm (Simon, 11.10.2026): links die Vorgänge als Zeilen --
+// Betreff, Nummer, Gemeinde, Status, Dringlichkeit, letzte Aktivität,
+// ungelesene Mails --, rechts der gewählte Vorgang im Lesebereich
+// (web/WebVorgangDetail). Die Adresse folgt der Wahl; Pfeiltasten wechseln
+// den Vorgang. Darüber die Stände mit Zahlen (Offen, Neu, In Arbeit, Wartet,
+// Archiv -- darin auch die erledigten), die Suche und hinter „Filter" Art und
+// Gemeinde. Mehrere Vorgänge lassen sich ankreuzen: archivieren,
+// wiederherstellen, löschen, Status setzen. „Neuer Vorgang" öffnet einen
+// Dialog; ist eine Gemeinde gewählt, heißt er „Schreiben".
 //
 // Die Logik (laden, filtern, Sammelaktionen, Aktualisieren bei Änderungen)
 // steht in components/support/useVorgangsliste.ts, dieselbe wie in der App.
-// Rahmen, Werkzeugzeile (Stände, Suche, Art, Gemeinde in einer Zeile), Liste
-// und Zustände stellt WebListenSeite (10.10.2026) -- ohne Kacheln. Filter und
-// Suche rechnet der Hook; die Hülle nimmt die Liste, wie sie kommt.
+// Rahmen, Werkzeugzeile und Zustände stellt WebListenSeite; Liste und
+// Lesebereich nebeneinander WebPostfach.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_ARCHIV, ICON_HINZUFUEGEN, ICON_LISTE, ICON_LOESCHEN, ICON_RUECKGAENGIG } from '../../shared/icons';
 import { datumUhrzeit } from '../../../utils/dateUtils';
-import { zeitpunktText } from '../../../utils/postfach';
+import { mailZeit } from '../../../utils/mailGespraeche';
 import { suchbegriff } from '../../../utils/supportWeb';
 import {
   ARTEN,
   STATUS_REIHE,
   VORGANG_STATUS,
-  artKurz,
-  bereichLabel,
   vorgaengeText,
   type Vorgang,
   type VorgangArt,
@@ -37,15 +36,15 @@ import {
 import { useVorgangsliste } from '../useVorgangsliste';
 import { useVorgangsAuswahl } from '../useVorgangsAuswahl';
 import WebKnopf from '../../web/WebKnopf';
-import WebLink from '../../web/WebLink';
 import WebAuswahl from '../../web/WebAuswahl';
 import WebListenSeite from '../../web/WebListenSeite';
-import { type WebSpalte } from '../../web/WebListe';
 import WebTreffer from '../../web/WebTreffer';
 import WebNeuerVorgang from './WebNeuerVorgang';
+import WebVorgangDetail from './WebVorgangDetail';
+import WebPostfach, { WebLeseHinweis, WebPostfachZeilen } from './WebPostfach';
+import { useLeseAuswahl } from './useLeseAuswahl';
 import { DringlichPill, StatusPill } from './WebVorgangTeile';
 import '../../../theme/web/support.css';
-import { vorgangStatusRang } from '../../../utils/statusReihenfolge';
 import { leerVon } from '../../../seiten/beschreibung';
 import {
   ALLE_ARTEN,
@@ -60,7 +59,8 @@ import {
 /** Wohin der Link „Zurueck zur Liste" eines Vorgangs fuehrt, mit dem Filter, der gerade gilt. */
 export const VORGAENGE_LISTE = '/admin/support/vorgaenge';
 
-const WebVorgaenge: React.FC = () => {
+const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => {
+  const [gewaehlt, waehlen] = useLeseAuswahl(VORGAENGE_LISTE, start);
   const { auswahl, setFilter, setArt, setGemeinde, setSuche, zuruecksetzen } = useVorgangsAuswahl();
   const liste = useVorgangsliste(auswahl);
   const { zaehlen, sichtbar, gemeinden, laedt, fehler, neuLaden, sammeln, loeschenFragen, isOnline } = liste;
@@ -106,103 +106,28 @@ const WebVorgaenge: React.FC = () => {
       ? [{ schluessel: auswahl.gemeinde, label: `Gemeinde ${auswahl.gemeinde}` }] : []),
   ];
 
-  const spalten: Array<WebSpalte<Vorgang>> = [
-    {
-      schluessel: 'auswahl',
-      kopf: 'Auswählen',
-      kopfVersteckt: true,
-      breite: '44px',
-      zelle: (v) => (
-        <input
-          type="checkbox"
-          className="web-kontrollkasten web-vorn"
-          aria-label={`Vorgang ${v.id} auswählen: ${v.betreff}`}
-          checked={ausgewaehlt.has(v.id)}
-          onChange={() => umschalten(v.id)}
-        />
-      ),
-    },
-    {
-      schluessel: 'nummer',
-      kopf: 'Nr.',
-      breite: '56px',
-      zahl: true,
-      sortWert: (v) => v.id,
-      zelle: (v) => <span className="web-gedaempft">{v.id}</span>,
-    },
-    {
-      schluessel: 'betreff',
-      kopf: 'Betreff',
-      sortWert: (v) => v.betreff || '(ohne Betreff)',
-      zelle: (v) => (
-        <>
-          <WebLink
-            href={`${VORGAENGE_LISTE}/${v.id}`}
-            className={`web-link--zeile web-link--text web-einzeilig${v.ungelesen > 0 || v.status === 'neu' ? ' web-ungelesen' : ''}`}
-          >
-            <WebTreffer text={v.betreff || '(ohne Betreff)'} suche={auswahl.suche} />
-            {v.ungelesen > 0 && <span className="web-nur-vorlesen">, {v.ungelesen} ungelesene {v.ungelesen === 1 ? 'Mail' : 'Mails'}</span>}
-          </WebLink>
-          {v.bereich && <span className="web-zelle-leise web-einzeilig">{bereichLabel(v.bereich)}</span>}
-        </>
-      ),
-    },
-    {
-      schluessel: 'art',
-      kopf: 'Art',
-      breite: '136px',
-      optional: true,
-      sortWert: (v) => artKurz(v.art),
-      zelle: (v) => <span className="web-einzeilig">{artKurz(v.art)}</span>,
-    },
-    {
-      schluessel: 'gemeinde',
-      kopf: 'Gemeinde',
-      breite: '19%',
-      sortWert: (v) => v.gemeinde_name,
-      zelle: (v) => (v.gemeinde_name
-        ? <span className="web-einzeilig"><WebTreffer text={v.gemeinde_name} suche={auswahl.suche} /></span>
-        : <span className="web-gedaempft web-einzeilig">Nicht zugeordnet</span>),
-    },
-    {
-      schluessel: 'status',
-      kopf: 'Status',
-      breite: '108px',
-      // Reihenfolge wie in jeder Status-Auswahl: Neu, In Arbeit, Wartet, Erledigt.
-      sortWert: (v) => vorgangStatusRang(v.status),
-      zelle: (v) => <StatusPill status={v.status} />,
-    },
-    {
-      schluessel: 'dringlichkeit',
-      kopf: 'Dringlichkeit',
-      breite: '100px',
-      optional: true,
-      // Dringendes beim ersten Klick oben.
-      sortWert: (v) => (v.dringlichkeit === 'dringend' ? 0 : 1),
-      zelle: (v) => (v.dringlichkeit === 'dringend' ? <DringlichPill dringlichkeit={v.dringlichkeit} /> : <span className="web-gedaempft">Normal</span>),
-    },
-    {
-      schluessel: 'aktivitaet',
-      kopf: archiv ? 'Archiviert' : 'Letzte Aktivität',
-      breite: '108px',
-      zahl: true,
-      sortWert: (v) => Date.parse(archiv && v.archiviert_am ? v.archiviert_am : v.letzte_aktivitaet),
-      zelle: (v) => {
-        const zeit = archiv && v.archiviert_am ? v.archiviert_am : v.letzte_aktivitaet;
-        return <span title={datumUhrzeit(zeit)}>{zeitpunktText(zeit)}</span>;
-      },
-    },
-    {
-      schluessel: 'ungelesen',
-      kopf: 'Ungelesen',
-      breite: '76px',
-      zahl: true,
-      sortWert: (v) => v.ungelesen,
-      zelle: (v) => (v.ungelesen > 0
-        ? <span className="web-chip__zahl web-chip__zahl--rot">{v.ungelesen}</span>
-        : <span className="web-gedaempft">–</span>),
-    },
-  ];
+  // Eine Zeile der Liste: oben Betreff und Zeit, unten Nummer, Gemeinde und Marken.
+  const zeile = (v: Vorgang) => {
+    const zeit = archiv && v.archiviert_am ? v.archiviert_am : v.letzte_aktivitaet;
+    return (
+      <>
+        <span className="web-postfachzeile__oben">
+          <span className="web-postfachzeile__titel"><WebTreffer text={v.betreff || '(ohne Betreff)'} suche={auswahl.suche} /></span>
+          <time className="web-postfachzeile__zeit" dateTime={zeit} title={datumUhrzeit(zeit)}>{mailZeit(zeit)}</time>
+        </span>
+        <span className="web-postfachzeile__unten">
+          <span className="web-postfachzeile__text">
+            Nr. {v.id} · {v.gemeinde_name ? <WebTreffer text={v.gemeinde_name} suche={auswahl.suche} /> : 'Nicht zugeordnet'}
+          </span>
+          <span className="web-postfachzeile__marken">
+            {v.ungelesen > 0 && <span className="web-chip__zahl web-chip__zahl--rot" title="Ungelesene Mails">{v.ungelesen}</span>}
+            <DringlichPill dringlichkeit={v.dringlichkeit} />
+            <StatusPill status={v.status} />
+          </span>
+        </span>
+      </>
+    );
+  };
 
   const gesamt = archiv ? liste.quelle?.length ?? 0 : zaehlen?.offen ?? 0;
   const inAuswahl = sichtbar.length !== gesamt ? ` · ${vorgaengeText(sichtbar.length)} in dieser Auswahl` : '';
@@ -214,7 +139,7 @@ const WebVorgaenge: React.FC = () => {
 
   // Die Leiste fuer mehrere ausgewaehlte Zeilen steht zwischen Werkzeugzeile und Liste.
   const sammelleiste = !laedt && !fehler && sichtbar.length > 0 ? (
-    <div className="web-sammelleiste" role="group" aria-label="Auswahl">
+    <div className="web-sammelleiste web-sammelleiste--liste" role="group" aria-label="Auswahl">
       <label className="web-sammelleiste__alle">
         <input ref={alleKasten} type="checkbox" className="web-kontrollkasten" checked={alleAn} onChange={alleUmschalten} />
         {ausgewaehlt.size > 0 ? `${vorgaengeText(ausgewaehlt.size)} ausgewählt` : 'Alle auswählen'}
@@ -300,16 +225,29 @@ const WebVorgaenge: React.FC = () => {
         },
         { beschriftung: 'Gemeinde', darstellung: 'auswahl', wahlen: gemeindeWahlen, wert: auswahl.gemeinde, onWert: setGemeinde },
       ]}
-      vorInhalt={sammelleiste}
       eintraege={sichtbar}
-      liste={{
-        beschriftung: 'Vorgänge',
-        spalten,
-        zeileSchluessel: (v) => v.id,
-        zeileKlasse: (v) => (v.ungelesen > 0 || v.status === 'neu' ? 'web-zeile--ungelesen' : undefined),
-        mittig: true,
-        fest: true,
-      }}
+      voll
+      inhaltStatt={(eintraege, leerZustand) => (
+        <WebPostfach
+          listeKopf={sammelleiste}
+          listeBeschriftung="Vorgänge"
+          liste={eintraege.length === 0 ? <div className="web-postfach__leer">{leerZustand}</div> : (
+            <WebPostfachZeilen<Vorgang>
+              eintraege={eintraege}
+              kennung={(v) => v.id}
+              gewaehlt={gewaehlt}
+              onWaehlen={waehlen}
+              zeile={zeile}
+              name={(v) => `Vorgang ${v.id}: ${v.betreff || '(ohne Betreff)'}`}
+              ungelesen={(v) => v.ungelesen > 0 || v.status === 'neu'}
+              auswahl={{ ausgewaehlt, umschalten }}
+            />
+          )}
+          lesen={gewaehlt !== null
+            ? <WebVorgangDetail key={gewaehlt} vorgangId={gewaehlt} onGeloescht={() => waehlen(null)} />
+            : <WebLeseHinweis icon={ICON_LISTE} titel="Kein Vorgang gewählt" text="Wähle links einen Vorgang — er öffnet sich hier." />}
+        />
+      )}
       leer={{
         icon: ICON_LISTE,
         titel: eingegrenzt ? VORGANG_KEINE_TREFFER.titel : VORGANG_LEER_TITEL[auswahl.filter],

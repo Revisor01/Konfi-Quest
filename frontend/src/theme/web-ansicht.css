@@ -100,6 +100,16 @@ ion-content.web-inhalt {
   box-sizing: border-box;
 }
 
+/* Seiten mit Liste und Lesebereich (Posteingang, Vorgaenge): Die Seite fuellt
+   die Hoehe des Fensters, Liste und Lesebereich rollen je fuer sich. Unter
+   560 px Hoehe rollt wieder die ganze Seite. */
+.web-seite--voll {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 560px;
+  padding-bottom: var(--app-abstand-weit);
+}
+
 /* --- Seitenkopf: Titel, Untertitel, Aktionen rechts --- */
 .web-kopf {
   display: flex;
@@ -1586,7 +1596,6 @@ mark.web-treffer {
 
 .web-eingabe:focus-visible,
 .web-liste__eintrag:focus-visible,
-.web-mail__zitat-knopf:focus-visible,
 .web-wahl__radio:focus-visible,
 .web-schalter__eingabe:focus-visible + .web-schalter__spur {
   outline: 2px solid var(--ion-color-primary);
@@ -1904,183 +1913,6 @@ mark.web-treffer {
   justify-content: flex-end;
   gap: var(--app-abstand-eng);
   margin-top: var(--app-abstand-eng);
-}
-
-/* --- Schriftwechsel wie in einem Mailprogramm --- */
-.web-mails {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-mittel);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.web-mail {
-  min-width: 0;
-  padding: var(--app-abstand-mittelweit) var(--app-abstand-basis);
-  border: 1px solid var(--web-linie-leise);
-  border-left: 3px solid var(--app-color-info);
-  border-radius: var(--app-radius-karte);
-  background: var(--web-karte);
-}
-
-/* Ausgehende ruecken ein und tragen die gruene Kante. */
-.web-mail--aus {
-  margin-left: var(--app-abstand-weit);
-  border-left-color: var(--app-color-success);
-}
-
-/* Die einzelne Mail im Posteingang liegt schon in einer Karte. */
-.web-mail--voll {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.web-mail__kopf {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--app-abstand-eng) var(--app-abstand-mittel);
-}
-
-.web-mail__richtung {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--app-abstand-mini);
-  font-size: var(--app-text-hinweis);
-  font-weight: var(--app-schrift-halbfett);
-}
-
-.web-mail--ein .web-mail__richtung {
-  color: var(--app-text-hinweis-dunkel);
-}
-
-.web-mail--aus .web-mail__richtung {
-  color: var(--app-color-success-tief);
-}
-
-.web-mail__absender {
-  flex: 1 1 200px;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.web-mail__meta {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--app-abstand-eng);
-  margin-left: auto;
-  font-size: var(--app-text-hinweis);
-}
-
-.web-mail__an {
-  margin: var(--app-abstand-mini) 0 0;
-  color: var(--web-text-leise);
-  font-size: var(--app-text-hinweis);
-  overflow-wrap: anywhere;
-}
-
-.web-mail__betreff {
-  margin: var(--app-abstand-eng) 0 0;
-  font-size: var(--app-text-standard);
-  font-weight: var(--app-schrift-halbfett);
-  overflow-wrap: anywhere;
-}
-
-.web-mail__kopfdaten {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: var(--app-abstand-mini) var(--app-abstand-basis);
-  margin: 0;
-  padding-bottom: var(--app-abstand-mittel);
-  border-bottom: 1px solid var(--web-linie-leise);
-}
-
-.web-mail__kopfdaten > div {
-  display: contents;
-}
-
-.web-mail__kopfdaten dt {
-  color: var(--web-text-leise);
-  font-size: var(--app-text-hinweis);
-}
-
-.web-mail__kopfdaten dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.web-mail__text {
-  margin-top: var(--app-abstand-eng);
-}
-
-.web-mail--voll .web-mail__text {
-  margin-top: var(--app-abstand-mittel);
-}
-
-.web-mail__text > :first-child {
-  margin-top: 0;
-}
-
-.web-mail__absatz {
-  margin: var(--app-abstand-eng) 0;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.web-mail__zitat {
-  margin: var(--app-abstand-eng) 0;
-}
-
-.web-mail__zitat-knopf {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--app-abstand-mini);
-  padding: var(--app-abstand-winzig) var(--app-abstand-eng);
-  border: 0;
-  border-radius: var(--app-radius-fein);
-  background: transparent;
-  color: var(--web-text-leise);
-  font: inherit;
-  font-size: var(--app-text-hinweis);
-  cursor: pointer;
-}
-
-.web-mail__zitat-knopf:hover {
-  background: var(--web-hover);
-}
-
-.web-mail__zitat-text {
-  margin-top: var(--app-abstand-mini);
-  padding-left: var(--app-abstand-mittel);
-  border-left: 2px solid var(--web-linie);
-  color: var(--web-text-leise);
-  font-size: var(--app-text-sekundaer);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
-.web-mail__anhaenge {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--app-abstand-eng);
-  margin: var(--app-abstand-mittel) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.web-mail__anhang {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--app-abstand-mini);
-  padding: var(--app-abstand-mini) var(--app-abstand-mittel);
-  border: 1px solid var(--web-linie);
-  border-radius: var(--app-radius-klein);
-  background: var(--web-grund);
-  font-size: var(--app-text-hinweis);
 }
 
 /* --- Antwort-Editor --- */

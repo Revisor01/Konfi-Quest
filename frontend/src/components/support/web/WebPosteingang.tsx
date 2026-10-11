@@ -1,20 +1,20 @@
-// Posteingang in der Web-Fassung der Support-Ansicht, /admin/support/post
-// (docs/planung/support-vorgaenge.md, Entscheidung 7).
+// Posteingang in der Web-Fassung der Support-Ansicht, /admin/support/post und
+// /admin/support/post/:id (docs/planung/support-vorgaenge.md, Entscheidung 7).
 //
 // Simon, 03.10.2026: „… und dann gibt es immer noch die Mail, und die kann
 // zusortiert werden." Hier liegen nur die eingehenden Mails an moin@ und
 // support@, die der Server keinem Vorgang zuordnen konnte und die nicht
-// archiviert sind. Je Mail „Einsortieren" (bestehender Vorgang mit Suche oder
-// neuer Vorgang mit Art, Bereich, Gemeinde), Archivieren und Löschen; mehrere
-// Mails lassen sich auswählen. Filter: Alle, Ungelesen, moin@, support@ und
-// Archiv. Alles andere -- Anfragen, Formulare, Schriftwechsel -- steht in den
-// Vorgängen.
+// archiviert sind. Wie ein Mailprogramm (Simon, 11.10.2026): links die Mails
+// (Absender, Betreff, eine Zeile Text), rechts die gewählte im Lesebereich
+// (web/WebPostDetail) mit Antworten, Einsortieren, Archivieren und Löschen.
+// Mehrere Mails lassen sich ankreuzen. Filter: Alle, Ungelesen, moin@,
+// support@ und Archiv. Der Zustand der Postfächer steht als eine Zeile oben
+// und klappt nur bei einer Störung auf.
 //
 // Die rote Zahl am Filter „Ungelesen" ist dieselbe wie die der Leiste
 // (navigation/supportMailZaehler.ts). Die Logik steht in
 // components/support/usePosteingang.ts und useMailAktionen.ts, dieselbe wie in
-// der App. Rahmen, Filter, Liste und Zustände stellt WebListenSeite
-// (10.10.2026) -- ohne Kacheln; den Filter rechnet der Hook.
+// der App.
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -23,18 +23,19 @@ import type { MailPostfachStatus } from '../../../types/support';
 import { POSTFACH_INFO, SERVER_AUS_HINWEIS, aufDiesemServer } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
+import { mailZeit } from '../../../utils/mailGespraeche';
 import { mailsText } from '../../../utils/supportVorgaenge';
 import { EINGANG_FILTER, type EingangFilter, type MailEingangWeb } from '../../../utils/supportWeb';
 import { useSupportMailZaehler } from '../../../navigation/supportMailZaehler';
 import { usePosteingang } from '../usePosteingang';
 import { useMailAktionen } from '../useMailAktionen';
 import WebKnopf from '../../web/WebKnopf';
-import WebLink from '../../web/WebLink';
 import WebPill from '../../web/WebPill';
 import WebListenSeite from '../../web/WebListenSeite';
-import { type WebSpalte } from '../../web/WebListe';
 import { useFilterAusAdresse } from '../../web/useFilterAusAdresse';
-import WebEinsortieren from './WebEinsortieren';
+import WebPostDetail from './WebPostDetail';
+import WebPostfach, { WebLeseHinweis, WebPostfachZeilen } from './WebPostfach';
+import { useLeseAuswahl } from './useLeseAuswahl';
 import '../../../theme/web/support.css';
 import { leerVon } from '../../../seiten/beschreibung';
 import {
@@ -45,25 +46,20 @@ import {
   ZUGANGSDATEN_FEHLEN,
 } from '../../../seiten/supportPosteingang';
 
-/** Der Zustand eines Postfachs: eingerichtet, zuletzt abgeholt, Fehler, "auf diesem Server aus". */
-const PostfachStatus: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
+/** Ein Postfach braucht Aufmerksamkeit: Fehler, nicht eingerichtet oder auf diesem Server aus. */
+const gestoert = (p: MailPostfachStatus) => Boolean(p.fehler) || !p.eingerichtet || !aufDiesemServer(p);
+
+/** Der Zustand eines Postfachs mit Grund -- nur, wenn etwas nicht stimmt. */
+const PostfachStoerung: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
   const info = POSTFACH_INFO[p.postfach];
   const aus = !aufDiesemServer(p);
-  const art = p.fehler ? ' web-status--fehler' : aus || !p.eingerichtet ? ' web-status--warnung' : '';
   return (
-    <div className={`web-status${art}`}>
+    <div className={`web-status${p.fehler ? ' web-status--fehler' : ' web-status--warnung'}`}>
       <div className="web-status__kopf">
         <span className="web-status__name">{p.adresse || info?.kurz}</span>
-        <WebPill ton={p.eingerichtet && !aus ? 'erfolg' : 'warnung'} punkt>
-          {aus ? 'Auf diesem Server aus' : p.eingerichtet ? 'Eingerichtet' : 'Nicht eingerichtet'}
-        </WebPill>
-      </div>
-      <div className="web-status__meta">
-        <span>{info?.aufgabe}</span>
-        <span>{p.abgeholt_am ? `zuletzt abgeholt ${zeitpunktText(p.abgeholt_am)}` : 'noch nicht abgeholt'}</span>
+        <WebPill ton="warnung" punkt>{aus ? 'Auf diesem Server aus' : p.eingerichtet ? 'Fehler beim Abholen' : 'Nicht eingerichtet'}</WebPill>
       </div>
       {aus && <div className="web-status__meta"><span>{SERVER_AUS_HINWEIS}</span></div>}
-      {/* Wie in der App: Ohne Zugangsdaten wird das Postfach nicht gelesen (bis 09.10.2026 stand im Browser nur die Marke). */}
       {!p.eingerichtet && !aus && (
         <div className="web-status__meta"><span>{ZUGANGSDATEN_FEHLEN.titel}: {ZUGANGSDATEN_FEHLEN.text}</span></div>
       )}
@@ -76,13 +72,33 @@ const PostfachStatus: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
   );
 };
 
-const WebPosteingang: React.FC = () => {
+/**
+ * Der Zustand der Postfächer als eine Zeile; bei einer Störung je Postfach
+ * ein Kasten mit dem Grund (bis 11.10.2026 standen immer beide Kästen da).
+ */
+const PostfachZeile: React.FC<{ status: MailPostfachStatus[] | null }> = ({ status }) => {
+  if (!status) return <div className="web-status web-status--fehler" role="status">Der Zustand der Postfächer konnte nicht geladen werden.</div>;
+  if (status.length === 0) return <div className="web-status">Der Server meldet keine Postfächer.</div>;
+  const stoerungen = status.filter(gestoert);
+  if (stoerungen.length > 0) {
+    return <div className="web-statuszeile">{stoerungen.map((p) => <PostfachStoerung key={p.postfach} p={p} />)}</div>;
+  }
+  const zuletzt = status.map((p) => p.abgeholt_am).filter((t): t is string => Boolean(t)).sort().pop();
+  return (
+    <p className="web-postfachstand" role="status">
+      <WebPill ton="erfolg" punkt>{status.map((p) => POSTFACH_INFO[p.postfach]?.kurz ?? p.postfach).join(' und ')}</WebPill>
+      {zuletzt ? ` zuletzt abgeholt ${zeitpunktText(zuletzt)}` : ' noch nicht abgeholt'}
+    </p>
+  );
+};
+
+const WebPosteingang: React.FC<{ start?: number | null }> = ({ start = null }) => {
+  const [gewaehlt, waehlen] = useLeseAuswahl('/admin/support/post', start);
   const zaehler = useSupportMailZaehler(true);
   const [filter, setFilter] = useFilterAusAdresse<EingangFilter>('/admin/support/post', EINGANG_FILTER, 'alle');
   const eingang = usePosteingang(filter);
   const aktionen = useMailAktionen();
   const { zaehlen, sichtbar, laedt, fehler, status, neuLaden } = eingang;
-  const [einsortieren, setEinsortieren] = useState<MailEingangWeb | null>(null);
   const [ausgewaehlt, setAusgewaehlt] = useState<ReadonlySet<number>>(new Set());
 
   const archiv = filter === 'archiv';
@@ -111,120 +127,34 @@ const WebPosteingang: React.FC = () => {
   const ids = [...ausgewaehlt];
   const nachAktion = (ok: boolean) => { if (ok) setAusgewaehlt(new Set()); };
 
-  const spalten: Array<WebSpalte<MailEingangWeb>> = [
-    {
-      schluessel: 'auswahl',
-      kopf: 'Auswählen',
-      kopfVersteckt: true,
-      breite: '44px',
-      zelle: (m) => (
-        <input
-          type="checkbox"
-          className="web-kontrollkasten web-vorn"
-          aria-label={`Mail auswählen: ${m.betreff?.trim() || '(ohne Betreff)'}`}
-          checked={ausgewaehlt.has(m.id)}
-          onChange={() => umschalten(m.id)}
-        />
-      ),
-    },
-    {
-      schluessel: 'punkt',
-      kopf: 'Ungelesen',
-      kopfVersteckt: true,
-      breite: '28px',
-      zelle: (m) => (m.gelesen_am ? null : <span className="app-ungelesen-punkt web-punkt-zeile" role="img" aria-label="ungelesen" />),
-    },
-    {
-      schluessel: 'postfach',
-      kopf: 'Postfach',
-      breite: '92px',
-      sortWert: (m) => POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach,
-      zelle: (m) => <WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill>,
-    },
-    {
-      schluessel: 'von',
-      kopf: 'Von',
-      breite: '22%',
-      sortWert: (m) => m.von_name?.trim() || m.von_adresse,
-      zelle: (m) => {
-        const name = m.von_name?.trim();
-        return (
-          <span className={m.gelesen_am ? undefined : 'web-ungelesen'}>
-            <span className="web-einzeilig">{name || m.von_adresse}</span>
-            {name && <span className="web-zelle-leise web-einzeilig">{m.von_adresse}</span>}
+  // Eine Zeile der Liste: Absender und Zeit, Betreff, eine Zeile Text.
+  const zeile = (m: MailEingangWeb) => {
+    const anhaenge = (m.anhaenge ?? []).length;
+    return (
+      <>
+        <span className="web-postfachzeile__oben">
+          <span className="web-postfachzeile__titel">{m.von_name?.trim() || m.von_adresse}</span>
+          <time className="web-postfachzeile__zeit" dateTime={m.gesendet_am} title={datumUhrzeit(m.gesendet_am)}>{mailZeit(m.gesendet_am)}</time>
+        </span>
+        <span className="web-postfachzeile__betreff">{m.betreff?.trim() || '(ohne Betreff)'}</span>
+        <span className="web-postfachzeile__unten">
+          <span className="web-postfachzeile__text">
+            {anhaenge > 0 && <IonIcon icon={ICON_ANHANG} aria-label={anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`} />}
+            {m.auszug || 'Ohne Text'}
           </span>
-        );
-      },
-    },
-    {
-      schluessel: 'betreff',
-      kopf: 'Betreff',
-      sortWert: (m) => m.betreff?.trim() || '(ohne Betreff)',
-      zelle: (m) => {
-        const anhaenge = (m.anhaenge ?? []).length;
-        return (
-          <>
-            <WebLink
-              href={`/admin/support/post/${m.id}`}
-              className={`web-link--zeile web-link--text web-einzeilig${m.gelesen_am ? ' web-gedaempft' : ' web-ungelesen'}`}
-            >
-              {m.betreff?.trim() || '(ohne Betreff)'}
-            </WebLink>
-            {(m.auszug || anhaenge > 0) && (
-              <span className="web-zelle-leise web-einzeilig">
-                {anhaenge > 0 && (
-                  <>
-                    <IonIcon icon={ICON_ANHANG} aria-hidden="true" /> {anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`}{m.auszug ? ' · ' : ''}
-                  </>
-                )}
-                {m.auszug}
-              </span>
-            )}
-          </>
-        );
-      },
-    },
-    {
-      schluessel: 'datum',
-      kopf: 'Datum',
-      breite: '104px',
-      zahl: true,
-      sortWert: (m) => Date.parse(m.gesendet_am),
-      zelle: (m) => <span title={datumUhrzeit(m.gesendet_am)}>{zeitpunktText(m.gesendet_am)}</span>,
-    },
-  ];
+          <span className="web-postfachzeile__marken"><WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill></span>
+        </span>
+      </>
+    );
+  };
 
   const untertitel = archiv
     ? 'Archivierte Mails, die zu keinem Vorgang gehören'
     : `${mailsText(zaehlen.alle)} ${zaehlen.alle === 1 ? 'wartet' : 'warten'} darauf, einem Vorgang zugeordnet zu werden`;
 
-  const zeilenKnoepfe = (m: MailEingangWeb) => {
-    const titel = m.betreff?.trim() || '(ohne Betreff)';
-    return (
-      <>
-        {archiv ? (
-          <WebKnopf klein vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.wiederherstellen([m.id]); }} aria-label={`Wiederherstellen: ${titel}`}>
-            <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-            Wiederherstellen
-          </WebKnopf>
-        ) : (
-          <>
-            <WebKnopf klein art="primaer" vorn onClick={() => setEinsortieren(m)} aria-label={`Einsortieren: ${titel}`}>Einsortieren</WebKnopf>
-            <WebKnopf klein symbol vorn disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren([m.id]); }} aria-label={`Archivieren: ${titel}`} title="Archivieren">
-              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-            </WebKnopf>
-          </>
-        )}
-        <WebKnopf klein symbol art="gefahr" vorn disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen([m.id])} aria-label={`Löschen: ${titel}`} title="Löschen">
-          <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-        </WebKnopf>
-      </>
-    );
-  };
-
   // Die Leiste fuer mehrere ausgewaehlte Mails steht zwischen Filter und Liste.
   const sammelleiste = !laedt && !fehler && sichtbar.length > 0 ? (
-    <div className="web-sammelleiste" role="group" aria-label="Auswahl">
+    <div className="web-sammelleiste web-sammelleiste--liste" role="group" aria-label="Auswahl">
       <label className="web-sammelleiste__alle">
         <input
           ref={alleKasten}
@@ -270,15 +200,7 @@ const WebPosteingang: React.FC = () => {
       )}
       laden={laedt ? { text: 'Der Posteingang wird geladen.', karten: 2 } : undefined}
       fehler={!laedt && fehler ? { text: 'Der Posteingang konnte nicht geladen werden.', onErneut: () => { void neuLaden(); } } : undefined}
-      oben={(
-        <div className="web-statuszeile">
-          {status
-            ? (status.length > 0
-              ? status.map((p) => <PostfachStatus key={p.postfach} p={p} />)
-              : <div className="web-status">Der Server meldet keine Postfächer.</div>)
-            : <div className="web-status web-status--fehler" role="status">Der Zustand der Postfächer konnte nicht geladen werden.</div>}
-        </div>
-      )}
+      oben={<PostfachZeile status={status} />}
       // Filter aus der gemeinsamen Beschreibung (seiten/supportPosteingang.ts); rot sind die, die Arbeit machen.
       reiter={{
         beschriftung: POSTEINGANG_FILTER_BESCHRIFTUNG,
@@ -292,24 +214,31 @@ const WebPosteingang: React.FC = () => {
         },
         rot: (f) => POSTEINGANG_FILTER.find((w) => w.schluessel === f)?.zahlText !== undefined,
       }}
-      vorInhalt={sammelleiste}
       eintraege={sichtbar}
-      liste={{
-        beschriftung: archiv ? 'Archivierte Mails' : 'Mails im Posteingang',
-        spalten,
-        zeileSchluessel: (m) => m.id,
-        zeileKlasse: (m) => (m.gelesen_am ? undefined : 'web-zeile--ungelesen'),
-        mittig: true,
-        fest: true,
-        aktionenBreite: '232px',
-        weitere: zeilenKnoepfe,
-      }}
-      leer={{ icon: archiv ? ICON_ARCHIV : ICON_MAIL, titel: POSTEINGANG_LEER_TITEL[filter], text: leerVon(POSTEINGANG_FILTER, filter) }}
-    >
-      {einsortieren && (
-        <WebEinsortieren mail={{ id: einsortieren.id, betreff: einsortieren.betreff }} onSchliessen={() => setEinsortieren(null)} />
+      voll
+      inhaltStatt={(eintraege, leerZustand) => (
+        <WebPostfach
+          listeKopf={sammelleiste}
+          listeBeschriftung={archiv ? 'Archivierte Mails' : 'Mails im Posteingang'}
+          liste={eintraege.length === 0 ? <div className="web-postfach__leer">{leerZustand}</div> : (
+            <WebPostfachZeilen<MailEingangWeb>
+              eintraege={eintraege}
+              kennung={(m) => m.id}
+              gewaehlt={gewaehlt}
+              onWaehlen={waehlen}
+              zeile={zeile}
+              name={(m) => `${m.von_name?.trim() || m.von_adresse}: ${m.betreff?.trim() || '(ohne Betreff)'}`}
+              ungelesen={(m) => !m.gelesen_am}
+              auswahl={{ ausgewaehlt, umschalten }}
+            />
+          )}
+          lesen={gewaehlt !== null
+            ? <WebPostDetail key={gewaehlt} nachrichtId={gewaehlt} onGeloescht={() => waehlen(null)} onEinsortiert={() => waehlen(null)} />
+            : <WebLeseHinweis icon={ICON_MAIL} titel="Keine Mail gewählt" text="Wähle links eine Mail — sie öffnet sich hier." />}
+        />
       )}
-    </WebListenSeite>
+      leer={{ icon: archiv ? ICON_ARCHIV : ICON_MAIL, titel: POSTEINGANG_LEER_TITEL[filter], text: leerVon(POSTEINGANG_FILTER, filter) }}
+    />
   );
 };
 

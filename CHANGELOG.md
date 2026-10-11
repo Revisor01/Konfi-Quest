@@ -144,6 +144,13 @@ Versionsüberschrift.
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
 
 ### Geändert
+- Im Support stehen Mails als Gespräche: Antworten eingerückt unter der Mail,
+  auf die sie antworten, jede Mail eingeklappt mit einer Zeile Text, Zitate und
+  Signatur verborgen, Gesendetes grün markiert.
+- Posteingang und Vorgänge des Supports arbeiten im Browser wie ein
+  Mailprogramm: links die Liste, rechts der gewählte Eintrag; Antworten,
+  Einordnen und Einsortieren öffnen sich als kompaktes Fenster, in der App als
+  eigenes Fenster.
 - Im Browser stehen zwei oder mehr Filter einer Liste hinter dem Knopf
   „Filter"; sie klappen darunter auf, und die Zeile mit Reitern und Suche
   bricht nicht mehr um.

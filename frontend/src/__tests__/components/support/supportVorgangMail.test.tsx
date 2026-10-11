@@ -1,7 +1,8 @@
 // Verlauf und Antworten in einem Vorgang, gerendert (Support-Mail, 03.10.2026,
 // docs/planung/support-mail.md; seit den Vorgängen unter /admin/support/
 // vorgaenge/:id): Verlauf chronologisch, ein- und ausgehend unterscheidbar,
-// Zitate eingeklappt, ungelesene als gelesen gemeldet; Antworten mit Bausteinen
+// Zitate eingeklappt, ungelesene als gelesen gemeldet; Antworten (seit
+// 11.10.2026 im Modal, das sich nach dem Senden schließt) mit Bausteinen
 // (moin@ und beide), Platzhaltern der Anfrage, Vorschau mit Fußzeile,
 // Rückfrage; 503/502 verständlich, der Text bleibt; auf diesem Server aus.
 // Ein Vorgang aus einer Anfrage antwortet immer von moin@ an die Adresse der
@@ -10,7 +11,7 @@
 // supportVorgangDetail.test.tsx und webVorgangDetail.test.tsx.
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import type { AlertOptionen } from './ionicAttrappe';
 import { ANFRAGE_41, mail, vorgang, vorgaengeServer } from './vorgaengeServer';
 
@@ -88,12 +89,19 @@ beforeEach(() => {
   });
 });
 
-const oeffnen = async () => {
-  render(<SupportVorgangDetailPage vorgangId={4} />);
-  await screen.findAllByRole('article');
+/** Das Antwortformular steht im Modal „Antworten“ (11.10.2026). */
+const antwortOeffnen = async () => {
+  fireEvent.click(screen.getByRole('button', { name: 'Antworten' }));
+  await screen.findByRole('dialog', { name: 'Antworten' });
   // Bausteine, Einstellungen und Zustand laden im Formular für sich.
   await waitFor(() => expect((screen.getByLabelText('Textbaustein') as HTMLSelectElement).options.length).toBeGreaterThan(1));
 };
+const oeffnen = async () => {
+  render(<SupportVorgangDetailPage vorgangId={4} />);
+  await screen.findByRole('region', { name: 'Verlauf' });
+  await antwortOeffnen();
+};
+const mailZeilen = () => [...screen.getByRole('region', { name: 'Verlauf' }).querySelectorAll('li.mail-zeile')] as HTMLElement[];
 
 const text = () => screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement;
 const senden = () => screen.getByRole('button', { name: 'Antwort senden' });
@@ -103,13 +111,13 @@ const betreff = () => screen.getByLabelText('Betreff') as HTMLInputElement;
 describe('Vorgang aus einer Anfrage: Verlauf', () => {
   it('älteste zuerst, ein- und ausgehend unterscheidbar; die ungelesene wird gemeldet und trägt „Neu“', async () => {
     await oeffnen();
-    const mails = screen.getAllByRole('article');
-    expect(mails.map((m) => m.getAttribute('aria-label'))).toEqual([
-      'Eingegangen am 02.10.2026, 11:00',
-      'Gesendet am 02.10.2026, 13:00',
-    ]);
-    expect(mails[0]).toHaveTextContent('Neu');
-    expect(mails[1]).not.toHaveTextContent('Neu');
+    const mails = mailZeilen();
+    expect(mails.map((m) => m.querySelector('time')?.getAttribute('dateTime'))).toEqual(['2026-10-02T09:00:00Z', '2026-10-02T11:00:00Z']);
+    expect(within(mails[0]).getByText('Anna Beispiel')).toBeInTheDocument();
+    expect(within(mails[0]).queryByText('Gesendet')).toBeNull();
+    expect(within(mails[1]).getByText('Gesendet')).toBeInTheDocument();
+    expect(within(mails[0]).getByText('Neu')).toBeInTheDocument();
+    expect(within(mails[1]).queryByText('Neu')).toBeNull();
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledWith('/support/mail/gelesen', { ids: [11] }));
   });
 
@@ -121,11 +129,13 @@ describe('Vorgang aus einer Anfrage: Verlauf', () => {
     expect(screen.getByText(/> wie geht es weiter\?/)).toBeInTheDocument();
   });
 
-  it('ohne Mails: ein Satz; der Betreff antwortet auf die automatische Bestätigung', async () => {
+  it('ohne Mails: nur die Nachricht aus der Anfrage; der Betreff antwortet auf die automatische Bestätigung', async () => {
     server.stand.mails = [];
     render(<SupportVorgangDetailPage vorgangId={4} />);
-    expect(await screen.findByText('Noch keine Mails in diesem Vorgang.')).toBeInTheDocument();
-    await waitFor(() => expect((screen.getByLabelText('Textbaustein') as HTMLSelectElement).options.length).toBeGreaterThan(1));
+    const anfrage = await screen.findByRole('region', { name: 'Nachricht aus der Anfrage' });
+    expect(within(anfrage).getByText('Wir starten im November.')).toBeInTheDocument();
+    expect(mailZeilen()).toHaveLength(0);
+    await antwortOeffnen();
     expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest');
   });
 });
@@ -181,21 +191,27 @@ describe('Vorgang aus einer Anfrage: Antworten', () => {
       betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]',
     }]);
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
-    expect(text().value).toBe('');
+    // Das Modal schließt sich; geöffnet ist das Formular wieder leer.
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Antworten' })).toBeNull());
     await waitFor(() => expect(server.aufrufe('get', '/support/vorgaenge/4').length).toBeGreaterThan(abrufeVorher));
-    await waitFor(() => expect((screen.getByLabelText('Status') as HTMLSelectElement).value).toBe('in_arbeit'));
-    expect(screen.getAllByRole('article')).toHaveLength(3);
+    expect(await screen.findByText('In Arbeit')).toBeInTheDocument();
+    await waitFor(() => expect(mailZeilen()).toHaveLength(3));
+    await antwortOeffnen();
+    expect(text().value).toBe('');
   });
 
   it('der unberührte Betreff folgt dem Vorschlag aus dem neuen Verlauf; ein getippter bleibt', async () => {
     server.stand.mails = [];
     render(<SupportVorgangDetailPage vorgangId={4} />);
-    await screen.findByText('Noch keine Mails in diesem Vorgang.');
+    await screen.findByRole('region', { name: 'Nachricht aus der Anfrage' });
+    await antwortOeffnen();
     await waitFor(() => expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest'));
     fireEvent.change(text(), { target: { value: 'Hallo Anna' } });
     fireEvent.click(senden());
     await bestaetigen();
-    // Der Server hat die Nummer des Vorgangs in den Betreff gesetzt.
+    await waitFor(() => expect(mailZeilen()).toHaveLength(1));
+    // Wieder geöffnet: Der Server hat die Nummer des Vorgangs in den Betreff gesetzt.
+    await antwortOeffnen();
     await waitFor(() => expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest [Vorgang 4]'));
 
     fireEvent.change(betreff(), { target: { value: 'Termine im November' } });

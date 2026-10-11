@@ -61,7 +61,11 @@ export function ionicAttrappe(optionen: {
     // Modale spielen in diesen Tests keine Rolle.
     IonDatetime: () => null,
     IonDatetimeButton: () => null,
-    IonModal: () => null,
+    // Ein Modal mit isOpen (Antworten, Einordnen, Einsortieren; 11.10.2026)
+    // steht als Dialog da, solange es offen ist. Modale ohne isOpen (Datum)
+    // bleiben weg.
+    IonModal: ({ isOpen, children, 'aria-label': label }: Kinder & { isOpen?: boolean; 'aria-label'?: string }) =>
+      (isOpen ? <div role="dialog" aria-label={label}>{children}</div> : null),
     IonItemSliding: durch,
     IonItemOptions: () => null,
     IonItemOption: () => null,

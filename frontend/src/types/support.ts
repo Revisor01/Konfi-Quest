@@ -163,6 +163,8 @@ export interface MailNachricht {
   /** Eingehend: wann im Support gesehen; ausgehend: = gesendet_am. */
   gelesen_am: string | null;
   verfasst_von?: number | null;
+  /** Anzeigename des Kontos, das eine ausgehende Mail verfasst hat (der Server liefert ihn mit). */
+  verfasst_von_name?: string | null;
   created_at?: string;
 }
 

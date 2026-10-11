@@ -1,10 +1,10 @@
 // Eine Mail aus dem Posteingang in der Web-Fassung (/admin/support/post/:id),
 // gerendert (docs/planung/support-vorgaenge.md, Entscheidung 7): wie ein
-// Mailprogramm -- Kopf (Von, An, Datum, Postfach), Text, Anhänge, die weiteren
-// Mails des Fadens, der Antwort-Editor; rechts „Einsortieren“ (bestehender oder
-// neuer Vorgang), Archivieren, Wiederherstellen und Löschen. Die Logik ist die
-// der App (usePostDetail, useEinsortieren). Im schmalen Fenster bleibt die
-// Seite der App.
+// Mailprogramm (11.10.2026) -- die Adresse öffnet den Posteingang mit dieser
+// Mail im Lesebereich rechts. Kopf mit Betreff, Absender und Postfach, Knöpfe
+// Antworten, Einsortieren (Dialog), Archivieren oder Wiederherstellen, Löschen;
+// darunter der Faden als Gespräch (MailGespraeche). Die Logik ist die der App
+// (usePostDetail, useEinsortieren). Im schmalen Fenster bleibt die Seite der App.
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
@@ -23,6 +23,7 @@ const h = vi.hoisted(() => ({
   breit: true,
   online: true,
   user: { id: 9, role_name: 'super_admin', is_super_admin: true } as Record<string, unknown>,
+  standort: { pathname: '/admin/support/post/31', search: '', state: null },
 }));
 
 vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttrappe({
@@ -37,6 +38,8 @@ vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: h.setError, setSuccess: h.setSuccess, isOnline: h.online }),
 }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
+vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.standort }));
+vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 
 import SupportPostDetailPage from '../../../components/support/SupportPostDetailPage';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
@@ -47,17 +50,19 @@ afterAll(() => { if (vorherTZ === undefined) delete process.env.TZ; else process
 
 let server: ReturnType<typeof vorgaengeServer>;
 
-// Ein Faden aus drei Mails ohne Vorgang; Reihenfolge im Speicher absichtlich durcheinander.
+// Ein Faden aus drei Mails ohne Vorgang; Reihenfolge im Speicher absichtlich
+// durcheinander. Die Kopfzeilen verketten sie: 29 <- 30 <- 31.
 const FADEN = () => [
   mail(31, null, {
     faden: 'zugang', postfach: 'moin', von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', an_adressen: ['moin@konfi-quest.example'],
-    betreff: 'Frage zum Zugang', gesendet_am: '2026-10-03T09:00:00Z',
+    betreff: 'Frage zum Zugang', gesendet_am: '2026-10-03T09:00:00Z', message_id: '<z3@ex>', in_reply_to: '<z2@kq>', referenzen: ['<z1@ex>', '<z2@kq>'],
     text: 'Danke! Und noch eins.\n\nAm 02.10.2026 um 12:00 schrieb Support <moin@konfi-quest.example>:\n> alte Antwort', anhaenge: [{ name: 'plan.pdf' }],
   }),
-  mail(29, null, { faden: 'zugang', postfach: 'moin', von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', betreff: 'Frage zum Zugang', gesendet_am: '2026-10-02T08:00:00Z', text: 'Wie melde ich mich an?' }),
+  mail(29, null, { faden: 'zugang', postfach: 'moin', von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', betreff: 'Frage zum Zugang', gesendet_am: '2026-10-02T08:00:00Z', text: 'Wie melde ich mich an?', message_id: '<z1@ex>' }),
   mail(30, null, {
     faden: 'zugang', postfach: 'moin', richtung: 'aus', von_adresse: 'moin@konfi-quest.example', von_name: 'Support', an_adressen: ['anna@example.org'],
-    betreff: 'Re: Frage zum Zugang', gesendet_am: '2026-10-02T10:00:00Z', gelesen_am: '2026-10-02T10:00:00Z', text: 'So geht es.',
+    betreff: 'Re: Frage zum Zugang', gesendet_am: '2026-10-02T10:00:00Z', gelesen_am: '2026-10-02T10:00:00Z', text: 'So geht es.\n\n-- \nKonfi Quest · Fußzeile',
+    message_id: '<z2@kq>', in_reply_to: '<z1@ex>', referenzen: ['<z1@ex>'],
   }),
 ];
 
@@ -72,102 +77,107 @@ beforeEach(() => {
   h.breit = true;
   h.online = true;
   h.user = { id: 9, role_name: 'super_admin', is_super_admin: true };
+  h.standort = { pathname: '/admin/support/post/31', search: '', state: null };
+  window.history.replaceState(null, '', '/admin/support/post/31');
   supportMailZaehlerZuruecksetzen();
   server = vorgaengeServer({ vorgaenge: VORGAENGE(), mails: FADEN() });
   server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
 });
 
-const oeffnen = async (id = 31) => {
+const oeffnen = async (id = 31, titel = 'Frage zum Zugang') => {
   render(<SupportPostDetailPage nachrichtId={id} />);
-  await screen.findByRole('complementary', { name: 'Einsortieren' });
+  await screen.findByRole('article', { name: titel });
 };
-const seite = () => screen.getByRole('complementary', { name: 'Einsortieren' });
-const hauptKarte = (titel: string) => screen.getByRole('heading', { level: 2, name: titel }).closest('section') as HTMLElement;
-const bestaetigen = async (knopf: string) => { await act(async () => { h.alert?.buttons?.find((b) => b.text === knopf)?.handler?.(); }); };
+/** Der Lesebereich rechts: die gewählte Mail mit ihrem Faden. */
+const lesen = (titel = 'Frage zum Zugang') => screen.getByRole('article', { name: titel });
+const knopf = (name: string) => within(lesen()).getByRole('button', { name });
+/** Der Kopf einer Mail im Gespräch (ein Knopf zum Auf- und Zuklappen). */
+const mailKopf = (name: RegExp) => within(lesen()).getByRole('button', { name });
+const bestaetigen = async (k: string) => { await act(async () => { h.alert?.buttons?.find((b) => b.text === k)?.handler?.(); }); };
 const dialog = () => screen.getByRole('dialog', { name: 'Mail einsortieren' });
 
-describe('Mail (Web): wie ein Mailprogramm', () => {
-  it('der Betreff ist die Überschrift der Karte; der Kopf nennt Von, An, Datum und Postfach', async () => {
+describe('Mail (Web): im Lesebereich neben dem Posteingang', () => {
+  it('die Adresse einer Mail öffnet den Posteingang; die Mail steht rechts, ihre Zeile links ist gewählt', async () => {
     await oeffnen();
-    expect(screen.getByRole('heading', { level: 1, name: 'Mail' })).toBeInTheDocument();
-    const karte = hauptKarte('Frage zum Zugang');
-    const kopf = karte.querySelector('.web-mail__kopfdaten')!;
-    expect([...kopf.querySelectorAll('dt')].map((d) => d.textContent)).toEqual(['Von', 'An', 'Datum', 'Postfach']);
-    const werte = [...kopf.querySelectorAll('dd')].map((d) => d.textContent);
-    expect(werte[0]).toBe('Anna Beispiel <anna@example.org>');
-    expect(werte[1]).toBe('moin@konfi-quest.example');
-    expect(werte[2]).toBe('03.10.2026, 11:00');
-    expect(werte[3]).toContain('moin@');
-    expect(werte[3]).toContain('Eingegangen');
-    // Die geöffnete Mail war ungelesen: „Neu“ an ihr, für diesen Besuch.
-    expect(werte[3]).toContain('Neu');
-    expect(screen.getByText('03.10.2026, 11:00 · Faden mit 3 Mails')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Posteingang' })).toBeInTheDocument();
+    const liste = screen.getByRole('navigation', { name: 'Mails im Posteingang' });
+    // 29 und 31 tragen denselben Namen; gewählt ist genau eine Zeile -- die von 31 (die jüngere steht oben).
+    const gewaehlt = within(liste).getAllByRole('button', { current: true });
+    expect(gewaehlt).toHaveLength(1);
+    expect(gewaehlt[0]).toHaveAccessibleName(/^Anna Beispiel: Frage zum Zugang/);
+    expect(within(liste).getAllByRole('button', { name: /^Anna Beispiel: Frage zum Zugang/ }).indexOf(gewaehlt[0])).toBe(0);
+    expect(within(lesen()).getByRole('heading', { level: 2, name: 'Frage zum Zugang' })).toBeInTheDocument();
   });
 
-  it('der Weg zurück ist ein Link auf den Posteingang, der in der App bleibt', async () => {
+  it('der Kopf nennt Absender mit Adresse, Postfach und die Zahl der Mails im Faden', async () => {
     await oeffnen();
-    const zurueck = within(screen.getByRole('navigation', { name: 'Zurück' })).getByRole('link', { name: 'Posteingang' });
-    expect(zurueck).toHaveAttribute('href', '/admin/support/post');
-    fireEvent.click(zurueck);
-    expect(h.push).toHaveBeenCalledWith('/admin/support/post', 'none', 'push');
+    const kopf = lesen().querySelector('.web-lesen__angaben') as HTMLElement;
+    expect(kopf).toHaveTextContent('Anna Beispiel <anna@example.org>');
+    expect(kopf).toHaveTextContent('moin@');
+    expect(kopf).toHaveTextContent('3 Mails im Faden');
+    for (const name of ['Antworten', 'Einsortieren', 'Archivieren', 'Löschen']) expect(knopf(name), name).toBeInTheDocument();
+    expect(within(lesen()).queryByRole('button', { name: 'Wiederherstellen' })).toBeNull();
+  });
+
+  it('der Faden ist ein Gespräch: Antworten eingerückt unter ihrem Vorgänger; offen sind die jüngste und die ungelesenen', async () => {
+    await oeffnen();
+    const gespraech = within(lesen()).getByRole('region', { name: 'Frage zum Zugang' });
+    const zeilen = [...gespraech.querySelectorAll<HTMLElement>('li.mail-zeile')];
+    expect(zeilen.map((z) => z.querySelector('.mail-zeile__absender')?.textContent)).toEqual(['Anna Beispiel', 'Support', 'Anna Beispiel']);
+    expect(zeilen.map((z) => z.className.match(/tiefe-(\d)/)?.[1])).toEqual(['0', '1', '2']);
+    // 29 und 31 waren ungelesen: offen und „Neu“; die gesendete 30 ist zu und trägt „Gesendet“.
+    const koepfe = zeilen.map((z) => within(z).getAllByRole('button')[0]);
+    expect(koepfe.map((k) => k.getAttribute('aria-expanded'))).toEqual(['true', 'false', 'true']);
+    expect(koepfe.map((k) => k.textContent?.includes('Neu'))).toEqual([true, false, true]);
+    expect(koepfe[1]).toHaveTextContent('Gesendet');
+    expect(koepfe[1]).toHaveTextContent('So geht es.');
   });
 
   it('Text mit eingeklapptem Zitat, Anhänge nur als Namen', async () => {
     await oeffnen();
-    const karte = within(hauptKarte('Frage zum Zugang'));
-    expect(karte.getByText('Danke! Und noch eins.')).toBeInTheDocument();
-    expect(screen.queryByText(/alte Antwort/)).toBeNull();
-    fireEvent.click(karte.getByRole('button', { name: 'Zitat einblenden' }));
-    expect(screen.getByText(/alte Antwort/).textContent).toBe('Am 02.10.2026 um 12:00 schrieb Support <moin@konfi-quest.example>:\n> alte Antwort');
-    expect(karte.getByRole('list', { name: 'Anhänge' }).textContent).toBe('plan.pdf');
+    expect(within(lesen()).getByText('Danke! Und noch eins.')).toBeInTheDocument();
+    expect(within(lesen()).queryByText(/alte Antwort/)).toBeNull();
+    fireEvent.click(within(lesen()).getByRole('button', { name: 'Zitat einblenden' }));
+    expect(within(lesen()).getByText(/alte Antwort/).textContent).toBe('Am 02.10.2026 um 12:00 schrieb Support <moin@konfi-quest.example>:\n> alte Antwort');
+    expect(within(lesen()).getByRole('list', { name: 'Anhänge' }).textContent).toBe('plan.pdf');
   });
 
-  it('die weiteren Mails des Fadens stehen darunter, älteste zuerst -- ohne die geöffnete', async () => {
+  it('die Signatur der gesendeten Mail ist eingeklappt, auch aufgeklappt', async () => {
     await oeffnen();
-    const faden = screen.getByRole('list', { name: 'Weitere Mails im Faden' });
-    expect(within(faden).getAllByRole('article').map((m) => m.getAttribute('aria-label'))).toEqual([
-      'Eingegangen am 02.10.2026, 10:00',
-      'Gesendet am 02.10.2026, 12:00',
-    ]);
-    expect(screen.getByRole('heading', { level: 2, name: 'Weitere Mails im Faden (2)' })).toBeInTheDocument();
-    // Beim Öffnen waren 29 und 31 ungelesen: gemeldet, und 29 trägt „Neu“.
-    await waitFor(() => expect(server.stand.mails.filter((m) => m.gelesen_am).map((m) => m.id).sort()).toEqual([29, 30, 31]));
-    expect(within(faden).getAllByRole('article').map((m) => within(m).queryByText('Neu') !== null)).toEqual([true, false]);
+    fireEvent.click(mailKopf(/^Support/));
+    expect(within(lesen()).getByText('So geht es.', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.queryByText(/Fußzeile/)).toBeNull();
+    fireEvent.click(within(lesen()).getByRole('button', { name: 'Signatur einblenden' }));
+    expect(screen.getByText('Konfi Quest · Fußzeile')).toBeInTheDocument();
   });
 
   it('die ungelesenen Mails des Fadens werden mit einem Aufruf gemeldet', async () => {
     await oeffnen();
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledWith('/support/mail/gelesen', { ids: [29, 31] }));
+    await waitFor(() => expect(server.stand.mails.filter((m) => m.gelesen_am).map((m) => m.id).sort()).toEqual([29, 30, 31]));
   });
 
-  it('eine einzelne Mail hat keine Karte für weitere Mails', async () => {
+  it('eine einzelne Mail: „eine Mail“, ein Gespräch mit einer Zeile', async () => {
     server.stand.mails = [mail(40, null, { betreff: 'Allein', von_name: 'Ben', gesendet_am: '2026-10-03T09:00:00Z' })];
-    await oeffnen(40);
-    expect(screen.queryByRole('heading', { name: /Weitere Mails/ })).toBeNull();
-    expect(screen.getByText('03.10.2026, 11:00 · einzelne Mail')).toBeInTheDocument();
+    await oeffnen(40, 'Allein');
+    expect(lesen('Allein').querySelector('.web-lesen__angaben')).toHaveTextContent('eine Mail');
+    expect(lesen('Allein').querySelectorAll('li.mail-zeile')).toHaveLength(1);
   });
 
   it('nichts ungelesen: kein Aufruf „gelesen“', async () => {
     server.stand.mails = [mail(40, null, { betreff: 'Allein', gelesen_am: '2026-10-03T09:30:00Z' })];
-    await oeffnen(40);
+    await oeffnen(40, 'Allein');
     await act(async () => {});
     expect(h.apiPost).not.toHaveBeenCalled();
   });
 });
 
 describe('Mail (Web): einsortieren', () => {
-  it('rechts steht „Einsortieren“ mit dem Hinweis, dass der ganze Faden mitgeht; Archivieren und Löschen darunter', async () => {
+  it('„Einsortieren“ öffnet den Dialog; in einen bestehenden Vorgang: ein Aufruf mit der Nummer, der ganze Faden geht mit, der Vorgang öffnet sich', async () => {
     await oeffnen();
-    expect(within(seite()).getByRole('heading', { level: 2, name: 'Einsortieren' })).toBeInTheDocument();
-    expect(within(seite()).getByText(/Der ganze Faden geht mit/)).toBeInTheDocument();
-    for (const name of ['Einsortieren', 'Archivieren', 'Löschen']) expect(within(seite()).getByRole('button', { name }), name).toBeInTheDocument();
-    expect(within(seite()).queryByRole('button', { name: 'Wiederherstellen' })).toBeNull();
-  });
-
-  it('in einen bestehenden Vorgang: ein Aufruf mit der Nummer; der ganze Faden geht mit; die Seite öffnet den Vorgang', async () => {
-    await oeffnen();
-    fireEvent.click(within(seite()).getByRole('button', { name: 'Einsortieren' }));
+    fireEvent.click(knopf('Einsortieren'));
     await screen.findByRole('dialog', { name: 'Mail einsortieren' });
+    expect(within(dialog()).getByText(/Spätere Antworten darauf ordnet der Server dann selbst zu/)).toBeInTheDocument();
     await waitFor(() => expect(within(dialog()).queryAllByRole('radio').length).toBe(2));
     fireEvent.click(within(dialog()).getByRole('radio', { name: /Nr\. 2/ }));
     await act(async () => { fireEvent.click(within(dialog()).getByRole('button', { name: 'Einsortieren' })); });
@@ -177,9 +187,9 @@ describe('Mail (Web): einsortieren', () => {
     expect(server.stand.mails.map((m) => [m.id, m.vorgang_id]).sort()).toEqual([[29, 2], [30, 2], [31, 2]]);
   });
 
-  it('in einen neuen Vorgang: Art, Bereich, Betreff und Gemeinde gehen mit; danach öffnet sich der neue Vorgang', async () => {
+  it('in einen neuen Vorgang: Art und Betreff gehen mit; danach öffnet sich der neue Vorgang', async () => {
     await oeffnen();
-    fireEvent.click(within(seite()).getByRole('button', { name: 'Einsortieren' }));
+    fireEvent.click(knopf('Einsortieren'));
     await screen.findByRole('dialog', { name: 'Mail einsortieren' });
     const d = within(dialog());
     fireEvent.click(d.getByRole('button', { name: 'Neuer Vorgang' }));
@@ -192,10 +202,10 @@ describe('Mail (Web): einsortieren', () => {
     expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/100');
   });
 
-  it('ein Fehler des Servers steht im Dialog; die Seite bleibt, wie sie ist', async () => {
+  it('ein Fehler des Servers steht im Dialog; nichts öffnet sich', async () => {
     server.stand.fehler.set('POST /support/mail/nachrichten/31/einsortieren', Object.assign(new Error('x'), { response: { status: 500, data: { error: 'Datenbankfehler' } } }));
     await oeffnen();
-    fireEvent.click(within(seite()).getByRole('button', { name: 'Einsortieren' }));
+    fireEvent.click(knopf('Einsortieren'));
     await screen.findByRole('dialog', { name: 'Mail einsortieren' });
     await waitFor(() => expect(within(dialog()).queryAllByRole('radio').length).toBe(2));
     fireEvent.click(within(dialog()).getByRole('radio', { name: /Nr\. 1/ }));
@@ -204,89 +214,100 @@ describe('Mail (Web): einsortieren', () => {
     expect(h.push).not.toHaveBeenCalled();
   });
 
-  it('liegt die Mail schon in einem Vorgang: Hinweis mit Link, „Anderem Vorgang zuordnen“, kein Antwort-Editor', async () => {
+  it('liegt die Mail schon in einem Vorgang: Hinweis mit Knopf zum Vorgang, „Umsortieren“, kein „Antworten“', async () => {
     server.stand.mails.forEach((m) => { m.vorgang_id = 2; });
+    // Eine weitere Mail im Posteingang: ohne sie steht statt Liste und
+    // Lesebereich nur „Nichts einzusortieren“ (siehe Bericht).
+    server.stand.mails.push(mail(50, null, { betreff: 'Andere Mail', gesendet_am: '2026-10-03T06:00:00Z' }));
     await oeffnen();
-    const hinweis = within(seite()).getByText('Einsortiert in Vorgang 2').closest('.web-hinweis') as HTMLElement;
+    const hinweis = within(lesen()).getByText('Einsortiert in Vorgang 2').closest('.web-hinweis') as HTMLElement;
     const link = within(hinweis).getByRole('link', { name: 'Vorgang öffnen' });
     expect(link).toHaveAttribute('href', '/admin/support/vorgaenge/2');
     fireEvent.click(link);
     expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/2', 'none', 'push');
-    expect(within(seite()).getByRole('button', { name: 'Anderem Vorgang zuordnen' })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { level: 2, name: 'Antworten' })).toBeNull();
+    expect(knopf('Umsortieren')).toBeInTheDocument();
+    expect(within(lesen()).queryByRole('button', { name: 'Antworten' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Antwort senden' })).toBeNull();
   });
 
-  it('ohne Netz ist „Einsortieren“ gesperrt', async () => {
+  it('ohne Netz sind Antworten, Einsortieren, Archivieren und Löschen gesperrt', async () => {
     h.online = false;
     await oeffnen();
-    for (const name of ['Einsortieren', 'Archivieren', 'Löschen']) expect(within(seite()).getByRole('button', { name }), name).toBeDisabled();
+    for (const name of ['Antworten', 'Einsortieren', 'Archivieren', 'Löschen']) expect(knopf(name), name).toBeDisabled();
   });
 });
 
 describe('Mail (Web): archivieren, wiederherstellen, löschen', () => {
-  it('Archivieren: eine Anfrage an die Mail; die Seite zeigt, dass sie im Archiv liegt, und bietet „Wiederherstellen“', async () => {
+  it('Archivieren: eine Anfrage an die Mail; der Lesebereich zeigt, dass sie im Archiv liegt, und bietet „Wiederherstellen“', async () => {
     await oeffnen();
-    await act(async () => { fireEvent.click(within(seite()).getByRole('button', { name: 'Archivieren' })); });
+    await act(async () => { fireEvent.click(knopf('Archivieren')); });
     expect(server.aufrufe('post', '/support/mail/nachrichten/31/archivieren')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('1 Mail archiviert');
-    expect(await screen.findByText('Diese Mail liegt im Archiv')).toBeInTheDocument();
-    expect(screen.getByText(/Nach 180 Tagen wird sie gelöscht/)).toBeInTheDocument();
-    expect(within(seite()).getByRole('button', { name: 'Wiederherstellen' })).toBeInTheDocument();
-    expect(within(seite()).queryByRole('button', { name: 'Archivieren' })).toBeNull();
+    expect(await within(lesen()).findByText('Diese Mail liegt im Archiv')).toBeInTheDocument();
+    expect(within(lesen()).getByText(/Nach 180 Tagen wird sie gelöscht/)).toBeInTheDocument();
+    expect(knopf('Wiederherstellen')).toBeInTheDocument();
+    expect(within(lesen()).queryByRole('button', { name: 'Archivieren' })).toBeNull();
     // Eine archivierte Mail wird nicht beantwortet.
-    expect(screen.queryByRole('button', { name: 'Antwort senden' })).toBeNull();
+    expect(within(lesen()).queryByRole('button', { name: 'Antworten' })).toBeNull();
   });
 
-  it('Wiederherstellen: die Mail ist wieder im Posteingang, der Editor ist wieder da', async () => {
+  it('Wiederherstellen: die Mail ist wieder im Posteingang, „Antworten“ ist wieder da', async () => {
     server.stand.mails.find((m) => m.id === 31)!.archiviert_am = '2026-10-02T12:00:00Z';
     await oeffnen();
-    expect(screen.getByText('Diese Mail liegt im Archiv')).toBeInTheDocument();
-    await act(async () => { fireEvent.click(within(seite()).getByRole('button', { name: 'Wiederherstellen' })); });
+    expect(within(lesen()).getByText('Diese Mail liegt im Archiv')).toBeInTheDocument();
+    await act(async () => { fireEvent.click(knopf('Wiederherstellen')); });
     expect(server.aufrufe('post', '/support/mail/nachrichten/31/wiederherstellen')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('1 Mail wiederhergestellt – wieder im Posteingang');
-    await waitFor(() => expect(screen.queryByText('Diese Mail liegt im Archiv')).toBeNull());
-    expect(await screen.findByRole('button', { name: 'Antwort senden' })).toBeInTheDocument();
+    await waitFor(() => expect(within(lesen()).queryByText('Diese Mail liegt im Archiv')).toBeNull());
+    expect(await within(lesen()).findByRole('button', { name: 'Antworten' })).toBeInTheDocument();
   });
 
-  it('Löschen fragt zuerst und sagt, dass im Postfach alles stehen bleibt; erst „Löschen“ löscht und führt zurück zum Posteingang', async () => {
+  it('Löschen fragt zuerst und sagt, dass im Postfach alles stehen bleibt; erst „Löschen“ löscht -- der Lesebereich ist danach leer, die Seite bleibt', async () => {
     await oeffnen();
-    fireEvent.click(within(seite()).getByRole('button', { name: 'Löschen' }));
+    fireEvent.click(knopf('Löschen'));
     expect(h.alert?.header).toBe('Mail löschen');
     expect(h.alert?.message).toContain('Im Postfach selbst bleibt alles stehen');
     expect(server.aufrufe('delete')).toHaveLength(0);
     await bestaetigen('Löschen');
     expect(server.aufrufe('delete', '/support/mail/nachrichten/31')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('1 Mail gelöscht');
-    expect(h.push).toHaveBeenCalledWith('/admin/support/post', 'back', 'replace');
+    expect(await screen.findByText('Keine Mail gewählt')).toBeInTheDocument();
+    expect(screen.queryByRole('article', { name: 'Frage zum Zugang' })).toBeNull();
+    expect(window.location.pathname).toBe('/admin/support/post');
+    expect(h.push).not.toHaveBeenCalled();
   });
 
   it('Abbrechen löscht nichts', async () => {
     await oeffnen();
-    fireEvent.click(within(seite()).getByRole('button', { name: 'Löschen' }));
+    fireEvent.click(knopf('Löschen'));
     await bestaetigen('Abbrechen');
     expect(server.aufrufe('delete')).toHaveLength(0);
-    expect(h.push).not.toHaveBeenCalled();
+    expect(lesen()).toBeInTheDocument();
   });
 
-  it('ein Fehler beim Löschen: Meldung, die Seite bleibt', async () => {
+  it('ein Fehler beim Löschen: Meldung, die Mail bleibt im Lesebereich', async () => {
     server.stand.fehler.set('DELETE /support/mail/nachrichten/31', new Error('Netz weg'));
     await oeffnen();
-    fireEvent.click(within(seite()).getByRole('button', { name: 'Löschen' }));
+    fireEvent.click(knopf('Löschen'));
     await bestaetigen('Löschen');
     expect(h.setError).toHaveBeenCalledWith('Löschen hat nicht geklappt');
+    expect(lesen()).toBeInTheDocument();
     expect(h.push).not.toHaveBeenCalled();
   });
 });
 
 describe('Mail (Web): antworten', () => {
-  it('an den Absender der letzten eingehenden Mail, Betreff vorgeschlagen, mit Rückfrage; danach neu geladen', async () => {
+  it('„Antworten“ öffnet das Formular unter dem Verlauf: an den Absender der letzten eingehenden Mail, Betreff vorgeschlagen, mit Rückfrage; danach zu und neu geladen', async () => {
     await oeffnen();
-    expect(screen.getByText(/^An:/, { selector: 'p.web-antwort__an' })).toHaveTextContent('An: anna@example.org · von moin@');
-    expect((screen.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Re: Frage zum Zugang');
-    fireEvent.change(screen.getByLabelText('Text der Antwort'), { target: { value: 'Hallo Anna,\nso geht es.' } });
-    expect(screen.getByRole('region', { name: 'Vorschau der Antwort' }).textContent).toBe('Hallo Anna,\nso geht es.\n\n-- \nKonfi Quest');
-    fireEvent.click(screen.getByRole('button', { name: 'Antwort senden' }));
+    expect(screen.queryByLabelText('Text der Antwort')).toBeNull();
+    fireEvent.click(knopf('Antworten'));
+    const bereich = within(screen.getByRole('region', { name: 'Antwort schreiben' }));
+    expect(bereich.getByText(/^An:/, { selector: 'p.web-antwort__an' })).toHaveTextContent('An: anna@example.org · von moin@');
+    expect((bereich.getByLabelText('Betreff') as HTMLInputElement).value).toBe('Re: Frage zum Zugang');
+    fireEvent.change(bereich.getByLabelText('Text der Antwort'), { target: { value: 'Hallo Anna,\nso geht es.' } });
+    // Die Fußzeile kommt mit den Einstellungen, die das Formular beim Öffnen lädt.
+    await waitFor(() => expect(bereich.getByRole('region', { name: 'Vorschau der Antwort' }).textContent).toBe('Hallo Anna,\nso geht es.\n\n-- \nKonfi Quest'));
+    fireEvent.click(bereich.getByRole('button', { name: 'Antwort senden' }));
     expect(h.alert?.header).toBe('Antwort senden');
     expect(h.alert?.message).toBe('An anna@example.org: „Re: Frage zum Zugang“ von moin@ senden?');
     expect(server.aufrufe('post', '/support/mail/nachrichten/31/antworten')).toHaveLength(0);
@@ -296,26 +317,31 @@ describe('Mail (Web): antworten', () => {
     expect(server.aufrufe('post', '/support/mail/nachrichten/31/antworten').map((a) => a.koerper)).toEqual([{ text: 'Hallo Anna,\nso geht es.', betreff: 'Re: Frage zum Zugang' }]);
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     await waitFor(() => expect(server.aufrufe('get', '/support/mail/nachrichten/31').length).toBe(abrufeVorher + 1));
-    expect((screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement).value).toBe('');
+    expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
+  });
+
+  it('„Verwerfen“ schließt das Formular ohne Aufruf', async () => {
+    await oeffnen();
+    fireEvent.click(knopf('Antworten'));
+    fireEvent.click(within(screen.getByRole('region', { name: 'Antwort schreiben' })).getByRole('button', { name: 'Verwerfen' }));
+    expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
+    expect(server.aufrufe('post', /antworten$/)).toHaveLength(0);
   });
 });
 
 describe('Mail (Web): Laden, Fehler, nicht gefunden', () => {
-  it('404: „Mail nicht gefunden“; eine ungültige Kennung ruft nichts ab', async () => {
-    const { unmount } = render(<SupportPostDetailPage nachrichtId={999} />);
+  it('404: „Mail nicht gefunden“ im Lesebereich, der Posteingang daneben bleibt', async () => {
+    render(<SupportPostDetailPage nachrichtId={999} />);
     expect(await screen.findByText('Mail nicht gefunden')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Posteingang' })).toBeInTheDocument();
-    unmount();
-    server.stand.aufrufe.length = 0;
-    render(<SupportPostDetailPage nachrichtId={Number.NaN} />);
-    expect(await screen.findByText('Mail nicht gefunden')).toBeInTheDocument();
-    expect(server.aufrufe('get', /^\/support\/mail\/nachrichten/)).toHaveLength(0);
+    expect(screen.getByRole('heading', { level: 1, name: 'Posteingang' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Mails im Posteingang' })).toBeInTheDocument();
+    expect(server.aufrufe('get', '/support/mail/nachrichten/999')).toHaveLength(1);
   });
 
   it('Netzfehler: Hinweis mit erneutem Versuch, der wirklich neu lädt', async () => {
     server.stand.fehler.set('GET /support/mail/nachrichten/31', new Error('Netz weg'));
     render(<SupportPostDetailPage nachrichtId={31} />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Die Mail konnte nicht geladen werden.');
+    expect(await screen.findByText('Die Mail konnte nicht geladen werden.')).toBeInTheDocument();
     server.stand.fehler.delete('GET /support/mail/nachrichten/31');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' })); });
     expect(await screen.findByRole('heading', { level: 2, name: 'Frage zum Zugang' })).toBeInTheDocument();
@@ -324,7 +350,7 @@ describe('Mail (Web): Laden, Fehler, nicht gefunden', () => {
   it('beim Laden steht ein Platzhalter', () => {
     h.apiGet.mockImplementation(() => new Promise(() => {}));
     render(<SupportPostDetailPage nachrichtId={31} />);
-    expect(screen.getByRole('status')).toHaveTextContent('Die Mail wird geladen.');
+    expect(screen.getByText('Der Posteingang wird geladen.')).toBeInTheDocument();
   });
 });
 
@@ -332,7 +358,7 @@ describe('Mail: zwei Gesichter, eine Seite', () => {
   it('im schmalen Fenster bleibt die App-Darstellung -- mit derselben Logik', async () => {
     h.breit = false;
     render(<SupportPostDetailPage nachrichtId={31} />);
-    await screen.findByText('Faden mit 3 Mails');
+    await screen.findByRole('heading', { level: 2, name: 'Frage zum Zugang' });
     expect(document.querySelector('.web-seite')).toBeNull();
     expect(screen.getByRole('button', { name: 'Einsortieren' })).toBeInTheDocument();
   });

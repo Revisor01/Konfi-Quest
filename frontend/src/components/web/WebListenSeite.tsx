@@ -129,7 +129,8 @@ export interface WebListenSeiteProps<T, R extends string = string> extends Omit<
   ansicht?: { seite: WebAnsichtSeite; vorgabe: WebAnsicht };
   eintraege: readonly T[];
   sortierung?: WebListenSortierung<T>;
-  liste: Omit<WebListeProps<T>, 'zeilen' | 'leer' | 'sortierung' | 'onSortieren'>;
+  /** Die Tabelle; entfaellt nur mit `inhaltStatt`. */
+  liste?: Omit<WebListeProps<T>, 'zeilen' | 'leer' | 'sortierung' | 'onSortieren'>;
   /** Die Ansicht Kacheln; fehlt sie, ist die Seite nur eine Liste (ohne Umschalter). */
   kacheln?: Omit<WebKachelnProps<T>, 'eintraege'>;
   /** Zwischen Werkzeugzeile und Inhalt (Leiste fuer mehrere ausgewaehlte Zeilen). */
@@ -143,6 +144,13 @@ export interface WebListenSeiteProps<T, R extends string = string> extends Omit<
   /** Nur der Inhalt unter der Werkzeugzeile laedt (Reiter wird nachgeladen). */
   inhaltLaden?: string;
   inhaltFehler?: { text: string; onErneut: () => void };
+  /**
+   * Statt Liste und Kacheln: eigener Inhalt fuer die sichtbaren Eintraege --
+   * Liste mit Lesebereich daneben (web/support/WebPostfach). Steht ohne Karte
+   * drumherum und auch bei leerer Liste da (der Lesebereich kann etwas
+   * zeigen, das nicht in der Liste steht); den Leerzustand bekommt er mit.
+   */
+  inhaltStatt?: (sichtbar: readonly T[], leer: React.ReactNode) => React.ReactNode;
   /** Nach dem Inhalt (Fenster der Seite). */
   children?: React.ReactNode;
 }
@@ -152,7 +160,7 @@ const sortierWert = (s: { schluessel: string; richtung: 'auf' | 'ab' }): string 
 function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps<T, R>): React.ReactElement {
   const {
     oben, kennzahlen, reiter, filter, suche, werkzeuge, ohneWerkzeugzeile = false, zaehlzeile, ansicht, eintraege, sortierung, liste, kacheln, vorInhalt, leer,
-    laden, fehler, inhaltLaden, inhaltFehler, children, ...seite
+    laden, fehler, inhaltLaden, inhaltFehler, inhaltStatt, children, ...seite
   } = props;
   const [gemerkt, setDarstellung] = useAnsicht(kacheln && ansicht ? ansicht.seite : null, ansicht?.vorgabe ?? 'liste');
   const darstellung: WebAnsicht = kacheln ? gemerkt : 'liste';
@@ -201,13 +209,15 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
     inhalt = <WebLaden karten={1} text={inhaltLaden} />;
   } else if (inhaltFehler) {
     inhalt = <WebFehler text={inhaltFehler.text} onErneut={inhaltFehler.onErneut} />;
+  } else if (inhaltStatt) {
+    inhalt = inhaltStatt(sichtbar, <WebLeer {...leer} />);
   } else if (sichtbar.length === 0) {
     inhalt = <WebLeer {...leer} />;
   } else if (darstellung === 'kacheln' && kacheln) {
     inhalt = <WebKacheln {...kacheln} eintraege={sichtbar} />;
     kachelnSichtbar = true;
   } else {
-    inhalt = sortierung
+    inhalt = !liste ? null : sortierung
       ? <WebListe {...liste} zeilen={sichtbar} sortierung={aktuelleSortierung} onSortieren={sortiereNach} />
       : <WebListe {...liste} zeilen={sichtbar} />;
   }
@@ -325,7 +335,9 @@ function WebListenSeite<T, R extends string = string>(props: WebListenSeiteProps
       {vorInhalt}
 
       {/* Die Kacheln stehen frei im Raster, die Tabelle und jeder Hinweis in einer Karte. */}
-      {kachelnSichtbar ? inhalt : <div className="web-karte">{inhalt}</div>}
+      {kachelnSichtbar || (inhaltStatt && !inhaltLaden && !inhaltFehler)
+        ? inhalt
+        : <div className="web-karte">{inhalt}</div>}
 
       {children}
     </WebSeite>

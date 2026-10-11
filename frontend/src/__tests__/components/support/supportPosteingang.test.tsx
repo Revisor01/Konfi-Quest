@@ -75,14 +75,22 @@ const oeffnen = async () => {
 };
 
 describe('Posteingang: Zustand der Postfächer', () => {
-  it('zeigt je Postfach Adresse, eingerichtet, zuletzt abgeholt und einen Fehler beim Abholen', async () => {
+  it('stört ein Postfach, steht nur sein Kasten da: Adresse, eingerichtet, zuletzt abgeholt, Fehler beim Abholen', async () => {
     await oeffnen();
-    expect(screen.getByText('moin@konfi-quest.de')).toBeInTheDocument();
+    expect(screen.queryByText('moin@konfi-quest.de')).toBeNull();
     expect(screen.getByText('support@konfi-quest.de')).toBeInTheDocument();
-    expect(screen.getAllByText('Eingerichtet')).toHaveLength(2);
-    expect(screen.getByText('Anfragen und Erstkontakt · zuletzt abgeholt 03.10.2026, 12:00')).toBeInTheDocument();
+    expect(screen.getAllByText('Eingerichtet')).toHaveLength(1);
+    expect(screen.getByText('Hilfe für Gemeinden · zuletzt abgeholt 03.10.2026, 11:58')).toBeInTheDocument();
     const fehler = screen.getAllByRole('status').find((s) => s.textContent?.includes('Fehler beim Abholen'));
     expect(fehler?.textContent).toBe('Fehler beim AbholenAnmeldung fehlgeschlagen (03.10.2026, 12:02)');
+  });
+
+  it('laufen beide Postfächer, steht nur eine Zeile da -- kein Kasten', async () => {
+    status = { postfaecher: STATUS.postfaecher.map((p) => ({ ...p, fehler: null, fehler_am: null })) };
+    await oeffnen();
+    expect(screen.getByText('moin@ und support@ eingerichtet · zuletzt abgeholt 03.10.2026, 12:00')).toBeInTheDocument();
+    expect(screen.queryByText('moin@konfi-quest.de')).toBeNull();
+    expect(screen.queryByText('Eingerichtet')).toBeNull();
   });
 
   it('nicht eingerichtet und auf diesem Server aus: je ein Hinweis', async () => {
@@ -102,7 +110,9 @@ describe('Posteingang: Zustand der Postfächer', () => {
   it('ohne das Feld auf_diesem_server (älterer Server): kein Hinweis „aus“', async () => {
     status = { postfaecher: STATUS.postfaecher.map(({ auf_diesem_server: _weg, ...p }) => p) };
     await oeffnen();
-    expect(screen.getAllByText('Eingerichtet')).toHaveLength(2);
+    // Nur support@ stört (Fehler beim Abholen); moin@ gilt ohne das Feld als hier bedient.
+    expect(screen.getAllByText('Eingerichtet')).toHaveLength(1);
+    expect(screen.queryByText('moin@konfi-quest.de')).toBeNull();
     expect(screen.queryByText(/Auf diesem Server aus/)).toBeNull();
   });
 

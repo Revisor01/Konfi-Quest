@@ -42,6 +42,28 @@ eigene Liste der Bereiche gibt es dort nicht. In den Apps und im schmalen
 Fenster bleibt die Darstellung der App. Gestaltung und Bausteine:
 [planung/support-web.md](../planung/support-web.md).
 
+**Vorgänge** und **Posteingang** arbeiten im Browser wie ein Mailprogramm:
+links die Liste, rechts der gewählte Eintrag im Lesebereich; beide Spalten
+rollen für sich. Eine Zeile wählt man per Klick oder mit den Pfeiltasten, die
+Adresse folgt der Wahl (`/admin/support/vorgaenge/12`), Neuladen öffnet
+denselben Eintrag. Kleine Formulare — Einordnen, Einsortieren, Neuer Vorgang —
+öffnen sich als kompakter Dialog über der Seite; das Antwortformular steht
+unter dem Verlauf. In der App öffnen Antworten, Einordnen und Einsortieren
+je ein Modal.
+
+**Mails als Gespräche.** Überall — Vorgang, Posteingang, App und Browser —
+stehen Mails als Gespräche: Was über die Kopfzeilen `In-Reply-To` und
+`References` zusammenhängt, ist ein Gespräch mit dem Betreff als Überschrift
+(ohne „Re:“ und ohne `[Vorgang 12]`). Jede Antwort steht eingerückt unter der
+Mail, auf die sie antwortet, höchstens drei Stufen tief. Jede Mail ist eine
+Zeile mit Kreis, Absender, Zeit und einer Zeile Text; aufgeklappt sind beim
+Öffnen die jüngste und die ungelesenen. Zitate und die Signatur (alles nach
+`-- `) sind eingeklappt. Was der Support gesendet hat, trägt einen grünen
+Kreis, das Wort „Gesendet“ und den Namen des Kontos, das es schrieb. Die
+Nachricht aus dem Formular steht vorn. Die Regeln stehen in
+`frontend/src/utils/mailGespraeche.ts`, die Darstellung in
+`frontend/src/components/support/MailGespraeche.tsx`.
+
 ## Die Übersicht im Browser lesen
 
 Die Übersicht im Browser liest `GET /api/support/uebersicht`:
@@ -97,13 +119,14 @@ Die Listen stehen einmal im Server (`backend/utils/supportVorgaenge.js`) und
 einmal in der Oberfläche (`frontend/src/utils/supportVorgaenge.ts`); ein
 CHECK in Migration 195 hält die Datenbank dazu.
 
-**Liste** (Bereich **Vorgänge**): im Browser eine Tabelle mit Nummer, Betreff,
-Art, Gemeinde, Status, Dringlichkeit, letzter Aktivität und ungelesenen
-Mails; in der App eine Liste. Filter **Offen** (Neu, In Arbeit, Wartet),
+**Liste** (Bereich **Vorgänge**): im Browser links neben dem Lesebereich, je
+Zeile Betreff, Zeit der letzten Aktivität, Nummer, Gemeinde, ungelesene
+Mails, Dringlichkeit und Status; in der App eine Liste. Filter **Offen** (Neu, In Arbeit, Wartet),
 **Neu**, **In Arbeit**, **Wartet** und **Archiv** (darin die erledigten),
-dazu Art, Gemeinde und eine Suche über Betreff, Beschreibung, Kontakt,
-Gemeinde und die Mails des Vorgangs; „#12“ findet Vorgang 12. Im Browser
-lassen sich mehrere Zeilen wählen und gemeinsam archivieren,
+dazu Art, Gemeinde (hinter „Filter“) und eine Suche über Betreff,
+Beschreibung, Kontakt, Gemeinde und die Mails des Vorgangs; „#12“ findet
+Vorgang 12. Im Browser lassen sich mehrere Zeilen ankreuzen („Alle
+auswählen“ steht oben in der Liste) und gemeinsam archivieren,
 wiederherstellen, löschen oder auf einen Status setzen. **Neuer Vorgang**
 legt einen an — mit Text geht zugleich eine Mail von support@ hinaus, an eine
 der Adressen der Gemeinde (Gemeindeleitung und Leitung, wie im Schriftwechsel
@@ -112,12 +135,16 @@ Vorgang. Antworten gehen nur an Adressen, die zum Vorgang gehören:
 Absender seiner Mails, Kontakt aus dem Formular, Adresse der Anfrage und die
 Adressen der Gemeinde.
 
-**Ein Vorgang** zeigt links den Verlauf (Text aus dem Formular, die Mails,
-die Antwort mit Textbausteinen), rechts **Einordnen** (Art, Bereich,
-Dringlichkeit, Status, Gemeinde — sofort gespeichert), den Kontakt, die
-Gemeinde mit ihrer Gemeindeleitung, bei einer Anfrage deren Angaben und
-**Gemeinde anlegen** und die interne Notiz. Wechselt die Gemeinde, gehen die
-Mails des Vorgangs mit.
+**Ein Vorgang** zeigt oben Betreff, Nummer, Status, Dringlichkeit und
+Gemeinde mit den Handgriffen **Antworten** und **Einordnen** (Status, Art,
+Bereich, Dringlichkeit, Gemeinde), im Browser daneben Archivieren und Löschen.
+Darunter Kontakt, Art und Eingang in einer Zeile, dann der Verlauf als
+Gespräche, bei einer Anfrage **Gemeinde anlegen**; Gemeinde mit
+Gemeindeleitung, Angaben der Anfrage und die interne Notiz stehen im Browser
+eingeklappt am Ende, in der App als eigene Abschnitte. Einordnen speichert in
+der App jede Änderung sofort, im Browser mit „Speichern“ alles auf einmal.
+Kommt ein Vorgang aus einer Mail, gilt als Kontakt, wer die erste Mail
+schrieb. Wechselt die Gemeinde, gehen die Mails des Vorgangs mit.
 
 **Archivieren und löschen.** Der Status **Erledigt** archiviert den Vorgang;
 er verschwindet aus „Offen“ und steht unter „Archiv“. **Archivieren** legt
@@ -326,7 +353,9 @@ lesend: Er löscht nichts, verschiebt nichts und markiert nichts als gelesen.
 Im Mailprogramm bleibt alles, wie es war. Übernommen wird ab Einrichtung,
 nicht der Altbestand. Auf einer Instanz mit `RUN_BACKGROUND_JOBS=false` wird
 weder abgeholt noch versendet. Den Zustand zeigt der Bereich **Posteingang**
-oben: eingerichtet, zuletzt abgeholt, letzter Fehler.
+oben in einer Zeile („moin@ und support@ … zuletzt abgeholt …“); ist ein
+Postfach nicht eingerichtet, auf diesem Server aus oder meldet einen Fehler,
+steht dort je Postfach ein Kasten mit dem Grund.
 
 Übernommen werden der Text und von Anhängen nur Name, Typ und Größe. Eine
 Mail über 10 MB (`MAX_MAIL_GROESSE` in `services/mailAbholung.js`) lädt der
@@ -367,8 +396,11 @@ Im Browser lassen sich mehrere Mails wählen und gemeinsam archivieren,
 wiederherstellen oder löschen (`POST /api/support/mail/sammel`). Eine Mail
 zu einer Anfrage zählt als Bewegung: Die 365-Tage-Frist beginnt neu.
 
-**Antworten.** Im Vorgang (Verlauf, unten) oder im Posteingang: Baustein
-wählen (füllt die Platzhalter), Betreff und Text prüfen, senden. Der Server
+**Antworten.** Im Vorgang oder im Posteingang über **Antworten** — im
+Browser öffnet sich das Formular unter dem Verlauf, in der App als Modal:
+Empfänger prüfen (vorgewählt ist, wer zuletzt geschrieben hat, wenn die
+Adresse zur Wahl steht), Baustein wählen (füllt die Platzhalter), Betreff und
+Text prüfen, senden; danach schließt sich das Formular. Der Server
 setzt die Fußzeile darunter, `[Vorgang 12]` in den Betreff, die
 Antwort-Kopfzeilen auf die letzte Mail des Verlaufs und legt die Antwort in
 den Ordner „Gesendet" des Postfachs (fehlt er, legt er „Sent" an). Eine

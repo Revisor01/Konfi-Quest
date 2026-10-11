@@ -1,68 +1,115 @@
-// Eine Mail aus dem Posteingang in der Web-Fassung der Support-Ansicht,
-// /admin/support/post/:id (docs/planung/support-vorgaenge.md, Entscheidung 7)
-// -- wie in einem Mailprogramm.
+// Eine Mail aus dem Posteingang im Lesebereich der Web-Fassung (rechts neben
+// der Liste, web/WebPosteingang; docs/planung/support-vorgaenge.md,
+// Entscheidung 7) -- wie in einem Mailprogramm (Simon, 11.10.2026).
 //
-// Links die Mail mit Kopf (Von, An, Datum, Postfach), Text und Anhängen, die
-// weiteren Mails des Fadens darunter und -- solange die Mail in keinem Vorgang
-// liegt -- der Antwort-Editor (vom selben Postfach an den Absender). Rechts
-// „Einsortieren": in einen bestehenden oder neuen Vorgang, dazu Archivieren
-// (oder Wiederherstellen) und Löschen mit Rückfrage. Liegt die Mail schon in
-// einem Vorgang, führt ein Link dorthin; geantwortet wird dort, damit Postfach
-// und Nummer im Betreff stimmen.
+// Kopf: Betreff, Absender, Postfach; rechts Antworten (solange die Mail in
+// keinem Vorgang liegt, vom selben Postfach an den Absender), Einsortieren
+// (kompakter Dialog: bestehender oder neuer Vorgang, der ganze Faden geht
+// mit), Archivieren oder Wiederherstellen, Löschen mit Rückfrage. Darunter der
+// Faden als Gespräch (MailGespraeche). „Antworten" öffnet das Formular unter
+// dem Verlauf. Liegt die Mail schon in einem Vorgang, führt ein Knopf dorthin;
+// geantwortet wird dort, damit Postfach und Nummer im Betreff stimmen.
 //
-// Rahmen und Zustaende (laden, Fehler, nicht gefunden) stellt WebDetailSeite
-// wie bei jeder Detailseite (10.10.2026). Einsortieren, Archivieren und
-// Loeschen bleiben rechts in der Karte "Einsortieren" -- sie gehoeren dort zum
-// Einordnen der Mail, nicht in den Kopf.
-//
-// Die Logik (laden, als gelesen melden, einsortieren, archivieren, löschen)
-// steht in components/support/usePostDetail.ts, dieselbe wie in der App.
+// Die Logik (laden, als gelesen melden, archivieren, löschen) steht in
+// components/support/usePostDetail.ts, dieselbe wie in der App.
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IonIcon, useIonRouter } from '@ionic/react';
-import { ICON_ARCHIV, ICON_LISTE, ICON_LOESCHEN, ICON_MAIL, ICON_RUECKGAENGIG } from '../../shared/icons';
+import { ICON_ANTWORTEN, ICON_ARCHIV, ICON_LISTE, ICON_LOESCHEN, ICON_MAIL, ICON_RUECKGAENGIG, ICON_WARNHINWEIS, ICON_WECHSEL } from '../../shared/icons';
 import api from '../../../services/api';
 import type { MailAntwortDaten } from '../../../types/support';
 import { POSTFACH_INFO } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { usePostDetail } from '../usePostDetail';
-import WebDetailSeite from '../../web/WebDetailSeite';
-import WebKarte from '../../web/WebKarte';
+import MailGespraeche from '../MailGespraeche';
 import WebKnopf from '../../web/WebKnopf';
 import WebHinweis from '../../web/WebHinweis';
+import WebPill from '../../web/WebPill';
 import WebAntwortEditor from './WebAntwortEditor';
 import WebEinsortieren from './WebEinsortieren';
-import { WebMailEintrag, WebMailVerlauf } from './WebMailVerlauf';
+import { WebLesebereich, WebLeseHinweis } from './WebPostfach';
 import '../../../theme/web/support.css';
 
-const ZURUECK = { href: '/admin/support/post', text: 'Posteingang' };
+export interface WebPostDetailProps {
+  nachrichtId: number;
+  /** Die Mail ist gelöscht: den Lesebereich leeren. */
+  onGeloescht?: () => void;
+  /**
+   * Die Mail ist einsortiert und steht nicht mehr im Posteingang: Auswahl
+   * leeren. Sonst laedt der Lesebereich sie neu und meldet den Verlauf ihres
+   * Vorgangs als gelesen, ohne dass ihn jemand geoeffnet hat.
+   */
+  onEinsortiert?: () => void;
+}
 
-const WebPostDetail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => {
+const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht, onEinsortiert }) => {
   const {
     isOnline, mail, faden, neu, laedt, fehler, nichtGefunden, laden, letzteEingehende, betreffVorschlag, vorgangId, archiviert,
     archivieren, wiederherstellen, loeschenFragen,
-  } = usePostDetail(nachrichtId);
+  } = usePostDetail(nachrichtId, onGeloescht);
   const [einsortieren, setEinsortieren] = useState(false);
+  const [antwortOffen, setAntwortOffen] = useState(false);
+  const antwortBereich = useRef<HTMLElement>(null);
   const router = useIonRouter();
 
+  useEffect(() => {
+    if (antwortOffen) antwortBereich.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [antwortOffen]);
+
   if (!mail) {
-    return (
-      <WebDetailSeite
-        bereich="Support"
-        titel="Mail"
-        zurueck={ZURUECK}
-        laden={laedt ? 'Die Mail wird geladen.' : undefined}
-        fehler={fehler && !nichtGefunden ? { text: 'Die Mail konnte nicht geladen werden.', onErneut: () => { void laden(); } } : undefined}
-        leer={{ icon: ICON_MAIL, titel: 'Mail nicht gefunden', text: 'Diese Mail gibt es nicht (mehr) — archivierte Mails bleiben 180 Tage.' }}
-      />
-    );
+    if (laedt) return <WebLeseHinweis icon={ICON_MAIL} titel="Die Mail wird geladen." />;
+    if (fehler && !nichtGefunden) {
+      return (
+        <WebLeseHinweis icon={ICON_WARNHINWEIS} titel="Die Mail konnte nicht geladen werden.">
+          <WebKnopf onClick={() => { void laden(); }}>Erneut versuchen</WebKnopf>
+        </WebLeseHinweis>
+      );
+    }
+    return <WebLeseHinweis icon={ICON_MAIL} titel="Mail nicht gefunden" text="Diese Mail gibt es nicht (mehr) — archivierte Mails bleiben 180 Tage." />;
   }
 
-  const weitere = faden.filter((m) => m.id !== mail.id);
   const imVorgang = vorgangId !== null;
+  const antworten = !imVorgang && !archiviert && letzteEingehende !== null;
+  const absender = mail.von_name?.trim();
 
-  const haupt = (
-    <>
+  return (
+    <WebLesebereich
+      titel={mail.betreff?.trim() || '(ohne Betreff)'}
+      angaben={(
+        <>
+          <span>{absender ? <><strong>{absender}</strong> &lt;{mail.von_adresse}&gt;</> : <strong>{mail.von_adresse}</strong>}</span>
+          <WebPill postfach>{POSTFACH_INFO[mail.postfach]?.kurz ?? mail.postfach}</WebPill>
+          <span>{faden.length === 1 ? 'eine Mail' : `${faden.length} Mails im Faden`}</span>
+          {archiviert && <WebPill ton="neutral">Archiv</WebPill>}
+        </>
+      )}
+      werkzeuge={(
+        <>
+          {antworten && (
+            <WebKnopf art="primaer" disabled={!isOnline} onClick={() => setAntwortOffen(true)}>
+              <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
+              Antworten
+            </WebKnopf>
+          )}
+          <WebKnopf art={antworten ? 'sekundaer' : 'primaer'} disabled={!isOnline} onClick={() => setEinsortieren(true)}>
+            <IonIcon icon={ICON_WECHSEL} aria-hidden="true" />
+            {imVorgang ? 'Umsortieren' : 'Einsortieren'}
+          </WebKnopf>
+          {archiviert ? (
+            <WebKnopf symbol disabled={!isOnline} onClick={() => { void wiederherstellen(); }} aria-label="Wiederherstellen" title="Wiederherstellen">
+              <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+            </WebKnopf>
+          ) : (
+            <WebKnopf symbol disabled={!isOnline} onClick={() => { void archivieren(); }} aria-label="Archivieren" title="Archivieren">
+              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+            </WebKnopf>
+          )}
+          <WebKnopf symbol art="gefahr" disabled={!isOnline} onClick={loeschenFragen} aria-label="Löschen" title="Löschen">
+            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+          </WebKnopf>
+        </>
+      )}
+    >
       {archiviert && (
         <WebHinweis art="hinweis" titel="Diese Mail liegt im Archiv">
           <p className="web-hinweis__absatz">
@@ -71,91 +118,43 @@ const WebPostDetail: React.FC<{ nachrichtId: number }> = ({ nachrichtId }) => {
           </p>
         </WebHinweis>
       )}
-
-      <WebKarte
-        titel={mail.betreff?.trim() || '(ohne Betreff)'}
-        untertitel={`${mail.richtung === 'ein' ? 'Eingegangen' : 'Gesendet'} über ${POSTFACH_INFO[mail.postfach]?.kurz ?? mail.postfach}`}
-      >
-        <WebMailEintrag mail={mail} neu={neu.has(mail.id)} kopf="voll" />
-      </WebKarte>
-
-      {weitere.length > 0 && (
-        <WebKarte titel={`Weitere Mails im Faden (${weitere.length})`} untertitel="Älteste zuerst">
-          <WebMailVerlauf mails={weitere} neu={neu} beschriftung="Weitere Mails im Faden" />
-        </WebKarte>
+      {imVorgang && (
+        <WebHinweis art="erfolg" titel={`Einsortiert in Vorgang ${vorgangId}`}>
+          <p className="web-hinweis__absatz">Antworten gehen über den Vorgang, damit die Nummer im Betreff steht.</p>
+          <WebKnopf klein href={`/admin/support/vorgaenge/${vorgangId}`}>
+            <IonIcon icon={ICON_LISTE} aria-hidden="true" />
+            Vorgang öffnen
+          </WebKnopf>
+        </WebHinweis>
       )}
 
-      {!imVorgang && !archiviert && letzteEingehende && (
-        <WebKarte titel="Antworten" untertitel={`Von ${POSTFACH_INFO[mail.postfach].kurz} an den Absender`}>
+      <MailGespraeche key={mail.id} mails={faden} neu={neu} beschriftung="Faden" />
+
+      {antwortOffen && antworten && letzteEingehende && (
+        <section ref={antwortBereich} className="web-lesen__antwort" aria-label="Antwort schreiben">
+          <div className="web-lesen__antwortkopf">
+            <h3 className="web-lesen__antworttitel">Antwort</h3>
+            <WebKnopf klein onClick={() => setAntwortOffen(false)}>Verwerfen</WebKnopf>
+          </div>
           <WebAntwortEditor
+            key={mail.id}
             postfach={mail.postfach}
             betreffVorschlag={betreffVorschlag}
             an={letzteEingehende.von_adresse}
             senden={(koerper: MailAntwortDaten) => api.post(`/support/mail/nachrichten/${mail.id}/antworten`, koerper)}
+            onGesendet={() => setAntwortOffen(false)}
           />
-        </WebKarte>
+        </section>
       )}
-    </>
-  );
 
-  const seite = (
-    <WebKarte
-      titel={imVorgang ? 'Vorgang' : 'Einsortieren'}
-      untertitel={imVorgang ? undefined : 'Der ganze Faden geht mit — auch spätere Antworten darauf ordnet der Server dann selbst zu.'}
-    >
-      <div className="web-formular">
-        {imVorgang ? (
-          <WebHinweis art="erfolg" titel={`Einsortiert in Vorgang ${vorgangId}`}>
-            <p className="web-hinweis__absatz">Antworten gehen über den Vorgang, damit die Nummer im Betreff steht.</p>
-            <WebKnopf klein href={`/admin/support/vorgaenge/${vorgangId}`}>
-              <IonIcon icon={ICON_LISTE} aria-hidden="true" />
-              Vorgang öffnen
-            </WebKnopf>
-          </WebHinweis>
-        ) : null}
-        <WebKnopf art={imVorgang ? 'sekundaer' : 'primaer'} disabled={!isOnline} onClick={() => setEinsortieren(true)}>
-          <IonIcon icon={ICON_LISTE} aria-hidden="true" />
-          {imVorgang ? 'Anderem Vorgang zuordnen' : 'Einsortieren'}
-        </WebKnopf>
-        <div className="web-formular__knoepfe">
-          {archiviert ? (
-            <WebKnopf disabled={!isOnline} onClick={() => { void wiederherstellen(); }}>
-              <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-              Wiederherstellen
-            </WebKnopf>
-          ) : (
-            <WebKnopf disabled={!isOnline} onClick={() => { void archivieren(); }}>
-              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-              Archivieren
-            </WebKnopf>
-          )}
-          <WebKnopf art="gefahr" disabled={!isOnline} onClick={loeschenFragen}>
-            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-            Löschen
-          </WebKnopf>
-        </div>
-      </div>
-    </WebKarte>
-  );
-
-  return (
-    <WebDetailSeite
-      bereich="Support"
-      titel="Mail"
-      kennzeichen={`${datumUhrzeit(mail.gesendet_am)} · ${faden.length === 1 ? 'einzelne Mail' : `Faden mit ${faden.length} Mails`}`}
-      zurueck={ZURUECK}
-      haupt={haupt}
-      seite={seite}
-      seiteBeschriftung="Einsortieren"
-    >
       {einsortieren && (
         <WebEinsortieren
           mail={{ id: mail.id, betreff: mail.betreff }}
           onSchliessen={() => setEinsortieren(false)}
-          onFertig={(id) => { if (id) router.push(`/admin/support/vorgaenge/${id}`); }}
+          onFertig={(id) => { onEinsortiert?.(); if (id) router.push(`/admin/support/vorgaenge/${id}`); }}
         />
       )}
-    </WebDetailSeite>
+    </WebLesebereich>
   );
 };
 

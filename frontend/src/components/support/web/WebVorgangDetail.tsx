@@ -1,82 +1,82 @@
-// Ein Vorgang in der Web-Fassung der Support-Ansicht,
-// /admin/support/vorgaenge/:id (docs/planung/support-vorgaenge.md,
-// Entscheidung 7).
+// Ein Vorgang im Lesebereich der Web-Fassung (rechts neben der Liste,
+// web/WebVorgaenge; docs/planung/support-vorgaenge.md, Entscheidung 7).
+// Simon, 11.10.2026: „Auf Web wird sie ausgewählt Mail rechts in einem Feld
+// angezeigt. Wie in einem guten Mail Client."
 //
-// Zwei Spalten. Kopf: Betreff, Nummer, Status. Links der Verlauf wie in einem
-// Mailprogramm -- der Text aus dem Formular, die Mails, die Antwort mit
-// Textbausteinen. Rechts „Einordnen" (Art, Bereich, Dringlichkeit, Status,
-// Gemeinde als Auswahlfelder, sofort gespeichert), der Kontakt, die Gemeinde
-// mit ihrer Gemeindeleitung, bei einer Anfrage deren Angaben und „Gemeinde
-// anlegen", die interne Notiz. Archivieren, Wiederherstellen und Löschen
-// (mit Rückfrage) stehen im Kopf.
-//
-// Rahmen und Zustaende (laden, Fehler, nicht gefunden) stellt WebDetailSeite
-// wie bei jeder Detailseite (10.10.2026).
+// Kopf: Betreff, Nummer, Status, Dringlichkeit, Gemeinde; rechts Antworten,
+// Einordnen (kompakter Dialog), Archivieren oder Wiederherstellen, Löschen.
+// Darunter die wichtigsten Angaben in einer Zeile, dann der Verlauf als
+// Gespräche (MailGespraeche, wie in der App) mit der Nachricht aus dem
+// Formular vorn. „Antworten" öffnet das Antwortformular unter dem Verlauf --
+// dort, wo man beim Lesen ankommt. Gemeinde, Gemeindeleitung, Angaben einer
+// Anfrage und die interne Notiz stehen eingeklappt am Ende.
 //
 // Die Logik (laden, einordnen, Notiz, archivieren, löschen, Antwortweg) steht in
 // components/support/useVorgangDetail.ts, dieselbe wie in der App.
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
-import { ICON_ARCHIV, ICON_LISTE, ICON_LOESCHEN, ICON_ORGANISATION, ICON_RUECKGAENGIG } from '../../shared/icons';
-import api from '../../../services/api';
-import type { MailAntwortDaten } from '../../../types/support';
+import {
+  ICON_ANTWORTEN,
+  ICON_ARCHIV,
+  ICON_BEARBEITEN,
+  ICON_LISTE,
+  ICON_LOESCHEN,
+  ICON_ORGANISATION,
+  ICON_RUECKGAENGIG,
+  ICON_WARNHINWEIS,
+} from '../../shared/icons';
 import { lizenzText } from '../../../utils/lizenzen';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
-import { gemeindeName } from '../../../utils/supportMail';
 import { laufzeitAngabe } from '../../../utils/supportWeb';
-import {
-  BEREICHE,
-  ARTEN,
-  DRINGLICHKEITEN,
-  ERLEDIGT_HINWEIS,
-  QUELLEN,
-  STATUS_REIHE,
-  VORGANG_STATUS,
-  bereichIstPflicht,
-  gemeindeAngabeVon,
-  kontaktVon,
-  type VorgangArt,
-  type VorgangBereich,
-  type VorgangStatus,
-  type Dringlichkeit,
-} from '../../../utils/supportVorgaenge';
-import { useVorgangDetail, type VorgangDetailDaten } from '../useVorgangDetail';
-import WebDetailSeite from '../../web/WebDetailSeite';
-import WebKarte from '../../web/WebKarte';
+import { QUELLEN, artKurz, bereichLabel, gemeindeAngabeVon, kontaktVon } from '../../../utils/supportVorgaenge';
+import { useVorgangDetail } from '../useVorgangDetail';
+import MailGespraeche from '../MailGespraeche';
 import WebKnopf from '../../web/WebKnopf';
 import WebPill from '../../web/WebPill';
 import WebHinweis from '../../web/WebHinweis';
 import WebAngaben from '../../web/WebAngaben';
-import WebAuswahl from '../../web/WebAuswahl';
+import WebAkkordeon from '../../web/WebAkkordeon';
 import WebTextfeld from '../../web/WebTextfeld';
 import WebAntwortEditor from './WebAntwortEditor';
-import { WebMailVerlauf } from './WebMailVerlauf';
+import WebEinordnen from './WebEinordnen';
 import { WebAnlegenKarte, WebGemeindeAngelegt } from './WebGemeindeAnlegen';
+import { WebLesebereich, WebLeseHinweis } from './WebPostfach';
 import { DringlichPill, StatusPill } from './WebVorgangTeile';
 import '../../../theme/web/support.css';
 
-const ZURUECK = { href: '/admin/support/vorgaenge', text: 'Alle Vorgänge' };
+export interface WebVorgangDetailProps {
+  vorgangId: number;
+  /** Der Vorgang ist gelöscht: den Lesebereich leeren. */
+  onGeloescht?: () => void;
+}
 
-const WebVorgangDetail: React.FC<{ vorgangId: number }> = ({ vorgangId }) => {
-  const d: VorgangDetailDaten = useVorgangDetail(vorgangId);
+const WebVorgangDetail: React.FC<WebVorgangDetailProps> = ({ vorgangId, onGeloescht }) => {
+  const d = useVorgangDetail(vorgangId, onGeloescht);
   const {
-    isOnline, vorgang, neu, laedt, fehler, nichtGefunden, speichert, laden, gemeinden, gemeindenFehlt, empfaenger, empfaengerFehlt,
-    antwortWeg, betreffVorschlag, einordnen, notiz, setNotiz, notizGeaendert, notizSpeichern, archivieren, wiederherstellen,
-    loeschenFragen, archiviert, anlegen,
+    isOnline, vorgang, neu, laedt, fehler, nichtGefunden, speichert, laden, antwort, notiz, setNotiz, notizGeaendert,
+    notizSpeichern, archivieren, wiederherstellen, loeschenFragen, archiviert, anlegen,
   } = d;
+  const [antwortOffen, setAntwortOffen] = useState(false);
+  const [einordnenOffen, setEinordnenOffen] = useState(false);
+  const [mehrOffen, setMehrOffen] = useState(false);
+  const antwortBereich = useRef<HTMLElement>(null);
+
+  // Das Formular aufschlagen, wo man es sieht.
+  useEffect(() => {
+    if (antwortOffen) antwortBereich.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [antwortOffen]);
 
   if (!vorgang) {
-    return (
-      <WebDetailSeite
-        bereich="Support"
-        titel="Vorgang"
-        zurueck={ZURUECK}
-        laden={laedt ? 'Der Vorgang wird geladen.' : undefined}
-        fehler={fehler && !nichtGefunden ? { text: 'Der Vorgang konnte nicht geladen werden.', onErneut: () => { void laden(); } } : undefined}
-        leer={{ icon: ICON_LISTE, titel: 'Vorgang nicht gefunden', text: 'Diesen Vorgang gibt es nicht (mehr) — vielleicht wurde er gelöscht.' }}
-      />
-    );
+    if (laedt) return <WebLeseHinweis icon={ICON_LISTE} titel="Der Vorgang wird geladen." />;
+    if (fehler && !nichtGefunden) {
+      return (
+        <WebLeseHinweis icon={ICON_WARNHINWEIS} titel="Der Vorgang konnte nicht geladen werden.">
+          <WebKnopf onClick={() => { void laden(); }}>Erneut versuchen</WebKnopf>
+        </WebLeseHinweis>
+      );
+    }
+    return <WebLeseHinweis icon={ICON_LISTE} titel="Vorgang nicht gefunden" text="Diesen Vorgang gibt es nicht (mehr) — vielleicht wurde er gelöscht." />;
   }
 
   const anfrage = vorgang.anfrage;
@@ -84,202 +84,111 @@ const WebVorgangDetail: React.FC<{ vorgangId: number }> = ({ vorgangId }) => {
   const gemeindeAngabe = gemeindeAngabeVon(vorgang);
   const gemeinde = vorgang.gemeinde;
   const formularText = vorgang.beschreibung ?? anfrage?.nachricht ?? null;
-  const sender = kontakt.name ?? 'Kontakt';
-  const bereichFehlt = bereichIstPflicht(vorgang.art) && vorgang.bereich === null;
+  const gemeindeText = gemeinde?.display_name ?? vorgang.gemeinde_name ?? (vorgang.organization_id !== null ? `Gemeinde ${vorgang.organization_id}` : null);
 
-  const antwortSenden = (koerper: MailAntwortDaten) => api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper);
-
-  const gemeindeOptionen = [
-    { wert: '', label: 'Keine Gemeinde' },
-    ...gemeinden.map((g) => ({ wert: String(g.id), label: gemeindeName(g) })),
-    ...(vorgang.organization_id !== null && !gemeinden.some((g) => g.id === vorgang.organization_id)
-      ? [{ wert: String(vorgang.organization_id), label: vorgang.gemeinde_name ?? `Gemeinde ${vorgang.organization_id}` }] : []),
-  ];
-
-  const haupt = (
-    <>
+  return (
+    <WebLesebereich
+      titel={vorgang.betreff || '(ohne Betreff)'}
+      angaben={(
+        <>
+          <span>Vorgang {vorgang.id}</span>
+          <StatusPill status={vorgang.status} />
+          <DringlichPill dringlichkeit={vorgang.dringlichkeit} />
+          {archiviert && <WebPill ton="neutral">Archiv</WebPill>}
+          {gemeindeText && (
+            <span className="web-vorgangskopf__gemeinde"><IonIcon icon={ICON_ORGANISATION} aria-hidden="true" /> {gemeindeText}</span>
+          )}
+        </>
+      )}
+      werkzeuge={(
+        <>
+          <WebKnopf art="primaer" disabled={!antwort || !isOnline} onClick={() => setAntwortOffen(true)}>
+            <IonIcon icon={ICON_ANTWORTEN} aria-hidden="true" />
+            Antworten
+          </WebKnopf>
+          <WebKnopf disabled={!isOnline} onClick={() => setEinordnenOffen(true)}>
+            <IonIcon icon={ICON_BEARBEITEN} aria-hidden="true" />
+            Einordnen
+          </WebKnopf>
+          {archiviert ? (
+            <WebKnopf symbol disabled={speichert || !isOnline} onClick={() => { void wiederherstellen(); }} aria-label="Wiederherstellen" title="Wiederherstellen">
+              <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
+            </WebKnopf>
+          ) : (
+            <WebKnopf symbol disabled={speichert || !isOnline} onClick={() => { void archivieren(); }} aria-label="Archivieren" title="Archivieren">
+              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
+            </WebKnopf>
+          )}
+          <WebKnopf symbol art="gefahr" disabled={speichert || !isOnline} onClick={loeschenFragen} aria-label="Löschen" title="Löschen">
+            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+          </WebKnopf>
+        </>
+      )}
+    >
       {archiviert && (
         <WebHinweis art="hinweis" titel={vorgang.status === 'erledigt' ? 'Erledigt und im Archiv' : 'Dieser Vorgang liegt im Archiv'}>
           <p className="web-hinweis__absatz">
             {vorgang.archiviert_am ? `Archiviert am ${datumUhrzeit(vorgang.archiviert_am)}. ` : ''}
-            Eine neue Mail holt ihn zurück; oder du stellst ihn mit „Wiederherstellen“ oben wieder her — er steht dann „In Arbeit“ in der Liste.
+            Eine neue Mail holt ihn zurück; „Wiederherstellen“ oben stellt ihn auf „In Arbeit“.
           </p>
         </WebHinweis>
       )}
-
-      {formularText && (
-        <WebKarte
-          titel={vorgang.quelle === 'anfrage' ? 'Nachricht aus dem Formular' : 'Anliegen'}
-          untertitel={`Von ${sender}, ${datumUhrzeit(vorgang.created_at)}`}
-        >
-          <p className="web-mail__absatz">{formularText}</p>
-        </WebKarte>
-      )}
-
-      <WebKarte
-        titel="Schriftwechsel"
-        untertitel={`${vorgang.verlauf.length} ${vorgang.verlauf.length === 1 ? 'Mail' : 'Mails'}`}
-      >
-        <WebMailVerlauf mails={vorgang.verlauf} neu={neu} leer="Noch keine Mails in diesem Vorgang." />
-      </WebKarte>
-
-      <WebKarte
-        titel="Antworten"
-        untertitel={antwortWeg && antwortWeg.art !== 'keiner'
-          ? `Von ${antwortWeg.postfach === 'moin' ? 'moin@' : 'support@'}${antwortWeg.art === 'gemeinde' ? ' an die Gemeinde' : ''}; die Nummer des Vorgangs steht im Betreff`
-          : undefined}
-      >
-        {antwortWeg && antwortWeg.art !== 'keiner' ? (
-          <WebAntwortEditor
-            key={vorgang.id}
-            postfach={antwortWeg.postfach}
-            platzhalterFuer={anfrage ? { anfrage_id: anfrage.id } : vorgang.organization_id !== null ? { organization_id: vorgang.organization_id } : null}
-            betreffVorschlag={betreffVorschlag}
-            an={antwortWeg.art === 'gemeinde' ? null : antwortWeg.an}
-            empfaenger={antwortWeg.art === 'gemeinde' ? empfaenger : null}
-            empfaengerFehlt={empfaengerFehlt}
-            senden={antwortSenden}
-          />
-        ) : (
-          <WebHinweis art="hinweis" titel="Es gibt noch niemanden, dem sich antworten ließe">
-            Ordne rechts eine Gemeinde zu — dann stehen ihre Gemeindeleitung und Leitung als Empfänger zur Wahl.
-          </WebHinweis>
-        )}
-      </WebKarte>
-    </>
-  );
-
-  const seite = (
-    <>
-      {gemeinde === null && vorgang.organization_id === null && (
+      {vorgang.organization_id === null && (
         <WebHinweis art="warnung" titel="Noch keiner Gemeinde zugeordnet">
-          {gemeindeAngabe
-            ? <p className="web-hinweis__absatz">Angegeben im Formular: <strong className="web-gemeindeangabe">{gemeindeAngabe}</strong></p>
-            : <p className="web-hinweis__absatz">Im Formular wurde keine Gemeinde genannt.</p>}
-          <p className="web-hinweis__absatz">Wähle unter „Einordnen“ die passende Gemeinde.</p>
+          <p className="web-hinweis__absatz">
+            {gemeindeAngabe ? <>Angegeben im Formular: <strong className="web-gemeindeangabe">{gemeindeAngabe}</strong>. </> : 'Im Formular wurde keine Gemeinde genannt. '}
+          </p>
+          <WebKnopf klein onClick={() => setEinordnenOffen(true)}>Gemeinde zuordnen</WebKnopf>
         </WebHinweis>
       )}
 
-      <WebKarte titel="Einordnen" untertitel="Jede Änderung wird sofort gespeichert.">
-        <div className="web-formular">
-          <WebAuswahl
-            label="Art"
-            wert={vorgang.art}
-            deaktiviert={!isOnline}
-            onWert={(w) => { void einordnen({ art: w as VorgangArt }); }}
-            optionen={ARTEN.map((a) => ({ wert: a.wert, label: a.label }))}
-          />
-          <WebAuswahl
-            label="Bereich"
-            pflicht={bereichIstPflicht(vorgang.art)}
-            wert={vorgang.bereich ?? ''}
-            deaktiviert={!isOnline}
-            onWert={(w) => { void einordnen({ bereich: w ? (w as VorgangBereich) : null }); }}
-            optionen={[{ wert: '', label: bereichFehlt ? 'Bitte wählen' : 'Kein Bereich' }, ...BEREICHE.map((b) => ({ wert: b.wert, label: b.label }))]}
-            hinweis={bereichFehlt ? 'Bei Frage, Fehler und Wunsch gehört ein Bereich dazu.' : undefined}
-          />
-          <WebAuswahl
-            label="Dringlichkeit"
-            wert={vorgang.dringlichkeit}
-            deaktiviert={!isOnline}
-            onWert={(w) => { void einordnen({ dringlichkeit: w as Dringlichkeit }); }}
-            optionen={DRINGLICHKEITEN.map((x) => ({ wert: x.wert, label: x.hinweis ? `${x.label} – ${x.hinweis}` : x.label }))}
-          />
-          <WebAuswahl
-            label="Status"
-            wert={vorgang.status}
-            deaktiviert={!isOnline}
-            onWert={(w) => { void einordnen({ status: w as VorgangStatus }); }}
-            optionen={STATUS_REIHE.map((s) => ({ wert: s, label: VORGANG_STATUS[s].label }))}
-            hinweis={ERLEDIGT_HINWEIS}
-          />
-          <WebAuswahl
-            label="Gemeinde"
-            wert={vorgang.organization_id === null ? '' : String(vorgang.organization_id)}
-            deaktiviert={!isOnline}
-            onWert={(w) => { void einordnen({ organization_id: w ? Number(w) : null }); }}
-            optionen={gemeindeOptionen}
-            hinweis={gemeindenFehlt ? 'Die Gemeinden konnten nicht vollständig geladen werden.' : undefined}
-          />
+      <dl className="web-steckbrief" aria-label="Angaben zum Vorgang">
+        <div>
+          <dt>Kontakt</dt>
+          <dd>
+            {kontakt.name ?? (kontakt.email ? null : '–')}
+            {kontakt.name && kontakt.email ? ' · ' : ''}
+            {kontakt.email && <a className="web-link" href={`mailto:${kontakt.email}`}>{kontakt.email}</a>}
+            {kontakt.funktion ? ` (${kontakt.funktion})` : ''}
+          </dd>
         </div>
-      </WebKarte>
+        <div>
+          <dt>Art</dt>
+          <dd>{artKurz(vorgang.art)}{vorgang.bereich ? ` · ${bereichLabel(vorgang.bereich)}` : ''}</dd>
+        </div>
+        <div>
+          <dt>Eingegangen</dt>
+          <dd>{QUELLEN[vorgang.quelle]}, {datumUhrzeit(vorgang.created_at)}</dd>
+        </div>
+      </dl>
 
-      <WebKarte titel="Kontakt">
-        <WebAngaben
-          beschriftung="Kontakt aus dem Formular"
-          angaben={[
-            { label: 'Name', wert: kontakt.name },
-            { label: 'E-Mail', wert: kontakt.email ? <a className="web-link" href={`mailto:${kontakt.email}`}>{kontakt.email}</a> : null },
-            { label: 'Funktion', wert: kontakt.funktion },
-            { label: 'Gemeinde laut Formular', wert: gemeindeAngabe },
-            { label: 'Eingegangen über', wert: QUELLEN[vorgang.quelle] },
-            { label: 'Eingegangen', wert: datumUhrzeit(vorgang.created_at) },
-          ]}
-        />
-      </WebKarte>
+      <MailGespraeche
+        key={vorgang.id}
+        mails={vorgang.verlauf}
+        neu={neu}
+        anfang={formularText ? {
+          marke: vorgang.quelle === 'anfrage' ? 'Nachricht aus der Anfrage' : 'Anliegen aus dem Formular',
+          name: kontakt.name,
+          adresse: kontakt.email,
+          datum: vorgang.created_at,
+          text: formularText,
+        } : null}
+        leer="Noch keine Mails in diesem Vorgang."
+      />
 
-      {(gemeinde || vorgang.organization_id !== null) && (
-        <WebKarte
-          titel="Gemeinde"
-          aktion={vorgang.organization_id !== null ? (
-            <WebKnopf klein href={`/admin/support/vorgaenge?gemeinde=${vorgang.organization_id}`}>
-              <IonIcon icon={ICON_LISTE} aria-hidden="true" />
-              Alle Vorgänge
-            </WebKnopf>
-          ) : undefined}
-        >
-          <WebAngaben
-            beschriftung="Gemeinde des Vorgangs"
-            angaben={[
-              { label: 'Gemeinde', wert: <a className="web-link" href={`/admin/organizations?gemeinde=${vorgang.organization_id}`}>{gemeinde?.display_name ?? vorgang.gemeinde_name ?? `Gemeinde ${vorgang.organization_id}`}</a> },
-              ...(gemeinde ? [
-                { label: 'Laufzeit', wert: laufzeitAngabe(gemeinde).text },
-                { label: 'Konfis', wert: gemeinde.konfi_count !== null ? `${gemeinde.konfi_count}${gemeinde.max_konfis ? ` von ${gemeinde.max_konfis}` : ''}` : null },
-                { label: 'Kirchenkreis', wert: gemeinde.kirchenkreis },
-                { label: 'Landeskirche', wert: gemeinde.landeskirche },
-              ] : []),
-            ]}
-          />
-          {vorgang.leitung.length > 0 && (
-            <>
-              <h3 className="web-gruppe">Gemeindeleitung</h3>
-              <ul className="web-personen" aria-label="Gemeindeleitung">
-                {vorgang.leitung.map((l) => (
-                  <li key={l.id} className="web-person">
-                    <div className="web-person__kopf">
-                      <span className="web-person__name">{l.display_name || l.username}</span>
-                      {!l.is_active && <WebPill ton="neutral">Gesperrt</WebPill>}
-                    </div>
-                    <div className="web-person__zeile">
-                      {l.email ? <a className="web-link" href={`mailto:${l.email}`}>{l.email}</a> : <span className="web-gedaempft">Keine E-Mail</span>}
-                    </div>
-                    <div className="web-person__zeile web-gedaempft">
-                      {l.last_login_at ? `Zuletzt angemeldet ${datumKurz(l.last_login_at)}` : 'Noch nicht angemeldet'}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-        </WebKarte>
+      {antwortOffen && antwort && (
+        <section ref={antwortBereich} className="web-lesen__antwort" aria-label="Antwort schreiben">
+          <div className="web-lesen__antwortkopf">
+            <h3 className="web-lesen__antworttitel">Antwort</h3>
+            <WebKnopf klein onClick={() => setAntwortOffen(false)}>Verwerfen</WebKnopf>
+          </div>
+          <WebAntwortEditor key={vorgang.id} {...antwort} onGesendet={() => setAntwortOffen(false)} />
+        </section>
       )}
-
-      {anfrage && (
-        <WebKarte titel="Angaben aus der Anfrage">
-          <WebAngaben
-            beschriftung="Angaben aus dem Formular der Anfrage"
-            angaben={[
-              { label: 'Gemeinde', wert: anfrage.gemeinde },
-              { label: 'Verantwortlich', wert: `${anfrage.kontakt_name}${anfrage.funktion ? ` (${anfrage.funktion})` : ''}` },
-              { label: 'E-Mail', wert: <a className="web-link" href={`mailto:${anfrage.email}`}>{anfrage.email}</a> },
-              { label: 'Mobilnummer', wert: anfrage.mobil ? <a className="web-link" href={`tel:${anfrage.mobil.replace(/[^\d+]/g, '')}`}>{anfrage.mobil}</a> : null },
-              { label: 'Kirchenkreis', wert: anfrage.kirchenkreis },
-              { label: 'Landeskirche', wert: anfrage.landeskirche },
-              { label: 'Ungefähre Zahl', wert: `${anfrage.anzahl_konfis ?? '–'} Konfis · ${anfrage.anzahl_teamer ?? '–'} Teamer:innen` },
-              { label: 'Wunschlizenz', wert: anlegen.wunsch ? `${lizenzText(anlegen.wunsch)}, ${anlegen.wunsch.euro} € pro Jahr` : 'Noch offen' },
-            ]}
-          />
-        </WebKarte>
+      {!antwort && (
+        <WebHinweis art="hinweis" titel="Es gibt noch niemanden, dem sich antworten ließe">
+          Ordne eine Gemeinde zu — dann stehen ihre Gemeindeleitung und Leitung als Empfänger zur Wahl.
+        </WebHinweis>
       )}
 
       {anfrage && (anlegen.angelegt || (anfrage.status === 'angelegt' && anlegen.gemeindeId)) && anlegen.gemeindeId !== null && (
@@ -287,58 +196,77 @@ const WebVorgangDetail: React.FC<{ vorgangId: number }> = ({ vorgangId }) => {
       )}
       {anfrage && anlegen.anlegbar && <WebAnlegenKarte anfrage={anfrage} d={anlegen} />}
 
-      <WebKarte titel="Notiz" untertitel="Nur für den Support sichtbar.">
-        <div className="web-formular">
-          <WebTextfeld label="Interne Notiz" zeilen={4} wert={notiz} onWert={setNotiz} />
-          <div className="web-formular__aktionen">
-            <WebKnopf art="primaer" disabled={!notizGeaendert || speichert || !isOnline} onClick={() => { void notizSpeichern(); }}>
-              Notiz speichern
-            </WebKnopf>
+      <WebAkkordeon
+        id={`vorgang-${vorgang.id}-mehr`}
+        ebene={3}
+        titel="Gemeinde, Anfrage und Notiz"
+        meta={vorgang.notiz?.trim() ? 'mit Notiz' : undefined}
+        offen={mehrOffen}
+        onUmschalten={() => setMehrOffen((o) => !o)}
+      >
+        <div className="web-lesen__mehr">
+          {gemeindeText && (
+            <section aria-label="Gemeinde des Vorgangs">
+              <WebAngaben
+                beschriftung="Gemeinde des Vorgangs"
+                angaben={[
+                  { label: 'Gemeinde', wert: <a className="web-link" href={`/admin/organizations?gemeinde=${vorgang.organization_id}`}>{gemeindeText}</a> },
+                  ...(gemeinde ? [
+                    { label: 'Laufzeit', wert: laufzeitAngabe(gemeinde).text },
+                    { label: 'Konfis', wert: gemeinde.konfi_count !== null ? `${gemeinde.konfi_count}${gemeinde.max_konfis ? ` von ${gemeinde.max_konfis}` : ''}` : null },
+                    { label: 'Kirchenkreis', wert: gemeinde.kirchenkreis },
+                    { label: 'Landeskirche', wert: gemeinde.landeskirche },
+                  ] : []),
+                  { label: 'Vorgänge', wert: <a className="web-link" href={`/admin/support/vorgaenge?gemeinde=${vorgang.organization_id}`}>Alle Vorgänge dieser Gemeinde</a> },
+                ]}
+              />
+              {vorgang.leitung.length > 0 && (
+                <ul className="web-personen" aria-label="Gemeindeleitung">
+                  {vorgang.leitung.map((l) => (
+                    <li key={l.id} className="web-person">
+                      <div className="web-person__kopf">
+                        <span className="web-person__name">{l.display_name || l.username}</span>
+                        {!l.is_active && <WebPill ton="neutral">Gesperrt</WebPill>}
+                      </div>
+                      <div className="web-person__zeile">
+                        {l.email ? <a className="web-link" href={`mailto:${l.email}`}>{l.email}</a> : <span className="web-gedaempft">Keine E-Mail</span>}
+                        <span className="web-gedaempft"> · {l.last_login_at ? `zuletzt angemeldet ${datumKurz(l.last_login_at)}` : 'noch nicht angemeldet'}</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          {anfrage && (
+            <WebAngaben
+              beschriftung="Angaben aus dem Formular der Anfrage"
+              angaben={[
+                { label: 'Gemeinde laut Anfrage', wert: anfrage.gemeinde },
+                { label: 'Verantwortlich', wert: `${anfrage.kontakt_name}${anfrage.funktion ? ` (${anfrage.funktion})` : ''}` },
+                { label: 'Mobilnummer', wert: anfrage.mobil ? <a className="web-link" href={`tel:${anfrage.mobil.replace(/[^\d+]/g, '')}`}>{anfrage.mobil}</a> : null },
+                { label: 'Kirchenkreis', wert: anfrage.kirchenkreis },
+                { label: 'Landeskirche', wert: anfrage.landeskirche },
+                { label: 'Ungefähre Zahl', wert: `${anfrage.anzahl_konfis ?? '–'} Konfis · ${anfrage.anzahl_teamer ?? '–'} Teamer:innen` },
+                { label: 'Wunschlizenz', wert: anlegen.wunsch ? `${lizenzText(anlegen.wunsch)}, ${anlegen.wunsch.euro} € pro Jahr` : 'Noch offen' },
+              ]}
+            />
+          )}
+
+          <div className="web-formular">
+            <WebTextfeld label="Interne Notiz (nur für den Support)" zeilen={3} wert={notiz} onWert={setNotiz} />
+            <div className="web-formular__aktionen">
+              <WebKnopf art="primaer" disabled={!notizGeaendert || speichert || !isOnline} onClick={() => { void notizSpeichern(); }}>
+                Notiz speichern
+              </WebKnopf>
+            </div>
           </div>
         </div>
-      </WebKarte>
-    </>
-  );
+      </WebAkkordeon>
 
-  return (
-    <WebDetailSeite
-      bereich="Support"
-      titel={vorgang.betreff || '(ohne Betreff)'}
-      kennzeichen={(
-        <span className="web-vorgangskopf">
-          <span>Vorgang {vorgang.id}</span>
-          <StatusPill status={vorgang.status} />
-          <DringlichPill dringlichkeit={vorgang.dringlichkeit} />
-          {archiviert && <WebPill ton="neutral">Archiv</WebPill>}
-          {vorgang.gemeinde_name && (
-            <span className="web-vorgangskopf__gemeinde"><IonIcon icon={ICON_ORGANISATION} aria-hidden="true" /> {vorgang.gemeinde_name}</span>
-          )}
-        </span>
-      )}
-      zurueck={ZURUECK}
-      aktionen={(
-        <>
-          {archiviert ? (
-            <WebKnopf disabled={speichert || !isOnline} onClick={() => { void wiederherstellen(); }}>
-              <IonIcon icon={ICON_RUECKGAENGIG} aria-hidden="true" />
-              Wiederherstellen
-            </WebKnopf>
-          ) : (
-            <WebKnopf disabled={speichert || !isOnline} onClick={() => { void archivieren(); }}>
-              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-              Archivieren
-            </WebKnopf>
-          )}
-          <WebKnopf art="gefahr" disabled={speichert || !isOnline} onClick={loeschenFragen}>
-            <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-            Löschen
-          </WebKnopf>
-        </>
-      )}
-      haupt={haupt}
-      seite={seite}
-      seiteBeschriftung="Einordnen und Angaben"
-    />
+      {einordnenOffen && <WebEinordnen d={d} onSchliessen={() => setEinordnenOffen(false)} />}
+    </WebLesebereich>
   );
 };
 

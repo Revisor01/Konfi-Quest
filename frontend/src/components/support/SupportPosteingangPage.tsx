@@ -1,8 +1,9 @@
 // Posteingang der Support-Ansicht, /admin/support/post
 // (docs/planung/support-vorgaenge.md, Entscheidung 7).
 //
-// Oben der Zustand beider Postfächer (eingerichtet, zuletzt abgeholt, Fehler
-// beim Abholen, auf diesem Server aus), darunter die Mails, die in keinem
+// Oben der Zustand der Postfächer -- eine Zeile, solange beide laufen, sonst
+// je gestörtem Postfach der Grund (nicht eingerichtet, Fehler beim Abholen,
+// auf diesem Server aus) --, darunter die Mails, die in keinem
 // Vorgang liegen und nicht archiviert sind -- neueste zuerst, ungelesene
 // hervorgehoben. Filter: Alle, Ungelesen, moin@, support@ und Archiv. Ein
 // Antippen öffnet die Mail mit ihrem Faden, zum Einsortieren, Archivieren,
@@ -99,6 +100,8 @@ const Posteingang: React.FC = () => {
   const [filter, setFilter] = useState<EingangFilter>('alle');
   const { sichtbar, zaehlen, status, laedt, fehler, neuLaden } = usePosteingang(filter);
   const archiv = filter === 'archiv';
+  const stoerungen = (status ?? []).filter((p) => Boolean(p.fehler) || !p.eingerichtet || !aufDiesemServer(p));
+  const zuletztAbgeholt = (status ?? []).map((p) => p.abgeholt_am).filter((t): t is string => Boolean(t)).sort().pop();
 
   return (
     <IonPage>
@@ -109,19 +112,29 @@ const Posteingang: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        <Abschnitt icon={ICON_AT_ZEICHEN} titel="Postfächer" farbe="organizations">
-          {status ? (
-            status.length === 0
-              ? <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Der Server meldet keine Postfächer.</p>
-              : status.map((p) => <PostfachZustand key={p.postfach} p={p} />)
-          ) : laedt ? (
-            <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Zustand wird geladen...</p>
-          ) : (
-            <p role="status" style={{ margin: 0, color: 'var(--app-text-fehler)' }}>
-              Der Zustand der Postfächer konnte nicht geladen werden.
-            </p>
-          )}
-        </Abschnitt>
+        {/* Laufen beide Postfächer, steht nur eine Zeile da; der Kasten mit dem
+            Grund erscheint erst bei einer Störung (Simon, 10.10.2026: „mega
+            unübersichtlich"). */}
+        {status && status.length > 0 && stoerungen.length === 0 ? (
+          <p role="status" style={{ margin: '0 var(--app-abstand-basis)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
+            {status.map((p) => POSTFACH_INFO[p.postfach]?.kurz ?? p.postfach).join(' und ')} eingerichtet
+            {zuletztAbgeholt ? ` · zuletzt abgeholt ${datumUhrzeit(zuletztAbgeholt)}` : ''}
+          </p>
+        ) : (
+          <Abschnitt icon={ICON_AT_ZEICHEN} titel="Postfächer" farbe="organizations">
+            {status ? (
+              status.length === 0
+                ? <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Der Server meldet keine Postfächer.</p>
+                : stoerungen.map((p) => <PostfachZustand key={p.postfach} p={p} />)
+            ) : laedt ? (
+              <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Zustand wird geladen...</p>
+            ) : (
+              <p role="status" style={{ margin: 0, color: 'var(--app-text-fehler)' }}>
+                Der Zustand der Postfächer konnte nicht geladen werden.
+              </p>
+            )}
+          </Abschnitt>
+        )}
 
         <div style={{ margin: 'var(--app-abstand-basis)' }}>
           <IonSegment scrollable value={filter} aria-label={POSTEINGANG_FILTER_BESCHRIFTUNG} onIonChange={(e) => setFilter((e.detail.value as EingangFilter) ?? 'alle')}>

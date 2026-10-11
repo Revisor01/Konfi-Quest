@@ -291,9 +291,19 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
 - **Support-Ansicht auf Handy und im Web übersichtlicher** (Simon,
   10.10.2026, nach dem Probelauf): „Die gesamte Support-Ansicht ist auf dem
   Handy mega unübersichtlich, im Web auch; das machen wir während des
-  Web-Umbaus gleich mit. Vieles ist aber schon sehr gut." Gehört in den
-  Web-Umbau; Pläne der Ansicht: [support-web.md](support-web.md),
+  Web-Umbaus gleich mit. Vieles ist aber schon sehr gut." Erster Schritt am
+  11.10.2026 (Simon: „Als erstes die Mails … Wie in einem guten Mail
+  Client"): Mails als Gespräche, Posteingang und Vorgänge im Browser mit
+  Liste und Lesebereich, Antworten, Einordnen und Einsortieren als Modal bzw.
+  kompakter Dialog ([betrieb/support-ansicht.md](../betrieb/support-ansicht.md#zwei-gesichter-browser-und-app)).
+  Offen: Struktur, Textbausteine und Support-Konten auf dem Handy (Formulare
+  stehen dauerhaft oben, große Knöpfe je Eintrag), die abgeschnittene Kachel
+  „Neue Vorgä…“ der Übersicht. Pläne der Ansicht: [support-web.md](support-web.md),
   [support-vorgaenge.md](support-vorgaenge.md).
+- **Eigene, kompakte Dialoge im Browser überall** (Simon, 11.10.2026: „Web
+  braucht eigene kompaktere Modale überall"): Im Browser öffnen die meisten
+  Formulare noch die Modale der App (`useIonModal`, rund 50 Stellen); die
+  Support-Ansicht nutzt schon `WebDialog`.
 - **Gruppe „Verwaltung" in der Leiste** (Entscheidung 23): Die Unterseiten
   von „Mehr" (Benutzer:innen, Badges, Material, Jahrgänge …) stehen im
   breiten Fenster direkt in der Leiste, als eigene Gruppe.

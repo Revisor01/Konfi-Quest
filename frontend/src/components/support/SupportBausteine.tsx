@@ -55,8 +55,10 @@ export const Abschnitt: React.FC<{
   /** Farbklasse des Symbols (app-section-icon--…). */
   farbe?: string;
   rechts?: React.ReactNode;
+  /** Ohne Karte: der Inhalt bringt eigene Karten mit (Mails als Gespraeche). */
+  ohneKarte?: boolean;
   children: React.ReactNode;
-}> = ({ icon, titel, farbe = 'users', rechts, children }) => (
+}> = ({ icon, titel, farbe = 'users', rechts, ohneKarte = false, children }) => (
   <IonList inset={true} className="app-segment-wrapper">
     <IonListHeader>
       <div className={`app-section-icon app-section-icon--${farbe}`}>
@@ -65,11 +67,13 @@ export const Abschnitt: React.FC<{
       <IonLabel>{titel}</IonLabel>
       {rechts}
     </IonListHeader>
-    <IonCard className="app-card">
-      <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
-        {children}
-      </IonCardContent>
-    </IonCard>
+    {ohneKarte ? children : (
+      <IonCard className="app-card">
+        <IonCardContent style={{ padding: 'var(--app-abstand-mittel)' }}>
+          {children}
+        </IonCardContent>
+      </IonCard>
+    )}
   </IonList>
 );
 

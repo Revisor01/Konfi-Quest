@@ -1,6 +1,7 @@
 // Vorgänge in der Web-Fassung, gerendert (docs/planung/support-vorgaenge.md,
-// Entscheidung 7): der Eingang des Supports als Tabelle -- Nr., Betreff, Art,
-// Gemeinde, Status, Dringlichkeit, letzte Aktivität, ungelesen --, Filter
+// Entscheidung 7): der Eingang des Supports wie ein Mailprogramm (11.10.2026)
+// -- links die Liste (Betreff, Nr., Gemeinde, Status, Dringend, ungelesene
+// Mails, letzte Aktivitaet), rechts der gewaehlte Vorgang --, Filter
 // (Offen, Neu, In Arbeit, Wartet, Archiv), Auswahl nach Art und Gemeinde, Suche,
 // Sammelaktionen, „Neuer Vorgang" und „Schreiben". Im schmalen Fenster bleibt
 // die Liste der App.
@@ -65,6 +66,7 @@ beforeEach(() => {
   h.user = { id: 9, role_name: 'super_admin', is_super_admin: true };
   h.standort = { pathname: '/admin/support/vorgaenge', search: '', state: null };
   supportMailZaehlerZuruecksetzen();
+  window.history.replaceState(null, '', '/admin/support/vorgaenge');
   server = vorgaengeServer({
     vorgaenge: stand(),
     mails: [mail(11, 1, { gelesen_am: null }), mail(12, 1, { gelesen_am: null, gesendet_am: '2026-10-03T08:30:00Z' }), mail(31, 3, { gelesen_am: '2026-10-02T10:00:00Z' })],
@@ -80,14 +82,20 @@ const filterAufklappen = () => {
   if (knopf.getAttribute('aria-expanded') === 'false') fireEvent.click(knopf);
 };
 
+// Die Liste links: eine Zeile je Vorgang, darin ein Knopf, der ihn rechts oeffnet.
+const liste = () => screen.getByRole('navigation', { name: 'Vorgänge' });
 const zeigen = async () => {
   render(<SupportVorgaengePage />);
-  await screen.findByRole('table', { name: 'Vorgänge' });
+  await screen.findByRole('navigation', { name: 'Vorgänge' });
 };
-const zeilen = () => within(screen.getByRole('table', { name: 'Vorgänge' })).getAllByRole('row').slice(1);
-const nummern = () => zeilen().map((z) => within(z).getAllByRole('cell')[1].textContent);
+const zeilen = () => within(liste()).getAllByRole('listitem');
+const knopf = (z: HTMLElement) => within(z).getByRole('button');
+const nummerVon = (z: HTMLElement) => /^Vorgang (\d+):/.exec(knopf(z).getAttribute('aria-label') ?? '')?.[1];
+const nummern = () => zeilen().map(nummerVon);
+const zeileNr = (n: number) => zeilen().find((z) => nummerVon(z) === String(n))!;
+/** Die Marke des Status steht als letzte in der Zeile. */
+const statusIn = (z: HTMLElement) => [...z.querySelectorAll('.web-postfachzeile__marken .web-pill')].pop()?.textContent;
 const chip = (name: RegExp) => within(screen.getByRole('group', { name: 'Vorgänge nach Stand' })).getByRole('button', { name });
-const zelle = (z: HTMLElement, spalte: number) => within(z).getAllByRole('cell')[spalte];
 const bestaetigen = async (knopf: string) => { await act(async () => { h.alert?.buttons?.find((b) => b.text === knopf)?.handler?.(); }); };
 
 describe('Vorgänge (Web): was geladen wird', () => {
@@ -114,7 +122,7 @@ describe('Vorgänge (Web): was geladen wird', () => {
   });
 });
 
-describe('Vorgänge (Web): Tabelle', () => {
+describe('Vorgänge (Web): Liste und Lesebereich', () => {
   it('eine Zeile je offenem Vorgang, die jüngste Aktivität zuerst', async () => {
     await zeigen();
     // Nach Aktivität: Vorgang 1 hat die jüngste Mail (08:30), Vorgang 3 eine von 08:00; 2 und 4 haben nur ihren Eingang.
@@ -123,48 +131,83 @@ describe('Vorgänge (Web): Tabelle', () => {
     expect(screen.getByText('4 Vorgänge offen')).toBeInTheDocument();
   });
 
-  it('Nr., Betreff mit Bereich, Art, Gemeinde, Status, Dringlichkeit und Ungelesen stehen in der Zeile', async () => {
+  it('Betreff, Nr., Gemeinde, Status, Dringend und die Zahl der ungelesenen Mails stehen in der Zeile', async () => {
     await zeigen();
     const z = zeilen()[0];
-    expect(zelle(z, 1)).toHaveTextContent('1');
-    expect(zelle(z, 2)).toHaveTextContent('Chat zeigt nichts Neues');
-    expect(zelle(z, 2)).toHaveTextContent('Chat');
-    expect(zelle(z, 3)).toHaveTextContent('Fehler');
-    expect(zelle(z, 4)).toHaveTextContent('Kirchengemeinde Musterdorf');
-    expect(zelle(z, 5)).toHaveTextContent('Neu');
-    expect(zelle(z, 6)).toHaveTextContent('Dringend');
-    expect(zelle(z, 8)).toHaveTextContent('2');
-    expect(zelle(z, 8).querySelector('.web-chip__zahl--rot')).not.toBeNull();
+    expect(z.querySelector('.web-postfachzeile__titel')).toHaveTextContent('Chat zeigt nichts Neues');
+    expect(z.querySelector('.web-postfachzeile__text')).toHaveTextContent('Nr. 1 · Kirchengemeinde Musterdorf');
+    expect(statusIn(z)).toBe('Neu');
+    expect(within(z).getByText('Dringend')).toBeInTheDocument();
+    const zahl = z.querySelector('.web-chip__zahl--rot');
+    expect(zahl).toHaveTextContent('2');
+    // Die Zeit ist die letzte Aktivitaet: die juengste Mail (08:30 UTC).
+    expect(z.querySelector('time')).toHaveAttribute('dateTime', '2026-10-03T08:30:00Z');
   });
 
-  it('ohne Gemeinde steht „Nicht zugeordnet“; Normal und fehlende Ungelesene stehen gedämpft', async () => {
+  it('ohne Gemeinde steht „Nicht zugeordnet“; Normal und keine ungelesenen Mails stehen nicht da', async () => {
     await zeigen();
-    const z = zeilen().find((x) => zelle(x, 1).textContent === '4')!;
-    expect(zelle(z, 4)).toHaveTextContent('Nicht zugeordnet');
-    expect(zelle(z, 6)).toHaveTextContent('Normal');
-    expect(zelle(z, 8)).toHaveTextContent('–');
+    const z = zeileNr(4);
+    expect(z.querySelector('.web-postfachzeile__text')).toHaveTextContent('Nr. 4 · Nicht zugeordnet');
+    expect(within(z).queryByText('Dringend')).toBeNull();
+    expect(within(z).queryByText('Normal')).toBeNull();
+    expect(z.querySelector('.web-chip__zahl--rot')).toBeNull();
   });
 
-  it('die Zeile öffnet den Vorgang: ein echter Link auf der ganzen Zeile, Klick bleibt in der App', async () => {
+  it('nichts gewählt: der Lesebereich sagt es', async () => {
     await zeigen();
-    const link = within(zeilen().find((z) => zelle(z, 1).textContent === '2')!).getByRole('link', { name: 'Passwort zurücksetzen' });
-    expect(link).toHaveAttribute('href', '/admin/support/vorgaenge/2');
-    expect(link.className).toContain('web-link--zeile');
-    fireEvent.click(link);
-    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/2', 'none', 'push');
+    expect(screen.getByText('Kein Vorgang gewählt')).toBeInTheDocument();
+    expect(zeilen().some((z) => knopf(z).hasAttribute('aria-current'))).toBe(false);
   });
 
-  it('neue und ungelesene Vorgänge stehen fett mit Punkt-Zeile; in Arbeit ohne Ungelesenes nicht', async () => {
+  it('ein Klick auf die Zeile öffnet den Vorgang rechts, markiert die Zeile und schreibt die Adresse -- ohne neue Seite', async () => {
+    await zeigen();
+    fireEvent.click(knopf(zeileNr(2)));
+    expect(await screen.findByRole('heading', { level: 2, name: 'Passwort zurücksetzen' })).toBeInTheDocument();
+    expect(knopf(zeileNr(2))).toHaveAttribute('aria-current', 'true');
+    expect(knopf(zeileNr(1))).not.toHaveAttribute('aria-current');
+    expect(window.location.pathname).toBe('/admin/support/vorgaenge/2');
+    expect(h.push).not.toHaveBeenCalled();
+    expect(screen.queryByText('Kein Vorgang gewählt')).toBeNull();
+  });
+
+  it('die Pfeiltasten wechseln den Vorgang wie in einem Mailprogramm', async () => {
+    await zeigen();
+    fireEvent.click(knopf(zeileNr(3)));
+    knopf(zeileNr(3)).focus();
+    fireEvent.keyDown(knopf(zeileNr(3)), { key: 'ArrowDown' });
+    expect(knopf(zeileNr(2))).toHaveAttribute('aria-current', 'true');
+    expect(document.activeElement).toBe(knopf(zeileNr(2)));
+    expect(window.location.pathname).toBe('/admin/support/vorgaenge/2');
+    fireEvent.keyDown(knopf(zeileNr(2)), { key: 'ArrowUp' });
+    fireEvent.keyDown(knopf(zeileNr(3)), { key: 'ArrowUp' });
+    expect(knopf(zeileNr(1))).toHaveAttribute('aria-current', 'true');
+    // Oben ist Schluss.
+    fireEvent.keyDown(knopf(zeileNr(1)), { key: 'ArrowUp' });
+    expect(knopf(zeileNr(1))).toHaveAttribute('aria-current', 'true');
+    expect(await screen.findByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toBeInTheDocument();
+  });
+
+  it('die Adresse behält ihre Auswahl (?gemeinde=7), wenn ein Vorgang gewählt wird', async () => {
+    h.standort = { pathname: '/admin/support/vorgaenge', search: '?gemeinde=7', state: null };
+    window.history.replaceState(null, '', '/admin/support/vorgaenge?gemeinde=7');
+    await zeigen();
+    fireEvent.click(knopf(zeileNr(1)));
+    expect(`${window.location.pathname}${window.location.search}`).toBe('/admin/support/vorgaenge/1?gemeinde=7');
+  });
+
+  it('neue und ungelesene Vorgänge stehen fett mit Punkt; in Arbeit ohne Ungelesenes nicht', async () => {
     await zeigen();
     expect(nummern()).toEqual(['1', '3', '2', '4']);
-    expect(zeilen().map((z) => z.classList.contains('web-zeile--ungelesen'))).toEqual([true, false, false, true]);
-    expect(within(zeilen()[0]).getByRole('link', { name: /Chat zeigt nichts Neues, 2 ungelesene Mails/ })).toBeInTheDocument();
+    expect(zeilen().map((z) => z.classList.contains('web-postfachzeile--ungelesen'))).toEqual([true, false, false, true]);
+    expect(zeilen().map((z) => z.querySelector('.app-ungelesen-punkt') !== null)).toEqual([true, false, false, true]);
+    expect(within(liste()).getByRole('button', { name: 'Vorgang 1: Chat zeigt nichts Neues, ungelesen' })).toBeInTheDocument();
   });
 
   it('der Betreff „ohne Betreff“ steht nicht leer da', async () => {
     server.stand.vorgaenge.push(vorgang(8, { betreff: '', status: 'neu' }));
     await zeigen();
-    expect(screen.getByRole('link', { name: '(ohne Betreff)' })).toHaveAttribute('href', '/admin/support/vorgaenge/8');
+    expect(zeileNr(8).querySelector('.web-postfachzeile__titel')).toHaveTextContent('(ohne Betreff)');
+    expect(knopf(zeileNr(8))).toHaveAccessibleName('Vorgang 8: (ohne Betreff), ungelesen');
   });
 });
 
@@ -201,16 +244,17 @@ describe('Vorgänge (Web): Filter-Chips', () => {
     expect(within(zeilen()[0]).getByText('Erledigt')).toBeInTheDocument();
     expect(within(zeilen()[1]).getByText('In Arbeit')).toBeInTheDocument();
     expect(screen.getByText('2 Vorgänge im Archiv')).toBeInTheDocument();
-    // Die Spalte nennt das Archivdatum statt der Aktivität.
-    expect(screen.getByRole('columnheader', { name: 'Archiviert' })).toBeInTheDocument();
+    // Die Zeit nennt im Archiv das Archivdatum statt der Aktivitaet.
+    expect(zeilen()[0].querySelector('time')).toHaveAttribute('dateTime', '2026-10-01T12:00:00Z');
   });
 
   it('ein Filter ohne Vorgänge: eigener Hinweis', async () => {
     server.stand.vorgaenge = server.stand.vorgaenge.filter((v) => v.status !== 'wartet');
     await zeigen();
     fireEvent.click(chip(/^Wartet/));
-    expect(screen.getByText('Nichts wartet')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).toBeNull();
+    // Der Hinweis steht in der Liste; der Lesebereich daneben bleibt.
+    expect(within(screen.getByRole('navigation', { name: 'Vorgänge' })).getByText('Nichts wartet')).toBeInTheDocument();
+    expect(screen.getByText('Kein Vorgang gewählt')).toBeInTheDocument();
   });
 });
 
@@ -294,7 +338,7 @@ describe('Vorgänge (Web): Auswahl aus der Adresse', () => {
 
   it('eine neue Adresse bei offener Seite stellt die Auswahl um; auf einer anderen Seite rührt sie nichts an', async () => {
     const { rerender } = render(<SupportVorgaengePage />);
-    await screen.findByRole('table', { name: 'Vorgänge' });
+    await screen.findByRole('navigation', { name: 'Vorgänge' });
     expect(nummern()).toEqual(['1', '3', '2', '4']);
     h.standort = { pathname: '/admin/support/vorgaenge', search: '?art=lizenz', state: null };
     rerender(<SupportVorgaengePage />);
@@ -307,7 +351,7 @@ describe('Vorgänge (Web): Auswahl aus der Adresse', () => {
 
   it('eine gewählte Art und die Suche bleiben beim Wechsel der Adresse auf dieselbe Seite -- die Suche gehört nicht in die Adresse', async () => {
     const { rerender } = render(<SupportVorgaengePage />);
-    await screen.findByRole('table', { name: 'Vorgänge' });
+    await screen.findByRole('navigation', { name: 'Vorgänge' });
     fireEvent.change(screen.getByRole('searchbox', { name: 'Vorgänge durchsuchen' }), { target: { value: 'chat' } });
     h.standort = { pathname: '/admin/support/vorgaenge', search: '?filter=neu', state: null };
     rerender(<SupportVorgaengePage />);
@@ -317,7 +361,7 @@ describe('Vorgänge (Web): Auswahl aus der Adresse', () => {
 });
 
 describe('Vorgänge (Web): Sammelaktionen', () => {
-  const auswaehlen = (...nr: number[]) => { for (const n of nr) fireEvent.click(within(zeilen().find((z) => zelle(z, 1).textContent === String(n))!).getByRole('checkbox')); };
+  const auswaehlen = (...nr: number[]) => { for (const n of nr) fireEvent.click(within(zeileNr(n)).getByRole('checkbox')); };
 
   it('ohne Auswahl keine Aktionen; „Alle auswählen“ wählt alle sichtbaren', async () => {
     await zeigen();
@@ -355,7 +399,7 @@ describe('Vorgänge (Web): Sammelaktionen', () => {
     await act(async () => { fireEvent.change(status, { target: { value: 'wartet' } }); });
     expect(server.aufrufe('post', '/support/vorgaenge/sammel')[0].koerper).toEqual({ ids: [1, 4], aktion: 'status', status: 'wartet' });
     expect(h.setSuccess).toHaveBeenCalledWith('2 Vorgänge auf „Wartet auf Rückmeldung“ gesetzt');
-    await waitFor(() => expect(zeilen().map((z) => zelle(z, 5).textContent)).toEqual(['Wartet', 'Wartet', 'In Arbeit', 'Wartet']));
+    await waitFor(() => expect(zeilen().map(statusIn)).toEqual(['Wartet', 'Wartet', 'In Arbeit', 'Wartet']));
   });
 
   it('Erledigt setzen legt die Vorgänge ins Archiv: sie verlassen die offene Liste', async () => {
@@ -399,7 +443,7 @@ describe('Vorgänge (Web): Sammelaktionen', () => {
     await waitFor(() => expect(nummern()).toEqual(['6']));
     fireEvent.click(chip(/^Offen/));
     await waitFor(() => expect(nummern()).toContain('5'));
-    expect(zeilen().find((z) => zelle(z, 1).textContent === '5')).toHaveTextContent('In Arbeit');
+    expect(statusIn(zeileNr(5))).toBe('In Arbeit');
   });
 
   it('eine gescheiterte Sammelaktion meldet den Fehler und lässt die Auswahl stehen', async () => {
@@ -538,11 +582,11 @@ describe('Vorgänge (Web): Neuer Vorgang', () => {
 });
 
 describe('Vorgänge (Web): Laden, Fehler, leer', () => {
-  it('beim Laden: Platzhalter statt leerer Tabelle', () => {
+  it('beim Laden: Platzhalter statt leerer Liste', () => {
     h.apiGet.mockImplementation(() => new Promise(() => {}));
     render(<SupportVorgaengePage />);
     expect(screen.getByText('Die Vorgänge werden geladen.')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Vorgänge' })).toBeNull();
   });
 
   it('Fehler: Hinweis mit erneutem Versuch, der wirklich neu lädt', async () => {
@@ -551,7 +595,7 @@ describe('Vorgänge (Web): Laden, Fehler, leer', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Die Vorgänge konnten nicht geladen werden.');
     server.stand.fehler.delete('GET /support/vorgaenge');
     fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
-    await screen.findByRole('table', { name: 'Vorgänge' });
+    await screen.findByRole('navigation', { name: 'Vorgänge' });
   });
 
   it('eine Antwort in unbekannter Form ist ein Fehler, kein Absturz', async () => {
@@ -570,7 +614,7 @@ describe('Vorgänge (Web): Laden, Fehler, leer', () => {
     await zeigen();
     server.stand.vorgaenge.push(vorgang(9, { betreff: 'Frisch hereingekommen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Aktualisieren' }));
-    expect(await screen.findByRole('link', { name: 'Frisch hereingekommen' })).toBeInTheDocument();
+    expect(await within(liste()).findByRole('button', { name: 'Vorgang 9: Frisch hereingekommen, ungelesen' })).toBeInTheDocument();
   });
 });
 
@@ -579,7 +623,7 @@ describe('Vorgänge: zwei Gesichter, eine Seite', () => {
     h.breit = false;
     render(<SupportVorgaengePage />);
     expect(await screen.findByText('Chat zeigt nichts Neues')).toBeInTheDocument();
-    expect(screen.queryByRole('table')).toBeNull();
+    expect(screen.queryByRole('navigation', { name: 'Vorgänge' })).toBeNull();
     // Dieselbe Beschriftung wie die Chips im Browser (seiten/supportVorgaenge.ts).
     expect(screen.getByRole('tablist', { name: 'Vorgänge nach Stand' })).toBeInTheDocument();
   });
@@ -592,26 +636,18 @@ describe('Vorgänge: zwei Gesichter, eine Seite', () => {
   });
 });
 
-describe('Vorgänge (Web): sortieren nach Spalte', () => {
-  const kopf = (name: string) => within(screen.getByRole('table', { name: 'Vorgänge' })).getByRole('columnheader', { name });
-
-  it('Klick auf "Status" ordnet wie die Status-Auswahl (Neu, In Arbeit, Wartet), der zweite Klick dreht', async () => {
+describe('Vorgänge (Web): Auswahl und Lesebereich zusammen', () => {
+  it('„Alle auswählen“ steht oben in der Liste, nicht als eigene Zeile über der Seite', async () => {
     await zeigen();
-    expect(nummern()).toEqual(['1', '3', '2', '4']);
-    fireEvent.click(within(kopf('Status')).getByRole('button'));
-    // Gleicher Status behält die Reihenfolge der Seite (1 vor 4).
-    expect(nummern()).toEqual(['1', '4', '2', '3']);
-    expect(kopf('Status')).toHaveAttribute('aria-sort', 'ascending');
-    fireEvent.click(within(kopf('Status')).getByRole('button'));
-    expect(nummern()).toEqual(['3', '2', '1', '4']);
-    expect(kopf('Status')).toHaveAttribute('aria-sort', 'descending');
+    const kasten = within(liste()).getByRole('checkbox', { name: 'Alle auswählen' });
+    expect(kasten.closest('.web-postfach__listekopf')).not.toBeNull();
   });
 
-  it('Klick auf "Nr." ordnet nach Nummer', async () => {
+  it('ein Kästchen anzukreuzen öffnet den Vorgang nicht -- Wählen und Ankreuzen sind getrennt', async () => {
     await zeigen();
-    fireEvent.click(within(kopf('Nr.')).getByRole('button'));
-    expect(nummern()).toEqual(['1', '2', '3', '4']);
-    fireEvent.click(within(kopf('Nr.')).getByRole('button'));
-    expect(nummern()).toEqual(['4', '3', '2', '1']);
+    fireEvent.click(within(zeileNr(2)).getByRole('checkbox'));
+    expect(screen.getByText('1 Vorgang ausgewählt')).toBeInTheDocument();
+    expect(screen.getByText('Kein Vorgang gewählt')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/admin/support/vorgaenge');
   });
 });

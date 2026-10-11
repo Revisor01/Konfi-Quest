@@ -114,3 +114,340 @@
   color: var(--web-text);
   overflow-wrap: anywhere;
 }
+
+/* ===================================================================
+   Liste und Lesebereich nebeneinander, wie in einem Mailprogramm
+   (web/WebPostfach.tsx; Simon, 11.10.2026). Posteingang und Vorgänge.
+   =================================================================== */
+.web-postfach {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(300px, 380px) minmax(0, 1fr);
+  gap: var(--app-abstand-basis);
+}
+
+.web-postfach__liste,
+.web-postfach__lesen {
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+}
+
+.web-postfach__lesen {
+  background: var(--web-grund);
+}
+
+/* --- Die Zeilen der Liste --- */
+.web-postfachzeilen {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.web-postfachzeile {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-postfachzeile--gewaehlt {
+  background: color-mix(in srgb, var(--ion-color-primary) 10%, var(--web-karte));
+}
+
+.web-postfachzeile__kasten {
+  flex-shrink: 0;
+  margin: var(--app-abstand-mittelweit) 0 0 var(--app-abstand-mittel);
+}
+
+.web-postfachzeile__knopf {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  margin: 0;
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittel) var(--app-abstand-schmal) var(--app-abstand-schmal);
+  border: 0;
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-postfachzeile__knopf:hover {
+  background: var(--web-hover);
+}
+
+.web-postfachzeile--gewaehlt .web-postfachzeile__knopf:hover {
+  background: transparent;
+}
+
+.web-postfachzeile__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+/* Der Punkt fuer Ungelesenes steht am linken Rand der Zeile. */
+.web-postfachzeile__punkt {
+  position: absolute;
+  top: 18px;
+  left: 3px;
+  width: 7px;
+  height: 7px;
+}
+
+.web-postfachzeile__oben,
+.web-postfachzeile__unten {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+}
+
+.web-postfachzeile__unten {
+  align-items: center;
+}
+
+.web-postfachzeile__titel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-postfachzeile--ungelesen .web-postfachzeile__titel,
+.web-postfachzeile--ungelesen .web-postfachzeile__betreff {
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-postfachzeile__zeit {
+  flex-shrink: 0;
+  font-size: var(--app-text-klein);
+  color: var(--web-text-leise);
+  white-space: nowrap;
+}
+
+.web-postfachzeile__betreff {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-postfachzeile__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-postfachzeile__marken {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+}
+
+/* --- Der Lesebereich --- */
+.web-lesen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.web-lesen__kopf {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  background: var(--web-karte);
+  border-bottom: 1px solid var(--web-linie);
+}
+
+.web-lesen__titelblock {
+  flex: 1;
+  min-width: 240px;
+}
+
+.web-lesen__titel {
+  margin: 0;
+  font-family: var(--app-schriftart-ueberschrift);
+  font-size: var(--app-text-untertitel);
+  font-weight: var(--app-schrift-fett);
+  line-height: 1.25;
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}
+
+.web-lesen__angaben {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-kompakt) var(--app-abstand-eng);
+  margin-top: var(--app-abstand-kompakt);
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-lesen__werkzeuge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-lesen__inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-basis) var(--app-abstand-gross) var(--app-abstand-weit);
+}
+
+/* Die wichtigsten Angaben eines Vorgangs in einer Zeile. */
+.web-steckbrief {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng) var(--app-abstand-weit);
+  margin: 0;
+  font-size: var(--app-text-hinweis);
+}
+
+.web-steckbrief > div {
+  min-width: 0;
+}
+
+.web-steckbrief dt {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+}
+
+.web-steckbrief dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Die Antwort steht unter dem Verlauf, dort, wo man beim Lesen ankommt. */
+.web-lesen__antwort {
+  padding: var(--app-abstand-basis);
+  background: var(--web-karte);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+}
+
+.web-lesen__antwortkopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  margin-bottom: var(--app-abstand-mittel);
+}
+
+.web-lesen__antworttitel {
+  margin: 0;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-lesen__mehr {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-basis);
+}
+
+/* Rechts, solange nichts gewaehlt ist. */
+.web-lesen-leer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--app-abstand-eng);
+  min-height: 100%;
+  padding: var(--app-abstand-riesig) var(--app-abstand-weit);
+  text-align: center;
+  color: var(--web-text-leise);
+}
+
+.web-lesen-leer__symbol {
+  width: 40px;
+  height: 40px;
+}
+
+.web-lesen-leer__titel {
+  margin: 0;
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-lesen-leer__text {
+  margin: 0;
+  max-width: 360px;
+}
+
+/* Der Zustand der Postfaecher als eine Zeile ueber dem Posteingang. */
+.web-postfachstand {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+/* Schmaler Inhalt (eingeklappte Leiste aus, kleines Fenster): Liste schmaler. */
+@container (max-width: 900px) {
+  .web-postfach {
+    grid-template-columns: minmax(260px, 300px) minmax(0, 1fr);
+  }
+}
+
+/* Oben in der Liste: „Alle auswählen" und, bei einer Auswahl, die
+   Sammelaktionen -- bleibt beim Rollen stehen (bis 11.10.2026 eine eigene
+   Zeile über der ganzen Seite). */
+.web-postfach__listekopf {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--web-karte);
+  border-bottom: 1px solid var(--web-linie);
+}
+
+.web-sammelleiste--liste {
+  min-height: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 0;
+  border-radius: 0;
+  gap: var(--app-abstand-eng);
+}
+
+.web-sammelleiste--liste .web-sammelleiste__aktionen {
+  margin-left: 0;
+  width: 100%;
+}
+
+.web-sammelleiste--liste .web-sammelleiste__status {
+  min-width: 0;
+  flex: 1;
+}
+
+/* Leere Liste neben dem Lesebereich: der Leerzustand steht in der Spalte. */
+.web-postfach__leer {
+  padding: var(--app-abstand-basis);
+}

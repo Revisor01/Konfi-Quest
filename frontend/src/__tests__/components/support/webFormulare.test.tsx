@@ -1,6 +1,7 @@
 // Die Bausteine der Web-Fassung fuer die Detailseiten (components/support/web/,
 // Phase 2): Eingabefeld, Textfeld, Auswahl, Auswahl mit Suche, Schalter,
-// Hinweis, Angaben, Dialog, Schriftwechsel (Mailverlauf) und Spalten. Gerendert
+// Hinweis, Angaben, Dialog, Schriftwechsel (Mails als Gespraeche, App und Web
+// derselbe Baustein) und Spalten. Gerendert
 // wie eine Person sie bedient -- tippen, waehlen, Tab, Escape.
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import React, { useState } from 'react';
@@ -22,7 +23,7 @@ import WebAngaben from '../../../components/web/WebAngaben';
 import WebDialog from '../../../components/web/WebDialog';
 import WebSpalten from '../../../components/web/WebSpalten';
 import WebKnopf from '../../../components/web/WebKnopf';
-import { WebMailEintrag, WebMailVerlauf } from '../../../components/support/web/WebMailVerlauf';
+import MailGespraeche from '../../../components/support/MailGespraeche';
 import type { MailNachricht } from '../../../types/support';
 
 let vorherTZ: string | undefined;
@@ -310,42 +311,76 @@ describe('WebDialog', () => {
   });
 });
 
-describe('Schriftwechsel (WebMailVerlauf)', () => {
+describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
   const mail = (id: number, extra: Partial<MailNachricht> = {}): MailNachricht => ({
     id, postfach: 'moin', richtung: 'ein', anfrage_id: 4, organization_id: null,
     von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', an_adressen: ['moin@konfi-quest.example'],
     betreff: 'Eure Anfrage', text: 'Hallo\nwie geht es weiter?', anhaenge: [],
     gesendet_am: '2026-10-02T09:00:00Z', gelesen_am: null, ...extra,
   });
+  /** Der Kopf einer Mail ist ein Knopf zum Auf- und Zuklappen. */
+  const kopf = (name: RegExp) => screen.getByRole('button', { name });
 
-  it('eingehend und ausgehend sagen es in Worten; Absender, Postfach und Datum stehen im Kopf', () => {
-    render(<WebMailVerlauf mails={[
+  it('eingehend und ausgehend: der Kreis unterscheidet, ausgehende sagen „Gesendet" in Worten; nur die jüngste ist offen', () => {
+    render(<MailGespraeche mails={[
       mail(1),
-      mail(2, { richtung: 'aus', von_adresse: 'moin@konfi-quest.example', von_name: null, an_adressen: ['anna@example.org'], gesendet_am: '2026-10-02T10:00:00Z', text: 'Gern.' }),
-    ]} />);
-    const artikel = screen.getAllByRole('article');
-    expect(artikel.map((a) => a.getAttribute('aria-label'))).toEqual(['Eingegangen am 02.10.2026, 11:00', 'Gesendet am 02.10.2026, 12:00']);
-    expect(artikel[0].className).toContain('web-mail--ein');
-    expect(artikel[1].className).toContain('web-mail--aus');
-    expect(artikel[0]).toHaveTextContent('Anna Beispiel');
-    expect(artikel[0]).toHaveTextContent('<anna@example.org>');
-    expect(artikel[0]).toHaveTextContent('moin@');
-    expect(artikel[0]).toHaveTextContent('An: moin@konfi-quest.example');
-    expect(artikel[0]).toHaveTextContent('Eure Anfrage');
-    // Ohne Namen steht die Adresse allein.
-    expect(within(artikel[1]).getByText('moin@konfi-quest.example', { selector: 'strong' })).toBeInTheDocument();
-    expect(artikel[1]).not.toHaveTextContent('<moin@');
+      mail(2, {
+        richtung: 'aus', von_adresse: 'moin@konfi-quest.example', von_name: 'Konfi Quest', an_adressen: ['anna@example.org'],
+        gesendet_am: '2026-10-02T10:00:00Z', text: 'Gern.', message_id: '<b@kq>', in_reply_to: '<a@ex>',
+      }),
+    ].map((m, i) => (i === 0 ? { ...m, message_id: '<a@ex>' } : m))} />);
+    const ein = kopf(/^Anna Beispiel/);
+    const aus = kopf(/^Konfi Quest/);
+    expect(ein).toHaveAttribute('aria-expanded', 'false');
+    expect(aus).toHaveAttribute('aria-expanded', 'true');
+    expect(ein.querySelector('.mail-kreis')!.className).toBe('mail-kreis');
+    expect(aus.querySelector('.mail-kreis')!.className).toBe('mail-kreis mail-kreis--aus');
+    expect(aus).toHaveTextContent('Gesendet');
+    expect(ein).not.toHaveTextContent('Gesendet');
+    // Eingeklappt: eine Zeile Vorschau statt Empfänger.
+    expect(ein).toHaveTextContent('Hallo wie geht es weiter?');
+    // Aufgeklappt: Empfänger und Postfach, der Text darunter.
+    expect(aus).toHaveTextContent('An anna@example.org · von moin@');
+    expect(screen.getByText('Gern.')).toBeInTheDocument();
+    // Ein Gespräch, Betreff einmal darüber.
+    expect(screen.getAllByRole('region', { name: 'Eure Anfrage' })).toHaveLength(1);
   });
 
-  it('"Neu" steht nur an den Mails, die in der Menge sind', () => {
-    render(<WebMailVerlauf mails={[mail(1), mail(2)]} neu={new Set([2])} />);
-    const artikel = screen.getAllByRole('article');
-    expect(artikel[0]).not.toHaveTextContent('Neu');
-    expect(artikel[1]).toHaveTextContent('Neu');
+  it('Antworten stehen eingerückt unter der Mail, auf die sie antworten', () => {
+    render(<MailGespraeche mails={[
+      mail(1, { message_id: '<a@ex>' }),
+      mail(2, { message_id: '<b@ex>', in_reply_to: '<a@ex>', gesendet_am: '2026-10-02T10:00:00Z', von_name: 'Ben' }),
+      mail(3, { message_id: '<c@ex>', in_reply_to: '<b@ex>', gesendet_am: '2026-10-02T11:00:00Z', von_name: 'Cara' }),
+      mail(4, { message_id: '<d@ex>', in_reply_to: '<a@ex>', gesendet_am: '2026-10-02T12:00:00Z', von_name: 'Dora' }),
+    ]} />);
+    const zeilen = within(screen.getByRole('region', { name: 'Eure Anfrage' })).getAllByRole('listitem');
+    expect(zeilen.map((z) => z.className.match(/tiefe-(\d)/)?.[1])).toEqual(['0', '1', '2', '1']);
+    expect(zeilen.map((z) => z.querySelector('.mail-zeile__absender')?.textContent)).toEqual(['Anna Beispiel', 'Ben', 'Cara', 'Dora']);
+  });
+
+  it('"Neu" steht nur an den Mails, die in der Menge sind -- und die sind aufgeklappt', () => {
+    render(<MailGespraeche mails={[mail(1), mail(2, { gesendet_am: '2026-10-02T08:00:00Z', von_name: 'Ben' })]} neu={new Set([2])} />);
+    expect(kopf(/^Anna Beispiel/)).not.toHaveTextContent('Neu');
+    expect(kopf(/^Ben/)).toHaveTextContent('Neu');
+    expect(kopf(/^Ben/)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('Antippen klappt eine Mail auf und wieder zu; „Alle aufklappen" öffnet alle', () => {
+    render(<MailGespraeche mails={[mail(1, { text: 'Erste Mail' }), mail(2, { text: 'Zweite Mail', gesendet_am: '2026-10-02T10:00:00Z', von_name: 'Ben' })]} />);
+    expect(screen.queryByText('Erste Mail', { selector: 'p' })).toBeNull();
+    fireEvent.click(kopf(/^Anna Beispiel/));
+    expect(kopf(/^Anna Beispiel/)).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Erste Mail', { selector: 'p' })).toBeInTheDocument();
+    fireEvent.click(kopf(/^Anna Beispiel/));
+    expect(screen.queryByText('Erste Mail', { selector: 'p' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
+    expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Alle einklappen' }));
+    expect(screen.queryAllByRole('button', { expanded: true })).toHaveLength(0);
   });
 
   it('Zitate sind eingeklappt und lassen sich aufklappen -- der eigene Text bleibt sichtbar', () => {
-    render(<WebMailVerlauf mails={[mail(1, { text: 'Danke, klingt gut.\n\n> Hallo\n> wie geht es weiter?' })]} />);
+    render(<MailGespraeche mails={[mail(1, { text: 'Danke, klingt gut.\n\n> Hallo\n> wie geht es weiter?' })]} />);
     expect(screen.getByText('Danke, klingt gut.')).toBeInTheDocument();
     expect(screen.queryByText(/> wie geht es weiter\?/)).toBeNull();
     const knopf = screen.getByRole('button', { name: 'Zitat einblenden' });
@@ -357,31 +392,33 @@ describe('Schriftwechsel (WebMailVerlauf)', () => {
     expect(screen.queryByText(/> wie geht es weiter\?/)).toBeNull();
   });
 
+  it('die Signatur nach „-- " ist eingeklappt und fehlt in der Vorschau', () => {
+    render(<MailGespraeche mails={[
+      mail(1, { text: 'Erster Text\n\n-- \nKonfi Quest · Fußzeile' }),
+      mail(2, { text: 'Zweiter Text\n\n-- \nKonfi Quest · Fußzeile', gesendet_am: '2026-10-02T10:00:00Z', von_name: 'Ben' }),
+    ]} />);
+    // Eingeklappt: die Vorschau endet vor der Signatur.
+    expect(kopf(/^Anna Beispiel/)).toHaveTextContent('Erster Text');
+    expect(kopf(/^Anna Beispiel/)).not.toHaveTextContent('Fußzeile');
+    // Aufgeklappt: Text sichtbar, Signatur erst nach dem Knopf.
+    expect(screen.getByText('Zweiter Text')).toBeInTheDocument();
+    expect(screen.queryByText(/Fußzeile/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Signatur einblenden' }));
+    expect(screen.getByText('Konfi Quest · Fußzeile')).toBeInTheDocument();
+  });
+
   it('Anhaenge stehen als Namen in einer benannten Liste; ohne Anhaenge keine Liste', () => {
-    render(<WebMailVerlauf mails={[mail(1, { anhaenge: [{ name: 'angebot.pdf' }, { name: 'logo.png' }, { name: '  ' }] }), mail(2)]} />);
+    render(<MailGespraeche mails={[mail(1), mail(2, { anhaenge: [{ name: 'angebot.pdf' }, { name: 'logo.png' }, { name: '  ' }], gesendet_am: '2026-10-02T10:00:00Z' })]} />);
     const liste = screen.getByRole('list', { name: 'Anhänge' });
     expect(within(liste).getAllByRole('listitem').map((l) => l.textContent)).toEqual(['angebot.pdf', 'logo.png']);
     expect(screen.getAllByRole('list', { name: 'Anhänge' })).toHaveLength(1);
   });
 
   it('eine Mail ohne Text sagt es; ohne Mails steht der Satz der Seite', () => {
-    const { rerender } = render(<WebMailVerlauf mails={[mail(1, { text: null })]} />);
+    const { rerender } = render(<MailGespraeche mails={[mail(1, { text: null })]} />);
     expect(screen.getByText('Ohne Text')).toBeInTheDocument();
-    rerender(<WebMailVerlauf mails={[]} leer="Noch keine Mails zu dieser Anfrage." />);
+    rerender(<MailGespraeche mails={[]} leer="Noch keine Mails zu dieser Anfrage." />);
     expect(screen.getByText('Noch keine Mails zu dieser Anfrage.')).toBeInTheDocument();
-    expect(screen.queryByRole('article')).toBeNull();
-  });
-
-  it('die einzelne Mail (kopf="voll"): Von, An, Datum und Postfach als Liste', () => {
-    render(<WebMailEintrag mail={mail(1)} kopf="voll" neu />);
-    const kopf = document.querySelector('.web-mail__kopfdaten')!;
-    expect([...kopf.querySelectorAll('dt')].map((d) => d.textContent)).toEqual(['Von', 'An', 'Datum', 'Postfach']);
-    const werte = [...kopf.querySelectorAll('dd')].map((d) => d.textContent);
-    expect(werte[0]).toBe('Anna Beispiel <anna@example.org>');
-    expect(werte[1]).toBe('moin@konfi-quest.example');
-    expect(werte[2]).toBe('02.10.2026, 11:00');
-    expect(werte[3]).toContain('moin@');
-    expect(werte[3]).toContain('Eingegangen');
-    expect(werte[3]).toContain('Neu');
+    expect(screen.queryByRole('listitem')).toBeNull();
   });
 });

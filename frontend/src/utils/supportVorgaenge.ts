@@ -294,10 +294,16 @@ export interface VorgangKontakt {
   funktion: string | null;
 }
 
-export function kontaktVon(v: Pick<VorgangDetail, 'kontakt_name' | 'kontakt_email' | 'kontakt_funktion' | 'anfrage'>): VorgangKontakt {
+export function kontaktVon(
+  v: Pick<VorgangDetail, 'kontakt_name' | 'kontakt_email' | 'kontakt_funktion' | 'anfrage'> & { verlauf?: readonly MailNachricht[] },
+): VorgangKontakt {
+  // Ein Vorgang aus einer Mail hat kein Formular: Kontakt ist dann, wer die
+  // erste eingehende Mail schrieb (bis 11.10.2026 stand dort viermal „–").
+  const erste = (v.verlauf ?? []).find((m) => m.richtung === 'ein' && m.von_adresse);
+  const formular = Boolean(v.kontakt_name || v.kontakt_email || v.anfrage);
   return {
-    name: v.kontakt_name ?? v.anfrage?.kontakt_name ?? null,
-    email: v.kontakt_email ?? v.anfrage?.email ?? null,
+    name: v.kontakt_name ?? v.anfrage?.kontakt_name ?? (formular ? null : erste?.von_name ?? null),
+    email: v.kontakt_email ?? v.anfrage?.email ?? (formular ? null : erste?.von_adresse ?? null),
     funktion: v.kontakt_funktion ?? v.anfrage?.funktion ?? null,
   };
 }

@@ -1,10 +1,11 @@
 // Posteingang in der Web-Fassung, gerendert (docs/planung/support-vorgaenge.md,
 // Entscheidung 7): nur die Mails, die in keinem Vorgang liegen und nicht
-// archiviert sind. Je Mail „Einsortieren“ (bestehender Vorgang mit Suche oder
-// neuer Vorgang mit Art, Bereich, Gemeinde), Archivieren und Löschen; mehrere
-// Mails lassen sich auswählen; Filter Alle, Ungelesen, moin@, support@ und
-// Archiv; oben der Zustand der Postfächer. Im schmalen Fenster bleibt der
-// Posteingang der App.
+// archiviert sind. Wie ein Mailprogramm (11.10.2026): links die Mails als
+// Zeilen, rechts die gewählte im Lesebereich mit „Einsortieren“ (bestehender
+// Vorgang mit Suche oder neuer Vorgang mit Art, Bereich, Gemeinde),
+// Archivieren und Löschen; mehrere Mails lassen sich ankreuzen; Filter Alle,
+// Ungelesen, moin@, support@ und Archiv; oben der Zustand der Postfächer als
+// eine Zeile. Im schmalen Fenster bleibt der Posteingang der App.
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
@@ -75,6 +76,7 @@ beforeEach(() => {
   h.online = true;
   h.user = { id: 9, display_name: 'Support Eins', role_name: 'super_admin', is_super_admin: true };
   h.standort = { pathname: '/admin/support/post', search: '', state: null };
+  window.history.replaceState(null, '', '/admin/support/post');
   supportMailZaehlerZuruecksetzen();
   server = vorgaengeServer({ vorgaenge: VORGAENGE(), mails: MAILS() });
   server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
@@ -83,16 +85,24 @@ beforeEach(() => {
 });
 afterEach(() => { vi.useRealTimers(); });
 
-const TABELLE = 'Mails im Posteingang';
-const zeigen = async (name = TABELLE) => {
+const LISTE = 'Mails im Posteingang';
+const zeigen = async (name = LISTE) => {
   render(<SupportPosteingangPage />);
-  await screen.findByRole('table', { name });
+  await screen.findByRole('navigation', { name });
 };
-const zeilen = (name = TABELLE) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
-const zelle = (z: HTMLElement, spalte: number) => within(z).getAllByRole('cell')[spalte];
-const betreffe = (name = TABELLE) => zeilen(name).map((z) => within(zelle(z, 4)).getByRole('link').textContent);
+const liste = (name = LISTE) => screen.getByRole('navigation', { name });
+const zeilen = (name = LISTE) => [...liste(name).querySelectorAll<HTMLElement>('li.web-postfachzeile')];
+const betreffe = (name = LISTE) => zeilen(name).map((z) => z.querySelector('.web-postfachzeile__betreff')!.textContent);
+const zeileVon = (betreff: string, name = LISTE) => zeilen(name).find((z) => z.querySelector('.web-postfachzeile__betreff')!.textContent === betreff)!;
+const zeilenKnopf = (betreff: string, name = LISTE) => zeileVon(betreff, name).querySelector('button') as HTMLButtonElement;
 const chip = (name: RegExp | string) => within(screen.getByRole('group', { name: 'Mails filtern' })).getByRole('button', { name });
 const bestaetigen = async (knopf: string) => { await act(async () => { h.alert?.buttons?.find((b) => b.text === knopf)?.handler?.(); }); };
+/** Eine Mail wählen: Klick auf die Zeile; rechts steht sie dann im Lesebereich. */
+const waehlen = async (betreff: string, name = LISTE) => {
+  fireEvent.click(zeilenKnopf(betreff, name));
+  return screen.findByRole('article', { name: betreff });
+};
+const lesen = (betreff: string) => within(screen.getByRole('article', { name: betreff }));
 
 describe('Posteingang (Web): was geladen wird', () => {
   it('ruft nur die Mails ohne Vorgang ab -- ohne Parameter -- und den Zustand der Postfächer', async () => {
@@ -114,11 +124,20 @@ describe('Posteingang (Web): was geladen wird', () => {
     expect(server.aufrufe('get', '/support/mail/eingang')).toHaveLength(1);
     fireEvent.click(chip(/^Archiv/));
     await waitFor(() => expect(server.aufrufe('get', '/support/mail/eingang').map((a) => a.optionen)).toContainEqual({ params: { archiv: 1 } }));
-    await screen.findByRole('table', { name: 'Archivierte Mails' });
+    await screen.findByRole('navigation', { name: 'Archivierte Mails' });
+  });
+
+  it('beim Öffnen ist keine Mail gewählt: rechts steht ein Hinweis, keine Mail wird abgerufen oder als gelesen gemeldet', async () => {
+    await zeigen();
+    expect(screen.getByText('Keine Mail gewählt')).toBeInTheDocument();
+    expect(screen.getByText('Wähle links eine Mail — sie öffnet sich hier.')).toBeInTheDocument();
+    expect(within(liste()).queryAllByRole('button', { current: true })).toHaveLength(0);
+    expect(server.aufrufe('get', /^\/support\/mail\/nachrichten\//)).toHaveLength(0);
+    expect(h.apiPost).not.toHaveBeenCalledWith('/support/mail/gelesen', expect.anything());
   });
 });
 
-describe('Posteingang (Web): Tabelle', () => {
+describe('Posteingang (Web): Liste', () => {
   it('eine Zeile je Mail ohne Vorgang, neueste zuerst; Mails in einem Vorgang und archivierte fehlen', async () => {
     await zeigen();
     expect(betreffe()).toEqual(['Rückfrage zur Lizenz', 'Frage zu den Jahrgängen', 'Passwort vergessen?', 'Angebot', 'Pressemitteilung']);
@@ -126,38 +145,57 @@ describe('Posteingang (Web): Tabelle', () => {
     expect(screen.getByText('5 Mails warten darauf, einem Vorgang zugeordnet zu werden')).toBeInTheDocument();
   });
 
-  it('Postfach, Von (Name und Adresse), Betreff mit Auszug und Datum stehen in der Zeile', async () => {
+  it('Absender (Name, sonst Adresse), Zeit, Betreff, Auszug und Postfach stehen in der Zeile', async () => {
     await zeigen();
     const z = zeilen();
-    expect(z.map((x) => zelle(x, 2).textContent)).toEqual(['moin@', 'support@', 'support@', 'moin@', 'moin@']);
-    expect(zelle(z[0], 3)).toHaveTextContent('Pastorin Lena Probe');
-    expect(zelle(z[0], 3)).toHaveTextContent('lena.probe@example.org');
-    expect(zelle(z[0], 4)).toHaveTextContent('Rückfrage zur Lizenz');
-    expect(zelle(z[0], 4)).toHaveTextContent('Vielen Dank für die schnelle Rückmeldung!');
-    expect(zelle(z[0], 5)).toHaveTextContent('vor 12 Min.');
-    // Ohne Namen steht die Adresse allein; ein Datum ab zwei Tagen als Datum.
-    expect(zelle(z[2], 3).textContent).toBe('info@beispiel-verein.example');
-    expect(zelle(z[4], 5)).toHaveTextContent('28.09.2026');
-    // Anhänge stehen vor dem Auszug.
-    expect(zelle(z[3], 4)).toHaveTextContent('2 Anhänge');
+    const teil = (x: HTMLElement, klasse: string) => x.querySelector(`.web-postfachzeile__${klasse}`)!.textContent;
+    expect(z.map((x) => teil(x, 'titel'))).toEqual(['Pastorin Lena Probe', 'Sam Muster', 'info@beispiel-verein.example', 'Jan Vorlage', 'Presseverteiler']);
+    expect(z.map((x) => teil(x, 'marken'))).toEqual(['moin@', 'support@', 'support@', 'moin@', 'moin@']);
+    expect(teil(z[0], 'text')).toBe('Vielen Dank für die schnelle Rückmeldung!');
+    // Heute die Uhrzeit, gestern „gestern, …“, sonst das Datum -- in deutscher Zeit.
+    expect(z.map((x) => teil(x, 'zeit'))).toEqual(['10:18', '09:35', '05:30', 'gestern, 12:30', '28.09., 12:30']);
+    expect(z[0].querySelector('time')).toHaveAttribute('title', '03.10.2026, 10:18');
   });
 
-  it('ungelesene Mails tragen einen Punkt und stehen fett; gelesene nicht', async () => {
+  it('ungelesene Mails tragen einen Punkt, stehen fett und sagen es dem Vorleseprogramm; gelesene nicht', async () => {
     await zeigen();
     const z = zeilen();
-    expect(z.map((x) => within(x).queryByRole('img', { name: 'ungelesen' }) !== null)).toEqual([true, true, true, false, false]);
-    expect(z.map((x) => x.classList.contains('web-zeile--ungelesen'))).toEqual([true, true, true, false, false]);
-    expect(within(z[0]).getByRole('link', { name: 'Rückfrage zur Lizenz' }).className).toContain('web-ungelesen');
-    expect(within(z[3]).getByRole('link', { name: 'Angebot' }).className).not.toContain('web-ungelesen');
+    expect(z.map((x) => x.querySelector('.app-ungelesen-punkt') !== null)).toEqual([true, true, true, false, false]);
+    expect(z.map((x) => x.classList.contains('web-postfachzeile--ungelesen'))).toEqual([true, true, true, false, false]);
+    expect(z[0].querySelector('button')).toHaveAccessibleName('Pastorin Lena Probe: Rückfrage zur Lizenz, ungelesen');
+    expect(z[3].querySelector('button')).toHaveAccessibleName('Jan Vorlage: Angebot');
   });
 
-  it('die Zeile öffnet die Mail: ein echter Link, Klick bleibt in der App', async () => {
+  it('ein Klick wählt die Mail: die Zeile ist markiert, rechts steht die Mail, die Adresse folgt -- ohne neue Seite', async () => {
     await zeigen();
-    const link = within(zeilen()[1]).getByRole('link', { name: 'Frage zu den Jahrgängen' });
-    expect(link).toHaveAttribute('href', '/admin/support/post/302');
-    expect(link.className).toContain('web-link--zeile');
-    fireEvent.click(link);
-    expect(h.push).toHaveBeenCalledWith('/admin/support/post/302', 'none', 'push');
+    const lese = await waehlen('Frage zu den Jahrgängen');
+    expect(zeilenKnopf('Frage zu den Jahrgängen')).toHaveAttribute('aria-current', 'true');
+    expect(zeileVon('Frage zu den Jahrgängen').classList.contains('web-postfachzeile--gewaehlt')).toBe(true);
+    expect(within(liste()).getAllByRole('button', { current: true })).toHaveLength(1);
+    expect(within(lese).getByRole('heading', { level: 2, name: 'Frage zu den Jahrgängen' })).toBeInTheDocument();
+    expect(await within(lese).findByText('Guten Morgen, wir möchten den neuen Jahrgang anlegen.', { selector: 'p' })).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/admin/support/post/302');
+    expect(h.push).not.toHaveBeenCalled();
+    // Die gewählte Mail war ungelesen: gemeldet.
+    await waitFor(() => expect(h.apiPost).toHaveBeenCalledWith('/support/mail/gelesen', { ids: [302] }));
+  });
+
+  it('Pfeiltasten wählen die nächste und vorige Mail und nehmen den Fokus mit', async () => {
+    await zeigen();
+    await waehlen('Rückfrage zur Lizenz');
+    zeilenKnopf('Rückfrage zur Lizenz').focus();
+    fireEvent.keyDown(zeilenKnopf('Rückfrage zur Lizenz'), { key: 'ArrowDown' });
+    expect(await screen.findByRole('article', { name: 'Frage zu den Jahrgängen' })).toBeInTheDocument();
+    expect(zeilenKnopf('Frage zu den Jahrgängen')).toHaveAttribute('aria-current', 'true');
+    expect(document.activeElement).toBe(zeilenKnopf('Frage zu den Jahrgängen'));
+    fireEvent.keyDown(zeilenKnopf('Frage zu den Jahrgängen'), { key: 'ArrowDown' });
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
+    fireEvent.keyDown(document.activeElement!, { key: 'ArrowUp' });
+    // Oben bleibt oben.
+    expect(await screen.findByRole('article', { name: 'Rückfrage zur Lizenz' })).toBeInTheDocument();
+    expect(document.activeElement).toBe(zeilenKnopf('Rückfrage zur Lizenz'));
+    expect(window.location.pathname).toBe('/admin/support/post/301');
   });
 
   it('neueste zuerst, auch wenn der Server sie durcheinander liefert; bei gleicher Zeit entscheidet die höhere Kennung', async () => {
@@ -225,27 +263,29 @@ describe('Posteingang (Web): Filter', () => {
     expect(screen.getByText('Alle Mails sind gelesen.')).toBeInTheDocument();
   });
 
-  it('Archiv: die archivierten Mails, mit „Zurück“ statt „Einsortieren“ -- und die Zahl steht am Chip', async () => {
+  it('Archiv: die archivierten Mails; gewählt bietet der Lesebereich „Wiederherstellen“ statt „Archivieren“ und kein „Antworten“ -- die Zahl steht am Chip', async () => {
     await zeigen();
     expect(chip(/^Archiv/).querySelector('.web-chip__zahl')).toBeNull();
     fireEvent.click(chip(/^Archiv/));
-    await screen.findByRole('table', { name: 'Archivierte Mails' });
+    await screen.findByRole('navigation', { name: 'Archivierte Mails' });
     expect(betreffe('Archivierte Mails')).toEqual(['Sonderangebot']);
-    const z = zeilen('Archivierte Mails')[0];
-    expect(within(z).getByRole('button', { name: 'Wiederherstellen: Sonderangebot' })).toBeInTheDocument();
-    expect(within(z).queryByRole('button', { name: /^Einsortieren/ })).toBeNull();
-    expect(within(z).queryByRole('button', { name: /^Archivieren/ })).toBeNull();
-    expect(within(z).getByRole('button', { name: 'Löschen: Sonderangebot' })).toBeInTheDocument();
+    const lese = within(await waehlen('Sonderangebot', 'Archivierte Mails'));
+    expect(lese.getByText('Diese Mail liegt im Archiv')).toBeInTheDocument();
+    expect(lese.getByRole('button', { name: 'Wiederherstellen' })).toBeInTheDocument();
+    expect(lese.queryByRole('button', { name: 'Archivieren' })).toBeNull();
+    expect(lese.queryByRole('button', { name: 'Antworten' })).toBeNull();
+    expect(lese.getByRole('button', { name: 'Löschen' })).toBeInTheDocument();
     expect(chip(/^Archiv/)).toHaveTextContent('1');
     expect(screen.getByText('Archivierte Mails, die zu keinem Vorgang gehören')).toBeInTheDocument();
   });
 
   it('ein leeres Archiv und ein leerer Posteingang sagen es', async () => {
     server.stand.mails = server.stand.mails.filter((m) => m.id !== 306 && m.vorgang_id !== null);
-    await zeigen('Mails im Posteingang').catch(() => undefined);
-    // Ohne Mails keine Tabelle: der Hinweis steht da.
+    render(<SupportPosteingangPage />);
+    // Ohne Mails steht der Hinweis in der Liste; der Lesebereich daneben bleibt.
     expect(await screen.findByText('Nichts einzusortieren')).toBeInTheDocument();
-    expect(screen.getByText('Alles ist einsortiert. Neue Mails, die zu keinem Vorgang passen, erscheinen hier.')).toBeInTheDocument();
+    expect(within(screen.getByRole('navigation', { name: LISTE })).getByText('Alles ist einsortiert. Neue Mails, die zu keinem Vorgang passen, erscheinen hier.')).toBeInTheDocument();
+    expect(screen.getByText('Keine Mail gewählt')).toBeInTheDocument();
     fireEvent.click(chip(/^Archiv/));
     expect(await screen.findByText('Das Archiv ist leer')).toBeInTheDocument();
     expect(screen.getByText('Archivierte Mails liegen hier und werden nach 180 Tagen gelöscht.')).toBeInTheDocument();
@@ -273,7 +313,7 @@ describe('Posteingang (Web): Filter aus der Adresse', () => {
     for (const [wert, name, zahl] of [['moin', 'moin@', 3], ['support', 'support@', 2], ['alle', 'Alle', 5]] as const) {
       h.standort = { pathname: '/admin/support/post', search: `?filter=${wert}`, state: null };
       const { unmount } = render(<SupportPosteingangPage />);
-      await screen.findByRole('table', { name: TABELLE });
+      await screen.findByRole('navigation', { name: LISTE });
       expect(eingestellt()).toEqual([name]);
       expect(zeilen()).toHaveLength(zahl);
       unmount();
@@ -283,7 +323,7 @@ describe('Posteingang (Web): Filter aus der Adresse', () => {
   it('ein unbekannter Wert: Alle; eine neue Adresse bei offener Seite stellt um; auf einer anderen Seite rührt sie nichts an', async () => {
     h.standort = { pathname: '/admin/support/post', search: '?filter=blau', state: null };
     const { rerender } = render(<SupportPosteingangPage />);
-    await screen.findByRole('table', { name: TABELLE });
+    await screen.findByRole('navigation', { name: LISTE });
     expect(eingestellt()).toEqual(['Alle']);
     h.standort = { pathname: '/admin/support/post', search: '?filter=ungelesen', state: null };
     rerender(<SupportPosteingangPage />);
@@ -292,15 +332,25 @@ describe('Posteingang (Web): Filter aus der Adresse', () => {
     rerender(<SupportPosteingangPage />);
     expect(eingestellt()).toEqual(['Ungelesen']);
   });
+
+  it('beim Wählen bleibt der Filter in der Adresse stehen', async () => {
+    window.history.replaceState(null, '', '/admin/support/post?filter=support');
+    h.standort = { pathname: '/admin/support/post', search: '?filter=support', state: null };
+    await zeigen();
+    await waehlen('Passwort vergessen?');
+    expect(`${window.location.pathname}${window.location.search}`).toBe('/admin/support/post/303?filter=support');
+  });
 });
 
-describe('Posteingang (Web): Archivieren, Wiederherstellen, Löschen je Mail', () => {
-  it('Archivieren: eine Anfrage an die Mail; sie verlässt die Liste und liegt im Archiv', async () => {
+describe('Posteingang (Web): Archivieren, Wiederherstellen, Löschen im Lesebereich', () => {
+  it('Archivieren: eine Anfrage an die Mail; sie verlässt die Liste, der Lesebereich zeigt sie im Archiv', async () => {
     await zeigen();
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Archivieren: Frage zu den Jahrgängen' })); });
+    const lese = within(await waehlen('Frage zu den Jahrgängen'));
+    await act(async () => { fireEvent.click(lese.getByRole('button', { name: 'Archivieren' })); });
     expect(server.aufrufe('post', '/support/mail/nachrichten/302/archivieren')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('1 Mail archiviert');
     await waitFor(() => expect(betreffe()).toEqual(['Rückfrage zur Lizenz', 'Passwort vergessen?', 'Angebot', 'Pressemitteilung']));
+    expect(await lesen('Frage zu den Jahrgängen').findByText('Diese Mail liegt im Archiv')).toBeInTheDocument();
     expect(server.stand.mails.find((m) => m.id === 302)!.archiviert_am).not.toBeNull();
     fireEvent.click(chip(/^Archiv/));
     await waitFor(() => expect(betreffe('Archivierte Mails')).toEqual(['Frage zu den Jahrgängen', 'Sonderangebot']));
@@ -309,16 +359,18 @@ describe('Posteingang (Web): Archivieren, Wiederherstellen, Löschen je Mail', (
   it('Wiederherstellen im Archiv: die Mail ist wieder im Posteingang', async () => {
     h.standort = { pathname: '/admin/support/post', search: '?filter=archiv', state: null };
     await zeigen('Archivierte Mails');
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Wiederherstellen: Sonderangebot' })); });
+    const lese = within(await waehlen('Sonderangebot', 'Archivierte Mails'));
+    await act(async () => { fireEvent.click(lese.getByRole('button', { name: 'Wiederherstellen' })); });
     expect(server.aufrufe('post', '/support/mail/nachrichten/306/wiederherstellen')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('1 Mail wiederhergestellt – wieder im Posteingang');
     expect(await screen.findByText('Das Archiv ist leer')).toBeInTheDocument();
     expect(server.stand.mails.find((m) => m.id === 306)!.archiviert_am).toBeNull();
   });
 
-  it('Löschen fragt zuerst und sagt, dass im Postfach alles stehen bleibt; erst „Löschen“ löscht', async () => {
+  it('Löschen fragt zuerst und sagt, dass im Postfach alles stehen bleibt; erst „Löschen“ löscht -- die Zeile fehlt, rechts ist nichts mehr gewählt', async () => {
     await zeigen();
-    fireEvent.click(screen.getByRole('button', { name: 'Löschen: Passwort vergessen?' }));
+    const lese = within(await waehlen('Passwort vergessen?'));
+    fireEvent.click(lese.getByRole('button', { name: 'Löschen' }));
     expect(h.alert?.header).toBe('Mail löschen');
     expect(h.alert?.message).toContain('Im Postfach selbst bleibt alles stehen');
     expect(server.aufrufe('delete')).toHaveLength(0);
@@ -327,67 +379,74 @@ describe('Posteingang (Web): Archivieren, Wiederherstellen, Löschen je Mail', (
     expect(h.setSuccess).toHaveBeenCalledWith('1 Mail gelöscht');
     await waitFor(() => expect(betreffe()).not.toContain('Passwort vergessen?'));
     expect(zeilen()).toHaveLength(4);
+    expect(screen.getByText('Keine Mail gewählt')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/admin/support/post');
+    expect(h.push).not.toHaveBeenCalled();
   });
 
   it('Abbrechen löscht nichts', async () => {
     await zeigen();
-    fireEvent.click(screen.getByRole('button', { name: 'Löschen: Passwort vergessen?' }));
+    const lese = within(await waehlen('Passwort vergessen?'));
+    fireEvent.click(lese.getByRole('button', { name: 'Löschen' }));
     await bestaetigen('Abbrechen');
     expect(server.aufrufe('delete')).toHaveLength(0);
     expect(zeilen()).toHaveLength(5);
+    expect(screen.getByRole('article', { name: 'Passwort vergessen?' })).toBeInTheDocument();
   });
 
   it('ein Fehler beim Archivieren: Meldung, die Mail bleibt in der Liste', async () => {
     server.stand.fehler.set('POST /support/mail/nachrichten/302/archivieren', Object.assign(new Error('x'), { response: { status: 500, data: { error: 'Datenbankfehler' } } }));
     await zeigen();
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Archivieren: Frage zu den Jahrgängen' })); });
+    const lese = within(await waehlen('Frage zu den Jahrgängen'));
+    await act(async () => { fireEvent.click(lese.getByRole('button', { name: 'Archivieren' })); });
     expect(h.setError).toHaveBeenCalledWith('Datenbankfehler');
     expect(zeilen()).toHaveLength(5);
   });
 
-  it('ohne Netz sind Archivieren und Löschen gesperrt; Einsortieren öffnet den Dialog, sendet aber nicht', async () => {
+  it('ohne Netz sind Antworten, Einsortieren, Archivieren und Löschen gesperrt', async () => {
     h.online = false;
     await zeigen();
-    expect(screen.getByRole('button', { name: 'Archivieren: Frage zu den Jahrgängen' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Löschen: Frage zu den Jahrgängen' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Einsortieren: Frage zu den Jahrgängen' }));
-    const d = within(await screen.findByRole('dialog', { name: 'Mail einsortieren' }));
-    expect(d.getByRole('button', { name: 'Einsortieren' })).toBeDisabled();
+    const lese = within(await waehlen('Frage zu den Jahrgängen'));
+    for (const name of ['Antworten', 'Einsortieren', 'Archivieren', 'Löschen']) expect(lese.getByRole('button', { name }), name).toBeDisabled();
   });
 });
 
 describe('Posteingang (Web): mehrere Mails auswählen', () => {
-  const kasten = (betreff: string) => screen.getByRole('checkbox', { name: `Mail auswählen: ${betreff}` }) as HTMLInputElement;
+  const kasten = (betreff: string) => within(zeileVon(betreff)).getByRole('checkbox') as HTMLInputElement;
+  const leiste = () => within(screen.getByRole('group', { name: 'Auswahl' }));
 
-  it('ohne Auswahl steht nur „Alle auswählen“; mit Auswahl die Zahl und die Aktionen', async () => {
+  it('die Kästchen sind benannt; die Leiste steht oben in der Liste: ohne Auswahl nur „Alle auswählen“, mit Auswahl Zahl und Aktionen', async () => {
     await zeigen();
-    const leiste = within(screen.getByRole('group', { name: 'Auswahl' }));
-    expect(leiste.getByText('Alle auswählen')).toBeInTheDocument();
-    expect(leiste.queryByRole('button')).toBeNull();
+    expect(kasten('Frage zu den Jahrgängen')).toHaveAccessibleName('Auswählen: Sam Muster: Frage zu den Jahrgängen');
+    expect(liste().contains(screen.getByRole('group', { name: 'Auswahl' }))).toBe(true);
+    expect(leiste().getByText('Alle auswählen')).toBeInTheDocument();
+    expect(leiste().queryByRole('button')).toBeNull();
     fireEvent.click(kasten('Frage zu den Jahrgängen'));
     fireEvent.click(kasten('Passwort vergessen?'));
-    expect(leiste.getByText('2 Mails ausgewählt')).toBeInTheDocument();
-    expect(leiste.getByRole('button', { name: 'Archivieren' })).toBeInTheDocument();
-    expect(leiste.getByRole('button', { name: 'Löschen' })).toBeInTheDocument();
-    expect((leiste.getByRole('checkbox') as HTMLInputElement).indeterminate).toBe(true);
+    expect(leiste().getByText('2 Mails ausgewählt')).toBeInTheDocument();
+    expect(leiste().getByRole('button', { name: 'Archivieren' })).toBeInTheDocument();
+    expect(leiste().getByRole('button', { name: 'Löschen' })).toBeInTheDocument();
+    expect((leiste().getByRole('checkbox') as HTMLInputElement).indeterminate).toBe(true);
+    // Ankreuzen wählt keine Mail zum Lesen.
+    expect(screen.getByText('Keine Mail gewählt')).toBeInTheDocument();
   });
 
   it('Archivieren: ein Aufruf für alle gewählten; danach ist die Auswahl leer und die Liste neu', async () => {
     await zeigen();
     fireEvent.click(kasten('Frage zu den Jahrgängen'));
     fireEvent.click(kasten('Passwort vergessen?'));
-    await act(async () => { fireEvent.click(within(screen.getByRole('group', { name: 'Auswahl' })).getByRole('button', { name: 'Archivieren' })); });
+    await act(async () => { fireEvent.click(leiste().getByRole('button', { name: 'Archivieren' })); });
     expect(server.aufrufe('post', '/support/mail/sammel').map((a) => a.koerper)).toEqual([{ ids: [302, 303], aktion: 'archivieren' }]);
     expect(h.setSuccess).toHaveBeenCalledWith('2 Mails archiviert');
     await waitFor(() => expect(betreffe()).toEqual(['Rückfrage zur Lizenz', 'Angebot', 'Pressemitteilung']));
-    expect(within(screen.getByRole('group', { name: 'Auswahl' })).getByText('Alle auswählen')).toBeInTheDocument();
+    expect(leiste().getByText('Alle auswählen')).toBeInTheDocument();
   });
 
   it('Löschen fragt mit der Zahl; erst „Löschen“ löscht alle gewählten', async () => {
     await zeigen();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Alle auswählen' }));
     expect(screen.getByText('5 Mails ausgewählt')).toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole('group', { name: 'Auswahl' })).getByRole('button', { name: 'Löschen' }));
+    fireEvent.click(leiste().getByRole('button', { name: 'Löschen' }));
     expect(h.alert?.header).toBe('5 Mails löschen');
     expect(server.aufrufe('post', '/support/mail/sammel')).toHaveLength(0);
     await bestaetigen('Löschen');
@@ -399,7 +458,8 @@ describe('Posteingang (Web): mehrere Mails auswählen', () => {
     await zeigen();
     fireEvent.click(kasten('Frage zu den Jahrgängen'));
     fireEvent.click(kasten('Passwort vergessen?'));
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Archivieren: Frage zu den Jahrgängen' })); });
+    const lese = within(await waehlen('Frage zu den Jahrgängen'));
+    await act(async () => { fireEvent.click(lese.getByRole('button', { name: 'Archivieren' })); });
     await waitFor(() => expect(betreffe()).not.toContain('Frage zu den Jahrgängen'));
     expect(screen.getByText('1 Mail ausgewählt')).toBeInTheDocument();
   });
@@ -409,7 +469,7 @@ describe('Posteingang (Web): mehrere Mails auswählen', () => {
     h.standort = { pathname: '/admin/support/post', search: '?filter=archiv', state: null };
     await zeigen('Archivierte Mails');
     fireEvent.click(screen.getByRole('checkbox', { name: 'Alle auswählen' }));
-    await act(async () => { fireEvent.click(within(screen.getByRole('group', { name: 'Auswahl' })).getByRole('button', { name: 'Wiederherstellen' })); });
+    await act(async () => { fireEvent.click(leiste().getByRole('button', { name: 'Wiederherstellen' })); });
     expect(server.aufrufe('post', '/support/mail/sammel').map((a) => a.koerper)).toEqual([{ ids: [307, 306], aktion: 'wiederherstellen' }]);
     expect(h.setSuccess).toHaveBeenCalledWith('2 Mails wiederhergestellt – wieder im Posteingang');
   });
@@ -419,7 +479,7 @@ describe('Posteingang (Web): mehrere Mails auswählen', () => {
     await zeigen();
     fireEvent.click(kasten('Frage zu den Jahrgängen'));
     fireEvent.click(kasten('Passwort vergessen?'));
-    await act(async () => { fireEvent.click(within(screen.getByRole('group', { name: 'Auswahl' })).getByRole('button', { name: 'Archivieren' })); });
+    await act(async () => { fireEvent.click(leiste().getByRole('button', { name: 'Archivieren' })); });
     expect(h.setError).toHaveBeenCalledWith('Archivieren hat nicht geklappt');
     expect(screen.getByText('2 Mails ausgewählt')).toBeInTheDocument();
   });
@@ -429,7 +489,8 @@ describe('Posteingang (Web): Einsortieren', () => {
   const dialog = () => screen.getByRole('dialog', { name: 'Mail einsortieren' });
   const oeffnen = async (betreff = 'Frage zu den Jahrgängen') => {
     await zeigen();
-    fireEvent.click(screen.getByRole('button', { name: `Einsortieren: ${betreff}` }));
+    const lese = within(await waehlen(betreff));
+    fireEvent.click(lese.getByRole('button', { name: 'Einsortieren' }));
     await screen.findByRole('dialog', { name: 'Mail einsortieren' });
     // Die offenen Vorgänge kommen nach dem Öffnen.
     await waitFor(() => expect(within(dialog()).queryAllByRole('radio').length).toBeGreaterThan(0));
@@ -460,7 +521,7 @@ describe('Posteingang (Web): Einsortieren', () => {
     expect(d.getByText(/Keine Treffer für „gibt es nicht“/)).toBeInTheDocument();
   });
 
-  it('einen bestehenden Vorgang wählen: ein Aufruf mit der Nummer; die Mail verlässt den Posteingang und liegt im Vorgang', async () => {
+  it('einen bestehenden Vorgang wählen: ein Aufruf mit der Nummer; die Mail verlässt den Posteingang, der Vorgang öffnet sich', async () => {
     await oeffnen();
     const d = within(dialog());
     fireEvent.click(d.getByRole('radio', { name: /Nr\. 2/ }));
@@ -468,9 +529,15 @@ describe('Posteingang (Web): Einsortieren', () => {
     expect(server.aufrufe('post', '/support/mail/nachrichten/302/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 2 }]);
     expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 2 einsortiert');
     expect(screen.queryByRole('dialog', { name: 'Mail einsortieren' })).toBeNull();
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/2');
     await waitFor(() => expect(betreffe()).not.toContain('Frage zu den Jahrgängen'));
     expect(zeilen()).toHaveLength(4);
     expect(server.stand.mails.find((m) => m.id === 302)!.vorgang_id).toBe(2);
+    // Die Mail ist nicht mehr gewählt: Der Lesebereich lädt sie nicht neu und
+    // meldet den Verlauf ihres Vorgangs nicht als gelesen (bis 11.10.2026 sank
+    // so die rote Zahl der Vorgänge, ohne dass jemand den Vorgang öffnete).
+    expect(screen.getByText('Keine Mail gewählt')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/admin/support/post');
   });
 
   it('ohne Wahl: ein Satz sagt, was fehlt -- nichts geht raus', async () => {
@@ -500,6 +567,7 @@ describe('Posteingang (Web): Einsortieren', () => {
     ]);
     expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 100 einsortiert');
     expect(server.stand.vorgaenge.find((v) => v.id === 100)).toMatchObject({ art: 'fehler', bereich: 'chat', organization_id: 7 });
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/100');
     await waitFor(() => expect(betreffe()).not.toContain('Frage zu den Jahrgängen'));
   });
 
@@ -541,13 +609,15 @@ describe('Posteingang (Web): Einsortieren', () => {
     expect(d.getByRole('alert')).toHaveTextContent('Die Mail liegt schon in einem Vorgang');
     expect(screen.getByRole('dialog', { name: 'Mail einsortieren' })).toBeInTheDocument();
     expect(h.setSuccess).not.toHaveBeenCalled();
+    expect(h.push).not.toHaveBeenCalled();
     expect(zeilen()).toHaveLength(5);
   });
 
   it('die Vorgänge lassen sich nicht laden: der Dialog sagt das und bleibt für „Neuer Vorgang“ benutzbar', async () => {
     await zeigen();
+    const lese = within(await waehlen('Frage zu den Jahrgängen'));
     server.stand.fehler.set('GET /support/vorgaenge', new Error('Netz weg'));
-    fireEvent.click(screen.getByRole('button', { name: 'Einsortieren: Frage zu den Jahrgängen' }));
+    fireEvent.click(lese.getByRole('button', { name: 'Einsortieren' }));
     const d = within(await screen.findByRole('dialog', { name: 'Mail einsortieren' }));
     expect(await d.findByText('Die Vorgänge konnten nicht geladen werden.')).toBeInTheDocument();
     fireEvent.click(d.getByRole('button', { name: 'Neuer Vorgang' }));
@@ -563,35 +633,47 @@ describe('Posteingang (Web): Einsortieren', () => {
 });
 
 describe('Posteingang (Web): Zustand der Postfächer', () => {
-  it('je Postfach: Adresse, eingerichtet, Aufgabe, zuletzt abgeholt', async () => {
-    await zeigen();
-    const k = screen.getByText('moin@konfi-quest.example').closest('.web-status') as HTMLElement;
-    expect(k).toHaveTextContent('Eingerichtet');
-    expect(k).toHaveTextContent('Anfragen und Erstkontakt');
-    expect(k).toHaveTextContent('zuletzt abgeholt vor 1 Min.');
-    expect(screen.getByText('support@konfi-quest.example').closest('.web-status')).toHaveTextContent('Hilfe für Gemeinden');
-  });
-
-  it('Fehler beim Abholen, nicht eingerichtet und „auf diesem Server aus“ stehen da', async () => {
+  const statusAntwort = (postfaecher: unknown[]) => {
     const vorher = h.apiGet.getMockImplementation()!;
     h.apiGet.mockImplementation((pfad: string, o?: unknown) => (pfad === '/support/mail/status'
-      ? Promise.resolve({
-        data: {
-          postfaecher: [
-            { postfach: 'moin', adresse: 'moin@konfi-quest.example', eingerichtet: true, abgeholt_am: '2026-10-03T07:00:00Z', fehler: 'Anmeldung abgelehnt', fehler_am: '2026-10-03T07:01:00Z' },
-            { postfach: 'support', adresse: 'support@konfi-quest.example', eingerichtet: false, abgeholt_am: null, fehler: null, fehler_am: null, auf_diesem_server: false },
-          ],
-        },
-      })
+      ? Promise.resolve({ data: { postfaecher } })
       : vorher(pfad, o as never)));
+  };
+  const LAEUFT = { postfach: 'support', adresse: 'support@konfi-quest.example', eingerichtet: true, abgeholt_am: '2026-10-03T08:29:00Z', fehler: null, fehler_am: null, auf_diesem_server: true };
+
+  it('laufen beide Postfächer, steht eine Zeile da: beide Namen und wann zuletzt abgeholt -- keine Kästen', async () => {
+    await zeigen();
+    const zeile = screen.getByText(/zuletzt abgeholt/, { selector: 'p.web-postfachstand' });
+    expect(zeile).toHaveTextContent('moin@ und support@ zuletzt abgeholt vor 1 Min.');
+    expect(document.querySelectorAll('.web-status')).toHaveLength(0);
+  });
+
+  it('Fehler beim Abholen und „auf diesem Server aus“: je ein Kasten mit dem Grund, keine Zeile', async () => {
+    statusAntwort([
+      { postfach: 'moin', adresse: 'moin@konfi-quest.example', eingerichtet: true, abgeholt_am: '2026-10-03T07:00:00Z', fehler: 'Anmeldung abgelehnt', fehler_am: '2026-10-03T07:01:00Z' },
+      { postfach: 'support', adresse: 'support@konfi-quest.example', eingerichtet: false, abgeholt_am: null, fehler: null, fehler_am: null, auf_diesem_server: false },
+    ]);
     await zeigen();
     const moin = screen.getByText('moin@konfi-quest.example').closest('.web-status') as HTMLElement;
     expect(moin.className).toContain('web-status--fehler');
     expect(moin).toHaveTextContent('Fehler beim Abholen: Anmeldung abgelehnt (03.10.2026, 09:01)');
     const support = screen.getByText('support@konfi-quest.example').closest('.web-status') as HTMLElement;
     expect(support).toHaveTextContent('Auf diesem Server aus');
-    expect(support).toHaveTextContent('noch nicht abgeholt');
     expect(support.className).toContain('web-status--warnung');
+    expect(document.querySelector('.web-postfachstand')).toBeNull();
+  });
+
+  it('nur das gestörte Postfach bekommt einen Kasten -- nicht eingerichtet sagt, was fehlt', async () => {
+    statusAntwort([
+      { postfach: 'moin', adresse: 'moin@konfi-quest.example', eingerichtet: false, abgeholt_am: null, fehler: null, fehler_am: null, auf_diesem_server: true },
+      LAEUFT,
+    ]);
+    await zeigen();
+    expect(document.querySelectorAll('.web-status')).toHaveLength(1);
+    const moin = screen.getByText('moin@konfi-quest.example').closest('.web-status') as HTMLElement;
+    expect(moin).toHaveTextContent('Nicht eingerichtet');
+    expect(moin).toHaveTextContent('Zugangsdaten fehlen');
+    expect(screen.queryByText('support@konfi-quest.example')).toBeNull();
   });
 
   it('kommt der Zustand nicht, sagt die Seite das -- und zeigt die Mails trotzdem', async () => {
@@ -609,7 +691,7 @@ describe('Posteingang (Web): Laden, Fehler, leer', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Der Posteingang konnte nicht geladen werden.');
     server.stand.fehler.delete('GET /support/mail/eingang');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' })); });
-    expect(await screen.findByRole('table', { name: TABELLE })).toBeInTheDocument();
+    expect(await screen.findByRole('navigation', { name: LISTE })).toBeInTheDocument();
   });
 
   it('eine Antwort in unbekannter Form ist ein Fehler, kein Absturz', async () => {
@@ -630,7 +712,7 @@ describe('Posteingang: zwei Gesichter, eine Seite', () => {
   it('im schmalen Fenster bleibt die App-Darstellung -- mit derselben Logik', async () => {
     h.breit = false;
     render(<SupportPosteingangPage />);
-    expect(await screen.findByText('Postfächer')).toBeInTheDocument();
+    expect(await screen.findByText(/moin@ und support@ eingerichtet/)).toBeInTheDocument();
     expect(await screen.findByText('5 Mails zum Einsortieren')).toBeInTheDocument();
     expect(server.aufrufe('get', '/support/mail/eingang').map((a) => a.optionen)).toEqual([undefined]);
     expect(document.querySelector('.web-seite')).toBeNull();
@@ -641,27 +723,5 @@ describe('Posteingang: zwei Gesichter, eine Seite', () => {
     render(<SupportPosteingangPage />);
     expect(screen.getByText('Nur für den Support')).toBeInTheDocument();
     expect(server.aufrufe('get', '/support/mail/eingang')).toHaveLength(0);
-  });
-});
-
-describe('Posteingang (Web): sortieren nach Spalte', () => {
-  const kopf = (name: string) => within(screen.getByRole('table', { name: TABELLE })).getByRole('columnheader', { name });
-
-  it('Klick auf "Von" ordnet nach Absender (Name, sonst Adresse), der zweite Klick dreht', async () => {
-    await zeigen();
-    fireEvent.click(within(kopf('Von')).getByRole('button'));
-    expect(betreffe()).toEqual(['Passwort vergessen?', 'Angebot', 'Rückfrage zur Lizenz', 'Pressemitteilung', 'Frage zu den Jahrgängen']);
-    expect(kopf('Von')).toHaveAttribute('aria-sort', 'ascending');
-    fireEvent.click(within(kopf('Von')).getByRole('button'));
-    expect(betreffe()).toEqual(['Frage zu den Jahrgängen', 'Pressemitteilung', 'Rückfrage zur Lizenz', 'Angebot', 'Passwort vergessen?']);
-    expect(kopf('Von')).toHaveAttribute('aria-sort', 'descending');
-  });
-
-  it('Klick auf "Datum" stellt die älteste Mail nach oben', async () => {
-    await zeigen();
-    fireEvent.click(within(kopf('Datum')).getByRole('button'));
-    expect(betreffe()).toEqual(['Pressemitteilung', 'Angebot', 'Passwort vergessen?', 'Frage zu den Jahrgängen', 'Rückfrage zur Lizenz']);
-    fireEvent.click(within(kopf('Datum')).getByRole('button'));
-    expect(betreffe()).toEqual(['Rückfrage zur Lizenz', 'Frage zu den Jahrgängen', 'Passwort vergessen?', 'Angebot', 'Pressemitteilung']);
   });
 });

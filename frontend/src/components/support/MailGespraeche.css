@@ -1,0 +1,300 @@
+/* Mails als Gespräche (components/support/MailGespraeche.tsx), in App und
+   Web derselbe Baustein. Nur Tokens -- der Dunkelmodus kommt über sie.
+   Keine farbigen Kanten vor den Mails (Simon, 11.10.2026): Ein- und
+   ausgehend unterscheidet der Kreis, ausgehende tragen dazu „Gesendet". */
+
+.mail-gespraeche {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.mail-gespraeche__leiste {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-system);
+}
+
+.mail-leer {
+  margin: 0;
+  color: var(--app-text-system);
+}
+
+/* --- Ein Gespräch: eine Karte, die Mails darin als Zeilen --- */
+.mail-gespraech {
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-karte);
+  overflow: hidden;
+}
+
+.mail-gespraech__kopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis) var(--app-abstand-eng);
+}
+
+.mail-gespraech__betreff {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--app-text-betont);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--app-text-emphasis);
+  overflow-wrap: anywhere;
+}
+
+.mail-gespraech__zahl {
+  flex-shrink: 0;
+  min-width: 22px;
+  padding: 0 var(--app-abstand-kompakt);
+  border-radius: var(--app-radius-band);
+  background: var(--app-surface-muted);
+  color: var(--app-text-system);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 20px;
+  text-align: center;
+}
+
+.mail-gespraech__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- Eine Mail --- */
+.mail-zeile {
+  border-top: 1px solid var(--app-border-soft);
+}
+
+/* Antworten stehen eingerückt unter ihrem Vorgänger -- ohne Linie davor. */
+.mail-zeile--tiefe-1 { padding-left: var(--app-abstand-gross); }
+.mail-zeile--tiefe-2 { padding-left: var(--app-abstand-riesig); }
+.mail-zeile--tiefe-3 { padding-left: calc(var(--app-abstand-riesig) + var(--app-abstand-gross)); }
+
+.mail-zeile__kopf {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  margin: 0;
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-zeile__kopf--fest {
+  cursor: default;
+}
+
+button.mail-zeile__kopf:hover {
+  background: var(--app-surface-soft);
+}
+
+button.mail-zeile__kopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.mail-kreis {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: rgba(var(--app-color-info-rgb), 0.14);
+  color: var(--app-color-info);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: 0.02em;
+}
+
+.mail-kreis--aus {
+  background: rgba(var(--app-color-success-rgb), 0.16);
+  color: var(--app-color-success);
+}
+
+.mail-zeile__mitte {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+}
+
+.mail-zeile__oben {
+  display: flex;
+  align-items: baseline;
+  gap: var(--app-abstand-kompakt);
+  min-width: 0;
+}
+
+.mail-zeile__absender {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--app-text-emphasis);
+}
+
+.mail-zeile__absender--neu {
+  font-weight: var(--app-schrift-fett);
+}
+
+.mail-zeile__zeit {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--app-text-meta);
+  color: var(--app-text-system);
+  white-space: nowrap;
+}
+
+.mail-zeile__unten {
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-system);
+  overflow-wrap: anywhere;
+}
+
+.mail-zeile__vorschau {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+}
+
+.mail-zeile__vorschau ion-icon {
+  flex-shrink: 0;
+}
+
+.mail-marke {
+  flex-shrink: 0;
+  padding: 0 var(--app-abstand-kompakt);
+  border-radius: var(--app-radius-band);
+  font-size: var(--app-text-mini);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 18px;
+}
+
+.mail-marke--gesendet {
+  background: rgba(var(--app-color-success-rgb), 0.14);
+  color: var(--app-color-success);
+}
+
+.mail-marke--neu {
+  background: var(--app-color-danger);
+  color: var(--app-weiss);
+}
+
+/* Der aufgeklappte Inhalt steht unter dem Absender, nicht unter dem Kreis. */
+.mail-zeile__inhalt {
+  padding: 0 var(--app-abstand-basis) var(--app-abstand-basis) calc(var(--app-abstand-riesig) + var(--app-abstand-weit));
+  color: var(--app-text-body);
+  font-size: var(--app-text-basis);
+  line-height: 1.5;
+}
+
+.mail-zeile__betreff {
+  margin: 0 0 var(--app-abstand-eng);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--app-text-emphasis);
+  overflow-wrap: anywhere;
+}
+
+.mail-text {
+  margin: 0 0 var(--app-abstand-eng);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mail-text--leer {
+  font-style: italic;
+  color: var(--app-text-system);
+}
+
+/* --- Zitate und Signatur: eingeklappt hinter einem leisen Knopf --- */
+.mail-einklappbar {
+  margin: var(--app-abstand-mini) 0;
+}
+
+.mail-einklappbar__knopf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  margin: 0;
+  padding: var(--app-abstand-winzig) var(--app-abstand-eng);
+  border: 0;
+  border-radius: var(--app-radius-band);
+  background: var(--app-surface-muted);
+  color: var(--app-text-system);
+  font: inherit;
+  font-size: var(--app-text-klein);
+  cursor: pointer;
+}
+
+.mail-einklappbar__knopf:hover {
+  color: var(--app-text-emphasis);
+}
+
+.mail-einklappbar__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.mail-einklappbar__text {
+  margin-top: var(--app-abstand-eng);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-surface-soft);
+  color: var(--app-text-system);
+  font-size: var(--app-text-sekundaer);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.mail-anhaenge {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt);
+  list-style: none;
+  margin: var(--app-abstand-eng) 0 0;
+  padding: 0;
+}
+
+.mail-anhang {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  padding: var(--app-abstand-winzig) var(--app-abstand-eng);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-band);
+  font-size: var(--app-text-klein);
+  color: var(--app-text-body);
+}
+
+/* Schmal (Handy): weniger Einrückung, damit der Text Platz behält. */
+@media (max-width: 520px) {
+  .mail-zeile--tiefe-1 { padding-left: var(--app-abstand-mittel); }
+  .mail-zeile--tiefe-2 { padding-left: var(--app-abstand-weit); }
+  .mail-zeile--tiefe-3 { padding-left: calc(var(--app-abstand-weit) + var(--app-abstand-mittel)); }
+
+  .mail-zeile__inhalt {
+    padding-left: var(--app-abstand-basis);
+  }
+}

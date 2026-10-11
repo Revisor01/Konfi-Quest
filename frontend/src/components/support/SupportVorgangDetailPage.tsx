@@ -1,18 +1,19 @@
 // Ein Vorgang der Support-Ansicht, /admin/support/vorgaenge/:id
 // (docs/planung/support-vorgaenge.md, Entscheidung 7).
 //
-// Kopf mit Betreff, Nummer und Status. Darunter „Einordnen" -- Art, Bereich,
-// Dringlichkeit, Status und Gemeinde als Auswahlfelder, jede Änderung sofort
-// gespeichert --, der Kontakt, die Gemeinde mit ihrer Gemeindeleitung, bei einer
-// Anfrage deren Angaben und „Gemeinde anlegen", der Verlauf mit der Antwort
-// (Textbausteine, Vorschau mit Fußzeile), die interne Notiz, Archivieren und
-// Löschen mit Rückfrage. Im breiten Browserfenster stehen sie in zwei Spalten
-// (web/WebVorgangDetail).
+// Kopf mit Betreff, Nummer und Status, darunter die zwei Handgriffe
+// „Antworten" und „Einordnen" -- beide öffnen ein Modal (Simon, 11.10.2026).
+// Dann der Verlauf als Gespräche (MailGespraeche: eingeklappte Mails, Antworten
+// eingerückt unter ihrem Vorgänger, die Nachricht aus dem Formular vorn), der
+// Kontakt, die Gemeinde mit ihrer Gemeindeleitung, bei einer Anfrage deren
+// Angaben und „Gemeinde anlegen", die interne Notiz, Archivieren und Löschen
+// mit Rückfrage. Im breiten Browserfenster steht der Vorgang im Lesebereich
+// neben der Liste (web/WebVorgaenge).
 //
 // Die Logik steht in components/support/useVorgangDetail.ts, dieselbe wie in der
 // Web-Fassung.
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   IonButton,
   IonContent,
@@ -21,8 +22,6 @@ import {
   IonLabel,
   IonList,
   IonPage,
-  IonSelect,
-  IonSelectOption,
   IonTextarea,
 } from '@ionic/react';
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
@@ -43,37 +42,26 @@ import {
   ICON_RUECKGAENGIG,
   ICON_TEXTDOKUMENT,
 } from '../shared/icons';
-import api from '../../services/api';
-import type { MailAntwortDaten } from '../../types/support';
 import { datumKurz, datumUhrzeit } from '../../utils/dateUtils';
 import { lizenzText } from '../../utils/lizenzen';
-import { gemeindeName } from '../../utils/supportMail';
 import { laufzeitAngabe } from '../../utils/supportWeb';
 import {
-  ARTEN,
-  BEREICHE,
-  DRINGLICHKEITEN,
-  ERLEDIGT_HINWEIS,
   QUELLEN,
-  STATUS_REIHE,
   VORGANG_STATUS,
   artKurz,
-  bereichIstPflicht,
   gemeindeAngabeVon,
   kontaktVon,
-  type Dringlichkeit,
-  type VorgangArt,
-  type VorgangBereich,
-  type VorgangStatus,
 } from '../../utils/supportVorgaenge';
 import { SUPPORT_VORGAENGE } from '../../navigation/supportMenue';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
-import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
-import { AntwortFormular, Hinweis, MailListe } from './SupportMailTeile';
+import { Abschnitt, Ladefehler, NurSupport } from './SupportBausteine';
+import { Hinweis } from './SupportMailTeile';
+import MailGespraeche from './MailGespraeche';
+import { AntwortModal, EinordnenModal } from './SupportModale';
 import SupportGemeindeAnlegen from './SupportGemeindeAnlegen';
 import { useSupportZurueck } from './useSupportZurueck';
 import { useVorgangDetail } from './useVorgangDetail';
-import WebVorgangDetail from './web/WebVorgangDetail';
+import WebVorgaenge from './web/WebVorgaenge';
 
 interface Props {
   vorgangId: number;
@@ -92,21 +80,15 @@ const Angabe: React.FC<{ icon: string; label: string; children: React.ReactNode 
   </div>
 );
 
-const STATUS_FARBE: Record<VorgangStatus, string> = {
-  neu: 'var(--app-color-warning)',
-  in_arbeit: 'var(--app-color-info)',
-  wartet: 'var(--app-color-neutral)',
-  erledigt: 'var(--app-color-success)',
-};
-
 const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
   const zurueck = useSupportZurueck(SUPPORT_VORGAENGE);
   const d = useVorgangDetail(vorgangId);
   const {
-    isOnline, vorgang, neu, laedt, fehler, nichtGefunden, speichert, laden, gemeinden, empfaenger, empfaengerFehlt, antwortWeg,
-    betreffVorschlag, einordnen, notiz, setNotiz, notizGeaendert, notizSpeichern, archivieren, wiederherstellen, loeschenFragen,
-    archiviert, anlegen,
+    isOnline, vorgang, neu, laedt, fehler, nichtGefunden, speichert, laden, antwort, notiz, setNotiz, notizGeaendert,
+    notizSpeichern, archivieren, wiederherstellen, loeschenFragen, archiviert, anlegen,
   } = d;
+  const [antwortOffen, setAntwortOffen] = useState(false);
+  const [einordnenOffen, setEinordnenOffen] = useState(false);
 
   if (laedt && !vorgang) {
     return (
@@ -141,7 +123,6 @@ const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
   const gemeindeAngabe = gemeindeAngabeVon(vorgang);
   const gemeinde = vorgang.gemeinde;
   const formularText = vorgang.beschreibung ?? anfrage?.nachricht ?? null;
-  const bereichFehlt = bereichIstPflicht(vorgang.art) && vorgang.bereich === null;
 
   return (
     <IonPage>
@@ -151,7 +132,7 @@ const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
 
         <SectionHeader
           title={vorgang.betreff || '(ohne Betreff)'}
-          subtitle={`Vorgang ${vorgang.id} · ${QUELLEN[vorgang.quelle]}`}
+          subtitle={`Vorgang ${vorgang.id} · ${vorgang.gemeinde_name ?? 'keine Gemeinde'}`}
           icon={ICON_LISTE}
           preset="organizations"
           stats={[
@@ -161,20 +142,30 @@ const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
           ]}
         />
 
+        {/* Die zwei Handgriffe eines Vorgangs stehen oben; beide öffnen ein Modal. */}
+        <div style={{ display: 'flex', gap: 'var(--app-abstand-eng)', margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)' }}>
+          <IonButton style={{ flex: 1 }} onClick={() => setAntwortOffen(true)} disabled={!antwort || !isOnline}>
+            <IonIcon icon={ICON_ANTWORTEN} slot="start" />
+            Antworten
+          </IonButton>
+          <IonButton style={{ flex: 1 }} fill="outline" onClick={() => setEinordnenOffen(true)} disabled={!isOnline}>
+            <IonIcon icon={ICON_BEARBEITEN} slot="start" />
+            Einordnen
+          </IonButton>
+        </div>
+
         {archiviert && (
-          <div role="status" className="app-card" style={{ margin: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-kompakt)', fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-emphasis)' }}>
-              <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
-              {vorgang.status === 'erledigt' ? 'Erledigt und im Archiv' : 'Dieser Vorgang liegt im Archiv'}
-            </div>
-            <p style={{ margin: 'var(--app-abstand-kompakt) 0', color: 'var(--app-text-body)' }}>
+          <div style={{ margin: '0 var(--app-abstand-basis)' }}>
+            <Hinweis art="hinweis" titel={vorgang.status === 'erledigt' ? 'Erledigt und im Archiv' : 'Dieser Vorgang liegt im Archiv'}>
               {vorgang.archiviert_am ? `Archiviert am ${datumUhrzeit(vorgang.archiviert_am)}. ` : ''}
-              Eine neue Mail holt ihn zurück; oder du stellst ihn wieder her — er steht dann „In Arbeit“ in der Liste.
-            </p>
-            <IonButton fill="outline" onClick={() => { void wiederherstellen(); }} disabled={speichert || !isOnline}>
-              <IonIcon icon={ICON_RUECKGAENGIG} slot="start" />
-              Wiederherstellen
-            </IonButton>
+              Eine neue Mail holt ihn zurück.
+              <div style={{ marginTop: 'var(--app-abstand-eng)' }}>
+                <IonButton size="small" fill="outline" onClick={() => { void wiederherstellen(); }} disabled={speichert || !isOnline}>
+                  <IonIcon icon={ICON_RUECKGAENGIG} slot="start" />
+                  Wiederherstellen
+                </IonButton>
+              </div>
+            </Hinweis>
           </div>
         )}
 
@@ -182,68 +173,57 @@ const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
           <div style={{ margin: '0 var(--app-abstand-basis)' }}>
             <Hinweis art="warnung" titel="Noch keiner Gemeinde zugeordnet">
               {gemeindeAngabe ? <>Angegeben im Formular: <strong>{gemeindeAngabe}</strong>. </> : 'Im Formular wurde keine Gemeinde genannt. '}
-              Wähle unter „Einordnen“ die passende Gemeinde.
+              Unter „Einordnen“ lässt sie sich zuordnen.
             </Hinweis>
           </div>
         )}
 
-        <Abschnitt icon={ICON_BEARBEITEN} titel="Einordnen" farbe="organizations" rechts={<Marke text={VORGANG_STATUS[vorgang.status].kurz} farbe={STATUS_FARBE[vorgang.status]} />}>
-          <IonList style={{ background: 'transparent' }}>
-            <IonItem lines="full" style={{ '--background': 'transparent' }}>
-              <IonLabel position="stacked">Art</IonLabel>
-              <IonSelect aria-label="Art" interface="popover" value={vorgang.art} disabled={!isOnline}
-                onIonChange={(e) => { const w = String(e.detail.value ?? ''); if (w && w !== vorgang.art) void einordnen({ art: w as VorgangArt }); }}>
-                {ARTEN.map((a) => <IonSelectOption key={a.wert} value={a.wert}>{a.label}</IonSelectOption>)}
-              </IonSelect>
-            </IonItem>
-            <IonItem lines="full" style={{ '--background': 'transparent' }}>
-              <IonLabel position="stacked">{bereichIstPflicht(vorgang.art) ? 'Bereich *' : 'Bereich'}</IonLabel>
-              <IonSelect aria-label="Bereich" interface="popover" value={vorgang.bereich ?? ''} disabled={!isOnline}
-                onIonChange={(e) => { const w = String(e.detail.value ?? ''); if (w !== (vorgang.bereich ?? '')) void einordnen({ bereich: w ? (w as VorgangBereich) : null }); }}>
-                <IonSelectOption value="">{bereichFehlt ? 'Bitte wählen' : 'Kein Bereich'}</IonSelectOption>
-                {BEREICHE.map((b) => <IonSelectOption key={b.wert} value={b.wert}>{b.label}</IonSelectOption>)}
-              </IonSelect>
-            </IonItem>
-            <IonItem lines="full" style={{ '--background': 'transparent' }}>
-              <IonLabel position="stacked">Dringlichkeit</IonLabel>
-              <IonSelect aria-label="Dringlichkeit" interface="popover" value={vorgang.dringlichkeit} disabled={!isOnline}
-                onIonChange={(e) => { const w = String(e.detail.value ?? ''); if (w && w !== vorgang.dringlichkeit) void einordnen({ dringlichkeit: w as Dringlichkeit }); }}>
-                {DRINGLICHKEITEN.map((x) => <IonSelectOption key={x.wert} value={x.wert}>{x.hinweis ? `${x.label} – ${x.hinweis}` : x.label}</IonSelectOption>)}
-              </IonSelect>
-            </IonItem>
-            <IonItem lines="full" style={{ '--background': 'transparent' }}>
-              <IonLabel position="stacked">Status</IonLabel>
-              <IonSelect aria-label="Status" interface="popover" value={vorgang.status} disabled={!isOnline}
-                onIonChange={(e) => { const w = String(e.detail.value ?? ''); if (w && w !== vorgang.status) void einordnen({ status: w as VorgangStatus }); }}>
-                {STATUS_REIHE.map((s) => <IonSelectOption key={s} value={s}>{VORGANG_STATUS[s].label}</IonSelectOption>)}
-              </IonSelect>
-            </IonItem>
-            <p style={{ margin: 'var(--app-abstand-eng) var(--app-abstand-basis)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>{ERLEDIGT_HINWEIS}</p>
-            <IonItem lines="none" style={{ '--background': 'transparent' }}>
-              <IonLabel position="stacked">Gemeinde</IonLabel>
-              <IonSelect aria-label="Gemeinde" interface="popover" value={vorgang.organization_id === null ? '' : String(vorgang.organization_id)} disabled={!isOnline}
-                onIonChange={(e) => { const w = String(e.detail.value ?? ''); if (w !== (vorgang.organization_id === null ? '' : String(vorgang.organization_id))) void einordnen({ organization_id: w ? Number(w) : null }); }}>
-                <IonSelectOption value="">Keine Gemeinde</IonSelectOption>
-                {vorgang.organization_id !== null && !gemeinden.some((g) => g.id === vorgang.organization_id) && (
-                  <IonSelectOption value={String(vorgang.organization_id)}>{vorgang.gemeinde_name ?? `Gemeinde ${vorgang.organization_id}`}</IonSelectOption>
-                )}
-                {gemeinden.map((g) => <IonSelectOption key={g.id} value={String(g.id)}>{gemeindeName(g)}</IonSelectOption>)}
-              </IonSelect>
-            </IonItem>
-          </IonList>
+        {!antwort && (
+          <div style={{ margin: '0 var(--app-abstand-basis)' }}>
+            <Hinweis art="hinweis" titel="Es gibt noch niemanden, dem sich antworten ließe">
+              Ordne unter „Einordnen“ eine Gemeinde zu — dann stehen ihre Gemeindeleitung und Leitung als Empfänger zur Wahl.
+            </Hinweis>
+          </div>
+        )}
+
+        <Abschnitt icon={ICON_CHATS} titel="Verlauf" farbe="organizations" ohneKarte>
+          <MailGespraeche
+            mails={vorgang.verlauf}
+            neu={neu}
+            anfang={formularText ? {
+              marke: vorgang.quelle === 'anfrage' ? 'Nachricht aus der Anfrage' : 'Anliegen aus dem Formular',
+              name: kontakt.name,
+              adresse: kontakt.email,
+              datum: vorgang.created_at,
+              text: formularText,
+            } : null}
+            leer="Noch keine Mails in diesem Vorgang."
+          />
         </Abschnitt>
 
-        {formularText && (
-          <Abschnitt icon={ICON_TEXTDOKUMENT} titel={vorgang.quelle === 'anfrage' ? 'Nachricht aus dem Formular' : 'Anliegen'} farbe="organizations">
-            <p style={{ margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', color: 'var(--app-text-body)' }}>{formularText}</p>
-          </Abschnitt>
+        {anfrage && anlegen.gemeindeId !== null && (anlegen.angelegt || anfrage.status === 'angelegt') && (
+          <div role="status" className="app-card" style={{ margin: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)' }}>
+            <div style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-emphasis)' }}>Die Gemeinde ist angelegt.</div>
+            {anlegen.angelegt && (
+              <p style={{ margin: 'var(--app-abstand-kompakt) 0', color: 'var(--app-text-body)' }}>
+                Benutzername der Gemeindeleitung: <strong>{anlegen.angelegt.username}</strong>. Benutzername und Passwort
+                auf getrennten Wegen weitergeben — nicht beides in derselben Mail.
+              </p>
+            )}
+            <IonButton fill="outline" routerLink={`/admin/organizations?gemeinde=${anlegen.gemeindeId}`}>
+              <IonIcon icon={ICON_ORGANISATION} slot="start" />
+              Gemeinde öffnen
+            </IonButton>
+          </div>
         )}
+        {anfrage && anlegen.anlegbar && <SupportGemeindeAnlegen anfrage={anfrage} d={anlegen} />}
 
         <Abschnitt icon={ICON_PERSON} titel="Kontakt" farbe="organizations">
           <Angabe icon={ICON_PERSON} label="Name">{kontakt.name ?? '–'}</Angabe>
           <Angabe icon={ICON_MAIL} label="E-Mail">{kontakt.email ? <a href={`mailto:${kontakt.email}`}>{kontakt.email}</a> : '–'}</Angabe>
-          <Angabe icon={ICON_INFO} label="Funktion">{kontakt.funktion ?? '–'}</Angabe>
-          <Angabe icon={ICON_ORGANISATION} label="Gemeinde laut Formular">{gemeindeAngabe ?? '–'}</Angabe>
+          {kontakt.funktion && <Angabe icon={ICON_INFO} label="Funktion">{kontakt.funktion}</Angabe>}
+          {gemeindeAngabe && <Angabe icon={ICON_ORGANISATION} label="Gemeinde laut Formular">{gemeindeAngabe}</Angabe>}
+          <Angabe icon={ICON_INFO} label="Eingegangen">{`${QUELLEN[vorgang.quelle]}, ${datumUhrzeit(vorgang.created_at)}`}</Angabe>
         </Abschnitt>
 
         {(gemeinde || vorgang.organization_id !== null) && (
@@ -278,47 +258,6 @@ const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
           </Abschnitt>
         )}
 
-        {anfrage && anlegen.gemeindeId !== null && (anlegen.angelegt || anfrage.status === 'angelegt') && (
-          <div role="status" className="app-card" style={{ margin: 'var(--app-abstand-basis)', padding: 'var(--app-abstand-basis)' }}>
-            <div style={{ fontWeight: 'var(--app-schrift-halbfett)', color: 'var(--app-text-emphasis)' }}>Die Gemeinde ist angelegt.</div>
-            {anlegen.angelegt && (
-              <p style={{ margin: 'var(--app-abstand-kompakt) 0', color: 'var(--app-text-body)' }}>
-                Benutzername der Gemeindeleitung: <strong>{anlegen.angelegt.username}</strong>. Benutzername und Passwort
-                auf getrennten Wegen weitergeben — nicht beides in derselben Mail.
-              </p>
-            )}
-            <IonButton fill="outline" routerLink={`/admin/organizations?gemeinde=${anlegen.gemeindeId}`}>
-              <IonIcon icon={ICON_ORGANISATION} slot="start" />
-              Gemeinde öffnen
-            </IonButton>
-          </div>
-        )}
-
-        <Abschnitt icon={ICON_CHATS} titel="Verlauf" farbe="organizations">
-          <MailListe mails={vorgang.verlauf} neu={neu} leer="Noch keine Mails in diesem Vorgang." />
-        </Abschnitt>
-
-        <Abschnitt icon={ICON_ANTWORTEN} titel="Antworten" farbe="organizations">
-          {antwortWeg && antwortWeg.art !== 'keiner' ? (
-            <AntwortFormular
-              key={vorgang.id}
-              postfach={antwortWeg.postfach}
-              platzhalterFuer={anfrage ? { anfrage_id: anfrage.id } : vorgang.organization_id !== null ? { organization_id: vorgang.organization_id } : null}
-              betreffVorschlag={betreffVorschlag}
-              an={antwortWeg.art === 'gemeinde' ? null : antwortWeg.an}
-              empfaenger={antwortWeg.art === 'gemeinde' ? empfaenger : null}
-              empfaengerFehlt={empfaengerFehlt}
-              senden={(koerper: MailAntwortDaten) => api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper)}
-            />
-          ) : (
-            <Hinweis art="hinweis" titel="Es gibt noch niemanden, dem sich antworten ließe">
-              Ordne oben eine Gemeinde zu — dann stehen ihre Gemeindeleitung und Leitung als Empfänger zur Wahl.
-            </Hinweis>
-          )}
-        </Abschnitt>
-
-        {anfrage && anlegen.anlegbar && <SupportGemeindeAnlegen anfrage={anfrage} d={anlegen} />}
-
         <Abschnitt icon={ICON_TEXTDOKUMENT} titel="Notiz (nur für den Support)" farbe="organizations">
           <IonList style={{ background: 'transparent' }}>
             <IonItem lines="none" style={{ '--background': 'transparent' }}>
@@ -331,32 +270,35 @@ const VorgangDetail: React.FC<Props> = ({ vorgangId }) => {
           </IonButton>
         </Abschnitt>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)', margin: 'var(--app-abstand-basis)' }}>
+        <div style={{ display: 'flex', gap: 'var(--app-abstand-eng)', margin: 'var(--app-abstand-basis)' }}>
           {!archiviert && (
-            <IonButton expand="block" fill="outline" onClick={() => { void archivieren(); }} disabled={speichert || !isOnline}>
+            <IonButton style={{ flex: 1 }} fill="outline" onClick={() => { void archivieren(); }} disabled={speichert || !isOnline}>
               <IonIcon icon={ICON_ARCHIV} slot="start" />
               Archivieren
             </IonButton>
           )}
-          <IonButton expand="block" fill="outline" color="danger" onClick={loeschenFragen} disabled={speichert || !isOnline}>
+          <IonButton style={{ flex: 1 }} fill="outline" color="danger" onClick={loeschenFragen} disabled={speichert || !isOnline}>
             <IonIcon icon={ICON_LOESCHEN} slot="start" />
             Löschen
           </IonButton>
         </div>
 
         <div style={{ height: 'var(--app-abstand-riesig)' }} />
+
+        {antwort && <AntwortModal key={vorgang.id} offen={antwortOffen} onSchliessen={() => setAntwortOffen(false)} formular={antwort} />}
+        <EinordnenModal offen={einordnenOffen} onSchliessen={() => setEinordnenOffen(false)} d={d} />
       </IonContent>
     </IonPage>
   );
 };
 
-// Zwei Gesichter, eine Seite: im breiten Browserfenster die zweispaltige
-// Web-Fassung, sonst die Darstellung der App. Beide nutzen useVorgangDetail.
+// Zwei Gesichter, eine Seite: im breiten Browserfenster die Liste mit diesem
+// Vorgang im Lesebereich, sonst die Darstellung der App. Beide nutzen useVorgangDetail.
 const SupportVorgangDetailPage: React.FC<Props> = (props) => {
   const breit = useBreitesLayout();
   return (
     <NurSupport titel="Vorgang">
-      {breit ? <WebVorgangDetail vorgangId={props.vorgangId} /> : <VorgangDetail {...props} />}
+      {breit ? <WebVorgaenge start={props.vorgangId} /> : <VorgangDetail {...props} />}
     </NurSupport>
   );
 };

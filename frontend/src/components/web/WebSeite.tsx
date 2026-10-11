@@ -37,10 +37,16 @@ export interface WebSeiteProps {
    * die neue Seite bliebe weiss (MainTabs.tsx, SeiteMitChunk).
    */
   ohneIonPage?: boolean;
+  /**
+   * Die Seite fuellt die Hoehe des Fensters, statt mit dem Inhalt zu
+   * wachsen: fuer Listen mit Lesebereich daneben (Posteingang, Vorgaenge),
+   * deren Spalten je fuer sich rollen -- wie in einem Mailprogramm.
+   */
+  voll?: boolean;
 }
 
 const WebSeite: React.FC<WebSeiteProps> = ({
-  bereich, titel, untertitel, aktionen, children, pageRef, wartung = false, zurueck, kreis, ohneIonPage = false,
+  bereich, titel, untertitel, aktionen, children, pageRef, wartung = false, zurueck, kreis, ohneIonPage = false, voll = false,
 }) => {
   const titelText = (
     <>
@@ -52,7 +58,7 @@ const WebSeite: React.FC<WebSeiteProps> = ({
     <>
       <AppKopfzeile titel={bereich} gemeindeUmschalter={false} />
       <IonContent className="web-inhalt" fullscreen>
-        <div className="web-seite">
+        <div className={voll ? 'web-seite web-seite--voll' : 'web-seite'}>
           {wartung && <WartungsHinweis style={{ margin: 0 }} />}
           {zurueck && (
             <nav className="web-zurueck" aria-label="Zurück">

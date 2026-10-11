@@ -1,10 +1,12 @@
 // Ein Vorgang in der Web-Fassung, gerendert (docs/planung/support-vorgaenge.md,
-// Entscheidung 7): zwei Spalten -- links der Verlauf und die Antwort mit
-// Textbausteinen, rechts „Einordnen“ (Art, Bereich, Dringlichkeit, Status,
-// Gemeinde, sofort gespeichert), Kontakt, Gemeinde mit Gemeindeleitung, bei einer
-// Anfrage deren Angaben und „Gemeinde anlegen“, die interne Notiz; im Kopf
-// Archivieren, Wiederherstellen und Löschen mit Rückfrage. Die Logik ist die der
-// App (useVorgangDetail, useGemeindeAnlegen, useAntwortEditor).
+// Entscheidung 7): wie in einem Mailprogramm (11.10.2026) steht er im
+// Lesebereich rechts neben der Liste. Kopf mit Betreff, Nummer, Status,
+// Dringlichkeit und Gemeinde; Antworten, Einordnen (Dialog mit „Speichern“),
+// Archivieren, Wiederherstellen und Loeschen mit Rueckfrage. Darunter die
+// Angaben in einer Zeile, der Verlauf als Gespraeche (MailGespraeche), das
+// Antwortformular erst auf „Antworten“, eingeklappt Gemeinde, Anfrage und
+// Notiz, dazu „Gemeinde anlegen“ einer Anfrage. Die Logik ist die der App
+// (useVorgangDetail, useGemeindeAnlegen, useAntwortEditor).
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
@@ -23,6 +25,7 @@ const h = vi.hoisted(() => ({
   breit: true,
   online: true,
   user: { id: 9, role_name: 'super_admin', is_super_admin: true } as Record<string, unknown>,
+  standort: { pathname: '/admin/support/vorgaenge/1', search: '', state: null } as { pathname: string; search: string; state: null },
 }));
 
 vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttrappe({
@@ -37,6 +40,7 @@ vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: h.setError, setSuccess: h.setSuccess, isOnline: h.online }),
 }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
+vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.standort }));
 
 import SupportVorgangDetailPage from '../../../components/support/SupportVorgangDetailPage';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
@@ -59,6 +63,7 @@ beforeEach(() => {
   h.online = true;
   h.user = { id: 9, role_name: 'super_admin', is_super_admin: true };
   supportMailZaehlerZuruecksetzen();
+  window.history.replaceState(null, '', '/admin/support/vorgaenge/1');
   server = vorgaengeServer({
     vorgaenge: [
       // 1: Formular einer bekannten Gemeinde, dringend, mit drei Mails (zwei ungelesen)
@@ -90,245 +95,327 @@ beforeEach(() => {
 const oeffnen = async (id = 1, titel?: RegExp) => {
   const ergebnis = render(<SupportVorgangDetailPage vorgangId={id} />);
   await waitFor(() => {
-    const t = document.querySelector('.web-titel');
+    const t = document.querySelector('.web-lesen__titel');
     expect(t).not.toBeNull();
     if (titel) expect(t!.textContent).toMatch(titel);
-    // Die Knopfleiste kommt nach dem Titel; im vollen CI-Lauf fanden Tests
-    // „Löschen“ bzw. „Archivieren“ sonst einmal nicht (09./10.10.2026).
     expect(screen.queryByRole('button', { name: 'Löschen' })).not.toBeNull();
   });
   return ergebnis;
 };
-const seite = () => screen.getByRole('complementary', { name: 'Einordnen und Angaben' });
-const haupt = () => document.querySelector('.web-spalten__haupt') as HTMLElement;
-const kartenTitel = (wurzel: HTMLElement) => [...wurzel.querySelectorAll('h2.web-karte__titel')].map((t) => t.textContent);
-const auswahl = (name: string) => within(seite()).getByRole('combobox', { name }) as HTMLSelectElement;
+/** Der Lesebereich rechts neben der Liste. */
+const lesen = () => document.querySelector('.web-lesen') as HTMLElement;
+const angaben = () => document.querySelector('.web-lesen__angaben') as HTMLElement;
+const steckbrief = () => screen.getByLabelText('Angaben zum Vorgang');
+const steckbriefWert = (label: string) => [...steckbrief().querySelectorAll('div')].find((z) => z.querySelector('dt')!.textContent === label)!.querySelector('dd')!;
+const mails = () => [...document.querySelectorAll('li.mail-zeile')] as HTMLElement[];
+const mailKopf = (m: HTMLElement) => m.querySelector('button.mail-zeile__kopf') as HTMLButtonElement;
+const absender = () => mails().map((m) => m.querySelector('.mail-zeile__absender')!.textContent);
+const dialog = () => screen.getByRole('dialog', { name: 'Einordnen' });
+const einordnen = () => { fireEvent.click(screen.getByRole('button', { name: 'Einordnen' })); return dialog(); };
+const auswahl = (name: string) => within(dialog()).getByRole('combobox', { name }) as HTMLSelectElement;
+const speichern = async () => { await act(async () => { fireEvent.click(within(dialog()).getByRole('button', { name: 'Speichern' })); }); };
 const optionen = (el: HTMLSelectElement) => [...el.options].map((o) => o.textContent);
 const patches = () => server.aufrufe('patch');
 const bestaetigen = async (knopf: string) => { await act(async () => { h.alert?.buttons?.find((b) => b.text === knopf)?.handler?.(); }); };
 const text = () => screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement;
 const feld = (name: string) => screen.getByLabelText(name) as HTMLInputElement;
+const antworten = () => fireEvent.click(screen.getByRole('button', { name: 'Antworten' }));
+const mehr = () => screen.getByRole('button', { name: /^Gemeinde, Anfrage und Notiz/ });
+const mehrAufklappen = () => { if (mehr().getAttribute('aria-expanded') === 'false') fireEvent.click(mehr()); };
 
 describe('Vorgang (Web): Aufbau', () => {
-  it('Kopf: Betreff als Überschrift, Nummer, Status, Dringlichkeit und Gemeinde; der Weg zurück ist ein Link auf die Liste', async () => {
+  it('Kopf: Betreff als Überschrift, Nummer, Status, Dringlichkeit und Gemeinde', async () => {
     await oeffnen();
-    expect(screen.getByRole('heading', { level: 1, name: 'Chat zeigt nichts Neues' })).toBeInTheDocument();
-    const kopf = document.querySelector('.web-vorgangskopf') as HTMLElement;
-    expect(kopf).toHaveTextContent('Vorgang 1');
-    expect(within(kopf).getByText('Neu')).toBeInTheDocument();
-    expect(within(kopf).getByText('Dringend')).toBeInTheDocument();
-    expect(kopf).toHaveTextContent('Kirchengemeinde Musterdorf');
-    const zurueck = within(screen.getByRole('navigation', { name: 'Zurück' })).getByRole('link', { name: 'Alle Vorgänge' });
-    expect(zurueck).toHaveAttribute('href', '/admin/support/vorgaenge');
-    fireEvent.click(zurueck);
-    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge', 'none', 'push');
+    expect(within(lesen()).getByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toBeInTheDocument();
+    expect(angaben()).toHaveTextContent('Vorgang 1');
+    expect(within(angaben()).getByText('Neu')).toBeInTheDocument();
+    expect(within(angaben()).getByText('Dringend')).toBeInTheDocument();
+    expect(angaben()).toHaveTextContent('Kirchengemeinde Musterdorf');
   });
 
-  it('zwei Spalten: links Anliegen, Schriftwechsel und Antworten, rechts Einordnen, Kontakt, Gemeinde und Notiz', async () => {
+  it('der Vorgang steht neben der Liste: seine Zeile ist gewählt, die Seite heißt „Vorgänge“', async () => {
     await oeffnen();
-    await waitFor(() => expect((screen.getByLabelText('Textbaustein') as HTMLSelectElement).options.length).toBeGreaterThan(1));
-    expect(kartenTitel(haupt())).toEqual(['Anliegen', 'Schriftwechsel', 'Antworten']);
-    expect(kartenTitel(seite())).toEqual(['Einordnen', 'Kontakt', 'Gemeinde', 'Notiz']);
+    expect(screen.getByRole('heading', { level: 1, name: 'Vorgänge' })).toBeInTheDocument();
+    const liste = screen.getByRole('navigation', { name: 'Vorgänge' });
+    expect(within(liste).getByRole('button', { name: /^Vorgang 1: Chat zeigt nichts Neues/ })).toHaveAttribute('aria-current', 'true');
+    expect(within(liste).getByRole('button', { name: /^Vorgang 2:/ })).not.toHaveAttribute('aria-current');
   });
 
-  it('das Anliegen steht als eigene Karte, mit Absender und Zeit; ohne Text fehlt die Karte', async () => {
+  it('ein anderer Vorgang in der Liste ersetzt den Lesebereich, die Adresse folgt', async () => {
     await oeffnen();
-    const karte = within(screen.getByRole('heading', { level: 2, name: 'Anliegen' }).closest('section')!);
-    expect(karte.getByText('Seit gestern erscheint im Chat nichts Neues.')).toBeInTheDocument();
-    expect(karte.getByText('Von Pastorin Lena Probe, 03.10.2026, 09:00')).toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Vorgänge' })).getByRole('button', { name: /^Vorgang 2:/ }));
+    // Der Lesebereich baut sich fuer den neuen Vorgang neu auf (laden, dann zeigen).
+    expect(await screen.findByRole('heading', { level: 2, name: 'Wie lege ich einen Jahrgang an?' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toBeNull();
+    expect(window.location.pathname).toBe('/admin/support/vorgaenge/2');
+    expect(h.push).not.toHaveBeenCalled();
   });
 
-  it('ohne Text aus dem Formular keine Karte „Anliegen“', async () => {
+  it('Reihenfolge: Angaben, Verlauf, eingeklappt Gemeinde, Anfrage und Notiz -- das Antwortformular erst auf „Antworten“', async () => {
+    await oeffnen();
+    const steck = steckbrief();
+    const verlauf = screen.getByRole('region', { name: 'Verlauf' });
+    expect(steck.compareDocumentPosition(verlauf) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(verlauf.compareDocumentPosition(mehr()) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(mehr()).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByLabelText('Text der Antwort')).toBeNull();
+    expect(screen.queryByLabelText(/Interne Notiz/)).toBeNull();
+  });
+
+  it('das Anliegen steht vorn im Verlauf, mit Absender und Zeit', async () => {
+    await oeffnen();
+    const anliegen = screen.getByRole('region', { name: 'Anliegen aus dem Formular' });
+    expect(within(anliegen).getByText('Seit gestern erscheint im Chat nichts Neues.')).toBeInTheDocument();
+    expect(within(anliegen).getByText('Pastorin Lena Probe')).toBeInTheDocument();
+    expect(anliegen.querySelector('time')).toHaveAttribute('title', '03.10.2026, 09:00');
+  });
+
+  it('ohne Text aus dem Formular kein Anliegen', async () => {
     await oeffnen(5, /Intern notiert/);
-    expect(screen.queryByRole('heading', { level: 2, name: 'Anliegen' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'Anliegen aus dem Formular' })).toBeNull();
   });
 
-  it('die Anfrage-Nachricht heißt „Nachricht aus dem Formular“', async () => {
+  it('die Anfrage-Nachricht heißt „Nachricht aus der Anfrage“', async () => {
     await oeffnen(3, /Lindenau/);
-    expect(screen.getByRole('heading', { level: 2, name: 'Nachricht aus dem Formular' })).toBeInTheDocument();
-    expect(screen.getByText('Wir starten im November.')).toBeInTheDocument();
+    const nachricht = screen.getByRole('region', { name: 'Nachricht aus der Anfrage' });
+    expect(within(nachricht).getByText('Wir starten im November.')).toBeInTheDocument();
   });
 });
 
-describe('Vorgang (Web): Schriftwechsel', () => {
-  it('älteste zuerst, ein- und ausgehend unterscheidbar; die ungelesenen werden gemeldet und tragen „Neu“', async () => {
+describe('Vorgang (Web): Verlauf', () => {
+  it('älteste zuerst, Gesendetes trägt „Gesendet“; aufgeklappt sind die jüngste und die ungelesenen, die als gelesen gemeldet werden und „Neu“ tragen', async () => {
     await oeffnen();
-    const mails = screen.getAllByRole('article');
-    expect(mails.map((m) => m.getAttribute('aria-label'))).toEqual([
-      'Eingegangen am 03.10.2026, 09:00', 'Gesendet am 03.10.2026, 09:30', 'Eingegangen am 03.10.2026, 10:00',
-    ]);
-    expect(within(mails[0]).getByText('Neu')).toBeInTheDocument();
-    expect(within(mails[1]).queryByText('Neu')).toBeNull();
-    expect(within(mails[2]).getByRole('list', { name: 'Anhänge' })).toHaveTextContent('bildschirmfoto.png');
+    expect(absender()).toEqual(['Pastorin Lena Probe', 'Support', 'Pastorin Lena Probe']);
+    expect(mails().map((m) => within(m).queryByText('Gesendet') !== null)).toEqual([false, true, false]);
+    expect(mails().map((m) => mailKopf(m).getAttribute('aria-expanded'))).toEqual(['true', 'false', 'true']);
+    expect(mails().map((m) => within(m).queryByText('Neu') !== null)).toEqual([true, false, true]);
+    expect(within(mails()[2]).getByRole('list', { name: 'Anhänge' })).toHaveTextContent('bildschirmfoto.png');
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledWith('/support/mail/gelesen', { ids: [11, 13] }));
     // Nach dem Melden tragen sie die Marke weiter -- für diesen Besuch.
-    expect(within(screen.getAllByRole('article')[0]).getByText('Neu')).toBeInTheDocument();
-    expect(screen.getByText('3 Mails')).toBeInTheDocument();
+    expect(within(mails()[0]).getByText('Neu')).toBeInTheDocument();
+    expect(screen.getByText('3 Mails in 3 Gesprächen')).toBeInTheDocument();
   });
 
-  it('das Zitat in der Antwort ist eingeklappt und lässt sich aufklappen', async () => {
+  it('eine eingeklappte Mail zeigt eine Zeile Vorschau ohne Zitat; aufgeklappt ist das Zitat eingeklappt und lässt sich aufklappen', async () => {
     await oeffnen();
-    expect(screen.getByText('Wir schauen nach.')).toBeInTheDocument();
-    expect(screen.queryByText(/> erscheint nichts/)).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Zitat einblenden' }));
-    expect(screen.getByText(/> erscheint nichts/)).toBeInTheDocument();
+    const antwort = mails()[1];
+    expect(antwort.querySelector('.mail-zeile__vorschau')).toHaveTextContent('Wir schauen nach.');
+    expect(antwort.querySelector('.mail-zeile__vorschau')!.textContent).not.toContain('erscheint nichts');
+    fireEvent.click(mailKopf(antwort));
+    expect(mailKopf(mails()[1])).toHaveAttribute('aria-expanded', 'true');
+    expect(within(mails()[1]).getByText('Wir schauen nach.', { selector: 'p' })).toBeInTheDocument();
+    expect(within(mails()[1]).queryByText(/> erscheint nichts/)).toBeNull();
+    fireEvent.click(within(mails()[1]).getByRole('button', { name: 'Zitat einblenden' }));
+    expect(within(mails()[1]).getByText(/> erscheint nichts/)).toBeInTheDocument();
+    // Ausgehend: an wen und von welchem Postfach.
+    expect(mails()[1].querySelector('.mail-zeile__unten')).toHaveTextContent('An lena.probe@example.org · von support@');
   });
 
-  it('ein Vorgang ohne Mails sagt das', async () => {
-    await oeffnen(2, /Jahrgang/);
+  it('„Alle aufklappen“ klappt jede Mail auf, „Alle einklappen“ wieder zu', async () => {
+    await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
+    expect(mails().map((m) => mailKopf(m).getAttribute('aria-expanded'))).toEqual(['true', 'true', 'true']);
+    fireEvent.click(screen.getByRole('button', { name: 'Alle einklappen' }));
+    expect(mails().map((m) => mailKopf(m).getAttribute('aria-expanded'))).toEqual(['false', 'false', 'false']);
+  });
+
+  it('ein Vorgang ohne Mails und ohne Anliegen sagt das', async () => {
+    await oeffnen(5, /Intern notiert/);
     expect(screen.getByText('Noch keine Mails in diesem Vorgang.')).toBeInTheDocument();
+  });
+
+  it('nur ein Anliegen, keine Mails: das Anliegen steht da, keine Mailzeile', async () => {
+    await oeffnen(2, /Jahrgang/);
+    expect(screen.getByRole('region', { name: 'Anliegen aus dem Formular' })).toHaveTextContent('Wir sind neu dabei.');
+    expect(mails()).toHaveLength(0);
   });
 });
 
-describe('Vorgang (Web): Einordnen', () => {
-  it('die fünf Auswahlfelder zeigen den Stand; Art und Status nennen alle Werte', async () => {
+describe('Vorgang (Web): Einordnen im Dialog', () => {
+  it('der Dialog zeigt den Stand; Art und Status nennen alle Werte', async () => {
     await oeffnen();
+    einordnen();
     expect(auswahl('Art').value).toBe('fehler');
     expect(optionen(auswahl('Art'))).toEqual(['Neue Gemeinde', 'Frage zur Bedienung', 'Fehler melden', 'Wunsch oder Idee', 'Zugang und Konten', 'Lizenz und Abrechnung', 'Datenschutz', 'Sonstiges']);
     expect(auswahl('Bereich').value).toBe('chat');
-    expect(optionen(auswahl('Bereich'))).toEqual(['Kein Bereich', 'Konfis', 'Events', 'Punkte und Anträge', 'Challenges', 'Chat', 'Badges', 'Material', 'Konten und Einladungen', 'Einstellungen', 'Sonstiges']);
+    expect(optionen(auswahl('Bereich'))).toEqual(['Bitte wählen', 'Konfis', 'Events', 'Punkte und Anträge', 'Challenges', 'Chat', 'Badges', 'Material', 'Konten und Einladungen', 'Einstellungen', 'Sonstiges']);
     expect(auswahl('Dringlichkeit').value).toBe('dringend');
     expect(optionen(auswahl('Dringlichkeit'))).toEqual(['Normal', 'Dringend – wir können gerade nicht weiterarbeiten']);
     expect(auswahl('Status').value).toBe('neu');
     expect(optionen(auswahl('Status'))).toEqual(['Neu', 'In Arbeit', 'Wartet auf Rückmeldung', 'Erledigt']);
-    expect(auswahl('Gemeinde').value).toBe('7');
+    await waitFor(() => expect(auswahl('Gemeinde').value).toBe('7'));
+    expect(dialog()).toHaveAccessibleDescription('Vorgang 1: Chat zeigt nichts Neues');
   });
 
-  it('jede Änderung wird sofort gespeichert -- ein Aufruf je Feld, nur mit dem geänderten Feld', async () => {
+  it('Ändern speichert noch nichts; „Speichern“ schickt einen Aufruf mit genau den geänderten Feldern und schließt', async () => {
     await oeffnen();
+    einordnen();
     fireEvent.change(auswahl('Art'), { target: { value: 'wunsch' } });
-    await waitFor(() => expect(patches()).toHaveLength(1));
     fireEvent.change(auswahl('Bereich'), { target: { value: 'termine' } });
-    await waitFor(() => expect(patches()).toHaveLength(2));
     fireEvent.change(auswahl('Dringlichkeit'), { target: { value: 'normal' } });
-    await waitFor(() => expect(patches()).toHaveLength(3));
     fireEvent.change(auswahl('Status'), { target: { value: 'wartet' } });
-    await waitFor(() => expect(patches()).toHaveLength(4));
     fireEvent.change(auswahl('Gemeinde'), { target: { value: '8' } });
-    await waitFor(() => expect(patches()).toHaveLength(5));
+    expect(patches()).toHaveLength(0);
+    await speichern();
     expect(patches().map((p) => [p.pfad, p.koerper])).toEqual([
-      ['/support/vorgaenge/1', { art: 'wunsch' }],
-      ['/support/vorgaenge/1', { bereich: 'termine' }],
-      ['/support/vorgaenge/1', { dringlichkeit: 'normal' }],
-      ['/support/vorgaenge/1', { status: 'wartet' }],
-      ['/support/vorgaenge/1', { organization_id: 8 }],
+      ['/support/vorgaenge/1', { status: 'wartet', art: 'wunsch', bereich: 'termine', dringlichkeit: 'normal', organization_id: 8 }],
     ]);
     expect(h.setSuccess).toHaveBeenCalledWith('Gespeichert');
-    // Der Server hat es: nach dem Neuladen steht es da.
-    await waitFor(() => expect(auswahl('Gemeinde').value).toBe('8'));
-    expect(screen.getByText('Wartet')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    // Der Server hat es: nach dem Neuladen steht es im Kopf.
+    await waitFor(() => expect(angaben()).toHaveTextContent('Kirchengemeinde Wiesengrund'));
+    expect(within(angaben()).getByText('Wartet')).toBeInTheDocument();
+    expect(steckbriefWert('Art')).toHaveTextContent('Wunsch · Events');
+  });
+
+  it('nur eine Änderung: nur dieses Feld geht an den Server', async () => {
+    await oeffnen();
+    einordnen();
+    fireEvent.change(auswahl('Dringlichkeit'), { target: { value: 'normal' } });
+    await speichern();
+    expect(patches().map((p) => p.koerper)).toEqual([{ dringlichkeit: 'normal' }]);
+  });
+
+  it('ohne Änderung schließt „Speichern“ ohne Aufruf; „Abbrechen“ verwirft', async () => {
+    await oeffnen();
+    einordnen();
+    await speichern();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    einordnen();
+    fireEvent.change(auswahl('Status'), { target: { value: 'wartet' } });
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(patches()).toHaveLength(0);
   });
 
   it('„Kein Bereich“ und „Keine Gemeinde“ gehen als null an den Server', async () => {
     await oeffnen();
+    einordnen();
+    fireEvent.change(auswahl('Art'), { target: { value: 'sonstiges' } });
     fireEvent.change(auswahl('Bereich'), { target: { value: '' } });
-    await waitFor(() => expect(patches()).toHaveLength(1));
+    await waitFor(() => expect(auswahl('Gemeinde').value).toBe('7'));
     fireEvent.change(auswahl('Gemeinde'), { target: { value: '' } });
-    await waitFor(() => expect(patches()).toHaveLength(2));
-    expect(patches()[0].koerper).toEqual({ bereich: null });
-    expect(patches()[1].koerper).toEqual({ organization_id: null });
-    await waitFor(() => expect(auswahl('Gemeinde').value).toBe(''));
+    await speichern();
+    expect(patches().map((p) => p.koerper)).toEqual([{ art: 'sonstiges', bereich: null, organization_id: null }]);
+    expect(await screen.findByText('Noch keiner Gemeinde zugeordnet')).toBeInTheDocument();
   });
 
-  it('Status „Erledigt“: der Hinweis steht schon beim Auswählen da; danach liegt der Vorgang im Archiv', async () => {
+  it('Frage, Fehler und Wunsch ohne Bereich: Meldung im Dialog, nichts geht raus', async () => {
     await oeffnen();
-    expect(auswahl('Status')).toHaveAccessibleDescription('Erledigte Vorgänge liegen im Archiv. Eine neue Mail holt den Vorgang zurück.');
+    einordnen();
+    fireEvent.change(auswahl('Bereich'), { target: { value: '' } });
+    await speichern();
+    expect(within(dialog()).getByRole('alert')).toHaveTextContent('Bei Frage, Fehler und Wunsch gehört ein Bereich dazu.');
+    expect(patches()).toHaveLength(0);
+  });
+
+  it('Status „Erledigt“: der Hinweis steht beim Auswählen da; danach liegt der Vorgang im Archiv', async () => {
+    await oeffnen();
+    einordnen();
+    expect(auswahl('Status')).not.toHaveAccessibleDescription();
     fireEvent.change(auswahl('Status'), { target: { value: 'erledigt' } });
-    await waitFor(() => expect(patches()).toHaveLength(1));
+    expect(auswahl('Status')).toHaveAccessibleDescription('Erledigte Vorgänge liegen im Archiv. Eine neue Mail holt den Vorgang zurück.');
+    await speichern();
     expect(patches()[0].koerper).toEqual({ status: 'erledigt' });
     expect(h.setSuccess).toHaveBeenCalledWith('Vorgang erledigt und ins Archiv gelegt');
     expect(await screen.findByText('Erledigt und im Archiv')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Wiederherstellen' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Archivieren' })).toBeNull();
+    expect(within(lesen()).getByRole('button', { name: 'Wiederherstellen' })).toBeInTheDocument();
+    expect(within(lesen()).queryByRole('button', { name: 'Archivieren' })).toBeNull();
   });
 
   it('Frage, Fehler und Wunsch ohne Bereich: der Bereich trägt den Stern und sagt, dass er dazugehört', async () => {
     await oeffnen(2, /Jahrgang/);
+    einordnen();
     expect(auswahl('Bereich').value).toBe('');
     expect(optionen(auswahl('Bereich'))[0]).toBe('Bitte wählen');
     expect(auswahl('Bereich')).toHaveAccessibleDescription('Bei Frage, Fehler und Wunsch gehört ein Bereich dazu.');
-    expect(within(seite()).getByText('Bereich').className).toContain('web-feld__label--pflicht');
+    expect(within(dialog()).getByText('Bereich').className).toContain('web-feld__label--pflicht');
   });
 
-  it('ein Fehler beim Speichern: Meldung, der Stand vom Server kommt zurück', async () => {
+  it('ein Fehler beim Speichern: Meldung, der Dialog bleibt, der Stand vom Server kommt zurück', async () => {
     await oeffnen();
     server.stand.fehler.set('PATCH /support/vorgaenge/1', Object.assign(new Error('x'), { response: { status: 500, data: { error: 'Datenbankfehler' } } }));
+    einordnen();
     fireEvent.change(auswahl('Art'), { target: { value: 'wunsch' } });
+    await speichern();
     await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Datenbankfehler'));
-    await waitFor(() => expect(auswahl('Art').value).toBe('fehler'));
+    expect(dialog()).toBeInTheDocument();
+    await waitFor(() => expect(steckbriefWert('Art')).toHaveTextContent('Fehler · Chat'));
   });
 
-  it('ohne Netz sind die Felder gesperrt', async () => {
+  it('ohne Netz lässt sich der Dialog nicht öffnen', async () => {
     h.online = false;
     await oeffnen();
-    for (const name of ['Art', 'Bereich', 'Dringlichkeit', 'Status', 'Gemeinde']) expect(auswahl(name), name).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Einordnen' })).toBeDisabled();
   });
 });
 
 describe('Vorgang (Web): Kontakt und Gemeinde', () => {
   const angabe = (karte: HTMLElement, label: string) => [...karte.querySelectorAll('.web-angaben__zeile')].find((z) => z.querySelector('dt')!.textContent === label)!.querySelector('dd')!;
 
-  it('Kontakt: Name, E-Mail als Verweis, Funktion, Gemeinde laut Formular, woher und wann', async () => {
+  it('die Angaben in einer Zeile: Kontakt mit Adresse als Verweis und Funktion, Art mit Bereich, woher und wann', async () => {
     await oeffnen();
-    const kontakt = screen.getByLabelText('Kontakt aus dem Formular');
-    expect(angabe(kontakt, 'Name')).toHaveTextContent('Pastorin Lena Probe');
-    expect(within(angabe(kontakt, 'E-Mail') as HTMLElement).getByRole('link', { name: 'lena.probe@example.org' })).toHaveAttribute('href', 'mailto:lena.probe@example.org');
-    expect(angabe(kontakt, 'Funktion')).toHaveTextContent('Gemeindeleitung');
-    expect(angabe(kontakt, 'Gemeinde laut Formular')).toHaveTextContent('Kirchengemeinde Musterdorf');
-    expect(angabe(kontakt, 'Eingegangen über')).toHaveTextContent('Support-Formular auf der Homepage');
-    expect(angabe(kontakt, 'Eingegangen')).toHaveTextContent('03.10.2026, 09:00');
+    expect(steckbriefWert('Kontakt')).toHaveTextContent('Pastorin Lena Probe · lena.probe@example.org (Gemeindeleitung)');
+    expect(within(steckbriefWert('Kontakt') as HTMLElement).getByRole('link', { name: 'lena.probe@example.org' })).toHaveAttribute('href', 'mailto:lena.probe@example.org');
+    expect(steckbriefWert('Art')).toHaveTextContent('Fehler · Chat');
+    expect(steckbriefWert('Eingegangen')).toHaveTextContent('Support-Formular auf der Homepage, 03.10.2026, 09:00');
   });
 
   it('bei einer Anfrage stehen Name und Adresse aus deren Angaben da', async () => {
     await oeffnen(3, /Lindenau/);
-    const kontakt = screen.getByLabelText('Kontakt aus dem Formular');
-    expect(angabe(kontakt, 'Name')).toHaveTextContent('Anna Beispiel');
-    expect(angabe(kontakt, 'E-Mail')).toHaveTextContent('anna@example.org');
-    expect(angabe(kontakt, 'Funktion')).toHaveTextContent('Pastorin');
-    expect(angabe(kontakt, 'Gemeinde laut Formular')).toHaveTextContent('Kirchengemeinde Lindenau');
-    expect(angabe(kontakt, 'Eingegangen über')).toHaveTextContent('Anfrage von der Homepage');
+    expect(steckbriefWert('Kontakt')).toHaveTextContent('Anna Beispiel · anna@example.org (Pastorin)');
+    expect(steckbriefWert('Eingegangen')).toHaveTextContent('Anfrage von der Homepage');
   });
 
-  it('Gemeinde und Gemeindeleitung: Laufzeit, Konfis, Kirchenkreis, Leitung mit Adresse und letzter Anmeldung', async () => {
+  it('Gemeinde und Gemeindeleitung (aufgeklappt): Laufzeit, Konfis, Kirchenkreis, Leitung mit Adresse und letzter Anmeldung', async () => {
     await oeffnen();
-    const gemeinde = screen.getByLabelText('Gemeinde des Vorgangs');
+    mehrAufklappen();
+    const gemeinde = screen.getByRole('region', { name: 'Gemeinde des Vorgangs' });
     expect(within(angabe(gemeinde, 'Gemeinde') as HTMLElement).getByRole('link', { name: 'Kirchengemeinde Musterdorf' })).toHaveAttribute('href', '/admin/organizations?gemeinde=7');
     expect(angabe(gemeinde, 'Konfis')).toHaveTextContent('3 von 5');
     expect(angabe(gemeinde, 'Kirchenkreis')).toHaveTextContent('Dithmarschen');
     expect(angabe(gemeinde, 'Landeskirche')).toHaveTextContent('Nordkirche');
+    expect(within(angabe(gemeinde, 'Vorgänge') as HTMLElement).getByRole('link', { name: 'Alle Vorgänge dieser Gemeinde' })).toHaveAttribute('href', '/admin/support/vorgaenge?gemeinde=7');
     const leitung = screen.getByRole('list', { name: 'Gemeindeleitung' });
     expect(within(leitung).getByText('Pastorin Lena Probe')).toBeInTheDocument();
     expect(within(leitung).getByRole('link', { name: 'lena.probe@example.org' })).toHaveAttribute('href', 'mailto:lena.probe@example.org');
-    expect(leitung).toHaveTextContent('Zuletzt angemeldet 02.10.2026');
-    expect(within(seite()).getByRole('link', { name: /Alle Vorgänge/ })).toHaveAttribute('href', '/admin/support/vorgaenge?gemeinde=7');
+    expect(leitung).toHaveTextContent('zuletzt angemeldet 02.10.2026');
   });
 
   it('eine Leitung ohne Adresse und ohne Anmeldung sagt das; eine gesperrte trägt eine Marke', async () => {
     LEITUNG[7] = [{ id: 22, display_name: 'Sam Muster', username: 'sam.muster', email: null, is_active: false, last_login_at: null }];
     await oeffnen();
+    mehrAufklappen();
     const leitung = screen.getByRole('list', { name: 'Gemeindeleitung' });
     expect(leitung).toHaveTextContent('Keine E-Mail');
-    expect(leitung).toHaveTextContent('Noch nicht angemeldet');
+    expect(leitung).toHaveTextContent('noch nicht angemeldet');
     expect(within(leitung).getByText('Gesperrt')).toBeInTheDocument();
     LEITUNG[7] = [{ id: 21, display_name: 'Pastorin Lena Probe', username: 'lena.probe', email: 'lena.probe@example.org', is_active: true, last_login_at: '2026-10-02T08:00:00Z' }];
   });
 
-  it('ohne Gemeinde: die Angabe aus dem Formular steht prominent da, daneben die Auswahl der Gemeinde', async () => {
+  it('ohne Gemeinde: die Angabe aus dem Formular steht prominent da, „Gemeinde zuordnen“ öffnet den Dialog', async () => {
     await oeffnen(2, /Jahrgang/);
     const hinweis = screen.getByText('Noch keiner Gemeinde zugeordnet').closest('.web-hinweis') as HTMLElement;
     expect(hinweis.className).toContain('web-hinweis--warnung');
     expect(within(hinweis).getByText('Kirchengemeinde Heide').className).toContain('web-gemeindeangabe');
-    expect(hinweis).toHaveTextContent('Wähle unter „Einordnen“ die passende Gemeinde.');
+    fireEvent.click(within(hinweis).getByRole('button', { name: 'Gemeinde zuordnen' }));
     expect(auswahl('Gemeinde').value).toBe('');
-    expect(screen.queryByLabelText('Gemeinde des Vorgangs')).toBeNull();
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Abbrechen' }));
+    mehrAufklappen();
+    expect(screen.queryByRole('region', { name: 'Gemeinde des Vorgangs' })).toBeNull();
   });
 
-  it('die Gemeinde wählen: der Hinweis verschwindet, die Karte „Gemeinde“ mit der Leitung erscheint', async () => {
+  it('die Gemeinde zuordnen: der Hinweis verschwindet, Gemeinde und Leitung stehen bereit', async () => {
     await oeffnen(2, /Jahrgang/);
+    einordnen();
+    fireEvent.change(auswahl('Bereich'), { target: { value: 'konfis' } });
+    await waitFor(() => expect(auswahl('Gemeinde').options.length).toBe(3));
     fireEvent.change(auswahl('Gemeinde'), { target: { value: '7' } });
-    await waitFor(() => expect(patches()[0].koerper).toEqual({ organization_id: 7 }));
-    expect(await screen.findByLabelText('Gemeinde des Vorgangs')).toBeInTheDocument();
-    expect(screen.queryByText('Noch keiner Gemeinde zugeordnet')).toBeNull();
+    await speichern();
+    expect(patches()[0].koerper).toEqual({ bereich: 'konfis', organization_id: 7 });
+    await waitFor(() => expect(screen.queryByText('Noch keiner Gemeinde zugeordnet')).toBeNull());
+    mehrAufklappen();
+    expect(await screen.findByRole('region', { name: 'Gemeinde des Vorgangs' })).toBeInTheDocument();
     expect(screen.getByRole('list', { name: 'Gemeindeleitung' })).toHaveTextContent('Pastorin Lena Probe');
   });
 
@@ -339,8 +426,19 @@ describe('Vorgang (Web): Kontakt und Gemeinde', () => {
 });
 
 describe('Vorgang (Web): Antworten', () => {
-  it('mit Gemeinde: von support@ an eine Adresse der Gemeinde -- der Kontakt des Formulars steht zur Wahl, die Bausteine für support@ und beide', async () => {
+  it('„Antworten“ öffnet das Formular unter dem Verlauf; „Verwerfen“ schließt es', async () => {
     await oeffnen();
+    expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
+    antworten();
+    const bereich = screen.getByRole('region', { name: 'Antwort schreiben' });
+    expect(screen.getByRole('region', { name: 'Verlauf' }).compareDocumentPosition(bereich) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(within(bereich).getByRole('button', { name: 'Verwerfen' }));
+    expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
+  });
+
+  it('mit Gemeinde: von support@ an eine Adresse der Gemeinde -- die einzige Adresse ist vorgewählt, die Bausteine stehen bereit', async () => {
+    await oeffnen();
+    antworten();
     const empfaenger = await waitFor(() => {
       const el = screen.getByLabelText('Empfänger') as HTMLSelectElement;
       expect(el.options.length).toBeGreaterThan(1);
@@ -348,14 +446,15 @@ describe('Vorgang (Web): Antworten', () => {
     });
     // Die Gemeindeleitung ist zugleich der Kontakt: nur einmal -- als Gemeindeleitung.
     await waitFor(() => expect([...empfaenger.options].map((o) => o.textContent)).toEqual(['Bitte wählen', 'Pastorin Lena Probe <lena.probe@example.org> · Gemeindeleitung']));
-    expect(screen.getByText('Von support@ an die Gemeinde; die Nummer des Vorgangs steht im Betreff')).toBeInTheDocument();
+    expect(empfaenger.value).toBe('lena.probe@example.org');
     await waitFor(() => expect((screen.getByLabelText('Textbaustein') as HTMLSelectElement).options.length).toBeGreaterThan(1));
   });
 
-  it('der Kontakt, der nicht zur Gemeindeleitung gehört, steht vorn in der Wahl', async () => {
+  it('mehrere Adressen: vorgewählt ist, wer zuletzt geschrieben hat; der Kontakt außerhalb der Leitung steht vorn in der Wahl', async () => {
     server.stand.vorgaenge[0].kontakt_email = 'sekretariat@example.org';
     server.stand.vorgaenge[0].kontakt_name = 'Das Sekretariat';
     await oeffnen();
+    antworten();
     const empfaenger = await waitFor(() => {
       const el = screen.getByLabelText('Empfänger') as HTMLSelectElement;
       expect(el.options.length).toBe(3);
@@ -366,10 +465,13 @@ describe('Vorgang (Web): Antworten', () => {
       'Das Sekretariat <sekretariat@example.org> · Kontakt aus dem Formular',
       'Pastorin Lena Probe <lena.probe@example.org> · Gemeindeleitung',
     ]);
+    // Die letzte eingehende Mail kam von der Leitung.
+    expect(empfaenger.value).toBe('lena.probe@example.org');
   });
 
-  it('Senden mit Rückfrage an den Vorgang; Körper mit Betreff, Text und gewählter Adresse; danach steht die Mail im Verlauf', async () => {
+  it('Senden mit Rückfrage an den Vorgang; Körper mit Betreff, Text und Adresse; danach schließt das Formular und die Mail steht im Verlauf', async () => {
     await oeffnen();
+    antworten();
     await waitFor(() => expect((screen.getByLabelText('Empfänger') as HTMLSelectElement).options[1]?.textContent).toContain('Gemeindeleitung'));
     fireEvent.change(screen.getByLabelText('Empfänger'), { target: { value: 'lena.probe@example.org' } });
     // Die letzte Mail des Verlaufs trägt die Nummer schon im Betreff.
@@ -384,15 +486,19 @@ describe('Vorgang (Web): Antworten', () => {
       text: 'Danke für die Rückmeldung.', betreff: 'Re: Chat zeigt nichts Neues [Vorgang 1]', an: 'lena.probe@example.org',
     });
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
-    expect(text().value).toBe('');
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(4));
-    expect(screen.getByText('4 Mails')).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
+    await waitFor(() => expect(mails()).toHaveLength(4));
+    // Die neue Mail steht aufgeklappt da.
+    expect(mailKopf(mails()[3])).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('bei mehreren Adressen ohne gewählten Empfänger: Meldung, keine Rückfrage, kein Versand', async () => {
+  it('bei mehreren Adressen, von denen keine zuletzt geschrieben hat: Meldung, keine Rückfrage, kein Versand', async () => {
     server.stand.vorgaenge[0].kontakt_email = 'sekretariat@example.org';
+    for (const m of server.stand.mails) if (m.richtung === 'ein') m.von_adresse = 'fremd@example.org';
     await oeffnen();
+    antworten();
     await waitFor(() => expect((screen.getByLabelText('Empfänger') as HTMLSelectElement).options.length).toBe(3));
+    expect((screen.getByLabelText('Empfänger') as HTMLSelectElement).value).toBe('');
     fireEvent.change(text(), { target: { value: 'Hallo' } });
     fireEvent.click(screen.getByRole('button', { name: 'Antwort senden' }));
     expect(h.setError).toHaveBeenCalledWith('Bitte einen Empfänger wählen');
@@ -401,6 +507,7 @@ describe('Vorgang (Web): Antworten', () => {
 
   it('bei einer Anfrage: von moin@ an die Adresse der Anfrage, fest; die Platzhalter kommen von der Anfrage', async () => {
     await oeffnen(3, /Lindenau/);
+    antworten();
     expect(screen.getByText(/^An:/, { selector: 'p.web-antwort__an' })).toHaveTextContent('An: anna@example.org · von moin@');
     expect(screen.queryByLabelText('Empfänger')).toBeNull();
     // Die Mail der Anfrage ist die letzte im Verlauf: „Re: …“ ihres Betreffs.
@@ -418,69 +525,77 @@ describe('Vorgang (Web): Antworten', () => {
 
   it('ohne Gemeinde, aber mit Kontakt des Formulars: von support@ an dessen Adresse', async () => {
     await oeffnen(2, /Jahrgang/);
+    antworten();
     expect(screen.getByText(/^An:/, { selector: 'p.web-antwort__an' })).toHaveTextContent('An: anna@example.org · von support@');
     expect((feld('Betreff')).value).toBe('Re: Wie lege ich einen Jahrgang an?');
   });
 
-  it('niemand zum Antworten: Hinweis statt Formular', async () => {
+  it('niemand zum Antworten: Hinweis, „Antworten“ ist gesperrt', async () => {
     await oeffnen(5, /Intern notiert/);
     expect(screen.getByText('Es gibt noch niemanden, dem sich antworten ließe')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Antworten' })).toBeDisabled();
     expect(screen.queryByLabelText('Text der Antwort')).toBeNull();
   });
 });
 
 describe('Vorgang (Web): Notiz', () => {
+  const notizFeld = () => screen.getByLabelText('Interne Notiz (nur für den Support)') as HTMLTextAreaElement;
+
   it('Speichern erst nach einer Änderung; die Notiz geht getrimmt an den Server, leer als null', async () => {
     await oeffnen();
-    const speichern = screen.getByRole('button', { name: 'Notiz speichern' });
-    expect(speichern).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Interne Notiz'), { target: { value: '  Rückruf am Montag ' } });
-    expect(speichern).toBeEnabled();
-    await act(async () => { fireEvent.click(speichern); });
+    mehrAufklappen();
+    const speichernKnopf = screen.getByRole('button', { name: 'Notiz speichern' });
+    expect(speichernKnopf).toBeDisabled();
+    fireEvent.change(notizFeld(), { target: { value: '  Rückruf am Montag ' } });
+    expect(speichernKnopf).toBeEnabled();
+    await act(async () => { fireEvent.click(speichernKnopf); });
     expect(patches()[0]).toMatchObject({ pfad: '/support/vorgaenge/1', koerper: { notiz: 'Rückruf am Montag' } });
     expect(h.setSuccess).toHaveBeenCalledWith('Notiz gespeichert');
     await waitFor(() => expect(screen.getByRole('button', { name: 'Notiz speichern' })).toBeDisabled());
-    fireEvent.change(screen.getByLabelText('Interne Notiz'), { target: { value: '   ' } });
+    fireEvent.change(notizFeld(), { target: { value: '   ' } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Notiz speichern' })); });
     expect(patches()[1].koerper).toEqual({ notiz: null });
   });
 
-  it('eine vorhandene Notiz steht im Feld', async () => {
+  it('eine vorhandene Notiz steht im Feld; der eingeklappte Bereich sagt, dass es eine gibt', async () => {
     server.stand.vorgaenge[0].notiz = 'Nachfragen';
     await oeffnen();
-    expect((screen.getByLabelText('Interne Notiz') as HTMLTextAreaElement).value).toBe('Nachfragen');
+    expect(mehr()).toHaveTextContent('mit Notiz');
+    mehrAufklappen();
+    expect(notizFeld().value).toBe('Nachfragen');
   });
 
   it('ein Fehler beim Speichern: Meldung, die Eingabe bleibt', async () => {
     await oeffnen();
+    mehrAufklappen();
     server.stand.fehler.set('PATCH /support/vorgaenge/1', Object.assign(new Error('x'), { response: { status: 500, data: { error: 'Datenbankfehler' } } }));
-    fireEvent.change(screen.getByLabelText('Interne Notiz'), { target: { value: 'Neu' } });
+    fireEvent.change(notizFeld(), { target: { value: 'Neu' } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Notiz speichern' })); });
     expect(h.setError).toHaveBeenCalledWith('Datenbankfehler');
-    expect((screen.getByLabelText('Interne Notiz') as HTMLTextAreaElement).value).toBe('Neu');
+    expect(notizFeld().value).toBe('Neu');
   });
 });
 
 describe('Vorgang (Web): Archivieren, Wiederherstellen, Löschen', () => {
   it('Archivieren: eine Anfrage an den Vorgang; er zeigt danach, dass er im Archiv liegt', async () => {
     await oeffnen();
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Archivieren' })); });
+    await act(async () => { fireEvent.click(within(lesen()).getByRole('button', { name: 'Archivieren' })); });
     expect(server.aufrufe('post', '/support/vorgaenge/1/archivieren')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('Vorgang archiviert');
     expect(await screen.findByText('Dieser Vorgang liegt im Archiv')).toBeInTheDocument();
-    expect(screen.getByText('Archiv', { selector: '.web-pill' })).toBeInTheDocument();
+    expect(within(angaben()).getByText('Archiv')).toBeInTheDocument();
   });
 
   it('ein erledigter Vorgang liegt im Archiv und lässt sich wiederherstellen: danach „In Arbeit“', async () => {
     await oeffnen(4, /Konto entsperrt/);
     expect(screen.getByText('Erledigt und im Archiv')).toBeInTheDocument();
     expect(screen.getByText(/Archiviert am 02\.10\.2026/)).toBeInTheDocument();
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Wiederherstellen' })); });
+    await act(async () => { fireEvent.click(within(lesen()).getByRole('button', { name: 'Wiederherstellen' })); });
     expect(server.aufrufe('post', '/support/vorgaenge/4/wiederherstellen')).toHaveLength(1);
     expect(h.setSuccess).toHaveBeenCalledWith('Vorgang wiederhergestellt – Status „In Arbeit“');
     await waitFor(() => expect(screen.queryByText('Erledigt und im Archiv')).toBeNull());
-    expect(auswahl('Status').value).toBe('in_arbeit');
-    expect(screen.getByRole('button', { name: 'Archivieren' })).toBeInTheDocument();
+    expect(within(angaben()).getByText('In Arbeit')).toBeInTheDocument();
+    expect(within(lesen()).getByRole('button', { name: 'Archivieren' })).toBeInTheDocument();
   });
 
   it('ein manuell archivierter Vorgang trägt den Hinweis „liegt im Archiv“, nicht „erledigt“', async () => {
@@ -489,57 +604,64 @@ describe('Vorgang (Web): Archivieren, Wiederherstellen, Löschen', () => {
     expect(screen.queryByText('Erledigt und im Archiv')).toBeNull();
   });
 
-  it('Löschen fragt zuerst und nennt, was gelöscht wird -- bei einer Anfrage auch sie; erst „Löschen“ löscht und führt zur Liste', async () => {
+  it('Löschen fragt zuerst und nennt, was gelöscht wird -- bei einer Anfrage auch sie; erst „Löschen“ löscht und leert den Lesebereich', async () => {
     await oeffnen(3, /Lindenau/);
-    fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+    fireEvent.click(within(lesen()).getByRole('button', { name: 'Löschen' }));
     expect(h.alert?.header).toBe('Vorgang löschen');
     expect(h.alert?.message).toBe('„Anfrage Kirchengemeinde Lindenau“ wird mit seinen Mails in Konfi Quest und der Anfrage gelöscht. Im Postfach selbst bleibt alles stehen. Das lässt sich nicht rückgängig machen.');
     expect(server.aufrufe('delete')).toHaveLength(0);
     await bestaetigen('Löschen');
     expect(server.aufrufe('delete')[0].pfad).toBe('/support/vorgaenge/3');
     expect(h.setSuccess).toHaveBeenCalledWith('Vorgang gelöscht');
-    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge', 'back', 'replace');
+    // Die Liste steht schon da: kein Seitenwechsel, nur der Lesebereich wird leer.
+    expect(h.push).not.toHaveBeenCalled();
+    expect(await screen.findByText('Kein Vorgang gewählt')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/admin/support/vorgaenge');
+    await waitFor(() => expect(within(screen.getByRole('navigation', { name: 'Vorgänge' })).queryByRole('button', { name: /^Vorgang 3:/ })).toBeNull());
   });
 
-  it('Abbrechen löscht nichts; ein Fehler beim Löschen meldet ihn und bleibt auf der Seite', async () => {
+  it('Abbrechen löscht nichts; ein Fehler beim Löschen meldet ihn und der Vorgang bleibt offen', async () => {
     await oeffnen();
-    fireEvent.click(screen.getByRole('button', { name: 'Löschen' }));
+    fireEvent.click(within(lesen()).getByRole('button', { name: 'Löschen' }));
     expect(h.alert?.buttons?.find((b) => b.role === 'cancel')?.text).toBe('Abbrechen');
     expect(server.aufrufe('delete')).toHaveLength(0);
     server.stand.fehler.set('DELETE /support/vorgaenge/1', Object.assign(new Error('x'), { response: { status: 500, data: { error: 'Datenbankfehler' } } }));
     await bestaetigen('Löschen');
     expect(h.setError).toHaveBeenCalledWith('Datenbankfehler');
     expect(h.push).not.toHaveBeenCalled();
+    expect(within(lesen()).getByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toBeInTheDocument();
   });
 
-  it('ohne Netz sind Archivieren und Löschen gesperrt', async () => {
+  it('ohne Netz sind Antworten, Archivieren und Löschen gesperrt', async () => {
     h.online = false;
     await oeffnen();
-    // findBy: Der Titel steht schon, bevor die Knopfleiste nachkommt; im
-    // vollen CI-Lauf fiel getBy deshalb einmal (09.10.2026).
-    expect(await screen.findByRole('button', { name: 'Archivieren' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Löschen' })).toBeDisabled();
+    expect(within(lesen()).getByRole('button', { name: 'Antworten' })).toBeDisabled();
+    expect(within(lesen()).getByRole('button', { name: 'Archivieren' })).toBeDisabled();
+    expect(within(lesen()).getByRole('button', { name: 'Löschen' })).toBeDisabled();
   });
 });
 
 describe('Vorgang (Web): Angaben der Anfrage und Gemeinde anlegen', () => {
   const tarif = () => screen.getByLabelText('Tarif') as HTMLSelectElement;
   const anlegenKnopf = () => screen.getByRole('button', { name: 'Gemeinde anlegen' });
-  const angaben = () => screen.getByLabelText('Angaben aus dem Formular der Anfrage');
-  const wert = (label: string) => [...angaben().querySelectorAll('.web-angaben__zeile')].find((z) => z.querySelector('dt')!.textContent === label)!.querySelector('dd')!;
+  const anfrageAngaben = () => screen.getByLabelText('Angaben aus dem Formular der Anfrage');
+  const wert = (label: string) => [...anfrageAngaben().querySelectorAll('.web-angaben__zeile')].find((z) => z.querySelector('dt')!.textContent === label)!.querySelector('dd')!;
 
-  it('die Angaben aus der Anfrage: Mail und Telefon sind Verweise, die Wunschlizenz steht mit Preis da', async () => {
+  it('die Angaben aus der Anfrage (aufgeklappt): Telefon ist ein Verweis, die Wunschlizenz steht mit Preis da', async () => {
     await oeffnen(3, /Lindenau/);
-    expect(wert('Gemeinde')).toHaveTextContent('Kirchengemeinde Lindenau');
+    mehrAufklappen();
+    expect(wert('Gemeinde laut Anfrage')).toHaveTextContent('Kirchengemeinde Lindenau');
     expect(wert('Verantwortlich')).toHaveTextContent('Anna Beispiel (Pastorin)');
-    expect(within(wert('E-Mail') as HTMLElement).getByRole('link', { name: 'anna@example.org' })).toHaveAttribute('href', 'mailto:anna@example.org');
     expect(within(wert('Mobilnummer') as HTMLElement).getByRole('link', { name: '0170 1234567' })).toHaveAttribute('href', 'tel:01701234567');
     expect(wert('Ungefähre Zahl')).toHaveTextContent('25 Konfis · 6 Teamer:innen');
     expect(wert('Wunschlizenz')).toHaveTextContent('Standard — bis 50 Konfis, 99 € pro Jahr');
+    // Die Adresse steht schon im Kontakt oben.
+    expect(within(steckbriefWert('Kontakt') as HTMLElement).getByRole('link', { name: 'anna@example.org' })).toHaveAttribute('href', 'mailto:anna@example.org');
   });
 
   it('ein Vorgang ohne Anfrage hat weder ihre Angaben noch „Gemeinde anlegen“', async () => {
     await oeffnen();
+    mehrAufklappen();
     expect(screen.queryByLabelText('Angaben aus dem Formular der Anfrage')).toBeNull();
     expect(screen.queryByRole('heading', { level: 2, name: 'Gemeinde anlegen' })).toBeNull();
   });
@@ -654,30 +776,32 @@ describe('Vorgang (Web): Angaben der Anfrage und Gemeinde anlegen', () => {
 });
 
 describe('Vorgang (Web): Laden, Fehler, nicht gefunden', () => {
-  it('nicht gefunden (404): eigener Hinweis, der Weg zurück bleibt', async () => {
+  it('nicht gefunden (404): eigener Hinweis im Lesebereich, die Liste bleibt', async () => {
     render(<SupportVorgangDetailPage vorgangId={999} />);
     expect(await screen.findByText('Vorgang nicht gefunden')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Alle Vorgänge' })).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Vorgänge' })).toBeInTheDocument();
   });
 
   it('Fehler beim Laden: Hinweis mit erneutem Versuch, der wirklich neu lädt', async () => {
     server.stand.fehler.set('GET /support/vorgaenge/1', new Error('Netz weg'));
     render(<SupportVorgangDetailPage vorgangId={1} />);
-    expect(await screen.findByRole('alert')).toHaveTextContent('Der Vorgang konnte nicht geladen werden.');
+    expect(await screen.findByText('Der Vorgang konnte nicht geladen werden.')).toBeInTheDocument();
     server.stand.fehler.delete('GET /support/vorgaenge/1');
     fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' }));
-    expect(await screen.findByRole('heading', { level: 1, name: 'Chat zeigt nichts Neues' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toBeInTheDocument();
   });
 
-  it('beim Laden steht ein Platzhalter, der sich als „wird geladen“ meldet', () => {
-    h.apiGet.mockImplementation(() => new Promise(() => {}));
+  it('beim Laden steht im Lesebereich ein Platzhalter, der sich als „wird geladen“ meldet', async () => {
+    const alt = h.apiGet.getMockImplementation()!;
+    h.apiGet.mockImplementation((pfad: string, o?: unknown) => (pfad === '/support/vorgaenge/1' ? new Promise(() => {}) : alt(pfad, o as never)));
     render(<SupportVorgangDetailPage vorgangId={1} />);
-    expect(screen.getByRole('status')).toHaveTextContent('Der Vorgang wird geladen.');
+    const platzhalter = await screen.findByText('Der Vorgang wird geladen.');
+    expect(platzhalter.closest('[role="status"]')).not.toBeNull();
   });
 
-  it('eine ungültige Nummer in der Adresse: „nicht gefunden“ ohne Abruf', async () => {
+  it('eine ungültige Nummer in der Adresse: nichts gewählt, kein Abruf -- und keine Schleife', async () => {
     render(<SupportVorgangDetailPage vorgangId={Number.NaN} />);
-    expect(await screen.findByText('Vorgang nicht gefunden')).toBeInTheDocument();
+    expect(await screen.findByText('Kein Vorgang gewählt')).toBeInTheDocument();
     expect(server.aufrufe('get', /^\/support\/vorgaenge\//)).toHaveLength(0);
   });
 });

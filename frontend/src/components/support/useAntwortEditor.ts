@@ -52,6 +52,12 @@ export interface AntwortFormularProps {
   empfaenger?: MailEmpfaenger[] | null;
   /** Die Empfaenger konnten nicht geladen werden. */
   empfaengerFehlt?: boolean;
+  /**
+   * Vorgewaehlter Empfaenger, wenn er unter `empfaenger` steht: wer zuletzt
+   * geschrieben hat. Ohne ihn stand bis 11.10.2026 „Bitte waehlen" da, obwohl
+   * klar war, wem geantwortet wird.
+   */
+  empfaengerVorgabe?: string | null;
   /** Schickt die Antwort; wirft beim Scheitern (axios-Fehler). */
   senden: (koerper: MailAntwortDaten) => Promise<unknown>;
   /**
@@ -63,7 +69,7 @@ export interface AntwortFormularProps {
 }
 
 export function useAntwortEditor({
-  postfach, platzhalterFuer = null, betreffVorschlag, an = null, empfaenger = null, empfaengerFehlt = false, senden, onGesendet,
+  postfach, platzhalterFuer = null, betreffVorschlag, an = null, empfaenger = null, empfaengerFehlt = false, empfaengerVorgabe = null, senden, onGesendet,
 }: AntwortFormularProps) {
   const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
@@ -141,8 +147,12 @@ export function useAntwortEditor({
   };
 
   const empfaengerNoetig = empfaenger !== null;
-  // Genau ein moeglicher Empfaenger: vorgewaehlt. Mehrere: bewusst waehlen.
-  const gewaehlt = gewaehlterEmpfaenger || (empfaenger && empfaenger.length === 1 ? empfaenger[0].adresse : '');
+  // Genau ein moeglicher Empfaenger: vorgewaehlt; sonst, wer zuletzt schrieb,
+  // wenn er zur Wahl steht. Sonst bewusst waehlen.
+  const vorgabeInListe = empfaengerVorgabe
+    ? empfaenger?.find((e) => e.adresse.toLowerCase() === empfaengerVorgabe.toLowerCase())?.adresse ?? ''
+    : '';
+  const gewaehlt = gewaehlterEmpfaenger || (empfaenger && empfaenger.length === 1 ? empfaenger[0].adresse : vorgabeInListe);
   const empfaengerAnzeige = empfaengerNoetig ? gewaehlt : an ?? '';
 
   const abschicken = () => {

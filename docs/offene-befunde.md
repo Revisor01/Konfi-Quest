@@ -33,8 +33,8 @@ Nichts.
 
 ### Wartet auf Gerät oder Simon
 
-- [ ] **Maltes Gerätetest Android versionCode 139** (interner Testtrack seit
-  10.10.2026) — Rückmeldung je Prüfpunkt aus
+- [ ] **Maltes Gerätetest Android versionCode 140** (interner Testtrack seit
+  11.10.2026) — Rückmeldung je Prüfpunkt aus
   [Auftrag 18](auftraege/lokaler-agent/18-agp9-android-2.4.0.md), Schritt 4,
   dazu Systemleisten oben und unten (hell, dunkel, Gesten und drei Knöpfe,
   Tastatur, Datumsauswahl) und das In-App-Update
@@ -55,7 +55,9 @@ Nichts.
   Play-Bildschirmfoto `konfi-challenge-feed` nach dem Deploy der deckenden
   Kopfleiste neu ziehen.
 - [ ] **Web-Version: was noch fehlt** — Support-Ansicht auf Handy und im
-  Web übersichtlicher (Simon, 10.10.2026), Leiste „Verwaltung", Rückweg ohne
+  Web übersichtlicher (Simon, 10.10.2026; Mails, Posteingang und Vorgänge
+  erledigt 11.10.2026, Struktur, Textbausteine und Konten offen), eigene
+  kompakte Dialoge im Browser überall (Simon, 11.10.2026), Leiste „Verwaltung", Rückweg ohne
   Gemeinde, Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular

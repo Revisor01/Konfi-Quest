@@ -81,7 +81,7 @@ const supportOhneZugang = () => {
 const zeigen = async (breit: boolean) => {
   h.breit = breit;
   render(<SupportPosteingangPage />);
-  if (breit) await screen.findByRole('table', { name: 'Mails im Posteingang' });
+  if (breit) await screen.findByRole('navigation', { name: 'Mails im Posteingang' });
   else await screen.findByText('Rückfrage zur Lizenz');
 };
 

@@ -16,7 +16,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIonAlert, useIonRouter } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import type { GemeindeKurz, MailEmpfaenger } from '../../types/support';
+import type { GemeindeKurz, MailAntwortDaten, MailEmpfaenger } from '../../types/support';
+import type { AntwortFormularProps } from './useAntwortEditor';
 import { fehlerStatus, fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { empfaengerLesen, gemeindenSortiert, standardBetreff, ungeleseneIds, ANFRAGE_BETREFF } from '../../utils/supportMail';
@@ -45,7 +46,12 @@ export interface Einordnung {
   organization_id?: number | null;
 }
 
-export function useVorgangDetail(vorgangId: number) {
+/**
+ * @param nachLoeschen Was nach dem Loeschen geschieht; ohne: zurueck zur
+ *   Liste. Die Web-Fassung leert damit nur ihren Lesebereich -- sie steht schon
+ *   in der Liste.
+ */
+export function useVorgangDetail(vorgangId: number, nachLoeschen?: () => void) {
   const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
   const router = useIonRouter();
@@ -240,7 +246,8 @@ export function useVorgangDetail(vorgangId: number) {
                 await api.delete(`/support/vorgaenge/${id}`);
                 setSuccess('Vorgang gelöscht');
                 meldeSupportGeaendert();
-                router.push(SUPPORT_VORGAENGE, 'back', 'replace');
+                if (nachLoeschen) nachLoeschen();
+                else router.push(SUPPORT_VORGAENGE, 'back', 'replace');
               } catch (err) {
                 setError(fehlerText(err, 'Vorgang konnte nicht gelöscht werden'));
               }
@@ -275,6 +282,24 @@ export function useVorgangDetail(vorgangId: number) {
 
   const archiviert = vorgang !== null && (vorgang.archiviert_am !== null || vorgang.status === 'erledigt');
 
+  // Was das Antwortformular braucht -- fuer App (Modal) und Web (unter dem
+  // Verlauf) dasselbe. null: Es gibt niemanden, dem sich antworten liesse.
+  const antwort: AntwortFormularProps | null = useMemo(() => {
+    if (!vorgang || !antwortWeg || antwortWeg.art === 'keiner') return null;
+    const zuletzt = [...vorgang.verlauf].reverse().find((m) => m.richtung === 'ein');
+    return {
+      postfach: antwortWeg.postfach,
+      platzhalterFuer: vorgang.anfrage ? { anfrage_id: vorgang.anfrage.id }
+        : vorgang.organization_id !== null ? { organization_id: vorgang.organization_id } : null,
+      betreffVorschlag,
+      an: antwortWeg.art === 'gemeinde' ? null : antwortWeg.an,
+      empfaenger: antwortWeg.art === 'gemeinde' ? empfaenger : null,
+      empfaengerFehlt,
+      empfaengerVorgabe: zuletzt?.von_adresse ?? vorgang.kontakt_email ?? null,
+      senden: (koerper: MailAntwortDaten) => api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper),
+    };
+  }, [vorgang, antwortWeg, betreffVorschlag, empfaenger, empfaengerFehlt]);
+
   return {
     isOnline,
     vorgang,
@@ -289,6 +314,7 @@ export function useVorgangDetail(vorgangId: number) {
     empfaenger,
     empfaengerFehlt,
     antwortWeg,
+    antwort,
     betreffVorschlag,
     einordnen,
     notiz,
