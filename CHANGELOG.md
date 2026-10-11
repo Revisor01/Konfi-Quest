@@ -142,13 +142,12 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 - Im Browser lässt sich „Material verwalten" auch als Kacheln ansehen; die
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
-- Im Browser haben die häufigen Formulare ein eigenes, kompaktes Fenster mit
-  beschrifteten Feldern: Event anlegen, bearbeiten und kopieren, Aktivität
-  eintragen, Bonuspunkte vergeben, Aktivität melden und prüfen, Material,
-  Badges, Kategorien, Level, Zertifikate, Benutzer:innen und Jahrgänge sowie
-  Passwort und E-Mail-Adresse ändern. Abbrechen und Speichern stehen unten
-  rechts und bleiben in langen Formularen beim Scrollen im Bild; Datum und
-  Uhrzeit wählst du im Kalender des Browsers.
+- Im Browser haben die häufigen Formulare ein eigenes, kompaktes Fenster —
+  Events, Aktivität eintragen, melden und prüfen, Bonuspunkte, Material,
+  Badges, Kategorien, Level, Zertifikate, Benutzer:innen, Jahrgänge, Passwort
+  und E-Mail-Adresse — mit beschrifteten Feldern, dem Kalender des Browsers
+  für Datum und Uhrzeit und den Knöpfen unten rechts, die in langen Formularen
+  beim Scrollen im Bild bleiben.
 - In diesen Fenstern steht der Grund im Fenster selbst, wenn eine Angabe fehlt
   oder der Server ablehnt, und solange gespeichert wird, lässt sich das
   Fenster nicht schließen.
@@ -496,9 +495,9 @@ Versionsüberschrift.
   angezeigten 4 Wochen, beim Anlegen wie beim Speichern eines älteren Badges
   ohne Zeitraum; bisher lehnte der Server mit „Bitte einen Zeitraum angeben“
   ab.
-- Beim Melden einer Aktivität steht das Datum auch dann auf Deutsch, wenn Handy
-  oder Browser auf eine andere Sprache eingestellt sind; bisher stand dort dann
-  etwa „Oct 11, 2026“.
+- Beim Melden einer Aktivität in der App steht das Datum auch dann auf
+  Deutsch, wenn das Handy auf eine andere Sprache eingestellt ist; bisher
+  stand dort dann etwa „Oct 11, 2026“.
 - „Aktivität eintragen“ geht ohne Netz, wenn die Liste der Aktivitäten auf dem
   Gerät schon einmal geladen war; der Eintrag geht hinaus, sobald wieder
   Verbindung besteht. Bisher blieb die Liste ohne Netz leer.

@@ -241,8 +241,9 @@ und der Kalender zum Datum öffnet sich als kleines Fenster über dem Formular.
 Die Anwesenheit der Konfis bekommt mehr Breite, weil sie für jedes
 Pflicht-Event eine Spalte hat.
 
-Rückfragen vor dem Löschen oder Zurücksetzen kommen in allen Fenstern wie in
-der App; nur eine Datei im Material-Fenster fragt in ihrer eigenen Zeile nach.
+Rückfragen vor dem Löschen oder Zurücksetzen kommen wie in der App; nur wenn
+du im Material-Fenster eine Datei löschst, steht die Rückfrage in der Zeile
+der Datei.
 Was ohne Netz geht, ist dasselbe wie in der App (siehe
 [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)).
 

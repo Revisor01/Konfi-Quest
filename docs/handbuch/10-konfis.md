@@ -277,7 +277,7 @@ mit Datum, Uhrzeit und Ort, sobald das Datum feststeht (der Ort ist ein Link auf
 die Karte), die **Konto-Einstellungen** und das **Konto**. Die Einstellungen sind
 Zeilen mit je einem Knopf: App-Tour, E-Mail-Adresse, Passwort,
 Bibelübersetzung, Benachrichtigungen und Medien-Cache. E-Mail-Adresse und
-Passwort änderst du in einem eigenen Fenster des Browsers (siehe
+Passwort änderst du im Browser in einem eigenen, kompakten Fenster (siehe
 [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
 die übrigen Knöpfe öffnen dieselben Fenster wie in der App. **Abmelden** und
 **Konto löschen** stehen im Kasten **Konto**; was beim Löschen passiert, steht

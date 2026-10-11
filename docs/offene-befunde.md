@@ -308,9 +308,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Badge, Kategorie, Level, Zertifikat, Benutzer:in, Jahrgang, Passwort und
   E-Mail, die Logik je Formular in einem Hook, den App-Modal und Fenster
   teilen. Dabei behoben: Badge-Auswahl beim Bearbeiten und Zeitraum ohne
-  eigene Wahl, deutsches Datum beim Melden, „Aktivität eintragen" ohne Netz
-  mit gemerkter Liste, Enter im Suchfeld, Level ohne Farbwahl im Browser,
-  Team-Liste nach „Teamer:in anlegen" im Browser.
+  eigene Wahl, deutsches Datum beim Melden in der App, „Aktivität
+  eintragen" ohne Netz mit gemerkter Liste, Enter im Suchfeld, Level ohne
+  Farbwahl im Browser, Team-Liste nach „Teamer:in anlegen" im Browser.
 
 
 ## Offen
@@ -375,18 +375,18 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   nennen soll (11.10.2026).
 - **Event-Serie in der App ohne Griff an den Regler scheitert.** „Als Serie
   erstellen" lässt `series_count` auf 1 (`EventFormSections`), der Regler
-  zeigt 2; `POST /events/series` antwortet 400 „Name, Datum und
-  Serienanzahl (min. 2) sind erforderlich". Das Fenster im Browser setzt beim
-  Einschalten mindestens 2 (`mitSerie` in `eventFormularRegeln.ts`); die App
-  bräuchte denselben Aufruf (11.10.2026).
+  steht am Anschlag bei 2, die Zahl daneben zeigt 1; `POST /events/series`
+  antwortet 400 „Name, Datum und Serienanzahl (min. 2) sind erforderlich".
+  Das Fenster im Browser setzt beim Einschalten mindestens 2 (`mitSerie` in
+  `eventFormularRegeln.ts`); die App bräuchte denselben Aufruf (11.10.2026).
 - **Kopie eines Events: Anmeldeschluss und Zeitfenster wandern nicht mit.**
   `nachDatumswechsel` behandelt eine Kopie als Bearbeiten (`!!event`, die
-  Vorlage hat id 0). Die Kopie beginnt im Vorschlag in einer halben Stunde,
-  ihr Anmeldeschluss liegt kurz davor; wer das Datum verschiebt, behält diesen
-  Schluss, und die Anmeldung schließt kurz nach dem Anlegen. Zeitfenster
-  bleiben am alten Tag. Dazu heißt das App-Modal bei einer Kopie „Event
-  bearbeiten". App und Browser teilen die Regel; das Fenster im Browser nennt
-  nur den abweichenden Tag am Zeitfenster (11.10.2026).
+  Vorlage hat id 0). Die Kopie beginnt im Vorschlag binnen einer halben
+  Stunde, ihr Anmeldeschluss liegt kurz davor; wer das Datum verschiebt,
+  behält diesen Schluss, und die Anmeldung schließt kurz nach dem Anlegen.
+  Zeitfenster bleiben am alten Tag. Dazu heißt das App-Modal bei einer
+  Kopie „Event bearbeiten". App und Browser teilen die Regel; das Fenster im
+  Browser nennt nur den abweichenden Tag am Zeitfenster (11.10.2026).
 - **Platzzahl in der Event-Liste kommt als Text.** `GET /events` liefert
   `max_participants` aus einem `CASE` mit `SUM(...)`, also als `bigint` und
   damit als Text (`'0'`, `'50'`). Eine Kopie aus der Liste zeigt ein
@@ -401,9 +401,12 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   eigenen Fenster hängen mit z-index 1000 an `<body>`, Toasts und
   `useIonAlert` in `ion-app`; gemessen lagen sie darunter. Die Formulare
   zeigen ihre Meldungen deshalb im Fenster selbst, Rückfragen als zweites
-  kleines Fenster. Offen ist noch das Öffnen einer Datei im
-  Material-Fenster: Scheitert das Laden, kommt „Fehler beim Öffnen der
-  Datei" als Toast unter dem Fenster (`useDateiOeffnen`) (11.10.2026).
+  kleines Fenster. Offen sind noch zwei Stellen: Scheitert im
+  Material-Fenster das Öffnen einer Datei, kommt „Fehler beim Öffnen der
+  Datei" als Toast unter dem Fenster (`useDateiOeffnen`); nach **Foto
+  löschen** im Fenster „Aktivität prüfen" kommt „Foto erfolgreich gelöscht"
+  als Toast unter dem Fenster, das offen bleibt (`setSuccess` in
+  `useAntragPruefen`) (11.10.2026).
 
 ### Tests und CI
 

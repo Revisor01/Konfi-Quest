@@ -1366,8 +1366,8 @@ Wischen der App: **Event kopieren**,
 [Ein Event kopieren](#ein-event-kopieren) und
 [Ein Event absagen oder löschen](#ein-event-absagen-oder-loeschen).
 **Neues Event** und **Event kopieren** — wie auf der Seite eines Events
-**Bearbeiten** und **Kopieren** — öffnen das Formular in einem eigenen Fenster
-des Browsers (siehe
+**Bearbeiten** und **Kopieren** — öffnen das Formular in einem eigenen,
+kompakten Fenster (siehe
 [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen));
 Absagen und Löschen öffnen dieselben Fenster und stellen dieselben Rückfragen
 wie in der App.
@@ -1380,10 +1380,11 @@ Aktivität mit Kommentar, Datum mit Hinweis auf das Foto, Punkten und Status, di
 neueste Meldung oben. **Offen**, **Verbucht**, **Abgelehnt** und **Alle**
 filtern, zuerst steht **Offen** da; die Suche findet Person und Aktivität.
 **Prüfen** öffnet das Fenster „Aktivität prüfen": links die Angaben — von
-wem, welche Aktivität, Punkte, Teilnahmedatum, Eingang und Kommentar —,
-darunter das Feld für den Grund einer Ablehnung, rechts, wenn es eines gibt,
-das Nachweisfoto mit **Foto löschen**. Du entscheidest mit **Genehmigen** oder **Ablehnen**;
-ablehnen geht nur mit Grund. Der
+wem, welche Aktivität, bei Konfis die Punkte, Teilnahmedatum, wann gemeldet
+wurde, und der Kommentar —, darunter das Feld für den Grund einer Ablehnung,
+rechts, wenn es eines gibt, das Nachweisfoto mit **Foto löschen**. Du
+entscheidest mit **Genehmigen** oder **Ablehnen**; ablehnen geht nur mit
+Grund. Der
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
 derselbe. Bei einer entschiedenen Meldung öffnet **Ansehen** dasselbe Fenster,
 und **Aktivität zurücksetzen** macht sie nach einer Rückfrage wieder offen. Hat

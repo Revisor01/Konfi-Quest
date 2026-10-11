@@ -263,8 +263,8 @@ heißt **Mein Profil** und hat zwei Spalten. Links stehen deine Angaben — Name
 mit Funktionsbeschreibung, Benutzername, E-Mail-Adresse, Gemeinde und „Dabei
 seit" —, die **Konto-Einstellungen** — Funktionsbeschreibung, E-Mail-Adresse,
 Passwort, Bibelübersetzung, App-Tour, Benachrichtigungen und Medien-Cache,
-jeweils mit einem Knopf; E-Mail-Adresse und Passwort änderst du in einem
-eigenen Fenster des Browsers (siehe
+jeweils mit einem Knopf; E-Mail-Adresse und Passwort änderst du im Browser
+in einem eigenen, kompakten Fenster (siehe
 [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
 die übrigen Knöpfe öffnen dieselben Fenster wie in der App — und das
 **Konto** mit **Abmelden** und **Konto löschen**.

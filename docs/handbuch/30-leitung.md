@@ -414,8 +414,8 @@ Kennzahlen darüber. Oben links führt **Mehr** zurück, oben rechts neben der
 die Wahl zwischen Liste und Kacheln. Am Ende jeder Zeile bzw. unten auf jeder
 Kachel bearbeitest und löschst du; ein Klick auf den Namen öffnet ebenfalls das
 Bearbeiten. Benutzer:innen, Kategorien, Level, Zertifikate, Jahrgänge und
-Material legst du in einem eigenen Fenster des Browsers an und bearbeitest sie
-dort (siehe
+Material legst du im Browser in einem eigenen, kompakten Fenster an und
+bearbeitest sie dort (siehe
 [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
 eine Aktivität im Fenster der App; die Rückfragen vor dem Löschen sind dieselben
 wie in der App. Liste und Kacheln gibt es bei Benutzer:innen, Jahrgängen,

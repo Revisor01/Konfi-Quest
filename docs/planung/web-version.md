@@ -320,10 +320,13 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     „Teamer:in anlegen") und Jahrgang; Passwort und E-Mail in allen drei
     Rollen. Je Formular ein Hook, den App-Modal und Dialog teilen
     (`useEventFormular`, `useAktivitaetEintragen`, `useBadgeFormular` …);
-    das App-Modal sieht aus und verhält sich wie vorher. Gemeinsam: gesperrt
-    während des Sendens (`gesperrt`), die Knopfleiste breiter Dialoge klebt
-    unten (`web-ansicht.css`), Ankreuzlisten behalten Werte außerhalb der
-    Liste (`WebMehrfachAuswahl`), Enter im Suchfeld schickt nicht ab
+    das App-Modal sieht aus und verhält sich wie vorher, bis auf die Fehler,
+    die dabei behoben wurden (Badge-Auswahl beim Bearbeiten und Zeitraum ohne
+    eigene Wahl, deutsches Datum beim Melden, gemerkte Liste beim Eintragen
+    ohne Netz). Gemeinsam: gesperrt während des Sendens (`gesperrt`), die
+    Knopfleiste breiter Dialoge klebt unten (`web-ansicht.css`),
+    Ankreuzlisten behalten Werte außerhalb der Liste
+    (`WebMehrfachAuswahl`), Enter im Suchfeld schickt nicht ab
     (`WebAuswahlSuche`), Datum und Uhrzeit als Felder des Browsers
     (`WebDatum`), Meldungen im Dialog statt als Toast.
   - *Bewusst beim Weg der App:* Rückfragen vor Löschen, Sperren und
@@ -342,9 +345,13 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     (`ParticipantManagementModal`), Zertifikat zuweisen, Aktivität im
     Katalog (`ActivityManagementModal`), Person einladen, Event absagen,
     Abmeldung nachtragen und Notiz in der Teilnehmerliste, die Anwesenheit,
-    Punkte-Übersicht, Konfispruch, Bibelübersetzung, Funktionsbeschreibung,
+    Abmelden vom Event (Konfi, `UnregisterModal`) und Absage (Team und
+    eigene Absage der Leitung, `TeamerAbsageModal`), Punkte-Übersicht,
+    Konfispruch, Bibelübersetzung, Funktionsbeschreibung,
     Benachrichtigungen, Konto löschen, Gemeinde bearbeiten (Support) und das
-    Postfach. Die Chat-Fenster (Mitglieder, Umfrage, neuer Chat) haben ihre
+    Postfach; dazu Ansichten ohne Formular: QR-Code und Einchecken, Legende
+    und Material aus einem Event (`TeamerMaterialDetailPage`).
+    Die Chat-Fenster (Mitglieder, Umfrage, neuer Chat) haben ihre
     eigene Größe, der Rückblick bleibt Vollbild. Vorschläge aus dem Bau:
     nach „Speichern" beim Bearbeiten eines Events auf seiner Seite bleiben
     statt zur Liste zurück; Dateien in den Material-Dialog ziehen. Was dabei
