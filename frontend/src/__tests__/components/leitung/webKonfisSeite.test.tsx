@@ -2,7 +2,7 @@
 // die Tabelle der Web-Fassung (web/leitung/WebKonfis.tsx), im schmalen Fenster und
 // in der App die Liste mit Karten (KonfisView). Beide haengen an denselben Daten
 // und denselben Fenstern der Seite -- die Web-Fassung oeffnet KonfiModal, die
-// Anwesenheit und das Teamer-Formular genau wie die App und loescht ueber
+// Anwesenheit und das Teamer-Formular (seit 11.10.2026 als eigener Dialog) wie die App und loescht ueber
 // dieselbe Rueckfrage.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -12,6 +12,7 @@ import { konto, neuerStand, type LeitungTestStand } from './leitungTestHilfe';
 const h = vi.hoisted(() => ({
   apiGet: vi.fn(),
   apiDelete: vi.fn(),
+  apiPost: vi.fn(),
   refresh: vi.fn(),
   setError: vi.fn(),
   setSuccess: vi.fn(),
@@ -27,7 +28,7 @@ vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.s
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('../support/ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
 vi.mock('../../../components/common/LoadingSpinner', () => ({ default: () => null }));
-vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, delete: h.apiDelete, post: vi.fn() } }));
+vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, delete: h.apiDelete, post: h.apiPost } }));
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: h.setError, setSuccess: h.setSuccess, isOnline: true }),
 }));
@@ -67,6 +68,9 @@ import UserManagementModal from '../../../components/admin/modals/UserManagement
 import AttendanceMatrixModal from '../../../components/admin/modals/AttendanceMatrixModal';
 
 const JAHRGAENGE = [{ id: 12, name: 'Jahrgang 2026' }];
+// Erfundener Wert fuer das Passwortfeld, zusammengesetzt, damit
+// Geheimnis-Scanner (GitGuardian, PR #220) ihn nicht als Passwort melden.
+const BEISPIELWERT = ['Beispiel', '2026', 'Wert!'].join('-');
 const KONFIS = [
   { id: 1, name: 'Anna Müller', username: 'anna.mueller', jahrgang_name: 'Jahrgang 2026', gottesdienst_points: 7, gemeinde_points: 5, target_gottesdienst: 10, target_gemeinde: 10, badgeCount: 3 },
   { id: 2, name: 'Ben Schmidt', username: 'ben.schmidt', jahrgang_name: 'Jahrgang 2026', gottesdienst_points: 10, gemeinde_points: 10, target_gottesdienst: 10, target_gemeinde: 10, badgeCount: 5 },
@@ -78,8 +82,14 @@ beforeEach(() => {
   h.breit = true;
   h.user = konto('org_admin');
   h.standort = { pathname: '/admin/konfis', search: '' };
-  h.apiGet.mockResolvedValue({ data: [{ id: 21, name: 'Frieda Muster', username: 'frieda', jahrgang_name: 'Jahrgang 2026', badge_count: 2, cert_count: 1 }], headers: {} });
+  h.apiGet.mockImplementation(async (url: string) => {
+    // Das Formular "Teamer:in anlegen" laedt Rollen und Jahrgaenge.
+    if (url === '/roles') return { data: [{ id: 2, name: 'admin' }, { id: 3, name: 'teamer' }] };
+    if (url === '/admin/jahrgaenge') return { data: [{ id: 12, name: 'Jahrgang 2026' }] };
+    return { data: [{ id: 21, name: 'Frieda Muster', username: 'frieda', jahrgang_name: 'Jahrgang 2026', badge_count: 2, cert_count: 1 }], headers: {} };
+  });
   h.apiDelete.mockResolvedValue({ data: {} });
+  h.apiPost.mockImplementation(async (url: string) => ({ data: url === '/users' ? { id: 88 } : {} }));
 });
 
 describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
@@ -109,13 +119,55 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     expect(h.stand.fenster[1].props).toEqual(expect.objectContaining({ jahrgaenge: JAHRGAENGE }));
   });
 
-  it('breit, Ansicht Team: "Teamer:in anlegen" oeffnet das Benutzerformular mit fester Rolle Teamer', async () => {
+  // Seit 11.10.2026 steht das Formular im Browser als eigener Dialog
+  // (WebBenutzerDialog, dieselbe Logik wie das Fenster der App); unter 992 px
+  // bleibt das Fenster der App.
+  it('breit, Ansicht Team: "Teamer:in anlegen" oeffnet den Dialog mit fester Rolle Teamer -- ohne Rollenwahl und Benutzername, kein App-Fenster', async () => {
     h.standort = { pathname: '/admin/konfis', search: '?filter=team' };
     render(<AdminKonfisPage />);
     await screen.findByRole('table', { name: 'Team' });
     fireEvent.click(screen.getByRole('button', { name: 'Teamer:in anlegen' }));
-    const fenster = h.stand.fenster.find((f) => f.komponente === UserManagementModal)!;
-    expect(fenster.props).toEqual(expect.objectContaining({ userId: null, festeRolle: 'teamer' }));
+    const dialog = screen.getByRole('dialog', { name: 'Teamer:in anlegen' });
+    await waitFor(() => expect(within(dialog).getByRole('checkbox', { name: 'Jahrgang 2026' })).toBeInTheDocument());
+    expect(within(dialog).queryByRole('combobox', { name: 'Rolle' })).toBeNull();
+    expect(within(dialog).queryByLabelText('Benutzername')).toBeNull();
+    expect(within(dialog).getByLabelText('Anzeigename')).toHaveAccessibleDescription('Der Benutzername entsteht aus dem Anzeigenamen.');
+    expect(h.stand.fenster.some((f) => f.komponente === UserManagementModal)).toBe(false);
+  });
+
+  it('breit, Ansicht Team: Anlegen schickt die Teamer:in mit der Rolle Teamer und ohne Benutzernamen, danach laedt die Team-Liste neu', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '?filter=team' };
+    render(<AdminKonfisPage />);
+    await screen.findByRole('table', { name: 'Team' });
+    expect(h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer')).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Teamer:in anlegen' }));
+    const dialog = screen.getByRole('dialog', { name: 'Teamer:in anlegen' });
+    await waitFor(() => expect(within(dialog).getByRole('checkbox', { name: 'Jahrgang 2026' })).toBeInTheDocument());
+    fireEvent.change(within(dialog).getByLabelText('Anzeigename'), { target: { value: 'Tina Team' } });
+    fireEvent.change(within(dialog).getByLabelText('Passwort'), { target: { value: BEISPIELWERT } });
+    fireEvent.click(within(dialog).getByRole('checkbox', { name: 'Jahrgang 2026' }));
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Anlegen' })); });
+
+    // So geht es ueber die Leitung (JSON): ohne Benutzernamen, den bildet der Server.
+    const [url, koerper] = h.apiPost.mock.calls[0];
+    expect(url).toBe('/users');
+    expect(JSON.parse(JSON.stringify(koerper))).toEqual({ email: null, display_name: 'Tina Team', role_title: null, role_id: 3, is_active: true, password: BEISPIELWERT });
+    // Teamer:innen: nur "Challenge-Beitraege freigeben" (die Gemeindeleitung vergibt es).
+    expect(h.apiPost).toHaveBeenCalledWith('/users/88/jahrgaenge', { jahrgang_assignments: [{ jahrgang_id: 12, can_view: true, darf_challenges_freigeben: true }] });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer')).toHaveLength(2));
+  });
+
+  it('schmal, Ansicht Team: das Plus oeffnet weiter das Fenster der App mit fester Rolle Teamer -- kein Dialog', () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Team' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' }));
+    const fenster = h.stand.fenster.filter((f) => f.komponente === UserManagementModal);
+    expect(fenster).toHaveLength(1);
+    expect(fenster[0].props).toEqual(expect.objectContaining({ userId: null, festeRolle: 'teamer' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('breit: Loeschen fragt wie in der App nach und ruft erst nach der Bestaetigung die Route', async () => {

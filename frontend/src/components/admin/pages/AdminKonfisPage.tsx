@@ -23,6 +23,7 @@ import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import WebKonfis from '../web/leitung/WebKonfis';
+import WebBenutzerDialog from '../web/leitung/WebBenutzerDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
@@ -184,6 +185,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
       refreshKonfis();
     }
   });
+  // Im Browser ab 992 px dasselbe Formular als eigener Dialog
+  // (web/leitung/WebBenutzerDialog.tsx, dieselbe Logik useBenutzerFormular).
+  // Nach dem Anlegen laedt die Team-Liste der Web-Fassung neu (teamStand).
+  const [teamerDialogOffen, setTeamerDialogOffen] = useState(false);
+  const [teamStand, setTeamStand] = useState(0);
 
   // Memoized refresh function for live updates
   const refreshAll = useCallback(() => {
@@ -422,7 +428,8 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         ohneJahrgang={ohneJahrgang}
         pageRef={pageRef}
         onKonfiAnlegen={presentKonfiModal}
-        onTeamAnlegen={() => presentTeamerModalHook({ presentingElement: presentingElement })}
+        onTeamAnlegen={() => setTeamerDialogOffen(true)}
+        teamStand={teamStand}
         onMatrix={() => presentMatrixModal({ presentingElement: presentingElement, cssClass: 'app-modal-breit' })}
         onKonfiLoeschen={handleDeleteKonfi}
         onTeamerLoeschen={handleDeleteTeamer}
@@ -437,7 +444,23 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             onMitmachenAusblenden={markMitmachenHinweisGesehen}
           />
         )}
-        overlays={ueberlagerungen}
+        overlays={(
+          <>
+            {ueberlagerungen}
+            {teamerDialogOffen && (
+              <WebBenutzerDialog
+                userId={null}
+                festeRolle="teamer"
+                onSchliessen={() => setTeamerDialogOffen(false)}
+                onGespeichert={() => {
+                  setTeamerDialogOffen(false);
+                  refreshKonfis();
+                  setTeamStand((n) => n + 1);
+                }}
+              />
+            )}
+          </>
+        )}
       />
     );
   }

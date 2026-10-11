@@ -15,7 +15,7 @@ import {
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerDaten, fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -49,21 +49,19 @@ import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { jahrgangLoeschHinweis, istLoeschVorschau, type JahrgangLoeschVorschau } from '../../../utils/jahrgangLoeschen';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { safeUUID } from '../../../utils/uuid';
-import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
 import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebJahrgaenge from '../web/leitung/WebJahrgaenge';
+import WebJahrgangDialog from '../web/leitung/WebJahrgangDialog';
+import { useJahrgangFormular } from '../useJahrgangFormular';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -82,17 +80,6 @@ interface Jahrgang {
   konfi_count?: number;
   gottesdienst_points_total?: number;
   gemeinde_points_total?: number;
-}
-
-// Personen, die beim Anlegen direkt Zugriff auf den neuen Jahrgang bekommen
-// koennen (Simons Entscheidung 01.09.2026: nur der Org-Admin legt Jahrgaenge
-// an und weist dabei direkt zu). Angeboten werden Admins und Teamer:innen —
-// Org-Admins sehen ohnehin alle Jahrgaenge, Konfis gehoeren zu einem Jahrgang
-// statt ihm zugewiesen zu werden.
-interface ZuweisbarePerson {
-  id: number;
-  display_name: string;
-  role_name: string;
 }
 
 interface JahrgangModalProps {
@@ -120,134 +107,16 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
       onClose();
     }
   };
-  const { user, setSuccess, setError } = useApp();
-  const [loading, setLoading] = useState(false);
-
-  // Direkt-Zuweisung beim Anlegen: Auswahl der Personen, die Zugriff auf den
-  // neuen Jahrgang bekommen. Optional — niemand MUSS zugewiesen werden.
-  // Nur im Anlege-Modus relevant (beim Bearbeiten laeuft die Zuweisung wie
-  // gehabt ueber Mehr > Benutzer:innen).
-  const [zuweisbare, setZuweisbare] = useState<ZuweisbarePerson[]>([]);
-  const [ausgewaehlt, setAusgewaehlt] = useState<{ [id: number]: boolean }>({});
-  const [formData, setFormData] = useState({
-    name: '',
-    gottesdienst_enabled: true,
-    gemeinde_enabled: true,
-    target_gottesdienst: 10,
-    target_gemeinde: 10,
-    konfspruch_enabled: true
-  });
-
-  useEffect(() => {
-    if (jahrgang) {
-      setFormData({
-        name: jahrgang.name,
-        gottesdienst_enabled: jahrgang.gottesdienst_enabled ?? true,
-        gemeinde_enabled: jahrgang.gemeinde_enabled ?? true,
-        // `|| 10` wie ueberall: eine 0 aus frueheren Tagen heisst 10 (der
-        // Regler beginnt bei 1; Audit Fachlogik Punkte/Termine BF-10).
-        target_gottesdienst: jahrgang.target_gottesdienst || 10,
-        target_gemeinde: jahrgang.target_gemeinde || 10,
-        konfspruch_enabled: jahrgang.konfspruch_enabled ?? true
-      });
-    } else {
-      setFormData({
-        name: '',
-        gottesdienst_enabled: true,
-        gemeinde_enabled: true,
-        target_gottesdienst: 10,
-        target_gemeinde: 10,
-        konfspruch_enabled: true
-      });
-    }
-    // Auswahl der Direkt-Zuweisung gehoert zum Anlege-Vorgang — beim Wechsel
-    // des bearbeiteten Jahrgangs darf keine alte Auswahl haengen bleiben.
-    setAusgewaehlt({});
-  }, [jahrgang]);
-
-  // Personenliste nur laden, wenn wirklich angelegt wird und der Aufrufer
-  // org_admin ist — nur er darf anlegen und zuweisen. Fehler hier blockieren
-  // das Anlegen nicht; die Zuweisung ist optional und geht auch spaeter.
-  useEffect(() => {
-    if (jahrgang || user?.role_name !== 'org_admin' || !networkMonitor.isOnline) return;
-    let aktiv = true;
-    (async () => {
-      try {
-        const res = await api.get('/users');
-        if (!aktiv) return;
-        const personen = (res.data as ZuweisbarePerson[]).filter(
-          (p) => p.role_name === 'admin' || p.role_name === 'teamer'
-        );
-        setZuweisbare(personen);
-      } catch {
-        // still: Abschnitt bleibt leer, das Anlegen funktioniert trotzdem
-      }
-    })();
-    return () => { aktiv = false; };
-  }, [jahrgang, user?.role_name]);
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      setError('Name ist erforderlich');
-      return;
-    }
-
-    const payload: Record<string, unknown> = {
-      name: formData.name.trim(),
-      gottesdienst_enabled: formData.gottesdienst_enabled,
-      gemeinde_enabled: formData.gemeinde_enabled,
-      target_gottesdienst: formData.target_gottesdienst,
-      target_gemeinde: formData.target_gemeinde,
-      konfspruch_enabled: formData.konfspruch_enabled
-    };
-
-    // Direkt-Zuweisung nur beim Anlegen und nur, wenn jemand ausgewaehlt ist —
-    // ohne Auswahl bleibt das Feld weg und der Server verhaelt sich wie bisher.
-    // Nur Sehen, wie bei der Zuweisung ueber die Benutzerverwaltung: das
-    // Zuordnungsrecht (can_edit) setzt der Server nach der Rolle.
-    const zugewieseneIds = Object.entries(ausgewaehlt)
-      .filter(([, gewaehlt]) => gewaehlt)
-      .map(([id]) => parseInt(id, 10));
-    if (!jahrgang && zugewieseneIds.length > 0) {
-      payload.user_assignments = zugewieseneIds.map((id) => ({
-        user_id: id,
-        can_view: true
-      }));
-    }
-
-    setLoading(true);
-    try {
-      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
-      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
-      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
-      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
-      // Audit Grundgeruest BF-01).
-      const { weg } = await sendenOderEinreihen({
-        online: networkMonitor.isOnline,
-        methode: jahrgang ? 'PUT' : 'POST',
-        senden: () => (jahrgang ? api.put(`/admin/jahrgaenge/${jahrgang.id}`, payload) : api.post('/admin/jahrgaenge', payload)),
-        einreihen: () => writeQueue.enqueue({
-          method: jahrgang ? 'PUT' : 'POST',
-          url: jahrgang ? `/admin/jahrgaenge/${jahrgang.id}` : '/admin/jahrgaenge',
-          body: payload,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'admin',
-            clientId: safeUUID(),
-            label: jahrgang ? 'Jahrgang bearbeiten' : 'Jahrgang erstellen'
-          }
-        }),
-      });
-      if (weg === 'eingereiht') setSuccess('Wird gespeichert sobald du wieder online bist');
+  // Vorbelegung, Personen zur Direkt-Zuweisung, Pruefen und Speichern stehen
+  // seit 11.10.2026 in useJahrgangFormular -- dieselbe Logik zeigt der Browser
+  // ab 992 px als eigenen Dialog (web/leitung/WebJahrgangDialog.tsx).
+  const { user, loading, formData, setFormData, zuweisbare, ausgewaehlt, setAusgewaehlt, handleSubmit } = useJahrgangFormular(
+    jahrgang,
+    () => {
       onSuccess();
       handleClose();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Speichern des Jahrgangs'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  );
 
   // generateWrapped / deleteWrapped / handleWrappedToggle sind am
   // 03.09.2026 entfallen: Der Rueckblick wird nicht mehr ueber einen Schalter
@@ -496,8 +365,9 @@ const JahrgangModal: React.FC<JahrgangModalProps> = ({
 const AdminJahrgaengeePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-jahrgaenge');
   const { user, setError, isOnline } = useApp();
-  // Im Browser ab 992 px eine Tabelle (web/leitung/WebJahrgaenge.tsx); Daten,
-  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebJahrgaenge.tsx); Daten
+  // und Rueckfragen dieser Seite bleiben dieselben, das Formular steht dort
+  // als eigener Dialog (WebJahrgangDialog, dieselbe Logik useJahrgangFormular).
   const breit = useBreitesLayout();
 
   // Offline-Query: Jahrgänge
@@ -508,6 +378,10 @@ const AdminJahrgaengeePage: React.FC = () => {
   );
 
   const [editJahrgang, setEditJahrgang] = useState<Jahrgang | null>(null);
+  // Im Browser ab 992 px oeffnen Anlegen und Bearbeiten einen eigenen Dialog
+  // (web/leitung/WebJahrgangDialog.tsx) statt des App-Fensters -- gerendert,
+  // solange dies gesetzt ist; `jahrgang: null` heisst "neuer Jahrgang".
+  const [webDialog, setWebDialog] = useState<{ jahrgang: Jahrgang | null } | null>(null);
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   // Alert Hook für Bestätigungsdialoge
@@ -619,17 +493,29 @@ const AdminJahrgaengeePage: React.FC = () => {
 
   if (breit) {
     return (
-      <WebJahrgaenge
-        jahrgaenge={jahrgaenge || []}
-        laedt={loading}
-        darfAnlegen={canCreate}
-        darfBearbeiten={canEdit}
-        darfLoeschen={canDelete}
-        pageRef={pageRef}
-        onAnlegen={openCreateModal}
-        onBearbeiten={openEditModal}
-        onLoeschen={(jahrgang) => handleDeleteWithSlideClose(jahrgang)}
-      />
+      <>
+        <WebJahrgaenge
+          jahrgaenge={jahrgaenge || []}
+          laedt={loading}
+          darfAnlegen={canCreate}
+          darfBearbeiten={canEdit}
+          darfLoeschen={canDelete}
+          pageRef={pageRef}
+          onAnlegen={() => setWebDialog({ jahrgang: null })}
+          onBearbeiten={(jahrgang) => setWebDialog({ jahrgang })}
+          onLoeschen={(jahrgang) => handleDeleteWithSlideClose(jahrgang)}
+        />
+        {webDialog && (
+          <WebJahrgangDialog
+            jahrgang={webDialog.jahrgang}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => {
+              setWebDialog(null);
+              refreshJahrgaenge();
+            }}
+          />
+        )}
+      </>
     );
   }
 

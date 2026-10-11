@@ -11,7 +11,8 @@
 // Entfernen und die offenen Einladungen gibt es nur fuer die Gemeindeleitung
 // (requireOrgAdmin im Server), Bearbeiten nur bei `can_edit`, Entfernen nach
 // `can_delete` (utils/mitgliedschaft.ts, darfEntfernen) -- wie in der App. Das
-// Formular ist dasselbe Fenster wie dort (UserManagementModal).
+// Formular ist ein eigener Dialog (WebBenutzerDialog) mit derselben Logik wie
+// das Fenster der App (useBenutzerFormular).
 
 import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';

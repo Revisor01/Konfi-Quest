@@ -69,14 +69,18 @@ describe('Benutzerliste: Mitglieder aus weiteren Gemeinden', () => {
 
 describe('Bearbeiten-Dialog: in einer weiteren Gemeinde nur, was je Gemeinde gilt', () => {
   const modal = lies('src/components/admin/modals/UserManagementModal.tsx');
+  // Laden und Speichern stehen seit 11.10.2026 in der Logik, die das Fenster
+  // der App und der Dialog im Browser teilen (gerendert geprueft in
+  // leitung/webBenutzerDialog.test.tsx, "weitere Gemeinde").
+  const formular = lies('src/components/admin/useBenutzerFormular.ts');
 
   // Seit 08.10.2026 (Migration 196) gelten Funktionsbeschreibung und Sperre
   // je Gemeinde; die weitere Gemeinde darf sie bei sich setzen.
   it('leitet nurRolle aus dem Kennzeichen ab und speichert dann Rolle, Funktion, Sperre und ein neues Passwort', () => {
-    expect(modal).toContain("const nurRolle = !!userId && user?.mitgliedschaft === 'weitere';");
-    expect(modal).toContain('role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active,');
+    expect(formular).toContain("const nurRolle = !!userId && user?.mitgliedschaft === 'weitere';");
+    expect(formular).toContain('role_id: formData.role_id, role_title: userData.role_title, is_active: userData.is_active,');
     // Seit 08.10.2026 (Simon: jede Gemeinde darf das Passwort setzen).
-    expect(modal).toContain('...(userData.password ? { password: userData.password } : {})');
+    expect(formular).toContain('...(userData.password ? { password: userData.password } : {})');
   });
 
   it('sperrt Anzeigename, Benutzername und E-Mail, nicht Passwort, Funktion und Aktiv-Schalter', () => {

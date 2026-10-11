@@ -23,6 +23,7 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import UsersView from '../UsersView';
 import OffeneEinladungen from '../OffeneEinladungen';
 import WebBenutzer from '../web/leitung/WebBenutzer';
+import WebBenutzerDialog from '../web/leitung/WebBenutzerDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EinladungModal from '../modals/EinladungModal';
@@ -34,8 +35,9 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 const AdminUsersPage: React.FC = () => {
   const { setError, setSuccess, user, isOnline } = useApp();
   const { pageRef, presentingElement } = useModalPage('admin-users');
-  // Im Browser ab 992 px eine Tabelle (web/leitung/WebBenutzer.tsx); Daten,
-  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebBenutzer.tsx); Daten
+  // und Rueckfragen dieser Seite bleiben dieselben, das Formular steht dort
+  // als eigener Dialog (WebBenutzerDialog).
   const breit = useBreitesLayout();
   
   // Offline-Query: Users
@@ -58,6 +60,11 @@ const AdminUsersPage: React.FC = () => {
 
   // Modal state
   const [modalUserId, setModalUserId] = useState<number | null>(null);
+  // Im Browser ab 992 px oeffnen Anlegen und Bearbeiten einen eigenen Dialog
+  // (web/leitung/WebBenutzerDialog.tsx, dieselbe Logik useBenutzerFormular)
+  // statt des App-Fensters -- gerendert, solange dies gesetzt ist;
+  // `userId: null` heisst "anlegen".
+  const [webDialog, setWebDialog] = useState<{ userId: number | null } | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
@@ -160,19 +167,31 @@ const AdminUsersPage: React.FC = () => {
 
   if (breit) {
     return (
-      <WebBenutzer
-        users={users || []}
-        laedt={loading}
-        // Verwalten darf nur org_admin (users.js, requireOrgAdmin) -- Anlegen,
-        // Einladen, Entfernen und die offenen Einladungen, wie in der App.
-        darfVerwalten={user?.role_name === 'org_admin'}
-        einladungenStand={einladungenStand}
-        pageRef={pageRef}
-        onBearbeiten={handleSelectUser}
-        onLoeschen={handleDeleteUser}
-        onAnlegen={presentUserModal}
-        onEinladen={() => presentEinladungHook({ presentingElement })}
-      />
+      <>
+        <WebBenutzer
+          users={users || []}
+          laedt={loading}
+          // Verwalten darf nur org_admin (users.js, requireOrgAdmin) -- Anlegen,
+          // Einladen, Entfernen und die offenen Einladungen, wie in der App.
+          darfVerwalten={user?.role_name === 'org_admin'}
+          einladungenStand={einladungenStand}
+          pageRef={pageRef}
+          onBearbeiten={(u) => setWebDialog({ userId: u.id })}
+          onLoeschen={handleDeleteUser}
+          onAnlegen={() => setWebDialog({ userId: null })}
+          onEinladen={() => presentEinladungHook({ presentingElement })}
+        />
+        {webDialog && (
+          <WebBenutzerDialog
+            userId={webDialog.userId}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => {
+              setWebDialog(null);
+              refreshUsers();
+            }}
+          />
+        )}
+      </>
     );
   }
 

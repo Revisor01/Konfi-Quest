@@ -7,7 +7,8 @@
 // (10.10.2026); hier stehen nur Spalten, Karte und Daten.
 //
 // Daten, Rechte und Fenster kommen von der Seite (AdminJahrgaengeePage): Das
-// Formular ist dasselbe Fenster wie in der App (JahrgangModal), das Loeschen
+// Formular ist ein eigener Dialog (WebJahrgangDialog, dieselbe Logik wie das
+// Fenster der App: useJahrgangFormular), das Loeschen
 // fragt dieselbe Rueckfrage mit den Zahlen (Vorschau beim Server) und die
 // zweite, wenn der Jahrgang Chat-Nachrichten enthaelt. Anlegen darf nur die
 // Gemeindeleitung; Bearbeiten und Loeschen auch die Leitung -- die Liste
