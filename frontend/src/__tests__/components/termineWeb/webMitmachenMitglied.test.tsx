@@ -251,12 +251,16 @@ describe('Konfis: eigene Aktivitäten', () => {
     expect(zeile).toHaveTextContent('Offen');
   });
 
-  it('"Ansehen" öffnet das Fenster; "Aktivität melden" öffnet den Antrag', async () => {
+  // „Aktivität melden" ist seit 11.10.2026 im Browser ein eigener Dialog statt
+  // des Fensters der App (Simon: „Web braucht eigene kompaktere Modale
+  // überall"); geprüft im Einzelnen in webAktivitaetMeldenDialog.test.tsx.
+  it('"Ansehen" öffnet das Fenster; "Aktivität melden" öffnet den Dialog "Aktivität melden"', async () => {
     await oeffneAktivitaeten();
     fireEvent.click(screen.getByRole('button', { name: 'Gemeindefest helfen ansehen' }));
     expect(geoeffnet('RequestDetailModal')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Neue Aktivität melden' }));
-    expect(geoeffnet('KonfiActivityRequestModal')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Aktivität melden' })).toBeInTheDocument();
+    expect(geoeffnet('KonfiActivityRequestModal')).toHaveLength(0);
   });
 
   it('Löschen fragt nach und ruft erst nach "Löschen" DELETE auf die eigene Meldung', async () => {
@@ -371,10 +375,14 @@ describe('Team: eigene Aktivitäten', () => {
     expect(screen.queryByRole('columnheader', { name: 'Punkte' })).toBe(null);
   });
 
-  it('"Aktivität melden" öffnet den Antrag des Teams; Löschen ruft DELETE auf /teamer/requests', async () => {
+  it('"Aktivität melden" öffnet den Dialog des Teams; Löschen ruft DELETE auf /teamer/requests', async () => {
     await oeffneTeam('?segment=antraege');
     fireEvent.click(screen.getByRole('button', { name: 'Neue Aktivität melden' }));
-    expect(geoeffnet('TeamerActivityRequestModal')).toHaveLength(1);
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität melden' });
+    expect(dialog).toHaveAccessibleDescription('Die Leitung prüft deine Meldung.');
+    expect(geoeffnet('TeamerActivityRequestModal')).toHaveLength(0);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBe(null);
     fireEvent.click(screen.getByRole('button', { name: 'Aktivität löschen' }));
     await act(async () => { await knopfIn(letzteRueckfrage(), 'Löschen')!.handler!(); });
     expect(api.delete).toHaveBeenCalledWith('/teamer/requests/91');
