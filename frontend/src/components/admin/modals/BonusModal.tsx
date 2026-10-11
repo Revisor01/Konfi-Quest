@@ -1,6 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useRef, useState } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -25,20 +23,13 @@ import {
   IonModal,
 } from '@ionic/react';
 import { ICON_BONUS_GEFUELLT, ICON_CHAT, ICON_HAKEN, ICON_SCHLIESSEN } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
-import {
-  aktivePunktearten,
-  ersteAktivePunkteart,
-  PUNKTEART_NAME,
-  type Punkteart,
-  type PunkteartFlags,
-} from '../../../utils/punktearten';
-import { trackHandlung } from '../../../services/analytics';
+import { PUNKTEART_NAME, type PunkteartFlags } from '../../../utils/punktearten';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useBonusVergeben } from './useBonusVergeben';
+
+// Vorbelegung, Prüfung, Speichern und Warteschlange stehen in
+// useBonusVergeben -- dieselbe Logik wie im Dialog der Web-Fassung
+// (web/leitung/WebBonusDialog).
 
 interface BonusModalProps {
   konfiId: number;
@@ -54,7 +45,6 @@ interface BonusModalProps {
 }
 
 const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismiss, punkteartFlags }) => {
-  const { setError } = useApp();
   const handleClose = () => {
     if (dismiss) {
       dismiss();
@@ -62,73 +52,10 @@ const BonusModal: React.FC<BonusModalProps> = ({ konfiId, onClose, onSave, dismi
       onClose();
     }
   };
-  const [name, setName] = useState('');
-  const [points, setPoints] = useState<number>(1);
-  const [reason, setReason] = useState('');
-  // Vorbelegung nur aus den AKTIVEN Arten. Vorher stand fest 'gemeinde' hier --
-  // war ausgerechnet Gemeinde abgeschaltet, war die Voreinstellung die verbotene.
-  const verfuegbareArten = aktivePunktearten(punkteartFlags);
-  const [type, setType] = useState<Punkteart | null>(
-    () => ersteAktivePunkteart(punkteartFlags, 'gemeinde')
-  );
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const { isSubmitting, guard } = useActionGuard();
-  // Eine Kennung je Vorgang (so lange das Fenster offen ist): Erreicht die
-  // Warteschlange den Server zweimal mit derselben, bucht er nur einmal
-  // (Wiederholungsschutz, 08.10.2026). Ein zweites Speichern nach einem
-  // Fehler ist derselbe Vorgang.
-  const vorgangKennung = useRef(safeUUID());
-
-  const handleSave = async () => {
-    if (!name.trim() || points <= 0) return;
-    // Ohne aktive Punkteart gibt es nichts zu vergeben -- der Server wiese das
-    // mit 400 zurueck. Hier abfangen, statt eine leere type-Angabe zu senden.
-    if (!type) {
-      setError('Für diesen Jahrgang ist keine Punkteart aktiv.');
-      return;
-    }
-
-    const body = {
-      points: points,
-      type: type,
-      description: `${name.trim()}${reason.trim() ? ': ' + reason.trim() : ''}`,
-      completed_date: selectedDate,
-      client_id: vorgangKennung.current
-    };
-
-    await guard(async () => {
-      if (networkMonitor.isOnline) {
-        try {
-          await api.post(`/admin/konfis/${konfiId}/bonus-points`, body);
-          // Anonyme Messung NACH der erfolgreichen Antwort. Nur der Weg und
-          // die Punkteart — nicht die Punktzahl, nicht der eingegebene Grund.
-          trackHandlung('punkte-vergeben', { weg: 'bonus', punkteart: type });
-          await onSave();
-          handleClose();
-        } catch (err) {
-          console.error('Error saving bonus points:', err);
-          setError(fehlerText(err, 'Bonus-Punkte konnten nicht gespeichert werden'));
-        }
-      } else {
-        await writeQueue.enqueue({
-          method: 'POST',
-          url: `/admin/konfis/${konfiId}/bonus-points`,
-          body,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'admin',
-            clientId: vorgangKennung.current,
-            label: 'Bonus-Punkte vergeben'
-          }
-        });
-        await onSave();
-        handleClose();
-      }
-    });
-  };
-
-  const isValid = name.trim().length > 0 && points > 0;
+  const {
+    name, setName, points, setPoints, reason, setReason, type, setType, verfuegbareArten,
+    selectedDate, setSelectedDate, isSubmitting, isValid, handleSave,
+  } = useBonusVergeben({ konfiId, punkteartFlags, onSave, schliessen: handleClose });
 
   return (
     <IonPage>
