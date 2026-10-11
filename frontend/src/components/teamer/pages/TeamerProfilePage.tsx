@@ -42,9 +42,11 @@ import { trackHandlung, losungBibelMesswert } from '../../../services/analytics'
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import { CACHE_TTL } from '../../../services/offlineCache';
-import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
 import ChangePasswordModal from '../../shared/ChangePasswordModal';
+import { useNeueEmailUebernehmen } from '../../shared/useEmailAendern';
+import WebEmailAendern from '../../shared/web/konto/WebEmailAendern';
+import WebPasswortAendern from '../../shared/web/konto/WebPasswortAendern';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
@@ -106,7 +108,7 @@ interface TeamerProfile {
 
 const TeamerProfilePage: React.FC = () => {
   const { pageRef } = useModalPage('profile');
-  const { user, setUser, setError, signOut } = useApp();
+  const { user, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   const router = useIonRouter();
@@ -171,22 +173,19 @@ const TeamerProfilePage: React.FC = () => {
     onSelect: (code: string) => { handleTranslationChange(code); dismissBibleModal(); },
   });
 
+  // Nach einer neuen Adresse: Profil neu laden, dann die Adresse in den
+  // Context und den TokenStore (App-Modal und Web-Dialog gleich).
+  const emailUebernehmen = useNeueEmailUebernehmen(refresh);
+  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail und Passwort einen
+  // eigenen Dialog statt des App-Modals.
+  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | null>(null);
+
   // Modals
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModal(),
     onSuccess: async () => {
       dismissEmailModal();
-      await refresh();
-      try {
-        const response = await api.get('/auth/me');
-        if (user) {
-          const updatedUser = { ...user, email: response.data.email };
-          await setTokenStoreUser(updatedUser);
-          setUser(updatedUser);
-        }
-      } catch (err) {
-        console.error('Error refreshing user:', err);
-      }
+      await emailUebernehmen();
     },
     variante: 'teamer'
   });
@@ -305,8 +304,8 @@ const TeamerProfilePage: React.FC = () => {
             presentingElement={seite}
             onRueckblick={setWrappedModalData}
             onFunktion={() => presentRoleTitleModal({ presentingElement: ueber() })}
-            onEmail={() => presentEmailModal({ presentingElement: ueber() })}
-            onPasswort={() => presentPasswordModal({ presentingElement: ueber() })}
+            onEmail={() => setWebDialog('email')}
+            onPasswort={() => setWebDialog('passwort')}
             onUebersetzung={() => presentBibleModal({ presentingElement: ueber() })}
             onTour={() => setShowOnboarding(true)}
             onCache={handleClearMediaCache}
@@ -324,6 +323,16 @@ const TeamerProfilePage: React.FC = () => {
         )}
         {showUpdateWalkthrough && <TeamerUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
         {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="teamer" onClose={() => setShowMitmachenErklaerung(false)} />}
+        {webDialog === 'email' && (
+          <WebEmailAendern
+            initialEmail={profile?.user.email || ''}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); void emailUebernehmen(); }}
+          />
+        )}
+        {webDialog === 'passwort' && (
+          <WebPasswortAendern onSchliessen={() => setWebDialog(null)} onGespeichert={() => setWebDialog(null)} />
+        )}
       </WebSeite>
     );
   }

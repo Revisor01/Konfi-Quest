@@ -1632,3 +1632,38 @@
   opacity: 0.6;
   cursor: default;
 }
+
+/* --- Konto: Anforderungen im Dialog „Passwort ändern“ (alle drei Profile) ---
+   Die Liste beschreibt das Feld „Neues Passwort“ (aria-describedby); erfüllte
+   Punkte tragen einen Haken und die Farbe der Erfolgs-Hinweise. */
+.web-passwort-regeln {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+}
+
+.web-passwort-regeln__liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--app-abstand-mini) var(--app-abstand-mittel);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-passwort-regel {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-passwort-regel--erfuellt {
+  color: var(--app-color-success-tief);
+}
+
+.web-passwort-regel__symbol {
+  flex: none;
+  font-size: var(--app-text-basis);
+}
