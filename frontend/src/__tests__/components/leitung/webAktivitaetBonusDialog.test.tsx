@@ -17,6 +17,11 @@
 // auch das Laden der Liste nicht (wie im Browser), die Liste kommt aus dem
 // zuletzt geladenen Stand -- gab es keinen, sagt der Dialog das, statt die
 // Warteschlange zu versprechen. Und Enter im Suchfeld bucht nichts.
+//
+// Angeglichen an „Passwort ändern" (11.10.2026): Solange gespeichert wird,
+// schließt nichts den Dialog -- das X ist gesperrt, Escape und ein Klick auf
+// den Grund wirken nicht (WebDialog `gesperrt`). Sonst ginge eine Ablehnung
+// des Servers ins Leere.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -110,6 +115,8 @@ vi.mock('../../../components/shared/NachweisFoto', () => ({ default: () => null 
 import KonfiDetailView from '../../../components/admin/views/KonfiDetailView';
 import ActivityModal from '../../../components/admin/modals/ActivityModal';
 import BonusModal from '../../../components/admin/modals/BonusModal';
+import WebAktivitaetDialog from '../../../components/admin/web/leitung/WebAktivitaetDialog';
+import WebBonusDialog from '../../../components/admin/web/leitung/WebBonusDialog';
 
 const ID = 9;
 const KONFI = {
@@ -170,6 +177,18 @@ const eintraege = (dialog: HTMLElement) => within(dialog).getAllByRole('radio').
 const bonusDialog = () => {
   fireEvent.click(kopf().getByRole('button', { name: 'Bonuspunkte vergeben' }));
   return screen.getByRole('dialog', { name: 'Bonuspunkte vergeben' });
+};
+/** Der Server antwortet erst, wenn der Test `kommt()` ruft. */
+const antwortHaengt = () => {
+  const antwort = { kommt: () => undefined as void };
+  h.apiPost.mockImplementationOnce(() => new Promise((ja) => { antwort.kommt = () => ja({ data: {} }); }));
+  return antwort;
+};
+/** Die drei Wege, die einen Dialog sonst schließen: X, Escape, Klick auf den abgedunkelten Grund. */
+const schliessenVersuchen = (dialog: HTMLElement) => {
+  fireEvent.click(within(dialog).getByRole('button', { name: 'Schließen' }));
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  fireEvent.mouseDown(dialog.closest('.web-dialog-grund') as HTMLElement);
 };
 
 beforeEach(() => {
@@ -300,6 +319,35 @@ describe('Aktivität eintragen im Browser: eigener Dialog', () => {
     expect(h.apiPost).not.toHaveBeenCalled();
     expect(h.enqueue).not.toHaveBeenCalled();
     expect(h.triggerRefresh).not.toHaveBeenCalled();
+  });
+
+  it('während des Eintragens schließt nichts den Dialog (X gesperrt, Escape und Klick daneben wirken nicht); nach der Antwort wie bisher', async () => {
+    const antwort = antwortHaengt();
+    const onGespeichert = vi.fn(async () => {});
+    const onSchliessen = vi.fn();
+    render(<WebAktivitaetDialog konfiId={ID} personName="Anna Müller" targetRole="konfi" onGespeichert={onGespeichert} onSchliessen={onSchliessen} />);
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
+    await waitFor(() => expect(within(dialog).getAllByRole('radio')).toHaveLength(3));
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Kirchencafé helfen/ }));
+    await absenden(dialog, 'Eintragen');
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+
+    const x = within(dialog).getByRole('button', { name: 'Schließen' });
+    expect(x).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    schliessenVersuchen(dialog);
+    await warten();
+    expect(onSchliessen).not.toHaveBeenCalled();
+    expect(onGespeichert).not.toHaveBeenCalled();
+
+    // Die Antwort kommt: Die Seite lädt neu, der Dialog schließt genau einmal und ist wieder frei.
+    await act(async () => { antwort.kommt(); });
+    await warten();
+    expect(onGespeichert).toHaveBeenCalledTimes(1);
+    expect(onSchliessen).toHaveBeenCalledTimes(1);
+    expect(x).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onSchliessen).toHaveBeenCalledTimes(2);
   });
 
   it('ohne Netz: die Liste kommt aus dem zuletzt geladenen Stand, der Eintrag geht in die Warteschlange statt an den Server', async () => {
@@ -500,6 +548,34 @@ describe('Bonuspunkte vergeben im Browser: eigener Dialog', () => {
     await warten();
     expect(h.apiPost).not.toHaveBeenCalled();
     expect(h.enqueue).not.toHaveBeenCalled();
+  });
+
+  it('während des Vergebens schließt nichts den Dialog (X gesperrt, Escape und Klick daneben wirken nicht); nach der Antwort wie bisher', async () => {
+    const antwort = antwortHaengt();
+    const onGespeichert = vi.fn(async () => {});
+    const onSchliessen = vi.fn();
+    render(<WebBonusDialog konfiId={ID} personName="Anna Müller" onGespeichert={onGespeichert} onSchliessen={onSchliessen} />);
+    const dialog = screen.getByRole('dialog', { name: 'Bonuspunkte vergeben' });
+    tippen(within(dialog).getByRole('textbox', { name: 'Bezeichnung' }), 'Plakate fürs Fest');
+    await absenden(dialog, 'Vergeben');
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+
+    const x = within(dialog).getByRole('button', { name: 'Schließen' });
+    expect(x).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    schliessenVersuchen(dialog);
+    await warten();
+    expect(onSchliessen).not.toHaveBeenCalled();
+    expect(onGespeichert).not.toHaveBeenCalled();
+
+    // Die Antwort kommt: Die Seite lädt neu, der Dialog schließt genau einmal und ist wieder frei.
+    await act(async () => { antwort.kommt(); });
+    await warten();
+    expect(onGespeichert).toHaveBeenCalledTimes(1);
+    expect(onSchliessen).toHaveBeenCalledTimes(1);
+    expect(x).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onSchliessen).toHaveBeenCalledTimes(2);
   });
 
   it('abgeschaltete Punkteart: nur die aktive zur Wahl, mit Hinweis; sie wird geschickt', async () => {
