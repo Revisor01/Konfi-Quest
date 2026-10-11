@@ -7,7 +7,8 @@
 // Geprueft: Umschaltung (breit der Dialog und kein App-Fenster, schmal das
 // App-Fenster), Felder mit Namen, Vorbelegung, Rollen und Rechte wie in der
 // App, Pruefung mit Meldung, Speichern mit genau diesem Koerper an genau diese
-// Route, Abbrechen ohne Aufruf, ohne Netz gesperrt.
+// Route, Abbrechen ohne Aufruf, ohne Netz gesperrt, waehrend des Speicherns
+// nicht zu schliessen.
 //
 // Meldungen stehen IM Dialog (role="alert"), nicht oben: Die Meldung oben ist
 // ein IonToast in <ion-app> und laege im Browser unter dem abgedunkelten Grund
@@ -312,6 +313,35 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     await klicken(knopf(d, 'Anlegen'));
     expect(meldung(d)).toBe('Fehler beim Speichern des Benutzers');
     expect(h.setError).not.toHaveBeenCalled();
+  });
+
+  it('solange gespeichert wird, schließt nichts den Dialog (wie „Schließen“ in der App); lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    // Vorher ließ sich der Dialog beim Speichern schließen: Das Konto
+    // entstand trotzdem, und eine Ablehnung des Servers ging ins Leere.
+    let ablehnen: (grund: unknown) => void = () => {};
+    h.apiPost.mockReturnValueOnce(new Promise((_ok, nein) => { ablehnen = nein; }));
+    const d = await anlegen();
+    tippen(d, 'Anzeigename', 'Kim Neu');
+    tippen(d, 'Benutzername', 'kim.neu');
+    tippen(d, 'Passwort', BEISPIELWERT);
+    rolleWaehlen(d, 3);
+    await klicken(knopf(d, 'Anlegen'));
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+
+    expect([knopf(d, 'Abbrechen'), knopf(d, 'Schließen'), knopf(d, 'Anlegen')].map((k) => k.disabled)).toEqual([true, true, true]);
+    fireEvent.click(knopf(d, 'Abbrechen'));
+    fireEvent.click(knopf(d, 'Schließen'));
+    fireEvent.keyDown(d, { key: 'Escape' });
+    fireEvent.mouseDown(d.parentElement as HTMLElement);
+    expect(dialog('Benutzer:in anlegen')).toBe(d);
+
+    await act(async () => { ablehnen({ response: { status: 409, data: { error: 'Benutzername bereits vergeben' } } }); });
+    expect(meldung(d)).toBe('Benutzername bereits vergeben');
+    expect(h.refresh).not.toHaveBeenCalled();
+    // Danach lässt er sich wieder schließen.
+    expect(knopf(d, 'Abbrechen')).toBeEnabled();
+    fireEvent.keyDown(d, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('Abbrechen, Schließen und Escape senden nichts', async () => {

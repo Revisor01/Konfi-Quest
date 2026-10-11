@@ -12,6 +12,11 @@
 // IonToast in <ion-app> und laege unter dem abgedunkelten Grund dieses
 // Dialogs (Gegenprüfung 11.10.2026). Die nächste Eingabe räumt sie weg.
 //
+// Während des Speicherns (`loading` des Hooks steht nur dann) schließt nichts
+// den Dialog (Abbrechen, X, Escape, Klick daneben), wie „Schließen" in der
+// App: Das Speichern liefe sonst unbemerkt weiter, und eine Ablehnung des
+// Servers ginge ins Leere.
+//
 // Geoeffnet von AdminJahrgaengeePage im breiten Layout ("Neuer Jahrgang",
 // "Bearbeiten"); unter 992 px und in den Apps bleibt das Fenster der App.
 
@@ -65,9 +70,10 @@ const WebJahrgangDialog: React.FC<WebJahrgangDialogProps> = ({ jahrgang, onSchli
       beschreibung="Hier steuerst du diesen Jahrgang zentral: Punkteziele und die Freischaltung der Konfispruch-Auswahl."
       onSchliessen={onSchliessen}
       onAbsenden={() => { void handleSubmit(); }}
+      gesperrt={loading}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={loading}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={loading}>{jahrgang ? 'Speichern' : 'Anlegen'}</WebKnopf>
         </>
       )}
