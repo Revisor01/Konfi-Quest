@@ -24,8 +24,8 @@ import { PUNKTEART_NAME, type Punkteart } from '../../../../utils/punktearten';
 import { datumKurz, datumLang } from '../../../../utils/dateUtils';
 import { useEventFormular } from '../../modals/useEventFormular';
 import {
-  EVENT_GRENZEN, letzterSerienTermin, lokaleZeit, mitKonfirmation, mitPflicht, mitSerie, mitSerienIntervall, mitSichtbarerAuswahl,
-  mitUhrzeit, nachZielgruppe, plaetzeHoechstwert, serienHoechstzahl, verdeckteAuswahl, verfuegbarePunktearten, type TeamerZugang,
+  EVENT_GRENZEN, letzterSerienTermin, lokaleZeit, mitKonfirmation, mitPflicht, mitSerie, mitSerienIntervall, mitUhrzeit,
+  nachZielgruppe, plaetzeHoechstwert, serienHoechstzahl, verdeckteAuswahl, verfuegbarePunktearten, type TeamerZugang,
 } from '../../modals/eventFormularRegeln';
 import WebDialog from '../../../web/WebDialog';
 import WebFeld from '../../../web/WebFeld';
@@ -142,11 +142,10 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
   ];
 
   // Admins und Teamer:innen sehen nur ihre eigenen Jahrgänge als Haken. Gehört
-  // das Event auch einem fremden, bleibt er in der Auswahl (mitSichtbarerAuswahl)
-  // und der Hinweis sagt es -- sonst stünde „2 ausgewählt" neben einem Haken.
-  // Solange die Liste lädt, ist nichts verdeckt.
-  const jahrgangIds = jahrgaenge.map((j) => j.id);
-  const verdeckt = jahrgaenge.length > 0 ? verdeckteAuswahl(formData.jahrgang_ids, jahrgangIds) : [];
+  // das Event auch einem fremden, bleibt er in der Auswahl (das hält die
+  // Ankreuzliste selbst) und der Hinweis sagt es -- sonst stünde „2 ausgewählt"
+  // neben einem Haken. Solange die Liste lädt, ist nichts verdeckt.
+  const verdeckt = jahrgaenge.length > 0 ? verdeckteAuswahl(formData.jahrgang_ids, jahrgaenge.map((j) => j.id)) : [];
   const verdecktNamen = verdeckt
     .map((id) => event?.jahrgaenge?.find((j) => j.id === id)?.name)
     .filter((name): name is string => !!name);
@@ -218,10 +217,7 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
             label="Kategorien (mehrere möglich)"
             eintraege={categories.map((c) => ({ wert: String(c.id), titel: c.name }))}
             werte={formData.category_ids.map(String)}
-            onWerte={(werte) => {
-              setFehler(null);
-              setFormData((f) => ({ ...f, category_ids: mitSichtbarerAuswahl(f.category_ids, categories.map((c) => c.id), werte.map(Number)) }));
-            }}
+            onWerte={(werte) => { setFehler(null); setFormData((f) => ({ ...f, category_ids: werte.map(Number) })); }}
             leerText="Keine Kategorien verfügbar"
             deaktiviert={aus}
           />
@@ -231,10 +227,7 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
               pflicht={formData.mandatory}
               eintraege={jahrgaenge.map((j) => ({ wert: String(j.id), titel: j.name }))}
               werte={formData.jahrgang_ids.map(String)}
-              onWerte={(werte) => {
-                setFehler(null);
-                setFormData((f) => ({ ...f, jahrgang_ids: mitSichtbarerAuswahl(f.jahrgang_ids, jahrgangIds, werte.map(Number)) }));
-              }}
+              onWerte={(werte) => { setFehler(null); setFormData((f) => ({ ...f, jahrgang_ids: werte.map(Number) })); }}
               leerText="Keine Jahrgänge angelegt"
               hinweis={jahrgangHinweis}
               deaktiviert={aus}

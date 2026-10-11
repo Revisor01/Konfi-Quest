@@ -98,6 +98,24 @@ describe('WebMehrfachAuswahl', () => {
     expect(screen.getByTestId('werte').textContent).toBe('1');
   });
 
+  // Admins und Teamer:innen sehen nur ihre eigenen Jahrgänge; ein Event kann
+  // zusätzlich fremden gehören (hier 9 und 7). Die Liste zeigt sie nicht als
+  // Haken -- beim Umschalten dürfen sie trotzdem nicht aus der Auswahl fallen,
+  // sonst entfernt das Speichern sie still. Die App schaltet ebenso relativ
+  // zum bisherigen Stand um.
+  it('Werte, die die Liste nicht zeigt, bleiben beim Umschalten erhalten: hinten, die gezeigten in Listenfolge', () => {
+    render(<Harness start={['9', '2', '7']} />);
+    expect(screen.getAllByRole('checkbox').map((h) => (h as HTMLInputElement).checked)).toEqual([false, true, false]);
+    fireEvent.click(screen.getByRole('checkbox', { name: '2027/2028' }));
+    expect(screen.getByTestId('werte').textContent).toBe('2,3,9,7');
+    fireEvent.click(screen.getByRole('checkbox', { name: /^2026\/2027/ }));
+    expect(screen.getByTestId('werte').textContent).toBe('3,9,7');
+    fireEvent.click(screen.getByRole('checkbox', { name: '2027/2028' }));
+    expect(screen.getByTestId('werte').textContent).toBe('9,7');
+    fireEvent.click(screen.getByRole('checkbox', { name: '2025/2026' }));
+    expect(screen.getByTestId('werte').textContent).toBe('1,9,7');
+  });
+
   it('ohne Einträge steht der Leertext statt einer leeren Liste', () => {
     render(<WebMehrfachAuswahl label="Kategorien" eintraege={[]} werte={[]} onWerte={() => {}} leerText="Noch keine Kategorien angelegt." />);
     expect(screen.getByRole('status').textContent).toBe('Noch keine Kategorien angelegt.');

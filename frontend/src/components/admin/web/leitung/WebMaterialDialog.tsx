@@ -60,17 +60,6 @@ export interface WebMaterialDialogProps {
 
 const GRENZE_MB = Math.round(UPLOAD_GRENZE.material / (1024 * 1024));
 
-/**
- * Die neue Auswahl einer Ankreuzliste, ohne zugeordnete Werte zu verlieren,
- * die die Liste gar nicht anbietet (ein vergangenes Event, ein Jahrgang, den
- * diese Person nicht sieht). Die App schaltet einzeln um und behält sie
- * ebenso.
- */
-const auswahlUebernehmen = (bisher: readonly number[], angeboten: readonly number[], gewaehlt: readonly string[]): number[] => [
-  ...bisher.filter((id) => !angeboten.includes(id)),
-  ...gewaehlt.map(Number),
-];
-
 /** Wer das Material bearbeiten darf -- derselbe Satz wie in der App. */
 const rechteText = (material: Material | null): string => (material?.created_by_name
   ? `Angelegt von ${material.created_by_name}. Bearbeiten und löschen kann nur diese Person oder die Gemeindeleitung.`
@@ -330,8 +319,6 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
     );
   }
 
-  const angeboteneEvents = f.eventsZurAuswahl.map((ev) => ev.id);
-  const angeboteneJahrgaenge = f.jahrgaenge.map((j) => j.id);
   const linkName = (index: number) => `Adresse ${f.linkUrls.length > 1 ? index + 1 : ''}`.trim();
   const hatDateien = f.existingFiles.length > 0 || f.newFiles.length > 0;
   const gesperrt = f.isSubmitting || loescht;
@@ -384,6 +371,8 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
         />
 
         <h3 className="web-gruppe">Zuordnung</h3>
+        {/* Was die Listen nicht anbieten (ein vergangenes Event, ein Jahrgang,
+            den diese Person nicht sieht), behält die Ankreuzliste beim Umschalten. */}
         <div className="web-feldpaar">
           <WebMehrfachAuswahl
             label="Events"
@@ -393,7 +382,7 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
               beschreibung: ev.event_date ? datumKurz(ev.event_date) : undefined,
             }))}
             werte={f.eventIds.map(String)}
-            onWerte={(werte) => f.setEventIds(auswahlUebernehmen(f.eventIds, angeboteneEvents, werte))}
+            onWerte={(werte) => f.setEventIds(werte.map(Number))}
             leerText="Keine anstehenden Events."
             hinweis={f.eventIds.length > 0
               ? `${f.eventIds.length} ${f.eventIds.length === 1 ? 'Event' : 'Events'} ausgewählt`
@@ -404,7 +393,7 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
             label="Jahrgänge"
             eintraege={f.jahrgaenge.map((j) => ({ wert: String(j.id), titel: j.name }))}
             werte={f.jahrgangIds.map(String)}
-            onWerte={(werte) => f.setJahrgangIds(auswahlUebernehmen(f.jahrgangIds, angeboteneJahrgaenge, werte))}
+            onWerte={(werte) => f.setJahrgangIds(werte.map(Number))}
             leerText="Keine Jahrgänge vorhanden."
             hinweis={sichtbarkeitText(f.jahrgangIds.length)}
             deaktiviert={f.isSubmitting}

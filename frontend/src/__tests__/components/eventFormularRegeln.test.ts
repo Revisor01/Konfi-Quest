@@ -6,8 +6,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   letzterSerienTermin, lokaleZeit, mitAnmeldungAbSofort, mitKonfirmation, mitPflicht, mitSerie, mitSerienIntervall,
-  mitSichtbarerAuswahl, mitUhrzeit, nachDatumswechsel, nachZielgruppe, plaetzeHoechstwert, serienHoechstzahl,
-  verdeckteAuswahl, verfuegbarePunktearten,
+  mitUhrzeit, nachDatumswechsel, nachZielgruppe, plaetzeHoechstwert, serienHoechstzahl, verdeckteAuswahl,
+  verfuegbarePunktearten,
 } from '../../components/admin/modals/eventFormularRegeln';
 import type { EventFormData } from '../../components/admin/modals/EventFormSections';
 
@@ -117,17 +117,6 @@ describe('Plätze und Punktearten', () => {
 });
 
 describe('Auswahl aus einer Liste, die nicht alles zeigt (Jahrgänge außerhalb der eigenen)', () => {
-  it('die verdeckten Werte bleiben; erst die gezeigten in Listenfolge, dann die verdeckten', () => {
-    // Gezeigt wird nur Jahrgang 1; das Event gehört auch Jahrgang 2.
-    expect(mitSichtbarerAuswahl([1, 2], [1], [])).toEqual([2]);
-    expect(mitSichtbarerAuswahl([2], [1], [1])).toEqual([1, 2]);
-    expect(mitSichtbarerAuswahl([2, 1], [1, 3], [1, 3])).toEqual([1, 3, 2]);
-    // Alles gezeigt: die Auswahl der Liste, nichts dazu.
-    expect(mitSichtbarerAuswahl([1, 2], [1, 2], [2])).toEqual([2]);
-    // Ein Wert, den die Liste nicht kennt, kommt über die Auswahl nicht herein.
-    expect(mitSichtbarerAuswahl([], [1], [1, 9])).toEqual([1]);
-  });
-
   it('verdeckt ist, was gewählt ist und die Liste nicht zeigt', () => {
     expect(verdeckteAuswahl([1, 2, 4], [1, 3])).toEqual([2, 4]);
     expect(verdeckteAuswahl([1], [1, 3])).toEqual([]);
