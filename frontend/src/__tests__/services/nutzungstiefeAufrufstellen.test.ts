@@ -27,13 +27,15 @@ const STELLEN: Array<{
   /** Der api-Aufruf, hinter dem die Messung stehen MUSS. */
   vorher: string;
 }> = [
+  // Aktivitaet eintragen und Bonuspunkte vergeben speichern seit 11.10.2026
+  // im Hook, den das Modal der App und der Dialog der Web-Fassung teilen.
   {
-    datei: 'src/components/admin/modals/ActivityModal.tsx',
+    datei: 'src/components/admin/modals/useAktivitaetEintragen.ts',
     handlung: 'punkte-vergeben',
     vorher: '/activities`, body)'
   },
   {
-    datei: 'src/components/admin/modals/BonusModal.tsx',
+    datei: 'src/components/admin/modals/useBonusVergeben.ts',
     handlung: 'punkte-vergeben',
     vorher: '/bonus-points`, body)'
   },

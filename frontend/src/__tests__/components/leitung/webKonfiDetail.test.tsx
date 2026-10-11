@@ -8,6 +8,8 @@
 // (KonfiDetailView) haelt Daten und Aktionen und oeffnet dieselben Fenster und
 // Rueckfragen wie in der App; geprueft wird, dass die Web-Fassung genau diese
 // ruft -- mit den richtigen Werten --, und dass die App-Darstellung bleibt.
+// Aktivitaet eintragen und Bonuspunkte vergeben oeffnen seit 11.10.2026 eigene
+// Dialoge der Web-Fassung (Formular und Speichern: webAktivitaetBonusDialog.test.tsx).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -287,8 +289,16 @@ describe('Konfi-Detail (Web): Person und Punkte', () => {
 });
 
 describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
-  it('Aktivitaet eintragen und Bonuspunkte vergeben: dieselben Fenster, vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs', async () => {
+  // Bis 11.10.2026 oeffneten beide Knoepfe die Modale der App; seitdem eigene
+  // Dialoge der Web-Fassung (Simon: „Web braucht eigene kompaktere Modale
+  // überall"). Gewollte Aenderung: Die Erwartung prueft jetzt den Dialog,
+  // vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs.
+  it('Aktivitaet eintragen und Bonuspunkte vergeben: eigene Dialoge der Web-Fassung, vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, gottesdienst_enabled: false });
+    h.antworten.set('/admin/activities?target_role=konfi', [
+      { id: 31, name: 'Gottesdienstbesuch', points: 1, type: 'gottesdienst' },
+      { id: 32, name: 'Kirchencafé helfen', points: 2, type: 'gemeinde' },
+    ]);
     await oeffnen();
     const aktionen = kopf();
     // Alle Aktionen stehen im Kopf, die wichtigste als Hauptknopf.
@@ -296,12 +306,21 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
       .toEqual(['Passwort zurücksetzen', 'Konfi bearbeiten', 'Bonuspunkte vergeben', 'Aktivität eintragen']);
     expect(aktionen.getByRole('button', { name: 'Aktivität eintragen' }).classList.contains('web-knopf--primaer')).toBe(true);
     fireEvent.click(aktionen.getByRole('button', { name: 'Aktivität eintragen' }));
-    expect(fenster(ActivityModal)).toHaveLength(1);
-    expect(fenster(ActivityModal)[0].props).toEqual(expect.objectContaining({
-      konfiId: ID, targetRole: 'konfi', punkteartFlags: { gottesdienst_enabled: false, gemeinde_enabled: undefined },
-    }));
+    const aktivitaet = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
+    expect(aktivitaet).toHaveAccessibleDescription('Für Anna Müller');
+    // Gottesdienst ist im Jahrgang abgeschaltet: nur die Gemeinde-Aktivitaet steht zur Wahl.
+    await waitFor(() => expect(within(aktivitaet).getAllByRole('radio').map((r) => r.closest('label')?.querySelector('.web-wahl__titel')?.textContent))
+      .toEqual(['Kirchencafé helfen']));
+    expect(fenster(ActivityModal)).toHaveLength(0);
+    fireEvent.click(within(aktivitaet).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
     fireEvent.click(aktionen.getByRole('button', { name: 'Bonuspunkte vergeben' }));
-    expect(fenster(BonusModal)[0].props).toEqual(expect.objectContaining({ konfiId: ID, punkteartFlags: { gottesdienst_enabled: false, gemeinde_enabled: undefined } }));
+    const bonus = screen.getByRole('dialog', { name: 'Bonuspunkte vergeben' });
+    expect(bonus).toHaveAccessibleDescription('Für Anna Müller');
+    const typ = within(bonus).getByRole('combobox', { name: 'Typ' }) as HTMLSelectElement;
+    expect([...typ.options].map((o) => o.textContent)).toEqual(['Gemeinde']);
+    expect(fenster(BonusModal)).toHaveLength(0);
   });
 
   it('Bearbeiten: das Formular mit Name und Jahrgang der Konfi; die Gemeindeleitung sieht alle Jahrgaenge', async () => {

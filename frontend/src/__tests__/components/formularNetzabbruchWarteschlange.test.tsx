@@ -172,7 +172,8 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
   });
 
   it('verboten: Bonuspunkte (POST ohne Idempotenzschluessel) fallen nach einem Abbruch NICHT in die Warteschlange', () => {
-    const bonus = lies('admin/modals/BonusModal.tsx');
+    // Speichern steht seit 11.10.2026 im Hook, den App-Modal und Web-Dialog teilen.
+    const bonus = lies('admin/modals/useBonusVergeben.ts');
     expect(bonus).not.toContain('idempotent: true');
   });
 });
@@ -183,7 +184,9 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
 // daran den zweiten Eingang) und als Kennung des Warteschlangen-Eintrags.
 describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id', () => {
   it('Bonuspunkte: eine Kennung je Fenster, im Rumpf und in der Warteschlange', () => {
-    const bonus = lies('admin/modals/BonusModal.tsx');
+    // Im Hook (useBonusVergeben), den App-Modal und Web-Dialog teilen; gerendert
+    // prueft es webAktivitaetBonusDialog.test.tsx (Rumpf und Warteschlange).
+    const bonus = lies('admin/modals/useBonusVergeben.ts');
     expect(bonus).toContain('const vorgangKennung = useRef(safeUUID());');
     expect(bonus).toContain('client_id: vorgangKennung.current');
     expect(bonus).toContain('clientId: vorgangKennung.current,');

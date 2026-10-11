@@ -1,6 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import React from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonButtons, IonItem, IonLabel, IonList, IonListHeader, IonIcon, IonTextarea, IonCard, IonCardContent, IonSpinner, IonDatetime, IonDatetimeButton, IonModal, useIonAlert } from '@ionic/react';
 import {
   ICON_ABZEICHEN_GEFUELLT,
@@ -12,23 +10,13 @@ import {
   ICON_SCHLIESSEN,
   ICON_TERMIN_GEFUELLT,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
-import { istPunkteartAktiv, type PunkteartFlags } from '../../../utils/punktearten';
-import { trackHandlung } from '../../../services/analytics';
+import type { PunkteartFlags } from '../../../utils/punktearten';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { useZeitgeber } from '../../../hooks/useZeitgeber';
+import { useAktivitaetEintragen } from './useAktivitaetEintragen';
 
-interface Activity {
-  id: number;
-  name: string;
-  points: number;
-  type: string;
-  categories?: { id: number; name: string }[];
-}
+// Laden, Vorbelegung, Speichern und Warteschlange stehen in
+// useAktivitaetEintragen -- dieselbe Logik wie im Dialog der Web-Fassung
+// (web/leitung/WebAktivitaetDialog).
 
 interface ActivityModalProps {
   konfiId: number;
@@ -46,27 +34,7 @@ interface ActivityModalProps {
 }
 
 const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave, dismiss, targetRole, punkteartFlags }) => {
-  const { setError } = useApp();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedActivity, setSelectedActivity] = useState<number | null>(null);
-  const [comment, setComment] = useState('');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const { isSubmitting, guard } = useActionGuard();
-  const [isDirty, setIsDirty] = useState(false);
   const [presentAlert] = useIonAlert();
-  const initializedRef = useRef(false);
-  const zeitgeber = useZeitgeber();
-
-  // isDirty nach Initialisierung tracken
-  useEffect(() => {
-    if (initializedRef.current) {
-      setIsDirty(true);
-    }
-  }, [selectedActivity, comment, selectedDate]);
-
-  useEffect(() => {
-    zeitgeber.nach(100, () => { initializedRef.current = true; });
-  }, []);
 
   const doClose = () => {
     if (dismiss) {
@@ -75,6 +43,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
       onClose();
     }
   };
+
+  const {
+    aktivitaetenSortiert, selectedActivity, setSelectedActivity, comment, setComment,
+    selectedDate, setSelectedDate, isSubmitting, isDirty, handleSave,
+  } = useAktivitaetEintragen({ konfiId, targetRole, punkteartFlags, onSave, schliessen: doClose });
 
   const handleClose = () => {
     if (isDirty) {
@@ -89,78 +62,6 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
     } else {
       doClose();
     }
-  };
-
-  useEffect(() => {
-    loadActivities();
-  }, []);
-
-  const loadActivities = async () => {
-    try {
-      const url = targetRole ? `/admin/activities?target_role=${targetRole}` : '/admin/activities';
-      const response = await api.get(url);
-      // Nur Aktivitaeten anbieten, deren Punkteart im Jahrgang aktiv ist.
-      // Teamer-Aktivitaeten haben type = NULL und keine Punkteart -- die
-      // bleiben unabhaengig davon in der Liste.
-      setActivities(
-        (response.data || []).filter((activity: Activity) =>
-          !activity.type || istPunkteartAktiv(punkteartFlags, activity.type as 'gottesdienst' | 'gemeinde')
-        )
-      );
-    } catch (err) {
- console.error('Error loading activities:', err);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!selectedActivity) return;
-
-    const body = {
-      activity_id: selectedActivity,
-      completed_date: selectedDate,
-      comment: comment
-    };
-
-    await guard(async () => {
-      if (networkMonitor.isOnline) {
-        try {
-          await api.post(`/admin/konfis/${konfiId}/activities`, body);
-          // Anonyme Messung NACH der erfolgreichen Antwort: eine Aktivitaet
-          // wurde wirklich verbucht. Nur der Weg und die Punkteart — kein
-          // Name der Aktivitaet, keine Konfi, keine Punktzahl.
-          trackHandlung('punkte-vergeben', {
-            weg: 'aktivitaet',
-            punkteart: activities.find((a) => a.id === selectedActivity)?.type || 'ohne'
-          });
-          setIsDirty(false);
-          await onSave();
-          doClose();
-        } catch (err) {
-          // Ohne diese Meldung blieb das Modal bei einer Ablehnung des Servers
-          // einfach offen stehen — etwa wenn die Punktart im Jahrgang
-          // abgeschaltet ist. Für die Leitung sah das so aus, als passiere
-          // nichts (Befund 24.08.2026).
-          console.error('Error saving activity:', err);
-          setError(fehlerText(err, 'Aktivität konnte nicht gespeichert werden'));
-        }
-      } else {
-        await writeQueue.enqueue({
-          method: 'POST',
-          url: `/admin/konfis/${konfiId}/activities`,
-          body,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'admin',
-            clientId: safeUUID(),
-            label: 'Aktivität zuweisen'
-          }
-        });
-        setIsDirty(false);
-        await onSave();
-        doClose();
-      }
-    });
   };
 
   // Farben für Aktivitäten (CSS-Variablen statt Hex)
@@ -244,22 +145,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ konfiId, onClose, onSave,
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
-                {[...activities]
-                  .sort((a, b) => {
-                    // NULL-SICHER: Teamer-Aktivitäten duerfen type = NULL haben
-                    // ("Konfi-Wochenende", "Konfi-Freizeit begleitet"). Ein
-                    // direktes a.type.localeCompare() warf dort sofort, der
-                    // Render brach ab und die ErrorBoundary loggte aus — das war
-                    // der Rauswurf beim Oeffnen (User-Hinweis 11.08.).
-                    // Ausserdem NICHT mehr in-place sortieren: .sort() mutiert
-                    // sonst das activities-State-Array bei jedem Render.
-                    const typeA = a.type || '';
-                    const typeB = b.type || '';
-                    if (typeA !== typeB) {
-                      return typeA.localeCompare(typeB);
-                    }
-                    return (a.name || '').localeCompare(b.name || '');
-                  })
+                {aktivitaetenSortiert
                   .map(activity => {
                     const isSelected = selectedActivity === activity.id;
                     // Bei Teamer einheitlich Pink, sonst Gottesdienst blau / Gemeinde dunkelgrün
