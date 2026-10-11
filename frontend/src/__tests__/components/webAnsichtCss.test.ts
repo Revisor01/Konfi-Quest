@@ -56,6 +56,20 @@ describe('theme/web-ansicht.css: eigenes Stylesheet der Web-Fassungen', () => {
     expect([...gelesen].filter((t) => !definiert.has(t))).toEqual([]);
   });
 
+  // Gemessen 11.10.2026: „Neuer Jahrgang" (520 px, ohne breit) bei 1280 x 800
+  // -- die Knoepfe lagen bei 809-845 px, der Dialog endete bei 776 px.
+  it('die Knopfleiste jedes Dialogs bleibt beim Scrollen unten im Bild, nicht nur im breiten', () => {
+    const alle = regeln(rein);
+    const leiste = alle.find(([s]) => s === '.web-dialog__aktionen')?.[1] ?? '';
+    expect(leiste).toMatch(/position:\s*sticky;/);
+    expect(leiste).toMatch(/bottom:\s*calc\(-1 \* var\(--app-abstand-gross\)\);/);
+    expect(leiste).toMatch(/background:\s*var\(--web-karte\);/);
+    expect(alle.filter(([s]) => /\.web-dialog--breit\s+\.web-dialog__aktionen/.test(s))).toEqual([]);
+    // Was den Fokus bekommt, scrollt der Browser ueber die Leiste statt dahinter.
+    const dialog = alle.find(([s]) => s === '.web-dialog')?.[1] ?? '';
+    expect(dialog).toMatch(/scroll-padding-bottom:\s*calc\(6 \* var\(--app-abstand-gross\)\);/);
+  });
+
   it('der Dunkelmodus legt nur Aliasse um -- Seitengrund und Hover --, keine Farbwerte', () => {
     const von = rein.indexOf('@media (prefers-color-scheme: dark)');
     expect(von).toBeGreaterThan(-1);

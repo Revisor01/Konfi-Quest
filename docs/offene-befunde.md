@@ -423,6 +423,37 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   löschen** im Fenster „Aktivität prüfen" kommt „Foto erfolgreich gelöscht"
   als Toast unter dem Fenster, das offen bleibt (`setSuccess` in
   `useAntragPruefen`) (11.10.2026).
+- **Kompakte Fenster im Browser: Feinschliff aus der Bilderprüfung**
+  (11.10.2026, alle Fenster bei 1440 und 1280, hell und dunkel angesehen;
+  kein Feld abgeschnitten, keine Überlappung):
+  - Die Datumsfelder der eigenen Fenster folgen der Sprache des Browsers;
+    ein englisch eingestellter Browser zeigt „10/11/2026, 05:00 PM". Mit
+    deutschem Browser steht dort „11.10.2026, 17:00". Das App-Modal zeigte
+    im Browser immer Deutsch.
+  - Die beiden Datumswähler in `ChallengeManageModal` haben kein
+    `locale="de-DE"` (die übrigen Datumswähler der App setzen es); auf einem
+    englisch eingestellten Gerät oder Browser kommen englische Monate und
+    12-Stunden-Zeit.
+  - Das Schließen-Kreuz der Fenster ist klein (Symbol 14 px im
+    30-px-Knopf), das App-Modal hatte ein großes Kreuz links.
+  - Scrollen im Scrollen: das Symbolraster beim Badge (eigene Höhe 248 px)
+    und die Eventliste beim Material scrollen in einem Fenster, das selbst
+    scrollt; beim Material sind nach dem Scrollen Titel und Kreuz weg.
+  - „Aktivität melden": „Aktivität" ohne Pflichtstern, der Platzhalter
+    „Anmerkungen... (optional)" doppelt zum Hinweis „Freiwillig." und mit
+    drei Punkten statt „…" (ebenso „Bitte gib einen Grund für die Ablehnung
+    an..." beim Prüfen); unter zwei Team-Aktivitäten bleiben links etwa
+    170 px leer.
+  - „Benutzer:in anlegen": Passwortfeld ohne Platzhalter und ohne Hinweis
+    auf die Regeln (vorher „Passwort eingeben").
+  - „Neues Level": „Benötigte Punkte" ist mit 0 vorbelegt; gibt es schon
+    ein Level mit 0 Punkten, lehnt der Server ohne Änderung ab („Ein Level
+    mit dieser Punktzahl existiert bereits"). Nur im Code nachvollzogen.
+  - Im Dunkeln hebt sich der Datumswähler über einem App-Modal kaum ab
+    (gleicher Grund wie die Karte darunter), und der Knopf der Schalter ist
+    schwarz statt weiß.
+  - Die Anwesenheit nutzt die 880 px schlecht: Namensspalte schmal und
+    zentriert, die Σ-Spalte nimmt die rechte Hälfte ein.
 
 ### Tests und CI
 

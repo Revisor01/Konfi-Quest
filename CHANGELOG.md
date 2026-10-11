@@ -146,8 +146,8 @@ Versionsüberschrift.
   Events, Aktivität eintragen, melden und prüfen, Bonuspunkte, Material,
   Badges, Kategorien, Level, Zertifikate, Benutzer:innen, Jahrgänge, Passwort
   und E-Mail-Adresse — mit beschrifteten Feldern, dem Kalender des Browsers
-  für Datum und Uhrzeit und den Knöpfen unten rechts, die in langen Formularen
-  beim Scrollen im Bild bleiben.
+  für Datum und Uhrzeit und den Knöpfen unten rechts, die beim Scrollen im
+  Bild bleiben.
 - In diesen Fenstern steht der Grund im Fenster selbst, wenn eine Angabe fehlt
   oder der Server ablehnt, und solange gespeichert wird, lässt sich das
   Fenster nicht schließen.

@@ -217,9 +217,9 @@ reichen weiter. Das gilt für:
 In diesen Fenstern gilt:
 
 - **Speichern oder abbrechen:** Unten rechts stehen **Abbrechen** und der
-  Hauptknopf, etwa **Speichern**, **Anlegen** oder **Eintragen**. In langen
-  Formularen wie Event, Material oder Badge bleibt diese Knopfleiste beim
-  Scrollen unten im Bild. Enter in einem einzeiligen Feld schickt das
+  Hauptknopf, etwa **Speichern**, **Anlegen** oder **Eintragen**. Ist ein
+  Formular länger als das Fenster — etwa Event, Material oder Badge —, bleibt
+  diese Knopfleiste beim Scrollen unten im Bild. Enter in einem einzeiligen Feld schickt das
   Formular ab.
 - **Suchen:** Enter in einem Suchfeld schickt nichts ab. Passt nur noch ein
   Eintrag, wählt Enter ihn aus; blendet die Suche deine Wahl aus, steht sie

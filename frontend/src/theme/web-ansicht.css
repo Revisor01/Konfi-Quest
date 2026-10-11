@@ -1883,10 +1883,6 @@ mark.web-treffer {
   font-size: var(--app-text-sekundaer);
   line-height: 1.45;
   box-sizing: border-box;
-}
-
-.web-dialog--breit {
-  max-width: 720px;
   /* Was den Fokus bekommt (per Tab oder nach Loeschen und Entfernen), scrollt
      der Browser ueber die Knopfleiste unten (siehe dort) statt dahinter. Die
      Leiste ist 61 px hoch, mit einer Meldung darin 116 px. Gemessen
@@ -1894,6 +1890,10 @@ mark.web-treffer {
      „Anmeldung ab sofort" (Event, Unterkante 766 px) hinter der Leiste ab
      714 px, ebenso „Link hinzufuegen" (Material); damit kein Feld. */
   scroll-padding-bottom: calc(6 * var(--app-abstand-gross));
+}
+
+.web-dialog--breit {
+  max-width: 720px;
 }
 
 .web-dialog *,
@@ -1933,27 +1933,23 @@ mark.web-treffer {
   gap: var(--app-abstand-mittel);
 }
 
+/* Abbrechen und die Hauptaktion bleiben beim Scrollen unten im Bild, statt
+   erst am Ende des Formulars zu stehen -- wie der Haken oben im Modal der
+   App. Gemessen 11.10.2026 bei 1440 x 900: Neues Event 1400 px Inhalt in
+   850 px Dialoghoehe, Neues Badge 1211 px (die Leiste stand dort oben
+   geoeffnet 341 px unter dem Rand), Neues Material 910 px. Das gilt auch fuer
+   die schmalen Dialoge: „Neuer Jahrgang" bei 1280 x 800 hatte die Knoepfe bei
+   809-845 px, der Dialog endete bei 776 px. Die Leiste steht im Formular oder,
+   bei Dialogen ohne onAbsenden, direkt im Dialog; der Selektor trifft beide. */
 .web-dialog__aktionen {
+  position: sticky;
+  bottom: calc(-1 * var(--app-abstand-gross));
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--app-abstand-eng);
-  margin-top: var(--app-abstand-eng);
-}
-
-/* Breite Dialoge sind die langen Formulare (Event, Material, Badge, Level,
-   Benutzer:in, Aktivitaet melden und pruefen): Abbrechen und die Hauptaktion
-   bleiben beim Scrollen unten im Bild, statt erst am Ende des Formulars zu
-   stehen -- wie der Haken oben im Modal der App. Gemessen 11.10.2026 bei
-   1440 x 900: Neues Event 1400 px Inhalt in 850 px Dialoghoehe, Neues Badge
-   1211 px (die Leiste stand dort oben geoeffnet 341 px unter dem Rand),
-   Neues Material 910 px. Die Leiste steht im Formular oder, bei Dialogen
-   ohne onAbsenden, direkt im Dialog; der Selektor trifft beide. */
-.web-dialog--breit .web-dialog__aktionen {
-  position: sticky;
-  bottom: calc(-1 * var(--app-abstand-gross));
-  z-index: 1;
-  margin: 0 calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-gross));
+  margin: var(--app-abstand-eng) calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-gross));
   padding: var(--app-abstand-mittel) var(--app-abstand-gross);
   border-top: 1px solid var(--web-linie-leise);
   background: var(--web-karte);

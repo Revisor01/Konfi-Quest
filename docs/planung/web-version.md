@@ -330,7 +330,7 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     die dabei behoben wurden (Badge-Auswahl beim Bearbeiten und Zeitraum ohne
     eigene Wahl, deutsches Datum beim Melden, gemerkte Liste beim Eintragen
     ohne Netz). Gemeinsam: gesperrt während des Sendens (`gesperrt`), die
-    Knopfleiste breiter Dialoge klebt unten (`web-ansicht.css`),
+    Knopfleiste klebt unten, auch in den schmalen Dialogen (`web-ansicht.css`),
     Ankreuzlisten behalten Werte außerhalb der Liste
     (`WebMehrfachAuswahl`), Enter im Suchfeld schickt nicht ab
     (`WebAuswahlSuche`), Datum und Uhrzeit als Felder des Browsers
