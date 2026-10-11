@@ -222,10 +222,10 @@ describe('Leitung: Bearbeiten ja, Anlegen nein', () => {
   const faelle: Array<[string, string]> = [
     // Die Logik des Badge-Formulars steht seit 11.10.2026 im Hook (App-Modal und Web-Dialog teilen ihn).
     ['admin/useBadgeFormular.ts', "methode: isEditMode ? 'PUT' : 'POST'"],
-    ['admin/modals/LevelManagementModal.tsx', "methode: level?.id ? 'PUT' : 'POST'"],
+    ['admin/useLevelFormular.ts', "methode: level?.id ? 'PUT' : 'POST'"], // Logik des LevelManagementModal (11.10.2026)
     ['admin/modals/ActivityManagementModal.tsx', "methode: currentActivity ? 'PUT' : 'POST'"],
-    ['admin/pages/AdminCategoriesPage.tsx', "methode: category ? 'PUT' : 'POST'"],
-    ['admin/pages/AdminCertificatesPage.tsx', "methode: certificateType ? 'PUT' : 'POST'"],
+    ['admin/useKategorieFormular.ts', "methode: category ? 'PUT' : 'POST'"], // Logik des CategoryModal (11.10.2026)
+    ['admin/useZertifikatFormular.ts', "methode: certificateType ? 'PUT' : 'POST'"], // Logik des CertificateModal (11.10.2026)
     ['admin/pages/AdminJahrgaengeePage.tsx', "methode: jahrgang ? 'PUT' : 'POST'"],
     ['admin/pages/AdminDashboardSettingsPage.tsx', "methode: 'PUT'"],
   ];

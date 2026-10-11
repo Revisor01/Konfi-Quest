@@ -7,8 +7,9 @@
 // (10.10.2026); hier stehen nur Spalten, Karte und Daten.
 //
 // Daten, Rechte und Fenster kommen von der Seite (AdminCategoriesPage): Das
-// Formular ist dasselbe Fenster wie in der App (CategoryModal), das Loeschen
-// fragt dieselbe Rueckfrage.
+// Formular ist ein eigener Dialog (WebKategorieDialog, 11.10.2026) mit der
+// Logik des App-Modals (useKategorieFormular), das Loeschen fragt dieselbe
+// Rueckfrage.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
