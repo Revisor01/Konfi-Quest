@@ -296,6 +296,12 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
   Client"): Mails als Gespräche, Posteingang und Vorgänge im Browser mit
   Liste und Lesebereich, Antworten, Einordnen und Einsortieren als Modal bzw.
   kompakter Dialog ([betrieb/support-ansicht.md](../betrieb/support-ansicht.md#zwei-gesichter-browser-und-app)).
+  Zweiter Schritt, Entwurf vom 11.10.2026 (Simon: „Support Details Seiten …
+  müssen wir optimieren auf App und Desktop"): die Detailseiten von Vorgang,
+  Anfrage und Mail mit dem Gerüst der Detailseiten des Hauptwebs, Stand-Satz,
+  flachem Verlauf und kompaktem Editor —
+  [support-detailseiten.md](support-detailseiten.md), wartet auf Simons
+  Antworten.
   Offen: Struktur, Textbausteine und Support-Konten auf dem Handy (Formulare
   stehen dauerhaft oben, große Knöpfe je Eintrag), die abgeschnittene Kachel
   „Neue Vorgä…“ der Übersicht. Pläne der Ansicht: [support-web.md](support-web.md),

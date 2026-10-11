@@ -39,6 +39,11 @@ Nichts.
   dazu Systemleisten oben und unten (hell, dunkel, Gesten und drei Knöpfe,
   Tastatur, Datumsauswahl) und das In-App-Update
   ([betrieb/mindestversion.md](betrieb/mindestversion.md)).
+- [ ] **Support-Detailseiten übersichtlicher** — Entwurf für Vorgang,
+  Anfrage und Mail in App und Browser liegt vor (11.10.2026); wartet auf
+  Simons Antworten zu zwölf Fragen
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md#fragen-an-simon)).
+  Danach Paket 1, die Fehler vorab.
 - [ ] **VoiceOver, Sprachsteuerung und größte Schrift am iPhone** —
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
@@ -317,6 +322,17 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Code
 
+- **Support-Detailseiten: sechs Darstellungsfehler** (gefunden beim Messen
+  am 11.10.2026, am Code bestätigt): Vorsilben häufen sich im
+  vorgeschlagenen Betreff („Re: [Vorgang 2] Re: AW: Re: …"); Archivieren
+  und Löschen stehen an Mails, die schon in einem Vorgang liegen, und der
+  Server lehnt beides mit 409 ab; ein Gemeindename aus dem Formular gilt
+  im Browser als zugeordnete Gemeinde, Links führen auf `?gemeinde=null`;
+  die Empfängerwahl zeigt den rohen Schlüssel „· verlauf"; die
+  App-Kacheln von Vorgang und Mail laufen über; der Archiv-Satz der Mail
+  widerspricht dem Einsortieren-Knopf daneben. Ursachen und Fix je Punkt:
+  [planung/support-detailseiten.md](planung/support-detailseiten.md#fehler-vorab),
+  Paket 1.
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird
