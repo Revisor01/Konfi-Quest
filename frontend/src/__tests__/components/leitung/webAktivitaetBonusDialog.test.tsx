@@ -12,10 +12,16 @@
 // Warteschlange, Handbuch: „Ohne Netz gehen nur das Eintragen von Aktivitäten
 // und Bonuspunkten"), danach die Seite neu lädt und beim Abbrechen nichts
 // schickt. Die App-Modale schicken weiter denselben Rumpf.
+//
+// Nachgebessert nach der Gegenprüfung (11.10.2026): Ohne Netz antwortet hier
+// auch das Laden der Liste nicht (wie im Browser), die Liste kommt aus dem
+// zuletzt geladenen Stand -- gab es keinen, sagt der Dialog das, statt die
+// Warteschlange zu versprechen. Und Enter im Suchfeld bucht nichts.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { konto, neuerStand, type LeitungTestStand } from './leitungTestHilfe';
+import { CACHE_TTL } from '../../../services/offlineCache';
 
 const h = vi.hoisted(() => ({
   breit: true,
@@ -30,6 +36,9 @@ const h = vi.hoisted(() => ({
   apiPut: vi.fn(),
   apiDelete: vi.fn(),
   enqueue: vi.fn(),
+  /** Der gespeicherte Stand (offlineCache), je Schlüssel. */
+  speicher: new Map<string, unknown>(),
+  cacheSet: vi.fn(),
   messen: vi.fn(),
   setError: vi.fn(),
   setSuccess: vi.fn(),
@@ -66,9 +75,15 @@ vi.mock('../../../contexts/LiveUpdateContext', () => ({
   useLiveUpdate: () => ({ triggerRefresh: h.triggerRefresh }),
   useLiveRefresh: () => {},
 }));
+// Der gespeicherte Stand als Karte: Was mit Netz geladen wurde, steht ohne
+// Netz wieder bereit (netzZuerst.ts schreibt und liest ihn).
 vi.mock('../../../services/offlineCache', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../services/offlineCache')>()),
-  offlineCache: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), remove: vi.fn() },
+  offlineCache: {
+    get: async (schluessel: string) => (h.speicher.has(schluessel) ? { data: h.speicher.get(schluessel), timestamp: 0, ttl: 0 } : null),
+    set: async (schluessel: string, daten: unknown, ttl: number) => { h.cacheSet(schluessel, daten, ttl); h.speicher.set(schluessel, daten); },
+    remove: async () => {},
+  },
 }));
 // Das Netz, nach dem die Formulare zwischen Senden und Einreihen entscheiden.
 vi.mock('../../../services/networkMonitor', () => ({
@@ -114,6 +129,11 @@ const TEAMER_AKTIVITAETEN = [{ id: 41, name: 'Konfi-Wochenende begleitet', point
 const ABGELEHNT = Object.assign(new Error('Request failed with status code 400'), {
   response: { status: 400, data: { error: 'Gottesdienst-Punkte sind für diesen Jahrgang deaktiviert' } },
 });
+/** Ohne Netz kommt keine Antwort: axios meldet einen Netzfehler ohne response. */
+const KEIN_NETZ = Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' });
+/** Der Schlüssel, unter dem auch die Seite Aktivitäten die Liste merkt (Gemeinde 1, Konfis). */
+const LISTE_KONFIS = 'admin:activities:1:konfi';
+const OFFLINE_ZUSAGE = 'Ohne Verbindung wird die Aktivität eingetragen, sobald du wieder online bist.';
 
 const antworten = () => new Map<string, unknown>([
   [`/admin/konfis/${ID}`, KONFI],
@@ -163,8 +183,10 @@ beforeEach(() => {
   h.zaehler = 0;
   h.user = konto('org_admin');
   h.antworten = antworten();
+  h.speicher = new Map();
   for (const f of [h.apiGet, h.apiPost, h.apiPut, h.apiDelete, h.enqueue]) f.mockReset();
   h.apiGet.mockImplementation(async (pfad: string) => {
+    if (!h.netz) throw KEIN_NETZ;
     if (!h.antworten.has(pfad)) return { data: [] };
     return { data: h.antworten.get(pfad) };
   });
@@ -280,12 +302,22 @@ describe('Aktivität eintragen im Browser: eigener Dialog', () => {
     expect(h.triggerRefresh).not.toHaveBeenCalled();
   });
 
-  it('ohne Netz: Hinweis im Dialog, der Eintrag geht in die Warteschlange statt an den Server', async () => {
+  it('ohne Netz: die Liste kommt aus dem zuletzt geladenen Stand, der Eintrag geht in die Warteschlange statt an den Server', async () => {
     await oeffnen();
+    // Einmal mit Netz geöffnet: Die Liste wird unter dem Schlüssel der Seite Aktivitäten gemerkt.
+    let dialog = await aktivitaetDialog();
+    expect(h.cacheSet).toHaveBeenCalledWith(LISTE_KONFIS, AKTIVITAETEN, CACHE_TTL.STAMMDATEN);
+    expect(within(dialog).queryByText(/Ohne Verbindung/)).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+    // Jetzt ohne Netz: Gefragt wird gar nicht erst, die gemerkte Liste steht da.
     h.online = false;
     h.netz = false;
-    const dialog = await aktivitaetDialog();
-    expect(within(dialog).getByText('Ohne Verbindung wird die Aktivität eingetragen, sobald du wieder online bist.')).toBeInTheDocument();
+    const listenAbrufe = () => h.apiGet.mock.calls.filter(([pfad]) => pfad === '/admin/activities?target_role=konfi').length;
+    expect(listenAbrufe()).toBe(1);
+    dialog = await aktivitaetDialog();
+    expect(listenAbrufe()).toBe(1);
+    expect(eintraege(dialog).map(([titel]) => titel)).toEqual(['Adventsbasar', 'Kirchencafé helfen', 'Gottesdienstbesuch']);
+    expect(within(dialog).getByText(`${OFFLINE_ZUSAGE} Die Liste zeigt den zuletzt geladenen Stand.`)).toBeInTheDocument();
     fireEvent.click(within(dialog).getByRole('radio', { name: /Adventsbasar/ }));
     await absenden(dialog, 'Eintragen');
     expect(h.apiPost).not.toHaveBeenCalled();
@@ -300,6 +332,82 @@ describe('Aktivität eintragen im Browser: eigener Dialog', () => {
     });
     expect(h.triggerRefresh).toHaveBeenCalledWith('konfis');
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('Funkloch (das Gerät hält sich für online, die Anfrage kommt nicht an): die gemerkte Liste; ein Fehler des Servers dagegen bleibt ein Fehler', async () => {
+    h.speicher.set(LISTE_KONFIS, AKTIVITAETEN);
+    await oeffnen();
+    const echt = h.apiGet.getMockImplementation()!;
+    h.apiGet.mockImplementation(async (pfad: string) => {
+      if (pfad.startsWith('/admin/activities')) throw KEIN_NETZ;
+      return echt(pfad);
+    });
+    let dialog = await aktivitaetDialog();
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/activities?target_role=konfi');
+    expect(eintraege(dialog).map(([titel]) => titel)).toEqual(['Adventsbasar', 'Kirchencafé helfen', 'Gottesdienstbesuch']);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+    // Antwortet der Server mit einem Fehler, zeigt der Dialog nicht den gemerkten Stand.
+    h.apiGet.mockImplementation(async (pfad: string) => {
+      if (pfad.startsWith('/admin/activities')) throw Object.assign(new Error('Request failed with status code 500'), { response: { status: 500, data: {} } });
+      return echt(pfad);
+    });
+    fireEvent.click(kopf().getByRole('button', { name: 'Aktivität eintragen' }));
+    dialog = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
+    await warten();
+    expect(within(dialog).queryAllByRole('radio')).toHaveLength(0);
+    expect(within(dialog).getByText('Die Aktivitäten konnten nicht geladen werden.')).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Eintragen' })).toBeDisabled();
+  });
+
+  it('ohne Netz und nie geladen: ehrlicher Hinweis statt Versprechen, Eintragen gesperrt; zurück online lädt die Liste', async () => {
+    const { rerender } = await oeffnen();
+    h.online = false;
+    h.netz = false;
+    fireEvent.click(kopf().getByRole('button', { name: 'Aktivität eintragen' }));
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
+    await warten();
+    expect(within(dialog).queryAllByRole('radio')).toHaveLength(0);
+    expect(within(dialog).getByText('Ohne Verbindung lassen sich die Aktivitäten nicht laden. Die Liste erscheint, sobald du wieder online bist.')).toBeInTheDocument();
+    expect(within(dialog).queryByText(OFFLINE_ZUSAGE)).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Eintragen' })).toBeDisabled();
+    await absenden(dialog, 'Eintragen');
+    expect(h.enqueue).not.toHaveBeenCalled();
+    expect(h.apiPost).not.toHaveBeenCalled();
+
+    // Die Verbindung ist zurück: Die Liste lädt von selbst, Eintragen geht wieder.
+    h.online = true;
+    h.netz = true;
+    rerender(<KonfiDetailView konfiId={ID} onBack={vi.fn()} />);
+    await warten();
+    const wieder = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
+    expect(eintraege(wieder).map(([titel]) => titel)).toEqual(['Adventsbasar', 'Kirchencafé helfen', 'Gottesdienstbesuch']);
+    expect(within(wieder).getByRole('button', { name: 'Eintragen' })).toBeEnabled();
+    expect(within(wieder).queryByText(/Ohne Verbindung/)).toBeNull();
+  });
+
+  it('Enter in der Suche bucht nicht: die ausgeblendete Wahl bleibt als „Gewählt“ sichtbar, bei einem Treffer wählt Enter um', async () => {
+    await oeffnen();
+    const dialog = await aktivitaetDialog();
+    fireEvent.click(within(dialog).getByRole('radio', { name: /Gottesdienstbesuch/ }));
+    const suche = within(dialog).getByRole('searchbox', { name: 'Aktivität suchen' });
+    // Zwei Treffer, die Wahl ist nicht darunter: Sie steht als eigene Zeile da, Enter schickt nichts.
+    tippen(suche, 'gemeinde');
+    expect(eintraege(dialog).map(([titel]) => titel)).toEqual(['Adventsbasar', 'Kirchencafé helfen']);
+    expect(within(dialog).getByText(/^Gewählt:/)).toHaveTextContent('Gewählt: Gottesdienstbesuch');
+    expect(fireEvent.keyDown(suche, { key: 'Enter', code: 'Enter' })).toBe(false);
+    await warten();
+    expect(h.apiPost).not.toHaveBeenCalled();
+    expect(h.enqueue).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Aktivität eintragen' })).toBe(dialog);
+    // Ein Treffer: Enter wählt ihn um; geschickt wird erst mit „Eintragen“.
+    tippen(suche, 'kirch');
+    expect(fireEvent.keyDown(suche, { key: 'Enter', code: 'Enter' })).toBe(false);
+    expect(within(dialog).getByRole('radio', { name: /Kirchencafé helfen/ })).toBeChecked();
+    expect(within(dialog).queryByText(/^Gewählt:/)).toBeNull();
+    expect(h.apiPost).not.toHaveBeenCalled();
+    await absenden(dialog, 'Eintragen');
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+    expect(h.apiPost).toHaveBeenCalledWith(`/admin/konfis/${ID}/activities`, { activity_id: 32, completed_date: '2026-10-11', comment: '' });
   });
 });
 
@@ -461,6 +569,29 @@ describe('Die Modale der App schicken weiter denselben Rumpf (gemeinsame Logik)'
     await warten();
     expect(h.apiPost).toHaveBeenCalledWith(`/admin/konfis/${ID}/activities`, { activity_id: 32, completed_date: '2026-10-11', comment: 'Mit Kuchen' });
     expect(onSave).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('Aktivität ohne Netz: die App zeigt die zuletzt geladene Liste, der Haken reiht in die Warteschlange ein', async () => {
+    h.speicher.set(LISTE_KONFIS, AKTIVITAETEN);
+    h.online = false;
+    h.netz = false;
+    const onClose = vi.fn();
+    render(<ActivityModal konfiId={ID} targetRole="konfi" onClose={onClose} onSave={vi.fn(async () => {})} />);
+    await warten();
+    fireEvent.click(screen.getByRole('button', { name: /Kirchencafé helfen/ }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Aktivität speichern' })); });
+    await warten();
+    expect(h.apiPost).not.toHaveBeenCalled();
+    expect(h.enqueue).toHaveBeenCalledTimes(1);
+    expect(h.enqueue.mock.calls[0][0]).toEqual({
+      method: 'POST',
+      url: `/admin/konfis/${ID}/activities`,
+      body: { activity_id: 32, completed_date: '2026-10-11', comment: '' },
+      maxRetries: 5,
+      hasFileUpload: false,
+      metadata: { type: 'admin', clientId: expect.stringMatching(/^kennung-\d+$/), label: 'Aktivität zuweisen' },
+    });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 

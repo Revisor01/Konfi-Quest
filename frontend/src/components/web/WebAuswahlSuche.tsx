@@ -6,6 +6,13 @@
 // Fuer lange Listen (alle Anfragen, alle Gemeinden): Wer "buesum" tippt, findet
 // "Büsum" (Umlaute wie in der Suche der Seiten, utils/supportWeb.ts). Die Liste
 // scrollt in sich; die Zahl der Treffer steht dabei.
+//
+// In einem Formular (WebDialog mit onAbsenden): Enter im Suchfeld schickt
+// NICHT ab. Nach HTML-Regel loeste es sonst den Knopf mit type="submit" aus
+// (implizites Absenden) -- und gebucht wurde, was zuvor gewaehlt war, auch wenn
+// die Suche es laengst ausgeblendet hatte (Gegenpruefung 11.10.2026, „Aktivität
+// eintragen“). Stattdessen waehlt Enter bei genau einem Treffer diesen. Blendet
+// die Suche die Wahl aus, steht sie als „Gewählt: …“ unter der Liste.
 
 import React, { useId, useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -42,6 +49,17 @@ const WebAuswahlSuche: React.FC<WebAuswahlSucheProps> = ({ label, eintraege, wer
     ? eintraege.filter((e) => suchTreffer(e.titel, suche).length > 0 || (e.beschreibung ? suchTreffer(e.beschreibung, suche).length > 0 : false))
     : eintraege), [eintraege, suche, sucht]);
 
+  // Die Wahl, wenn die Suche sie ausgeblendet hat -- sonst null.
+  const ausgeblendeteWahl = wert !== '' && !sichtbar.some((e) => e.wert === wert)
+    ? eintraege.find((e) => e.wert === wert) ?? null
+    : null;
+
+  const taste = (ereignis: React.KeyboardEvent<HTMLInputElement>) => {
+    if (ereignis.key !== 'Enter') return;
+    ereignis.preventDefault();
+    if (sucht && sichtbar.length === 1 && sichtbar[0].wert !== wert) onWert(sichtbar[0].wert);
+  };
+
   return (
     <fieldset className="web-wahl" disabled={deaktiviert}>
       <legend className="web-feld__label web-wahl__legende">{label}</legend>
@@ -54,6 +72,7 @@ const WebAuswahlSuche: React.FC<WebAuswahlSucheProps> = ({ label, eintraege, wer
           placeholder={suchePlatzhalter}
           value={suche}
           onChange={(e) => setSuche(e.target.value)}
+          onKeyDown={taste}
         />
       </div>
       {eintraege.length === 0 ? (
@@ -85,6 +104,9 @@ const WebAuswahlSuche: React.FC<WebAuswahlSucheProps> = ({ label, eintraege, wer
       )}
       {eintraege.length > 0 && sucht && (
         <p className="web-wahl__zahl" role="status">{sichtbar.length} von {eintraege.length}</p>
+      )}
+      {ausgeblendeteWahl && (
+        <p className="web-wahl__zahl">Gewählt: <strong>{ausgeblendeteWahl.titel}</strong></p>
       )}
     </fieldset>
   );

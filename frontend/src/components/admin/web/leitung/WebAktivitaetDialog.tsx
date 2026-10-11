@@ -8,6 +8,11 @@
 // dieselbe Liste (nur aktive Punktearten des Jahrgangs), dieselbe Route,
 // ohne Netz dieselbe Warteschlange. Anders als in der App steht ein Fehler im
 // Dialog, und „Eintragen" ohne gewählte Aktivität sagt, was fehlt.
+//
+// Ohne Netz: Die Liste ist der zuletzt geladene Stand, und der Hinweis sagt,
+// dass der Eintrag nachgeht. Gab es nie einen Stand, verspricht der Dialog das
+// nicht, sondern sagt, dass die Liste erst mit Verbindung kommt; „Eintragen“
+// ist dann gesperrt (Gegenprüfung 11.10.2026).
 
 import React from 'react';
 import { mitEinheit } from '../../../../utils/supportStatistik';
@@ -49,7 +54,7 @@ const WebAktivitaetDialog: React.FC<WebAktivitaetDialogProps> = ({
   konfiId, personName, targetRole, punkteartFlags, onGespeichert, onSchliessen,
 }) => {
   const {
-    aktivitaetenSortiert, laedt, ladeFehler, selectedActivity, setSelectedActivity, comment, setComment,
+    aktivitaetenSortiert, laedt, ladeFehler, ausSpeicher, selectedActivity, setSelectedActivity, comment, setComment,
     selectedDate, setSelectedDate, isSubmitting, ohneNetz, fehler, handleSave,
   } = useAktivitaetEintragen({ konfiId, targetRole, punkteartFlags, onSave: onGespeichert, schliessen: onSchliessen, fehlerImFenster: true });
   const istTeamer = targetRole === 'teamer';
@@ -62,8 +67,12 @@ const WebAktivitaetDialog: React.FC<WebAktivitaetDialogProps> = ({
   const leerText = laedt
     ? 'Die Aktivitäten werden geladen.'
     : ladeFehler
-      ? 'Die Aktivitäten konnten nicht geladen werden.'
+      ? (ohneNetz
+        ? 'Ohne Verbindung lassen sich die Aktivitäten nicht laden. Die Liste erscheint, sobald du wieder online bist.'
+        : 'Die Aktivitäten konnten nicht geladen werden.')
       : 'Es gibt noch keine Aktivitäten, die du eintragen kannst.';
+  // Die Zusage gilt nur, wenn es etwas zu wählen gibt.
+  const offlineZusage = ohneNetz && eintraege.length > 0;
 
   return (
     <WebDialog
@@ -74,14 +83,17 @@ const WebAktivitaetDialog: React.FC<WebAktivitaetDialogProps> = ({
       aktionen={(
         <>
           <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
-          <WebKnopf art="primaer" absenden disabled={isSubmitting}>Eintragen</WebKnopf>
+          <WebKnopf art="primaer" absenden disabled={isSubmitting || eintraege.length === 0}>Eintragen</WebKnopf>
         </>
       )}
     >
       <div className="web-formular">
         {fehler && <WebHinweis art="fehler" rolle="alert">{fehler}</WebHinweis>}
-        {ohneNetz && (
-          <WebHinweis art="hinweis">Ohne Verbindung wird die Aktivität eingetragen, sobald du wieder online bist.</WebHinweis>
+        {offlineZusage && (
+          <WebHinweis art="hinweis">
+            {'Ohne Verbindung wird die Aktivität eingetragen, sobald du wieder online bist.'}
+            {ausSpeicher && ' Die Liste zeigt den zuletzt geladenen Stand.'}
+          </WebHinweis>
         )}
         <WebAuswahlSuche
           label="Aktivität"

@@ -56,7 +56,8 @@ vi.mock('../../../contexts/LiveUpdateContext', () => ({
 }));
 vi.mock('../../../services/offlineCache', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../services/offlineCache')>()),
-  offlineCache: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), remove: vi.fn() },
+  // set liefert wie das echte ein Promise: netzZuerst.ts haengt .catch daran.
+  offlineCache: { get: vi.fn().mockResolvedValue(null), set: vi.fn().mockResolvedValue(undefined), remove: vi.fn() },
 }));
 vi.mock('../../../components/admin/views/ActivityRings', () => ({
   default: (p: Record<string, unknown>) => (
