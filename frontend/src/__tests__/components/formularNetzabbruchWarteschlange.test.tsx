@@ -191,15 +191,17 @@ describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id
     expect(bonus).not.toContain('clientId: safeUUID()');
   });
 
+  // Das Speichern steht seit 11.10.2026 im Hook, den das Modal der App und der
+  // Dialog der Web-Fassung gemeinsam nutzen (useEventFormular.ts).
   it('Event anlegen: online und in der Warteschlange mit derselben Kennung', () => {
-    const event = lies('admin/modals/EventModal.tsx');
+    const event = lies('admin/modals/useEventFormular.ts');
     expect(event).toContain('const anlegeKennung = useRef(safeUUID());');
     expect(event).toContain("api.post('/events', { ...payload, client_id: anlegeKennung.current })");
     expect(event).toContain("url: '/events', body: { ...payload, client_id: anlegeKennung.current }");
   });
 
   it('Event-Serie anlegen: dieselbe Kennung des Fensters, EINE fuer die ganze Serie', () => {
-    const event = lies('admin/modals/EventModal.tsx');
+    const event = lies('admin/modals/useEventFormular.ts');
     expect(event).toContain("api.post('/events/series', { ...payload, client_id: anlegeKennung.current })");
     expect(event).toContain("url: '/events/series', body: { ...payload, client_id: anlegeKennung.current }");
     expect(event).toContain("clientId: anlegeKennung.current, label: 'Event-Serie erstellen'");

@@ -32,6 +32,7 @@ import { useBadge } from '../../../contexts/BadgeContext';
 import SegmentZahl from '../../shared/SegmentZahl';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
+import WebEventDialog from '../web/termine/WebEventDialog';
 import { segmentAusAdresse } from '../web/termine/typen';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 import { trackBereich } from '../../../services/analytics';
@@ -181,6 +182,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Zeitfenster einer Kopie. Das Modal kann sie bei einer Kopie nicht selbst
   // nachladen -- die hat keine id (siehe kopiereTermin).
   const [kopierteTimeslots, setKopierteTimeslots] = useState<Timeslot[]>([]);
+  // Web-Fassung (11.10.2026): Im breiten Fenster oeffnen Neu und Kopieren
+  // statt des App-Modals einen eigenen Dialog (WebEventDialog). Gesetzt =
+  // offen; er bekommt Vorlage und Zeitfenster wie das Modal.
+  const [webEventFormular, setWebEventFormular] = useState<{ event: Event | null; timeslots: Timeslot[] } | null>(null);
 
   // --- Aktivitäten-State ---
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
@@ -636,32 +641,42 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     }
   };
 
-  const presentEventModal = (eventType: 'single' | 'series' = 'single') => {
-    // Zeitfenster einer vorherigen Kopie verwerfen: Sie werden beim Schliessen
-    // bewusst nicht zurueckgesetzt (siehe Kommentar am Modal-Hook), sonst
-    // brachte "Neuer Termin" direkt nach einem Kopieren dessen Zeitfenster mit.
-    setKopierteTimeslots([]);
-    if (eventType === 'series') {
-      // For series, we need to create a proper "new event" object with is_series flag
-      setEditEvent({
-        id: 0, // Set to 0 to indicate new event
-        name: '',
-        description: '',
-        event_date: '',
-        location: '',
-        points: 0,
-        type: 'gottesdienst',
-        max_participants: 10,
-        is_series: true
-      } as Event);
-    } else {
-      setEditEvent(null);
+  /**
+   * Das Event-Formular zeigen: im Browser ab 992 px den Dialog der
+   * Web-Fassung, sonst das Modal der App. Vorlage und Zeitfenster sind
+   * vorher gesetzt (editEvent, kopierteTimeslots).
+   */
+  const zeigeEventFormular = (vorlage: Event | null, slots: Timeslot[]) => {
+    if (breit) {
+      setWebEventFormular({ event: vorlage, timeslots: slots });
+      return;
     }
     presentEventModalHook({
       presentingElement: presentingElement,
       canDismiss: eventModalCanDismiss,
       backdropDismiss: false
     });
+  };
+
+  const presentEventModal = (eventType: 'single' | 'series' = 'single') => {
+    // Zeitfenster einer vorherigen Kopie verwerfen: Sie werden beim Schliessen
+    // bewusst nicht zurueckgesetzt (siehe Kommentar am Modal-Hook), sonst
+    // brachte "Neuer Termin" direkt nach einem Kopieren dessen Zeitfenster mit.
+    setKopierteTimeslots([]);
+    // For series, we need to create a proper "new event" object with is_series flag
+    const vorlage = eventType === 'series' ? ({
+      id: 0, // Set to 0 to indicate new event
+      name: '',
+      description: '',
+      event_date: '',
+      location: '',
+      points: 0,
+      type: 'gottesdienst',
+      max_participants: 10,
+      is_series: true
+    } as Event) : null;
+    setEditEvent(vorlage);
+    zeigeEventFormular(vorlage, []);
   };
 
   /**
@@ -695,11 +710,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     const { event: vorlage, timeslots: kopierteSlots } = kopiereTermin(event, timeslots);
     setKopierteTimeslots(kopierteSlots);
     setEditEvent(vorlage);
-    presentEventModalHook({
-      presentingElement: presentingElement,
-      canDismiss: eventModalCanDismiss,
-      backdropDismiss: false
-    });
+    zeigeEventFormular(vorlage, kopierteSlots);
   };
 
   const handleAddEventClick = () => {
@@ -798,6 +809,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Antrag prüfen ...) sind dieselben; die Web-Fassung bekommt sie hereingereicht.
   if (breit) {
     return (
+      <>
       <WebMitmachenLeitung
         pageRef={pageRef}
         presentingElement={presentingElement}
@@ -823,6 +835,22 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         neuLaden={async () => { await refreshEvents(); await refreshCancelled(); }}
         antraegeNeuLaden={refreshRequests}
       />
+      {/* Neu und Kopieren als eigener Dialog; nach dem Speichern wie in der
+          App: Liste und Abgesagte neu laden. Bei ungespeicherten
+          Aenderungen fragt der Dialog selbst nach (wie canDismiss hier). */}
+      {webEventFormular && (
+        <WebEventDialog
+          event={webEventFormular.event}
+          vorbelegteTimeslots={webEventFormular.timeslots}
+          onSchliessen={() => setWebEventFormular(null)}
+          onSuccess={() => {
+            setWebEventFormular(null);
+            refreshEvents();
+            refreshCancelled();
+          }}
+        />
+      )}
+      </>
     );
   }
 

@@ -24,9 +24,16 @@ import {
   ICON_SCANNEN,
 } from '../../shared/icons';
 import { Category, Jahrgang } from '../../../types/event';
-import { istPunkteartAktiv, PUNKTEART_NAME, type Punkteart } from '../../../utils/punktearten';
+import { PUNKTEART_NAME } from '../../../utils/punktearten';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumLang } from '../../../utils/dateUtils';
+// Was ein Schalter am uebrigen Formular aendert, steht seit 11.10.2026 in
+// eventFormularRegeln.ts -- die Web-Fassung (WebEventDialog) ruft dieselben
+// Regeln auf.
+import {
+  letzterSerienTermin, mitKonfirmation, mitPflicht, mitSerienIntervall, nachZielgruppe,
+  serienHoechstzahl, verfuegbarePunktearten,
+} from './eventFormularRegeln';
 
 // ---- Shared form data type ----
 
@@ -140,7 +147,7 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
               // beides sind Konfi-Kategorien (Pflicht für den Jahrgang bzw. der
               // Konfirmationstermin) und ergeben ohne Konfis keinen Sinn.
               if (value === 'teamer_only') {
-                setFormData({ ...formData, mandatory: false, is_konfirmation: false, has_timeslots: false });
+                setFormData(nachZielgruppe(formData, value));
               }
             }}
             disabled={loading}
@@ -161,9 +168,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             className="app-toggle--events"
             checked={formData.mandatory}
             onIonChange={(e) => {
-              const mandatory = e.detail.checked;
               // Pflicht-Event schließt Timeslots aus -> beim Aktivieren abschalten
-              setFormData({ ...formData, mandatory, ...(mandatory ? { has_timeslots: false } : {}) });
+              setFormData(mitPflicht(formData, e.detail.checked));
             }}
             disabled={loading}
           />
@@ -175,9 +181,8 @@ export const BasicInfoSection = React.memo<BasicInfoSectionProps>(({
             className="app-toggle--konfis"
             checked={formData.is_konfirmation}
             onIonChange={(e) => {
-              const is_konfirmation = e.detail.checked;
               // Konfirmation schließt Timeslots aus (feste Termine) -> beim Aktivieren abschalten
-              setFormData({ ...formData, is_konfirmation, ...(is_konfirmation ? { has_timeslots: false } : {}) });
+              setFormData(mitKonfirmation(formData, e.detail.checked));
             }}
             disabled={loading}
           />
@@ -259,10 +264,7 @@ export const PointsParticipantsSection = React.memo<PointsParticipantsSectionPro
   // fuer die uebrigen verbucht der Server sie ohnehin nicht.
   // Ohne Jahrgangs-Auswahl (noch keiner gewaehlt) bleiben beide waehlbar,
   // sonst haette man vor der ersten Auswahl gar keine Punkteart.
-  const gewaehlte = jahrgaenge.filter((j) => formData.jahrgang_ids.includes(j.id));
-  const verfuegbareArten: Punkteart[] = (['gottesdienst', 'gemeinde'] as Punkteart[]).filter(
-    (art) => gewaehlte.length === 0 || gewaehlte.some((j) => istPunkteartAktiv(j, art))
-  );
+  const verfuegbareArten = verfuegbarePunktearten(formData.jahrgang_ids, jahrgaenge);
 
   return (
   <IonList inset={true} className="app-modal-section">
@@ -638,20 +640,16 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
 }) => {
   // Serien-Limit: max. 12 Monate Spannweite (Backend prüft identisch).
   // Monatliches Intervall -> max. 12 Termine, alle anderen -> max. 26.
-  const maxCount = formData.series_interval === 'month' ? 12 : 26;
+  const maxCount = serienHoechstzahl(formData.series_interval);
 
   // Letzten Termin der Serie berechnen (gleiche Datums-Logik wie das Backend)
-  const lastDate = React.useMemo(() => {
-    if (!formData.is_series || !formData.event_date) return null;
-    const d = new Date(formData.event_date);
-    if (isNaN(d.getTime())) return null;
-    const steps = (formData.series_count || 2) - 1;
-    if (formData.series_interval === 'day') d.setDate(d.getDate() + steps);
-    else if (formData.series_interval === '2weeks') d.setDate(d.getDate() + steps * 14);
-    else if (formData.series_interval === 'month') d.setMonth(d.getMonth() + steps);
-    else d.setDate(d.getDate() + steps * 7);
-    return d;
-  }, [formData.is_series, formData.event_date, formData.series_count, formData.series_interval]);
+  const lastDate = React.useMemo(
+    () => letzterSerienTermin({
+      is_series: formData.is_series, event_date: formData.event_date,
+      series_count: formData.series_count, series_interval: formData.series_interval,
+    }),
+    [formData.is_series, formData.event_date, formData.series_count, formData.series_interval],
+  );
 
   return (
   <IonList inset={true} className="app-modal-section">
@@ -697,14 +695,8 @@ export const SeriesSection = React.memo<SeriesSectionProps>(({
                 <IonSelect aria-label="Intervall"
                   value={formData.series_interval}
                   onIonChange={(e) => {
-                    const interval = e.detail.value;
                     // Beim Wechsel auf monatlich Anzahl auf das 12-Monats-Limit kappen
-                    const cap = interval === 'month' ? 12 : 26;
-                    setFormData({
-                      ...formData,
-                      series_interval: interval,
-                      series_count: Math.min(formData.series_count, cap)
-                    });
+                    setFormData(mitSerienIntervall(formData, e.detail.value));
                   }}
                   placeholder="Intervall wählen"
                   disabled={loading}
