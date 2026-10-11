@@ -384,6 +384,40 @@ describe('Badge-Formular (Web): schliessen und abbrechen', () => {
     expect(screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' })).toBeInTheDocument();
     expect(props.onSchliessen).not.toHaveBeenCalled();
   });
+
+  // Wie das X der App-Modale (`disabled={isSubmitting}`): Sonst ginge ein
+  // Fehler des Servers ins Leere, und nach erneutem Öffnen ließe sich dasselbe
+  // Badge sofort ein zweites Mal abschicken.
+  it('während des Speicherns bleibt der Dialog offen: Abbrechen und X gesperrt, Escape und Klick daneben fragen nicht; lehnt der Server ab, ist er wieder frei', async () => {
+    let ablehnen: (grund: unknown) => void = () => {};
+    h.apiPut.mockReturnValue(new Promise((_, nein) => { ablehnen = nein; }));
+    const dialog = await oeffnen(7);
+    fireEvent.change(feld(dialog, 'Name'), { target: { value: 'Chorprobe neu' } });
+    await speichern(dialog);
+    expect(h.apiPut).toHaveBeenCalledTimes(1);
+    const abbrechen = im(dialog).getByRole('button', { name: 'Abbrechen' });
+    const x = im(dialog).getByRole('button', { name: 'Schließen' });
+    expect(abbrechen).toBeDisabled();
+    expect(x).toBeDisabled();
+    fireEvent.click(abbrechen);
+    fireEvent.click(x);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    // Der abgedunkelte Grund um das Fenster.
+    fireEvent.mouseDown(dialog.parentElement!);
+    expect(screen.queryByRole('dialog', { name: 'Ungespeicherte Änderungen' })).toBeNull();
+    expect(props.onSchliessen).not.toHaveBeenCalled();
+    expect(screen.getByRole('dialog', { name: 'Badge bearbeiten' })).toBe(dialog);
+
+    await act(async () => { ablehnen({ response: { status: 409, data: { error: 'Ein Badge mit diesem Namen gibt es schon' } } }); });
+    expect(im(dialog).getByRole('alert')).toHaveTextContent('Ein Badge mit diesem Namen gibt es schon');
+    expect(props.onGespeichert).not.toHaveBeenCalled();
+    // Fertig gesendet: Abbrechen und X wieder frei, Escape fragt wie sonst nach.
+    expect(abbrechen).toBeEnabled();
+    expect(x).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' })).toBeInTheDocument();
+    expect(props.onSchliessen).not.toHaveBeenCalled();
+  });
 });
 
 describe('Badge-Formular (Web): ohne Netz', () => {

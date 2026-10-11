@@ -8,7 +8,9 @@
 // Auswahlfeld mit ihrem Hilfetext, der Wert als Zahlenfeld statt Regler.
 //
 // Schliessen mit ungespeicherten Änderungen fragt nach -- wie die App über
-// canDismiss der Seite (dieselbe Rückfrage).
+// canDismiss der Seite (dieselbe Rückfrage). Während gespeichert wird, ist
+// das Formular gesperrt (X, Abbrechen, Escape, Klick daneben), die Rückfrage
+// nicht: Sie kann dann gar nicht offen sein.
 
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -295,9 +297,10 @@ const WebBadgeFormular: React.FC<WebBadgeFormularProps> = ({ badgeId, targetRole
       beschreibung="Das Badge wird automatisch vergeben, sobald jemand die Bedingung erfüllt."
       onSchliessen={schliessen}
       onAbsenden={absenden}
+      gesperrt={f.isSubmitting}
       aktionen={(
         <>
-          <WebKnopf onClick={schliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={schliessen} disabled={f.isSubmitting}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={!f.bereit || f.loading || f.isSubmitting}>Speichern</WebKnopf>
         </>
       )}
