@@ -1362,10 +1362,15 @@ denen nichts mehr zu verbuchen ist, stehen blass da.
 Am Ende der Zeile, in den Kacheln unten auf der Karte, ersetzen Knöpfe das
 Wischen der App: **Event kopieren**,
 **Event absagen** — an einem abgesagten Event **Absagegrund bearbeiten** und
-**Absage zurücknehmen** — und **Event löschen**. Sie öffnen dieselben Fenster
-und stellen dieselben Rückfragen wie dort, siehe
+**Absage zurücknehmen** — und **Event löschen**, siehe
 [Ein Event kopieren](#ein-event-kopieren) und
 [Ein Event absagen oder löschen](#ein-event-absagen-oder-loeschen).
+**Neues Event** und **Event kopieren** — wie auf der Seite eines Events
+**Bearbeiten** und **Kopieren** — öffnen das Formular in einem eigenen Fenster
+des Browsers (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen));
+Absagen und Löschen öffnen dieselben Fenster und stellen dieselben Rückfragen
+wie in der App.
 
 ### Gemeldete Aktivitäten in der Tabelle entscheiden
 
@@ -1374,8 +1379,11 @@ Tabelle mit Eingang, Person und Jahrgang — bei Teamer:innen steht „Team" —
 Aktivität mit Kommentar, Datum mit Hinweis auf das Foto, Punkten und Status, die
 neueste Meldung oben. **Offen**, **Verbucht**, **Abgelehnt** und **Alle**
 filtern, zuerst steht **Offen** da; die Suche findet Person und Aktivität.
-**Prüfen** öffnet das Fenster „Aktivität prüfen" mit Foto, Kommentar und
-Entscheidung; der
+**Prüfen** öffnet das Fenster „Aktivität prüfen": links die Angaben — von
+wem, welche Aktivität, Punkte, Teilnahmedatum, Eingang und Kommentar —,
+darunter das Feld für den Grund einer Ablehnung, rechts, wenn es eines gibt,
+das Nachweisfoto mit **Foto löschen**. Du entscheidest mit **Genehmigen** oder **Ablehnen**;
+ablehnen geht nur mit Grund. Der
 [Weg einer Meldung](40-punkte.md#eine-gemeldete-aktivitaet-entscheiden) ist
 derselbe. Bei einer entschiedenen Meldung öffnet **Ansehen** dasselbe Fenster,
 und **Aktivität zurücksetzen** macht sie nach einer Rückfrage wieder offen. Hat

@@ -192,15 +192,59 @@ Was sich in der App als eigenes Fenster über die Seite schiebt — ein
 Formular, eine Auswahl, eine Übersicht —, öffnet sich im Browser als
 **kompaktes Fenster** in der Mitte: so breit, wie ein Formular braucht, und
 so hoch wie sein Inhalt. Ist ein Formular länger als das Browserfenster,
-scrollt es in sich; Kopfzeile mit Titel und Knöpfen bleibt oben stehen. Die
-Anwesenheit der Konfis bekommt mehr Breite, weil sie für jedes Pflicht-Event
-eine Spalte hat. Ansichten über die ganze Fläche — ein Jahresrückblick, eine
-geöffnete Datei — bleiben, wie sie sind.
+scrollt es in sich. Ansichten über die ganze Fläche — ein Jahresrückblick,
+eine geöffnete Datei — bleiben, wie sie sind. Schließen kannst du jedes
+Fenster mit dem Kreuz oben, mit der Escape-Taste oder mit einem Klick neben
+das Fenster.
 
-- **Schließen:** mit dem Kreuz oben, mit der Escape-Taste oder mit einem
-  Klick neben das Fenster.
-- **Datum wählen:** Der Kalender öffnet sich als kleines Fenster über dem
-  Formular.
+Die Formulare, die du am häufigsten brauchst, haben im Browser ein **eigenes
+Fenster**: dieselben Angaben und Regeln wie in der App, aber mit beschrifteten
+Feldern, zusammengehörige Felder nebeneinander, Auswahl- und Ankreuzlisten
+statt Kacheln und Zahlen als Feld oder Auswahl statt Schieberegler — in
+denselben Grenzen wie in der App, nur die
+[benötigten Punkte eines Levels](40-punkte.md#level-anlegen-und-pflegen)
+reichen weiter. Das gilt für:
+
+- Event anlegen, bearbeiten und kopieren
+- Aktivität eintragen und Bonuspunkte vergeben, auf der Seite einer Person
+- Aktivität melden (Konfis und Team) und Aktivität prüfen (Leitung)
+- Material anlegen, bearbeiten und ansehen
+- Badges anlegen und bearbeiten
+- Kategorien, Level und Zertifikate
+- Benutzer:innen — auch „Teamer:in anlegen" — und Jahrgänge
+- Passwort und E-Mail-Adresse ändern, in jeder Rolle
+
+In diesen Fenstern gilt:
+
+- **Speichern oder abbrechen:** Unten rechts stehen **Abbrechen** und der
+  Hauptknopf, etwa **Speichern**, **Anlegen** oder **Eintragen**. In langen
+  Formularen wie Event, Material oder Badge bleibt diese Knopfleiste beim
+  Scrollen unten im Bild. Enter in einem einzeiligen Feld schickt das
+  Formular ab.
+- **Suchen:** Enter in einem Suchfeld schickt nichts ab. Passt nur noch ein
+  Eintrag, wählt Enter ihn aus; blendet die Suche deine Wahl aus, steht sie
+  darunter als „Gewählt: …".
+- **Datum und Uhrzeit:** Das sind Felder des Browsers — du tippst sie ein
+  oder wählst sie im Kalender des Browsers. Wie das Datum dasteht, richtet
+  sich nach der Sprache des Browsers.
+- **Hinweise lesen:** Fehlt eine Angabe oder lehnt der Server das Speichern
+  ab, steht der Grund im Fenster, und es bleibt offen.
+- **Warten, bis gespeichert ist:** Solange gespeichert oder gesendet wird,
+  geht das Fenster nicht zu — Kreuz und **Abbrechen** sind gesperrt, Escape
+  und ein Klick daneben wirken erst danach wieder. So geht keine Antwort des
+  Servers verloren.
+- **Änderungen verwerfen:** Hast du im Event- oder im Badge-Formular etwas
+  geändert, fragt das Fenster beim Schließen nach.
+
+In den übrigen Fenstern bleiben Titel und Knöpfe oben in der Kopfzeile stehen,
+und der Kalender zum Datum öffnet sich als kleines Fenster über dem Formular.
+Die Anwesenheit der Konfis bekommt mehr Breite, weil sie für jedes
+Pflicht-Event eine Spalte hat.
+
+Rückfragen vor dem Löschen oder Zurücksetzen kommen in allen Fenstern wie in
+der App; nur eine Datei im Material-Fenster fragt in ihrer eigenen Zeile nach.
+Was ohne Netz geht, ist dasselbe wie in der App (siehe
+[Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)).
 
 Wird das Browserfenster schmaler als 992 Pixel, öffnen sich die Fenster wie
 in der App.
@@ -795,7 +839,10 @@ später los:
 - **Chat-Nachrichten** schreiben, an Umfragen teilnehmen, auf Nachrichten
   reagieren
 - als Leitung: Events, Aktivitäten, Badges, Level, Material und Kategorien
-  **anlegen oder bearbeiten**, Bonuspunkte vergeben
+  **anlegen oder bearbeiten**, Bonuspunkte vergeben und einer Person eine
+  Aktivität eintragen — Letzteres, wenn die Liste der Aktivitäten auf dem
+  Gerät schon einmal mit Netz geladen war (im Fenster „Aktivität eintragen"
+  oder auf der Seite Aktivitäten)
 
 Du siehst diese Vorgänge im [Postfach](#mitteilungen-im-postfach-nachlesen)
 hinter der Glocke unter **„Wird gesendet…"**, mit einem Uhr-Symbol; die Zahl

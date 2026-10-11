@@ -412,10 +412,14 @@ Die Seiten, die du über **Mehr** erreichst, sind im Browser Tabellen mit
 Kennzahlen darüber. Oben links führt **Mehr** zurück, oben rechts neben der
 Überschrift legst du Neues an, darunter stehen in einer Zeile Filter, Suche und
 die Wahl zwischen Liste und Kacheln. Am Ende jeder Zeile bzw. unten auf jeder
-Kachel bearbeitest und löschst du — mit denselben Fenstern und Rückfragen wie in
-der App; ein Klick auf den Namen öffnet ebenfalls das Bearbeiten. Liste und
-Kacheln gibt es bei Benutzer:innen, Jahrgängen, Kategorien, Level und
-Zertifikaten, siehe
+Kachel bearbeitest und löschst du; ein Klick auf den Namen öffnet ebenfalls das
+Bearbeiten. Benutzer:innen, Kategorien, Level, Zertifikate, Jahrgänge und
+Material legst du in einem eigenen Fenster des Browsers an und bearbeitest sie
+dort (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
+eine Aktivität im Fenster der App; die Rückfragen vor dem Löschen sind dieselben
+wie in der App. Liste und Kacheln gibt es bei Benutzer:innen, Jahrgängen,
+Kategorien, Level und Zertifikaten, siehe
 [Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen). Wer was darf, gilt wie dort, siehe
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
 
@@ -450,10 +454,14 @@ Name und Beschreibung, die Filter **Alle**, **Aktiv**, **Geheim** und **Inaktiv*
 mit den Zahlen und die Sortierung nach Kriterium, Name oder Verliehen. Die
 Tabelle nennt je Badge den Namen mit der Beschreibung, das Kriterium, den
 Stand — aktiv oder inaktiv, geheim oder sichtbar — und wie oft es verliehen
-wurde; ein Klick auf den Namen oder den Stift öffnet dasselbe Formular wie in
-der App, der Papierkorb löscht nach einer Rückfrage. Inaktive Badges stehen
-blass da. **Neues Badge** oben rechts legt eines an; wie Bedingungen
-funktionieren, steht unter
+wurde; ein Klick auf den Namen oder den Stift öffnet das Formular in einem
+eigenen Fenster (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen))
+— mit denselben Angaben wie in der App, die Bedingung als Auswahl mit ihrer
+Erklärung und oben eine kleine Vorschau des Badges. Das Ergebnis von **Badge
+neu prüfen** steht dort im Fenster. Der Papierkorb löscht nach einer
+Rückfrage. Inaktive Badges stehen blass da. **Neues Badge** oben rechts legt
+eines an; wie Bedingungen funktionieren, steht unter
 [Ein Badge anlegen](60-badges.md#ein-badge-anlegen).
 
 ## Eine neue Gemeinde einrichten
