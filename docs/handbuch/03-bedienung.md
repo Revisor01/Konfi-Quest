@@ -70,8 +70,10 @@ Der Inhalt steht daneben, auf breiten Bildschirmen mittig.
 Jeder Bereich hat im Browser eine eigene, breitere Ansicht: Listen stehen als
 Tabellen oder Karten da — bei Events, Challenges und Konfis nach deiner Wahl —,
 mit Suche und Filtern darüber; die Seiten der Events und Challenges sind alle
-gleich aufgebaut. Was du darfst, was die Zahlen zählen und welche Fenster aufgehen, ist
-dasselbe wie in der App — nur die Darstellung nutzt die Breite. Was sich öffnen
+gleich aufgebaut. Was du darfst, was die Zahlen zählen und was in den Fenstern
+steht, ist dasselbe wie in der App — nur die Darstellung nutzt die Breite, und
+die Fenster sind kompakter (siehe
+[Im Browser ein Fenster bedienen](#im-browser-ein-fenster-bedienen)). Was sich öffnen
 lässt — eine Person, ein Event, eine Challenge, eine Kachel —, ist ein
 gewöhnlicher Link: Mit Strg-Klick (am Mac ⌘-Klick) oder der mittleren
 Maustaste geht es in einem neuen Tab auf. Wie die Ansichten aufgebaut sind,
@@ -183,6 +185,25 @@ darunter klappt den Rest auf, **Weniger anzeigen** wieder zu. Ein Klick auf
 einen Spaltenkopf sortiert dabei immer die ganze Tabelle.
 
 Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
+
+### Im Browser ein Fenster bedienen
+
+Was sich in der App als eigenes Fenster über die Seite schiebt — ein
+Formular, eine Auswahl, eine Übersicht —, öffnet sich im Browser als
+**kompaktes Fenster** in der Mitte: so breit, wie ein Formular braucht, und
+so hoch wie sein Inhalt. Ist ein Formular länger als das Browserfenster,
+scrollt es in sich; Kopfzeile mit Titel und Knöpfen bleibt oben stehen. Die
+Anwesenheit der Konfis bekommt mehr Breite, weil sie für jedes Pflicht-Event
+eine Spalte hat. Ansichten über die ganze Fläche — ein Jahresrückblick, eine
+geöffnete Datei — bleiben, wie sie sind.
+
+- **Schließen:** mit dem Kreuz oben, mit der Escape-Taste oder mit einem
+  Klick neben das Fenster.
+- **Datum wählen:** Der Kalender öffnet sich als kleines Fenster über dem
+  Formular.
+
+Wird das Browserfenster schmaler als 992 Pixel, öffnen sich die Fenster wie
+in der App.
 
 ### Den Umschalter finden, hinter dem etwas auf dich wartet
 

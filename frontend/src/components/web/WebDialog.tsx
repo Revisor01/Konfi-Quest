@@ -1,5 +1,9 @@
-// Ein Dialog der Web-Fassung: ein Fenster ueber der Seite fuer ein kurzes
-// Formular (Konto anlegen, Landeskirche anlegen, Kirchenkreis bearbeiten).
+// Ein Dialog der Web-Fassung: ein Fenster ueber der Seite fuer ein
+// Formular (Konto anlegen, Landeskirche anlegen, Event, Bonuspunkte). Seit
+// 11.10.2026 die Form aller haeufigen Formulare im Browser (Simon: „Web
+// braucht eigene kompaktere Modale überall"); die App oeffnet dafuer ihre
+// Modale, und die uebrigen App-Modale stehen im Browser kompakt
+// (theme/web-modale.css).
 // Rueckfragen vor dem Loeschen oder Sperren bleiben bei der App (useIonAlert);
 // dies hier ist nur fuer Formulare.
 //
@@ -30,11 +34,17 @@ export interface WebDialogProps {
    * `absenden` rufen dies auf.
    */
   onAbsenden?: () => void;
+  /**
+   * Breiter (720 statt 520 px) für Formulare mit vielen Feldern, die zu
+   * zweit nebeneinander stehen (Event, Material). Kurze Formulare bleiben
+   * schmal.
+   */
+  breit?: boolean;
 }
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden }) => {
+const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false }) => {
   const titelId = useId();
   const beschreibungId = useId();
   const fenster = useRef<HTMLDivElement>(null);
@@ -82,7 +92,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
     <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget) schliessen.current(); }}>
       <div
         ref={fenster}
-        className="web-dialog"
+        className={breit ? 'web-dialog web-dialog--breit' : 'web-dialog'}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titelId}

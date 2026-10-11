@@ -1512,6 +1512,14 @@ mark.web-treffer {
   gap: var(--app-abstand-eng);
 }
 
+/* Zwei Felder nebeneinander (Art und Bereich, Datum und Uhrzeit); unter
+   400 px Breite untereinander. Bis 11.10.2026 nur im Support (web/support.css). */
+.web-feldpaar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--app-abstand-mittel);
+}
+
 .web-gruppe {
   margin: var(--app-abstand-eng) 0 0;
   padding-top: var(--app-abstand-mittel);
@@ -1570,6 +1578,11 @@ mark.web-treffer {
   resize: vertical;
 }
 
+.web-eingabe--datum {
+  /* Kalender und Uhr des Browsers folgen hell und dunkel. */
+  color-scheme: light dark;
+}
+
 .web-eingabe--auswahl {
   padding-right: var(--app-abstand-riesig);
   text-overflow: ellipsis;
@@ -1597,6 +1610,7 @@ mark.web-treffer {
 .web-eingabe:focus-visible,
 .web-liste__eintrag:focus-visible,
 .web-wahl__radio:focus-visible,
+.web-wahl__haken:focus-visible,
 .web-schalter__eingabe:focus-visible + .web-schalter__spur {
   outline: 2px solid var(--ion-color-primary);
   outline-offset: 2px;
@@ -1808,7 +1822,8 @@ mark.web-treffer {
   background: var(--app-flaeche-hinweis);
 }
 
-.web-wahl__radio {
+.web-wahl__radio,
+.web-wahl__haken {
   flex: 0 0 auto;
   margin: var(--app-abstand-mini) 0 0;
   accent-color: var(--ion-color-primary);
@@ -1868,6 +1883,10 @@ mark.web-treffer {
   font-size: var(--app-text-sekundaer);
   line-height: 1.45;
   box-sizing: border-box;
+}
+
+.web-dialog--breit {
+  max-width: 720px;
 }
 
 .web-dialog *,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
+import { spezifitaet, vergleich, regeln as themeRegeln, teileObersteEbene } from '../cssSpezifitaet';
 
 // Das eigene Stylesheet der Web-Fassungen (theme/web-ansicht.css, 03.10.2026,
 // docs/planung/support-web.md, Entscheidung 2). Es gilt nur dort, wo eine
@@ -182,5 +183,82 @@ describe('theme/web/*.css: Stylesheets der Bereiche', () => {
     const suche = regel('.web-challenge-filter__zeile > .web-werkzeuge__rechts > .web-suche');
     expect(suche).toMatch(/flex:\s*1 1 200px;/);
     expect(suche).toMatch(/min-width:\s*200px;/);
+  });
+});
+
+// Die Modale der App im breiten Browserfenster (theme/web-modale.css,
+// Simon 11.10.2026: „Web braucht eigene kompaktere Modale überall"). Die
+// Datei setzt als einzige Regeln auf ion-modal -- deshalb eine eigene Datei
+// und nicht web-ansicht.css (Regel oben: kein Eingriff in Ionic). Damit sie
+// nie die Apps trifft, beginnt jeder Selektor mit html[data-layout='breit'];
+// das Merkmal setzt nur die Web-Version ab 992 px (layoutImDokument.ts,
+// geprüft in seitenleiste.test.tsx). Wie groß die Modale dann sind, misst
+// jsdom nicht; gemessen im Browser am 11.10.2026 (1440 x 900): Neue
+// Kategorie 600 x 600 -> 560 x 350, Neues Event 600 x 600 -> 560 x 804
+// (scrollt), auf dem iPad 936 x 836 -> 560 x 349.
+describe('theme/web-modale.css: App-Modale im breiten Browserfenster', () => {
+  const quelle = lies('src/theme/web-modale.css');
+  const text = ohneKommentare(quelle);
+  const alle = regeln(text);
+  const BREIT = "html[data-layout='breit']";
+  const KERN = "html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname]))";
+
+  it('wird global eingebunden, nach web-ansicht.css', () => {
+    const app = lies('src/App.tsx');
+    expect(app).toContain("import './theme/web-modale.css';");
+    expect(app.indexOf("import './theme/web-modale.css';")).toBeGreaterThan(app.indexOf("import './theme/web-ansicht.css';"));
+  });
+
+  it('jeder Selektor beginnt mit dem Merkmal des breiten Layouts -- die Apps bleiben unberührt', () => {
+    expect(alle.length).toBe(8);
+    const fremd = alle.flatMap(([sel]) => teileObersteEbene(sel)).filter((teil) => !teil.startsWith(`${BREIT} ion-modal`));
+    expect(fremd).toEqual([]);
+  });
+
+  it('nimmt Vollbild-Ansichten, Chat-Fenster und Datumswähler aus der allgemeinen Regel aus', () => {
+    const kern = alle.find(([sel]) => sel === KERN)?.[1] ?? '';
+    expect(kern).toMatch(/--width:\s*min\(560px, calc\(100% - 48px\)\);/);
+    expect(kern).toMatch(/--height:\s*auto;/);
+    expect(kern).toMatch(/--max-height:\s*calc\(100% - 96px\);/);
+    // Ohne die Regel fuer die innere Seite fiel jedes Hook-Modal bei Hoehe auto auf 0 px.
+    const innen = alle.find(([sel]) => sel === `${KERN} > .ion-page > .ion-page`)?.[1] ?? '';
+    expect(innen).toMatch(/position:\s*relative;/);
+    expect(innen).toMatch(/contain:\s*layout style;/);
+  });
+
+  it('nur Tokens für Radius und Schatten, keine Abdunklung, keine Bewegung, keine Farbwerte', () => {
+    expect(text.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
+    expect(text.match(/\b(?:rgb|rgba|hsl|hsla)\(/g) ?? []).toEqual([]);
+    expect([...text.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]).filter((v) => !/^--(?:app|ion)-/.test(v))).toEqual([]);
+    const radien = [...text.matchAll(/--border-radius:\s*([^;]+);/g)].map((m) => m[1].trim());
+    expect(radien).toEqual(['var(--app-radius-karte)', 'var(--app-radius-karte)']);
+    const schatten = [...text.matchAll(/box-shadow:\s*([^;]+);/g)].map((m) => m[1].trim());
+    expect(schatten).toEqual(['var(--app-schatten-modal)', 'var(--app-schatten-modal)']);
+    // Ionic nimmt dem zweiten von zwei Modalen die Abdunklung; eine eigene liesse jede Stufe nachdunkeln.
+    expect(text).not.toContain('--backdrop-opacity');
+    expect(text).not.toMatch(/(?:^|[\s;{])(?:transition|animation)(?:-[a-z]+)?\s*:/);
+    expect(text).not.toContain('@keyframes');
+  });
+
+  // Die Themes setzen Groesse und Radius der Modale selbst (ios27: Karte
+  // 936 px, md3: Radius 24 px). Die eigene Regel muss jede ihrer Regeln
+  // rechnerisch schlagen -- dann ist die Ladereihenfolge egal.
+  it('schlägt jede Größen- und Radius-Regel der Themes ios27 und md3', () => {
+    const themeDateien = [
+      'node_modules/@rdlabo/ionic-theme-ios27/dist/css/components/ion-modal.css',
+      'node_modules/@rdlabo/ionic-theme-md3/dist/css/components/ion-modal.css',
+    ];
+    const gegner = themeDateien.flatMap((datei) => themeRegeln(lies(datei)))
+      .filter(({ rumpf }) => /--(?:width|height|border-radius)\s*:/.test(rumpf))
+      .flatMap(({ selektor }) => teileObersteEbene(selektor))
+      .filter((sel) => /ion-modal/.test(sel) && !/modal-sheet|datetime/.test(sel));
+    expect(gegner.length).toBeGreaterThan(2);
+    const verlierer = gegner.filter((sel) => vergleich(spezifitaet(KERN), spezifitaet(sel)) <= 0);
+    expect(verlierer).toEqual([]);
+    // Die Datumswaehler-Regel schlaegt das ios27-Fenster von 580 x 660 px.
+    const datum = `${BREIT} ion-modal.ion-datetime-button-overlay`;
+    const ios = gegner.filter((sel) => /\.ios/.test(sel) && !/modal-card/.test(sel));
+    expect(ios.length).toBeGreaterThan(0);
+    expect(ios.filter((sel) => vergleich(spezifitaet(datum), spezifitaet(sel)) <= 0)).toEqual([]);
   });
 });

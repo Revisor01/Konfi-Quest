@@ -161,7 +161,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({ onClose, onSuccess }) =
   }
 
   return (
-    <IonPage>
+    <IonPage className="app-modal-kamera">
       <IonHeader>
         <IonToolbar>
           <IonButtons slot="start">

@@ -82,12 +82,7 @@
   min-width: 200px;
 }
 
-/* Zwei Auswahlfelder nebeneinander (Art und Bereich in den Dialogen); bei wenig Platz untereinander. */
-.web-feldpaar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--app-abstand-mittel);
-}
+/* Zwei Felder nebeneinander: .web-feldpaar steht seit 11.10.2026 in web-ansicht.css. */
 
 /* Die Aktionen einer Zeile (Einsortieren, Archivieren, Löschen) bleiben in einer Reihe. */
 .web-spalte-aktionen .web-zeilenaktionen {

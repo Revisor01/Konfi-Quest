@@ -939,7 +939,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         onZertifikatZuweisen={handleAssignCertificate}
         onPasswort={handlePasswordAction}
         onBefoerdern={handlePromoteToTeamer}
-        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement ?? undefined })}
+        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement ?? undefined, cssClass: 'app-modal-breit' })}
         onAktivitaetLoeschen={handleDeleteActivity}
         onBonusLoeschen={handleDeleteBonus}
         onZertifikatEntfernen={handleDeleteCertificate}

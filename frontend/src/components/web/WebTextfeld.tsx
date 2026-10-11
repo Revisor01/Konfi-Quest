@@ -12,10 +12,12 @@ export interface WebTextfeldProps {
   zeilen?: number;
   hinweis?: string;
   deaktiviert?: boolean;
+  /** Grauer Beispieltext im leeren Feld; der Name bleibt die Beschriftung. */
+  platzhalter?: string;
 }
 
 const WebTextfeld: React.FC<WebTextfeldProps> = ({
-  label, wert, onWert, pflicht = false, zeilen = 6, hinweis, deaktiviert = false,
+  label, wert, onWert, pflicht = false, zeilen = 6, hinweis, deaktiviert = false, platzhalter,
 }) => {
   const id = useId();
   const hinweisId = `${id}-hinweis`;
@@ -27,6 +29,7 @@ const WebTextfeld: React.FC<WebTextfeldProps> = ({
         className="web-eingabe web-eingabe--text"
         rows={zeilen}
         value={wert}
+        placeholder={platzhalter}
         disabled={deaktiviert}
         aria-required={pflicht ? 'true' : undefined}
         aria-describedby={hinweis ? hinweisId : undefined}

@@ -3,6 +3,7 @@ import { IonSplitPane } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import { istWebVersion, useBreitesLayout } from '../../navigation/breitesLayout';
 import { useRollenfarbeImDokument } from '../../navigation/rollenfarbeImDokument';
+import { useLayoutImDokument } from '../../navigation/layoutImDokument';
 import Seitenleiste from './Seitenleiste';
 
 /** Kennung des Hauptbereichs neben der Leiste (das Outlet aus App.tsx). */
@@ -32,6 +33,9 @@ const SeitenleistenRahmen: React.FC<{ children: React.ReactElement<{ id?: string
   const web = istWebVersion();
   // Gewählte Filter der Web-Fassung stehen in der Rollenfarbe (06.10.2026).
   useRollenfarbeImDokument(web ? user?.role_name : null);
+  // Im breiten Fenster stehen alle App-Modale kompakt (11.10.2026,
+  // theme/web-modale.css).
+  useLayoutImDokument(web && breit);
   if (!web) return children;
   return (
     <IonSplitPane when={breit} contentId={INHALT_ID} className="app-seitenleisten-rahmen">

@@ -144,6 +144,10 @@ Versionsüberschrift.
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
 
 ### Geändert
+- Im Browser öffnen sich alle Fenster der App kompakt: mittig, so groß wie ihr
+  Inhalt und mit derselben Form wie die übrigen Fenster im Browser, statt
+  immer gleich groß mit leerer Fläche oder abgeschnittenem Rand. Der Kalender
+  zum Datum steht als kleines Fenster darüber.
 - Im Support stehen Mails als Gespräche: Antworten eingerückt unter der Mail,
   auf die sie antworten, jede Mail eingeklappt mit einer Zeile Text, Zitate und
   Signatur verborgen, Gesendetes grün markiert.

@@ -423,7 +423,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         pageRef={pageRef}
         onKonfiAnlegen={presentKonfiModal}
         onTeamAnlegen={() => presentTeamerModalHook({ presentingElement: presentingElement })}
-        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement })}
+        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement, cssClass: 'app-modal-breit' })}
         onKonfiLoeschen={handleDeleteKonfi}
         onTeamerLoeschen={handleDeleteTeamer}
         banner={(

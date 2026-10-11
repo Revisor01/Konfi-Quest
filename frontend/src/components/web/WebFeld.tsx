@@ -16,10 +16,17 @@ export interface WebFeldProps {
   /** Erklaerung unter dem Feld. */
   hinweis?: string;
   deaktiviert?: boolean;
+  /** Grauer Beispieltext im leeren Feld; der Name bleibt die Beschriftung. */
+  platzhalter?: string;
+  /** Grenzen und Schrittweite für Zahlen (typ="number"). */
+  min?: number;
+  max?: number;
+  schritt?: number;
 }
 
 const WebFeld: React.FC<WebFeldProps> = ({
   label, wert, onWert, pflicht = false, typ = 'text', autocomplete = 'off', hinweis, deaktiviert = false,
+  platzhalter, min, max, schritt,
 }) => {
   const id = useId();
   const hinweisId = `${id}-hinweis`;
@@ -32,6 +39,10 @@ const WebFeld: React.FC<WebFeldProps> = ({
         type={typ}
         autoComplete={autocomplete}
         value={wert}
+        placeholder={platzhalter}
+        min={min}
+        max={max}
+        step={schritt}
         disabled={deaktiviert}
         aria-required={pflicht ? 'true' : undefined}
         aria-describedby={hinweis ? hinweisId : undefined}
