@@ -358,13 +358,18 @@ describe('Jahrgaenge (Web)', () => {
     expect(zelle(zeilen('Jahrgänge')[0], 0)).toHaveTextContent('Jahrgang 2027');
   });
 
-  it('Bearbeiten und "Neuer Jahrgang" oeffnen das Fenster der App mit dem Jahrgang', () => {
+  // Seit 11.10.2026 ein eigener Dialog statt des App-Fensters
+  // (WebJahrgangDialog; Speichern, Pruefen und Offline in webJahrgangDialog.test.tsx).
+  it('Bearbeiten und "Neuer Jahrgang" oeffnen den Dialog mit dem Jahrgang -- nicht das Fenster der App', async () => {
     render(<AdminJahrgaengeePage />);
     fireEvent.click(erster('Jahrgang 2026 bearbeiten'));
-    expect((fenster()[0].komponente as { name: string }).name).toBe('JahrgangModal');
-    expect(fenster()[0].props.jahrgang).toEqual(JAHRGAENGE[1]);
-    fireEvent.click(screen.getByRole('button', { name: 'Neuer Jahrgang' }));
-    expect(fenster()[1].props.jahrgang).toBeNull();
+    const bearbeiten = screen.getByRole('dialog', { name: 'Jahrgang bearbeiten' });
+    expect((within(bearbeiten).getByLabelText('Name') as HTMLInputElement).value).toBe('Jahrgang 2026');
+    expect((within(bearbeiten).getByRole('combobox', { name: 'Ziel Gottesdienst' }) as HTMLSelectElement).value).toBe('12');
+    fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Neuer Jahrgang' })); });
+    expect((within(screen.getByRole('dialog', { name: 'Neuer Jahrgang' })).getByLabelText('Name') as HTMLInputElement).value).toBe('');
+    expect(fenster()).toEqual([]);
   });
 
   it('Loeschen: erst die Zahlen vom Server in der Rueckfrage, dann die Route', async () => {

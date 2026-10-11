@@ -226,7 +226,8 @@ describe('Leitung: Bearbeiten ja, Anlegen nein', () => {
     ['admin/modals/ActivityManagementModal.tsx', "methode: currentActivity ? 'PUT' : 'POST'"],
     ['admin/useKategorieFormular.ts', "methode: category ? 'PUT' : 'POST'"], // Logik des CategoryModal (11.10.2026)
     ['admin/useZertifikatFormular.ts', "methode: certificateType ? 'PUT' : 'POST'"], // Logik des CertificateModal (11.10.2026)
-    ['admin/pages/AdminJahrgaengeePage.tsx', "methode: jahrgang ? 'PUT' : 'POST'"],
+    // Seit 11.10.2026 in der Logik, die App-Fenster und Web-Dialog teilen.
+    ['admin/useJahrgangFormular.ts', "methode: jahrgang ? 'PUT' : 'POST'"],
     ['admin/pages/AdminDashboardSettingsPage.tsx', "methode: 'PUT'"],
   ];
 
