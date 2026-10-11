@@ -84,7 +84,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
     if (!(aktiv instanceof HTMLElement) || !knoten.contains(aktiv) || aktiv.matches(':disabled')) knoten.focus();
   }, [gesperrt]);
 
-  const taste =(ereignis: React.KeyboardEvent<HTMLDivElement>) => {
+  const taste = (ereignis: React.KeyboardEvent<HTMLDivElement>) => {
     if (ereignis.key === 'Escape') {
       ereignis.stopPropagation();
       if (!gesperrt) schliessen.current();
