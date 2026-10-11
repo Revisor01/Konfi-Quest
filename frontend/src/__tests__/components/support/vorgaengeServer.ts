@@ -27,6 +27,11 @@ export interface TestMail {
   archiviert_am: string | null;
   /** Mails ohne Vorgang mit gleichem Schluessel bilden einen Faden; er geht beim Einsortieren ganz mit. */
   faden?: string | null;
+  /** Kopfzeilen fuer den Gespraechsbaum (MailGespraeche, 11.10.2026). */
+  message_id?: string | null;
+  in_reply_to?: string | null;
+  referenzen?: string[] | null;
+  verfasst_von_name?: string | null;
 }
 
 export interface TestVorgang {
