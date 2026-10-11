@@ -404,6 +404,44 @@ describe('Neues Event: Abbrechen und ohne Netz', () => {
     expect(h.enqueue).not.toHaveBeenCalled();
   });
 
+  it('solange gespeichert wird, schließt nichts den Dialog; lehnt der Server ab, steht seine Meldung im Dialog, danach fragt Schließen wieder nach', async () => {
+    // Gegenprüfung 11.10.2026: Vorher ließ sich der Dialog beim Speichern
+    // schließen oder die Rückfrage öffnen (Abbrechen, X, Escape, Klick
+    // daneben) -- das Event wurde trotzdem angelegt, und eine Ablehnung des
+    // Servers ging ins Leere.
+    let ablehnen: (grund: unknown) => void = () => {};
+    api.post.mockReturnValue(new Promise((_ok, nein) => { ablehnen = nein; }));
+    const d = await neuesEvent();
+    await nachDemOeffnen();
+    tippe(textfeld(d, 'Event-Name'), 'Konfi-Tag am See');
+    await absenden(d);
+    expect(api.post).toHaveBeenCalledTimes(1);
+
+    const knopf = (name: string) => within(d).getByRole('button', { name }) as HTMLButtonElement;
+    expect([knopf('Abbrechen'), knopf('Schließen'), knopf('Event anlegen')].map((k) => k.disabled)).toEqual([true, true, true]);
+    fireEvent.click(knopf('Abbrechen'));
+    fireEvent.click(knopf('Schließen'));
+    fireEvent.keyDown(d, { key: 'Escape' });
+    fireEvent.mouseDown(d.parentElement as HTMLElement);
+    // Weder zu noch die Rückfrage darüber: nur der Dialog selbst.
+    expect(screen.getAllByRole('dialog')).toHaveLength(1);
+    expect(screen.getByRole('dialog')).toBe(d);
+
+    await act(async () => { ablehnen({ response: { status: 400, data: { error: 'Validierungsfehler', details: [{ message: 'Ort ist zu lang' }] } } }); });
+    await warte();
+    expect(within(d).getByRole('alert')).toHaveTextContent('Ort ist zu lang');
+    expect(h.neuGeladen).toEqual([]);
+    // Danach ist er wieder frei; Schließen fragt wie sonst nach, und die
+    // Rückfrage selbst ist nie gesperrt.
+    expect(knopf('Abbrechen')).toBeEnabled();
+    fireEvent.keyDown(d, { key: 'Escape' });
+    const frage = screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
+    expect(within(frage).getByRole('button', { name: 'Schließen' })).toBeEnabled();
+    fireEvent.click(within(frage).getByRole('button', { name: 'Verwerfen' }));
+    expect(screen.queryByRole('dialog')).toBe(null);
+    expect(api.post).toHaveBeenCalledTimes(1);
+  });
+
   it('ohne Netz: wie in der App in die Warteschlange, mit Kennung und Meldung', async () => {
     h.online = false;
     const d = await neuesEvent();
