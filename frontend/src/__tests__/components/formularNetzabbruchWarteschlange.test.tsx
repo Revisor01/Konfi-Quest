@@ -220,7 +220,8 @@ describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id
 // Methode entscheidet die Hilfsfunktion, keine Zusicherung.
 describe('Leitung: Bearbeiten ja, Anlegen nein', () => {
   const faelle: Array<[string, string]> = [
-    ['admin/modals/BadgeManagementModal.tsx', "methode: isEditMode ? 'PUT' : 'POST'"],
+    // Die Logik des Badge-Formulars steht seit 11.10.2026 im Hook (App-Modal und Web-Dialog teilen ihn).
+    ['admin/useBadgeFormular.ts', "methode: isEditMode ? 'PUT' : 'POST'"],
     ['admin/modals/LevelManagementModal.tsx', "methode: level?.id ? 'PUT' : 'POST'"],
     ['admin/modals/ActivityManagementModal.tsx', "methode: currentActivity ? 'PUT' : 'POST'"],
     ['admin/pages/AdminCategoriesPage.tsx', "methode: category ? 'PUT' : 'POST'"],

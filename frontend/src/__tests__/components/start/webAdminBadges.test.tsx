@@ -1,20 +1,23 @@
 // „Badges verwalten" der Leitung in der Web-Fassung, gerendert (03.10.2026,
 // docs/planung/web-alle-bereiche.md, Entscheidung 6): Kennzahlen, Wechsel
 // zwischen Konfis und Team, Suche, Status-Filter und Sortierung, darunter eine
-// Tabelle. „Bearbeiten" und „Neues Badge" oeffnen das Formular der App
-// (BadgeManagementModal), „Loeschen" fragt wie in der App nach. Im schmalen
-// Fenster bleibt die Darstellung der App.
+// Tabelle. „Bearbeiten" und „Neues Badge" oeffnen seit 11.10.2026 den Dialog
+// der Web-Fassung (WebBadgeFormular, dieselbe Logik wie das Formular der App);
+// „Loeschen" fragt wie in der App nach. Im schmalen Fenster bleibt die
+// Darstellung der App, mit ihrem Formular (BadgeManagementModal).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import type { ModalAufruf } from './ionicStart';
+import { badgeServer, gespeichertesBadge } from './badgeServer';
 
 const h = vi.hoisted(() => ({
   breit: true,
   laedt: false,
   online: true,
   apiGet: vi.fn(),
+  apiPost: vi.fn(),
   apiDelete: vi.fn(),
   push: vi.fn(),
   modale: [] as Array<{ name: string; props: Record<string, unknown>; optionen: Record<string, unknown> | undefined }>,
@@ -29,16 +32,25 @@ const h = vi.hoisted(() => ({
   schluessel: [] as string[],
 }));
 
-vi.mock('@ionic/react', async () => (await import('./ionicStart')).ionicStart(h as never));
+vi.mock('@ionic/react', async () => ({
+  ...(await import('./ionicStart')).ionicStart(h as never),
+  // Die Liste der App (schmales Fenster) oeffnet ein Badge ueber den Klick aufs IonItem.
+  IonItem: ({ children, onClick }: { children?: React.ReactNode; onClick?: () => void }) => (
+    onClick ? <button type="button" onClick={onClick}>{children}</button> : <>{children}</>
+  ),
+}));
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('../support/ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
 vi.mock('../../../components/common/LoadingSpinner', () => ({ default: ({ message }: { message: string }) => <p>{message}</p> }));
 vi.mock('../../../components/admin/modals/BadgeManagementModal', async () => ({ default: (await import('./ionicStart')).modalAttrappe('BadgeManagementModal') }));
-vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, delete: h.apiDelete } }));
+vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, post: h.apiPost, delete: h.apiDelete } }));
+vi.mock('../../../services/writeQueue', () => ({ writeQueue: { enqueue: vi.fn() } }));
+vi.mock('../../../services/networkMonitor', () => ({ networkMonitor: { isOnline: true } }));
+vi.mock('../../../services/analytics', () => ({ trackHandlung: vi.fn() }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({ useLiveRefresh: vi.fn() }));
 vi.mock('../../../contexts/ModalContext', () => ({ useModalPage: () => ({ pageRef: { current: h.seite }, presentingElement: h.seite }) }));
 vi.mock('../../../contexts/AppContext', () => ({
-  useApp: () => ({ user: h.user, setError: h.setError, isOnline: h.online }),
+  useApp: () => ({ user: h.user, setError: h.setError, setSuccess: vi.fn(), isOnline: h.online }),
 }));
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
@@ -73,6 +85,13 @@ const TEAM = [
   badge(12, 'Zweites Jahr', 'teamer_year', 2, { earned_count: 1 }),
 ];
 
+/** Was GET /admin/badges/:id fuer das Formular liefert. */
+const EINZELN = [
+  gespeichertesBadge({ id: 2, name: 'Punkte-Sammler', icon: 'trophy', description: 'Punkte-Sammler beschrieben', criteria_type: 'total_points', criteria_value: 15, criteria_extra: null, color: '#c0c0c0' }),
+  gespeichertesBadge({ id: 3, name: 'Gottesdienst-Held', icon: 'trophy', description: 'Gottesdienst-Held beschrieben', criteria_type: 'gottesdienst_points', criteria_value: 8, criteria_extra: null, color: '#c0c0c0' }),
+];
+const formularServer = badgeServer(EINZELN);
+
 const zeigeSeite = async () => {
   const ergebnis = render(<AdminBadgesPage />);
   await screen.findByRole('heading', { level: 1, name: 'Badges' });
@@ -90,6 +109,7 @@ const modal = (name: string): ModalAufruf | undefined => h.modale.find((m) => m.
 beforeEach(() => {
   vi.clearAllMocks();
   h.apiGet.mockReset();
+  h.apiPost.mockReset();
   h.apiDelete.mockReset();
   h.breit = true;
   h.laedt = false;
@@ -101,7 +121,10 @@ beforeEach(() => {
   h.konfiBadges = KONFI;
   h.teamBadges = TEAM;
   h.refresh.mockResolvedValue(undefined);
-  h.apiGet.mockImplementation((url: string) => Promise.resolve({ data: url.includes('target_role=teamer') ? [{ id: 90, name: 'Gruppenstunde' }] : [{ id: 58, name: 'Nachtwanderung' }] }));
+  h.apiGet.mockImplementation((url: string) => (url.startsWith('/admin/activities')
+    ? Promise.resolve({ data: url.includes('target_role=teamer') ? [{ id: 90, name: 'Gruppenstunde', type: 'gemeinde' }] : [{ id: 58, name: 'Nachtwanderung', type: 'gemeinde' }] })
+    : formularServer(url)));
+  h.apiPost.mockResolvedValue({ data: { id: 40 } });
   h.apiDelete.mockResolvedValue({ data: {} });
 });
 
@@ -246,35 +269,53 @@ describe('Badges verwalten (Web): Konfis und Team', () => {
   });
 });
 
-describe('Badges verwalten (Web): Bearbeiten, Anlegen und Loeschen -- wie in der App', () => {
-  it('der Name und der Stift oeffnen das Formular der App fuer genau dieses Badge', async () => {
+describe('Badges verwalten (Web): Bearbeiten und Anlegen im eigenen Dialog, Loeschen wie in der App', () => {
+  const dialog = (name: string) => screen.getByRole('dialog', { name });
+  const nameFeld = async (titel: string) => within(dialog(titel)).findByRole('textbox', { name: 'Name' }) as Promise<HTMLInputElement>;
+
+  it('der Name und der Stift oeffnen den Web-Dialog fuer genau dieses Badge -- kein App-Modal', async () => {
     await zeigeSeite();
     fireEvent.click(within(zeile('Punkte-Sammler')).getAllByRole('button', { name: 'Punkte-Sammler bearbeiten' })[0]);
-    expect(h.modale.map((m) => m.name)).toEqual(['BadgeManagementModal']);
-    expect(h.zuletzt.BadgeManagementModal.badgeId).toBe(2);
-    expect(h.zuletzt.BadgeManagementModal.targetRole).toBe('konfi');
-    expect(modal('BadgeManagementModal')?.optionen).toMatchObject({ presentingElement: h.seite, backdropDismiss: false });
+    expect(await nameFeld('Badge bearbeiten')).toHaveValue('Punkte-Sammler');
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/badges/2');
+    expect(within(dialog('Badge bearbeiten')).getByRole('spinbutton', { name: 'Punkte' })).toHaveValue(15);
+    // useIonModal wird nicht aufgerufen: kein Fenster der App, auch nicht dahinter.
+    expect(h.modale).toEqual([]);
 
-    h.modale.length = 0;
+    fireEvent.click(within(dialog('Badge bearbeiten')).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(within(zeile('Gottesdienst-Held')).getByRole('button', { name: 'Gottesdienst-Held bearbeiten', description: 'Bearbeiten' }));
-    expect(h.modale).toHaveLength(1);
-    expect(h.zuletzt.BadgeManagementModal.badgeId).toBe(3);
+    expect(await nameFeld('Badge bearbeiten')).toHaveValue('Gottesdienst-Held');
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/badges/3');
+    expect(h.modale).toEqual([]);
   });
 
-  it('„Neues Badge" oeffnet das Formular ohne Badge', async () => {
+  it('„Neues Badge" oeffnet den Dialog ohne Badge, fuer Konfis', async () => {
     await zeigeSeite();
     fireEvent.click(screen.getByRole('button', { name: 'Neues Badge' }));
-    expect(h.modale).toHaveLength(1);
-    expect(h.zuletzt.BadgeManagementModal.badgeId).toBeNull();
-    expect(h.zuletzt.BadgeManagementModal.targetRole).toBe('konfi');
+    expect(await nameFeld('Neues Badge')).toHaveValue('');
+    expect((within(dialog('Neues Badge')).getByRole('combobox', { name: 'Zielgruppe' }) as HTMLSelectElement).value).toBe('konfi');
+    expect(h.modale).toEqual([]);
   });
 
-  it('im Team-Reiter gilt das Formular fuers Team', async () => {
+  it('im Team-Reiter gilt der Dialog fuers Team', async () => {
     await zeigeSeite();
     fireEvent.click(screen.getByRole('button', { name: 'Team' }));
     await waitFor(() => expect(namen()).toEqual(['Erstes Jahr', 'Zweites Jahr']));
     fireEvent.click(screen.getByRole('button', { name: 'Neues Badge' }));
-    expect(h.zuletzt.BadgeManagementModal.targetRole).toBe('teamer');
+    await nameFeld('Neues Badge');
+    expect((within(dialog('Neues Badge')).getByRole('combobox', { name: 'Zielgruppe' }) as HTMLSelectElement).value).toBe('teamer');
+    expect((within(dialog('Neues Badge')).getByRole('combobox', { name: 'Bedingung' }) as HTMLSelectElement).value).toBe('activity_count');
+  });
+
+  it('Speichern schliesst den Dialog und laedt die Liste neu', async () => {
+    await zeigeSeite();
+    fireEvent.click(screen.getByRole('button', { name: 'Neues Badge' }));
+    fireEvent.change(await nameFeld('Neues Badge'), { target: { value: 'Neu im Browser' } });
+    await act(async () => { fireEvent.click(within(dialog('Neues Badge')).getByRole('button', { name: 'Speichern' })); });
+    expect(h.apiPost).toHaveBeenCalledWith('/admin/badges', expect.objectContaining({ name: 'Neu im Browser', target_role: 'konfi' }));
+    expect(h.refresh).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('Loeschen fragt nach; erst die Bestaetigung loescht und laedt die Liste neu', async () => {
@@ -320,5 +361,22 @@ describe('Badges verwalten: schmales Fenster', () => {
     expect(container.querySelector('.web-seite')).toBeNull();
     expect(screen.queryByRole('table')).toBeNull();
     expect(screen.queryByRole('group', { name: 'Badges: 6' })).toBeNull();
+  });
+
+  it('„Neues Badge" und ein Badge der Liste oeffnen weiter das Formular der App, keinen Web-Dialog', async () => {
+    h.breit = false;
+    render(<AdminBadgesPage />);
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByRole('button', { name: 'Neues Badge anlegen' }));
+    expect(h.modale.map((m) => m.name)).toEqual(['BadgeManagementModal']);
+    expect(h.zuletzt.BadgeManagementModal.badgeId).toBeNull();
+    expect(h.zuletzt.BadgeManagementModal.targetRole).toBe('konfi');
+    expect(modal('BadgeManagementModal')?.optionen).toMatchObject({ presentingElement: h.seite, backdropDismiss: false });
+    expect(typeof modal('BadgeManagementModal')?.optionen?.canDismiss).toBe('function');
+
+    fireEvent.click(screen.getByRole('button', { name: /Punkte-Sammler/ }));
+    expect(h.modale).toHaveLength(2);
+    expect(h.zuletzt.BadgeManagementModal.badgeId).toBe(2);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

@@ -6,8 +6,9 @@
 // Die Seite lädt und speichert nichts selbst: Liste, Suche, Filter, Löschen
 // und das Formular zum Bearbeiten gehören der App-Fassung
 // (admin/BadgesView.tsx und admin/pages/AdminBadgesPage.tsx) -- hier kommt
-// alles als Daten und Funktionen an. „Bearbeiten" öffnet dasselbe Formular
-// (BadgeManagementModal) wie in der App.
+// alles als Daten und Funktionen an. „Bearbeiten" und „Neues Badge" öffnen
+// den Dialog der Web-Fassung (WebBadgeFormular, seit 11.10.2026) mit derselben
+// Logik wie das Formular der App (useBadgeFormular).
 
 import React, { useState } from 'react';
 import { IonIcon } from '@ionic/react';
