@@ -275,7 +275,8 @@ einmal für die ganze Gemeinde an — nicht pro Jahrgang. Der Weg führt über
 Ein Level besteht aus:
 
 - **„Titel"** — was angezeigt wird, etwa „Bronze" oder „Meister"
-- **„Benötigte Punkte"** — ab wann es gilt, per Schieberegler von **1 bis 40**
+- **„Benötigte Punkte"** — ab wann es gilt; in der App per Schieberegler von
+  **1 bis 40**, im Browser als Zahl ab **0** ohne Obergrenze
 - **„Beschreibung"**, **„Icon"** und **„Level-Farbe"** — wie es aussieht
 
 Zwei Level dürfen nicht dieselbe Punktzahl haben; der Versuch endet mit „Ein

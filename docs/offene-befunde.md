@@ -57,8 +57,10 @@ Nichts.
 - [ ] **Web-Version: was noch fehlt** — Support-Ansicht auf Handy und im
   Web übersichtlicher (Simon, 10.10.2026; Mails, Posteingang und Vorgänge
   erledigt 11.10.2026, Struktur, Textbausteine und Konten offen), eigene
-  kompakte Dialoge im Browser überall (Simon, 11.10.2026), Leiste „Verwaltung", Rückweg ohne
-  Gemeinde, Kennzahlen, Einwilligung am Profil
+  Fenster für die übrigen Formulare (Simon, 11.10.2026; die häufigen
+  erledigt 11.10.2026, offen etwa Challenge, Konfi, Teilnehmende und
+  Zertifikat zuweisen), Leiste „Verwaltung", Rückweg ohne Gemeinde,
+  Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular
   ([planung/support-vorgaenge.md](planung/support-vorgaenge.md)).
@@ -298,6 +300,17 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   WebListe als die eine sortierbare Tabelle, WebKacheln, WebKreis);
   Aktivitäten-Katalog und Konfis/Team darauf umgestellt
   (Branch `refactor/web-bausteine`).
+- [x] 11.10.2026 — Kompakte Fenster im Browser (Simon: „Web braucht eigene
+  kompaktere Modale überall"): alle App-Modale ab 992 px kompakt
+  (`theme/web-modale.css`, Merkmal `data-layout` aus
+  `navigation/layoutImDokument.ts`); eigene Fenster (`WebDialog`) für Event,
+  Aktivität eintragen, Bonuspunkte, Aktivität melden und prüfen, Material,
+  Badge, Kategorie, Level, Zertifikat, Benutzer:in, Jahrgang, Passwort und
+  E-Mail, die Logik je Formular in einem Hook, den App-Modal und Fenster
+  teilen. Dabei behoben: Badge-Auswahl beim Bearbeiten und Zeitraum ohne
+  eigene Wahl, deutsches Datum beim Melden in der App, „Aktivität
+  eintragen" ohne Netz mit gemerkter Liste, Enter im Suchfeld, Level ohne
+  Farbwahl im Browser, Team-Liste nach „Teamer:in anlegen" im Browser.
 
 
 ## Offen
@@ -323,6 +336,77 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   rechnet das Backend beim Lesen aus. Ein `pollUpdated` geht dabei nicht
   hinaus; wer den Chat offen hat, sieht die Namen erst beim nächsten Laden
   (10.10.2026).
+- **Neues Level ohne Farbwahl scheitert in der App.** `LevelManagementModal`
+  schickt ohne eigene Farbwahl `color: 'var(--app-color-level)'`;
+  `levels.color` ist `varchar(7)`, `POST /api/levels` antwortet mit 500
+  „Fehler beim Erstellen des Levels". Das Farbfeld zeigt dabei Schwarz. So
+  seit 05.09.2026, also auch in der Store-Version 2.3.0; im Browser ab 992 px
+  behoben (das Fenster belegt die Farbe mit `levelFarbeAlsHex` vor). Der
+  Store-App hilft nur das Backend: eine Farbe, die nicht `#rrggbb` ist, durch
+  die Vorgabe ersetzen statt abzubrechen (additiv); für die App dieselbe
+  Vorbelegung, mit einem Test, der zuerst fällt (11.10.2026).
+- **„Heute" ist beim Melden und Eintragen das UTC-Datum.** Aktivität melden,
+  Aktivität eintragen und Bonuspunkte belegen das Datum mit
+  `new Date().toISOString().split('T')[0]` vor (`useAktivitaetMelden`,
+  `useAktivitaetEintragen`, `useBonusVergeben`), das Melden setzt damit auch
+  den spätesten Tag. Zwischen Mitternacht und 2 Uhr (Winterzeit 1 Uhr) steht
+  dort der Vortag, und beim Melden lässt sich der heutige Tag nicht wählen.
+  App und Browser gleich; richtig wäre das lokale Datum (11.10.2026).
+- **„Aktivität eintragen" ohne Netz braucht eine einmal geladene Liste.**
+  Die Liste der Aktivitäten kommt ohne Netz aus dem Speicher
+  (`admin:activities:<Gemeinde>:<Rolle>`, derselbe Schlüssel wie die Seite
+  Aktivitäten). Hat das Gerät sie nie geladen, geht ohne Netz nur
+  Bonuspunkte vergeben; das Fenster im Browser sagt das, das App-Modal zeigt
+  eine leere Liste mit gesperrtem Haken. Möglich: die Liste beim Anmelden der
+  Leitung vorladen (11.10.2026).
+- **Aktivitäten eines neuen Badges folgen nicht der Zielgruppe.**
+  `useBadgeFormular` lädt `/admin/activities?target_role=` nach dem Reiter
+  der Seite, nicht nach der im Formular gewählten Zielgruppe. Wer aus der
+  Konfi-Liste ein Badge anlegt und auf Team umschaltet, bekommt bei
+  „Spezifische Aktivität" und „Aktivitäts-Kombination" Konfi-Aktivitäten
+  angeboten; die Wertung zählt für Team-Badges nur Team-Aktivitäten, das
+  Badge wird nie vergeben. App und Browser gleich; beim Wechsel der
+  Zielgruppe neu laden (11.10.2026).
+- **„Badge neu prüfen" nennt die Zahl der Geprüften nicht.**
+  `POST /admin/badges/:id/pruefen` liefert `geprueft` und `neu_vergeben`;
+  App und Browser zeigen nur die neu Vergebenen bzw. „Alle Badges sind
+  aktuell". Das Handbuch sagte bis 11.10.2026, auch die Zahl der Geprüften
+  stehe da, und beschreibt jetzt den Ist-Stand. Offen, ob die Meldung sie
+  nennen soll (11.10.2026).
+- **Event-Serie in der App ohne Griff an den Regler scheitert.** „Als Serie
+  erstellen" lässt `series_count` auf 1 (`EventFormSections`), der Regler
+  steht am Anschlag bei 2, die Zahl daneben zeigt 1; `POST /events/series`
+  antwortet 400 „Name, Datum und Serienanzahl (min. 2) sind erforderlich".
+  Das Fenster im Browser setzt beim Einschalten mindestens 2 (`mitSerie` in
+  `eventFormularRegeln.ts`); die App bräuchte denselben Aufruf (11.10.2026).
+- **Kopie eines Events: Anmeldeschluss und Zeitfenster wandern nicht mit.**
+  `nachDatumswechsel` behandelt eine Kopie als Bearbeiten (`!!event`, die
+  Vorlage hat id 0). Die Kopie beginnt im Vorschlag binnen einer halben
+  Stunde, ihr Anmeldeschluss liegt kurz davor; wer das Datum verschiebt,
+  behält diesen Schluss, und die Anmeldung schließt kurz nach dem Anlegen.
+  Zeitfenster bleiben am alten Tag. Dazu heißt das App-Modal bei einer
+  Kopie „Event bearbeiten". App und Browser teilen die Regel; das Fenster im
+  Browser nennt nur den abweichenden Tag am Zeitfenster (11.10.2026).
+- **Platzzahl in der Event-Liste kommt als Text.** `GET /events` liefert
+  `max_participants` aus einem `CASE` mit `SUM(...)`, also als `bigint` und
+  damit als Text (`'0'`, `'50'`). Eine Kopie aus der Liste zeigt ein
+  unbegrenztes Event im App-Formular als begrenzt (`=== 0`). Die Antwortform
+  bleibt (ausgelieferte Apps); umwandeln gehört in die App (`Number()` beim
+  Füllen des Formulars) (11.10.2026).
+- **Team-Liste der App lädt nach „Teamer:in anlegen" nicht neu.** Das
+  App-Modal ruft danach nur `refreshKonfis`; `useTeamerListe` lädt erst beim
+  nächsten Wechsel zwischen Konfis und Team. Im Browser behoben
+  (`teamStand` in `WebKonfis`) (11.10.2026).
+- **Meldungen am Rand liegen im Browser unter einem offenen Fenster.** Die
+  eigenen Fenster hängen mit z-index 1000 an `<body>`, Toasts und
+  `useIonAlert` in `ion-app`; gemessen lagen sie darunter. Die Formulare
+  zeigen ihre Meldungen deshalb im Fenster selbst, Rückfragen als zweites
+  kleines Fenster. Offen sind noch zwei Stellen: Scheitert im
+  Material-Fenster das Öffnen einer Datei, kommt „Fehler beim Öffnen der
+  Datei" als Toast unter dem Fenster (`useDateiOeffnen`); nach **Foto
+  löschen** im Fenster „Aktivität prüfen" kommt „Foto erfolgreich gelöscht"
+  als Toast unter dem Fenster, das offen bleibt (`setSuccess` in
+  `useAntragPruefen`) (11.10.2026).
 
 ### Tests und CI
 
@@ -428,7 +512,21 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-Nichts.
+- **Event mit fremdem Jahrgang speichern.** Eine Leitung, die nur einem Teil
+  der Jahrgänge eines Events zugewiesen ist, kann es weder in der App noch im
+  Browser speichern: `PUT /events/:id` prüft jeden Ziel-Jahrgang
+  (`zielJahrgangErlaubt`) und antwortet 403 „Kein Zugriff auf diesen
+  Jahrgang". Den fremden Jahrgang kann sie nicht abwählen, weil sie ihn nicht
+  sieht; das Fenster im Browser nennt ihn unter der Auswahl. Gewollt (dann
+  bearbeitet nur die Gemeindeleitung solche Events, und das Handbuch sagt
+  es), oder soll das Backend unverändert gelassene fremde Jahrgänge zulassen?
+  (11.10.2026)
+- **Meldungen der Browser-Fenster in der Fehlermessung.** Prüf- und
+  Serverfehler stehen in den eigenen Fenstern im Fenster selbst und laufen
+  nicht über `setError` im `AppContext`, also nicht in die anonyme
+  Fehlermessung (`trackFehler`); die App misst sie weiter, die
+  Support-Fenster schon bisher nicht. Mitzählen hieße: ein Weg im
+  `AppContext`, der misst, ohne einen Toast zu zeigen (11.10.2026).
 
 ## Geplant
 
@@ -437,16 +535,18 @@ Nichts.
   kleinere Punkte: [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version: was noch fehlt** — Leiste links, Support-Ansicht mit
   Vorgängen, Posteingang, Formularen und Support-Mail sowie die
-  Browser-Ansichten aller Bereiche sind gebaut (03. bis 07.10.2026).
-  Offen: die Gruppe „Verwaltung" in der Leiste, der Rückweg
-  „ohne Gemeinde" nach einem Gemeindewechsel, weitere Kennzahlen,
-  „Einwilligung liegt vor" am Konfi-Profil
-  ([planung/web-version.md](planung/web-version.md), Abschnitt „Offen");
-  Zuweisung von Vorgängen an einzelne Support-Konten und Bildschirmfotos im
-  Support-Formular ([planung/support-vorgaenge.md](planung/support-vorgaenge.md));
-  die Spalte „Letzte Aktivität" der Konfi-Tabelle im Browser bleibt
-  ausgeblendet, bis `GET /admin/konfis` das Feld `letzte_aktivitaet`
-  (additiv) liefert.
+  Browser-Ansichten aller Bereiche sind gebaut (03. bis 07.10.2026), die
+  kompakten Fenster mit eigenen Fenstern für die häufigen Formulare
+  (11.10.2026). Offen ([planung/web-version.md](planung/web-version.md#offen)):
+  Support-Ansicht auf Handy und im Web übersichtlicher (Struktur,
+  Textbausteine, Konten), eigene Fenster für die übrigen Formulare, die
+  Gruppe „Verwaltung" in der Leiste, der Rückweg „ohne Gemeinde" nach einem
+  Gemeindewechsel, weitere Kennzahlen, „Einwilligung liegt vor" am
+  Konfi-Profil; Zuweisung von Vorgängen an einzelne Support-Konten und
+  Bildschirmfotos im Support-Formular
+  ([planung/support-vorgaenge.md](planung/support-vorgaenge.md)); die Spalte
+  „Letzte Aktivität" der Konfi-Tabelle im Browser bleibt ausgeblendet, bis
+  `GET /admin/konfis` das Feld `letzte_aktivitaet` (additiv) liefert.
 - **Feature-Empfehlungen** mit Simons Antworten vom 02.10.2026 —
   vor der EKD-Ausrollung Einwilligung (E-01, Vermerk am Konfi-Profil),
   Löschfristen (E-02), Selbstauskunft (E-21) und Hilfe und Support (E-04,

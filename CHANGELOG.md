@@ -142,6 +142,18 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 - Im Browser lässt sich „Material verwalten" auch als Kacheln ansehen; die
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
+- Im Browser haben die häufigen Formulare ein eigenes, kompaktes Fenster —
+  Events, Aktivität eintragen, melden und prüfen, Bonuspunkte, Material,
+  Badges, Kategorien, Level, Zertifikate, Benutzer:innen, Jahrgänge, Passwort
+  und E-Mail-Adresse — mit beschrifteten Feldern, dem Kalender des Browsers
+  für Datum und Uhrzeit und den Knöpfen unten rechts, die in langen Formularen
+  beim Scrollen im Bild bleiben.
+- In diesen Fenstern steht der Grund im Fenster selbst, wenn eine Angabe fehlt
+  oder der Server ablehnt, und solange gespeichert wird, lässt sich das
+  Fenster nicht schließen.
+- Beim Prüfen einer gemeldeten Aktivität im Browser stehen links die Angaben
+  und rechts das Nachweisfoto; entschieden wird mit „Genehmigen" oder
+  „Ablehnen".
 
 ### Geändert
 - Im Browser öffnen sich alle Fenster der App kompakt: mittig, so groß wie ihr
@@ -483,6 +495,20 @@ Versionsüberschrift.
   angezeigten 4 Wochen, beim Anlegen wie beim Speichern eines älteren Badges
   ohne Zeitraum; bisher lehnte der Server mit „Bitte einen Zeitraum angeben“
   ab.
+- Beim Melden einer Aktivität in der App steht das Datum auch dann auf
+  Deutsch, wenn das Handy auf eine andere Sprache eingestellt ist; bisher
+  stand dort dann etwa „Oct 11, 2026“.
+- „Aktivität eintragen“ geht ohne Netz, wenn die Liste der Aktivitäten auf dem
+  Gerät schon einmal geladen war; der Eintrag geht hinaus, sobald wieder
+  Verbindung besteht. Bisher blieb die Liste ohne Netz leer.
+- Im Browser schickt Enter im Suchfeld eines Fensters nichts mehr ab, etwa
+  beim Einsortieren einer Mail im Support; bisher wurde dabei der zuvor
+  gewählte Eintrag übernommen, auch wenn die Suche ihn schon ausgeblendet
+  hatte. Passt nur noch ein Eintrag, wählt Enter ihn aus.
+- Im Browser lässt sich ein neues Level ohne eigene Farbwahl anlegen; es
+  bekommt die Farbe, die das Farbfeld zeigt. Bisher scheiterte das Speichern.
+- Im Browser steht eine neu angelegte Teamer:in sofort in der Team-Liste,
+  nicht erst nach einem Wechsel zwischen Konfis und Team.
 
 ### Sonstiges
 - Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,
