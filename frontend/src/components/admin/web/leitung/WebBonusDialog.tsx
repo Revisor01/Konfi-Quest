@@ -9,6 +9,8 @@
 // Vorbelegung, derselbe Rumpf an dieselbe Route, ohne Netz dieselbe
 // Warteschlange mit derselben Kennung. Anders als in der App steht ein Fehler
 // im Dialog, und „Vergeben" mit fehlender Angabe sagt, was fehlt.
+// Während des Vergebens schließt nichts den Dialog (Abbrechen, X, Escape,
+// Klick daneben), wie das X der App: Ein Fehler des Servers ginge sonst ins Leere.
 
 import React, { useState } from 'react';
 import { PUNKTEART_NAME, type Punkteart, type PunkteartFlags } from '../../../../utils/punktearten';
@@ -54,6 +56,7 @@ const WebBonusDialog: React.FC<WebBonusDialogProps> = ({ konfiId, personName, pu
       beschreibung={`Für ${personName}`}
       onSchliessen={onSchliessen}
       onAbsenden={() => { void handleSave(); }}
+      gesperrt={isSubmitting}
       aktionen={(
         <>
           <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>

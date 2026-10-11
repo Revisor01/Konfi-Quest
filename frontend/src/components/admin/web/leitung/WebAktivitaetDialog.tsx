@@ -8,6 +8,8 @@
 // dieselbe Liste (nur aktive Punktearten des Jahrgangs), dieselbe Route,
 // ohne Netz dieselbe Warteschlange. Anders als in der App steht ein Fehler im
 // Dialog, und „Eintragen" ohne gewählte Aktivität sagt, was fehlt.
+// Während des Eintragens schließt nichts den Dialog (Abbrechen, X, Escape,
+// Klick daneben), wie das X der App: Ein Fehler des Servers ginge sonst ins Leere.
 //
 // Ohne Netz: Die Liste ist der zuletzt geladene Stand, und der Hinweis sagt,
 // dass der Eintrag nachgeht. Gab es nie einen Stand, verspricht der Dialog das
@@ -80,6 +82,7 @@ const WebAktivitaetDialog: React.FC<WebAktivitaetDialogProps> = ({
       beschreibung={`Für ${personName}`}
       onSchliessen={onSchliessen}
       onAbsenden={() => { void handleSave(); }}
+      gesperrt={isSubmitting}
       aktionen={(
         <>
           <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
