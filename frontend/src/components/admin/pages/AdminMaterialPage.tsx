@@ -54,7 +54,10 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { darfMaterialBearbeiten } from '../../../utils/materialRechte';
 import { materialStats } from '../../../utils/materialStats';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
-import WebMaterialVerwaltung from '../web/leitung/WebMaterialVerwaltung';import { wahlVon } from '../../../seiten/beschreibung';
+import WebMaterialVerwaltung from '../web/leitung/WebMaterialVerwaltung';
+import WebMaterialDialog from '../web/leitung/WebMaterialDialog';
+import type { Material as MaterialDetail } from '../modals/useMaterialFormular';
+import { wahlVon } from '../../../seiten/beschreibung';
 import { MATERIAL_LEITUNG_FILTER, MATERIAL_LEITUNG_TITEL, MATERIAL_LEITUNG_UNTERTITEL, materialLeitungLeer } from '../../../seiten/materialLeitung';
 
 
@@ -222,8 +225,26 @@ const AdminMaterialPage: React.FC = () => {
     }
   };
 
+  // Im breiten Layout ein eigener Dialog der Web-Fassung statt des Modals
+  // (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale überall");
+  // dieselbe Logik (useMaterialFormular), dasselbe Laden vorher, dieselbe
+  // Regel fuer den Schreibschutz. null: kein Dialog offen.
+  const [webFormular, setWebFormular] = useState<{ material: MaterialDetail | null } | null>(null);
+
+  const webAnlegen = () => setWebFormular({ material: null });
+
+  const webOeffnen = async (material: Material) => {
+    try {
+      const res = await api.get(`/material/${material.id}`);
+      setWebFormular({ material: res.data });
+    } catch {
+      setError('Fehler beim Laden des Materials');
+    }
+  };
+
   if (breit) {
     return (
+      <>
       <WebMaterialVerwaltung
         alle={materials || []}
         angezeigt={filteredMaterials}
@@ -238,11 +259,23 @@ const AdminMaterialPage: React.FC = () => {
           setActiveJahrgangId(wert === 'alle' || wert === 'global' ? undefined : Number(wert));
         }}
         darfBearbeiten={(material) => darfMaterialBearbeiten(user, material)}
-        onAnlegen={openCreateModal}
-        onOeffnen={openEditModal}
+        onAnlegen={webAnlegen}
+        onOeffnen={webOeffnen}
         onLoeschen={handleDelete}
         pageRef={pageRef}
       />
+      {webFormular && (
+        <WebMaterialDialog
+          material={webFormular.material}
+          nurLesen={webFormular.material ? !darfMaterialBearbeiten(user, webFormular.material) : false}
+          onSchliessen={() => setWebFormular(null)}
+          onGespeichert={() => {
+            setWebFormular(null);
+            refreshMaterial();
+          }}
+        />
+      )}
+      </>
     );
   }
 

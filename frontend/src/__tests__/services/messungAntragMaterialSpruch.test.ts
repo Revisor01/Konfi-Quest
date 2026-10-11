@@ -280,7 +280,7 @@ describe('materialInhalt: dieselben Werte beim Einstellen und beim Ansehen', () 
   });
 
   it('das Einstellen nutzt dieselbe Hilfe', () => {
-    const quelle = lies('src/components/admin/modals/MaterialFormModal.tsx');
+    const quelle = lies('src/components/admin/modals/useMaterialFormular.ts');
     expect(quelle).toContain("trackHandlung('material-bereitgestellt', {\n              inhalt: materialInhalt(hatDatei, hatLink)");
   });
 });
