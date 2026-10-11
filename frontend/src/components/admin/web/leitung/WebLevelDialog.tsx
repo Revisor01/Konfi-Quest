@@ -11,9 +11,15 @@
 // Gemeinde steht oft bei 0, aeltere Level stehen auch ueber 40 -- die App
 // speichert solche Werte unveraendert, solange der Regler nicht bewegt wird.
 // Ein Feld mit 1 bis 40 wuerde sie hier sperren.
+//
+// Die Farbe ist vorbelegt als #rrggbb (levelFarbeAlsHex): ein neues Level mit
+// der Farbe der Level, wie das Farbfeld sie zeigt. Gespeichert wird, was das
+// Farbfeld zeigt. Das Token var(--app-color-level), mit dem die App ein
+// neues Level beginnt, nimmt der Server nicht an (levels.color varchar(7),
+// 500; Gegenpruefung 11.10.2026).
 
-import React, { useId } from 'react';
-import { useLevelFormular, type LevelFormularDaten } from '../../useLevelFormular';
+import React, { useId, useMemo } from 'react';
+import { NEUES_LEVEL, levelFarbeAlsHex, useLevelFormular, type LevelFormularDaten } from '../../useLevelFormular';
 import { OFFLINE_HINWEIS } from '../../stammdatenFormular';
 import WebDialog from '../../../web/WebDialog';
 import WebFeld from '../../../web/WebFeld';
@@ -30,32 +36,21 @@ export interface WebLevelDialogProps {
   onGespeichert: () => void;
 }
 
-const HEX = /^#[0-9a-f]{6}$/i;
-
-/**
- * Der Wert fuer das Farbfeld des Browsers, das nur #rrggbb kennt. Ein neues
- * Level traegt die Farbe der Level als Token (var(--app-color-level)) -- so
- * speichert es auch die App, solange niemand eine Farbe waehlt. Angezeigt
- * wird dann der Wert des Tokens statt Schwarz.
- */
-function farbfeldWert(farbe: string | undefined): string {
-  if (farbe && HEX.test(farbe)) return farbe;
-  const token = /^var\((--[\w-]+)\)$/.exec(farbe ?? '')?.[1];
-  if (!token) return '';
-  const wert = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
-  return HEX.test(wert) ? wert : '';
-}
-
 const WebLevelDialog: React.FC<WebLevelDialogProps> = ({ level, onSchliessen, onGespeichert }) => {
   const farbId = useId();
-  const { formData, aendern, loading, isSubmitting, fehler, isOnline, speichern } = useLevelFormular(level, {
+  // Neu oder bearbeitet: dieselben Werte, nur die Farbe sicher als #rrggbb.
+  const vorlage = useMemo<LevelFormularDaten>(() => {
+    const basis = level ?? NEUES_LEVEL;
+    return { ...basis, color: levelFarbeAlsHex(basis.color) };
+  }, [level]);
+  const { formData, aendern, loading, isSubmitting, fehler, isOnline, speichern } = useLevelFormular(vorlage, {
     onFertig: () => {
       onGespeichert();
       onSchliessen();
     },
     fehlerImDialog: true,
   });
-  const farbe = formData.color || 'var(--app-color-level)';
+  const farbe = levelFarbeAlsHex(formData.color);
   const punkte = formData.points_required;
 
   return (
@@ -119,7 +114,7 @@ const WebLevelDialog: React.FC<WebLevelDialogProps> = ({ level, onSchliessen, on
             id={farbId}
             type="color"
             className="web-farbwahl"
-            value={farbfeldWert(formData.color)}
+            value={formData.color}
             onChange={(e) => aendern({ color: e.target.value })}
             disabled={loading}
           />

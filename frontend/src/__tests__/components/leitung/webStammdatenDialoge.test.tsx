@@ -9,7 +9,7 @@
 // Echt sind Seiten, Dialoge, Hooks, sendenOderEinreihen und useActionGuard;
 // nachgestellt sind Server, Warteschlange, Netzstand, Anmeldung, Ionic und
 // das breite Layout.
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import { konto, neuerStand, type LeitungTestStand } from './leitungTestHilfe';
@@ -139,10 +139,6 @@ beforeEach(() => {
   h.apiPut.mockReset().mockResolvedValue({ data: {} });
   h.apiDelete.mockReset().mockResolvedValue({ data: {} });
   h.enqueue.mockReset().mockResolvedValue({ id: 'q1' });
-});
-
-afterEach(() => {
-  document.documentElement.style.removeProperty('--app-color-level');
 });
 
 // ---------------------------------------------------------------------------
@@ -308,8 +304,7 @@ describe('Level im Browser: eigener Dialog', () => {
     expect(knopf(d, 'Speichern')).toHaveAttribute('type', 'submit');
   });
 
-  it('ein neues Level: leerer Titel, 0 Punkte, Pokal; das Farbfeld zeigt den Wert der Level-Farbe statt Schwarz', () => {
-    document.documentElement.style.setProperty('--app-color-level', '#ec4899');
+  it('ein neues Level: leerer Titel, 0 Punkte, Pokal; das Farbfeld zeigt die Farbe der Level (#ec4899) statt Schwarz', () => {
     render(<AdminLevelsPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Neues Level' }));
     const d = dialog('Neues Level');
@@ -364,13 +359,29 @@ describe('Level im Browser: eigener Dialog', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('ohne gewaehlte Farbe bleibt es wie in der App bei der Farbe der Level als Token', async () => {
+  it('ohne gewaehlte Farbe geht die angezeigte Farbe der Level als #rrggbb hinaus, nicht das Token', async () => {
+    // Der Server speichert die Farbe in levels.color varchar(7): Das Token
+    // var(--app-color-level) brach dort mit 500 ab (Gegenpruefung, 11.10.2026).
+    // Gesendet wird, was das Farbfeld zeigt -- auch ohne geladenes Stylesheet.
     render(<AdminLevelsPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Neues Level' }));
     const d = dialog('Neues Level');
+    expect(feld(d, 'Level-Farbe')).toHaveValue('#ec4899');
     tippen(d, 'Titel', 'Start');
     await klicken(knopf(d, 'Anlegen'));
-    expect(h.apiPost).toHaveBeenCalledWith('/levels', expect.objectContaining({ name: 'start', points_required: 0, icon: 'trophy', color: 'var(--app-color-level)' }));
+    expect(h.apiPost).toHaveBeenCalledWith('/levels', {
+      name: 'start',
+      title: 'Start',
+      description: '',
+      points_required: 0,
+      icon: 'trophy',
+      color: '#ec4899',
+      reward_type: null,
+      reward_value: null,
+      is_active: true,
+    });
+    expect(h.refresh).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('Bearbeiten schickt PUT /levels/:id mit dem gespeicherten Namen; ein Fehler des Servers steht im Dialog', async () => {
@@ -447,6 +458,10 @@ describe('Level im Browser: eigener Dialog', () => {
     fireEvent.change(screen.getByLabelText('Benötigte Punkte'), { target: { value: '30' } });
     await klicken(screen.getByRole('button', { name: 'Sonne' }));
     await klicken(screen.getByRole('button', { name: 'Level speichern' }));
+    // Die App schickt ohne Farbwahl weiter das Token, wie vor dem Herausziehen
+    // der Logik. Der Server lehnt es ab (levels.color varchar(7), 500) -- ein
+    // offener Befund der App, zu beheben in einem eigenen Commit mit Test;
+    // der Dialog im Browser schickt #rrggbb (Test oben).
     expect(h.apiPost).toHaveBeenCalledWith('/levels', {
       name: 'gold_meister', title: 'Gold-Meister', description: '', points_required: 30, icon: 'sunny',
       color: 'var(--app-color-level)', reward_type: null, reward_value: null, is_active: true,

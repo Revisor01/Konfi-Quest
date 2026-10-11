@@ -18,6 +18,7 @@ import { writeQueue } from '../../services/writeQueue';
 import { fehlerText } from '../../utils/fehler';
 import { safeUUID } from '../../utils/uuid';
 import { sendenOderEinreihen } from '../../utils/sendenOderEinreihen';
+import { FARBEN } from '../../theme/colors';
 import type { FormularOptionen } from './stammdatenFormular';
 
 export interface LevelFormularDaten {
@@ -43,6 +44,23 @@ export const NEUES_LEVEL: LevelFormularDaten = {
   color: 'var(--app-color-level)',
   is_active: true
 };
+
+const HEX_FARBE = /^#[0-9a-f]{6}$/i;
+
+/**
+ * Die Farbe eines Levels so, wie der Server sie speichern kann: #rrggbb.
+ * Er haelt sie in levels.color (varchar(7)) -- das Token
+ * var(--app-color-level), mit dem ein neues Level beginnt, bricht dort mit
+ * 500 ab („Fehler beim Erstellen des Levels"; Gegenpruefung 11.10.2026, in
+ * der App noch offen). Alles, was kein #rrggbb ist, wird zur Farbe der Level
+ * (FARBEN.level, der Spiegel von --app-color-level, hell wie dunkel derselbe
+ * Wert). Das Farbfeld des Browsers kennt ohnehin nur #rrggbb und zeigte
+ * sonst Schwarz. Der Dialog der Web-Fassung belegt damit vor, damit
+ * gespeichert wird, was das Farbfeld zeigt.
+ */
+export function levelFarbeAlsHex(farbe: string | null | undefined): string {
+  return farbe && HEX_FARBE.test(farbe) ? farbe : FARBEN.level;
+}
 
 /**
  * Der interne Name eines Levels aus seinem Titel, wenn keiner gesetzt ist:
