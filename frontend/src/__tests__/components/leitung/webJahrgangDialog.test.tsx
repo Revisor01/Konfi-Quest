@@ -219,6 +219,32 @@ describe('Neuer Jahrgang (Gemeindeleitung)', () => {
     expect(h.enqueue).not.toHaveBeenCalled();
   });
 
+  it('solange gespeichert wird, schließt nichts den Dialog (wie „Schließen“ in der App); lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    // Vorher ließ sich der Dialog beim Speichern schließen: Der Jahrgang
+    // entstand trotzdem, und eine Ablehnung des Servers ging ins Leere.
+    let ablehnen: (grund: unknown) => void = () => {};
+    h.apiPost.mockReturnValueOnce(new Promise((_ok, nein) => { ablehnen = nein; }));
+    const d = await neuerJahrgang();
+    tippenName(d, 'Jahrgang 2028');
+    await klicken(knopf(d, 'Anlegen'));
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+
+    expect([knopf(d, 'Abbrechen'), knopf(d, 'Schließen'), knopf(d, 'Anlegen')].map((k) => k.disabled)).toEqual([true, true, true]);
+    fireEvent.click(knopf(d, 'Abbrechen'));
+    fireEvent.click(knopf(d, 'Schließen'));
+    fireEvent.keyDown(d, { key: 'Escape' });
+    fireEvent.mouseDown(d.parentElement as HTMLElement);
+    expect(dialog('Neuer Jahrgang')).toBe(d);
+
+    await act(async () => { ablehnen({ response: { status: 409, data: { error: 'Ein Jahrgang mit diesem Namen existiert bereits' } } }); });
+    expect(meldung(d)).toBe('Ein Jahrgang mit diesem Namen existiert bereits');
+    expect(h.refresh).not.toHaveBeenCalled();
+    // Danach lässt er sich wieder schließen.
+    expect(knopf(d, 'Abbrechen')).toBeEnabled();
+    fireEvent.keyDown(d, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('Abbrechen und Escape senden nichts', async () => {
     const d = await neuerJahrgang();
     tippenName(d, 'Jahrgang 2028');

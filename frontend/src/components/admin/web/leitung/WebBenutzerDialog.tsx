@@ -16,6 +16,10 @@
 // Die ist ein IonToast in <ion-app> und laege unter dem abgedunkelten Grund
 // dieses Dialogs (Gegenprüfung 11.10.2026). Die nächste Eingabe räumt sie weg.
 //
+// Während des Speicherns schließt nichts den Dialog (Abbrechen, X, Escape,
+// Klick daneben), wie „Schließen" in der App: Das Speichern liefe sonst
+// unbemerkt weiter, und eine Ablehnung des Servers ginge ins Leere.
+//
 // Geöffnet im breiten Layout von AdminUsersPage (Anlegen, Bearbeiten) und
 // AdminKonfisPage (Teamer:in anlegen, festeRolle 'teamer'); unter 992 px und in
 // den Apps bleibt das Fenster der App.
@@ -100,9 +104,10 @@ const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRoll
       beschreibung={isEditMode && user ? `${user.display_name} (@${user.username})` : undefined}
       onSchliessen={onSchliessen}
       onAbsenden={() => { void handleSave(); }}
+      gesperrt={isSubmitting}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={isSubmitting || laedt || !isOnline}>
             {isEditMode ? 'Speichern' : 'Anlegen'}
           </WebKnopf>
