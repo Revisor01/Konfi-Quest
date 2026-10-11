@@ -24,7 +24,7 @@
 // Warum ein Skript und kein Handgriff: Bis zum 27.09.2026 standen im Repo
 // vier verschiedene App-Versionen (2.9.0, 0.0.1, 1.0.1 und 2.3.0), und
 // /api/status meldete 1.0.1 auf einem 2.3.0-System (Audit, Sammelbefund S-13).
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, realpathSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -127,7 +127,11 @@ function ausgeben({ quelle, staende, abweichungen }) {
   }
 }
 
-const istHauptmodul = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+// Ueber den echten Pfad vergleichen: Auf macOS ist /var ein Symlink auf
+// /private/var -- in einem Temp-Verzeichnis lief das Skript sonst gar nicht
+// (versionsnummernEineQuelle.test.ts fiel nur auf dem Mac, nicht in der CI).
+const echterPfad = (p) => { try { return realpathSync(p); } catch { return resolve(p); } };
+const istHauptmodul = process.argv[1] && echterPfad(process.argv[1]) === echterPfad(fileURLToPath(import.meta.url));
 if (istHauptmodul) {
   const args = process.argv.slice(2);
   const nurPruefen = args.includes('--pruefen');
