@@ -68,6 +68,7 @@ import { anwesenheitSetzen } from '../../../utils/anwesenheitSetzen';
 import { datumLang } from '../../../utils/dateUtils';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebTerminDetailLeitung from '../web/termine/WebTerminDetailLeitung';
+import WebEventDialog from '../web/termine/WebEventDialog';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -303,6 +304,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Neuanlage (id 0), deshalb ein zweiter Einstieg mit der Vorlage.
   const [kopierVorlage, setKopierVorlage] = useState<VollerEvent | null>(null);
   const [kopierteTimeslots, setKopierteTimeslots] = useState<Timeslot[]>([]);
+  // Web-Fassung (11.10.2026): Im breiten Fenster oeffnen Bearbeiten und
+  // Kopieren statt der App-Modale einen eigenen Dialog (WebEventDialog).
+  const [webEventFormular, setWebEventFormular] = useState<'bearbeiten' | 'kopie' | null>(null);
 
   const [presentKopierModal, dismissKopierModal] = useIonModal(EventModal, {
     event: kopierVorlage,
@@ -349,6 +353,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     const { event: vorlage, timeslots: neueSlots } = kopiereTermin(eventData as unknown as VollerEvent, slots);
     setKopierteTimeslots(neueSlots);
     setKopierVorlage(vorlage);
+    if (breit) {
+      setWebEventFormular('kopie');
+      return;
+    }
     presentKopierModal({
       presentingElement: presentingElement || undefined,
       canDismiss: eventModalCanDismiss,
@@ -1430,6 +1438,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       oeffnen({ presentingElement: presentingElement || undefined });
     };
     return (
+      <>
       <WebTerminDetailLeitung
         pageRef={pageRef}
         laedt={loading}
@@ -1457,7 +1466,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           hinzufuegen: oeffneHinzufuegen,
           absagen: handleCancelEvent,
           zuruecknehmen: handleAbsageZuruecknehmen,
-          bearbeiten: () => presentEventModalHook({ presentingElement: presentingElement || undefined, canDismiss: eventModalCanDismiss, backdropDismiss: false }),
+          bearbeiten: () => setWebEventFormular('bearbeiten'),
           kopieren: handleKopieren,
           qr: () => presentQRDisplayModal({ presentingElement: presentingElement || undefined }),
           chat: handleChatButtonClick,
@@ -1467,6 +1476,23 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           neuLaden: () => { void loadEventData(); },
         }}
       />
+      {/* Bearbeiten und Kopieren als eigener Dialog. Nach dem Speichern wie
+          in der App zurueck zur Liste (onBack, dort laedt sie neu); bei
+          ungespeicherten Aenderungen fragt der Dialog selbst nach. */}
+      {webEventFormular && (
+        <WebEventDialog
+          event={webEventFormular === 'kopie' ? kopierVorlage : (eventData as unknown as VollerEvent | null)}
+          vorbelegteTimeslots={webEventFormular === 'kopie' ? kopierteTimeslots : undefined}
+          onSchliessen={() => setWebEventFormular(null)}
+          onSuccess={() => {
+            const war = webEventFormular;
+            setWebEventFormular(null);
+            if (war === 'kopie') onBack();
+            else handleEditSuccess();
+          }}
+        />
+      )}
+      </>
     );
   }
 

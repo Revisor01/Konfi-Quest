@@ -149,18 +149,23 @@ describe('Kopf und Angaben', () => {
     expect(screen.getByRole('group', { name: 'Team: 1 / 4' })).toBeInTheDocument();
   });
 
+  // Bearbeiten und Kopieren seit 11.10.2026 als eigener Dialog statt des
+  // App-Modals (webEventDialogBearbeiten.test.tsx).
   it('Aktionen oben: QR-Code, Bearbeiten, Kopieren, Absagen öffnen ihre Fenster; Chat führt in den Chat-Raum', async () => {
     await oeffne();
     fireEvent.click(screen.getByRole('button', { name: 'QR-Code anzeigen' }));
     expect(geoeffnet('QRDisplayModal')).toHaveLength(1);
-    fireEvent.click(screen.getByRole('button', { name: 'Event bearbeiten' }));
-    expect(geoeffnet('EventModal')).toHaveLength(1);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Event bearbeiten' })); });
+    expect(screen.getByRole('dialog', { name: 'Event bearbeiten' })).toBeInTheDocument();
+    await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Abbrechen' })); });
+    expect(screen.queryByRole('dialog')).toBe(null);
     fireEvent.click(screen.getByRole('button', { name: 'Event absagen' }));
     expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
     fireEvent.click(screen.getByRole('button', { name: 'Event-Chat öffnen' }));
     expect(routerPush).toHaveBeenCalledWith('/admin/chat/room/55', 'root');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Event kopieren' })); });
-    expect(geoeffnet('EventModal')).toHaveLength(2);
+    expect(screen.getByRole('dialog', { name: 'Event kopieren' })).toBeInTheDocument();
+    expect(geoeffnet('EventModal')).toHaveLength(0);
     expect(api.post).not.toHaveBeenCalled();
   });
 

@@ -45,7 +45,9 @@ const STELLEN: Array<{
     vorher: '/moderate`'
   },
   {
-    datei: 'src/components/admin/modals/EventModal.tsx',
+    // Das Speichern steht seit 11.10.2026 im Hook, den das Modal der App
+    // und der Dialog der Web-Fassung gemeinsam nutzen.
+    datei: 'src/components/admin/modals/useEventFormular.ts',
     handlung: 'termin-angelegt',
     vorher: "api.post('/events/series', { ...payload, client_id: anlegeKennung.current })"
   },
@@ -246,7 +248,7 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
   });
 
   it('das Bearbeiten eines Termins zaehlt nicht als Anlegen', () => {
-    const quelle = lies('src/components/admin/modals/EventModal.tsx');
+    const quelle = lies('src/components/admin/modals/useEventFormular.ts');
     // Der PUT-Zweig (Bearbeiten) darf keine Messung tragen.
     const posPut = quelle.indexOf('api.put(`/events/${event.id}`, updatePayload)');
     const posSerie = quelle.indexOf("api.post('/events/series', { ...payload, client_id: anlegeKennung.current })");
