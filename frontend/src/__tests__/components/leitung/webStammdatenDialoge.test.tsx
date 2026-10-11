@@ -125,6 +125,22 @@ const appModalZeigen = (i = 0) => {
   const Komponente = fenster()[i].komponente as React.FC<Record<string, unknown>>;
   return render(<Komponente {...fenster()[i].props} />);
 };
+/** Eine Anfrage, die haengt, bis der Test sie scheitern laesst. */
+const haengend = () => {
+  let nein: (grund: unknown) => void = () => {};
+  const anfrage = new Promise((_ok, ablehnen) => { nein = ablehnen; });
+  const scheitern = async (grund: unknown) => { await act(async () => { nein(grund); await takt(); }); };
+  return { anfrage, scheitern };
+};
+/** Welche dieser Knoepfe im Dialog gesperrt sind. */
+const gesperrt = (d: HTMLElement, namen: string[]) => namen.map((name) => (knopf(d, name) as HTMLButtonElement).disabled);
+/** Alle Wege, den Dialog zu schliessen: Abbrechen, X, Escape, Klick auf den abgedunkelten Grund. */
+const schliessenVersuchen = (d: HTMLElement) => {
+  fireEvent.click(knopf(d, 'Abbrechen'));
+  fireEvent.click(knopf(d, 'Schließen'));
+  fireEvent.keyDown(d, { key: 'Escape' });
+  fireEvent.mouseDown(d.parentElement as HTMLElement);
+};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -231,6 +247,31 @@ describe('Kategorie im Browser: eigener Dialog', () => {
     expect(h.setError).not.toHaveBeenCalled();
     expect(h.refresh).not.toHaveBeenCalled();
     expect(dialog('Neue Kategorie')).toBeInTheDocument();
+  });
+
+  it('solange gespeichert wird, schliesst nichts den Dialog (wie das X der App); lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    const post = haengend();
+    h.apiPost.mockReturnValue(post.anfrage);
+    render(<AdminCategoriesPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Kategorie' }));
+    const d = dialog('Neue Kategorie');
+    tippen(d, 'Name', 'Gottesdienst');
+    await klicken(knopf(d, 'Anlegen'));
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+    expect(gesperrt(d, ['Abbrechen', 'Schließen', 'Anlegen'])).toEqual([true, true, true]);
+    expect(document.activeElement).toBe(d);
+    schliessenVersuchen(d);
+    expect(dialog('Neue Kategorie')).toBe(d);
+
+    await post.scheitern({ response: { status: 409, data: { error: 'Kategoriename existiert bereits' } } });
+    expect(within(d).getByRole('alert')).toHaveTextContent('Kategoriename existiert bereits');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.refresh).not.toHaveBeenCalled();
+    // Danach laesst er sich wieder schliessen.
+    expect(gesperrt(d, ['Abbrechen', 'Schließen', 'Anlegen'])).toEqual([false, false, false]);
+    fireEvent.keyDown(d, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
   });
 
   it('ohne Netz: Hinweis im Dialog, gespeichert wird wie in der App ueber die Warteschlange', async () => {
@@ -410,6 +451,30 @@ describe('Level im Browser: eigener Dialog', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('solange gespeichert wird, schliesst nichts den Dialog; lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    const put = haengend();
+    h.apiPut.mockReturnValue(put.anfrage);
+    render(<AdminLevelsPage />);
+    fireEvent.click(erster('Fleißig bearbeiten'));
+    const d = dialog('Level bearbeiten');
+    tippen(d, 'Benötigte Punkte', '0');
+    await klicken(knopf(d, 'Speichern'));
+    expect(h.apiPut).toHaveBeenCalledTimes(1);
+    expect(gesperrt(d, ['Abbrechen', 'Schließen', 'Speichern'])).toEqual([true, true, true]);
+    expect(document.activeElement).toBe(d);
+    schliessenVersuchen(d);
+    expect(dialog('Level bearbeiten')).toBe(d);
+
+    await put.scheitern({ response: { status: 400, data: { error: 'Ein anderes Level mit dieser Punktzahl existiert bereits' } } });
+    expect(within(d).getByRole('alert')).toHaveTextContent('Ein anderes Level mit dieser Punktzahl existiert bereits');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.refresh).not.toHaveBeenCalled();
+    expect(gesperrt(d, ['Abbrechen', 'Schließen', 'Speichern'])).toEqual([false, false, false]);
+    fireEvent.click(knopf(d, 'Abbrechen'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.apiPut).toHaveBeenCalledTimes(1);
+  });
+
   it('Abbrechen schickt nichts', () => {
     render(<AdminLevelsPage />);
     fireEvent.click(erster('Fleißig bearbeiten'));
@@ -515,6 +580,30 @@ describe('Zertifikat im Browser: eigener Dialog', () => {
     await klicken(knopf(b, 'Speichern'));
     expect(h.apiPut).toHaveBeenCalledWith('/teamer/certificate-types/1', { name: 'JuLeiCa 2027', icon: 'ribbon' });
     expect(h.refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('solange gespeichert wird, schliesst nichts den Dialog (wie das X der App); lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    const post = haengend();
+    h.apiPost.mockReturnValue(post.anfrage);
+    render(<AdminCertificatesPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Neues Zertifikat' }));
+    const d = dialog('Neues Zertifikat');
+    tippen(d, 'Name', 'JuLeiCa');
+    await klicken(knopf(d, 'Anlegen'));
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+    expect(gesperrt(d, ['Abbrechen', 'Schließen', 'Anlegen'])).toEqual([true, true, true]);
+    expect(document.activeElement).toBe(d);
+    schliessenVersuchen(d);
+    expect(dialog('Neues Zertifikat')).toBe(d);
+
+    await post.scheitern({ response: { status: 409, data: { error: 'Ein Zertifikat-Typ mit diesem Namen existiert bereits' } } });
+    expect(within(d).getByRole('alert')).toHaveTextContent('Ein Zertifikat-Typ mit diesem Namen existiert bereits');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.refresh).not.toHaveBeenCalled();
+    expect(gesperrt(d, ['Abbrechen', 'Schließen', 'Anlegen'])).toEqual([false, false, false]);
+    fireEvent.mouseDown(d.parentElement as HTMLElement);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
   });
 
   it('Abbrechen schickt nichts', () => {

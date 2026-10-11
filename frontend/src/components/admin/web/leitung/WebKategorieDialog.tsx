@@ -3,7 +3,10 @@
 // eigene kompaktere Modale überall"). Dieselben Felder wie das Modal der App
 // (CategoryModal in admin/pages/AdminCategoriesPage.tsx): Name und
 // Beschreibung. Die Logik ist dieselbe (useKategorieFormular): ohne Netz geht
-// die Kategorie in die Warteschlange, Fehler stehen im Dialog.
+// die Kategorie in die Warteschlange, Fehler stehen im Dialog. Während
+// gespeichert wird, schließt nichts den Dialog (Abbrechen, X, Escape, Klick
+// daneben), wie das X der App: Eine Ablehnung des Servers ginge sonst ins
+// Leere.
 
 import React from 'react';
 import { useKategorieFormular, type KategorieVorlage } from '../../useKategorieFormular';
@@ -37,9 +40,10 @@ const WebKategorieDialog: React.FC<WebKategorieDialogProps> = ({ kategorie, onSc
       beschreibung="Kategorien sortieren Aktivitäten und Events der ganzen Gemeinde."
       onSchliessen={onSchliessen}
       onAbsenden={() => { void speichern(); }}
+      gesperrt={loading}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={loading}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={loading}>{kategorie ? 'Speichern' : 'Anlegen'}</WebKnopf>
         </>
       )}
