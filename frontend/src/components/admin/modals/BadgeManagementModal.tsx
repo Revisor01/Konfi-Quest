@@ -150,9 +150,14 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   useEffect(() => {
     const init = async () => {
-      await loadInitialData();
+      // Die Liste geht als Wert weiter, nicht ueber den Zustand: Dieser Effekt
+      // sieht den Stand seines Renders, und dort ist `activities` noch leer.
+      // Vorher stand beim Bearbeiten einer „Spezifischen Aktivität" bzw.
+      // „Aktivitäts-Kombination" die Auswahl leer da, und Speichern scheiterte
+      // (11.10.2026).
+      const geladen = await loadInitialData();
       if (isEditMode) {
-        await loadBadge();
+        await loadBadge(geladen);
       }
       zeitgeber.nach(100, () => { initializedRef.current = true; });
     };
@@ -161,7 +166,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
 
   const [initialDataLoading, setInitialDataLoading] = useState(true);
 
-  const loadInitialData = async () => {
+  const loadInitialData = async (): Promise<Activity[]> => {
+    let geladen: Activity[] = [];
     try {
       setInitialDataLoading(true);
 
@@ -169,7 +175,8 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       // nicht auf Konfi-Aktivitäten verweisen (und umgekehrt) — die Wertung in
       // badges.js zählt ohnehin nur die passende target_role.
       const activitiesResponse = await api.get(`/admin/activities?target_role=${targetRole}`);
-      setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
+      geladen = Array.isArray(activitiesResponse.data) ? activitiesResponse.data : [];
+      setActivities(geladen);
 
       // Load categories
       const categoriesResponse = await api.get('/admin/categories');
@@ -184,9 +191,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     } finally {
       setInitialDataLoading(false);
     }
+    return geladen;
   };
 
-  const loadBadge = async () => {
+  const loadBadge = async (geladeneAktivitaeten: Activity[]) => {
     if (!badgeId) return;
 
     setLoading(true);
@@ -223,12 +231,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
         // activity_id/activity_ids werden weiter gelesen: Badges aus der Zeit
         // vor dem Fix (23.08.2026) tragen noch die alten Schlüssel.
         if (badge.criteria_type === 'specific_activity' && !extra.activity_id) {
-          const treffer = activities.find(a => a.name === extra.required_activity_name);
+          const treffer = geladeneAktivitaeten.find(a => a.name === extra.required_activity_name);
           if (treffer) extra.activity_id = treffer.id;
         }
         if (badge.criteria_type === 'activity_combination' && !extra.activity_ids) {
           const ids = (extra.required_activities || [])
-            .map((name: string) => activities.find(a => a.name === name)?.id)
+            .map((name: string) => geladeneAktivitaeten.find(a => a.name === name)?.id)
             .filter((id: number | undefined): id is number => id !== undefined);
           if (ids.length > 0) extra.activity_ids = ids;
         }
@@ -309,9 +317,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
           break;
         }
         case 'time_based':
-          if (extraCriteria.weeks) {
-            criteriaExtra = { days: extraCriteria.weeks * 7 };
-          }
+          // Was der Regler zeigt, geht mit: ohne eigene Wahl die angezeigten
+          // 4 Wochen. Vorher fehlte der Zeitraum dann, und der Server lehnte
+          // ab („Bitte einen Zeitraum angeben", 11.10.2026).
+          criteriaExtra = { days: (extraCriteria.weeks || 4) * 7 };
           break;
         case 'activity_combination': {
           const namen = (extraCriteria.activity_ids || [])

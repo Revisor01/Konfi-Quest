@@ -476,6 +476,13 @@ Versionsüberschrift.
   Namen der Gemeinde, in die sie zurückwechselt.
 - In den Terminlisten stehen die Kategorien eines Termins ohne doppelte
   Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
+- Beim Bearbeiten eines Badges mit „Spezifischer Aktivität“ oder
+  „Aktivitäts-Kombination“ ist die gespeicherte Auswahl gewählt, und Speichern
+  gelingt; bisher stand die Auswahl leer da, und das Speichern scheiterte.
+- Ein zeitbasiertes Badge gilt ohne eigene Wahl des Zeitraums für die
+  angezeigten 4 Wochen, beim Anlegen wie beim Speichern eines älteren Badges
+  ohne Zeitraum; bisher lehnte der Server mit „Bitte einen Zeitraum angeben“
+  ab.
 
 ### Sonstiges
 - Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,

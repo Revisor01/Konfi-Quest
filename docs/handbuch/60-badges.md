@@ -295,7 +295,7 @@ So viele Aktivitäten oder Events innerhalb der letzten X Wochen.
 *Beispiel:* Wert 2 + 4 Wochen → zwei Einträge in den letzten vier Wochen.
 
 Das Fenster wandert immer mit — es ist kein fester Zeitraum, sondern „ab jetzt
-rückwärts". Einstellbar sind 1 bis 26 Wochen.
+rückwärts". Einstellbar sind 1 bis 26 Wochen; ohne eigene Wahl gelten 4 Wochen.
 
 #### Serie
 
