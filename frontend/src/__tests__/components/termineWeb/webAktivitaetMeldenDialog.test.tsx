@@ -11,8 +11,10 @@
 // konkreter Meldung, die Rückfrage ohne Foto im Dialog, exakt dieser Rumpf an
 // exakt diese Route (mit Foto erst der Upload), danach Erfolgsmeldung und
 // Neuladen; ohne Netz die Warteschlange samt gesichertem Foto; Abbrechen
-// schickt nichts.
-import { h, api, setSuccess, geoeffnet, zuruecksetzen, richteEin, oeffne, JETZT } from './geruestWeb';
+// schickt nichts. Solange gesendet wird, lässt sich der Dialog nicht
+// schließen (wie das X der App), damit ein Fehler des Servers nicht ins Leere
+// geht.
+import { h, api, setSuccess, setError, geoeffnet, zuruecksetzen, richteEin, oeffne, JETZT } from './geruestWeb';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 
@@ -89,6 +91,29 @@ const fotoWaehlen = async (dialog: HTMLElement) => {
   await waitFor(() => expect(within(dialog).getByRole('img', { name: 'Gewähltes Foto' })).toBeInTheDocument());
 };
 const posts = () => api.post.mock.calls.map(([route, rumpf]) => [route, rumpf instanceof FormData ? 'FormData' : rumpf]);
+/** Ein Aufruf, der erst antwortet, wenn der Test es sagt. */
+const haengend = () => {
+  let ablehnen!: (grund: unknown) => void;
+  const antwort = new Promise<never>((_, nein) => { ablehnen = nein; });
+  return { antwort, ablehnen };
+};
+const GIBT_ES_NICHT = Object.assign(new Error('Request failed with status code 400'), {
+  response: { status: 400, data: { error: 'Diese Aktivität gibt es nicht mehr' } },
+});
+/** Konfi wählt Aktivität und Foto, „Melden" ist geklickt, der Upload hängt. */
+const meldenMitHaengendemUpload = async () => {
+  const upload = haengend();
+  h.api.post.mockImplementation((route: string) => (route === '/konfi/upload-photo' ? upload.antwort : Promise.resolve({ data: { id: 501 } })));
+  const seite = await oeffneKonfi();
+  const dialog = dialogOeffnen();
+  waehle(dialog, 'Gemeindefest helfen');
+  await fotoWaehlen(dialog);
+  // Wie mit der Maus: Der Knopf hat den Fokus, wenn er gesperrt wird.
+  within(dialog).getByRole('button', { name: 'Melden' }).focus();
+  await klick(dialog, 'Melden');
+  expect(posts()).toEqual([['/konfi/upload-photo', 'FormData']]);
+  return { seite, dialog, upload };
+};
 
 beforeEach(() => {
   zuruecksetzen();
@@ -249,6 +274,40 @@ describe('Aktivität melden (Konfi) im Browser: eigener Dialog', () => {
     expect(screen.getByRole('dialog', { name: 'Aktivität melden' })).toBe(dialog);
     expect(setSuccess).not.toHaveBeenCalled();
     expect(m.messen).not.toHaveBeenCalled();
+  });
+
+  it('während des Sendens bleibt der Dialog offen: X gesperrt, Escape und Klick daneben wirken nicht; lehnt der Server dann ab, steht sein Satz im Dialog', async () => {
+    const { dialog, upload } = await meldenMitHaengendemUpload();
+    expect(within(dialog).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeDisabled();
+    // Der Fokus fällt nicht mit dem gesperrten Knopf aus dem Dialog.
+    expect(document.activeElement).toBe(dialog);
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Aktivität melden' })).toBe(dialog);
+    // Der abgedunkelte Grund um das Fenster.
+    fireEvent.mouseDown(dialog.parentElement!);
+    expect(screen.getByRole('dialog', { name: 'Aktivität melden' })).toBe(dialog);
+
+    await act(async () => { upload.ablehnen(GIBT_ES_NICHT); });
+    await warten();
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Diese Aktivität gibt es nicht mehr');
+    expect(posts()).toEqual([['/konfi/upload-photo', 'FormData']]);
+    expect(setSuccess).not.toHaveBeenCalled();
+    expect(setError).not.toHaveBeenCalled();
+    expect(m.messen).not.toHaveBeenCalled();
+    // Fertig gesendet: Jetzt schließt er wieder.
+    expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('verschwindet der Dialog trotzdem während des Sendens (die Seite wird verlassen), kommt der Fehler des Servers als Meldung der App', async () => {
+    const { seite, upload } = await meldenMitHaengendemUpload();
+    seite.unmount();
+    await act(async () => { upload.ablehnen(GIBT_ES_NICHT); });
+    await warten();
+    expect(setError.mock.calls).toEqual([['Diese Aktivität gibt es nicht mehr']]);
+    expect(setSuccess).not.toHaveBeenCalled();
   });
 
   it('„Abbrechen" schließt und schickt nichts', async () => {

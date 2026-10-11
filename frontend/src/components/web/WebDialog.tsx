@@ -12,7 +12,8 @@
 //   - der Fokus geht beim Oeffnen hinein (auf das erste Feld) und beim
 //     Schliessen zurueck an die Stelle, von der aus er geoeffnet wurde;
 //   - Tab und Umschalt+Tab bleiben im Dialog;
-//   - Escape und ein Klick auf den abgedunkelten Grund schliessen.
+//   - Escape und ein Klick auf den abgedunkelten Grund schliessen -- ausser
+//     er ist `gesperrt`, weil gerade gesendet wird (dann auch das X).
 // Er wird an <body> gehaengt: Ionics Seiten schneiden mit `contain` alles ab,
 // was in ihnen "fixed" steht.
 
@@ -40,11 +41,19 @@ export interface WebDialogProps {
    * schmal.
    */
   breit?: boolean;
+  /**
+   * Es wird gerade gesendet: Das X ist gesperrt, Escape und ein Klick auf
+   * den Grund schliessen nicht -- wie das X der App-Modale
+   * (`disabled={isSubmitting}`). Sonst ginge ein Fehler des Servers ins
+   * Leere, und nach erneutem Oeffnen liesse sich derselbe Vorgang sofort ein
+   * zweites Mal abschicken (Gegenpruefung 11.10.2026).
+   */
+  gesperrt?: boolean;
 }
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false }) => {
+const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false, gesperrt = false }) => {
   const titelId = useId();
   const beschreibungId = useId();
   const fenster = useRef<HTMLDivElement>(null);
@@ -64,10 +73,21 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
     return () => { vorher?.focus(); };
   }, []);
 
-  const taste = (ereignis: React.KeyboardEvent<HTMLDivElement>) => {
+  // Beim Sperren wird meist der Knopf mitgesperrt, der das Senden ausgeloest
+  // hat und den Fokus traegt. Der Browser nimmt ihm den Fokus und legt ihn auf
+  // die Seite -- danach kaemen Escape und Tab nicht mehr im Dialog an. Der
+  // Fokus geht deshalb auf das Fenster selbst.
+  useEffect(() => {
+    const knoten = fenster.current;
+    if (!gesperrt || !knoten) return;
+    const aktiv = document.activeElement;
+    if (!(aktiv instanceof HTMLElement) || !knoten.contains(aktiv) || aktiv.matches(':disabled')) knoten.focus();
+  }, [gesperrt]);
+
+  const taste =(ereignis: React.KeyboardEvent<HTMLDivElement>) => {
     if (ereignis.key === 'Escape') {
       ereignis.stopPropagation();
-      schliessen.current();
+      if (!gesperrt) schliessen.current();
       return;
     }
     if (ereignis.key !== 'Tab' || !fenster.current) return;
@@ -89,7 +109,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
   };
 
   return createPortal(
-    <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget) schliessen.current(); }}>
+    <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget && !gesperrt) schliessen.current(); }}>
       <div
         ref={fenster}
         className={breit ? 'web-dialog web-dialog--breit' : 'web-dialog'}
@@ -102,7 +122,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
       >
         <header className="web-dialog__kopf">
           <h2 id={titelId} className="web-dialog__titel">{titel}</h2>
-          <button type="button" className="web-knopf web-knopf--text web-knopf--symbol" aria-label="Schließen" onClick={() => schliessen.current()}>
+          <button type="button" className="web-knopf web-knopf--text web-knopf--symbol" aria-label="Schließen" disabled={gesperrt} onClick={() => schliessen.current()}>
             <IonIcon icon={ICON_SCHLIESSEN} aria-hidden="true" />
           </button>
         </header>

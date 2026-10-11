@@ -18,7 +18,7 @@
 // triggerRefresh nicht hier: Das Modal der App rendert via useIonModal
 // außerhalb des Provider-Baums. Die Seite stößt es in onSuccess an.
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../../contexts/AppContext';
 import { useActionGuard } from '../../../hooks/useActionGuard';
 import api from '../../../services/api';
@@ -85,7 +85,15 @@ export function useAntragPruefen({ requestId, onSuccess, onClose, fehlerImFenste
   // bewusst setError: Die Positivliste der Fehlertexte
   // (bekannteFehlertexte.test.ts) liest die Texte an den Aufrufstellen von
   // setError -- in der App gehen sie genau dorthin.
-  const setError = fehlerImFenster ? setFehler : meldungDerApp;
+  // Ist der Dialog schon fort (er ist während des Sendens gesperrt, aber die
+  // Seite kann verlassen werden), käme ein Fehler im Fenster nirgends an: Er
+  // geht dann als Meldung der App.
+  const dialogDa = useRef(true);
+  useEffect(() => {
+    dialogDa.current = true;
+    return () => { dialogDa.current = false; };
+  }, []);
+  const setError = (text: string) => (fehlerImFenster && dialogDa.current ? setFehler(text) : meldungDerApp(text));
 
   const loadRequest = async () => {
     if (!requestId) return;

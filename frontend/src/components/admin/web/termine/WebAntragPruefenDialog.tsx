@@ -102,15 +102,18 @@ const WebAntragPruefenDialog: React.FC<WebAntragPruefenDialogProps> = ({
   const { request } = p;
   const entscheiden = request ? p.isPending && p.darfEntscheiden : !nurAnsehen;
   const breit = request ? !!request.photo_filename : mitFoto;
+  // Während entschieden oder das Foto gelöscht wird, schließt nichts (wie das
+  // X der App): Ein Fehler des Servers soll im Dialog ankommen.
+  const gesperrt = p.isSubmitting || p.deletingPhoto;
 
   const aktionen = request && p.isPending && p.darfEntscheiden ? (
     <>
-      <WebKnopf onClick={onSchliessen} disabled={p.isSubmitting}>Abbrechen</WebKnopf>
+      <WebKnopf onClick={onSchliessen} disabled={gesperrt}>Abbrechen</WebKnopf>
       <WebKnopf art="gefahr" onClick={() => { void p.handleSubmit('reject'); }} disabled={p.isSubmitting}>Ablehnen</WebKnopf>
       <WebKnopf art="primaer" onClick={() => { void p.handleSubmit('approve'); }} disabled={p.isSubmitting}>Genehmigen</WebKnopf>
     </>
   ) : (
-    <WebKnopf onClick={onSchliessen}>Schließen</WebKnopf>
+    <WebKnopf onClick={onSchliessen} disabled={gesperrt}>Schließen</WebKnopf>
   );
 
   let inhalt: React.ReactNode;
@@ -189,6 +192,7 @@ const WebAntragPruefenDialog: React.FC<WebAntragPruefenDialogProps> = ({
     <WebDialog
       titel={entscheiden ? 'Aktivität prüfen' : 'Aktivität ansehen'}
       onSchliessen={onSchliessen}
+      gesperrt={gesperrt}
       breit={breit}
       aktionen={aktionen}
     >

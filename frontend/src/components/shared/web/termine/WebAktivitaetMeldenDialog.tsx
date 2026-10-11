@@ -72,6 +72,9 @@ const WebAktivitaetMeldenDialog: React.FC<WebAktivitaetMeldenDialogProps> = ({ r
         ? 'Die Leitung prüft deine Meldung; danach bekommst du die Punkte.'
         : 'Die Leitung prüft deine Meldung.'}
       onSchliessen={onSchliessen}
+      // Während gesendet wird, schließt nichts (wie das X der App): Ein Fehler
+      // des Servers soll im Dialog ankommen, nicht ins Leere gehen.
+      gesperrt={m.isSubmitting}
       onAbsenden={() => { void m.handleSubmit(frageSichtbar); }}
       aktionen={(
         <>

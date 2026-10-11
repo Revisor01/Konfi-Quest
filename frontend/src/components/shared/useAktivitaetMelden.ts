@@ -22,7 +22,7 @@
 //     im Fenster (fehlerImFenster). Ohne Foto fragt die App mit einer
 //     Rückfrage nach, der Web-Dialog im Fenster (fragOhneFoto).
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
 import { useActionGuard } from '../../hooks/useActionGuard';
 import { useOfflineQuery } from '../../hooks/useOfflineQuery';
@@ -124,7 +124,15 @@ export function useAktivitaetMelden({ rolle, onSuccess, fragOhneFoto, fehlerImFe
   // bewusst setError: Die Positivliste der Fehlertexte
   // (bekannteFehlertexte.test.ts) liest die Texte an den Aufrufstellen von
   // setError -- in der App gehen sie genau dorthin.
-  const setError = fehlerImFenster ? setFehler : meldungDerApp;
+  // Ist der Dialog schon fort (er ist während des Sendens gesperrt, aber die
+  // Seite kann verlassen werden), käme ein Fehler im Fenster nirgends an: Er
+  // geht dann als Meldung der App.
+  const dialogDa = useRef(true);
+  useEffect(() => {
+    dialogDa.current = true;
+    return () => { dialogDa.current = false; };
+  }, []);
+  const setError = (text: string) => (fehlerImFenster && dialogDa.current ? setFehler(text) : meldungDerApp(text));
 
   const aendern = (teil: Partial<Omit<typeof formData, 'photo_file'>>) => {
     setFehler(null);

@@ -10,8 +10,10 @@
 // benannte Angaben aus dem Antrag, Entscheiden schickt exakt diesen Rumpf an
 // exakt diese Route, Ablehnen nur mit Grund (konkrete Meldung), danach lädt
 // die Liste neu und die Zähler laufen an; ohne Netz geht die Entscheidung
-// in die Warteschlange; Abbrechen schickt nichts.
-import { h, api, setSuccess, geoeffnet, zuruecksetzen, richteEin, oeffne, JETZT } from './geruestWeb';
+// in die Warteschlange; Abbrechen schickt nichts. Solange entschieden oder das
+// Foto gelöscht wird, lässt sich der Dialog nicht schließen (wie das X der
+// App), damit ein Fehler des Servers nicht ins Leere geht.
+import { h, api, setSuccess, setError, geoeffnet, zuruecksetzen, richteEin, oeffne, JETZT } from './geruestWeb';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import React from 'react';
 import { screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -89,6 +91,23 @@ const klick = async (dialog: HTMLElement, knopf: string) => {
   await warten();
 };
 const PUT_ROUTE = '/admin/activities/requests/71';
+/** Ein Aufruf, der erst antwortet, wenn der Test es sagt. */
+const haengend = () => {
+  let ablehnen!: (grund: unknown) => void;
+  const antwort = new Promise<never>((_, nein) => { ablehnen = nein; });
+  return { antwort, ablehnen };
+};
+const SCHON_ENTSCHIEDEN = Object.assign(new Error('Request failed with status code 409'), {
+  response: { status: 409, data: { error: 'Der Antrag wurde bereits bearbeitet' } },
+});
+/** X, Escape und der abgedunkelte Grund schließen den Dialog nicht. */
+const bleibtOffen = (dialog: HTMLElement, titel: string) => {
+  expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeDisabled();
+  fireEvent.keyDown(dialog, { key: 'Escape' });
+  expect(screen.getByRole('dialog', { name: titel })).toBe(dialog);
+  fireEvent.mouseDown(dialog.parentElement!);
+  expect(screen.getByRole('dialog', { name: titel })).toBe(dialog);
+};
 
 beforeEach(() => {
   zuruecksetzen();
@@ -169,6 +188,59 @@ describe('Aktivität prüfen im Browser: eigener Dialog', () => {
     expect(screen.getByRole('dialog', { name: 'Aktivität prüfen' })).toBe(dialog);
     expect(m.messen).not.toHaveBeenCalled();
     expect(h.triggerRefresh).not.toHaveBeenCalled();
+  });
+
+  it('während der Entscheidung bleibt der Dialog offen: X gesperrt, Escape und Klick daneben wirken nicht; ein 409 steht danach im Dialog', async () => {
+    const put = haengend();
+    h.api.put.mockImplementationOnce(() => put.antwort);
+    await oeffneListe();
+    const dialog = await dialogVon('Aktivität von Mia Muster prüfen', 'Aktivität prüfen');
+    await klick(dialog, 'Genehmigen');
+    expect(api.put.mock.calls).toEqual([[PUT_ROUTE, { status: 'approved', admin_comment: '' }]]);
+    expect(within(dialog).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    bleibtOffen(dialog, 'Aktivität prüfen');
+
+    await act(async () => { put.ablehnen(SCHON_ENTSCHIEDEN); });
+    await warten();
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Der Antrag wurde bereits bearbeitet');
+    expect(setError).not.toHaveBeenCalled();
+    expect(m.messen).not.toHaveBeenCalled();
+    expect(h.triggerRefresh).not.toHaveBeenCalled();
+    // Fertig: Jetzt schließt er wieder.
+    expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('während „Foto löschen" ebenso; scheitert es, steht die Meldung im Dialog', async () => {
+    const loeschen = haengend();
+    h.api.delete.mockImplementationOnce(() => loeschen.antwort);
+    await oeffneListe();
+    const dialog = await dialogVon('Aktivität von Mia Muster prüfen', 'Aktivität prüfen');
+    await klick(dialog, 'Foto löschen');
+    expect(api.delete.mock.calls).toEqual([['/admin/activities/requests/71/photo']]);
+    expect(within(dialog).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    bleibtOffen(dialog, 'Aktivität prüfen');
+
+    await act(async () => { loeschen.ablehnen(new Error('Request failed with status code 500')); });
+    await warten();
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Fehler beim Löschen des Fotos');
+    expect(within(dialog).getByRole('img', { name: 'Foto zur Aktivität' })).toBeInTheDocument();
+    expect(setError).not.toHaveBeenCalled();
+    expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeEnabled();
+  });
+
+  it('verschwindet der Dialog trotzdem während der Entscheidung (die Seite wird verlassen), kommt der Fehler des Servers als Meldung der App', async () => {
+    const put = haengend();
+    h.api.put.mockImplementationOnce(() => put.antwort);
+    const seite = await oeffneListe();
+    const dialog = await dialogVon('Aktivität von Mia Muster prüfen', 'Aktivität prüfen');
+    await klick(dialog, 'Genehmigen');
+    seite.unmount();
+    await act(async () => { put.ablehnen(SCHON_ENTSCHIEDEN); });
+    await warten();
+    expect(setError.mock.calls).toEqual([['Der Antrag wurde bereits bearbeitet']]);
+    expect(m.messen).not.toHaveBeenCalled();
   });
 
   it('„Abbrechen" schließt und schickt nichts', async () => {
