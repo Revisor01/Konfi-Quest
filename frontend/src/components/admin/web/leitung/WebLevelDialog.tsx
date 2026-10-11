@@ -4,7 +4,9 @@
 // das Modal der App (admin/modals/LevelManagementModal.tsx): Titel und
 // benötigte Punkte nebeneinander, Beschreibung, Icon (WebSymbolWahl) und
 // Level-Farbe. Die Logik ist dieselbe (useLevelFormular): ohne Netz geht das
-// Level in die Warteschlange, Fehler stehen im Dialog.
+// Level in die Warteschlange, Fehler stehen im Dialog. Während gespeichert
+// wird, schließt nichts den Dialog (Abbrechen, X, Escape, Klick daneben),
+// wie das X der App: Eine Ablehnung des Servers ginge sonst ins Leere.
 //
 // Die Punkte sind hier ein Zahlenfeld ab 0 statt des Schiebereglers 1 bis 40
 // der App. Ein neues Level beginnt bei 0 Punkten, das erste Level einer
@@ -50,6 +52,9 @@ const WebLevelDialog: React.FC<WebLevelDialogProps> = ({ level, onSchliessen, on
     },
     fehlerImDialog: true,
   });
+  // Es wird gesendet, solange der Doppelklick-Schutz (isSubmitting) oder das
+  // Speichern (loading) läuft -- dieselbe Bedingung wie am Haken der App.
+  const sendet = loading || isSubmitting;
   const farbe = levelFarbeAlsHex(formData.color);
   const punkte = formData.points_required;
 
@@ -60,10 +65,11 @@ const WebLevelDialog: React.FC<WebLevelDialogProps> = ({ level, onSchliessen, on
       breit
       onSchliessen={onSchliessen}
       onAbsenden={() => { void speichern(); }}
+      gesperrt={sendet}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
-          <WebKnopf art="primaer" absenden disabled={loading || isSubmitting}>{level ? 'Speichern' : 'Anlegen'}</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={sendet}>Abbrechen</WebKnopf>
+          <WebKnopf art="primaer" absenden disabled={sendet}>{level ? 'Speichern' : 'Anlegen'}</WebKnopf>
         </>
       )}
     >

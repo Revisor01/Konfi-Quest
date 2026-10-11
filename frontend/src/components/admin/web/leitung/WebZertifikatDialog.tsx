@@ -4,7 +4,9 @@
 // (CertificateModal in admin/pages/AdminCertificatesPage.tsx): Name und Icon,
 // das Icon aus demselben Vorrat (WebSymbolWahl). Die Logik ist dieselbe
 // (useZertifikatFormular): ohne Netz geht das Zertifikat in die
-// Warteschlange, Fehler stehen im Dialog.
+// Warteschlange, Fehler stehen im Dialog. Während gespeichert wird, schließt
+// nichts den Dialog (Abbrechen, X, Escape, Klick daneben), wie das X der
+// App: Eine Ablehnung des Servers ginge sonst ins Leere.
 
 import React from 'react';
 import { ICON_ABZEICHEN_GEFUELLT } from '../../../shared/icons';
@@ -39,9 +41,10 @@ const WebZertifikatDialog: React.FC<WebZertifikatDialogProps> = ({ zertifikat, o
       beschreibung="Zertifikate fürs Team, die du danach einzelnen Teamer:innen zuweist."
       onSchliessen={onSchliessen}
       onAbsenden={() => { void speichern(); }}
+      gesperrt={loading}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={loading}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={loading}>{zertifikat ? 'Speichern' : 'Anlegen'}</WebKnopf>
         </>
       )}
