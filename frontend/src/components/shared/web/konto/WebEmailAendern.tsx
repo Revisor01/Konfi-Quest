@@ -2,6 +2,7 @@
 // 11.10.2026: „Web braucht eigene kompaktere Modale überall"). Geöffnet aus
 // dem Profil aller drei Rollen (Leitung, Team, Konfi). Ein Feld mit der
 // Adresse, darunter der Hinweis der App; Fehler stehen über dem Feld.
+// Während des Speicherns schließt nichts den Dialog, wie in der App.
 //
 // Die Logik ist die der App (useEmailAendern): aktuelle Adresse vom Server,
 // freiwillig, eine angegebene muss gültig sein, Server-Meldungen wie dort.
@@ -35,9 +36,10 @@ const WebEmailAendern: React.FC<WebEmailAendernProps> = ({ initialEmail = '', on
       titel="E-Mail ändern"
       onSchliessen={onSchliessen}
       onAbsenden={() => { void speichern(); }}
+      gesperrt={isSubmitting}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={isSubmitting || laedt || !isOnline}>Speichern</WebKnopf>
         </>
       )}

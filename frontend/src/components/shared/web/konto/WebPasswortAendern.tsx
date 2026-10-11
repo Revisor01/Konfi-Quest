@@ -9,6 +9,9 @@
 // Server, mit denselben Texten wie in der App -- stehen über den Feldern.
 // Der Knopf „Speichern" bleibt bedienbar, damit die Prüfung sagen kann, was
 // fehlt; nur ohne Netz und während des Speicherns ist er gesperrt.
+// Während des Speicherns schließt auch nichts den Dialog (Abbrechen, X,
+// Escape, Klick daneben), wie „Schließen" in der App: Der Wechsel liefe sonst
+// unbemerkt weiter, und eine Ablehnung des Servers ginge ins Leere.
 //
 // Die Logik ist die der App (usePasswortAendern).
 
@@ -48,9 +51,10 @@ const WebPasswortAendern: React.FC<WebPasswortAendernProps> = ({ onSchliessen, o
       beschreibung="Auf allen anderen Geräten endet danach die Anmeldung."
       onSchliessen={onSchliessen}
       onAbsenden={() => { void speichern(); }}
+      gesperrt={isSubmitting}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={isSubmitting || !isOnline}>Speichern</WebKnopf>
         </>
       )}

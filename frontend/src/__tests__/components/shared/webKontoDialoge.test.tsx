@@ -179,6 +179,35 @@ describe('Web-Dialog „Passwort ändern“', () => {
     expect(h.apiPost).toHaveBeenCalledTimes(0);
   });
 
+  it('solange gespeichert wird, schließt nichts den Dialog (wie „Schließen“ in der App); lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    // Gegenprüfung 11.10.2026: Vorher ließ sich der Dialog beim Speichern
+    // schließen -- der Wechsel lief trotzdem durch, und eine Ablehnung des
+    // Servers ging ins Leere.
+    let ablehnen: (grund: unknown) => void = () => {};
+    h.apiPost.mockReturnValue(new Promise((_ok, nein) => { ablehnen = nein; }));
+    const { dialog, feld, speichern, onSchliessen, onGespeichert } = zeige();
+    ausfuellen(feld, ALT, NEU, NEU);
+    await speichern();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+
+    const knopf = (name: string) => within(dialog).getByRole('button', { name });
+    expect([knopf('Abbrechen'), knopf('Schließen'), knopf('Speichern')].map((k) => (k as HTMLButtonElement).disabled)).toEqual([true, true, true]);
+    fireEvent.click(knopf('Abbrechen'));
+    fireEvent.click(knopf('Schließen'));
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    fireEvent.mouseDown(dialog.parentElement as HTMLElement);
+    expect(onSchliessen).toHaveBeenCalledTimes(0);
+
+    await act(async () => { ablehnen(serverFehler(400, 'Aktuelles Passwort ist falsch')); });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Aktuelles Passwort ist falsch');
+    expect(h.setSuccess).toHaveBeenCalledTimes(0);
+    expect(onGespeichert).toHaveBeenCalledTimes(0);
+    // Danach lässt er sich wieder schließen.
+    expect(knopf('Abbrechen')).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onSchliessen).toHaveBeenCalledTimes(1);
+  });
+
   it('ohne Netz: Hinweis, Speichern gesperrt, auch Enter schickt nichts', async () => {
     h.online = false;
     const { dialog, feld, onGespeichert } = zeige();
@@ -320,6 +349,33 @@ describe('Web-Dialog „E-Mail ändern“', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
     expect(onSchliessen).toHaveBeenCalledTimes(1);
     expect(h.apiPost).toHaveBeenCalledTimes(0);
+  });
+
+  it('solange gespeichert wird, schließt nichts den Dialog (wie „Schließen“ in der App); lehnt der Server dann ab, steht seine Meldung im Dialog', async () => {
+    h.apiGet.mockResolvedValue({ data: { email: 'server@example.org' } });
+    let ablehnen: (grund: unknown) => void = () => {};
+    h.apiPost.mockReturnValue(new Promise((_ok, nein) => { ablehnen = nein; }));
+    const { dialog, feld, speichern, onSchliessen, onGespeichert } = zeige();
+    await geladen(feld, 'server@example.org');
+    tippen(feld(), 'vergeben@example.org');
+    await speichern();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+
+    const knopf = (name: string) => within(dialog).getByRole('button', { name });
+    expect([knopf('Abbrechen'), knopf('Schließen'), knopf('Speichern')].map((k) => (k as HTMLButtonElement).disabled)).toEqual([true, true, true]);
+    fireEvent.click(knopf('Abbrechen'));
+    fireEvent.click(knopf('Schließen'));
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    fireEvent.mouseDown(dialog.parentElement as HTMLElement);
+    expect(onSchliessen).toHaveBeenCalledTimes(0);
+
+    await act(async () => { ablehnen(serverFehler(409, 'Diese E-Mail-Adresse wird bereits verwendet.')); });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Diese E-Mail-Adresse wird bereits von einem anderen Konto verwendet.');
+    expect(h.setSuccess).toHaveBeenCalledTimes(0);
+    expect(onGespeichert).toHaveBeenCalledTimes(0);
+    expect(knopf('Abbrechen')).toBeEnabled();
+    fireEvent.click(knopf('Abbrechen'));
+    expect(onSchliessen).toHaveBeenCalledTimes(1);
   });
 
   it('ohne Netz: Hinweis, Speichern gesperrt, auch Enter schickt nichts', async () => {
