@@ -14,7 +14,7 @@
 // Anders als in der App bleibt „Event anlegen" anklickbar, solange nichts
 // gespeichert wird: Fehlt etwas, sagt der Dialog es in sich selbst, bei den
 // Knöpfen -- ein gesperrter Knopf sagt nicht, warum. Die Knöpfe bleiben beim
-// Scrollen unten im Bild (theme/web/termine.css).
+// Scrollen unten im Bild wie in jedem breiten Dialog (theme/web-ansicht.css).
 
 import React, { useState } from 'react';
 import { IonIcon } from '@ionic/react';

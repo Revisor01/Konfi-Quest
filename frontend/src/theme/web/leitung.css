@@ -910,30 +910,6 @@
   min-width: 0;
 }
 
-/* Das Formular ist laenger als der Dialog hoch (gemessen 11.10.2026: neues
-   Material leer 910 px Inhalt in einem 850 px hohen Dialog bei 1440 x 900 und
-   750 px bei 1280 x 800; mit einem Link und zwei Dateien 1083 px): Abbrechen
-   und Speichern bleiben unten im Bild, wie der Haken oben im Modal der App.
-   Nur in diesem Dialog; die Knopfleiste selbst gehoert web-ansicht.css. */
-.web-dialog__form:has(.web-material-formular) > .web-dialog__aktionen {
-  position: sticky;
-  bottom: calc(-1 * var(--app-abstand-gross));
-  z-index: 1;
-  margin: 0 calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-gross));
-  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
-  border-top: 1px solid var(--web-linie-leise);
-  background: var(--web-karte);
-}
-
-/* Was den Fokus bekommt (per Tab oder nach Loeschen und Entfernen), scrollt
-   der Browser ueber diese Leiste statt dahinter (gemessen 11.10.2026 bei
-   1440 x 900: der Papierkorb einer Datei per Tab mit Unterkante 862 px hinter
-   der Leiste ab 814 px; damit 677 px). Die Leiste ist 62 px hoch, mit einer
-   Meldung darin 116 px. */
-.web-dialog-grund > .web-dialog:has(.web-material-formular) {
-  scroll-padding-bottom: calc(6 * var(--app-abstand-gross));
-}
-
 /* --- g6-stammdaten: Icon-Wahl und Level-Farbe der Dialoge für Level und Zertifikat (WebSymbolWahl, WebLevelDialog, 11.10.2026) --- */
 .web-symbolwahl {
   /* Die Farbe des gewaehlten Icons; der Dialog setzt sie (Farbe des Levels, des Teams). */
