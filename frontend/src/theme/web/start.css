@@ -1491,3 +1491,144 @@
 .web-auf-farbe .web-rang-kopf__pokal {
   color: var(--app-weiss);
 }
+
+/* --- g5-badge: Badge anlegen und bearbeiten (Dialog der Leitung: Vorschau, Farbe, Symbol-Raster) --- */
+.web-badge-vorschau {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-hover);
+}
+
+.web-badge-vorschau__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-badge-vorschau__name {
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}
+
+.web-badge-vorschau__zeile {
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-badge-farbe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-badge-farbe__eingabe {
+  width: 72px;
+  height: 40px;
+  padding: var(--app-abstand-mini);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  cursor: pointer;
+}
+
+.web-badge-farbe__eingabe:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-badge-farbe__wert {
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.web-badge-farbe__muster {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--app-radius-kreis);
+}
+
+.web-badge-symbole {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.web-badge-symbole__gewaehlt {
+  margin: 0;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+/* 95 Symbole: das Raster scrollt in sich, der Dialog bleibt kompakt.
+   position: relative macht es zum Bezug von offsetTop (gewähltes Symbol einrollen). */
+.web-badge-symbole__raster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  max-height: 248px;
+  overflow-y: auto;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+}
+
+.web-badge-symbole__gruppe {
+  margin: 0 0 var(--app-abstand-mini);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text-leise);
+}
+
+.web-badge-symbole__knoepfe {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  gap: var(--app-abstand-mini);
+}
+
+.web-badge-symbole__knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-gross);
+  cursor: pointer;
+}
+
+.web-badge-symbole__knopf:hover {
+  background: var(--web-hover);
+  color: var(--web-text);
+}
+
+/* Gewählt: auf der Farbe des Badges (inline, aus dem Formular), Symbol weiß -- wie in der App. */
+.web-badge-symbole__knopf[aria-pressed='true'] {
+  border-color: transparent;
+  color: var(--app-weiss);
+}
+
+.web-badge-symbole__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-badge-symbole__knopf:disabled {
+  opacity: 0.6;
+  cursor: default;
+}

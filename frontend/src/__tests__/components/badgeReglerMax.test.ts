@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { reglerMaximum as reglerMax } from '../../components/admin/useBadgeFormular';
 
 // Der Wert-Regler im BadgeManagementModal war fest auf max={20} begrenzt,
 // obwohl das Backend keine Obergrenze kennt (routes/badges.js: isInt({min:1}),
@@ -10,9 +11,9 @@ import { describe, it, expect } from 'vitest';
 // beim ersten Anfassen des Reglers "20 Punkte" geworden — das Abzeichen ginge
 // schlagartig an alle mit 20 Punkten, nicht rueckholbar (kein Entzug).
 //
-// Der Hoechstwert waechst deshalb mit dem geladenen Wert mit.
-const reglerMax = (criteriaValue: number | undefined | null) =>
-  Math.max(20, criteriaValue || 0);
+// Der Hoechstwert waechst deshalb mit dem geladenen Wert mit. Seit 11.10.2026
+// prueft der Test die Funktion selbst (useBadgeFormular), die der Regler der
+// App und das Zahlenfeld des Web-Dialogs lesen -- vorher eine Abschrift.
 
 describe('Abzeichen: Hoechstwert des Wert-Reglers', () => {
   it('bleibt bei 20 fuer neue Abzeichen und Werte darunter', () => {

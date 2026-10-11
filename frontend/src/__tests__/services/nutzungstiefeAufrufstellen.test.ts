@@ -97,7 +97,8 @@ const STELLEN: Array<{
   // Stellen, die an einer Server-Antwort hängen; die übrigen (Ansehen,
   // Postfach, Suche) prüft messungVorschlaege.test.ts.
   {
-    datei: 'src/components/admin/modals/BadgeManagementModal.tsx',
+    // Seit 11.10.2026 im Hook des Formulars (App-Modal und Web-Dialog).
+    datei: 'src/components/admin/useBadgeFormular.ts',
     handlung: 'badge-angelegt',
     vorher: "api.post('/admin/badges', badgeData)"
   },
