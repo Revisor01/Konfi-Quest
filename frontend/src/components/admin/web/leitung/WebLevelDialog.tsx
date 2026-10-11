@@ -1,0 +1,132 @@
+// Level anlegen oder bearbeiten als Dialog der Web-Fassung
+// (/admin/settings/levels ab 992 px; Simon, 11.10.2026: „Web braucht eigene
+// kompaktere Modale überall"). Dieselben Felder in derselben Reihenfolge wie
+// das Modal der App (admin/modals/LevelManagementModal.tsx): Titel und
+// benötigte Punkte nebeneinander, Beschreibung, Icon (WebSymbolWahl) und
+// Level-Farbe. Die Logik ist dieselbe (useLevelFormular): ohne Netz geht das
+// Level in die Warteschlange, Fehler stehen im Dialog.
+//
+// Die Punkte sind hier ein Zahlenfeld ab 0 statt des Schiebereglers 1 bis 40
+// der App. Ein neues Level beginnt bei 0 Punkten, das erste Level einer
+// Gemeinde steht oft bei 0, aeltere Level stehen auch ueber 40 -- die App
+// speichert solche Werte unveraendert, solange der Regler nicht bewegt wird.
+// Ein Feld mit 1 bis 40 wuerde sie hier sperren.
+
+import React, { useId } from 'react';
+import { useLevelFormular, type LevelFormularDaten } from '../../useLevelFormular';
+import { OFFLINE_HINWEIS } from '../../stammdatenFormular';
+import WebDialog from '../../../web/WebDialog';
+import WebFeld from '../../../web/WebFeld';
+import WebHinweis from '../../../web/WebHinweis';
+import WebKnopf from '../../../web/WebKnopf';
+import WebTextfeld from '../../../web/WebTextfeld';
+import WebSymbolWahl from './WebSymbolWahl';
+
+export interface WebLevelDialogProps {
+  /** Das Level zum Bearbeiten; null legt ein neues an. */
+  level: LevelFormularDaten | null;
+  onSchliessen: () => void;
+  /** Nach dem Speichern (auch eingereiht): die Liste neu laden. */
+  onGespeichert: () => void;
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/**
+ * Der Wert fuer das Farbfeld des Browsers, das nur #rrggbb kennt. Ein neues
+ * Level traegt die Farbe der Level als Token (var(--app-color-level)) -- so
+ * speichert es auch die App, solange niemand eine Farbe waehlt. Angezeigt
+ * wird dann der Wert des Tokens statt Schwarz.
+ */
+function farbfeldWert(farbe: string | undefined): string {
+  if (farbe && HEX.test(farbe)) return farbe;
+  const token = /^var\((--[\w-]+)\)$/.exec(farbe ?? '')?.[1];
+  if (!token) return '';
+  const wert = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  return HEX.test(wert) ? wert : '';
+}
+
+const WebLevelDialog: React.FC<WebLevelDialogProps> = ({ level, onSchliessen, onGespeichert }) => {
+  const farbId = useId();
+  const { formData, aendern, loading, isSubmitting, fehler, isOnline, speichern } = useLevelFormular(level, {
+    onFertig: () => {
+      onGespeichert();
+      onSchliessen();
+    },
+    fehlerImDialog: true,
+  });
+  const farbe = formData.color || 'var(--app-color-level)';
+  const punkte = formData.points_required;
+
+  return (
+    <WebDialog
+      titel={level ? 'Level bearbeiten' : 'Neues Level'}
+      beschreibung="Level sind die Stufen, die sich aus dem Punktestand ergeben. Sie gelten für die ganze Gemeinde."
+      breit
+      onSchliessen={onSchliessen}
+      onAbsenden={() => { void speichern(); }}
+      aktionen={(
+        <>
+          <WebKnopf onClick={onSchliessen}>Abbrechen</WebKnopf>
+          <WebKnopf art="primaer" absenden disabled={loading || isSubmitting}>{level ? 'Speichern' : 'Anlegen'}</WebKnopf>
+        </>
+      )}
+    >
+      <div className="web-formular">
+        {fehler && <WebHinweis art="fehler" rolle="alert">{fehler}</WebHinweis>}
+        {!isOnline && <WebHinweis art="hinweis">{OFFLINE_HINWEIS}</WebHinweis>}
+        <div className="web-feldpaar">
+          <WebFeld
+            label="Titel"
+            pflicht
+            wert={formData.title}
+            onWert={(title) => aendern({ title })}
+            platzhalter="z.B. Anfänger, Bronze, Meister"
+            deaktiviert={loading}
+          />
+          <WebFeld
+            label="Benötigte Punkte"
+            pflicht
+            typ="number"
+            min={0}
+            schritt={1}
+            wert={Number.isFinite(punkte) ? String(punkte) : ''}
+            onWert={(w) => aendern({ points_required: w.trim() === '' ? Number.NaN : Number(w) })}
+            hinweis="Ab dieser Punktzahl gilt das Level. Zwei Level dürfen nicht dieselbe Punktzahl haben."
+            deaktiviert={loading}
+          />
+        </div>
+        <WebTextfeld
+          label="Beschreibung"
+          zeilen={3}
+          wert={formData.description ?? ''}
+          onWert={(description) => aendern({ description })}
+          platzhalter="Optionale Beschreibung..."
+          deaktiviert={loading}
+        />
+        <WebSymbolWahl
+          label="Icon"
+          pflicht
+          wert={formData.icon || 'trophy'}
+          onWert={(icon) => aendern({ icon })}
+          farbe={farbe}
+          ton="level"
+          deaktiviert={loading}
+        />
+        <div className="web-feld">
+          <label htmlFor={farbId} className="web-feld__label">Level-Farbe</label>
+          <input
+            id={farbId}
+            type="color"
+            className="web-farbwahl"
+            value={farbfeldWert(formData.color)}
+            onChange={(e) => aendern({ color: e.target.value })}
+            disabled={loading}
+          />
+        </div>
+      </div>
+    </WebDialog>
+  );
+};
+
+export default WebLevelDialog;

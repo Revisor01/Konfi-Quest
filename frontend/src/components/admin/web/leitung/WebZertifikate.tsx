@@ -8,8 +8,9 @@
 // (10.10.2026); hier stehen nur Spalten, Karte und Daten.
 //
 // Daten, Rechte und Fenster kommen von der Seite (AdminCertificatesPage): Das
-// Formular ist dasselbe Fenster wie in der App (CertificateModal), das
-// Loeschen fragt dieselbe Rueckfrage. Anlegen, Bearbeiten und Loeschen nur fuer
+// Formular ist ein eigener Dialog (WebZertifikatDialog, 11.10.2026) mit der
+// Logik des App-Modals (useZertifikatFormular), das Loeschen fragt dieselbe
+// Rueckfrage. Anlegen, Bearbeiten und Loeschen nur fuer
 // Gemeindeleitung und Leitung.
 
 import React from 'react';

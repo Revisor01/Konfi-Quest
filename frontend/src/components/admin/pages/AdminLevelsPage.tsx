@@ -31,6 +31,7 @@ import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebLevels from '../web/leitung/WebLevels';
+import WebLevelDialog from '../web/leitung/WebLevelDialog';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -56,12 +57,17 @@ interface Level {
 const AdminLevelsPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-levels');
   const { user, setError, isOnline } = useApp();
-  // Im Browser ab 992 px eine Tabelle (web/leitung/WebLevels.tsx); Daten,
-  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebLevels.tsx); Daten
+  // und Rueckfragen dieser Seite bleiben dieselben, das Formular ist dort ein
+  // eigener Dialog (WebLevelDialog) mit derselben Logik.
   const breit = useBreitesLayout();
   const [presentAlert] = useIonAlert();
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const [editLevel, setEditLevel] = useState<Level | undefined>(undefined);
+  // Im breiten Layout ein eigener Dialog statt des App-Modals (Simon,
+  // 11.10.2026: „Web braucht eigene kompaktere Modale überall"): offen mit
+  // dem Level (bearbeiten) oder mit null (anlegen).
+  const [webDialog, setWebDialog] = useState<{ level: Level | null } | null>(null);
 
   // Offline-Query: Levels
   const { data: levels, loading, refresh: refreshLevels, refreshLive: refreshLevelsLive } = useOfflineQuery<Level[]>(
@@ -128,14 +134,23 @@ const AdminLevelsPage: React.FC = () => {
 
   if (breit) {
     return (
-      <WebLevels
-        levels={levels || []}
-        laedt={loading}
-        pageRef={pageRef}
-        onAnlegen={handleAdd}
-        onBearbeiten={handleEdit}
-        onLoeschen={handleDelete}
-      />
+      <>
+        <WebLevels
+          levels={levels || []}
+          laedt={loading}
+          pageRef={pageRef}
+          onAnlegen={() => setWebDialog({ level: null })}
+          onBearbeiten={(level) => setWebDialog({ level })}
+          onLoeschen={handleDelete}
+        />
+        {webDialog && (
+          <WebLevelDialog
+            level={webDialog.level}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={refreshLevels}
+          />
+        )}
+      </>
     );
   }
 

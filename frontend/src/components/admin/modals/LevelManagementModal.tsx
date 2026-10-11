@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -23,33 +22,15 @@ import {
   IonRange
 } from '@ionic/react';
 import { ICON_AUFKLAPPEN, ICON_BEARBEITEN_GEFUELLT, ICON_HAKEN, ICON_SCHLIESSEN } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
-import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { ICON_CHOICES as LEVEL_ICONS, getIconFromString } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
+import { useLevelFormular, type LevelFormularDaten } from '../useLevelFormular';
 
-
-
-interface Level {
-  id?: number;
-  name: string;
-  title: string;
-  description?: string;
-  points_required: number;
-  icon?: string;
-  color?: string;
-  reward_type?: string;
-  reward_value?: number;
-  is_active?: boolean;
-}
+// Laden, Pruefen und Speichern stehen in useLevelFormular (11.10.2026) --
+// dieselbe Logik wie im Dialog der Web-Fassung (web/leitung/WebLevelDialog).
 
 interface LevelManagementModalProps {
-  level?: Level;
+  level?: LevelFormularDaten;
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
@@ -63,99 +44,12 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
       onClose();
     }
   };
-  const { setSuccess, setError } = useApp();
-  const [formData, setFormData] = useState<Level>({
-    name: '',
-    title: '',
-    description: '',
-    points_required: 0,
-    icon: 'trophy',
-    color: 'var(--app-color-level)',
-    is_active: true
-  });
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (level) {
-      setFormData(level);
-    }
-  }, [level]);
-
-  const isFormValid = formData.title.trim().length > 0 && formData.points_required >= 0;
-
-  const handleSubmit = async () => {
-    if (!isFormValid) return;
-
-    await guard(async () => {
-    setLoading(true);
-    try {
-      // Auto-generate name from title if empty
-      const generatedName = formData.name.trim() ||
-        formData.title.toLowerCase()
-          .replace(/ä/g, 'ae')
-          .replace(/ö/g, 'oe')
-          .replace(/ü/g, 'ue')
-          .replace(/ß/g, 'ss')
-          .replace(/[^a-z0-9]/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
-
-      const payload = {
-        name: generatedName,
-        title: formData.title.trim(),
-        description: formData.description?.trim() || '',
-        points_required: formData.points_required,
-        icon: formData.icon || 'trophy',
-        color: formData.color || 'var(--app-color-level)',
-        reward_type: formData.reward_type || null,
-        reward_value: formData.reward_value || null,
-        is_active: formData.is_active !== false
-      };
-
-      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
-      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
-      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
-      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
-      // Audit Grundgeruest BF-01).
-      const { weg } = await sendenOderEinreihen({
-        online: networkMonitor.isOnline,
-        methode: level?.id ? 'PUT' : 'POST',
-        senden: () => (level?.id
-          ? api.put(`/levels/${level.id}`, payload)
-          : api.post('/levels', payload)),
-        einreihen: () => (level?.id
-          ? writeQueue.enqueue({
-            method: 'PUT',
-            url: `/levels/${level.id}`,
-            body: payload,
-            maxRetries: 5,
-            hasFileUpload: false,
-            metadata: { type: 'admin', clientId: safeUUID(), label: 'Level bearbeiten' },
-          })
-          : writeQueue.enqueue({
-            method: 'POST',
-            url: '/levels',
-            body: payload,
-            maxRetries: 5,
-            hasFileUpload: false,
-            metadata: { type: 'admin', clientId: safeUUID(), label: 'Level erstellen' },
-          })),
-      });
-      if (weg === 'eingereiht') {
-        setSuccess(level?.id
-          ? 'Level wird aktualisiert sobald du wieder online bist'
-          : 'Level wird erstellt sobald du wieder online bist');
-      }
+  const { formData, aendern, loading, isSubmitting, isFormValid, speichern: handleSubmit } = useLevelFormular(level, {
+    onFertig: () => {
       onSuccess();
       handleClose();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Speichern'));
-    } finally {
-      setLoading(false);
-    }
-    });
-  };
+    },
+  });
 
   return (
     <IonPage>
@@ -203,7 +97,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                   <IonLabel position="stacked">Titel *</IonLabel>
                   <IonInput aria-label="Titel" aria-required="true"
                     value={formData.title}
-                    onIonInput={(e) => setFormData({ ...formData, title: e.detail.value! })}
+                    onIonInput={(e) => aendern({ title: e.detail.value! })}
                     placeholder="z.B. Anfänger, Bronze, Meister"
                     disabled={loading}
                     clearInput={true}
@@ -218,7 +112,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                       min={1} max={40} step={1}
                       pin={true} pinFormatter={(value: number) => `${value}`}
                       value={formData.points_required}
-                      onIonChange={(e) => setFormData({ ...formData, points_required: e.detail.value as number })}
+                      onIonChange={(e) => aendern({ points_required: e.detail.value as number })}
                       disabled={loading}
                       style={{ flex: 1 }}
                     />
@@ -230,7 +124,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                   <IonLabel position="stacked">Beschreibung</IonLabel>
                   <IonTextarea aria-label="Beschreibung"
                     value={formData.description}
-                    onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+                    onIonInput={(e) => aendern({ description: e.detail.value! })}
                     placeholder="Optionale Beschreibung..."
                     rows={3}
                     disabled={loading}
@@ -284,7 +178,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                             {group.icons.map(({ key, data }) => (
                               <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-label={data.name} aria-pressed={formData.icon === key}
                                 key={key}
-                                onClick={() => setFormData({ ...formData, icon: key })}
+                                onClick={() => aendern({ icon: key })}
                                 style={{
                                   width: '100%',
                                   aspectRatio: '1',
@@ -324,7 +218,7 @@ const LevelManagementModal: React.FC<LevelManagementModalProps> = ({ level, onCl
                   <input
                     type="color"
                     value={formData.color}
-                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                    onChange={(e) => aendern({ color: e.target.value })}
                     disabled={loading}
                     style={{
                       width: '100%',

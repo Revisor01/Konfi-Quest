@@ -849,3 +849,81 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- g6-stammdaten: Icon-Wahl und Level-Farbe der Dialoge für Level und Zertifikat (WebSymbolWahl, WebLevelDialog, 11.10.2026) --- */
+.web-symbolwahl {
+  /* Die Farbe des gewaehlten Icons; der Dialog setzt sie (Farbe des Levels, des Teams). */
+  --web-symbolwahl-farbe: var(--ion-color-primary);
+}
+
+.web-symbolwahl__gewaehlt {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  font-weight: var(--app-schrift-mittel);
+  color: var(--web-text);
+}
+
+.web-symbolwahl__raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--app-abstand-eng);
+}
+
+.web-symbolwahl__knopf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  color: var(--web-text-leise);
+  font: inherit;
+  font-size: var(--app-text-ueberschrift);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-symbolwahl__knopf:hover {
+  background: var(--web-hover);
+  color: var(--web-text);
+}
+
+/* Gewaehlt: weisses Icon auf der Farbe des Levels bzw. des Teams, wie in der App. */
+.web-symbolwahl__knopf[aria-pressed='true'],
+.web-symbolwahl__knopf[aria-pressed='true']:hover {
+  border-color: var(--web-symbolwahl-farbe);
+  background: var(--web-symbolwahl-farbe);
+  color: var(--app-weiss);
+}
+
+.web-symbolwahl__knopf:focus-visible,
+.web-farbwahl:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-symbolwahl__knopf[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.web-farbwahl {
+  width: 96px;
+  height: 40px;
+  padding: var(--app-abstand-mini);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  cursor: pointer;
+}
+
+.web-farbwahl[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
