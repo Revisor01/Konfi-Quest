@@ -171,7 +171,7 @@ describe('Andere Upload-Stellen lesen die Datei sofort aus (Waechter)', () => {
     'src/components/teamer/modals/TeamerActivityRequestModal.tsx',
     'src/components/shared/useAktivitaetMelden.ts',
     'src/components/chat/useChatDateien.ts',
-    'src/components/admin/modals/MaterialFormModal.tsx',
+    'src/components/admin/modals/useMaterialFormular.ts',
   ];
 
   it.each(dateien)('%s greift nicht verzoegert auf target.files zu', (pfad) => {

@@ -38,15 +38,27 @@ export interface OeffenbareDatei {
   typ?: string | null;
 }
 
+/** Was gleich vor dem Betrachter der App und nach seinem Schließen geschieht. */
+export interface BetrachterRueckrufe {
+  vorher: () => void;
+  nachher: () => void;
+}
+
 interface DateiOeffnenOptionen {
   quelle: MedienQuelle;
   /** Alle Dateien der Ansicht in Anzeigereihenfolge (Wischen im Betrachter). */
   kontext: () => OeffenbareDatei[];
   /** Ort für die Fehlermeldung an die Diagnose, etwa "chat-datei". */
   fehlerOrt: string;
+  /**
+   * Nur für einen Dialog der Web-Fassung (web/WebDialog): Er liegt über allen
+   * ion-modals und tritt zur Seite, solange der Betrachter offen ist (11.10.2026,
+   * Material). Gelesen erst beim Öffnen; ohne Angabe wie bisher.
+   */
+  betrachter?: () => BetrachterRueckrufe | undefined;
 }
 
-export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOptionen) {
+export function useDateiOeffnen({ quelle, kontext, fehlerOrt, betrachter }: DateiOeffnenOptionen) {
   const { setError } = useApp();
   // Welche Datei gerade geladen wird und wie weit. Ohne Rueckmeldung sieht man
   // beim Antippen einer PDF gar nichts passieren und tippt weiter (Simon,
@@ -121,7 +133,13 @@ export function useDateiOeffnen({ quelle, kontext, fehlerOrt }: DateiOeffnenOpti
       viewerRef.current = clickedIndex >= 0
         ? { files, initialIndex: clickedIndex }
         : { files: [{ url: blobUrl, fileName, mimeType: mime }], initialIndex: 0 };
-      presentFileViewer({ cssClass: 'file-viewer-modal' });
+      const rueckrufe = betrachter?.();
+      if (rueckrufe) {
+        rueckrufe.vorher();
+        presentFileViewer({ cssClass: 'file-viewer-modal', onDidDismiss: () => rueckrufe.nachher() });
+      } else {
+        presentFileViewer({ cssClass: 'file-viewer-modal' });
+      }
       return true;
     } catch (err) {
       setError('Fehler beim Öffnen der Datei', { ort: fehlerOrt, fehler: err });

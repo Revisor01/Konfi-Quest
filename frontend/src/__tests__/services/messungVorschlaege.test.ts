@@ -394,7 +394,7 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S17: nur die Lese-Ansicht, die Datei erst nach dem Laden', () => {
-    const q = lies('src/components/admin/modals/MaterialFormModal.tsx');
+    const q = lies('src/components/admin/modals/useMaterialFormular.ts');
     expect(q).toContain('if (!nurLesen || !material || angesehenGemeldet.current) return;');
     expect(q).toContain("if (geladen && nurLesen) trackHandlung('material-abgerufen', { inhalt: 'datei' });");
   });

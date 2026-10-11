@@ -8,8 +8,9 @@
 // stehen nur Spalten, Karte und Daten.
 //
 // Daten, Filter und Fenster kommen von der Seite (AdminMaterialPage): Das
-// Formular ist dasselbe Fenster wie in der App (MaterialFormModal), das Loeschen
-// fragt dieselbe Rueckfrage. Bearbeiten und Loeschen darf nur die erstellende
+// Formular ist ein eigener Dialog der Web-Fassung (WebMaterialDialog, seit
+// 11.10.2026) mit der Logik der App (useMaterialFormular), das Loeschen fragt
+// dieselbe Rueckfrage. Bearbeiten und Loeschen darf nur die erstellende
 // Person oder die Gemeindeleitung (darfMaterialBearbeiten); wer es nicht darf,
 // sieht das Material schreibgeschuetzt ("Ansehen"). Die Suche fragt wie dort den
 // Server -- nach einer kurzen Pause im Tippen, nicht bei jedem Zeichen --, und

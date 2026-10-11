@@ -191,25 +191,35 @@ describe('Material verwalten (Web)', () => {
     expect(screen.getAllByRole('button', { name: 'Andacht Advent ansehen' })).toHaveLength(2);
   });
 
-  it('Bearbeiten laedt das Material und oeffnet das Fenster der App; "Neues Material" oeffnet es leer', async () => {
+  // Seit dem 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale
+  // überall") öffnet im breiten Layout der Dialog der Web-Fassung statt des
+  // Modals der App (WebMaterialDialog); die Einzelheiten prüft
+  // webMaterialDialog.test.tsx.
+  it('Bearbeiten laedt das Material und oeffnet den Dialog der Web-Fassung; "Neues Material" oeffnet ihn leer', async () => {
     await oeffnen();
     fireEvent.click(screen.getAllByRole('button', { name: 'Liederbuch Freizeit bearbeiten' })[0]);
     await warten();
     expect(h.apiGet).toHaveBeenCalledWith('/material/1');
-    expect(h.stand.fenster).toHaveLength(1);
-    expect(h.stand.fenster[0].komponente).toBe(MaterialFormModal);
-    expect(h.stand.fenster[0].props.material).toEqual(DETAIL);
-    expect(h.stand.fenster[0].props.nurLesen).toBe(false);
+    const bearbeiten = screen.getByRole('dialog', { name: 'Material bearbeiten' });
+    expect((within(bearbeiten).getByRole('textbox', { name: 'Titel' }) as HTMLInputElement).value).toBe('Liederbuch Freizeit');
+    expect(h.stand.fenster.filter((f) => f.komponente === MaterialFormModal)).toHaveLength(0);
+    fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Neues Material' }));
-    expect(h.stand.fenster[1].props.material).toBeNull();
+    await warten();
+    const neu = screen.getByRole('dialog', { name: 'Neues Material' });
+    expect((within(neu).getByRole('textbox', { name: 'Titel' }) as HTMLInputElement).value).toBe('');
+    expect(h.stand.fenster).toHaveLength(0);
   });
 
-  it('fremdes Material oeffnet das Fenster schreibgeschuetzt', async () => {
+  it('fremdes Material oeffnet den Dialog schreibgeschuetzt', async () => {
     h.user = konto('admin', [12]);
     await oeffnen();
     fireEvent.click(screen.getAllByRole('button', { name: 'Andacht Advent ansehen' })[0]);
     await warten();
-    expect(h.stand.fenster[0].props.nurLesen).toBe(true);
+    const d = screen.getByRole('dialog', { name: 'Material ansehen' });
+    expect(within(d).queryAllByRole('textbox')).toHaveLength(0);
+    expect(within(d).queryByRole('button', { name: 'Speichern' })).toBeNull();
+    expect(h.stand.fenster).toHaveLength(0);
   });
 
   it('Loeschen fragt nach, nimmt die Dateien vom Geraet und ruft die Route erst nach der Bestaetigung', async () => {

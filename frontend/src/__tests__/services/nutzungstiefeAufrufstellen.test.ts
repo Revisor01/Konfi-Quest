@@ -54,7 +54,7 @@ const STELLEN: Array<{
     vorher: "api.post('/events/series', { ...payload, client_id: anlegeKennung.current })"
   },
   {
-    datei: 'src/components/admin/modals/MaterialFormModal.tsx',
+    datei: 'src/components/admin/modals/useMaterialFormular.ts',
     handlung: 'material-bereitgestellt',
     vorher: "api.post('/material', payload)"
   },
@@ -262,7 +262,7 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
   });
 
   it('nur neu eingestelltes Material wird gezaehlt', () => {
-    const quelle = lies('src/components/admin/modals/MaterialFormModal.tsx');
+    const quelle = lies('src/components/admin/modals/useMaterialFormular.ts');
     // Die Messung haengt an der Bedingung "kein vorhandenes Material".
     expect(quelle).toMatch(
       /if \(!material\) \{[\s\S]{0,400}?trackHandlung\('material-bereitgestellt'/
