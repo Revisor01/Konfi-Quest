@@ -9,7 +9,11 @@
 // Netz dieselbe Warteschlange. Anders als in der App:
 //   - Fehler und Prüfung stehen im Dialog (eine Meldung der App läge darunter).
 //   - Eine vorhandene Datei löschen fragt in ihrer Zeile nach -- ein Alert
-//     der App läge ebenfalls unter dem Dialog.
+//     der App läge ebenfalls unter dem Dialog. Escape bricht dort nur die
+//     Rückfrage ab.
+//   - Solange gesendet oder gelöscht wird, lässt er sich nicht schließen (X,
+//     Escape, Klick daneben); in der App bleibt das X frei, ein Fehler kommt
+//     dort als Meldung der App.
 //   - Eine Datei ansehen öffnet den Betrachter der App (Zoom, PDF-Seiten,
 //     Herunterladen). Er ist ein ion-modal und läge unter dem Dialog; der
 //     Dialog tritt deshalb zur Seite, solange der Betrachter offen ist, und
@@ -17,7 +21,7 @@
 //   - Wer das Material nicht bearbeiten darf, sieht statt gesperrter Felder
 //     die Angaben zum Lesen; Links sind echte Links, Dateien lassen sich öffnen.
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_DATEI_GEFUELLT,
@@ -105,51 +109,78 @@ const DateiZeile: React.FC<{
   </li>
 );
 
+/**
+ * Löschen mit Rückfrage in der Zeile. Der Zustand steht im Dialog: Er sperrt
+ * sich, solange gelöscht wird, und führt den Fokus (die Knöpfe nehmen sich
+ * dabei selbst aus dem Dialog).
+ */
+interface DateiLoeschen {
+  /** Die Datei, deren Rückfrage offen ist. */
+  rueckfrage: number | null;
+  loescht: boolean;
+  fragen: (datei: MaterialFile, zeile: number) => void;
+  abbrechen: (zeile: number) => void;
+  bestaetigen: (datei: MaterialFile, zeile: number) => void;
+}
+
 /** Die vorhandenen Dateien; mit `loeschen` je Zeile ein Löschen mit Rückfrage in der Zeile. */
-const VorhandeneDateien: React.FC<{ f: MaterialFormularZustand; loeschen: boolean }> = ({ f, loeschen }) => {
-  const [rueckfrage, setRueckfrage] = useState<number | null>(null);
-  const [loescht, setLoescht] = useState(false);
-
-  const bestaetigen = async (datei: MaterialFile) => {
-    setLoescht(true);
-    await f.dateiLoeschen(datei);
-    setLoescht(false);
-    setRueckfrage(null);
-  };
-
-  return (
-    <>
-      {f.existingFiles.map((datei) => {
-        if (rueckfrage === datei.id) {
-          return (
-            <li key={datei.id} className="web-material-datei">
-              <div className="web-material-rueckfrage" role="group" aria-label={`${datei.original_name} löschen`}>
-                <p className="web-material-rueckfrage__text">„{datei.original_name}“ wirklich löschen?</p>
-                <WebKnopf klein onClick={() => setRueckfrage(null)} disabled={loescht}>Abbrechen</WebKnopf>
-                <WebKnopf klein art="gefahr" onClick={() => { void bestaetigen(datei); }} disabled={loescht}>Löschen</WebKnopf>
-              </div>
-            </li>
-          );
-        }
-        const laedt = f.ladendeDatei?.pfad === datei.stored_name;
+const VorhandeneDateien: React.FC<{ f: MaterialFormularZustand; loeschen?: DateiLoeschen }> = ({ f, loeschen }) => (
+  <>
+    {f.existingFiles.map((datei, zeile) => {
+      if (loeschen && loeschen.rueckfrage === datei.id) {
         return (
-          <DateiZeile
-            key={datei.id}
-            name={datei.original_name}
-            mimeType={datei.mime_type}
-            unterzeile={laedt ? ladeText(f.ladendeDatei?.prozent) : dateiGroesse(datei.file_size)}
-            laedtProzent={laedt ? (f.ladendeDatei?.prozent ?? null) : undefined}
-            onAnsehen={() => { void f.openFile(datei); }}
-            aktion={loeschen && (
-              <WebKnopf klein art="gefahr" symbol onClick={() => setRueckfrage(datei.id)} aria-label={`${datei.original_name} löschen`} title="Datei löschen" disabled={f.isSubmitting}>
-                <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-              </WebKnopf>
-            )}
-          />
+          <li key={datei.id} className="web-material-datei">
+            {/* Escape bricht nur die Rückfrage ab; der Dialog mit allen
+                Eingaben bleibt. */}
+            <div
+              className="web-material-rueckfrage"
+              role="group"
+              aria-label={`${datei.original_name} löschen`}
+              onKeyDown={(ereignis) => {
+                if (ereignis.key !== 'Escape') return;
+                ereignis.stopPropagation();
+                if (!loeschen.loescht) loeschen.abbrechen(zeile);
+              }}
+            >
+              <p className="web-material-rueckfrage__text">„{datei.original_name}“ wirklich löschen?</p>
+              <WebKnopf klein onClick={() => loeschen.abbrechen(zeile)} disabled={loeschen.loescht}>Abbrechen</WebKnopf>
+              <WebKnopf klein art="gefahr" onClick={() => loeschen.bestaetigen(datei, zeile)} disabled={loeschen.loescht}>Löschen</WebKnopf>
+            </div>
+          </li>
         );
-      })}
-    </>
-  );
+      }
+      const laedt = f.ladendeDatei?.pfad === datei.stored_name;
+      return (
+        <DateiZeile
+          key={datei.id}
+          name={datei.original_name}
+          mimeType={datei.mime_type}
+          unterzeile={laedt ? ladeText(f.ladendeDatei?.prozent) : dateiGroesse(datei.file_size)}
+          laedtProzent={laedt ? (f.ladendeDatei?.prozent ?? null) : undefined}
+          onAnsehen={() => { void f.openFile(datei); }}
+          aktion={loeschen && (
+            <WebKnopf
+              klein
+              art="gefahr"
+              symbol
+              onClick={() => loeschen.fragen(datei, zeile)}
+              aria-label={`${datei.original_name} löschen`}
+              title="Datei löschen"
+              disabled={f.isSubmitting || loeschen.loescht}
+            >
+              <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
+            </WebKnopf>
+          )}
+        />
+      );
+    })}
+  </>
+);
+
+/** Der letzte Knopf in einem Element: in einer Zeile ihr Entfernen bzw. Löschen. */
+const letzterKnopf = (element: Element | null | undefined): HTMLElement | null => {
+  const knoepfe = element?.querySelectorAll<HTMLElement>('button');
+  return knoepfe && knoepfe.length > 0 ? knoepfe[knoepfe.length - 1] : null;
 };
 
 /** Die Angaben eines Materials, das diese Person nicht bearbeiten darf. */
@@ -209,7 +240,7 @@ const MaterialLesen: React.FC<{ material: Material | null; f: MaterialFormularZu
         <>
           <h3 className="web-gruppe">Dateien</h3>
           <ul className="web-material-liste" aria-label="Dateien">
-            <VorhandeneDateien f={f} loeschen={false} />
+            <VorhandeneDateien f={f} />
           </ul>
         </>
       )}
@@ -229,6 +260,60 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
     fehlerImFenster: true,
     betrachter: { vorher: () => setBetrachterOffen(true), nachher: () => setBetrachterOffen(false) },
   });
+  const [rueckfrage, setRueckfrage] = useState<number | null>(null);
+  const [loescht, setLoescht] = useState(false);
+
+  // DER FOKUS BLEIBT IM DIALOG (Gegenprüfung 11.10.2026): Papierkorb, die
+  // Knöpfe der Rückfrage und Entfernen nehmen sich beim Klick selbst aus dem
+  // Dialog. Der Fokus fiel dann auf <body>, und Tab lief in die Seite dahinter
+  // (die Fokusfalle hängt am Dialog). Wer eine Zeile ändert, sagt hier, wohin
+  // der Fokus nach dem nächsten Zeichnen geht: die Rückfrage auf ihr
+  // Abbrechen, danach zurück auf den Papierkorb; nach dem Entfernen auf die
+  // Zeile, die nachrückt, sonst die davor, sonst auf „Dateien auswählen“
+  // bzw. „Link hinzufügen“.
+  const formularRef = useRef<HTMLDivElement>(null);
+  const dateienRef = useRef<HTMLUListElement>(null);
+  const dateiKnoepfeRef = useRef<HTMLDivElement>(null);
+  const linkKnoepfeRef = useRef<HTMLDivElement>(null);
+  const fokusDanach = useRef<(() => HTMLElement | null | undefined) | null>(null);
+  useEffect(() => {
+    const ziel = fokusDanach.current;
+    if (!ziel) return;
+    fokusDanach.current = null;
+    ziel()?.focus();
+  });
+
+  const dateiZeile = (zeile: number) => dateienRef.current?.children.item(zeile);
+  const nachDateiEntfernt = (zeile: number) => () => letzterKnopf(dateiZeile(zeile))
+    ?? letzterKnopf(dateiZeile(zeile - 1))
+    ?? dateiKnoepfeRef.current?.querySelector<HTMLElement>('button');
+  const linkZeile = (zeile: number) => formularRef.current?.querySelectorAll('.web-material-link').item(zeile);
+  const nachLinkEntfernt = (zeile: number) => () => letzterKnopf(linkZeile(zeile))
+    ?? letzterKnopf(linkZeile(zeile - 1))
+    ?? linkKnoepfeRef.current?.querySelector<HTMLElement>('button');
+
+  const dateiLoeschen: DateiLoeschen = {
+    rueckfrage,
+    loescht,
+    fragen: (datei, zeile) => {
+      fokusDanach.current = () => dateiZeile(zeile)?.querySelector<HTMLElement>('[role="group"] button');
+      setRueckfrage(datei.id);
+    },
+    abbrechen: (zeile) => {
+      fokusDanach.current = () => letzterKnopf(dateiZeile(zeile));
+      setRueckfrage(null);
+    },
+    bestaetigen: (datei, zeile) => {
+      setLoescht(true);
+      void f.dateiLoeschen(datei).then((geloescht) => {
+        // Gelöscht: die Zeile, die nachrückt. Gescheitert: Die Datei bleibt,
+        // der Fokus geht zurück auf ihren Papierkorb (die Meldung steht unten).
+        fokusDanach.current = geloescht ? nachDateiEntfernt(zeile) : () => letzterKnopf(dateiZeile(zeile));
+        setLoescht(false);
+        setRueckfrage(null);
+      });
+    },
+  };
 
   if (betrachterOffen) return null;
 
@@ -249,12 +334,17 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
   const angeboteneJahrgaenge = f.jahrgaenge.map((j) => j.id);
   const linkName = (index: number) => `Adresse ${f.linkUrls.length > 1 ? index + 1 : ''}`.trim();
   const hatDateien = f.existingFiles.length > 0 || f.newFiles.length > 0;
+  const gesperrt = f.isSubmitting || loescht;
 
   return (
     <WebDialog
       breit
       titel={material ? 'Material bearbeiten' : 'Neues Material'}
       onSchliessen={onSchliessen}
+      // Solange gesendet oder gelöscht wird, schließen weder das X noch
+      // Escape noch ein Klick daneben (Gegenprüfung 11.10.2026): Ein Fehler
+      // danach ginge sonst still verloren.
+      gesperrt={gesperrt}
       onAbsenden={() => { void f.handleSave(); }}
       aktionen={(
         <>
@@ -274,12 +364,12 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
               />
             </div>
           )}
-          <WebKnopf onClick={onSchliessen} disabled={f.isSubmitting}>Abbrechen</WebKnopf>
-          <WebKnopf art="primaer" absenden disabled={f.isSubmitting}>{material ? 'Speichern' : 'Material anlegen'}</WebKnopf>
+          <WebKnopf onClick={onSchliessen} disabled={gesperrt}>Abbrechen</WebKnopf>
+          <WebKnopf art="primaer" absenden disabled={gesperrt}>{material ? 'Speichern' : 'Material anlegen'}</WebKnopf>
         </>
       )}
     >
-      <div className="web-formular web-material-formular">
+      <div ref={formularRef} className="web-formular web-material-formular">
         {f.ohneNetz && (
           <WebHinweis art="hinweis">Ohne Verbindung wird das Material gespeichert, sobald du wieder online bist. Dateien lassen sich erst dann hochladen.</WebHinweis>
         )}
@@ -338,7 +428,10 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
             <WebKnopf
               art="gefahr"
               symbol
-              onClick={() => f.setLinkUrls((vorher) => vorher.filter((_, i) => i !== index))}
+              onClick={() => {
+                fokusDanach.current = nachLinkEntfernt(index);
+                f.setLinkUrls((vorher) => vorher.filter((_, i) => i !== index));
+              }}
               aria-label={`${linkName(index)} entfernen`}
               title="Link entfernen"
               disabled={f.isSubmitting}
@@ -347,7 +440,7 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
             </WebKnopf>
           </div>
         ))}
-        <div className="web-formular__knoepfe">
+        <div ref={linkKnoepfeRef} className="web-formular__knoepfe">
           <WebKnopf onClick={() => f.setLinkUrls((vorher) => [...vorher, ''])} disabled={f.isSubmitting}>
             <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
             Link hinzufügen
@@ -356,8 +449,8 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
 
         <h3 className="web-gruppe">Dateien</h3>
         {hatDateien && (
-          <ul className="web-material-liste" aria-label="Dateien">
-            <VorhandeneDateien f={f} loeschen />
+          <ul ref={dateienRef} className="web-material-liste" aria-label="Dateien">
+            <VorhandeneDateien f={f} loeschen={dateiLoeschen} />
             {f.newFiles.map((datei, index) => (
               <DateiZeile
                 key={`neu-${index}`}
@@ -366,7 +459,18 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
                 unterzeile={`Neu · ${dateiGroesse(datei.size)} · geht beim Speichern hoch`}
                 onAnsehen={() => f.openInAppViewer(datei, datei.name, datei.type)}
                 aktion={(
-                  <WebKnopf klein art="gefahr" symbol onClick={() => f.removeNewFile(index)} aria-label={`${datei.name} entfernen`} title="Datei entfernen" disabled={f.isSubmitting}>
+                  <WebKnopf
+                    klein
+                    art="gefahr"
+                    symbol
+                    onClick={() => {
+                      fokusDanach.current = nachDateiEntfernt(f.existingFiles.length + index);
+                      f.removeNewFile(index);
+                    }}
+                    aria-label={`${datei.name} entfernen`}
+                    title="Datei entfernen"
+                    disabled={gesperrt}
+                  >
                     <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
                   </WebKnopf>
                 )}
@@ -374,7 +478,7 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
             ))}
           </ul>
         )}
-        <div className="web-formular__knoepfe">
+        <div ref={dateiKnoepfeRef} className="web-formular__knoepfe">
           <WebKnopf onClick={() => { void f.dateienWaehlen(); }} disabled={f.isSubmitting}>
             <IonIcon icon={ICON_HOCHLADEN} aria-hidden="true" />
             Dateien auswählen

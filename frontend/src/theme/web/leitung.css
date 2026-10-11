@@ -924,3 +924,12 @@
   border-top: 1px solid var(--web-linie-leise);
   background: var(--web-karte);
 }
+
+/* Was den Fokus bekommt (per Tab oder nach Loeschen und Entfernen), scrollt
+   der Browser ueber diese Leiste statt dahinter (gemessen 11.10.2026 bei
+   1440 x 900: der Papierkorb einer Datei per Tab mit Unterkante 862 px hinter
+   der Leiste ab 814 px; damit 677 px). Die Leiste ist 62 px hoch, mit einer
+   Meldung darin 116 px. */
+.web-dialog-grund > .web-dialog:has(.web-material-formular) {
+  scroll-padding-bottom: calc(6 * var(--app-abstand-gross));
+}

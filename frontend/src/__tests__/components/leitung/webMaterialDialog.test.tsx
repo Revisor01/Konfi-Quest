@@ -490,6 +490,190 @@ describe('Dateien', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Gegenprüfung 11.10.2026: Ging der Dialog während des Hochladens zu (Escape,
+// Klick daneben, das X), verschwand ein Fehler danach still -- das Material
+// stand schon, die Dateien fehlten, niemand erfuhr es.
+describe('Während gesendet oder gelöscht wird, bleibt der Dialog', () => {
+  /** POST /material geht durch, das Hochladen hängt, bis der Test es auflöst. */
+  const uploadHaengt = () => {
+    const ausgang: { ablehnen: (e: unknown) => void } = { ablehnen: () => undefined };
+    h.apiPost.mockImplementation((url: string) => (url === '/material'
+      ? Promise.resolve({ data: { id: 33 } })
+      : new Promise((_, nein) => { ausgang.ablehnen = nein; })));
+    h.auswahl.mockResolvedValue([new File(['%PDF Brief'], 'brief.pdf', { type: 'application/pdf' })]);
+    return ausgang;
+  };
+  const NUR_DATEIEN_FEHLEN = 'Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.';
+
+  it('Upload hängt: Abbrechen und X gesperrt, Escape und Klick daneben lassen ihn offen; der Fehler steht danach im Dialog', async () => {
+    const upload = uploadHaengt();
+    const d = await neuOeffnen();
+    tippen(feld(d, 'Titel'), 'Elternbrief');
+    await absenden(d, 'Dateien auswählen');
+    await absenden(d, 'Material anlegen');
+    expect(h.apiPost).toHaveBeenLastCalledWith('/material/33/files', expect.any(FormData), expect.objectContaining({ timeout: 180000 }));
+
+    expect(within(d).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    const x = within(d).getByRole('button', { name: 'Schließen' });
+    expect(x).toBeDisabled();
+    fireEvent.click(x);
+    fireEvent.keyDown(d, { key: 'Escape' });
+    fireEvent.mouseDown(d.parentElement!);
+    await warten();
+    expect(dialog('Neues Material')).toBe(d);
+
+    const fehler = { response: { status: 500, data: {} } };
+    await act(async () => { upload.ablehnen(fehler); });
+    await warten();
+    expect(within(d).getByRole('alert')).toHaveTextContent(NUR_DATEIEN_FEHLEN);
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.setSuccess).not.toHaveBeenCalled();
+    expect(h.refresh).not.toHaveBeenCalled();
+    // Danach wieder frei: Escape schließt.
+    expect(x).toBeEnabled();
+    fireEvent.keyDown(d, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('das Fenster wird während des Hochladens schmal: der Fehler kommt genau einmal als Meldung der App, mit Ort', async () => {
+    const upload = uploadHaengt();
+    const r = await oeffnen();
+    await klick(screen.getByRole('button', { name: 'Neues Material' }));
+    const d = dialog('Neues Material');
+    tippen(feld(d, 'Titel'), 'Elternbrief');
+    await absenden(d, 'Dateien auswählen');
+    await absenden(d, 'Material anlegen');
+
+    h.breit = false;
+    r.rerender(<AdminMaterialPage />);
+    await warten();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    const fehler = { response: { status: 500, data: {} } };
+    await act(async () => { upload.ablehnen(fehler); });
+    await warten();
+    expect(h.setError).toHaveBeenCalledTimes(1);
+    expect(h.setError).toHaveBeenCalledWith(NUR_DATEIEN_FEHLEN, { ort: 'material-dateien-hochladen', fehler });
+    expect(h.refresh).not.toHaveBeenCalled();
+  });
+
+  it('eine Datei wird gelöscht: X, Escape und Speichern gesperrt; danach wieder frei', async () => {
+    const loeschen = { fertig: () => undefined as void };
+    h.apiDelete.mockImplementation(() => new Promise((ja) => { loeschen.fertig = () => ja({ data: {} }); }));
+    const d = await bearbeitenOeffnen();
+    await klick(within(d).getByRole('button', { name: 'lieder.pdf löschen' }));
+    await klick(within(within(d).getByRole('group', { name: 'lieder.pdf löschen' })).getByRole('button', { name: 'Löschen' }));
+    expect(h.apiDelete).toHaveBeenCalledWith('/material/files/71');
+
+    expect(within(d).getByRole('button', { name: 'Schließen' })).toBeDisabled();
+    expect(within(d).getByRole('button', { name: 'Speichern' })).toBeDisabled();
+    fireEvent.keyDown(d, { key: 'Escape' });
+    fireEvent.mouseDown(d.parentElement!);
+    await warten();
+    expect(dialog('Material bearbeiten')).toBe(d);
+
+    await act(async () => { loeschen.fertig(); });
+    await warten();
+    expect(within(d).queryByRole('button', { name: 'lieder.pdf ansehen' })).toBeNull();
+    expect(within(d).getByRole('button', { name: 'Schließen' })).toBeEnabled();
+    expect(within(d).getByRole('button', { name: 'Speichern' })).toBeEnabled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Gegenprüfung 11.10.2026: Knöpfe, die sich selbst aus dem Dialog nehmen
+// (Papierkorb, die Knöpfe der Rückfrage, Entfernen), ließen den Fokus auf
+// <body> fallen -- Tab lief danach in die Seite hinter dem Dialog.
+describe('Der Fokus bleibt im Dialog', () => {
+  const aktiv = () => document.activeElement;
+
+  it('der Papierkorb öffnet die Rückfrage mit dem Fokus auf ihrem Abbrechen; Abbrechen bringt ihn zurück auf den Papierkorb', async () => {
+    const d = await bearbeitenOeffnen();
+    const papierkorb = within(d).getByRole('button', { name: 'lieder.pdf löschen' });
+    papierkorb.focus();
+    await klick(papierkorb);
+    const rueckfrage = within(d).getByRole('group', { name: 'lieder.pdf löschen' });
+    expect(aktiv()).toBe(within(rueckfrage).getByRole('button', { name: 'Abbrechen' }));
+    await klick(within(rueckfrage).getByRole('button', { name: 'Abbrechen' }));
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'lieder.pdf löschen' }));
+  });
+
+  it('Escape in der Rückfrage schließt nur die Rückfrage; Dialog und Eingaben bleiben, der Fokus auf dem Papierkorb', async () => {
+    const d = await bearbeitenOeffnen();
+    tippen(feld(d, 'Titel'), 'Noch nicht gespeichert');
+    await klick(within(d).getByRole('button', { name: 'lieder.pdf löschen' }));
+    const rueckfrage = within(d).getByRole('group', { name: 'lieder.pdf löschen' });
+    await act(async () => { fireEvent.keyDown(within(rueckfrage).getByRole('button', { name: 'Abbrechen' }), { key: 'Escape' }); });
+    await warten();
+    expect(dialog('Material bearbeiten')).toBe(d);
+    expect(within(d).queryByRole('group', { name: 'lieder.pdf löschen' })).toBeNull();
+    expect(feld(d, 'Titel').value).toBe('Noch nicht gespeichert');
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'lieder.pdf löschen' }));
+    expect(h.apiDelete).not.toHaveBeenCalled();
+  });
+
+  it('nach dem Löschen steht der Fokus auf dem Papierkorb der nächsten Datei, nach der letzten auf der davor, zuletzt auf „Dateien auswählen“', async () => {
+    const d = await bearbeitenOeffnen();
+    const loeschen = async (name: string) => {
+      await klick(within(d).getByRole('button', { name: `${name} löschen` }));
+      await klick(within(within(d).getByRole('group', { name: `${name} löschen` })).getByRole('button', { name: 'Löschen' }));
+    };
+    await loeschen('lieder.pdf');
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'gruppenfoto.jpg löschen' }));
+    await loeschen('gruppenfoto.jpg');
+    expect(within(d).queryByRole('list', { name: 'Dateien' })).toBeNull();
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'Dateien auswählen' }));
+    expect(h.apiDelete).toHaveBeenCalledTimes(2);
+  });
+
+  it('scheitert das Löschen, steht der Fokus wieder auf dem Papierkorb derselben Datei', async () => {
+    h.apiDelete.mockRejectedValue(new Error('weg'));
+    const d = await bearbeitenOeffnen();
+    await klick(within(d).getByRole('button', { name: 'gruppenfoto.jpg löschen' }));
+    await klick(within(within(d).getByRole('group', { name: 'gruppenfoto.jpg löschen' })).getByRole('button', { name: 'Löschen' }));
+    expect(within(d).getByRole('alert')).toHaveTextContent('Fehler beim Löschen der Datei');
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'gruppenfoto.jpg löschen' }));
+  });
+
+  it('eine neue Datei entfernen: der Fokus geht auf die Zeile, die nachrückt; nach der letzten auf die davor, auch eine vorhandene', async () => {
+    h.auswahl.mockResolvedValue([
+      new File(['%PDF a'], 'a.pdf', { type: 'application/pdf' }),
+      new File(['%PDF b'], 'b.pdf', { type: 'application/pdf' }),
+    ]);
+    const d = await bearbeitenOeffnen();
+    await absenden(d, 'Dateien auswählen');
+    await klick(within(d).getByRole('button', { name: 'a.pdf entfernen' }));
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'b.pdf entfernen' }));
+    await klick(within(d).getByRole('button', { name: 'b.pdf entfernen' }));
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'gruppenfoto.jpg löschen' }));
+  });
+
+  it('die einzige neue Datei entfernen: der Fokus geht auf „Dateien auswählen“', async () => {
+    h.auswahl.mockResolvedValue([new File(['%PDF'], 'weg.pdf', { type: 'application/pdf' })]);
+    const d = await neuOeffnen();
+    await absenden(d, 'Dateien auswählen');
+    await klick(within(d).getByRole('button', { name: 'weg.pdf entfernen' }));
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'Dateien auswählen' }));
+  });
+
+  it('eine Adresse entfernen: der Fokus geht auf das Entfernen der nächsten, sonst der davor, zuletzt auf „Link hinzufügen“', async () => {
+    const d = await bearbeitenOeffnen();
+    await klick(within(d).getByRole('button', { name: 'Link hinzufügen' }));
+    tippen(feld(d, 'Adresse 2'), 'https://beispiel.example/zwei');
+    await klick(within(d).getByRole('button', { name: 'Link hinzufügen' }));
+    tippen(feld(d, 'Adresse 3'), 'https://beispiel.example/drei');
+
+    await klick(within(d).getByRole('button', { name: 'Adresse 2 entfernen' }));
+    expect(feld(d, 'Adresse 2').value).toBe('https://beispiel.example/drei');
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'Adresse 2 entfernen' }));
+    await klick(within(d).getByRole('button', { name: 'Adresse 2 entfernen' }));
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'Adresse entfernen' }));
+    await klick(within(d).getByRole('button', { name: 'Adresse entfernen' }));
+    expect(aktiv()).toBe(within(d).getByRole('button', { name: 'Link hinzufügen' }));
+  });
+});
+
+// ---------------------------------------------------------------------------
 describe('Lesen: fremdes Material ohne Bearbeitungsrecht', () => {
   const ansehen = async () => {
     h.user = konto('admin', [12]);

@@ -14,7 +14,8 @@
 //     neue vor dem Hochladen im Betrachter ansehen; vorhandene löschen sofort.
 //   - Fehler meldet die App als Meldung (setError); der Web-Dialog zeigt sie
 //     im Fenster (fehlerImFenster). Eine Meldung der App läge dort unter dem
-//     Dialog.
+//     Dialog. Ist er schon fort, wenn der Fehler kommt, geht er als Meldung
+//     der App (dialogDa).
 //   - Der Betrachter der App ist ein ion-modal. Der Web-Dialog liegt über
 //     allen ion-modals und tritt zur Seite, solange er offen ist (betrachter).
 
@@ -140,6 +141,17 @@ export function useMaterialFormular({
   const [sendeProzent, setSendeProzent] = useState(0);
   // Nur im Web-Dialog gesetzt (fehlerImFenster).
   const [fehler, setFehler] = useState<string | null>(null);
+  // Ist der Web-Dialog schon fort, käme ein Fehler im Fenster nirgends an:
+  // Er ist zwar gesperrt, solange gesendet oder gelöscht wird, aber die Seite
+  // kann verlassen werden, und unter 992 px zeigt sie die App-Fassung ohne
+  // ihn (Gegenprüfung 11.10.2026: das Material stand, die Dateien fehlten,
+  // niemand erfuhr es). Der Fehler geht dann als Meldung der App, mit Ort.
+  const dialogDa = useRef(true);
+  useEffect(() => {
+    dialogDa.current = true;
+    return () => { dialogDa.current = false; };
+  }, []);
+  const imFenster = () => fehlerImFenster && dialogDa.current;
 
   const [events, setEvents] = useState<EventOption[]>([]);
   const [jahrgaenge, setJahrgaenge] = useState<JahrgangOption[]>([]);
@@ -263,7 +275,7 @@ export function useMaterialFormular({
       }
     }
     if (zuGross) {
-      if (fehlerImFenster) setFehler(zuGross);
+      if (imFenster()) setFehler(zuGross);
       else setError(zuGross);
     }
     if (fertig.length > 0) setNewFiles(prev => [...prev, ...fertig]);
@@ -299,7 +311,7 @@ export function useMaterialFormular({
       await medienVergessen(file.stored_name, 'material');
       return true;
     } catch {
-      if (fehlerImFenster) setFehler(DATEI_LOESCHEN_FEHLER);
+      if (imFenster()) setFehler(DATEI_LOESCHEN_FEHLER);
       else setError(DATEI_LOESCHEN_FEHLER);
       return false;
     }
@@ -329,7 +341,7 @@ export function useMaterialFormular({
     // wuerde ohnehin mit 403 antworten (Ersteller-Regel, 01.09.2026).
     if (nurLesen) return;
     if (!title.trim()) {
-      if (fehlerImFenster) setFehler(TITEL_FEHLT);
+      if (imFenster()) setFehler(TITEL_FEHLT);
       else setError(TITEL_FEHLT);
       return;
     }
@@ -339,7 +351,7 @@ export function useMaterialFormular({
     // Leere Eingabefelder fallen still heraus, sie sind kein Fehler.
     const bereinigt = linkUrls.map(l => l.trim()).filter(l => l !== '');
     if (bereinigt.some(l => !istWebLink(l))) {
-      if (fehlerImFenster) setFehler(LINK_UNGUELTIG);
+      if (imFenster()) setFehler(LINK_UNGUELTIG);
       else setError(LINK_UNGUELTIG);
       return;
     }
@@ -436,11 +448,12 @@ export function useMaterialFormular({
         // Ersatztext, nicht WARUM der Upload scheiterte (Netz, Zeitgrenze,
         // Status) -- genau das fehlte beim Android-Befund 01.10.2026
         // (services/uploadDiagnose.ts). Der Web-Dialog zeigt den Satz im
-        // Fenster, ohne Messung (wie die Dialoge des Supports).
+        // Fenster, ohne Messung (wie die Dialoge des Supports) -- solange er
+        // noch da ist; sonst geht er wie in der App, mit Ort.
         const meldung = fehlerText(err, dateienStehenAus
           ? 'Das Material ist gespeichert, die Dateien noch nicht. Tippe noch einmal auf Speichern.'
           : 'Fehler beim Speichern');
-        if (fehlerImFenster) setFehler(meldung);
+        if (imFenster()) setFehler(meldung);
         else setError(meldung, { ort: dateienStehenAus ? 'material-dateien-hochladen' : 'material-speichern', fehler: err });
       } finally {
         setSendeProzent(0);
