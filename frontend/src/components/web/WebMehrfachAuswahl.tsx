@@ -4,6 +4,12 @@
 // Ankreuzfeld; gleiche Optik wie die Auswahl mit Suche (WebAuswahlSuche).
 // Die App nimmt dafuer ein IonSelect mit multiple, das im Browser ein
 // eigenes Fenster oeffnet.
+//
+// Gewählte Werte, die die Liste nicht zeigt -- Jahrgänge eines Events
+// außerhalb der eigenen, eine Kategorie, die es nicht mehr gibt --, bleiben
+// beim Umschalten erhalten, hinten angehängt. Sonst fielen sie beim ersten
+// Klick still heraus und das Speichern entfernte sie. Die App schaltet
+// ebenso relativ zum bisherigen Stand um.
 
 import React, { useId } from 'react';
 
@@ -16,7 +22,7 @@ export interface WebMehrfachEintrag {
 export interface WebMehrfachAuswahlProps {
   label: string;
   eintraege: ReadonlyArray<WebMehrfachEintrag>;
-  /** Die gewählten Werte; Reihenfolge wie in `eintraege`. */
+  /** Die gewählten Werte. Zurück kommen die gezeigten in der Reihenfolge von `eintraege`, dahinter die, die die Liste nicht zeigt. */
   werte: ReadonlyArray<string>;
   onWerte: (werte: string[]) => void;
   pflicht?: boolean;
@@ -34,7 +40,9 @@ const WebMehrfachAuswahl: React.FC<WebMehrfachAuswahlProps> = ({
   const umschalten = (wert: string, an: boolean) => {
     const neu = new Set(gewaehlt);
     if (an) neu.add(wert); else neu.delete(wert);
-    onWerte(eintraege.map((e) => e.wert).filter((w) => neu.has(w)));
+    const gezeigt = eintraege.map((e) => e.wert);
+    const sichtbar = new Set(gezeigt);
+    onWerte([...gezeigt.filter((w) => neu.has(w)), ...[...neu].filter((w) => !sichtbar.has(w))]);
   };
   return (
     <fieldset className="web-wahl" disabled={deaktiviert} aria-required={pflicht ? 'true' : undefined} aria-describedby={hinweis ? hinweisId : undefined}>

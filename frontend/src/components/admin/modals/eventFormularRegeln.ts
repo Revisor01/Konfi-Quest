@@ -105,22 +105,11 @@ export const verfuegbarePunktearten = (jahrgangIds: readonly number[], jahrgaeng
 };
 
 /**
- * Neue Auswahl aus einer Ankreuzliste, die nur einen Teil der gespeicherten
- * Werte zeigt (Gegenprüfung 11.10.2026). Admins und Teamer:innen bekommen in
- * GET /admin/jahrgaenge nur ihre eigenen Jahrgänge; ein Event kann zusätzlich
- * einem fremden gehören. Die Liste liefert nur die gezeigten Haken zurück --
- * was sie nicht zeigt, bleibt, wie es war, statt still aus jahrgang_ids zu
- * fallen. Die App schaltet ebenso relativ zum bisherigen Stand um. Erst die
- * gezeigten in der Reihenfolge der Liste, dann die verdeckten.
+ * Gewählte Werte, die die Liste nicht zeigt -- in der Reihenfolge der Auswahl.
+ * Admins und Teamer:innen bekommen in GET /admin/jahrgaenge nur ihre eigenen
+ * Jahrgänge; ein Event kann zusätzlich einem fremden gehören. Die Ankreuzliste
+ * (WebMehrfachAuswahl) behält solche Werte beim Umschalten; der Dialog nennt sie.
  */
-export const mitSichtbarerAuswahl = (
-  bisher: readonly number[], gezeigt: readonly number[], gewaehlt: readonly number[],
-): number[] => {
-  const sichtbar = new Set(gezeigt);
-  return [...gewaehlt.filter((id) => sichtbar.has(id)), ...bisher.filter((id) => !sichtbar.has(id))];
-};
-
-/** Gewählte Werte, die die Liste nicht zeigt -- in der Reihenfolge der Auswahl. */
 export const verdeckteAuswahl = (gewaehlt: readonly number[], gezeigt: readonly number[]): number[] => {
   const sichtbar = new Set(gezeigt);
   return gewaehlt.filter((id) => !sichtbar.has(id));

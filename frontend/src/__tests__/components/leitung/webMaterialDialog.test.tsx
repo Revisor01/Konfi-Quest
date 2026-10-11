@@ -352,7 +352,8 @@ describe('Speichern', () => {
       title: 'Liederbuch Sommer',
       description: 'Alle Lieder für das Lagerfeuer',
       event_ids: [5],
-      jahrgang_ids: [99, 11, 12],
+      // Die gezeigten in Listenfolge, der verdeckte 99 hinten (WebMehrfachAuswahl).
+      jahrgang_ids: [11, 12, 99],
       link_urls: ['https://beispiel.example/lieder'],
     });
     expect(h.apiPost).not.toHaveBeenCalled();
