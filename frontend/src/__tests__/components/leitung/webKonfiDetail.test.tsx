@@ -432,7 +432,7 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
 
   // Offenes steht OBEN in der jeweiligen Liste, kein eigener Bereich
   // (Simon, 09.10.2026).
-  it('Offene Antraege stehen oben in den Aktivitaeten, ohne "(gemeldet)"; mit Recht oeffnet "Pruefen" das Fenster der Antragsliste', async () => {
+  it('Offene Antraege stehen oben in den Aktivitaeten, ohne "(gemeldet)"; mit Recht oeffnet "Pruefen" den Dialog "Aktivität prüfen" mit denselben Folgen wie in der App', async () => {
     await oeffnen();
     expect(screen.queryByRole('region', { name: 'Offene Anträge' })).toBeNull();
     const akt = karte('Aktivitäten');
@@ -446,10 +446,30 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     // Der Zaehler im Untertitel zaehlt nur Verbuchtes (zwei Aktivitaeten).
     expect(akt).toHaveTextContent('3 Punkte aus 2 Aktivitäten');
     expect(h.apiGet).toHaveBeenCalledWith('/admin/activities/requests', { params: { user_id: ID, status: 'pending' } });
+    // Seit 11.10.2026 im Browser der Dialog der Web-Fassung statt des Fensters
+    // der App (Simon: „Web braucht eigene kompaktere Modale überall"); geprüft
+    // im Einzelnen in termineWeb/webAntragPruefenDialog.test.tsx.
+    h.antworten.set('/admin/activities/requests/71', {
+      id: 71, konfi_id: ID, konfi_name: 'Anna Müller', activity_id: 4, activity_name: 'Gemeindebrief austragen',
+      activity_type: 'gemeinde', activity_points: 2, activity_target_role: 'konfi', requested_date: '2026-10-02',
+      photo_filename: 'foto.jpg', status: 'pending', created_at: '2026-10-02T08:00:00Z', updated_at: '2026-10-02T08:00:00Z',
+    });
     fireEvent.click(offen.getByRole('button', { name: 'Aktivität Gemeindebrief austragen prüfen' }));
-    const pruefen = fenster(ActivityRequestModal);
-    expect(pruefen).toHaveLength(1);
-    expect((pruefen[0].props as { requestId?: number }).requestId).toBe(71);
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität prüfen' });
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/activities/requests/71');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Genehmigen' })).toBeInTheDocument());
+    expect(fenster(ActivityRequestModal)).toHaveLength(0);
+
+    // Nach der Entscheidung dieselben Folgen wie im Fenster der App: die
+    // Ansicht lädt neu, Antragszähler und Konfi-Liste laufen an.
+    const vorher = h.apiGet.mock.calls.filter(([pfad]) => pfad === `/admin/konfis/${ID}`).length;
+    h.apiPut.mockResolvedValue({ data: {} });
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Genehmigen' })); });
+    for (let i = 0; i < 6; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(h.apiPut).toHaveBeenCalledWith('/admin/activities/requests/71', { status: 'approved', admin_comment: '' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.apiGet.mock.calls.filter(([pfad]) => pfad === `/admin/konfis/${ID}`).length).toBe(vorher + 1);
+    expect(h.triggerRefresh.mock.calls.map((a) => a[0])).toEqual(['requests', 'konfis']);
   });
 
   it('Offener Antrag ohne Recht: kein "Pruefen", nur das Foto', async () => {

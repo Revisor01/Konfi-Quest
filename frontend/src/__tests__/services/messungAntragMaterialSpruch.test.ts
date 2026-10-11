@@ -358,23 +358,25 @@ const hinterAufrufVorCatch = (datei: string, aufruf: string, messung: string) =>
 };
 
 describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
-  it('Leitung entscheidet einen Antrag (ActivityRequestModal)', () => {
+  // Seit dem 11.10.2026 steht die Logik in useAntragPruefen -- dieselbe für
+  // das Modal der App und den Dialog der Web-Fassung.
+  it('Leitung entscheidet einen Antrag (useAntragPruefen: Modal der App und Dialog im Browser)', () => {
     hinterAufrufVorCatch(
-      'src/components/admin/modals/ActivityRequestModal.tsx',
+      'src/components/admin/modals/useAntragPruefen.ts',
       'await api.put(`/admin/activities/requests/${request.id}`, body);',
       "trackHandlung('antrag-entschieden', {"
     );
   });
 
   it('Antrag: Entscheidung und Antragsteller kommen aus dem Antrag, nicht aus Freitext', () => {
-    const quelle = lies('src/components/admin/modals/ActivityRequestModal.tsx');
+    const quelle = lies('src/components/admin/modals/useAntragPruefen.ts');
     expect(quelle).toContain(
-      "trackHandlung('antrag-entschieden', {\n            entscheidung: selectedAction === 'approve' ? 'angenommen' : 'abgelehnt',\n            antrag_von: request.activity_target_role\n          });"
+      "trackHandlung('antrag-entschieden', {\n            entscheidung: aktion === 'approve' ? 'angenommen' : 'abgelehnt',\n            antrag_von: request.activity_target_role\n          });"
     );
   });
 
   it('Antrag: genau eine Messstelle — offline eingereihte Entscheidungen zählen nicht', () => {
-    const quelle = lies('src/components/admin/modals/ActivityRequestModal.tsx');
+    const quelle = lies('src/components/admin/modals/useAntragPruefen.ts');
     // Eine einzige Messung, und die steht (Test oben) vor dem catch des
     // Online-Zweigs; der Offline-Zweig mit writeQueue folgt erst danach.
     expect(quelle.split('trackHandlung(').length - 1).toBe(1);

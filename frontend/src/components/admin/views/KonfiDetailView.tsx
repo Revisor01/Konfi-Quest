@@ -80,6 +80,7 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { tastaturKlick } from '../../../utils/tastatur';
 import WebKonfiDetail from '../web/leitung/WebKonfiDetail';
+import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
@@ -146,6 +147,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const isTeamer = targetRole === 'teamer';
   const fotoAntragRef = React.useRef<number | null>(null);
   const pruefAntragRef = React.useRef<number | null>(null);
+  // Im breiten Layout öffnet „Prüfen" eines offenen Antrags den Dialog der
+  // Web-Fassung (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale
+  // überall"); Logik und Folgen wie im Modal der App (useAntragPruefen).
+  const [webPruefAntrag, setWebPruefAntrag] = useState<{ id: number; mitFoto: boolean } | null>(null);
   // Anwesenheit eintragen ist Leitungssache (requireAdmin an der Route); je
   // Termin entscheidet zusaetzlich darf_verbuchen.
   const kannVerbuchen = darfTermineVerwalten(user);
@@ -287,6 +292,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Fenster wie in der Antragsliste (Genehmigen, Ablehnen mit Grund), mit
   // denselben Folgen danach -- Neuladen, Antragszähler ('requests') und
   // Punkte in der Konfi-Liste ('konfis'), wie AdminEventsPage.
+  const nachAntragEntschieden = () => {
+    void loadKonfiData();
+    triggerRefresh('requests');
+    triggerRefresh('konfis');
+  };
   const [presentPruefModal, dismissPruefModal] = useIonModal(ActivityRequestModal, {
     get requestId() { return pruefAntragRef.current; },
     onClose: () => {
@@ -296,9 +306,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     onSuccess: () => {
       pruefAntragRef.current = null;
       dismissPruefModal();
-      void loadKonfiData();
-      triggerRefresh('requests');
-      triggerRefresh('konfis');
+      nachAntragEntschieden();
     }
   });
 
@@ -793,6 +801,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     // Offener Antrag mit Recht: das Prüf-Fenster der Antragsliste, darin auch
     // das Foto. Ohne Recht (oder ohne Netz) bleibt es beim Foto.
     if (activity.isPending && activity.requestId && activity.darfEntscheiden && isOnline) {
+      // Im Browser (breit) der Dialog der Web-Fassung, sonst das Modal der App.
+      if (breit) {
+        setWebPruefAntrag({ id: activity.requestId, mitFoto: !!activity.hasPhoto });
+        return;
+      }
       pruefAntragRef.current = activity.requestId;
       presentPruefModal({ presentingElement: presentingElement || undefined });
       return;
@@ -909,6 +922,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
 
   if (breit) {
     return (
+      <>
       <WebKonfiDetail
         konfiId={konfiId}
         laedt={loading}
@@ -947,6 +961,15 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         onRueckblick={setWrappedModalData}
         onTeamerSeit={handleTeamerSeit}
       />
+      {webPruefAntrag && (
+        <WebAntragPruefenDialog
+          requestId={webPruefAntrag.id}
+          mitFoto={webPruefAntrag.mitFoto}
+          onGespeichert={nachAntragEntschieden}
+          onSchliessen={() => setWebPruefAntrag(null)}
+        />
+      )}
+      </>
     );
   }
 

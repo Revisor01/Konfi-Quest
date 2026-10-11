@@ -150,9 +150,12 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
   const faelle: Array<[string, string, string]> = [
     ['konfi/views/EventDetailView.tsx', "url: `/konfi/events/${eventData.id}/opt-out`", "methode: 'POST'"],
     ['konfi/views/EventDetailView.tsx', "url: `/konfi/events/${eventData.id}/register`", "methode: 'DELETE'"],
-    ['konfi/modals/ActivityRequestModal.tsx', "url: '/konfi/requests'", "methode: 'POST'"],
+    // Konfis und Team melden über useAktivitaetMelden (11.10.2026): die Route
+    // aus MELDE_ROLLEN, eingereiht unter url: routen.antrag.
+    ['shared/useAktivitaetMelden.ts', 'url: routen.antrag', "methode: 'POST'"],
+    ['shared/useAktivitaetMelden.ts', "antrag: '/konfi/requests'", "methode: 'POST'"],
+    ['shared/useAktivitaetMelden.ts', "antrag: '/teamer/requests'", "methode: 'POST'"],
     ['konfi/views/ProfileView.tsx', "url: '/konfi/bible-translation'", "methode: 'PUT'"],
-    ['teamer/modals/TeamerActivityRequestModal.tsx', "url: '/teamer/requests'", "methode: 'POST'"],
     ['teamer/pages/TeamerEventsPage.tsx', "url: `/teamer/events/${event.id}/zusage`", "methode: 'POST'"],
     ['teamer/pages/TeamerProfilePage.tsx', "url: '/teamer/bible-translation'", "methode: 'PUT'"],
   ];
@@ -165,8 +168,8 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
   });
 
   it('jeder POST, der nach einem Abbruch eingereiht werden darf, traegt die Zusicherung mit Begruendung', () => {
-    for (const datei of ['konfi/views/EventDetailView.tsx', 'konfi/modals/ActivityRequestModal.tsx',
-      'teamer/modals/TeamerActivityRequestModal.tsx', 'teamer/pages/TeamerEventsPage.tsx']) {
+    for (const datei of ['konfi/views/EventDetailView.tsx', 'shared/useAktivitaetMelden.ts',
+      'teamer/pages/TeamerEventsPage.tsx']) {
       expect(lies(datei), datei).toContain('idempotent: true');
     }
   });

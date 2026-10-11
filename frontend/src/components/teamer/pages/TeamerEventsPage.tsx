@@ -98,6 +98,7 @@ import { track, trackHandlung, trackMitmachenAnsicht } from '../../../services/a
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
+import WebAktivitaetMeldenDialog from '../../shared/web/termine/WebAktivitaetMeldenDialog';
 import { mitgliedSegmentAusAdresse, type EigenerAntragFilter, type TeamEventFilter } from '../../shared/web/termine/terminFilter';
 import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
 import { EIGENE_ANTRAEGE_START, MITGLIED_BEREICHE, TEAM_EVENTS, TEAM_EVENTS_LEER_TITEL } from '../../../seiten/mitmachenMitglied';
@@ -217,6 +218,11 @@ const TeamerEventsPage: React.FC = () => {
   );
 
   useLiveRefresh('requests', refreshRequestsLive);
+
+  // Im breiten Layout öffnet „Aktivität melden" den Dialog der Web-Fassung
+  // (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale überall"); Logik
+  // und Folgen sind dieselben wie im Modal der App (useAktivitaetMelden).
+  const [meldenOffen, setMeldenOffen] = useState(false);
 
   const handleAddRequest = () => {
     presentRequestModal({
@@ -2145,6 +2151,7 @@ const TeamerEventsPage: React.FC = () => {
       );
     }
     return (
+      <>
       <WebMitmachenMitglied
         rolle="team"
         basisPfad="/teamer/events"
@@ -2160,12 +2167,20 @@ const TeamerEventsPage: React.FC = () => {
         gescheitert={gescheitert}
         onVergessen={(id) => { void vergessen(id); }}
         onScannen={() => presentScannerModal()}
-        onNeueAktivitaet={handleAddRequest}
+        onNeueAktivitaet={() => setMeldenOffen(true)}
         onAntragOeffnen={handleSelectRequest}
         onAntragLoeschen={handleDeleteRequest}
         neuLaden={refresh}
         antraegeNeuLaden={refreshRequests}
       />
+      {meldenOffen && (
+        <WebAktivitaetMeldenDialog
+          rolle="team"
+          onGemeldet={() => { void refreshRequests(); }}
+          onSchliessen={() => setMeldenOffen(false)}
+        />
+      )}
+      </>
     );
   }
 

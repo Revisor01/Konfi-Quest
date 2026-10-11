@@ -72,6 +72,7 @@ export const BEKANNTE_FEHLERTEXTE: readonly string[] = [
   'Bitte gib mindestens 2 Antwortmöglichkeiten ein',
   'Bitte lege Datum und Uhrzeit fest',
   'Bitte schreib etwas, bevor du einreichst',
+  'Bitte wähle ein Datum aus',
   'Bitte wähle eine Aktivität aus',
   'Bitte wähle eine Datei aus',
   'Bitte wähle einen Jahrgang aus',

@@ -32,6 +32,7 @@ import { useBadge } from '../../../contexts/BadgeContext';
 import SegmentZahl from '../../shared/SegmentZahl';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
+import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
 import { segmentAusAdresse } from '../web/termine/typen';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 import { trackBereich } from '../../../services/analytics';
@@ -184,6 +185,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // --- Aktivitäten-State ---
   const [modalRequestId, setModalRequestId] = useState<number | null>(null);
+  // Im breiten Layout öffnet „Prüfen"/„Ansehen" den Dialog der Web-Fassung
+  // (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale überall"); Logik
+  // und Folgen sind dieselben wie im Modal der App (useAntragPruefen).
+  const [webAntrag, setWebAntrag] = useState<ActivityRequest | null>(null);
 
   // Modal mit useIonModal Hook - löst Tab-Navigation Problem
   // Haelt den "ungespeicherte Änderungen"-Stand des EventModals, damit canDismiss
@@ -260,6 +265,18 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     dismiss: () => dismissAbsageModal()
   });
 
+  // Nach einer Entscheidung -- im Modal der App wie im Dialog der Web-Fassung.
+  const nachAntragEntschieden = () => {
+    refreshRequests();
+    // Genehmigen/Ablehnen ändert die Anzahl offener Anträge -> 'requests'
+    // triggern, damit das Events-Tab-Badge (BadgeContext) sofort aktualisiert
+    // statt erst beim 30s-Poll.
+    triggerRefresh('requests');
+    // Genehmigen/Ablehnen ändert Konfi-Punkte -> Admin-Konfi-Liste live
+    // aktualisieren, damit man nicht manuell refreshen muss.
+    triggerRefresh('konfis');
+  };
+
   const [presentRequestModalHook, dismissRequestModalHook] = useIonModal(ActivityRequestModal, {
     requestId: modalRequestId,
     onClose: () => {
@@ -269,14 +286,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     onSuccess: () => {
       dismissRequestModalHook();
       setModalRequestId(null);
-      refreshRequests();
-      // Genehmigen/Ablehnen ändert die Anzahl offener Anträge -> 'requests'
-      // triggern, damit das Events-Tab-Badge (BadgeContext) sofort aktualisiert
-      // statt erst beim 30s-Poll.
-      triggerRefresh('requests');
-      // Genehmigen/Ablehnen ändert Konfi-Punkte -> Admin-Konfi-Liste live
-      // aktualisieren, damit man nicht manuell refreshen muss.
-      triggerRefresh('konfis');
+      nachAntragEntschieden();
     }
   });
 
@@ -798,6 +808,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Antrag prüfen ...) sind dieselben; die Web-Fassung bekommt sie hereingereicht.
   if (breit) {
     return (
+      <>
       <WebMitmachenLeitung
         pageRef={pageRef}
         presentingElement={presentingElement}
@@ -819,10 +830,20 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
           zuruecknehmen: handleAbsageZuruecknehmen,
           loeschen: handleDeleteEvent,
         }}
-        antragAktionen={{ pruefen: handleSelectRequest, zuruecksetzen: handleResetRequest }}
+        antragAktionen={{ pruefen: setWebAntrag, zuruecksetzen: handleResetRequest }}
         neuLaden={async () => { await refreshEvents(); await refreshCancelled(); }}
         antraegeNeuLaden={refreshRequests}
       />
+      {webAntrag && (
+        <WebAntragPruefenDialog
+          requestId={webAntrag.id}
+          nurAnsehen={webAntrag.status !== 'pending' || webAntrag.darf_entscheiden === false}
+          mitFoto={!!webAntrag.photo_filename}
+          onGespeichert={nachAntragEntschieden}
+          onSchliessen={() => setWebAntrag(null)}
+        />
+      )}
+      </>
     );
   }
 

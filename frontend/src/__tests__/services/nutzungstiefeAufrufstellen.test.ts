@@ -65,8 +65,9 @@ const STELLEN: Array<{
   // die Sammelverbuchung misst weiter in EventDetailView.
   // Simon, 27.09.2026: Anträge, Material, Konfispruch
   // (docs/messung/umami.md, U1–U3).
+  // Seit dem 11.10.2026 in useAntragPruefen (Modal der App und Dialog im Browser).
   {
-    datei: 'src/components/admin/modals/ActivityRequestModal.tsx',
+    datei: 'src/components/admin/modals/useAntragPruefen.ts',
     handlung: 'antrag-entschieden',
     vorher: 'api.put(`/admin/activities/requests/${request.id}`, body)'
   },
