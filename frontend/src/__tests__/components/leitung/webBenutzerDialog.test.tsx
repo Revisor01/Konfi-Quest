@@ -8,6 +8,11 @@
 // App-Fenster), Felder mit Namen, Vorbelegung, Rollen und Rechte wie in der
 // App, Pruefung mit Meldung, Speichern mit genau diesem Koerper an genau diese
 // Route, Abbrechen ohne Aufruf, ohne Netz gesperrt.
+//
+// Meldungen stehen IM Dialog (role="alert"), nicht oben: Die Meldung oben ist
+// ein IonToast in <ion-app> und laege im Browser unter dem abgedunkelten Grund
+// des Dialogs (Gegenpruefung 11.10.2026). Deshalb hier: im Dialog der Text,
+// und setError (die Meldung oben) wird nicht gerufen.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -100,6 +105,9 @@ const DETAILS: Record<number, Record<string, unknown>> = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Auch die Einmal-Antworten (mockRejectedValueOnce) eines vorigen Tests weg.
+  h.apiPost.mockReset();
+  h.apiPut.mockReset();
   Object.assign(h.stand, neuerStand());
   h.breit = true;
   h.online = true;
@@ -127,6 +135,8 @@ const jahrgang = (d: HTMLElement, name: string) => within(d).getByRole('checkbox
 const schalter = (bereich: HTMLElement, name: string) => within(bereich).getByRole('switch', { name }) as HTMLInputElement;
 const knopf = (d: HTMLElement, name: string) => within(d).getByRole('button', { name }) as HTMLButtonElement;
 const klicken = async (el: HTMLElement) => { await act(async () => { fireEvent.click(el); }); };
+/** Der Text der Meldung im Dialog (role="alert"). */
+const meldung = (d: HTMLElement) => within(d).getByRole('alert').textContent;
 
 /** Seite rendern und den Dialog über den Knopf bzw. den Namen in der Zeile öffnen. */
 const anlegen = async () => {
@@ -207,19 +217,38 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     expect(optionen(rolle(d))).toEqual(['Gemeindeleitung', 'Leitung', 'Teamer:in']);
   });
 
-  it('Prüfung mit Meldung: ohne Benutzername, ohne Anzeigename, ohne Passwort wird nichts gesendet', async () => {
+  it('Prüfung mit Meldung im Dialog: ohne Benutzername, ohne Anzeigename, ohne Passwort wird nichts gesendet', async () => {
     const d = await anlegen();
+    expect(within(d).queryByRole('alert')).toBeNull();
     await klicken(knopf(d, 'Anlegen'));
-    expect(h.setError).toHaveBeenLastCalledWith('Benutzername ist erforderlich');
+    expect(meldung(d)).toBe('Benutzername ist erforderlich');
+    // Die nächste Eingabe räumt die Meldung weg.
     tippen(d, 'Benutzername', 'kim.neu');
+    expect(within(d).queryByRole('alert')).toBeNull();
     await klicken(knopf(d, 'Anlegen'));
-    expect(h.setError).toHaveBeenLastCalledWith('Anzeigename und Rolle sind erforderlich');
+    expect(meldung(d)).toBe('Anzeigename und Rolle sind erforderlich');
     tippen(d, 'Anzeigename', 'Kim Neu');
     rolleWaehlen(d, 3);
     await klicken(knopf(d, 'Anlegen'));
-    expect(h.setError).toHaveBeenLastCalledWith('Passwort ist für neue Benutzer erforderlich');
+    expect(meldung(d)).toBe('Passwort ist für neue Benutzer erforderlich');
+    expect(h.setError).not.toHaveBeenCalled();
     expect(h.apiPost).not.toHaveBeenCalled();
     expect(dialog('Benutzer:in anlegen')).toBeInTheDocument();
+  });
+
+  it('die Meldung rückt in den sichtbaren Teil des Dialogs (der breite Dialog rollt, „Anlegen“ steht unten)', async () => {
+    const gerollt = vi.fn();
+    const vorher = HTMLElement.prototype.scrollIntoView;
+    HTMLElement.prototype.scrollIntoView = gerollt;
+    try {
+      const d = await anlegen();
+      await klicken(knopf(d, 'Anlegen'));
+      expect(gerollt).toHaveBeenCalledTimes(1);
+      expect(gerollt.mock.contexts[0]).toBe(within(d).getByRole('alert'));
+      expect(gerollt).toHaveBeenCalledWith({ block: 'nearest' });
+    } finally {
+      HTMLElement.prototype.scrollIntoView = vorher;
+    }
   });
 
   it('Speichern: POST /users mit genau diesem Körper, dann die Jahrgänge mit den Rechten; Dialog zu, Liste neu', async () => {
@@ -252,7 +281,7 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     expect(h.setError).not.toHaveBeenCalled();
   });
 
-  it('ein Fehler des Servers bleibt im Dialog und meldet sich mit dem Text des Servers', async () => {
+  it('ein Fehler des Servers (409) bleibt im Dialog und steht dort mit dem Text des Servers', async () => {
     h.apiPost.mockRejectedValueOnce({ response: { status: 409, data: { error: 'Benutzername bereits vergeben' } } });
     const d = await anlegen();
     tippen(d, 'Anzeigename', 'Kim Neu');
@@ -260,9 +289,29 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     tippen(d, 'Passwort', BEISPIELWERT);
     rolleWaehlen(d, 3);
     await klicken(knopf(d, 'Anlegen'));
-    expect(h.setError).toHaveBeenCalledWith('Benutzername bereits vergeben');
+    expect(meldung(d)).toBe('Benutzername bereits vergeben');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
     expect(dialog('Benutzer:in anlegen')).toBeInTheDocument();
     expect(h.refresh).not.toHaveBeenCalled();
+    // Ein neuer Versuch räumt die alte Meldung weg und klappt.
+    tippen(d, 'Benutzername', 'kim.neu2');
+    await klicken(knopf(d, 'Anlegen'));
+    expect(h.apiPost).toHaveBeenNthCalledWith(2, '/users', expect.objectContaining({ username: 'kim.neu2' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('ohne Antwort des Servers der Ersatztext im Dialog', async () => {
+    h.apiPost.mockRejectedValueOnce(new Error('Network Error'));
+    const d = await anlegen();
+    tippen(d, 'Anzeigename', 'Kim Neu');
+    tippen(d, 'Benutzername', 'kim.neu');
+    tippen(d, 'Passwort', BEISPIELWERT);
+    rolleWaehlen(d, 3);
+    await klicken(knopf(d, 'Anlegen'));
+    expect(meldung(d)).toBe('Fehler beim Speichern des Benutzers');
+    expect(h.setError).not.toHaveBeenCalled();
   });
 
   it('Abbrechen, Schließen und Escape senden nichts', async () => {
@@ -288,7 +337,8 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     rolleWaehlen(d, 3);
     expect(knopf(d, 'Anlegen')).toBeDisabled();
     await act(async () => { fireEvent.submit(d.querySelector('form')!); });
-    expect(h.setError).toHaveBeenCalledWith(OFFLINE_AKTION_MELDUNG);
+    expect(meldung(d)).toBe(OFFLINE_AKTION_MELDUNG);
+    expect(h.setError).not.toHaveBeenCalled();
     expect(h.apiPost).not.toHaveBeenCalled();
   });
 });
@@ -314,6 +364,29 @@ describe('Benutzer:in bearbeiten', () => {
     expect(schalter(rechte, 'Events verbuchen').checked).toBe(false);
     expect(schalter(rechte, 'Challenge-Beiträge freigeben').checked).toBe(true);
     expect(within(d).queryByRole('group', { name: 'Rechte für 2027/28' })).toBeNull();
+  });
+
+  it('Anzeigename geleert: „Speichern“ meldet im Dialog, was fehlt, und sendet nichts', async () => {
+    const d = await bearbeiten('Sam Muster');
+    tippen(d, 'Anzeigename', '  ');
+    await klicken(knopf(d, 'Speichern'));
+    expect(meldung(d)).toBe('Anzeigename und Rolle sind erforderlich');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.apiPut).not.toHaveBeenCalled();
+    expect(h.apiPost).not.toHaveBeenCalled();
+  });
+
+  it('lässt sich die Person nicht laden, steht das im Dialog', async () => {
+    const laden = h.apiGet.getMockImplementation()!;
+    h.apiGet.mockImplementation(async (url: string) => {
+      if (url === '/users/3') throw new Error('Network Error');
+      return laden(url);
+    });
+    render(<AdminUsersPage />);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Sam Muster bearbeiten' })[0]);
+    const d = dialog('Benutzer:in bearbeiten');
+    await waitFor(() => expect(meldung(d)).toBe('Fehler beim Laden des Benutzers'));
+    expect(h.setError).not.toHaveBeenCalled();
   });
 
   it('Speichern: PUT /users/3 ohne Passwort, dann die Jahrgänge -- ein abgewählter fehlt', async () => {

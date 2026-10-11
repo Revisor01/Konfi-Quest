@@ -11,6 +11,11 @@
 // Gemeindeleitung (Leitung: alle drei, Team: Challenge-Beiträge). Wer in einer
 // anderen Gemeinde zuhause ist, behält Name, Benutzername und E-Mail gesperrt.
 //
+// Meldungen (Prüfung, Server, Laden, offline) stehen oben im Formular als
+// role="alert" und rücken beim Erscheinen ins Bild -- nicht als Meldung oben:
+// Die ist ein IonToast in <ion-app> und laege unter dem abgedunkelten Grund
+// dieses Dialogs (Gegenprüfung 11.10.2026). Die nächste Eingabe räumt sie weg.
+//
 // Geöffnet im breiten Layout von AdminUsersPage (Anlegen, Bearbeiten) und
 // AdminKonfisPage (Teamer:in anlegen, festeRolle 'teamer'); unter 992 px und in
 // den Apps bleibt das Fenster der App.
@@ -54,9 +59,9 @@ const zuweisungText = (z?: JahrgangsZuweisung): string | undefined => (z ? ['Zug
 const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRolle, onSchliessen, onGespeichert }) => {
   const {
     currentUser, isOnline, isSubmitting, loading, geladen, isEditMode, nameAutomatisch, nurRolle, formData, aendern,
-    jahrgaenge, user, jahrgangAssignments, jahrgangRechte, rechteFelder, rechteVergeben, getAllowedRoles,
+    fehler, jahrgaenge, user, jahrgangAssignments, jahrgangRechte, rechteFelder, rechteVergeben, getAllowedRoles,
     handleSave, setzeRecht, handleJahrgangAssignment,
-  } = useBenutzerFormular({ userId, festeRolle, onSuccess: onGespeichert });
+  } = useBenutzerFormular({ userId, festeRolle, onSuccess: onGespeichert, fehlerImDialog: true });
   const sperrt = isSubmitting || nurRolle;
   // Das Formular steht erst da, wenn Rollen, Jahrgänge (und die Person) geladen sind.
   const laedt = loading || !geladen;
@@ -67,6 +72,10 @@ const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRoll
   useEffect(() => {
     if (!laedt) formular.current?.querySelector<HTMLElement>('input:not([disabled])')?.focus();
   }, [laedt]);
+  // Der Dialog rollt, „Anlegen“ steht unten: Eine Meldung rückt ins Bild.
+  useEffect(() => {
+    if (fehler) formular.current?.querySelector<HTMLElement>('[role="alert"]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [fehler]);
 
   // Die Rollen, die dieses Konto vergeben darf (wie in der App: nie Konfi oder
   // Super-Admin, die Leitung nur Team). Eine Rolle, die nicht vergeben werden
@@ -101,6 +110,7 @@ const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRoll
       )}
     >
       <div className="web-formular" ref={formular}>
+        {fehler && <WebHinweis art="fehler" rolle="alert">{fehler}</WebHinweis>}
         {!isOnline && (
           <WebHinweis art="warnung">Du bist offline. Speichern geht erst wieder mit Internetverbindung.</WebHinweis>
         )}

@@ -6,6 +6,11 @@
 //
 // Speichern: PUT /admin/jahrgaenge/:id bzw. POST /admin/jahrgaenge, offline
 // (und beim Bearbeiten nach einem Netzabbruch) in die Warteschlange.
+//
+// Meldungen: in der App oben (setError, mit der anonymen Fehlermessung), im
+// Dialog des Browsers (`fehlerImDialog`) im Dialog selbst (`fehler`) -- die
+// Meldung oben ist ein IonToast in <ion-app> und laege dort unter dem
+// abgedunkelten Grund des Dialogs (Gegenprüfung 11.10.2026).
 
 import { useEffect, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -73,13 +78,34 @@ export const jahrgangVorbelegen = (jahrgang?: JahrgangVorlage | null): JahrgangF
       konfspruch_enabled: true
     });
 
+export interface JahrgangFormularOptionen {
+  /**
+   * Meldungen im Formular zeigen (`fehler`; der Dialog des Browsers) statt
+   * oben als Meldung (App) -- eine Meldung oben laege unter dem Dialog.
+   */
+  fehlerImDialog?: boolean;
+}
+
 /**
  * @param jahrgang  der bearbeitete Jahrgang; null/undefined: ein neuer.
  * @param onGespeichert  nach dem Speichern (auch eingereiht): Liste neu laden, Fenster schließen.
  */
-export function useJahrgangFormular(jahrgang: JahrgangVorlage | null | undefined, onGespeichert: () => void) {
-  const { user, setSuccess, setError } = useApp();
+export function useJahrgangFormular(
+  jahrgang: JahrgangVorlage | null | undefined,
+  onGespeichert: () => void,
+  { fehlerImDialog = false }: JahrgangFormularOptionen = {},
+) {
+  const { user, setSuccess, setError: meldungOben } = useApp();
   const [loading, setLoading] = useState(false);
+  // Die Meldung im Dialog; leer, sobald jemand etwas ändert oder neu speichert.
+  const [fehler, setFehler] = useState<string | null>(null);
+  // Wohin eine Meldung geht (siehe oben). Bewusst unter dem Namen setError:
+  // Die Positivliste der Fehlertexte (utils/bekannteFehlertexte.ts) liest die
+  // Texte an den Aufrufstellen von setError -- die App meldet sie weiter oben.
+  const setError = (...meldung: Parameters<typeof meldungOben>) => {
+    if (fehlerImDialog) setFehler(meldung[0] || null);
+    else meldungOben(...meldung);
+  };
 
   // Direkt-Zuweisung beim Anlegen: Auswahl der Personen, die Zugriff auf den
   // neuen Jahrgang bekommen. Optional — niemand MUSS zugewiesen werden.
@@ -121,6 +147,7 @@ export function useJahrgangFormular(jahrgang: JahrgangVorlage | null | undefined
   }, [jahrgang, user?.role_name]);
 
   const handleSubmit = async () => {
+    setFehler(null);
     if (!formData.name.trim()) {
       setError('Name ist erforderlich');
       return;
@@ -187,11 +214,21 @@ export function useJahrgangFormular(jahrgang: JahrgangVorlage | null | undefined
     loading,
     formData,
     setFormData,
-    /** Einzelne Felder ändern (Web-Dialog). */
-    aendern: (teil: Partial<JahrgangFormularDaten>) => setFormData((f) => ({ ...f, ...teil })),
+    /** Einzelne Felder ändern (Web-Dialog); räumt die Meldung im Dialog weg. */
+    aendern: (teil: Partial<JahrgangFormularDaten>) => {
+      setFehler(null);
+      setFormData((f) => ({ ...f, ...teil }));
+    },
+    /** Die Meldung im Dialog (nur mit `fehlerImDialog`). */
+    fehler,
     zuweisbare,
     ausgewaehlt,
     setAusgewaehlt,
+    /** Die Personen mit Zugriff wählen (Web-Dialog); räumt die Meldung im Dialog weg. */
+    personenWaehlen: (auswahl: { [id: number]: boolean }) => {
+      setFehler(null);
+      setAusgewaehlt(auswahl);
+    },
     zuweisungMoeglich,
     handleSubmit,
   };

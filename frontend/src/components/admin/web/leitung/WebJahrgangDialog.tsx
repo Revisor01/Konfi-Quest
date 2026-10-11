@@ -7,10 +7,15 @@
 // mindestens eine Punkteart bleibt an, die Ziele reichen von 1 bis 20,
 // offline geht das Speichern in die Warteschlange.
 //
+// Meldungen (Prüfung, Server) stehen oben im Formular als role="alert" und
+// rücken beim Erscheinen ins Bild -- nicht als Meldung oben: Die ist ein
+// IonToast in <ion-app> und laege unter dem abgedunkelten Grund dieses
+// Dialogs (Gegenprüfung 11.10.2026). Die nächste Eingabe räumt sie weg.
+//
 // Geoeffnet von AdminJahrgaengeePage im breiten Layout ("Neuer Jahrgang",
 // "Bearbeiten"); unter 992 px und in den Apps bleibt das Fenster der App.
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useApp } from '../../../../contexts/AppContext';
 import { rollenName } from '../../../../utils/rollenNamen';
 import { useJahrgangFormular, ZIEL_MAX, ZIEL_MIN, type JahrgangVorlage } from '../../useJahrgangFormular';
@@ -41,7 +46,16 @@ const letztePunkteart = (art: string, konfis?: number): string =>
 
 const WebJahrgangDialog: React.FC<WebJahrgangDialogProps> = ({ jahrgang, onSchliessen, onGespeichert }) => {
   const { isOnline } = useApp();
-  const { loading, formData, aendern, zuweisbare, ausgewaehlt, setAusgewaehlt, zuweisungMoeglich, handleSubmit } = useJahrgangFormular(jahrgang, onGespeichert);
+  const { loading, formData, aendern, fehler, zuweisbare, ausgewaehlt, personenWaehlen, zuweisungMoeglich, handleSubmit } = useJahrgangFormular(
+    jahrgang,
+    onGespeichert,
+    { fehlerImDialog: true },
+  );
+  // Eine Meldung rückt ins Bild (mit vielen Personen zur Wahl rollt der Dialog).
+  const formular = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (fehler) formular.current?.querySelector<HTMLElement>('[role="alert"]')?.scrollIntoView?.({ block: 'nearest' });
+  }, [fehler]);
   const godi = formData.gottesdienst_enabled;
   const gemeinde = formData.gemeinde_enabled;
 
@@ -58,7 +72,8 @@ const WebJahrgangDialog: React.FC<WebJahrgangDialogProps> = ({ jahrgang, onSchli
         </>
       )}
     >
-      <div className="web-formular">
+      <div className="web-formular" ref={formular}>
+        {fehler && <WebHinweis art="fehler" rolle="alert">{fehler}</WebHinweis>}
         {!isOnline && (
           <WebHinweis art="warnung">
             Du bist offline. Der Jahrgang wird gespeichert, sobald du wieder online bist.
@@ -131,7 +146,7 @@ const WebJahrgangDialog: React.FC<WebJahrgangDialogProps> = ({ jahrgang, onSchli
               label="Personen mit Zugriff"
               eintraege={zuweisbare.map((p) => ({ wert: String(p.id), titel: p.display_name, beschreibung: rollenName(p.role_name) }))}
               werte={zuweisbare.filter((p) => ausgewaehlt[p.id]).map((p) => String(p.id))}
-              onWerte={(werte) => setAusgewaehlt(Object.fromEntries(werte.map((w) => [Number(w), true])))}
+              onWerte={(werte) => personenWaehlen(Object.fromEntries(werte.map((w) => [Number(w), true])))}
               leerText="Niemand aus Leitung oder Team."
               hinweis="Ausgewählte Personen sehen und bearbeiten den neuen Jahrgang sofort. Ohne Auswahl kannst du die Zuweisung später unter „Benutzer:innen“ vergeben."
               deaktiviert={loading}

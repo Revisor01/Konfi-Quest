@@ -4,6 +4,10 @@
 // und die echte Logik (useJahrgangFormular, dieselbe wie im Fenster der App).
 // Gemockt sind nur Server, Netzstand, Warteschlange, Kontext, das breite
 // Layout und Ionic.
+//
+// Meldungen stehen im Browser IM Dialog (role="alert"): Die Meldung oben (ein
+// IonToast in <ion-app>) laege unter dem abgedunkelten Grund des Dialogs
+// (Gegenpruefung 11.10.2026). Das Fenster der App meldet weiter oben.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
@@ -24,7 +28,11 @@ const h = vi.hoisted(() => ({
   user: {} as Record<string, unknown>,
 }));
 
-vi.mock('@ionic/react', async () => (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand));
+vi.mock('@ionic/react', async () => ({
+  ...(await (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand)),
+  // Das Fenster der App (JahrgangModal) zeigt die Punkteziele als Regler.
+  IonRange: () => null,
+}));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('../support/ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
@@ -57,6 +65,9 @@ const PERSONEN = [
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Auch die Einmal-Antworten (mockRejectedValueOnce) eines vorigen Tests weg.
+  h.apiPost.mockReset();
+  h.apiPut.mockReset();
   Object.assign(h.stand, neuerStand());
   h.breit = true;
   h.online = true;
@@ -76,6 +87,8 @@ const auswahl = (d: HTMLElement, name: string) => within(d).getByRole('combobox'
 const schalter = (d: HTMLElement, name: string) => within(d).getByRole('switch', { name }) as HTMLInputElement;
 const knopf = (d: HTMLElement, name: string) => within(d).getByRole('button', { name }) as HTMLButtonElement;
 const klicken = async (el: HTMLElement) => { await act(async () => { fireEvent.click(el); }); };
+/** Der Text der Meldung im Dialog (role="alert"). */
+const meldung = (d: HTMLElement) => within(d).getByRole('alert').textContent;
 
 const neuerJahrgang = async () => {
   render(<AdminJahrgaengeePage />);
@@ -106,6 +119,20 @@ describe('Jahrgang im Browser: Umschaltung', () => {
     expect(h.stand.fenster[0].props.jahrgang).toBeNull();
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('das Fenster der App meldet einen Fehler weiter oben (setError), nicht im Fenster', async () => {
+    h.breit = false;
+    h.apiPost.mockRejectedValueOnce(new Error('Network Error'));
+    render(<AdminJahrgaengeePage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Neuen Jahrgang anlegen' }));
+    const { komponente, props } = h.stand.fenster[0];
+    await act(async () => { render(React.createElement(komponente as React.FC<Record<string, unknown>>, props)); });
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Jahrgang 2028' } });
+    await klicken(screen.getByRole('button', { name: 'Jahrgang speichern' }));
+    expect(h.apiPost).toHaveBeenCalledWith('/admin/jahrgaenge', expect.objectContaining({ name: 'Jahrgang 2028' }));
+    expect(h.setError).toHaveBeenCalledWith('Fehler beim Speichern des Jahrgangs');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
 });
 
 describe('Neuer Jahrgang (Gemeindeleitung)', () => {
@@ -130,13 +157,35 @@ describe('Neuer Jahrgang (Gemeindeleitung)', () => {
     expect(h.apiGet).toHaveBeenCalledWith('/users');
   });
 
-  it('Prüfung mit Meldung: ohne Namen wird nichts gesendet', async () => {
+  it('Prüfung mit Meldung im Dialog: ohne Namen wird nichts gesendet; die nächste Eingabe räumt sie weg', async () => {
     const d = await neuerJahrgang();
+    expect(within(d).queryByRole('alert')).toBeNull();
     tippenName(d, '   ');
     await klicken(knopf(d, 'Anlegen'));
-    expect(h.setError).toHaveBeenCalledWith('Name ist erforderlich');
+    expect(meldung(d)).toBe('Name ist erforderlich');
+    expect(h.setError).not.toHaveBeenCalled();
     expect(h.apiPost).not.toHaveBeenCalled();
     expect(dialog('Neuer Jahrgang')).toBeInTheDocument();
+    tippenName(d, 'Jahrgang 2028');
+    expect(within(d).queryByRole('alert')).toBeNull();
+  });
+
+  it('ein Fehler des Servers bleibt im Dialog, mit dem Text des Servers bzw. dem Ersatztext', async () => {
+    h.apiPost
+      .mockRejectedValueOnce({ response: { status: 409, data: { error: 'Ein Jahrgang mit diesem Namen existiert bereits' } } })
+      .mockRejectedValueOnce(new Error('Network Error'));
+    const d = await neuerJahrgang();
+    tippenName(d, 'Jahrgang 2026');
+    await klicken(knopf(d, 'Anlegen'));
+    expect(meldung(d)).toBe('Ein Jahrgang mit diesem Namen existiert bereits');
+    await klicken(knopf(d, 'Anlegen'));
+    expect(meldung(d)).toBe('Fehler beim Speichern des Jahrgangs');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.apiPost).toHaveBeenCalledTimes(2);
+    // Anlegen reiht nach einem Abbruch nicht ein (sonst entstuende er womöglich doppelt).
+    expect(h.enqueue).not.toHaveBeenCalled();
+    expect(dialog('Neuer Jahrgang')).toBeInTheDocument();
+    expect(h.refresh).not.toHaveBeenCalled();
   });
 
   it('mindestens eine Punkteart bleibt an: Gemeinde aus sperrt den Gottesdienst-Schalter und sagt warum', async () => {

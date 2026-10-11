@@ -7,8 +7,12 @@
 // Laden:     GET /roles, GET /admin/jahrgaenge; beim Bearbeiten GET /users/:id.
 // Speichern: PUT /users/:id bzw. POST /users, danach
 //            POST /users/:id/jahrgaenge { jahrgang_assignments }.
-// Meldungen gehen wie bisher an setError (Meldung oben); nach dem Speichern
-// ruft der Hook onSuccess -- die Seite schließt und lädt neu.
+// Meldungen: in der App wie bisher an setError (Meldung oben, mit der
+// anonymen Fehlermessung); im Dialog des Browsers (`fehlerImDialog`) stehen sie
+// im Dialog selbst (`fehler`) -- die Meldung oben ist ein IonToast in <ion-app>
+// und laege dort unter dem abgedunkelten Grund des Dialogs (Gegenprüfung
+// 11.10.2026). Nach dem Speichern ruft der Hook onSuccess -- die Seite
+// schließt und lädt neu.
 
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -94,10 +98,25 @@ export interface BenutzerFormularOptionen {
    */
   festeRolle?: string;
   onSuccess: () => void;
+  /**
+   * Meldungen im Formular zeigen (`fehler`; der Dialog des Browsers) statt
+   * oben als Meldung (App) -- eine Meldung oben laege unter dem Dialog.
+   */
+  fehlerImDialog?: boolean;
 }
 
-export function useBenutzerFormular({ userId, festeRolle, onSuccess }: BenutzerFormularOptionen) {
-  const { setError, user: currentUser, isOnline } = useApp();
+export function useBenutzerFormular({ userId, festeRolle, onSuccess, fehlerImDialog = false }: BenutzerFormularOptionen) {
+  const { setError: meldungOben, user: currentUser, isOnline } = useApp();
+  // Die Meldung im Dialog; leer, sobald jemand etwas ändert oder neu speichert.
+  const [fehler, setFehler] = useState<string | null>(null);
+  // Wohin eine Meldung geht (siehe oben). Bewusst unter dem Namen setError:
+  // Die Positivliste der Fehlertexte (utils/bekannteFehlertexte.ts) liest die
+  // Texte an den Aufrufstellen von setError -- die App meldet sie weiter oben.
+  // Die App bekommt genau die Argumente wie vorher (Text, ggf. die Diagnose).
+  const setError = (...meldung: Parameters<typeof meldungOben>) => {
+    if (fehlerImDialog) setFehler(meldung[0] || null);
+    else meldungOben(...meldung);
+  };
   const { isSubmitting, guard } = useActionGuard();
   const [loading, setLoading] = useState(false);
   // Der erste Abruf ist durch (auch wenn er scheiterte). `loading` steht beim
@@ -278,6 +297,7 @@ export function useBenutzerFormular({ userId, festeRolle, onSuccess }: BenutzerF
   };
 
   const handleSave = async () => {
+    setFehler(null);
     // Die App sperrt den Knopf offline; im Browser schickt auch Enter im
     // Feld ab -- dann eine Meldung statt stillem Nichtstun.
     if (offlineBlockiert(isOnline, setError)) return;
@@ -366,6 +386,7 @@ export function useBenutzerFormular({ userId, festeRolle, onSuccess }: BenutzerF
   };
 
   const setzeRecht = (jahrgangId: number, feld: keyof FreigabeRechte, wert: boolean) => {
+    setFehler(null);
     setJahrgangRechte(prev => ({
       ...prev,
       [jahrgangId]: { ...alleRechte(prev[jahrgangId]), [feld]: wert }
@@ -373,6 +394,7 @@ export function useBenutzerFormular({ userId, festeRolle, onSuccess }: BenutzerF
   };
 
   const handleJahrgangAssignment = (jahrgangId: number, value: boolean) => {
+    setFehler(null);
     setJahrgangAssignments(prev => ({
       ...prev,
       [jahrgangId]: value
@@ -398,8 +420,13 @@ export function useBenutzerFormular({ userId, festeRolle, onSuccess }: BenutzerF
     nurRolle,
     formData,
     setFormData,
-    /** Einzelne Felder ändern (Web-Dialog). */
-    aendern: (teil: Partial<BenutzerFormularDaten>) => setFormData((f) => ({ ...f, ...teil })),
+    /** Einzelne Felder ändern (Web-Dialog); räumt die Meldung im Dialog weg. */
+    aendern: (teil: Partial<BenutzerFormularDaten>) => {
+      setFehler(null);
+      setFormData((f) => ({ ...f, ...teil }));
+    },
+    /** Die Meldung im Dialog (nur mit `fehlerImDialog`). */
+    fehler,
     roles,
     jahrgaenge,
     user,
