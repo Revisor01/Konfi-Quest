@@ -15,6 +15,11 @@
 // gespeichert wird: Fehlt etwas, sagt der Dialog es in sich selbst, bei den
 // Knöpfen -- ein gesperrter Knopf sagt nicht, warum. Die Knöpfe bleiben beim
 // Scrollen unten im Bild (theme/web/termine.css).
+// Während des Speicherns schließt nichts den Dialog (Abbrechen, X, Escape,
+// Klick daneben), wie bei den übrigen Dialogen der Web-Fassung: Das Event
+// würde sonst unbemerkt gespeichert, und eine Ablehnung des Servers ginge ins
+// Leere. Die Rückfrage „Ungespeicherte Änderungen" sendet nichts und bleibt
+// frei.
 
 import React, { useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -167,6 +172,7 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
       breit
       onSchliessen={abbrechen}
       onAbsenden={absenden}
+      gesperrt={isSubmitting}
       aktionen={(
         <>
           {/* Die Meldung steht bei den Knöpfen, die unten im Bild bleiben --
@@ -176,7 +182,7 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
               <WebHinweis art="fehler" rolle="alert">{fehler}</WebHinweis>
             </div>
           )}
-          <WebKnopf onClick={abbrechen}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={abbrechen} disabled={isSubmitting}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={loading || isSubmitting}>{absendenText}</WebKnopf>
         </>
       )}
