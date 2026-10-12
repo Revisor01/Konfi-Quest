@@ -402,10 +402,13 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
       if (status !== undefined && !STATUS.includes(status as TestVorgang['status'])) {
         return Promise.reject(ungueltig({ error: 'Validierungsfehler', details: [{ field: 'status', message: `status: ${STATUS.join(', ')}` }] }));
       }
-      const antwortAuf = alt ? undefined : koerper?.antwort_auf;
-      if (antwortAuf !== undefined && !(typeof antwortAuf === 'number' && Number.isInteger(antwortAuf) && antwortAuf > 0)) {
-        return Promise.reject(ungueltig({ error: 'Validierungsfehler', details: [{ field: 'antwort_auf', message: 'Kennung einer Mail erwartet' }] }));
+      // antwort_auf wie body('antwort_auf').optional({ values: 'null' }).not().isArray().isInt({ min: 1 }):
+      // null heißt „nicht angegeben", eine Kennung als Zeichenkette ('11') geht wie die Zahl.
+      const antwortAufRoh = alt ? undefined : (koerper?.antwort_auf ?? undefined);
+      if (antwortAufRoh !== undefined && (Array.isArray(antwortAufRoh) || !/^[-+]?[0-9]+$/.test(String(antwortAufRoh)) || Number(antwortAufRoh) < 1)) {
+        return Promise.reject(ungueltig({ error: 'Validierungsfehler', details: [{ field: 'antwort_auf', message: 'Ungültige Mail' }] }));
       }
+      const antwortAuf = antwortAufRoh === undefined ? undefined : Number(antwortAufRoh);
       const beantwortet = antwortAuf === undefined ? null : s.mails.find((m) => m.id === antwortAuf) ?? null;
       if (antwortAuf !== undefined && beantwortet?.vorgang_id !== id) {
         return Promise.reject(ungueltig({ error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' }));

@@ -89,6 +89,36 @@ describe('Attrappe wie der Server', () => {
     expect(ohne.nachricht).toMatchObject({ in_reply_to: mitBezug.nachricht.message_id });
   });
 
+  it('die Werte von `antwort_auf` und `status` wie die Prüfung des Servers: null heißt „nicht angegeben" bzw. ungültig, eine Kennung als Zeichenkette geht', async () => {
+    // backend/routes/supportVorgaenge.js: antwort_auf optional({ values: 'null' }) + not().isArray() + isInt({ min: 1 });
+    // status optional() (null wird geprüft) + isString + isIn.
+    const a = api();
+    const server = vorgaengeServer({
+      vorgaenge: [vorgang(1, { organization_id: 7 })],
+      mails: [
+        mail(11, 1, { message_id: '<m11@ex>', gesendet_am: '2026-10-03T07:00:00Z' }),
+        mail(12, 1, { richtung: 'aus', message_id: '<m12@kq>', in_reply_to: '<m11@ex>', referenzen: ['<m11@ex>'], gesendet_am: '2026-10-03T08:00:00Z' }),
+      ],
+    });
+    server.installieren(a);
+    // null wie ohne Angabe: der Bezug ist die jüngste Mail des Vorgangs (12), gleich welcher Richtung.
+    const ohne = (await a.post('/support/vorgaenge/1/antworten', { text: 'A', antwort_auf: null })).data as { nachricht: Record<string, unknown> };
+    expect(ohne.nachricht).toMatchObject({ in_reply_to: '<m12@kq>' });
+    // Eine Kennung als Zeichenkette prüft der Server wie eine Zahl (isInt).
+    const alsText = (await a.post('/support/vorgaenge/1/antworten', { text: 'B', antwort_auf: '11' })).data as { nachricht: Record<string, unknown> };
+    expect(alsText.nachricht).toMatchObject({ in_reply_to: '<m11@ex>', referenzen: ['<m11@ex>'] });
+    for (const antwortAuf of ['abc', 0, -1, 1.5, true, [11]]) {
+      await expect(a.post('/support/vorgaenge/1/antworten', { text: 'x', antwort_auf: antwortAuf }))
+        .rejects.toMatchObject({ response: { status: 400, data: { error: 'Validierungsfehler', details: [{ field: 'antwort_auf', message: 'Ungültige Mail' }] } } });
+    }
+    for (const status of [null, '', 5, ['erledigt']]) {
+      await expect(a.post('/support/vorgaenge/1/antworten', { text: 'x', status }))
+        .rejects.toMatchObject({ response: { status: 400, data: { error: 'Validierungsfehler', details: [{ field: 'status', message: 'status: neu, in_arbeit, wartet, erledigt' }] } } });
+    }
+    // Nur A und B gingen hinaus.
+    expect(server.stand.mails.filter((m) => m.richtung === 'aus').map((m) => m.text)).toEqual(['Hallo', 'A', 'B']);
+  });
+
   it('ein älterer Server (alterServer): übergeht `status` und `antwort_auf`, antwortet nur `{ nachricht }`', async () => {
     const a = api();
     const server = vorgaengeServer({ alterServer: true, vorgaenge: [vorgang(1, { organization_id: 7, status: 'neu' })], mails: [mail(11, 1)] });
