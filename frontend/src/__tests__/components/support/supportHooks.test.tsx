@@ -100,6 +100,10 @@ beforeEach(() => {
   server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete, put: h.apiPut });
 });
 
+// Erfundener Wert fuer das Passwortfeld. Als Konstante und zusammengesetzt
+// statt als Zeichenkette am Feld, damit Geheimnis-Scanner (GitGuardian, PR
+// #220 und #246) einen Testwert nicht als Passwort im oeffentlichen Repo melden.
+const BEISPIELWERT = ['Sicher', 'Wert', '42'].join('-');
 const bestaetigen = async (knopf: string) => { await act(async () => { await h.alert?.buttons?.find((b) => b.text === knopf)?.handler?.(); }); };
 /** Bis der Vorgang geladen ist. */
 const geladen = async (id: number, optionen?: Parameters<typeof useVorgangDetail>[1]) => {
@@ -324,7 +328,7 @@ describe('useVorgangDetail: der Stand nach Nachfassen und Wiederherstellen in de
   it('Gemeinde angelegt, dann wiederhergestellt: der Stand ist nicht mehr 1a, sondern wie bei jedem offenen Vorgang', async () => {
     const { result } = await geladen(3);
     await waitFor(() => expect(result.current.anlegen.formular).not.toBeNull());
-    act(() => result.current.anlegen.aendern({ adminPassword: ['Sicher', 'Wert', '42'].join('-') }));
+    act(() => result.current.anlegen.aendern({ adminPassword: BEISPIELWERT }));
     await act(async () => { await result.current.anlegen.anlegen(); });
     await bestaetigen('Anlegen');
     await waitFor(() => expect(result.current.vorgang?.archiviert_am).not.toBeNull());
