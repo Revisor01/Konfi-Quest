@@ -499,6 +499,15 @@ describe('usePostDetail: Stand, Antwort, Weiterleitung', () => {
     expect(server.aufrufe('post', '/support/mail/nachrichten/52/antworten')).toHaveLength(1);
   });
 
+  it('eine ältere Mail des Fadens geöffnet: geantwortet wird auf die jüngste eingehende -- an sie geht auch der Aufruf', async () => {
+    const { result } = await geoeffnet(51);
+    expect(result.current.antwort?.beantwortet?.id).toBe(52);
+    expect(result.current.antwort?.an).toBe('ben@example.org');
+    await act(async () => { await result.current.antwort!.senden({ text: 'Hallo' }); });
+    // Bis 12.10.2026 an /51/antworten: Der Server antwortete dann an den Absender von 51, mit 51 als Bezug.
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/52/antworten']);
+  });
+
   it('eine Mail in einem Vorgang: kein Antworten, kein Archivieren, kein Löschen -- die Weiterleitung mit ?mail=', async () => {
     const { result } = await geoeffnet(13);
     expect(result.current.imPosteingang).toBe(false);

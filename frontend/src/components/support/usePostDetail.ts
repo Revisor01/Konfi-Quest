@@ -120,15 +120,22 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
    * Das Antwortformular für App und Web: vom Postfach der Mail an den
    * Absender der letzten eingehenden. Nur, wenn der Stand Antworten anbietet
    * (Posteingang, nicht im Archiv); sonst null.
+   *
+   * Der Aufruf geht an die angezeigte, beantwortete Mail
+   * (POST /support/mail/nachrichten/<ihre ID>/antworten): Der Server antwortet
+   * an ihren Absender und nimmt sie als Bezug (In-Reply-To, „Re:"). Bis
+   * 12.10.2026 ging er an die Mail aus der Adresse -- öffnete man eine ältere
+   * Mail des Fadens, nannte die Anzeige die jüngste eingehende, die Antwort
+   * ging aber an den Absender der älteren, mit ihr als Bezug.
    */
   const antwort: AntwortFormularProps | null = useMemo(() => {
     if (!mail || !stand?.neben.includes('antworten') || !letzteEingehende || letzteEingehende.richtung !== 'ein') return null;
-    const id = mail.id;
+    const beantwortetId = letzteEingehende.id;
     return {
       postfach: mail.postfach,
       betreffVorschlag,
       an: letzteEingehende.von_adresse,
-      senden: (koerper: MailAntwortDaten) => api.post(`/support/mail/nachrichten/${id}/antworten`, koerper),
+      senden: (koerper: MailAntwortDaten) => api.post(`/support/mail/nachrichten/${beantwortetId}/antworten`, koerper),
       beantwortet: letzteEingehende,
     };
   }, [mail, stand, letzteEingehende, betreffVorschlag]);

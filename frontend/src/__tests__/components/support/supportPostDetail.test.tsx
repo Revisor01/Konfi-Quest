@@ -479,6 +479,25 @@ describe('Mail (App): antworten', () => {
     await waitFor(() => expect(mailZeilen()).toHaveLength(4));
   });
 
+  it('eine ältere Mail des Fadens geöffnet: die Antwort geht an die angezeigte, beantwortete Mail -- Empfänger und Bezug wie im Modal', async () => {
+    // Die jüngste eingehende Mail kam von einer anderen Adresse als die geöffnete ältere (29).
+    const juengste = server.stand.mails.find((m) => m.id === 31)!;
+    juengste.von_adresse = 'sekretariat@example.org';
+    juengste.von_name = 'Sekretariat Lindenau';
+    await oeffnen(29);
+    const modal = await antworten();
+    expect(modal.getByText(/^Du antwortest auf/)).toHaveTextContent('Sekretariat Lindenau');
+    expect(modal.getByText('Sekretariat Lindenau <sekretariat@example.org>', { selector: 'strong' })).toBeInTheDocument();
+    fireEvent.change(modal.getByLabelText('Text der Antwort'), { target: { value: 'Hallo zusammen' } });
+    fireEvent.click(modal.getByRole('button', { name: 'Antwort senden' }));
+    expect(h.alert?.message).toBe('An sekretariat@example.org: „Re: Frage zum Zugang“ von moin@ senden?');
+    await bestaetigen('Senden');
+    // Bis 12.10.2026 ging sie an die Mail aus der Adresse (29): an anna@ statt an die angezeigte Adresse,
+    // mit 29 als Bezug -- die Anzeige nannte die jüngste eingehende Mail des Fadens.
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/31/antworten']);
+    expect(server.stand.mails.find((m) => m.richtung === 'aus' && m.text === 'Hallo zusammen')?.an_adressen).toEqual(['sekretariat@example.org']);
+  });
+
   it('ein Fehler beim Senden: das Modal bleibt offen, der Text steht noch da', async () => {
     await oeffnen();
     const modal = await antworten();
