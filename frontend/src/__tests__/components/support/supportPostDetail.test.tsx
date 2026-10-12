@@ -409,6 +409,58 @@ describe('Mail (App): einsortieren im Modal', () => {
   });
 });
 
+describe('Mail (App): der Absender gehört zu einer Gemeinde (Frage 11, absender_bekannt)', () => {
+  const hinweis = () => document.querySelector('.support-stand__hinweis') as HTMLElement | null;
+
+  it('ohne Angabe des Servers kein Hinweis in der Karte „Stand"', async () => {
+    await oeffnen();
+    expect(hinweis()).toBeNull();
+    expect(knoepfe().map((k) => k.textContent)).toEqual(['Einsortieren', 'Antworten']);
+  });
+
+  it('der Hinweis in der Karte „Stand", darunter „In Vorgang N einsortieren" -- es sortiert ohne Modal ein, der Vorgang ersetzt die Seite', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    await oeffnen();
+    expect(hinweis()).toHaveTextContent('Absender gehört zu Kirchengemeinde Musterdorf · 1 offener Vorgang');
+    // Hauptknopf und Nebenknopf bleiben, wie sie waren; der neue Knopf steht im Hinweis, nicht in einem anderen Knopf.
+    expect(knoepfe().map((k) => k.textContent)).toEqual(['Einsortieren', 'Antworten']);
+    const direkt = within(hinweis()!).getByRole('button', { name: 'In Vorgang 1 einsortieren' });
+    expect(direkt.closest('.support-stand__knoepfe')).toBeNull();
+    await act(async () => { fireEvent.click(direkt); });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 1 }]);
+    expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 1 einsortiert');
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/1?mail=31', 'forward', 'replace');
+  });
+
+  it('kein offener Vorgang der Gemeinde: der Satz sagt es, kein Knopf', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 8;
+    await oeffnen();
+    expect(hinweis()).toHaveTextContent('Absender gehört zu Kirchengemeinde Wiesengrund · kein offener Vorgang');
+    expect(within(hinweis()!).queryByRole('button')).toBeNull();
+  });
+
+  it('ohne Netz ist der Knopf gesperrt', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    h.online = false;
+    await oeffnen();
+    expect(within(hinweis()!).getByRole('button', { name: 'In Vorgang 1 einsortieren' })).toBeDisabled();
+  });
+
+  it('das Modal „Einsortieren" ist vorbelegt: der Vorgang gewählt, beim neuen Vorgang die Gemeinde', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    await oeffnen();
+    const modal = await einsortieren();
+    expect(vorgangWahl().value).toBe('1');
+    fireEvent.click(modal.getByRole('tab', { name: 'Neuer Vorgang' }));
+    await waitFor(() => expect((modal.getByLabelText('Gemeinde') as HTMLSelectElement).options.length).toBeGreaterThan(1));
+    expect((modal.getByLabelText('Gemeinde') as HTMLSelectElement).value).toBe('7');
+    fireEvent.click(modal.getByRole('tab', { name: 'Bestehender Vorgang' }));
+    await act(async () => { fireEvent.click(modal.getByRole('button', { name: 'Einsortieren' })); });
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 1 }]);
+  });
+});
+
 describe('Mail (App): archivieren, wiederherstellen, löschen', () => {
   it('Archivieren (Kopfzeile): eine Anfrage an die Mail; danach der Archiv-Satz und „Wiederherstellen“', async () => {
     await oeffnen();

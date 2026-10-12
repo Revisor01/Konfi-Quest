@@ -14,6 +14,13 @@
 // nur sie. Der eigene Vorgang steht dann nicht zur Wahl. Ein Vorgang, der
 // dabei leer wird, bleibt stehen. Danach laden alle Ansichten neu
 // („Support-Daten geändert").
+//
+// Seit 12.10.2026 (Paket 6, Frage 11): Kennt der Server den Absender
+// (`absender_bekannt`), belegt der Dialog vor -- der bestehende Vorgang ist
+// der jüngste offene der Gemeinde, ein neuer Vorgang bekommt die Gemeinde.
+// Nicht beim Verschieben aus dem Menü einer Mail im Vorgang (`ausVorgang`).
+// `useDirektEinsortieren` legt die Mail ohne Dialog in einen Vorgang
+// („In Vorgang N einsortieren") -- derselbe Aufruf, dieselbe Folge.
 
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -23,6 +30,7 @@ import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { gemeindenSortiert } from '../../utils/supportMail';
 import {
+  type EinsortierenKoerper,
   einsortierenBestehendKoerper,
   einsortierenNeuFehler,
   einsortierenNeuKoerper,
@@ -37,12 +45,36 @@ import { vorgaengeLaden } from './useVorgangsliste';
 
 export type EinsortierenModus = 'bestehend' | 'neu';
 
+/** Womit der Dialog vorbelegt ist, wenn der Server den Absender kennt (`absender_bekannt`). */
+export interface EinsortierenVorgabe {
+  /** Der jüngste offene Vorgang der Gemeinde: vorgewählt unter „Bestehender Vorgang". */
+  vorgangId: number | null;
+  /** Die Gemeinde: vorgewählt beim neuen Vorgang. */
+  organizationId: number | null;
+}
+
 export interface EinsortierenOptionen {
   /** Die Mail liegt in diesem Vorgang: Er steht nicht zur Wahl, und die Mail geht allein. */
   ausVorgang?: number | null;
   /** Womit der Dialog beginnt -- „In neuen Vorgang herauslösen" beginnt mit 'neu'. */
   modus?: EinsortierenModus;
+  /** Vorbelegung aus `absender_bekannt` -- gilt nur aus dem Posteingang, nicht mit `ausVorgang`. */
+  vorgabe?: EinsortierenVorgabe | null;
 }
+
+/**
+ * POST …/einsortieren. Die Kennung des Vorgangs: die gewählte, sonst die,
+ * die der Server nennt (`vorgang_id`, ältere Stände `id`), sonst null.
+ */
+async function einsortierenSenden(mailId: number, koerper: EinsortierenKoerper, gewaehlt: number | null): Promise<number | null> {
+  const antwort = await api.post(`/support/mail/nachrichten/${mailId}/einsortieren`, koerper);
+  const daten = antwort.data as { vorgang_id?: unknown; id?: unknown } | undefined;
+  const neueId = typeof daten?.vorgang_id === 'number' ? daten.vorgang_id : typeof daten?.id === 'number' ? daten.id : null;
+  return gewaehlt ?? neueId;
+}
+
+/** „Mail in Vorgang N einsortiert" bzw. ohne Nummer „Mail einsortiert". */
+const einsortiertText = (id: number | null): string => (id ? `Mail in Vorgang ${id} einsortiert` : 'Mail einsortiert');
 
 export function useEinsortieren(
   mail: { id: number; betreff: string | null },
@@ -51,12 +83,16 @@ export function useEinsortieren(
 ) {
   const { setError, setSuccess, isOnline } = useApp();
   const ausVorgang = o.ausVorgang ?? null;
+  // Die Vorbelegung gilt beim Öffnen (Startwert) -- und nie beim Verschieben aus einem Vorgang.
+  const vorgabe = ausVorgang === null ? o.vorgabe ?? null : null;
 
   const [modus, setModus] = useState<EinsortierenModus>(o.modus ?? 'bestehend');
   const [vorgaenge, setVorgaenge] = useState<Vorgang[] | null>(null);
   const [vorgaengeFehlen, setVorgaengeFehlen] = useState(false);
-  const [vorgangWahl, setVorgangWahl] = useState('');
-  const [neu, setNeu] = useState<EinsortierenNeuFormular>(() => einsortierenNeuVorbelegen(mail.betreff));
+  const [vorgangWahl, setVorgangWahl] = useState(() => (vorgabe?.vorgangId ? String(vorgabe.vorgangId) : ''));
+  const [neu, setNeu] = useState<EinsortierenNeuFormular>(
+    () => einsortierenNeuVorbelegen(mail.betreff, vorgabe?.organizationId ? String(vorgabe.organizationId) : ''),
+  );
   const [gemeinden, setGemeinden] = useState<GemeindeKurz[]>([]);
   const [gemeindenFehlen, setGemeindenFehlen] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -111,11 +147,8 @@ export function useEinsortieren(
     }
     setSendet(true);
     try {
-      const antwort = await api.post(`/support/mail/nachrichten/${mail.id}/einsortieren`, koerper);
-      const daten = antwort.data as { vorgang_id?: unknown; id?: unknown } | undefined;
-      const neueId = typeof daten?.vorgang_id === 'number' ? daten.vorgang_id : typeof daten?.id === 'number' ? daten.id : null;
-      const id = gewaehlterVorgang?.id ?? neueId;
-      setSuccess(id ? `Mail in Vorgang ${id} einsortiert` : 'Mail einsortiert');
+      const id = await einsortierenSenden(mail.id, koerper, gewaehlterVorgang?.id ?? null);
+      setSuccess(einsortiertText(id));
       meldeSupportGeaendert();
       onFertig?.(id);
     } catch (err) {
@@ -147,3 +180,34 @@ export function useEinsortieren(
 }
 
 export type EinsortierenZustand = ReturnType<typeof useEinsortieren>;
+
+/**
+ * „In Vorgang N einsortieren" ohne Dialog (die Zeile „Absender gehört zu …"):
+ * derselbe Aufruf wie Einsortieren in einen bestehenden Vorgang
+ * ({ vorgang_id }) und dieselbe Folge -- Meldung, „Support-Daten geändert",
+ * `onFertig(N)` (die Seite öffnet den Vorgang mit der Mail). Fehler kommen
+ * als Meldung; ohne Netz geschieht nichts.
+ */
+export function useDirektEinsortieren(mailId: number | null, onFertig?: (vorgangId: number | null) => void) {
+  const { setError, setSuccess, isOnline } = useApp();
+  const [sendet, setSendet] = useState(false);
+
+  const einsortieren = async (vorgangId: number): Promise<boolean> => {
+    if (mailId === null || sendet || offlineBlockiert(isOnline, setError)) return false;
+    setSendet(true);
+    try {
+      const id = await einsortierenSenden(mailId, einsortierenBestehendKoerper(vorgangId), vorgangId);
+      setSuccess(einsortiertText(id));
+      meldeSupportGeaendert();
+      onFertig?.(id);
+      return true;
+    } catch (err) {
+      setError(fehlerText(err, 'Mail konnte nicht einsortiert werden'));
+      return false;
+    } finally {
+      setSendet(false);
+    }
+  };
+
+  return { einsortieren, sendet, isOnline };
+}

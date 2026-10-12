@@ -737,6 +737,36 @@
   font-weight: var(--app-schrift-halbfett);
 }
 
+/* Eine Mail im Posteingang, deren Absender der Server kennt
+   (absender_bekannt): „Absender gehört zu {Gemeinde} · 2 offene Vorgänge",
+   rechts daneben „In Vorgang N einsortieren". Schmal bricht der Knopf unter
+   den Satz. Im Ton eines Hinweises -- der Satz sagt es auch. */
+.web-absender {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng) var(--app-abstand-mittel);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-mittel);
+  border: 1px solid var(--app-rand-hinweis);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-flaeche-hinweis);
+  color: var(--app-text-hinweis-dunkel);
+}
+
+.web-absender__symbol {
+  flex: 0 0 auto;
+  font-size: var(--app-text-standard);
+}
+
+.web-absender__satz {
+  flex: 1 1 16em;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
+  overflow-wrap: anywhere;
+}
+
 /* Die interne Notiz oben: höchstens drei Zeilen, dann „mehr". */
 .web-notiz {
   display: block;

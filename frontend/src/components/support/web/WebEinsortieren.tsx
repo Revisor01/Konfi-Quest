@@ -9,11 +9,14 @@
 // verschieben" (`ausVorgang`, Modus bestehend -- der eigene Vorgang steht
 // nicht zur Wahl) und „In neuen Vorgang herauslösen" (Modus neu). Dann geht
 // nur diese eine Mail; der Titel nennt die Handlung, in App und Web gleich.
+// Seit 12.10.2026 belegt `vorgabe` vor (Absender bekannt): der jüngste offene
+// Vorgang der Gemeinde bzw. beim neuen Vorgang die Gemeinde -- nicht beim
+// Verschieben aus dem Menü.
 // Die Logik steht in components/support/useEinsortieren.ts, dieselbe wie in der App.
 
 import React from 'react';
 import { betreffKern, gemeindeName } from '../../../utils/supportMail';
-import { useEinsortieren, type EinsortierenModus } from '../useEinsortieren';
+import { useEinsortieren, type EinsortierenModus, type EinsortierenVorgabe } from '../useEinsortieren';
 import WebDialog from '../../web/WebDialog';
 import WebAuswahl from '../../web/WebAuswahl';
 import WebAuswahlSuche from '../../web/WebAuswahlSuche';
@@ -38,10 +41,12 @@ export interface WebEinsortierenProps {
   ausVorgang?: number | null;
   /** Womit der Dialog beginnt -- „In neuen Vorgang herauslösen" beginnt mit 'neu'. */
   modus?: EinsortierenModus;
+  /** Vorbelegung, wenn der Server den Absender kennt (nur aus dem Posteingang). */
+  vorgabe?: EinsortierenVorgabe | null;
 }
 
-const WebEinsortieren: React.FC<WebEinsortierenProps> = ({ mail, onSchliessen, onFertig, ausVorgang = null, modus }) => {
-  const z = useEinsortieren(mail, (id) => { onFertig?.(id); onSchliessen(); }, { ausVorgang, modus });
+const WebEinsortieren: React.FC<WebEinsortierenProps> = ({ mail, onSchliessen, onFertig, ausVorgang = null, modus, vorgabe = null }) => {
+  const z = useEinsortieren(mail, (id) => { onFertig?.(id); onSchliessen(); }, { ausVorgang, modus, vorgabe });
   const ausEinemVorgang = ausVorgang !== null;
   // Aus dem Menü einer Mail ist die Handlung schon gewählt: Titel und Knopf nennen sie, keine Wahl dazwischen.
   const titel = !ausEinemVorgang ? 'Mail einsortieren' : z.modus === 'neu' ? MAIL_MENUE.herausloesen : MAIL_MENUE.verschieben;

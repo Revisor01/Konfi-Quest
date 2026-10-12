@@ -174,6 +174,23 @@ export interface MailVerlauf extends MailNachricht {
   verlauf: MailNachricht[];
 }
 
+/**
+ * GET /support/mail/nachrichten/:id, Feld `absender_bekannt` (additiv seit
+ * 12.10.2026, nur an der obersten Ebene): Die Adresse einer eingehenden Mail
+ * ohne Vorgang gehört zu genau einem aktiven Konto (nicht Konfi) in genau
+ * einer Gemeinde -- dieselbe Regel wie beim Abholen
+ * (backend/utils/mailZuordnung.js, gemeindeDesKontos). Sonst null.
+ */
+export interface AbsenderBekannt {
+  organization_id: number;
+  /** Anzeigename der Gemeinde. */
+  gemeinde_name: string;
+  /** Offene Vorgänge der Gemeinde (nicht im Archiv; neu, in Arbeit, wartet). */
+  offene_vorgaenge: number;
+  /** Der jüngste offene Vorgang der Gemeinde; null ohne. */
+  vorgang_id: number | null;
+}
+
 /** GET /support/mail/eingang — ein Eintrag (nicht zugeordnet, neueste zuerst). */
 export interface MailEingangEintrag {
   id: number;

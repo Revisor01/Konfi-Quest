@@ -9,8 +9,11 @@
 //
 // Seit 12.10.2026 (Paket 6, additiv) wie der Server: Die Antwort im Vorgang
 // nimmt `status` und `antwort_auf` (beide vor dem Versand geprüft, sonst 400)
-// und antwortet `{ nachricht, vorgang }`; mit `alterServer` wie ein Server
-// davor -- er übergeht beide Felder und antwortet nur `{ nachricht }`.
+// und antwortet `{ nachricht, vorgang }`; das Mail-Detail trägt
+// `absender_bekannt` (Standard null; bekannte Absender stellt der Test über
+// `bekannteAbsender` ein). Mit `alterServer` wie ein Server davor -- er
+// übergeht beide Felder, antwortet nur `{ nachricht }` und kennt
+// `absender_bekannt` nicht.
 
 import { vi } from 'vitest';
 
@@ -152,6 +155,12 @@ export interface ServerOptionen {
    * -- für die Rückfallebene („Danach" per PATCH).
    */
   alterServer?: boolean;
+  /**
+   * Adressen, die zu genau einem Konto genau einer Gemeinde gehören
+   * (backend/utils/mailZuordnung.js, gemeindeDesKontos): Adresse -> Gemeinde.
+   * Daraus entsteht `absender_bekannt` am Mail-Detail; ohne Eintrag null.
+   */
+  bekannteAbsender?: Record<string, number>;
 }
 
 /** Die Status eines Vorgangs, wie der Server sie prüft (backend/utils/supportVorgaenge.js, STATUS). */
@@ -161,6 +170,8 @@ const STATUS: ReadonlyArray<TestVorgang['status']> = ['neu', 'in_arbeit', 'warte
 const ungueltig = (data: Record<string, unknown>) => Object.assign(new Error('ungültig'), { response: { status: 400, data } });
 
 export function vorgaengeServer(optionen: ServerOptionen = {}) {
+  // Unter eigenem Namen: get() hat einen Parameter `optionen` (die Abruf-Optionen), der diesen verdeckt.
+  const alterServer = optionen.alterServer === true;
   const s = {
     vorgaenge: [...(optionen.vorgaenge ?? [])],
     mails: [...(optionen.mails ?? [])],
@@ -173,6 +184,8 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     konto: { id: 9, name: 'Test Super-Admin' },
     /** Einzelne Routen scheitern lassen: Pfad -> Fehler. */
     fehler: new Map<string, unknown>(),
+    /** Adresse (klein) -> Gemeinde, für `absender_bekannt`; im Test änderbar. */
+    bekannteAbsender: Object.fromEntries(Object.entries(optionen.bekannteAbsender ?? {}).map(([a, g]) => [a.trim().toLowerCase(), g])) as Record<string, number>,
   };
 
   const mailsVon = (id: number) => s.mails.filter((m) => m.vorgang_id === id).sort((a, b) => a.gesendet_am.localeCompare(b.gesendet_am) || a.id - b.id);
@@ -248,6 +261,20 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     return s.mails.filter((x) => x.faden === m.faden && x.vorgang_id === null).sort((a, b) => a.gesendet_am.localeCompare(b.gesendet_am) || a.id - b.id);
   };
 
+  /**
+   * `absender_bekannt` wie der Server: nur für eingehende Mails ohne Vorgang,
+   * deren Adresse einer Gemeinde gehört. Offen heißt nicht im Archiv und nicht
+   * erledigt; der Vorgang ist der jüngste offene (offenerVorgangDerGemeinde).
+   */
+  const absenderBekanntVon = (m: TestMail) => {
+    if (m.richtung !== 'ein' || m.vorgang_id !== null) return null;
+    const org = s.bekannteAbsender[m.von_adresse.trim().toLowerCase()];
+    if (org === undefined) return null;
+    const offen = s.vorgaenge.filter((v) => v.organization_id === org && !v.archiviert_am && v.status !== 'erledigt');
+    const juengster = [...offen].sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id - a.id)[0] ?? null;
+    return { organization_id: org, gemeinde_name: gemeindeName(org), offene_vorgaenge: offen.length, vorgang_id: juengster?.id ?? null };
+  };
+
   const posteingang = () => s.mails.filter((m) => m.richtung === 'ein' && m.vorgang_id === null && !m.archiviert_am);
   const eingangEintrag = (m: TestMail) => ({
     id: m.id, postfach: m.postfach, von_adresse: m.von_adresse, von_name: m.von_name, betreff: m.betreff, auszug: m.text, gesendet_am: m.gesendet_am,
@@ -287,7 +314,8 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     if (/^\/support\/mail\/nachrichten\/\d+$/.test(pfad)) {
       const m = s.mails.find((x) => x.id === idAus(pfad, /(\d+)$/));
       if (!m) return Promise.reject(nichtGefunden());
-      return Promise.resolve({ data: { ...m, anfrage_id: null, organization_id: null, verlauf: fadenVon(m) } });
+      const detail = { ...m, anfrage_id: null, organization_id: null, verlauf: fadenVon(m) };
+      return Promise.resolve({ data: alterServer ? detail : { ...detail, absender_bekannt: absenderBekanntVon(m) } });
     }
     if (pfad === '/support/mail/status') {
       return Promise.resolve({ data: { postfaecher: [
@@ -368,7 +396,7 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
       const id = idAus(pfad, /vorgaenge\/(\d+)/);
       const v = finde(id);
       if (!v) return Promise.reject(nichtGefunden());
-      const alt = optionen.alterServer === true;
+      const alt = alterServer;
       // Wie der Server: `status` und `antwort_auf` werden VOR dem Versand geprüft -- bei 400 geht nichts hinaus.
       const status = alt ? undefined : koerper?.status;
       if (status !== undefined && !STATUS.includes(status as TestVorgang['status'])) {

@@ -108,6 +108,36 @@ describe('Attrappe wie der Server', () => {
     expect(Object.keys(antwort as object)).toEqual(['nachricht']);
   });
 
+  it('das Mail-Detail trägt absender_bekannt (seit 12.10.2026): nur eingehend ohne Vorgang, Zahl der offenen, der jüngste offene; Standard null', async () => {
+    const a = api();
+    const server = vorgaengeServer({
+      bekannteAbsender: { 'Anna@Example.org': 7 },
+      vorgaenge: [
+        vorgang(1, { organization_id: 7, status: 'neu', created_at: '2026-10-01T08:00:00Z' }),
+        vorgang(2, { organization_id: 7, status: 'wartet', created_at: '2026-10-02T08:00:00Z' }),
+        vorgang(3, { organization_id: 7, status: 'erledigt', archiviert_am: '2026-10-03T08:00:00Z', created_at: '2026-10-03T08:00:00Z' }),
+        vorgang(4, { organization_id: 7, status: 'in_arbeit', archiviert_am: '2026-10-03T08:00:00Z', created_at: '2026-10-03T09:00:00Z' }),
+        vorgang(5, { organization_id: 8, status: 'neu', created_at: '2026-10-04T08:00:00Z' }),
+      ],
+      mails: [
+        mail(31, null, { von_adresse: 'anna@example.org' }),
+        mail(32, null, { von_adresse: 'ben@example.org' }),
+        mail(33, null, { richtung: 'aus', von_adresse: 'anna@example.org' }),
+        mail(34, 1, { von_adresse: 'anna@example.org' }),
+      ],
+    });
+    server.installieren(a);
+    const detail = async (id: number) => ((await a.get(`/support/mail/nachrichten/${id}`)).data as Record<string, unknown>).absender_bekannt;
+    expect(await detail(31)).toEqual({ organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: 2, vorgang_id: 2 });
+    expect(await detail(32)).toBeNull();
+    expect(await detail(33)).toBeNull();
+    expect(await detail(34)).toBeNull();
+    // Ein älterer Server kennt das Feld nicht.
+    const alt = vorgaengeServer({ alterServer: true, bekannteAbsender: { 'anna@example.org': 7 }, mails: [mail(31, null, { von_adresse: 'anna@example.org' })] });
+    alt.installieren(a);
+    expect('absender_bekannt' in ((await a.get('/support/mail/nachrichten/31')).data as object)).toBe(false);
+  });
+
   it('Einsortieren: eine Mail aus einem Vorgang geht allein; aus dem Posteingang der Faden', async () => {
     const a = api();
     const server = vorgaengeServer({

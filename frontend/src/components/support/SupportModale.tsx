@@ -68,7 +68,7 @@ import { AntwortFormularInhalt, type AntwortFormularProps } from './SupportMailT
 import SupportGemeindeAnlegen from './SupportGemeindeAnlegen';
 import { useAntwortEditor } from './useAntwortEditor';
 import { useEinordnenFormular } from './useEinordnenFormular';
-import { useEinsortieren, type EinsortierenModus } from './useEinsortieren';
+import { useEinsortieren, type EinsortierenModus, type EinsortierenVorgabe } from './useEinsortieren';
 import { useLizenzAendern } from './useLizenzAendern';
 import type { VorgangDetailDaten } from './useVorgangDetail';
 import type { GemeindeAnlegenDaten } from './useGemeindeAnlegen';
@@ -501,8 +501,9 @@ const EinsortierenInhalt: React.FC<{
   onFertig: (vorgangId: number | null) => void;
   ausVorgang: number | null;
   modus?: EinsortierenModus;
-}> = ({ mail, onFertig, ausVorgang, modus }) => {
-  const z = useEinsortieren(mail, onFertig, { ausVorgang, modus });
+  vorgabe: EinsortierenVorgabe | null;
+}> = ({ mail, onFertig, ausVorgang, modus, vorgabe }) => {
+  const z = useEinsortieren(mail, onFertig, { ausVorgang, modus, vorgabe });
   const [suche, setSuche] = useState('');
   const treffer = useMemo(() => (z.vorgaenge ?? []).filter((v) => vorgangPasstZurSuche(v, suche)), [z.vorgaenge, suche]);
   const pflicht = bereichIstPflicht(z.neu.art);
@@ -604,11 +605,19 @@ export const EinsortierenModal: React.FC<{
   ausVorgang?: number | null;
   /** Womit das Modal beginnt -- „In neuen Vorgang herauslösen" beginnt mit 'neu'. */
   modus?: EinsortierenModus;
-}> = ({ offen, onSchliessen, mail, titel, onFertig, ausVorgang = null, modus }) => {
+  /**
+   * Vorbelegung, wenn der Server den Absender kennt (nur aus dem Posteingang;
+   * mit `ausVorgang` ohne Wirkung). Sie ist ein Startwert: Der Inhalt entsteht
+   * mit jedem Öffnen neu (IonModal hängt ihn nur offen ein), so gilt die
+   * Vorgabe des letzten Ladens -- ein Neuladen bei offenem Modal überschreibt
+   * keine Wahl (darum steht sie nicht im key).
+   */
+  vorgabe?: EinsortierenVorgabe | null;
+}> = ({ offen, onSchliessen, mail, titel, onFertig, ausVorgang = null, modus, vorgabe = null }) => {
   const eigenerTitel = titel ?? (ausVorgang === null ? 'Einsortieren' : modus === 'neu' ? MAIL_MENUE.herausloesen : MAIL_MENUE.verschieben);
   return (
     <SupportModal offen={offen} titel={eigenerTitel} onSchliessen={onSchliessen}>
-      <EinsortierenInhalt key={`${mail.id}-${modus ?? 'bestehend'}`} mail={mail} ausVorgang={ausVorgang} modus={modus}
+      <EinsortierenInhalt key={`${mail.id}-${modus ?? 'bestehend'}`} mail={mail} ausVorgang={ausVorgang} modus={modus} vorgabe={vorgabe}
         onFertig={(id) => { onSchliessen(); onFertig(id); }} />
     </SupportModal>
   );

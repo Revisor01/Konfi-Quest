@@ -34,6 +34,9 @@ import {
   mailImPosteingang,
   mailKennzahlen,
   mailStand,
+  absenderBekanntLesen,
+  mailAbsenderAngabe,
+  mailMitVorgangLesen,
   mailWeiterleitung,
   type MailMitVorgang,
 } from '../../utils/supportMail';
@@ -419,6 +422,48 @@ describe('Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E)
     });
     // Auch eine ältere Zuordnung nur über die Anfrage zählt.
     expect(mailStand(mitVorgang({ anfrage_id: 41 }))).toMatchObject({ archivierbar: false, loeschbar: false, weiterleitung: '/admin/support/anfragen/41' });
+  });
+
+  it('absender_bekannt lesen: die Angabe, wie der Server sie schickt -- fehlt sie oder ist sie kaputt, null', () => {
+    const gut = { organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: 2, vorgang_id: 5 };
+    expect(absenderBekanntLesen(gut)).toEqual(gut);
+    expect(absenderBekanntLesen({ ...gut, offene_vorgaenge: 0, vorgang_id: null })).toEqual({ ...gut, offene_vorgaenge: 0, vorgang_id: null });
+    // Der Name ohne Leerraum drumherum; ein fehlender vorgang_id gilt als keiner.
+    expect(absenderBekanntLesen({ organization_id: 7, gemeinde_name: ' Musterdorf ', offene_vorgaenge: 1 })).toEqual({ organization_id: 7, gemeinde_name: 'Musterdorf', offene_vorgaenge: 1, vorgang_id: null });
+    for (const kaputt of [
+      undefined, null, 'Musterdorf', [gut], {},
+      { ...gut, organization_id: null }, { ...gut, organization_id: '7' }, { ...gut, organization_id: 0 },
+      { ...gut, gemeinde_name: '' }, { ...gut, gemeinde_name: '  ' }, { ...gut, gemeinde_name: null },
+      { ...gut, offene_vorgaenge: -1 }, { ...gut, offene_vorgaenge: 1.5 }, { ...gut, offene_vorgaenge: '2' },
+      { ...gut, vorgang_id: 'fünf' }, { ...gut, vorgang_id: 0 },
+    ]) {
+      expect(absenderBekanntLesen(kaputt), JSON.stringify(kaputt)).toBeNull();
+    }
+  });
+
+  it('das Mail-Detail lesen: absender_bekannt immer durch den Leser (älterer Server: null); ohne Kennung keine Mail', () => {
+    const roh = { ...mail(5), verlauf: [], vorgang_id: null, archiviert_am: null };
+    expect(mailMitVorgangLesen(roh)?.absender_bekannt).toBeNull();
+    expect(mailMitVorgangLesen({ ...roh, absender_bekannt: { organization_id: 7 } })?.absender_bekannt).toBeNull();
+    expect(mailMitVorgangLesen({ ...roh, absender_bekannt: { organization_id: 7, gemeinde_name: 'Musterdorf', offene_vorgaenge: 0, vorgang_id: null } })?.absender_bekannt)
+      .toEqual({ organization_id: 7, gemeinde_name: 'Musterdorf', offene_vorgaenge: 0, vorgang_id: null });
+    expect(mailMitVorgangLesen({ ...roh, id: '5' })).toBeNull();
+    expect(mailMitVorgangLesen(null)).toBeNull();
+    expect(mailMitVorgangLesen([roh])).toBeNull();
+  });
+
+  it('die Zeile über den Absender: nur im Posteingang und nur mit Angabe des Servers; Zahlwort für 0, 1 und mehr', () => {
+    const absender = (offene: number, vorgang_id: number | null) => ({ organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: offene, vorgang_id });
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: absender(2, 5) })))
+      .toEqual({ satz: 'Absender gehört zu Kirchengemeinde Musterdorf · 2\u00a0offene Vorgänge', organizationId: 7, vorgangId: 5 });
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: absender(1, 5) }))?.satz).toBe('Absender gehört zu Kirchengemeinde Musterdorf · 1\u00a0offener Vorgang');
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: absender(0, null) })))
+      .toEqual({ satz: 'Absender gehört zu Kirchengemeinde Musterdorf · kein offener Vorgang', organizationId: 7, vorgangId: null });
+    expect(mailAbsenderAngabe(mitVorgang())).toBeNull();
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: null }))).toBeNull();
+    // Liegt die Mail woanders, leitet die Seite weiter -- keine Zeile.
+    expect(mailAbsenderAngabe(mitVorgang({ vorgang_id: 2, absender_bekannt: absender(2, 5) }))).toBeNull();
+    expect(mailAbsenderAngabe(mitVorgang({ anfrage_id: 41, absender_bekannt: absender(2, 5) }))).toBeNull();
   });
 
   it('Kennzahlen: Mails im Faden · Neu · Anhänge', () => {

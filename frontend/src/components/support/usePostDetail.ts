@@ -14,6 +14,11 @@
 // Seite leitet dann mit replace dorthin (`?mail=`), der Server lehnt
 // Archivieren und Löschen solcher Mails ohnehin ab (409).
 //
+// Seit 12.10.2026 (Paket 6, Frage 11) auch, was der Server über den Absender
+// weiß (`absender_bekannt`, gelesen von mailMitVorgangLesen): die Zeile
+// „Absender gehört zu …" und die Vorbelegung des Einsortierens (`absender`).
+// Ein älterer Server liefert das Feld nicht -- dann null.
+//
 // Jede Änderung meldet „Support-Daten geändert" (utils/supportAktualisieren.ts):
 // Mail, Posteingang und rote Zahlen laden danach von selbst neu.
 
@@ -23,10 +28,13 @@ import api from '../../services/api';
 import type { MailAntwortDaten, MailNachricht } from '../../types/support';
 import {
   fadenAus,
+  mailAbsenderAngabe,
   mailKennzahlen,
+  mailMitVorgangLesen,
   mailStand,
   standardBetreff,
   ungeleseneIds,
+  type MailAbsenderAngabe,
   type MailMitVorgang,
   type MailStandAngabe,
 } from '../../utils/supportMail';
@@ -61,8 +69,8 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     }
     try {
       const antwort = await api.get(`/support/mail/nachrichten/${nachrichtId}`);
-      const daten = antwort.data && typeof antwort.data === 'object' ? antwort.data as MailMitVorgang : null;
-      if (!daten || typeof daten.id !== 'number') {
+      const daten = mailMitVorgangLesen(antwort.data);
+      if (!daten) {
         setMail(null);
         setNichtGefunden(true);
         return;
@@ -115,6 +123,8 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
   /** Liegt die Mail woanders: das Ziel. Die Seite leitet mit replace weiter (router.push(ziel, 'none', 'replace')). */
   const weiterleitung = stand?.weiterleitung ?? null;
   const kennzahlen: Kennzahl[] = useMemo(() => (mail ? mailKennzahlen(faden, neu.size) : []), [mail, faden, neu]);
+  /** „Absender gehört zu …" (nur im Posteingang, nur wenn der Server die Gemeinde kennt); sonst null. */
+  const absender: MailAbsenderAngabe | null = useMemo(() => (mail ? mailAbsenderAngabe(mail) : null), [mail]);
 
   /**
    * Das Antwortformular für App und Web: vom Postfach der Mail an den
@@ -170,6 +180,7 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     antwort,
     imPosteingang,
     weiterleitung,
+    absender,
   };
 }
 

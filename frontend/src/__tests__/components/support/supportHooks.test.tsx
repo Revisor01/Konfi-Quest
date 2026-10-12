@@ -48,7 +48,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 import { useVorgangDetail } from '../../../components/support/useVorgangDetail';
 import { useAntwortEditor, vorgewaehlterEmpfaenger, type AntwortFormularProps } from '../../../components/support/useAntwortEditor';
 import { usePostDetail } from '../../../components/support/usePostDetail';
-import { useEinsortieren } from '../../../components/support/useEinsortieren';
+import { useDirektEinsortieren, useEinsortieren } from '../../../components/support/useEinsortieren';
 import { useGemeindeAnlegen } from '../../../components/support/useGemeindeAnlegen';
 import { useEinordnenFormular } from '../../../components/support/useEinordnenFormular';
 import { useLizenzAendern } from '../../../components/support/useLizenzAendern';
@@ -566,6 +566,25 @@ describe('usePostDetail: Stand, Antwort, Weiterleitung', () => {
     expect(result.current.stand).toMatchObject({ haupt: null, neben: [], archivierbar: false, loeschbar: false });
   });
 
+  it('absender_bekannt: die Angabe für Zeile und Vorbelegung -- nur im Posteingang; ohne Angabe oder bei einem älteren Server null', async () => {
+    const ohne = await geoeffnet(52);
+    expect(ohne.result.current.absender).toBeNull();
+    ohne.unmount();
+
+    server.stand.bekannteAbsender['ben@example.org'] = 7;
+    const mit = await geoeffnet(52);
+    // Offen in Gemeinde 7: 1 (in Arbeit) und 6 (in Arbeit) -- 4 ist erledigt; der jüngste ist 6 (gleiche Zeit, höhere Nummer).
+    expect(mit.result.current.absender).toEqual({ satz: 'Absender gehört zu Kirchengemeinde Musterdorf · 2\u00a0offene Vorgänge', organizationId: 7, vorgangId: 6 });
+    expect(mit.result.current.mail?.absender_bekannt).toEqual({ organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: 2, vorgang_id: 6 });
+    mit.unmount();
+
+    server = vorgaengeServer({ alterServer: true, vorgaenge: server.stand.vorgaenge, mails: server.stand.mails, bekannteAbsender: { 'ben@example.org': 7 } });
+    server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete, put: h.apiPut });
+    const alt = await geoeffnet(52);
+    expect(alt.result.current.mail?.absender_bekannt).toBeNull();
+    expect(alt.result.current.absender).toBeNull();
+  });
+
   it('im Archiv: kein Antworten; Wiederherstellen daneben und der Satz, dass Einsortieren sie zurückholt', async () => {
     const { result } = await geoeffnet(53);
     expect(result.current.antwort).toBeNull();
@@ -581,6 +600,72 @@ describe('useEinsortieren: Ziel und was mitgeht', () => {
     expect(result.current.vorgaenge!.map((v) => v.id).sort()).toEqual([1, 3, 6, 7]);
     expect(result.current.hinweis).toBe(EINSORTIEREN_HINWEIS.faden);
     expect(result.current.modus).toBe('bestehend');
+  });
+
+  it('mit Vorgabe (Absender bekannt): der Vorgang ist gewählt, beim neuen Vorgang die Gemeinde -- Absenden nimmt die Wahl', async () => {
+    const onFertig = vi.fn();
+    const { result } = renderHook(() => useEinsortieren({ id: 52, betreff: 'Re: Frage' }, onFertig, { vorgabe: { vorgangId: 6, organizationId: 7 } }));
+    await waitFor(() => expect(result.current.vorgaenge).not.toBeNull());
+    expect(result.current.vorgangWahl).toBe('6');
+    expect(result.current.gewaehlterVorgang?.id).toBe(6);
+    expect(result.current.neu).toEqual({ art: '', bereich: '', dringlichkeit: 'normal', betreff: 'Frage', organizationId: '7' });
+    await act(async () => { await result.current.absenden(); });
+    expect(server.aufrufe('post', '/support/mail/nachrichten/52/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 6 }]);
+    expect(onFertig).toHaveBeenCalledWith(6);
+  });
+
+  it('eine Vorgabe ohne Vorgang belegt nur die Gemeinde vor; beim Verschieben aus einem Vorgang gilt keine Vorgabe', async () => {
+    const nurGemeinde = renderHook(() => useEinsortieren({ id: 52, betreff: 'Re: Frage' }, undefined, { vorgabe: { vorgangId: null, organizationId: 8 } }));
+    await waitFor(() => expect(nurGemeinde.result.current.vorgaenge).not.toBeNull());
+    expect(nurGemeinde.result.current.vorgangWahl).toBe('');
+    expect(nurGemeinde.result.current.neu.organizationId).toBe('8');
+
+    const verschieben = renderHook(() => useEinsortieren({ id: 13, betreff: 'AW: Re: Chat' }, undefined, { ausVorgang: 1, vorgabe: { vorgangId: 6, organizationId: 7 } }));
+    await waitFor(() => expect(verschieben.result.current.vorgaenge).not.toBeNull());
+    expect(verschieben.result.current.vorgangWahl).toBe('');
+    expect(verschieben.result.current.gewaehlterVorgang).toBeNull();
+    expect(verschieben.result.current.neu.organizationId).toBe('');
+  });
+
+  it('useDirektEinsortieren: derselbe Aufruf wie aus dem Dialog ({ vorgang_id }), dieselbe Folge -- Meldung, „Support-Daten geändert", onFertig', async () => {
+    const onFertig = vi.fn();
+    const geaendert = vi.fn();
+    const ab = abonniereSupportGeaendert(geaendert);
+    try {
+      const { result } = renderHook(() => useDirektEinsortieren(52, onFertig));
+      let ok = false;
+      await act(async () => { ok = await result.current.einsortieren(6); });
+      expect(ok).toBe(true);
+      expect(server.aufrufe('post', '/support/mail/nachrichten/52/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 6 }]);
+      expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 6 einsortiert');
+      expect(geaendert).toHaveBeenCalledTimes(1);
+      expect(onFertig).toHaveBeenCalledWith(6);
+      // Wie der Server: Der Faden geht aus dem Posteingang mit.
+      expect(server.stand.mails.filter((m) => m.faden === 'post').map((m) => m.vorgang_id)).toEqual([6, 6]);
+    } finally {
+      ab();
+    }
+  });
+
+  it('useDirektEinsortieren: ein Fehler kommt als Meldung, kein onFertig; ohne Netz und ohne Mail kein Aufruf', async () => {
+    const onFertig = vi.fn();
+    server.stand.fehler.set('POST /support/mail/nachrichten/52/einsortieren', Object.assign(new Error('x'), { response: { status: 404, data: { error: 'Vorgang nicht gefunden' } } }));
+    const { result } = renderHook(() => useDirektEinsortieren(52, onFertig));
+    let ok = true;
+    await act(async () => { ok = await result.current.einsortieren(6); });
+    expect(ok).toBe(false);
+    expect(h.setError).toHaveBeenCalledWith('Vorgang nicht gefunden');
+    expect(onFertig).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    h.online = false;
+    const offline = renderHook(() => useDirektEinsortieren(52, onFertig));
+    await act(async () => { ok = await offline.result.current.einsortieren(6); });
+    expect(ok).toBe(false);
+    const ohneMail = renderHook(() => useDirektEinsortieren(null, onFertig));
+    await act(async () => { ok = await ohneMail.result.current.einsortieren(6); });
+    expect(ok).toBe(false);
+    expect(server.aufrufe('post', /einsortieren$/)).toHaveLength(1);
   });
 
   it('aus einem Vorgang: der eigene steht nicht zur Wahl, nur diese Mail geht; Herauslösen beginnt mit „neu“', async () => {
