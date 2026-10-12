@@ -135,7 +135,7 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
       postfach: mail.postfach,
       betreffVorschlag,
       an: letzteEingehende.von_adresse,
-      senden: (koerper: MailAntwortDaten) => api.post(`/support/mail/nachrichten/${beantwortetId}/antworten`, koerper),
+      senden: async (koerper: MailAntwortDaten) => (await api.post(`/support/mail/nachrichten/${beantwortetId}/antworten`, koerper)).data,
       beantwortet: letzteEingehende,
     };
   }, [mail, stand, letzteEingehende, betreffVorschlag]);

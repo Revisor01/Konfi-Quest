@@ -284,7 +284,38 @@ describe('useVorgangDetail: Status, Ablehnen, Abschluss', () => {
     expect(result.current.vorgang?.betreff).toBe('Chat lädt nicht');
   });
 
-  it('„Danach“ setzt den Status leise -- ohne eigene Meldung; Erledigt meldet den Abschluss', async () => {
+  it('die Antwort trägt die angezeigte Mail (antwort_auf = die jüngste eingehende), auch wenn der Support zuletzt schrieb', async () => {
+    server.stand.mails.push(mail(14, 1, { richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: ['lena.probe@example.org'],
+      betreff: 'Re: Chat zeigt nichts Neues [Vorgang 1]', text: 'Klappt es?', gesendet_am: '2026-10-03T08:30:00Z', gelesen_am: '2026-10-03T08:30:00Z' }));
+    const { result } = await geladen(1);
+    expect(result.current.beantwortet?.id).toBe(13);
+    expect(result.current.antwort?.antwortAuf).toBe(13);
+    // Im Posteingang steht die beantwortete Mail in der Adresse des Aufrufs -- kein Feld im Körper.
+    const post = renderHook(() => usePostDetail(52));
+    await waitFor(() => expect(post.result.current.antwort).not.toBeNull());
+    expect(post.result.current.antwort?.antwortAuf).toBeUndefined();
+  });
+
+  it('„Danach“ aus der Antwort: bestätigt nur derselbe Vorgang mit genau diesem Status; Erledigt meldet dann den Abschluss -- ohne PATCH', async () => {
+    const nachAbschluss = vi.fn();
+    const { result } = await geladen(1, { nachAbschluss });
+    const danach = result.current.antwort!.danach!;
+    const stand = (status: string, id = 1) => ({ nachricht: { id: 99 }, vorgang: { id, status, status_seit: '2026-10-03T09:00:00Z', archiviert_am: null } });
+    expect(danach.ausAntwort!(stand('wartet'), 'wartet')).toBe(true);
+    expect(nachAbschluss).not.toHaveBeenCalled();
+    // Ein älterer Server ({ nachricht }), ein anderer Status, ein anderer Vorgang, ein kaputtes Feld: nicht bestätigt.
+    expect(danach.ausAntwort!({ nachricht: { id: 99 } }, 'wartet')).toBe(false);
+    expect(danach.ausAntwort!(stand('in_arbeit'), 'wartet')).toBe(false);
+    expect(danach.ausAntwort!(stand('wartet', 2), 'wartet')).toBe(false);
+    expect(danach.ausAntwort!({ vorgang: 'wartet' }, 'wartet')).toBe(false);
+    expect(nachAbschluss).not.toHaveBeenCalled();
+    expect(danach.ausAntwort!({ nachricht: { id: 99 }, vorgang: { id: 1, status: 'erledigt', status_seit: '2026-10-03T09:00:00Z', archiviert_am: '2026-10-03T09:00:00Z' } }, 'erledigt')).toBe(true);
+    expect(nachAbschluss).toHaveBeenCalledTimes(1);
+    expect(nachAbschluss).toHaveBeenCalledWith('erledigt', 1);
+    expect(server.aufrufe('patch')).toEqual([]);
+  });
+
+  it('„Danach“ per PATCH (die Rückfallebene für ältere Server) setzt den Status leise -- ohne eigene Meldung; Erledigt meldet den Abschluss', async () => {
     const nachAbschluss = vi.fn();
     const { result } = await geladen(1, { nachAbschluss });
     expect(result.current.antwort?.danach?.wahlen).toEqual(['wartet', 'in_arbeit', 'erledigt']);
@@ -316,9 +347,12 @@ describe('useVorgangDetail: der Stand nach Nachfassen und Wiederherstellen in de
     expect(result.current.stand).toMatchObject({ fall: '5', haupt: 'antworten', satz: 'Wartet seit 03.10., 12:00 auf Pastorin Lena Probe – nachfassen?' });
     expect(result.current.antwort?.danach?.vorgabe).toBe('wartet');
 
-    // Was der Editor tut: senden, dann „Danach" mit der Vorgabe; die Meldung lädt neu.
-    await act(async () => { await result.current.antwort!.senden({ betreff: 'Re: Chat', text: 'Klappt es inzwischen?', an: 'lena.probe@example.org' }); });
-    await act(async () => { await result.current.antwort!.danach!.setzen('wartet'); });
+    // Was der Editor tut (seit 12.10.2026): senden mit „Danach" (Vorgabe) im Körper; der Server bestätigt den
+    // Status in der Antwort -- kein PATCH. Die Meldung lädt neu.
+    let antwort: unknown;
+    await act(async () => { antwort = await result.current.antwort!.senden({ betreff: 'Re: Chat', text: 'Klappt es inzwischen?', an: 'lena.probe@example.org', status: 'wartet', antwort_auf: 91 }); });
+    expect(result.current.antwort!.danach!.ausAntwort!(antwort, 'wartet')).toBe(true);
+    expect(server.aufrufe('patch')).toEqual([]);
     await act(async () => { meldeSupportGeaendert(); });
     await waitFor(() => expect(result.current.vorgang?.verlauf.length).toBe(3));
     expect(result.current.vorgang?.status_seit).toBe('2026-10-03T10:00:00Z');
@@ -379,24 +413,40 @@ describe('useAntwortEditor: „Danach“, feste Zeile, Wahl', () => {
     await act(async () => { await new Promise((fertig) => setTimeout(fertig, 0)); });
   };
 
-  it('nach dem Senden setzt „Danach“ den gewählten Status; Erfolg heißt „Antwort gesendet“', async () => {
+  it('„Danach“ geht im Körper mit; bestätigt die Antwort des Servers den Status, kein zweiter Aufruf -- Erfolg heißt „Antwort gesendet“', async () => {
     const setzen = vi.fn().mockResolvedValue(true);
+    const ausAntwort = vi.fn().mockReturnValue(true);
     const onGesendet = vi.fn();
-    const p = props({ danach: { wahlen: ['wartet', 'in_arbeit', 'erledigt'], vorgabe: 'wartet', setzen }, onGesendet });
+    const antwortDesServers = { nachricht: { id: 99 }, vorgang: { id: 1, status: 'in_arbeit', status_seit: '2026-10-03T09:00:00Z', archiviert_am: null } };
+    const p = props({ danach: { wahlen: ['wartet', 'in_arbeit', 'erledigt'], vorgabe: 'wartet', setzen, ausAntwort }, onGesendet, antwortAuf: 13, senden: vi.fn().mockResolvedValue(antwortDesServers) });
     const hook = await editor(p);
     expect(hook.result.current.danachStatus).toBe('wartet');
     expect(hook.result.current.danachWahlen).toEqual(['wartet', 'in_arbeit', 'erledigt']);
     act(() => hook.result.current.setDanachStatus('in_arbeit'));
     await tippenUndSenden(hook);
-    expect(p.senden).toHaveBeenCalledWith({ text: 'Hallo', betreff: 'Re: Frage', an: 'lena.probe@example.org' });
-    expect(setzen).toHaveBeenCalledTimes(1);
-    expect(setzen).toHaveBeenCalledWith('in_arbeit');
+    expect(p.senden).toHaveBeenCalledWith({ text: 'Hallo', betreff: 'Re: Frage', an: 'lena.probe@example.org', status: 'in_arbeit', antwort_auf: 13 });
+    expect(ausAntwort).toHaveBeenCalledWith(antwortDesServers, 'in_arbeit');
+    expect(setzen).not.toHaveBeenCalled();
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     expect(h.setError).not.toHaveBeenCalled();
     expect(onGesendet).toHaveBeenCalledTimes(1);
     // Danach steht wieder die Vorgabe da, der Text ist leer.
     expect(hook.result.current.danachStatus).toBe('wartet');
     expect(hook.result.current.entwurf.text).toBe('');
+  });
+
+  it('bestätigt die Antwort den Status nicht (älterer Server), setzt ihn die Rückfallebene: genau ein PATCH über `setzen`', async () => {
+    const setzen = vi.fn().mockResolvedValue(true);
+    const ausAntwort = vi.fn().mockReturnValue(false);
+    const p = props({ danach: { wahlen: ['wartet', 'in_arbeit'], vorgabe: 'wartet', setzen, ausAntwort }, senden: vi.fn().mockResolvedValue({ nachricht: { id: 99 } }) });
+    const hook = await editor(p);
+    await tippenUndSenden(hook);
+    expect(p.senden).toHaveBeenCalledWith({ text: 'Hallo', betreff: 'Re: Frage', an: 'lena.probe@example.org', status: 'wartet' });
+    expect(ausAntwort).toHaveBeenCalledWith({ nachricht: { id: 99 } }, 'wartet');
+    expect(setzen).toHaveBeenCalledTimes(1);
+    expect(setzen).toHaveBeenCalledWith('wartet');
+    expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
+    expect(h.setError).not.toHaveBeenCalled();
   });
 
   it('scheitert der Status: „Gesendet, Status nicht gesetzt.“ -- nie Stille, keine Erfolgsmeldung; der Entwurf ist trotzdem gesendet und leer', async () => {

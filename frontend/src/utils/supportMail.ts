@@ -24,7 +24,7 @@ import type {
 } from '../types/support';
 import { datumKurz } from './dateUtils';
 // Nur Typen: supportVorgaenge liest zur Laufzeit von hier, nicht umgekehrt.
-import type { Kennzahl, StandTon } from './supportVorgaenge';
+import type { Kennzahl, StandTon, VorgangStatus } from './supportVorgaenge';
 import { MAIL_ARCHIV_SATZ, kennzahlLabel } from '../seiten/supportDetail';
 
 // --- Postfaecher -------------------------------------------------------------
@@ -269,15 +269,27 @@ export function bausteinEinfuegen(
   return { betreff, text: neuerText };
 }
 
+/** Was nur die Antwort im Vorgang mitschickt (additiv seit 12.10.2026). */
+export interface AntwortZusatz {
+  /** „Danach": der Status nach dem Senden. */
+  status?: VorgangStatus | null;
+  /** Die angezeigte, beantwortete Mail (ihre ID). */
+  antwortAuf?: number | null;
+}
+
 /**
  * Koerper fuer POST …/antworten: Text ohne Leerraum am Ende, Betreff nur,
  * wenn einer dasteht (sonst setzt ihn der Server), `an` nur bei Gemeinden.
+ * Im Vorgang dazu `status` („Danach") und `antwort_auf` (die beantwortete
+ * Mail) -- jeweils nur, wenn es sie gibt; ältere Server übergehen beide.
  */
-export function antwortKoerper(entwurf: AntwortEntwurf, an?: string | null): MailAntwortDaten {
+export function antwortKoerper(entwurf: AntwortEntwurf, an?: string | null, zusatz: AntwortZusatz = {}): MailAntwortDaten {
   const koerper: MailAntwortDaten = { text: entwurf.text.replace(/\s+$/, '') };
   const betreff = entwurf.betreff.trim();
   if (betreff) koerper.betreff = betreff;
   if (an) koerper.an = an;
+  if (zusatz.status) koerper.status = zusatz.status;
+  if (typeof zusatz.antwortAuf === 'number' && Number.isInteger(zusatz.antwortAuf) && zusatz.antwortAuf > 0) koerper.antwort_auf = zusatz.antwortAuf;
   return koerper;
 }
 

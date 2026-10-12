@@ -8,6 +8,7 @@ import {
   STATUS_REIHE,
   VORGANG_FILTER,
   VORGANG_STATUS,
+  antwortVorgangLesen,
   antwortWegVon,
   artLabel,
   auswahlAusAdresse,
@@ -409,6 +410,28 @@ describe('Detail lesen: die Felder, die der Server schon lieferte und der Leser 
     const d = vorgangDetailLesen({ id: 2, gemeinde: { id: 7, name: 'x', wunsch_lizenz: 'riesig', kirchenkreis_id: 'elf' } });
     expect(d).toMatchObject({ status_seit: null, updated_at: null, erstellt_von_name: null, empfaenger: [] });
     expect(d?.gemeinde).toMatchObject({ wunsch_lizenz: null, kirchenkreis_id: null, intern: false });
+  });
+});
+
+describe('Antwort lesen: der Stand nach POST …/antworten (additiv seit 12.10.2026)', () => {
+  it('liest `vorgang` mit Status, status_seit und archiviert_am', () => {
+    expect(antwortVorgangLesen({ nachricht: { id: 99 }, vorgang: { id: 4, status: 'erledigt', status_seit: '2026-10-12T09:00:00Z', archiviert_am: '2026-10-12T09:00:00Z' } }))
+      .toEqual({ id: 4, status: 'erledigt', status_seit: '2026-10-12T09:00:00Z', archiviert_am: '2026-10-12T09:00:00Z' });
+    expect(antwortVorgangLesen({ nachricht: {}, vorgang: { id: 4, status: 'wartet', status_seit: null, archiviert_am: null } }))
+      .toEqual({ id: 4, status: 'wartet', status_seit: null, archiviert_am: null });
+  });
+
+  it('ein älterer Server ({ nachricht }) oder ein kaputtes Feld: null -- der Status gilt als nicht bestätigt', () => {
+    expect(antwortVorgangLesen({ nachricht: { id: 99 } })).toBeNull();
+    expect(antwortVorgangLesen({})).toBeNull();
+    expect(antwortVorgangLesen(null)).toBeNull();
+    expect(antwortVorgangLesen('ok')).toBeNull();
+    expect(antwortVorgangLesen({ vorgang: null })).toBeNull();
+    expect(antwortVorgangLesen({ vorgang: [] })).toBeNull();
+    expect(antwortVorgangLesen({ vorgang: { status: 'wartet' } })).toBeNull();
+    expect(antwortVorgangLesen({ vorgang: { id: '4', status: 'wartet' } })).toBeNull();
+    expect(antwortVorgangLesen({ vorgang: { id: 4, status: 'archiviert' } })).toBeNull();
+    expect(antwortVorgangLesen({ vorgang: { id: 4 } })).toBeNull();
   });
 });
 

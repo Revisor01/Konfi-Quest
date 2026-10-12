@@ -17,6 +17,13 @@
 // Löschen meldet `nachAbschluss` den Abschluss -- die Web-Fassung öffnet
 // dann den nächsten Eintrag (Frage 6).
 //
+// Seit 12.10.2026 (Paket 6, additiv): Die Antwort trägt „Danach" als `status`
+// und die angezeigte, beantwortete Mail als `antwort_auf` im Körper. Der
+// Server setzt den Status in derselben Transaktion und nennt den Stand danach
+// (`vorgang`); bestätigt er ihn, entfällt der PATCH, und Erledigt meldet den
+// Abschluss wie bisher. Ein älterer Server übergeht beide Felder -- dann setzt
+// der PATCH den Status wie bis dahin.
+//
 // Jede Änderung meldet „Support-Daten geändert" (utils/supportAktualisieren.ts):
 // Der Vorgang selbst, die Liste, die Übersicht und die roten Zahlen der Leiste
 // laden danach von selbst neu. Eine Eingabe, die noch nicht gespeichert ist
@@ -34,6 +41,7 @@ import { gemeindenSortiert, standardBetreff, ungeleseneIds, ANFRAGE_BETREFF } fr
 import {
   DANACH_VORGABE,
   ERLEDIGT_HINWEIS,
+  antwortVorgangLesen,
   antwortWegVon,
   danachWahlen,
   istArchiviert,
@@ -385,18 +393,28 @@ export function useVorgangDetail(vorgangId: number, optionen?: (() => void) | Vo
 
   const archiviert = vorgang !== null && istArchiviert(vorgang);
 
-  // Nach dem Senden setzt „Danach" den Status (leise: Erfolg und Fehler meldet der Editor).
+  // „Danach": Der Status geht im Körper der Antwort mit. Bestätigt die Antwort des Servers ihn
+  // (`vorgang.status`), ist er gesetzt -- Erledigt meldet dann den Abschluss wie nach dem PATCH.
+  // Sonst (älterer Server) setzt ihn statusPatchen leise (Erfolg und Fehler meldet der Editor).
   // Gerufen wird statusPatchen aus dem jüngsten Rendern.
   const statusPatchenAktuell = useRef(statusPatchen);
   useEffect(() => { statusPatchenAktuell.current = statusPatchen; });
   // Ohne Wahl (erledigt oder im Archiv) kein „Danach": Die Antwort lässt den Status, wie er ist.
   const danach: AntwortDanach | null = useMemo(() => {
     const wahlen = vorgang ? danachWahlen(vorgang) : [];
-    return wahlen.length > 0 ? {
+    if (!vorgang || wahlen.length === 0) return null;
+    const id = vorgang.id;
+    return {
       wahlen,
       vorgabe: DANACH_VORGABE,
       setzen: (s: VorgangStatus) => statusPatchenAktuell.current(s, true),
-    } : null;
+      ausAntwort: (antwort: unknown, s: VorgangStatus) => {
+        const danachStand = antwortVorgangLesen(antwort);
+        if (!danachStand || danachStand.id !== id || danachStand.status !== s) return false;
+        if (s === 'erledigt') rueckrufe.current.nachAbschluss?.('erledigt', id);
+        return true;
+      },
+    };
   }, [vorgang]);
 
   // Was das Antwortformular braucht -- fuer App (Modal) und Web (unter dem
@@ -419,9 +437,12 @@ export function useVorgangDetail(vorgangId: number, optionen?: (() => void) | Vo
       empfaenger: mitWahl ? empfaenger : null,
       empfaengerFehlt: false,
       empfaengerVorgabe: vorgabe,
-      senden: (koerper: MailAntwortDaten) => api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper),
+      // Der Körper der Antwort des Servers -- „Danach" liest daraus, ob der Status gesetzt ist.
+      senden: async (koerper: MailAntwortDaten) => (await api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper)).data,
       danach,
       beantwortet,
+      // Auf sie beziehen sich In-Reply-To und „Re:" -- dieselbe Mail, die „Du antwortest auf" nennt.
+      antwortAuf: beantwortet?.id ?? null,
     };
   }, [vorgang, antwortWeg, betreffVorschlag, empfaenger, antwortVorgabe, beantwortet, danach]);
 

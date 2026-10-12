@@ -245,6 +245,18 @@ describe('Antworten senden', () => {
     expect(antwortKoerper({ betreff: '', text: 'Hallo' }, 'leitung@example.org')).toEqual({ text: 'Hallo', an: 'leitung@example.org' });
   });
 
+  it('Koerper im Vorgang (additiv seit 12.10.2026): „Danach" als status und die beantwortete Mail als antwort_auf -- nur, wenn es sie gibt', () => {
+    expect(antwortKoerper({ betreff: 'Re: Frage', text: 'Hallo' }, 'leitung@example.org', { status: 'wartet', antwortAuf: 13 }))
+      .toEqual({ text: 'Hallo', betreff: 'Re: Frage', an: 'leitung@example.org', status: 'wartet', antwort_auf: 13 });
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { status: 'erledigt' })).toEqual({ text: 'Hallo', status: 'erledigt' });
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { antwortAuf: 13 })).toEqual({ text: 'Hallo', antwort_auf: 13 });
+    // Ohne „Danach" und ohne beantwortete Mail bleibt der Körper, wie er war -- auch keine leeren Felder.
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { status: null, antwortAuf: null })).toEqual({ text: 'Hallo' });
+    // Keine Kennung: kein antwort_auf (der Server lehnte sonst mit 400 ab).
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { antwortAuf: 0 })).toEqual({ text: 'Hallo' });
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { antwortAuf: 1.5 })).toEqual({ text: 'Hallo' });
+  });
+
   it('vor dem Senden: Empfaenger (wenn noetig), dann Text', () => {
     expect(antwortFehler({ betreff: '', text: 'x' }, true, '')).toBe('Bitte einen Empfänger wählen');
     expect(antwortFehler({ betreff: '', text: '  ' })).toBe('Bitte einen Text schreiben');

@@ -220,6 +220,21 @@ describe('Breit lesen: der Schalter im Kopf der Liste', () => {
     fireEvent.click(blaettern().getByRole('button', { name: 'Voriger Eintrag' }));
     await titel('Chat zeigt nichts Neues');
   });
+
+  it('„Danach: Erledigt" beim Senden: ein Aufruf, den der Server bestätigt -- danach der nächste Eintrag wie nach Erledigt (Frage 6)', async () => {
+    await vorgangOeffnen(1);
+    fireEvent.click(within(document.querySelector('.web-lesen__kopf') as HTMLElement).getByRole('button', { name: 'Antworten' }));
+    const editor = within(screen.getByRole('region', { name: 'Antwort schreiben' }));
+    fireEvent.change(editor.getByRole('combobox', { name: 'Danach' }), { target: { value: 'erledigt' } });
+    fireEvent.change(editor.getByLabelText('Text der Antwort'), { target: { value: 'Dann ist alles gut.' } });
+    fireEvent.click(editor.getByRole('button', { name: 'Antwort senden' }));
+    await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Senden')?.handler?.(); });
+    await titel('Wie lege ich einen Jahrgang an?');
+    expect(window.location.pathname).toBe('/admin/support/vorgaenge/2');
+    expect(server.aufrufe('post', '/support/vorgaenge/1/antworten').map((a) => (a.koerper as { status?: string }).status)).toEqual(['erledigt']);
+    expect(server.aufrufe('patch')).toEqual([]);
+    expect(server.stand.vorgaenge.find((v) => v.id === 1)).toMatchObject({ status: 'erledigt', archiviert_am: server.stand.jetzt });
+  });
 });
 
 describe('Breit lesen: der Fokus geht mit, wenn sein Knopf verschwindet', () => {

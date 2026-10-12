@@ -192,17 +192,21 @@ describe('Vorgang aus einer Anfrage: Antworten', () => {
 
     const abrufeVorher = server.aufrufe('get', '/support/vorgaenge/4').length;
     await bestaetigen();
+    // Seit 12.10.2026 im Körper: „Danach" (Vorgabe „Wartet") und die beantwortete Mail (11, Annas -- nicht
+    // die eigene Antwort 12, die zuletzt kam).
     expect(server.aufrufe('post', '/support/vorgaenge/4/antworten').map((a) => a.koerper)).toEqual([{
       text: 'Hallo Anna,\nes geht los.',
       betreff: 'Re: Eure Anfrage bei Konfi Quest',
+      status: 'wartet',
+      antwort_auf: 11,
     }]);
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     // Das Modal schließt sich; geöffnet ist das Formular wieder leer.
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Antworten' })).toBeNull());
     await waitFor(() => expect(server.aufrufe('get', '/support/vorgaenge/4').length).toBeGreaterThan(abrufeVorher));
-    // „Danach“ (Simon, 11.10.2026, Frage 3): nach dem Senden ein PATCH mit dem Status -- Vorgabe „Wartet“.
-    // Bis dahin blieb der Vorgang auf „In Arbeit“, wie der Server ihn beim Antworten setzt.
-    expect(server.aufrufe('patch', '/support/vorgaenge/4').map((a) => a.koerper)).toEqual([{ status: 'wartet' }]);
+    // „Danach“ (Simon, 11.10.2026, Frage 3) setzt der Server mit der Antwort -- Vorgabe „Wartet“. Bis
+    // 12.10.2026 folgte dafür ein PATCH; den gibt es nur noch für ältere Server (webVorgangDetail.test.tsx).
+    expect(server.aufrufe('patch', '/support/vorgaenge/4')).toEqual([]);
     expect(await screen.findByText('Wartet')).toBeInTheDocument();
     await waitFor(() => expect(mailZeilen()).toHaveLength(3));
     await antwortOeffnen();

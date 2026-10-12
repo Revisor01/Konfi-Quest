@@ -15,6 +15,13 @@
 // Rückmeldung"); scheitert das, kommt „Gesendet, Status nicht gesetzt." --
 // nie Stille. Gibt es genau eine Adresse, steht sie als feste Zeile da
 // (`feste`), sonst zur Wahl mit lesbarem Etikett (`empfaengerOptionen`).
+//
+// Seit 12.10.2026 (Paket 6, additiv): Der Status geht im Körper der Antwort
+// mit (`status`), der Server setzt ihn in derselben Transaktion wie das
+// Speichern -- ein Aufruf statt zwei. Bestätigt die Antwort des Servers ihn
+// nicht (ein älterer Server übergeht das Feld), folgt wie bis dahin der PATCH.
+// Im Vorgang trägt der Körper auch die angezeigte, beantwortete Mail
+// (`antwort_auf`): Auf sie beziehen sich In-Reply-To und „Re:".
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIonAlert } from '@ionic/react';
@@ -51,14 +58,19 @@ import { offlineBlockiert } from '../../utils/offlineAktion';
 import { meldeSupportGeaendert, useSupportGeaendert } from '../../utils/supportAktualisieren';
 
 /**
- * „Danach": der Status des Vorgangs nach dem Senden. `setzen` schickt ihn
- * (PATCH) und meldet nichts selbst -- Erfolg oder „Gesendet, Status nicht
- * gesetzt." sagt der Editor.
+ * „Danach": der Status des Vorgangs nach dem Senden. Er geht im Körper der
+ * Antwort mit; `ausAntwort` liest aus der Antwort des Servers, ob er gesetzt
+ * ist (und tut, was danach folgt -- Erledigt meldet den Abschluss). Sonst
+ * schickt ihn `setzen` (PATCH, die Rückfallebene für ältere Server). Beide
+ * melden nichts selbst -- Erfolg oder „Gesendet, Status nicht gesetzt." sagt
+ * der Editor.
  */
 export interface AntwortDanach {
   wahlen: readonly VorgangStatus[];
   vorgabe: VorgangStatus;
   setzen: (s: VorgangStatus) => Promise<boolean>;
+  /** true: Die Antwort des Servers (Körper) bestätigt den Status `s` -- kein PATCH mehr. */
+  ausAntwort?: (antwort: unknown, s: VorgangStatus) => boolean;
 }
 
 export interface AntwortFormularProps {
@@ -80,7 +92,7 @@ export interface AntwortFormularProps {
    * klar war, wem geantwortet wird.
    */
   empfaengerVorgabe?: string | null;
-  /** Schickt die Antwort; wirft beim Scheitern (axios-Fehler). */
+  /** Schickt die Antwort und gibt den Körper der Antwort des Servers zurück; wirft beim Scheitern (axios-Fehler). */
   senden: (koerper: MailAntwortDaten) => Promise<unknown>;
   /**
    * Nach dem Senden, falls die Seite noch etwas tun will. Verlauf, Listen und
@@ -92,6 +104,11 @@ export interface AntwortFormularProps {
   danach?: AntwortDanach | null;
   /** Die Mail, auf die geantwortet wird (App-Modal: „Du antwortest auf"). */
   beantwortet?: MailNachricht | null;
+  /**
+   * Nur im Vorgang: die ID der beantworteten Mail für den Körper
+   * (`antwort_auf`). Im Posteingang steht sie schon in der Adresse des Aufrufs.
+   */
+  antwortAuf?: number | null;
 }
 
 /** „Name <adresse>" bzw. nur die Adresse. */
@@ -114,7 +131,7 @@ export function vorgewaehlterEmpfaenger(empfaenger: readonly MailEmpfaenger[] | 
 
 export function useAntwortEditor({
   postfach, platzhalterFuer = null, betreffVorschlag, an = null, empfaenger = null, empfaengerFehlt = false, empfaengerVorgabe = null, senden, onGesendet,
-  danach = null, beantwortet = null,
+  danach = null, beantwortet = null, antwortAuf = null,
 }: AntwortFormularProps) {
   const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
@@ -235,8 +252,8 @@ export function useAntwortEditor({
       setError(meldung);
       return;
     }
-    const koerper = antwortKoerper(entwurf, empfaengerNoetig ? gewaehlt : null);
     const nachher = danach && danachStatus ? danachStatus : null;
+    const koerper = antwortKoerper(entwurf, empfaengerNoetig ? gewaehlt : null, { status: nachher, antwortAuf });
     presentAlert({
       header: 'Antwort senden',
       message: `${empfaengerAnzeige ? `An ${empfaengerAnzeige}` : 'An den Absender'}${koerper.betreff ? `: „${koerper.betreff}“` : ''} von ${POSTFACH_INFO[postfach].kurz} senden?`,
@@ -248,8 +265,9 @@ export function useAntwortEditor({
             void (async () => {
               setSendet(true);
               setProblem(null);
+              let antwort: unknown;
               try {
-                await senden(koerper);
+                antwort = await senden(koerper);
               } catch (err) {
                 const art = sendeProblem(fehlerStatus(err), fehlerDaten(err)?.error);
                 if (art) setProblem(art);
@@ -262,7 +280,9 @@ export function useAntwortEditor({
               setBetreffBearbeiten(false);
               setDanachStatus(null);
               let statusGesetzt = true;
-              if (danach && nachher) {
+              // Bestätigt der Server den Status (er ging im Körper mit), ist er gesetzt. Sonst --
+              // ein älterer Server übergeht das Feld -- die Rückfallebene: PATCH wie bis 12.10.2026.
+              if (danach && nachher && !danach.ausAntwort?.(antwort, nachher)) {
                 try {
                   statusGesetzt = await danach.setzen(nachher);
                 } catch {

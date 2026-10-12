@@ -6,6 +6,11 @@
 // passiert, wenn eine Seite etwas aendert und eine ANDERE Seite im Speicher
 // stehen bleibt (Ionic haelt besuchte Seiten): Antworten kommen aus dem Stand,
 // nicht aus festen Attrappen. Alle Daten sind erfunden.
+//
+// Seit 12.10.2026 (Paket 6, additiv) wie der Server: Die Antwort im Vorgang
+// nimmt `status` und `antwort_auf` (beide vor dem Versand geprüft, sonst 400)
+// und antwortet `{ nachricht, vorgang }`; mit `alterServer` wie ein Server
+// davor -- er übergeht beide Felder und antwortet nur `{ nachricht }`.
 
 import { vi } from 'vitest';
 
@@ -141,7 +146,19 @@ export interface ServerOptionen {
   gemeindeNameWieServer?: boolean;
   /** Abweichende Angaben je Gemeinde (Lizenz, Stammdaten), etwa `{ 7: { max_konfis: 50, wunsch_lizenz: 'standard' } }`. */
   gemeinden?: Record<number, Partial<TestGemeinde>>;
+  /**
+   * Ein Server vor dem 12.10.2026: POST /support/vorgaenge/:id/antworten
+   * übergeht `status` und `antwort_auf` und antwortet nur `{ nachricht }`
+   * -- für die Rückfallebene („Danach" per PATCH).
+   */
+  alterServer?: boolean;
 }
+
+/** Die Status eines Vorgangs, wie der Server sie prüft (backend/utils/supportVorgaenge.js, STATUS). */
+const STATUS: ReadonlyArray<TestVorgang['status']> = ['neu', 'in_arbeit', 'wartet', 'erledigt'];
+
+/** 400 wie der Server (middleware/validation.js bzw. eine eigene Meldung der Route). */
+const ungueltig = (data: Record<string, unknown>) => Object.assign(new Error('ungültig'), { response: { status: 400, data } });
 
 export function vorgaengeServer(optionen: ServerOptionen = {}) {
   const s = {
@@ -350,16 +367,47 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     if (/^\/support\/vorgaenge\/\d+\/antworten$/.test(pfad)) {
       const id = idAus(pfad, /vorgaenge\/(\d+)/);
       const v = finde(id);
-      if (v && v.status === 'neu') statusSetzen(v, 'in_arbeit');
-      s.mails.push(mail(s.naechsteId++, id, { richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: koerper?.an ? [String(koerper.an)] : null, betreff: `${koerper?.betreff ?? ''} [Vorgang ${id}]`, text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name }));
-      return Promise.resolve({ data: {} });
+      if (!v) return Promise.reject(nichtGefunden());
+      const alt = optionen.alterServer === true;
+      // Wie der Server: `status` und `antwort_auf` werden VOR dem Versand geprüft -- bei 400 geht nichts hinaus.
+      const status = alt ? undefined : koerper?.status;
+      if (status !== undefined && !STATUS.includes(status as TestVorgang['status'])) {
+        return Promise.reject(ungueltig({ error: 'Validierungsfehler', details: [{ field: 'status', message: `status: ${STATUS.join(', ')}` }] }));
+      }
+      const antwortAuf = alt ? undefined : koerper?.antwort_auf;
+      if (antwortAuf !== undefined && !(typeof antwortAuf === 'number' && Number.isInteger(antwortAuf) && antwortAuf > 0)) {
+        return Promise.reject(ungueltig({ error: 'Validierungsfehler', details: [{ field: 'antwort_auf', message: 'Kennung einer Mail erwartet' }] }));
+      }
+      const beantwortet = antwortAuf === undefined ? null : s.mails.find((m) => m.id === antwortAuf) ?? null;
+      if (antwortAuf !== undefined && beantwortet?.vorgang_id !== id) {
+        return Promise.reject(ungueltig({ error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' }));
+      }
+      // Der Bezug (In-Reply-To, References): die beantwortete Mail, sonst die jüngste des Vorgangs gleich welcher Richtung.
+      const bezug = beantwortet ?? mailsVon(id).at(-1) ?? null;
+      const nr = s.naechsteId++;
+      const nachricht = mail(nr, id, {
+        richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: koerper?.an ? [String(koerper.an)] : null,
+        betreff: `${koerper?.betreff ?? (bezug?.betreff ? `Re: ${bezug.betreff}` : v.betreff)} [Vorgang ${id}]`, text: String(koerper?.text),
+        gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name,
+        message_id: `<kq-${nr}@konfi-quest.example>`,
+        in_reply_to: bezug?.message_id ?? null,
+        referenzen: bezug?.message_id ? [...(bezug.referenzen ?? []).filter((r) => r !== bezug.message_id), bezug.message_id] : [],
+      });
+      s.mails.push(nachricht);
+      // In derselben Transaktion: der mitgeschickte Status -- sonst wie bisher „neu" auf „in Arbeit".
+      if (status !== undefined) { statusSetzen(v, status as TestVorgang['status']); erledigtArchiviert(v); } else if (v.status === 'neu') statusSetzen(v, 'in_arbeit');
+      if (alt) return Promise.resolve({ data: { nachricht } });
+      return Promise.resolve({ data: { nachricht, vorgang: { id: v.id, status: v.status, status_seit: v.status_seit ?? v.created_at, archiviert_am: v.archiviert_am } } });
     }
     if (/^\/support\/mail\/nachrichten\/\d+\/antworten$/.test(pfad)) {
       // Antwort auf eine Mail ohne Vorgang: eine ausgehende Mail im selben Faden.
       const m = s.mails.find((x) => x.id === idAus(pfad, /nachrichten\/(\d+)/));
-      if (m) s.mails.push(mail(s.naechsteId++, m.vorgang_id, { faden: m.faden ?? `mail-${m.id}`, richtung: 'aus', postfach: m.postfach, von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: [m.von_adresse], betreff: String(koerper?.betreff ?? ''), text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name }));
-      if (m && !m.faden) m.faden = `mail-${m.id}`;
-      return Promise.resolve({ data: {} });
+      if (!m) return Promise.reject(nichtGefunden());
+      const nachricht = mail(s.naechsteId++, m.vorgang_id, { faden: m.faden ?? `mail-${m.id}`, richtung: 'aus', postfach: m.postfach, von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: [m.von_adresse], betreff: String(koerper?.betreff ?? ''), text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name });
+      s.mails.push(nachricht);
+      if (!m.faden) m.faden = `mail-${m.id}`;
+      // Wie der Server: 201 { nachricht }.
+      return Promise.resolve({ data: { nachricht } });
     }
     if (/^\/support\/mail\/nachrichten\/\d+\/(archivieren|wiederherstellen)$/.test(pfad)) {
       const m = s.mails.find((x) => x.id === idAus(pfad, /nachrichten\/(\d+)/));

@@ -25,7 +25,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } 
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import type { AlertOptionen } from './ionicAttrappe';
-import { ANFRAGE_41, LEITUNG, mail, vorgang, vorgaengeServer } from './vorgaengeServer';
+import { ANFRAGE_41, LEITUNG, mail, vorgang, vorgaengeServer, type TestMail } from './vorgaengeServer';
 
 const h = vi.hoisted(() => ({
   apiGet: vi.fn(),
@@ -182,6 +182,11 @@ const antwortzeile = () => document.querySelector('button.web-antwortzeile') as 
 const antworten = () => fireEvent.click(within(kopf()).getByRole('button', { name: 'Antworten' }));
 const editor = () => screen.getByRole('region', { name: 'Antwort schreiben' });
 const an = () => screen.getByRole('combobox', { name: 'An' }) as HTMLSelectElement;
+/** Derselbe Stand, aber wie ein Server vor dem 12.10.2026: Die Antwort übergeht `status` und `antwort_auf`. */
+const alsAlterServer = () => {
+  server = vorgaengeServer({ vorgaenge: server.stand.vorgaenge, mails: server.stand.mails, alterServer: true });
+  server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
+};
 
 describe('Vorgang (Web): Kopf', () => {
   it('Kreis der Art, Betreff als Überschrift, Kennzeichen: Nr., Status, Dringend, Art › Bereich und die Gemeinde als Verweis', async () => {
@@ -985,7 +990,7 @@ describe('Vorgang (Web): Antworten', () => {
     expect(screen.queryByRole('combobox', { name: 'An' })).toBeNull();
   });
 
-  it('Senden mit Rückfrage; Körper mit Betreff, Text und Adresse; danach „Danach" (Vorgabe Wartet), der Editor schließt, die Mail steht im Verlauf', async () => {
+  it('Senden mit Rückfrage; EIN Aufruf mit Betreff, Text, Adresse, „Danach" (Vorgabe Wartet) und der beantworteten Mail; der Editor schließt, die Mail steht im Verlauf', async () => {
     server.stand.vorgaenge[0].kontakt_email = 'sekretariat@example.org';
     await oeffnen();
     antworten();
@@ -1001,17 +1006,19 @@ describe('Vorgang (Web): Antworten', () => {
     expect(server.aufrufe('post', /antworten$/)).toHaveLength(0);
 
     await bestaetigen('Senden');
+    // Seit 12.10.2026 im Körper: der Status (statt eines PATCH danach) und die beantwortete Mail (13, die jüngste eingehende).
     expect(server.aufrufe('post', '/support/vorgaenge/1/antworten')[0].koerper).toEqual({
-      text: 'Danke für die Rückmeldung.', betreff: 'Re: Chat zeigt nichts Neues', an: 'lena.probe@example.org',
+      text: 'Danke für die Rückmeldung.', betreff: 'Re: Chat zeigt nichts Neues', an: 'lena.probe@example.org', status: 'wartet', antwort_auf: 13,
     });
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
-    await waitFor(() => expect(server.aufrufe('patch', '/support/vorgaenge/1').map((a) => a.koerper)).toEqual([{ status: 'wartet' }]));
+    expect(server.aufrufe('patch', '/support/vorgaenge/1')).toEqual([]);
+    expect(server.stand.vorgaenge[0].status).toBe('wartet');
     expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
     await waitFor(() => expect(mails()).toHaveLength(4));
     expect(mailKopf(mails()[3])).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('„Danach: Erledigt" legt den Vorgang nach dem Senden ins Archiv', async () => {
+  it('„Danach: Erledigt" legt den Vorgang mit dem Senden ins Archiv -- in einem Aufruf', async () => {
     await allein();
     antworten();
     await waitFor(() => expect(editor().querySelector('p.web-antwort__an')).not.toBeNull());
@@ -1019,11 +1026,50 @@ describe('Vorgang (Web): Antworten', () => {
     fireEvent.change(text(), { target: { value: 'Erledigt.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Antwort senden' }));
     await bestaetigen('Senden');
-    await waitFor(() => expect(server.aufrufe('patch', '/support/vorgaenge/1').map((a) => a.koerper)).toEqual([{ status: 'erledigt' }]));
+    expect(server.aufrufe('post', '/support/vorgaenge/1/antworten')[0].koerper).toMatchObject({ status: 'erledigt' });
     await waitFor(() => expect(stand()).toHaveTextContent('Erledigt am 03.10.2026.'));
+    expect(server.aufrufe('patch', '/support/vorgaenge/1')).toEqual([]);
   });
 
-  it('scheitert „Danach", ist die Antwort trotzdem gesendet: „Gesendet, Status nicht gesetzt." -- nie Stille', async () => {
+  it('ein älterer Server übergeht den Status im Körper: dann setzt ihn der PATCH wie bis 12.10.2026 -- Erfolg wie sonst', async () => {
+    alsAlterServer();
+    await oeffnen();
+    antworten();
+    await waitFor(() => expect(editor().querySelector('p.web-antwort__an')).not.toBeNull());
+    fireEvent.change(text(), { target: { value: 'Danke.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Antwort senden' }));
+    await bestaetigen('Senden');
+    // Die Antwort nennt keinen Stand ({ nachricht }): Der Status gilt als nicht gesetzt, der PATCH folgt.
+    await waitFor(() => expect(server.aufrufe('patch', '/support/vorgaenge/1').map((a) => a.koerper)).toEqual([{ status: 'wartet' }]));
+    await waitFor(() => expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet'));
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(server.stand.vorgaenge[0].status).toBe('wartet');
+  });
+
+  it('schrieb der Support zuletzt, bezieht sich die Antwort trotzdem auf die angezeigte Mail -- In-Reply-To wie „Antwort an"', async () => {
+    // Kopfzeilen: 11 <- 12 <- 13, danach eine eigene Nachfrage 14 (die jüngste Mail des Vorgangs).
+    const kopf = (id: number, extra: Partial<TestMail>) => Object.assign(server.stand.mails.find((m) => m.id === id)!, extra);
+    kopf(11, { message_id: '<m11@ex>' });
+    kopf(12, { message_id: '<m12@kq>', in_reply_to: '<m11@ex>', referenzen: ['<m11@ex>'] });
+    kopf(13, { message_id: '<m13@ex>', in_reply_to: '<m12@kq>', referenzen: ['<m11@ex>', '<m12@kq>'] });
+    server.stand.mails.push(mail(14, 1, {
+      richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: ['lena.probe@example.org'], betreff: 'Re: Chat zeigt nichts Neues [Vorgang 1]',
+      text: 'Klappt es inzwischen?', gesendet_am: '2026-10-03T08:30:00Z', gelesen_am: '2026-10-03T08:30:00Z', message_id: '<m14@kq>', in_reply_to: '<m13@ex>', referenzen: ['<m11@ex>', '<m12@kq>', '<m13@ex>'],
+    }));
+    await oeffnen();
+    expect(antwortzeile()).toHaveTextContent('Antwort an Pastorin Lena Probe schreiben');
+    fireEvent.click(antwortzeile());
+    fireEvent.change(text(), { target: { value: 'Gut zu hören.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Antwort senden' }));
+    await bestaetigen('Senden');
+    expect(server.aufrufe('post', '/support/vorgaenge/1/antworten')[0].koerper).toMatchObject({ antwort_auf: 13 });
+    // Bis 12.10.2026 nahm der Server die jüngste Mail gleich welcher Richtung (14, die eigene) als Bezug.
+    const neu = server.stand.mails.find((m) => m.text === 'Gut zu hören.')!;
+    expect(neu).toMatchObject({ in_reply_to: '<m13@ex>', referenzen: ['<m11@ex>', '<m12@kq>', '<m13@ex>'] });
+  });
+
+  it('scheitert „Danach" (älterer Server, PATCH scheitert), ist die Antwort trotzdem gesendet: „Gesendet, Status nicht gesetzt." -- nie Stille', async () => {
+    alsAlterServer();
     await oeffnen();
     antworten();
     await waitFor(() => expect(editor().querySelector('p.web-antwort__an')).not.toBeNull());
@@ -1138,7 +1184,10 @@ describe('Vorgang (Web): Antworten', () => {
     expect(text().value).toBe('Danke, Anna Beispiel.');
     fireEvent.click(screen.getByRole('button', { name: 'Antwort senden' }));
     await bestaetigen('Senden');
-    expect(server.aufrufe('post', '/support/vorgaenge/3/antworten')[0].koerper).toEqual({ text: 'Danke, Anna Beispiel.', betreff: 'Re: Eure Anfrage bei Konfi Quest' });
+    // „Danach" mit der Vorgabe „Wartet" und die Mail der Anfrage (31) gehen im Körper mit (seit 12.10.2026).
+    expect(server.aufrufe('post', '/support/vorgaenge/3/antworten')[0].koerper).toEqual({
+      text: 'Danke, Anna Beispiel.', betreff: 'Re: Eure Anfrage bei Konfi Quest', status: 'wartet', antwort_auf: 31,
+    });
   });
 
   it('ohne Gemeinde, aber mit Kontakt des Formulars: von support@ an dessen Adresse', async () => {

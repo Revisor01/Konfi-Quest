@@ -5,10 +5,12 @@
 // einem Vorgang wandert beim Einsortieren allein, und die Lizenz-Routen
 // GET/PUT /organizations/:id und PATCH …/limit. Der PUT leert, was im Körper
 // fehlt -- genau deshalb schickt „Lizenz ändern" den vollen Körper
-// (utils/lizenzAendern.ts, lizenzPutKoerper).
+// (utils/lizenzAendern.ts, lizenzPutKoerper). Seit 12.10.2026 (Paket 6) die
+// Antwort im Vorgang mit `status` und `antwort_auf` und ihre Form
+// `{ nachricht, vorgang }` -- und ein älterer Server, der beides übergeht.
 import { describe, it, expect, vi } from 'vitest';
 import { mail, vorgang, vorgaengeServer } from './vorgaengeServer';
-import { vorgangDetailLesen } from '../../../utils/supportVorgaenge';
+import { antwortVorgangLesen, vorgangDetailLesen } from '../../../utils/supportVorgaenge';
 import { gemeindeStammLesen, lizenzPutKoerper } from '../../../utils/lizenzAendern';
 
 const api = () => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn(), put: vi.fn() });
@@ -41,6 +43,69 @@ describe('Attrappe wie der Server', () => {
     const d = vorgangDetailLesen((await a.get('/support/vorgaenge/1')).data);
     expect(d?.verlauf[0]).toMatchObject({ richtung: 'aus', verfasst_von: 9, verfasst_von_name: 'Test Super-Admin', an_adressen: ['lena.probe@example.org'] });
     expect(d).toMatchObject({ status: 'wartet', status_seit: server.stand.jetzt });
+  });
+
+  it('die Antwort im Vorgang (seit 12.10.2026): `status` in derselben Transaktion, Antwort `{ nachricht, vorgang }` mit dem Stand danach', async () => {
+    const a = api();
+    const server = vorgaengeServer({ vorgaenge: [vorgang(1, { organization_id: 7, status: 'neu' })], mails: [mail(11, 1)] });
+    server.installieren(a);
+    const antwort = (await a.post('/support/vorgaenge/1/antworten', { text: 'Hallo', betreff: 'Re: X', an: 'lena.probe@example.org', status: 'erledigt' })).data;
+    expect(antwortVorgangLesen(antwort)).toEqual({ id: 1, status: 'erledigt', status_seit: server.stand.jetzt, archiviert_am: server.stand.jetzt });
+    expect(antwort).toMatchObject({ nachricht: { richtung: 'aus', vorgang_id: 1, text: 'Hallo', verfasst_von: 9 } });
+    expect(server.aufrufe('patch')).toEqual([]);
+    // Ohne `status` wie bisher: „neu" geht auf „in Arbeit" -- und `vorgang` ist trotzdem dabei.
+    const zweiter = vorgaengeServer({ vorgaenge: [vorgang(2, { status: 'neu', kontakt_email: 'anna@example.org' })] });
+    zweiter.installieren(a);
+    expect(antwortVorgangLesen((await a.post('/support/vorgaenge/2/antworten', { text: 'Hallo' })).data)).toMatchObject({ id: 2, status: 'in_arbeit', archiviert_am: null });
+  });
+
+  it('die Antwort im Vorgang prüft `status` und `antwort_auf` vor dem Versand: 400, nichts geht hinaus', async () => {
+    const a = api();
+    const server = vorgaengeServer({ vorgaenge: [vorgang(1, { organization_id: 7 }), vorgang(2)], mails: [mail(11, 1), mail(21, 2), mail(31, null)] });
+    server.installieren(a);
+    await expect(a.post('/support/vorgaenge/1/antworten', { text: 'Hallo', status: 'archiviert' })).rejects.toMatchObject({ response: { status: 400, data: { error: 'Validierungsfehler' } } });
+    for (const fremd of [21, 31, 999]) {
+      await expect(a.post('/support/vorgaenge/1/antworten', { text: 'Hallo', antwort_auf: fremd }))
+        .rejects.toMatchObject({ response: { status: 400, data: { error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' } } });
+    }
+    expect(server.stand.mails.filter((m) => m.richtung === 'aus')).toEqual([]);
+    expect(server.stand.vorgaenge[0].status).toBe('neu');
+  });
+
+  it('`antwort_auf` ist der Bezug (In-Reply-To, References); ohne die jüngste Mail gleich welcher Richtung', async () => {
+    const a = api();
+    const server = vorgaengeServer({
+      vorgaenge: [vorgang(1, { organization_id: 7 })],
+      mails: [
+        mail(11, 1, { message_id: '<m11@ex>', gesendet_am: '2026-10-03T07:00:00Z' }),
+        mail(12, 1, { richtung: 'aus', message_id: '<m12@kq>', in_reply_to: '<m11@ex>', referenzen: ['<m11@ex>'], gesendet_am: '2026-10-03T08:00:00Z' }),
+      ],
+    });
+    server.installieren(a);
+    const mitBezug = (await a.post('/support/vorgaenge/1/antworten', { text: 'A', antwort_auf: 11 })).data as { nachricht: Record<string, unknown> };
+    expect(mitBezug.nachricht).toMatchObject({ in_reply_to: '<m11@ex>', referenzen: ['<m11@ex>'] });
+    const ohne = (await a.post('/support/vorgaenge/1/antworten', { text: 'B' })).data as { nachricht: Record<string, unknown> };
+    // Die jüngste ist jetzt die eben gesendete A (der Server vergibt jeder Antwort eine Message-ID).
+    expect(ohne.nachricht).toMatchObject({ in_reply_to: mitBezug.nachricht.message_id });
+  });
+
+  it('ein älterer Server (alterServer): übergeht `status` und `antwort_auf`, antwortet nur `{ nachricht }`', async () => {
+    const a = api();
+    const server = vorgaengeServer({ alterServer: true, vorgaenge: [vorgang(1, { organization_id: 7, status: 'neu' })], mails: [mail(11, 1)] });
+    server.installieren(a);
+    const antwort = (await a.post('/support/vorgaenge/1/antworten', { text: 'Hallo', status: 'wartet', antwort_auf: 999 })).data;
+    expect(Object.keys(antwort as object)).toEqual(['nachricht']);
+    expect(antwortVorgangLesen(antwort)).toBeNull();
+    expect(server.stand.vorgaenge[0].status).toBe('in_arbeit');
+  });
+
+  it('die Antwort im Posteingang: `{ nachricht }` an den Absender der Mail aus der Adresse', async () => {
+    const a = api();
+    const server = vorgaengeServer({ mails: [mail(31, null, { von_adresse: 'anna@example.org' })] });
+    server.installieren(a);
+    const antwort = (await a.post('/support/mail/nachrichten/31/antworten', { text: 'Hallo', betreff: 'Re: X' })).data;
+    expect(antwort).toMatchObject({ nachricht: { richtung: 'aus', an_adressen: ['anna@example.org'], text: 'Hallo' } });
+    expect(Object.keys(antwort as object)).toEqual(['nachricht']);
   });
 
   it('Einsortieren: eine Mail aus einem Vorgang geht allein; aus dem Posteingang der Faden', async () => {

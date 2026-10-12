@@ -7,6 +7,7 @@
 // sind hier `| null`.
 
 import type { LizenzSchluessel } from '../utils/lizenzen';
+import type { VorgangStatus } from '../utils/supportVorgaenge';
 
 /** Status einer Anfrage aus dem Formular der Homepage. */
 export type AnfrageStatus = 'neu' | 'in_arbeit' | 'angelegt' | 'abgelehnt';
@@ -276,6 +277,19 @@ export interface MailAntwortDaten {
   betreff?: string;
   /** Nur bei Gemeinden: eine Adresse aus /empfaenger. */
   an?: string;
+  /**
+   * Nur im Vorgang (POST /support/vorgaenge/:id/antworten, additiv seit
+   * 12.10.2026): der Status danach („Danach"), gesetzt in derselben
+   * Transaktion wie das Speichern der Antwort. Ältere Server übergehen das Feld.
+   */
+  status?: VorgangStatus;
+  /**
+   * Nur im Vorgang (additiv seit 12.10.2026): die Mail, auf die geantwortet
+   * wird -- In-Reply-To, References und „Re:" beziehen sich auf sie statt auf
+   * die jüngste Mail des Vorgangs. Sie muss zum Vorgang gehören, sonst 400
+   * (vor dem Versand). Ältere Server übergehen das Feld.
+   */
+  antwort_auf?: number;
 }
 
 /** Eine Gemeinde, wie GET /organizations sie liefert (nur, was die Support-Mail braucht). */
