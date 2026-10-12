@@ -83,6 +83,19 @@ const chip = (name: RegExp) => within(liste().getByRole('group', { name: 'Vorgä
 const vorgaengeListe = () => liste().getByRole('navigation', { name: 'Vorgänge' });
 const zeilen = () => within(vorgaengeListe()).getAllByRole('listitem');
 const zeile = (nummer: number) => zeilen().find((z) => within(z).queryByRole('button', { name: new RegExp(`^Vorgang ${nummer}:`) }));
+/**
+ * Welcher Vorgang nach einem Abschluss im Lesebereich der Vorgangsseite
+ * erscheint: der nach ihm in deren Liste, sonst der davor (Simon, 11.10.2026:
+ * Frage 6). Gelesen aus der Liste, wie sie vor dem Abschluss dastand.
+ */
+const naechsterNach = (nummer: number): number => {
+  const reihe = within(within(screen.getByTestId('detail')).getByRole('navigation', { name: 'Vorgänge' }))
+    .getAllByRole('button', { name: /^Vorgang \d+:/ })
+    .map((k) => Number(/^Vorgang (\d+):/.exec(k.getAttribute('aria-label')!)![1]));
+  const i = reihe.indexOf(nummer);
+  return reihe[i + 1] ?? reihe[i - 1];
+};
+const detailTitel = () => screen.getByTestId('detail').querySelector('.web-lesen__titel');
 /** Die Marke des Status steht als letzte in der Zeile. */
 const statusIn = (z: HTMLElement) => [...z.querySelectorAll('.web-postfachzeile__marken .web-pill')].pop()?.textContent;
 /** Einordnen im Dialog: ein Feld aendern, speichern. */
@@ -144,18 +157,18 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
     expect(server.aufrufe('patch')[0]).toMatchObject({ pfad: '/support/vorgaenge/1', koerper: { status: 'in_arbeit' } });
   });
 
-  it('Erledigt im Vorgang legt ihn ins Archiv: er verschwindet aus der offenen Liste, die Zahlen sinken, der Vorgang zeigt das Archiv', async () => {
+  it('Erledigt im Vorgang legt ihn ins Archiv: er verschwindet aus der offenen Liste, die Zahlen sinken, der Lesebereich zeigt den nächsten', async () => {
     await zeigen();
+    const naechster = naechsterNach(1);
     await einordnen('Status', 'erledigt');
 
     await waitFor(() => expect(zeile(1)).toBeUndefined());
     expect(zeilen()).toHaveLength(2);
     expect(chip(/^Offen/)).toHaveTextContent('2');
     await waitFor(() => expect(leiste()).toHaveTextContent('1/1'));
-    // Der Vorgang selbst zeigt, wo er jetzt liegt -- vom Server, nicht aus einer Vermutung.
-    expect(await detail().findByText('Erledigt und im Archiv')).toBeInTheDocument();
-    expect(detail().getByRole('button', { name: 'Wiederherstellen' })).toBeInTheDocument();
-    expect(detail().queryByRole('button', { name: 'Archivieren' })).toBeNull();
+    // Weiterlesen ohne Klick in die Liste (Frage 6); der erledigte steht im Archiv.
+    await waitFor(() => expect(detailTitel()).toHaveTextContent(`Betreff ${naechster}`));
+    expect(server.stand.vorgaenge.find((v) => v.id === 1)).toMatchObject({ status: 'erledigt', archiviert_am: server.stand.jetzt });
     expect(h.setSuccess).toHaveBeenCalledWith('Vorgang erledigt und ins Archiv gelegt');
   });
 
@@ -168,7 +181,7 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
 
     await waitFor(() => expect(zeile(3)).toBeDefined());
     expect(statusIn(zeile(3)!)).toBe('In Arbeit');
-    expect(detail().queryByText('Erledigt und im Archiv')).toBeNull();
+    expect(detail().queryByText(/^Erledigt am /)).toBeNull();
   });
 
   it('der Vorgang wird geöffnet: seine ungelesene Mail gilt als gelesen -- die Liste zeigt keine rote Zahl mehr, die Leiste sinkt', async () => {
@@ -200,8 +213,8 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
     // meldet ihn als gelesen.
     await waitFor(() => expect(leiste().textContent?.split('/')[1]).toBe('0'));
     expect(server.stand.mails.find((m) => m.id === 91)?.vorgang_id).toBe(2);
-    // Danach fuehrt der Weg zum Vorgang, in dem die Mail jetzt liegt.
-    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/2');
+    // Danach fuehrt der Weg zum Vorgang, in dem die Mail jetzt liegt -- mit ihr offen (?mail=).
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/2?mail=91');
   });
 
   it('Archivieren mehrerer Vorgänge in der Liste: der offene Vorgang daneben zeigt sofort sein Archiv', async () => {
@@ -212,12 +225,13 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
 
     await waitFor(() => expect(zeile(2)).toBeUndefined());
     expect(zeile(3)).toBeUndefined();
-    expect(await detail().findByText('Dieser Vorgang liegt im Archiv')).toBeInTheDocument();
+    expect(await detail().findByText('Im Archiv seit 03.10.2026. Eine neue Mail holt ihn zurück.')).toBeInTheDocument();
     expect(server.aufrufe('post', '/support/vorgaenge/sammel')[0].koerper).toEqual({ ids: [2, 3], aktion: 'archivieren' });
   });
 
-  it('Löschen im Vorgang: die Liste zeigt ihn nicht mehr, die Leiste sinkt', async () => {
+  it('Löschen im Vorgang: die Liste zeigt ihn nicht mehr, die Leiste sinkt, der Lesebereich zeigt den nächsten', async () => {
     await zeigen();
+    const naechster = naechsterNach(1);
     fireEvent.click(detail().getByRole('button', { name: 'Löschen' }));
     expect(h.alert?.header).toBe('Vorgang löschen');
     await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Löschen')?.handler?.(); });
@@ -225,9 +239,10 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
     await waitFor(() => expect(zeile(1)).toBeUndefined());
     await waitFor(() => expect(leiste()).toHaveTextContent('1/1'));
     expect(server.aufrufe('delete')[0].pfad).toBe('/support/vorgaenge/1');
-    // Die Liste steht schon da: kein Seitenwechsel, der Lesebereich wird leer.
+    // Die Liste steht schon da: kein Seitenwechsel; statt eines leeren Lesebereichs der nächste Eintrag.
     expect(h.push).not.toHaveBeenCalled();
-    expect(within(screen.getByTestId('detail')).getByText('Kein Vorgang gewählt')).toBeInTheDocument();
+    await waitFor(() => expect(detailTitel()).toHaveTextContent(`Betreff ${naechster}`));
+    expect(within(screen.getByTestId('detail')).queryByText('Kein Vorgang gewählt')).toBeNull();
   });
 
   it('eine Änderung von draußen (anderes Fenster, Mail abgeholt) erreicht alle Ansichten über die Meldung „Support-Daten geändert“', async () => {
@@ -261,13 +276,38 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
 
   it('eine Notiz, die noch nicht gespeichert ist, überlebt das Neuladen -- auch eine Änderung an anderer Stelle', async () => {
     await zeigen();
-    fireEvent.click(detail().getByRole('button', { name: /^Gemeinde, Anfrage und Notiz/ }));
+    // Die Notiz steht oben im Vorgang (11.10.2026; bis dahin eingeklappt unter „Gemeinde, Anfrage und Notiz").
+    fireEvent.click(detail().getByRole('button', { name: 'Interne Notiz' }));
     const notiz = () => detail().getByLabelText('Interne Notiz (nur für den Support)') as HTMLTextAreaElement;
     fireEvent.change(notiz(), { target: { value: 'Bitte zurückrufen' } });
     server.stand.vorgaenge[1].betreff = 'Betreff 2 geändert';
     act(() => { meldeSupportGeaendert(); });
     await liste().findByRole('button', { name: /^Vorgang 2: Betreff 2 geändert/ });
     expect(notiz().value).toBe('Bitte zurückrufen');
+  });
+
+  it('App: eine Notiz im Notiz-Modal, noch nicht gespeichert, überlebt das Neuladen -- auch eine neue Notiz von anderer Stelle', async () => {
+    h.breit = false;
+    render(<SupportVorgangDetailPage vorgangId={1} />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Interne Notiz hinzufügen' }));
+    const modal = within(screen.getByRole('dialog', { name: 'Notiz' }));
+    const notiz = () => modal.getByLabelText('Interne Notiz') as HTMLTextAreaElement;
+    fireEvent.change(notiz(), { target: { value: 'Bitte zurückrufen' } });
+    // Jemand anderes speichert inzwischen eine Notiz; die Meldung lädt den Vorgang neu.
+    server.stand.vorgaenge[0].notiz = 'Von anderer Stelle';
+    const vorher = server.aufrufe('get', '/support/vorgaenge/1').length;
+    act(() => { meldeSupportGeaendert(); });
+    await waitFor(() => expect(server.aufrufe('get', '/support/vorgaenge/1').length).toBe(vorher + 1));
+    expect(await screen.findByRole('button', { name: 'Interne Notiz bearbeiten: Von anderer Stelle' })).toBeInTheDocument();
+    expect(notiz().value).toBe('Bitte zurückrufen');
+    // Verworfen: im Modal steht wieder, was gespeichert ist.
+    await act(async () => { fireEvent.click(modal.getByRole('button', { name: 'Abbrechen' })); });
+    expect(h.alert?.header).toBe('Ungespeicherte Änderungen');
+    await act(async () => { h.alert?.buttons?.find((b) => b.text === 'Verwerfen')?.handler?.(); });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Interne Notiz bearbeiten: Von anderer Stelle' }));
+    expect((within(screen.getByRole('dialog', { name: 'Notiz' })).getByLabelText('Interne Notiz') as HTMLTextAreaElement).value).toBe('Von anderer Stelle');
+    expect(server.aufrufe('patch')).toHaveLength(0);
   });
 
   it('die eigene Änderung lädt den Vorgang genau einmal neu, nicht in einer Schleife', async () => {

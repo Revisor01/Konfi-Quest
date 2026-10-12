@@ -39,11 +39,6 @@ Nichts.
   dazu Systemleisten oben und unten (hell, dunkel, Gesten und drei Knöpfe,
   Tastatur, Datumsauswahl) und das In-App-Update
   ([betrieb/mindestversion.md](betrieb/mindestversion.md)).
-- [ ] **Support-Detailseiten übersichtlicher** — Entwurf für Vorgang,
-  Anfrage und Mail in App und Browser liegt vor (11.10.2026); wartet auf
-  Simons Antworten zu zwölf Fragen
-  ([planung/support-detailseiten.md](planung/support-detailseiten.md#fragen-an-simon)).
-  Danach Paket 1, die Fehler vorab.
 - [ ] **VoiceOver, Sprachsteuerung und größte Schrift am iPhone** —
   Voraussetzung für die Barrierefreiheitsangaben bei Apple
   ([Release](#release), „Barrierefreiheitsangaben im App Store").
@@ -60,12 +55,12 @@ Nichts.
   Play-Bildschirmfoto `konfi-challenge-feed` nach dem Deploy der deckenden
   Kopfleiste neu ziehen.
 - [ ] **Web-Version: was noch fehlt** — Support-Ansicht auf Handy und im
-  Web übersichtlicher (Simon, 10.10.2026; Mails, Posteingang und Vorgänge
-  erledigt 11.10.2026, Struktur, Textbausteine und Konten offen), eigene
-  Fenster für die übrigen Formulare (Simon, 11.10.2026; die häufigen
-  erledigt 11.10.2026, offen etwa Challenge, Konfi, Teilnehmende und
-  Zertifikat zuweisen), Leiste „Verwaltung", Rückweg ohne Gemeinde,
-  Kennzahlen, Einwilligung am Profil
+  Web übersichtlicher (Simon, 10.10.2026; Mails, Posteingang, Vorgänge und
+  ihre Detailseiten erledigt 11.10.2026, Struktur, Textbausteine und Konten
+  offen), eigene Fenster für die übrigen Formulare (Simon, 11.10.2026;
+  die häufigen erledigt 11.10.2026, offen etwa Challenge, Konfi,
+  Teilnehmende und Zertifikat zuweisen), Leiste „Verwaltung", Rückweg ohne
+  Gemeinde, Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular
   ([planung/support-vorgaenge.md](planung/support-vorgaenge.md)).
@@ -316,23 +311,43 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   eigene Wahl, deutsches Datum beim Melden in der App, „Aktivität
   eintragen" ohne Netz mit gemerkter Liste, Enter im Suchfeld, Level ohne
   Farbwahl im Browser, Team-Liste nach „Teamer:in anlegen" im Browser.
+- [x] 11.10.2026 — Support-Detailseiten übersichtlich, nach Simons Antworten
+  vom selben Tag: Stand-Satz mit Hauptknopf, Notiz oben, Verlauf flach mit
+  dem Editor unter der jüngsten Mail und „Danach“, Angaben als Karten,
+  Ablehnen, Einordnen mit Speichern auch in der App, Vorgang „Lizenz und
+  Abrechnung“ mit „Lizenz ändern“, Menü je Mail (verschieben, herauslösen),
+  Mail im Posteingang mit Einsortieren als Hauptknopf und Weiterleitung in
+  den Vorgang, „Breit lesen“ und nächster Eintrag im Browser; dabei die
+  sechs Darstellungsfehler vom Messen behoben, dazu die drei vom Ansehen
+  (12.10.2026): der Titel „Mail“ in der iOS-Kopfzeile der Mail-Seite,
+  „Support“ im Verlauf der App ganz (das Konto kürzt zuerst) und „‹ Alle …“
+  mit ‹ › auch, solange der nächste Eintrag lädt oder fehlt
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md);
+  Branches `support-detail/*`).
+- [x] 12.10.2026 — Rückfragen und Meldungen aus einem Browser-Fenster stehen
+  über ihm: `WebDialog` hängt in `ion-app` statt an `<body>`, in derselben
+  Ebene wie Ionics Alerts und Toasts (gemessen: 0 von 384 Rasterpunkten
+  über fünf Fenstern bei 1440 und 1024 px gehören der Seite, Toast und
+  „Nicht möglich“ obenauf). „Gemeinde anlegen“ fragt im Browser in einem
+  zweiten Fenster, wie Event und Badge. Damit auch die beiden Toasts, die
+  noch unter einem Fenster lagen: „Fehler beim Öffnen der Datei“ im Material
+  und „Foto erfolgreich gelöscht“ beim Prüfen einer Aktivität.
 
 
 ## Offen
 
 ### Code
 
-- **Support-Detailseiten: sechs Darstellungsfehler** (gefunden beim Messen
-  am 11.10.2026, am Code bestätigt): Vorsilben häufen sich im
-  vorgeschlagenen Betreff („Re: [Vorgang 2] Re: AW: Re: …"); Archivieren
-  und Löschen stehen an Mails, die schon in einem Vorgang liegen, und der
-  Server lehnt beides mit 409 ab; ein Gemeindename aus dem Formular gilt
-  im Browser als zugeordnete Gemeinde, Links führen auf `?gemeinde=null`;
-  die Empfängerwahl zeigt den rohen Schlüssel „· verlauf"; die
-  App-Kacheln von Vorgang und Mail laufen über; der Archiv-Satz der Mail
-  widerspricht dem Einsortieren-Knopf daneben. Ursachen und Fix je Punkt:
-  [planung/support-detailseiten.md](planung/support-detailseiten.md#fehler-vorab),
-  Paket 1.
+- **Übersicht: neueste Mails ohne Vorgang.** `GET /support/uebersicht`
+  liefert in `neueste_mails` kein `vorgang_id`:
+  `backend/routes/supportUebersicht.js` (`neuesteMails`) wählt es nicht
+  aus, und `ZUORDNUNG_SPALTEN` in `backend/utils/mailNachrichten.js` nennt
+  nur `anfrage_id`, `organization_id` und `gemeinde_name`. Ein Klick auf eine
+  der neuesten Mails geht deshalb über die Seite der Mail, die sich dann
+  durch den Vorgang ersetzt. Mit dem Feld (additiv, Paket 6 der
+  Detailseiten) führte die Übersicht direkt in den Vorgang; die Oberfläche
+  kann es schon (`WebUebersicht`, Test in `webUebersicht.test.tsx`)
+  (12.10.2026).
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird
@@ -413,16 +428,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   App-Modal ruft danach nur `refreshKonfis`; `useTeamerListe` lädt erst beim
   nächsten Wechsel zwischen Konfis und Team. Im Browser behoben
   (`teamStand` in `WebKonfis`) (11.10.2026).
-- **Meldungen am Rand liegen im Browser unter einem offenen Fenster.** Die
-  eigenen Fenster hängen mit z-index 1000 an `<body>`, Toasts und
-  `useIonAlert` in `ion-app`; gemessen lagen sie darunter. Die Formulare
-  zeigen ihre Meldungen deshalb im Fenster selbst, Rückfragen als zweites
-  kleines Fenster. Offen sind noch zwei Stellen: Scheitert im
-  Material-Fenster das Öffnen einer Datei, kommt „Fehler beim Öffnen der
-  Datei" als Toast unter dem Fenster (`useDateiOeffnen`); nach **Foto
-  löschen** im Fenster „Aktivität prüfen" kommt „Foto erfolgreich gelöscht"
-  als Toast unter dem Fenster, das offen bleibt (`setSuccess` in
-  `useAntragPruefen`) (11.10.2026).
 - **Kompakte Fenster im Browser: Feinschliff aus der Bilderprüfung**
   (11.10.2026, alle Fenster bei 1440 und 1280, hell und dunkel angesehen;
   kein Feld abgeschnitten, keine Überlappung):
@@ -559,6 +564,46 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
+- **Support-Detailseiten: Kreis der Art im schmalen Lesebereich.** Unter
+  600 px Lesebreite — bei 1280 px Fensterbreite neben der Liste — blendet
+  der Kopf den Kreis der Art aus; mit Kreis rutschten die Knöpfe in eine
+  zweite Reihe (Kopf 123 bzw. 135 statt 95 px, die Anfrage 135 statt 113 px,
+  gemessen 11.10.2026). Die Art steht dann in den Kennzeichen; bei einer
+  Anfrage steht dort „Noch nicht angelegt“, „Neue Gemeinde“ fehlt schmal
+  also. Der Plan sieht den Kreis ohne Ausnahme vor. So lassen oder den
+  Kreis kleiner zurückholen?
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md#messbarer-gewinn))
+  (11.10.2026)
+- **Support-Detailseiten: Messziele, die verfehlt sind.** Gemessen am
+  12.10.2026 gegen dieselben Testdaten wie der Plan: Der Kopf der Anfrage ist
+  im Browser 131 px hoch (Ziel ≈ 104, vorher 134), beim breiten Lesen mit der
+  Leiste zum Blättern 133 px; mit dem Betreff in bis zu drei Zeilen sind
+  Mail-Vorgang (1440) und Anliegen (1280) 117 statt 95 px hoch. Beim
+  Antworten rollt der Lesebereich 390 / 622 / 494 px (1440) bzw. 588 / 760 /
+  670 px (1280; Anliegen, Anfrage, Mail-Vorgang) statt höchstens 300, und
+  bei 1280 bleiben von der beantworteten Mail unter dem Kopf 6 / 30 / 6 px
+  im Bild (geschätzt waren 150). „Test Org-Admin 1“ steht im Anliegen an 7
+  Stellen statt 4, die Kontaktperson der Anfrage am Handy an 5 statt 3 (die
+  Skizze zeigt selbst 6). Die Seite am Handy ist 1817 / 2113 / 1943 px lang
+  (Ziel ≈ 1600 / 1700 / 1300, vorher 2647 / 4001 / 2227), weil die jüngste
+  Mail ganz offen steht und die Angaben offen folgen. Ziele neu setzen oder
+  nachbessern — etwa die jüngste Mail am Handy nach einigen Zeilen kürzen,
+  die Angaben dort einklappen, den Editor bei 1280 niedriger beginnen, den
+  Namen an Stand oder Antwortzeile weglassen?
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md#messbarer-gewinn))
+  (12.10.2026)
+- **„Lizenz ändern“ bei einer gesperrten Gemeinde.** Nach Ablauf von
+  Testphase oder Lizenz sperrt der nächtliche Lauf die Gemeinde
+  (`is_active = false`, `backend/services/backgroundService.js`). „Lizenz
+  ändern“ im Vorgang verlängert die Laufzeit, schreibt `is_active` aber
+  unverändert zurück: Der typische Antrag „Testphase abgelaufen, bitte
+  Lizenz“ endet mit einer weiter gesperrten Gemeinde. Seit 12.10.2026 sagen
+  Vorschau und Erfolgsmeldung das („Der Zugang der Gemeinde bleibt gesperrt
+  – freigeben lässt er sich im Formular der Gemeinde.“). Soll der Dialog bei
+  einer gesperrten Gemeinde selbst „Zugang wieder freigeben“ anbieten (der
+  PUT darf `is_active` setzen; keine neue Route)?
+  ([betrieb/support-ansicht.md](betrieb/support-ansicht.md#die-lizenz-im-vorgang-ändern))
+  (12.10.2026)
 - **Event mit fremdem Jahrgang speichern.** Eine Leitung, die nur einem Teil
   der Jahrgänge eines Events zugewiesen ist, kann es weder in der App noch im
   Browser speichern: `PUT /events/:id` prüft jeden Ziel-Jahrgang
@@ -642,6 +687,9 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   ein hellerer Wert lässt sich je Bereich an einer Stelle setzen (UI BF-04,
   Rest). Gemessen 08.10.2026: 25 von 51 Text-Tokens mit festem Farbwert
   liegen auf Weiß unter 4,5:1 — deshalb keine Kontrast-Angabe bei Apple.
+  Dazu gehören die Links und Aktionen der Support-Detailseiten in der App
+  (`--app-text-users`, 3,66:1; gemessen 11.10.2026) sowie im Mail-Verlauf
+  der Kreis „KQ“ (1,95:1) und die Marke „Gesendet“ (1,98:1).
 - **react-router 6.** Zwei moderate Meldungen (Open Redirect über Backslash,
   Constructor Injection bei SSR-Hydration) treffen die App nicht: kein SSR,
   Navigationsziele nur aus festen Pfaden mit eingesetzten Kennungen; Push-,

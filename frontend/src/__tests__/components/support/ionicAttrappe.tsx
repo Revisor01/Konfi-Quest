@@ -31,6 +31,31 @@ const betretenHorcher = new Set<() => void>();
 export function seiteBetreten(): void {
   for (const h of [...betretenHorcher]) h();
 }
+// Ebenso das Verlassen (useIonViewWillLeave): `seiteVerlassen()`.
+const verlassenHorcher = new Set<() => void>();
+
+/** Spielt „die Seite wird verlassen" nach: ruft alle Rueckrufe von useIonViewWillLeave. */
+export function seiteVerlassen(): void {
+  for (const h of [...verlassenHorcher]) h();
+}
+// „Ziehen zum Aktualisieren": IonRefresher zeigt nichts, merkt sich aber
+// seinen onIonRefresh; ein Test spielt das Ziehen mit
+// `ziehenZumAktualisieren()` nach.
+type ZiehenEreignis = { detail: { complete: () => void } };
+const ziehenHorcher = new Set<(e: ZiehenEreignis) => void>();
+
+/**
+ * Spielt „Ziehen zum Aktualisieren" nach: ruft onIonRefresh jedes gezeigten
+ * IonRefresher. Zurück kommt, wie viele es gab und wie oft complete() fiel
+ * (der Kreisel verschwindet erst damit).
+ */
+export function ziehenZumAktualisieren(): { refresher: number; fertig: () => number } {
+  let fertig = 0;
+  const horcher = [...ziehenHorcher];
+  for (const h of horcher) h({ detail: { complete: () => { fertig += 1; } } });
+  return { refresher: horcher.length, fertig: () => fertig };
+}
+
 const Segment = createContext<{ wert: unknown; waehlen: (w: unknown) => void }>({ wert: undefined, waehlen: () => {} });
 
 export function ionicAttrappe(optionen: {
@@ -55,7 +80,16 @@ export function ionicAttrappe(optionen: {
     IonBadge: ({ children }: Kinder) => <span>{children}</span>,
     IonIcon: () => null,
     IonSpinner: () => null,
-    IonRefresher: () => null,
+    IonRefresher: function Refresher({ onIonRefresh }: { onIonRefresh?: (e: ZiehenEreignis) => void }) {
+      const neueste = useRef(onIonRefresh);
+      useEffect(() => { neueste.current = onIonRefresh; });
+      useEffect(() => {
+        const horcher = (e: ZiehenEreignis) => neueste.current?.(e);
+        ziehenHorcher.add(horcher);
+        return () => { ziehenHorcher.delete(horcher); };
+      }, []);
+      return null;
+    },
     IonRefresherContent: () => null,
     // Fuer das Formular "Gemeinde": Datum, Wischaktionen und verschachtelte
     // Modale spielen in diesen Tests keine Rolle.
@@ -133,6 +167,16 @@ export function ionicAttrappe(optionen: {
         const horcher = () => neueste.current();
         betretenHorcher.add(horcher);
         return () => { betretenHorcher.delete(horcher); };
+      }, []);
+    },
+    // Verlassen einer Seite: der Test loest es mit seiteVerlassen() aus.
+    useIonViewWillLeave: (rueckruf: () => void) => {
+      const neueste = useRef(rueckruf);
+      useEffect(() => { neueste.current = rueckruf; });
+      useEffect(() => {
+        const horcher = () => neueste.current();
+        verlassenHorcher.add(horcher);
+        return () => { verlassenHorcher.delete(horcher); };
       }, []);
     },
   };

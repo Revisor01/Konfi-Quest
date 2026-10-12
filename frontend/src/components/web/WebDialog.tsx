@@ -14,8 +14,13 @@
 //   - Tab und Umschalt+Tab bleiben im Dialog;
 //   - Escape und ein Klick auf den abgedunkelten Grund schliessen -- ausser
 //     er ist `gesperrt`, weil gerade gesendet wird (dann auch das X).
-// Er wird an <body> gehaengt: Ionics Seiten schneiden mit `contain` alles ab,
-// was in ihnen "fixed" steht.
+// Er wird in <ion-app> gehaengt, nicht in die Seite: Ionics Seiten schneiden
+// mit `contain` alles ab, was in ihnen "fixed" steht. In ion-app haengt Ionic
+// auch seine Rueckfragen (ion-alert) und Meldungen (ion-toast); dort
+// entscheidet der z-index, und der Grund (1000) liegt unter ihnen. Bis
+// 12.10.2026 hing er an <body>, ueber der ganzen Ebene von ion-app
+// (`contain`, `z-index: 0`): Eine Rueckfrage aus dem Dialog lag unsichtbar
+// dahinter, eine Fehlermeldung abgedunkelt und halb verdeckt.
 
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -141,7 +146,8 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
         )}
       </div>
     </div>,
-    document.body,
+    // Ohne ion-app (vor dem Start der App, in Tests) an <body>.
+    document.querySelector('ion-app') ?? document.body,
   );
 };
 

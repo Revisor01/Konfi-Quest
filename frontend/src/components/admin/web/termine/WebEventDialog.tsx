@@ -126,8 +126,9 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
   const aendern = (neu: typeof formData) => { setFehler(null); setFormData(neu); };
 
   // Schließen mit ungespeicherten Änderungen fragt nach -- dieselbe Frage wie
-  // das Modal der App (canDismiss der Seite). Als kleiner Dialog über diesem:
-  // Ein Ionic-Alert läge unter dem Dialog, der an <body> hängt.
+  // das Modal der App (canDismiss der Seite). Als kleiner Dialog über diesem,
+  // in der Form der Web-Fassung (bis 12.10.2026 lag ein Ionic-Alert zudem
+  // unter dem Dialog; seitdem hängt WebDialog in ion-app, wie die Alerts).
   const abbrechen = () => {
     if (isDirty) setRueckfrage(true);
     else onSchliessen();

@@ -1,7 +1,11 @@
 # Support-Detailseiten: Vorgang, Anfrage und Mail übersichtlich
 
-Stand: 11.10.2026, **Entwurf, wartet auf Simons Antworten** (unten). Baut
-auf [support-vorgaenge.md](support-vorgaenge.md) (Entscheidung 7),
+Stand: **umgesetzt am 11.10.2026** — Pakete 1 bis 5 und der
+[Lizenz-Vorgang](#der-lizenz-vorgang), nach Simons Antworten vom 11.10.2026
+([unten](#fragen-an-simon)); Paket 6 und die Fragen 10 und 11 sind offen.
+Nachgemessen am 12.10.2026 ([Messbarer Gewinn](#messbarer-gewinn)). Wie die
+Seiten jetzt arbeiten: [betrieb/support-ansicht.md](../betrieb/support-ansicht.md).
+Baut auf [support-vorgaenge.md](support-vorgaenge.md) (Entscheidung 7),
 [support-web.md](support-web.md) und
 [web-alle-bereiche.md](web-alle-bereiche.md) (Entscheidung 5) auf.
 
@@ -51,12 +55,13 @@ Browser.
 - **Darstellungsfehler:** siehe [Fehler vorab](#fehler-vorab).
 
 **Die Wörter.** *Vorgang* ist jedes Support-Anliegen mit Nummer. *Anfrage*
-ist der Vorgang der Art „Neue Gemeinde" aus dem Formular der Homepage. Einen
-*Antrag* gibt es im Support nicht; gelesen ist er hier als das Anliegen aus
-dem Support-Formular (Frage 1). Der Entwurf deckt damit alle
-Detailansichten des Supports ab: Vorgang (aus Formular, Mail oder vom
-Support angelegt), Vorgang einer Anfrage, Mail im Posteingang und Mail, die
-schon in einem Vorgang liegt.
+ist der Vorgang der Art „Neue Gemeinde" aus dem Formular der Homepage. Ein
+*Antrag* ist die Bitte einer Gemeinde um eine Lizenz, also der Vorgang der
+Art „Lizenz und Abrechnung" (Simon, 11.10.2026: „Antrag meint bitte um
+Lizenz"; Frage 1, [Der Lizenz-Vorgang](#der-lizenz-vorgang)). Der Entwurf
+deckt damit alle Detailansichten des Supports ab: Vorgang (aus Formular,
+Mail oder vom Support angelegt), Vorgang einer Anfrage, Mail im Posteingang
+und Mail, die schon in einem Vorgang liegt.
 
 ## Leitidee
 
@@ -131,7 +136,7 @@ Bestätigung (ausgehend, `verfasst_von` leer) zählt nicht als Antwort.
 | 2 | kein Antwortweg | „Niemand, dem sich antworten ließe: keine Gemeinde, kein Kontakt. Laut Formular: X." (Warnung) | Gemeinde zuordnen (öffnet Einordnen) | – |
 | 3 | jüngste Nachricht von außen | „{Name} wartet seit {Zeit} auf Antwort." (Warnung) | Antworten | bei Anfrage Gemeinde anlegen und Ablehnen, sonst Erledigt |
 | 4 | Anfrage anlegbar, Support schrieb zuletzt | „Support hat {Zeit} geantwortet. Anlegen oder ablehnen?" (Hinweis) | Gemeinde anlegen | Ablehnen, Antworten |
-| 5 | Status Wartet | „Wartet seit {status_seit} auf {Name}." Ab 7 Tagen: „… – nachfassen?" (neutral) | Erledigt; ab 7 Tagen Antworten | Antworten bzw. Erledigt |
+| 5 | Status Wartet | „Wartet seit {status_seit bzw. der jüngsten Mail des Supports, was später kam} auf {Name}." Ab 7 Tagen: „… – nachfassen?" (neutral) | Erledigt; ab 7 Tagen Antworten | Antworten bzw. Erledigt |
 | 6 | sonst | „Support ({Konto}) hat {Zeit} geantwortet." (neutral) | Erledigt | Antworten |
 
 Zu 1a: Den Benutzernamen gibt es künftig auch nach dem Neuladen, aus
@@ -180,7 +185,7 @@ Pill, `>` zu, `v` offen. Die y-Werte sind Zielwerte im Lesebereich.
 +-- KOPF, klebt (Ziel ~104 px; heute 134, bei 1280 157) -----------------------+
 | (Kreis   Konfis sehen den Termin am           (L)(A)(E) [Erledigt]           |
 |  Fehler)  Samstag nicht                                   [[Antworten]]      |
-|          Nr. 2 · {In Arbeit} {Dringend} · Fehler › Termine ·                 |
+|          Nr. 2 · {In Arbeit} {Dringend} · Fehler › Events ·                  |
 |          Test-Gemeinde St. Martin (Link)                                     |
 +------------------------------------------------------------------------------+
 | STAND (eine Zeile, Ton Warnung)                                      ~40 px  |
@@ -257,6 +262,8 @@ Pill, `>` zu, `v` offen. Die y-Werte sind Zielwerte im Lesebereich.
 **Ergebnis:** Die jüngste Mail beginnt bei y ≈ 390 (Kopf 104 + Stand 40 +
 Notiz 56 + Abstände 36 + Verlaufskopf 32 + Anfang 76 + Stapel 40).
 Scrollweg 0 statt 513 px (1440) bzw. 0 statt 656 px (1280, Lesehöhe 556).
+*Gemessen 12.10.2026:* Kopf 95 px, die jüngste Mail beginnt bei y 457 (1440
+und 1280), Scrollweg 0.
 
 ### B. Vorgang einer Anfrage (Vorgang 1)
 
@@ -306,6 +313,9 @@ Scrollweg 0 statt 513 px (1440) bzw. 0 statt 656 px (1280, Lesehöhe 556).
   Nebenaktion.
 - **Bei 1280 (580 px):** Haupt plus Symbole lassen dem Titel ≈ 194 px; die
   Knopfreihe rutscht wie heute unter die Kennzeichen. Nach dem Bau messen.
+  *Gemessen 12.10.2026:* Der Titel steht in einer Zeile über den Knöpfen,
+  der Kreis entfällt schmal; Kopf 113 px (vorher 157). Bei 1440 brechen die
+  Knöpfe rechts in eine zweite Reihe um; Kopf 131 px (vorher 134).
 
 ### C. Reiner Mail-Vorgang (Vorgang 3)
 
@@ -367,10 +377,20 @@ jede Detailseite hat: „‹ Alle Vorgänge" (blendet die Liste wieder ein) und
 weiter. Die Wahl wird je Gerät gemerkt (localStorage, nur Bequemlichkeit,
 mit try/catch). Direktlinks öffnen wie heute mit Liste (Frage 9).
 
+*Gebaut (12.10.2026):* „Die Pfeiltasten wirken weiter" gilt in der Leiste
+„‹ Alle Vorgänge (‹)(›)": Dort blättern sie nach oben und unten, der Fokus
+bleibt auf seinem Knopf. Im übrigen Lesebereich rollen sie den Inhalt. Die
+Wahl gilt für Vorgänge und Posteingang zugleich; ein Direktlink öffnet auch
+beim erneuten Betreten mit Liste. Die Leiste steht über dem Lesebereich,
+nicht im Kopf des Eintrags: Sie rollt nicht mit und bleibt beim Blättern
+stehen, auch solange der nächste Eintrag lädt oder fehlt (nachgebessert am
+12.10.2026; vorher fehlte sie dann, und die Liste war nur über die Leiste
+links erreichbar).
+
 ```
 | ‹ Alle Vorgänge                                                     (‹)(›)  |
 | (Kreis) Konfis sehen den Termin am Samstag nicht  (L)(A) [Einordnen]        |
-|         Nr. 2 · {In Arbeit} {Dringend} · Fehler › Termine ·  [Erledigt]     |
+|         Nr. 2 · {In Arbeit} {Dringend} · Fehler › Events ·  [Erledigt]      |
 |         Test-Gemeinde St. Martin                             [[Antworten]]  |
 | STAND  Test Org-Admin 1 wartet seit heute, 12:23 auf Antwort.               |
 | [Mails 6]          [Neu 1]          [Offen seit 2 Tagen · In Arbeit seit …]  |
@@ -464,7 +484,7 @@ unten. Alle Detailseiten bekommen „Ziehen zum Aktualisieren"
 | #   [  6  ]     [  1  ]     [  2  ]      # |  nur Zahlen: kein Überlauf
 | #   MAILS       NEU         TAGE OFFEN   # |
 | +-- Stand --------------------------------+ |
-| | {In Arbeit}{Dringend}{Fehler › Termine} | |  Marken; antippen = Einordnen
+| | {In Arbeit}{Dringend}{Fehler › Events}  | |  Marken; antippen = Einordnen
 | | Test Org-Admin 1 wartet seit heute,     | |
 | | 12:23 auf Antwort.                      | |
 | | [[    ANTWORTEN    ]]  [ ERLEDIGT ]     | |  Haupt 2 : Neben 1
@@ -486,7 +506,7 @@ unten. Alle Detailseiten bekommen „Ziehen zum Aktualisieren"
 - **Kacheln:** Status, Art und Dringlichkeit waren Wörter und liefen über;
   jetzt Marken in der Stand-Karte. „Normal" entfällt als Anzeige und bleibt
   in Einordnen wählbar. Der Bereich steht heute in der App nirgends,
-  künftig in der Marke „Fehler › Termine".
+  künftig in der Marke „Fehler › Events".
 - **Knöpfe:** Antworten und Einordnen waren zwei gleich große Knöpfe. Jetzt
   folgt ein Hauptknopf dem Stand; Einordnen sitzt als Symbol oben, wie
   Bearbeiten bei Event und Konfi, und hinter den Marken.
@@ -503,13 +523,15 @@ Preis), Kontakt (Person, E-Mail, Mobil — fehlt der App heute), unten „Vorgan
 und Anfrage löschen". Gemeinde anlegen öffnet ein Vollbild-Modal (F). Nach
 dem Anlegen zeigt die Stand-Karte Fall 1a mit `[[GEMEINDE ÖFFNEN]]`, und der
 Abschnitt Gemeinde erscheint. Der Gemeindename steht zweimal statt fünfmal.
-Ziel ≈ 1700 px statt 4001.
+Ziel ≈ 1700 px statt 4001 (gemessen 12.10.2026: 2110 px, siehe
+[Messbarer Gewinn](#messbarer-gewinn)).
 
 ### C. Reiner Mail-Vorgang (Vorgang 3)
 
 Wie A ohne Formular-Anfang, Kontakt ist der erste Absender, Kacheln Mails
 3 · Neu 0 · Tage 1. Ohne Gemeinde zeigt die Stand-Karte Fall 2 mit
-`[[GEMEINDE ZUORDNEN]]`. Ziel ≈ 1300 px statt 2227.
+`[[GEMEINDE ZUORDNEN]]`. Ziel ≈ 1300 px statt 2227 (gemessen 12.10.2026,
+im Testbestand mit Gemeinde: 1941 px).
 
 ### D. Mail im Posteingang
 
@@ -565,6 +587,48 @@ eine ≈ 90 px schmale Spalte über vier Zeilen mit Silbentrennung). Art,
 Gemeinde und Suche wandern hinter einen Filter-Knopf: die erste Karte bei
 y ≈ 200 statt 431. Die Postfach-Karte des Posteingangs wird eine Zeile: die
 erste Mail bei y ≈ 200 statt 611.
+
+## Der Lizenz-Vorgang
+
+Simons Antwort auf Frage 1 (11.10.2026): „Antrag meint bitte um Lizenz". Der
+Vorgang der Art `lizenz` („Lizenz und Abrechnung") bekommt deshalb eine
+eigene Ausprägung; gebaut am 11.10.2026, beschrieben in
+[betrieb/support-ansicht.md](../betrieb/support-ansicht.md#die-lizenz-im-vorgang-ändern).
+
+- **Was es gibt:** Die Lizenz ist keine eigene Spalte, sondern Tarif
+  (`max_konfis`: 5 Testphase, 15/50/75/100, leer unbegrenzt, sonst ein
+  eigenes Limit), Laufzeit (`trial_ends_at`) und der Hinweis „Testphase"
+  (`is_trial`). Das Support-Formular hat kein Feld für den Wunsch; bekannt ist
+  nur der Wunsch bei der Anmeldung (`gemeinde.wunsch_lizenz` aus der jüngsten
+  Anfrage der Gemeinde), den der Leser bis dahin verwarf.
+- **Stand:** Hauptknopf nach der Stand-Regel, „Lizenz ändern" als
+  Nebenknopf in den Fällen 3, 5 und 6 (ohne Gemeinde „Gemeinde zuordnen");
+  dazu eine Zeile `zusatz` nur mit Namen: „Lizenz heute: Testphase bis 20.10.
+  · bei der Anmeldung gewünscht: Standard.", „· Zugang gesperrt",
+  „abgelaufen am …" als Warnung, ohne Gemeinde der Satz, dass sich die
+  Lizenz erst mit Gemeinde ändern lässt. Kennzahlen wie jeder Vorgang.
+- **Karte „Lizenz"** als erste Karte: Tarif mit Preis, Konfis „3 von 5" mit
+  Ton, Laufzeit, Wunsch bei der Anmeldung (mit „entspricht dem Tarif"),
+  Zugang „Gesperrt". Laufzeit und Konfis stehen dann nicht in der Karte der
+  Gemeinde. Ohne Gemeinde nur „Nicht zugeordnet – laut Formular: X
+  [Zuordnen]", „Ändern" gesperrt.
+- **„Lizenz ändern"** (Browser `WebDialog` 520 px, App Fenster „Abbrechen |
+  Lizenz ändern | Speichern"): „Wunschlizenz übernehmen" (Tarif nach dem
+  Wunsch, Verbund unbegrenzt, Testphase aus, 1 Jahr ab heute bzw. ab
+  Laufzeitende), Tarif, Laufzeit (unverändert, 1 Jahr ab heute, 1 Jahr ab
+  Laufzeitende, 30 Tage Testphase, unbegrenzt, eigenes Datum; 1 Jahr = 365
+  Tage), Schalter „Testphase", Vorschau mit Warnung bei zu vielen Konfis,
+  Link ins volle Formular. Keine Rückfrage; Speichern gesperrt ohne
+  Änderung, bei ungültiger Eingabe und ohne Netz.
+- **Speichern** nur über bestehende Routen, Backend unverändert:
+  `PATCH /api/organizations/:id/limit` für den Tarif, `GET` und
+  `PUT /api/organizations/:id` mit allen Stammfeldern für Laufzeit und
+  Testphase (ein Teilkörper leerte sie). Teilerfolg: „Tarif gespeichert,
+  Laufzeit nicht – bitte erneut speichern." Restrisiko wie im Formular der
+  Gemeinde: Lesen, Ändern, Schreiben.
+- **Wo im Code:** Regeln `utils/lizenzAendern.ts`, Hook
+  `components/support/useLizenzAendern.ts`, Browser `WebLizenzAendern.tsx`,
+  App `LizenzModal` in `SupportModale.tsx`.
 
 ## Zuordnung heute → künftig
 
@@ -646,6 +710,12 @@ Jede Angabe und Aktion des Bestands, App und Browser zusammen.
 Beim Messen gefunden und am Code bestätigt. Sie stehen unabhängig vom Umbau
 an und kommen als Paket 1, je mit dem Test vorab, der fällt.
 
+**Alle sechs behoben am 11.10.2026:** 1, 3 und 4 mit den Regeln (Paket 1,
+je mit Test vorab), 2, 5 und 6 mit den Oberflächen von Vorgang und Mail
+(Pakete 2 und 5) —
+Archivieren und Löschen nur im Posteingang, Kacheln nur mit Zahlen, ein
+Archiv-Satz ohne Widerspruch.
+
 1. **Vorsilben häufen sich im Betreff.** `betreffKern('AW: [Vorgang 2] Re:
    AW: Re: Konfis sehen …')` ergibt „Re: AW: Re: Konfis sehen …": Erst
    fallen die führenden Vorsilben, dann die Kennung; was hinter der Kennung
@@ -675,39 +745,82 @@ an und kommen als Paket 1, je mit dem Test vorab, der fällt.
 
 ## Messbarer Gewinn
 
-Heute gemessen, Ziele geschätzt und nach jedem Paket nachgemessen.
+Heute gemessen, Ziele geschätzt. Nachgemessen am 12.10.2026 auf dem Stand
+aller Pakete, mit denselben Testdaten, Fenstergrößen (1440×900, 1280×800,
+390×844 mit iOS- und Android-Kennung) und Maßen wie oben, hell und dunkel
+gleich. Wo nicht gemessen, sondern nach dem Bau gezählt, steht es dabei.
+Die letzte Spalte ist der Stand nach den Abschluss-Korrekturen (Betreff bis
+drei Zeilen, Breit lesen ohne Werkzeuge der Liste). Namen sind als
+Textstellen im Lesebereich gezählt; Stellen im Text einer Mail stehen
+getrennt dabei, weil sie nicht von der Oberfläche kommen.
 
-| Messgröße | heute | Ziel |
-|---|---|---|
-| Weg zur jüngsten Mail, Web 1440: V2 / V1 / V3 | 513 / 342 / 23 px | 0 / 0 / 0 |
-| dasselbe Web 1280 | 656 / 509 / 236 px | 0 / ≤ 60 / 0 |
-| dasselbe Handy | 551 / 360 / 136 px | 0 / ≤ 100 / 0 |
-| Notiz sichtbar, Web V2 / V1 | nach Klick + 2363 / 2617 px | 0 (y ≈ 160) |
-| Notiz, Handy V2 / V1 / V3 | 1531 / 2884 / 1111 px | 0 (Stand-Karte) |
-| Antwortformular Web | 837 / 857 px | ≈ 300 px |
-| Sprung beim Öffnen der Antwort | 1280 px | ≤ 300 px |
-| Mail und „Senden" zugleich sichtbar (1440) | nie | ja |
-| Beantwortete Mail im App-Modal | 0 Zeilen | 3 Zeilen, aufklappbar |
-| Fester Lesekopf 1440 / 1280 | 134 / 157 px | ≈ 104 / ≈ 104 px (Anfrage bei 1280 wie heute) |
-| Lesebereich Web V1 / V2 / V3 (1440) | 2525 / 1360 / 1004 px | ≈ 1200 / ≈ 1050 / ≈ 850 px |
-| Handyseite V1 / V2 / V3 | 4001 / 2647 / 2227 px | ≈ 1700 / ≈ 1600 / ≈ 1300 px |
-| Archivieren am Handy (Scrollweg) V2 / V1 | 1763 / 3117 px | 0 (Kopfzeile) |
-| Angaben hinter Akkordeon (Web) | 3 Blöcke | 0 |
-| „Test Org-Admin 1" im Web-Lesebereich V2 | 6 (aufgeklappt 8) | 4 |
-| Gemeindename V1, Web / Handy | 5 / 5 | 3 / 2 |
-| Kontaktperson V1, Handy | 6 | 3 |
-| Betreff im Lesebereich V3 | 4 | 1 |
-| Mail im Vorgang (`/post/5`): Weg zum ersten Text | 196 / 366 / 221 px | 0 (Weiterleitung) |
-| Klicks „Erledigt" / „Antworten und auf Wartet" / „Anfrage ablehnen" | 3 / 6 / 3 | 1 / 3 / 2 |
-| Nach Erledigt, Archiv, Löschen weiterlesen (Web) | 1 Klick in die Liste | 0 |
-| Bedienweisen Einordnen / Antwortformen | 2 / 2 | 1 / 1 |
-| Knöpfe, die der Server ablehnt (`/post/:id` mit Vorgang) | 2 | 0 |
+| Messgröße | vorher | Ziel | gemessen 12.10. |
+|---|---|---|---|
+| Weg zur jüngsten Mail, Web 1440: V2 / V1 / V3 | 513 / 342 / 23 px | 0 / 0 / 0 | 0 / 0 / 0 (sie beginnt bei y 441 / 489 / 383 im Lesebereich von 654 px) |
+| dasselbe Web 1280 | 656 / 509 / 236 px | 0 / ≤ 60 / 0 | 0 / 0 / 0 (y 463 / 471 / 383 von 554 px) |
+| dasselbe Handy | 551 / 360 / 136 px | 0 / ≤ 100 / 0 | 0 / 19 / 0 px (y 774 / 863 / 720 bei 844 px Höhe, iOS) |
+| Jüngste Mail im Bild beim breiten Lesen V2 / V1 | — | ganz | 1440: 226 von 226 / 303 von 411 px; 1280: 214 von 248 / 181 von 454 px |
+| Notiz sichtbar, Web V2 / V1 | nach Klick + 2363 / 2617 px | 0 (y ≈ 160) | 0 (y 153 / 189) |
+| Notiz, Handy V2 / V1 / V3 | 1531 / 2884 / 1111 px | 0 (Stand-Karte) | 0 (y 435 / 510 / 458) |
+| Antwortformular Web | 837 / 857 px | ≈ 300 px | 301 px (1440), 355 px (1280) |
+| Sprung beim Öffnen der Antwort V2 / V1 / V3 | 1280 px | ≤ 300 px | 390 / 622 / 494 px (1440), 588 / 760 / 670 px (1280) |
+| Beantwortete Mail und „Senden" zugleich sichtbar V2 / V1 / V3 | nie | ja | ja; von der Mail unter dem Kopf 182 von 226 / 146 von 411 / 161 von 389 px (1440), 6 / 30 / 6 px (1280) |
+| Beantwortete Mail im App-Modal | 0 Zeilen | 3 Zeilen, aufklappbar | 3 Zeilen, „ganz lesen" (gebaut) |
+| Fester Lesekopf 1440 / 1280 | 134 / 157 px | ≈ 104 / ≈ 104 px (Anfrage bei 1280 wie heute) | V2 95 / 117, V3 117 / 117, Anfrage 131 / 113 px (Betreff in drei Zeilen); breit mit Leiste 133 px |
+| Lesebereich Web V1 / V2 / V3 (1440) | 2525 / 1360 / 1004 px | ≈ 1200 / ≈ 1050 / ≈ 850 px | 1249 / 1059 / 1087 px |
+| Handyseite V1 / V2 / V3 | 4001 / 2647 / 2227 px | ≈ 1700 / ≈ 1600 / ≈ 1300 px | 2113 / 1817 / 1943 px (iOS), 2084 / 1788 / 1914 px (Android) |
+| Archivieren am Handy (Scrollweg) V2 / V1 | 1763 / 3117 px | 0 (Kopfzeile) | 0 (Kopfzeile) |
+| Angaben hinter Akkordeon (Web) | 3 Blöcke | 0 | 0 |
+| „Test Org-Admin 1" im Web-Lesebereich V2 | 6 (aufgeklappt 8) | 4 | 7 (Stand, Anfang, Stapel, Mail, Antwortzeile, Kontakt, Leitung), dazu 2 im Text der Mails |
+| Gemeindename V1, Web / Handy | 5 / 5 | 3 / 2 | 2 / 2 (Betreff, Angabe „Gemeinde") |
+| Kontaktperson V1, Handy | 6 | 3 | 5 (Stand, Anfang, Mail, Antwortzeile, Kontakt), dazu 2 im Text der Mails |
+| Betreff im Lesebereich V3 | 4 | 1 | 1 (Web und Handy) |
+| Mail im Vorgang (`/post/5`): Weg zum ersten Text | 196 / 366 / 221 px | 0 (Weiterleitung) | 0, Weiterleitung (gebaut) |
+| Klicks „Erledigt" / „Antworten und auf Wartet" / „Anfrage ablehnen" | 3 / 6 / 3 | 1 / 3 / 2 | 1 / 3 / 2 (gezählt) |
+| Nach Erledigt, Archiv, Löschen weiterlesen (Web) | 1 Klick in die Liste | 0 | 0 |
+| Bedienweisen Einordnen / Antwortformen | 2 / 2 | 1 / 1 | 1 / 1 |
+| Knöpfe, die der Server ablehnt (`/post/:id` mit Vorgang) | 2 | 0 | 0 |
 
 Die Zahl der Knöpfe im Lesebereich bleibt etwa gleich (V2: 6 → 6); genau
 einer ist hervorgehoben, und er folgt dem Stand. Heute ist „Antworten" immer
 primär, auch wenn man nicht dran ist.
 
+**Verfehlt** (12.10.2026, bei Simon:
+[offene-befunde.md](../offene-befunde.md), „Support-Detailseiten: Messziele,
+die verfehlt sind"):
+
+- **Kopf:** Die Anfrage braucht 131 px bei 1440 statt ≈ 104 — Titel,
+  vier Symbole, „Gemeinde anlegen" und „Antworten" brauchen eine zweite
+  Knopfreihe. Bei 1280 ohne Kreis 113 px (vorher 157). Seit der Betreff bis
+  zu drei Zeilen hat, damit er ganz dasteht, ist der Kopf auch beim
+  Mail-Vorgang (1440) und beim Anliegen (1280) 117 statt 95 px hoch; mit
+  zwei Zeilen fehlte dort das Ende des Betreffs. Schmal (unter 600 px
+  Lesebreite) entfällt der Kreis der Art, sonst wäre der Kopf 123 bzw. 135
+  px hoch — eine Abweichung vom Plan, die Simon entscheidet.
+- **Antworten:** Der Editor ist mit 301 px so hoch wie geschätzt, der
+  Lesebereich rollt aber 390 / 622 / 494 px (1440) bzw. 588 / 760 / 670 px
+  (1280), weil er unter der ganzen jüngsten Mail beginnt. Unter dem Kopf
+  bleiben von der beantworteten Mail 182 / 146 / 161 px (1440) bzw. 6 / 30 /
+  6 px (1280) im Bild statt ≈ 150.
+- **Namen im Lesebereich:** „Test Org-Admin 1" steht im Anliegen 7-mal statt
+  4 (Stand, Anfang, Stapel, Mail, Antwortzeile, Kontakt, Leitung); die
+  Kontaktperson der Anfrage am Handy 5-mal statt 3. Die Skizze A selbst
+  zeigt 6 davon (alle außer der Leitung, die dort eingeklappt ist); das Ziel
+  4 passt nicht zu ihr. Erreicht sind Gemeindename (2 / 2) und Betreff (1).
+- **Handyseite:** 1817 / 2113 / 1943 px statt ≈ 1600 / 1700 / 1300 (V2 /
+  V1 / V3, iOS). Der Verlauf ist hoch, weil die jüngste Mail ganz offen
+  steht (265 / 450 / 465 px); danach folgen die Angaben offen. Das Ziel für
+  V3 setzte einen Vorgang ohne Gemeinde voraus (App C, Stand Fall 2); im
+  Testbestand ist er einer Gemeinde zugeordnet und hat eine Karte mehr.
+  Näher ans Ziel brächten: die jüngste Mail am Handy nach einigen Zeilen mit
+  „ganz lesen" kürzen und die Angaben dort einklappen.
+
 ## Umsetzung in Paketen
+
+**Stand 12.10.2026:** Pakete 1 bis 5 und der Lizenz-Vorgang sind gebaut
+(Branches `support-detail/*`, Doku gesammelt im letzten Schritt). Paket 6 ist
+offen; davon steht `vorgang_id` an den neuesten Mails der Übersicht in
+[offene-befunde.md](../offene-befunde.md).
 
 Jedes Paket für sich auslieferbar, ein Commit je Paket, im selben Commit
 CHANGELOG, `docs/betrieb/support-ansicht.md` und Tests. Keine Route und
@@ -822,34 +935,47 @@ dieselben Daten.
 
 ## Fragen an Simon
 
-Zu jeder Frage der Vorschlag.
+Zu jeder Frage der Vorschlag und Simons Antwort vom 11.10.2026. Umgesetzt
+ist alles außer den Fragen 10 und 11, die offen bleiben.
 
 1. **„Antrag"** — angenommen ist das Anliegen aus dem Support-Formular, dazu
    Anfrage und Mail. Den Aktivitäts-Antrag der Konfis gibt es im Support
    nicht. *Vorschlag: so.*
+   **Antwort:** „Antrag meint bitte um Lizenz" — der Vorgang „Lizenz und
+   Abrechnung" bekommt eine eigene Ausprägung
+   ([Der Lizenz-Vorgang](#der-lizenz-vorgang)).
 2. **Verlauf** überall flach, das Älteste oben, Gelesenes einzeilig, ab drei
    als „N frühere Mails", Bezug über „Antwort auf …" statt der Treppe, auch
-   im Posteingang? *Vorschlag: ja.*
+   im Posteingang? *Vorschlag: ja.* **Antwort:** ja.
 3. **Beim Senden den Status mitsetzen** („Danach", Vorgabe „Wartet auf
-   Rückmeldung")? *Vorschlag: ja.*
+   Rückmeldung")? *Vorschlag: ja.* **Antwort:** ja. Gebaut ohne Erledigt
+   bei einer Anfrage, die noch nicht angelegt ist, und ohne „Danach" bei
+   einem erledigten oder archivierten Vorgang.
 4. **„Ablehnen" als eigener Knopf bei Anfragen** — erledigt und archiviert
    den Vorgang, die Anfrage wird nach 180 Tagen gelöscht, keine Absage-Mail,
-   Wiederherstellen holt beides zurück? *Vorschlag: ja.*
+   Wiederherstellen holt beides zurück? *Vorschlag: ja.* **Antwort:**
+   entschieden — ein eigener Knopf.
 5. **Einordnen am Handy** wie im Browser erst mit „Speichern"?
-   *Vorschlag: ja.*
+   *Vorschlag: ja.* **Antwort:** wie vorgeschlagen.
 6. **Nach Erledigt, Archivieren oder Löschen** im Browser gleich den
-   nächsten Eintrag öffnen? *Vorschlag: ja.*
+   nächsten Eintrag öffnen? *Vorschlag: ja.* **Antwort:** wie vorgeschlagen.
 7. **Kennzahlen:** Mails · Neu · Tage offen; bei Anfragen Konfis ·
    Teamer:innen · Mails; bei Mails Mails · Neu · Anhänge? *Vorschlag: so.*
+   **Antwort:** wie vorgeschlagen; „Mails" zählt wie in der Skizze den
+   Anfang mit („6 MAILS", „6 Nachrichten").
 8. **App: Hauptknopf** oben in der Karte „Stand" oder erst nach dem Verlauf
    wie bei Events („erst lesen, dann handeln")? *Vorschlag: oben.*
+   **Antwort:** oben, in der Karte „Stand".
 9. **„Breit lesen"** als Schalter im Listenkopf, je Gerät gemerkt,
-   Direktlinks weiter mit Liste? *Vorschlag: ja.*
+   Direktlinks weiter mit Liste? *Vorschlag: ja.* **Antwort:** ja, als
+   Schalter je Gerät.
 10. **Kompakter Rahmen:** Suche in den Listenkopf, Untertitel weg (≈ 80 px
     mehr Lesehöhe, weicht von den anderen Web-Listen ab)? *Vorschlag: erst
-    nach Paket 5 messen.*
+    nach Paket 5 messen.* **Offen** — nicht umgesetzt.
 11. **Absender einer bekannten Gemeinde** im Posteingang anzeigen und beim
     Einsortieren vorbelegen (Backend additiv)? *Vorschlag: später,
-    Paket 6.*
+    Paket 6.* **Offen** — nicht umgesetzt.
 12. **Wort für den Bereich „termine":** im Support „Events", im Formular und
     in den Mails „Termin". *Vorschlag: „Events", wie überall in der App.*
+    **Antwort:** „Events". Im Code hieß der Bereich schon so; die Skizzen
+    oben sind nachgezogen.

@@ -1,13 +1,18 @@
 # Die Support-Ansicht benutzen
 
 Für den Betrieb von Konfi Quest: wer die Support-Ansicht sieht, wie man
-hinkommt und wie man darin Vorgänge bearbeitet und beantwortet, Mails
-einsortiert, archiviert und löscht, Gemeinden anlegt, die Struktur aus
-Landeskirchen und Kirchenkreisen pflegt und Support-Konten verwaltet.
-Grundlage sind Simons Entscheidungen vom 02. und 03.10.2026
+hinkommt und wie man darin Vorgänge liest, bearbeitet und beantwortet, Mails
+einsortiert, archiviert und löscht, Gemeinden anlegt, Lizenzen ändert, die
+Struktur aus Landeskirchen und Kirchenkreisen pflegt und Support-Konten
+verwaltet. Grundlage sind Simons Entscheidungen vom 02. und 03.10.2026
 ([planung/web-version.md](../planung/web-version.md), Punkt 2 bis 7 und 10
-bis 15; [planung/support-vorgaenge.md](../planung/support-vorgaenge.md)).
-Belegt am Code (`frontend/src/components/support/`,
+bis 15; [planung/support-vorgaenge.md](../planung/support-vorgaenge.md)) und
+vom 11.10.2026 zu den Detailseiten
+([planung/support-detailseiten.md](../planung/support-detailseiten.md)).
+Belegt am Code (`frontend/src/components/support/`, die Regeln der
+Detailseiten in `frontend/src/utils/supportVorgaenge.ts`, `supportMail.ts`,
+`mailGespraeche.ts` und `lizenzAendern.ts`, ihre Texte in
+`frontend/src/seiten/supportDetail.ts`,
 `frontend/src/navigation/rollenBaeume.ts` und `supportMenue.ts`, die Formulare in
 `frontend/public/landing.html`, `backend/routes/supportVorgaenge.js`,
 `backend/utils/mailZuordnung.js`) und an den Tests unter
@@ -46,23 +51,57 @@ Fenster bleibt die Darstellung der App. Gestaltung und Bausteine:
 links die Liste, rechts der gewählte Eintrag im Lesebereich; beide Spalten
 rollen für sich. Eine Zeile wählt man per Klick oder mit den Pfeiltasten, die
 Adresse folgt der Wahl (`/admin/support/vorgaenge/12`), Neuladen öffnet
-denselben Eintrag. Kleine Formulare — Einordnen, Einsortieren, Neuer Vorgang —
-öffnen sich als kompakter Dialog über der Seite; das Antwortformular steht
-unter dem Verlauf. In der App öffnen Antworten, Einordnen und Einsortieren
-je ein Modal.
+denselben Eintrag. Vor jeder Zeile steht derselbe Kreis wie im Kopf des
+Eintrags — bei Vorgängen das Symbol der Art, im Posteingang die Initialen
+des Absenders. Bei Vorgängen steht darunter „Nr. 12 · Art · Gemeinde“ —
+ohne Gemeinde „Nicht zugeordnet“, bei einer Anfrage wie im Kopf „Noch nicht
+angelegt“ — und die Marken in einer eigenen Zeile; im Posteingang der Kern
+des Betreffs, eine Zeile Text und das Postfach. Vorleseprogramme lesen eine
+Zeile mit kurzem Namen („Vorgang 12: Betreff“) und dazu als Beschreibung
+Art, Gemeinde bzw. „Nicht zugeordnet“ oder „Noch nicht angelegt“, Status,
+„Dringend“ und ungelesene Mails, im Posteingang Postfach, Anhänge und den
+Anfang der Mail.
 
-**Mails als Gespräche.** Überall — Vorgang, Posteingang, App und Browser —
-stehen Mails als Gespräche: Was über die Kopfzeilen `In-Reply-To` und
-`References` zusammenhängt, ist ein Gespräch mit dem Betreff als Überschrift
-(ohne „Re:“ und ohne `[Vorgang 12]`). Jede Antwort steht eingerückt unter der
-Mail, auf die sie antwortet, höchstens drei Stufen tief. Jede Mail ist eine
-Zeile mit Kreis, Absender, Zeit und einer Zeile Text; aufgeklappt sind beim
-Öffnen die jüngste und die ungelesenen. Zitate und die Signatur (alles nach
-`-- `) sind eingeklappt. Was der Support gesendet hat, trägt einen grünen
-Kreis, das Wort „Gesendet“ und den Namen des Kontos, das es schrieb. Die
-Nachricht aus dem Formular steht vorn. Die Regeln stehen in
-`frontend/src/utils/mailGespraeche.ts`, die Darstellung in
-`frontend/src/components/support/MailGespraeche.tsx`.
+Kleine Formulare — Einordnen, Einsortieren, Neuer Vorgang, Lizenz ändern —
+öffnen sich als kompakter Dialog über der Seite, „Gemeinde anlegen“ als
+breiter Dialog in zwei Spalten. Geantwortet wird in einem Editor direkt unter
+der jüngsten Mail ([unten](#mails-beantworten-und-einsortieren)). In der App
+öffnen Antworten, Einordnen, Notiz, Lizenz ändern, Gemeinde anlegen und
+Einsortieren je ein eigenes Fenster, „Abbrechen“ links, die Hauptaktion
+rechts; Antworten, Einordnen, Notiz, Lizenz ändern und Gemeinde anlegen
+fragen beim Schließen oder Wegwischen nach, wenn Eingaben verloren gingen.
+Vorgang und Mail aktualisiert man in der App durch Herunterziehen.
+
+**Breit lesen.** Der Symbolknopf im Kopf der Liste (Tooltip „Breit lesen –
+die Liste ausblenden“) blendet die Liste aus; ohne gewählten Eintrag ist er
+gesperrt. Der Lesebereich wird so breit wie die Seite und zweispaltig: links
+Notiz und Verlauf, rechts die Angaben, darüber Stand und Kennzahlen in einer
+Zeile. Titel, Knöpfe, Reiter, Suche und Filter der Liste treten mit ihr
+zurück. Über dem Kopf stehen „‹ Alle Vorgänge“ bzw. „‹ Posteingang“, das die
+Liste zurückholt, und ‹ › zum vorigen und nächsten Eintrag. Die Leiste rollt nicht mit und bleibt
+beim Blättern stehen, auch solange der nächste Eintrag lädt oder sich nicht
+laden lässt („nicht gefunden“, Netzfehler). In ihr blättern auch die
+Pfeiltasten nach oben und unten, der Fokus bleibt auf dem Knopf; nur wenn
+der Knopf am Ende der Liste gesperrt wird, geht er auf den der anderen
+Richtung. Im Lesebereich rollen die Pfeiltasten den Inhalt. Die Wahl gilt je
+Gerät für Vorgänge und Posteingang zugleich, auch für eine schon geöffnete
+Liste; ist der Speicher des Browsers gesperrt, gilt sie bis zum Neuladen. Ein
+Direktlink wie `/admin/support/vorgaenge/5` öffnet immer mit Liste, auch beim
+erneuten Betreten.
+
+**Nach Erledigt, Archivieren oder Löschen** öffnet der Lesebereich den
+nächsten Eintrag der Liste, am Ende den vorigen; der Fokus steht dann auf
+seinem Titel. Ebenso nach ‹ ›: Der Fokus bleibt auf dem Knopf, mit dem man
+geblättert hat. Steht im Editor eine Antwort, die noch nicht gesendet ist,
+oder eine Notiz, die noch nicht gespeichert ist, fragen Erledigt,
+Archivieren und Ablehnen vorher („Ungespeicherte Änderungen“); „Abbrechen“
+lässt Entwurf und Eintrag stehen, „Verwerfen“ schließt ab und öffnet den
+nächsten. Dasselbe gilt für die Sammelleiste der Liste, wenn der offene
+Eintrag dabei ist (Archivieren, Erledigt, Löschen): Der nächste öffnet sich,
+der nicht mit dabei war; mit einem Entwurf bleibt der offene stehen, außer
+er ist gelöscht. Fällt der offene Eintrag ohne Abschluss aus der Liste —
+etwa im Filter „Neu“ nach einer Antwort mit „Danach: Wartet“ —, bleibt er
+offen, und ‹ › blättern in der Reihenfolge, in der er zuletzt stand.
 
 ## Die Übersicht im Browser lesen
 
@@ -77,7 +116,14 @@ Die Übersicht im Browser liest `GET /api/support/uebersicht`:
 - **Aktivität über zwölf Wochen:** eingereichte Anträge, Anmeldungen zu
   Terminen (auch die automatischen bei Pflichtterminen) und Chat-Nachrichten.
 - **Neueste offene Vorgänge und Mails** (je fünf), **Testphasen, die in den
-  nächsten 14 Tagen enden**, und Gemeinden je Landeskirche.
+  nächsten 14 Tagen enden**, und Gemeinden je Landeskirche. Die Mails stehen
+  mit dem Kern des Betreffs (ohne „Re:“, „AW:“ und `[Vorgang 12]`), der volle
+  Betreff im Tooltip. Ein Klick führt über die Seite der Mail; liegt sie in
+  einem Vorgang, ersetzt sich die Seite durch ihn (unten, „Mails beantworten
+  und einsortieren“). Direkt in den Vorgang führte er, wenn der Server zu
+  jeder Mail `vorgang_id` liefert — das tut er heute nicht
+  ([offene-befunde.md](../offene-befunde.md), „Übersicht: neueste Mails
+  ohne Vorgang“).
 
 Monate und Wochen rechnen in deutscher Zeit. Konten zählen wie in der
 Statistik: nicht gelöscht, nicht gesperrt, Support-Konten ohne Gemeinde
@@ -113,15 +159,16 @@ Vorgang eröffnet, oder ein Vorgang, den der Support selbst anlegt (Spalte
 | Bereich | Konfis, Events, Punkte und Anträge, Challenges, Chat, Badges, Material, Konten und Einladungen, Einstellungen, Sonstiges — oder keiner |
 | Dringlichkeit | Normal, Dringend |
 | Status | Neu, In Arbeit, Wartet, Erledigt |
-| Gemeinde | sobald bekannt; sonst „Nicht zugeordnet“ mit der Angabe aus dem Formular |
+| Gemeinde | sobald zugeordnet (`organization_id`); sonst „Nicht zugeordnet“ mit der Angabe aus dem Formular — ein Gemeindename aus Formular oder Anfrage gilt nie als Zuordnung |
 
 Die Listen stehen einmal im Server (`backend/utils/supportVorgaenge.js`) und
 einmal in der Oberfläche (`frontend/src/utils/supportVorgaenge.ts`); ein
 CHECK in Migration 195 hält die Datenbank dazu.
 
 **Liste** (Bereich **Vorgänge**): im Browser links neben dem Lesebereich, je
-Zeile Betreff, Zeit der letzten Aktivität, Nummer, Gemeinde, ungelesene
-Mails, Dringlichkeit und Status; in der App eine Liste. Filter **Offen** (Neu, In Arbeit, Wartet),
+Zeile Kreis der Art, Betreff, Zeit der letzten Aktivität, Nummer, Art,
+Gemeinde, ungelesene Mails, Dringlichkeit und Status; in der App eine Liste.
+Filter **Offen** (Neu, In Arbeit, Wartet),
 **Neu**, **In Arbeit**, **Wartet** und **Archiv** (darin die erledigten),
 dazu Art, Gemeinde (hinter „Filter“) und eine Suche über Betreff,
 Beschreibung, Kontakt, Gemeinde und die Mails des Vorgangs; „#12“ findet
@@ -135,25 +182,36 @@ Vorgang. Antworten gehen nur an Adressen, die zum Vorgang gehören:
 Absender seiner Mails, Kontakt aus dem Formular, Adresse der Anfrage und die
 Adressen der Gemeinde.
 
-**Ein Vorgang** zeigt oben Betreff, Nummer, Status, Dringlichkeit und
-Gemeinde mit den Handgriffen **Antworten** und **Einordnen** (Status, Art,
-Bereich, Dringlichkeit, Gemeinde), im Browser daneben Archivieren und Löschen.
-Darunter Kontakt, Art und Eingang in einer Zeile, dann der Verlauf als
-Gespräche, bei einer Anfrage **Gemeinde anlegen**; Gemeinde mit
-Gemeindeleitung, Angaben der Anfrage und die interne Notiz stehen im Browser
-eingeklappt am Ende, in der App als eigene Abschnitte. Einordnen speichert in
-der App jede Änderung sofort, im Browser mit „Speichern“ alles auf einmal.
-Kommt ein Vorgang aus einer Mail, gilt als Kontakt, wer die erste Mail
-schrieb. Wechselt die Gemeinde, gehen die Mails des Vorgangs mit.
+**Ein Vorgang** sagt oben, wer dran ist und seit wann; darunter stehen die
+interne Notiz, der Verlauf mit der Antwort und die Angaben als Karten. Wie
+er aufgebaut ist, steht unten unter
+[„Einen Vorgang lesen“](#einen-vorgang-lesen). Kommt ein Vorgang aus einer
+Mail, gilt als Kontakt, wer die erste Mail schrieb. Wechselt die Gemeinde,
+gehen die Mails des Vorgangs mit.
+
+**Einordnen** — im Browser ein Knopf im Kopf (schmal ein Symbol), in der App
+das Symbol oben in der Kopfzeile und jede Marke der Karte „Stand“ außer
+„Noch nicht angelegt“ — ändert Betreff, Status, Dringlichkeit, Art, Bereich
+und Gemeinde in einem Formular. **Speichern** übernimmt alles in einem
+Schritt, im Browser wie in der App; ohne Änderung schließt es ohne Aufruf.
+Bei Frage, Fehler und Wunsch ist der Bereich Pflicht, der Betreff darf nicht
+leer sein und höchstens 300 Zeichen haben. Wer „Erledigt“ wählt, liest
+darunter, dass erledigte Vorgänge im Archiv liegen — an einer Anfrage, die
+noch nicht angelegt ist: „Erledigt lehnt die Anfrage ab; sie wird nach 180
+Tagen gelöscht.“
 
 **Archivieren und löschen.** Der Status **Erledigt** archiviert den Vorgang;
-er verschwindet aus „Offen“ und steht unter „Archiv“. **Archivieren** legt
-einen Vorgang auch ohne Erledigt ins Archiv; er behält seinen Status.
-**Wiederherstellen** holt ihn zurück, einen erledigten mit dem Status In
-Arbeit. Kommt zu einem archivierten Vorgang eine neue Mail, holt der Server
-ihn ebenso mit In Arbeit zurück. **Löschen** (mit Rückfrage)
-entfernt den Vorgang samt seinen Mails aus Konfi Quest; im Postfach bleiben
-sie. Ein Vorgang einer Anfrage geht mit der Anfrage.
+er verschwindet aus „Offen“ und steht unter „Archiv“. Erledigt steht als
+Haupt- oder Nebenknopf im Kopf bzw. in der Karte „Stand“ — außer im Archiv,
+ohne Antwortweg und bei einer Anfrage, die noch nicht angelegt ist (dort
+heißt es Ablehnen). **Archivieren** legt einen Vorgang auch ohne Erledigt ins
+Archiv; er behält seinen Status. **Wiederherstellen** holt ihn zurück, einen
+erledigten mit dem Status In Arbeit; im Archiv ist es der Hauptknopf. Kommt
+zu einem archivierten Vorgang eine neue Mail, holt der Server ihn ebenso mit
+In Arbeit zurück. **Löschen** (Symbol im Kopf, in der App der einzige Knopf
+ganz unten, mit Rückfrage) entfernt den Vorgang samt seinen Mails aus Konfi
+Quest; im Postfach bleiben sie. Der Vorgang einer Anfrage nimmt die Anfrage
+mit („Vorgang und Anfrage löschen“).
 
 **Rote Zahlen:** am Bereich **Vorgänge** die nicht archivierten Vorgänge, die
 neu sind oder eine ungelesene Mail haben; am **Posteingang** die ungelesenen
@@ -164,6 +222,183 @@ Felder `vorgaenge` und `posteingang`). Die Leiste holt sie alle zwei Minuten.
 Archivieren, Löschen — meldet sich bei allen offenen Listen, Zahlen und der
 Übersicht, die dann neu laden; ebenso beim Zurückkehren auf eine Seite und in
 den Tab (`frontend/src/utils/supportAktualisieren.ts`).
+
+## Einen Vorgang lesen
+
+Browser und App zeigen dieselbe Reihenfolge: Kopf, Stand, Notiz, Verlauf mit
+der Antwort, Angaben. Was wann dasteht, entscheidet eine Stelle für beide
+Fassungen (`frontend/src/utils/supportVorgaenge.ts`, die Texte in
+`frontend/src/seiten/supportDetail.ts`).
+
+**Kopf.** Im Browser klebt er oben im Lesebereich: der Kreis mit dem Symbol
+der Art, der Betreff (höchstens drei Zeilen, ganz im Tooltip) und darunter
+die Kennzeichen „Nr. 12“, Status, „Dringend“, „Art › Bereich“ und die
+Gemeinde als Verweis. Die Gemeinde steht nur da, wenn der Vorgang ihr
+zugeordnet ist; sonst die Marke „Keine Gemeinde“. Bei einer Anfrage steht
+statt der Art „Noch nicht angelegt“, solange die Gemeinde nicht angelegt ist,
+dazu Konfis und Teamer:innen. Fehlt bei Frage, Fehler oder Wunsch der
+Bereich, steht „Bereich fehlt“. „Keine Gemeinde“ und „Bereich fehlt“ öffnen
+Einordnen. Rechts stehen alle Aktionen: Löschen und Archivieren als Symbole,
+Einordnen, bei einer Anfrage Ablehnen (Kreis mit x), die Nebenknöpfe und
+rechts außen der eine Hauptknopf. Wie schmal sie werden, richtet sich nach
+der Breite des Lesebereichs: Unter 760 px werden Einordnen und „Lizenz
+ändern“ zu Symbolen, unter 600 px trägt nur der Hauptknopf Text, und der
+Kreis der Art entfällt (bei 1280 px Fensterbreite neben der Liste). In der
+App heißt die Kopfzeile „Vorgang 12“ bzw. „Anfrage 12“ und trägt Einordnen
+und Archivieren bzw. Wiederherstellen als Symbole; darunter der farbige Kopf
+mit dem Kreis der Art, dem Betreff, „Nr. 12 · Gemeinde“ und drei Kacheln.
+
+**Stand.** Ein Satz sagt, wer dran ist und seit wann; der Hauptknopf folgt
+ihm. In der App ist es die Karte „Stand“ mit den Marken (Status, Dringend,
+Art › Bereich; antippen öffnet Einordnen), dem Satz, dem Hauptknopf und
+darunter den Nebenknöpfen. Geprüft wird in dieser Reihenfolge; „von außen“
+heißt Formular, Anfrage oder eine eingehende Mail, die automatische
+Bestätigung zählt nicht als Antwort des Supports.
+
+| Fall | Satz | Hauptknopf | Nebenknöpfe |
+|---|---|---|---|
+| Anfrage angelegt (im Archiv oder eben angelegt) | „Gemeinde angelegt am …. Benutzername der Gemeindeleitung: … – Benutzername und Passwort getrennt weitergeben.“ | Gemeinde öffnen | – |
+| Anfrage abgelehnt | „Anfrage abgelehnt am …. Sie wird nach 180 Tagen gelöscht; Wiederherstellen holt sie zurück.“ | Wiederherstellen | Gemeinde anlegen |
+| sonst erledigt oder im Archiv | „Erledigt am …“ bzw. „Im Archiv seit …“ und „Eine neue Mail holt ihn zurück.“ | Wiederherstellen | – |
+| niemand, dem sich antworten ließe | „Niemand, dem sich antworten ließe: keine Gemeinde, kein Kontakt.“ (mit der Angabe aus dem Formular) | Gemeinde zuordnen (öffnet Einordnen) | – |
+| die jüngste Nachricht kam von außen | „{Name} wartet seit {Zeit} auf Antwort.“ | Antworten | bei einer Anfrage Gemeinde anlegen und Ablehnen, sonst Erledigt |
+| Anfrage nicht angelegt, der Support schrieb zuletzt | „Support hat {Zeit} geantwortet. Anlegen oder ablehnen?“ | Gemeinde anlegen | Ablehnen, Antworten |
+| Status Wartet | „Wartet seit {Zeit} auf {Name}.“, ab 7 Tagen „… – nachfassen?“ | Erledigt, ab 7 Tagen Antworten | Antworten bzw. Erledigt |
+| sonst | „Support ({Konto}) hat {Zeit} geantwortet.“ bzw. „Angelegt von …, noch ohne Nachricht.“ | Erledigt | Antworten |
+
+Bei Wartet zählt die Zeit ab dem Wechsel auf Wartet oder ab der jüngsten
+Mail des Supports, je nachdem, was später kam: Wer nachfasst und „Danach“ auf
+Wartet lässt, wartet ab dieser Mail wieder sieben Tage. „Gemeinde angelegt“
+steht, solange der Vorgang der angelegten Anfrage im Archiv liegt; holt
+Wiederherstellen oder eine neue Mail ihn zurück, gilt die Tabelle wie für
+jeden offenen Vorgang.
+
+Im Vorgang „Lizenz und Abrechnung“ kommen eine Zeile zur Lizenz und „Lizenz
+ändern“ als Nebenknopf dazu (unten, „Die Lizenz im Vorgang ändern“). Antworten
+und Einordnen sind immer erreichbar; der Satz nennt nur Tatsachen.
+
+**Notiz.** Die interne Notiz steht unter dem Stand. Im Browser zeigt sie
+höchstens drei Zeilen, dann „mehr“; **Bearbeiten** macht ein Feld daraus,
+„Notiz speichern“ erscheint erst nach einer Änderung. Ist sie leer, steht dort
+nur **+ Interne Notiz**. In der App ist sie die letzte Zeile der Karte „Stand“
+und öffnet das Fenster „Notiz“. Eine Notiz, die noch nicht gespeichert ist,
+überlebt das Neuladen der Daten, etwa nach einer Änderung an anderer Stelle,
+nicht aber das Neuladen der Seite.
+
+**Kennzahlen.** Drei Zahlen: Mails, Neu und Tage offen, bei einer Anfrage
+Konfis, Teamer:innen und Mails; bei 1 in der Einzahl („1 Mail“, „1 Tag
+offen“). „Mails“ zählt das Anliegen aus dem Formular
+bzw. die Nachricht der Anfrage mit, wie der Verlauf. Die App zeigt sie als
+Kacheln im Kopf, der Browser nur, wenn der Lesebereich zwei Spalten hat (ab
+960 px, also beim breiten Lesen), dann flach („6 Mails“) neben dem Stand;
+schmaler stehen Konfis und Teamer:innen einer Anfrage in den Kennzeichen.
+
+**Verlauf.** Überall — Vorgang und Posteingang, Browser und App — steht der
+Schriftwechsel flach und zeitlich geordnet, das Älteste oben, ohne Einrückung
+und ohne eigene Gesprächstitel:
+
+- Oben steht das Anliegen aus dem Formular bzw. die Nachricht der Anfrage mit
+  der Marke „Formular“ bzw. „Anfrage“. Es ist offen, bis der Support
+  antwortet, danach zwei Zeilen mit „ganz lesen“.
+- Offen sind die jüngste Mail und jede, die beim Öffnen ungelesen war (Marke
+  „Neu“); jede andere ist eine Zeile mit Kreis, Absender, Zeit und dem Anfang
+  des Textes. Ab drei eingeklappten Mails in Folge stehen sie als „N frühere
+  Mails · Absender · k Anhänge“; Ungelesenes steht nie darin. „Alle
+  aufklappen“ öffnet alles, „Alle einklappen“ stellt das Bild beim Öffnen
+  wieder her. Zitate und Signatur (alles nach `-- `) bleiben eingeklappt.
+- Was der Support gesendet hat, heißt „Support“ mit dem Kreis KQ, klein dazu
+  das Konto, das es schrieb, und „Gesendet“. Wird die Zeile eng (am Handy),
+  kürzt zuerst das Konto; „Support“ bleibt ganz. Antwortet eine Mail nicht
+  auf die direkt davor, steht klein „Antwort auf {Name}, {Zeit}“; weicht ihr
+  Betreff vom Betreff des Vorgangs ab, steht er als „Betreff: …“ dabei.
+- Jede offene Mail hat ein Menü (···): „In anderen Vorgang verschieben“, „In
+  neuen Vorgang herauslösen“ (nur im Vorgang) und „Kopfzeilen zeigen“.
+- Unter der jüngsten Mail steht die Antwortzeile — im Browser „Antwort an
+  {Name} schreiben …“ mit dem Postfach, in der App „Antwort an {Name} …“. Sie
+  nennt nur, wen der Editor vorwählt, sonst „Antwort schreiben …“. Ohne
+  Antwortweg ist sie gesperrt.
+
+Die Regeln stehen in `frontend/src/utils/mailGespraeche.ts`, die Darstellung
+in `frontend/src/components/support/MailGespraeche.tsx`.
+
+**Angaben** stehen offen als Karten — im Browser neben dem Verlauf, sobald
+der Lesebereich zwei Spalten hat, sonst darunter; in der App als Abschnitte
+nach dem Verlauf. Jede Angabe steht einmal:
+
+| Karte | Inhalt |
+|---|---|
+| Lizenz | nur im Vorgang „Lizenz und Abrechnung“, als erste Karte (unten) |
+| Anfrage | Gemeinde (angefragt), Kirchenkreis › Landeskirche mit „steht in der Struktur“ bzw. „fehlt noch“ und dann **Als Kirchenkreis anlegen**, Wunschlizenz mit Preis, Eingang |
+| Kontakt | Person mit Funktion, E-Mail (mailto) mit **Im Vorgang antworten** — der Editor öffnet sich mit dieser Adresse —, bei einer Anfrage die Mobilnummer (tel:), der Eingang (Herkunft), bei einem vom Support angelegten Vorgang „Angelegt von …“; ohne Zuordnung „Nicht zugeordnet – laut Formular: X“ mit **Zuordnen** |
+| Gemeinde | nur mit Zuordnung: Laufzeit (die Testphase in den letzten sieben Tagen als Warnung, abgelaufen als Fehler), Konfis, Kirchenkreis › Landeskirche, die Gemeindeleitung je Person mit Name, „Gesperrt“, E-Mail oder „Keine E-Mail“ und letzter Anmeldung bzw. „noch nicht angemeldet“; dazu **Gemeinde öffnen** und **Alle Vorgänge**. In der App ist die Gemeindeleitung eingeklappt. |
+
+## Die Lizenz im Vorgang ändern
+
+Im Vorgang der Art **Lizenz und Abrechnung** — gemeint ist die Bitte einer
+Gemeinde um eine Lizenz (Simon, 11.10.2026) — steht als erste Karte
+**Lizenz**:
+
+- **Tarif** mit Preis, etwa „Standard — bis 50 Konfis · 99 € pro Jahr“,
+  „Testphase — bis 5 Konfis · kostenlos“, „Unbegrenzt“ oder „Eigenes Limit —
+  120 Konfis“. Der Tarif ist das Konfi-Limit der Gemeinde (5 Testphase,
+  15/50/75/100 Klein bis Groß, leer unbegrenzt, sonst ein eigenes Limit).
+- **Konfis** „3 von 5“ (ab 90 % als Warnung, ab 100 % als Fehler), ohne Limit
+  „3 · ohne Limit“; **Laufzeit** („Testphase bis 20.10.“, „Lizenz bis …“,
+  „Unbegrenzt“, „Testphase abgelaufen“ bzw. „Lizenz abgelaufen“).
+- **Wunsch bei der Anmeldung** mit Preis in derselben Schreibweise („Standard
+  — bis 50 Konfis · 99 € pro Jahr“), „entspricht dem Tarif“, wenn er
+  gleich ist; es ist der Wunsch aus dem Anfrageformular, nicht der dieses
+  Anliegens — das Support-Formular hat dafür kein Feld.
+- **Zugang** „Gesperrt“, nur bei einer gesperrten Gemeinde.
+
+Laufzeit und Konfis stehen dann nicht noch einmal in der Karte der Gemeinde.
+Unter dem Stand-Satz steht eine Zeile wie „Lizenz heute: Testphase bis 20.10.
+· bei der Anmeldung gewünscht: Standard.“ (der Wunsch nur, wenn er vom Tarif
+abweicht; dazu „Zugang gesperrt“ bzw. „abgelaufen am …“ als Warnung). Ohne
+zugeordnete Gemeinde sagt sie, dass sich die Lizenz erst ändern lässt, wenn
+eine Gemeinde zugeordnet ist; „Ändern“ ist dann gesperrt, und statt „Lizenz
+ändern“ steht „Gemeinde zuordnen“.
+
+**Lizenz ändern** (Nebenknopf im Kopf bzw. in der Karte „Stand“, „Ändern“ an
+der Karte) öffnet im Browser einen Dialog, in der App ein Fenster:
+
+- **Wunschlizenz übernehmen: …** — nur, wenn ein Wunsch bekannt ist, vom
+  Tarif abweicht oder die Testphase noch läuft, und der Entwurf ihn noch
+  nicht trägt. Setzt den Tarif auf die Konfi-Zahl des Wunsches (Verbund:
+  unbegrenzt), schaltet die Testphase aus und die Laufzeit auf ein Jahr ab
+  heute bzw. ab Laufzeitende, wenn die Lizenz noch läuft.
+- **Tarif** wie im Formular der Gemeinde, mit „Eigenes Limit…“.
+- **Laufzeit**: unverändert, 1 Jahr ab heute, 1 Jahr ab Laufzeitende (nur,
+  wenn das Ende in der Zukunft liegt), 30 Tage Testphase, unbegrenzt oder ein
+  eigenes Datum; ein Jahr sind 365 Tage.
+- **Testphase (Hinweis auf den Startseiten)** — ohne Enddatum immer aus; das
+  Limit folgt dem Schalter wie beim Anlegen einer Gemeinde.
+- Darunter die **Vorschau** „Danach: …“, mit einer Warnung, wenn schon so
+  viele oder mehr Konfis angelegt sind als das neue Limit (bis 5 darüber mit
+  Bestätigung, danach gesperrt; `backend/utils/konfiLimit.js`). Ein
+  ungültiges Limit oder ein fehlendes Enddatum steht an ihrer Stelle, im
+  Browser wie in der App, und Speichern ist gesperrt. Ist die Gemeinde
+  gesperrt (nach Ablauf sperrt sie der nächtliche Lauf), sagen Vorschau und
+  Erfolgsmeldung: „Der Zugang der Gemeinde bleibt gesperrt – freigeben lässt
+  er sich im Formular der Gemeinde.“ „Lizenz ändern“ schreibt den Zugang,
+  wie er ist ([offene-befunde.md](../offene-befunde.md), „Lizenz ändern“ bei
+  einer gesperrten Gemeinde).
+- Ein Link **Alle Angaben der Gemeinde bearbeiten** führt ins volle Formular.
+
+**Speichern** ist gesperrt ohne Änderung, ohne Netz und während des
+Speicherns; eine Rückfrage gibt es nicht, die Vorschau sagt, was geschieht.
+Gespeichert wird über die bestehenden Routen der Gemeinde: Ein geänderter
+Tarif geht mit `PATCH /api/organizations/:id/limit`, eine geänderte Laufzeit
+oder Testphase mit `GET` und danach `PUT /api/organizations/:id` mit allen
+Stammfeldern aus der frischen Antwort — der PUT schreibt sie immer, ein
+Teilkörper würde sie leeren. Dabei wird die Erinnerung an das Lizenzende
+zurückgesetzt; die nächste kommt wieder. Klappt der Tarif, die Laufzeit aber
+nicht, steht dort „Tarif gespeichert, Laufzeit nicht – bitte erneut
+speichern.“, und der Entwurf bleibt. Liefert die Gemeinde keine lesbaren
+Stammdaten, ist der Teil „Laufzeit“ gesperrt, mit Verweis auf das Formular
+der Gemeinde. Wie im Formular der Gemeinde ist das ein Lesen, Ändern,
+Schreiben: Ändert jemand die Stammdaten zwischen GET und PUT, geht diese
+Änderung verloren.
 
 ## Ein Anliegen über das Support-Formular
 
@@ -245,13 +480,30 @@ unbegrenzt ([gemeinde-anlegen.md](gemeinde-anlegen.md#konfi-limit-testphase-5-da
 Die Werte stehen einmal in `backend/utils/lizenzen.js`; Migration 192 hält sie
 mit einem CHECK fest.
 
-**Der Vorgang einer Anfrage** zeigt alle Angaben (E-Mail und Telefon als
-Verweis), darunter:
+**Der Vorgang einer Anfrage** zeigt die Angaben in den Karten „Anfrage“ und
+„Kontakt“ (E-Mail und Mobilnummer als Verweis, [oben](#einen-vorgang-lesen));
+Status und Notiz teilt er mit der Anfrage ([oben](#eine-anfrage-kommt-an)).
+„Angelegt“ setzt allein das Anlegen der Gemeinde. Solange sie nicht angelegt
+ist, sind Gemeinde anlegen, Ablehnen und Antworten die Knöpfe des Stands;
+„Danach“ bietet beim Antworten nur Wartet und In Arbeit an, weil Erledigt die
+Anfrage ablehnen würde.
 
-- **Bearbeitung:** Status von Hand auf Neu, In Arbeit oder Abgelehnt setzen und
-  eine Notiz nur für den Support hinterlegen, dann **Speichern**. „Angelegt"
-  setzt allein das Anlegen der Gemeinde.
-- **Gemeinde anlegen** — vorbelegt aus der Anfrage:
+**Ablehnen** — im Browser das Symbol mit dem Kreis und x im Kopf (Tooltip
+„Anfrage ablehnen“), in der App ein Knopf in der Karte „Stand“ — fragt
+zuerst: „Anfrage ablehnen? Der Vorgang wird erledigt und archiviert, die
+Anfrage gilt als abgelehnt und wird nach 180 Tagen gelöscht. Eine Absage-Mail
+geht dabei nicht hinaus. Wiederherstellen holt beides zurück.“ Erst nach
+„Ablehnen“ setzt die Seite den Vorgang auf Erledigt; der Server lehnt die
+Anfrage dabei ab. Eine Absage schreibt man vorher als Antwort; eine Antwort
+auf die abgelehnte Anfrage lässt sie abgelehnt. **Wiederherstellen** holt
+Vorgang und Anfrage zurück in Arbeit. Eine abgelehnte Anfrage lässt sich auch
+anlegen: „Gemeinde anlegen“ steht dann neben „Wiederherstellen“.
+
+**Gemeinde anlegen** öffnet im Browser einen breiten Dialog in zwei Spalten —
+oben eine Zeile aus der Anfrage („A. Beispiel (Diakonin) · 38 Konfis · 9
+Teamer:innen · Wunsch: Standard“), links Gemeinde und Tarif, rechts die erste
+Gemeindeleitung —, in der App ein eigenes Fenster. Vorbelegt ist alles aus
+der Anfrage:
 
 | Feld | Vorbelegung |
 |---|---|
@@ -262,13 +514,26 @@ Verweis), darunter:
 | Testphase (30 Tage) | an: Zugang 30 Tage ab heute mit Hinweis auf den Startseiten; aus: ohne Ablaufdatum |
 | Erste Gemeindeleitung | Benutzername als Vorschlag aus dem Namen („Anna Müller" → `anna.mueller`), Anzeigename und E-Mail aus der Anfrage; das Passwort trägt man ein oder lässt es vorschlagen |
 
-Vor dem Absenden prüft die Seite Pflichtfelder, Benutzername und
-Passwortregel; dann kommt eine Rückfrage. **Anlegen** ruft
+„Als Kirchenkreis anlegen“ steht auch in der Karte „Anfrage“, wenn der
+Kirchenkreis dort „fehlt noch“ heißt. Vor dem Absenden prüft der Dialog
+Pflichtfelder, Benutzername und Passwortregel; dann kommt eine Rückfrage —
+im Browser als zweites kleines Fenster über dem Dialog („Gemeinde anlegen?“
+mit Name, Gemeindeleitung und Benutzername; **Abbrechen** lässt alles
+stehen), in der App als Rückfrage der App. Beim Anlegen ist er gesperrt. **Anlegen** ruft
 `POST /api/support/anfragen/<id>/anlegen`: Gemeinde und erste Gemeindeleitung
 entstehen in einer Transaktion mit derselben Logik wie beim Anlegen unter
-Gemeinden, die Anfrage steht danach auf **Angelegt**. Die Seite zeigt den
-Benutzernamen und **„Gemeinde öffnen"**. Ist der Benutzername schon vergeben,
-kommt die Meldung des Servers, und nichts wird angelegt.
+Gemeinden, die Anfrage steht danach auf **Angelegt**. Der Dialog schließt
+sich; der Stand sagt „Gemeinde angelegt am …“ mit dem Benutzernamen der
+Gemeindeleitung — auch nach dem Neuladen — und hat **Gemeinde öffnen** als
+Hauptknopf. Ist der Benutzername schon vergeben, kommt die Meldung des
+Servers, und nichts wird angelegt.
+
+Wer den Dialog mit eigenen Eingaben schließt (Escape, Klick daneben, ✕,
+Abbrechen), wird gefragt: „Eingaben verwerfen?“ — sonst ginge etwa ein
+vorgeschlagenes Passwort verloren. Ohne eigene Eingabe schließt er ohne
+Frage; ein Kirchenkreis, den „Als Kirchenkreis anlegen“ eben angelegt hat,
+zählt zur Vorbelegung. „Verwerfen“ stellt die Vorbelegung wieder her, mit der
+Struktur von jetzt.
 
 Danach wie bei jeder neuen Gemeinde: Benutzername und Passwort auf getrennten
 Wegen weitergeben ([gemeinde-anlegen.md](gemeinde-anlegen.md#was-danach-passiert)).
@@ -383,30 +648,98 @@ Arbeit zurück.
 
 Der **Posteingang** zeigt nur die eingehenden Mails beider Postfächer, die
 keinem Vorgang zugeordnet und nicht archiviert sind; Filter „Alle“,
-„Ungelesen“, „moin@“, „support@“ und „Archiv“. Je Mail:
+„Ungelesen“, „moin@“, „support@“ und „Archiv“.
 
-- **Einsortieren** in einen bestehenden Vorgang (mit Suche) oder in einen
-  neuen mit Art, Bereich, Dringlichkeit, Betreff und Gemeinde — der ganze
-  Faden geht mit, soweit er noch im Posteingang liegt,
+**Eine Mail im Posteingang** hat oben den Kern des Betreffs (ohne „Re:“,
+„AW:“ und `[Vorgang 12]`), darunter „Von Name <adresse> · an support@“, die
+Zeit und, wenn es sie gibt, die Zahl der Mails im Faden und der Anhänge; im
+Browser mit dem Kreis der Initialen davor, in der App mit den Kacheln Mails,
+Neu und Anhänge und dem Postfach als Marke in der Karte „Stand“. Darunter
+steht der Verlauf wie im Vorgang, ohne Menü zum Verschieben, mit der
+Antwortzeile unter der jüngsten Mail. Je Mail:
+
+- **Einsortieren** — der Hauptknopf, denn der Posteingang ist zum Zuordnen
+  da — in einen bestehenden Vorgang (mit Suche) oder in einen neuen mit Art,
+  Bereich, Dringlichkeit, Betreff und Gemeinde; der ganze Faden geht mit,
+  soweit er noch im Posteingang liegt. Danach öffnet sich der Vorgang mit
+  dieser Mail.
+- **Antworten** daneben, direkt an den Absender.
 - **Archivieren** (aus dem Eingang ins Archiv, wiederherstellbar) und
-  **Löschen** (mit Rückfrage; nur aus Konfi Quest, im Postfach bleibt sie),
-- **Antworten** direkt.
+  **Löschen** (mit Rückfrage; nur aus Konfi Quest, im Postfach bleibt sie) —
+  im Browser als Symbole im Kopf, in der App Archivieren oben in der
+  Kopfzeile und „Mail löschen“ als einziger Knopf ganz unten.
+
+Im Archiv sagt ein Satz: „Im Archiv seit … · wird nach 180 Tagen gelöscht ·
+Einsortieren holt sie zurück.“ Der Hauptknopf bleibt Einsortieren — der
+Server holt eine archivierte Mail dabei selbst aus dem Archiv —, daneben
+steht Wiederherstellen; Antworten und Archivieren entfallen.
 
 Im Browser lassen sich mehrere Mails wählen und gemeinsam archivieren,
 wiederherstellen oder löschen (`POST /api/support/mail/sammel`). Eine Mail
 zu einer Anfrage zählt als Bewegung: Die 365-Tage-Frist beginnt neu.
 
-**Antworten.** Im Vorgang oder im Posteingang über **Antworten** — im
-Browser öffnet sich das Formular unter dem Verlauf, in der App als Modal:
-Empfänger prüfen (vorgewählt ist, wer zuletzt geschrieben hat, wenn die
-Adresse zur Wahl steht), Baustein wählen (füllt die Platzhalter), Betreff und
-Text prüfen, senden; danach schließt sich das Formular. Der Server
-setzt die Fußzeile darunter, `[Vorgang 12]` in den Betreff, die
-Antwort-Kopfzeilen auf die letzte Mail des Verlaufs und legt die Antwort in
-den Ordner „Gesendet" des Postfachs (fehlt er, legt er „Sent" an). Eine
-Anfrage antwortet von moin@, alles andere von support@. Eine Antwort auf
-einen neuen Vorgang setzt ihn auf „In Arbeit". Scheitert der Versand, wird
-nichts gespeichert; der Entwurf bleibt stehen.
+**Eine Mail, die schon in einem Vorgang liegt,** öffnet sich dort: Die Seite
+der Mail (`/admin/support/post/5`) ersetzt sich durch
+`/admin/support/vorgaenge/2?mail=5`, so dass „Zurück“ nicht auf ihr landet.
+Im Vorgang steht die Mail aufgeklappt, in die Mitte gerollt und zwei
+Sekunden hervorgehoben, bei jedem Betreten der Seite wieder. Weitergeleitet
+wird, was schon beim Öffnen woanders lag. Wird die gewählte Mail im Browser
+erst danach anderswo einsortiert (anderer Reiter, Handy, zweite Person),
+bleibt der Posteingang stehen; der Lesebereich sagt „Die Mail liegt
+inzwischen in Vorgang N.“, und **Im Vorgang N öffnen** führt dorthin. Gehört eine Mail
+nur zu einer Anfrage oder Gemeinde (ältere Server), führt die Seite zur
+Anfrage bzw. zu den Vorgängen der Gemeinde. Archivieren und Löschen gibt es
+nur im Posteingang; der Server lehnt beides für Mails in einem Vorgang ab.
+Wer eine Mail umsortieren will, nimmt das Menü (···) der Mail im Vorgang:
+
+- **In anderen Vorgang verschieben** — nur diese Mail geht in den gewählten
+  Vorgang, der eigene steht nicht zur Wahl, und der Ausgangsvorgang bleibt
+  bestehen, auch wenn er leer wird.
+- **In neuen Vorgang herauslösen** — dieselbe Wahl mit einem neuen Vorgang,
+  der Betreff ist mit dem Kern des Betreffs der Mail vorbelegt.
+
+Titel und Knopf nennen die Handlung, in App und Browser gleich; im Browser
+nennt der Dialog dazu den Kern des Betreffs.
+
+**Antworten.** Über **Antworten** (Haupt- oder Nebenknopf), die Antwortzeile
+unter der jüngsten Mail oder **Im Vorgang antworten** an einer Adresse in
+den Karten. Im Browser öffnet sich ein kompakter Editor an der Stelle der
+Antwortzeile, direkt unter der jüngsten Mail; der Lesebereich rollt nur so
+weit, dass das Ende des Editors im Bild ist, und der Fokus steht im Text.
+Verwerfen und Senden geben den Fokus an die Antwortzeile zurück. In der App
+öffnet sich das Fenster „Antworten“; oben steht „Du antwortest auf · Name ·
+Zeit“ mit drei Zeilen der Mail, „ganz lesen“ zeigt sie ganz. Der Editor:
+
+- **An** — wer im Vorgang geschrieben hat, dazu Kontakt, Anfrage und
+  Gemeindeleitung, je mit lesbarer Herkunft: „schrieb uns“, „Kontakt aus dem
+  Formular“, „aus der Anfrage“, „Gemeindeleitung“, „aus früheren Mails“.
+  Vorgewählt ist die Adresse von „Im Vorgang antworten“, sonst der Absender
+  der jüngsten eingehenden Mail, sonst der Kontakt — wenn die Adresse zur
+  Wahl steht. Gibt es nur eine Adresse, steht eine feste Zeile „An … · von
+  …“; im Posteingang ebenso.
+- **Betreff** — „Re: “ und der Kern des Betreffs der letzten Mail, ohne
+  gehäufte Vorsilben (Re, AW, Antw, WG, FW, Fwd) und ohne Kennung; die
+  Kennung `[Vorgang 12]` hängt der Server an. **Ändern** macht ein Feld
+  daraus.
+- **Text**, **Baustein einfügen** (füllt die Platzhalter) und die
+  eingeklappte **Vorschau mit Fußzeile**.
+- **Danach** — der Status, den der Vorgang nach dem Senden bekommt:
+  vorgewählt „Wartet auf Rückmeldung“, zur Wahl „In Arbeit“ und „Erledigt“;
+  bei einer Anfrage, die noch nicht angelegt ist, ohne Erledigt. Gesetzt
+  wird er erst, wenn die Mail hinaus ist. Klappt das nicht, steht dort
+  „Gesendet, Status nicht gesetzt.“ statt der Erfolgsmeldung. „Danach“ gibt
+  es nur, solange der Vorgang offen ist: Eine Antwort auf einen erledigten
+  oder archivierten Vorgang — auch auf eine abgelehnte Anfrage — lässt den
+  Status, wie er ist; zurück holt ihn nur Wiederherstellen.
+
+Vor dem Senden kommt eine Rückfrage; Hinweise zu einem nicht eingerichteten
+Postfach, „Senden ist aus“ und die Fehler 502 und 503 stehen im Editor wie
+bisher. Der Server setzt die Fußzeile darunter, `[Vorgang 12]` in den
+Betreff, die Antwort-Kopfzeilen auf die letzte Mail des Verlaufs und legt die
+Antwort in den Ordner „Gesendet" des Postfachs (fehlt er, legt er „Sent"
+an). Eine Anfrage antwortet von moin@, alles andere von support@. Eine
+Antwort auf einen neuen Vorgang setzt ihn auf „In Arbeit". Scheitert der
+Versand, wird nichts gespeichert; der Entwurf bleibt stehen.
 
 **Textbausteine und Fußzeile** (Bereich **Textbausteine**): Bausteine für
 moin@, support@ oder beide, mit den Platzhaltern `{{name}}`, `{{gemeinde}}`,
@@ -469,7 +802,8 @@ Vorgänge und Mails lassen sich außerdem jederzeit in der Support-Ansicht
 löschen.
 
 Möchte jemand die Löschung vorher, löscht man den Vorgang in der
-Support-Ansicht; eine Anfrage wird abgelehnt und — bis es dafür einen Knopf
-gibt — in der Datenbank gelöscht (`DELETE FROM gemeinde_anfragen WHERE id = …`). Den Zähler gegen Missbrauch
+Support-Ansicht; beim Vorgang einer Anfrage geht die Anfrage mit („Vorgang
+und Anfrage löschen“, `vorgaengeLoeschen` in
+`backend/utils/supportVorgaenge.js`). Den Zähler gegen Missbrauch
 hält der Server je IP-Adresse eine Stunde, je E-Mail-Adresse einen Tag (als
 Prüfwert, nicht die Adresse) und löscht ihn danach binnen gut einer Stunde.

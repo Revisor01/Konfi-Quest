@@ -7,8 +7,13 @@
 //
 // POST /support/mail/nachrichten/:id/einsortieren
 //   { vorgang_id }  oder  { neu: { art, bereich?, dringlichkeit?, betreff?, organization_id? } }
-// Der ganze Faden geht mit. Danach laden alle Ansichten neu („Support-Daten
-// geändert"); die Mail verschwindet aus dem Posteingang.
+// Aus dem Posteingang gehen die Mails desselben Fadens mit, soweit sie noch
+// dort liegen; eine Mail, die schon in einem Vorgang liegt, geht allein
+// (backend/routes/supportMail.js) -- so verschiebt das Menü einer Mail im
+// Vorgang („In anderen Vorgang verschieben", „In neuen Vorgang herauslösen")
+// nur sie. Der eigene Vorgang steht dann nicht zur Wahl. Ein Vorgang, der
+// dabei leer wird, bleibt stehen. Danach laden alle Ansichten neu
+// („Support-Daten geändert").
 
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -26,15 +31,28 @@ import {
   type EinsortierenNeuFormular,
   type Vorgang,
 } from '../../utils/supportVorgaenge';
+import { EINSORTIEREN_HINWEIS } from '../../seiten/supportDetail';
 import { meldeSupportGeaendert } from '../../utils/supportAktualisieren';
 import { vorgaengeLaden } from './useVorgangsliste';
 
 export type EinsortierenModus = 'bestehend' | 'neu';
 
-export function useEinsortieren(mail: { id: number; betreff: string | null }, onFertig?: (vorgangId: number | null) => void) {
-  const { setError, setSuccess, isOnline } = useApp();
+export interface EinsortierenOptionen {
+  /** Die Mail liegt in diesem Vorgang: Er steht nicht zur Wahl, und die Mail geht allein. */
+  ausVorgang?: number | null;
+  /** Womit der Dialog beginnt -- „In neuen Vorgang herauslösen" beginnt mit 'neu'. */
+  modus?: EinsortierenModus;
+}
 
-  const [modus, setModus] = useState<EinsortierenModus>('bestehend');
+export function useEinsortieren(
+  mail: { id: number; betreff: string | null },
+  onFertig?: (vorgangId: number | null) => void,
+  o: EinsortierenOptionen = {},
+) {
+  const { setError, setSuccess, isOnline } = useApp();
+  const ausVorgang = o.ausVorgang ?? null;
+
+  const [modus, setModus] = useState<EinsortierenModus>(o.modus ?? 'bestehend');
   const [vorgaenge, setVorgaenge] = useState<Vorgang[] | null>(null);
   const [vorgaengeFehlen, setVorgaengeFehlen] = useState(false);
   const [vorgangWahl, setVorgangWahl] = useState('');
@@ -48,7 +66,12 @@ export function useEinsortieren(mail: { id: number; betreff: string | null }, on
   useEffect(() => {
     let aktiv = true;
     void vorgaengeLaden('offen').then(
-      (liste) => { if (aktiv) { setVorgaenge(vorgaengeSortieren(liste)); setVorgaengeFehlen(false); } },
+      (liste) => {
+        if (!aktiv) return;
+        // Verschieben: der eigene Vorgang ist kein Ziel.
+        setVorgaenge(vorgaengeSortieren(liste.filter((v) => v.id !== ausVorgang)));
+        setVorgaengeFehlen(false);
+      },
       () => { if (aktiv) { setVorgaenge([]); setVorgaengeFehlen(true); } },
     );
     void api.get('/organizations').then(
@@ -60,7 +83,7 @@ export function useEinsortieren(mail: { id: number; betreff: string | null }, on
       () => { if (aktiv) setGemeindenFehlen(true); },
     );
     return () => { aktiv = false; };
-  }, []);
+  }, [ausVorgang]);
 
   const gewaehlterVorgang = useMemo(() => vorgaenge?.find((v) => String(v.id) === vorgangWahl) ?? null, [vorgaenge, vorgangWahl]);
 
@@ -118,6 +141,8 @@ export function useEinsortieren(mail: { id: number; betreff: string | null }, on
     fehler,
     sendet,
     absenden,
+    /** Was mitgeht: aus dem Posteingang der Faden, aus einem Vorgang nur diese Mail. */
+    hinweis: ausVorgang !== null ? EINSORTIEREN_HINWEIS.allein : EINSORTIEREN_HINWEIS.faden,
   };
 }
 

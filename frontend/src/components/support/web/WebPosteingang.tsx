@@ -5,8 +5,12 @@
 // zusortiert werden." Hier liegen nur die eingehenden Mails an moin@ und
 // support@, die der Server keinem Vorgang zuordnen konnte und die nicht
 // archiviert sind. Wie ein Mailprogramm (Simon, 11.10.2026): links die Mails
-// (Absender, Betreff, eine Zeile Text), rechts die gewählte im Lesebereich
-// (web/WebPostDetail) mit Antworten, Einsortieren, Archivieren und Löschen.
+// (Kreis mit den Initialen des Absenders wie im Kopf der Mail, Absender,
+// Betreff als Kern ohne Re:/AW:, eine Zeile Text), rechts die gewählte im
+// Lesebereich (web/WebPostDetail) mit Einsortieren, Antworten, Archivieren
+// und Löschen. Der Lese-Rahmen (web/useListenRahmen.ts) gibt „Breit lesen"
+// (Schalter im Kopf der Liste), ‹ › zum Blättern und nach Archivieren oder
+// Löschen die nächste Mail (docs/planung/support-detailseiten.md, F).
 // Mehrere Mails lassen sich ankreuzen. Filter: Alle, Ungelesen, moin@,
 // support@ und Archiv. Der Zustand der Postfächer steht als eine Zeile oben
 // und klappt nur bei einer Störung auf.
@@ -20,7 +24,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_ANHANG, ICON_ARCHIV, ICON_LOESCHEN, ICON_MAIL, ICON_RUECKGAENGIG } from '../../shared/icons';
 import type { MailPostfachStatus } from '../../../types/support';
-import { POSTFACH_INFO, SERVER_AUS_HINWEIS, aufDiesemServer } from '../../../utils/supportMail';
+import { POSTFACH_INFO, SERVER_AUS_HINWEIS, aufDiesemServer, betreffKern } from '../../../utils/supportMail';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
 import { mailZeit } from '../../../utils/mailGespraeche';
@@ -34,8 +38,11 @@ import WebPill from '../../web/WebPill';
 import WebListenSeite from '../../web/WebListenSeite';
 import { useFilterAusAdresse } from '../../web/useFilterAusAdresse';
 import WebPostDetail from './WebPostDetail';
-import WebPostfach, { WebLeseHinweis, WebPostfachZeilen } from './WebPostfach';
+import WebPostfach, { MailKreis, WebLeseHinweis, WebPostfachZeilen } from './WebPostfach';
+import { LeseRahmenProvider, WebLeseNavigation } from './WebLeseRahmen';
 import { useLeseAuswahl } from './useLeseAuswahl';
+import { useListenRahmen } from './useListenRahmen';
+import { BREIT_LESEN } from '../../../seiten/supportDetail';
 import '../../../theme/web/support.css';
 import { leerVon } from '../../../seiten/beschreibung';
 import {
@@ -106,7 +113,11 @@ const WebPosteingang: React.FC<{ start?: number | null }> = ({ start = null }) =
   const ungelesenZahl = zaehler ? zaehler.posteingang : zaehlen.ungelesen;
 
   // Was nicht mehr in der Liste steht (einsortiert, archiviert, geloescht), bleibt nicht ausgewaehlt.
-  const sichtbareIds = useMemo(() => new Set(sichtbar.map((m) => m.id)), [sichtbar]);
+  const reihenfolge = useMemo(() => sichtbar.map((m) => m.id), [sichtbar]);
+  const sichtbareIds = useMemo(() => new Set(reihenfolge), [reihenfolge]);
+  const { rahmen, breit, breitLesen } = useListenRahmen({
+    ids: reihenfolge, gewaehlt, waehlen, listeLabel: BREIT_LESEN.liste.posteingang, direktlink: start !== null,
+  });
   useEffect(() => {
     setAusgewaehlt((alt) => {
       const rest = [...alt].filter((id) => sichtbareIds.has(id));
@@ -126,6 +137,22 @@ const WebPosteingang: React.FC<{ start?: number | null }> = ({ start = null }) =
   });
   const ids = [...ausgewaehlt];
   const nachAktion = (ok: boolean) => { if (ok) setAusgewaehlt(new Set()); };
+  // Archivieren und Löschen nehmen die Mails aus der Liste: Ist die offene dabei, öffnet sich wie
+  // nach einem Abschluss im Kopf die nächste (Frage 6).
+  const nachAbschluss = (ok: boolean, geloescht = false) => {
+    nachAktion(ok);
+    if (ok) rahmen.sammelAbgeschlossen(ids, geloescht);
+  };
+
+  // Was die Zeile außer „Absender: Betreff" zeigt, für Vorleseprogramme (der Name ersetzt den Inhalt des Knopfes).
+  const beschreibung = (m: MailEingangWeb) => {
+    const anhaenge = (m.anhaenge ?? []).length;
+    return [
+      `an ${POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}`,
+      ...(anhaenge > 0 ? [anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`] : []),
+      m.auszug || 'Ohne Text',
+    ].join(' · ');
+  };
 
   // Eine Zeile der Liste: Absender und Zeit, Betreff, eine Zeile Text.
   const zeile = (m: MailEingangWeb) => {
@@ -136,11 +163,12 @@ const WebPosteingang: React.FC<{ start?: number | null }> = ({ start = null }) =
           <span className="web-postfachzeile__titel">{m.von_name?.trim() || m.von_adresse}</span>
           <time className="web-postfachzeile__zeit" dateTime={m.gesendet_am} title={datumUhrzeit(m.gesendet_am)}>{mailZeit(m.gesendet_am)}</time>
         </span>
-        <span className="web-postfachzeile__betreff">{m.betreff?.trim() || '(ohne Betreff)'}</span>
+        <span className="web-postfachzeile__betreff">{betreffKern(m.betreff) || '(ohne Betreff)'}</span>
         <span className="web-postfachzeile__unten">
           <span className="web-postfachzeile__text">
-            {anhaenge > 0 && <IonIcon icon={ICON_ANHANG} aria-label={anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`} />}
-            {m.auszug || 'Ohne Text'}
+            {anhaenge > 0 && <IonIcon className="web-postfachzeile__anhang" icon={ICON_ANHANG} aria-label={anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`} />}
+            {/* Eigene Spanne: Im Flex-Behälter bekäme der bloße Text kein „…", er bräche mitten im Buchstaben ab. */}
+            <span className="web-postfachzeile__auszug">{m.auszug || 'Ohne Text'}</span>
           </span>
           <span className="web-postfachzeile__marken"><WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill></span>
         </span>
@@ -173,12 +201,12 @@ const WebPosteingang: React.FC<{ start?: number | null }> = ({ start = null }) =
               Wiederherstellen
             </WebKnopf>
           ) : (
-            <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren(ids).then(nachAktion); }}>
+            <WebKnopf klein disabled={!aktionen.isOnline} onClick={() => { void aktionen.archivieren(ids).then((ok) => nachAbschluss(ok)); }}>
               <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
               Archivieren
             </WebKnopf>
           )}
-          <WebKnopf klein art="gefahr" disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
+          <WebKnopf klein art="gefahr" disabled={!aktionen.isOnline} onClick={() => aktionen.loeschenFragen(ids, () => nachAbschluss(true, true))}>
             <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
             Löschen
           </WebKnopf>
@@ -220,21 +248,29 @@ const WebPosteingang: React.FC<{ start?: number | null }> = ({ start = null }) =
         <WebPostfach
           listeKopf={sammelleiste}
           listeBeschriftung={archiv ? 'Archivierte Mails' : 'Mails im Posteingang'}
+          breit={breit}
+          breitLesen={breitLesen}
           liste={eintraege.length === 0 ? <div className="web-postfach__leer">{leerZustand}</div> : (
             <WebPostfachZeilen<MailEingangWeb>
               eintraege={eintraege}
               kennung={(m) => m.id}
               gewaehlt={gewaehlt}
-              onWaehlen={waehlen}
+              onWaehlen={rahmen.waehlen}
               zeile={zeile}
-              name={(m) => `${m.von_name?.trim() || m.von_adresse}: ${m.betreff?.trim() || '(ohne Betreff)'}`}
+              kreis={(m) => <MailKreis name={m.von_name} adresse={m.von_adresse} />}
+              name={(m) => `${m.von_name?.trim() || m.von_adresse}: ${betreffKern(m.betreff) || '(ohne Betreff)'}`}
+              beschreibung={beschreibung}
               ungelesen={(m) => !m.gelesen_am}
               auswahl={{ ausgewaehlt, umschalten }}
             />
           )}
-          lesen={gewaehlt !== null
-            ? <WebPostDetail key={gewaehlt} nachrichtId={gewaehlt} onGeloescht={() => waehlen(null)} onEinsortiert={() => waehlen(null)} />
-            : <WebLeseHinweis icon={ICON_MAIL} titel="Keine Mail gewählt" text="Wähle links eine Mail — sie öffnet sich hier." />}
+          // Breit: „‹ Posteingang" und ‹ › über dem Lesebereich -- auch, solange die Mail lädt oder fehlt.
+          leiste={<LeseRahmenProvider wert={rahmen}><WebLeseNavigation /></LeseRahmenProvider>}
+          lesen={gewaehlt !== null ? (
+            <LeseRahmenProvider wert={rahmen}>
+              <WebPostDetail key={gewaehlt} nachrichtId={gewaehlt} onGeloescht={() => rahmen.waehlen(null)} onEinsortiert={() => rahmen.waehlen(null)} />
+            </LeseRahmenProvider>
+          ) : <WebLeseHinweis icon={ICON_MAIL} titel="Keine Mail gewählt" text="Wähle links eine Mail — sie öffnet sich hier." />}
         />
       )}
       leer={{ icon: archiv ? ICON_ARCHIV : ICON_MAIL, titel: POSTEINGANG_LEER_TITEL[filter], text: leerVon(POSTEINGANG_FILTER, filter) }}

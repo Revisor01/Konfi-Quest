@@ -321,20 +321,22 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
   /** Der Kopf einer Mail ist ein Knopf zum Auf- und Zuklappen. */
   const kopf = (name: RegExp) => screen.getByRole('button', { name });
 
-  it('eingehend und ausgehend: der Kreis unterscheidet, ausgehende sagen „Gesendet" in Worten; nur die jüngste ist offen', () => {
-    render(<MailGespraeche mails={[
+  it('eingehend und ausgehend: der Kreis unterscheidet, ausgehende heißen „Support" und sagen „Gesendet" in Worten; nur die jüngste ist offen', () => {
+    render(<MailGespraeche titelKern="Eure Anfrage" mails={[
       mail(1),
       mail(2, {
         richtung: 'aus', von_adresse: 'moin@konfi-quest.example', von_name: 'Konfi Quest', an_adressen: ['anna@example.org'],
-        gesendet_am: '2026-10-02T10:00:00Z', text: 'Gern.', message_id: '<b@kq>', in_reply_to: '<a@ex>',
+        gesendet_am: '2026-10-02T10:00:00Z', text: 'Gern.', message_id: '<b@kq>', in_reply_to: '<a@ex>', verfasst_von: 9, verfasst_von_name: 'Test Super-Admin',
       }),
     ].map((m, i) => (i === 0 ? { ...m, message_id: '<a@ex>' } : m))} />);
     const ein = kopf(/^Anna Beispiel/);
-    const aus = kopf(/^Konfi Quest/);
+    const aus = kopf(/^Support/);
     expect(ein).toHaveAttribute('aria-expanded', 'false');
     expect(aus).toHaveAttribute('aria-expanded', 'true');
     expect(ein.querySelector('.mail-kreis')!.className).toBe('mail-kreis');
     expect(aus.querySelector('.mail-kreis')!.className).toBe('mail-kreis mail-kreis--aus');
+    expect(aus.querySelector('.mail-kreis')).toHaveTextContent('KQ');
+    expect(aus).toHaveTextContent('Support· Test Super-Admin');
     expect(aus).toHaveTextContent('Gesendet');
     expect(ein).not.toHaveTextContent('Gesendet');
     // Eingeklappt: eine Zeile Vorschau statt Empfänger.
@@ -342,20 +344,27 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
     // Aufgeklappt: Empfänger und Postfach, der Text darunter.
     expect(aus).toHaveTextContent('An anna@example.org · von moin@');
     expect(screen.getByText('Gern.')).toBeInTheDocument();
-    // Ein Gespräch, Betreff einmal darüber.
-    expect(screen.getAllByRole('region', { name: 'Eure Anfrage' })).toHaveLength(1);
+    // Kein Gesprächstitel mehr: Der Betreff steht im Kopf der Seite, nicht noch einmal über den Mails.
+    expect(screen.queryByRole('region', { name: 'Eure Anfrage' })).toBeNull();
+    expect(screen.queryByText('Eure Anfrage')).toBeNull();
   });
 
-  it('Antworten stehen eingerückt unter der Mail, auf die sie antworten', () => {
+  it('flach, das Älteste oben, ohne Einrückung; antwortet eine Mail nicht auf die direkt davor, steht „Antwort auf …" dabei', () => {
     render(<MailGespraeche mails={[
       mail(1, { message_id: '<a@ex>' }),
       mail(2, { message_id: '<b@ex>', in_reply_to: '<a@ex>', gesendet_am: '2026-10-02T10:00:00Z', von_name: 'Ben' }),
       mail(3, { message_id: '<c@ex>', in_reply_to: '<b@ex>', gesendet_am: '2026-10-02T11:00:00Z', von_name: 'Cara' }),
       mail(4, { message_id: '<d@ex>', in_reply_to: '<a@ex>', gesendet_am: '2026-10-02T12:00:00Z', von_name: 'Dora' }),
     ]} />);
-    const zeilen = within(screen.getByRole('region', { name: 'Eure Anfrage' })).getAllByRole('listitem');
-    expect(zeilen.map((z) => z.className.match(/tiefe-(\d)/)?.[1])).toEqual(['0', '1', '2', '1']);
+    fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
+    const zeilen = [...document.querySelectorAll<HTMLElement>('li.mail-zeile')];
+    expect(zeilen.map((z) => z.className.match(/tiefe-(\d)/))).toEqual([null, null, null, null]);
     expect(zeilen.map((z) => z.querySelector('.mail-zeile__absender')?.textContent)).toEqual(['Anna Beispiel', 'Ben', 'Cara', 'Dora']);
+    // Ben und Cara antworten auf die Mail direkt davor; Dora auf Anna -- über zwei hinweg.
+    const bezug = zeilen.map((z) => z.querySelector('.mail-zeile__bezug')?.textContent ?? null);
+    expect(bezug.slice(0, 3)).toEqual([null, null, null]);
+    // Die Zeit wie in der Zeile („02.10., 11:00", in einem anderen Jahr mit Jahreszahl).
+    expect(bezug[3]).toMatch(/^Antwort auf Anna Beispiel, 02\.10\.(, 11:00|2026)$/);
   });
 
   it('"Neu" steht nur an den Mails, die in der Menge sind -- und die sind aufgeklappt', () => {
@@ -365,7 +374,7 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
     expect(kopf(/^Ben/)).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('Antippen klappt eine Mail auf und wieder zu; „Alle aufklappen" öffnet alle', () => {
+  it('Antippen klappt eine Mail auf und wieder zu; „Alle aufklappen" öffnet alle, „Alle einklappen" lässt die jüngste offen', () => {
     render(<MailGespraeche mails={[mail(1, { text: 'Erste Mail' }), mail(2, { text: 'Zweite Mail', gesendet_am: '2026-10-02T10:00:00Z', von_name: 'Ben' })]} />);
     expect(screen.queryByText('Erste Mail', { selector: 'p' })).toBeNull();
     fireEvent.click(kopf(/^Anna Beispiel/));
@@ -376,7 +385,8 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
     expect(screen.getAllByRole('button', { expanded: true })).toHaveLength(2);
     fireEvent.click(screen.getByRole('button', { name: 'Alle einklappen' }));
-    expect(screen.queryAllByRole('button', { expanded: true })).toHaveLength(0);
+    // Zurück zum Bild beim Öffnen: Die jüngste bleibt offen (flacher Verlauf, 11.10.2026).
+    expect(screen.getAllByRole('button', { expanded: true })).toEqual([kopf(/^Ben/)]);
   });
 
   it('Zitate sind eingeklappt und lassen sich aufklappen -- der eigene Text bleibt sichtbar', () => {

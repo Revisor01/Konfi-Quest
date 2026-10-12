@@ -1,50 +1,23 @@
-// Mails als Gespräche lesen (Simon, 11.10.2026: „Ordentliche eingeklappte
-// Ansichten … Konversationsbäume ordentlich. Wie in einem guten Mail
-// Client."). Reine Regeln ohne Darstellung -- App und Web zeigen sie mit
-// demselben Baustein (components/support/MailGespraeche.tsx).
+// Mails als Verlauf lesen (Simon, 11.10.2026: „Ordentliche eingeklappte
+// Ansichten … Wie in einem guten Mail Client."). Reine Regeln ohne
+// Darstellung -- App und Web zeigen sie mit demselben Baustein
+// (components/support/MailGespraeche.tsx).
 //
-// Ein Gespräch sind die Mails, die über ihre Kopfzeilen zusammenhängen:
-// In-Reply-To und References zeigen auf die Message-ID einer früheren Mail.
-// Wer worauf antwortet, ergibt den Baum; eingerückt wird nach der Tiefe, aber
-// höchstens MAX_TIEFE Stufen, sonst wandert ein langer Wechsel aus dem Bild.
-// Mails ohne Bezug (eine neue Mail, eine Antwort des Supports ohne
-// Vorgänger) beginnen ein eigenes Gespräch.
+// Worauf eine Mail antwortet, sagen ihre Kopfzeilen: In-Reply-To und
+// References zeigen auf die Message-ID einer früheren Mail (vorgaengerVon).
+// Seit 11.10.2026 steht der Verlauf überall flach (verlaufReihe, unten); der
+// Baum mit Einrückung und Gesprächstiteln (gespraecheBilden, anfangsOffen,
+// mailAbsender, MAX_TIEFE) ist entfallen.
 
 import type { MailNachricht } from '../types/support';
-import { auszug, zitateTrennen, type TextTeil } from './supportMail';
+import { auszug, betreffKern, zitateTrennen, type TextTeil } from './supportMail';
 import { datumKurz, datumUhrzeit, uhrzeit } from './dateUtils';
+import { VERLAUF_TEXT } from '../seiten/supportDetail';
 
-/** Tiefste Einrückung im Baum. */
-export const MAX_TIEFE = 3;
-
-export interface MailImBaum {
-  mail: MailNachricht;
-  /** 0 = Anfang des Gesprächs, gedeckelt auf MAX_TIEFE. */
-  tiefe: number;
-}
-
-export interface Gespraech {
-  /** Stabiler Schlüssel: die Kennung der ersten Mail. */
-  schluessel: string;
-  /** Betreff ohne „Re:"/„AW:" -- der der ersten Mail mit Betreff. */
-  betreff: string;
-  /** Die Mails in Lesereihenfolge: jede Antwort direkt unter ihrem Vorgänger. */
-  mails: MailImBaum[];
-  /** Zeitpunkt der jüngsten Mail. */
-  letzte: string;
-}
-
-const ANTWORT_VORSILBEN = /^\s*(?:(?:re|aw|antw|wg|fw|fwd)(?:\[\d+\])?\s*:\s*)+/i;
-
-/** Die Kennungen, die der Server in den Betreff setzt: „[Vorgang 4]", „[Anfrage 2]", „[Gemeinde 7]". */
-const KENNUNGEN = /\s*\[(?:Vorgang|Anfrage|Gemeinde)\s+\d+\]/gi;
-
-/**
- * Betreff ohne Antwort- und Weiterleitungs-Vorsilben und ohne die Kennung
- * des Servers -- so lautet er über dem Gespräch. Leer bleibt leer.
- */
-export const betreffKern = (betreff: string | null | undefined): string =>
-  (betreff ?? '').replace(ANTWORT_VORSILBEN, '').replace(KENNUNGEN, '').trim();
+// Der Kern eines Betreffs steht in utils/supportMail.ts -- eine Stelle für
+// Gespräche und Antworten (supportMail importiert nichts von hier, so
+// entsteht kein Kreis).
+export { betreffKern };
 
 const zeit = (m: Pick<MailNachricht, 'gesendet_am'>) => {
   const t = Date.parse(m.gesendet_am);
@@ -54,19 +27,18 @@ const zeit = (m: Pick<MailNachricht, 'gesendet_am'>) => {
 const frueher = (a: MailNachricht, b: MailNachricht) => zeit(a) - zeit(b) || a.id - b.id;
 
 /**
- * Die Mails einer Liste als Gespräche, ältestes zuerst. Jede Mail kommt genau
- * einmal vor. Ein Vorgänger zählt nur, wenn er früher kam -- so entsteht aus
- * fehlerhaften Kopfzeilen nie ein Kreis.
+ * Worauf jede Mail antwortet: erst In-Reply-To, dann die References von
+ * hinten (der nächste Vorgänger zuerst). Ein Vorgänger zählt nur, wenn er in
+ * der Liste steht und früher kam -- so entsteht aus fehlerhaften Kopfzeilen
+ * nie ein Kreis. Mails ohne Vorgänger fehlen in der Karte.
  */
-export function gespraecheBilden(mails: readonly MailNachricht[]): Gespraech[] {
+export function vorgaengerVon(mails: readonly MailNachricht[]): Map<number, MailNachricht> {
   const sortiert = [...mails].sort(frueher);
   const rang = new Map(sortiert.map((m, i) => [m.id, i]));
   const nachKennung = new Map<string, MailNachricht>();
   for (const m of sortiert) {
     if (m.message_id && !nachKennung.has(m.message_id)) nachKennung.set(m.message_id, m);
   }
-
-  // Vorgänger: erst In-Reply-To, dann die References von hinten (der nächste zuerst).
   const vorgaenger = new Map<number, MailNachricht>();
   for (const m of sortiert) {
     const kandidaten = [m.in_reply_to, ...[...(m.referenzen ?? [])].reverse()];
@@ -78,65 +50,7 @@ export function gespraecheBilden(mails: readonly MailNachricht[]): Gespraech[] {
       }
     }
   }
-
-  // Zusammenhang: über den Vorgänger und über gemeinsame Kennungen in den
-  // Kopfzeilen (zwei Antworten auf eine Mail, die hier fehlt).
-  const wurzel = new Map<number, number>(sortiert.map((m) => [m.id, m.id]));
-  const finde = (id: number): number => {
-    let w = id;
-    while (wurzel.get(w) !== w) w = wurzel.get(w) as number;
-    wurzel.set(id, w);
-    return w;
-  };
-  const verbinde = (a: number, b: number) => {
-    const wa = finde(a);
-    const wb = finde(b);
-    if (wa === wb) return;
-    // Die ältere Mail bleibt Wurzel: der Schlüssel des Gesprächs ist stabil.
-    if ((rang.get(wa) ?? 0) < (rang.get(wb) ?? 0)) wurzel.set(wb, wa);
-    else wurzel.set(wa, wb);
-  };
-  for (const [id, v] of vorgaenger) verbinde(id, v.id);
-  const ersteMitKennung = new Map<string, number>();
-  for (const m of sortiert) {
-    for (const k of [m.message_id, m.in_reply_to, ...(m.referenzen ?? [])]) {
-      if (!k) continue;
-      const schon = ersteMitKennung.get(k);
-      if (schon === undefined) ersteMitKennung.set(k, m.id);
-      else verbinde(m.id, schon);
-    }
-  }
-
-  const gruppen = new Map<number, MailNachricht[]>();
-  for (const m of sortiert) {
-    const w = finde(m.id);
-    gruppen.set(w, [...(gruppen.get(w) ?? []), m]);
-  }
-
-  const gespraeche: Gespraech[] = [];
-  for (const gruppe of gruppen.values()) {
-    const kinder = new Map<number, MailNachricht[]>();
-    const anfaenge: MailNachricht[] = [];
-    for (const m of gruppe) {
-      const v = vorgaenger.get(m.id);
-      if (v) kinder.set(v.id, [...(kinder.get(v.id) ?? []), m]);
-      else anfaenge.push(m);
-    }
-    const reihe: MailImBaum[] = [];
-    const absteigen = (m: MailNachricht, tiefe: number) => {
-      reihe.push({ mail: m, tiefe: Math.min(tiefe, MAX_TIEFE) });
-      for (const k of kinder.get(m.id) ?? []) absteigen(k, tiefe + 1);
-    };
-    for (const a of anfaenge) absteigen(a, 0);
-    const mitBetreff = gruppe.find((m) => betreffKern(m.betreff));
-    gespraeche.push({
-      schluessel: `gespraech-${gruppe[0].id}`,
-      betreff: mitBetreff ? betreffKern(mitBetreff.betreff) : '',
-      mails: reihe,
-      letzte: gruppe[gruppe.length - 1].gesendet_am,
-    });
-  }
-  return gespraeche.sort((a, b) => frueher(a.mails[0].mail, b.mails[0].mail));
+  return vorgaenger;
 }
 
 /** Signaturtrenner nach RFC 3676 („-- "), auch ohne das Leerzeichen. */
@@ -192,30 +106,6 @@ export function initialen(name: string | null | undefined, adresse?: string | nu
 }
 
 /**
- * Wer eine Mail geschrieben hat, für die Zeile im Gespräch: bei eingehenden
- * Name oder Adresse, bei ausgehenden das Support-Konto, das sie verfasst hat
- * (sonst der Absendername).
- */
-export function mailAbsender(m: MailNachricht & { verfasst_von_name?: string | null }): string {
-  if (m.richtung === 'aus') {
-    // „Gesendet" steht daneben; der Name sagt, wer im Support geschrieben hat.
-    return m.verfasst_von_name?.trim() || m.von_name?.trim() || 'Support';
-  }
-  return m.von_name?.trim() || m.von_adresse;
-}
-
-/**
- * Welche Mails beim Öffnen aufgeklappt sind: die jüngste und alle, die noch
- * ungelesen waren. Der Rest steht eingeklappt mit einer Zeile Vorschau da.
- */
-export function anfangsOffen(mails: readonly MailNachricht[], neu?: ReadonlySet<number>): Set<number> {
-  const offen = new Set<number>(neu ?? []);
-  const juengste = [...mails].sort(frueher).pop();
-  if (juengste) offen.add(juengste.id);
-  return offen;
-}
-
-/**
  * Zeit einer Mail wie in einem Mailprogramm: heute nur die Uhrzeit, gestern
  * „gestern, 14:05", im selben Jahr „10.10., 14:05", sonst das ganze Datum.
  * Die Formate kommen aus utils/dateUtils.ts, die Zeitzone ist die des Geräts.
@@ -229,4 +119,148 @@ export function mailZeit(iso: string, jetzt: Date = new Date()): string {
   if (dann.toDateString() === gestern.toDateString()) return `gestern, ${uhrzeit(dann)}`;
   if (dann.getFullYear() === jetzt.getFullYear()) return datumUhrzeit(dann, { ohneJahr: true });
   return datumKurz(dann);
+}
+
+// =====================================================================================
+// Der flache Verlauf (docs/planung/support-detailseiten.md; Simon, 11.10.2026,
+// Frage 2: „ja"): überall flach, das Älteste oben, keine Treppe. Offen sind
+// die jüngste Nachricht und jede neue; Gelesenes ist eine Zeile; ab drei
+// eingeklappten Mails in Folge ein Stapel „N frühere Mails". Antwortet eine
+// Mail nicht auf die direkt davor, steht „Antwort auf {Name}, {Zeit}" dabei.
+// =====================================================================================
+
+/** Der Anfang eines Vorgangs: das Formular bzw. die Anfrage, vor der ersten Mail. */
+export interface VerlaufAnfang {
+  marke: 'Formular' | 'Anfrage';
+  name: string | null;
+  adresse: string | null;
+  datum: string;
+  text: string;
+}
+
+export type VerlaufEintrag =
+  /** kurz: zwei Zeilen und „ganz lesen" -- sobald der Support geantwortet hat. */
+  | { art: 'anfang'; schluessel: 'anfang'; anfang: VerlaufAnfang; offen: boolean; kurz: boolean }
+  | {
+    art: 'mail'; schluessel: string; mail: MailNachricht; offen: boolean; neu: boolean; ausgehend: boolean;
+    absender: string; konto: string | null; kreis: string;
+    /** Antwortet die Mail nicht auf die direkt davor: auf wen und wann. */
+    antwortAuf: { name: string; zeit: string } | null;
+    /** Der Kern ihres Betreffs, wenn er vom Titel abweicht; sonst null. */
+    betreffAbweichend: string | null;
+  }
+  | { art: 'stapel'; schluessel: string; ids: number[]; anzahl: number; absender: string[]; anhaenge: number };
+
+export interface VerlaufOptionen {
+  /** Zusätzlich aufgeklappte Mails. */
+  offen?: ReadonlySet<number>;
+  /** Aufgelöste Stapel (ihr Schlüssel); die Mails stehen dann einzeln eingeklappt da. */
+  stapelOffen?: ReadonlySet<string>;
+  /** Der Kern des Titels (Vorgangsbetreff bzw. Betreff der Mail); null: kein Vergleich. */
+  titelKern?: string | null;
+  /** „Alle aufklappen": alles offen, kein Stapel, der Anfang ganz. */
+  alleOffen?: boolean;
+  jetzt?: Date;
+}
+
+/** Ab so vielen eingeklappten Mails in Folge steht statt ihrer ein Stapel. */
+export const STAPEL_AB = 3;
+
+/**
+ * Wer eine Mail schrieb, für ihre Zeile: eingehend Name (sonst Adresse) und
+ * Initialen; ausgehend einheitlich „Support" mit dem Kreis „KQ" und dem Konto
+ * klein daneben -- ohne Konto (automatische Bestätigung) nur „Support".
+ */
+export function absenderZeile(m: MailNachricht): { name: string; konto: string | null; kreis: string; ausgehend: boolean } {
+  if (m.richtung === 'aus') {
+    return { name: VERLAUF_TEXT.support, konto: m.verfasst_von_name?.trim() || null, kreis: VERLAUF_TEXT.supportKreis, ausgehend: true };
+  }
+  return { name: m.von_name?.trim() || m.von_adresse, konto: null, kreis: initialen(m.von_name, m.von_adresse), ausgehend: false };
+}
+
+/** Eine Mail, die noch niemand gelesen hat (eingehend, ohne Lesedatum). */
+const ungelesen = (m: MailNachricht): boolean => m.richtung === 'ein' && !m.gelesen_am;
+
+/**
+ * Der Verlauf als flache Reihe, das Älteste zuerst: der Anfang (offen,
+ * solange keine Antwort des Supports folgt -- die automatische Bestätigung
+ * ohne Konto zählt nicht --, danach kurz), dann die Mails. Offen sind die
+ * jüngste, jede neue und die in `o.offen`. Ab STAPEL_AB eingeklappten Mails
+ * in Folge steht ein Stapel; Ungelesenes und Neues wird nie gestapelt.
+ */
+export function verlaufReihe(
+  mails: readonly MailNachricht[],
+  anfang: VerlaufAnfang | null,
+  neu: ReadonlySet<number>,
+  o: VerlaufOptionen = {},
+): VerlaufEintrag[] {
+  const jetzt = o.jetzt ?? new Date();
+  const alle = !!o.alleOffen;
+  const sortiert = [...mails].sort(frueher);
+  const vorgaenger = vorgaengerVon(sortiert);
+  const juengste = sortiert[sortiert.length - 1];
+  const titel = o.titelKern ? betreffKern(o.titelKern).toLowerCase() : null;
+  const reihe: VerlaufEintrag[] = [];
+
+  if (anfang) {
+    const geantwortet = sortiert.some((m) => m.richtung === 'aus' && m.verfasst_von !== null && m.verfasst_von !== undefined);
+    const offen = alle || !geantwortet;
+    reihe.push({ art: 'anfang', schluessel: 'anfang', anfang, offen, kurz: !offen });
+  }
+
+  const mailEintraege = sortiert.map((m, i): Extract<VerlaufEintrag, { art: 'mail' }> => {
+    const zeile = absenderZeile(m);
+    const v = vorgaenger.get(m.id);
+    const davor = i > 0 ? sortiert[i - 1] : null;
+    const kern = betreffKern(m.betreff);
+    return {
+      art: 'mail',
+      schluessel: `mail-${m.id}`,
+      mail: m,
+      offen: alle || m.id === juengste.id || neu.has(m.id) || !!o.offen?.has(m.id),
+      neu: neu.has(m.id),
+      ausgehend: zeile.ausgehend,
+      absender: zeile.name,
+      konto: zeile.konto,
+      kreis: zeile.kreis,
+      antwortAuf: v && v.id !== davor?.id ? { name: absenderZeile(v).name, zeit: mailZeit(v.gesendet_am, jetzt) } : null,
+      betreffAbweichend: titel !== null && kern && kern.toLowerCase() !== titel ? kern : null,
+    };
+  });
+
+  // Stapel: Läufe eingeklappter Mails, unterbrochen von allem, was offen, neu oder ungelesen ist.
+  let lauf: Array<Extract<VerlaufEintrag, { art: 'mail' }>> = [];
+  const abschliessen = () => {
+    const schluessel = lauf.length > 0 ? `stapel-${lauf[0].mail.id}` : '';
+    if (lauf.length >= STAPEL_AB && !o.stapelOffen?.has(schluessel)) {
+      reihe.push({
+        art: 'stapel',
+        schluessel,
+        ids: lauf.map((e) => e.mail.id),
+        anzahl: lauf.length,
+        absender: [...new Set(lauf.map((e) => e.absender))],
+        anhaenge: lauf.reduce((summe, e) => summe + (e.mail.anhaenge?.length ?? 0), 0),
+      });
+    } else {
+      reihe.push(...lauf);
+    }
+    lauf = [];
+  };
+  for (const e of mailEintraege) {
+    if (!e.offen && !e.neu && !ungelesen(e.mail)) {
+      lauf.push(e);
+      continue;
+    }
+    abschliessen();
+    reihe.push(e);
+  }
+  abschliessen();
+  return reihe;
+}
+
+/** „6 Nachrichten, 1 neu" -- mit `mitAnfang` zählt das Formular bzw. die Anfrage mit. */
+export function verlaufZaehler(mails: readonly MailNachricht[], neu: ReadonlySet<number>, mitAnfang = false): string {
+  const anzahl = mails.length + (mitAnfang ? 1 : 0);
+  const neue = mails.filter((m) => neu.has(m.id)).length;
+  return neue > 0 ? `${VERLAUF_TEXT.nachrichten(anzahl)}, ${VERLAUF_TEXT.neu(neue)}` : VERLAUF_TEXT.nachrichten(anzahl);
 }

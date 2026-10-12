@@ -31,6 +31,8 @@ export interface TestMail {
   message_id?: string | null;
   in_reply_to?: string | null;
   referenzen?: string[] | null;
+  /** Das Konto, das eine ausgehende Mail verfasst hat; leer bei der automatischen Bestätigung. */
+  verfasst_von?: number | null;
   verfasst_von_name?: string | null;
 }
 
@@ -53,12 +55,51 @@ export interface TestVorgang {
   kontakt_funktion: string | null;
   gemeinde_angabe: string | null;
   anfrage: Record<string, unknown> | null;
+  /** Seit wann der Status gilt; ohne Angabe der Eingang. */
+  status_seit?: string | null;
+  updated_at?: string | null;
+  /** Wer den Vorgang angelegt hat (Herkunft „support"). */
+  erstellt_von_name?: string | null;
 }
 
 export const GEMEINDEN = [
   { id: 7, name: 'musterdorf', display_name: 'Kirchengemeinde Musterdorf' },
   { id: 8, name: 'wiesengrund', display_name: 'Kirchengemeinde Wiesengrund' },
 ];
+
+/**
+ * Eine Gemeinde, wie GET /organizations/:id sie liefert (SELECT * und die
+ * Zähler) -- und wie die Attrappe sie über PUT und PATCH …/limit ändert.
+ */
+export interface TestGemeinde {
+  id: number;
+  name: string;
+  slug: string;
+  display_name: string;
+  description: string | null;
+  contact_name: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  address: string | null;
+  website_url: string | null;
+  kirchenkreis: string | null;
+  kirchenkreis_id: number | null;
+  landeskirche: string | null;
+  is_active: boolean;
+  is_trial: boolean;
+  trial_ends_at: string | null;
+  max_konfis: number | null;
+  konfi_count: number;
+  wunsch_lizenz: string | null;
+  intern: boolean;
+}
+
+/** Die Werte, die die Attrappe vor dem 11.10.2026 fest lieferte -- ältere Tests rechnen mit ihnen. */
+const gemeindeVorgabe = (g: (typeof GEMEINDEN)[number]): TestGemeinde => ({
+  ...g, slug: g.name, description: null, contact_name: null, contact_email: null, contact_phone: null, address: null, website_url: null,
+  kirchenkreis: 'Dithmarschen', kirchenkreis_id: 11, landeskirche: 'Nordkirche', is_active: true, is_trial: true,
+  trial_ends_at: '2026-11-02T00:00:00Z', max_konfis: 5, konfi_count: 3, wunsch_lizenz: null, intern: false,
+});
 
 export const LEITUNG: Record<number, Array<{ id: number; display_name: string; username: string; email: string | null; is_active: boolean; last_login_at: string | null }>> = {
   7: [{ id: 21, display_name: 'Pastorin Lena Probe', username: 'lena.probe', email: 'lena.probe@example.org', is_active: true, last_login_at: '2026-10-02T08:00:00Z' }],
@@ -89,40 +130,99 @@ type Aufruf = { methode: 'get' | 'post' | 'patch' | 'put' | 'delete'; pfad: stri
 export interface ServerOptionen {
   vorgaenge?: TestVorgang[];
   mails?: TestMail[];
+  /**
+   * `gemeinde_name` wie der echte Server: der Name der zugeordneten Gemeinde,
+   * sonst die Gemeinde der Anfrage, sonst die Angabe im Formular
+   * (COALESCE in backend/routes/supportVorgaenge.js, LISTE_SPALTEN). Ohne die
+   * Option nur der Name der zugeordneten Gemeinde -- so bleiben die älteren
+   * Tests, wie sie sind. Mit ihr fällt auf, wenn eine Seite den Freitext für
+   * eine zugeordnete Gemeinde hält (Fehler vorab 3).
+   */
+  gemeindeNameWieServer?: boolean;
+  /** Abweichende Angaben je Gemeinde (Lizenz, Stammdaten), etwa `{ 7: { max_konfis: 50, wunsch_lizenz: 'standard' } }`. */
+  gemeinden?: Record<number, Partial<TestGemeinde>>;
 }
 
 export function vorgaengeServer(optionen: ServerOptionen = {}) {
   const s = {
     vorgaenge: [...(optionen.vorgaenge ?? [])],
     mails: [...(optionen.mails ?? [])],
+    /** Die Gemeinden mit Lizenz und Stammdaten (GET/PUT /organizations/:id, PATCH …/limit). */
+    gemeinden: Object.fromEntries(GEMEINDEN.map((g) => [g.id, { ...gemeindeVorgabe(g), ...(optionen.gemeinden?.[g.id] ?? {}) }])) as Record<number, TestGemeinde>,
     aufrufe: [] as Aufruf[],
     naechsteId: 100,
     jetzt: '2026-10-03T09:00:00Z',
+    /** Das Konto der Tests (verfasst_von der Antworten). */
+    konto: { id: 9, name: 'Test Super-Admin' },
     /** Einzelne Routen scheitern lassen: Pfad -> Fehler. */
     fehler: new Map<string, unknown>(),
   };
 
   const mailsVon = (id: number) => s.mails.filter((m) => m.vorgang_id === id).sort((a, b) => a.gesendet_am.localeCompare(b.gesendet_am) || a.id - b.id);
   const ungelesenVon = (id: number) => mailsVon(id).filter((m) => m.richtung === 'ein' && !m.gelesen_am).length;
-  const gemeindeName = (id: number | null) => (id === null ? null : GEMEINDEN.find((g) => g.id === id)?.display_name ?? `Gemeinde ${id}`);
+  const gemeindeName = (id: number | null) => (id === null ? null : s.gemeinden[id]?.display_name ?? `Gemeinde ${id}`);
   const aktivitaet = (v: TestVorgang) => [v.created_at, ...mailsVon(v.id).map((m) => m.gesendet_am)].sort().pop() as string;
+  const gemeindeNameVon = (v: TestVorgang): string | null => {
+    const zugeordnet = gemeindeName(v.organization_id);
+    if (!optionen.gemeindeNameWieServer) return zugeordnet;
+    const ausAnfrage = typeof v.anfrage?.gemeinde === 'string' && v.anfrage.gemeinde.trim() ? v.anfrage.gemeinde : null;
+    return zugeordnet ?? ausAnfrage ?? v.gemeinde_angabe ?? null;
+  };
 
   const eintrag = (v: TestVorgang) => ({
     id: v.id, art: v.art, bereich: v.bereich, dringlichkeit: v.dringlichkeit, status: v.status, betreff: v.betreff, quelle: v.quelle,
-    organization_id: v.organization_id, gemeinde_name: gemeindeName(v.organization_id), anfrage_id: v.anfrage_id, ungelesen: ungelesenVon(v.id),
+    organization_id: v.organization_id, gemeinde_name: gemeindeNameVon(v), anfrage_id: v.anfrage_id, ungelesen: ungelesenVon(v.id),
     letzte_aktivitaet: aktivitaet(v), created_at: v.created_at, archiviert_am: v.archiviert_am,
   });
 
+  /**
+   * Die möglichen Empfänger wie der Server (backend/routes/supportVorgaenge.js,
+   * empfaengerFuerVorgang): Absender eingehender Mails (zuletzt geschrieben
+   * zuerst), Kontakt aus dem Formular, Adresse der Anfrage, Gemeindeleitung --
+   * jede Adresse einmal, klein geschrieben, `herkunft` als Schlüssel.
+   */
+  const empfaengerVon = (v: TestVorgang) => {
+    const liste: Array<{ adresse: string; name: string | null; herkunft: string }> = [];
+    const gesehen = new Set<string>();
+    const dazu = (adresse: unknown, name: unknown, herkunft: string) => {
+      const a = typeof adresse === 'string' ? adresse.trim().toLowerCase() : '';
+      if (!a || gesehen.has(a)) return;
+      gesehen.add(a);
+      liste.push({ adresse: a, name: typeof name === 'string' && name ? name : null, herkunft });
+    };
+    for (const m of mailsVon(v.id).filter((x) => x.richtung === 'ein').reverse()) dazu(m.von_adresse, m.von_name, 'absender');
+    dazu(v.kontakt_email, v.kontakt_name, 'kontakt');
+    if (v.anfrage) dazu(v.anfrage.email, v.anfrage.kontakt_name, 'anfrage');
+    if (v.organization_id !== null) for (const l of LEITUNG[v.organization_id] ?? []) dazu(l.email, l.display_name, 'leitung');
+    return liste;
+  };
+
   const detail = (v: TestVorgang) => {
-    const g = v.organization_id === null ? null : GEMEINDEN.find((x) => x.id === v.organization_id) ?? null;
+    const g = v.organization_id === null ? null : s.gemeinden[v.organization_id] ?? null;
     return {
-      ...eintrag(v), notiz: v.notiz, beschreibung: v.beschreibung, kontakt_name: v.kontakt_name, kontakt_email: v.kontakt_email,
-      kontakt_funktion: v.kontakt_funktion, gemeinde_angabe: v.gemeinde_angabe,
+      ...eintrag(v), status_seit: v.status_seit ?? v.created_at, updated_at: v.updated_at ?? v.created_at,
+      notiz: v.notiz, beschreibung: v.beschreibung, kontakt_name: v.kontakt_name, kontakt_email: v.kontakt_email,
+      kontakt_funktion: v.kontakt_funktion, gemeinde_angabe: v.gemeinde_angabe, erstellt_von_name: v.erstellt_von_name ?? null,
       verlauf: mailsVon(v.id).map((m) => ({ ...m, anfrage_id: null, organization_id: v.organization_id })),
       anfrage: v.anfrage,
-      gemeinde: g && { id: g.id, name: g.name, display_name: g.display_name, is_active: true, is_trial: true, trial_ends_at: '2026-11-02T00:00:00Z', max_konfis: 5, konfi_count: 3, kirchenkreis: 'Dithmarschen', landeskirche: 'Nordkirche' },
+      gemeinde: g && {
+        id: g.id, name: g.name, display_name: g.display_name, is_active: g.is_active, is_trial: g.is_trial, trial_ends_at: g.trial_ends_at,
+        max_konfis: g.max_konfis, intern: g.intern, konfi_count: g.konfi_count, kirchenkreis_id: g.kirchenkreis_id, kirchenkreis: g.kirchenkreis,
+        landeskirche_id: 1, landeskirche: g.landeskirche, wunsch_lizenz: g.wunsch_lizenz,
+      },
       leitung: g ? LEITUNG[g.id] ?? [] : [],
+      empfaenger: empfaengerVon(v),
     };
+  };
+
+  /** Eine Gemeinde wie GET /organizations/:id (SELECT * und Zähler). */
+  const organisation = (g: TestGemeinde) => ({ ...g, user_count: (LEITUNG[g.id] ?? []).length, teamer_count: 0, admin_count: (LEITUNG[g.id] ?? []).length });
+
+  /** Status setzen wie backend/utils/supportVorgaenge.js (statusSetzen): status_seit läuft neu, wenn er sich ändert. */
+  const statusSetzen = (v: TestVorgang, status: TestVorgang['status']) => {
+    if (v.status !== status) v.status_seit = s.jetzt;
+    v.status = status;
+    v.updated_at = s.jetzt;
   };
 
   const fadenVon = (m: TestMail): TestMail[] => {
@@ -182,9 +282,15 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     if (pfad === '/support/mail/einstellungen') return Promise.resolve({ data: { fusszeile: 'Konfi Quest', absendername: 'Support-Team' } });
     if (pfad === '/support/mail/platzhalter') return Promise.resolve({ data: { name: 'Anna Beispiel', gemeinde: 'Kirchengemeinde Lindenau', lizenz: null, testphase_bis: null, benutzername: null, absender: null } });
     if (pfad === '/organizations') return Promise.resolve({ data: GEMEINDEN });
+    if (/^\/organizations\/\d+$/.test(pfad)) {
+      const g = s.gemeinden[idAus(pfad, /(\d+)$/)];
+      return g ? Promise.resolve({ data: organisation(g) }) : Promise.reject(nichtGefunden());
+    }
     if (/^\/support\/gemeinden\/\d+\/empfaenger$/.test(pfad)) {
       const id = idAus(pfad, /gemeinden\/(\d+)/);
-      return Promise.resolve({ data: (LEITUNG[id] ?? []).filter((l) => l.email).map((l) => ({ adresse: l.email, name: l.display_name, herkunft: 'Gemeindeleitung' })) });
+      // herkunft ist der Schlüssel des Servers ('leitung', 'verlauf'; backend/routes/supportMail.js,
+      // empfaengerLaden) -- bis 11.10.2026 stand hier schon das Etikett, und der rohe Schlüssel fiel nie auf.
+      return Promise.resolve({ data: (LEITUNG[id] ?? []).filter((l) => l.email).map((l) => ({ adresse: l.email, name: l.display_name, herkunft: 'leitung' })) });
     }
     if (pfad === '/support/kirchenkreise') return Promise.resolve({ data: [{ id: 11, name: 'Kirchenkreis Dithmarschen', landeskirche_id: 1, landeskirche: 'Nordkirche' }] });
     if (pfad === '/support/landeskirchen') return Promise.resolve({ data: [{ id: 1, name: 'Nordkirche', kirchenkreise: [] }] });
@@ -206,7 +312,7 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
         betreff: String(koerper?.betreff), quelle: 'support', organization_id: (koerper?.organization_id as number) ?? null, created_at: s.jetzt, status: 'neu',
       });
       s.vorgaenge.push(v);
-      if (koerper?.text) s.mails.push(mail(s.naechsteId++, id, { richtung: 'aus', postfach: 'support', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: [String(koerper.an)], betreff: `Re: ${v.betreff} [Vorgang ${id}]`, text: String(koerper.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt }));
+      if (koerper?.text) s.mails.push(mail(s.naechsteId++, id, { richtung: 'aus', postfach: 'support', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: [String(koerper.an)], betreff: `Re: ${v.betreff} [Vorgang ${id}]`, text: String(koerper.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name }));
       return Promise.resolve({ data: { id } });
     }
     if (pfad === '/support/vorgaenge/sammel') {
@@ -215,8 +321,8 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
         const v = finde(id);
         if (!v) continue;
         if (koerper?.aktion === 'archivieren') v.archiviert_am = s.jetzt;
-        if (koerper?.aktion === 'wiederherstellen') { v.archiviert_am = null; v.status = 'in_arbeit'; }
-        if (koerper?.aktion === 'status') { v.status = koerper.status as TestVorgang['status']; erledigtArchiviert(v); }
+        if (koerper?.aktion === 'wiederherstellen') { v.archiviert_am = null; statusSetzen(v, 'in_arbeit'); }
+        if (koerper?.aktion === 'status') { statusSetzen(v, koerper.status as TestVorgang['status']); erledigtArchiviert(v); }
         if (koerper?.aktion === 'loeschen') { s.vorgaenge = s.vorgaenge.filter((x) => x.id !== id); s.mails = s.mails.filter((m) => m.vorgang_id !== id); }
       }
       return Promise.resolve({ data: { ok: true } });
@@ -228,14 +334,14 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     }
     if (/^\/support\/vorgaenge\/\d+\/wiederherstellen$/.test(pfad)) {
       const v = finde(idAus(pfad, /vorgaenge\/(\d+)/));
-      if (v) { v.archiviert_am = null; v.status = 'in_arbeit'; }
+      if (v) { v.archiviert_am = null; statusSetzen(v, 'in_arbeit'); }
       return Promise.resolve({ data: {} });
     }
     if (/^\/support\/anfragen\/\d+\/anlegen$/.test(pfad)) {
       // Gemeinde und erste Gemeindeleitung angelegt: die Anfrage steht auf „angelegt“, ihr Vorgang ist erledigt (Uebernahme-Regel des Plans).
       const aid = idAus(pfad, /anfragen\/(\d+)/);
       const v = s.vorgaenge.find((x) => x.anfrage_id === aid);
-      if (v?.anfrage) { v.anfrage = { ...v.anfrage, status: 'angelegt', organization_id: 77 }; v.organization_id = 77; v.status = 'erledigt'; erledigtArchiviert(v); }
+      if (v?.anfrage) { v.anfrage = { ...v.anfrage, status: 'angelegt', organization_id: 77 }; v.organization_id = 77; statusSetzen(v, 'erledigt'); erledigtArchiviert(v); }
       return Promise.resolve({ data: { organization_id: 77, admin_id: 301 } });
     }
     if (pfad === '/support/kirchenkreise') {
@@ -244,14 +350,14 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     if (/^\/support\/vorgaenge\/\d+\/antworten$/.test(pfad)) {
       const id = idAus(pfad, /vorgaenge\/(\d+)/);
       const v = finde(id);
-      if (v && v.status === 'neu') v.status = 'in_arbeit';
-      s.mails.push(mail(s.naechsteId++, id, { richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', betreff: `${koerper?.betreff ?? ''} [Vorgang ${id}]`, text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt }));
+      if (v && v.status === 'neu') statusSetzen(v, 'in_arbeit');
+      s.mails.push(mail(s.naechsteId++, id, { richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: koerper?.an ? [String(koerper.an)] : null, betreff: `${koerper?.betreff ?? ''} [Vorgang ${id}]`, text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name }));
       return Promise.resolve({ data: {} });
     }
     if (/^\/support\/mail\/nachrichten\/\d+\/antworten$/.test(pfad)) {
       // Antwort auf eine Mail ohne Vorgang: eine ausgehende Mail im selben Faden.
       const m = s.mails.find((x) => x.id === idAus(pfad, /nachrichten\/(\d+)/));
-      if (m) s.mails.push(mail(s.naechsteId++, m.vorgang_id, { faden: m.faden ?? `mail-${m.id}`, richtung: 'aus', postfach: m.postfach, von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: [m.von_adresse], betreff: String(koerper?.betreff ?? ''), text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt }));
+      if (m) s.mails.push(mail(s.naechsteId++, m.vorgang_id, { faden: m.faden ?? `mail-${m.id}`, richtung: 'aus', postfach: m.postfach, von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: [m.von_adresse], betreff: String(koerper?.betreff ?? ''), text: String(koerper?.text), gesendet_am: s.jetzt, gelesen_am: s.jetzt, verfasst_von: s.konto.id, verfasst_von_name: s.konto.name }));
       if (m && !m.faden) m.faden = `mail-${m.id}`;
       return Promise.resolve({ data: {} });
     }
@@ -271,8 +377,11 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
           betreff: String(neu.betreff), quelle: 'mail', organization_id: (neu.organization_id as number) ?? null, created_at: s.jetzt,
         }));
       }
-      if (m && ziel) for (const x of fadenVon(m)) x.vorgang_id = ziel;
-      return Promise.resolve({ data: { vorgang_id: ziel } });
+      // Wie der Server (backend/routes/supportMail.js): Aus dem Posteingang geht der Faden mit, eine Mail
+      // aus einem Vorgang allein; archivierte Mails sind danach nicht mehr archiviert.
+      const bewegt = m && ziel ? (m.vorgang_id !== null ? [m] : fadenVon(m)) : [];
+      for (const x of bewegt) { x.vorgang_id = ziel as number; x.archiviert_am = null; }
+      return Promise.resolve({ data: { anzahl: bewegt.length, vorgang_id: ziel, ids: bewegt.map((x) => x.id) } });
     }
     if (pfad === '/support/mail/sammel') {
       for (const id of koerper?.ids as number[]) {
@@ -291,11 +400,56 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     s.aufrufe.push({ methode: 'patch', pfad, koerper });
     const fehler = s.fehler.get(`PATCH ${pfad}`);
     if (fehler) return Promise.reject(fehler);
+    if (/^\/organizations\/\d+\/limit$/.test(pfad)) {
+      // Wie backend/routes/organizations.js: null = unbegrenzt, sonst eine ganze Zahl ab 0.
+      const g = s.gemeinden[idAus(pfad, /organizations\/(\d+)/)];
+      if (!g) return Promise.reject(nichtGefunden());
+      const wert = koerper.max_konfis === undefined ? null : koerper.max_konfis;
+      if (wert !== null && (typeof wert !== 'number' || !Number.isInteger(wert) || wert < 0)) {
+        return Promise.reject(Object.assign(new Error('ungültig'), { response: { status: 400, data: { error: 'max_konfis muss null oder eine nicht-negative ganze Zahl sein' } } }));
+      }
+      g.max_konfis = wert as number | null;
+      return Promise.resolve({ data: { message: 'Konfi-Limit erfolgreich aktualisiert', max_konfis: wert } });
+    }
     const v = finde(idAus(pfad, /vorgaenge\/(\d+)$/));
     if (!v) return Promise.reject(nichtGefunden());
-    Object.assign(v, koerper);
+    const { status, ...rest } = koerper;
+    Object.assign(v, rest);
+    if (status !== undefined) statusSetzen(v, status as TestVorgang['status']);
+    v.updated_at = s.jetzt;
     erledigtArchiviert(v);
     return Promise.resolve({ data: detail(v) });
+  };
+
+  /**
+   * PUT /organizations/:id wie der Server: name, slug und display_name sind
+   * Pflicht (sonst 400); description, contact_*, address, website_url und
+   * kirchenkreis schreibt er IMMER -- was fehlt, wird leer. kirchenkreis_id,
+   * is_active, trial_ends_at und is_trial nur, wenn sie im Körper stehen.
+   */
+  const put = (pfad: string, koerper: Record<string, unknown>): Promise<{ data: unknown }> => {
+    s.aufrufe.push({ methode: 'put', pfad, koerper });
+    const fehler = s.fehler.get(`PUT ${pfad}`);
+    if (fehler) return Promise.reject(fehler);
+    if (!/^\/organizations\/\d+$/.test(pfad)) return Promise.reject(new Error(`unerwartet PUT ${pfad}`));
+    const g = s.gemeinden[idAus(pfad, /(\d+)$/)];
+    if (!g) return Promise.reject(nichtGefunden());
+    const pflicht = (wert: unknown) => typeof wert === 'string' && wert.trim() !== '';
+    if (!pflicht(koerper.name) || !pflicht(koerper.slug) || !pflicht(koerper.display_name)) {
+      return Promise.reject(Object.assign(new Error('ungültig'), { response: { status: 400, data: { error: 'Name ist erforderlich' } } }));
+    }
+    const text = (wert: unknown) => (typeof wert === 'string' ? wert : null);
+    Object.assign(g, {
+      name: koerper.name, slug: koerper.slug, display_name: koerper.display_name, description: text(koerper.description),
+      contact_name: text(koerper.contact_name), contact_email: text(koerper.contact_email), contact_phone: text(koerper.contact_phone),
+      address: text(koerper.address), website_url: text(koerper.website_url), kirchenkreis: text(koerper.kirchenkreis),
+    });
+    const hat = (feld: string) => Object.prototype.hasOwnProperty.call(koerper, feld);
+    if (hat('kirchenkreis_id')) g.kirchenkreis_id = (koerper.kirchenkreis_id as number | null) ?? null;
+    if (hat('is_active')) g.is_active = koerper.is_active === true;
+    if (hat('trial_ends_at')) g.trial_ends_at = (koerper.trial_ends_at as string | null) || null;
+    if (hat('is_trial')) g.is_trial = koerper.is_trial === true;
+    return Promise.resolve({ data: { message: 'Gemeinde erfolgreich aktualisiert' } });
   };
 
   const loeschen = (pfad: string): Promise<{ data: unknown }> => {
@@ -323,12 +477,19 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     aufrufe: (methode: Aufruf['methode'], pfad?: string | RegExp) => s.aufrufe.filter((a) => a.methode === methode
       && (pfad === undefined || (typeof pfad === 'string' ? a.pfad === pfad : pfad.test(a.pfad)))
       && a.pfad !== '/support/mail/gelesen'),
-    /** Haengt den Server an die Attrappen des Tests (axios-Form: get, post, patch, delete). */
-    installieren: (api: { get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; patch: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn> }) => {
+    /**
+     * Haengt den Server an die Attrappen des Tests (axios-Form: get, post,
+     * patch, delete; put, wenn der Test eine hat -- PUT /organizations/:id).
+     */
+    installieren: (api: {
+      get: ReturnType<typeof vi.fn>; post: ReturnType<typeof vi.fn>; patch: ReturnType<typeof vi.fn>; delete: ReturnType<typeof vi.fn>;
+      put?: ReturnType<typeof vi.fn>;
+    }) => {
       api.get.mockImplementation(get);
       api.post.mockImplementation(post);
       api.patch.mockImplementation(patch);
       api.delete.mockImplementation(loeschen);
+      api.put?.mockImplementation(put);
     },
   };
 }

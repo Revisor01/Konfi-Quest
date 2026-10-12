@@ -9,6 +9,12 @@
 // Scheitert das Senden, bleibt der Entwurf stehen; 503 und 502 erklaeren sich
 // im Formular. Bedient dieser Server das Postfach nicht (auf_diesem_server:
 // false), ist Senden aus -- mit dem Grund daneben.
+//
+// Seit 11.10.2026 (docs/planung/support-detailseiten.md, G; Simon, Frage 3):
+// „Danach" setzt nach dem Senden den Status des Vorgangs (Vorgabe „Wartet auf
+// Rückmeldung"); scheitert das, kommt „Gesendet, Status nicht gesetzt." --
+// nie Stille. Gibt es genau eine Adresse, steht sie als feste Zeile da
+// (`feste`), sonst zur Wahl mit lesbarem Etikett (`empfaengerOptionen`).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useIonAlert } from '@ionic/react';
@@ -19,6 +25,7 @@ import type {
   MailBaustein,
   MailEinstellungen,
   MailEmpfaenger,
+  MailNachricht,
   MailPostfachStatus,
   Platzhalter,
   Postfach,
@@ -30,14 +37,29 @@ import {
   aufDiesemServer,
   bausteinEinfuegen,
   bausteineFuer,
+  empfaengerEtikett,
+  empfaengerText,
   sendeProblem,
   vorschauText,
   type AntwortEntwurf,
   type SendeProblem,
 } from '../../utils/supportMail';
+import type { VorgangStatus } from '../../utils/supportVorgaenge';
+import { DANACH_FEHLER } from '../../seiten/supportDetail';
 import { fehlerDaten, fehlerStatus, fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
 import { meldeSupportGeaendert, useSupportGeaendert } from '../../utils/supportAktualisieren';
+
+/**
+ * „Danach": der Status des Vorgangs nach dem Senden. `setzen` schickt ihn
+ * (PATCH) und meldet nichts selbst -- Erfolg oder „Gesendet, Status nicht
+ * gesetzt." sagt der Editor.
+ */
+export interface AntwortDanach {
+  wahlen: readonly VorgangStatus[];
+  vorgabe: VorgangStatus;
+  setzen: (s: VorgangStatus) => Promise<boolean>;
+}
 
 export interface AntwortFormularProps {
   /** Von welchem Postfach die Antwort geht: Bausteine dieses Postfachs, sein Zustand. */
@@ -66,10 +88,33 @@ export interface AntwortFormularProps {
    * geaendert" (utils/supportAktualisieren.ts).
    */
   onGesendet?: () => void;
+  /** „Danach" (nur im Vorgang): der Status nach dem Senden. */
+  danach?: AntwortDanach | null;
+  /** Die Mail, auf die geantwortet wird (App-Modal: „Du antwortest auf"). */
+  beantwortet?: MailNachricht | null;
+}
+
+/** „Name <adresse>" bzw. nur die Adresse. */
+const wer = (adresse: string, name: string | null | undefined): string => (name?.trim() ? `${name.trim()} <${adresse}>` : adresse);
+
+/**
+ * Wen der Editor vorwählt, solange niemand selbst gewählt hat: die einzige
+ * Adresse, sonst die Vorgabe (wer zuletzt schrieb bzw. „Im Vorgang
+ * antworten"), wenn sie zur Wahl steht -- sonst niemanden (''). Eine Regel
+ * für den Editor und die Zeile, die ihn zugeklappt zeigt („Antwort an …
+ * schreiben"; bis 11.10.2026 nannte sie bei mehreren Adressen die erste,
+ * während der Editor „Bitte wählen" zeigte).
+ */
+export function vorgewaehlterEmpfaenger(empfaenger: readonly MailEmpfaenger[] | null | undefined, vorgabe: string | null | undefined): string {
+  if (!empfaenger) return '';
+  if (empfaenger.length === 1) return empfaenger[0].adresse;
+  if (!vorgabe) return '';
+  return empfaenger.find((e) => e.adresse.toLowerCase() === vorgabe.toLowerCase())?.adresse ?? '';
 }
 
 export function useAntwortEditor({
   postfach, platzhalterFuer = null, betreffVorschlag, an = null, empfaenger = null, empfaengerFehlt = false, empfaengerVorgabe = null, senden, onGesendet,
+  danach = null, beantwortet = null,
 }: AntwortFormularProps) {
   const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
@@ -83,6 +128,21 @@ export function useAntwortEditor({
   const [gewaehlterEmpfaenger, setGewaehlterEmpfaenger] = useState('');
   const [sendet, setSendet] = useState(false);
   const [problem, setProblem] = useState<SendeProblem | null>(null);
+  const [gewaehltDanach, setDanachStatus] = useState<VorgangStatus | null>(null);
+  const [betreffBearbeiten, setBetreffBearbeiten] = useState(false);
+
+  // „Im Vorgang antworten" an einer Angabe setzt eine andere Vorgabe: Sie gilt,
+  // auch wenn vorher jemand anderes gewählt war (nachgezogen beim Rendern).
+  const [letzteVorgabe, setLetzteVorgabe] = useState(empfaengerVorgabe);
+  if (empfaengerVorgabe !== letzteVorgabe) {
+    setLetzteVorgabe(empfaengerVorgabe);
+    setGewaehlterEmpfaenger('');
+  }
+
+  // Was „Danach" gerade sagt: die Wahl, solange sie angeboten wird, sonst die Vorgabe.
+  const danachStatus: VorgangStatus | null = danach
+    ? (gewaehltDanach !== null && danach.wahlen.includes(gewaehltDanach) ? gewaehltDanach : danach.vorgabe)
+    : null;
 
   // Der Vorschlag kommt oft erst mit dem Verlauf und aendert sich nach dem
   // Senden (die Kennung im Betreff setzt der Server). Solange das Feld leer
@@ -149,11 +209,24 @@ export function useAntwortEditor({
   const empfaengerNoetig = empfaenger !== null;
   // Genau ein moeglicher Empfaenger: vorgewaehlt; sonst, wer zuletzt schrieb,
   // wenn er zur Wahl steht. Sonst bewusst waehlen.
-  const vorgabeInListe = empfaengerVorgabe
-    ? empfaenger?.find((e) => e.adresse.toLowerCase() === empfaengerVorgabe.toLowerCase())?.adresse ?? ''
-    : '';
-  const gewaehlt = gewaehlterEmpfaenger || (empfaenger && empfaenger.length === 1 ? empfaenger[0].adresse : vorgabeInListe);
+  const gewaehlt = gewaehlterEmpfaenger || vorgewaehlterEmpfaenger(empfaenger, empfaengerVorgabe);
   const empfaengerAnzeige = empfaengerNoetig ? gewaehlt : an ?? '';
+
+  // Genau eine Adresse: eine feste Zeile „An … · von …" statt einer Wahl --
+  // im Vorgang wie im Posteingang (eine Form statt zwei).
+  const feste: { an: string; etikett: string | null } | null = useMemo(() => {
+    if (empfaenger !== null) {
+      return empfaenger.length === 1 ? { an: wer(empfaenger[0].adresse, empfaenger[0].name), etikett: empfaengerEtikett(empfaenger[0].herkunft) } : null;
+    }
+    if (!an) return null;
+    const name = beantwortet && beantwortet.von_adresse.toLowerCase() === an.toLowerCase() ? beantwortet.von_name : null;
+    return { an: wer(an, name), etikett: null };
+  }, [empfaenger, an, beantwortet]);
+
+  const empfaengerOptionen = useMemo(
+    () => (empfaenger ?? []).map((e) => ({ wert: e.adresse, label: empfaengerText(e) })),
+    [empfaenger],
+  );
 
   const abschicken = () => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -163,6 +236,7 @@ export function useAntwortEditor({
       return;
     }
     const koerper = antwortKoerper(entwurf, empfaengerNoetig ? gewaehlt : null);
+    const nachher = danach && danachStatus ? danachStatus : null;
     presentAlert({
       header: 'Antwort senden',
       message: `${empfaengerAnzeige ? `An ${empfaengerAnzeige}` : 'An den Absender'}${koerper.betreff ? `: „${koerper.betreff}“` : ''} von ${POSTFACH_INFO[postfach].kurz} senden?`,
@@ -176,17 +250,30 @@ export function useAntwortEditor({
               setProblem(null);
               try {
                 await senden(koerper);
-                setEntwurf({ betreff: betreffVorschlag, text: '' });
-                setSuccess('Antwort gesendet');
-                meldeSupportGeaendert();
-                onGesendet?.();
               } catch (err) {
                 const art = sendeProblem(fehlerStatus(err), fehlerDaten(err)?.error);
                 if (art) setProblem(art);
                 else setError(fehlerText(err, 'Antwort konnte nicht gesendet werden'));
-              } finally {
                 setSendet(false);
+                return;
               }
+              // Gesendet ist gesendet: Der Entwurf geht, auch wenn „Danach" scheitert.
+              setEntwurf({ betreff: betreffVorschlag, text: '' });
+              setBetreffBearbeiten(false);
+              setDanachStatus(null);
+              let statusGesetzt = true;
+              if (danach && nachher) {
+                try {
+                  statusGesetzt = await danach.setzen(nachher);
+                } catch {
+                  statusGesetzt = false;
+                }
+              }
+              if (statusGesetzt) setSuccess('Antwort gesendet');
+              else setError(DANACH_FEHLER);
+              setSendet(false);
+              meldeSupportGeaendert();
+              onGesendet?.();
             })();
           },
         },
@@ -219,6 +306,18 @@ export function useAntwortEditor({
     sendet,
     abschicken,
     isOnline,
+    /** „Danach": die Wahlen (leer ohne Vorgang), der gewählte Status und das Wählen. */
+    danachWahlen: danach?.wahlen ?? [],
+    danachStatus,
+    setDanachStatus,
+    /** Genau eine mögliche Adresse: „Name <adresse>" und das Etikett ihrer Herkunft. */
+    feste,
+    /** Die Wahl der Empfänger: Adresse und „Name <adresse> · Etikett" (ohne „Bitte wählen"). */
+    empfaengerOptionen,
+    beantwortet,
+    /** Der Betreff steht als Text mit „Ändern"; erst beim Bearbeiten wird er ein Feld. */
+    betreffBearbeiten,
+    setBetreffBearbeiten,
   };
 }
 

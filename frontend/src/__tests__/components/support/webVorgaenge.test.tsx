@@ -131,26 +131,47 @@ describe('Vorgänge (Web): Liste und Lesebereich', () => {
     expect(screen.getByText('4 Vorgänge offen')).toBeInTheDocument();
   });
 
-  it('Betreff, Nr., Gemeinde, Status, Dringend und die Zahl der ungelesenen Mails stehen in der Zeile', async () => {
+  it('Kreis der Art, Betreff, „Nr. · Art · Gemeinde", darunter in eigener Zeile die Marken: ungelesene Mails, Dringend, Status', async () => {
     await zeigen();
     const z = zeilen()[0];
+    // Derselbe Kreis wie im Kopf des Vorgangs, nur kleiner; Zierde -- die Art steht als Wort daneben.
+    const kreis = z.querySelector('.web-vorgang-kreis')!;
+    expect(kreis.className).toBe('web-vorgang-kreis web-vorgang-kreis--fehler');
+    expect(kreis).toHaveAttribute('aria-hidden', 'true');
     expect(z.querySelector('.web-postfachzeile__titel')).toHaveTextContent('Chat zeigt nichts Neues');
-    expect(z.querySelector('.web-postfachzeile__text')).toHaveTextContent('Nr. 1 · Kirchengemeinde Musterdorf');
+    expect(z.querySelector('.web-postfachzeile__mitte')!.textContent).toBe('Nr. 1 · Fehler · Kirchengemeinde Musterdorf');
+    // Drei Zeilen untereinander: oben, Mitte, Marken -- die Marken nicht mehr neben der Gemeinde.
+    expect([...z.querySelector('.web-postfachzeile__inhalt')!.children].map((c) => c.className)).toEqual([
+      'web-postfachzeile__oben', 'web-postfachzeile__mitte', 'web-postfachzeile__marken',
+    ]);
     expect(statusIn(z)).toBe('Neu');
     expect(within(z).getByText('Dringend')).toBeInTheDocument();
     const zahl = z.querySelector('.web-chip__zahl--rot');
     expect(zahl).toHaveTextContent('2');
     // Die Zeit ist die letzte Aktivitaet: die juengste Mail (08:30 UTC).
     expect(z.querySelector('time')).toHaveAttribute('dateTime', '2026-10-03T08:30:00Z');
+    // Der Name ersetzt den Inhalt des Knopfes; was die Zeile sonst zeigt, hören Vorleseprogramme als Beschreibung.
+    expect(knopf(z)).toHaveAccessibleName('Vorgang 1: Chat zeigt nichts Neues, ungelesen');
+    expect(knopf(z)).toHaveAccessibleDescription('Fehler · Kirchengemeinde Musterdorf · Neu · Dringend · 2 ungelesene Mails');
   });
 
   it('ohne Gemeinde steht „Nicht zugeordnet“; Normal und keine ungelesenen Mails stehen nicht da', async () => {
     await zeigen();
     const z = zeileNr(4);
-    expect(z.querySelector('.web-postfachzeile__text')).toHaveTextContent('Nr. 4 · Nicht zugeordnet');
+    expect(z.querySelector('.web-postfachzeile__mitte')!.textContent).toBe('Nr. 4 · Lizenz · Nicht zugeordnet');
     expect(within(z).queryByText('Dringend')).toBeNull();
     expect(within(z).queryByText('Normal')).toBeNull();
     expect(z.querySelector('.web-chip__zahl--rot')).toBeNull();
+    expect(knopf(z)).toHaveAccessibleDescription('Lizenz · Nicht zugeordnet · Neu');
+  });
+
+  // Bei einer Anfrage ist „nicht zugeordnet" der Normalfall -- die Aufgabe heißt anlegen. Die Zeile
+  // sagt deshalb dasselbe Wort wie der Kopf des Vorgangs („Noch nicht angelegt").
+  it('eine Anfrage ohne Gemeinde: „Noch nicht angelegt“ wie im Kopf, nicht „Nicht zugeordnet“', async () => {
+    await zeigen();
+    const z = zeileNr(3);
+    expect(z.querySelector('.web-postfachzeile__mitte')!.textContent).toBe('Nr. 3 · Neue Gemeinde · Noch nicht angelegt');
+    expect(knopf(z)).toHaveAccessibleDescription('Neue Gemeinde · Noch nicht angelegt · Wartet auf Rückmeldung');
   });
 
   it('nichts gewählt: der Lesebereich sagt es', async () => {

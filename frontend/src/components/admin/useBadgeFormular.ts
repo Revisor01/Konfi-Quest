@@ -8,9 +8,9 @@
 // und Erfolge als Toast (setSuccess), der Web-Dialog beides im Formular
 // (`fehlerImFormular`): Fehler mit dem Satz des Servers zur Pruefung („Bitte
 // einen Zeitraum angeben") statt nur „Validierungsfehler", das Ergebnis von
-// „Badge neu prüfen" als `meldung`. Der Toast haengt in ion-app und laege
-// unter dem Dialog (der an <body> haengt) -- und gerade dabei bleibt der
-// Dialog offen. Was erst nach dem Schliessen kommt (die Warteschlange), geht
+// „Badge neu prüfen" als `meldung` -- dort, wo die Eingabe ist, und gerade
+// dabei bleibt der Dialog offen (bis 12.10.2026 lag ein Toast zudem unter
+// dem Dialog). Was erst nach dem Schliessen kommt (die Warteschlange), geht
 // weiter als Toast.
 
 import { useEffect, useRef, useState } from 'react';

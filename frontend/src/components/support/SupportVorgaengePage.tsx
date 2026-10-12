@@ -48,6 +48,8 @@ import {
   artKurz,
   bereichIstPflicht,
   bereichLabel,
+  istZugeordnet,
+  ohneGemeindeText,
   vorgaengeText,
   type Dringlichkeit,
   type VorgangArt,
@@ -259,7 +261,7 @@ const Vorgaenge: React.FC = () => {
                           <div className="app-list-item__meta">
                             <span className="app-list-item__meta-item">Nr. {v.id}</span>
                             <span className="app-list-item__meta-item">{artKurz(v.art)}{v.bereich ? ` · ${bereichLabel(v.bereich)}` : ''}</span>
-                            <span className="app-list-item__meta-item">{v.gemeinde_name ?? 'Nicht zugeordnet'}</span>
+                            <span className="app-list-item__meta-item">{istZugeordnet(v) ? v.gemeinde_name ?? `Gemeinde ${v.organization_id}` : ohneGemeindeText(v)}</span>
                             <span className="app-list-item__meta-item">
                               <IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />
                               {datumUhrzeit(v.letzte_aktivitaet)}

@@ -92,7 +92,11 @@ describe('Zentrale Icon-Datei: eine Stelle fuer alle Icons', () => {
     // der Aenderungsanzeige 2.3.0 in allen drei Rollen.
     // 03.10.2026: 189 -> 190. ICON_SUPPORT kommt dazu: der Weg zur
     // Support-Ansicht unter "Mehr" und der Kopf ihrer Uebersicht.
-    expect(namen.length).toBe(190);
+    // 11.10.2026: 190 -> 191. ICON_ABLEHNEN kommt dazu: „Anfrage ablehnen"
+    // im Kopf des Lesebereichs, als Kontur neben Loeschen und Archivieren.
+    // 11.10.2026: 191 -> 192. ICON_BREIT_LESEN kommt dazu: der Schalter
+    // „Breit lesen" im Kopf der Liste von Vorgängen und Posteingang.
+    expect(namen.length).toBe(192);
   });
 
   it('keine Konstante ist verwaist — jede wird auch benutzt', () => {

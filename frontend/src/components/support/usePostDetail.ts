@@ -1,11 +1,18 @@
 // Eine Mail aus dem Posteingang als Logik ohne Darstellung
 // (/admin/support/post/:id, docs/planung/support-vorgaenge.md, Entscheidung 7):
 // die Mail mit ihrem ganzen Faden laden (ungelesene eingehende als gelesen
-// melden) und -- solange sie in keinem Vorgang liegt -- einsortieren,
-// archivieren, wiederherstellen, löschen und dem Absender antworten. Liegt sie
-// schon in einem Vorgang, führt ein Link dorthin; geantwortet wird im Vorgang.
+// melden) und -- solange sie im Posteingang liegt -- einsortieren,
+// archivieren, wiederherstellen, löschen und dem Absender antworten.
 // Die App-Fassung (SupportPostDetailPage) und die Web-Fassung
 // (web/WebPostDetail) zeigen dieselbe Logik.
+//
+// Seit 11.10.2026 (docs/planung/support-detailseiten.md, D und E) liefert der
+// Hook auch den Stand der Mail (mailStand: Einsortieren als Hauptknopf, der
+// Archiv-Satz, Archivieren und Löschen nur im Posteingang), die drei Zahlen,
+// das fertige Antwort-Objekt (bis dahin baute jede Seite es selbst) und das
+// Ziel der Weiterleitung, wenn die Mail schon in einem Vorgang liegt -- die
+// Seite leitet dann mit replace dorthin (`?mail=`), der Server lehnt
+// Archivieren und Löschen solcher Mails ohnehin ab (409).
 //
 // Jede Änderung meldet „Support-Daten geändert" (utils/supportAktualisieren.ts):
 // Mail, Posteingang und rote Zahlen laden danach von selbst neu.
@@ -13,16 +20,23 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useIonRouter } from '@ionic/react';
 import api from '../../services/api';
-import type { MailNachricht, MailVerlauf } from '../../types/support';
-import { fadenAus, standardBetreff, ungeleseneIds } from '../../utils/supportMail';
+import type { MailAntwortDaten, MailNachricht } from '../../types/support';
+import {
+  fadenAus,
+  mailKennzahlen,
+  mailStand,
+  standardBetreff,
+  ungeleseneIds,
+  type MailMitVorgang,
+  type MailStandAngabe,
+} from '../../utils/supportMail';
+import type { Kennzahl } from '../../utils/supportVorgaenge';
 import { fehlerStatus } from '../../utils/fehler';
 import { mailsAlsGelesen } from '../../navigation/supportMailZaehler';
 import { useSupportGeaendert, useSupportQuelle } from '../../utils/supportAktualisieren';
 import { SUPPORT_POSTEINGANG } from '../../navigation/supportMenue';
+import type { AntwortFormularProps } from './useAntwortEditor';
 import { useMailAktionen } from './useMailAktionen';
-
-/** Die zusaetzlichen Felder einer Mail seit den Vorgaengen; aeltere Server liefern sie nicht. */
-type MailMitVorgang = MailVerlauf & { vorgang_id?: number | null; archiviert_am?: string | null };
 
 /** @param nachLoeschen Was nach dem Loeschen geschieht; ohne: zurueck in den Posteingang. */
 export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
@@ -94,6 +108,31 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
   const vorgangId = mail?.vorgang_id ?? null;
   const archiviert = Boolean(mail?.archiviert_am);
 
+  /** Was die Seite zeigt und anbietet (utils/supportMail.ts, mailStand). */
+  const stand: MailStandAngabe | null = useMemo(() => (mail ? mailStand(mail) : null), [mail]);
+  /** Im Posteingang: weder Vorgang noch Anfrage noch Gemeinde (dieselbe Regel wie der Server). */
+  const imPosteingang = stand?.imPosteingang ?? false;
+  /** Liegt die Mail woanders: das Ziel. Die Seite leitet mit replace weiter (router.push(ziel, 'none', 'replace')). */
+  const weiterleitung = stand?.weiterleitung ?? null;
+  const kennzahlen: Kennzahl[] = useMemo(() => (mail ? mailKennzahlen(faden, neu.size) : []), [mail, faden, neu]);
+
+  /**
+   * Das Antwortformular für App und Web: vom Postfach der Mail an den
+   * Absender der letzten eingehenden. Nur, wenn der Stand Antworten anbietet
+   * (Posteingang, nicht im Archiv); sonst null.
+   */
+  const antwort: AntwortFormularProps | null = useMemo(() => {
+    if (!mail || !stand?.neben.includes('antworten') || !letzteEingehende || letzteEingehende.richtung !== 'ein') return null;
+    const id = mail.id;
+    return {
+      postfach: mail.postfach,
+      betreffVorschlag,
+      an: letzteEingehende.von_adresse,
+      senden: (koerper: MailAntwortDaten) => api.post(`/support/mail/nachrichten/${id}/antworten`, koerper),
+      beantwortet: letzteEingehende,
+    };
+  }, [mail, stand, letzteEingehende, betreffVorschlag]);
+
   /** Aus dem Archiv holen: die Mail liegt wieder im Posteingang. */
   const wiederherstellen = () => aktionen.wiederherstellen(mail ? [mail.id] : []);
   const archivieren = () => aktionen.archivieren(mail ? [mail.id] : []);
@@ -119,6 +158,11 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     archivieren,
     wiederherstellen,
     loeschenFragen,
+    stand,
+    kennzahlen,
+    antwort,
+    imPosteingang,
+    weiterleitung,
   };
 }
 

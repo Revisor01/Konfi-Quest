@@ -14,13 +14,18 @@
 // Seit den Vorgängen (docs/planung/support-vorgaenge.md) zeigen Kachel und
 // Liste, was früher „Anfragen" hieß, als offene und neueste Vorgänge -- aus
 // GET /support/vorgaenge?filter=offen. Die Kachel „Posteingang" zählt dieselben
-// Mails wie die rote Zahl der Leiste.
+// Mails wie die rote Zahl der Leiste. Eine der „Neuesten Mails", deren Vorgang
+// die Antwort nennt (vorgang_id), führt direkt dorthin (mailWeiterleitung,
+// …?mail=). Ohne -- so liefert GET /support/uebersicht heute -- führt sie zur
+// Seite der Mail: Die kennt den Vorgang und ersetzt sich durch ihn, die Mail
+// offen. Anfrage oder Gemeinde allein träfen die Mail nicht. Ihr Betreff
+// steht als Kern wie in Liste und Kopf, der rohe im Tooltip.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_LISTE, ICON_MAIL, ICON_ORGANISATION } from '../../shared/icons';
 import api from '../../../services/api';
-import { POSTFACH_INFO } from '../../../utils/supportMail';
+import { POSTFACH_INFO, betreffKern, mailWeiterleitung } from '../../../utils/supportMail';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
 import { zeitpunktText } from '../../../utils/postfach';
 import { tageBis } from '../../shared/eventFormatting';
@@ -35,7 +40,7 @@ import {
   zuordnungZiel,
   type SupportUebersicht,
 } from '../../../utils/supportWeb';
-import { artKurz, brauchtAufmerksamkeit, vorgaengeSortieren, vorgaengeZaehlen, type Vorgang } from '../../../utils/supportVorgaenge';
+import { artKurz, brauchtAufmerksamkeit, istZugeordnet, ohneGemeindeText, vorgaengeSortieren, vorgaengeZaehlen, type Vorgang } from '../../../utils/supportVorgaenge';
 import { useSupportMailZaehler } from '../../../navigation/supportMailZaehler';
 import { vorgaengeLaden } from '../useVorgangsliste';
 import { StatusPill } from './WebVorgangTeile';
@@ -100,7 +105,7 @@ const VorgangZeile: React.FC<{ v: Vorgang }> = ({ v }) => (
       </WebLink>
       <div className="web-feed__meta">
         <span>{artKurz(v.art)}</span>
-        <span>{v.gemeinde_name ?? 'Nicht zugeordnet'}</span>
+        <span>{istZugeordnet(v) ? v.gemeinde_name ?? `Gemeinde ${v.organization_id}` : ohneGemeindeText(v)}</span>
       </div>
     </div>
     <div className="web-feed__rechts">
@@ -218,15 +223,19 @@ const Uebersicht: React.FC = () => {
                   const ungelesen = !m.gelesen_am;
                   const ziel = zuordnungZiel(m);
                   const absender = m.von_name?.trim() || m.von_adresse;
+                  // Der Kern wie in Liste und Kopf („Frage zum Zugang" statt „AW: [Vorgang 2] Re: …"); der rohe Betreff im Tooltip.
+                  const roh = m.betreff?.trim() || '';
                   return (
                     <li key={m.id} className="web-feed__zeile">
                       <Punkt ungelesen={ungelesen} />
                       <div className="web-feed__haupt">
+                        {/* Mit bekanntem Vorgang gleich dorthin, die Mail offen und hervorgehoben (docs/planung/support-detailseiten.md, E). */}
                         <WebLink
-                          href={`/admin/support/post/${m.id}`}
+                          href={(m.vorgang_id ? mailWeiterleitung(m) : null) ?? `/admin/support/post/${m.id}`}
                           className={`web-link--zeile web-feed__titel web-einzeilig${ungelesen ? '' : ' web-gedaempft'}`}
+                          title={roh || undefined}
                         >
-                          {m.betreff?.trim() || '(ohne Betreff)'}
+                          {betreffKern(roh) || '(ohne Betreff)'}
                         </WebLink>
                         <div className="web-feed__meta">
                           <WebPill postfach>{POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach}</WebPill>

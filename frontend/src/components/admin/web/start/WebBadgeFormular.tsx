@@ -181,9 +181,9 @@ const WebBadgeFormular: React.FC<WebBadgeFormularProps> = ({ badgeId, targetRole
     if (zahl !== null) f.setzeWochen(zahl);
   };
 
-  // Die Rückfrage ist selbst ein Dialog der Web-Fassung: Ein Ionic-Alert läge
-  // unter diesem Dialog (er hängt in ion-app, dieser an <body>; im Browser
-  // nachgestellt, der Dialog fing die Klicks ab).
+  // Die Rückfrage ist selbst ein Dialog der Web-Fassung, wie beim Event. (Bis
+  // 12.10.2026 lag ein Ionic-Alert zudem unter diesem Dialog: er hing in
+  // ion-app, der Dialog an <body>. Seitdem hängt WebDialog ebenfalls in ion-app.)
   const [rueckfrage, setRueckfrage] = useState(false);
   const schliessen = () => {
     if (!f.hatAenderungen()) {
@@ -408,8 +408,8 @@ const WebBadgeFormular: React.FC<WebBadgeFormularProps> = ({ badgeId, targetRole
               <span className="web-feld__hinweis">Holt die Vergabe für alle der Zielgruppe nach. Speichern prüft ohnehin.</span>
             </div>
           )}
-          {/* Das Ergebnis von „Badge neu prüfen" steht hier, nicht als Toast:
-              Der hängt in ion-app und läge unter diesem Dialog. */}
+          {/* Das Ergebnis von „Badge neu prüfen" steht hier, beim Knopf, nicht
+              als Toast oben im Fenster. */}
           {f.meldung && <WebHinweis art="erfolg" rolle="status">{f.meldung}</WebHinweis>}
 
           {!isOnline && (
@@ -419,7 +419,7 @@ const WebBadgeFormular: React.FC<WebBadgeFormularProps> = ({ badgeId, targetRole
         </div>
       )}
     </WebDialog>
-    {/* Nach dem Formular eingehängt: liegt damit über ihm (beide an <body>). */}
+    {/* Nach dem Formular eingehängt: liegt damit über ihm (beide in ion-app). */}
     {rueckfrage && (
       <WebDialog
         titel="Ungespeicherte Änderungen"

@@ -7,17 +7,19 @@
 // Die Logik ist die der App (admin/modals/useMaterialFormular.ts): dieselbe
 // Vorbelegung, dieselben Prüfungen, derselbe Rumpf an dieselben Routen, ohne
 // Netz dieselbe Warteschlange. Anders als in der App:
-//   - Fehler und Prüfung stehen im Dialog (eine Meldung der App läge darunter).
-//   - Eine vorhandene Datei löschen fragt in ihrer Zeile nach -- ein Alert
-//     der App läge ebenfalls unter dem Dialog. Escape bricht dort nur die
-//     Rückfrage ab.
+//   - Fehler und Prüfung stehen im Dialog, dort, wo die Eingabe ist.
+//   - Eine vorhandene Datei löschen fragt in ihrer Zeile nach, nicht per
+//     Alert der App. Escape bricht dort nur die Rückfrage ab.
+//   (Bis 12.10.2026 lagen Meldungen und Alerts der App zudem unter dem
+//   Dialog; seitdem hängt WebDialog in ion-app, wie sie.)
 //   - Solange gesendet oder gelöscht wird, lässt er sich nicht schließen (X,
 //     Escape, Klick daneben); in der App bleibt das X frei, ein Fehler kommt
 //     dort als Meldung der App.
 //   - Eine Datei ansehen öffnet den Betrachter der App (Zoom, PDF-Seiten,
-//     Herunterladen). Er ist ein ion-modal und läge unter dem Dialog; der
-//     Dialog tritt deshalb zur Seite, solange der Betrachter offen ist, und
-//     kommt danach mit allen Eingaben wieder (sie stehen im Hook, nicht hier).
+//     Herunterladen), ein ion-modal. Der Dialog tritt zur Seite, solange der
+//     Betrachter offen ist -- zwei Fenster übereinander hätten zwei
+//     Fokusfallen --, und kommt danach mit allen Eingaben wieder (sie stehen
+//     im Hook, nicht hier).
 //   - Wer das Material nicht bearbeiten darf, sieht statt gesperrter Felder
 //     die Angaben zum Lesen; Links sind echte Links, Dateien lassen sich öffnen.
 
