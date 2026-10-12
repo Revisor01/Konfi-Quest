@@ -80,7 +80,9 @@ export interface MailEingangWeb extends Omit<MailEingangEintrag, 'auszug' | 'anh
   /**
    * Der Vorgang, in den die Mail einsortiert ist (docs/planung/
    * support-vorgaenge.md); ohne: nicht einsortiert, liegt im Posteingang.
-   * Aeltere Server liefern das Feld nicht.
+   * GET /support/mail/eingang liefert es seit Migration 195,
+   * `neueste_mails` der Übersicht seit 12.10.2026 (additiv); ältere Server
+   * nicht -- dann null.
    */
   vorgang_id?: number | null;
   /** Gesetzt: im Archiv des Posteingangs. */

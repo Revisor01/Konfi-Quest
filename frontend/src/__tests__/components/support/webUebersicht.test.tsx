@@ -74,10 +74,10 @@ const UEBERSICHT = {
   ],
   neueste_mails: [
     { id: 301, postfach: 'moin', von_name: 'Pastorin Lena Probe', von_adresse: 'lena.probe@example.org', betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]', gesendet_am: '2026-10-03T08:18:00Z', gelesen_am: null, anfrage_id: 41, vorgang_id: 41, organization_id: null, gemeinde_name: 'Kirchengemeinde Musterdorf-Süd' },
-    { id: 302, postfach: 'support', von_name: 'Sam Muster', von_adresse: 'sam@example.org', betreff: 'Frage zu den Jahrgängen', gesendet_am: '2026-10-03T07:35:00Z', gelesen_am: null, anfrage_id: null, organization_id: 1, gemeinde_name: 'Kirchengemeinde Musterdorf' },
-    { id: 303, postfach: 'support', von_name: null, von_adresse: 'info@beispiel-verein.example', betreff: 'Passwort vergessen?', gesendet_am: '2026-10-03T03:30:00Z', gelesen_am: null, anfrage_id: null, organization_id: null, gemeinde_name: null },
-    { id: 304, postfach: 'moin', von_name: 'Jan Vorlage', von_adresse: 'jan.vorlage@example.org', betreff: 'Rückfrage zur Lizenz', gesendet_am: '2026-10-02T10:30:00Z', gelesen_am: '2026-10-02T11:00:00Z', anfrage_id: 40, organization_id: null, gemeinde_name: 'Kirchengemeinde Wiesengrund' },
-    { id: 305, postfach: 'support', von_name: 'Robin Probe', von_adresse: 'robin@example.org', betreff: 'Termin-Export als Kalender?', gesendet_am: '2026-10-02T06:30:00Z', gelesen_am: '2026-10-02T07:00:00Z', anfrage_id: null, organization_id: 2, gemeinde_name: 'Kirchengemeinde Hafenstadt' },
+    { id: 302, postfach: 'support', von_name: 'Sam Muster', von_adresse: 'sam@example.org', betreff: 'Frage zu den Jahrgängen', gesendet_am: '2026-10-03T07:35:00Z', gelesen_am: null, anfrage_id: null, organization_id: 1, vorgang_id: 38, gemeinde_name: 'Kirchengemeinde Musterdorf' },
+    { id: 303, postfach: 'support', von_name: null, von_adresse: 'info@beispiel-verein.example', betreff: 'Passwort vergessen?', gesendet_am: '2026-10-03T03:30:00Z', gelesen_am: null, anfrage_id: null, organization_id: null, vorgang_id: null, gemeinde_name: null },
+    { id: 304, postfach: 'moin', von_name: 'Jan Vorlage', von_adresse: 'jan.vorlage@example.org', betreff: 'Rückfrage zur Lizenz', gesendet_am: '2026-10-02T10:30:00Z', gelesen_am: '2026-10-02T11:00:00Z', anfrage_id: 40, organization_id: null, vorgang_id: 40, gemeinde_name: 'Kirchengemeinde Wiesengrund' },
+    { id: 305, postfach: 'support', von_name: 'Robin Probe', von_adresse: 'robin@example.org', betreff: 'Termin-Export als Kalender?', gesendet_am: '2026-10-02T06:30:00Z', gelesen_am: '2026-10-02T07:00:00Z', anfrage_id: null, organization_id: 2, vorgang_id: 34, gemeinde_name: 'Kirchengemeinde Hafenstadt' },
   ],
   testphase_endet: [
     { id: 8, display_name: 'Kirchengemeinde Sonnenberg', trial_ends_at: '2026-10-07T00:00:00Z' },
@@ -281,30 +281,46 @@ describe('Uebersicht (Web): neueste Vorgänge und Mails', () => {
     expect(zeilen).toHaveLength(5);
     expect(zeilen[0]).toHaveTextContent('moin@');
     expect(zeilen[0]).toHaveTextContent('Pastorin Lena Probe');
-    // Mit Vorgang: zum Vorgang; älterer Server ohne Vorgang: eine Anfrage führt zu ihrem Vorgang, eine Gemeinde zu ihren Vorgängen.
+    // Jede Mail mit Vorgang (vorgang_id, additiv seit 12.10.2026 an GET /support/uebersicht): die Zuordnung führt zum Vorgang.
     expect(within(zeilen[0]).getByRole('link', { name: /Musterdorf-Süd/ })).toHaveAttribute('href', '/admin/support/vorgaenge/41');
-    expect(within(zeilen[1]).getByRole('link', { name: /Kirchengemeinde Musterdorf$/ })).toHaveAttribute('href', '/admin/support/vorgaenge?gemeinde=1');
-    expect(within(zeilen[3]).getByRole('link', { name: /Wiesengrund/ })).toHaveAttribute('href', '/admin/support/anfragen/40');
+    expect(within(zeilen[1]).getByRole('link', { name: /Kirchengemeinde Musterdorf$/ })).toHaveAttribute('href', '/admin/support/vorgaenge/38');
+    expect(within(zeilen[3]).getByRole('link', { name: /Wiesengrund/ })).toHaveAttribute('href', '/admin/support/vorgaenge/40');
     // Nicht einsortiert: Marke statt Link; ohne Namen steht die Adresse.
     expect(zeilen[2]).toHaveTextContent('Nicht einsortiert');
     expect(zeilen[2]).toHaveTextContent('info@beispiel-verein.example');
     expect(within(zeilen[2]).getAllByRole('link')).toHaveLength(1);
     // Ungelesen: die ersten drei.
     expect(within(k).getAllByRole('img', { name: 'ungelesen' })).toHaveLength(3);
-    // Der Betreff führt dorthin, wo die Mail liegt -- nennt die Übersicht den Vorgang (vorgang_id; der Server
-    // liefert das Feld heute noch nicht, die Zeile hält den Weg für ein additives Feld fest), direkt hinein,
-    // die Mail offen (statt über ihre Seite, die ohnehin weiterleitet); im Posteingang zur Mail.
-    // Er steht als Kern wie in Liste und Kopf, roh im Tooltip.
+    // Der Betreff führt dorthin, wo die Mail liegt: mit Vorgang direkt hinein, die Mail offen (statt über
+    // ihre Seite, die ohnehin weiterleitet); im Posteingang zur Mail. Er steht als Kern wie in Liste und
+    // Kopf, roh im Tooltip.
     const mitVorgang = within(zeilen[0]).getByRole('link', { name: 'Eure Anfrage bei Konfi Quest' });
     expect(mitVorgang).toHaveAttribute('href', '/admin/support/vorgaenge/41?mail=301');
     expect(mitVorgang).toHaveAttribute('title', 'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]');
+    expect(within(zeilen[1]).getByRole('link', { name: 'Frage zu den Jahrgängen' })).toHaveAttribute('href', '/admin/support/vorgaenge/38?mail=302');
+    expect(within(zeilen[3]).getByRole('link', { name: 'Rückfrage zur Lizenz' })).toHaveAttribute('href', '/admin/support/vorgaenge/40?mail=304');
+    expect(within(zeilen[4]).getByRole('link', { name: 'Termin-Export als Kalender?' })).toHaveAttribute('href', '/admin/support/vorgaenge/34?mail=305');
     expect(within(zeilen[2]).getByRole('link', { name: 'Passwort vergessen?' })).toHaveAttribute('href', '/admin/support/post/303');
-    // Ohne vorgang_id -- so liefert GET /support/uebersicht heute (gemessen 11.10.2026) -- über die Seite
-    // der Mail: Sie kennt den Vorgang und ersetzt sich durch ihn, die Mail offen. Anfrage oder Gemeinde
-    // allein träfen nur die Anfrage bzw. die Liste der Gemeinde, nicht die Mail.
+    expect(within(k).getByRole('link', { name: 'Zum Posteingang →' })).toHaveAttribute('href', '/admin/support/post');
+  });
+
+  it('ein älterer Server ohne vorgang_id an den Mails: Anfrage und Gemeinde führen zu ihren Vorgängen, der Betreff zur Seite der Mail', async () => {
+    // So lieferte GET /support/uebersicht bis 12.10.2026 (gemessen 11.10.2026).
+    const ohneVorgang = UEBERSICHT.neueste_mails.map((m) => Object.fromEntries(Object.entries(m).filter(([feld]) => feld !== 'vorgang_id')));
+    antworten({ ...UEBERSICHT, neueste_mails: ohneVorgang });
+    render(<SupportUebersichtPage />);
+    await screen.findByRole('group', { name: 'Konfis: 1.265' });
+    const zeilen = within(karte('Neueste Mails')).getAllByRole('listitem');
+    // Eine Anfrage führt zu ihrem Vorgang, eine Gemeinde zu ihren Vorgängen.
+    expect(within(zeilen[0]).getByRole('link', { name: /Musterdorf-Süd/ })).toHaveAttribute('href', '/admin/support/anfragen/41');
+    expect(within(zeilen[1]).getByRole('link', { name: /Kirchengemeinde Musterdorf$/ })).toHaveAttribute('href', '/admin/support/vorgaenge?gemeinde=1');
+    expect(within(zeilen[3]).getByRole('link', { name: /Wiesengrund/ })).toHaveAttribute('href', '/admin/support/anfragen/40');
+    // Der Betreff über die Seite der Mail: Sie kennt den Vorgang und ersetzt sich durch ihn, die Mail offen.
+    // Anfrage oder Gemeinde allein träfen nur die Anfrage bzw. die Liste der Gemeinde, nicht die Mail.
+    expect(within(zeilen[0]).getByRole('link', { name: 'Eure Anfrage bei Konfi Quest' })).toHaveAttribute('href', '/admin/support/post/301');
     expect(within(zeilen[3]).getByRole('link', { name: 'Rückfrage zur Lizenz' })).toHaveAttribute('href', '/admin/support/post/304');
     expect(within(zeilen[1]).getByRole('link', { name: 'Frage zu den Jahrgängen' })).toHaveAttribute('href', '/admin/support/post/302');
-    expect(within(k).getByRole('link', { name: 'Zum Posteingang →' })).toHaveAttribute('href', '/admin/support/post');
+    expect(within(zeilen[2]).getByRole('link', { name: 'Passwort vergessen?' })).toHaveAttribute('href', '/admin/support/post/303');
   });
 
   it('ein Klick bleibt in der App (Router), Strg-Klick und Mittelklick gehen an den Browser', async () => {
