@@ -3105,18 +3105,35 @@ paths:
       tags: ["Support"]
       summary: Antwort im Vorgang -- Mail mit [Vorgang N] im Betreff
       description: >
-        { betreff?, text, an? }. Vom Postfach moin (Vorgang einer Anfrage),
-        sonst support; Fusszeile, Message-ID, In-Reply-To/References auf die
-        letzte Mail des Vorgangs und Standardbetreff wie bei den alten
-        Antwort-Routen ("Re: <letzter Betreff>", ohne Verlauf der Betreff des
-        Vorgangs bzw. "Eure Anfrage für <Gemeinde>"); Kennung [Vorgang N], eine
-        alte Kennung [Anfrage N]/[Gemeinde N] im Betreff weicht ihr. `an` muss
-        unter `empfaenger` im Detail stehen (ohne Unterschied Gross/klein); ohne
+        { betreff?, text, an?, status?, antwort_auf? }. Vom Postfach moin
+        (Vorgang einer Anfrage), sonst support; Fusszeile, Message-ID,
+        In-Reply-To/References auf die beantwortete Mail und Standardbetreff
+        wie bei den alten Antwort-Routen ("Re: <Betreff der beantworteten
+        Mail>", ohne Verlauf der Betreff des Vorgangs bzw. "Eure Anfrage für
+        <Gemeinde>"); Kennung [Vorgang N], eine alte Kennung
+        [Anfrage N]/[Gemeinde N] im Betreff weicht ihr. `an` muss unter
+        `empfaenger` im Detail stehen (ohne Unterschied Gross/klein); ohne
         Angabe geht die Mail an die erste. Die Mail gehoert zum Vorgang
-        (vorgang_id; anfrage_id/organization_id folgen ihm). Ein Vorgang im
-        Status neu geht auf in_arbeit, mit ihm die Anfrage dahinter; ein
-        Vorgang "wartet" oder "in Arbeit" bleibt. Scheitert der Versand,
-        wird nichts gespeichert.
+        (vorgang_id; anfrage_id/organization_id folgen ihm). Scheitert der
+        Versand, wird nichts gespeichert und kein Status geaendert.
+        BEANTWORTETE MAIL (antwort_auf, additiv seit 12.10.2026): die Kennung
+        einer Mail DIESES Vorgangs (gleich welcher Richtung); sie ist dann der
+        Bezug. Gehoert sie zu einem anderen Vorgang, liegt sie im Posteingang
+        oder gibt es sie nicht: 400, bevor etwas hinausgeht. Ohne Angabe (oder
+        null) wie bisher die juengste Mail des Vorgangs, gleich welcher
+        Richtung.
+        STATUS (status, additiv seit 12.10.2026; Werte und Pruefung wie
+        PATCH /api/support/vorgaenge/{id}): wird mit dem Speichern der Mail in
+        DERSELBEN Transaktion gesetzt, mit denselben Folgen wie beim PATCH
+        (status_seit nur bei einem Wechsel; erledigt archiviert; die Anfrage
+        dahinter folgt: in_arbeit/wartet -> in_arbeit, erledigt -> abgelehnt,
+        eine angelegte bleibt angelegt). Ein ungueltiger Wert ergibt 400,
+        bevor etwas hinausgeht. Ohne status wie bisher: ein Vorgang im Status
+        neu geht auf in_arbeit, mit ihm die Anfrage dahinter; ein Vorgang
+        "wartet" oder "in Arbeit" bleibt. Ein Server vor dem 12.10.2026
+        uebergeht status und antwort_auf ohne Fehler und liefert `vorgang`
+        nicht -- die Oberflaeche erkennt daran, ob der Status gesetzt ist, und
+        setzt ihn sonst per PATCH.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       requestBody:
@@ -3130,18 +3147,41 @@ paths:
                 betreff: { type: [string, "null"], maxLength: 300 }
                 text: { type: string, maxLength: 20000 }
                 an: { type: [string, "null"], maxLength: 320 }
+                status:
+                  type: string
+                  enum: [neu, in_arbeit, wartet, erledigt]
+                  description: "additiv seit 12.10.2026: der Status nach der Antwort (\"Danach\"), statt des Schritts neu -> in_arbeit; null oder ein anderer Wert -> 400"
+                antwort_auf:
+                  type: [integer, "null"]
+                  minimum: 1
+                  description: "additiv seit 12.10.2026: Kennung der beantworteten Mail; muss zu diesem Vorgang gehoeren. Ohne Angabe oder null: die juengste Mail des Vorgangs"
       responses:
-        "201": { description: "{ nachricht: MailNachricht }" }
-        "400": { description: "Validierungsfehler; Adresse nicht unter den Empfaengern ('Diese Adresse gehört nicht zu den Empfängern dieses Vorgangs.'); kein Empfaenger bekannt" }
+        "201":
+          description: "{ nachricht, vorgang } -- vorgang additiv seit 12.10.2026, immer dabei (auch ohne status)"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  nachricht: { $ref: "#/components/schemas/MailNachricht" }
+                  vorgang:
+                    type: [object, "null"]
+                    description: "der Stand des Vorgangs nach dem Speichern der Mail; null nur, wenn der Vorgang zwischen Versand und Antwort geloescht wurde"
+                    properties:
+                      id: { type: integer }
+                      status: { type: string, enum: [neu, in_arbeit, wartet, erledigt] }
+                      status_seit: { type: string, format: date-time }
+                      archiviert_am: { type: [string, "null"], format: date-time, description: "bei erledigt gesetzt" }
+        "400": { description: "Validierungsfehler ({ error: 'Validierungsfehler', details }, auch fuer einen ungueltigen status oder ein antwort_auf, das keine positive ganze Zahl ist); antwort_auf gehoert nicht zu diesem Vorgang ({ error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' }); Adresse nicht unter den Empfaengern ('Diese Adresse gehört nicht zu den Empfängern dieses Vorgangs.'); kein Empfaenger bekannt. In allen Faellen geht nichts hinaus." }
         "403": { description: "Kein Super-Admin" }
         "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
-        "502": { description: "Versand gescheitert -- nichts gespeichert" }
+        "502": { description: "Versand gescheitert -- nichts gespeichert, Status unveraendert" }
         "503": { description: "Postfach nicht eingerichtet oder 'Auf diesem Server ist der Versand aus.' (RUN_BACKGROUND_JOBS=false)" }
       x-berechtigung:
         rollen: [super_admin]
         middleware: [verifyTokenRBAC, requireSuperAdmin, express-validator]
         org-scope: false
-        objekt-pruefung: "Existenz; Empfaenger aus den Empfaengern des Vorgangs (keine freie Adresse)"
+        objekt-pruefung: "Existenz; Empfaenger aus den Empfaengern des Vorgangs (keine freie Adresse); antwort_auf nur eine Mail dieses Vorgangs"
 
   /api/support/vorgaenge/{id}/archivieren:
     post:

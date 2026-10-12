@@ -452,7 +452,7 @@ body { margin:0; background:var(--ground); color:var(--text); font-family:'Plus 
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/support/vorgaenge/{id}/antworten</code></div>
         <p class="summary">Antwort im Vorgang -- Mail mit [Vorgang N] im Betreff</p>
-        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>express-validator</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Existenz; Empfaenger aus den Empfaengern des Vorgangs (keine freie Adresse)</div>
+        <div class="zugriff"><span class="chip r-super">Super-Admin</span></div><div class="mw"><code>verifyTokenRBAC</code> · <code>requireSuperAdmin</code> · <code>express-validator</code></div><div class="objekt"><span class="objekt-label">Objektprüfung</span>Existenz; Empfaenger aus den Empfaengern des Vorgangs (keine freie Adresse); antwort_auf nur eine Mail dieses Vorgangs</div>
       </article><article class="route">
         <div class="route-kopf"><span class="verb" style="--verb:#047857">POST</span><code class="pfad">/api/support/vorgaenge/{id}/archivieren</code></div>
         <p class="summary">Einen Vorgang archivieren</p>

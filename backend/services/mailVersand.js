@@ -8,7 +8,9 @@
 //      Postfach eingerichtet? Sonst 503.
 //   2. Text + Fusszeile (Trenner "-- " nach der Signaturkonvention), eigene
 //      Message-ID <kq-uuid@konfi-quest.de>, In-Reply-To/References auf die
-//      letzte Mail des Verlaufs, die Kennung im Betreff, wenn sie fehlt:
+//      beantwortete Mail (`bezug`: die die Route waehlt -- im Vorgang die mit
+//      antwort_auf genannte, sonst die letzte des Verlaufs), die Kennung im
+//      Betreff, wenn sie fehlt:
 //      [Vorgang N] (seit Migration 195, Vorgabe vorgangId), sonst die alten
 //      Kennungen [Anfrage N] / [Gemeinde N] (ohne Vorgang, nur noch
 //      Antworten im Posteingang). From "<Absendername> <Postfach>",
@@ -20,7 +22,11 @@
 //      utils/supportVorgaenge.js). Eine Antwort ist eine Bewegung des
 //      Vorgangs (updated_at); steht er auf "neu", geht er auf "in Arbeit" --
 //      ausser bei statusFolgen: false (die Bestaetigung des Formulars) -- und
-//      mit ihm die Anfrage dahinter.
+//      mit ihm die Anfrage dahinter. Mit `status` (Antwort im Vorgang mit
+//      "Danach", additiv seit 12.10.2026) setzt statusSetzen in DERSELBEN
+//      Transaktion genau diesen Status statt des Schritts neu -> in Arbeit
+//      (Folgen wie beim PATCH: erledigt archiviert, die Anfrage folgt). Ein
+//      ungueltiger Status bricht VOR dem Senden ab (400).
 //   5. Danach, ohne dass die Antwort darauf wartet: dieselbe Mail per IMAP
 //      in den Gesendet-Ordner des Postfachs legen. Gesucht wird der Ordner
 //      mit der Markierung \Sent, sonst einer mit dem Namen "Sent" (oder
@@ -52,7 +58,7 @@ const MailComposer = require('nodemailer/lib/mail-composer');
 const { postfachKonfig, smtpOptionen, imapOptionen, nichtEingerichtetMeldung } = require('../utils/mailPostfaecher');
 const { einstellungenLesen } = require('../utils/mailEinstellungen');
 const mailAbholung = require('./mailAbholung');
-const { mailSpalten, statusSetzen, vorgangBewegt } = require('../utils/supportVorgaenge');
+const { STATUS, mailSpalten, statusSetzen, vorgangBewegt } = require('../utils/supportVorgaenge');
 const { registriereArt, einreihen } = require('../utils/warteschlange');
 
 const { abmelden, fehlerText } = mailAbholung;
@@ -215,9 +221,14 @@ registriereArt(ABLAGE_ART, async (_db, p, k) => {
  *   organizationId folgen ihm (die Angaben dazu werden ueberschrieben)
  * @param {boolean} [a.statusFolgen]  false: ein Vorgang "neu" bleibt "neu"
  *   (Bestaetigung des Formulars); sonst geht er mit der Antwort auf "in Arbeit"
+ * @param {'neu'|'in_arbeit'|'wartet'|'erledigt'} [a.status]  nur mit vorgangId:
+ *   dieser Status wird mit dem Speichern gesetzt (statusSetzen, dieselbe
+ *   Transaktion) statt des Schritts neu -> in Arbeit; ungueltig -> 400 vor dem
+ *   Senden
  * @param {number|null} [a.anfrageId]
  * @param {number|null} [a.organizationId]
- * @param {object|null} [a.bezug]     letzte Mail des Verlaufs (Zeile aus mail_nachrichten)
+ * @param {object|null} [a.bezug]     die beantwortete Mail (Zeile aus mail_nachrichten):
+ *   In-Reply-To, References und "Re:"-Betreff beziehen sich auf sie
  * @param {string} a.standardBetreff  Betreff ohne Verlauf (ohne Kennung)
  * @param {number|null} a.verfasstVon
  * @param {object} [opt]
@@ -227,9 +238,12 @@ registriereArt(ABLAGE_ART, async (_db, p, k) => {
  *   im Gesendet-Ordner geht als Auftrag in die Warteschlange (Routen); ohne
  *   Angabe wartet die Funktion selbst darauf.
  * @returns {Promise<object>} die gespeicherte Mail (Felder wie GET /mail/nachrichten/:id)
- * @throws {VersandFehler} 503 (Versand aus, Postfach nicht eingerichtet), 502 (Versand gescheitert)
+ * @throws {VersandFehler} 400 (ungueltiger Status), 503 (Versand aus, Postfach nicht eingerichtet),
+ *   502 (Versand gescheitert)
  */
 async function antwortSenden(db, a, { env = process.env, imapFabrik = standardImapFabrik, nachlauf = null } = {}) {
+  const status = a.status ?? null;
+  if (status !== null && !STATUS.includes(status)) throw new VersandFehler(400, `status: ${STATUS.join(', ')}`);
   if (!versandAufDiesemServer(env)) throw new VersandFehler(503, VERSAND_AUS_MELDUNG);
   const konfig = postfachKonfig(a.postfach, env);
   if (!konfig.versandBereit) throw new VersandFehler(503, nichtEingerichtetMeldung(konfig));
@@ -289,8 +303,11 @@ async function antwortSenden(db, a, { env = process.env, imapFabrik = standardIm
         konfig.adresse, name, [an], betreff, text, gesendetAm, a.verfasstVon ?? null, vorgangId]);
     id = neu.id;
     if (vorgangId !== null) {
-      // Der Vorgang (und mit ihm die Anfrage dahinter) folgt der Antwort.
-      if (a.statusFolgen !== false) {
+      // Der Vorgang (und mit ihm die Anfrage dahinter) folgt der Antwort:
+      // dem gewaehlten Status, sonst dem Schritt neu -> in Arbeit.
+      if (status !== null) {
+        await statusSetzen(client, vorgangId, status, { userId: a.verfasstVon ?? null });
+      } else if (a.statusFolgen !== false) {
         const { rows: [v] } = await client.query('SELECT status FROM support_vorgaenge WHERE id = $1 FOR UPDATE', [vorgangId]);
         if (v && v.status === 'neu') await statusSetzen(client, vorgangId, 'in_arbeit', { userId: a.verfasstVon ?? null });
       }

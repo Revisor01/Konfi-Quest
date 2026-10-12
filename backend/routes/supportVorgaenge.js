@@ -53,6 +53,7 @@ const AKTIONEN = ['archivieren', 'wiederherstellen', 'loeschen', 'status'];
 
 const VORGANG_FEHLT = { error: 'Vorgang nicht gefunden' };
 const GEMEINDE_FEHLT = { error: 'Gemeinde nicht gefunden' };
+const FREMDE_MAIL = { error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' };
 
 /** Fehler ins Protokoll: nur Code und Meldung. */
 const protokolliere = (wo, err) => console.error(`${wo}: %s %s`, err.code || '', err.message);
@@ -432,14 +433,38 @@ module.exports = (db) => {
   // ANTWORTEN
   // ==========================================================================
 
-  // POST /vorgaenge/:id/antworten { betreff?, text, an? } -> 201 { nachricht }.
+  // POST /vorgaenge/:id/antworten { betreff?, text, an?, status?, antwort_auf? }
+  // -> 201 { nachricht, vorgang: { id, status, status_seit, archiviert_am } }.
   // Vom Postfach moin (Vorgang einer Anfrage) bzw. support, mit [Vorgang N]
   // im Betreff, an `an` (Empfaenger: im Kopf). Ein Vorgang "neu" geht auf
   // "in Arbeit".
+  //   status (additiv seit 12.10.2026; Werte und Pruefung wie PATCH): dieser
+  //     Status wird mit dem Speichern der Mail gesetzt, in derselben
+  //     Transaktion (statusSetzen: erledigt archiviert, die Anfrage folgt),
+  //     statt des Schritts neu -> in Arbeit. Ungueltig -> 400, nichts geht
+  //     hinaus.
+  //   antwort_auf (additiv seit 12.10.2026): Kennung der beantworteten Mail;
+  //     sie muss zu DIESEM Vorgang gehoeren, sonst 400 vor dem Versand. Sie
+  //     ist dann der Bezug (In-Reply-To, References, "Re:"-Betreff); ohne
+  //     Angabe die juengste Mail des Vorgangs, gleich welcher Richtung.
+  //   vorgang (additiv seit 12.10.2026, immer dabei): Status, status_seit und
+  //     archiviert_am nach dem Speichern -- die Oberflaeche erkennt daran, ob
+  //     der gewaehlte Status gesetzt ist (ein aelterer Server uebergeht
+  //     `status` ohne Fehler und liefert das Feld nicht).
   router.post('/vorgaenge/:id/antworten', [
-    id, textFeld, betreffFeld(false), anFeld, handleValidationErrors,
+    id, textFeld, betreffFeld(false), anFeld,
+    // Werte wie PATCH; isString vorweg, weil express-validator eine Liste
+    // Element fuer Element prueft (['erledigt'] kaeme sonst durch).
+    body('status').optional()
+      .isString().withMessage(`status: ${STATUS.join(', ')}`).bail()
+      .isIn(STATUS).withMessage(`status: ${STATUS.join(', ')}`),
+    body('antwort_auf').optional({ values: 'null' })
+      .not().isArray().withMessage('Ungültige Mail').bail()
+      .isInt({ min: 1 }).withMessage('Ungültige Mail'),
+    handleValidationErrors,
   ], async (req, res) => {
     let gespeichert;
+    let vorgang;
     try {
       const vorgangId = Number(req.params.id);
       const { rows: [v] } = await db.query(
@@ -447,6 +472,13 @@ module.exports = (db) => {
            FROM support_vorgaenge v LEFT JOIN gemeinde_anfragen a ON a.id = v.anfrage_id
           WHERE v.id = $1`, [vorgangId]);
       if (!v) return res.status(404).json(VORGANG_FEHLT);
+      let beantwortet = null;
+      if (req.body.antwort_auf != null) {
+        ({ rows: [beantwortet] } = await db.query(
+          `SELECT ${NACHRICHT_SPALTEN} FROM ${NACHRICHT_FROM} WHERE m.id = $1 AND m.vorgang_id = $2`,
+          [Number(req.body.antwort_auf), vorgangId]));
+        if (!beantwortet) return res.status(400).json(FREMDE_MAIL);
+      }
       const empfaenger = await empfaengerFuerVorgang(db, v);
       const gewuenscht = typeof req.body.an === 'string' ? req.body.an.trim().toLowerCase() : '';
       let an;
@@ -460,23 +492,30 @@ module.exports = (db) => {
       } else {
         return res.status(400).json({ error: 'Für diesen Vorgang ist keine Empfängeradresse bekannt.' });
       }
-      const { rows: [letzte] } = await db.query(
-        `SELECT ${NACHRICHT_SPALTEN} FROM ${NACHRICHT_FROM}
-          WHERE m.vorgang_id = $1 ORDER BY m.gesendet_am DESC, m.id DESC LIMIT 1`, [vorgangId]);
+      let bezug = beantwortet;
+      if (!bezug) {
+        ({ rows: [bezug] } = await db.query(
+          `SELECT ${NACHRICHT_SPALTEN} FROM ${NACHRICHT_FROM}
+            WHERE m.vorgang_id = $1 ORDER BY m.gesendet_am DESC, m.id DESC LIMIT 1`, [vorgangId]));
+      }
       gespeichert = await antwortSenden(db, {
         postfach: v.anfrage_id !== null ? 'moin' : 'support',
         an,
         betreff: req.body.betreff,
         text: req.body.text,
         vorgangId,
-        bezug: letzte || null,
+        status: req.body.status,
+        bezug: bezug || null,
         standardBetreff: v.anfrage_gemeinde ? `Eure Anfrage für ${v.anfrage_gemeinde}` : v.betreff,
         verfasstVon: req.user.id,
       }, { nachlauf: { req, bezeichnung: 'Gesendet-Ordner (Vorgang)' } });
+      ({ rows: [vorgang] } = await db.query(
+        'SELECT id, status, status_seit, archiviert_am FROM support_vorgaenge WHERE id = $1', [vorgangId]));
     } catch (err) {
       return fehlerAntwort(res, 'POST /support/vorgaenge/:id/antworten', err);
     }
-    res.status(201).json({ nachricht: gespeichert });
+    // vorgang null nur, wenn der Vorgang zwischen Versand und Lesen geloescht wurde.
+    res.status(201).json({ nachricht: gespeichert, vorgang: vorgang || null });
   });
 
   // ==========================================================================
