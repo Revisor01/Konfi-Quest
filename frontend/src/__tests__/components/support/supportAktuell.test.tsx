@@ -310,6 +310,25 @@ describe('Aktuell bleiben: Änderungen im Vorgang, Liste, Posteingang und Leiste
     expect(server.aufrufe('patch')).toHaveLength(0);
   });
 
+  it('App: der aufgeklappte Filter und seine Auswahl überstehen das Neuladen -- der Knopf zählt weiter', async () => {
+    h.breit = false;
+    render(<SupportVorgaengePage />);
+    await screen.findByRole('button', { name: /^Vorgang 1:/ });
+    fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
+    fireEvent.change(screen.getByLabelText('Gemeinde filtern'), { target: { value: '7' } });
+    const nummern = () => screen.getAllByRole('button', { name: /^Vorgang \d+:/ }).map((k) => /^Vorgang (\d+):/.exec(k.getAttribute('aria-label')!)![1]);
+    expect(nummern()).toEqual(['1']);
+    // Von draußen kommt ein Vorgang derselben Gemeinde hinzu; die Meldung lädt die Liste neu.
+    server.stand.vorgaenge.push(vorgang(8, { status: 'neu', organization_id: 7, betreff: 'Noch einer aus Musterdorf', created_at: '2026-10-04T07:00:00Z' }));
+    const vorher = server.aufrufe('get', '/support/vorgaenge').length;
+    act(() => { meldeSupportGeaendert(); });
+    await waitFor(() => expect(server.aufrufe('get', '/support/vorgaenge').length).toBe(vorher + 1));
+    await waitFor(() => expect(nummern()).toEqual(['8', '1']));
+    expect(screen.getByRole('button', { name: /^Filter/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: /^Filter/ })).toHaveAttribute('aria-label', 'Filter, 1 aktiv');
+    expect((screen.getByLabelText('Gemeinde filtern') as HTMLSelectElement).value).toBe('7');
+  });
+
   it('die eigene Änderung lädt den Vorgang genau einmal neu, nicht in einer Schleife', async () => {
     await zeigen();
     const vorher = server.aufrufe('get', '/support/vorgaenge/1').length;

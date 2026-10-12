@@ -2,6 +2,7 @@
    SupportVorgangTeile.tsx; docs/planung/support-detailseiten.md, „In der
    App"): Karte „Stand", Antwortzeile unter der jüngsten Mail, Angaben als
    Zeilen, die eingeklappte Gemeindeleitung und das Modal „Antworten".
+   Am Ende die Listen am Handy (Vorgänge und Posteingang, 12.10.2026).
    Nur Tokens -- der Dunkelmodus kommt über sie. */
 
 /* --- Die Seite: Kopfzeile und farbiger Kopf --- */
@@ -608,4 +609,151 @@ ion-button.md.support-modal__mehrzeilig::part(native) {
   height: auto;
   white-space: normal;
   line-height: 1.3;
+}
+
+/* --- Listen am Handy: Vorgänge und Posteingang (12.10.2026) ---
+   Der Betreff läuft über die volle Breite zwischen Kreis und Pfeil, darunter
+   eine Zeile „Nr. · Art · Bereich · Gemeinde · Zeit" (in der Mail: Absender ·
+   Zeit · Anhänge) und die Marken in einer eigenen Zeile. Vorher standen die
+   Marken rechts neben dem Betreff; mit white-space: nowrap ließen sie ihm bei
+   390 px eine Spalte von rund 90 px, „Konfis sehen den Termin am Samstag
+   nicht" stand über fünf Zeilen, mit erzwungener Silbentrennung. */
+.support-listenzeile__meta {
+  display: block;
+  line-height: 1.4;
+}
+
+/* Eine Angabe bricht nur in sich um, wenn sie allein nicht in die Zeile
+   passt (SupportBausteine, Angabenzeile): Vorher fiel „Test-Gemeinde St." /
+   „Martin" auseinander. */
+.support-listenzeile__angabe {
+  display: inline-block;
+}
+
+/* Der Auszug einer Mail: zwei Zeilen wie im Mailprogramm, den Rest zeigt die Mail. */
+.support-listenzeile__auszug {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: var(--app-abstand-mini);
+  color: var(--app-text-system);
+  font-size: var(--app-text-meta);
+  line-height: 1.4;
+}
+
+.support-listenzeile__marken {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  margin-top: var(--app-abstand-eng);
+}
+
+.support-listenzeile__punkt,
+.support-listenzeile__pfeil {
+  flex-shrink: 0;
+  margin-left: var(--app-abstand-eng);
+}
+
+.support-listenzeile__pfeil {
+  color: var(--app-text-system);
+}
+
+/* Der Knopf „Filter" in der Kopfzeile der Vorgänge. Die Zahl der aktiven
+   Filter sitzt mit ihrer Mitte auf der rechten oberen Ecke des Symbols, wie
+   die Zahl an der Glocke (theme/variables.css, Abschnitt Postfach-Glocke).
+   Gemessen am 12.10.2026 (390 px): iOS .button-inner 22,4 x 32 px, so breit
+   wie das Symbol (x 235,3-257,7, y 26,8-49,2) -- top 0 / right 0 legte die
+   Zahl mitten auf das Symbol; top -4 / right -9 setzt ihre Mitte auf
+   (257,7 / 27). Android .button-inner 48 x 24, Symbol 24 px mittig: top -8 /
+   right 2 wie an der Glocke, Mitte (267 / 17) gegen die Ecke (266 / 16).
+   Die Pille der Kopfzeile gibt die Zahl schon frei: Die Glocke steht im
+   selben ion-buttons. */
+ion-button.support-filterknopf {
+  position: relative;
+}
+
+ion-button.support-filterknopf::part(native) {
+  overflow: visible;
+}
+
+.support-filterknopf__zahl {
+  position: absolute;
+  top: -4px;
+  right: -9px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--app-abstand-mini);
+  box-sizing: border-box;
+  border-radius: var(--app-radius-knopf);
+  background: var(--ion-color-primary);
+  color: var(--app-weiss);
+  font-size: var(--app-text-winzig);
+  font-weight: var(--app-schrift-fett);
+  line-height: 18px;
+  text-align: center;
+  pointer-events: none;
+}
+
+ion-button.md.support-filterknopf .support-filterknopf__zahl {
+  top: -8px;
+  right: 2px;
+}
+
+/* Der Zustand der Postfächer im Posteingang: eine Zeile, solange beide
+   laufen, sonst eine Zeile je gestörtem Postfach mit dem Grund. Bis
+   12.10.2026 stand bei einer Störung ein Abschnitt „Postfächer" mit je einem
+   Kasten und einem Hinweis-Kasten darin -- bei zwei nicht eingerichteten
+   Postfächern rund 480 px vor den Reitern. */
+.support-postfach-zeile {
+  margin: 0 var(--app-abstand-basis);
+  color: var(--app-text-system);
+  font-size: var(--app-text-meta);
+}
+
+.support-postfach-zeile--fehler {
+  color: var(--app-text-fehler);
+}
+
+.support-postfach-stoerungen {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-kompakt);
+  list-style: none;
+  margin: 0 var(--app-abstand-basis);
+  padding: 0;
+}
+
+.support-postfach-stoerung {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-kompakt);
+  color: var(--app-text-secondary);
+  font-size: var(--app-text-klein);
+  line-height: 1.4;
+}
+
+.support-postfach-stoerung strong {
+  color: var(--app-text-primary);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.support-postfach-stoerung ion-icon {
+  flex-shrink: 0;
+  margin-top: var(--app-abstand-haar);
+  font-size: var(--app-text-sekundaer);
+}
+
+.support-postfach-stoerung--hinweis ion-icon {
+  color: var(--app-color-info);
+}
+
+.support-postfach-stoerung--warnung ion-icon {
+  color: var(--app-text-warnung);
+}
+
+.support-postfach-stoerung--fehler,
+.support-postfach-stoerung--fehler ion-icon {
+  color: var(--app-text-fehler);
 }

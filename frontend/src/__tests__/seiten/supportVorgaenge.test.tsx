@@ -108,6 +108,8 @@ describe('Vorgänge: Leerzustand in beiden Fassungen gleich', () => {
   it.each([false, true])('leer durch die Suche (breit=%s): „Keine Treffer" statt des Satzes zum Stand', async (breit) => {
     await zeigen(breit);
     fireEvent.click(stand(breit, /^Neu/));
+    // In der App steht die Suche hinter dem Knopf „Filter“ (12.10.2026).
+    if (!breit) fireEvent.click(screen.getByRole('button', { name: 'Filter' }));
     const suche = breit ? screen.getByRole('searchbox', { name: 'Vorgänge durchsuchen' }) : screen.getByLabelText('Suche');
     fireEvent.change(suche, { target: { value: 'Jahrgang' } });
     expect(await screen.findByText('Keine Treffer')).toBeInTheDocument();
