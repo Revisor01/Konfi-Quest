@@ -8,7 +8,7 @@ import {
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -40,18 +40,16 @@ import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { safeUUID } from '../../../utils/uuid';
-import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebKategorien from '../web/leitung/WebKategorien';
+import WebKategorieDialog from '../web/leitung/WebKategorieDialog';
+import { useKategorieFormular } from '../useKategorieFormular';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -84,72 +82,14 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
       onClose();
     }
   };
-  const { setSuccess, setError } = useApp();
-  const [loading, setLoading] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    name: '',
-    description: ''
-  });
-
-  useEffect(() => {
-    if (category) {
-      setFormData({
-        name: category.name,
-        description: category.description || ''
-      });
-    } else {
-      setFormData({
-        name: '',
-        description: ''
-      });
-    }
-  }, [category]);
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) {
-      setError('Name ist erforderlich');
-      return;
-    }
-
-    const payload = {
-      name: formData.name.trim(),
-      description: formData.description.trim() || null
-    };
-
-    setLoading(true);
-    try {
-      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
-      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
-      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
-      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
-      // Audit Grundgeruest BF-01).
-      const { weg } = await sendenOderEinreihen({
-        online: networkMonitor.isOnline,
-        methode: category ? 'PUT' : 'POST',
-        senden: () => (category ? api.put(`/admin/categories/${category.id}`, payload) : api.post('/admin/categories', payload)),
-        einreihen: () => writeQueue.enqueue({
-          method: category ? 'PUT' : 'POST',
-          url: category ? `/admin/categories/${category.id}` : '/admin/categories',
-          body: payload,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'admin',
-            clientId: safeUUID(),
-            label: category ? 'Kategorie bearbeiten' : 'Kategorie erstellen'
-          }
-        }),
-      });
-      if (weg === 'eingereiht') setSuccess('Wird gespeichert sobald du wieder online bist');
+  // Vorbelegung, Pruefen und Speichern: useKategorieFormular (11.10.2026),
+  // dieselbe Logik wie im Dialog der Web-Fassung (WebKategorieDialog).
+  const { formData, aendern, loading, speichern: handleSubmit } = useKategorieFormular(category, {
+    onFertig: () => {
       onSuccess();
       handleClose();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Speichern der Kategorie'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
   return (
     <IonPage>
@@ -194,7 +134,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                   <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput aria-label="Name" aria-required="true"
                     value={formData.name}
-                    onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                    onIonInput={(e) => aendern({ name: e.detail.value! })}
                     placeholder="z.B. Ausflug, Gottesdienst"
                     disabled={loading}
                     clearInput={true}
@@ -204,7 +144,7 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                   <IonLabel position="stacked">Beschreibung</IonLabel>
                   <IonTextarea aria-label="Beschreibung"
                     value={formData.description}
-                    onIonInput={(e) => setFormData({ ...formData, description: e.detail.value! })}
+                    onIonInput={(e) => aendern({ description: e.detail.value! })}
                     placeholder="Beschreibung der Kategorie..."
                     rows={3}
                     disabled={loading}
@@ -222,8 +162,9 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
 const AdminCategoriesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-categories');
   const { user, setError, isOnline } = useApp();
-  // Im Browser ab 992 px eine Tabelle (web/leitung/WebKategorien.tsx); Daten,
-  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  // Im Browser ab 992 px eine Tabelle (web/leitung/WebKategorien.tsx); Daten
+  // und Rueckfragen dieser Seite bleiben dieselben, das Formular ist dort ein
+  // eigener Dialog (WebKategorieDialog) mit derselben Logik.
   const breit = useBreitesLayout();
 
   // Offline-Query: Categories
@@ -234,6 +175,10 @@ const AdminCategoriesPage: React.FC = () => {
   );
 
   const [editCategory, setEditCategory] = useState<Category | null>(null);
+  // Im breiten Layout ein eigener Dialog statt des App-Modals (Simon,
+  // 11.10.2026: „Web braucht eigene kompaktere Modale überall"): offen mit
+  // der Kategorie (bearbeiten) oder mit null (anlegen).
+  const [webDialog, setWebDialog] = useState<{ kategorie: Category | null } | null>(null);
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   // Alert Hook für Bestätigungsdialoge
@@ -303,17 +248,26 @@ const AdminCategoriesPage: React.FC = () => {
 
   if (breit) {
     return (
-      <WebKategorien
-        kategorien={categories || []}
-        laedt={loading}
-        darfAnlegen={canCreate}
-        darfBearbeiten={canEdit}
-        darfLoeschen={canDelete}
-        pageRef={pageRef}
-        onAnlegen={openCreateModal}
-        onBearbeiten={openEditModal}
-        onLoeschen={handleDelete}
-      />
+      <>
+        <WebKategorien
+          kategorien={categories || []}
+          laedt={loading}
+          darfAnlegen={canCreate}
+          darfBearbeiten={canEdit}
+          darfLoeschen={canDelete}
+          pageRef={pageRef}
+          onAnlegen={() => setWebDialog({ kategorie: null })}
+          onBearbeiten={(kategorie) => setWebDialog({ kategorie })}
+          onLoeschen={handleDelete}
+        />
+        {webDialog && (
+          <WebKategorieDialog
+            kategorie={webDialog.kategorie}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={refreshCategories}
+          />
+        )}
+      </>
     );
   }
 

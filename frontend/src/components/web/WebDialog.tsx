@@ -1,5 +1,9 @@
-// Ein Dialog der Web-Fassung: ein Fenster ueber der Seite fuer ein kurzes
-// Formular (Konto anlegen, Landeskirche anlegen, Kirchenkreis bearbeiten).
+// Ein Dialog der Web-Fassung: ein Fenster ueber der Seite fuer ein
+// Formular (Konto anlegen, Landeskirche anlegen, Event, Bonuspunkte). Seit
+// 11.10.2026 die Form aller haeufigen Formulare im Browser (Simon: „Web
+// braucht eigene kompaktere Modale überall"); die App oeffnet dafuer ihre
+// Modale, und die uebrigen App-Modale stehen im Browser kompakt
+// (theme/web-modale.css).
 // Rueckfragen vor dem Loeschen oder Sperren bleiben bei der App (useIonAlert);
 // dies hier ist nur fuer Formulare.
 //
@@ -8,9 +12,15 @@
 //   - der Fokus geht beim Oeffnen hinein (auf das erste Feld) und beim
 //     Schliessen zurueck an die Stelle, von der aus er geoeffnet wurde;
 //   - Tab und Umschalt+Tab bleiben im Dialog;
-//   - Escape und ein Klick auf den abgedunkelten Grund schliessen.
-// Er wird an <body> gehaengt: Ionics Seiten schneiden mit `contain` alles ab,
-// was in ihnen "fixed" steht.
+//   - Escape und ein Klick auf den abgedunkelten Grund schliessen -- ausser
+//     er ist `gesperrt`, weil gerade gesendet wird (dann auch das X).
+// Er wird in <ion-app> gehaengt, nicht in die Seite: Ionics Seiten schneiden
+// mit `contain` alles ab, was in ihnen "fixed" steht. In ion-app haengt Ionic
+// auch seine Rueckfragen (ion-alert) und Meldungen (ion-toast); dort
+// entscheidet der z-index, und der Grund (1000) liegt unter ihnen. Bis
+// 12.10.2026 hing er an <body>, ueber der ganzen Ebene von ion-app
+// (`contain`, `z-index: 0`): Eine Rueckfrage aus dem Dialog lag unsichtbar
+// dahinter, eine Fehlermeldung abgedunkelt und halb verdeckt.
 
 import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
@@ -30,11 +40,26 @@ export interface WebDialogProps {
    * `absenden` rufen dies auf.
    */
   onAbsenden?: () => void;
+  /**
+   * Breiter (720 statt 520 px) für Formulare mit vielen Feldern, die zu
+   * zweit nebeneinander stehen (Event, Material). Kurze Formulare bleiben
+   * schmal. Die Knopfleiste eines breiten Dialogs bleibt beim Scrollen unten
+   * im Bild (theme/web-ansicht.css).
+   */
+  breit?: boolean;
+  /**
+   * Es wird gerade gesendet: Das X ist gesperrt, Escape und ein Klick auf
+   * den Grund schliessen nicht -- wie das X der App-Modale
+   * (`disabled={isSubmitting}`). Sonst ginge ein Fehler des Servers ins
+   * Leere, und nach erneutem Oeffnen liesse sich derselbe Vorgang sofort ein
+   * zweites Mal abschicken (Gegenpruefung 11.10.2026).
+   */
+  gesperrt?: boolean;
 }
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden }) => {
+const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false, gesperrt = false }) => {
   const titelId = useId();
   const beschreibungId = useId();
   const fenster = useRef<HTMLDivElement>(null);
@@ -54,10 +79,21 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
     return () => { vorher?.focus(); };
   }, []);
 
+  // Beim Sperren wird meist der Knopf mitgesperrt, der das Senden ausgeloest
+  // hat und den Fokus traegt. Der Browser nimmt ihm den Fokus und legt ihn auf
+  // die Seite -- danach kaemen Escape und Tab nicht mehr im Dialog an. Der
+  // Fokus geht deshalb auf das Fenster selbst.
+  useEffect(() => {
+    const knoten = fenster.current;
+    if (!gesperrt || !knoten) return;
+    const aktiv = document.activeElement;
+    if (!(aktiv instanceof HTMLElement) || !knoten.contains(aktiv) || aktiv.matches(':disabled')) knoten.focus();
+  }, [gesperrt]);
+
   const taste = (ereignis: React.KeyboardEvent<HTMLDivElement>) => {
     if (ereignis.key === 'Escape') {
       ereignis.stopPropagation();
-      schliessen.current();
+      if (!gesperrt) schliessen.current();
       return;
     }
     if (ereignis.key !== 'Tab' || !fenster.current) return;
@@ -79,10 +115,10 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
   };
 
   return createPortal(
-    <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget) schliessen.current(); }}>
+    <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget && !gesperrt) schliessen.current(); }}>
       <div
         ref={fenster}
-        className="web-dialog"
+        className={breit ? 'web-dialog web-dialog--breit' : 'web-dialog'}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titelId}
@@ -92,7 +128,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
       >
         <header className="web-dialog__kopf">
           <h2 id={titelId} className="web-dialog__titel">{titel}</h2>
-          <button type="button" className="web-knopf web-knopf--text web-knopf--symbol" aria-label="Schließen" onClick={() => schliessen.current()}>
+          <button type="button" className="web-knopf web-knopf--text web-knopf--symbol" aria-label="Schließen" disabled={gesperrt} onClick={() => schliessen.current()}>
             <IonIcon icon={ICON_SCHLIESSEN} aria-hidden="true" />
           </button>
         </header>
@@ -110,7 +146,8 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
         )}
       </div>
     </div>,
-    document.body,
+    // Ohne ion-app (vor dem Start der App, in Tests) an <body>.
+    document.querySelector('ion-app') ?? document.body,
   );
 };
 

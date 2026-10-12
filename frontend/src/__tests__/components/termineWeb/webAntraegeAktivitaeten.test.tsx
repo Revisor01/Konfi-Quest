@@ -6,12 +6,16 @@
 // Art-Filter und Suche. Geprüft, angelegt, gelöscht wird mit denselben
 // Fenstern und Rückfragen wie in der App.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, fireEvent, within, act } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import {
   h, api, setError, routerPush, geoeffnet, letzteRueckfrage, knopfIn,
   zuruecksetzen, richteEin, oeffne, JETZT,
 } from './geruestWeb';
 import WebAntraege from '../../../components/admin/web/termine/WebAntraege';
+
+// Das Nachweisfoto im Dialog „Aktivität prüfen" lädt über das Medien-System
+// (eigene Tests); hier geht es um die Liste und welches Fenster aufgeht.
+vi.mock('../../../components/shared/NachweisFoto', () => ({ default: () => null }));
 import type { AntragZeile } from '../../../components/admin/web/termine/typen';
 import WebAktivitaetenSeite, { type AktivitaetZeile } from '../../../components/admin/web/termine/WebAktivitaetenSeite';
 
@@ -164,16 +168,34 @@ describe('Anträge: Reiter und Tabelle', () => {
 });
 
 describe('Anträge: Aktionen -- dieselben Funktionen wie die App', () => {
-  it('"Prüfen" öffnet das Fenster "Aktivität prüfen"', async () => {
-    await oeffneReiter('antraege');
-    fireEvent.click(screen.getByRole('button', { name: 'Aktivität von Mia Muster prüfen' }));
-    expect(geoeffnet('AdminActivityRequestModal')).toHaveLength(1);
+  // Seit 11.10.2026 im Browser ein eigener Dialog statt des Fensters der App
+  // (Simon: „Web braucht eigene kompaktere Modale überall"); geprüft im
+  // Einzelnen in webAntragPruefenDialog.test.tsx.
+  const antragVomServer = () => api.get.mockImplementation(async (pfad: string) => {
+    const gefunden = ANTRAEGE.find((a) => pfad === `/admin/activities/requests/${a.id}`);
+    return { data: gefunden ? { ...gefunden } : [] };
   });
 
-  it('erledigte Anträge: "Ansehen" öffnet dasselbe Fenster, "Zurücksetzen" fragt nach und ruft /reset', async () => {
+  it('"Prüfen" öffnet den Dialog "Aktivität prüfen" mit diesem Antrag -- nicht das Fenster der App', async () => {
+    antragVomServer();
+    await oeffneReiter('antraege');
+    fireEvent.click(screen.getByRole('button', { name: 'Aktivität von Mia Muster prüfen' }));
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität prüfen' });
+    expect(api.get).toHaveBeenCalledWith('/admin/activities/requests/71');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Genehmigen' })).toBeInTheDocument());
+    expect(geoeffnet('AdminActivityRequestModal')).toHaveLength(0);
+  });
+
+  it('erledigte Anträge: "Ansehen" öffnet den Dialog "Aktivität ansehen", "Zurücksetzen" fragt nach und ruft /reset', async () => {
+    antragVomServer();
     await oeffneReiter('antraege', 'leitung', '&filter=verbucht');
     fireEvent.click(screen.getByRole('button', { name: 'Aktivität von Ben Beispiel ansehen' }));
-    expect(geoeffnet('AdminActivityRequestModal')).toHaveLength(1);
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität ansehen' });
+    expect(api.get).toHaveBeenCalledWith('/admin/activities/requests/72');
+    await waitFor(() => expect(within(dialog).getByRole('heading', { name: 'Bearbeitungsstatus' })).toBeInTheDocument());
+    expect(geoeffnet('AdminActivityRequestModal')).toHaveLength(0);
+    fireEvent.click(within(dialog).getAllByRole('button', { name: 'Schließen' })[0]);
+    expect(screen.queryByRole('dialog')).toBe(null);
 
     fireEvent.click(screen.getByRole('button', { name: 'Aktivität zurücksetzen' }));
     const frage = letzteRueckfrage();

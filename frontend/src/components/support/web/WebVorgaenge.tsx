@@ -3,10 +3,17 @@
 // Entscheidung 7).
 //
 // Wie ein Mailprogramm (Simon, 11.10.2026): links die Vorgänge als Zeilen --
-// Betreff, Nummer, Gemeinde, Status, Dringlichkeit, letzte Aktivität,
-// ungelesene Mails --, rechts der gewählte Vorgang im Lesebereich
+// der Kreis der Art wie im Kopf des Vorgangs, Betreff und letzte Aktivität,
+// darunter „Nr. · Art · Gemeinde" (die Gemeinde nur über organization_id;
+// sonst „Nicht zugeordnet", bei einer Anfrage „Noch nicht angelegt" wie im
+// Kopf) und in eigener Zeile die Marken: ungelesene Mails,
+// Dringend, Status --, rechts der gewählte Vorgang im Lesebereich
 // (web/WebVorgangDetail). Die Adresse folgt der Wahl; Pfeiltasten wechseln
-// den Vorgang. Darüber die Stände mit Zahlen (Offen, Neu, In Arbeit, Wartet,
+// den Vorgang. Der Lese-Rahmen (web/useListenRahmen.ts) gibt dem Lesebereich
+// „Breit lesen" (Schalter im Kopf der Liste), ‹ › zum Blättern, nach
+// Erledigt, Archivieren oder Löschen den nächsten Eintrag und `?mail=` (die
+// Mail, die offen und hervorgehoben steht; docs/planung/
+// support-detailseiten.md, E und F). Darüber die Stände mit Zahlen (Offen, Neu, In Arbeit, Wartet,
 // Archiv -- darin auch die erledigten), die Suche und hinter „Filter" Art und
 // Gemeinde. Mehrere Vorgänge lassen sich ankreuzen: archivieren,
 // wiederherstellen, löschen, Status setzen. „Neuer Vorgang" öffnet einen
@@ -27,6 +34,9 @@ import {
   ARTEN,
   STATUS_REIHE,
   VORGANG_STATUS,
+  artKurz,
+  istZugeordnet,
+  ohneGemeindeText,
   vorgaengeText,
   type Vorgang,
   type VorgangArt,
@@ -42,8 +52,11 @@ import WebTreffer from '../../web/WebTreffer';
 import WebNeuerVorgang from './WebNeuerVorgang';
 import WebVorgangDetail from './WebVorgangDetail';
 import WebPostfach, { WebLeseHinweis, WebPostfachZeilen } from './WebPostfach';
+import { LeseRahmenProvider, WebLeseNavigation } from './WebLeseRahmen';
 import { useLeseAuswahl } from './useLeseAuswahl';
-import { DringlichPill, StatusPill } from './WebVorgangTeile';
+import { useListenRahmen } from './useListenRahmen';
+import { DringlichPill, StatusPill, VorgangKreis } from './WebVorgangTeile';
+import { BREIT_LESEN } from '../../../seiten/supportDetail';
 import '../../../theme/web/support.css';
 import { leerVon } from '../../../seiten/beschreibung';
 import {
@@ -72,7 +85,11 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
   const eingegrenzt = sucht || auswahl.art !== 'alle' || auswahl.gemeinde !== 'alle';
 
   // Was nicht mehr in der Liste steht (anderer Filter, archiviert, geloescht), bleibt nicht ausgewaehlt.
-  const sichtbareIds = useMemo(() => new Set(sichtbar.map((v) => v.id)), [sichtbar]);
+  const reihenfolge = useMemo(() => sichtbar.map((v) => v.id), [sichtbar]);
+  const sichtbareIds = useMemo(() => new Set(reihenfolge), [reihenfolge]);
+  const { rahmen, breit, breitLesen } = useListenRahmen({
+    ids: reihenfolge, gewaehlt, waehlen, listeLabel: BREIT_LESEN.liste.vorgaenge, direktlink: start !== null,
+  });
   useEffect(() => {
     setAusgewaehlt((alt) => {
       const rest = [...alt].filter((id) => sichtbareIds.has(id));
@@ -94,6 +111,13 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
   const alleUmschalten = () => setAusgewaehlt(alleAn ? new Set() : new Set(sichtbar.map((v) => v.id)));
   const ids = [...ausgewaehlt];
   const nachAktion = (ok: boolean) => { if (ok) setAusgewaehlt(new Set()); };
+  // Archivieren, Erledigt und Löschen nehmen die Vorgänge aus der Liste: Ist der offene dabei,
+  // öffnet sich wie nach einem Abschluss im Kopf der nächste (Frage 6) -- nach Löschen sonst
+  // „Vorgang nicht gefunden".
+  const nachAbschluss = (ok: boolean, geloescht = false) => {
+    nachAktion(ok);
+    if (ok) rahmen.sammelAbgeschlossen(ids, geloescht);
+  };
 
   const gemeindeName = auswahl.gemeinde !== 'alle'
     ? gemeinden.find((g) => String(g.id) === auswahl.gemeinde)?.name ?? `Gemeinde ${auswahl.gemeinde}`
@@ -106,7 +130,16 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
       ? [{ schluessel: auswahl.gemeinde, label: `Gemeinde ${auswahl.gemeinde}` }] : []),
   ];
 
-  // Eine Zeile der Liste: oben Betreff und Zeit, unten Nummer, Gemeinde und Marken.
+  // Was die Zeile außer „Vorgang N: Betreff" zeigt, für Vorleseprogramme (der Name ersetzt den Inhalt des Knopfes).
+  const beschreibung = (v: Vorgang) => [
+    artKurz(v.art),
+    istZugeordnet(v) ? v.gemeinde_name ?? `Gemeinde ${v.organization_id}` : ohneGemeindeText(v),
+    (VORGANG_STATUS[v.status] ?? VORGANG_STATUS.neu).label,
+    ...(v.dringlichkeit === 'dringend' ? ['Dringend'] : []),
+    ...(v.ungelesen > 0 ? [v.ungelesen === 1 ? '1 ungelesene Mail' : `${v.ungelesen} ungelesene Mails`] : []),
+  ].join(' · ');
+
+  // Eine Zeile der Liste: Betreff und Zeit; „Nr. · Art · Gemeinde"; die Marken in eigener Zeile.
   const zeile = (v: Vorgang) => {
     const zeit = archiv && v.archiviert_am ? v.archiviert_am : v.letzte_aktivitaet;
     return (
@@ -115,15 +148,13 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
           <span className="web-postfachzeile__titel"><WebTreffer text={v.betreff || '(ohne Betreff)'} suche={auswahl.suche} /></span>
           <time className="web-postfachzeile__zeit" dateTime={zeit} title={datumUhrzeit(zeit)}>{mailZeit(zeit)}</time>
         </span>
-        <span className="web-postfachzeile__unten">
-          <span className="web-postfachzeile__text">
-            Nr. {v.id} · {v.gemeinde_name ? <WebTreffer text={v.gemeinde_name} suche={auswahl.suche} /> : 'Nicht zugeordnet'}
-          </span>
-          <span className="web-postfachzeile__marken">
-            {v.ungelesen > 0 && <span className="web-chip__zahl web-chip__zahl--rot" title="Ungelesene Mails">{v.ungelesen}</span>}
-            <DringlichPill dringlichkeit={v.dringlichkeit} />
-            <StatusPill status={v.status} />
-          </span>
+        <span className="web-postfachzeile__mitte">
+          Nr. {v.id} · {artKurz(v.art)} · {istZugeordnet(v) ? <WebTreffer text={v.gemeinde_name ?? `Gemeinde ${v.organization_id}`} suche={auswahl.suche} /> : ohneGemeindeText(v)}
+        </span>
+        <span className="web-postfachzeile__marken">
+          {v.ungelesen > 0 && <span className="web-chip__zahl web-chip__zahl--rot" title="Ungelesene Mails">{v.ungelesen}</span>}
+          <DringlichPill dringlichkeit={v.dringlichkeit} />
+          <StatusPill status={v.status} />
         </span>
       </>
     );
@@ -152,7 +183,7 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
               Wiederherstellen
             </WebKnopf>
           ) : (
-            <WebKnopf klein disabled={!isOnline} onClick={() => { void sammeln(ids, 'archivieren').then(nachAktion); }}>
+            <WebKnopf klein disabled={!isOnline} onClick={() => { void sammeln(ids, 'archivieren').then((ok) => nachAbschluss(ok)); }}>
               <IonIcon icon={ICON_ARCHIV} aria-hidden="true" />
               Archivieren
             </WebKnopf>
@@ -162,14 +193,14 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
               label="Status setzen"
               wert=""
               deaktiviert={!isOnline}
-              onWert={(w) => { if (w) void sammeln(ids, 'status', w as VorgangStatus).then(nachAktion); }}
+              onWert={(w) => { if (w) void sammeln(ids, 'status', w as VorgangStatus).then((ok) => (w === 'erledigt' ? nachAbschluss(ok) : nachAktion(ok))); }}
               optionen={[
                 { wert: '', label: 'Status setzen …' },
                 ...STATUS_REIHE.map((s) => ({ wert: s, label: s === 'erledigt' ? 'Erledigt (ins Archiv)' : VORGANG_STATUS[s].label })),
               ]}
             />
           </div>
-          <WebKnopf klein art="gefahr" disabled={!isOnline} onClick={() => loeschenFragen(ids, () => setAusgewaehlt(new Set()))}>
+          <WebKnopf klein art="gefahr" disabled={!isOnline} onClick={() => loeschenFragen(ids, () => nachAbschluss(true, true))}>
             <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
             Löschen
           </WebKnopf>
@@ -231,21 +262,29 @@ const WebVorgaenge: React.FC<{ start?: number | null }> = ({ start = null }) => 
         <WebPostfach
           listeKopf={sammelleiste}
           listeBeschriftung="Vorgänge"
+          breit={breit}
+          breitLesen={breitLesen}
           liste={eintraege.length === 0 ? <div className="web-postfach__leer">{leerZustand}</div> : (
             <WebPostfachZeilen<Vorgang>
               eintraege={eintraege}
               kennung={(v) => v.id}
               gewaehlt={gewaehlt}
-              onWaehlen={waehlen}
+              onWaehlen={rahmen.waehlen}
               zeile={zeile}
+              kreis={(v) => <VorgangKreis art={v.art} />}
               name={(v) => `Vorgang ${v.id}: ${v.betreff || '(ohne Betreff)'}`}
+              beschreibung={beschreibung}
               ungelesen={(v) => v.ungelesen > 0 || v.status === 'neu'}
               auswahl={{ ausgewaehlt, umschalten }}
             />
           )}
-          lesen={gewaehlt !== null
-            ? <WebVorgangDetail key={gewaehlt} vorgangId={gewaehlt} onGeloescht={() => waehlen(null)} />
-            : <WebLeseHinweis icon={ICON_LISTE} titel="Kein Vorgang gewählt" text="Wähle links einen Vorgang — er öffnet sich hier." />}
+          // Breit: „‹ Alle Vorgänge" und ‹ › über dem Lesebereich -- auch, solange der Vorgang lädt oder fehlt.
+          leiste={<LeseRahmenProvider wert={rahmen}><WebLeseNavigation /></LeseRahmenProvider>}
+          lesen={gewaehlt !== null ? (
+            <LeseRahmenProvider wert={rahmen}>
+              <WebVorgangDetail key={gewaehlt} vorgangId={gewaehlt} onGeloescht={() => rahmen.waehlen(null)} />
+            </LeseRahmenProvider>
+          ) : <WebLeseHinweis icon={ICON_LISTE} titel="Kein Vorgang gewählt" text="Wähle links einen Vorgang — er öffnet sich hier." />}
         />
       )}
       leer={{

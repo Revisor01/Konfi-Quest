@@ -3,8 +3,9 @@
 // vorgaenge/:id): Verlauf chronologisch, ein- und ausgehend unterscheidbar,
 // Zitate eingeklappt, ungelesene als gelesen gemeldet; Antworten (seit
 // 11.10.2026 im Modal, das sich nach dem Senden schließt) mit Bausteinen
-// (moin@ und beide), Platzhaltern der Anfrage, Vorschau mit Fußzeile,
-// Rückfrage; 503/502 verständlich, der Text bleibt; auf diesem Server aus.
+// (moin@ und beide), Platzhaltern der Anfrage, Vorschau mit Fußzeile
+// (eingeklappt), Rückfrage; 503/502 verständlich, der Text bleibt; auf diesem
+// Server aus.
 // Ein Vorgang aus einer Anfrage antwortet immer von moin@ an die Adresse der
 // Anfrage; derselbe Antwort-Editor dient auch den Vorgängen ohne Anfrage und den
 // Mails im Posteingang. Die Seite des Vorgangs selbst steht in
@@ -38,6 +39,7 @@ vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: h.setError, setSuccess: h.setSuccess, isOnline: true }),
 }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => false }));
+vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => ({ pathname: '/admin/support/vorgaenge/4', search: '', state: null }) }));
 
 import SupportVorgangDetailPage from '../../../components/support/SupportVorgangDetailPage';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
@@ -151,8 +153,8 @@ describe('Vorgang aus einer Anfrage: Antworten', () => {
     expect(h.apiGet).toHaveBeenCalledWith('/support/mail/platzhalter', { params: { anfrage_id: 4 } });
     // {{absender}} fehlt in den Platzhaltern -> Absendername aus den Einstellungen.
     expect(text().value).toBe('Hallo Anna Beispiel,\ndanke für eure Anfrage für Kirchengemeinde Heide (Standard). {{unbekannt}}\nSupport-Team');
-    // Der Betreff bleibt der Vorschlag aus dem Verlauf.
-    expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest [Anfrage 4]');
+    // Der Betreff bleibt der Vorschlag aus dem Verlauf -- ohne Kennung, die hängt der Server an.
+    expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest');
   });
 
   it('ein zweiter Baustein kommt unter den Text, nichts geht verloren', async () => {
@@ -163,9 +165,13 @@ describe('Vorgang aus einer Anfrage: Antworten', () => {
     expect(text().value).toBe('Hallo Anna,\n\nLeider nein.');
   });
 
-  it('Vorschau: Text, darunter „-- “ und die Fußzeile', async () => {
+  it('Vorschau: eingeklappt; aufgeklappt der Text, darunter „-- “ und die Fußzeile', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna,\nes geht los.' } });
+    expect(screen.queryByRole('region', { name: 'Vorschau der Antwort' })).toBeNull();
+    const knopf = screen.getByRole('button', { name: 'Vorschau mit Fußzeile' });
+    expect(knopf).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(knopf);
     expect(screen.getByRole('region', { name: 'Vorschau der Antwort' }).textContent)
       .toBe('Hallo Anna,\nes geht los.\n\n-- \nKonfi Quest\nmoin@konfi-quest.de');
   });
@@ -177,24 +183,27 @@ describe('Vorgang aus einer Anfrage: Antworten', () => {
     expect(h.alert).toBeNull();
   });
 
-  it('Senden mit Rückfrage; Körper an den Vorgang; danach Verlauf neu, Text leer, Status „In Arbeit“', async () => {
+  it('Senden mit Rückfrage; Körper an den Vorgang; danach Verlauf neu, Text leer, Status nach „Danach“ (Vorgabe „Wartet auf Rückmeldung“)', async () => {
     await oeffnen();
     fireEvent.change(text(), { target: { value: 'Hallo Anna,\nes geht los.\n\n' } });
     fireEvent.click(senden());
-    expect(h.alert?.message).toBe('An anna@example.org: „Re: Eure Anfrage bei Konfi Quest [Anfrage 4]“ von moin@ senden?');
+    expect(h.alert?.message).toBe('An anna@example.org: „Re: Eure Anfrage bei Konfi Quest“ von moin@ senden?');
     expect(server.aufrufe('post', /antworten$/)).toHaveLength(0);
 
     const abrufeVorher = server.aufrufe('get', '/support/vorgaenge/4').length;
     await bestaetigen();
     expect(server.aufrufe('post', '/support/vorgaenge/4/antworten').map((a) => a.koerper)).toEqual([{
       text: 'Hallo Anna,\nes geht los.',
-      betreff: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 4]',
+      betreff: 'Re: Eure Anfrage bei Konfi Quest',
     }]);
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     // Das Modal schließt sich; geöffnet ist das Formular wieder leer.
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Antworten' })).toBeNull());
     await waitFor(() => expect(server.aufrufe('get', '/support/vorgaenge/4').length).toBeGreaterThan(abrufeVorher));
-    expect(await screen.findByText('In Arbeit')).toBeInTheDocument();
+    // „Danach“ (Simon, 11.10.2026, Frage 3): nach dem Senden ein PATCH mit dem Status -- Vorgabe „Wartet“.
+    // Bis dahin blieb der Vorgang auf „In Arbeit“, wie der Server ihn beim Antworten setzt.
+    expect(server.aufrufe('patch', '/support/vorgaenge/4').map((a) => a.koerper)).toEqual([{ status: 'wartet' }]);
+    expect(await screen.findByText('Wartet')).toBeInTheDocument();
     await waitFor(() => expect(mailZeilen()).toHaveLength(3));
     await antwortOeffnen();
     expect(text().value).toBe('');
@@ -208,11 +217,14 @@ describe('Vorgang aus einer Anfrage: Antworten', () => {
     await waitFor(() => expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest'));
     fireEvent.change(text(), { target: { value: 'Hallo Anna' } });
     fireEvent.click(senden());
+    // Inzwischen antwortet Anna mit eigenem Betreff hinter der Kennung, die der Server gesetzt hat.
+    server.stand.mails.push(mail(13, 4, { postfach: 'moin', von_adresse: 'anna@example.org', von_name: 'Anna Beispiel', an_adressen: ['moin@konfi-quest.de'],
+      betreff: 'AW: [Vorgang 4] Re: Termine im Advent', text: 'Und im Advent?', gesendet_am: '2026-10-03T09:30:00Z' }));
     await bestaetigen();
-    await waitFor(() => expect(mailZeilen()).toHaveLength(1));
-    // Wieder geöffnet: Der Server hat die Nummer des Vorgangs in den Betreff gesetzt.
+    await waitFor(() => expect(mailZeilen()).toHaveLength(2));
+    // Wieder geöffnet: der Vorschlag aus dem neuen Verlauf -- der Kern ohne Kennung und Vorsilben.
     await antwortOeffnen();
-    await waitFor(() => expect(betreff().value).toBe('Re: Eure Anfrage bei Konfi Quest [Vorgang 4]'));
+    await waitFor(() => expect(betreff().value).toBe('Re: Termine im Advent'));
 
     fireEvent.change(betreff(), { target: { value: 'Termine im November' } });
     fireEvent.change(text(), { target: { value: 'Noch etwas' } });

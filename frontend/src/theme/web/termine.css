@@ -236,3 +236,86 @@
   justify-content: flex-start;
 }
 
+/* --- g1-event: Event anlegen, bearbeiten und kopieren (WebEventDialog) --- */
+/* Ein Zeitfenster: Start, Ende, Plaetze und Entfernen in einer Zeile, die
+   Nummer als Legende im Rahmen. */
+.web-zeitfenster {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  margin: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-knopf);
+}
+
+.web-zeitfenster__titel {
+  padding: 0 var(--app-abstand-mini);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+/* Ein Zeitfenster an einem anderen Tag als das Event: der Tag ueber die
+   ganze Zeile, in der Farbe einer Warnung. */
+.web-zeitfenster__tag {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-warnung);
+}
+
+/* Ein einzelnes Feld, wo sonst zwei nebeneinander stehen: halbe Breite statt
+   ueber die ganze Zeile gezogen. */
+.web-event-halb {
+  width: calc((100% - var(--app-abstand-mittel)) / 2);
+  min-width: 0;
+}
+
+/* Eine Meldung beim Speichern steht in der Knopfleiste, die beim Scrollen
+   unten im Bild bleibt (web-ansicht.css), ueber den Knoepfen. */
+.web-event-meldung {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+/* --- Antraege: Dialoge „Aktivität prüfen" und „Aktivität melden" (11.10.2026) --- */
+/* Das Nachweisfoto im Dialog: in seiner Spalte, nie hoeher als der Platz im
+   Fenster (ein Hochformat-Foto schob sonst die Entscheidung aus dem Blick). */
+.web-antrag-foto {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+}
+
+.web-antrag-foto img {
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+}
+
+.web-antrag-foto__titel {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  margin: 0;
+  font-size: var(--app-text-standard);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+/* Beim Melden: die Vorschau des gewaehlten Fotos, kleiner. */
+.web-antrag-foto--vorschau img {
+  max-height: 160px;
+  border-radius: var(--app-radius-klein);
+}
+
+.web-antrag-foto__knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+}

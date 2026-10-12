@@ -19,7 +19,6 @@ import { useApp } from '../../../contexts/AppContext';
 import api from '../../../services/api';
 import { trackHandlung, losungBibelMesswert } from '../../../services/analytics';
 import type { ChallengeMark } from '../../../types/challenges';
-import { setUser as setTokenStoreUser } from '../../../services/tokenStore';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import { SectionHeader } from '../../shared';
@@ -30,6 +29,9 @@ import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
 import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
 import ChangeEmailModal from '../../shared/ChangeEmailModal';
+import { useNeueEmailUebernehmen } from '../../shared/useEmailAendern';
+import WebEmailAendern from '../../shared/web/konto/WebEmailAendern';
+import WebPasswortAendern from '../../shared/web/konto/WebPasswortAendern';
 import DeleteAccountModal from '../../shared/DeleteAccountModal';
 import BibleTranslationModal, { getTranslationName } from '../../shared/BibleTranslationModal';
 import SpiritFooter from '../../shared/SpiritFooter';
@@ -104,7 +106,7 @@ interface ProfileViewProps {
 }
 
 const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presentingElement, pageRef }) => {
-  const { user, setUser, setError, signOut } = useApp();
+  const { user, setError, signOut } = useApp();
   const [presentAlert] = useIonAlert();
   // Browser ab 992 px: die Web-Fassung (web/WebKonfiProfil), zweispaltig.
   const breit = useBreitesLayout();
@@ -220,25 +222,21 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     });
   };
 
+  // Nach einer neuen Adresse: Profil neu laden, dann die Adresse in den
+  // Context und den TokenStore. Befund M9: Ohne diese Aktualisierung blieb
+  // die alte Adresse im User-Context und im TokenStore stehen, bis man sich
+  // neu anmeldete. App-Modal und Web-Dialog gleich.
+  const emailUebernehmen = useNeueEmailUebernehmen(onReload);
+  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail und Passwort einen
+  // eigenen Dialog statt des App-Modals.
+  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | null>(null);
+
   // Modal with useIonModal Hook for Email Edit
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
     onClose: () => dismissEmailModal(),
     onSuccess: async () => {
       dismissEmailModal();
-      onReload();
-      // Befund M9: Ohne diese Aktualisierung blieb die alte Adresse im
-      // User-Context und im TokenStore stehen, bis man sich neu anmeldete.
-      // Teamer- und Leitungs-Profil machen es seit jeher so.
-      try {
-        const response = await api.get('/auth/me');
-        if (user) {
-          const updatedUser = { ...user, email: response.data.email };
-          await setTokenStoreUser(updatedUser);
-          setUser(updatedUser);
-        }
-      } catch (err) {
-        console.error('Error refreshing user:', err);
-      }
+      await emailUebernehmen();
     },
     // initialEmail wird nicht mehr benötigt - Modal lädt selbst vom Server
     variante: 'purple'
@@ -356,8 +354,8 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           onRueckblick={openWrapped}
           onPunkte={() => presentPointsModal({ presentingElement: seite() })}
           onTour={() => setShowOnboarding(true)}
-          onEmail={() => presentEmailModal({ presentingElement: seite() })}
-          onPasswort={() => presentPasswordModal({ presentingElement: seite() })}
+          onEmail={() => setWebDialog('email')}
+          onPasswort={() => setWebDialog('passwort')}
           onUebersetzung={() => presentBibleModal({ presentingElement: seite() })}
           onCache={handleClearMediaCache}
           onAbmelden={handleLogout}
@@ -373,6 +371,16 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         )}
         {showUpdateWalkthrough && <KonfiUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
         {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="konfi" onClose={() => setShowMitmachenErklaerung(false)} />}
+        {webDialog === 'email' && (
+          <WebEmailAendern
+            initialEmail={profile.email || user?.email || ''}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); void emailUebernehmen(); }}
+          />
+        )}
+        {webDialog === 'passwort' && (
+          <WebPasswortAendern onSchliessen={() => setWebDialog(null)} onGespeichert={() => setWebDialog(null)} />
+        )}
       </>
     );
   }

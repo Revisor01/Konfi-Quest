@@ -1,10 +1,13 @@
 // Kategorien, Level, Zertifikate und Jahrgaenge in der Web-Fassung, gerendert
 // (docs/planung/web-alle-bereiche.md, Entscheidung 6): Tabellen bzw. Kacheln mit
 // Anlegen, Bearbeiten und Loeschen in der Zeile. Die Seiten halten Daten,
-// Rechte und Fenster; geprueft wird, dass die Web-Fassung dieselben Fenster
+// Rechte und Fenster; geprueft wird, dass die Web-Fassung die richtigen Fenster
 // mit den richtigen Werten oeffnet, dieselben Rueckfragen stellt, die Rechte
 // einhaelt (Anlegen von Jahrgaengen nur die Gemeindeleitung) und dass die
-// schmale Darstellung der App bleibt.
+// schmale Darstellung der App bleibt. Kategorie, Level und Zertifikat oeffnen
+// seit 11.10.2026 einen eigenen Dialog statt des App-Modals (Simon: „Web
+// braucht eigene kompaktere Modale überall"); Felder, Pruefen und Speichern
+// dieser Dialoge prueft webStammdatenDialoge.test.tsx.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -117,15 +120,17 @@ describe('Kategorien (Web)', () => {
     expect(zelle(z[2], 1)).toHaveTextContent('Aufbauen, Backen, Helfen');
   });
 
-  it('Bearbeiten (Name und Knopf) und "Neue Kategorie" oeffnen das Fenster der App mit der Kategorie', () => {
+  it('Bearbeiten (Name und Knopf) und "Neue Kategorie" oeffnen den Dialog der Web-Fassung mit der Kategorie, nicht das Fenster der App', () => {
     render(<AdminCategoriesPage />);
     fireEvent.click(erster('Ausflug bearbeiten'));
-    expect(fenster()).toHaveLength(1);
-    expect((fenster()[0].komponente as { name: string }).name).toBe('CategoryModal');
-    expect(fenster()[0].props.category).toEqual(KATEGORIEN[1]);
+    const bearbeiten = screen.getByRole('dialog', { name: 'Kategorie bearbeiten' });
+    expect(within(bearbeiten).getByLabelText('Name')).toHaveValue('Ausflug');
+    expect(within(bearbeiten).getByLabelText('Beschreibung')).toHaveValue('');
+    fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Neue Kategorie' }));
-    expect(fenster()).toHaveLength(2);
-    expect(fenster()[1].props.category).toBeNull();
+    expect(within(screen.getByRole('dialog', { name: 'Neue Kategorie' })).getByLabelText('Name')).toHaveValue('');
+    expect(fenster()).toEqual([]);
   });
 
   it('Loeschen fragt wie in der App nach und ruft erst danach die Route; danach wird die Liste neu geladen', async () => {
@@ -203,14 +208,27 @@ describe('Level (Web)', () => {
     expect((zelle(z[2], 0).querySelector('.web-symbol') as HTMLElement).style.background).toBe('');
   });
 
-  it('Bearbeiten und "Neues Level" oeffnen das Fenster der App; beim Anlegen ohne Level', () => {
+  it('Bearbeiten und "Neues Level" oeffnen den Dialog der Web-Fassung, nicht das Fenster der App; beim Anlegen leer', () => {
     render(<AdminLevelsPage />);
     fireEvent.click(erster('Fleißig bearbeiten'));
-    expect(fenster()[0].komponente).toBe(LevelManagementModal);
-    expect(fenster()[0].props.level).toEqual(LEVELS[1]);
+    const bearbeiten = screen.getByRole('dialog', { name: 'Level bearbeiten' });
+    expect(within(bearbeiten).getByLabelText('Titel')).toHaveValue('Fleißig');
+    expect(within(bearbeiten).getByLabelText('Benötigte Punkte')).toHaveValue(12);
+    fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Neues Level' }));
-    expect(fenster()[1].komponente).toBe(LevelManagementModal);
-    expect(fenster()[1].props.level).toBeUndefined();
+    const neu = screen.getByRole('dialog', { name: 'Neues Level' });
+    expect(within(neu).getByLabelText('Titel')).toHaveValue('');
+    expect(within(neu).getByLabelText('Benötigte Punkte')).toHaveValue(0);
+    expect(fenster()).toEqual([]);
+  });
+
+  it('schmal oeffnen Bearbeiten und Anlegen weiter das Fenster der App', () => {
+    h.breit = false;
+    render(<AdminLevelsPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Neues Level anlegen' }));
+    expect(fenster()[0].komponente).toBe(LevelManagementModal);
+    expect(fenster()[0].props.level).toBeUndefined();
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('Loeschen fragt nach dem Titel und ruft erst danach die Route', async () => {
@@ -251,15 +269,18 @@ describe('Zertifikate (Web)', () => {
     expect(within(kacheln[1]).getByRole('button', { name: 'Erste-Hilfe-Kurs löschen' })).toBeInTheDocument();
   });
 
-  it('Bearbeiten und "Neues Zertifikat" oeffnen das Fenster der App mit dem Zertifikat', () => {
+  it('Bearbeiten und "Neues Zertifikat" oeffnen den Dialog der Web-Fassung mit dem Zertifikat, nicht das Fenster der App', () => {
     render(<AdminCertificatesPage />);
-    // Name und Knopf der Kachel heissen gleich, beide oeffnen dasselbe Fenster.
+    // Name und Knopf der Kachel heissen gleich, beide oeffnen denselben Dialog.
     expect(screen.getAllByRole('button', { name: 'JuLeiCa bearbeiten' })).toHaveLength(2);
     fireEvent.click(erster('JuLeiCa bearbeiten'));
-    expect((fenster()[0].komponente as { name: string }).name).toBe('CertificateModal');
-    expect(fenster()[0].props.certificateType).toEqual(ZERTIFIKATE[0]);
+    const bearbeiten = screen.getByRole('dialog', { name: 'Zertifikat bearbeiten' });
+    expect(within(bearbeiten).getByLabelText('Name')).toHaveValue('JuLeiCa');
+    expect(within(bearbeiten).getByRole('button', { name: 'Band' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Neues Zertifikat' }));
-    expect(fenster()[1].props.certificateType).toBeNull();
+    expect(within(screen.getByRole('dialog', { name: 'Neues Zertifikat' })).getByLabelText('Name')).toHaveValue('');
+    expect(fenster()).toEqual([]);
   });
 
   it('Loeschen fragt nach dem Namen und ruft erst danach die Route', async () => {
@@ -337,13 +358,18 @@ describe('Jahrgaenge (Web)', () => {
     expect(zelle(zeilen('Jahrgänge')[0], 0)).toHaveTextContent('Jahrgang 2027');
   });
 
-  it('Bearbeiten und "Neuer Jahrgang" oeffnen das Fenster der App mit dem Jahrgang', () => {
+  // Seit 11.10.2026 ein eigener Dialog statt des App-Fensters
+  // (WebJahrgangDialog; Speichern, Pruefen und Offline in webJahrgangDialog.test.tsx).
+  it('Bearbeiten und "Neuer Jahrgang" oeffnen den Dialog mit dem Jahrgang -- nicht das Fenster der App', async () => {
     render(<AdminJahrgaengeePage />);
     fireEvent.click(erster('Jahrgang 2026 bearbeiten'));
-    expect((fenster()[0].komponente as { name: string }).name).toBe('JahrgangModal');
-    expect(fenster()[0].props.jahrgang).toEqual(JAHRGAENGE[1]);
-    fireEvent.click(screen.getByRole('button', { name: 'Neuer Jahrgang' }));
-    expect(fenster()[1].props.jahrgang).toBeNull();
+    const bearbeiten = screen.getByRole('dialog', { name: 'Jahrgang bearbeiten' });
+    expect((within(bearbeiten).getByLabelText('Name') as HTMLInputElement).value).toBe('Jahrgang 2026');
+    expect((within(bearbeiten).getByRole('combobox', { name: 'Ziel Gottesdienst' }) as HTMLSelectElement).value).toBe('12');
+    fireEvent.click(within(bearbeiten).getByRole('button', { name: 'Abbrechen' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Neuer Jahrgang' })); });
+    expect((within(screen.getByRole('dialog', { name: 'Neuer Jahrgang' })).getByLabelText('Name') as HTMLInputElement).value).toBe('');
+    expect(fenster()).toEqual([]);
   });
 
   it('Loeschen: erst die Zahlen vom Server in der Rueckfrage, dann die Route', async () => {

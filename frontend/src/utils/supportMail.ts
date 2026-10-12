@@ -17,11 +17,15 @@ import type {
   MailBausteinDaten,
   MailEmpfaenger,
   MailNachricht,
+  MailVerlauf,
   MailZaehler,
   Platzhalter,
   Postfach,
 } from '../types/support';
 import { datumKurz } from './dateUtils';
+// Nur Typen: supportVorgaenge liest zur Laufzeit von hier, nicht umgekehrt.
+import type { Kennzahl, StandTon } from './supportVorgaenge';
+import { MAIL_ARCHIV_SATZ, kennzahlLabel } from '../seiten/supportDetail';
 
 // --- Postfaecher -------------------------------------------------------------
 
@@ -188,16 +192,35 @@ export function auszug(text: string | null | undefined, laenge = 140): string {
 
 // --- Betreff, Vorschau, Koerper ------------------------------------------------
 
-/** Antwort-Vorsilben: "Re:", "AW:", "Antw:", "Re[2]:" -- auch mehrfach hintereinander. */
-const ANTWORT_VORSILBEN = /^\s*(?:(?:re|aw|antw)(?:\[\d+\])?\s*:\s*)+/i;
+/**
+ * Antwort- und Weiterleitungs-Vorsilben am Anfang: „Re:", „AW:", „Antw:",
+ * „WG:", „FW:", „Fwd:", „Re[2]:" -- auch mehrfach hintereinander. Dieselbe
+ * Liste wie der Server (backend/services/mailVersand.js, antwortBetreff).
+ */
+const ANTWORT_VORSILBEN = /^\s*(?:(?:re|aw|antw|wg|fw|fwd)(?:\[\d+\])?\s*:\s*)+/i;
+
+/** Die Kennungen, die der Server in den Betreff setzt: „[Vorgang 4]", „[Anfrage 2]", „[Gemeinde 7]". */
+const KENNUNGEN = /\s*\[(?:Vorgang|Anfrage|Gemeinde)\s+\d+\]/gi;
 
 /**
- * Betreff einer Antwort: „Re: " vor den Betreff der letzten Mail, ohne
- * doppelte Vorsilbe („AW: Re: Frage" -> „Re: Frage"). Leer bleibt leer --
- * dann setzt der Server den Betreff.
+ * Der Kern eines Betreffs: ohne die Kennungen des Servers und ohne die
+ * Vorsilben. Erst fallen die Kennungen, dann die Vorsilben -- sonst bliebe
+ * stehen, was hinter „AW: [Vorgang 2]" kommt („Re: AW: Re: …", Fehler vorab 1
+ * in docs/planung/support-detailseiten.md). Leer bleibt leer. Die eine Stelle
+ * für Gespräche (utils/mailGespraeche.ts) und Antworten.
+ */
+export function betreffKern(betreff: string | null | undefined): string {
+  return (betreff ?? '').replace(KENNUNGEN, '').replace(ANTWORT_VORSILBEN, '').trim();
+}
+
+/**
+ * Betreff einer Antwort: „Re: " vor den Kern des Betreffs der letzten Mail
+ * („AW: [Vorgang 2] Re: Frage" -> „Re: Frage"). Die Kennung hängt der Server
+ * beim Senden an (betreffMitKennung). Leer bleibt leer -- dann setzt der
+ * Server den Betreff.
  */
 export function standardBetreff(betreff: string | null | undefined): string {
-  const kern = (betreff ?? '').replace(ANTWORT_VORSILBEN, '').trim();
+  const kern = betreffKern(betreff);
   return kern ? `Re: ${kern}` : '';
 }
 
@@ -476,10 +499,44 @@ export function empfaengerLesen(daten: unknown): MailEmpfaenger[] {
   return raus;
 }
 
+/**
+ * Woher eine mögliche Adresse stammt -- die Schlüssel des Servers, in dieser
+ * Reihenfolge auch der Vorrang (backend/routes/supportVorgaenge.js,
+ * empfaengerFuerVorgang; backend/routes/supportMail.js, empfaengerLaden).
+ */
+export type EmpfaengerHerkunft = 'absender' | 'kontakt' | 'anfrage' | 'leitung' | 'verlauf';
+
+/** Das lesbare Etikett je Herkunft, für App und Web gleich. */
+export const EMPFAENGER_ETIKETT: Readonly<Record<EmpfaengerHerkunft, string>> = {
+  absender: 'schrieb uns',
+  kontakt: 'Kontakt aus dem Formular',
+  anfrage: 'aus der Anfrage',
+  leitung: 'Gemeindeleitung',
+  verlauf: 'aus früheren Mails',
+};
+
+/** Ein Schlüssel, wie der Server ihn schickt: nur Kleinbuchstaben, Ziffern und Unterstrich. */
+const ROHER_SCHLUESSEL = /^[a-z0-9_]+$/;
+
+/**
+ * Das Etikett zur Herkunft einer Adresse. Ein bekannter Schlüssel wird zum
+ * Etikett („verlauf" -> „aus früheren Mails"); ein unbekannter Schlüssel steht
+ * nie roh da (null). Ein lesbarer Text -- ein älterer Server, ein Etikett, das
+ * die Seite selbst setzt -- bleibt unverändert. Bis 11.10.2026 stand der
+ * Schlüssel roh in der Empfängerwahl (Fehler vorab 4).
+ */
+export function empfaengerEtikett(herkunft: string | null): string | null {
+  const wert = herkunft?.trim();
+  if (!wert) return null;
+  if (Object.prototype.hasOwnProperty.call(EMPFAENGER_ETIKETT, wert)) return EMPFAENGER_ETIKETT[wert as EmpfaengerHerkunft];
+  return ROHER_SCHLUESSEL.test(wert) ? null : wert;
+}
+
 /** "Anna Beispiel <anna@example.org> · Gemeindeleitung" */
 export function empfaengerText(e: MailEmpfaenger): string {
   const wer = e.name ? `${e.name} <${e.adresse}>` : e.adresse;
-  return e.herkunft ? `${wer} · ${e.herkunft}` : wer;
+  const etikett = empfaengerEtikett(e.herkunft);
+  return etikett ? `${wer} · ${etikett}` : wer;
 }
 
 /** Anzeigename einer Gemeinde. */
@@ -488,4 +545,83 @@ export const gemeindeName = (g: GemeindeKurz): string => (g.display_name?.trim()
 /** Gemeinden zur Auswahl, nach Namen. */
 export function gemeindenSortiert(gemeinden: readonly GemeindeKurz[]): GemeindeKurz[] {
   return [...gemeinden].sort((a, b) => gemeindeName(a).localeCompare(gemeindeName(b), 'de'));
+}
+
+// --- Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E) ----------
+
+/** GET /support/mail/nachrichten/:id mit den Feldern, die der Server zusätzlich liefert. */
+export type MailMitVorgang = MailVerlauf & { vorgang_id?: number | null; archiviert_am?: string | null };
+
+/**
+ * Liegt die Mail im Posteingang? Nur, wenn sie weder einem Vorgang noch einer
+ * Anfrage noch einer Gemeinde zugeordnet ist -- dieselbe Regel wie der Server
+ * (backend/routes/supportMail.js, IM_POSTEINGANG_SQL) und istNichtZugeordnet
+ * (utils/supportWeb.ts). Sonst lehnt der Server Archivieren und Löschen mit
+ * 409 ab.
+ */
+export function mailImPosteingang(m: Pick<MailNachricht, 'anfrage_id' | 'organization_id'> & { vorgang_id?: number | null }): boolean {
+  return (m.vorgang_id ?? null) === null && m.anfrage_id === null && m.organization_id === null;
+}
+
+/**
+ * Wohin eine Mail weiterleitet, die nicht im Posteingang liegt: in ihren
+ * Vorgang mit der Mail offen (`?mail=`), ältere Server nennen nur Anfrage
+ * oder Gemeinde. Im Posteingang: null.
+ */
+export function mailWeiterleitung(m: { id: number; vorgang_id?: number | null; anfrage_id: number | null; organization_id: number | null }): string | null {
+  if (m.vorgang_id) return `/admin/support/vorgaenge/${m.vorgang_id}?mail=${m.id}`;
+  if (m.anfrage_id !== null) return `/admin/support/anfragen/${m.anfrage_id}`;
+  if (m.organization_id !== null) return `/admin/support/vorgaenge?gemeinde=${m.organization_id}`;
+  return null;
+}
+
+/** Der Stand einer Mail: was die Detailseite zeigt und anbietet. */
+export interface MailStandAngabe {
+  imPosteingang: boolean;
+  archiviert: boolean;
+  /** Nur im Archiv: der Satz dazu. */
+  satz: string | null;
+  ton: StandTon | null;
+  /** Im Posteingang ist Einsortieren der Hauptknopf; sonst gibt es keinen (die Seite leitet weiter). */
+  haupt: 'einsortieren' | null;
+  neben: Array<'antworten' | 'wiederherstellen'>;
+  archivierbar: boolean;
+  loeschbar: boolean;
+  weiterleitung: string | null;
+}
+
+/**
+ * Der Stand einer Mail. Im Posteingang: Einsortieren als Hauptknopf,
+ * Antworten daneben; im Archiv Wiederherstellen daneben und der Satz, dass
+ * Einsortieren sie zurückholt (der Server holt sie dabei selbst aus dem
+ * Archiv). Archivieren und Löschen nur im Posteingang -- für Mails eines
+ * Vorgangs antwortet der Server 409 (Fehler vorab 2); die leiten weiter.
+ */
+export function mailStand(m: MailMitVorgang, _o: { jetzt?: Date } = {}): MailStandAngabe {
+  const imPosteingang = mailImPosteingang(m);
+  const archiviert = !!m.archiviert_am;
+  if (!imPosteingang) {
+    return {
+      imPosteingang, archiviert, satz: null, ton: null, haupt: null, neben: [], archivierbar: false, loeschbar: false,
+      weiterleitung: mailWeiterleitung(m),
+    };
+  }
+  return {
+    imPosteingang,
+    archiviert,
+    satz: archiviert ? MAIL_ARCHIV_SATZ(datumKurz(m.archiviert_am)) : null,
+    ton: archiviert ? 'hinweis' : null,
+    haupt: 'einsortieren',
+    neben: archiviert ? ['wiederherstellen'] : ['antworten'],
+    archivierbar: !archiviert,
+    loeschbar: true,
+    weiterleitung: null,
+  };
+}
+
+/** Die drei Zahlen einer Mail: Mails im Faden · Neu · Anhänge. */
+export function mailKennzahlen(faden: readonly MailNachricht[], neu: number): [Kennzahl, Kennzahl, Kennzahl] {
+  const zahl = (schluessel: Kennzahl['schluessel'], n: number): Kennzahl => ({ schluessel, label: kennzahlLabel(schluessel, n), wert: String(n), zahl: n });
+  const anhaenge = faden.reduce((summe, m) => summe + (m.anhaenge?.length ?? 0), 0);
+  return [zahl('mails', faden.length), zahl('neu', neu), zahl('anhaenge', anhaenge)];
 }

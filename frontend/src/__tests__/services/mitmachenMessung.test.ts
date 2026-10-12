@@ -80,9 +80,11 @@ describe('Aktivität eingereicht', () => {
     expect(p.data).toEqual({ mit_foto: true });
   });
 
+  // Seit dem 11.10.2026 melden Konfis und Team über useAktivitaetMelden --
+  // dieselbe Logik für die Modale der App und den Dialog im Browser; die
+  // Route kommt aus MELDE_ROLLEN (konfi: /konfi/requests, team: /teamer/requests).
   it.each([
-    ['src/components/konfi/modals/ActivityRequestModal.tsx', "api.post('/konfi/requests', requestData)"],
-    ['src/components/teamer/modals/TeamerActivityRequestModal.tsx', "api.post('/teamer/requests', requestData)"],
+    ['src/components/shared/useAktivitaetMelden.ts', 'api.post(routen.antrag, requestData)'],
   ])('%s meldet erst NACH der erfolgreichen Antwort', (datei, anfrage) => {
     const quelle = lies(datei);
     const posAnfrage = quelle.indexOf(`await ${anfrage}`);

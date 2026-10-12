@@ -7,8 +7,8 @@
 // (10.10.2026); hier stehen nur Spalten, Karte und Daten.
 //
 // Daten und Fenster kommen von der Seite (AdminLevelsPage): Das Formular ist
-// dasselbe Fenster wie in der App (LevelManagementModal), das Loeschen fragt
-// dieselbe Rueckfrage. Wie dort darf jede Leitung anlegen, bearbeiten und
+// ein eigener Dialog (WebLevelDialog, 11.10.2026) mit der Logik des
+// App-Modals (useLevelFormular), das Loeschen fragt dieselbe Rueckfrage. Wie dort darf jede Leitung anlegen, bearbeiten und
 // loeschen -- der Server haelt die Rechte.
 
 import React from 'react';

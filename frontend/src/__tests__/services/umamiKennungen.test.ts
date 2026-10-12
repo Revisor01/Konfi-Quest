@@ -240,7 +240,7 @@ describe('Die vier Datei-Stellen geben je einen eigenen Ort mit', () => {
     ['src/components/chat/useChatDateien.ts', 'chat-datei'],
     ['src/components/teamer/pages/TeamerMaterialPage.tsx', 'material-teamer-liste'],
     ['src/components/teamer/pages/TeamerMaterialDetailPage.tsx', 'material-teamer-detail'],
-    ['src/components/admin/modals/MaterialFormModal.tsx', 'material-admin-formular'],
+    ['src/components/admin/modals/useMaterialFormular.ts', 'material-admin-formular'],
   ];
 
   it.each(stellen)('%s meldet den Ort %s', (datei, ort) => {
@@ -277,7 +277,7 @@ describe('Nutzertexte bleiben Nutzertexte', () => {
       'src/hooks/useDateiOeffnen.ts',
       'src/components/teamer/pages/TeamerMaterialPage.tsx',
       'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
-      'src/components/admin/modals/MaterialFormModal.tsx',
+      'src/components/admin/modals/useMaterialFormular.ts',
     ]) {
       const quelle = lies(datei);
       expect(quelle).not.toMatch(/setError\('Fehler beim Öffnen der Datei[^']*(HTTP|http-|\[|\()/);

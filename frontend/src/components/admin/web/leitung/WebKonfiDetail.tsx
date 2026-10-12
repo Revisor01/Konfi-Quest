@@ -24,7 +24,9 @@
 //
 // Daten und Aktionen kommen von der Seite (KonfiDetailView): Sie laedt, haelt
 // den Zustand und oeffnet dieselben Fenster und Rueckfragen wie in der App
-// (Aktivitaet, Bonus, Zertifikat, Bearbeiten, Passwort, Foto, Rueckblick).
+// (Zertifikat, Bearbeiten, Passwort, Foto, Rueckblick). Aktivitaet und
+// Bonuspunkte gehen seit 11.10.2026 in eigenen Dialogen der Web-Fassung auf
+// (WebAktivitaetDialog, WebBonusDialog) -- mit der Logik der App-Modale.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';

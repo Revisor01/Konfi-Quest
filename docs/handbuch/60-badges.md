@@ -295,7 +295,7 @@ So viele Aktivitäten oder Events innerhalb der letzten X Wochen.
 *Beispiel:* Wert 2 + 4 Wochen → zwei Einträge in den letzten vier Wochen.
 
 Das Fenster wandert immer mit — es ist kein fester Zeitraum, sondern „ab jetzt
-rückwärts". Einstellbar sind 1 bis 26 Wochen.
+rückwärts". Einstellbar sind 1 bis 26 Wochen; ohne eigene Wahl gelten 4 Wochen.
 
 #### Serie
 
@@ -407,9 +407,10 @@ einträgt.
 Beim Bearbeiten eines Badges gibt es den Knopf „Badge neu prüfen". Er
 ist für den Sonderfall gedacht, dass sich die **Datenlage** geändert hat, nicht
 das Badge selbst — etwa nach einer nachträglich korrigierten Anwesenheit.
-Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push. Danach steht dort,
-wie viele Personen geprüft wurden und wie viele das Badge neu bekommen
-haben. Geprüft werden alle, die in deiner Gemeinde die Zielgruppe des Badges
+Die Vergabe läuft dabei **ohne** Mitteilung und ohne Push. Danach steht da,
+wie viele das Badge neu bekommen haben, oder „Alle Badges sind aktuell" — in
+der App als Meldung oben, im Browser im Fenster unter dem Knopf. Geprüft
+werden alle, die in deiner Gemeinde die Zielgruppe des Badges
 sind — auch wer dort nur zusätzlich zu einer anderen Gemeinde mitmacht.
 
 Zwei Dinge, die dabei auffallen können: Nach einem Lauf ist der Knopf für die

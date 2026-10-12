@@ -1,12 +1,13 @@
-/* Mails als Gespräche (components/support/MailGespraeche.tsx), in App und
-   Web derselbe Baustein. Nur Tokens -- der Dunkelmodus kommt über sie.
-   Keine farbigen Kanten vor den Mails (Simon, 11.10.2026): Ein- und
-   ausgehend unterscheidet der Kreis, ausgehende tragen dazu „Gesendet". */
+/* Der flache Verlauf (components/support/MailGespraeche.tsx), in App und Web
+   derselbe Baustein. Nur Tokens -- der Dunkelmodus kommt über sie.
+   Keine Treppe und keine farbigen Kanten vor den Mails (Simon, 11.10.2026):
+   Ein- und ausgehend unterscheidet der Kreis, ausgehende tragen dazu
+   „Gesendet". Jede Zeile geht über die volle Breite. */
 
 .mail-gespraeche {
   display: flex;
   flex-direction: column;
-  gap: var(--app-abstand-mittel);
+  gap: var(--app-abstand-eng);
   min-width: 0;
 }
 
@@ -24,64 +25,52 @@
   color: var(--app-text-system);
 }
 
-/* --- Ein Gespräch: eine Karte, die Mails darin als Zeilen --- */
-.mail-gespraech {
-  background: var(--app-surface-card);
-  border: 1px solid var(--app-border-soft);
-  border-radius: var(--app-radius-karte);
-  overflow: hidden;
-}
-
-.mail-gespraech__kopf {
-  display: flex;
-  align-items: center;
-  gap: var(--app-abstand-eng);
-  padding: var(--app-abstand-mittel) var(--app-abstand-basis) var(--app-abstand-eng);
-}
-
-.mail-gespraech__betreff {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--app-text-betont);
-  font-weight: var(--app-schrift-halbfett);
-  color: var(--app-text-emphasis);
-  overflow-wrap: anywhere;
-}
-
-.mail-gespraech__zahl {
-  flex-shrink: 0;
-  min-width: 22px;
-  padding: 0 var(--app-abstand-kompakt);
-  border-radius: var(--app-radius-band);
-  background: var(--app-surface-muted);
-  color: var(--app-text-system);
-  font-size: var(--app-text-klein);
-  font-weight: var(--app-schrift-halbfett);
-  line-height: 20px;
-  text-align: center;
-}
-
-.mail-gespraech__liste {
+/* --- Der Verlauf: eine Karte, darin jede Nachricht als Zeile --- */
+.mail-verlauf {
   list-style: none;
   margin: 0;
   padding: 0;
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-karte);
 }
 
-/* --- Eine Mail --- */
-.mail-zeile {
+.mail-verlauf > li + li {
   border-top: 1px solid var(--app-border-soft);
 }
 
-/* Antworten stehen eingerückt unter ihrem Vorgänger -- ohne Linie davor. */
-.mail-zeile--tiefe-1 { padding-left: var(--app-abstand-gross); }
-.mail-zeile--tiefe-2 { padding-left: var(--app-abstand-riesig); }
-.mail-zeile--tiefe-3 { padding-left: calc(var(--app-abstand-riesig) + var(--app-abstand-gross)); }
+.mail-verlauf > li:first-child {
+  border-top-left-radius: var(--app-radius-karte);
+  border-top-right-radius: var(--app-radius-karte);
+}
+
+.mail-verlauf > li:last-child {
+  border-bottom-left-radius: var(--app-radius-karte);
+  border-bottom-right-radius: var(--app-radius-karte);
+}
+
+/* Unter der jüngsten Mail: Antwortzeile bzw. Editor. */
+.mail-verlauf__nachher {
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
+}
+
+/* --- Eine Mail --- */
+.mail-zeile--hervorgehoben {
+  background: rgba(var(--app-color-warning-rgb), 0.12);
+}
+
+.mail-zeile__leiste {
+  display: flex;
+  align-items: flex-start;
+  min-width: 0;
+}
 
 .mail-zeile__kopf {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: flex-start;
   gap: var(--app-abstand-mittel);
-  width: 100%;
   margin: 0;
   padding: var(--app-abstand-mittel) var(--app-abstand-basis);
   border: 0;
@@ -154,6 +143,22 @@ button.mail-zeile__kopf:focus-visible {
   font-weight: var(--app-schrift-fett);
 }
 
+/* Das Konto einer ausgehenden Mail, klein neben „Support". Es bekommt nur den
+   Platz, der übrig ist (Grundbreite 0, wächst bis zu seiner vollen Breite),
+   und kürzt deshalb zuerst; „Support" kürzt erst, wenn vom Konto nichts mehr
+   steht. Bis 12.10.2026 kürzten beide nach ihrer Breite, und in der App stand
+   bei 390 px „S…" da (Rechnung und Messung: mailZeileKonto.test.ts). */
+.mail-zeile__konto {
+  flex: 1 1 0;
+  max-width: max-content;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-system);
+}
+
 .mail-zeile__zeit {
   margin-left: auto;
   flex-shrink: 0;
@@ -202,6 +207,12 @@ button.mail-zeile__kopf:focus-visible {
   color: var(--app-weiss);
 }
 
+/* Formular bzw. Anfrage am Anfang. */
+.mail-marke--anfang {
+  background: var(--app-surface-muted);
+  color: var(--app-text-body);
+}
+
 /* Der aufgeklappte Inhalt steht unter dem Absender, nicht unter dem Kreis. */
 .mail-zeile__inhalt {
   padding: 0 var(--app-abstand-basis) var(--app-abstand-basis) calc(var(--app-abstand-riesig) + var(--app-abstand-weit));
@@ -210,8 +221,15 @@ button.mail-zeile__kopf:focus-visible {
   line-height: 1.5;
 }
 
+.mail-zeile__bezug {
+  margin: 0 0 var(--app-abstand-eng);
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-system);
+}
+
 .mail-zeile__betreff {
   margin: 0 0 var(--app-abstand-eng);
+  font-size: var(--app-text-hinweis);
   font-weight: var(--app-schrift-halbfett);
   color: var(--app-text-emphasis);
   overflow-wrap: anywhere;
@@ -223,9 +241,157 @@ button.mail-zeile__kopf:focus-visible {
   overflow-wrap: anywhere;
 }
 
+/* Der Anfang, sobald der Support geantwortet hat: zwei Zeilen und „ganz lesen".
+   Die Absätze fließen dabei zusammen -- sonst füllten „Hallo Support," und
+   die Leerzeile danach die zwei Zeilen (11.10.2026, im Browser gemessen). */
+.mail-text--kurz {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
 .mail-text--leer {
   font-style: italic;
   color: var(--app-text-system);
+}
+
+/* --- Stapel: „N frühere Mails" --- */
+.mail-stapel__knopf {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  margin: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-basis);
+  border: 0;
+  background: var(--app-surface-soft);
+  color: var(--app-text-system);
+  font: inherit;
+  font-size: var(--app-text-hinweis);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-stapel__knopf:hover {
+  color: var(--app-text-emphasis);
+}
+
+.mail-stapel__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+.mail-stapel__punkte {
+  flex-shrink: 0;
+  width: 36px;
+  text-align: center;
+  font-weight: var(--app-schrift-fett);
+  letter-spacing: 0.1em;
+}
+
+.mail-stapel__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* --- Menü (···) an einer offenen Mail --- */
+.mail-menue {
+  position: relative;
+  flex-shrink: 0;
+  padding: var(--app-abstand-mittel) var(--app-abstand-eng) 0 0;
+}
+
+.mail-menue__knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--app-radius-kreis);
+  background: transparent;
+  color: var(--app-text-system);
+  font-size: var(--app-text-betont);
+  cursor: pointer;
+}
+
+.mail-menue__knopf:hover,
+.mail-menue__knopf[aria-expanded='true'] {
+  background: var(--app-surface-muted);
+  color: var(--app-text-emphasis);
+}
+
+.mail-menue__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.mail-menue__liste {
+  position: absolute;
+  top: 100%;
+  right: var(--app-abstand-eng);
+  z-index: 3;
+  min-width: 240px;
+  margin: var(--app-abstand-mini) 0 0;
+  padding: var(--app-abstand-mini) 0;
+  list-style: none;
+  background: var(--app-surface-card);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-knopf);
+  box-shadow: var(--app-schatten-schwebend);
+}
+
+.mail-menue__punkt {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 0;
+  background: transparent;
+  color: var(--app-text-body);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  text-align: left;
+  cursor: pointer;
+}
+
+.mail-menue__punkt:hover,
+.mail-menue__punkt:focus-visible {
+  background: var(--app-surface-soft);
+  color: var(--app-text-emphasis);
+  outline: none;
+}
+
+/* --- Kopfzeilen (Menü „Kopfzeilen zeigen") --- */
+.mail-kopfzeilen {
+  margin: 0 0 var(--app-abstand-eng);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-surface-soft);
+  font-size: var(--app-text-klein);
+  color: var(--app-text-system);
+}
+
+.mail-kopfzeilen__zeile {
+  display: flex;
+  gap: var(--app-abstand-eng);
+}
+
+.mail-kopfzeilen__zeile dt {
+  flex-shrink: 0;
+  min-width: 96px;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.mail-kopfzeilen__zeile dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* --- Zitate und Signatur: eingeklappt hinter einem leisen Knopf --- */
@@ -288,13 +454,20 @@ button.mail-zeile__kopf:focus-visible {
   color: var(--app-text-body);
 }
 
-/* Schmal (Handy): weniger Einrückung, damit der Text Platz behält. */
+/* Schmal (Handy): der Inhalt rückt nicht unter den Absender, damit der Text Platz behält. */
 @media (max-width: 520px) {
-  .mail-zeile--tiefe-1 { padding-left: var(--app-abstand-mittel); }
-  .mail-zeile--tiefe-2 { padding-left: var(--app-abstand-weit); }
-  .mail-zeile--tiefe-3 { padding-left: calc(var(--app-abstand-weit) + var(--app-abstand-mittel)); }
-
   .mail-zeile__inhalt {
     padding-left: var(--app-abstand-basis);
+  }
+}
+
+/* Der Anfang ohne zweite Zeile (die Adresse steht in der Karte „Kontakt"):
+   Der Kreis bestimmt die Höhe des Kopfs nicht, er ragt neben den Text, der
+   erst rechts von ihm beginnt. Sonst stand zwischen Namenszeile und Text eine
+   leere Zeile (27 statt 12 px, gemessen 12.10.2026). Schmal beginnt der Text
+   unter dem Kreis -- dort bleibt der Kopf, wie er ist. */
+@media (min-width: 521px) {
+  .mail-anfang--einzeilig .mail-kreis {
+    margin-bottom: calc(-1 * var(--app-abstand-basis));
   }
 }

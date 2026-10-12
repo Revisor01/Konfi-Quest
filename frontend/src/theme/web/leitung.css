@@ -849,3 +849,141 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* --- g4-material: Material anlegen, bearbeiten, ansehen (WebMaterialDialog) --- */
+/* Eine Datei im Dialog: die Zeile zum Ansehen, daneben Entfernen oder Loeschen;
+   darunter beim Laden der Balken. */
+.web-material-datei {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  min-width: 0;
+}
+
+.web-material-datei__zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+}
+
+/* Die Rueckfrage vor dem Loeschen steht in der Zeile der Datei: ein Alert der
+   App laege unter dem Dialog. */
+.web-material-rueckfrage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border: 1px solid var(--app-color-danger);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-karte);
+}
+
+.web-material-rueckfrage__text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--web-text);
+  overflow-wrap: anywhere;
+}
+
+/* Ein Link: das Feld, daneben "Entfernen" auf Hoehe des Feldes. */
+.web-material-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--app-abstand-eng);
+}
+
+/* Lade- und Sendestand in der Farbe des Materials (der Balken nimmt currentColor). */
+.web-material-fortschritt {
+  display: block;
+  color: var(--app-text-material);
+  font-size: var(--app-text-hinweis);
+}
+
+/* Eine Meldung (Pruefung, Fehler, Sendestand) steht in der Knopfleiste, ueber
+   den Knoepfen. */
+.web-material-meldung {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+/* --- g6-stammdaten: Icon-Wahl und Level-Farbe der Dialoge für Level und Zertifikat (WebSymbolWahl, WebLevelDialog, 11.10.2026) --- */
+.web-symbolwahl {
+  /* Die Farbe des gewaehlten Icons; der Dialog setzt sie (Farbe des Levels, des Teams). */
+  --web-symbolwahl-farbe: var(--ion-color-primary);
+}
+
+.web-symbolwahl__gewaehlt {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  font-weight: var(--app-schrift-mittel);
+  color: var(--web-text);
+}
+
+.web-symbolwahl__raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: var(--app-abstand-eng);
+}
+
+.web-symbolwahl__knopf {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  color: var(--web-text-leise);
+  font: inherit;
+  font-size: var(--app-text-ueberschrift);
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-symbolwahl__knopf:hover {
+  background: var(--web-hover);
+  color: var(--web-text);
+}
+
+/* Gewaehlt: weisses Icon auf der Farbe des Levels bzw. des Teams, wie in der App. */
+.web-symbolwahl__knopf[aria-pressed='true'],
+.web-symbolwahl__knopf[aria-pressed='true']:hover {
+  border-color: var(--web-symbolwahl-farbe);
+  background: var(--web-symbolwahl-farbe);
+  color: var(--app-weiss);
+}
+
+.web-symbolwahl__knopf:focus-visible,
+.web-farbwahl:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-symbolwahl__knopf[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.web-farbwahl {
+  width: 96px;
+  height: 40px;
+  padding: var(--app-abstand-mini);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+  background: var(--web-karte);
+  cursor: pointer;
+}
+
+.web-farbwahl[disabled] {
+  opacity: 0.6;
+  cursor: default;
+}

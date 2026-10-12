@@ -5,7 +5,7 @@
 
 import { wahlen } from './beschreibung';
 import { suchTreffer, suchbegriff } from '../utils/supportWeb';
-import { VORGANG_STATUS, artKurz, type Vorgang } from '../utils/supportVorgaenge';
+import { VORGANG_STATUS, artKurz, istZugeordnet, type Vorgang } from '../utils/supportVorgaenge';
 
 /** Wohin die Mail kommt. Vorgabe: ein bestehender Vorgang (useEinsortieren). */
 export const EINSORTIEREN_IN = wahlen([
@@ -14,13 +14,17 @@ export const EINSORTIEREN_IN = wahlen([
 ]);
 export const EINSORTIEREN_IN_BESCHRIFTUNG = 'Einsortieren in';
 
-type VorgangKurz = Pick<Vorgang, 'id' | 'betreff' | 'gemeinde_name' | 'art' | 'status'>;
+type VorgangKurz = Pick<Vorgang, 'id' | 'betreff' | 'gemeinde_name' | 'organization_id' | 'art' | 'status'>;
 
-/** Ein Vorgang in der Auswahl: Titel und Beschreibung, wie beide Fassungen ihn zeigen. */
+/**
+ * Ein Vorgang in der Auswahl: Titel und Beschreibung, wie beide Fassungen ihn
+ * zeigen. Die Gemeinde nur, wenn eine zugeordnet ist (istZugeordnet) --
+ * `gemeinde_name` nennt sonst den Freitext aus Formular oder Anfrage.
+ */
 export const vorgangEintrag = (v: VorgangKurz) => ({
   wert: String(v.id),
   titel: `Nr. ${v.id} · ${v.betreff || '(ohne Betreff)'}`,
-  beschreibung: `${v.gemeinde_name ?? 'Keine Gemeinde'} · ${artKurz(v.art)} · ${VORGANG_STATUS[v.status].kurz}`,
+  beschreibung: `${istZugeordnet(v) ? v.gemeinde_name ?? `Gemeinde ${v.organization_id}` : 'Keine Gemeinde'} · ${artKurz(v.art)} · ${VORGANG_STATUS[v.status].kurz}`,
 });
 
 /**

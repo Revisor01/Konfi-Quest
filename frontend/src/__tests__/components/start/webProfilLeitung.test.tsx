@@ -129,15 +129,24 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     expect(modal('ChangeRoleTitleModal')?.optionen?.presentingElement).toBe(h.seite);
   });
 
-  it('E-Mail, Passwort und Konto loeschen oeffnen die Modale in der Farbe der Leitung', async () => {
+  // Seit 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale überall")
+  // öffnen E-Mail und Passwort im Browser eigene Dialoge statt der App-Modale;
+  // Einzelheiten in start/webKontoUmschaltung und shared/webKontoDialoge.
+  it('E-Mail und Passwort öffnen die Dialoge der Web-Fassung, Konto loeschen das Modal der App', async () => {
+    h.antworten['/auth/me'] = { email: 'lena@example.org' };
     await zeige();
     expect(screen.getByRole('list', { name: 'Konto-Einstellungen' })).toHaveTextContent('E-Mail-AdresseAktuell: lena@example.org');
     fireEvent.click(knopfInZeile('E-Mail-Adresse', 'Ändern'));
-    expect(modal('ChangeEmailModal')?.props.variante).toBe('users');
+    const email = screen.getByRole('dialog', { name: 'E-Mail ändern' });
+    await waitFor(() => expect((within(email).getByLabelText('E-Mail-Adresse (optional)') as HTMLInputElement).value).toBe('lena@example.org'));
+    fireEvent.click(within(email).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(knopfInZeile('Passwort', 'Ändern'));
-    expect(modal('ChangePasswordModal')?.props.variante).toBe('users');
+    const passwort = screen.getByRole('dialog', { name: 'Passwort ändern' });
+    fireEvent.click(within(passwort).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Konto löschen' }));
     expect(modal('DeleteAccountModal')?.optionen?.presentingElement).toBe(h.seite);
+    expect(h.modale.map((m) => m.name)).toEqual(['DeleteAccountModal']);
   });
 
   it('Medien-Cache zeigt seinen Stand und leert ihn', async () => {

@@ -80,6 +80,9 @@ import { triggerPullHaptic } from '../../../utils/haptics';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { tastaturKlick } from '../../../utils/tastatur';
 import WebKonfiDetail from '../web/leitung/WebKonfiDetail';
+import WebAktivitaetDialog from '../web/leitung/WebAktivitaetDialog';
+import WebBonusDialog from '../web/leitung/WebBonusDialog';
+import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
@@ -125,6 +128,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Im Browser ab 992 px eine zweispaltige Seite (web/leitung/WebKonfiDetail.tsx);
   // Daten, Fenster und Rueckfragen dieser Ansicht bleiben dieselben.
   const breit = useBreitesLayout();
+  // Im breiten Layout oeffnen "Aktivitaet eintragen" und "Bonuspunkte
+  // vergeben" eigene Dialoge der Web-Fassung (Simon, 11.10.2026: „Web braucht
+  // eigene kompaktere Modale überall"); Logik und Folgen sind dieselben wie in
+  // den Modalen der App (useAktivitaetEintragen, useBonusVergeben).
+  const [webDialog, setWebDialog] = useState<'aktivitaet' | 'bonus' | null>(null);
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
@@ -146,6 +154,10 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   const isTeamer = targetRole === 'teamer';
   const fotoAntragRef = React.useRef<number | null>(null);
   const pruefAntragRef = React.useRef<number | null>(null);
+  // Im breiten Layout öffnet „Prüfen" eines offenen Antrags den Dialog der
+  // Web-Fassung (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale
+  // überall"); Logik und Folgen wie im Modal der App (useAntragPruefen).
+  const [webPruefAntrag, setWebPruefAntrag] = useState<{ id: number; mitFoto: boolean } | null>(null);
   // Anwesenheit eintragen ist Leitungssache (requireAdmin an der Route); je
   // Termin entscheidet zusaetzlich darf_verbuchen.
   const kannVerbuchen = darfTermineVerwalten(user);
@@ -287,6 +299,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Fenster wie in der Antragsliste (Genehmigen, Ablehnen mit Grund), mit
   // denselben Folgen danach -- Neuladen, Antragszähler ('requests') und
   // Punkte in der Konfi-Liste ('konfis'), wie AdminEventsPage.
+  const nachAntragEntschieden = () => {
+    void loadKonfiData();
+    triggerRefresh('requests');
+    triggerRefresh('konfis');
+  };
   const [presentPruefModal, dismissPruefModal] = useIonModal(ActivityRequestModal, {
     get requestId() { return pruefAntragRef.current; },
     onClose: () => {
@@ -296,9 +313,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     onSuccess: () => {
       pruefAntragRef.current = null;
       dismissPruefModal();
-      void loadKonfiData();
-      triggerRefresh('requests');
-      triggerRefresh('konfis');
+      nachAntragEntschieden();
     }
   });
 
@@ -793,6 +808,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     // Offener Antrag mit Recht: das Prüf-Fenster der Antragsliste, darin auch
     // das Foto. Ohne Recht (oder ohne Netz) bleibt es beim Foto.
     if (activity.isPending && activity.requestId && activity.darfEntscheiden && isOnline) {
+      // Im Browser (breit) der Dialog der Web-Fassung, sonst das Modal der App.
+      if (breit) {
+        setWebPruefAntrag({ id: activity.requestId, mitFoto: !!activity.hasPhoto });
+        return;
+      }
       pruefAntragRef.current = activity.requestId;
       presentPruefModal({ presentingElement: presentingElement || undefined });
       return;
@@ -908,7 +928,18 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   };
 
   if (breit) {
+    // Punktearten des Jahrgangs wie bei den Modalen der App.
+    const punkteartFlags = currentKonfi
+      ? { gottesdienst_enabled: currentKonfi.gottesdienst_enabled, gemeinde_enabled: currentKonfi.gemeinde_enabled }
+      : undefined;
+    const personName = currentKonfi?.display_name || currentKonfi?.name || (isTeamer ? 'Teamer:in' : 'Konfi');
+    // Dieselben Folgen wie nach dem Speichern im Modal der App.
+    const nachDemSpeichern = async () => {
+      await loadKonfiData();
+      triggerRefresh('konfis');
+    };
     return (
+      <>
       <WebKonfiDetail
         konfiId={konfiId}
         laedt={loading}
@@ -934,12 +965,12 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         pageRef={pageRef}
         onNeuLaden={() => { setLoading(true); void loadKonfiData(); }}
         onBearbeiten={() => presentBearbeitenModal({ presentingElement: presentingElement || undefined })}
-        onAktivitaetEintragen={() => presentActivityModalHook({ presentingElement: presentingElement || undefined })}
-        onBonusVergeben={() => presentBonusModalHook({ presentingElement: presentingElement || undefined })}
+        onAktivitaetEintragen={() => setWebDialog('aktivitaet')}
+        onBonusVergeben={() => setWebDialog('bonus')}
         onZertifikatZuweisen={handleAssignCertificate}
         onPasswort={handlePasswordAction}
         onBefoerdern={handlePromoteToTeamer}
-        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement ?? undefined })}
+        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement ?? undefined, cssClass: 'app-modal-breit' })}
         onAktivitaetLoeschen={handleDeleteActivity}
         onBonusLoeschen={handleDeleteBonus}
         onZertifikatEntfernen={handleDeleteCertificate}
@@ -947,6 +978,34 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         onRueckblick={setWrappedModalData}
         onTeamerSeit={handleTeamerSeit}
       />
+      {webDialog === 'aktivitaet' && (
+        <WebAktivitaetDialog
+          konfiId={konfiId}
+          personName={personName}
+          targetRole={targetRole}
+          punkteartFlags={punkteartFlags}
+          onGespeichert={nachDemSpeichern}
+          onSchliessen={() => setWebDialog(null)}
+        />
+      )}
+      {webDialog === 'bonus' && (
+        <WebBonusDialog
+          konfiId={konfiId}
+          personName={personName}
+          punkteartFlags={punkteartFlags}
+          onGespeichert={nachDemSpeichern}
+          onSchliessen={() => setWebDialog(null)}
+        />
+      )}
+      {webPruefAntrag && (
+        <WebAntragPruefenDialog
+          requestId={webPruefAntrag.id}
+          mitFoto={webPruefAntrag.mitFoto}
+          onGespeichert={nachAntragEntschieden}
+          onSchliessen={() => setWebPruefAntrag(null)}
+        />
+      )}
+      </>
     );
   }
 

@@ -67,7 +67,8 @@ export const TARIF_OPTIONEN: readonly TarifOption[] = [
   ...LIZENZEN.filter((l) => l.konfis !== null).map((l) => ({
     wert: String(l.konfis),
     name: l.name,
-    text: `${l.name} — bis ${l.konfis} Konfis · ${l.euro} € pro Jahr`,
+    // Geschütztes Leerzeichen vor „€": Zahl und Zeichen brechen nicht auseinander („99 / € pro Jahr").
+    text: `${l.name} — bis ${l.konfis} Konfis · ${l.euro}\u00a0€ pro Jahr`,
   })),
   { wert: '', name: 'Unbegrenzt', text: 'Unbegrenzt — ohne Konfi-Grenze' },
 ];

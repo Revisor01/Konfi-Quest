@@ -47,6 +47,7 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { trackMitmachenAnsicht } from '../../../services/analytics';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
+import WebAktivitaetMeldenDialog from '../../shared/web/termine/WebAktivitaetMeldenDialog';
 import { mitgliedSegmentAusAdresse, type EigenerAntragFilter, type KonfiEventFilter } from '../../shared/web/termine/terminFilter';
 import { wahlVon } from '../../../seiten/beschreibung';
 import { EIGENE_ANTRAEGE_START, KONFI_EVENTS, MITGLIED_BEREICHE } from '../../../seiten/mitmachenMitglied';
@@ -167,6 +168,11 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   // Subscribe to live updates
   useLiveRefresh('events', refreshLive);
   useLiveRefresh('requests', refreshRequestsLive);
+
+  // Im breiten Layout öffnet „Aktivität melden" den Dialog der Web-Fassung
+  // (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale überall"); Logik
+  // und Folgen sind dieselben wie im Modal der App (useAktivitaetMelden).
+  const [meldenOffen, setMeldenOffen] = useState(false);
 
   const handleAddRequest = () => {
     presentRequestModal({
@@ -301,6 +307,7 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
   // Aktivität melden, ansehen, löschen) sind dieselben.
   if (breit) {
     return (
+      <>
       <WebMitmachenMitglied
         rolle="konfi"
         basisPfad="/konfi/events"
@@ -316,12 +323,20 @@ const KonfiEventsPage: React.FC<KonfiEventsPageProps> = ({ onSelectEvent, select
         gescheitert={gescheitert}
         onVergessen={(id) => { void vergessen(id); }}
         onScannen={() => presentScannerModal()}
-        onNeueAktivitaet={handleAddRequest}
+        onNeueAktivitaet={() => setMeldenOffen(true)}
         onAntragOeffnen={handleSelectRequest}
         onAntragLoeschen={handleDeleteRequest}
         neuLaden={refresh}
         antraegeNeuLaden={refreshRequests}
       />
+      {meldenOffen && (
+        <WebAktivitaetMeldenDialog
+          rolle="konfi"
+          onGemeldet={() => { void refreshRequests(); }}
+          onSchliessen={() => setMeldenOffen(false)}
+        />
+      )}
+      </>
     );
   }
 

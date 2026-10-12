@@ -3,7 +3,8 @@
 // Farbe der Rolle, Jahrgaengen, Status und Aktionen, Filter und Suche, dazu die
 // offenen Einladungen. Die Rechte sind die der App: Anlegen, Einladen, Entfernen
 // und die offenen Einladungen nur fuer die Gemeindeleitung, Bearbeiten nur bei
-// can_edit. Die Seite oeffnet dieselben Fenster und Rueckfragen wie in der App.
+// can_edit. Die Seite stellt dieselben Rueckfragen wie in der App; das
+// Benutzerformular ist seit 11.10.2026 ein eigener Dialog (WebBenutzerDialog).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -79,7 +80,13 @@ beforeEach(() => {
   h.user = konto('org_admin');
   h.personen = PERSONEN;
   h.einladungen = EINLADUNGEN;
-  h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/einladungen' ? h.einladungen : [] }));
+  h.apiGet.mockImplementation(async (url: string) => {
+    // Der Dialog zum Bearbeiten laedt die Person (GET /users/:id).
+    const id = /^\/users\/(\d+)$/.exec(url)?.[1];
+    const p = id ? PERSONEN.find((x) => x.id === Number(id)) : undefined;
+    if (p) return { data: { ...p, email: '', role_title: '', role_id: 2, assigned_jahrgaenge: [] } };
+    return { data: url === '/einladungen' ? h.einladungen : [] };
+  });
   h.apiDelete.mockResolvedValue({ data: { message: 'Die Person wurde entfernt.' } });
 });
 
@@ -206,28 +213,38 @@ describe('Benutzer:innen (Web): Rechte', () => {
   });
 });
 
-describe('Benutzer:innen (Web): Aktionen oeffnen die Fenster der App', () => {
-  it('Anlegen: das Benutzerformular ohne Person; Einladen: das Fenster zum Einladen', async () => {
+describe('Benutzer:innen (Web): Aktionen oeffnen die Fenster', () => {
+  // Seit 11.10.2026 steht das Benutzerformular im Browser als eigener Dialog
+  // (WebBenutzerDialog; ausfuehrlich in webBenutzerDialog.test.tsx) -- das
+  // Fenster der App geht im breiten Layout nicht mehr auf. Einladen bleibt
+  // das Fenster der App.
+  it('Anlegen: der Dialog „Benutzer:in anlegen“ ohne Person; Einladen: das Fenster zum Einladen', async () => {
     render(<AdminUsersPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Benutzer:in anlegen' }));
-    expect(h.stand.fenster[0].komponente).toBe(UserManagementModal);
-    expect(h.stand.fenster[0].props).toEqual(expect.objectContaining({ userId: null }));
+    const dialog = screen.getByRole('dialog', { name: 'Benutzer:in anlegen' });
+    await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/roles'));
+    expect(h.apiGet).not.toHaveBeenCalledWith(expect.stringMatching(/^\/users\/\d+$/));
+    expect((within(dialog).getByLabelText('Anzeigename') as HTMLInputElement).value).toBe('');
+    expect(h.stand.fenster.some((f) => f.komponente === UserManagementModal)).toBe(false);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Person einladen' }));
-    expect(h.stand.fenster[1].komponente).toBe(EinladungModal);
+    expect(h.stand.fenster).toHaveLength(1);
+    expect(h.stand.fenster[0].komponente).toBe(EinladungModal);
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 
-  it('Bearbeiten (Name und Knopf): dasselbe Formular, mit der Kennung der Person', async () => {
+  it('Bearbeiten (Name und Knopf): derselbe Dialog, mit der Kennung der Person', async () => {
     render(<AdminUsersPage />);
     const knoepfe = within(zeileVon('Sam Muster')).getAllByRole('button', { name: 'Sam Muster bearbeiten' });
     expect(knoepfe).toHaveLength(2);
-    fireEvent.click(knoepfe[0]);
-    fireEvent.click(knoepfe[1]);
-    expect(h.stand.fenster).toHaveLength(2);
-    for (const f of h.stand.fenster) {
-      expect(f.komponente).toBe(UserManagementModal);
-      expect(f.props).toEqual(expect.objectContaining({ userId: 3 }));
+    for (const k of knoepfe) {
+      h.apiGet.mockClear();
+      fireEvent.click(k);
+      const dialog = screen.getByRole('dialog', { name: 'Benutzer:in bearbeiten' });
+      await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/users/3'));
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
     }
+    expect(h.stand.fenster).toEqual([]);
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 

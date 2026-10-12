@@ -1,6 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import React from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -28,44 +26,14 @@ import {
   ICON_TEXTDOKUMENT_GEFUELLT,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
 import NachweisFoto from '../../shared/NachweisFoto';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
 import { datumKurz, datumUhrzeit } from '../../../utils/dateUtils';
-import { trackHandlung } from '../../../services/analytics';
 import { punkteText } from '../../../utils/punkteText';
+import { useAntragPruefen } from './useAntragPruefen';
 // triggerRefresh nicht direkt nutzen — Modal rendert via useIonModal außerhalb des Provider-Trees
-// Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh
-
-interface ActivityRequest {
-  id: number;
-  konfi_id: number;
-  konfi_name: string;
-  jahrgang_name?: string;
-  activity_id: number;
-  activity_name: string;
-  activity_type?: string;
-  activity_points?: number;
-  activity_target_role?: 'konfi' | 'teamer';
-  requested_date: string;
-  comment?: string;
-  photo_filename?: string;
-  status: 'pending' | 'approved' | 'rejected';
-  admin_comment?: string;
-  approved_by?: number;
-  approved_by_name?: string;
-  created_at: string;
-  updated_at: string;
-  /**
-   * Darf die angemeldete Leitung über diesen Antrag entscheiden
-   * (genehmigen, ablehnen, zurücksetzen)? Recht „Anträge entscheiden" je
-   * Jahrgang (09.10.2026). Fehlt bei älteren Servern -- dann wie bisher.
-   */
-  darf_entscheiden?: boolean;
-}
+// Stattdessen onSuccess Callback nutzen, Parent-Page hat useLiveRefresh.
+// Laden, Foto löschen und Entscheiden stehen in useAntragPruefen -- dieselbe
+// Logik wie im Dialog der Web-Fassung (web/termine/WebAntragPruefenDialog).
 
 interface ActivityRequestModalProps {
   requestId?: number | null;
@@ -78,114 +46,21 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(false);
-  const [request, setRequest] = useState<ActivityRequest | null>(null);
-  const [adminComment, setAdminComment] = useState('');
-  const [selectedAction, setSelectedAction] = useState<'approve' | 'reject' | null>(null);
-  const [deletingPhoto, setDeletingPhoto] = useState(false);
-
-  const loadRequest = async () => {
-    if (!requestId) return;
-
-    setLoading(true);
-    try {
-      // Nur DIESER Antrag (28.09.2026, Leitung BF-04). Vorher kam die ganze
-      // Antragsgeschichte der Gemeinde über die Leitung, um per .find() einen
-      // Eintrag herauszusuchen. Die Antwort hat die Form eines Listeneintrags.
-      const response = await api.get<ActivityRequest>(`/admin/activities/requests/${requestId}`);
-      const foundRequest = response.data;
-      setRequest(foundRequest);
-      setAdminComment(foundRequest.admin_comment || '');
-      // Das Nachweisfoto lädt NachweisFoto selbst, sobald es gezeigt wird —
-      // für die Leitung in jedem Status (auch verbucht/abgelehnt).
-    } catch (err) {
-      // 404: Antrag gibt es (in dieser Gemeinde) nicht; 403: Konfi außerhalb
-      // der eigenen Jahrgänge. Beides meldet der Server mit eigenem Text.
-      setError(fehlerText(err, 'Fehler beim Laden der Aktivität'));
- console.error('Error loading request:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (requestId) {
-      loadRequest();
-    }
-  }, [requestId]);
-
-  const handleDeletePhoto = async () => {
-    if (!request) return;
-    setDeletingPhoto(true);
-    try {
-      await api.delete(`/admin/activities/requests/${request.id}/photo`);
-      // Ohne photo_filename haengt NachweisFoto ab und gibt dabei seine
-      // Blob-URL frei (Befund 30.08.2026, geprueft in
-      // adminActivityRequestFoto).
-      setRequest({ ...request, photo_filename: undefined });
-      setSuccess('Foto erfolgreich gelöscht');
-    } catch (err) {
-      setError('Fehler beim Löschen des Fotos');
- console.error('Error deleting photo:', err);
-    } finally {
-      setDeletingPhoto(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!request || !selectedAction) return;
-
-    if (selectedAction === 'reject' && !adminComment.trim()) {
-      setError('Bitte gib einen Grund für die Ablehnung an');
-      return;
-    }
-
-    await guard(async () => {
-      const body = {
-        status: selectedAction === 'approve' ? 'approved' : 'rejected',
-        admin_comment: adminComment
-      };
-
-      if (networkMonitor.isOnline) {
-        try {
-          await api.put(`/admin/activities/requests/${request.id}`, body);
-          // Anonyme Messung NACH der erfolgreichen Antwort: wie oft wird
-          // angenommen, wie oft abgelehnt, bei Konfis und beim Team (Simon,
-          // 27.09.2026). Kein Grund, keine Aktivitaet, keine Punkte, keine
-          // Person. Offline eingereiht zaehlt nicht — dort ist noch nichts
-          // entschieden.
-          trackHandlung('antrag-entschieden', {
-            entscheidung: selectedAction === 'approve' ? 'angenommen' : 'abgelehnt',
-            antrag_von: request.activity_target_role
-          });
-          // Parent-Page refresht via onSuccess + useLiveRefresh
-          onSuccess();
-          onClose();
-        } catch (err) {
-          setError(fehlerText(err, `Fehler beim ${selectedAction === 'approve' ? 'Genehmigen' : 'Ablehnen'} der Aktivität`));
-        }
-      } else {
-        await writeQueue.enqueue({
-          method: 'PUT',
-          url: `/admin/activities/requests/${request.id}`,
-          body,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'admin',
-            clientId: safeUUID(),
-            label: `Aktivität ${selectedAction === 'approve' ? 'genehmigen' : 'ablehnen'}`
-          }
-        });
-        setSuccess('Wird gespeichert sobald du wieder online bist');
-        // Parent-Page refresht via onSuccess + useLiveRefresh
-        onSuccess();
-        onClose();
-      }
-    });
-  };
+  const {
+    request,
+    loading,
+    adminComment,
+    setAdminComment,
+    selectedAction,
+    setSelectedAction,
+    deletingPhoto,
+    handleDeletePhoto,
+    handleSubmit,
+    isSubmitting,
+    isPending,
+    isApproved,
+    darfEntscheiden,
+  } = useAntragPruefen({ requestId, onSuccess, onClose });
 
   const formatDate = (dateString: string) => {
     return datumKurz(dateString);
@@ -194,13 +69,6 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   const formatDateTime = (dateString: string) => {
     return datumUhrzeit(dateString);
   };
-
-  const isPending = request?.status === 'pending';
-  const isApproved = request?.status === 'approved';
-  // Recht "Anträge entscheiden" (09.10.2026). Nur ein ausdrückliches false
-  // nimmt die Knöpfe weg -- fehlt das Feld (älterer Server), bleibt alles wie
-  // bisher; der Server prüft ohnehin selbst (403).
-  const darfEntscheiden = request?.darf_entscheiden !== false;
 
   if (!request) {
     return (
@@ -236,7 +104,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
           </IonButtons>
           {isPending && darfEntscheiden && selectedAction && (
             <IonButtons slot="end">
-              <IonButton aria-label="Entscheidung speichern" onClick={handleSubmit} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
+              <IonButton aria-label="Entscheidung speichern" onClick={() => { void handleSubmit(); }} disabled={isSubmitting || (selectedAction === 'reject' && !adminComment.trim())} className="app-modal-submit-btn app-modal-submit-btn--activities">
                 {isSubmitting ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} />}
               </IonButton>
             </IonButtons>

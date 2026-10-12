@@ -1,0 +1,94 @@
+/* ===================================================================
+   Modale der App im breiten Browserfenster (11.10.2026)
+
+   Simon: „Web braucht eigene kompaktere Modale überall."
+
+   Im Browser ab 992 px öffnen viele Formulare noch die Modale der App.
+   Ionic stellt sie dort als festes Fenster von 600 x 600 px dar, egal wie
+   viel darin steht: kurze Formulare mit leerer unterer Hälfte, lange
+   abgeschnitten. Gemessen (1440 x 900, Desktop = Ionic-Modus md): Neue
+   Kategorie 600 x 600 bei 352 px Inhalt, Neues Event 600 x 600 bei 2872 px
+   Inhalt. Auf dem iPad (Modus ios, Karten-Modal) 936 x 836.
+
+   Diese Datei macht JEDES App-Modal im breiten Fenster kompakt: so breit
+   wie ein Formular braucht, so hoch wie sein Inhalt (höchstens das Fenster
+   abzüglich Rand, dann scrollt der Inhalt), Radius und Schatten wie die
+   Karten und Dialoge der Web-Fassung. Die häufigen Formulare haben
+   zusätzlich eigene Web-Dialoge (components/web/WebDialog.tsx).
+
+   REGELN
+   - Jeder Selektor beginnt mit html[data-layout='breit']. Das Merkmal
+     setzt navigation/layoutImDokument.ts nur in der Web-Version ab 992 px;
+     in den Apps steht es nie. Die Modale der Apps bleiben, wie sie sind.
+   - Ausgenommen sind Vollbild-Ansichten (Rückblick, Dateien, alles mit
+     data-dialogname), die Chat-Fenster der Web-Fassung (eigene Größe in
+     theme/web/chat.css) und die Datumswähler (eigene Regel unten).
+   - Keine Abdunklung (--backdrop-opacity) setzen: Ionic nimmt dem zweiten
+     von zwei gestapelten Modalen die Abdunklung, sonst dunkelte jede
+     Stufe nach.
+   - Nur Tokens für Radius und Schatten, keine Bewegung. Breiten und Höhen
+     sind Pixel wie beim WebDialog.
+   __tests__/components/webAnsichtCss.test.ts prüft diese Datei.
+   =================================================================== */
+
+/* Ein App-Modal: zentriert, 560 px breit, so hoch wie der Inhalt.
+   Die Spezifität (0,4,2) schlägt die Themes (ios27: Karte (0,3,1),
+   md3 (0,2,1)) unabhängig von der Ladereihenfolge. */
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) {
+  --width: min(560px, calc(100% - 48px));
+  --max-width: 560px;
+  --height: auto;
+  --max-height: calc(100% - 96px);
+  --border-radius: var(--app-radius-karte);
+}
+
+/* Der Schatten direkt an der Hülle: Ionic legt ihn bei Karten-Modalen auf
+   ein eigenes Element, das bei Höhe auto keine Höhe hat. */
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname]))::part(content) {
+  box-shadow: var(--app-schatten-modal);
+}
+
+/* Höhe nach Inhalt: Ein per useIonModal geöffnetes Modal steckt in zwei
+   Seiten (Hülle des Hooks > IonPage der Komponente). Die innere steht bei
+   Ionic absolut und mit fester Größe -- mit Höhe auto fiel jedes dieser
+   Modale auf 0 px zusammen (gemessen an 13 Modalen). */
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) > .ion-page > .ion-page {
+  position: relative;
+  contain: layout style;
+  min-height: 0;
+  flex: 0 1 auto;
+}
+
+/* Eine schlanke Kopfzeile wie die Dialoge der Web-Fassung (sonst 64-70 px). */
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) ion-header ion-toolbar {
+  --min-height: 52px;
+  padding-top: 0;
+}
+
+/* Breite Inhalte: Die Anwesenheit (eine Spalte je Pflicht-Event) bekommt
+   mehr Breite. Gesetzt beim Öffnen über cssClass. Dieselbe Kette wie oben
+   plus eine Klasse, damit die Regel sie schlägt. */
+html[data-layout='breit'] ion-modal.app-modal-breit:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) {
+  --width: min(880px, calc(100% - 48px));
+  --max-width: 880px;
+}
+
+/* Kamera (QR-Code scannen): Das Bild füllt die Fläche; ohne feste Höhe
+   hätte es keine. */
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])):has(.app-modal-kamera) {
+  --height: min(640px, calc(100% - 96px));
+}
+
+/* Datumswähler: so groß wie der Kalender. Das iOS-Theme setzt sonst auch
+   ihnen 580 x 660 px, und der Kalender klebt in einer leeren Fläche oben
+   links (gemessen auf dem iPad). Ionic nimmt dem Wähler als zweitem Modal
+   den Schatten; ohne ihn verschwimmt er mit dem Formular darunter. */
+html[data-layout='breit'] ion-modal.ion-datetime-button-overlay {
+  --width: fit-content;
+  --height: fit-content;
+  --border-radius: var(--app-radius-karte);
+}
+
+html[data-layout='breit'] ion-modal.ion-datetime-button-overlay::part(content) {
+  box-shadow: var(--app-schatten-modal);
+}

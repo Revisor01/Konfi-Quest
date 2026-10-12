@@ -4,10 +4,12 @@
 // über `anfrage_id` -- in den offenen und in den archivierten -- und ersetzt
 // sich durch ihn, damit Lesezeichen, alte Mitteilungen und Mails mit dem
 // Kennzeichen „[Anfrage N]“ weiter ankommen. Gibt es ihn nicht, sagt die Seite
-// das und führt zur Liste der Anfragen.
+// das und führt zur Liste der Anfragen. In der App sucht „Ziehen zum
+// Aktualisieren" noch einmal (docs/planung/support-detailseiten.md, App E).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { ziehenZumAktualisieren } from './ionicAttrappe';
 import { vorgang, vorgaengeServer } from './vorgaengeServer';
 
 const h = vi.hoisted(() => ({
@@ -31,6 +33,7 @@ vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: h.user, setError: vi.fn(), setSuccess: vi.fn(), isOnline: true }),
 }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
+vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 
 import SupportAnfrageWeiterleitungPage from '../../../components/support/SupportAnfrageWeiterleitungPage';
 
@@ -102,6 +105,33 @@ describe('Anfrage-Adresse: kein Vorgang', () => {
     server.stand.fehler.delete('GET /support/vorgaenge');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Erneut versuchen' })); });
     await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/3', 'none', 'replace'));
+  });
+});
+
+describe('Anfrage-Adresse: Ziehen zum Aktualisieren (App)', () => {
+  it('nach einem Ladefehler sucht Ziehen noch einmal -- wie der Satz sagt; findet es den Vorgang, ersetzt sich die Seite', async () => {
+    server.stand.fehler.set('GET /support/vorgaenge', new Error('Netz weg'));
+    render(<SupportAnfrageWeiterleitungPage anfrageId={41} />);
+    expect(await screen.findByText('Die Vorgänge konnten nicht geladen werden. Zieh die Seite zum Aktualisieren herunter oder geh zurück.')).toBeInTheDocument();
+    server.stand.fehler.delete('GET /support/vorgaenge');
+    const vorher = server.aufrufe('get', '/support/vorgaenge').length;
+    let zug: ReturnType<typeof ziehenZumAktualisieren> = { refresher: 0, fertig: () => 0 };
+    await act(async () => { zug = ziehenZumAktualisieren(); });
+    expect(zug.refresher).toBe(1);
+    await waitFor(() => expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/3', 'none', 'replace'));
+    expect(server.aufrufe('get', '/support/vorgaenge')).toHaveLength(vorher + 2);
+  });
+
+  it('findet auch die neue Suche nichts, verschwindet der Kreisel (complete) und die Seite sagt es', async () => {
+    render(<SupportAnfrageWeiterleitungPage anfrageId={99} />);
+    expect(await screen.findByText('Anfrage nicht gefunden')).toBeInTheDocument();
+    let zug: ReturnType<typeof ziehenZumAktualisieren> = { refresher: 0, fertig: () => 0 };
+    await act(async () => { zug = ziehenZumAktualisieren(); });
+    await waitFor(() => expect(zug.fertig()).toBe(1));
+    expect(screen.getByText('Anfrage nicht gefunden')).toBeInTheDocument();
+    // Zwei Listen je Suche: offen und Archiv.
+    expect(server.aufrufe('get', '/support/vorgaenge')).toHaveLength(4);
+    expect(h.push).not.toHaveBeenCalled();
   });
 });
 

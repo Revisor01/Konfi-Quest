@@ -27,13 +27,15 @@ const STELLEN: Array<{
   /** Der api-Aufruf, hinter dem die Messung stehen MUSS. */
   vorher: string;
 }> = [
+  // Aktivitaet eintragen und Bonuspunkte vergeben speichern seit 11.10.2026
+  // im Hook, den das Modal der App und der Dialog der Web-Fassung teilen.
   {
-    datei: 'src/components/admin/modals/ActivityModal.tsx',
+    datei: 'src/components/admin/modals/useAktivitaetEintragen.ts',
     handlung: 'punkte-vergeben',
     vorher: '/activities`, body)'
   },
   {
-    datei: 'src/components/admin/modals/BonusModal.tsx',
+    datei: 'src/components/admin/modals/useBonusVergeben.ts',
     handlung: 'punkte-vergeben',
     vorher: '/bonus-points`, body)'
   },
@@ -45,12 +47,14 @@ const STELLEN: Array<{
     vorher: '/moderate`'
   },
   {
-    datei: 'src/components/admin/modals/EventModal.tsx',
+    // Das Speichern steht seit 11.10.2026 im Hook, den das Modal der App
+    // und der Dialog der Web-Fassung gemeinsam nutzen.
+    datei: 'src/components/admin/modals/useEventFormular.ts',
     handlung: 'termin-angelegt',
     vorher: "api.post('/events/series', { ...payload, client_id: anlegeKennung.current })"
   },
   {
-    datei: 'src/components/admin/modals/MaterialFormModal.tsx',
+    datei: 'src/components/admin/modals/useMaterialFormular.ts',
     handlung: 'material-bereitgestellt',
     vorher: "api.post('/material', payload)"
   },
@@ -65,8 +69,9 @@ const STELLEN: Array<{
   // die Sammelverbuchung misst weiter in EventDetailView.
   // Simon, 27.09.2026: Anträge, Material, Konfispruch
   // (docs/messung/umami.md, U1–U3).
+  // Seit dem 11.10.2026 in useAntragPruefen (Modal der App und Dialog im Browser).
   {
-    datei: 'src/components/admin/modals/ActivityRequestModal.tsx',
+    datei: 'src/components/admin/modals/useAntragPruefen.ts',
     handlung: 'antrag-entschieden',
     vorher: 'api.put(`/admin/activities/requests/${request.id}`, body)'
   },
@@ -97,7 +102,8 @@ const STELLEN: Array<{
   // Stellen, die an einer Server-Antwort hängen; die übrigen (Ansehen,
   // Postfach, Suche) prüft messungVorschlaege.test.ts.
   {
-    datei: 'src/components/admin/modals/BadgeManagementModal.tsx',
+    // Seit 11.10.2026 im Hook des Formulars (App-Modal und Web-Dialog).
+    datei: 'src/components/admin/useBadgeFormular.ts',
     handlung: 'badge-angelegt',
     vorher: "api.post('/admin/badges', badgeData)"
   },
@@ -246,7 +252,7 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
   });
 
   it('das Bearbeiten eines Termins zaehlt nicht als Anlegen', () => {
-    const quelle = lies('src/components/admin/modals/EventModal.tsx');
+    const quelle = lies('src/components/admin/modals/useEventFormular.ts');
     // Der PUT-Zweig (Bearbeiten) darf keine Messung tragen.
     const posPut = quelle.indexOf('api.put(`/events/${event.id}`, updatePayload)');
     const posSerie = quelle.indexOf("api.post('/events/series', { ...payload, client_id: anlegeKennung.current })");
@@ -257,7 +263,7 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
   });
 
   it('nur neu eingestelltes Material wird gezaehlt', () => {
-    const quelle = lies('src/components/admin/modals/MaterialFormModal.tsx');
+    const quelle = lies('src/components/admin/modals/useMaterialFormular.ts');
     // Die Messung haengt an der Bedingung "kein vorhandenes Material".
     expect(quelle).toMatch(
       /if \(!material\) \{[\s\S]{0,400}?trackHandlung\('material-bereitgestellt'/

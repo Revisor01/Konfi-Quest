@@ -84,6 +84,10 @@ import './theme/barrierefreiheit.css';
    setzt -- die App rendert ohne sie. Nach variables.css, weil sie dessen
    Tokens liest. */
 import './theme/web-ansicht.css';
+/* Die Modale der App im breiten Browserfenster: kompakt statt 600 x 600 px
+   (11.10.2026). Wirkt nur unter html[data-layout='breit'], das in den Apps
+   nie steht. Nach web-ansicht.css, weil sie dieselben Tokens liest. */
+import './theme/web-modale.css';
 import { bewegungReduziert } from './utils/bewegung';
 import { anmeldeHinweisMerken } from './utils/anmeldeHinweis';
 

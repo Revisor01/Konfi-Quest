@@ -150,9 +150,12 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
   const faelle: Array<[string, string, string]> = [
     ['konfi/views/EventDetailView.tsx', "url: `/konfi/events/${eventData.id}/opt-out`", "methode: 'POST'"],
     ['konfi/views/EventDetailView.tsx', "url: `/konfi/events/${eventData.id}/register`", "methode: 'DELETE'"],
-    ['konfi/modals/ActivityRequestModal.tsx', "url: '/konfi/requests'", "methode: 'POST'"],
+    // Konfis und Team melden über useAktivitaetMelden (11.10.2026): die Route
+    // aus MELDE_ROLLEN, eingereiht unter url: routen.antrag.
+    ['shared/useAktivitaetMelden.ts', 'url: routen.antrag', "methode: 'POST'"],
+    ['shared/useAktivitaetMelden.ts', "antrag: '/konfi/requests'", "methode: 'POST'"],
+    ['shared/useAktivitaetMelden.ts', "antrag: '/teamer/requests'", "methode: 'POST'"],
     ['konfi/views/ProfileView.tsx', "url: '/konfi/bible-translation'", "methode: 'PUT'"],
-    ['teamer/modals/TeamerActivityRequestModal.tsx', "url: '/teamer/requests'", "methode: 'POST'"],
     ['teamer/pages/TeamerEventsPage.tsx', "url: `/teamer/events/${event.id}/zusage`", "methode: 'POST'"],
     ['teamer/pages/TeamerProfilePage.tsx', "url: '/teamer/bible-translation'", "methode: 'PUT'"],
   ];
@@ -165,14 +168,15 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
   });
 
   it('jeder POST, der nach einem Abbruch eingereiht werden darf, traegt die Zusicherung mit Begruendung', () => {
-    for (const datei of ['konfi/views/EventDetailView.tsx', 'konfi/modals/ActivityRequestModal.tsx',
-      'teamer/modals/TeamerActivityRequestModal.tsx', 'teamer/pages/TeamerEventsPage.tsx']) {
+    for (const datei of ['konfi/views/EventDetailView.tsx', 'shared/useAktivitaetMelden.ts',
+      'teamer/pages/TeamerEventsPage.tsx']) {
       expect(lies(datei), datei).toContain('idempotent: true');
     }
   });
 
   it('verboten: Bonuspunkte (POST ohne Idempotenzschluessel) fallen nach einem Abbruch NICHT in die Warteschlange', () => {
-    const bonus = lies('admin/modals/BonusModal.tsx');
+    // Speichern steht seit 11.10.2026 im Hook, den App-Modal und Web-Dialog teilen.
+    const bonus = lies('admin/modals/useBonusVergeben.ts');
     expect(bonus).not.toContain('idempotent: true');
   });
 });
@@ -183,7 +187,9 @@ describe('Formulare mit Warteschlange fallen bei Netzabbruch in sie zurueck', ()
 // daran den zweiten Eingang) und als Kennung des Warteschlangen-Eintrags.
 describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id', () => {
   it('Bonuspunkte: eine Kennung je Fenster, im Rumpf und in der Warteschlange', () => {
-    const bonus = lies('admin/modals/BonusModal.tsx');
+    // Im Hook (useBonusVergeben), den App-Modal und Web-Dialog teilen; gerendert
+    // prueft es webAktivitaetBonusDialog.test.tsx (Rumpf und Warteschlange).
+    const bonus = lies('admin/modals/useBonusVergeben.ts');
     expect(bonus).toContain('const vorgangKennung = useRef(safeUUID());');
     expect(bonus).toContain('client_id: vorgangKennung.current');
     expect(bonus).toContain('clientId: vorgangKennung.current,');
@@ -191,15 +197,17 @@ describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id
     expect(bonus).not.toContain('clientId: safeUUID()');
   });
 
+  // Das Speichern steht seit 11.10.2026 im Hook, den das Modal der App und der
+  // Dialog der Web-Fassung gemeinsam nutzen (useEventFormular.ts).
   it('Event anlegen: online und in der Warteschlange mit derselben Kennung', () => {
-    const event = lies('admin/modals/EventModal.tsx');
+    const event = lies('admin/modals/useEventFormular.ts');
     expect(event).toContain('const anlegeKennung = useRef(safeUUID());');
     expect(event).toContain("api.post('/events', { ...payload, client_id: anlegeKennung.current })");
     expect(event).toContain("url: '/events', body: { ...payload, client_id: anlegeKennung.current }");
   });
 
   it('Event-Serie anlegen: dieselbe Kennung des Fensters, EINE fuer die ganze Serie', () => {
-    const event = lies('admin/modals/EventModal.tsx');
+    const event = lies('admin/modals/useEventFormular.ts');
     expect(event).toContain("api.post('/events/series', { ...payload, client_id: anlegeKennung.current })");
     expect(event).toContain("url: '/events/series', body: { ...payload, client_id: anlegeKennung.current }");
     expect(event).toContain("clientId: anlegeKennung.current, label: 'Event-Serie erstellen'");
@@ -212,12 +220,14 @@ describe('Wiederholungsschutz: Bonuspunkte und neue Events tragen eine client_id
 // Methode entscheidet die Hilfsfunktion, keine Zusicherung.
 describe('Leitung: Bearbeiten ja, Anlegen nein', () => {
   const faelle: Array<[string, string]> = [
-    ['admin/modals/BadgeManagementModal.tsx', "methode: isEditMode ? 'PUT' : 'POST'"],
-    ['admin/modals/LevelManagementModal.tsx', "methode: level?.id ? 'PUT' : 'POST'"],
+    // Die Logik des Badge-Formulars steht seit 11.10.2026 im Hook (App-Modal und Web-Dialog teilen ihn).
+    ['admin/useBadgeFormular.ts', "methode: isEditMode ? 'PUT' : 'POST'"],
+    ['admin/useLevelFormular.ts', "methode: level?.id ? 'PUT' : 'POST'"], // Logik des LevelManagementModal (11.10.2026)
     ['admin/modals/ActivityManagementModal.tsx', "methode: currentActivity ? 'PUT' : 'POST'"],
-    ['admin/pages/AdminCategoriesPage.tsx', "methode: category ? 'PUT' : 'POST'"],
-    ['admin/pages/AdminCertificatesPage.tsx', "methode: certificateType ? 'PUT' : 'POST'"],
-    ['admin/pages/AdminJahrgaengeePage.tsx', "methode: jahrgang ? 'PUT' : 'POST'"],
+    ['admin/useKategorieFormular.ts', "methode: category ? 'PUT' : 'POST'"], // Logik des CategoryModal (11.10.2026)
+    ['admin/useZertifikatFormular.ts', "methode: certificateType ? 'PUT' : 'POST'"], // Logik des CertificateModal (11.10.2026)
+    // Seit 11.10.2026 in der Logik, die App-Fenster und Web-Dialog teilen.
+    ['admin/useJahrgangFormular.ts', "methode: jahrgang ? 'PUT' : 'POST'"],
     ['admin/pages/AdminDashboardSettingsPage.tsx', "methode: 'PUT'"],
   ];
 

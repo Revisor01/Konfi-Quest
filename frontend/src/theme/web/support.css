@@ -82,37 +82,11 @@
   min-width: 200px;
 }
 
-/* Zwei Auswahlfelder nebeneinander (Art und Bereich in den Dialogen); bei wenig Platz untereinander. */
-.web-feldpaar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--app-abstand-mittel);
-}
+/* Zwei Felder nebeneinander: .web-feldpaar steht seit 11.10.2026 in web-ansicht.css. */
 
 /* Die Aktionen einer Zeile (Einsortieren, Archivieren, Löschen) bleiben in einer Reihe. */
 .web-spalte-aktionen .web-zeilenaktionen {
   flex-wrap: nowrap;
-}
-
-/* --- Kopf eines Vorgangs: Nummer, Status, Dringlichkeit, Gemeinde in einer Zeile --- */
-.web-vorgangskopf {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--app-abstand-kompakt) var(--app-abstand-eng);
-}
-
-.web-vorgangskopf__gemeinde {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--app-abstand-mini);
-}
-
-/* --- Die Gemeinde, wie die Person sie im Formular nannte --- */
-.web-gemeindeangabe {
-  font-size: var(--app-text-standard);
-  color: var(--web-text);
-  overflow-wrap: anywhere;
 }
 
 /* ===================================================================
@@ -130,14 +104,33 @@
 .web-postfach__liste,
 .web-postfach__lesen {
   min-height: 0;
-  overflow-y: auto;
   background: var(--web-karte);
   border: 1px solid var(--web-linie);
   border-radius: var(--app-radius-karte);
 }
 
+.web-postfach__liste {
+  overflow-y: auto;
+}
+
 .web-postfach__lesen {
   background: var(--web-grund);
+  /* Was im Lesebereich steht -- zwei Spalten (WebSpalten), Kennzahlen, die
+     Knöpfe des Kopfes --, richtet sich nach SEINER Breite, nicht nach der
+     Seite (docs/planung/support-detailseiten.md, „Rahmen und Maße"). */
+  container-type: inline-size;
+  /* Oben (breit) die Leiste zum Blättern, darunter das Feld des Eintrags.
+     Gerollt wird nur das Feld: Die Leiste bleibt stehen, auch solange der
+     nächste Eintrag lädt oder fehlt (WebPostfach, `leiste`). */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.web-postfach__lesefeld {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* --- Die Zeilen der Liste --- */
@@ -190,6 +183,33 @@
 .web-postfachzeile__knopf:focus-visible {
   outline: 2px solid var(--ion-color-primary);
   outline-offset: -2px;
+}
+
+/* Mit Kreis (Art eines Vorgangs, Initialen einer Mail -- derselbe wie im
+   Kopf des Lesebereichs): links der Kreis, rechts die Zeilen untereinander. */
+.web-postfachzeile__knopf--kreis {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+}
+
+.web-postfachzeile__inhalt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+}
+
+/* Zeile 2 eines Vorgangs: „Nr. · Art · Gemeinde" in einer Zeile, gekürzt;
+   die Marken stehen darunter in eigener Zeile (bis 11.10.2026 daneben, die
+   Gemeinde brach dann bei „Test-Gemeinde St. Mar" ab). */
+.web-postfachzeile__mitte {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
 }
 
 /* Der Punkt fuer Ungelesenes steht am linken Rand der Zeile. */
@@ -253,6 +273,19 @@
   color: var(--web-text-leise);
 }
 
+.web-postfachzeile__auszug {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Die Büroklammer vor dem Auszug behält ihre Größe; sonst drückt ein langer
+   Auszug sie auf einen Punkt zusammen. */
+.web-postfachzeile__anhang {
+  flex-shrink: 0;
+}
+
 .web-postfachzeile__marken {
   flex-shrink: 0;
   display: inline-flex;
@@ -260,7 +293,13 @@
   gap: var(--app-abstand-mini);
 }
 
-/* --- Der Lesebereich --- */
+/* --- Der Lesebereich ---
+   Kopf, Stand, Notiz, Verlauf mit Antwort und Karten eines Vorgangs
+   (web/WebVorgangDetail, docs/planung/support-detailseiten.md, A bis C, F
+   bis H); den Kopf teilt die Mail (WebPostDetail). Spalten, Kennzahlen und
+   Knöpfe richten sich nach der Breite des Lesebereichs (container-type an
+   .web-postfach__lesen): neben der Liste 740 bzw. 580 px, eine Spalte;
+   „Breit lesen" 1136 bzw. 976 px, zwei Spalten wie jede Detailseite. */
 .web-lesen {
   display: flex;
   flex-direction: column;
@@ -270,84 +309,146 @@
 .web-lesen__kopf {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--app-abstand-mittel);
-  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+  gap: var(--app-abstand-mini) var(--app-abstand-mittel);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
   background: var(--web-karte);
   border-bottom: 1px solid var(--web-linie);
 }
 
-.web-lesen__titelblock {
-  flex: 1;
-  min-width: 240px;
+/* Die Leiste zum Blättern (breit) steht über dem Kopf, außerhalb des Felds,
+   das rollt; mit ihm wirkt sie wie ein Block: dieselbe Fläche, der Kopf
+   rückt ohne oberen Innenabstand an sie heran (Abstand zum Titel wie bis
+   12.10.2026, als sie im Kopf stand: 4 + 4 px). Steht darunter nur ein
+   Hinweis (Laden, nicht gefunden, Fehler), schließt sie mit einer Linie ab. */
+.web-lesen__navigation {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross) calc(2 * var(--app-abstand-mini));
+  background: var(--web-karte);
 }
 
+.web-lesen__navigation + .web-postfach__lesefeld .web-lesen__kopf {
+  padding-top: 0;
+}
+
+.web-lesen__navigation:has(+ .web-postfach__lesefeld > .web-lesen-leer) {
+  padding-bottom: var(--app-abstand-mittel);
+  border-bottom: 1px solid var(--web-linie);
+}
+
+/* Die Reihenfolge im Kopf: Kreis, Titel, Knöpfe; darunter die Kennzeichen
+   über die volle Breite. Der Titel behält mindestens 220 px. Ab 600 px
+   Lesebreite brechen die Knöpfe dafür rechts in eine zweite Reihe um
+   (Anfrage bei 740 px, Skizze B); schmaler rutscht die Knopfreihe unter den
+   Titel (Anfrage bei 580 px). */
+
+.web-lesen__blaettern {
+  display: inline-flex;
+  gap: var(--app-abstand-eng);
+}
+
+.web-lesen__kreis {
+  order: 1;
+  flex: 0 0 auto;
+}
+
+.web-lesen__titelblock {
+  display: contents;
+}
+
+/* Der Betreff höchstens drei Zeilen, ganz im Tooltip. Bis 12.10.2026 waren
+   es zwei: Ein Betreff von 40 bis 50 Zeichen stand dann nirgends ganz da (bei
+   der Anfrage fehlte die Gemeinde, bei „… am Samstag nicht" das „nicht"),
+   obwohl der Kopf neben zwei Reihen Knöpfe Platz für eine dritte Zeile hat. */
 .web-lesen__titel {
+  order: 2;
+  flex: 1 1 220px;
+  min-width: 220px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+  align-self: center;
   margin: 0;
   font-family: var(--app-schriftart-ueberschrift);
-  font-size: var(--app-text-untertitel);
+  font-size: var(--app-text-gross);
   font-weight: var(--app-schrift-fett);
   line-height: 1.25;
   color: var(--web-text);
   overflow-wrap: anywhere;
 }
 
+.web-lesen__werkzeuge {
+  order: 3;
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--app-abstand-eng);
+  margin-left: auto;
+}
+
+@container (min-width: 600px) {
+  .web-lesen__werkzeuge {
+    max-width: calc(100% - 44px - 220px - 2 * var(--app-abstand-mittel));
+  }
+}
+
 .web-lesen__angaben {
+  order: 4;
+  flex: 1 0 100%;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--app-abstand-kompakt) var(--app-abstand-eng);
-  margin-top: var(--app-abstand-kompakt);
+  gap: var(--app-abstand-mini) var(--app-abstand-eng);
+  min-width: 0;
   font-size: var(--app-text-hinweis);
   color: var(--web-text-leise);
 }
 
-.web-lesen__werkzeuge {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--app-abstand-eng);
+/* Mit Kreis stehen die Kennzeichen unter dem Titel, nicht unter dem Kreis (44 px und Abstand). */
+.web-lesen__kreis + .web-lesen__titelblock > .web-lesen__angaben {
+  flex-basis: calc(100% - 44px - var(--app-abstand-mittel));
+  margin-left: calc(44px + var(--app-abstand-mittel));
+}
+
+.web-lesen__nummer,
+.web-lesen__art {
+  white-space: nowrap;
+}
+
+.web-lesen__gemeinde {
+  font-weight: var(--app-schrift-mittel);
+  overflow-wrap: anywhere;
+}
+
+/* Im Lesebereich etwas enger als auf einer Detailseite: das Neueste soll ohne Scrollen im Bild sein. */
+.web-lesen .web-detail,
+.web-lesen .web-spalten__haupt {
+  gap: var(--app-abstand-mittel);
 }
 
 .web-lesen__inhalt {
   display: flex;
   flex-direction: column;
   gap: var(--app-abstand-mittel);
-  padding: var(--app-abstand-basis) var(--app-abstand-gross) var(--app-abstand-weit);
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross) var(--app-abstand-weit);
 }
 
-/* Die wichtigsten Angaben eines Vorgangs in einer Zeile. */
-.web-steckbrief {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--app-abstand-eng) var(--app-abstand-weit);
-  margin: 0;
-  font-size: var(--app-text-hinweis);
-}
-
-.web-steckbrief > div {
-  min-width: 0;
-}
-
-.web-steckbrief dt {
-  color: var(--web-text-leise);
-  font-size: var(--app-text-klein);
-}
-
-.web-steckbrief dd {
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-/* Die Antwort steht unter dem Verlauf, dort, wo man beim Lesen ankommt. */
+/* Die Antwort steht direkt unter der jüngsten Mail (G). */
 .web-lesen__antwort {
-  padding: var(--app-abstand-basis);
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis);
   background: var(--web-karte);
-  border: 1px solid var(--web-linie);
+  border: 1px solid var(--ion-color-primary);
   border-radius: var(--app-radius-karte);
 }
 
@@ -356,20 +457,17 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--app-abstand-eng);
-  margin-bottom: var(--app-abstand-mittel);
+  margin-bottom: var(--app-abstand-kompakt);
 }
 
 .web-lesen__antworttitel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
   margin: 0;
-  font-size: var(--app-text-betont);
+  font-size: var(--app-text-sekundaer);
   font-weight: var(--app-schrift-halbfett);
   color: var(--web-text);
-}
-
-.web-lesen__mehr {
-  display: flex;
-  flex-direction: column;
-  gap: var(--app-abstand-basis);
 }
 
 /* Rechts, solange nichts gewaehlt ist. */
@@ -399,6 +497,684 @@
 .web-lesen-leer__text {
   margin: 0;
   max-width: 360px;
+}
+
+/* ===================================================================
+   Lesebereich eines Vorgangs: Kreis, Knöpfe, Stand, Notiz, Antwortzeile,
+   kompakter Editor, Karten und die Dialoge Gemeinde anlegen und Lizenz
+   ändern (11.10.2026, web/WebVorgangTeile.tsx und die Dialoge daneben).
+   =================================================================== */
+
+/* Der Kreis der Art -- im Kopf groß, in der Listenzeile klein. */
+.web-vorgang-kreis {
+  --web-vorgang-kreis-farbe: var(--app-color-neutral);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--app-radius-kreis);
+  background: color-mix(in srgb, var(--web-vorgang-kreis-farbe) 16%, var(--web-karte));
+  color: var(--web-vorgang-kreis-farbe);
+  font-size: var(--app-text-standard);
+}
+
+.web-vorgang-kreis--gross {
+  width: 44px;
+  height: 44px;
+  font-size: var(--app-text-titel);
+}
+
+.web-vorgang-kreis--neue_gemeinde { --web-vorgang-kreis-farbe: var(--app-color-success); }
+.web-vorgang-kreis--frage { --web-vorgang-kreis-farbe: var(--app-color-info); }
+.web-vorgang-kreis--fehler { --web-vorgang-kreis-farbe: var(--app-color-danger); }
+.web-vorgang-kreis--wunsch { --web-vorgang-kreis-farbe: var(--app-color-purple); }
+.web-vorgang-kreis--zugang { --web-vorgang-kreis-farbe: var(--app-color-warning); }
+.web-vorgang-kreis--lizenz { --web-vorgang-kreis-farbe: var(--app-color-categories); }
+.web-vorgang-kreis--datenschutz { --web-vorgang-kreis-farbe: var(--app-color-users); }
+.web-vorgang-kreis--sonstiges { --web-vorgang-kreis-farbe: var(--app-color-neutral); }
+
+/* Eine Marke, die Einordnen öffnet (Bereich fehlt, Keine Gemeinde). */
+.web-markenknopf {
+  display: inline-flex;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--app-radius-gross);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.web-markenknopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-markenknopf[disabled] {
+  cursor: default;
+}
+
+/* Die Knöpfe des Kopfes: Symbole, Nebenknöpfe, rechts außen der Hauptknopf. */
+.web-kopfaktionen {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--app-abstand-eng);
+}
+
+.web-kopfaktionen .web-knopf--symbol {
+  width: 36px;
+  min-height: 36px;
+}
+
+.web-kopfknopf:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Wird der Lesebereich schmal, trägt ein Knopf nur noch sein Symbol (Name im aria-label und Tooltip). */
+@container (max-width: 759px) {
+  .web-kopfknopf--unter760 {
+    width: 36px;
+    padding: 0;
+  }
+
+  .web-kopfknopf--unter760 .web-kopfknopf__text {
+    display: none;
+  }
+}
+
+@container (max-width: 599px) {
+  .web-kopfknopf--unter600 {
+    width: 36px;
+    padding: 0;
+  }
+
+  .web-kopfknopf--unter600 .web-kopfknopf__text {
+    display: none;
+  }
+
+  /* Schmal (1280 neben der Liste: 580 px) weicht der Kreis, damit Titel (220 px)
+     und Knöpfe in eine Zeile passen -- schon ein Kreis von 32 px schöbe die
+     Knöpfe in eine zweite Reihe (gemessen 11.10.2026: Kopf 95 statt 123 bzw.
+     135 px, Anfrage 113 statt 135 px). Die Art steht dann in den
+     Kennzeichen; bei einer Anfrage steht dort „Noch nicht angelegt", die Art
+     „Neue Gemeinde" fehlt schmal also. Der Plan sieht den Kreis ohne Ausnahme
+     vor: Abweichung, die Simon entscheidet (11.10.2026). */
+  .web-lesen__kreis {
+    display: none;
+  }
+
+  .web-lesen__kreis + .web-lesen__titelblock > .web-lesen__angaben {
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+}
+
+/* Kennzahlen nur, wenn der Lesebereich zwei Spalten hat (F); schmal stehen
+   dieselben Zahlen im Kopf bzw. über dem Verlauf -- jede Zahl einmal. */
+.web-lesen .web-detail__kennzahlen {
+  display: none;
+}
+
+/* Im Lesebereich etwas flacher als auf einer Detailseite (≈ 70 statt 95 px). */
+.web-lesen .web-detail__kennzahlen .web-kachel {
+  padding: var(--app-abstand-eng) var(--app-abstand-basis);
+}
+
+.web-lesen .web-detail__kennzahlen .web-kachel__wert {
+  font-size: var(--app-text-ueberschrift);
+}
+
+@container (min-width: 960px) {
+  /* Breit (zwei Spalten): Stand und Kennzahlen in einer Zeile, die Kennzahlen
+     flach („6 Mails"), damit die jüngste Mail im Bild ist (Leitidee 3; bis
+     12.10.2026 standen die Kacheln ≈ 75 px hoch in eigener Zeile, und beim
+     breiten Lesen begann die jüngste Mail bei 1280 px unter dem Rand). */
+  .web-lesen .web-detail {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+
+  .web-lesen .web-detail > .web-spalten {
+    grid-column: 1 / -1;
+  }
+
+  .web-lesen .web-detail__kennzahlen {
+    display: flex;
+    gap: var(--app-abstand-eng);
+  }
+
+  .web-lesen .web-detail__kennzahlen .web-kachel {
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--app-abstand-kompakt);
+    padding: var(--app-abstand-kompakt) var(--app-abstand-mittel);
+    box-shadow: none;
+  }
+
+  .web-lesen .web-detail__kennzahlen .web-kachel__wert {
+    order: -1;
+    font-size: var(--app-text-gross);
+  }
+
+  .web-lesen .web-detail__kennzahlen .web-kachel__label {
+    min-height: 0;
+    white-space: nowrap;
+  }
+
+  .web-lesen .web-detail__kennzahlen .web-kachel__zusatz {
+    display: none;
+  }
+
+  .web-lesen__nur-schmal {
+    display: none;
+  }
+}
+
+/* Der Stand: eine Zeile, wer dran ist und seit wann -- im Ton des Falls. */
+.web-stand {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-mittel);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+}
+
+.web-stand--warnung {
+  border-color: var(--app-rand-warnung);
+  background: var(--app-flaeche-warnung);
+  color: var(--app-text-warnung);
+}
+
+.web-stand--hinweis {
+  border-color: var(--app-rand-hinweis);
+  background: var(--app-flaeche-hinweis);
+  color: var(--app-text-hinweis-dunkel);
+}
+
+.web-stand--erfolg {
+  border-color: var(--app-rand-erfolg);
+  background: var(--app-flaeche-erfolg);
+  color: var(--app-color-success-tief);
+}
+
+.web-stand__symbol {
+  flex: 0 0 auto;
+  margin-top: var(--app-abstand-winzig);
+  font-size: var(--app-text-standard);
+}
+
+.web-stand__text {
+  min-width: 0;
+}
+
+.web-stand__satz,
+.web-stand__zusatz {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.web-stand__satz {
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
+}
+
+.web-stand__zusatz {
+  margin-top: var(--app-abstand-winzig);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-stand__zusatz--warnung {
+  color: var(--app-text-warnung);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+/* Die interne Notiz oben: höchstens drei Zeilen, dann „mehr". */
+.web-notiz {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: var(--app-abstand-kompakt) var(--app-abstand-mittel);
+  border: 1px dashed var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--web-karte);
+  color: var(--web-text);
+  box-sizing: border-box;
+}
+
+.web-notiz--leer {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--ion-color-primary);
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-notiz--leer:hover {
+  background: var(--web-hover);
+}
+
+.web-notiz--leer:focus-visible,
+.web-notiz__mehr:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-notiz--offen {
+  border-style: solid;
+}
+
+.web-notiz__kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+}
+
+.web-notiz__titel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--web-text-leise);
+}
+
+.web-notiz__text {
+  margin: var(--app-abstand-mini) 0 0;
+  font-size: var(--app-text-sekundaer);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.web-notiz__text--kurz {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.web-notiz__mehr {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ion-color-primary);
+  font: inherit;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  cursor: pointer;
+}
+
+.web-notiz .web-notiz__kopf .web-knopf--text {
+  min-height: 0;
+  padding: 0;
+}
+
+.web-notiz__knoepfe {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--app-abstand-eng);
+  margin-top: var(--app-abstand-eng);
+}
+
+/* Unter der jüngsten Mail: der Editor im zugeklappten Zustand. */
+.web-antwortzeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  margin: 0;
+  padding: var(--app-abstand-mini) 0;
+  border: 0;
+  background: transparent;
+  color: var(--web-text-leise);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  text-align: left;
+  cursor: pointer;
+}
+
+.web-antwortzeile:hover .web-antwortzeile__text {
+  color: var(--web-text);
+}
+
+.web-antwortzeile:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--app-radius-fein);
+}
+
+.web-antwortzeile:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.web-antwortzeile__symbol {
+  flex: 0 0 auto;
+  color: var(--ion-color-primary);
+}
+
+.web-antwortzeile__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.web-antwortzeile__postfach {
+  flex: 0 0 auto;
+  font-size: var(--app-text-klein);
+}
+
+.web-antwortzeile--gesperrt {
+  cursor: default;
+}
+
+/* Der Editor kompakt (G): Beschriftung links, Feld rechts, eine Zeile je Angabe. */
+.web-antwort--kompakt {
+  gap: var(--app-abstand-eng);
+}
+
+.web-antwort__zeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-antwort__zeile > .web-feld__label,
+.web-antwort__zeile > .web-feld > .web-feld__label,
+.web-antwort__danach .web-feld__label {
+  flex: 0 0 56px;
+}
+
+.web-antwort__zeile > .web-feld,
+.web-antwort__danach .web-feld {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+.web-antwort__zeile .web-auswahl {
+  flex: 1;
+  min-width: 0;
+}
+
+.web-antwort__betreff {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+}
+
+.web-antwort__betreff--fest {
+  padding-left: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: var(--app-text-sekundaer);
+  text-overflow: ellipsis;
+}
+
+.web-antwort__von {
+  flex: 0 0 auto;
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+  white-space: nowrap;
+}
+
+.web-antwort__warnung {
+  margin: 0;
+  font-size: var(--app-text-hinweis);
+  color: var(--app-text-warnung);
+}
+
+.web-antwort--kompakt .web-eingabe--text {
+  min-height: 0;
+}
+
+/* Kompakt: Auswahlfelder und Betreff 34 statt 40 px hoch. */
+.web-antwort--kompakt .web-eingabe:not(.web-eingabe--text) {
+  min-height: 34px;
+  padding-top: var(--app-abstand-mini);
+  padding-bottom: var(--app-abstand-mini);
+}
+
+/* „Text der Antwort" steht sichtbar im leeren Feld; die Beschriftung bleibt für Vorleseprogramme. */
+.web-antwort--kompakt > .web-feld > .web-feld__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.web-antwort__mitte {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+}
+
+.web-antwort--kompakt .web-antwort__baustein {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+}
+
+/* Die Beschriftung der Bausteinwahl nur für Vorleseprogramme; „Baustein wählen" steht im Feld. */
+.web-antwort--kompakt .web-antwort__baustein .web-feld__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.web-antwort__vorschauknopf {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  margin: 0;
+  padding: var(--app-abstand-mini) var(--app-abstand-eng);
+  border: 0;
+  border-radius: var(--app-radius-fein);
+  background: transparent;
+  color: var(--web-text-leise);
+  font: inherit;
+  font-size: var(--app-text-hinweis);
+  cursor: pointer;
+}
+
+.web-antwort__vorschauknopf:hover {
+  color: var(--web-text);
+}
+
+.web-antwort__vorschauknopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-antwort__vorschau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+}
+
+.web-antwort__fuss {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  padding-top: var(--app-abstand-eng);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-antwort__danach {
+  display: flex;
+  flex: 0 1 300px;
+  min-width: 0;
+}
+
+.web-antwort__senden {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  margin-left: auto;
+}
+
+/* Die Angaben als offene Karten: neben der Liste zwei nebeneinander (ab
+   640 px Lesebreite), breit eine unter der anderen in der schmalen Spalte. */
+.web-vorgang-karten {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  align-items: start;
+  gap: var(--app-abstand-basis);
+}
+
+.web-vorgang-karte__kopf {
+  align-items: center;
+  padding: var(--app-abstand-mittel) var(--app-abstand-basis) var(--app-abstand-eng);
+}
+
+.web-vorgang-karte__titel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  min-width: 0;
+  font-size: var(--app-text-sekundaer);
+  overflow-wrap: anywhere;
+}
+
+.web-vorgang-karte__inhalt {
+  padding: 0 var(--app-abstand-basis) var(--app-abstand-mittel);
+}
+
+.web-vorgang-karte .web-angaben__zeile {
+  grid-template-columns: 116px minmax(0, 1fr);
+  padding: var(--app-abstand-kompakt) 0;
+  font-size: var(--app-text-sekundaer);
+}
+
+.web-vorgang-karte .web-knopf--text {
+  min-height: 0;
+  padding: 0;
+}
+
+.web-vorgang-karte__wert {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--app-abstand-eng);
+}
+
+.web-vorgang-karte__link {
+  flex: 0 0 auto;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  white-space: nowrap;
+}
+
+.web-vorgang-karte__leitung {
+  margin-top: var(--app-abstand-eng);
+  padding-top: var(--app-abstand-eng);
+  border-top: 1px solid var(--web-linie-leise);
+}
+
+.web-vorgang-karte__leitung .web-personen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-vorgang-karte__untertitel {
+  margin: 0 0 var(--app-abstand-eng);
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text-leise);
+}
+
+.web-vorgang-karte__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-mittel);
+  margin: var(--app-abstand-eng) 0 0;
+  font-size: var(--app-text-hinweis);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+/* Gemeinde anlegen (H): Kurzzeile aus der Anfrage, darunter zwei Spalten. */
+.web-anlegen__kurz {
+  margin: 0;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-grund);
+  font-size: var(--app-text-hinweis);
+  color: var(--web-text-leise);
+}
+
+.web-anlegen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  align-items: start;
+  gap: var(--app-abstand-gross);
+}
+
+.web-anlegen__spalte {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.web-anlegen__gruppe {
+  margin: 0 0 var(--app-abstand-mini);
+  padding: 0;
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--web-text-leise);
+}
+
+/* Lizenz ändern: was danach gilt. */
+.web-lizenz__vorschau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-mittel);
+  border-radius: var(--app-radius-klein);
+  background: var(--web-grund);
+}
+
+.web-lizenz__danach,
+.web-lizenz__link {
+  margin: 0;
+}
+
+.web-lizenz__danach {
+  font-weight: var(--app-schrift-halbfett);
 }
 
 /* Der Zustand der Postfaecher als eine Zeile ueber dem Posteingang. */
@@ -450,4 +1226,97 @@
 /* Leere Liste neben dem Lesebereich: der Leerzustand steht in der Spalte. */
 .web-postfach__leer {
   padding: var(--app-abstand-basis);
+}
+
+/* ===================================================================
+   Rahmen: Listenzeile und Breit lesen (11.10.2026, docs/planung/
+   support-detailseiten.md, D, E, F und „Rahmen"; web/WebPostfach.tsx,
+   web/useListenRahmen.ts, web/WebPostDetail.tsx). Die Zeilen selbst stehen
+   oben unter „Die Zeilen der Liste".
+   =================================================================== */
+
+/* „Breit lesen": die Liste ist aus, der Lesebereich nimmt die ganze Breite
+   (1440: 1136 px, 1280: 976 px) und hat damit zwei Spalten wie jede
+   Detailseite. Stärker als die schmale Liste unter 900 px Inhaltsbreite. */
+.web-postfach.web-postfach--breit {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Breit lesen wie in Skizze F: Über dem Lesebereich steht nur die Leiste
+   „‹ Alle Vorgänge" -- Knöpfe, Reiter, Suche und Filter gehören zur Liste und
+   kommen mit ihr zurück. Der Titel der Seite bleibt für Vorleseprogramme. Bis
+   12.10.2026 standen sie da (≈ 170 px), und die jüngste Mail begann beim
+   breiten Lesen unter dem Rand. */
+.web-seite:has(> .web-postfach--breit) > .web-werkzeuge,
+.web-seite:has(> .web-postfach--breit) > .web-filterleiste,
+.web-seite:has(> .web-postfach--breit) > .web-kopf .web-kopf__aktionen {
+  display: none;
+}
+
+.web-seite:has(> .web-postfach--breit) > .web-kopf {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Im Kopf der Liste: links „Alle auswählen" und die Sammelaktionen, rechts
+   der Schalter „Breit lesen". */
+.web-postfach__listekopf {
+  display: flex;
+  align-items: flex-start;
+}
+
+.web-postfach__listekopf > .web-sammelleiste {
+  flex: 1;
+  min-width: 0;
+}
+
+.web-postfach__breit {
+  flex: 0 0 auto;
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel) 0 0;
+}
+
+/* Der Kreis einer Mail: die Initialen des Absenders, im Ton wie im Verlauf
+   -- in der Zeile der Liste und vor dem Titel im Lesebereich. */
+.web-mail-kreis {
+  --web-vorgang-kreis-farbe: var(--app-color-info);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-mail-kreis.web-vorgang-kreis--gross {
+  font-size: var(--app-text-sekundaer);
+}
+
+/* Kopf einer Mail: „Von Name <adresse>" und „an {Postfach}". */
+.web-lesen__absender {
+  overflow-wrap: anywhere;
+}
+
+.web-lesen__absender strong {
+  color: var(--web-text);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-lesen__postfach {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-mini);
+  white-space: nowrap;
+}
+
+/* Der Titel des Lesebereichs ist Ziel des Fokus, wenn ein Eintrag nach
+   Erledigt, Archivieren oder Löschen dem nächsten weicht (tabindex -1):
+   derselbe Ring wie an den übrigen Knöpfen statt des schwarzen Rahmens des
+   Browsers. */
+.web-lesen__titel:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--app-radius-fein);
 }

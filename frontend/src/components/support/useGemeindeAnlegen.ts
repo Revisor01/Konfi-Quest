@@ -11,12 +11,16 @@
 // POST /organizations. Steht der Kirchenkreis der Anfrage noch nicht in der
 // Struktur, legt ihn ein Schritt an. Die App-Fassung (SupportVorgangDetailPage)
 // und die Web-Fassung (web/WebVorgangDetail) zeigen dieselbe Logik.
+//
+// Die Rückfrage vor dem Anlegen: Die App fragt mit `anlegen` per ion-alert.
+// Die Web-Fassung prüft mit `anlegenPruefen`, fragt in einem zweiten Fenster
+// über ihrem Dialog, wie beim Event, und legt mit `anlegenAusfuehren` an.
 
 import { useCallback, useEffect, useState } from 'react';
 import { useIonAlert } from '@ionic/react';
 import { useApp } from '../../contexts/AppContext';
 import api from '../../services/api';
-import type { AnfrageAngelegt, GemeindeAnfrage, Kirchenkreis, Landeskirche } from '../../types/support';
+import type { AnfrageAngelegt, AnfrageAnlegenDaten, GemeindeAnfrage, Kirchenkreis, Landeskirche } from '../../types/support';
 import {
   anlegenFehler,
   anlegenKoerper,
@@ -30,6 +34,16 @@ import { offlineBlockiert } from '../../utils/offlineAktion';
 import { lizenzFinden } from '../../utils/lizenzen';
 import { meldeSupportGeaendert } from '../../utils/supportAktualisieren';
 
+/** Die Rückfrage vor dem Anlegen -- in der App als ion-alert, im Browser als zweites Fenster. */
+export const ANLEGEN_RUECKFRAGE = {
+  header: 'Gemeinde anlegen',
+  /** Titel des Fensters im Browser: als Frage, damit es sich vom Dialog darunter unterscheidet. */
+  titel: 'Gemeinde anlegen?',
+  frage: (k: AnfrageAnlegenDaten) => `„${k.display_name}“ mit der Gemeindeleitung „${k.admin_display_name}“ (${k.admin_username}) anlegen?`,
+  abbrechen: 'Abbrechen',
+  anlegen: 'Anlegen',
+} as const;
+
 export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
   const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
@@ -38,6 +52,9 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
   const [landeskirchen, setLandeskirchen] = useState<Landeskirche[]>([]);
   const [strukturFehlt, setStrukturFehlt] = useState(false);
   const [formular, setFormular] = useState<AnlegenFormular | null>(null);
+  // Die Vorbelegung aus der Anfrage: Weicht das Formular davon ab, fragt das
+  // Schließen zurück (sonst ginge etwa ein erzeugtes Passwort verloren).
+  const [vorbelegt, setVorbelegt] = useState<AnlegenFormular | null>(null);
   // "Eigenes Limit …" gewaehlt: Zahlenfeld statt Tarif (wie unter Gemeinden).
   const [eigenesLimit, setEigenesLimit] = useState(false);
   const [passwortZeigen, setPasswortZeigen] = useState(false);
@@ -64,7 +81,10 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
     if (!anfrage || !anlegbar) return undefined;
     let aktiv = true;
     void strukturLaden().then((kreise) => {
-      if (aktiv) setFormular((vorher) => vorher ?? anlegenVorbelegen(anfrage, kreise));
+      if (!aktiv) return;
+      const start = anlegenVorbelegen(anfrage, kreise);
+      setFormular((vorher) => vorher ?? start);
+      setVorbelegt((vorher) => vorher ?? start);
     });
     return () => { aktiv = false; };
     // Nur bei einer anderen Anfrage neu vorbelegen, nicht bei jeder neuen Antwort des Servers.
@@ -73,9 +93,27 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
 
   const aendern = (teil: Partial<AnlegenFormular>) => setFormular((f) => (f ? { ...f, ...teil } : f));
 
+  /**
+   * Zurück auf die Vorbelegung aus der Anfrage, gerechnet mit der Struktur,
+   * wie sie jetzt ist: Formular UND Vorbelegung zusammen, dazu Tarif-Wahl
+   * und Passwort-Anzeige. Danach ist nichts geändert (Verwerfen beim
+   * Schließen). Bis 11.10.2026 setzte der Dialog nur das Formular neu; die
+   * Vorbelegung blieb auf dem alten Stand, und jedes weitere Schließen fragte
+   * „Eingaben verwerfen?".
+   */
+  const zuruecksetzen = () => {
+    const start = anfrage && anlegbar ? anlegenVorbelegen(anfrage, kirchenkreise) : null;
+    setFormular(start);
+    setVorbelegt(start);
+    setEigenesLimit(false);
+    setPasswortZeigen(false);
+  };
+
   // Steht der Kirchenkreis der Anfrage noch nicht in der Struktur, legt ihn
   // ein Schritt an (mit der Landeskirche, wenn es sie schon gibt) und waehlt
-  // ihn aus.
+  // ihn aus. Er gehoert dann zur Vorbelegung -- so haette das Formular von
+  // Anfang an ausgesehen; Schliessen fragt deshalb nicht zurueck, nur weil er
+  // angelegt wurde (bis 11.10.2026 galt das als Eingabe).
   const kirchenkreisAnlegen = async () => {
     if (!anfrage?.kirchenkreis || offlineBlockiert(isOnline, setError)) return;
     try {
@@ -83,7 +121,10 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
       await api.post('/support/kirchenkreise', { name: anfrage.kirchenkreis.trim(), landeskirche_id: lk ? lk.id : null });
       const kreise = await strukturLaden();
       const neu = kirchenkreisFinden(anfrage.kirchenkreis, anfrage.landeskirche, kreise);
-      if (neu) aendern({ kirchenkreisId: neu.id });
+      if (neu) {
+        aendern({ kirchenkreisId: neu.id });
+        setVorbelegt((v) => (v ? { ...v, kirchenkreisId: neu.id } : v));
+      }
       setSuccess('Kirchenkreis angelegt');
       meldeSupportGeaendert();
     } catch (err) {
@@ -91,37 +132,43 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
     }
   };
 
-  const anlegen = async () => {
-    if (!anfrage || !formular || offlineBlockiert(isOnline, setError)) return;
+  /** Prüft das Formular: der Körper zum Anlegen, oder `null` mit Meldung (offline, Felder fehlen). */
+  const anlegenPruefen = (): AnfrageAnlegenDaten | null => {
+    if (!anfrage || !formular || offlineBlockiert(isOnline, setError)) return null;
     const meldung = anlegenFehler(formular);
     if (meldung) {
       setError(meldung);
-      return;
+      return null;
     }
-    const koerper = anlegenKoerper(formular);
+    return anlegenKoerper(formular);
+  };
+
+  /** Legt an, ohne zu fragen -- die Rückfrage stellt vorher `anlegen` (App) bzw. der Dialog (Browser). */
+  const anlegenAusfuehren = async (koerper: AnfrageAnlegenDaten) => {
+    if (!anfrage) return;
+    setLegtAn(true);
+    try {
+      const antwort = await api.post(`/support/anfragen/${anfrage.id}/anlegen`, koerper);
+      setAngelegt({ ...antwort.data, username: koerper.admin_username });
+      setSuccess('Gemeinde angelegt');
+      meldeSupportGeaendert();
+    } catch (err) {
+      setError(fehlerText(err, 'Gemeinde konnte nicht angelegt werden'));
+    } finally {
+      setLegtAn(false);
+    }
+  };
+
+  /** Die App-Fassung: prüfen, per ion-alert fragen, anlegen. */
+  const anlegen = async () => {
+    const koerper = anlegenPruefen();
+    if (!koerper) return;
     presentAlert({
-      header: 'Gemeinde anlegen',
-      message: `„${koerper.display_name}“ mit der Gemeindeleitung „${koerper.admin_display_name}“ (${koerper.admin_username}) anlegen?`,
+      header: ANLEGEN_RUECKFRAGE.header,
+      message: ANLEGEN_RUECKFRAGE.frage(koerper),
       buttons: [
-        { text: 'Abbrechen', role: 'cancel' },
-        {
-          text: 'Anlegen',
-          handler: () => {
-            void (async () => {
-              setLegtAn(true);
-              try {
-                const antwort = await api.post(`/support/anfragen/${anfrage.id}/anlegen`, koerper);
-                setAngelegt({ ...antwort.data, username: koerper.admin_username });
-                setSuccess('Gemeinde angelegt');
-                meldeSupportGeaendert();
-              } catch (err) {
-                setError(fehlerText(err, 'Gemeinde konnte nicht angelegt werden'));
-              } finally {
-                setLegtAn(false);
-              }
-            })();
-          },
-        },
+        { text: ANLEGEN_RUECKFRAGE.abbrechen, role: 'cancel' },
+        { text: ANLEGEN_RUECKFRAGE.anlegen, handler: () => { void anlegenAusfuehren(koerper); } },
       ],
     });
   };
@@ -131,8 +178,12 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
   const gemeindeId = angelegt?.organization_id ?? anfrage?.organization_id ?? null;
   const kkGefunden = anfrage ? kirchenkreisFinden(anfrage.kirchenkreis, anfrage.landeskirche, kirchenkreise) : undefined;
   const gewaehlterKreis = formular ? kirchenkreise.find((k) => k.id === formular.kirchenkreisId) : undefined;
+  /** Etwas am Formular ist anders als vorbelegt -- dann fragt das Schließen des Dialogs bzw. Modals zurück. */
+  const geaendert = formular !== null && vorbelegt !== null
+    && (Object.keys(vorbelegt) as Array<keyof AnlegenFormular>).some((feld) => formular[feld] !== vorbelegt[feld]);
 
   return {
+    geaendert,
     isOnline,
     anlegbar,
     kirchenkreise,
@@ -140,6 +191,7 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
     formular,
     setFormular,
     aendern,
+    zuruecksetzen,
     eigenesLimit,
     setEigenesLimit,
     passwortZeigen,
@@ -148,6 +200,8 @@ export function useGemeindeAnlegen(anfrage: GemeindeAnfrage | null) {
     angelegt,
     kirchenkreisAnlegen,
     anlegen,
+    anlegenPruefen,
+    anlegenAusfuehren,
     wunsch,
     gemeindeId,
     kkGefunden,

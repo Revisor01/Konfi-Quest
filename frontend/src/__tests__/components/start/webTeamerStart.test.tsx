@@ -232,9 +232,12 @@ describe('Team-Start (Web): Karten', () => {
 
   it('Challenges: laufende mit Link; ohne laufende steht die Karte trotzdem da (der Weg dorthin)', async () => {
     await zeige();
-    const k = await waitFor(() => karte('Laufende Challenges'));
-    expect(within(k).getByRole('link', { name: 'Kerzen-Challenge' })).toHaveAttribute('href', '/teamer/challenges/8');
-    expect(within(k).getByText('noch 2 Tage')).toBeInTheDocument();
+    // Die Challenges laden getrennt vom Dashboard; bis sie da sind, sagt die
+    // Karte „Gerade läuft keine Challenge". Gewartet wird deshalb auf den
+    // Link selbst, nicht nur auf die Karte (unter Last kam die Antwort im
+    // vollen Lauf nach der Pruefung, 11.10.2026).
+    await waitFor(() => expect(within(karte('Laufende Challenges')).getByRole('link', { name: 'Kerzen-Challenge' })).toHaveAttribute('href', '/teamer/challenges/8'));
+    expect(within(karte('Laufende Challenges')).getByText('noch 2 Tage')).toBeInTheDocument();
   });
 
   it('keine laufende Challenge: die Karte sagt es und fuehrt zu den Challenges', async () => {

@@ -1,6 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import React from 'react';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonTextarea, IonToggle, IonCard, IonCardContent, IonIcon, IonText, IonSpinner, IonList, IonListHeader, IonAccordion, IonAccordionGroup, IonRange } from '@ionic/react';
 import {
   ICON_ABZEICHEN_GEFUELLT,
@@ -15,59 +13,15 @@ import {
   ICON_KATEGORIE_GEFUELLT,
   ICON_SCHLIESSEN,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
-import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { ICON_CHOICES as BADGE_ICONS } from '../../../utils/badgeIcons';
-import { getCriteriaColor as getCategoryColor, getCriteriaIcon, CRITERIA_FALLBACK_COLOR } from '../../../utils/badgeCriteria';
-import type { BadgeKriteriumExtra } from '../../../utils/badgeCriteria';
+import { getCriteriaColor as getCategoryColor, getCriteriaIcon } from '../../../utils/badgeCriteria';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { useZeitgeber } from '../../../hooks/useZeitgeber';
-import { trackHandlung } from '../../../services/analytics';
+import { aktivitaetArt, ohneEmoji, STANDARD_WOCHEN, WOCHEN_MAX, useBadgeFormular, type BadgeAktivitaet } from '../useBadgeFormular';
 
-
-
-interface Activity {
-  id: number;
-  name: string;
-  type: 'gottesdienst' | 'gemeinde';
-  categories?: Category[];
-}
-
-interface Category {
-  id: number;
-  name: string;
-}
-
-/**
- * Ein waehlbarer Kriterientyp aus GET /admin/badges/criteria-types
- * (CRITERIA_TYPES in backend/routes/badges.js): kurze Bezeichnung, ein Satz
- * dazu und der ausfuehrliche Hilfetext mit Beispiel.
- */
-interface KriteriumTyp {
-  label: string;
-  description: string;
-  help: string;
-}
-
-/**
- * Die Zusatzangaben, WIE SIE IM FORMULAR stehen.
- *
- * Bewusst nicht BadgeKriteriumExtra: Das Formular arbeitet mit `weeks`,
- * gespeichert wird daraus `days` (weeks * 7, siehe handleSubmit).
- */
-interface ExtraKriteriumFormular {
-  activity_id?: number;
-  activity_ids?: number[];
-  required_category?: string;
-  /** category_combination: mehrere Kategorienamen (die Auswahl arbeitet hier
-   *  direkt mit Namen — die Wertung im Backend liest ebenfalls Namen). */
-  required_categories?: string[];
-  weeks?: number;
-}
+// Badge anlegen und bearbeiten in der App. Die Logik (Laden, Vorbelegung,
+// Kriterien, Speichern mit Warteschlange, „Badge neu prüfen") steht seit
+// 11.10.2026 in ../useBadgeFormular -- dieselbe wie im Dialog der Web-Fassung
+// (../web/start/WebBadgeFormular). Hier nur die Darstellung der App.
 
 interface BadgeManagementModalProps {
   badgeId?: number | null;
@@ -91,16 +45,12 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   onDirtyChange,
   onRefreshList
 }) => {
-  const { user, setSuccess, setError } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
-  // Nur admin/org_admin duerfen den Knopf "Abzeichen neu pruefen" sehen bzw.
-  // druecken (Route POST /admin/badges/:id/pruefen: requireAdmin).
-  const darfPruefen = user?.role_name === 'admin' || user?.role_name === 'org_admin';
-  const [pruefLoading, setPruefLoading] = useState(false);
-  const initializedRef = useRef(false);
-  const zeitgeber = useZeitgeber();
+  const {
+    isEditMode, darfPruefen, loading, initialDataLoading, isSubmitting, pruefLoading,
+    formData, setFormData, extraCriteria, activities, categories, criteriaTypes, kriterienZurWahl, reglerMax,
+    handleSave, handlePruefen, waehleZielgruppe, waehleKriterium, waehleAktivitaet, waehleKategorie,
+    kategorieKombiUmschalten, aktivitaetKombiUmschalten, setzeWochen, valueLabel,
+  } = useBadgeFormular({ badgeId, targetRole, onSuccess, onDirtyChange, onRefreshList });
 
   const doClose = () => onClose();
 
@@ -109,309 +59,6 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   // einheitlich ab) -> hier keine zweite Abfrage.
   const handleClose = () => { doClose(); };
 
-  // isDirty-Stand nach aussen melden (für canDismiss der praesentierenden Seite).
-  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
-
-  // Punkte-basierte Kriterien - bei Teamer ausblenden
-  const POINTS_CRITERIA_TYPES = ['total_points', 'gottesdienst_points', 'gemeinde_points', 'both_categories', 'bonus_points'];
-  const TEAMER_HIDDEN_TYPES = [...POINTS_CRITERIA_TYPES, 'time_based', 'streak', 'event_count', 'mandatory_event_count'];
-
-  // Form data
-  const defaultCriteriaType = targetRole === 'teamer' ? 'activity_count' : 'total_points';
-  const [formData, setFormData] = useState({
-    name: '',
-    icon: 'trophy',
-    description: '',
-    criteria_type: defaultCriteriaType,
-    criteria_value: targetRole === 'teamer' ? 5 : 10,
-    criteria_extra: '{}',
-    is_active: true,
-    is_hidden: false,
-    color: getCategoryColor(defaultCriteriaType),
-    target_role: targetRole
-  });
-
-  // isDirty nach Initialisierung bei jeder formData-Änderung setzen
-  useEffect(() => {
-    if (initializedRef.current) {
-      setIsDirty(true);
-    }
-  }, [formData]);
-
-  // Available data for dropdowns
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [criteriaTypes, setCriteriaTypes] = useState<Record<string, KriteriumTyp>>({});
-
-  // Additional form fields for complex criteria
-  const [extraCriteria, setExtraCriteria] = useState<ExtraKriteriumFormular>({});
-
-  const isEditMode = !!badgeId;
-
-  useEffect(() => {
-    const init = async () => {
-      await loadInitialData();
-      if (isEditMode) {
-        await loadBadge();
-      }
-      zeitgeber.nach(100, () => { initializedRef.current = true; });
-    };
-    init();
-  }, [badgeId]);
-
-  const [initialDataLoading, setInitialDataLoading] = useState(true);
-
-  const loadInitialData = async () => {
-    try {
-      setInitialDataLoading(true);
-
-      // Aktivitäten NUR aus der Zielgruppe des Badges: ein Teamer-Badge darf
-      // nicht auf Konfi-Aktivitäten verweisen (und umgekehrt) — die Wertung in
-      // badges.js zählt ohnehin nur die passende target_role.
-      const activitiesResponse = await api.get(`/admin/activities?target_role=${targetRole}`);
-      setActivities(Array.isArray(activitiesResponse.data) ? activitiesResponse.data : []);
-
-      // Load categories
-      const categoriesResponse = await api.get('/admin/categories');
-      setCategories(Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
-
-      // Load criteria types
-      const criteriaResponse = await api.get('/admin/badges/criteria-types');
-      setCriteriaTypes(criteriaResponse.data || {});
-    } catch (err) {
-      console.error('Error loading initial data:', err);
-      setError('Fehler beim Laden der Badge-Daten');
-    } finally {
-      setInitialDataLoading(false);
-    }
-  };
-
-  const loadBadge = async () => {
-    if (!badgeId) return;
-
-    setLoading(true);
-    try {
-      const response = await api.get(`/admin/badges/${badgeId}`);
-      const badge = response.data;
-
-      if (badge) {
-        // Parse extra criteria FIRST (kann doppelt escaped sein: "{\"days\":30}")
-        let extra: BadgeKriteriumExtra = {};
-        try {
-          let parsed = badge.criteria_extra;
-          if (typeof parsed === 'string') {
-            parsed = JSON.parse(parsed || '{}');
-          }
-          // Falls nach dem ersten Parse immer noch ein String (doppelt escaped)
-          if (typeof parsed === 'string') {
-            parsed = JSON.parse(parsed);
-          }
-          extra = parsed || {};
-        } catch (e) {
-          console.error('Error parsing criteria_extra:', e);
-          extra = {};
-        }
-
-        // time_based: DB speichert "days", Modal nutzt "weeks" - umrechnen
-        if (badge.criteria_type === 'time_based' && extra.days && !extra.weeks) {
-          extra.weeks = Math.round(extra.days / 7) || 1;
-        }
-
-        // Aktivitäten: DB speichert NAMEN, die Auswahl arbeitet mit IDs.
-        // Ohne diese Rueckuebersetzung stünde die Auswahl beim Bearbeiten
-        // leer da und ein Speichern wuerde die Angabe löschen.
-        // activity_id/activity_ids werden weiter gelesen: Badges aus der Zeit
-        // vor dem Fix (23.08.2026) tragen noch die alten Schlüssel.
-        if (badge.criteria_type === 'specific_activity' && !extra.activity_id) {
-          const treffer = activities.find(a => a.name === extra.required_activity_name);
-          if (treffer) extra.activity_id = treffer.id;
-        }
-        if (badge.criteria_type === 'activity_combination' && !extra.activity_ids) {
-          const ids = (extra.required_activities || [])
-            .map((name: string) => activities.find(a => a.name === name)?.id)
-            .filter((id: number | undefined): id is number => id !== undefined);
-          if (ids.length > 0) extra.activity_ids = ids;
-        }
-
-        const newFormData = {
-          name: badge.name || '',
-          icon: badge.icon || 'trophy-outline',
-          description: badge.description || '',
-          criteria_type: badge.criteria_type || 'total_points',
-          criteria_value: badge.criteria_value || 10,
-          criteria_extra: badge.criteria_extra || '{}',
-          is_active: badge.is_active !== undefined ? badge.is_active : true,
-          is_hidden: badge.is_hidden !== undefined ? badge.is_hidden : false,
-          // MUSS ein Hex-Wert bleiben: der Wert landet in <input type="color">
-          // und wird so in der Datenbank gespeichert. Eine CSS-Variable ist
-          // dort ungueltig (Regression vom 11.08., wieder zurückgenommen).
-          color: badge.color || CRITERIA_FALLBACK_COLOR,
-          target_role: badge.target_role || targetRole
-        };
-
-        setFormData(newFormData);
-        setExtraCriteria(extra);
-      }
-    } catch (err) {
-      setError('Fehler beim Laden des Badges');
- console.error('Error loading badge:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!formData.name.trim()) {
-      setError('Name ist erforderlich');
-      return;
-    }
-
-    // guard() wirft, wenn bereits ein Speichern läuft ("Aktion läuft
-    // bereits"). Ohne dieses catch flog der Fehler ungefangen nach oben —
-    // und weil setLoading(true) INNERHALB des Guards steht, blieb loading
-    // dann auf true hängen. Der X-Button ist mit disabled={loading}
-    // verknuepft und liess sich danach nicht mehr druecken, während der
-    // Swipe weiter ging (User-Hinweis 12.08.).
-    try {
-      await guard(async () => {
-    setLoading(true);
-    try {
-      // Prepare criteria_extra based on criteria_type
-      let criteriaExtra = {};
-      
-      // Die Auswahl arbeitet intern mit IDs, gespeichert werden aber NAMEN:
-      // Das Backend wertet `required_activity_name` bzw. `required_activities`
-      // über activities.name aus (badges.js:216,227). Vorher schrieb das
-      // Formular activity_id/activity_ids — diese Badges wurden nie vergeben,
-      // weil der Schlüssel serverseitig gar nicht gelesen wird
-      // (Befund 23.08.2026, in Produktion nachgewiesen).
-      switch (formData.criteria_type) {
-        case 'specific_activity': {
-          const gewaehlt = activities.find(a => a.id === extraCriteria.activity_id);
-          if (gewaehlt) {
-            criteriaExtra = { required_activity_name: gewaehlt.name };
-          }
-          break;
-        }
-        case 'category_activities':
-          if (extraCriteria.required_category) {
-            criteriaExtra = { required_category: extraCriteria.required_category };
-          }
-          break;
-        case 'category_combination': {
-          // Anders als bei den Aktivitaeten wird hier KEIN ID-Umweg gegangen:
-          // Die Wertung liest Kategorienamen (categories.name), und die
-          // Auswahl haelt sie schon als Namen.
-          const kategorien = [...new Set(extraCriteria.required_categories || [])];
-          if (kategorien.length > 0) {
-            criteriaExtra = { required_categories: kategorien };
-          }
-          break;
-        }
-        case 'time_based':
-          if (extraCriteria.weeks) {
-            criteriaExtra = { days: extraCriteria.weeks * 7 };
-          }
-          break;
-        case 'activity_combination': {
-          const namen = (extraCriteria.activity_ids || [])
-            .map((id: number) => activities.find(a => a.id === id)?.name)
-            .filter(Boolean);
-          if (namen.length > 0) {
-            criteriaExtra = { required_activities: namen };
-          }
-          break;
-        }
-      }
-
-      const badgeData = {
-        ...formData,
-        criteria_extra: criteriaExtra
-      };
-
-      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
-      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
-      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
-      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
-      // Audit Grundgeruest BF-01).
-      const { weg } = await sendenOderEinreihen({
-        online: networkMonitor.isOnline,
-        methode: isEditMode ? 'PUT' : 'POST',
-        senden: () => (isEditMode
-          ? api.put(`/admin/badges/${badgeId}`, badgeData)
-          : api.post('/admin/badges', badgeData)),
-        einreihen: () => (isEditMode
-          ? writeQueue.enqueue({
-            method: 'PUT',
-            url: `/admin/badges/${badgeId}`,
-            body: badgeData,
-            maxRetries: 5,
-            hasFileUpload: false,
-            metadata: { type: 'admin', clientId: safeUUID(), label: 'Badge bearbeiten' },
-          })
-          : writeQueue.enqueue({
-            method: 'POST',
-            url: '/admin/badges',
-            body: badgeData,
-            maxRetries: 5,
-            hasFileUpload: false,
-            metadata: { type: 'admin', clientId: safeUUID(), label: 'Badge erstellen' },
-          })),
-      });
-      if (weg === 'eingereiht') {
-        setSuccess(isEditMode
-          ? 'Badge wird aktualisiert sobald du wieder online bist'
-          : 'Badge wird erstellt sobald du wieder online bist');
-      } else if (!isEditMode) {
-        // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
-        // S5): Pflegen Gemeinden eigene Badges? Kein Name, keine Bedingung.
-        // Bearbeiten zaehlt nicht, offline Angelegtes erst beim Nachsenden.
-        trackHandlung('badge-angelegt', { zielgruppe: formData.target_role });
-      }
-
-      setIsDirty(false);
-      // WICHTIG: Dirty-Stand SYNCHRON nach aussen melden, bevor onSuccess() das Modal
-      // über dismiss()/canDismiss schließt. Sonst sieht canDismiss noch isDirty=true,
-      // blockiert das programmatische Schliessen -> Modal bleibt offen, erneutes
-      // Speichern legt das Badge mehrfach an.
-      onDirtyChange?.(false);
-      onSuccess();
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Speichern des Badges'));
-    } finally {
-      setLoading(false);
-    }
-      });
-    } catch {
-      // Doppelklick auf Speichern — der zweite Aufruf wird verworfen.
-      // Nichts anzeigen, aber den Ladezustand sicher zuruecknehmen.
-      setLoading(false);
-    }
-  };
-
-  // "Abzeichen neu pruefen": holt die Vergabe fuer alle Personen der
-  // Zielrolle in der eigenen Organisation nach (POST /admin/badges/:id/pruefen).
-  // Fuer Sonderfaelle gedacht (Datenlage hat sich geaendert) — Speichern loest
-  // die Pruefung inzwischen ohnehin automatisch aus.
-  const handlePruefen = async () => {
-    if (!badgeId) return;
-    setPruefLoading(true);
-    try {
-      const res = await api.post(`/admin/badges/${badgeId}/pruefen`);
-      const neuVergeben = res.data?.neu_vergeben ?? 0;
-      if (neuVergeben > 0) {
-        setSuccess(neuVergeben === 1 ? '1 Badge neu vergeben' : `${neuVergeben} Badges neu vergeben`);
-        onRefreshList?.();
-      } else {
-        setSuccess('Alle Badges sind aktuell');
-      }
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Prüfung des Badges'));
-    } finally {
-      setPruefLoading(false);
-    }
-  };
-
   // Gottesdienst/Gemeinde gibt es NUR bei Konfis — bei Teamer-Aktivitäten ist
   // `type` bedeutungslos und wuerde als Untertitel nur in die Irre fuehren
   // (User-Hinweis 11.08.). Deshalb dort neutral in der Teamer-Farbe.
@@ -419,20 +66,19 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
   // Dieselben Farben wie der linke Balken der Zeile (app-list-item--gottesdienst
   // / --gemeinde). Vorher standen hier #007aff (das ist die JAHRGANGS-Farbe) und
   // #2dd36f — dadurch hatten Balken und Icon-Kreis zwei verschiedene Toene.
-  const activityColor = (activity: Activity) =>
+  const activityColor = (activity: BadgeAktivitaet) =>
     isTeamerBadge ? 'var(--app-color-teamer)'
       : activity.type === 'gottesdienst'
         ? 'var(--app-color-gottesdienst)'
         : 'var(--app-color-gemeinde)';
-  const activityIcon = (activity: Activity) =>
+  const activityIcon = (activity: BadgeAktivitaet) =>
     isTeamerBadge ? ICON_GRUPPE_GEFUELLT : activity.type === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT : ICON_GEMEINDE_GEFUELLT;
-  const activitySubtitle = (activity: Activity): string | null =>
-    isTeamerBadge ? null : activity.type === 'gottesdienst' ? 'Gottesdienst' : 'Gemeinde';
+  const activitySubtitle = (activity: BadgeAktivitaet): string | null => aktivitaetArt(activity, targetRole);
 
   // Auswahl wird wie ueberall sonst über die Bereichsklasse dargestellt
   // (eingefaerbter Hintergrund), NICHT über ein Haekchen — siehe die
   // Kategorie- und Jahrgangs-Auswahl im Event-Formular (User-Hinweis 11.08.).
-  const activityItemClass = (activity: Activity, isSelected: boolean): string => {
+  const activityItemClass = (activity: BadgeAktivitaet, isSelected: boolean): string => {
     const bereich = isTeamerBadge
       ? 'app-list-item--teamer'
       : activity.type === 'gottesdienst'
@@ -470,7 +116,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
-                          onClick={() => !loading && setExtraCriteria({ ...extraCriteria, activity_id: activity.id })}
+                          onClick={() => waehleAktivitaet(activity.id)}
                           style={{
                             cursor: loading ? 'default' : 'pointer',
                             opacity: loading ? 0.6 : 1,
@@ -529,7 +175,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={category.id}
                           className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
-                          onClick={() => !loading && setExtraCriteria({ ...extraCriteria, required_category: category.name })}
+                          onClick={() => waehleKategorie(category.name)}
                           style={{
                             cursor: loading ? 'default' : 'pointer',
                             opacity: loading ? 0.6 : 1,
@@ -587,19 +233,9 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={isSelected}
                           key={category.id}
                           className={`app-list-item app-list-item--categories${isSelected ? ' app-list-item--selected' : ''}`}
-                          onClick={() => {
-                            if (loading) return;
-                            const neueAuswahl = isSelected
-                              ? gewaehlteKategorien.filter((n: string) => n !== category.name)
-                              : [...gewaehlteKategorien, category.name];
-                            setExtraCriteria({ ...extraCriteria, required_categories: neueAuswahl });
-                            // "4 aus 3" kann niemand erreichen — das Backend
-                            // lehnt es ab. Statt die Speichern-Meldung
-                            // abzuwarten, zieht der Wert beim Abwaehlen mit.
-                            if (neueAuswahl.length > 0 && formData.criteria_value > neueAuswahl.length) {
-                              setFormData({ ...formData, criteria_value: neueAuswahl.length });
-                            }
-                          }}
+                          // "4 aus 3" kann niemand erreichen: der Wert zieht
+                          // beim Abwaehlen mit (useBadgeFormular).
+                          onClick={() => kategorieKombiUmschalten(category.name)}
                           style={{
                             cursor: loading ? 'default' : 'pointer',
                             opacity: loading ? 0.6 : 1,
@@ -630,18 +266,18 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
       case 'time_based':
         return (
           <IonItem lines="none" style={{ '--background': 'transparent', marginTop: 'var(--app-abstand-basis)' }}>
-            <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Zeitraum (Wochen) <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || 4}</span></IonLabel>
+            <IonLabel position="stacked" style={{ marginBottom: 'var(--app-abstand-eng)' }}>Zeitraum (Wochen) <span style={{ fontWeight: 'var(--app-schrift-fett)', color: 'var(--ion-color-primary)' }}>{extraCriteria.weeks || STANDARD_WOCHEN}</span></IonLabel>
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', width: '100%' }}>
               <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>1</span>
               <IonRange aria-label="Zeitraum (Wochen)"
-                min={1} max={26} step={1}
+                min={1} max={WOCHEN_MAX} step={1}
                 pin={true} pinFormatter={(value: number) => `${value}`}
-                value={extraCriteria.weeks || 4}
-                onIonChange={(e) => setExtraCriteria({ ...extraCriteria, weeks: e.detail.value as number })}
+                value={extraCriteria.weeks || STANDARD_WOCHEN}
+                onIonChange={(e) => setzeWochen(e.detail.value as number)}
                 disabled={loading}
                 style={{ flex: 1 }}
               />
-              <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>26</span>
+              <span style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-system)', minWidth: '24px', textAlign: 'center' }}>{WOCHEN_MAX}</span>
             </div>
           </IonItem>
         );
@@ -674,13 +310,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={activity.id}
                           className={activityItemClass(activity, isSelected)}
-                          onClick={() => {
-                            const currentIds = extraCriteria.activity_ids || [];
-                            const newIds = isSelected
-                              ? currentIds.filter((id: number) => id !== activity.id)
-                              : [...currentIds, activity.id];
-                            setExtraCriteria({ ...extraCriteria, activity_ids: newIds });
-                          }}
+                          onClick={() => aktivitaetKombiUmschalten(activity.id)}
                           style={{
                             cursor: loading ? 'default' : 'pointer',
                             opacity: loading ? 0.6 : 1,
@@ -718,47 +348,10 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
     }
   };
 
-  // Hoechstwert des Reglers. Normalfall 20, waechst aber mit, wenn ein
-  // bestehendes Abzeichen darueber liegt: In Produktion gibt es Abzeichen mit
-  // 25, 26 und 30 (nachgemessen 25.08.2026, vier Organisationen betroffen) —
-  // das Backend kennt keine Obergrenze, nur der Regler. Ohne das Mitwachsen
-  // klemmt Ionic den Wert beim ersten Anfassen auf 20 herunter (ionChange ->
-  // ensureValueInBounds), und das Abzeichen ginge schlagartig an alle mit
-  // 20 Punkten — nicht rueckholbar, da es keinen Entzug gibt.
-  const reglerMax = Math.max(20, formData.criteria_value || 0);
-
-  const getValueLabel = () => {
-    switch (formData.criteria_type) {
-      case 'total_points':
-      case 'gottesdienst_points':
-      case 'gemeinde_points':
-      case 'both_categories':
-      case 'bonus_points':
-        return 'Punkte';
-      case 'specific_activity':
-        return 'Anzahl (Spezifische Aktivität)';
-      case 'activity_count':
-        return 'Anzahl (Aktivitäten & Events)';
-      case 'event_count':
-        return 'Anzahl (Events)';
-      case 'mandatory_event_count':
-        return 'Anzahl (Pflicht-Events)';
-      case 'category_activities':
-        return 'Anzahl (Kategorie-Aktivitäten & Events)';
-      case 'category_combination':
-        return 'Aus wie vielen der angekreuzten Kategorien?';
-      case 'unique_activities':
-        return 'Anzahl (Verschiedene Aktivitäten)';
-      case 'streak':
-        return 'Anzahl (Aufeinanderfolgende Wochen)';
-      case 'time_based':
-        return 'Anzahl (Aktivitäten & Events im Zeitraum)';
-      case 'teamer_year':
-        return 'Anzahl (Aktive Jahre als Teamer:in)';
-      default:
-        return 'Wert';
-    }
-  };
+  // Hoechstwert des Reglers (reglerMaximum in useBadgeFormular): Normalfall
+  // 20, waechst mit einem bestehenden hoeheren Wert mit, damit Ionic ihn beim
+  // ersten Anfassen nicht herunterklemmt.
+  const getValueLabel = () => valueLabel;
 
   return (
     <IonPage>
@@ -813,7 +406,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     statt beide in Orange — wie ueberall sonst in der App. */}
                 <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className={`app-list-item app-list-item--purple${formData.target_role === 'konfi' ? ' app-list-item--selected' : ''}`}
-                  onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', criteria_type: 'total_points', criteria_value: 10, color: getCategoryColor('total_points') })}
+                  onClick={() => waehleZielgruppe('konfi')}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
                     marginBottom: '0'
@@ -832,7 +425,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </div>
                 <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className={`app-list-item app-list-item--teamer${formData.target_role === 'teamer' ? ' app-list-item--selected' : ''}`}
-                  onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', criteria_type: 'activity_count', criteria_value: 5, color: getCategoryColor('activity_count') })}
+                  onClick={() => waehleZielgruppe('teamer')}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
                     marginBottom: '0'
@@ -1029,7 +622,7 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                     {formData.criteria_type && criteriaTypes[formData.criteria_type] && (
                       <>
                         <p style={{ fontSize: 'var(--app-text-sekundaer)', color: 'var(--app-text-primary)', margin: '0 0 var(--app-abstand-winzig) 0', fontWeight: 'var(--app-schrift-mittel)' }}>
-                          {criteriaTypes[formData.criteria_type].label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim()}
+                          {ohneEmoji(criteriaTypes[formData.criteria_type].label)}
                         </p>
                         <p style={{ fontSize: 'var(--app-text-klein)', color: 'var(--app-text-muted)', margin: '0', whiteSpace: 'normal' }}>
                           {criteriaTypes[formData.criteria_type].description}
@@ -1040,44 +633,19 @@ const BadgeManagementModal: React.FC<BadgeManagementModalProps> = ({
                 </IonItem>
                 <div slot="content" style={{ padding: 'var(--app-abstand-eng) 0' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
-                    {Object.entries(criteriaTypes)
-                      .filter(([value]) => {
-                        // Bei Teamer: Punkte-basierte Kriterien ausblenden
-                        if (formData.target_role === 'teamer' && TEAMER_HIDDEN_TYPES.includes(value)) return false;
-                        // teamer_year NUR bei Teamer anzeigen
-                        if (value === 'teamer_year' && formData.target_role !== 'teamer') return false;
-                        return true;
-                      })
-                      .map(([value, type]) => {
+                    {/* Bei Teamer ohne Punkte-Kriterien, teamer_year nur bei
+                        Teamer (kriteriumWaehlbar in useBadgeFormular). */}
+                    {kriterienZurWahl.map(([value, type]) => {
                       const isSelected = formData.criteria_type === value;
                       const typColor = getCategoryColor(value);
                       // Remove emojis from label
-                      const labelWithoutEmoji = type.label.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/gu, '').trim();
+                      const labelWithoutEmoji = ohneEmoji(type.label);
 
                       return (
                         <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                           key={value}
                           className="app-list-item"
-                          onClick={() => {
-                            if (!loading) {
-                              let defaultValue = 10;
-                              if (value === 'activity_count' || value === 'unique_activities' ||
-                                  value === 'specific_activity' || value === 'category_activities' ||
-                                  value === 'event_count') {
-                                defaultValue = 5;
-                              } else if (value === 'activity_combination' || value === 'category_combination') {
-                                defaultValue = 3;
-                              } else if (value === 'streak') {
-                                defaultValue = 4;
-                              }
-                              const currentCategoryColor = getCategoryColor(formData.criteria_type);
-                              const newColor = (formData.color === currentCategoryColor || formData.color === CRITERIA_FALLBACK_COLOR)
-                                ? getCategoryColor(value)
-                                : formData.color;
-                              setFormData({ ...formData, criteria_type: value, criteria_value: defaultValue, color: newColor });
-                              setExtraCriteria({});
-                            }
-                          }}
+                          onClick={() => waehleKriterium(value)}
                           style={{
                             cursor: loading ? 'default' : 'pointer',
                             opacity: loading ? 0.6 : 1,

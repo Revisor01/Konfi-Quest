@@ -121,6 +121,24 @@ Versionsüberschrift.
 - Support-Ansicht: Mails im Posteingang lassen sich einem bestehenden oder
   neuen Vorgang zuordnen, archivieren oder löschen, auch mehrere auf einmal;
   Vorgänge lassen sich archivieren und löschen.
+- Ein Vorgang im Support sagt oben, wer dran ist und seit wann, und sein
+  Hauptknopf folgt diesem Stand — Antworten, Erledigt, Gemeinde anlegen oder
+  Wiederherstellen —, im Browser im Kopf, in der App in der Karte „Stand“.
+- Eine Anfrage einer neuen Gemeinde lässt sich im Browser und in der App
+  ablehnen, mit einer Rückfrage, die die Folgen nennt.
+- Im Vorgang „Lizenz und Abrechnung“ stehen Tarif, Konfis, Laufzeit und der
+  Wunsch bei der Anmeldung in einer eigenen Karte, und Tarif und Laufzeit
+  lassen sich dort ändern, auch per „Wunschlizenz übernehmen“.
+- Jede Mail eines Vorgangs lässt sich über ihr Menü in einen anderen Vorgang
+  verschieben oder in einen neuen Vorgang herauslösen.
+- Im Browser lässt sich ein Vorgang oder eine Mail ohne Liste breit lesen,
+  die Wahl gilt je Gerät; die Werkzeuge der Liste treten dann mit ihr
+  zurück, damit die jüngste Mail gleich im Bild ist, ‹ › und die Pfeiltasten
+  blättern zum vorigen und nächsten Eintrag, „‹ Alle Vorgänge“ holt die
+  Liste zurück.
+- In der App lassen sich Vorgang und Mail im Support durch Herunterziehen
+  aktualisieren; ein alter Link auf eine Anfrage sucht damit ihren Vorgang
+  erneut.
 - Auf konfi-quest.de gibt es ein Formular „Hilfe und Support" mit Art,
   Bereich und Dringlichkeit zum Auswählen; unter „Mehr" führt „Hilfe und
   Support" für Gemeindeleitung und Leitung dorthin.
@@ -142,15 +160,62 @@ Versionsüberschrift.
   „offline nicht verfügbar".
 - Im Browser lässt sich „Material verwalten" auch als Kacheln ansehen; die
   Wahl zwischen Liste und Kacheln merkt sich der Browser.
+- Im Browser haben die häufigen Formulare ein eigenes, kompaktes Fenster —
+  Events, Aktivität eintragen, melden und prüfen, Bonuspunkte, Material,
+  Badges, Kategorien, Level, Zertifikate, Benutzer:innen, Jahrgänge, Passwort
+  und E-Mail-Adresse — mit beschrifteten Feldern, dem Kalender des Browsers
+  für Datum und Uhrzeit und den Knöpfen unten rechts, die beim Scrollen im
+  Bild bleiben.
+- In diesen Fenstern steht der Grund im Fenster selbst, wenn eine Angabe fehlt
+  oder der Server ablehnt, und solange gespeichert wird, lässt sich das
+  Fenster nicht schließen.
+- Beim Prüfen einer gemeldeten Aktivität im Browser stehen links die Angaben
+  und rechts das Nachweisfoto; entschieden wird mit „Genehmigen" oder
+  „Ablehnen".
 
 ### Geändert
-- Im Support stehen Mails als Gespräche: Antworten eingerückt unter der Mail,
-  auf die sie antworten, jede Mail eingeklappt mit einer Zeile Text, Zitate und
-  Signatur verborgen, Gesendetes grün markiert.
+- Im Browser öffnen sich alle Fenster der App kompakt: mittig, so groß wie ihr
+  Inhalt und mit derselben Form wie die übrigen Fenster im Browser, statt
+  immer gleich groß mit leerer Fläche oder abgeschnittenem Rand. Der Kalender
+  zum Datum steht als kleines Fenster darüber.
 - Posteingang und Vorgänge des Supports arbeiten im Browser wie ein
-  Mailprogramm: links die Liste, rechts der gewählte Eintrag; Antworten,
-  Einordnen und Einsortieren öffnen sich als kompaktes Fenster, in der App als
-  eigenes Fenster.
+  Mailprogramm: links die Liste, rechts der gewählte Eintrag; Einordnen und
+  Einsortieren öffnen sich als kompaktes Fenster, in der App als eigenes
+  Fenster.
+- Der Schriftwechsel eines Vorgangs und einer Mail im Support steht flach und
+  zeitlich geordnet, oben das Anliegen aus dem Formular bzw. der Anfrage:
+  Gelesenes als eine Zeile, ab drei früheren Mails als „N frühere Mails“, die
+  jüngste und neue Mails offen, Zitate und Signatur verborgen, Gesendetes
+  grün markiert.
+- Ein Vorgang im Browser ist aufgebaut wie jede Detailseite: Kopf mit Symbol
+  der Art, Betreff und Kennzeichen, darunter die interne Notiz und die
+  Angaben als offene Karten statt eines Akkordeons.
+- In der App nennt die Kopfzeile eines Vorgangs seine Nummer; Status,
+  Dringlichkeit und Art stehen als Marken in der Karte „Stand“ samt interner
+  Notiz, und die drei Kacheln oben zeigen nur Zahlen.
+- Antworten öffnet im Browser einen kompakten Editor direkt unter der
+  jüngsten Mail, mit dem Fokus im Text; in der App zeigt das Fenster
+  „Antworten“ die Mail, auf die man antwortet.
+- Nach einer Antwort auf einen offenen Vorgang lässt sich wählen, welchen
+  Status er bekommt (vorgewählt „Wartet auf Rückmeldung“); klappt das nicht,
+  steht dort „Gesendet, Status nicht gesetzt.“
+- Als Empfänger einer Antwort stehen alle zur Wahl, die im Vorgang
+  geschrieben haben, jeweils mit ihrer Herkunft.
+- Einordnen wird auch in der App erst mit „Speichern“ übernommen, und dabei
+  lässt sich der Betreff eines Vorgangs ändern.
+- „Gemeinde anlegen“ öffnet sich im Browser als breiter Dialog in zwei
+  Spalten, in der App als eigenes Fenster, und fragt beim Schließen nur nach,
+  wenn eigene Eingaben verloren gingen.
+- Eine Mail im Posteingang zeigt oben den Betreff ohne „Re:“ und „AW:“ und
+  den Absender mit Name und Adresse; ihr Hauptknopf ist „Einsortieren“.
+- Eine Mail, die schon in einem Vorgang liegt, öffnet sich dort, aufgeklappt
+  und kurz hervorgehoben — auch aus der Übersicht und nach dem Einsortieren.
+- Nach Erledigt, Archivieren oder Löschen öffnet sich im Browser der nächste
+  Eintrag der Liste, auch über die Sammelleiste; steht noch eine ungesendete
+  Antwort oder ungespeicherte Notiz da, wird vorher nachgefragt.
+- In den Listen von Vorgängen und Posteingang im Browser steht vor jeder
+  Zeile das Symbol der Art bzw. die Initialen des Absenders, bei Vorgängen
+  darunter Nummer, Art und Gemeinde.
 - Im Browser stehen zwei oder mehr Filter einer Liste hinter dem Knopf
   „Filter"; sie klappen darunter auf, und die Zeile mit Reitern und Suche
   bricht nicht mehr um.
@@ -288,6 +353,10 @@ Versionsüberschrift.
   neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
+- Im Browser stehen Rückfragen und Meldungen aus einem Fenster über dem
+  Fenster; bisher lagen sie dahinter — etwa beim Anlegen einer Gemeinde aus
+  einer Anfrage, das deshalb nicht weiterging, oder bei „Nicht möglich“ unter
+  Support-Konten.
 - In den Einführungen ist „Überspringen" auf dem farbigen Grund weiß und
   damit lesbar.
 - Bei Umfragen in der App überdeckt eine lange Antwort nicht mehr die
@@ -450,6 +519,23 @@ Versionsüberschrift.
 - Support-Ansicht: Listen, Zahlen und Übersicht zeigen nach einer Änderung
   (Status gesetzt, Mail gelesen, einsortiert, archiviert) sofort den neuen
   Stand.
+- Der vorgeschlagene Betreff einer Antwort im Support häuft keine „Re:“ und
+  „AW:“ mehr und trägt die Vorgangsnummer nur einmal.
+- Archivieren und Löschen stehen nicht mehr an Mails, die schon in einem
+  Vorgang liegen; der Server lehnte beides dort ab.
+- Ein Vorgang ohne zugeordnete Gemeinde zeigt den im Formular genannten
+  Gemeindenamen nicht mehr wie eine Gemeinde, und seine Gemeinde-Links führen
+  nicht mehr ins Leere.
+- In der Empfängerwahl einer Antwort steht lesbar, woher eine Adresse stammt
+  („Gemeindeleitung“, „aus früheren Mails“, „schrieb uns“), statt eines
+  internen Schlüssels.
+- Die Kacheln über einem Vorgang und einer Mail laufen in der App nicht mehr
+  über.
+- Der Archiv-Hinweis einer Mail widerspricht dem Knopf „Einsortieren“ nicht
+  mehr und steht nur einmal da.
+- Vorleseprogramme lesen in den Listen von Vorgängen und Posteingang zu jeder
+  Zeile auch Art, Gemeinde, Status und ungelesene Mails bzw. Postfach und
+  Anhänge, nicht nur Nummer bzw. Absender und Betreff.
 - Die roten Zahlen im Chat laufen nach dem Verlassen eines Chats live weiter.
 - Ein bevorstehendes Pflicht-Event heißt in der Liste der Leitung „Pflicht"
   statt „Geschlossen".
@@ -472,6 +558,27 @@ Versionsüberschrift.
   Namen der Gemeinde, in die sie zurückwechselt.
 - In den Terminlisten stehen die Kategorien eines Termins ohne doppelte
   Leerzeichen, und ein Kategoriename mit Komma bleibt ganz.
+- Beim Bearbeiten eines Badges mit „Spezifischer Aktivität“ oder
+  „Aktivitäts-Kombination“ ist die gespeicherte Auswahl gewählt, und Speichern
+  gelingt; bisher stand die Auswahl leer da, und das Speichern scheiterte.
+- Ein zeitbasiertes Badge gilt ohne eigene Wahl des Zeitraums für die
+  angezeigten 4 Wochen, beim Anlegen wie beim Speichern eines älteren Badges
+  ohne Zeitraum; bisher lehnte der Server mit „Bitte einen Zeitraum angeben“
+  ab.
+- Beim Melden einer Aktivität in der App steht das Datum auch dann auf
+  Deutsch, wenn das Handy auf eine andere Sprache eingestellt ist; bisher
+  stand dort dann etwa „Oct 11, 2026“.
+- „Aktivität eintragen“ geht ohne Netz, wenn die Liste der Aktivitäten auf dem
+  Gerät schon einmal geladen war; der Eintrag geht hinaus, sobald wieder
+  Verbindung besteht. Bisher blieb die Liste ohne Netz leer.
+- Im Browser schickt Enter im Suchfeld eines Fensters nichts mehr ab, etwa
+  beim Einsortieren einer Mail im Support; bisher wurde dabei der zuvor
+  gewählte Eintrag übernommen, auch wenn die Suche ihn schon ausgeblendet
+  hatte. Passt nur noch ein Eintrag, wählt Enter ihn aus.
+- Im Browser lässt sich ein neues Level ohne eigene Farbwahl anlegen; es
+  bekommt die Farbe, die das Farbfeld zeigt. Bisher scheiterte das Speichern.
+- Im Browser steht eine neu angelegte Teamer:in sofort in der Team-Liste,
+  nicht erst nach einem Wechsel zwischen Konfis und Team.
 
 ### Sonstiges
 - Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,

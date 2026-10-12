@@ -27,6 +27,7 @@ import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebSeite from '../../web/WebSeite';
 import WebKnopf from '../../web/WebKnopf';
 import { WebLaden } from '../../web/WebZustaende';
+import WebBadgeFormular from '../web/start/WebBadgeFormular';
 
 interface Badge {
   id: number;
@@ -61,6 +62,9 @@ const AdminBadgesPage: React.FC = () => {
 
   // Modal state
   const [modalBadgeId, setModalBadgeId] = useState<number | null>(null);
+  // Browser ab 992 px: statt des App-Modals der Dialog der Web-Fassung
+  // (web/start/WebBadgeFormular, dieselbe Logik). null = zu; badgeId null = neu.
+  const [webFormular, setWebFormular] = useState<{ badgeId: number | null } | null>(null);
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
@@ -134,6 +138,10 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const handleSelectBadge = (badge: Badge) => {
+    if (breit) {
+      setWebFormular({ badgeId: badge.id });
+      return;
+    }
     setModalBadgeId(badge.id);
     presentBadgeModalHook({
       presentingElement: presentingElement,
@@ -143,6 +151,10 @@ const AdminBadgesPage: React.FC = () => {
   };
 
   const presentBadgeModal = () => {
+    if (breit) {
+      setWebFormular({ badgeId: null });
+      return;
+    }
     setModalBadgeId(null);
     presentBadgeModalHook({
       presentingElement: presentingElement,
@@ -179,6 +191,15 @@ const AdminBadgesPage: React.FC = () => {
             onDeleteBadge={handleDeleteBadge}
             targetRole={selectedRole}
             onRoleChange={handleRoleChange}
+          />
+        )}
+        {webFormular && (
+          <WebBadgeFormular
+            badgeId={webFormular.badgeId}
+            targetRole={selectedRole}
+            onSchliessen={() => setWebFormular(null)}
+            onGespeichert={() => { setWebFormular(null); refreshBadges(); }}
+            onListeNeuLaden={() => { refreshBadges(); }}
           />
         )}
       </WebSeite>

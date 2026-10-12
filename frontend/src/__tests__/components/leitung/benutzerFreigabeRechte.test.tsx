@@ -7,8 +7,8 @@
 // anderen, der die Felder mitschickt, mit 403 ab. Deshalb hängen Schalter
 // UND Mitschicken an derselben Bedingung.
 //
-// Dasselbe Fenster nutzt die Web-Fassung (AdminUsersPage öffnet
-// UserManagementModal), deshalb gilt der Test für App und Web.
+// Der Dialog der Web-Fassung (WebBenutzerDialog) nutzt dieselbe Logik
+// (useBenutzerFormular); seine Darstellung prüft webBenutzerDialog.test.tsx.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
@@ -186,5 +186,17 @@ describe('VERBOTEN: keine Schalter und keine Felder im Speichern', () => {
     expect(screen.queryByText(HINWEIS)).toBeNull();
     const body = await speichern();
     expect(body).toEqual({ jahrgang_assignments: [{ jahrgang_id: 11, can_view: true }] });
+  });
+});
+
+describe('App: Meldungen bleiben oben', () => {
+  it('ein Fehler des Servers geht an die Meldung oben (setError), nicht in das Fenster', async () => {
+    h.apiPut.mockRejectedValueOnce({ response: { status: 409, data: { error: 'Benutzername bereits vergeben' } } });
+    await oeffne();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Benutzer:in speichern' })); });
+    expect(h.setError).toHaveBeenCalledTimes(1);
+    expect(h.setError).toHaveBeenCalledWith('Benutzername bereits vergeben');
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(h.apiPost).not.toHaveBeenCalled();
   });
 });

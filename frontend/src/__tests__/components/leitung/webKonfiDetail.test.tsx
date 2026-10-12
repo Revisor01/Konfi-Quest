@@ -8,6 +8,8 @@
 // (KonfiDetailView) haelt Daten und Aktionen und oeffnet dieselben Fenster und
 // Rueckfragen wie in der App; geprueft wird, dass die Web-Fassung genau diese
 // ruft -- mit den richtigen Werten --, und dass die App-Darstellung bleibt.
+// Aktivitaet eintragen und Bonuspunkte vergeben oeffnen seit 11.10.2026 eigene
+// Dialoge der Web-Fassung (Formular und Speichern: webAktivitaetBonusDialog.test.tsx).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
@@ -54,7 +56,8 @@ vi.mock('../../../contexts/LiveUpdateContext', () => ({
 }));
 vi.mock('../../../services/offlineCache', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../../services/offlineCache')>()),
-  offlineCache: { get: vi.fn().mockResolvedValue(null), set: vi.fn(), remove: vi.fn() },
+  // set liefert wie das echte ein Promise: netzZuerst.ts haengt .catch daran.
+  offlineCache: { get: vi.fn().mockResolvedValue(null), set: vi.fn().mockResolvedValue(undefined), remove: vi.fn() },
 }));
 vi.mock('../../../components/admin/views/ActivityRings', () => ({
   default: (p: Record<string, unknown>) => (
@@ -287,8 +290,16 @@ describe('Konfi-Detail (Web): Person und Punkte', () => {
 });
 
 describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
-  it('Aktivitaet eintragen und Bonuspunkte vergeben: dieselben Fenster, vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs', async () => {
+  // Bis 11.10.2026 oeffneten beide Knoepfe die Modale der App; seitdem eigene
+  // Dialoge der Web-Fassung (Simon: „Web braucht eigene kompaktere Modale
+  // überall"). Gewollte Aenderung: Die Erwartung prueft jetzt den Dialog,
+  // vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs.
+  it('Aktivitaet eintragen und Bonuspunkte vergeben: eigene Dialoge der Web-Fassung, vorbelegt mit der Konfi und den Punktearten ihres Jahrgangs', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, gottesdienst_enabled: false });
+    h.antworten.set('/admin/activities?target_role=konfi', [
+      { id: 31, name: 'Gottesdienstbesuch', points: 1, type: 'gottesdienst' },
+      { id: 32, name: 'Kirchencafé helfen', points: 2, type: 'gemeinde' },
+    ]);
     await oeffnen();
     const aktionen = kopf();
     // Alle Aktionen stehen im Kopf, die wichtigste als Hauptknopf.
@@ -296,12 +307,21 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
       .toEqual(['Passwort zurücksetzen', 'Konfi bearbeiten', 'Bonuspunkte vergeben', 'Aktivität eintragen']);
     expect(aktionen.getByRole('button', { name: 'Aktivität eintragen' }).classList.contains('web-knopf--primaer')).toBe(true);
     fireEvent.click(aktionen.getByRole('button', { name: 'Aktivität eintragen' }));
-    expect(fenster(ActivityModal)).toHaveLength(1);
-    expect(fenster(ActivityModal)[0].props).toEqual(expect.objectContaining({
-      konfiId: ID, targetRole: 'konfi', punkteartFlags: { gottesdienst_enabled: false, gemeinde_enabled: undefined },
-    }));
+    const aktivitaet = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
+    expect(aktivitaet).toHaveAccessibleDescription('Für Anna Müller');
+    // Gottesdienst ist im Jahrgang abgeschaltet: nur die Gemeinde-Aktivitaet steht zur Wahl.
+    await waitFor(() => expect(within(aktivitaet).getAllByRole('radio').map((r) => r.closest('label')?.querySelector('.web-wahl__titel')?.textContent))
+      .toEqual(['Kirchencafé helfen']));
+    expect(fenster(ActivityModal)).toHaveLength(0);
+    fireEvent.click(within(aktivitaet).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+
     fireEvent.click(aktionen.getByRole('button', { name: 'Bonuspunkte vergeben' }));
-    expect(fenster(BonusModal)[0].props).toEqual(expect.objectContaining({ konfiId: ID, punkteartFlags: { gottesdienst_enabled: false, gemeinde_enabled: undefined } }));
+    const bonus = screen.getByRole('dialog', { name: 'Bonuspunkte vergeben' });
+    expect(bonus).toHaveAccessibleDescription('Für Anna Müller');
+    const typ = within(bonus).getByRole('combobox', { name: 'Typ' }) as HTMLSelectElement;
+    expect([...typ.options].map((o) => o.textContent)).toEqual(['Gemeinde']);
+    expect(fenster(BonusModal)).toHaveLength(0);
   });
 
   it('Bearbeiten: das Formular mit Name und Jahrgang der Konfi; die Gemeindeleitung sieht alle Jahrgaenge', async () => {
@@ -432,7 +452,7 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
 
   // Offenes steht OBEN in der jeweiligen Liste, kein eigener Bereich
   // (Simon, 09.10.2026).
-  it('Offene Antraege stehen oben in den Aktivitaeten, ohne "(gemeldet)"; mit Recht oeffnet "Pruefen" das Fenster der Antragsliste', async () => {
+  it('Offene Antraege stehen oben in den Aktivitaeten, ohne "(gemeldet)"; mit Recht oeffnet "Pruefen" den Dialog "Aktivität prüfen" mit denselben Folgen wie in der App', async () => {
     await oeffnen();
     expect(screen.queryByRole('region', { name: 'Offene Anträge' })).toBeNull();
     const akt = karte('Aktivitäten');
@@ -446,10 +466,30 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     // Der Zaehler im Untertitel zaehlt nur Verbuchtes (zwei Aktivitaeten).
     expect(akt).toHaveTextContent('3 Punkte aus 2 Aktivitäten');
     expect(h.apiGet).toHaveBeenCalledWith('/admin/activities/requests', { params: { user_id: ID, status: 'pending' } });
+    // Seit 11.10.2026 im Browser der Dialog der Web-Fassung statt des Fensters
+    // der App (Simon: „Web braucht eigene kompaktere Modale überall"); geprüft
+    // im Einzelnen in termineWeb/webAntragPruefenDialog.test.tsx.
+    h.antworten.set('/admin/activities/requests/71', {
+      id: 71, konfi_id: ID, konfi_name: 'Anna Müller', activity_id: 4, activity_name: 'Gemeindebrief austragen',
+      activity_type: 'gemeinde', activity_points: 2, activity_target_role: 'konfi', requested_date: '2026-10-02',
+      photo_filename: 'foto.jpg', status: 'pending', created_at: '2026-10-02T08:00:00Z', updated_at: '2026-10-02T08:00:00Z',
+    });
     fireEvent.click(offen.getByRole('button', { name: 'Aktivität Gemeindebrief austragen prüfen' }));
-    const pruefen = fenster(ActivityRequestModal);
-    expect(pruefen).toHaveLength(1);
-    expect((pruefen[0].props as { requestId?: number }).requestId).toBe(71);
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität prüfen' });
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/activities/requests/71');
+    await waitFor(() => expect(within(dialog).getByRole('button', { name: 'Genehmigen' })).toBeInTheDocument());
+    expect(fenster(ActivityRequestModal)).toHaveLength(0);
+
+    // Nach der Entscheidung dieselben Folgen wie im Fenster der App: die
+    // Ansicht lädt neu, Antragszähler und Konfi-Liste laufen an.
+    const vorher = h.apiGet.mock.calls.filter(([pfad]) => pfad === `/admin/konfis/${ID}`).length;
+    h.apiPut.mockResolvedValue({ data: {} });
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Genehmigen' })); });
+    for (let i = 0; i < 6; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(h.apiPut).toHaveBeenCalledWith('/admin/activities/requests/71', { status: 'approved', admin_comment: '' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.apiGet.mock.calls.filter(([pfad]) => pfad === `/admin/konfis/${ID}`).length).toBe(vorher + 1);
+    expect(h.triggerRefresh.mock.calls.map((a) => a[0])).toEqual(['requests', 'konfis']);
   });
 
   it('Offener Antrag ohne Recht: kein "Pruefen", nur das Foto', async () => {

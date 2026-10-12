@@ -70,8 +70,10 @@ Der Inhalt steht daneben, auf breiten Bildschirmen mittig.
 Jeder Bereich hat im Browser eine eigene, breitere Ansicht: Listen stehen als
 Tabellen oder Karten da — bei Events, Challenges und Konfis nach deiner Wahl —,
 mit Suche und Filtern darüber; die Seiten der Events und Challenges sind alle
-gleich aufgebaut. Was du darfst, was die Zahlen zählen und welche Fenster aufgehen, ist
-dasselbe wie in der App — nur die Darstellung nutzt die Breite. Was sich öffnen
+gleich aufgebaut. Was du darfst, was die Zahlen zählen und was in den Fenstern
+steht, ist dasselbe wie in der App — nur die Darstellung nutzt die Breite, und
+die Fenster sind kompakter (siehe
+[Im Browser ein Fenster bedienen](#im-browser-ein-fenster-bedienen)). Was sich öffnen
 lässt — eine Person, ein Event, eine Challenge, eine Kachel —, ist ein
 gewöhnlicher Link: Mit Strg-Klick (am Mac ⌘-Klick) oder der mittleren
 Maustaste geht es in einem neuen Tab auf. Wie die Ansichten aufgebaut sind,
@@ -183,6 +185,71 @@ darunter klappt den Rest auf, **Weniger anzeigen** wieder zu. Ein Klick auf
 einen Spaltenkopf sortiert dabei immer die ganze Tabelle.
 
 Wird das Fenster schmaler, rutscht die rechte Spalte unter die linke.
+
+### Im Browser ein Fenster bedienen
+
+Was sich in der App als eigenes Fenster über die Seite schiebt — ein
+Formular, eine Auswahl, eine Übersicht —, öffnet sich im Browser als
+**kompaktes Fenster** in der Mitte: so breit, wie ein Formular braucht, und
+so hoch wie sein Inhalt. Ist ein Formular länger als das Browserfenster,
+scrollt es in sich. Ansichten über die ganze Fläche — ein Jahresrückblick,
+eine geöffnete Datei — bleiben, wie sie sind. Schließen kannst du jedes
+Fenster mit dem Kreuz oben, mit der Escape-Taste oder mit einem Klick neben
+das Fenster.
+
+Die Formulare, die du am häufigsten brauchst, haben im Browser ein **eigenes
+Fenster**: dieselben Angaben und Regeln wie in der App, aber mit beschrifteten
+Feldern, zusammengehörige Felder nebeneinander, Auswahl- und Ankreuzlisten
+statt Kacheln und Zahlen als Feld oder Auswahl statt Schieberegler — in
+denselben Grenzen wie in der App, nur die
+[benötigten Punkte eines Levels](40-punkte.md#level-anlegen-und-pflegen)
+reichen weiter. Das gilt für:
+
+- Event anlegen, bearbeiten und kopieren
+- Aktivität eintragen und Bonuspunkte vergeben, auf der Seite einer Person
+- Aktivität melden (Konfis und Team) und Aktivität prüfen (Leitung)
+- Material anlegen, bearbeiten und ansehen
+- Badges anlegen und bearbeiten
+- Kategorien, Level und Zertifikate
+- Benutzer:innen — auch „Teamer:in anlegen" — und Jahrgänge
+- Passwort und E-Mail-Adresse ändern, in jeder Rolle
+
+In diesen Fenstern gilt:
+
+- **Speichern oder abbrechen:** Unten rechts stehen **Abbrechen** und der
+  Hauptknopf, etwa **Speichern**, **Anlegen** oder **Eintragen**. Ist ein
+  Formular länger als das Fenster — etwa Event, Material oder Badge —, bleibt
+  diese Knopfleiste beim Scrollen unten im Bild. Enter in einem einzeiligen Feld schickt das
+  Formular ab.
+- **Suchen:** Enter in einem Suchfeld schickt nichts ab. Passt nur noch ein
+  Eintrag, wählt Enter ihn aus; blendet die Suche deine Wahl aus, steht sie
+  darunter als „Gewählt: …".
+- **Datum und Uhrzeit:** Das sind Felder des Browsers — du tippst sie ein
+  oder wählst sie im Kalender des Browsers. Wie das Datum dasteht, richtet
+  sich nach der Sprache des Browsers.
+- **Hinweise lesen:** Fehlt eine Angabe oder lehnt der Server das Speichern
+  ab, steht der Grund im Fenster, und es bleibt offen.
+- **Warten, bis gespeichert ist:** Solange gespeichert oder gesendet wird,
+  geht das Fenster nicht zu — Kreuz und **Abbrechen** sind gesperrt, Escape
+  und ein Klick daneben wirken erst danach wieder. So geht keine Antwort des
+  Servers verloren.
+- **Änderungen verwerfen:** Hast du im Event- oder im Badge-Formular etwas
+  geändert, fragt das Fenster beim Schließen nach.
+
+In den übrigen Fenstern bleiben Titel und Knöpfe oben in der Kopfzeile stehen,
+und der Kalender zum Datum öffnet sich als kleines Fenster über dem Formular.
+Die Anwesenheit der Konfis bekommt mehr Breite, weil sie für jedes
+Pflicht-Event eine Spalte hat.
+
+Rückfragen vor dem Löschen oder Zurücksetzen kommen wie in der App und stehen
+über dem Fenster, ebenso Meldungen wie „Gespeichert"; nur wenn du im
+Material-Fenster eine Datei löschst, steht die Rückfrage in der Zeile der
+Datei.
+Was ohne Netz geht, ist dasselbe wie in der App (siehe
+[Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)).
+
+Wird das Browserfenster schmaler als 992 Pixel, öffnen sich die Fenster wie
+in der App.
 
 ### Den Umschalter finden, hinter dem etwas auf dich wartet
 
@@ -774,7 +841,10 @@ später los:
 - **Chat-Nachrichten** schreiben, an Umfragen teilnehmen, auf Nachrichten
   reagieren
 - als Leitung: Events, Aktivitäten, Badges, Level, Material und Kategorien
-  **anlegen oder bearbeiten**, Bonuspunkte vergeben
+  **anlegen oder bearbeiten**, Bonuspunkte vergeben und einer Person eine
+  Aktivität eintragen — Letzteres, wenn die Liste der Aktivitäten auf dem
+  Gerät schon einmal mit Netz geladen war (im Fenster „Aktivität eintragen"
+  oder auf der Seite Aktivitäten)
 
 Du siehst diese Vorgänge im [Postfach](#mitteilungen-im-postfach-nachlesen)
 hinter der Glocke unter **„Wird gesendet…"**, mit einem Uhr-Symbol; die Zahl

@@ -1,5 +1,4 @@
-import { fehlerText, fehlerTextOderMessage } from '../../../utils/fehler';
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -38,31 +37,9 @@ import {
   ICON_TEXT,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
-import { writeQueue, QueueBody } from '../../../services/writeQueue';
-import { warteschlangenDateiSichern } from '../../../services/warteschlangenDatei';
-import { AktivitaetMelden } from '../../../types/request';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
-import { fuerUploadVorbereiten, DateiZuGrossFehler, UPLOAD_GRENZE } from '../../../services/mediaCompression';
-import { dateiAuswaehlen } from '../../../services/systemDialoge';
 import SendeAnzeige from '../../shared/SendeAnzeige';
-import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
-import { CACHE_TTL } from '../../../services/offlineCache';
+import { useAktivitaetMelden } from '../../shared/useAktivitaetMelden';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { track } from '../../../services/analytics';
-import { sendenOderEinreihen, istVerbindungsabbruch } from '../../../utils/sendenOderEinreihen';
-
-interface Activity {
-  id: number;
-  name: string;
-  description?: string;
-  points: number;
-  type: 'gottesdienst' | 'gemeinde';
-  category_names?: string;
-}
 
 interface ActivityRequestModalProps {
   onClose: () => void;
@@ -73,220 +50,40 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { setSuccess, setError, user } = useApp();
   const [presentAlert] = useIonAlert();
-
-  const { isSubmitting, guard } = useActionGuard();
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  const [formData, setFormData] = useState({
-    activity_id: '',
-    description: '',
-    requested_date: new Date().toISOString().split('T')[0],
-    photo_file: null as File | null
-  });
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const accordionGroupRef = useRef<HTMLIonAccordionGroupElement>(null);
-
-  // Aktivitaeten aus dem Cache statt per Direkt-Abruf: Der VERSAND einer
-  // Meldung ist laengst queue-faehig, aber die Auswahlliste lud per
-  // api.get — offline blieb sie leer und das Formular damit nutzlos
-  // (Offline-Audit 25.08.2026). Aktivitaeten sind Stammdaten und aendern
-  // sich selten, daher STAMMDATEN-TTL.
-  const { data: activitiesData, loading } = useOfflineQuery<Activity[]>(
-    'konfi:activities:' + user?.organization_id,
-    () => api.get('/konfi/activities').then(r => r.data),
-    { ttl: CACHE_TTL.STAMMDATEN }
-  );
-  const activities = activitiesData || [];
-
-  // Über die Hülle (services/systemDialoge): Sie meldet den Ausflug der
-  // App-Sperre an — ohne ihn sperrte die Fotoauswahl bei „Sofort" die App
-  // (Simons Befund 29.09.2026, Android).
-  const handlePhotoSelect = async () => {
-    const auswahl = await dateiAuswaehlen({ accept: 'image/*' });
-    if (auswahl) await fotoUebernehmen(auswahl[0]);
-  };
-
-  const fotoUebernehmen = async (file: File) => {
-    try {
-      // Derselbe Weg wie in Chat und Challenges (27.09.2026): erst
-      // verkleinern (1920 px, JPEG), DANN gegen die Grenze des Servers prüfen
-      // — Live-Kamerafotos haben 8-16 MB und passen erst danach. Zu groß
-      // meldet derselbe Satz wie überall: "Datei ist zu groß (max. 5 MB)."
-      const { file: prepared, bildVorschau } = await fuerUploadVorbereiten(file, UPLOAD_GRENZE.nachweisfoto);
-      // Das Formular zeigt keine Bildvorschau, nur "Foto ausgewählt".
-      if (bildVorschau) URL.revokeObjectURL(bildVorschau);
-      setFormData(prev => ({ ...prev, photo_file: prepared }));
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPhotoPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(prepared);
-    } catch (err) {
-      setError(err instanceof DateiZuGrossFehler ? err.message : 'Foto konnte nicht verarbeitet werden');
-    }
-  };
-
-  const uploadPhoto = async (): Promise<string | null> => {
-    if (!formData.photo_file) return null;
-
-    const uploadFormData = new FormData();
-    uploadFormData.append('photo', formData.photo_file);
-
-    try {
-      const response = await api.post('/konfi/upload-photo', uploadFormData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        // Foto-Upload auf Mobilfunk kann laenger dauern als die globalen 20s
-        timeout: 60000,
-        onUploadProgress: (progressEvent) => {
-          if (progressEvent.total) {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percentCompleted);
-          }
-        }
-      });
-
-      return response.data.filename;
-    } catch (error) {
-      // Netz abgerissen: unverpackt weiterreichen, damit der Vorgang in die
-      // Warteschlange faellt (sendenOderEinreihen erkennt nur den Netzfehler).
-      if (istVerbindungsabbruch(error)) throw error;
-      throw new Error(fehlerText(error, 'Fehler beim Hochladen des Fotos'), { cause: error });
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!formData.activity_id) {
-      setError('Bitte wähle eine Aktivität aus');
-      return;
-    }
-
-    if (!formData.photo_file) {
+  // Laden, Foto, Prüfen und Melden (mit Warteschlange) stehen in
+  // useAktivitaetMelden -- dieselbe Logik wie im Dialog der Web-Fassung
+  // (shared/web/termine/WebAktivitaetMeldenDialog).
+  const {
+    activities,
+    loading,
+    formData,
+    aendern,
+    selectedActivity,
+    photoPreview,
+    handlePhotoSelect,
+    removePhoto,
+    handleSubmit,
+    isSubmitting,
+    uploadProgress,
+    ohneFotoFrage,
+  } = useAktivitaetMelden({
+    rolle: 'konfi',
+    onSuccess,
+    fragOhneFoto: (weiter) => {
       presentAlert({
         header: 'Kein Foto',
-        message: 'Normalerweise gehört ein Foto dazu, damit dein Team sieht, dass du dabei warst. Trotzdem abschicken?',
+        message: ohneFotoFrage,
         buttons: [
           { text: 'Abbrechen', role: 'cancel' },
-          { text: 'Ohne Foto fortfahren', handler: () => submitRequest() }
+          { text: 'Ohne Foto fortfahren', handler: () => weiter() }
         ]
       });
-      return;
-    }
-
-    submitRequest();
-  };
-
-  const submitRequest = async () => {
-    await guard(async () => {
-      setUploadProgress(0);
-
-      const clientId = safeUUID();
-
-      // In die Warteschlange: derselbe Vorgang mit derselben client_id, das
-      // Foto lokal gesichert (die Warteschlange laedt es beim Senden hoch).
-      let fotoNichtGesichert = false;
-      const einreihen = async () => {
-        let hasFileUpload = false;
-        const queueBody: QueueBody & AktivitaetMelden = {
-          activity_id: parseInt(formData.activity_id),
-          description: formData.description.trim(),
-          requested_date: formData.requested_date,
-          client_id: clientId,
-        };
-
-        if (formData.photo_file) {
-          // Foto lokal speichern
-          hasFileUpload = true;
-          try {
-            const reader = new FileReader();
-            const base64 = await new Promise<string>((resolve, reject) => {
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(formData.photo_file!);
-            });
-            const fileName = `queue_${clientId}_photo.jpg`;
-            queueBody._localPhotoPath = await warteschlangenDateiSichern(fileName, base64);
-            queueBody._photoFileName = formData.photo_file.name;
-          } catch (fehler) {
-            fotoNichtGesichert = true;
-            throw fehler;
-          }
-        }
-
-        await writeQueue.enqueue({
-          method: 'POST',
-          url: '/konfi/requests',
-          body: queueBody,
-          maxRetries: 5,
-          hasFileUpload,
-          metadata: {
-            type: 'request',
-            clientId,
-            label: 'Aktivität melden',
-          },
-        });
-      };
-
-      try {
-        // Offline -- oder online, aber das Netz reisst ab: in die
-        // Warteschlange statt in eine Fehlermeldung (Audit Grundgeruest
-        // BF-01, utils/sendenOderEinreihen.ts). Ein zweiter Eingang ist
-        // harmlos: Der Server erkennt ihn an der client_id.
-        const { weg } = await sendenOderEinreihen({
-          online: networkMonitor.isOnline,
-          methode: 'POST',
-          idempotent: true,
-          senden: async () => {
-            let photoFilename: string | null = null;
-
-            if (formData.photo_file) {
-              photoFilename = await uploadPhoto();
-            }
-
-            const requestData: AktivitaetMelden = {
-              activity_id: parseInt(formData.activity_id),
-              description: formData.description.trim(),
-              requested_date: formData.requested_date,
-              photo_filename: photoFilename,
-              client_id: clientId,
-            };
-
-            await api.post('/konfi/requests', requestData);
-            // Anonyme Messung (Simon, 27.09.2026): Wie oft werden Aktivitäten
-            // eingereicht, und mit Nachweisfoto? Erst nach der erfolgreichen
-            // Antwort; kein Name, keine Aktivität, keine Kennung.
-            track('aktivitaet-eingereicht', { mit_foto: !!photoFilename });
-          },
-          einreihen,
-        });
-
-        setSuccess(weg === 'eingereiht'
-          ? 'Aktivität wird gesendet sobald du wieder online bist'
-          : 'Aktivität erfolgreich eingereicht!');
-        onSuccess();
-      } catch (error) {
-        setError(fotoNichtGesichert
-          ? 'Foto konnte nicht lokal gespeichert werden'
-          : fehlerTextOderMessage(error, 'Fehler beim Einreichen der Aktivität'));
-      } finally {
-        setUploadProgress(0);
-      }
-    });
-  };
-
-  const removePhoto = () => {
-    setFormData(prev => ({ ...prev, photo_file: null }));
-    setPhotoPreview(null);
-  };
+    },
+  });
+  const accordionGroupRef = useRef<HTMLIonAccordionGroupElement>(null);
 
   const filteredActivities = activities;
-
-  const selectedActivity = activities.find(a => a.id.toString() === formData.activity_id);
 
   return (
     <IonPage>
@@ -299,7 +96,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton aria-label="Aktivität absenden" className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={isSubmitting || loading}>
+            <IonButton aria-label="Aktivität absenden" className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={() => { void handleSubmit(); }} disabled={isSubmitting || loading}>
               <IonIcon icon={ICON_HAKEN_GEFUELLT} />
             </IonButton>
           </IonButtons>
@@ -387,7 +184,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                               key={activity.id}
                               className={`app-list-item app-list-item--${variant}${isSelected ? ' app-list-item--selected' : ''}`}
                               onClick={() => {
-                                setFormData(prev => ({ ...prev, activity_id: activity.id.toString() }));
+                                aendern({ activity_id: activity.id.toString() });
                                 if (accordionGroupRef.current) {
                                   accordionGroupRef.current.value = undefined;
                                 }
@@ -452,8 +249,9 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
                   <IonDatetime aria-label="Datum wählen"
                     id="date-picker"
                     value={formData.requested_date}
-                    onIonChange={(e) => setFormData(prev => ({ ...prev, requested_date: e.detail.value as string }))}
+                    onIonChange={(e) => aendern({ requested_date: e.detail.value as string })}
                     presentation="date"
+                    locale="de-DE"
                     max={new Date().toISOString().split('T')[0]}
                     firstDayOfWeek={1}
                   />
@@ -476,7 +274,7 @@ const ActivityRequestModal: React.FC<ActivityRequestModalProps> = ({
               <IonItem lines="none" style={{ '--background': 'transparent' }}>
                 <IonTextarea aria-label="Anmerkungen (optional)"
                   value={formData.description}
-                  onIonInput={(e) => setFormData(prev => ({ ...prev, description: e.detail.value! }))}
+                  onIonInput={(e) => aendern({ description: e.detail.value! })}
                   placeholder="Anmerkungen... (optional)"
                   autoGrow={true}
                   rows={2}

@@ -1512,6 +1512,14 @@ mark.web-treffer {
   gap: var(--app-abstand-eng);
 }
 
+/* Zwei Felder nebeneinander (Art und Bereich, Datum und Uhrzeit); unter
+   400 px Breite untereinander. Bis 11.10.2026 nur im Support (web/support.css). */
+.web-feldpaar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--app-abstand-mittel);
+}
+
 .web-gruppe {
   margin: var(--app-abstand-eng) 0 0;
   padding-top: var(--app-abstand-mittel);
@@ -1570,6 +1578,11 @@ mark.web-treffer {
   resize: vertical;
 }
 
+.web-eingabe--datum {
+  /* Kalender und Uhr des Browsers folgen hell und dunkel. */
+  color-scheme: light dark;
+}
+
 .web-eingabe--auswahl {
   padding-right: var(--app-abstand-riesig);
   text-overflow: ellipsis;
@@ -1597,6 +1610,7 @@ mark.web-treffer {
 .web-eingabe:focus-visible,
 .web-liste__eintrag:focus-visible,
 .web-wahl__radio:focus-visible,
+.web-wahl__haken:focus-visible,
 .web-schalter__eingabe:focus-visible + .web-schalter__spur {
   outline: 2px solid var(--ion-color-primary);
   outline-offset: 2px;
@@ -1808,7 +1822,8 @@ mark.web-treffer {
   background: var(--app-flaeche-hinweis);
 }
 
-.web-wahl__radio {
+.web-wahl__radio,
+.web-wahl__haken {
   flex: 0 0 auto;
   margin: var(--app-abstand-mini) 0 0;
   accent-color: var(--ion-color-primary);
@@ -1868,6 +1883,17 @@ mark.web-treffer {
   font-size: var(--app-text-sekundaer);
   line-height: 1.45;
   box-sizing: border-box;
+  /* Was den Fokus bekommt (per Tab oder nach Loeschen und Entfernen), scrollt
+     der Browser ueber die Knopfleiste unten (siehe dort) statt dahinter. Die
+     Leiste ist 61 px hoch, mit einer Meldung darin 116 px. Gemessen
+     11.10.2026 per Tab durch jedes Feld: ohne dies lag bei 1280 x 800
+     „Anmeldung ab sofort" (Event, Unterkante 766 px) hinter der Leiste ab
+     714 px, ebenso „Link hinzufuegen" (Material); damit kein Feld. */
+  scroll-padding-bottom: calc(6 * var(--app-abstand-gross));
+}
+
+.web-dialog--breit {
+  max-width: 720px;
 }
 
 .web-dialog *,
@@ -1907,12 +1933,26 @@ mark.web-treffer {
   gap: var(--app-abstand-mittel);
 }
 
+/* Abbrechen und die Hauptaktion bleiben beim Scrollen unten im Bild, statt
+   erst am Ende des Formulars zu stehen -- wie der Haken oben im Modal der
+   App. Gemessen 11.10.2026 bei 1440 x 900: Neues Event 1400 px Inhalt in
+   850 px Dialoghoehe, Neues Badge 1211 px (die Leiste stand dort oben
+   geoeffnet 341 px unter dem Rand), Neues Material 910 px. Das gilt auch fuer
+   die schmalen Dialoge: „Neuer Jahrgang" bei 1280 x 800 hatte die Knoepfe bei
+   809-845 px, der Dialog endete bei 776 px. Die Leiste steht im Formular oder,
+   bei Dialogen ohne onAbsenden, direkt im Dialog; der Selektor trifft beide. */
 .web-dialog__aktionen {
+  position: sticky;
+  bottom: calc(-1 * var(--app-abstand-gross));
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--app-abstand-eng);
-  margin-top: var(--app-abstand-eng);
+  margin: var(--app-abstand-eng) calc(-1 * var(--app-abstand-gross)) calc(-1 * var(--app-abstand-gross));
+  padding: var(--app-abstand-mittel) var(--app-abstand-gross);
+  border-top: 1px solid var(--web-linie-leise);
+  background: var(--web-karte);
 }
 
 /* --- Antwort-Editor --- */

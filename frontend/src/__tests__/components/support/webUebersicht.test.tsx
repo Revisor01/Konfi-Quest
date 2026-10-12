@@ -258,7 +258,7 @@ describe('Uebersicht (Web): neueste Vorgänge und Mails', () => {
     expect(within(karte('Neueste Vorgänge')).queryByText('Alter Vorgang')).toBeNull();
     expect(zeilen[0]).toHaveTextContent('Anfrage Kirchengemeinde Musterdorf-Süd');
     expect(zeilen[0]).toHaveTextContent('Neue Gemeinde');
-    expect(zeilen[0]).toHaveTextContent('Nicht zugeordnet');
+    expect(zeilen[0]).toHaveTextContent('Noch nicht angelegt');
     expect(zeilen[0]).toHaveTextContent('Neu');
     expect(zeilen[0]).toHaveTextContent('vor 1 Std.');
     expect(zeilen[3]).toHaveTextContent('Kirchengemeinde Musterdorf');
@@ -291,7 +291,19 @@ describe('Uebersicht (Web): neueste Vorgänge und Mails', () => {
     expect(within(zeilen[2]).getAllByRole('link')).toHaveLength(1);
     // Ungelesen: die ersten drei.
     expect(within(k).getAllByRole('img', { name: 'ungelesen' })).toHaveLength(3);
-    expect(within(zeilen[0]).getByRole('link', { name: 'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]' })).toHaveAttribute('href', '/admin/support/post/301');
+    // Der Betreff führt dorthin, wo die Mail liegt -- nennt die Übersicht den Vorgang (vorgang_id; der Server
+    // liefert das Feld heute noch nicht, die Zeile hält den Weg für ein additives Feld fest), direkt hinein,
+    // die Mail offen (statt über ihre Seite, die ohnehin weiterleitet); im Posteingang zur Mail.
+    // Er steht als Kern wie in Liste und Kopf, roh im Tooltip.
+    const mitVorgang = within(zeilen[0]).getByRole('link', { name: 'Eure Anfrage bei Konfi Quest' });
+    expect(mitVorgang).toHaveAttribute('href', '/admin/support/vorgaenge/41?mail=301');
+    expect(mitVorgang).toHaveAttribute('title', 'Re: Eure Anfrage bei Konfi Quest [Anfrage 41]');
+    expect(within(zeilen[2]).getByRole('link', { name: 'Passwort vergessen?' })).toHaveAttribute('href', '/admin/support/post/303');
+    // Ohne vorgang_id -- so liefert GET /support/uebersicht heute (gemessen 11.10.2026) -- über die Seite
+    // der Mail: Sie kennt den Vorgang und ersetzt sich durch ihn, die Mail offen. Anfrage oder Gemeinde
+    // allein träfen nur die Anfrage bzw. die Liste der Gemeinde, nicht die Mail.
+    expect(within(zeilen[3]).getByRole('link', { name: 'Rückfrage zur Lizenz' })).toHaveAttribute('href', '/admin/support/post/304');
+    expect(within(zeilen[1]).getByRole('link', { name: 'Frage zu den Jahrgängen' })).toHaveAttribute('href', '/admin/support/post/302');
     expect(within(k).getByRole('link', { name: 'Zum Posteingang →' })).toHaveAttribute('href', '/admin/support/post');
   });
 

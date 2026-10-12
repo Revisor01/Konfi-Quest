@@ -149,10 +149,10 @@ describe('Konfi-Limit: Testphase 5, danach unbegrenzt', () => {
     const optionen = [...tarif.querySelectorAll('[data-option]')].map((o) => [o.getAttribute('data-option'), o.textContent]);
     expect(optionen).toEqual([
       ['5', 'Testphase — bis 5 Konfis · kostenlos, 30 Tage'],
-      ['15', 'Klein — bis 15 Konfis · 49 € pro Jahr'],
-      ['50', 'Standard — bis 50 Konfis · 99 € pro Jahr'],
-      ['75', 'Plus — bis 75 Konfis · 139 € pro Jahr'],
-      ['100', 'Groß — bis 100 Konfis · 179 € pro Jahr'],
+      ['15', 'Klein — bis 15 Konfis · 49\u00a0€ pro Jahr'],
+      ['50', 'Standard — bis 50 Konfis · 99\u00a0€ pro Jahr'],
+      ['75', 'Plus — bis 75 Konfis · 139\u00a0€ pro Jahr'],
+      ['100', 'Groß — bis 100 Konfis · 179\u00a0€ pro Jahr'],
       ['', 'Unbegrenzt — ohne Konfi-Grenze'],
       ['__eigen__', 'Eigenes Limit…'],
     ]);

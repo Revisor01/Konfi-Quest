@@ -1,0 +1,611 @@
+/* Die App-Fassung der Support-Detailseiten (components/support/
+   SupportVorgangTeile.tsx; docs/planung/support-detailseiten.md, „In der
+   App"): Karte „Stand", Antwortzeile unter der jüngsten Mail, Angaben als
+   Zeilen, die eingeklappte Gemeindeleitung und das Modal „Antworten".
+   Nur Tokens -- der Dunkelmodus kommt über sie. */
+
+/* --- Die Seite: Kopfzeile und farbiger Kopf --- */
+
+/* iOS zentriert den Titel zwischen 90 px Rand links und rechts; die drei
+   Knöpfe rechts (Einordnen, Archiv, Glocke) sind breiter und lagen über
+   „Vorgang 2". Hier rückt der Titel nach links, frei von den Knöpfen. */
+.support-vorgang-seite > ion-header ion-title.ios.title-default {
+  padding-inline-start: var(--app-freiraum-aktion-l);
+  padding-inline-end: calc(var(--app-freiraum-aktion-xxxl) + var(--app-abstand-block));
+}
+
+/* Android: linksbündig neben dem Zurück-Knopf; die drei Knöpfe rechts ließen
+   bei 360 px nur 88 px, aus „Vorgang 2" wurde „Vorgan…". Ohne den Rand
+   rechts (und mit Knöpfen nur aus Symbolen) sind es 120 px -- genug für
+   „Vorgang 123" (113 px). */
+.support-vorgang-seite > ion-header ion-title.md.title-default {
+  padding-inline-end: var(--app-abstand-mini);
+}
+
+/* Ein Modal ohne Aktion rechts (Einsortieren): Der lange Titel „In anderen
+   Vorgang verschieben" bekommt den Platz rechts dazu. */
+ion-title.ios.title-default.support-modal__titel--frei {
+  padding-inline-start: var(--app-freiraum-aktion-l);
+  padding-inline-end: var(--app-abstand-basis);
+}
+
+/* Android: linksbündiger Titel neben dem Schließen-Knopf; ohne diese
+   Engführung endet er bei 390 px in „verschie…". */
+ion-title.md.title-default.support-modal__titel--frei {
+  padding-inline-start: var(--app-abstand-mini);
+  padding-inline-end: var(--app-abstand-eng);
+  font-size: var(--app-text-untertitel);
+}
+
+/* Der Kopf trägt hier den Betreff eines Vorgangs, oft drei Zeilen: etwas
+   kleiner und enger als auf den anderen Seiten, damit die jüngste Mail
+   früher ins Bild kommt. Farbe, Kreis und Kacheln bleiben die der App. */
+.support-vorgang__kopf .app-header-banner {
+  padding: var(--app-abstand-basis) var(--app-abstand-gross);
+}
+
+.support-vorgang__kopf .app-header-banner__header {
+  align-items: flex-start;
+  margin-bottom: var(--app-abstand-mittel);
+}
+
+.support-vorgang__kopf .app-header-banner__icon {
+  flex-shrink: 0;
+}
+
+.support-vorgang__kopf .app-header-banner__title {
+  font-size: var(--app-text-untertitel);
+  line-height: 1.2;
+}
+
+/* Unter dem Betreff einer Mail stehen Name und Adresse des Absenders: Eine
+   lange Adresse bricht um, statt über den Rand des Kopfes zu laufen (bei
+   390 px lief „<jugendwerk@kirchenkreis.example.org>" hinaus). */
+.support-vorgang__kopf .app-header-banner__subtitle {
+  overflow-wrap: anywhere;
+}
+
+/* --- Karte „Stand": Marken, Satz, Zusatz, Knöpfe, Notiz --- */
+.support-stand {
+  margin: 0 var(--app-abstand-basis) var(--app-abstand-basis);
+  padding: var(--app-abstand-mittelweit);
+  background: var(--app-surface-card);
+  border-radius: var(--app-radius-gross);
+  box-shadow: var(--app-schatten-fein);
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+}
+
+.support-stand__marken {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-kompakt);
+}
+
+/* Eine Marke: Status, Dringend, Art › Bereich … Antippen öffnet „Einordnen". */
+.support-marke {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: var(--app-abstand-winzig) var(--app-abstand-schmal);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-gross);
+  background: var(--app-surface-soft);
+  color: var(--app-text-body);
+  font: inherit;
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+button.support-marke {
+  cursor: pointer;
+  min-height: var(--app-freiraum-aktion-xxs);
+}
+
+button.support-marke:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.support-marke--info {
+  background: var(--app-flaeche-hinweis);
+  border-color: var(--app-rand-hinweis);
+  color: var(--app-text-hinweis-dunkel);
+}
+
+.support-marke--erfolg {
+  background: var(--app-flaeche-erfolg);
+  border-color: var(--app-rand-erfolg);
+  color: var(--app-color-success-strong);
+}
+
+.support-marke--warnung {
+  background: var(--app-flaeche-warnung);
+  border-color: var(--app-rand-warnung);
+  color: var(--app-text-warnung);
+}
+
+.support-marke--fehler {
+  background: var(--app-flaeche-fehler);
+  border-color: var(--app-rand-fehler);
+  color: var(--app-text-fehler);
+}
+
+/* Der Satz: wer dran ist, seit wann. Der Ton steht als Kante davor --
+   der Satz selbst sagt es auch, die Farbe ist nie allein. */
+.support-stand__satz {
+  margin: 0;
+  padding-left: var(--app-abstand-schmal);
+  border-left: 3px solid var(--app-border-soft);
+  color: var(--app-text-primary);
+  font-size: var(--app-text-betont);
+  line-height: 1.4;
+}
+
+.support-stand__satz--warnung { border-left-color: var(--app-color-warning); }
+.support-stand__satz--erfolg { border-left-color: var(--app-color-success-strong); }
+.support-stand__satz--hinweis { border-left-color: var(--app-color-info); }
+
+.support-stand__zusatz {
+  margin: 0;
+  color: var(--app-text-secondary);
+  font-size: var(--app-text-sekundaer);
+  line-height: 1.4;
+}
+
+.support-stand__zusatz--warnung { color: var(--app-text-warnung); }
+
+/* Hauptknopf 2 : Nebenknopf 1; mit zwei Nebenknöpfen steht der Hauptknopf
+   allein darüber. Kein Knopf wird schmaler als seine Beschriftung: Passen
+   beide nicht in eine Zeile (bei 390 px „Wiederherstellen" neben „Gemeinde
+   anlegen", Stand 1b), rutscht der Nebenknopf in eine eigene Zeile, statt
+   über den Rand der Karte zu laufen. */
+.support-stand__knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+}
+
+.support-stand__knoepfe > ion-button {
+  flex: 1 1 0;
+  min-width: max-content;
+}
+
+.support-stand__knoepfe > ion-button.support-stand__haupt {
+  flex-grow: 2;
+}
+
+.support-stand__knoepfe--allein > ion-button,
+.support-stand__knoepfe--drei > ion-button.support-stand__haupt {
+  flex-basis: 100%;
+}
+
+.support-stand__knoepfe ion-button {
+  margin: 0;
+  min-height: 44px;
+  font-weight: var(--app-schrift-halbfett);
+}
+
+/* Nebenknöpfe sind ein Drittel bzw. die Hälfte breit: „Gemeinde anlegen"
+   und „Lizenz ändern" bleiben in einer Zeile. */
+.support-stand__knoepfe ion-button.support-stand__neben {
+  --padding-start: var(--app-abstand-eng);
+  --padding-end: var(--app-abstand-eng);
+  font-size: var(--app-text-basis);
+  white-space: nowrap;
+}
+
+/* Die interne Notiz als Zeile: antippen öffnet das Modal. */
+.support-stand__notiz {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--app-abstand-schmal) 0 0;
+  border: 0;
+  border-top: 1px solid var(--app-border-soft);
+  background: transparent;
+  color: var(--app-text-secondary);
+  font: inherit;
+  font-size: var(--app-text-basis);
+  text-align: left;
+  cursor: pointer;
+}
+
+.support-stand__notiz:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.support-stand__notiz--leer {
+  color: var(--app-text-users);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.support-stand__notiz-text {
+  flex: 1;
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.35;
+}
+
+.support-stand__notiz-text strong {
+  color: var(--app-text-primary);
+}
+
+.support-stand__notiz ion-icon {
+  flex-shrink: 0;
+  font-size: var(--app-text-gross);
+}
+
+/* --- Unter der jüngsten Mail: die Antwortzeile --- */
+.support-antwortzeile {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittel);
+  border: 1px solid var(--app-border-soft);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-surface-soft);
+  color: var(--app-text-secondary);
+  font: inherit;
+  font-size: var(--app-text-basis);
+  text-align: left;
+  cursor: pointer;
+}
+
+.support-antwortzeile:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.support-antwortzeile:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.support-antwortzeile__text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.support-antwortzeile ion-icon {
+  flex-shrink: 0;
+  font-size: var(--app-text-gross);
+}
+
+.support-antwortzeile ion-icon:first-child {
+  color: var(--app-text-users);
+}
+
+/* --- Angaben: Zeilen „Bezeichnung | Wert" --- */
+.support-angaben {
+  display: flex;
+  flex-direction: column;
+}
+
+.support-angabe {
+  display: grid;
+  grid-template-columns: minmax(76px, 30%) 1fr;
+  gap: var(--app-abstand-eng);
+  padding: var(--app-abstand-schmal) 0;
+  border-top: 1px solid var(--app-border-soft);
+  font-size: var(--app-text-basis);
+  line-height: 1.35;
+}
+
+.support-angabe:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.support-angabe__label {
+  color: var(--app-text-system);
+  font-size: var(--app-text-sekundaer);
+}
+
+.support-angabe__wert {
+  min-width: 0;
+  color: var(--app-text-primary);
+  overflow-wrap: anywhere;
+}
+
+.support-angabe__wert a {
+  color: var(--app-text-users);
+  text-decoration: none;
+}
+
+.support-angabe__wert--warnung { color: var(--app-text-warnung); }
+.support-angabe__wert--fehler { color: var(--app-text-fehler); }
+.support-angabe__wert--erfolg { color: var(--app-color-success-strong); }
+
+/* Eine Aktion an einer Angabe („Im Vorgang antworten", „Zuordnen"). */
+.support-angabe__aktion {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--app-freiraum-aktion-xxs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-users);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+  cursor: pointer;
+}
+
+.support-angabe__aktion:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+/* Ein Link der Karte (Gemeinde öffnen, Alle Vorgänge) und der Kopf der Gemeindeleitung. */
+.support-zeilenknopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: var(--app-abstand-eng) 0;
+  border: 0;
+  border-top: 1px solid var(--app-border-soft);
+  background: transparent;
+  color: var(--app-text-users);
+  font: inherit;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
+  text-align: left;
+  cursor: pointer;
+}
+
+.support-zeilenknopf:focus-visible,
+.support-angabe__aktion:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.support-zeilenknopf ion-icon {
+  flex-shrink: 0;
+  color: var(--app-text-system);
+}
+
+.support-leitung {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.support-leitung__person {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  padding: var(--app-abstand-eng) 0;
+  border-top: 1px solid var(--app-border-soft);
+  font-size: var(--app-text-basis);
+}
+
+.support-leitung__name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  color: var(--app-text-primary);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.support-leitung__zeile {
+  color: var(--app-text-secondary);
+  font-size: var(--app-text-sekundaer);
+  overflow-wrap: anywhere;
+}
+
+.support-leitung__zeile a {
+  color: var(--app-text-users);
+  text-decoration: none;
+}
+
+/* Die Aktion einer Karte als Knopf darunter („Lizenz ändern"). */
+.support-karte__aktion {
+  margin: var(--app-abstand-mittel) 0 0;
+}
+
+/* Löschen: der einzige Knopf ganz unten. */
+.support-vorgang__loeschen {
+  margin: var(--app-abstand-gross) var(--app-abstand-basis) 0;
+}
+
+/* Android, 360 px: „VORGANG UND ANFRAGE LÖSCHEN" bricht in Großbuchstaben
+   um; der Knopf wächst mit, statt die zweite Zeile an den Rand zu drücken. */
+ion-button.md.support-vorgang__loeschen {
+  height: auto;
+  --padding-top: var(--app-abstand-eng);
+  --padding-bottom: var(--app-abstand-eng);
+}
+
+ion-button.md.support-vorgang__loeschen::part(native) {
+  height: auto;
+  min-height: 44px;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+/* --- Modal „Antworten" --- */
+.support-beantwortet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mini);
+  margin: 0 0 var(--app-abstand-mittel);
+  padding: var(--app-abstand-schmal) var(--app-abstand-mittel);
+  border-left: 3px solid var(--app-color-users);
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-surface-soft);
+}
+
+.support-beantwortet__kopf {
+  color: var(--app-text-system);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.support-beantwortet__text {
+  margin: 0;
+  color: var(--app-text-primary);
+  font-size: var(--app-text-basis);
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.support-beantwortet__text--kurz {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.support-beantwortet__knopf {
+  align-self: flex-start;
+  min-height: var(--app-freiraum-aktion-xxs);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-users);
+  font: inherit;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-halbfett);
+  cursor: pointer;
+}
+
+/* Eine Zeile mit einem kurzen Hinweis (Postfach, Server) über „An". */
+.support-antwort__hinweis {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-kompakt);
+  margin: 0 0 var(--app-abstand-eng);
+  color: var(--app-text-warnung);
+  font-size: var(--app-text-sekundaer);
+  line-height: 1.35;
+}
+
+.support-antwort__hinweis ion-icon {
+  flex-shrink: 0;
+  margin-top: var(--app-abstand-haar);
+}
+
+.support-antwort__feste {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: var(--app-abstand-mittel) 0 var(--app-abstand-mittel) var(--app-abstand-basis);
+  border-bottom: 1px solid var(--app-border-soft);
+  color: var(--app-text-primary);
+  font-size: var(--app-text-basis);
+  overflow-wrap: anywhere;
+}
+
+.support-antwort__feste span:first-child {
+  color: var(--app-text-system);
+}
+
+.support-antwort__etikett {
+  color: var(--app-text-secondary);
+}
+
+.support-antwort__reihe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-eng);
+  margin: var(--app-abstand-eng) 0;
+}
+
+.support-antwort__aufklappen {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+  min-height: 44px;
+  margin: 0 0 var(--app-abstand-mini);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-text-users);
+  font: inherit;
+  font-size: var(--app-text-basis);
+  font-weight: var(--app-schrift-halbfett);
+  cursor: pointer;
+}
+
+.support-antwort__aufklappen:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.support-antwort__danach {
+  margin: var(--app-abstand-mittel) 0 0;
+}
+
+.support-antwort__danach-titel {
+  margin: 0 0 var(--app-abstand-kompakt);
+  color: var(--app-text-system);
+  font-size: var(--app-text-sekundaer);
+}
+
+.support-antwort__senden {
+  margin-top: var(--app-abstand-mittel);
+}
+
+.support-modal__zeile {
+  margin: 0 0 var(--app-abstand-mittel);
+  color: var(--app-text-secondary);
+  font-size: var(--app-text-sekundaer);
+  line-height: 1.4;
+}
+
+.support-modal__fehler {
+  margin: var(--app-abstand-eng) 0;
+  color: var(--app-text-fehler);
+  font-size: var(--app-text-sekundaer);
+}
+
+/* Lange Schalter-Beschriftung („Testphase (Hinweis auf den Startseiten)") bricht um statt abzuschneiden. */
+ion-toggle.support-modal__schalter::part(label) {
+  white-space: normal;
+  overflow: visible;
+}
+
+/* Android schreibt Knöpfe in Versalien; „WUNSCHLIZENZ ÜBERNEHMEN: STANDARD"
+   bricht dann um und braucht Höhe statt der festen Knopfhöhe. */
+ion-button.md.support-modal__mehrzeilig {
+  height: auto;
+  --padding-top: var(--app-abstand-eng);
+  --padding-bottom: var(--app-abstand-eng);
+}
+
+ion-button.md.support-modal__mehrzeilig::part(native) {
+  height: auto;
+  white-space: normal;
+  line-height: 1.3;
+}

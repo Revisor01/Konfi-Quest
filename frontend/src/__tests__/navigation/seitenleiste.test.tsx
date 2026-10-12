@@ -305,6 +305,39 @@ describe('Rollenfarbe der gewählten Filter (Simon, 06.10.2026)', () => {
   });
 });
 
+describe('Kompakte Modale im breiten Fenster (Simon, 11.10.2026)', () => {
+  // theme/web-modale.css wirkt nur unter html[data-layout="breit"]. Das
+  // Merkmal setzt der Rahmen -- aus derselben Quelle wie die Leiste.
+  afterEach(() => { delete document.documentElement.dataset.layout; });
+
+  it('Web, 992 px und breiter: data-layout="breit" an <html>', () => {
+    halter.breit = true;
+    zeigeRahmen();
+    expect(document.documentElement.dataset.layout).toBe('breit');
+  });
+
+  it('Web, schmales Fenster: kein Merkmal -- dort bleiben die Modale der App', () => {
+    zeigeRahmen();
+    expect(document.documentElement.dataset.layout).toBeUndefined();
+  });
+
+  it('App auf dem Geraet, auch breit (iPad quer): nie ein Merkmal', () => {
+    halter.nativ = true;
+    halter.breit = true;
+    zeigeRahmen();
+    expect(document.documentElement.dataset.layout).toBeUndefined();
+  });
+
+  it('folgt dem Fenster: schmal gezogen verschwindet es, breit kommt es wieder', () => {
+    zeigeRahmen();
+    expect(document.documentElement.dataset.layout).toBeUndefined();
+    setzeBreite(true);
+    expect(document.documentElement.dataset.layout).toBe('breit');
+    setzeBreite(false);
+    expect(document.documentElement.dataset.layout).toBeUndefined();
+  });
+});
+
 describe('Reiterleiste oder Leiste -- nie beide, nie keine (Aufbau wie App.tsx)', () => {
   const reiterleiste = (container: HTMLElement) => container.querySelector('ion-tab-bar');
 

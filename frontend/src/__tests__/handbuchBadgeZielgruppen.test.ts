@@ -22,7 +22,9 @@ const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8'
 
 const handbuch = lies('../docs/handbuch/60-badges.md');
 const badgesJs = lies('../backend/routes/badges.js');
-const formular = lies('src/components/admin/modals/BadgeManagementModal.tsx');
+// Die Kriterien je Zielgruppe stehen seit 11.10.2026 im Hook des Formulars
+// (App-Modal und Web-Dialog lesen dieselbe Liste).
+const formular = lies('src/components/admin/useBadgeFormular.ts');
 
 // Zeilenbeschriftung der Tabelle -> criteria_type (Namen wie in BadgesView).
 const TYPEN: Record<string, string[]> = {

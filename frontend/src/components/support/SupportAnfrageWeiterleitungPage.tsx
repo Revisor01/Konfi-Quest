@@ -8,15 +8,18 @@
 // ?filter=archiv, Feld `anfrage_id`) und ersetzt sich dann durch ihn. Links aus
 // alten Mitteilungen, Lesezeichen und Mails mit dem Kennzeichen „[Anfrage N]"
 // kommen so weiter an. Gibt es den Vorgang nicht (mehr), sagt die Seite das und
-// führt zur Liste der Anfragen.
+// führt zur Liste der Anfragen. In der App sucht „Ziehen zum Aktualisieren"
+// noch einmal (docs/planung/support-detailseiten.md, App E) -- so stimmt der
+// Satz, den die Seite bei einem Ladefehler sagt.
 
-import React, { useEffect, useState } from 'react';
-import { IonButton, IonContent, IonPage, useIonRouter } from '@ionic/react';
+import React, { useEffect, useRef, useState } from 'react';
+import { IonButton, IonContent, IonPage, IonRefresher, IonRefresherContent, useIonRouter } from '@ionic/react';
 import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import EmptyState from '../shared/EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { ICON_LISTE } from '../shared/icons';
 import { SUPPORT_VORGAENGE } from '../../navigation/supportMenue';
+import { triggerPullHaptic } from '../../utils/haptics';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
 import { NurSupport } from './SupportBausteine';
 import { vorgaengeLaden } from './useVorgangsliste';
@@ -64,10 +67,25 @@ function useVorgangDerAnfrage(anfrageId: number): [Stand, () => void] {
 
 const AnfrageAppFassung: React.FC<{ stand: Stand; erneut: () => void }> = ({ stand, erneut }) => {
   const zurueck = useSupportZurueck(ANFRAGEN_LISTE);
+  // Der Kreisel des Ziehens bleibt, bis die neue Suche fertig ist; findet sie
+  // den Vorgang, ersetzt sich die Seite ohnehin.
+  const ziehenFertig = useRef<(() => void) | null>(null);
+  useEffect(() => {
+    if (stand === 'sucht' || !ziehenFertig.current) return;
+    ziehenFertig.current();
+    ziehenFertig.current = null;
+  }, [stand]);
   return (
     <IonPage>
       <AppKopfzeile titel="Anfrage" onZurueck={zurueck} gemeindeUmschalter={false} />
       <IonContent className="app-gradient-background" fullscreen>
+        <IonRefresher
+          slot="fixed"
+          onIonRefresh={(e) => { ziehenFertig.current = () => e.detail.complete(); erneut(); }}
+          onIonPull={triggerPullHaptic}
+        >
+          <IonRefresherContent refreshingSpinner="crescent" />
+        </IonRefresher>
         <AppKopfzeileGross titel="Anfrage" />
         {stand === 'sucht' ? (
           <LoadingSpinner message="Anfrage wird geöffnet..." />

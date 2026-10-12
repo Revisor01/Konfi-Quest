@@ -276,10 +276,12 @@ Jahrgang, Benutzername, E-Mail-Adresse und „Dabei seit" —, deine Konfirmatio
 mit Datum, Uhrzeit und Ort, sobald das Datum feststeht (der Ort ist ein Link auf
 die Karte), die **Konto-Einstellungen** und das **Konto**. Die Einstellungen sind
 Zeilen mit je einem Knopf: App-Tour, E-Mail-Adresse, Passwort,
-Bibelübersetzung, Benachrichtigungen und Medien-Cache; jeder Knopf öffnet
-dasselbe Fenster wie in der App. **Abmelden** und **Konto löschen** stehen im
-Kasten **Konto**; was beim Löschen passiert, steht unter
-[Ein Konto löschen](05-rollen.md#ein-konto-loeschen).
+Bibelübersetzung, Benachrichtigungen und Medien-Cache. E-Mail-Adresse und
+Passwort änderst du im Browser in einem eigenen, kompakten Fenster (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
+die übrigen Knöpfe öffnen dieselben Fenster wie in der App. **Abmelden** und
+**Konto löschen** stehen im Kasten **Konto**; was beim Löschen passiert, steht
+unter [Ein Konto löschen](05-rollen.md#ein-konto-loeschen).
 
 Rechts stehen, falls du in eine weitere Gemeinde eingeladen bist, die Einladung
 mit **Annehmen** und **Ablehnen**, dann Kacheln für **Punkte gesamt** (mit

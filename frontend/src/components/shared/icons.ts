@@ -120,6 +120,9 @@ export {
   printOutline as ICON_DRUCKEN,
   shareOutline as ICON_TEILEN,
   scanOutline as ICON_SCANNEN,
+  // „Breit lesen": blendet die Liste neben dem Lesebereich aus (Support im
+  // Browser, 11.10.2026).
+  expandOutline as ICON_BREIT_LESEN,
   ellipsisHorizontal as ICON_MEHR,
   ellipsisVertical as ICON_MEHR_VERTIKAL,
   removeCircle as ICON_ENTFERNEN_GEFUELLT,
@@ -139,6 +142,10 @@ export {
   checkmarkCircleOutline as ICON_ZUSAGE,
   checkmarkDoneCircle as ICON_ANWESEND,
   closeCircle as ICON_ABSAGE,
+  // Ablehnen als Knopf zwischen Kontur-Symbolen (Kopf einer Anfrage im
+  // Browser, 11.10.2026): das Zeichen der Absage, aber als Kontur -- gefuellt
+  // wirkte es dort wie das Schliessen des Lesebereichs.
+  closeCircleOutline as ICON_ABLEHNEN,
   ellipseOutline as ICON_KREIS_LEER,
   hourglass as ICON_WARTEND_GEFUELLT,
   hourglassOutline as ICON_WARTEND,

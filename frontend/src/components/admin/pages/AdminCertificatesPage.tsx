@@ -9,7 +9,7 @@ import {
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -42,20 +42,18 @@ import { useApp } from '../../../contexts/AppContext';
 import { offlineBlockiert } from '../../../utils/offlineAktion';
 import { useModalPage } from '../../../contexts/ModalContext';
 import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { SectionHeader, ListSection } from '../../shared';
 import { triggerPullHaptic } from '../../../utils/haptics';
-import { safeUUID } from '../../../utils/uuid';
-import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
 import { ICON_CHOICES, getIconFromString, type IconChoice } from '../../../utils/badgeIcons';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebZertifikate from '../web/leitung/WebZertifikate';
+import WebZertifikatDialog from '../web/leitung/WebZertifikatDialog';
+import { useZertifikatFormular } from '../useZertifikatFormular';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -95,62 +93,14 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
       onClose();
     }
   };
-  const { setSuccess, setError } = useApp();
-  const [loading, setLoading] = useState(false);
-
-  const [name, setName] = useState(certificateType?.name || '');
-  const [icon, setIcon] = useState(certificateType?.icon || 'ribbon');
-  useEffect(() => {
-    if (certificateType) {
-      setName(certificateType.name);
-      setIcon(certificateType.icon || 'ribbon');
-    } else {
-      setName('');
-      setIcon('ribbon');
-    }
-  }, [certificateType]);
-
-  const handleSubmit = async () => {
-    if (!name.trim()) {
-      setError('Name ist erforderlich');
-      return;
-    }
-
-    const payload = { name: name.trim(), icon };
-
-    setLoading(true);
-    try {
-      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
-      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
-      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
-      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
-      // Audit Grundgeruest BF-01).
-      const { weg } = await sendenOderEinreihen({
-        online: networkMonitor.isOnline,
-        methode: certificateType ? 'PUT' : 'POST',
-        senden: () => (certificateType ? api.put(`/teamer/certificate-types/${certificateType.id}`, payload) : api.post('/teamer/certificate-types', payload)),
-        einreihen: () => writeQueue.enqueue({
-          method: certificateType ? 'PUT' : 'POST',
-          url: certificateType ? `/teamer/certificate-types/${certificateType.id}` : '/teamer/certificate-types',
-          body: payload,
-          maxRetries: 5,
-          hasFileUpload: false,
-          metadata: {
-            type: 'admin',
-            clientId: safeUUID(),
-            label: certificateType ? 'Zertifikat bearbeiten' : 'Zertifikat erstellen'
-          }
-        }),
-      });
-      if (weg === 'eingereiht') setSuccess('Wird gespeichert sobald du wieder online bist');
+  // Vorbelegung, Pruefen und Speichern: useZertifikatFormular (11.10.2026),
+  // dieselbe Logik wie im Dialog der Web-Fassung (WebZertifikatDialog).
+  const { name, setName, icon, setIcon, loading, speichern: handleSubmit } = useZertifikatFormular(certificateType, {
+    onFertig: () => {
       onSuccess();
       handleClose();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Speichern'));
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
   return (
     <IonPage>
@@ -279,8 +229,9 @@ const CertificateModal: React.FC<CertificateModalProps> = ({
 const AdminCertificatesPage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-certificates');
   const { user, setError, isOnline } = useApp();
-  // Im Browser ab 992 px ein Raster (web/leitung/WebZertifikate.tsx); Daten,
-  // Fenster und Rueckfragen dieser Seite bleiben dieselben.
+  // Im Browser ab 992 px ein Raster (web/leitung/WebZertifikate.tsx); Daten
+  // und Rueckfragen dieser Seite bleiben dieselben, das Formular ist dort ein
+  // eigener Dialog (WebZertifikatDialog) mit derselben Logik.
   const breit = useBreitesLayout();
 
   // Offline-Query: Certificate Types
@@ -291,6 +242,10 @@ const AdminCertificatesPage: React.FC = () => {
   );
 
   const [editCert, setEditCert] = useState<CertificateType | null>(null);
+  // Im breiten Layout ein eigener Dialog statt des App-Modals (Simon,
+  // 11.10.2026: „Web braucht eigene kompaktere Modale überall"): offen mit
+  // dem Zertifikat (bearbeiten) oder mit null (anlegen).
+  const [webDialog, setWebDialog] = useState<{ zertifikat: CertificateType | null } | null>(null);
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
 
   const [presentAlert] = useIonAlert();
@@ -350,15 +305,24 @@ const AdminCertificatesPage: React.FC = () => {
 
   if (breit) {
     return (
-      <WebZertifikate
-        zertifikate={certificateTypes || []}
-        laedt={loading}
-        darfVerwalten={isAdmin}
-        pageRef={pageRef}
-        onAnlegen={openCreateModal}
-        onBearbeiten={openEditModal}
-        onLoeschen={handleDelete}
-      />
+      <>
+        <WebZertifikate
+          zertifikate={certificateTypes || []}
+          laedt={loading}
+          darfVerwalten={isAdmin}
+          pageRef={pageRef}
+          onAnlegen={() => setWebDialog({ zertifikat: null })}
+          onBearbeiten={(zertifikat) => setWebDialog({ zertifikat })}
+          onLoeschen={handleDelete}
+        />
+        {webDialog && (
+          <WebZertifikatDialog
+            zertifikat={webDialog.zertifikat}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={refreshCertificateTypes}
+          />
+        )}
+      </>
     );
   }
 

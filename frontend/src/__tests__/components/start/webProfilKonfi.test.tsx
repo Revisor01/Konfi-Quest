@@ -343,16 +343,23 @@ describe('Profil der Konfis (Web): Einstellungen -- dieselben Handgriffe wie in 
     expect(liste).toHaveTextContent('BenachrichtigungenAlle Mitteilungen aufs Handy');
   });
 
-  it('E-Mail, Passwort und Konto loeschen oeffnen die Modale der App ueber dieser Seite', async () => {
+  // Seit 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale überall")
+  // öffnen E-Mail und Passwort im Browser eigene Dialoge statt der App-Modale;
+  // Einzelheiten in start/webKontoUmschaltung und shared/webKontoDialoge.
+  it('E-Mail und Passwort öffnen die Dialoge der Web-Fassung, Konto loeschen das Modal der App ueber dieser Seite', async () => {
+    h.antworten['/auth/me'] = { email: 'mia@example.org' };
     await zeige();
     fireEvent.click(knopfInZeile('E-Mail-Adresse', 'Ändern'));
-    expect(modal('ChangeEmailModal')?.props.variante).toBe('purple');
-    expect(modal('ChangeEmailModal')?.optionen?.presentingElement).toBe(h.seite);
+    const email = screen.getByRole('dialog', { name: 'E-Mail ändern' });
+    await waitFor(() => expect((within(email).getByLabelText('E-Mail-Adresse (optional)') as HTMLInputElement).value).toBe('mia@example.org'));
+    fireEvent.click(within(email).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(knopfInZeile('Passwort', 'Ändern'));
-    expect(modal('ChangePasswordModal')?.props.variante).toBe('purple');
+    const passwort = screen.getByRole('dialog', { name: 'Passwort ändern' });
+    fireEvent.click(within(passwort).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Konto löschen' }));
     expect(modal('DeleteAccountModal')?.optionen?.presentingElement).toBe(h.seite);
-    expect(h.modale.map((m) => m.name)).toEqual(expect.arrayContaining(['ChangeEmailModal', 'ChangePasswordModal', 'DeleteAccountModal']));
+    expect(h.modale.map((m) => m.name)).toEqual(['DeleteAccountModal']);
   });
 
   it('Bibeluebersetzung oeffnet die Auswahl mit der aktuellen Uebersetzung', async () => {

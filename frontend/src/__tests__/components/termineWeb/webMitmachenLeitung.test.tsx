@@ -261,17 +261,20 @@ describe('Events: Filter und Suche', () => {
 });
 
 describe('Events: Aktionen -- dieselben Funktionen wie die Wischaktionen der App', () => {
-  it('"Neues Event anlegen" öffnet das Event-Fenster', async () => {
+  // Seit 11.10.2026 ein eigener Dialog statt des App-Modals (webEventDialog.test.tsx).
+  it('"Neues Event anlegen" öffnet das Event-Fenster -- im Browser den Dialog, nicht das App-Modal', async () => {
     await oeffneEvents();
-    fireEvent.click(screen.getByRole('button', { name: 'Neues Event anlegen' }));
-    expect(geoeffnet('EventModal')).toHaveLength(1);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Neues Event anlegen' })); });
+    expect(screen.getByRole('dialog', { name: 'Neues Event' })).toBeInTheDocument();
+    expect(geoeffnet('EventModal')).toHaveLength(0);
   });
 
   it('Kopieren öffnet das Fenster, legt aber nichts an', async () => {
     await oeffneEvents();
     fireEvent.click(within(zeileVon('Sonntagsgottesdienst')).getByRole('button', { name: 'Event kopieren' }));
     await act(async () => { await Promise.resolve(); });
-    expect(geoeffnet('EventModal')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Event kopieren' })).toBeInTheDocument();
+    expect(geoeffnet('EventModal')).toHaveLength(0);
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -315,6 +318,7 @@ describe('Events: Aktionen -- dieselben Funktionen wie die Wischaktionen der App
     fireEvent.click(within(zeileVon('Konfi-Tag')).getByRole('button', { name: 'Event kopieren' }));
     expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
     expect(geoeffnet('EventModal')).toHaveLength(0);
+    expect(screen.queryByRole('dialog')).toBe(null);
     expect(setError).toHaveBeenCalledTimes(2);
     expect(setSuccess).not.toHaveBeenCalled();
   });
@@ -596,7 +600,8 @@ describe('Ansicht: Liste und Kacheln', () => {
       await kachelnOeffnen();
       fireEvent.click(within(karte('Sonntagsgottesdienst')).getByRole('button', { name: 'Event kopieren: Sonntagsgottesdienst' }));
       await act(async () => { await Promise.resolve(); });
-      expect(geoeffnet('EventModal')).toHaveLength(1);
+      expect(screen.getByRole('dialog', { name: 'Event kopieren' })).toBeInTheDocument();
+      expect(geoeffnet('EventModal')).toHaveLength(0);
       expect(api.post).not.toHaveBeenCalled();
     });
 
@@ -649,6 +654,7 @@ describe('Ansicht: Liste und Kacheln', () => {
       fireEvent.click(within(karte('Konfi-Tag')).getByRole('button', { name: 'Event kopieren: Konfi-Tag' }));
       expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
       expect(geoeffnet('EventModal')).toHaveLength(0);
+      expect(screen.queryByRole('dialog')).toBe(null);
       expect(setError).toHaveBeenCalledTimes(2);
       expect(setSuccess).not.toHaveBeenCalled();
     });

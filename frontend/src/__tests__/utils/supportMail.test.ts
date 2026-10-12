@@ -4,6 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   ANFRAGE_BETREFF,
+  EMPFAENGER_ETIKETT,
   PLATZHALTER,
   absenderText,
   antwortFehler,
@@ -17,6 +18,7 @@ import {
   bausteinPostfachText,
   bausteineFuer,
   chronologisch,
+  empfaengerEtikett,
   empfaengerLesen,
   empfaengerText,
   fadenAus,
@@ -29,6 +31,11 @@ import {
   vorschauText,
   zaehlerLesen,
   zitateTrennen,
+  mailImPosteingang,
+  mailKennzahlen,
+  mailStand,
+  mailWeiterleitung,
+  type MailMitVorgang,
 } from '../../utils/supportMail';
 import type { MailBaustein, MailNachricht } from '../../types/support';
 
@@ -142,12 +149,22 @@ describe('Betreff, Vorschau, Auszug', () => {
     expect(standardBetreff('Frage zum Jahrgang')).toBe('Re: Frage zum Jahrgang');
     expect(standardBetreff('Re: Frage')).toBe('Re: Frage');
     expect(standardBetreff('AW: Re: RE: Frage')).toBe('Re: Frage');
-    expect(standardBetreff('Antw: Re[2]: Frage [Anfrage 12]')).toBe('Re: Frage [Anfrage 12]');
+    // Die Kennung faellt weg: Der Server haengt die richtige selbst an (betreffMitKennung).
+    expect(standardBetreff('Antw: Re[2]: Frage [Anfrage 12]')).toBe('Re: Frage');
     expect(standardBetreff('  ')).toBe('');
     expect(standardBetreff(null)).toBe('');
     // „Reise" beginnt mit „Re", ist aber keine Vorsilbe.
     expect(standardBetreff('Reise nach Heide')).toBe('Re: Reise nach Heide');
     expect(standardBetreff(ANFRAGE_BETREFF)).toBe('Re: Eure Anfrage bei Konfi Quest');
+  });
+
+  it('Standardbetreff: erst die Kennungen weg, dann alle Vorsilben -- auch die hinter der Kennung (Fehler vorab 1)', () => {
+    // Gemessen am 11.10.2026: vorgeschlagen war „Re: [Vorgang 2] Re: AW: Re: …".
+    expect(standardBetreff('AW: [Vorgang 2] Re: AW: Re: Konfis sehen den Termin am Samstag nicht')).toBe('Re: Konfis sehen den Termin am Samstag nicht');
+    expect(standardBetreff('Re: Chat zeigt nichts Neues [Vorgang 1]')).toBe('Re: Chat zeigt nichts Neues');
+    // Weitergeleitetes beantwortet man ebenfalls mit „Re:".
+    expect(standardBetreff('WG: Fwd: FW: Einladung')).toBe('Re: Einladung');
+    expect(standardBetreff('[Vorgang 4]')).toBe('');
   });
 
   it('Vorschau: Text, Leerzeile, „-- ", Fusszeile', () => {
@@ -323,5 +340,81 @@ describe('Antworten des Servers lesen', () => {
   it('Empfaenger als Text', () => {
     expect(empfaengerText({ adresse: 'a@example.org', name: 'Anna', herkunft: 'Gemeindeleitung' })).toBe('Anna <a@example.org> · Gemeindeleitung');
     expect(empfaengerText({ adresse: 'a@example.org', name: null, herkunft: null })).toBe('a@example.org');
+  });
+
+  it('Empfaenger als Text: die Herkunft des Servers als lesbares Etikett, nie roh (Fehler vorab 4)', () => {
+    // Gemessen am 11.10.2026: „Test Org-Admin 1 <…> · verlauf".
+    const e = (herkunft: string | null) => empfaengerText({ adresse: 'a@example.org', name: 'Anna', herkunft });
+    expect(e('absender')).toBe('Anna <a@example.org> · schrieb uns');
+    expect(e('kontakt')).toBe('Anna <a@example.org> · Kontakt aus dem Formular');
+    expect(e('anfrage')).toBe('Anna <a@example.org> · aus der Anfrage');
+    expect(e('leitung')).toBe('Anna <a@example.org> · Gemeindeleitung');
+    expect(e('verlauf')).toBe('Anna <a@example.org> · aus früheren Mails');
+    // Ein unbekannter Schlüssel steht nicht roh da.
+    expect(e('neue_quelle')).toBe('Anna <a@example.org>');
+  });
+
+  it('Etikett der Herkunft: bekannte Schlüssel übersetzt, unbekannte Schlüssel nie roh, lesbarer Text unverändert', () => {
+    expect(Object.keys(EMPFAENGER_ETIKETT)).toEqual(['absender', 'kontakt', 'anfrage', 'leitung', 'verlauf']);
+    expect(empfaengerEtikett('verlauf')).toBe('aus früheren Mails');
+    expect(empfaengerEtikett(' leitung ')).toBe('Gemeindeleitung');
+    expect(empfaengerEtikett('neue_quelle')).toBeNull();
+    expect(empfaengerEtikett('Kontakt aus dem Formular')).toBe('Kontakt aus dem Formular');
+    expect(empfaengerEtikett('Gemeindeleitung')).toBe('Gemeindeleitung');
+    expect(empfaengerEtikett('')).toBeNull();
+    expect(empfaengerEtikett(null)).toBeNull();
+    // Ein geerbter Name ist kein Schlüssel.
+    expect(empfaengerEtikett('constructor')).toBeNull();
+  });
+});
+
+describe('Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E)', () => {
+  const mitVorgang = (extra: Partial<MailMitVorgang> = {}): MailMitVorgang => ({ ...mail(5), verlauf: [], vorgang_id: null, archiviert_am: null, ...extra });
+
+  it('im Posteingang nur ohne Vorgang, Anfrage und Gemeinde -- alle drei Spalten wie der Server', () => {
+    expect(mailImPosteingang({ anfrage_id: null, organization_id: null, vorgang_id: null })).toBe(true);
+    expect(mailImPosteingang({ anfrage_id: null, organization_id: null })).toBe(true);
+    expect(mailImPosteingang({ anfrage_id: null, organization_id: null, vorgang_id: 2 })).toBe(false);
+    expect(mailImPosteingang({ anfrage_id: 41, organization_id: null, vorgang_id: null })).toBe(false);
+    expect(mailImPosteingang({ anfrage_id: null, organization_id: 7, vorgang_id: null })).toBe(false);
+  });
+
+  it('Weiterleitung: in den Vorgang mit der Mail offen, sonst Anfrage oder Gemeinde; im Posteingang keine', () => {
+    expect(mailWeiterleitung({ id: 5, vorgang_id: 2, anfrage_id: 41, organization_id: 7 })).toBe('/admin/support/vorgaenge/2?mail=5');
+    expect(mailWeiterleitung({ id: 5, vorgang_id: null, anfrage_id: 41, organization_id: null })).toBe('/admin/support/anfragen/41');
+    expect(mailWeiterleitung({ id: 5, anfrage_id: null, organization_id: 7 })).toBe('/admin/support/vorgaenge?gemeinde=7');
+    expect(mailWeiterleitung({ id: 5, vorgang_id: null, anfrage_id: null, organization_id: null })).toBeNull();
+  });
+
+  it('Posteingang: Einsortieren ist Hauptknopf, Antworten daneben, kein Satz; Archivieren und Löschen erlaubt', () => {
+    expect(mailStand(mitVorgang())).toEqual({
+      imPosteingang: true, archiviert: false, satz: null, ton: null, haupt: 'einsortieren', neben: ['antworten'],
+      archivierbar: true, loeschbar: true, weiterleitung: null,
+    });
+  });
+
+  it('im Archiv: ein Satz ohne Widerspruch -- Einsortieren holt sie zurück; Wiederherstellen daneben', () => {
+    expect(mailStand(mitVorgang({ archiviert_am: '2026-10-02T12:00:00Z' }))).toEqual({
+      imPosteingang: true, archiviert: true, satz: 'Im Archiv seit 02.10.2026 · wird nach 180 Tagen gelöscht · Einsortieren holt sie zurück.', ton: 'hinweis',
+      haupt: 'einsortieren', neben: ['wiederherstellen'], archivierbar: false, loeschbar: true, weiterleitung: null,
+    });
+  });
+
+  it('in einem Vorgang: keine Knöpfe, die der Server mit 409 ablehnt -- nur die Weiterleitung (Fehler vorab 2)', () => {
+    expect(mailStand(mitVorgang({ vorgang_id: 2 }))).toEqual({
+      imPosteingang: false, archiviert: false, satz: null, ton: null, haupt: null, neben: [], archivierbar: false, loeschbar: false,
+      weiterleitung: '/admin/support/vorgaenge/2?mail=5',
+    });
+    // Auch eine ältere Zuordnung nur über die Anfrage zählt.
+    expect(mailStand(mitVorgang({ anfrage_id: 41 }))).toMatchObject({ archivierbar: false, loeschbar: false, weiterleitung: '/admin/support/anfragen/41' });
+  });
+
+  it('Kennzahlen: Mails im Faden · Neu · Anhänge', () => {
+    const faden = [mail(1, { anhaenge: [{ name: 'a.pdf' }, { name: 'b.png' }] }), mail(2, { anhaenge: null }), mail(3, { anhaenge: [{ name: 'c.pdf' }] })];
+    expect(mailKennzahlen(faden, 1)).toEqual([
+      { schluessel: 'mails', label: 'Mails', wert: '3', zahl: 3 },
+      { schluessel: 'neu', label: 'Neu', wert: '1', zahl: 1 },
+      { schluessel: 'anhaenge', label: 'Anhänge', wert: '3', zahl: 3 },
+    ]);
   });
 });

@@ -296,14 +296,75 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
   Client"): Mails als Gespräche, Posteingang und Vorgänge im Browser mit
   Liste und Lesebereich, Antworten, Einordnen und Einsortieren als Modal bzw.
   kompakter Dialog ([betrieb/support-ansicht.md](../betrieb/support-ansicht.md#zwei-gesichter-browser-und-app)).
+  Zweiter Schritt, umgesetzt am 11.10.2026 nach Simons Antworten vom selben
+  Tag (Simon: „Support Details Seiten … müssen wir optimieren auf App und
+  Desktop"): die Detailseiten von Vorgang, Anfrage und Mail mit dem Gerüst
+  der Detailseiten des Hauptwebs, Stand-Satz, flachem Verlauf, kompaktem
+  Editor, „Breit lesen" und dem Vorgang „Lizenz und Abrechnung" mit „Lizenz
+  ändern" — [support-detailseiten.md](support-detailseiten.md),
+  [betrieb/support-ansicht.md](../betrieb/support-ansicht.md#einen-vorgang-lesen).
   Offen: Struktur, Textbausteine und Support-Konten auf dem Handy (Formulare
   stehen dauerhaft oben, große Knöpfe je Eintrag), die abgeschnittene Kachel
   „Neue Vorgä…“ der Übersicht. Pläne der Ansicht: [support-web.md](support-web.md),
   [support-vorgaenge.md](support-vorgaenge.md).
 - **Eigene, kompakte Dialoge im Browser überall** (Simon, 11.10.2026: „Web
-  braucht eigene kompaktere Modale überall"): Im Browser öffnen die meisten
-  Formulare noch die Modale der App (`useIonModal`, rund 50 Stellen); die
-  Support-Ansicht nutzt schon `WebDialog`.
+  braucht eigene kompaktere Modale überall"). Gemessen am 11.10.2026: 91
+  Aufrufe von `useIonModal` in 38 Dateien für 49 Komponenten, dazu 18
+  `<IonModal>` in 12 Dateien, meist Datumswähler. Die Zahlen bleiben nach dem
+  Umbau gleich, weil unter 992 px und in den Apps weiter das App-Modal
+  öffnet. Umgesetzt am 11.10.2026 in zwei Stufen:
+  - *Eine Stelle für alle App-Modale:* Der Rahmen schreibt im breiten Layout
+    `data-layout="breit"` an `<html>` (`navigation/layoutImDokument.ts`, in
+    den Apps nie); `theme/web-modale.css` stellt darunter jedes App-Modal
+    kompakt — 560 px breit, so hoch wie der Inhalt, die Anwesenheit 880 px,
+    Datumswähler in Kalendergröße. Ausgenommen: Vollbild-Ansichten
+    (Rückblick, Datei-Betrachter, alles mit `data-dialogname`) und die
+    Chat-Fenster der Web-Fassung mit eigener Größe (`theme/web/chat.css`).
+  - *Eigene Dialoge (`WebDialog`) für die häufigen Formulare:* Event anlegen,
+    bearbeiten und kopieren; Aktivität eintragen und Bonuspunkte; Aktivität
+    prüfen (Leitung) und melden (Konfi, Team); Material anlegen, bearbeiten
+    und ansehen; Badge; Kategorie, Level, Zertifikat; Benutzer:in (auch
+    „Teamer:in anlegen") und Jahrgang; Passwort und E-Mail in allen drei
+    Rollen. Je Formular ein Hook, den App-Modal und Dialog teilen
+    (`useEventFormular`, `useAktivitaetEintragen`, `useBadgeFormular` …);
+    das App-Modal sieht aus und verhält sich wie vorher, bis auf die Fehler,
+    die dabei behoben wurden (Badge-Auswahl beim Bearbeiten und Zeitraum ohne
+    eigene Wahl, deutsches Datum beim Melden, gemerkte Liste beim Eintragen
+    ohne Netz). Gemeinsam: gesperrt während des Sendens (`gesperrt`), die
+    Knopfleiste klebt unten, auch in den schmalen Dialogen (`web-ansicht.css`),
+    Ankreuzlisten behalten Werte außerhalb der Liste
+    (`WebMehrfachAuswahl`), Enter im Suchfeld schickt nicht ab
+    (`WebAuswahlSuche`), Datum und Uhrzeit als Felder des Browsers
+    (`WebDatum`), Meldungen im Dialog statt als Toast.
+  - *Bewusst beim Weg der App:* Rückfragen vor Löschen, Sperren und
+    Zurücksetzen bleiben `useIonAlert` — `WebDialog` ist nur für Formulare.
+    Fragt ein offener Dialog selbst nach (ungespeicherte Änderungen bei Event
+    und Badge, Datei löschen im Material), ist das ein zweiter kleiner Dialog
+    bzw. eine Zeile im Dialog (bis 12.10.2026 lag ein `ion-alert` zudem
+    unter dem Dialog; seitdem hängt `WebDialog` in `ion-app`, in derselben
+    Ebene wie Ionics Alerts und Toasts, und diese stehen darüber).
+    Der Datei-Betrachter bleibt Vollbild; der Material-Dialog tritt beiseite,
+    solange er offen ist (Blob-Adressen ohne Dateinamen, Popup-Sperren nach
+    dem Laden). Das große Nachweisfoto und „Ansehen" der eigenen Meldung sind
+    Ansichten, keine Formulare. Die Meldung „… sobald du wieder online bist"
+    bleibt ein Toast, weil der Dialog dann schon zu ist.
+  - *Offen — im Browser noch App-Modal, kompakt:* Challenge anlegen und
+    bearbeiten (`ChallengeManageModal`) und Beitrag einreichen, Konfi anlegen
+    und bearbeiten (`KonfiModal`), Teilnehmende hinzufügen
+    (`ParticipantManagementModal`), Zertifikat zuweisen, Aktivität im
+    Katalog (`ActivityManagementModal`), Person einladen, Event absagen,
+    Abmeldung nachtragen und Notiz in der Teilnehmerliste, die Anwesenheit,
+    Abmelden vom Event (Konfi, `UnregisterModal`) und Absage (Team und
+    eigene Absage der Leitung, `TeamerAbsageModal`), Punkte-Übersicht,
+    Konfispruch, Bibelübersetzung, Funktionsbeschreibung,
+    Benachrichtigungen, Konto löschen, Gemeinde bearbeiten (Support) und das
+    Postfach; dazu Ansichten ohne Formular: QR-Code und Einchecken, Legende
+    und Material aus einem Event (`TeamerMaterialDetailPage`).
+    Die Chat-Fenster (Mitglieder, Umfrage, neuer Chat) haben ihre
+    eigene Größe, der Rückblick bleibt Vollbild. Vorschläge aus dem Bau:
+    nach „Speichern" beim Bearbeiten eines Events auf seiner Seite bleiben
+    statt zur Liste zurück; Dateien in den Material-Dialog ziehen. Was dabei
+    an Fehlern auffiel, steht in [offene-befunde.md](../offene-befunde.md).
 - **Gruppe „Verwaltung" in der Leiste** (Entscheidung 23): Die Unterseiten
   von „Mehr" (Benutzer:innen, Badges, Material, Jahrgänge …) stehen im
   breiten Fenster direkt in der Leiste, als eigene Gruppe.

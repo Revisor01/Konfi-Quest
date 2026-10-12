@@ -55,9 +55,11 @@ Nichts.
   Play-Bildschirmfoto `konfi-challenge-feed` nach dem Deploy der deckenden
   Kopfleiste neu ziehen.
 - [ ] **Web-Version: was noch fehlt** — Support-Ansicht auf Handy und im
-  Web übersichtlicher (Simon, 10.10.2026; Mails, Posteingang und Vorgänge
-  erledigt 11.10.2026, Struktur, Textbausteine und Konten offen), eigene
-  kompakte Dialoge im Browser überall (Simon, 11.10.2026), Leiste „Verwaltung", Rückweg ohne
+  Web übersichtlicher (Simon, 10.10.2026; Mails, Posteingang, Vorgänge und
+  ihre Detailseiten erledigt 11.10.2026, Struktur, Textbausteine und Konten
+  offen), eigene Fenster für die übrigen Formulare (Simon, 11.10.2026;
+  die häufigen erledigt 11.10.2026, offen etwa Challenge, Konfi,
+  Teilnehmende und Zertifikat zuweisen), Leiste „Verwaltung", Rückweg ohne
   Gemeinde, Kennzahlen, Einwilligung am Profil
   ([planung/web-version.md](planung/web-version.md#offen)); Zuweisung von
   Vorgängen und Bildschirmfotos im Support-Formular
@@ -298,12 +300,54 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   WebListe als die eine sortierbare Tabelle, WebKacheln, WebKreis);
   Aktivitäten-Katalog und Konfis/Team darauf umgestellt
   (Branch `refactor/web-bausteine`).
+- [x] 11.10.2026 — Kompakte Fenster im Browser (Simon: „Web braucht eigene
+  kompaktere Modale überall"): alle App-Modale ab 992 px kompakt
+  (`theme/web-modale.css`, Merkmal `data-layout` aus
+  `navigation/layoutImDokument.ts`); eigene Fenster (`WebDialog`) für Event,
+  Aktivität eintragen, Bonuspunkte, Aktivität melden und prüfen, Material,
+  Badge, Kategorie, Level, Zertifikat, Benutzer:in, Jahrgang, Passwort und
+  E-Mail, die Logik je Formular in einem Hook, den App-Modal und Fenster
+  teilen. Dabei behoben: Badge-Auswahl beim Bearbeiten und Zeitraum ohne
+  eigene Wahl, deutsches Datum beim Melden in der App, „Aktivität
+  eintragen" ohne Netz mit gemerkter Liste, Enter im Suchfeld, Level ohne
+  Farbwahl im Browser, Team-Liste nach „Teamer:in anlegen" im Browser.
+- [x] 11.10.2026 — Support-Detailseiten übersichtlich, nach Simons Antworten
+  vom selben Tag: Stand-Satz mit Hauptknopf, Notiz oben, Verlauf flach mit
+  dem Editor unter der jüngsten Mail und „Danach“, Angaben als Karten,
+  Ablehnen, Einordnen mit Speichern auch in der App, Vorgang „Lizenz und
+  Abrechnung“ mit „Lizenz ändern“, Menü je Mail (verschieben, herauslösen),
+  Mail im Posteingang mit Einsortieren als Hauptknopf und Weiterleitung in
+  den Vorgang, „Breit lesen“ und nächster Eintrag im Browser; dabei die
+  sechs Darstellungsfehler vom Messen behoben, dazu die drei vom Ansehen
+  (12.10.2026): der Titel „Mail“ in der iOS-Kopfzeile der Mail-Seite,
+  „Support“ im Verlauf der App ganz (das Konto kürzt zuerst) und „‹ Alle …“
+  mit ‹ › auch, solange der nächste Eintrag lädt oder fehlt
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md);
+  Branches `support-detail/*`).
+- [x] 12.10.2026 — Rückfragen und Meldungen aus einem Browser-Fenster stehen
+  über ihm: `WebDialog` hängt in `ion-app` statt an `<body>`, in derselben
+  Ebene wie Ionics Alerts und Toasts (gemessen: 0 von 384 Rasterpunkten
+  über fünf Fenstern bei 1440 und 1024 px gehören der Seite, Toast und
+  „Nicht möglich“ obenauf). „Gemeinde anlegen“ fragt im Browser in einem
+  zweiten Fenster, wie Event und Badge. Damit auch die beiden Toasts, die
+  noch unter einem Fenster lagen: „Fehler beim Öffnen der Datei“ im Material
+  und „Foto erfolgreich gelöscht“ beim Prüfen einer Aktivität.
 
 
 ## Offen
 
 ### Code
 
+- **Übersicht: neueste Mails ohne Vorgang.** `GET /support/uebersicht`
+  liefert in `neueste_mails` kein `vorgang_id`:
+  `backend/routes/supportUebersicht.js` (`neuesteMails`) wählt es nicht
+  aus, und `ZUORDNUNG_SPALTEN` in `backend/utils/mailNachrichten.js` nennt
+  nur `anfrage_id`, `organization_id` und `gemeinde_name`. Ein Klick auf eine
+  der neuesten Mails geht deshalb über die Seite der Mail, die sich dann
+  durch den Vorgang ersetzt. Mit dem Feld (additiv, Paket 6 der
+  Detailseiten) führte die Übersicht direkt in den Vorgang; die Oberfläche
+  kann es schon (`WebUebersicht`, Test in `webUebersicht.test.tsx`)
+  (12.10.2026).
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird
@@ -323,6 +367,98 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   rechnet das Backend beim Lesen aus. Ein `pollUpdated` geht dabei nicht
   hinaus; wer den Chat offen hat, sieht die Namen erst beim nächsten Laden
   (10.10.2026).
+- **Neues Level ohne Farbwahl scheitert in der App.** `LevelManagementModal`
+  schickt ohne eigene Farbwahl `color: 'var(--app-color-level)'`;
+  `levels.color` ist `varchar(7)`, `POST /api/levels` antwortet mit 500
+  „Fehler beim Erstellen des Levels". Das Farbfeld zeigt dabei Schwarz. So
+  seit 05.09.2026, also auch in der Store-Version 2.3.0; im Browser ab 992 px
+  behoben (das Fenster belegt die Farbe mit `levelFarbeAlsHex` vor). Der
+  Store-App hilft nur das Backend: eine Farbe, die nicht `#rrggbb` ist, durch
+  die Vorgabe ersetzen statt abzubrechen (additiv); für die App dieselbe
+  Vorbelegung, mit einem Test, der zuerst fällt (11.10.2026).
+- **„Heute" ist beim Melden und Eintragen das UTC-Datum.** Aktivität melden,
+  Aktivität eintragen und Bonuspunkte belegen das Datum mit
+  `new Date().toISOString().split('T')[0]` vor (`useAktivitaetMelden`,
+  `useAktivitaetEintragen`, `useBonusVergeben`), das Melden setzt damit auch
+  den spätesten Tag. Zwischen Mitternacht und 2 Uhr (Winterzeit 1 Uhr) steht
+  dort der Vortag, und beim Melden lässt sich der heutige Tag nicht wählen.
+  App und Browser gleich; richtig wäre das lokale Datum (11.10.2026).
+- **„Aktivität eintragen" ohne Netz braucht eine einmal geladene Liste.**
+  Die Liste der Aktivitäten kommt ohne Netz aus dem Speicher
+  (`admin:activities:<Gemeinde>:<Rolle>`, derselbe Schlüssel wie die Seite
+  Aktivitäten). Hat das Gerät sie nie geladen, geht ohne Netz nur
+  Bonuspunkte vergeben; das Fenster im Browser sagt das, das App-Modal zeigt
+  eine leere Liste mit gesperrtem Haken. Möglich: die Liste beim Anmelden der
+  Leitung vorladen (11.10.2026).
+- **Aktivitäten eines neuen Badges folgen nicht der Zielgruppe.**
+  `useBadgeFormular` lädt `/admin/activities?target_role=` nach dem Reiter
+  der Seite, nicht nach der im Formular gewählten Zielgruppe. Wer aus der
+  Konfi-Liste ein Badge anlegt und auf Team umschaltet, bekommt bei
+  „Spezifische Aktivität" und „Aktivitäts-Kombination" Konfi-Aktivitäten
+  angeboten; die Wertung zählt für Team-Badges nur Team-Aktivitäten, das
+  Badge wird nie vergeben. App und Browser gleich; beim Wechsel der
+  Zielgruppe neu laden (11.10.2026).
+- **„Badge neu prüfen" nennt die Zahl der Geprüften nicht.**
+  `POST /admin/badges/:id/pruefen` liefert `geprueft` und `neu_vergeben`;
+  App und Browser zeigen nur die neu Vergebenen bzw. „Alle Badges sind
+  aktuell". Das Handbuch sagte bis 11.10.2026, auch die Zahl der Geprüften
+  stehe da, und beschreibt jetzt den Ist-Stand. Offen, ob die Meldung sie
+  nennen soll (11.10.2026).
+- **Event-Serie in der App ohne Griff an den Regler scheitert.** „Als Serie
+  erstellen" lässt `series_count` auf 1 (`EventFormSections`), der Regler
+  steht am Anschlag bei 2, die Zahl daneben zeigt 1; `POST /events/series`
+  antwortet 400 „Name, Datum und Serienanzahl (min. 2) sind erforderlich".
+  Das Fenster im Browser setzt beim Einschalten mindestens 2 (`mitSerie` in
+  `eventFormularRegeln.ts`); die App bräuchte denselben Aufruf (11.10.2026).
+- **Kopie eines Events: Anmeldeschluss und Zeitfenster wandern nicht mit.**
+  `nachDatumswechsel` behandelt eine Kopie als Bearbeiten (`!!event`, die
+  Vorlage hat id 0). Die Kopie beginnt im Vorschlag binnen einer halben
+  Stunde, ihr Anmeldeschluss liegt kurz davor; wer das Datum verschiebt,
+  behält diesen Schluss, und die Anmeldung schließt kurz nach dem Anlegen.
+  Zeitfenster bleiben am alten Tag. Dazu heißt das App-Modal bei einer
+  Kopie „Event bearbeiten". App und Browser teilen die Regel; das Fenster im
+  Browser nennt nur den abweichenden Tag am Zeitfenster (11.10.2026).
+- **Platzzahl in der Event-Liste kommt als Text.** `GET /events` liefert
+  `max_participants` aus einem `CASE` mit `SUM(...)`, also als `bigint` und
+  damit als Text (`'0'`, `'50'`). Eine Kopie aus der Liste zeigt ein
+  unbegrenztes Event im App-Formular als begrenzt (`=== 0`). Die Antwortform
+  bleibt (ausgelieferte Apps); umwandeln gehört in die App (`Number()` beim
+  Füllen des Formulars) (11.10.2026).
+- **Team-Liste der App lädt nach „Teamer:in anlegen" nicht neu.** Das
+  App-Modal ruft danach nur `refreshKonfis`; `useTeamerListe` lädt erst beim
+  nächsten Wechsel zwischen Konfis und Team. Im Browser behoben
+  (`teamStand` in `WebKonfis`) (11.10.2026).
+- **Kompakte Fenster im Browser: Feinschliff aus der Bilderprüfung**
+  (11.10.2026, alle Fenster bei 1440 und 1280, hell und dunkel angesehen;
+  kein Feld abgeschnitten, keine Überlappung):
+  - Die Datumsfelder der eigenen Fenster folgen der Sprache des Browsers;
+    ein englisch eingestellter Browser zeigt „10/11/2026, 05:00 PM". Mit
+    deutschem Browser steht dort „11.10.2026, 17:00". Das App-Modal zeigte
+    im Browser immer Deutsch.
+  - Die beiden Datumswähler in `ChallengeManageModal` haben kein
+    `locale="de-DE"` (die übrigen Datumswähler der App setzen es); auf einem
+    englisch eingestellten Gerät oder Browser kommen englische Monate und
+    12-Stunden-Zeit.
+  - Das Schließen-Kreuz der Fenster ist klein (Symbol 14 px im
+    30-px-Knopf), das App-Modal hatte ein großes Kreuz links.
+  - Scrollen im Scrollen: das Symbolraster beim Badge (eigene Höhe 248 px)
+    und die Eventliste beim Material scrollen in einem Fenster, das selbst
+    scrollt; beim Material sind nach dem Scrollen Titel und Kreuz weg.
+  - „Aktivität melden": „Aktivität" ohne Pflichtstern, der Platzhalter
+    „Anmerkungen... (optional)" doppelt zum Hinweis „Freiwillig." und mit
+    drei Punkten statt „…" (ebenso „Bitte gib einen Grund für die Ablehnung
+    an..." beim Prüfen); unter zwei Team-Aktivitäten bleiben links etwa
+    170 px leer.
+  - „Benutzer:in anlegen": Passwortfeld ohne Platzhalter und ohne Hinweis
+    auf die Regeln (vorher „Passwort eingeben").
+  - „Neues Level": „Benötigte Punkte" ist mit 0 vorbelegt; gibt es schon
+    ein Level mit 0 Punkten, lehnt der Server ohne Änderung ab („Ein Level
+    mit dieser Punktzahl existiert bereits"). Nur im Code nachvollzogen.
+  - Im Dunkeln hebt sich der Datumswähler über einem App-Modal kaum ab
+    (gleicher Grund wie die Karte darunter), und der Knopf der Schalter ist
+    schwarz statt weiß.
+  - Die Anwesenheit nutzt die 880 px schlecht: Namensspalte schmal und
+    zentriert, die Σ-Spalte nimmt die rechte Hälfte ein.
 
 ### Tests und CI
 
@@ -428,7 +564,61 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
-Nichts.
+- **Support-Detailseiten: Kreis der Art im schmalen Lesebereich.** Unter
+  600 px Lesebreite — bei 1280 px Fensterbreite neben der Liste — blendet
+  der Kopf den Kreis der Art aus; mit Kreis rutschten die Knöpfe in eine
+  zweite Reihe (Kopf 123 bzw. 135 statt 95 px, die Anfrage 135 statt 113 px,
+  gemessen 11.10.2026). Die Art steht dann in den Kennzeichen; bei einer
+  Anfrage steht dort „Noch nicht angelegt“, „Neue Gemeinde“ fehlt schmal
+  also. Der Plan sieht den Kreis ohne Ausnahme vor. So lassen oder den
+  Kreis kleiner zurückholen?
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md#messbarer-gewinn))
+  (11.10.2026)
+- **Support-Detailseiten: Messziele, die verfehlt sind.** Gemessen am
+  12.10.2026 gegen dieselben Testdaten wie der Plan: Der Kopf der Anfrage ist
+  im Browser 131 px hoch (Ziel ≈ 104, vorher 134), beim breiten Lesen mit der
+  Leiste zum Blättern 133 px; mit dem Betreff in bis zu drei Zeilen sind
+  Mail-Vorgang (1440) und Anliegen (1280) 117 statt 95 px hoch. Beim
+  Antworten rollt der Lesebereich 390 / 622 / 494 px (1440) bzw. 588 / 760 /
+  670 px (1280; Anliegen, Anfrage, Mail-Vorgang) statt höchstens 300, und
+  bei 1280 bleiben von der beantworteten Mail unter dem Kopf 6 / 30 / 6 px
+  im Bild (geschätzt waren 150). „Test Org-Admin 1“ steht im Anliegen an 7
+  Stellen statt 4, die Kontaktperson der Anfrage am Handy an 5 statt 3 (die
+  Skizze zeigt selbst 6). Die Seite am Handy ist 1817 / 2113 / 1943 px lang
+  (Ziel ≈ 1600 / 1700 / 1300, vorher 2647 / 4001 / 2227), weil die jüngste
+  Mail ganz offen steht und die Angaben offen folgen. Ziele neu setzen oder
+  nachbessern — etwa die jüngste Mail am Handy nach einigen Zeilen kürzen,
+  die Angaben dort einklappen, den Editor bei 1280 niedriger beginnen, den
+  Namen an Stand oder Antwortzeile weglassen?
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md#messbarer-gewinn))
+  (12.10.2026)
+- **„Lizenz ändern“ bei einer gesperrten Gemeinde.** Nach Ablauf von
+  Testphase oder Lizenz sperrt der nächtliche Lauf die Gemeinde
+  (`is_active = false`, `backend/services/backgroundService.js`). „Lizenz
+  ändern“ im Vorgang verlängert die Laufzeit, schreibt `is_active` aber
+  unverändert zurück: Der typische Antrag „Testphase abgelaufen, bitte
+  Lizenz“ endet mit einer weiter gesperrten Gemeinde. Seit 12.10.2026 sagen
+  Vorschau und Erfolgsmeldung das („Der Zugang der Gemeinde bleibt gesperrt
+  – freigeben lässt er sich im Formular der Gemeinde.“). Soll der Dialog bei
+  einer gesperrten Gemeinde selbst „Zugang wieder freigeben“ anbieten (der
+  PUT darf `is_active` setzen; keine neue Route)?
+  ([betrieb/support-ansicht.md](betrieb/support-ansicht.md#die-lizenz-im-vorgang-ändern))
+  (12.10.2026)
+- **Event mit fremdem Jahrgang speichern.** Eine Leitung, die nur einem Teil
+  der Jahrgänge eines Events zugewiesen ist, kann es weder in der App noch im
+  Browser speichern: `PUT /events/:id` prüft jeden Ziel-Jahrgang
+  (`zielJahrgangErlaubt`) und antwortet 403 „Kein Zugriff auf diesen
+  Jahrgang". Den fremden Jahrgang kann sie nicht abwählen, weil sie ihn nicht
+  sieht; das Fenster im Browser nennt ihn unter der Auswahl. Gewollt (dann
+  bearbeitet nur die Gemeindeleitung solche Events, und das Handbuch sagt
+  es), oder soll das Backend unverändert gelassene fremde Jahrgänge zulassen?
+  (11.10.2026)
+- **Meldungen der Browser-Fenster in der Fehlermessung.** Prüf- und
+  Serverfehler stehen in den eigenen Fenstern im Fenster selbst und laufen
+  nicht über `setError` im `AppContext`, also nicht in die anonyme
+  Fehlermessung (`trackFehler`); die App misst sie weiter, die
+  Support-Fenster schon bisher nicht. Mitzählen hieße: ein Weg im
+  `AppContext`, der misst, ohne einen Toast zu zeigen (11.10.2026).
 
 ## Geplant
 
@@ -437,16 +627,18 @@ Nichts.
   kleinere Punkte: [planung/2.4.0.md](planung/2.4.0.md).
 - **Web-Version: was noch fehlt** — Leiste links, Support-Ansicht mit
   Vorgängen, Posteingang, Formularen und Support-Mail sowie die
-  Browser-Ansichten aller Bereiche sind gebaut (03. bis 07.10.2026).
-  Offen: die Gruppe „Verwaltung" in der Leiste, der Rückweg
-  „ohne Gemeinde" nach einem Gemeindewechsel, weitere Kennzahlen,
-  „Einwilligung liegt vor" am Konfi-Profil
-  ([planung/web-version.md](planung/web-version.md), Abschnitt „Offen");
-  Zuweisung von Vorgängen an einzelne Support-Konten und Bildschirmfotos im
-  Support-Formular ([planung/support-vorgaenge.md](planung/support-vorgaenge.md));
-  die Spalte „Letzte Aktivität" der Konfi-Tabelle im Browser bleibt
-  ausgeblendet, bis `GET /admin/konfis` das Feld `letzte_aktivitaet`
-  (additiv) liefert.
+  Browser-Ansichten aller Bereiche sind gebaut (03. bis 07.10.2026), die
+  kompakten Fenster mit eigenen Fenstern für die häufigen Formulare
+  (11.10.2026). Offen ([planung/web-version.md](planung/web-version.md#offen)):
+  Support-Ansicht auf Handy und im Web übersichtlicher (Struktur,
+  Textbausteine, Konten), eigene Fenster für die übrigen Formulare, die
+  Gruppe „Verwaltung" in der Leiste, der Rückweg „ohne Gemeinde" nach einem
+  Gemeindewechsel, weitere Kennzahlen, „Einwilligung liegt vor" am
+  Konfi-Profil; Zuweisung von Vorgängen an einzelne Support-Konten und
+  Bildschirmfotos im Support-Formular
+  ([planung/support-vorgaenge.md](planung/support-vorgaenge.md)); die Spalte
+  „Letzte Aktivität" der Konfi-Tabelle im Browser bleibt ausgeblendet, bis
+  `GET /admin/konfis` das Feld `letzte_aktivitaet` (additiv) liefert.
 - **Feature-Empfehlungen** mit Simons Antworten vom 02.10.2026 —
   vor der EKD-Ausrollung Einwilligung (E-01, Vermerk am Konfi-Profil),
   Löschfristen (E-02), Selbstauskunft (E-21) und Hilfe und Support (E-04,
@@ -495,6 +687,9 @@ Nichts.
   ein hellerer Wert lässt sich je Bereich an einer Stelle setzen (UI BF-04,
   Rest). Gemessen 08.10.2026: 25 von 51 Text-Tokens mit festem Farbwert
   liegen auf Weiß unter 4,5:1 — deshalb keine Kontrast-Angabe bei Apple.
+  Dazu gehören die Links und Aktionen der Support-Detailseiten in der App
+  (`--app-text-users`, 3,66:1; gemessen 11.10.2026) sowie im Mail-Verlauf
+  der Kreis „KQ“ (1,95:1) und die Marke „Gesendet“ (1,98:1).
 - **react-router 6.** Zwei moderate Meldungen (Open Redirect über Backslash,
   Constructor Injection bei SSR-Hydration) treffen die App nicht: kein SSR,
   Navigationsziele nur aus festen Pfaden mit eingesetzten Kennungen; Push-,

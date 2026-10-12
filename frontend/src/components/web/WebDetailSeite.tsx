@@ -14,6 +14,9 @@
 //
 // Die Seiten reichen nur Inhalte herein; wo etwas steht, entscheidet allein
 // diese Huelle. Keine eigene Aktionen-Karte, keine gespiegelten Spalten.
+// Den Rumpf unter dem Kopf (Hinweis, Kennzahlen, zwei Spalten) rendert seit
+// 11.10.2026 WebDetailRumpf -- derselbe Baustein steht im Lesebereich des
+// Supports unter dessen eigenem Kopf (docs/planung/support-detailseiten.md).
 // Begleitsaetze zu den Aktionen (Abmeldefrist, "Ohne Netz nicht moeglich")
 // stehen als `hinweis` ueber den Kennzahlen.
 //
@@ -30,11 +33,11 @@
 
 import React, { useState } from 'react';
 import WebSeite from './WebSeite';
-import WebSpalten from './WebSpalten';
-import WebKachel, { type WebKachelProps } from './WebKachel';
+import WebDetailRumpf from './WebDetailRumpf';
+import type { WebKachelProps } from './WebKachel';
 import WebKarte from './WebKarte';
 import WebKnopf from './WebKnopf';
-import WebAngaben, { type WebAngabe } from './WebAngaben';
+import type { WebAngabe } from './WebAngaben';
 import WebListe, { type WebListeProps, type WebSortierung } from './WebListe';
 import { WebFehler, WebLaden, WebLeer, type WebLeerProps } from './WebZustaende';
 import { naechsteSortierung, sortiereZeilen } from '../../utils/tabelleSortieren';
@@ -97,22 +100,17 @@ const WebDetailSeite: React.FC<WebDetailSeiteProps> = ({
   } else if (leer) {
     inhalt = <div className="web-karte"><WebLeer {...leer} /></div>;
   } else {
-    const angabenKarte = angaben ? (
-      <WebKarte titel="Angaben">
-        {angabenVorspann}
-        <WebAngaben angaben={angaben} beschriftung={angabenBeschriftung} />
-      </WebKarte>
-    ) : null;
     inhalt = (
-      <div className="web-detail">
-        {hinweis}
-        {kennzahlen.length > 0 && (
-          <div className="web-raster web-raster--kacheln web-detail__kennzahlen">
-            {kennzahlen.map((k) => <WebKachel key={k.label} {...k} />)}
-          </div>
-        )}
-        <WebSpalten haupt={haupt ?? null} seite={<>{angabenKarte}{seite}</>} seiteBeschriftung={seiteBeschriftung} />
-      </div>
+      <WebDetailRumpf
+        hinweis={hinweis}
+        kennzahlen={kennzahlen}
+        haupt={haupt}
+        angaben={angaben}
+        angabenBeschriftung={angabenBeschriftung}
+        angabenVorspann={angabenVorspann}
+        seite={seite}
+        seiteBeschriftung={seiteBeschriftung}
+      />
     );
   }
   // Ohne Inhalt keine Kennzeichen und Aktionen: sie gehoeren zu dem, was gezeigt wird.

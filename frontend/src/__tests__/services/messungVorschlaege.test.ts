@@ -339,7 +339,8 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S5: nur neu angelegte Badges, nicht offline', () => {
-    const q = lies('src/components/admin/modals/BadgeManagementModal.tsx');
+    // Seit 11.10.2026 im Hook des Formulars (App-Modal und Web-Dialog).
+    const q = lies('src/components/admin/useBadgeFormular.ts');
     expect(q).toMatch(/\} else if \(!isEditMode\) \{[\s\S]{0,300}trackHandlung\('badge-angelegt', \{ zielgruppe: formData\.target_role \}\)/);
   });
 
@@ -394,7 +395,7 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S17: nur die Lese-Ansicht, die Datei erst nach dem Laden', () => {
-    const q = lies('src/components/admin/modals/MaterialFormModal.tsx');
+    const q = lies('src/components/admin/modals/useMaterialFormular.ts');
     expect(q).toContain('if (!nurLesen || !material || angesehenGemeldet.current) return;');
     expect(q).toContain("if (geladen && nurLesen) trackHandlung('material-abgerufen', { inhalt: 'datei' });");
   });

@@ -28,7 +28,7 @@
 // Anlegen, Loeschen und die Anwesenheit sind die Fenster und Rueckfragen der
 // Seite. Neu ist nur die Darstellung.
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_CHECKBOX,
@@ -92,6 +92,8 @@ export interface WebKonfisProps {
   pageRef?: React.Ref<HTMLElement>;
   onKonfiAnlegen: () => void;
   onTeamAnlegen: () => void;
+  /** Zaehlt hoch, wenn die Team-Liste neu geladen werden soll (nach "Teamer:in anlegen"). */
+  teamStand?: number;
   onMatrix: () => void;
   onKonfiLoeschen: (konfi: KonfiListenEintrag) => void;
   onTeamerLoeschen: (teamer: TeamerListenEintrag) => void | Promise<void>;
@@ -321,7 +323,7 @@ const teamKarte = (suche: string) => (t: TeamerListenEintrag) => ({
 
 const WebKonfis: React.FC<WebKonfisProps> = ({
   konfis, jahrgaenge, laedt, ohneJahrgang, pageRef,
-  onKonfiAnlegen, onTeamAnlegen, onMatrix, onKonfiLoeschen, onTeamerLoeschen, banner, overlays,
+  onKonfiAnlegen, onTeamAnlegen, teamStand = 0, onMatrix, onKonfiLoeschen, onTeamerLoeschen, banner, overlays,
 }) => {
   const { user } = useApp();
   const rolle = user?.role_name ?? '';
@@ -339,6 +341,11 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   const [jahrgang, setJahrgang] = useState('alle');
 
   const team = useTeamerListe(ansicht === 'team');
+  // Eine neue Teamer:in (Dialog der Seite): die Team-Liste neu laden.
+  const teamLaden = team.laden;
+  useEffect(() => {
+    if (teamStand > 0) void teamLaden();
+  }, [teamStand, teamLaden]);
 
   // Die Jahrgaenge dieses Kontos: die Gemeindeleitung alle, eine Leitung ihre zugewiesenen.
   const meineJahrgaenge = useMemo(() => sichtbareJahrgaenge(jahrgaenge, user), [jahrgaenge, user]);
