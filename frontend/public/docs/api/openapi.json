@@ -5229,7 +5229,7 @@
           "Support"
         ],
         "summary": "Eine Mail mit ihrem Faden",
-        "description": "Die Mail mit allen Feldern und verlauf: alle Mails desselben Fadens (sie selbst eingeschlossen), aelteste zuerst. Ein Faden sind alle Mails, deren Schluessel (Message-ID, In-Reply-To, References) sich ueberschneiden -- auch ueber eine Mail, die Konfi Quest nicht gespeichert hat. Liest nur; gelesen setzt POST /mail/gelesen.\n",
+        "description": "Die Mail mit allen Feldern und verlauf: alle Mails desselben Fadens (sie selbst eingeschlossen), aelteste zuerst. Ein Faden sind alle Mails, deren Schluessel (Message-ID, In-Reply-To, References) sich ueberschneiden -- auch ueber eine Mail, die Konfi Quest nicht gespeichert hat. Liest nur; gelesen setzt POST /mail/gelesen. ABSENDER BEKANNT (absender_bekannt, additiv seit 12.10.2026, nur an der obersten Ebene, nicht in den Eintraegen von verlauf): Gehoert der Absender einer EINGEHENDEN Mail OHNE Vorgang zu einer Gemeinde, steht hier die Gemeinde mit ihren offenen Vorgaengen -- die Oberflaeche bietet damit das Einsortieren an. Die Regel ist dieselbe wie beim Abholen (Regel 4, utils/mailZuordnung.js gemeindeDesKontos): genau ein aktives Konto (nicht Konfi, nicht geloescht) mit dieser Adresse (ohne Unterschied Gross/klein, ohne Leerraum), Mitglied in genau einer Gemeinde (beide Quellen der Zugehoerigkeit, Rolle je Gemeinde). Sonst -- unbekannte Adresse, mehrere Konten, ein Konto in mehreren Gemeinden, Konfi-Konto, gesperrtes Konto, ausgehende Mail, Mail in einem Vorgang -- null. Interne Gemeinden zaehlen wie jede andere.\n",
         "parameters": [
           {
             "name": "id",
@@ -5242,7 +5242,7 @@
         ],
         "responses": {
           "200": {
-            "description": "MailNachricht + verlauf",
+            "description": "MailNachricht + verlauf + absender_bekannt",
             "content": {
               "application/json": {
                 "schema": {
@@ -5257,6 +5257,33 @@
                           "type": "array",
                           "items": {
                             "$ref": "#/components/schemas/MailNachricht"
+                          }
+                        },
+                        "absender_bekannt": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "description": "additiv seit 12.10.2026; null ausser bei einer eingehenden Mail ohne Vorgang, deren Absender genau einer Gemeinde zugeordnet ist (Regel oben)",
+                          "properties": {
+                            "organization_id": {
+                              "type": "integer"
+                            },
+                            "gemeinde_name": {
+                              "type": "string",
+                              "description": "Anzeigename der Gemeinde, sonst ihr Name (wie gemeinde_name in GET /api/support/mail/eingang)"
+                            },
+                            "offene_vorgaenge": {
+                              "type": "integer",
+                              "description": "Vorgaenge der Gemeinde, nicht archiviert, Status neu, in_arbeit oder wartet (wie der Filter offen in GET /api/support/vorgaenge)"
+                            },
+                            "vorgang_id": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "der zuletzt angelegte offene Vorgang der Gemeinde (nach created_at); null, wenn es keinen gibt"
+                            }
                           }
                         }
                       }
