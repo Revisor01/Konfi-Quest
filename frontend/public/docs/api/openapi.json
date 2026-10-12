@@ -21082,6 +21082,13 @@
                     "null"
                   ],
                   "description": "wie in GET /api/support/mail/eingang"
+                },
+                "vorgang_id": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "description": "der Vorgang der Mail; null = Posteingang (additiv seit 12.10.2026; wie in GET /api/support/mail/eingang). Die Web-Uebersicht oeffnet damit den Vorgang statt der Mail."
                 }
               }
             }

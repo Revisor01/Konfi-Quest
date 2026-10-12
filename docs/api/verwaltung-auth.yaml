@@ -575,6 +575,7 @@ components:
               anfrage_id: { type: [integer, "null"] }
               organization_id: { type: [integer, "null"] }
               gemeinde_name: { type: [string, "null"], description: "wie in GET /api/support/mail/eingang" }
+              vorgang_id: { type: [integer, "null"], description: "der Vorgang der Mail; null = Posteingang (additiv seit 12.10.2026; wie in GET /api/support/mail/eingang). Die Web-Uebersicht oeffnet damit den Vorgang statt der Mail." }
         testphase_endet:
           type: array
           description: "laufende Testphasen (is_trial true) nicht gesperrter, nicht interner Gemeinden, die in den naechsten 14 Tagen enden (nach jetzt, bis jetzt + 14 Tage einschliesslich), fruehestes Ende zuerst; Lizenzen mit Ablaufdatum stehen hier nicht"
