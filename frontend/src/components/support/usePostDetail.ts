@@ -32,6 +32,7 @@ import {
   mailKennzahlen,
   mailMitVorgangLesen,
   mailStand,
+  posteingangsAntwortAuf,
   standardBetreff,
   ungeleseneIds,
   type MailAbsenderAngabe,
@@ -105,11 +106,10 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     return holen(true);
   };
 
-  // Antwort an den Absender der letzten eingehenden Mail des Fadens.
-  const letzteEingehende = useMemo(
-    () => [...faden].reverse().find((m) => m.richtung === 'ein') ?? mail,
-    [faden, mail]
-  );
+  // Antwort an den Absender der jüngsten eingehenden Mail des Fadens, die im
+  // Posteingang liegt (posteingangsAntwortAuf) -- nicht an eine Mail desselben
+  // Fadens aus einem Vorgang: Die Antwort bekäme dessen Zuordnung.
+  const letzteEingehende = useMemo(() => posteingangsAntwortAuf(faden, mail), [faden, mail]);
   const betreffVorschlag = standardBetreff(faden[faden.length - 1]?.betreff ?? mail?.betreff);
 
   // Abgeleitetes -- fuer beide Fassungen gleich.
@@ -127,22 +127,23 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
   const absender: MailAbsenderAngabe | null = useMemo(() => (mail ? mailAbsenderAngabe(mail) : null), [mail]);
 
   /**
-   * Das Antwortformular für App und Web: vom Postfach der Mail an den
-   * Absender der letzten eingehenden. Nur, wenn der Stand Antworten anbietet
-   * (Posteingang, nicht im Archiv); sonst null.
+   * Das Antwortformular für App und Web: an den Absender der jüngsten
+   * eingehenden Mail im Posteingang, von ihrem Postfach. Nur, wenn der Stand
+   * Antworten anbietet (Posteingang, nicht im Archiv); sonst null.
    *
    * Der Aufruf geht an die angezeigte, beantwortete Mail
    * (POST /support/mail/nachrichten/<ihre ID>/antworten): Der Server antwortet
-   * an ihren Absender und nimmt sie als Bezug (In-Reply-To, „Re:"). Bis
-   * 12.10.2026 ging er an die Mail aus der Adresse -- öffnete man eine ältere
-   * Mail des Fadens, nannte die Anzeige die jüngste eingehende, die Antwort
-   * ging aber an den Absender der älteren, mit ihr als Bezug.
+   * an ihren Absender, von ihrem Postfach, mit ihr als Bezug (In-Reply-To,
+   * „Re:"), und gibt der Antwort ihre Zuordnung. Bis 12.10.2026 ging er an
+   * die Mail aus der Adresse -- öffnete man eine ältere Mail des Fadens,
+   * nannte die Anzeige die jüngste eingehende, die Antwort ging aber an den
+   * Absender der älteren, mit ihr als Bezug.
    */
   const antwort: AntwortFormularProps | null = useMemo(() => {
     if (!mail || !stand?.neben.includes('antworten') || !letzteEingehende || letzteEingehende.richtung !== 'ein') return null;
     const beantwortetId = letzteEingehende.id;
     return {
-      postfach: mail.postfach,
+      postfach: letzteEingehende.postfach,
       betreffVorschlag,
       an: letzteEingehende.von_adresse,
       senden: async (koerper: MailAntwortDaten) => (await api.post(`/support/mail/nachrichten/${beantwortetId}/antworten`, koerper)).data,

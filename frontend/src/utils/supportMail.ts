@@ -636,6 +636,25 @@ export function mailImPosteingang(m: Pick<MailNachricht, 'anfrage_id' | 'organiz
 }
 
 /**
+ * Worauf im Posteingang geantwortet wird: die jüngste eingehende Mail des
+ * Fadens (chronologisch, fadenAus), die selbst im Posteingang liegt -- sonst
+ * die geöffnete. Der Faden läuft über die Kopfzeilen
+ * (backend/utils/mailNachrichten.js, fadenIds) und kann Mails aus Vorgängen
+ * enthalten; der Server gibt der Antwort die Zuordnung und das Postfach der
+ * beantworteten Mail (backend/routes/supportMail.js,
+ * POST /mail/nachrichten/:id/antworten). So bleibt eine Antwort von der Seite
+ * einer Mail im Posteingang dort, wie damals, als sie an die Mail aus der
+ * Adresse ging. Fehlen an einem Eintrag die Spalten der Zuordnung, gilt er als
+ * nicht zugeordnet.
+ */
+export function posteingangsAntwortAuf(faden: readonly MailNachricht[], mail: MailNachricht | null): MailNachricht | null {
+  const imPosteingang = (m: MailNachricht) => mailImPosteingang({
+    vorgang_id: m.vorgang_id ?? null, anfrage_id: m.anfrage_id ?? null, organization_id: m.organization_id ?? null,
+  });
+  return [...faden].reverse().find((m) => m.richtung === 'ein' && imPosteingang(m)) ?? mail;
+}
+
+/**
  * Wohin eine Mail weiterleitet, die nicht im Posteingang liegt: in ihren
  * Vorgang mit der Mail offen (`?mail=`), ältere Server nennen nur Anfrage
  * oder Gemeinde. Im Posteingang: null.

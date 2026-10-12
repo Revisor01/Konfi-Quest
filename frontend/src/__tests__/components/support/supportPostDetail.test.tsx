@@ -550,6 +550,27 @@ describe('Mail (App): antworten', () => {
     expect(server.stand.mails.find((m) => m.richtung === 'aus' && m.text === 'Hallo zusammen')?.an_adressen).toEqual(['sekretariat@example.org']);
   });
 
+  it('ein Faden über Posteingang und Vorgang: Modal, Rückfrage und Aufruf nennen die jüngste eingehende IM POSTEINGANG -- die Antwort bleibt dort', async () => {
+    // 32 gehört über die Kopfzeilen zum selben Faden, liegt aber in Vorgang 2 und kam an support@.
+    server.stand.mails.push(mail(32, 2, {
+      faden: 'zugang', postfach: 'support', von_adresse: 'sekretariat@example.org', von_name: 'Sekretariat Lindenau',
+      betreff: 'AW: Frage zum Zugang', gesendet_am: '2026-10-03T10:00:00Z', text: 'Wir hängen uns dran.',
+    }));
+    await oeffnen(31);
+    expect(mailZeilen()).toHaveLength(4);
+    const modal = await antworten();
+    expect(modal.getByText(/^Du antwortest auf/)).toHaveTextContent('Anna Beispiel');
+    expect(modal.getByText('Anna Beispiel <anna@example.org>', { selector: 'strong' })).toBeInTheDocument();
+    fireEvent.change(modal.getByLabelText('Text der Antwort'), { target: { value: 'Hallo Anna' } });
+    fireEvent.click(modal.getByRole('button', { name: 'Antwort senden' }));
+    expect(h.alert?.message).toBe('An anna@example.org: „Re: Frage zum Zugang“ von moin@ senden?');
+    await bestaetigen('Senden');
+    // An 32 ginge sie an sekretariat@, von support@, und gehörte wie 32 zu Vorgang 2.
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/31/antworten']);
+    const gesendet = server.stand.mails.filter((m) => m.richtung === 'aus' && m.text === 'Hallo Anna');
+    expect(gesendet.map((m) => [m.an_adressen, m.postfach, m.vorgang_id])).toEqual([[['anna@example.org'], 'moin', null]]);
+  });
+
   it('ein Fehler beim Senden: das Modal bleibt offen, der Text steht noch da', async () => {
     await oeffnen();
     const modal = await antworten();

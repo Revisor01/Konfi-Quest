@@ -150,6 +150,11 @@ export interface MailNachricht {
   /** Zugeordnet zu einer Anfrage ODER einer Gemeinde -- oder keins (Posteingang). */
   anfrage_id: number | null;
   organization_id: number | null;
+  /**
+   * Der Vorgang der Mail (Migration 195); null im Posteingang. Der Server
+   * liefert ihn an jeder Mail, auch an den Einträgen eines Fadens.
+   */
+  vorgang_id?: number | null;
   message_id?: string | null;
   in_reply_to?: string | null;
   referenzen?: string[] | null;

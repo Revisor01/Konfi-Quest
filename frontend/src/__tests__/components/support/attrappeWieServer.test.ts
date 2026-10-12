@@ -168,6 +168,27 @@ describe('Attrappe wie der Server', () => {
     expect('absender_bekannt' in ((await a.get('/support/mail/nachrichten/31')).data as object)).toBe(false);
   });
 
+  it('der Faden im Mail-Detail wie der Server (fadenIds, Kopfzeilen): auch Mails aus einem Vorgang; die Posteingangs-Antwort bekommt die Zuordnung der beantworteten Mail', async () => {
+    const a = api();
+    const server = vorgaengeServer({
+      vorgaenge: [vorgang(1), vorgang(2)],
+      mails: [
+        mail(31, null, { faden: 'f', gesendet_am: '2026-10-03T07:00:00Z' }),
+        mail(32, 1, { faden: 'f', gesendet_am: '2026-10-03T08:00:00Z' }),
+        mail(33, null, { faden: 'anderer', gesendet_am: '2026-10-03T09:00:00Z' }),
+      ],
+    });
+    server.installieren(a);
+    const verlauf = async (id: number) => ((await a.get(`/support/mail/nachrichten/${id}`)).data as { verlauf: Array<{ id: number }> }).verlauf.map((m) => m.id);
+    expect(await verlauf(31)).toEqual([31, 32]);
+    // backend/routes/supportMail.js: liegt die beantwortete Mail in einem Vorgang, gehört die Antwort dorthin; sonst Posteingang.
+    const inVorgang = (await a.post('/support/mail/nachrichten/32/antworten', { text: 'A' })).data as { nachricht: { vorgang_id: number | null } };
+    const imPosteingang = (await a.post('/support/mail/nachrichten/31/antworten', { text: 'B' })).data as { nachricht: { vorgang_id: number | null } };
+    expect([inVorgang.nachricht.vorgang_id, imPosteingang.nachricht.vorgang_id]).toEqual([1, null]);
+    // Einsortieren nimmt nur mit, was noch im Posteingang liegt: 31 und die Antwort B (101), nicht 32 und A (100).
+    expect((await a.post('/support/mail/nachrichten/31/einsortieren', { vorgang_id: 2 })).data).toEqual({ anzahl: 2, vorgang_id: 2, ids: [31, 101] });
+  });
+
   it('Einsortieren: eine Mail aus einem Vorgang geht allein; aus dem Posteingang der Faden', async () => {
     const a = api();
     const server = vorgaengeServer({

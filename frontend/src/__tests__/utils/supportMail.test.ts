@@ -32,6 +32,7 @@ import {
   zaehlerLesen,
   zitateTrennen,
   mailImPosteingang,
+  posteingangsAntwortAuf,
   mailKennzahlen,
   mailStand,
   absenderBekanntLesen,
@@ -392,6 +393,31 @@ describe('Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E)
     expect(mailImPosteingang({ anfrage_id: null, organization_id: null, vorgang_id: 2 })).toBe(false);
     expect(mailImPosteingang({ anfrage_id: 41, organization_id: null, vorgang_id: null })).toBe(false);
     expect(mailImPosteingang({ anfrage_id: null, organization_id: 7, vorgang_id: null })).toBe(false);
+  });
+
+  it('worauf im Posteingang geantwortet wird: die jüngste eingehende Mail des Fadens, die selbst im Posteingang liegt -- sonst die geöffnete', () => {
+    // Der Faden läuft über die Kopfzeilen und kann Mails aus Vorgängen, Anfragen und Gemeinden enthalten;
+    // der Server gibt der Antwort die Zuordnung der beantworteten Mail.
+    const geoeffnet = mail(1, { gesendet_am: '2026-10-01T08:00:00Z' });
+    const faden: Array<MailNachricht> = [
+      geoeffnet,
+      mail(2, { gesendet_am: '2026-10-02T08:00:00Z', postfach: 'support' }),
+      mail(3, { gesendet_am: '2026-10-03T08:00:00Z', vorgang_id: 9 }),
+      mail(4, { gesendet_am: '2026-10-04T08:00:00Z', anfrage_id: 41 }),
+      mail(5, { gesendet_am: '2026-10-05T08:00:00Z', organization_id: 7 }),
+      mail(6, { gesendet_am: '2026-10-06T08:00:00Z', richtung: 'aus' }),
+    ];
+    expect(posteingangsAntwortAuf(faden, geoeffnet)?.id).toBe(2);
+    // Keine andere eingehende im Posteingang: die geöffnete selbst.
+    expect(posteingangsAntwortAuf([geoeffnet, ...faden.slice(2)], geoeffnet)?.id).toBe(1);
+    // Ohne Faden (noch nicht geladen): die geöffnete; ohne beides null.
+    expect(posteingangsAntwortAuf([], geoeffnet)?.id).toBe(1);
+    expect(posteingangsAntwortAuf([], null)).toBeNull();
+    // Fehlen die Spalten der Zuordnung an einem Eintrag, gilt er als nicht zugeordnet.
+    const ohneSpalten = { ...mail(7, { gesendet_am: '2026-10-07T08:00:00Z' }) } as Partial<MailNachricht>;
+    delete ohneSpalten.anfrage_id;
+    delete ohneSpalten.organization_id;
+    expect(posteingangsAntwortAuf([...faden, ohneSpalten as MailNachricht], geoeffnet)?.id).toBe(7);
   });
 
   it('Weiterleitung: in den Vorgang mit der Mail offen, sonst Anfrage oder Gemeinde; im Posteingang keine', () => {

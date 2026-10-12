@@ -262,6 +262,18 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
   };
 
   /**
+   * Der Faden im Mail-Detail wie der Server (backend/utils/mailNachrichten.js,
+   * fadenIds): über die Kopfzeilen, gleich wo die Mails liegen. Zu einer Mail
+   * im Posteingang gehören so auch Mails desselben Fadens aus einem Vorgang
+   * (etwa dieselbe Mail an moin@ und support@). Einsortieren nimmt dagegen nur
+   * mit, was noch im Posteingang liegt (fadenVon).
+   */
+  const verlaufVon = (m: TestMail): TestMail[] => {
+    if (m.vorgang_id !== null || !m.faden) return fadenVon(m);
+    return s.mails.filter((x) => x.faden === m.faden).sort((a, b) => a.gesendet_am.localeCompare(b.gesendet_am) || a.id - b.id);
+  };
+
+  /**
    * `absender_bekannt` wie der Server: nur für eingehende Mails ohne Vorgang,
    * deren Adresse einer Gemeinde gehört. Offen heißt nicht im Archiv und nicht
    * erledigt; der Vorgang ist der jüngste offene (offenerVorgangDerGemeinde).
@@ -314,7 +326,7 @@ export function vorgaengeServer(optionen: ServerOptionen = {}) {
     if (/^\/support\/mail\/nachrichten\/\d+$/.test(pfad)) {
       const m = s.mails.find((x) => x.id === idAus(pfad, /(\d+)$/));
       if (!m) return Promise.reject(nichtGefunden());
-      const detail = { ...m, anfrage_id: null, organization_id: null, verlauf: fadenVon(m) };
+      const detail = { ...m, anfrage_id: null, organization_id: null, verlauf: verlaufVon(m) };
       return Promise.resolve({ data: alterServer ? detail : { ...detail, absender_bekannt: absenderBekanntVon(m) } });
     }
     if (pfad === '/support/mail/status') {

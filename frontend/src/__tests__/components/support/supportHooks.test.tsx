@@ -558,6 +558,29 @@ describe('usePostDetail: Stand, Antwort, Weiterleitung', () => {
     expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/52/antworten']);
   });
 
+  it('ein Faden über Posteingang und Vorgang: geantwortet wird auf die jüngste eingehende IM POSTEINGANG -- die Antwort bleibt dort', async () => {
+    // 54 gehört über die Kopfzeilen zum selben Faden, liegt aber in Vorgang 1
+    // (etwa dieselbe Mail an moin@ und support@: moin@ Posteingang, support@ Regel 4).
+    server.stand.mails.push(mail(54, 1, { faden: 'post', postfach: 'support', von_adresse: 'lena.probe@example.org', von_name: 'Pastorin Lena Probe', betreff: 'Re: Frage', gesendet_am: '2026-10-03T09:00:00Z' }));
+    const { result } = await geoeffnet(51);
+    expect(result.current.faden.map((m) => m.id)).toEqual([51, 52, 54]);
+    expect(result.current.letzteEingehende?.id).toBe(52);
+    expect(result.current.antwort).toMatchObject({ postfach: 'moin', an: 'ben@example.org' });
+    expect(result.current.antwort?.beantwortet?.id).toBe(52);
+    await act(async () => { await result.current.antwort!.senden({ text: 'Hallo' }); });
+    // Ginge sie an 54, gehörte die Antwort wie 54 zu Vorgang 1 (der Server übernimmt die Zuordnung der beantworteten Mail).
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/52/antworten']);
+    expect(server.stand.mails.filter((m) => m.richtung === 'aus' && m.text === 'Hallo').map((m) => m.vorgang_id)).toEqual([null]);
+  });
+
+  it('die jüngste eingehende im Posteingang kam an das andere Postfach: das Formular nennt ihr Postfach -- von dort sendet der Server', async () => {
+    server.stand.mails.push(mail(55, null, { faden: 'post', postfach: 'support', von_adresse: 'ben@example.org', von_name: 'Ben Beispiel', betreff: 'Re: Frage', gesendet_am: '2026-10-03T09:00:00Z' }));
+    const { result } = await geoeffnet(51);
+    expect(result.current.mail?.postfach).toBe('moin');
+    expect(result.current.antwort?.beantwortet?.id).toBe(55);
+    expect(result.current.antwort).toMatchObject({ postfach: 'support', an: 'ben@example.org' });
+  });
+
   it('eine Mail in einem Vorgang: kein Antworten, kein Archivieren, kein Löschen -- die Weiterleitung mit ?mail=', async () => {
     const { result } = await geoeffnet(13);
     expect(result.current.imPosteingang).toBe(false);
