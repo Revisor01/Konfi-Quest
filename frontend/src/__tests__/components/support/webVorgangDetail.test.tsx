@@ -187,8 +187,10 @@ describe('Vorgang (Web): Kopf', () => {
   it('Kreis der Art, Betreff als Überschrift, Kennzeichen: Nr., Status, Dringend, Art › Bereich und die Gemeinde als Verweis', async () => {
     await oeffnen();
     expect(within(lesen()).getByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toHaveAttribute('title', 'Chat zeigt nichts Neues');
-    const kreis = kopf().querySelector('.web-lesen__kreis > span')!;
-    expect(kreis.className).toBe('web-vorgang-kreis web-vorgang-kreis--fehler web-vorgang-kreis--gross');
+    const kreis = kopf().querySelector('.web-lesen__kreis > span') as HTMLElement;
+    expect(kreis.className).toBe('web-vorgang-kreis web-vorgang-kreis--gross');
+    // Die Farbe der Art aus ART_FARBE, derselben Zuordnung wie der Kreis der App.
+    expect(kreis.style.getPropertyValue('--web-vorgang-kreis-farbe')).toBe('var(--app-color-danger)');
     expect(kreis).toHaveAttribute('aria-hidden', 'true');
     expect(teile(kennzeichen())).toEqual(['Nr. 1', 'Neu', 'Dringend', 'Fehler › Chat', 'Kirchengemeinde Musterdorf']);
     expect(within(kennzeichen()).getByRole('link', { name: 'Kirchengemeinde Musterdorf' })).toHaveAttribute('href', '/admin/organizations?gemeinde=7');

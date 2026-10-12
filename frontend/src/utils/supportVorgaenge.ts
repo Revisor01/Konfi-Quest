@@ -638,6 +638,26 @@ export const ART_SYMBOL: Readonly<Record<VorgangArt, string>> = {
 };
 
 /**
+ * Farbe des Kreises je Art: der Modifier von .app-icon-circle in der App
+ * (theme/variables.css) und das Token --app-color-… im Browser
+ * (web/WebVorgangTeile, VorgangKreis). Eine Stelle für beide: Bis 12.10.2026
+ * stand die Zuordnung zweimal, als Tabelle der App und als Modifier in
+ * theme/web/support.css.
+ */
+export type ArtFarbe = 'success' | 'info' | 'danger' | 'purple' | 'warning' | 'categories' | 'users' | 'neutral';
+
+export const ART_FARBE: Readonly<Record<VorgangArt, ArtFarbe>> = {
+  neue_gemeinde: 'success',
+  frage: 'info',
+  fehler: 'danger',
+  wunsch: 'purple',
+  zugang: 'warning',
+  lizenz: 'categories',
+  datenschutz: 'users',
+  sonstiges: 'neutral',
+};
+
+/**
  * Eine Zeit im Stand-Satz: „heute, 12:23", „gestern, 14:05", im selben Jahr
  * „10.10., 14:05", sonst das Datum „10.10.2025". Zeitzone des Geräts, Formate
  * aus utils/dateUtils.ts. Ungültig: ''.

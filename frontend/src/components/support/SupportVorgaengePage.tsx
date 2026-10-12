@@ -44,6 +44,7 @@ import { triggerPullHaptic } from '../../utils/haptics';
 import { empfaengerText, gemeindeName } from '../../utils/supportMail';
 import {
   ARTEN,
+  ART_FARBE,
   ART_SYMBOL,
   BEREICHE,
   DRINGLICHKEITEN,
@@ -87,23 +88,6 @@ const STATUS_FARBE: Record<VorgangStatus, string> = {
   in_arbeit: 'var(--app-color-info)',
   wartet: 'var(--app-color-neutral)',
   erledigt: 'var(--app-color-success)',
-};
-
-/**
- * Farbe des Kreises je Art (Modifier von .app-icon-circle): dieselben Farben
- * wie der Kreis der Web-Fassung (web/WebVorgangTeile, VorgangKreis), das
- * Symbol aus ART_SYMBOL. Bis 12.10.2026 trug jede Zeile der App dasselbe
- * Gebäude (ICON_ORGANISATION).
- */
-const ART_KREIS: Record<VorgangArt, string> = {
-  neue_gemeinde: 'success',
-  frage: 'info',
-  fehler: 'danger',
-  wunsch: 'purple',
-  zugang: 'warning',
-  lizenz: 'categories',
-  datenschutz: 'users',
-  sonstiges: 'neutral',
 };
 
 /** Neuer Vorgang als Abschnitt der Seite (die App hat dafuer keinen Dialog). */
@@ -321,7 +305,10 @@ const Vorgaenge: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-zaehler-anker">
-                          <div className={`app-icon-circle app-icon-circle--lg app-icon-circle--${ART_KREIS[v.art] ?? 'neutral'}`}>
+                          {/* Symbol und Farbe der Art, dieselbe Zuordnung wie im Browser
+                              (ART_SYMBOL, ART_FARBE); bis 12.10.2026 trug jede Zeile
+                              dasselbe Gebäude. */}
+                          <div className={`app-icon-circle app-icon-circle--lg app-icon-circle--${ART_FARBE[v.art] ?? 'neutral'}`}>
                             <IonIcon icon={ART_SYMBOL[v.art] ?? ART_SYMBOL.sonstiges} />
                           </div>
                           <ZaehlerKugel anzahl={v.ungelesen} label="ungelesene Mails" />

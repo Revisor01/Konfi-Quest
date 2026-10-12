@@ -9,7 +9,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import { mail, vorgang, vorgaengeServer } from './vorgaengeServer';
-import { ART_SYMBOL } from '../../../utils/supportVorgaenge';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
+import { ART_SYMBOL, type VorgangArt } from '../../../utils/supportVorgaenge';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 
 const h = vi.hoisted(() => ({
@@ -43,6 +45,7 @@ vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => fa
 vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.standort }));
 
 import SupportVorgaengePage from '../../../components/support/SupportVorgaengePage';
+import { VorgangKreis } from '../../../components/support/web/WebVorgangTeile';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 
 let server: ReturnType<typeof vorgaengeServer>;
@@ -76,6 +79,25 @@ const zeigen = async () => {
 const eintraege = () => screen.getAllByRole('button', { name: /^Vorgang \d+:/ }).map((e) => e.getAttribute('aria-label'));
 const nummern = () => screen.queryAllByRole('button', { name: /^Vorgang \d+:/ }).map((e) => /^Vorgang (\d+):/.exec(e.getAttribute('aria-label') ?? '')![1]);
 const segment = (name: string | RegExp) => screen.getByRole('tab', { name });
+/**
+ * Die Farbe je Art, ausgeschrieben -- nicht aus der Zuordnung des Codes
+ * abgeleitet, sonst prüfte der Test sie gegen sich selbst. Dieselben Farben
+ * wie der Kreis im Browser. Alle acht Arten (Prüfung 12.10.2026: vorher nur
+ * die vier aus dem Bestand oben).
+ */
+const ART_FARBEN_ERWARTET: ReadonlyArray<readonly [VorgangArt, string]> = [
+  ['neue_gemeinde', 'success'],
+  ['frage', 'info'],
+  ['fehler', 'danger'],
+  ['wunsch', 'purple'],
+  ['zugang', 'warning'],
+  ['lizenz', 'categories'],
+  ['datenschutz', 'users'],
+  ['sonstiges', 'neutral'],
+];
+/** Zu welcher Art ein Symbol gehört (ART_SYMBOL rückwärts), sonst das Symbol selbst. */
+const artDesSymbols = (symbol: string) => Object.entries(ART_SYMBOL).find(([, s]) => s === symbol)?.[0] ?? symbol;
+
 const filterKnopf = () => screen.getByRole('button', { name: /^Filter/ });
 /** Klappt Art, Gemeinde und Suche auf (sie stehen hinter dem Knopf „Filter“). */
 const filterOeffnen = () => {
@@ -130,6 +152,42 @@ describe('Vorgänge (App): Liste', () => {
     // Ohne Bereich und ohne Dringend: nur der Status in der Zeile der Marken.
     expect(zeile(3).querySelector('.support-listenzeile__marken')!.textContent).toBe('Wartet');
     expect(zeile(3).querySelector('.support-listenzeile__meta')!.textContent).toMatch(/^Nr\. 3 · Neue Gemeinde · Noch nicht angelegt · /);
+  });
+
+  it('jede der acht Arten: ihr Symbol auf ihrer Farbe, und jede Farbe hat ihre Regel in variables.css', async () => {
+    server = vorgaengeServer({
+      vorgaenge: ART_FARBEN_ERWARTET.map(([art], i) => vorgang(i + 1, { art, betreff: `Art ${art}`, created_at: `2026-10-0${9 - i}T07:00:00Z` })),
+    });
+    server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
+    render(<SupportVorgaengePage />);
+    await screen.findByRole('button', { name: /^Vorgang 1:/ });
+    const symbole: string[] = [];
+    const zeigt = ART_FARBEN_ERWARTET.map(([art], i) => {
+      const kreis = screen.getByRole('button', { name: new RegExp(`^Vorgang ${i + 1}:`) }).querySelector('.app-icon-circle')!;
+      const symbol = kreis.querySelector('[data-icon]')!.getAttribute('data-icon') ?? '';
+      symbole.push(symbol);
+      const farben = [...kreis.classList].filter((k) => k !== 'app-icon-circle' && k !== 'app-icon-circle--lg');
+      // Das Symbol als Name seiner Art -- lesbarer als das SVG, wenn es abweicht.
+      return [art, artDesSymbols(symbol), farben];
+    });
+    expect(zeigt).toEqual(ART_FARBEN_ERWARTET.map(([art, farbe]) => [art, art, [`app-icon-circle--${farbe}`]]));
+    // Acht Arten, acht verschiedene Symbole.
+    expect(new Set(symbole).size).toBe(8);
+    // Ein Modifier ohne Regel ließe den Kreis ohne Fläche -- weiß auf weiß.
+    const css = readFileSync(resolve(process.cwd(), 'src/theme/variables.css'), 'utf8');
+    const ohneRegel = ART_FARBEN_ERWARTET.filter(([, farbe]) => !new RegExp(`^\\.app-icon-circle--${farbe} \\{ background-color: var\\(--app-color-[a-z]+\\); \\}`, 'm').test(css));
+    expect(ohneRegel).toEqual([]);
+  });
+
+  it('der Kreis im Browser zeigt je Art dasselbe Symbol auf derselben Farbe wie die App (eine Zuordnung, ART_FARBE)', () => {
+    const zeigt = ART_FARBEN_ERWARTET.map(([art]) => {
+      const { container, unmount } = render(<VorgangKreis art={art} />);
+      const kreis = container.querySelector('.web-vorgang-kreis') as HTMLElement;
+      const ergebnis = [art, artDesSymbols(kreis.querySelector('[data-icon]')!.getAttribute('data-icon') ?? ''), kreis.style.getPropertyValue('--web-vorgang-kreis-farbe')];
+      unmount();
+      return ergebnis;
+    });
+    expect(zeigt).toEqual(ART_FARBEN_ERWARTET.map(([art, farbe]) => [art, art, `var(--app-color-${farbe})`]));
   });
 
   it('lädt die offenen Vorgänge -- das Archiv erst, wenn der Filter es zeigt', async () => {
