@@ -484,9 +484,13 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         titel={seitenTitel}
         rechts={['org_admin', 'admin'].includes(user?.role_name || '') ? (
           <>
-            <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
-              <IonIcon icon={ICON_CHECKBOX} />
-            </IonButton>
+            {/* Die Anwesenheit gehoert zu den Konfis, nicht zum Team (Simon,
+                13.10.2026) -- wie im Browser. */}
+            {viewMode !== 'teamer' && (
+              <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
+                <IonIcon icon={ICON_CHECKBOX} />
+              </IonButton>
+            )}
             <IonButton
               aria-label={viewMode === 'teamer' ? 'Neue Teamer:in anlegen' : 'Neuen Konfi anlegen'}
               onClick={() => viewMode === 'teamer'

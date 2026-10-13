@@ -165,6 +165,20 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     await waitFor(() => expect(h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer')).toHaveLength(2));
   });
 
+  // Simon, 13.10.2026: die Anwesenheit nur bei den Konfis, nicht beim Team.
+  it('schmal: der Knopf "Anwesenheit" steht nur bei den Konfis; beim Team nur das Plus', async () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    await screen.findByRole('tab', { name: 'Team (1)' });
+    fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit und Konfisprüche anzeigen' }));
+    expect(h.stand.fenster.filter((f) => f.komponente === AttendanceMatrixModal)).toHaveLength(1);
+    fireEvent.click(screen.getByRole('tab', { name: 'Team (1)' }));
+    expect(screen.queryByRole('button', { name: 'Anwesenheit und Konfisprüche anzeigen' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Konfis (2)' }));
+    expect(screen.getByRole('button', { name: 'Anwesenheit und Konfisprüche anzeigen' })).toBeInTheDocument();
+  });
+
   it('schmal, Ansicht Team: das Plus oeffnet weiter das Fenster der App mit fester Rolle Teamer -- kein Dialog', () => {
     h.breit = false;
     render(<AdminKonfisPage />);

@@ -330,6 +330,10 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   // Dieselben Regeln wie in der App: Anlegen und Anwesenheit fuer Leitung und
   // Gemeindeleitung, Einladen fuer die Gemeindeleitung, Teamer:innen loeschen
   // nur die Gemeindeleitung (DELETE /users/:id verlangt requireOrgAdmin).
+  // Anwesenheit und Einladen nur im Reiter "Konfis": Die Uebersicht zeigt
+  // Pflicht-Events und Konfisprueche der Konfis, nicht das Team (Simon,
+  // 13.10.2026: "anwesenheiten den button brauche ich nur bei konfis nicht
+  // bei teamern").
   const darfVerwalten = rolle === 'org_admin' || rolle === 'admin';
   const istGemeindeleitung = rolle === 'org_admin';
   const darfTeamLoeschen = rolle === 'org_admin' || user?.is_super_admin === true;
@@ -372,10 +376,12 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
 
   const aktionen = darfVerwalten ? (
     <>
-      <WebKnopf onClick={onMatrix}>
-        <IonIcon icon={ICON_CHECKBOX} aria-hidden="true" />
-        Anwesenheit
-      </WebKnopf>
+      {!istTeam && (
+        <WebKnopf onClick={onMatrix}>
+          <IonIcon icon={ICON_CHECKBOX} aria-hidden="true" />
+          Anwesenheit
+        </WebKnopf>
+      )}
       {istGemeindeleitung && !istTeam && (
         <WebKnopf href="/admin/settings/invite">
           <IonIcon icon={ICON_QRCODE} aria-hidden="true" />

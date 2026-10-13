@@ -365,6 +365,20 @@ describe('Konfis (Web): Rechte', () => {
       .toEqual(['Alle Jahrgänge', 'Jahrgang 2025', 'Jahrgang 2026']);
   });
 
+  // Simon, 13.10.2026: "anwesenheiten den button brauche ich nur bei konfis nicht bei teamern."
+  it.each(['org_admin', 'admin'] as const)('%s: "Anwesenheit" steht nur im Reiter Konfis, nicht beim Team', async (rolle) => {
+    h.user = konto(rolle, [11, 12]);
+    zeigen();
+    expect(screen.getByRole('button', { name: 'Anwesenheit' })).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
+    await screen.findByRole('table', { name: 'Team' });
+    expect(screen.queryByRole('button', { name: 'Anwesenheit' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Teamer:in anlegen' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Konfis/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' }));
+    expect(aktionen.onMatrix).toHaveBeenCalledTimes(1);
+  });
+
   it('Leitung mit einem Jahrgang: nur dieser im Filter und in den Zahlen, kein Einladen', () => {
     h.user = konto('admin', [12]);
     zeigen({ konfis: [KONFIS[0], KONFIS[1], KONFIS[4]] });
