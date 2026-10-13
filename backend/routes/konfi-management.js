@@ -1280,8 +1280,10 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
             // ALLE Termine einer Konfi in einer Liste (13.10.2026, additiv):
             // angemeldet, Warteliste, anwesend, abwesend, abgemeldet -- mit
-            // Pflicht, Punkten und darf_verbuchen (utils/terminLeitungSicht.js,
-            // alleTermineDerPerson). Nur bei Konfis: Eine Teamer:in hat ihre
+            // Pflicht, Punkten, darf_verbuchen und darf_oeffnen
+            // (utils/terminLeitungSicht.js, alleTermineDerPerson). Buchungen
+            // nur an Terminen, die der Aufrufer sieht -- dieselbe Regel wie
+            // `termine` oben. Nur bei Konfis: Eine Teamer:in hat ihre
             // Buchungen in teamerEvents, und die Event-Punkte ihrer Konfi-Zeit
             // stehen in konfiHistory -- hier kaemen sie ein zweites Mal.
             const alleTermine = konfi.role_name === 'konfi'

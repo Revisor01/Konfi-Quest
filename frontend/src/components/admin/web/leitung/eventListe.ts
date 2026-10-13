@@ -13,9 +13,12 @@
 //
 // Quellen:
 //   Konfi       `alleTermine` (GET /admin/konfis/:id, seit 13.10.2026) --
-//               jede Buchung mit Pflicht, Punkten und darf_verbuchen. Fehlt
-//               das Feld (gemerkter Stand von vorher, aelterer Server), wie
-//               bisher `termine` und die Event-Punkte, ohne Pflicht.
+//               jede Buchung an einem Termin, den die Leitung sieht (dieselbe
+//               Regel wie `termine`), mit Pflicht, Punkten, darf_verbuchen
+//               und darf_oeffnen; Event-Punkte an Terminen ausserhalb der
+//               Sicht ohne Buchung und ohne Link. Fehlt das Feld (gemerkter
+//               Stand von vorher, aelterer Server), wie bisher `termine` und
+//               die Event-Punkte, ohne Pflicht.
 //   Teamer:in   `teamerEvents` (alle Buchungen mit Anwesenheit) und
 //               `termine` (welche zu verbuchen sind, mit Recht).
 //
