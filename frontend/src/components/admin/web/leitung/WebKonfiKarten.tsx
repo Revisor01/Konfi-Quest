@@ -353,8 +353,11 @@ export const EventListeKarte: React.FC<{
         return (
           <NameMitKreis
             kreis={<WebKreis icon={EVENT_SYMBOL} ton="events" />}
-            // In den Termin -- mit Rueckweg zu dieser Person.
-            name={<WebLink href={eventMitRueckweg(z.event_id, personId)} className="web-link--zeile web-link--text web-zelle-titel">{z.name}</WebLink>}
+            // In den Termin -- mit Rueckweg zu dieser Person; ein Termin
+            // ausserhalb der eigenen Sicht ohne Link (er antwortete 403).
+            name={z.oeffnen
+              ? <WebLink href={eventMitRueckweg(z.event_id, personId)} className="web-link--zeile web-link--text web-zelle-titel">{z.name}</WebLink>
+              : <span className="web-zelle-titel">{z.name}</span>}
             dahinter={(
               <>
                 <WebMerkmale

@@ -338,6 +338,26 @@ async function darfTerminVerbuchen(db, req, eventId) {
 }
 
 /**
+ * Sieht der Aufrufer den Termin <e>? Die Sicht der Terminliste als
+ * SQL-Bedingung fuer die Detailseite einer Person: Org-Leitung alles, sonst
+ * gebundeneLeitungSiehtTerminSql mit den can_view-Jahrgaengen des Aufrufers
+ * (Parameter an `params`). EINE Stelle fuer `termine` und `alleTermine` --
+ * bis zur Pruefung vom 13.10.2026 filterte nur `termine`, und ein Termin
+ * eines fremden Jahrgangs stand in `alleTermine` als "zu verbuchen" da.
+ *
+ * @param {object} user  req.user mit role_name, is_super_admin, assigned_jahrgaenge
+ * @param {Array} params Parameterliste der Abfrage (wird ergaenzt)
+ * @returns {string} SQL-Bedingung
+ */
+function leitungSiehtTerminBedingung(user, params) {
+  if (leitungSiehtAlleTermine(user)) return 'true';
+  const sichtbar = (user.assigned_jahrgaenge || [])
+    .filter((j) => j.can_view).map((j) => Number(j.id));
+  params.push(sichtbar);
+  return gebundeneLeitungSiehtTerminSql({ jahrgaenge: `$${params.length}::int[]` });
+}
+
+/**
  * Die Termine EINER Person, die in ihrer Detailansicht der Leitung oben in
  * der Eventliste stehen (Simon, 09.10.2026: "In ein Konfi reingehen, seinen
  * Status sehen und Offenes von da aus direkt bestaetigen"):
@@ -367,13 +387,7 @@ async function darfTerminVerbuchen(db, req, eventId) {
  */
 async function termineDerPersonFuerLeitung(db, req, personId) {
   const params = [personId, req.user.organization_id];
-  let sicht = 'true';
-  if (!leitungSiehtAlleTermine(req.user)) {
-    const sichtbar = (req.user.assigned_jahrgaenge || [])
-      .filter((j) => j.can_view).map((j) => Number(j.id));
-    params.push(sichtbar);
-    sicht = gebundeneLeitungSiehtTerminSql({ jahrgaenge: `$${params.length}::int[]` });
-  }
+  const sicht = leitungSiehtTerminBedingung(req.user, params);
   const darf = req.user.type === 'admin' ? darfVerbuchenBedingung(req.user, params) : 'false';
   const { rows } = await db.query(
     `SELECT eb.id AS booking_id, e.id AS event_id, e.name AS event_name,
@@ -418,11 +432,20 @@ async function termineDerPersonFuerLeitung(db, req, personId) {
  *   art 'erledigt'   alles andere: verbucht, abgemeldet, abgesagt, die
  *                    Warteliste eines vergangenen Termins
  *
- * KEIN Sichtfilter nach Terminen: Die Liste ist die Geschichte DIESER Konfi,
- * und wer sie sehen darf, entscheidet die Route (darfKonfi am Kopf). Bisher
- * zeigte die Punkte-Liste ebenso alle Termine mit Punkten, auch aus einem
- * frueheren Jahrgang. `darf_verbuchen` je Zeile aus derselben Bedingung wie
- * die Anwesenheits-Route (darfVerbuchenBedingung); fuer Teamer:innen als
+ * SICHT: Buchungen nur an Terminen, die der Aufrufer sieht -- dieselbe
+ * Bedingung wie `termine` (leitungSiehtTerminBedingung: Org-Leitung alles,
+ * sonst die can_view-Jahrgaenge, "Nur Team" und Termine ohne Jahrgang).
+ * Zuerst stand hier "kein Sichtfilter"; ein Termin eines fremden Jahrgangs
+ * (alte Buchung nach einem Jahrgangswechsel) stand dann als "zu verbuchen"
+ * oben, ohne Knoepfe, der Klick fuehrte auf 403, und der Reiter "Verbuchen"
+ * zaehlte ihn nicht (Pruefung 13.10.2026).
+ * Event-Punkte bleiben ungefiltert wie bei GET /:id/event-points -- die
+ * Summe gehoert zur Konfi. An einem Termin, den der Aufrufer nicht sieht,
+ * stehen sie als Punkte-Zeile ohne Buchung; `darf_oeffnen` sagt je Zeile,
+ * ob der Aufrufer den Termin oeffnen darf (dieselbe Sicht), damit die
+ * Oberflaeche dort keinen Link auf eine 403-Seite setzt.
+ * `darf_verbuchen` je Zeile aus derselben Bedingung wie die
+ * Anwesenheits-Route (darfVerbuchenBedingung); fuer Teamer:innen als
  * Aufrufer immer false (die Route ist requireAdmin).
  *
  * Reihenfolge Eventdatum absteigend; Offenes nach oben ordnet die Oberflaeche.
@@ -436,10 +459,12 @@ async function termineDerPersonFuerLeitung(db, req, personId) {
  *   mandatory: boolean, is_konfirmation: boolean, cancelled: boolean,
  *   booking_status: string|null, attendance_status: string|null,
  *   art: 'verbuchen'|'anstehend'|'erledigt', darf_verbuchen: boolean,
- *   points: number, point_type: string|null, points_von: string|null }>>}
+ *   darf_oeffnen: boolean, points: number, point_type: string|null,
+ *   points_von: string|null }>>}
  */
 async function alleTermineDerPerson(db, req, personId) {
   const params = [personId, req.user.organization_id];
+  const sicht = leitungSiehtTerminBedingung(req.user, params);
   const darf = req.user.type === 'admin' ? darfVerbuchenBedingung(req.user, params) : 'false';
   const { rows } = await db.query(
     `WITH punkte AS (
@@ -458,11 +483,16 @@ async function alleTermineDerPerson(db, req, personId) {
          FROM event_bookings eb
          JOIN events e ON e.id = eb.event_id
         WHERE eb.user_id = $1 AND e.organization_id = $2
+          AND ${sicht}
        UNION ALL
+       -- Punkte ohne (sichtbare) Buchung: Buchung entfernt oder Termin
+       -- ausserhalb der Sicht des Aufrufers.
        SELECT NULL, p.event_id, NULL, NULL
          FROM punkte p
-        WHERE NOT EXISTS (
-          SELECT 1 FROM event_bookings eb2 WHERE eb2.user_id = $1 AND eb2.event_id = p.event_id
+         JOIN events e ON e.id = p.event_id
+        WHERE NOT (
+          ${sicht}
+          AND EXISTS (SELECT 1 FROM event_bookings eb2 WHERE eb2.user_id = $1 AND eb2.event_id = p.event_id)
         )
      )
      SELECT z.booking_id, e.id AS event_id, e.name AS event_name, e.event_date, e.location,
@@ -478,6 +508,7 @@ async function alleTermineDerPerson(db, req, personId) {
               ELSE 'erledigt'
             END AS art,
             (${darf}) AS darf_verbuchen,
+            (${sicht}) AS darf_oeffnen,
             COALESCE(p.points, 0) AS points, p.point_type, p.points_von
        FROM zeilen z
        JOIN events e ON e.id = z.event_id AND e.organization_id = $2
@@ -485,7 +516,11 @@ async function alleTermineDerPerson(db, req, personId) {
       ORDER BY e.event_date DESC NULLS LAST, e.id DESC`,
     params
   );
-  return rows.map((r) => ({ ...r, darf_verbuchen: r.darf_verbuchen === true }));
+  return rows.map((r) => ({
+    ...r,
+    darf_verbuchen: r.darf_verbuchen === true,
+    darf_oeffnen: r.darf_oeffnen === true
+  }));
 }
 
 module.exports = {

@@ -15,7 +15,7 @@ import type { PersonTermin } from '../../../components/admin/views/KonfiDetailSe
 const JETZT = Date.parse('2026-10-13T12:00:00Z');
 const zeile = (name: string, art: EventZeile['art'], datum: string): EventZeile => ({
   schluessel: name, event_id: 0, name, datum, pflicht: false, konfirmation: false, abgesagt: false, art,
-  booking_status: 'confirmed', attendance_status: null, punkte: 0, punkteArt: null, von: null, termin: null,
+  booking_status: 'confirmed', attendance_status: null, punkte: 0, punkteArt: null, von: null, termin: null, oeffnen: true,
 });
 const termin = (event_id: number, art: PersonTermin['art'], zusatz: Partial<PersonTermin> = {}): PersonTermin => ({
   booking_id: event_id + 500, event_id, event_name: `Termin ${event_id}`, event_date: '2026-10-01T09:00:00Z',
@@ -67,6 +67,17 @@ describe('Quellen', () => {
       ['Termin 42', 'anstehend', 0, 542],
       ['Wochenende', 'erledigt', 2, null],
     ]);
+  });
+
+  it('Konfi mit alleTermine: darf_oeffnen entscheidet den Link, fehlt es (Stand davor), bleibt er', () => {
+    const eintrag = {
+      booking_id: null, event_id: 9, event_name: 'Alter Jahrgang', event_date: '2026-05-01T09:00:00Z',
+      mandatory: false, booking_status: null, attendance_status: null, art: 'erledigt' as const,
+      darf_verbuchen: false, points: 2, point_type: 'gemeinde',
+    };
+    expect(konfiEventZeilen([{ ...eintrag, darf_oeffnen: false }], [], [])[0].oeffnen).toBe(false);
+    expect(konfiEventZeilen([{ ...eintrag, darf_oeffnen: true }], [], [])[0].oeffnen).toBe(true);
+    expect(konfiEventZeilen([eintrag], [], [])[0].oeffnen).toBe(true);
   });
 
   it('Konfi mit alleTermine (auch leer): nur daraus, die Event-Punkte bleiben aussen vor', () => {

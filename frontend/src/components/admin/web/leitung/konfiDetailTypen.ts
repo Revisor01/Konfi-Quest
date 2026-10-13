@@ -41,6 +41,12 @@ export interface AlleTermineEintrag {
   attendance_status: string | null;
   art: 'verbuchen' | 'anstehend' | 'erledigt';
   darf_verbuchen: boolean;
+  /**
+   * Sieht die Leitung den Termin (darf ihn oeffnen)? false nur bei
+   * Event-Punkten an einem Termin ausserhalb ihrer Sicht (Pruefung
+   * 13.10.2026); fehlt bei einem Stand davor.
+   */
+  darf_oeffnen?: boolean;
   points: number;
   point_type?: string | null;
   points_von?: string | null;

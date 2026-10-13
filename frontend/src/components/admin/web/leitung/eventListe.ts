@@ -49,6 +49,13 @@ export interface EventZeile {
   von: string | null;
   /** Fuer "Anwesend / Nicht anwesend": die Buchung mit dem Recht daran; null ohne Buchung. */
   termin: PersonTermin | null;
+  /**
+   * Darf die Leitung den Termin oeffnen? Nur dann ist der Name ein Link.
+   * Event-Punkte an einem Termin ausserhalb ihrer Sicht (fremder Jahrgang)
+   * stehen in der Liste, ein Link fuehrte aber nur auf die 403-Seite
+   * (alleTermine.darf_oeffnen, Pruefung 13.10.2026).
+   */
+  oeffnen: boolean;
 }
 
 /** Der Stand einer Zeile als Wort und Farbe der Marke. */
@@ -119,6 +126,8 @@ const ausAllenTerminen = (t: AlleTermineEintrag): EventZeile => ({
     art: t.art === 'anstehend' ? 'anstehend' : 'verbuchen',
     darf_verbuchen: t.darf_verbuchen === true,
   } : null,
+  // Fehlt das Feld (Stand davor), bleibt der Link.
+  oeffnen: t.darf_oeffnen !== false,
 });
 
 /** Eine Zeile aus `termine` (offen oder anstehend). */
@@ -137,6 +146,8 @@ const ausTermin = (t: PersonTermin): EventZeile => ({
   punkteArt: null,
   von: null,
   termin: t,
+  // `termine` traegt nur Termine, die die Leitung sieht.
+  oeffnen: true,
 });
 
 /**
@@ -167,6 +178,7 @@ export function konfiEventZeilen(
       punkteArt: e.point_type ?? null,
       von: e.admin_name ?? null,
       termin: null,
+      oeffnen: true,
     }));
   return eventZeilenOrdnen([...termine.map(ausTermin), ...verbucht]);
 }
@@ -203,6 +215,7 @@ export function teamerEventZeilen(
       punkteArt: null,
       von: null,
       termin,
+      oeffnen: true,
     };
   });
   // Ein Termin aus `termine`, der in teamerEvents fehlt (gemerkter Stand), steht trotzdem da.

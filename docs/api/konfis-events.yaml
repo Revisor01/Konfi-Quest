@@ -3988,12 +3988,22 @@ paths:
         `is_konfirmation`, `cancelled`, `booking_status`,
         `attendance_status`, `art` ('verbuchen' | 'anstehend' | 'erledigt';
         'verbuchen' und 'anstehend' wie bei `termine`), `darf_verbuchen`
-        (dieselbe Pruefung wie bei `termine`), `points` (Summe der
+        (dieselbe Pruefung wie bei `termine`), `darf_oeffnen` (sieht der
+        Aufrufer den Termin, darf er ihn also oeffnen), `points` (Summe der
         Event-Punkte dieser Konfi am Termin, 0 ohne), `point_type` und
         `points_von` (vergebende Person). Reihenfolge Eventdatum
-        absteigend. KEIN Sichtfilter nach Terminen: Die Liste ist die
-        Geschichte der Konfi, wer sie sehen darf, entscheidet die
-        Jahrgangs-Bindung der Route -- wie bisher GET /:id/event-points.
+        absteigend. SICHT: Buchungen nur an Terminen, die der Aufrufer
+        sieht -- dieselbe Regel wie `termine` (Org-Leitung alles; Admin und
+        Teamer:in die can_view-Jahrgaenge, Termine "Nur Team" und ohne
+        Jahrgang). Event-Punkte bleiben ungefiltert wie bei GET
+        /:id/event-points; an einem Termin ausserhalb der Sicht stehen sie
+        als Punkte-Zeile ohne Buchung (`booking_id` null) mit
+        `darf_oeffnen` false.
+        BEHOBEN 13.10.2026 (Pruefung des Pakets): Zuerst kam `alleTermine`
+        ohne Sichtfilter -- ein Termin eines fremden Jahrgangs (alte
+        Buchung nach einem Jahrgangswechsel) stand bei Admin und Teamer:in
+        als "zu verbuchen" in der Liste, obwohl `termine` ihn wegliess, der
+        Reiter "Verbuchen" ihn nicht zaehlte und das Event 403 antwortete.
         Bei Teamer:innen fehlt das Feld (ihre Buchungen stehen in
         `teamerEvents`, die Event-Punkte der Konfi-Zeit in `konfiHistory`).
         `termine` und GET /:id/event-points bleiben unveraendert.

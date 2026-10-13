@@ -110,7 +110,7 @@ const termin = (zusatz: Record<string, unknown>) => ({
   booking_id: null, event_id: 0, event_name: '', event_date: tage(-1), location: null,
   mandatory: false, is_konfirmation: false, cancelled: false,
   booking_status: 'confirmed', attendance_status: null, art: 'erledigt', darf_verbuchen: true,
-  points: 0, point_type: null, points_von: null,
+  darf_oeffnen: true, points: 0, point_type: null, points_von: null,
   ...zusatz,
 });
 
@@ -313,6 +313,25 @@ describe('4. Ein Event führt mit Rückweg zur Person', () => {
     await oeffnen();
     const links = zeilen('Events').map((z) => within(zelle(z, 0)).getByRole('link').getAttribute('href'));
     expect(links).toEqual([41, 42, 43, 55, 51, 52, 53, 50, 54, 56].map((id) => `/admin/events/${id}?person=${ID}`));
+  });
+
+  // Pruefung 13.10.2026: Event-Punkte an einem Termin, den die Leitung nicht
+  // sieht (fremder Jahrgang, darf_oeffnen false), stehen in der Liste -- ein
+  // Link fuehrte dort nur auf die 403-Seite des Events.
+  it('Punkte an einem Termin außerhalb der eigenen Sicht: der Name steht ohne Link da', async () => {
+    h.antworten.set(`/admin/konfis/${ID}`, {
+      ...KONFI,
+      alleTermine: [
+        ALLE_TERMINE.find((t) => t.event_id === 51),
+        termin({ booking_id: null, event_id: 57, event_name: 'Alter Jahrgang', event_date: tage(-60), booking_status: null, points: 2, point_type: 'gemeinde', darf_oeffnen: false }),
+      ],
+    });
+    await oeffnen();
+    const [eigener, fremder] = zeilen('Events');
+    expect(within(zelle(eigener, 0)).getByRole('link', { name: 'Konfi-Wochenende' })).toHaveAttribute('href', `/admin/events/51?person=${ID}`);
+    expect(zelle(fremder, 0)).toHaveTextContent('Alter Jahrgang');
+    expect(within(zelle(fremder, 0)).queryByRole('link')).toBeNull();
+    expect(zelle(fremder, 3)).toHaveTextContent('+2');
   });
 
   it('die Seite merkt sich den Namen, damit die Eventseite ihn schon beim Laden zeigt', async () => {

@@ -9,6 +9,15 @@
 // -- mit Pflicht, Punkten und darf_verbuchen, dazu Event-Punkte ohne Buchung.
 // `termine` und GET /:id/event-points bleiben unveraendert (Vertrag mit den
 // Store-Apps).
+//
+// Sicht (Pruefung 13.10.2026): Buchungen nur an Terminen, die der Aufrufer
+// sieht -- dieselbe Regel wie `termine` (gebundeneLeitungSiehtTerminSql mit
+// den can_view-Jahrgaengen, Org-Leitung alles). Bis dahin stand ein Termin
+// eines fremden Jahrgangs als "zu verbuchen" oben in der Liste, ohne Knoepfe,
+// der Klick fuehrte auf 403, der Reiter "Verbuchen" zaehlte ihn nicht.
+// Event-Punkte bleiben wie bei /:id/event-points ungefiltert -- an einem
+// Termin, den der Aufrufer nicht sieht, als Punkte-Zeile ohne Buchung und
+// mit darf_oeffnen = false.
 const request = require('supertest');
 const { getTestApp } = require('../helpers/testApp');
 const { getTestPool, truncateAll, closePool } = require('../helpers/db');
@@ -121,6 +130,8 @@ describe('GET /api/admin/konfis/:id -- Feld alleTermine', () => {
       ['Abgemeldet', 'erledigt', 'opted_out', null, true, 0],
       ['Nur Punkte', 'erledigt', null, null, false, 2],
     ]);
+    // ERLAUBT: Die Org-Leitung sieht auch den Termin des fremden Jahrgangs und darf jeden oeffnen.
+    expect(res.body.alleTermine.every((t) => t.darf_oeffnen === true)).toBe(true);
     const offen = res.body.alleTermine.find((t) => t.event_name === 'Offen');
     // Die Buchungs-ID ist die participantId der Anwesenheits-Route.
     expect(offen.booking_id).toBe(ids.bOffen);
@@ -144,15 +155,22 @@ describe('GET /api/admin/konfis/:id -- Feld alleTermine', () => {
     expect(ep.body).toHaveLength(2);
   });
 
-  it('Admin mit Recht nur am Jahrgang der Konfi: sieht die ganze Liste, darf_verbuchen nur, wo die Route es annimmt', async () => {
+  it('Admin nur am Jahrgang der Konfi: ohne den Termin des fremden Jahrgangs -- dieselbe Regel wie `termine`', async () => {
     await zuweisen('admin1', [[J1, true]]);
     const res = await lesen('admin1');
     expect(res.status).toBe(200);
-    expect(res.body.alleTermine).toHaveLength(11);
+    // VERBOTEN: Die Buchung am Termin des fremden Jahrgangs fehlt.
+    expect(res.body.alleTermine.map((t) => t.event_name)).toEqual([
+      'Warteliste', 'Bald', 'Offen', 'Abgesagt', 'Anwesend', 'Pflicht da',
+      'Abwesend', 'Entschuldigt', 'Abgemeldet', 'Nur Punkte',
+    ]);
+    // Liste und `termine` lesen dieselbe Regel: Offenes und Anstehendes sind dieselben Termine.
+    expect(res.body.termine.map((t) => t.event_name)).toEqual(['Offen', 'Bald', 'Warteliste']);
+    expect(res.body.alleTermine.filter((t) => t.art !== 'erledigt').map((t) => t.event_name).sort())
+      .toEqual(['Bald', 'Offen', 'Warteliste']);
+    expect(res.body.alleTermine.every((t) => t.darf_oeffnen === true)).toBe(true);
     const offen = res.body.alleTermine.find((t) => t.event_name === 'Offen');
-    const fremd = res.body.alleTermine.find((t) => t.event_name === 'Fremder Jahrgang');
     expect(offen.darf_verbuchen).toBe(true);
-    expect(fremd.darf_verbuchen).toBe(false);
 
     // VERBOTEN: der Termin des fremden Jahrgangs -- die Route antwortet 403.
     const verboten = await request(app)
@@ -171,12 +189,47 @@ describe('GET /api/admin/konfis/:id -- Feld alleTermine', () => {
       .toEqual(['Offen', 'erledigt', 'confirmed', 'present', true, 0]);
   });
 
-  it('Teamer:in als Aufrufer: dieselbe Liste, darf aber nie verbuchen', async () => {
+  it('Teamer:in als Aufrufer: ohne den fremden Jahrgang, darf nie verbuchen', async () => {
     await zuweisen('teamer1', [[J1, true]]);
     const res = await lesen('teamer1');
     expect(res.status).toBe(200);
-    expect(res.body.alleTermine).toHaveLength(11);
+    expect(res.body.alleTermine).toHaveLength(10);
+    expect(res.body.alleTermine.map((t) => t.event_name)).not.toContain('Fremder Jahrgang');
     expect(res.body.alleTermine.every((t) => t.darf_verbuchen === false)).toBe(true);
+  });
+
+  it('Termin eines fremden Jahrgangs mit Punkten: Punkte-Zeile ohne Buchung und ohne Oeffnen; Org-Leitung sieht die Buchung', async () => {
+    // Die Konfi war im alten Jahrgang da und bekam Punkte; ein Termin ohne
+    // Jahrgang gilt der ganzen Gemeinde und bleibt sichtbar.
+    const alt = await termin('Alter Jahrgang', -30, { jahrgang: J_ZWEI });
+    await buchen(alt, 'confirmed', 'present');
+    await punkte(alt, 2);
+    const gemeinde = await termin('Gemeindefest', -12, { jahrgang: null });
+    await buchen(gemeinde, 'confirmed', 'present');
+    await zuweisen('admin1', [[J1, true]]);
+
+    const res = await lesen('admin1');
+    expect(res.status).toBe(200);
+    const zeileAlt = res.body.alleTermine.find((t) => t.event_name === 'Alter Jahrgang');
+    expect([zeileAlt.booking_id, zeileAlt.booking_status, zeileAlt.attendance_status, zeileAlt.art, zeileAlt.points, zeileAlt.darf_oeffnen])
+      .toEqual([null, null, null, 'erledigt', 2, false]);
+    const zeileGemeinde = res.body.alleTermine.find((t) => t.event_name === 'Gemeindefest');
+    expect([zeileGemeinde.attendance_status, zeileGemeinde.darf_oeffnen]).toEqual(['present', true]);
+    // Die Punkte der Liste sind dieselben wie in GET /:id/event-points (ungefiltert, wie bisher).
+    const ep = await request(app)
+      .get(`/api/admin/konfis/${KONFI}/event-points`)
+      .set('Authorization', `Bearer ${generateToken('admin1')}`);
+    expect(ep.status).toBe(200);
+    const summe = (zeilen) => zeilen.reduce((s, z) => s + Number(z.points), 0);
+    expect(summe(res.body.alleTermine)).toBe(7);
+    expect(summe(ep.body)).toBe(7);
+
+    // ERLAUBT: Die Org-Leitung sieht jeden Termin der Gemeinde mit seiner Buchung.
+    const voll = await lesen('orgAdmin1');
+    const vollAlt = voll.body.alleTermine.find((t) => t.event_name === 'Alter Jahrgang');
+    expect([vollAlt.booking_status, vollAlt.attendance_status, vollAlt.points, vollAlt.darf_oeffnen])
+      .toEqual(['confirmed', 'present', 2, true]);
+    expect(voll.body.alleTermine.filter((t) => t.event_name === 'Alter Jahrgang')).toHaveLength(1);
   });
 
   it('fremde Gemeinde: 404, keine Liste', async () => {
