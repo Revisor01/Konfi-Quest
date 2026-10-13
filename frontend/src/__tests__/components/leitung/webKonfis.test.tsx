@@ -224,6 +224,11 @@ describe('Konfis (Web): Pflicht-Events "x von y"', () => {
     expect(karteVon('Dora Test')).toHaveTextContent('0 von 0 Pflicht-Events besucht');
     sortiereKacheln('pflicht:auf');
     expect(kartenNamen()).toEqual(['Clara Beispiel', 'Emil Probe', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+    // Die Beschriftung sagt, wonach geordnet wird: nach dem Anteil (dass 3 von 3
+    // vor 4 von 5 steht, prueft konfiListe.test.ts); 0 von 0 steht unten.
+    sortiereKacheln('pflicht:ab');
+    expect(within(sortierAuswahl()).getByRole('option', { selected: true })).toHaveTextContent('Höchster Anteil Pflicht-Events');
+    expect(kartenNamen()).toEqual(['Ben Schmidt', 'Anna Müller', 'Emil Probe', 'Clara Beispiel', 'Dora Test']);
     unmount();
     zeigen();
     expect(karteVon('Anna Müller')).not.toHaveTextContent('Pflicht-Events');
@@ -829,8 +834,11 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
       ['jahrgang:ab', 'Jahrgang Z–A'],
       ['badges:ab', 'Meiste Badges'],
       ['badges:auf', 'Wenigste Badges'],
-      ['pflicht:ab', 'Meiste Pflicht-Events besucht'],
-      ['pflicht:auf', 'Wenigste Pflicht-Events besucht'],
+      // Geordnet wird nach dem Anteil besucht/faellig (3 von 3 vor 4 von 5),
+      // die Beschriftung sagt das (Befund 13.10.2026: "Meiste ... besucht"
+      // versprach die Anzahl).
+      ['pflicht:ab', 'Höchster Anteil Pflicht-Events'],
+      ['pflicht:auf', 'Niedrigster Anteil Pflicht-Events'],
       ['gottesdienst:ab', 'Meiste Gottesdienst-Punkte'],
       ['gottesdienst:auf', 'Wenigste Gottesdienst-Punkte'],
       ['gemeinde:ab', 'Meiste Gemeinde-Punkte'],

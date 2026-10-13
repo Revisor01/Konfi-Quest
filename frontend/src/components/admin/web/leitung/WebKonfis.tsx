@@ -124,9 +124,12 @@ const KONFI_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 
   { schluessel: 'jahrgang', richtung: 'ab', label: 'Jahrgang Z–A' },
   { schluessel: 'badges', richtung: 'ab', label: 'Meiste Badges' },
   { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
-  // Nach dem Anteil besucht/faellig (utils/konfiListe, sortiereKonfis).
-  { schluessel: 'pflicht', richtung: 'ab', label: 'Meiste Pflicht-Events besucht' },
-  { schluessel: 'pflicht', richtung: 'auf', label: 'Wenigste Pflicht-Events besucht' },
+  // Nach dem Anteil besucht/faellig (utils/konfiListe, sortiereKonfis) -- so
+  // stehen Konfis mit verschieden vielen faelligen Terminen richtig
+  // zueinander. Die Beschriftung sagt das; "Meiste ... besucht" versprach
+  // die Anzahl, 3 von 3 stand aber vor 4 von 5 (Befund 13.10.2026).
+  { schluessel: 'pflicht', richtung: 'ab', label: 'Höchster Anteil Pflicht-Events' },
+  { schluessel: 'pflicht', richtung: 'auf', label: 'Niedrigster Anteil Pflicht-Events' },
   { schluessel: 'gottesdienst', richtung: 'ab', label: 'Meiste Gottesdienst-Punkte' },
   { schluessel: 'gottesdienst', richtung: 'auf', label: 'Wenigste Gottesdienst-Punkte' },
   { schluessel: 'gemeinde', richtung: 'ab', label: 'Meiste Gemeinde-Punkte' },
