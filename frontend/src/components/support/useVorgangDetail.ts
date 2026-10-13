@@ -411,7 +411,11 @@ export function useVorgangDetail(vorgangId: number, optionen?: (() => void) | Vo
       ausAntwort: (antwort: unknown, s: VorgangStatus) => {
         const danachStand = antwortVorgangLesen(antwort);
         if (!danachStand || danachStand.id !== id || danachStand.status !== s) return false;
-        if (s === 'erledigt') rueckrufe.current.nachAbschluss?.('erledigt', id);
+        // Der Status ist gesetzt; scheitert nur das Weiterlesen (Lese-Rahmen),
+        // bleibt es dabei -- der Fehler darf den Editor nicht abbrechen.
+        if (s === 'erledigt') {
+          try { rueckrufe.current.nachAbschluss?.('erledigt', id); } catch { /* nur das Weiterlesen */ }
+        }
         return true;
       },
     };

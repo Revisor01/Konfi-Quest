@@ -327,6 +327,24 @@ describe('Mail (Web): der Absender gehört zu einer Gemeinde (Frage 11, absender
     expect(server.stand.mails.filter((m) => m.faden === 'zugang').map((m) => [m.id, m.vorgang_id]).sort()).toEqual([[29, 5], [30, 5], [31, 5]]);
   });
 
+  it('mit getippter Antwort fragt „In Vorgang N einsortieren" erst nach -- „Abbrechen" lässt Entwurf und Mail stehen, „Verwerfen" sortiert ein', async () => {
+    bekannt();
+    await oeffnen();
+    fireEvent.click(antwortzeile()!);
+    fireEvent.change(screen.getByLabelText('Text der Antwort'), { target: { value: 'Hallo Anna, gleich …' } });
+    const direkt = () => within(zeile()!).getByRole('button', { name: 'In Vorgang 5 einsortieren' });
+    await act(async () => { fireEvent.click(direkt()); });
+    expect(h.alert).toMatchObject({ header: 'Ungespeicherte Änderungen', message: 'Die Antwort ist noch nicht gesendet. Möchtest du sie verwerfen?' });
+    await bestaetigen('Abbrechen');
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren')).toEqual([]);
+    expect((screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement).value).toBe('Hallo Anna, gleich …');
+
+    await act(async () => { fireEvent.click(direkt()); });
+    await bestaetigen('Verwerfen');
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((x) => x.koerper)).toEqual([{ vorgang_id: 5 }]);
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/5?mail=31');
+  });
+
   it('kein offener Vorgang: „kein offener Vorgang", kein Knopf -- Einsortieren bleibt der Weg', async () => {
     server.stand.bekannteAbsender['anna@example.org'] = 8;
     await oeffnen();

@@ -192,6 +192,17 @@ describe('useVorgangDetail: Status, Ablehnen, Abschluss', () => {
     expect(h.setSuccess).toHaveBeenCalledWith('Vorgang erledigt und ins Archiv gelegt');
   });
 
+  it('„Danach“ Erledigt, vom Server bestätigt: scheitert danach das Weiterlesen (nachAbschluss wirft), gilt der Status trotzdem als gesetzt -- kein Fehler läuft in den Editor', async () => {
+    const nachAbschluss = vi.fn(() => { throw new Error('Navigation gescheitert'); });
+    const { result } = await geladen(1, { nachAbschluss });
+    const bestaetigt = { nachricht: { id: 99 }, vorgang: { id: 1, status: 'erledigt', status_seit: '2026-10-03T09:00:00Z', archiviert_am: '2026-10-03T09:00:00Z' } };
+    let gesetzt: boolean | undefined;
+    expect(() => { gesetzt = result.current.antwort!.danach!.ausAntwort!(bestaetigt, 'erledigt'); }).not.toThrow();
+    expect(gesetzt).toBe(true);
+    expect(nachAbschluss).toHaveBeenCalledTimes(1);
+    expect(nachAbschluss).toHaveBeenCalledWith('erledigt', 1);
+  });
+
   it('statusSetzen scheitert: Meldung, kein Abschluss; ein anderer Status als Erledigt ist kein Abschluss', async () => {
     const nachAbschluss = vi.fn();
     const { result } = await geladen(1, { nachAbschluss });
@@ -447,6 +458,20 @@ describe('useAntwortEditor: „Danach“, feste Zeile, Wahl', () => {
     expect(setzen).toHaveBeenCalledWith('wartet');
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     expect(h.setError).not.toHaveBeenCalled();
+  });
+
+  it('wirft das Lesen der Bestätigung (ausAntwort), folgt die Rückfallebene, und der Editor wird fertig: nicht mehr „sendet“, onGesendet gerufen', async () => {
+    const setzen = vi.fn().mockResolvedValue(true);
+    const ausAntwort = vi.fn(() => { throw new Error('kaputt'); });
+    const onGesendet = vi.fn();
+    const hook = await editor(props({ danach: { wahlen: ['wartet'], vorgabe: 'wartet', setzen, ausAntwort }, onGesendet }));
+    await tippenUndSenden(hook);
+    expect(ausAntwort).toHaveBeenCalledTimes(1);
+    expect(setzen).toHaveBeenCalledTimes(1);
+    expect(setzen).toHaveBeenCalledWith('wartet');
+    expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
+    expect(onGesendet).toHaveBeenCalledTimes(1);
+    expect(hook.result.current.sendet).toBe(false);
   });
 
   it('scheitert der Status: „Gesendet, Status nicht gesetzt.“ -- nie Stille, keine Erfolgsmeldung; der Entwurf ist trotzdem gesendet und leer', async () => {

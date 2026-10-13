@@ -282,7 +282,11 @@ export function useAntwortEditor({
               let statusGesetzt = true;
               // Bestätigt der Server den Status (er ging im Körper mit), ist er gesetzt. Sonst --
               // ein älterer Server übergeht das Feld -- die Rückfallebene: PATCH wie bis 12.10.2026.
-              if (danach && nachher && !danach.ausAntwort?.(antwort, nachher)) {
+              let bestaetigt = false;
+              if (danach && nachher) {
+                try { bestaetigt = !!danach.ausAntwort?.(antwort, nachher); } catch { bestaetigt = false; }
+              }
+              if (danach && nachher && !bestaetigt) {
                 try {
                   statusGesetzt = await danach.setzen(nachher);
                 } catch {

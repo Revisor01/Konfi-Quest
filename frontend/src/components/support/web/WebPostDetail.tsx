@@ -199,7 +199,12 @@ const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht,
     >
       {stand.satz && <StandZeile satz={stand.satz} ton={stand.ton ?? 'hinweis'} />}
       {absender && (
-        <AbsenderZeile absender={absender} onEinsortieren={(id) => { void direkt.einsortieren(id); }} gesperrt={!isOnline || direkt.sendet} />
+        // Nach dem Einsortieren gibt es hier kein Antworten mehr: ein getippter Entwurf ginge verloren -- erst fragen.
+        <AbsenderZeile
+          absender={absender}
+          onEinsortieren={(id) => entwurfSchutz({ antwort: stelle.hatEntwurf(), notiz: false }, () => { void direkt.einsortieren(id); })}
+          gesperrt={!isOnline || direkt.sendet}
+        />
       )}
 
       <MailGespraeche
