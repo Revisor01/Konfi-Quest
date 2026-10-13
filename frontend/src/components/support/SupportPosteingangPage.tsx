@@ -62,16 +62,18 @@ import './SupportVorgangTeile.css';
 type StoerungTon = 'fehler' | 'warnung' | 'hinweis';
 
 /** Grund und Ton eines gestörten Postfachs, mit denselben Sätzen wie im Browser (web/WebPosteingang). */
-const stoerungVon = (p: MailPostfachStatus): { name: string; grund: string; ton: StoerungTon } => {
+const stoerungVon = (p: MailPostfachStatus): { name: string; grund: string; grundMehrere: string; ton: StoerungTon } => {
   const aus = !aufDiesemServer(p);
-  const gruende = [
-    aus ? SERVER_AUS_HINWEIS : null,
-    !p.eingerichtet && !aus ? `${ZUGANGSDATEN_FEHLEN.titel}: ${ZUGANGSDATEN_FEHLEN.text}` : null,
-    p.fehler ? `Fehler beim Abholen: ${p.fehler}${p.fehler_am ? ` (${datumUhrzeit(p.fehler_am)})` : ''}` : null,
-  ].filter((g): g is string => Boolean(g));
+  const ohneZugang = !p.eingerichtet && !aus;
+  const abholFehler = p.fehler ? `Fehler beim Abholen: ${p.fehler}${p.fehler_am ? ` (${datumUhrzeit(p.fehler_am)})` : ''}` : null;
+  const gruende = (zugang: string) => [aus ? SERVER_AUS_HINWEIS : null, ohneZugang ? `${ZUGANGSDATEN_FEHLEN.titel}: ${zugang}` : null, abholFehler]
+    .filter((g): g is string => Boolean(g))
+    .join(' · ');
   return {
     name: POSTFACH_INFO[p.postfach]?.kurz || p.adresse || p.postfach,
-    grund: gruende.join(' · '),
+    grund: gruende(ZUGANGSDATEN_FEHLEN.text),
+    // Stehen mehrere Postfächer in einer Zeile, spricht der Text in der Mehrzahl.
+    grundMehrere: gruende(ZUGANGSDATEN_FEHLEN.textMehrere),
     ton: p.fehler ? 'fehler' : aus ? 'warnung' : 'hinweis',
   };
 };
@@ -84,14 +86,14 @@ const stoerungVon = (p: MailPostfachStatus): { name: string; grund: string; ton:
  * begann die erste Mail erst bei y 616 bis 623.
  */
 const stoerungsZeilen = (gestoert: MailPostfachStatus[]) => {
-  const zeilen: { namen: string[]; grund: string; ton: StoerungTon }[] = [];
+  const zeilen: { namen: string[]; grund: string; grundMehrere: string; ton: StoerungTon }[] = [];
   for (const p of gestoert) {
     const s = stoerungVon(p);
     const gleich = zeilen.find((z) => z.grund === s.grund && z.ton === s.ton);
     if (gleich) gleich.namen.push(s.name);
-    else zeilen.push({ namen: [s.name], grund: s.grund, ton: s.ton });
+    else zeilen.push({ namen: [s.name], grund: s.grund, grundMehrere: s.grundMehrere, ton: s.ton });
   }
-  return zeilen;
+  return zeilen.map(({ namen, grund, grundMehrere, ton }) => ({ namen, grund: namen.length > 1 ? grundMehrere : grund, ton }));
 };
 
 const PostfachStoerung: React.FC<{ namen: string[]; grund: string; ton: StoerungTon }> = ({ namen, grund, ton }) => (

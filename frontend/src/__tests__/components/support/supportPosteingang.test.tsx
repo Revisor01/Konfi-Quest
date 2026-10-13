@@ -124,9 +124,18 @@ describe('Posteingang: Zustand der Postfächer', () => {
     status = { postfaecher: STATUS.postfaecher.map((p) => ({ ...p, eingerichtet: false, fehler: null, fehler_am: null, abgeholt_am: null })) };
     await oeffnen();
     expect(stoerungen()).toEqual([
-      'moin@ und support@ · Zugangsdaten fehlen: Ohne Benutzer, Passwort und IMAP-Server auf dem Server wird dieses Postfach nicht gelesen.',
+      // Zwei Namen, also Mehrzahl: „werden diese Postfächer“ (nicht „wird dieses Postfach“).
+      'moin@ und support@ · Zugangsdaten fehlen: Ohne Benutzer, Passwort und IMAP-Server auf dem Server werden diese Postfächer nicht gelesen.',
     ]);
     expect(within(screen.getByRole('status', { name: 'Postfächer' })).getByRole('listitem')).toHaveClass('support-postfach-stoerung--hinweis');
+  });
+
+  it('nur ein Postfach ohne Zugangsdaten: Einzahl', async () => {
+    status = { postfaecher: [{ ...STATUS.postfaecher[0], eingerichtet: false, fehler: null, fehler_am: null }, { ...STATUS.postfaecher[1], fehler: null, fehler_am: null }] };
+    await oeffnen();
+    expect(stoerungen()).toEqual([
+      'moin@ · Zugangsdaten fehlen: Ohne Benutzer, Passwort und IMAP-Server auf dem Server wird dieses Postfach nicht gelesen.',
+    ]);
   });
 
   it('zwei Gründe an einem Postfach stehen in seiner einen Zeile', async () => {
