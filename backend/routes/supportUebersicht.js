@@ -258,11 +258,17 @@ module.exports = (db) => {
     return rows;
   };
 
-  /** Die neuesten eingehenden Mails, zugeordnet oder nicht (nicht nach intern gefiltert). */
+  /**
+   * Die neuesten eingehenden Mails, zugeordnet oder nicht (nicht nach intern
+   * gefiltert). vorgang_id (additiv seit 12.10.2026): der Vorgang der Mail,
+   * null im Posteingang -- die Web-Uebersicht oeffnet damit den Vorgang statt
+   * der Mail. Hier und nicht in ZUORDNUNG_SPALTEN: GET /mail/eingang waehlt
+   * m.vorgang_id schon selbst aus.
+   */
   const neuesteMails = async (c) => {
     const { rows } = await c.query(
       `SELECT m.id, m.postfach, m.von_name, m.von_adresse, m.betreff, m.gesendet_am, m.gelesen_am,
-              ${ZUORDNUNG_SPALTEN}
+              ${ZUORDNUNG_SPALTEN}, m.vorgang_id
          FROM mail_nachrichten m
          ${ZUORDNUNG_JOINS}
         WHERE m.richtung = 'ein' AND m.archiviert_am IS NULL

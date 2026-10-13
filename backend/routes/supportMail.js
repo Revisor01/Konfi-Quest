@@ -37,8 +37,9 @@ const { ladeLeitungDerOrganisation } = require('../utils/orgMitglieder');
 const { antwortSenden, VersandFehler, versandAufDiesemServer } = require('../services/mailVersand');
 const {
   ARTEN, BEREICHE, DRINGLICHKEITEN, betreffAusMail, vorgangAnlegen, vorgangFuerAnfrage, vorgangFuerGemeinde,
-  mailsBinden,
+  mailsBinden, offenerVorgangDerGemeinde,
 } = require('../utils/supportVorgaenge');
+const { gemeindeDesKontos } = require('../utils/mailZuordnung');
 
 const TEXT_MAX = 20000;
 const BETREFF_MAX = 300;
@@ -145,6 +146,46 @@ async function empfaengerLaden(db, organizationId) {
     ergebnis.push({ adresse, name: v.name || null, herkunft: 'verlauf' });
   }
   return ergebnis;
+}
+
+/**
+ * Gehoert der Absender einer Mail im Posteingang zu einer Gemeinde?
+ * (additiv seit 12.10.2026; Feld absender_bekannt an GET /mail/nachrichten/:id)
+ *
+ * Nur fuer eingehende Mails ohne Vorgang -- sonst null. Die Regel-Stelle ist
+ * gemeindeDesKontos (utils/mailZuordnung.js, dieselbe wie Regel 4 beim
+ * Abholen): genau ein aktives Konto (nicht Konfi) mit der Adresse in genau
+ * einer Gemeinde, beide Quellen der Zugehoerigkeit; sonst null. Dazu der
+ * Anzeigename der Gemeinde, die offenen Vorgaenge der Gemeinde (nicht
+ * archiviert, Status neu, in_arbeit oder wartet -- wie der Filter "offen" der
+ * Vorgangsliste) und der juengste davon (offenerVorgangDerGemeinde, dieselbe
+ * Stelle wie die alte Zuordnung zur Gemeinde). Interne Gemeinden zaehlen wie
+ * jede andere.
+ *
+ * @returns {Promise<null|{organization_id: number, gemeinde_name: string, offene_vorgaenge: number,
+ *   vorgang_id: number|null}>}
+ */
+async function absenderBekannt(db, mail) {
+  if (mail.richtung !== 'ein' || mail.vorgang_id !== null) return null;
+  const organizationId = await gemeindeDesKontos(db, mail.von_adresse);
+  if (organizationId === null) return null;
+  const [{ rows: [g] }, vorgangId] = await Promise.all([
+    db.query(
+      `SELECT ${GEMEINDE_NAME} AS gemeinde_name,
+              (SELECT COUNT(*)::int FROM support_vorgaenge v
+                WHERE v.organization_id = o.id AND v.archiviert_am IS NULL
+                  AND v.status IN ('neu', 'in_arbeit', 'wartet')) AS offene_vorgaenge
+         FROM organizations o
+        WHERE o.id = $1`, [organizationId]),
+    offenerVorgangDerGemeinde(db, organizationId),
+  ]);
+  if (!g) return null;
+  return {
+    organization_id: organizationId,
+    gemeinde_name: g.gemeinde_name,
+    offene_vorgaenge: g.offene_vorgaenge,
+    vorgang_id: vorgangId,
+  };
 }
 
 /** Fehler des Versands als Antwort. */
@@ -305,12 +346,18 @@ module.exports = (db) => {
 
   // GET /mail/nachrichten/:id -- die Mail mit allen Feldern und `verlauf`:
   // alle Mails desselben Fadens (sie selbst eingeschlossen), aelteste zuerst.
+  // absender_bekannt (additiv seit 12.10.2026, nur an der obersten Ebene):
+  // die Gemeinde des Absenders einer eingehenden Mail ohne Vorgang, sonst
+  // null (absenderBekannt oben).
   router.get('/mail/nachrichten/:id', [id, handleValidationErrors], async (req, res) => {
     try {
       const mail = await nachrichtLaden(db, Number(req.params.id));
       if (!mail) return res.status(404).json(MAIL_FEHLT);
-      const verlauf = await nachrichtenLaden(db, await fadenIds(db, mail.id));
-      res.json({ ...mail, verlauf });
+      const [verlauf, bekannt] = await Promise.all([
+        fadenIds(db, mail.id).then((ids) => nachrichtenLaden(db, ids)),
+        absenderBekannt(db, mail),
+      ]);
+      res.json({ ...mail, verlauf, absender_bekannt: bekannt });
     } catch (err) {
       protokolliere('GET /support/mail/nachrichten/:id', err);
       res.status(500).json({ error: 'Datenbankfehler' });

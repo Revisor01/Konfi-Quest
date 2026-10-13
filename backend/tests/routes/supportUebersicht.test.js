@@ -18,6 +18,7 @@ const { generateToken } = require('../helpers/auth');
 const { invalidateUserCache } = require('../../middleware/rbac');
 const { SUPPORT, supportKontoAnlegen, supportToken } = require('../helpers/kontoOhneGemeinde');
 const { supportDaten } = require('../helpers/supportDaten');
+const { vorgaengeDaten } = require('../helpers/vorgaengeDaten');
 
 // Samstag, 03.10.2026, 10:00 Uhr Berlin -- ISO-Woche 2026-W40. Die Sommerzeit
 // endet am 25.10.2026 (danach UTC+1).
@@ -429,12 +430,34 @@ describe('GET /api/support/uebersicht', () => {
       const iso = (h) => stunde(h).toISOString();
       const absender = { von_adresse: 'absender@beispiel.example', von_name: null };
       expect(liste).toEqual([
-        { id: ohneAnzeige, postfach: 'moin', ...absender, betreff: 'Ohne Anzeigenamen', gesendet_am: iso(7), gelesen_am: null, anfrage_id: null, organization_id: 5, gemeinde_name: 'nur-systemname' },
-        { id: zurInternen, postfach: 'moin', ...absender, betreff: 'Intern', gesendet_am: iso(6), gelesen_am: null, anfrage_id: null, organization_id: 4, gemeinde_name: 'Test Teamer Sicht' },
-        { id: zurGemeinde, postfach: 'moin', ...absender, betreff: 'Gemeinde', gesendet_am: iso(5), gelesen_am: null, anfrage_id: null, organization_id: 3, gemeinde_name: 'Evangelische Kirchengemeinde Beispiel' },
-        { id: zurAnfrage, postfach: 'moin', ...absender, betreff: 'Anfrage', gesendet_am: iso(3), gelesen_am: iso(4), anfrage_id: anfrageId, organization_id: null, gemeinde_name: 'Kirchengemeinde Büsum' },
-        { id: offen, postfach: 'support', von_adresse: 'absender@beispiel.example', von_name: 'Erika', betreff: 'offen', gesendet_am: iso(2), gelesen_am: null, anfrage_id: null, organization_id: null, gemeinde_name: null },
+        { id: ohneAnzeige, postfach: 'moin', ...absender, betreff: 'Ohne Anzeigenamen', gesendet_am: iso(7), gelesen_am: null, anfrage_id: null, organization_id: 5, gemeinde_name: 'nur-systemname', vorgang_id: null },
+        { id: zurInternen, postfach: 'moin', ...absender, betreff: 'Intern', gesendet_am: iso(6), gelesen_am: null, anfrage_id: null, organization_id: 4, gemeinde_name: 'Test Teamer Sicht', vorgang_id: null },
+        { id: zurGemeinde, postfach: 'moin', ...absender, betreff: 'Gemeinde', gesendet_am: iso(5), gelesen_am: null, anfrage_id: null, organization_id: 3, gemeinde_name: 'Evangelische Kirchengemeinde Beispiel', vorgang_id: null },
+        { id: zurAnfrage, postfach: 'moin', ...absender, betreff: 'Anfrage', gesendet_am: iso(3), gelesen_am: iso(4), anfrage_id: anfrageId, organization_id: null, gemeinde_name: 'Kirchengemeinde Büsum', vorgang_id: null },
+        { id: offen, postfach: 'support', von_adresse: 'absender@beispiel.example', von_name: 'Erika', betreff: 'offen', gesendet_am: iso(2), gelesen_am: null, anfrage_id: null, organization_id: null, gemeinde_name: null, vorgang_id: null },
       ]);
+    });
+
+    it('vorgang_id (additiv seit 12.10.2026): der Vorgang der Mail, null im Posteingang -- je Eintrag genau die Felder des Vertrags', async () => {
+      const v = vorgaengeDaten(db);
+      const vorgangGemeinde = await v.vorgang({ organization_id: 2 });
+      const { anfrage, vorgang: vorgangAnfrage } = await v.anfrageMitVorgang({ gemeinde: 'Kirchengemeinde Wesselburen' });
+      const stunde = (h) => new Date(Date.UTC(2026, 8, 20, h));
+
+      const imPosteingang = await d.mail({ betreff: 'Posteingang', gesendet_am: stunde(1) });
+      const imVorgang = await d.mail({ betreff: 'Vorgang', organization_id: 2, vorgang_id: vorgangGemeinde, gesendet_am: stunde(2) });
+      const imAnfrageVorgang = await d.mail({ betreff: 'Anfrage', anfrage_id: anfrage, vorgang_id: vorgangAnfrage, gesendet_am: stunde(3) });
+
+      const { neueste_mails: liste } = await uebersicht();
+      expect(liste.map((m) => [m.id, m.vorgang_id])).toEqual([
+        [imAnfrageVorgang, vorgangAnfrage], [imVorgang, vorgangGemeinde], [imPosteingang, null]]);
+      for (const m of liste) {
+        expect(Object.keys(m).sort()).toEqual([
+          'id', 'postfach', 'von_name', 'von_adresse', 'betreff', 'gesendet_am', 'gelesen_am',
+          'anfrage_id', 'organization_id', 'gemeinde_name', 'vorgang_id'].sort());
+      }
+      expect(liste[0]).toMatchObject({ anfrage_id: anfrage, organization_id: null, gemeinde_name: 'Kirchengemeinde Wesselburen' });
+      expect(liste[1]).toMatchObject({ anfrage_id: null, organization_id: 2, gemeinde_name: 'Andere Gemeinde' });
     });
   });
 

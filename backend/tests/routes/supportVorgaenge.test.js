@@ -88,6 +88,8 @@ describe('/api/support/vorgaenge', () => {
         ['get', `/api/support/vorgaenge/${v}`],
         ['patch', `/api/support/vorgaenge/${v}`, { status: 'erledigt' }],
         ['post', `/api/support/vorgaenge/${v}/antworten`, { text: 'x', an: 'a@b.example' }],
+        // mit Status und beantworteter Mail (additiv seit 12.10.2026): auch so nichts
+        ['post', `/api/support/vorgaenge/${v}/antworten`, { text: 'x', an: 'a@b.example', status: 'erledigt', antwort_auf: m }],
         ['post', `/api/support/vorgaenge/${v}/archivieren`, {}],
         ['post', `/api/support/vorgaenge/${v}/wiederherstellen`, {}],
         ['delete', `/api/support/vorgaenge/${v}`],
@@ -556,6 +558,9 @@ describe('/api/support/vorgaenge', () => {
       const z = await d.vorgangZeile(v);
       expect(z.status).toBe('in_arbeit');
       expect(Date.now() - z.status_seit.getTime()).toBeLessThan(60 * 1000);
+      // Antwortform (vorgang additiv seit 12.10.2026, immer dabei): der Stand nach dem Speichern
+      expect(Object.keys(res.body).sort()).toEqual(['nachricht', 'vorgang']);
+      expect(res.body.vorgang).toEqual({ id: v, status: 'in_arbeit', status_seit: z.status_seit.toISOString(), archiviert_am: null });
     });
 
     it('eigener Betreff und Antwort auf eine Mail: Re: ohne doppeltes Re:, In-Reply-To auf die letzte Mail; „wartet“ und „in Arbeit“ bleiben', async () => {
@@ -593,6 +598,254 @@ describe('/api/support/vorgaenge', () => {
       expect(await d.anzahl('mail_nachrichten')).toBe(0);
       // Gegenprobe: die Kontaktadresse (ohne Groß/klein) geht
       expect((await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', an: 'ERIKA@andere.example' })).status).toBe(201);
+    });
+
+    // ------------------------------------------------------------------------
+    // status im Koerper (additiv seit 12.10.2026): "Danach" in einem Schritt
+    // ------------------------------------------------------------------------
+    it('status „wartet“: gesetzt mit dem Speichern, statt des Schritts neu → in Arbeit; die Antwort meldet den Stand', async () => {
+      const v = await d.vorgang({ status: 'neu', status_seit: '2026-09-01T08:00:00Z', kontakt_email: 'erika@andere.example' });
+      const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'Wir melden uns', status: 'wartet' });
+      expect(res.status).toBe(201);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      const z = await d.vorgangZeile(v);
+      expect(z).toMatchObject({ status: 'wartet', archiviert_am: null });
+      expect(Date.now() - z.status_seit.getTime()).toBeLessThan(60 * 1000);
+      expect(res.body.vorgang).toEqual({ id: v, status: 'wartet', status_seit: z.status_seit.toISOString(), archiviert_am: null });
+      expect(res.body.nachricht).toMatchObject({ vorgang_id: v, richtung: 'aus' });
+      // die Mail liegt im Vorgang, der Vorgang gilt als bewegt
+      expect((await d.mailZeile(res.body.nachricht.id)).vorgang_id).toBe(v);
+      expect(Date.now() - z.updated_at.getTime()).toBeLessThan(60 * 1000);
+    });
+
+    it('status „neu“ hält den Vorgang auf „neu“ -- der automatische Schritt entfällt, wenn ein Status gewählt ist', async () => {
+      const v = await d.vorgang({ status: 'neu', kontakt_email: 'erika@andere.example' });
+      const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', status: 'neu' });
+      expect([res.status, res.body.vorgang.status, (await d.vorgangZeile(v)).status]).toEqual([201, 'neu', 'neu']);
+      // Gegenprobe: ohne status geht derselbe Vorgang auf „in Arbeit“
+      const ohne = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'y' });
+      expect([ohne.status, ohne.body.vorgang.status, (await d.vorgangZeile(v)).status]).toEqual([201, 'in_arbeit', 'in_arbeit']);
+    });
+
+    it('status „erledigt“: der Vorgang geht ins Archiv, die Anfrage dahinter folgt wie beim PATCH (abgelehnt)', async () => {
+      const { anfrage, vorgang } = await d.anfrageMitVorgang({ email: 'probe@buesum.example' });
+      await db.query("UPDATE gemeinde_anfragen SET updated_at = NOW() - interval '300 days'");
+      const res = await super_().post(`/api/support/vorgaenge/${vorgang}/antworten`, { text: 'Danke, damit ist es erledigt.', status: 'erledigt' });
+      expect(res.status).toBe(201);
+      const z = await d.vorgangZeile(vorgang);
+      expect(z.status).toBe('erledigt');
+      expect(z.archiviert_am).not.toBeNull();
+      expect(res.body.vorgang).toEqual({
+        id: vorgang, status: 'erledigt', status_seit: z.status_seit.toISOString(), archiviert_am: z.archiviert_am.toISOString(),
+      });
+      const a = await d.anfrageZeile(anfrage);
+      expect(a).toMatchObject({ status: 'abgelehnt', bearbeitet_von: USERS.orgAdminSuper.id });
+      expect(Date.now() - a.updated_at.getTime()).toBeLessThan(60 * 1000);
+      // raus aus den offenen, im Archiv -- samt der gerade gesendeten Mail
+      expect((await super_().get('/api/support/vorgaenge')).body).toEqual([]);
+      expect((await super_().get('/api/support/vorgaenge?filter=archiv')).body.map((x) => x.id)).toEqual([vorgang]);
+      expect((await d.mailZeile(res.body.nachricht.id)).vorgang_id).toBe(vorgang);
+    });
+
+    it('status „erledigt“ bei einer angelegten Anfrage: die Anfrage bleibt „angelegt“ (wie beim PATCH)', async () => {
+      const { anfrage, vorgang } = await d.anfrageMitVorgang({ status: 'angelegt', organization_id: 2 });
+      await db.query("UPDATE support_vorgaenge SET status = 'in_arbeit', archiviert_am = NULL WHERE id = $1", [vorgang]);
+      const res = await super_().post(`/api/support/vorgaenge/${vorgang}/antworten`, { text: 'x', status: 'erledigt' });
+      expect([res.status, res.body.vorgang.status]).toEqual([201, 'erledigt']);
+      expect((await d.anfrageZeile(anfrage)).status).toBe('angelegt');
+    });
+
+    it('ungültiger status: 400 VOR dem Versand -- nichts geht hinaus, nichts wird gespeichert, der Status bleibt', async () => {
+      const v = await d.vorgang({ status: 'neu', kontakt_email: 'erika@andere.example' });
+      for (const status of ['offen', 'ERLEDIGT', '', null, 5, ['erledigt']]) {
+        const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', status });
+        expect([status, res.status, res.body.details])
+          .toEqual([status, 400, [{ field: 'status', message: 'status: neu, in_arbeit, wartet, erledigt' }]]);
+      }
+      expect(sendMail).not.toHaveBeenCalled();
+      expect(await d.anzahl('mail_nachrichten')).toBe(0);
+      expect((await d.vorgangZeile(v)).status).toBe('neu');
+      // Gegenprobe: jeder gültige Wert geht
+      for (const status of ['neu', 'in_arbeit', 'wartet', 'erledigt']) {
+        const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', status });
+        expect([status, res.status, res.body.vorgang.status]).toEqual([status, 201, status]);
+      }
+      expect(sendMail).toHaveBeenCalledTimes(4);
+    });
+
+    it('502 mit status: scheitert der Versand, bleibt der Status, wie er war', async () => {
+      const v = await d.vorgang({ status: 'in_arbeit', kontakt_email: 'erika@andere.example' });
+      sendMail.mockRejectedValue(Object.assign(new Error('boom'), { code: 'EENVELOPE' }));
+      const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        expect((await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', status: 'erledigt' })).status).toBe(502);
+      } finally {
+        fehler.mockRestore();
+      }
+      expect(await d.vorgangZeile(v)).toMatchObject({ status: 'in_arbeit', archiviert_am: null });
+      expect(await d.anzahl('mail_nachrichten')).toBe(0);
+    });
+
+    // ------------------------------------------------------------------------
+    // status und Mail in EINER Transaktion (Pruefung vom 13.10.2026). Der
+    // Fehler kommt aus der DATENBANK (Trigger, Muster absageMeldetAb.test.js),
+    // damit der echte Weg umfaellt und kein nachgebauter. Zwei Stellen, weil
+    // jede eine andere Abweichung zeigt:
+    //  - der Statusschritt selbst scheitert -> auch die Mail ist nicht
+    //    gespeichert (rot, wenn der Status erst nach dem COMMIT geschrieben
+    //    wird);
+    //  - erst das COMMIT scheitert (aufgeschobener Trigger auf
+    //    mail_nachrichten, gleich in welcher Reihenfolge die Schritte davor
+    //    laufen) -> auch der Status ist nicht gesetzt und die Anfrage nicht
+    //    mitgegangen (rot, wenn der Status vor oder neben der Transaktion
+    //    geschrieben wird).
+    // Die Meldung im Protokoll zeigt, dass genau diese Stelle getroffen ist;
+    // die Gegenprobe ohne Trigger, dass derselbe Aufruf sonst etwas aendert.
+    // ------------------------------------------------------------------------
+    /** Fuehrt fn mit einem Trigger aus (anlegen/entfernen: SQL) und liefert { res, meldungen } (console.error). */
+    const mitBremse = async (anlegen, entfernen, fn) => {
+      await db.query(anlegen);
+      const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const res = await fn();
+        return { res, meldungen: fehler.mock.calls.map((aufruf) => aufruf.join(' ')) };
+      } finally {
+        fehler.mockRestore();
+        await db.query(entfernen);
+      }
+    };
+    const GESENDET_NICHT_GESPEICHERT = { error: 'Die Mail wurde gesendet, aber nicht gespeichert.' };
+
+    it('status in derselben Transaktion: scheitert der Statusschritt nach dem Versand, ist auch die Mail nicht gespeichert', async () => {
+      const v = await d.vorgang({ status: 'in_arbeit', kontakt_email: 'erika@andere.example' });
+      const vorher = await d.vorgangZeile(v);
+      const antworten = () => super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', status: 'erledigt' });
+      const { res, meldungen } = await mitBremse(`
+        CREATE OR REPLACE FUNCTION test_status_bremse() RETURNS trigger AS $$
+        BEGIN RAISE EXCEPTION 'Statusschritt gebremst'; END; $$ LANGUAGE plpgsql;
+        CREATE TRIGGER test_status_bremse BEFORE UPDATE ON support_vorgaenge
+          FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status) EXECUTE FUNCTION test_status_bremse();`,
+      'DROP TRIGGER IF EXISTS test_status_bremse ON support_vorgaenge; DROP FUNCTION IF EXISTS test_status_bremse();',
+      antworten);
+      expect([res.status, res.body]).toEqual([500, GESENDET_NICHT_GESPEICHERT]);
+      expect(meldungen).toEqual(['Mail-Versand (support): gesendet, aber nicht gespeichert (P0001 Statusschritt gebremst)']);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      expect(await d.anzahl('mail_nachrichten')).toBe(0);
+      expect(await d.vorgangZeile(v)).toEqual(vorher);
+      // Gegenprobe: ohne Trigger setzt derselbe Aufruf den Status und speichert die Mail
+      const ok = await antworten();
+      expect([ok.status, ok.body.vorgang.status, ok.body.vorgang.archiviert_am === null]).toEqual([201, 'erledigt', false]);
+      expect(await d.anzahl('mail_nachrichten')).toBe(1);
+    });
+
+    it('status in derselben Transaktion: scheitert erst das COMMIT, ist auch der Status nicht gesetzt -- die Anfrage nicht mitgegangen', async () => {
+      const { anfrage, vorgang } = await d.anfrageMitVorgang({ status: 'in_arbeit' });
+      const stand = async () => ({ vorgang: await d.vorgangZeile(vorgang), anfrage: await d.anfrageZeile(anfrage) });
+      const vorher = await stand();
+      const antworten = () => super_().post(`/api/support/vorgaenge/${vorgang}/antworten`, { text: 'x', status: 'erledigt' });
+      const { res, meldungen } = await mitBremse(`
+        CREATE OR REPLACE FUNCTION test_speichern_bremse() RETURNS trigger AS $$
+        BEGIN RAISE EXCEPTION 'Speichern gebremst'; END; $$ LANGUAGE plpgsql;
+        CREATE CONSTRAINT TRIGGER test_speichern_bremse AFTER INSERT ON mail_nachrichten
+          DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION test_speichern_bremse();`,
+      'DROP TRIGGER IF EXISTS test_speichern_bremse ON mail_nachrichten; DROP FUNCTION IF EXISTS test_speichern_bremse();',
+      antworten);
+      expect([res.status, res.body]).toEqual([500, GESENDET_NICHT_GESPEICHERT]);
+      expect(meldungen).toEqual(['Mail-Versand (moin): gesendet, aber nicht gespeichert (P0001 Speichern gebremst)']);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      expect(await d.anzahl('mail_nachrichten')).toBe(0);
+      expect(await stand()).toEqual(vorher);
+      // Gegenprobe: ohne Trigger geht der Vorgang auf erledigt und die Anfrage mit (ohne Gemeinde: abgelehnt)
+      const ok = await antworten();
+      expect([ok.status, ok.body.vorgang.status, (await d.anfrageZeile(anfrage)).status]).toEqual([201, 'erledigt', 'abgelehnt']);
+      expect(await d.anzahl('mail_nachrichten')).toBe(1);
+    });
+
+    // ------------------------------------------------------------------------
+    // antwort_auf (additiv seit 12.10.2026): die beantwortete Mail als Bezug
+    // ------------------------------------------------------------------------
+    /**
+     * Ein Vorgang mit drei Mails: Frage A, Nachfrage B (Antwort auf A), danach
+     * unsere Antwort C (die juengste). Die drei Betreffe ergeben drei
+     * VERSCHIEDENE Antwortbetreffe -- nur so zeigt der Betreff, von welcher
+     * Mail er stammt (mit "Frage A", "AW: Frage A" und "Re: Frage A" waeren es
+     * dreimal "Re: Frage A [Vorgang v]", und ein Betreff aus der juengsten Mail
+     * fiele nicht auf; Pruefung vom 13.10.2026).
+     */
+    const vorgangMitFaden = async () => {
+      const v = await d.vorgang({ organization_id: 2, betreff: 'Kalender' });
+      const a = await d.mail({ vorgang_id: v, message_id: '<a@andere.example>', betreff: 'Frage A', von_adresse: 'erika@andere.example' });
+      const b = await d.mail({
+        vorgang_id: v, message_id: '<b@andere.example>', in_reply_to: '<a@andere.example>', referenzen: ['<a@andere.example>'],
+        betreff: 'AW: Nachfrage B', von_adresse: 'paul@andere.example',
+      });
+      const c = await d.mail({
+        vorgang_id: v, richtung: 'aus', message_id: '<kq-c@konfi-quest.de>', in_reply_to: '<b@andere.example>',
+        referenzen: ['<a@andere.example>', '<b@andere.example>'], betreff: `Re: Ganz anders [Vorgang ${v}]`, von_adresse: 'support@konfi-quest.de',
+      });
+      return { v, a, b, c };
+    };
+
+    it('antwort_auf: In-Reply-To, References und „Re:“ beziehen sich auf genau diese Mail -- nicht auf die jüngste', async () => {
+      const { v, a, b } = await vorgangMitFaden();
+      const aufA = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'Zu A', antwort_auf: a, an: 'erika@andere.example' });
+      expect(aufA.status).toBe(201);
+      const kopfA = await simpleParser(sendMail.mock.calls[0][0].raw);
+      expect([kopfA.inReplyTo, kopfA.references, kopfA.subject])
+        .toEqual(['<a@andere.example>', '<a@andere.example>', `Re: Frage A [Vorgang ${v}]`]);
+      expect(await d.mailZeile(aufA.body.nachricht.id)).toMatchObject({ in_reply_to: '<a@andere.example>', referenzen: ['<a@andere.example>'] });
+
+      const aufB = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'Zu B', antwort_auf: String(b), an: 'paul@andere.example' });
+      expect(aufB.status).toBe(201);
+      const kopfB = await simpleParser(sendMail.mock.calls[1][0].raw);
+      expect([kopfB.inReplyTo, kopfB.references, kopfB.subject])
+        .toEqual(['<b@andere.example>', ['<a@andere.example>', '<b@andere.example>'], `Re: Nachfrage B [Vorgang ${v}]`]);
+      expect(await d.mailZeile(aufB.body.nachricht.id))
+        .toMatchObject({ in_reply_to: '<b@andere.example>', referenzen: ['<a@andere.example>', '<b@andere.example>'] });
+    });
+
+    it('ohne antwort_auf (oder null): wie bisher die jüngste Mail des Vorgangs, gleich welcher Richtung', async () => {
+      const { v } = await vorgangMitFaden();
+      const erste = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x' });
+      expect(erste.status).toBe(201);
+      // danach ist die eben gesendete Antwort die juengste Mail des Vorgangs
+      const zweite = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: null });
+      expect(zweite.status).toBe(201);
+      expect([(await gesendet(0)).inReplyTo, (await gesendet(1)).inReplyTo])
+        .toEqual(['<kq-c@konfi-quest.de>', erste.body.nachricht.message_id]);
+      // der Betreff ebenso von der juengsten Mail (C, danach die erste Antwort)
+      expect([(await gesendet(0)).betreff, (await gesendet(1)).betreff])
+        .toEqual([`Re: Ganz anders [Vorgang ${v}]`, `Re: Ganz anders [Vorgang ${v}]`]);
+    });
+
+    it('antwort_auf einer Mail aus einem anderen Vorgang, aus dem Posteingang oder ohne Mail: 400 VOR dem Versand, nichts geht hinaus', async () => {
+      const { v, a } = await vorgangMitFaden();
+      const anderer = await d.vorgang({ organization_id: 2 });
+      const fremd = await d.mail({ vorgang_id: anderer, von_adresse: 'erika@andere.example' });
+      const posteingang = await d.mail({ von_adresse: 'erika@andere.example' });
+      const vorher = await d.anzahl('mail_nachrichten');
+      for (const antwortAuf of [fremd, posteingang, 999999]) {
+        const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: antwortAuf });
+        expect([antwortAuf, res.status, res.body]).toEqual([antwortAuf, 400, { error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' }]);
+      }
+      for (const antwortAuf of ['abc', 0, -1, 1.5, true, [a]]) {
+        const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: antwortAuf });
+        expect([antwortAuf, res.status, res.body.details]).toEqual([antwortAuf, 400, [{ field: 'antwort_auf', message: 'Ungültige Mail' }]]);
+      }
+      expect(sendMail).not.toHaveBeenCalled();
+      expect(await d.anzahl('mail_nachrichten')).toBe(vorher);
+      expect((await d.vorgangZeile(v)).status).toBe('neu');
+      // Gegenprobe: dieselbe Route mit einer Mail DIESES Vorgangs geht
+      expect((await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: a })).status).toBe(201);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+    });
+
+    it('antwort_auf und status zusammen: Bezug auf die genannte Mail, Status gesetzt', async () => {
+      const { v, a } = await vorgangMitFaden();
+      const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: a, status: 'wartet' });
+      const mail = await gesendet();
+      expect([res.status, res.body.vorgang.status, mail.inReplyTo, mail.betreff])
+        .toEqual([201, 'wartet', '<a@andere.example>', `Re: Frage A [Vorgang ${v}]`]);
     });
 
     it('502: scheitert der Versand, wird nichts gespeichert und der Status bleibt', async () => {

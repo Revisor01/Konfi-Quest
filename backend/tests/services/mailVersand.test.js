@@ -3,11 +3,14 @@
 // Bausteine des Versands (services/mailVersand.js) ohne Datenbank: der
 // Gesendet-Ordner (Befund in der Produktion, 03.10.2026: moin@ hat "Sent"
 // ohne \Sent-Markierung, support@ hat gar keinen), Betreff, Fusszeile und
-// Bezug auf die letzte Mail. Die Routen samt gesendetem Quelltext pruefen
-// tests/routes/supportMailAntworten.test.js.
+// Bezug auf die letzte Mail, die Pruefung eines gewaehlten Status vor allem
+// anderen. Die Routen samt gesendetem Quelltext pruefen
+// tests/routes/supportMailAntworten.test.js und supportVorgaenge.test.js.
+const nodemailer = require('nodemailer');
 const { imapAttrappe } = require('../helpers/imapAttrappe');
 const {
   inGesendetAblegen, antwortBetreff, betreffMitKennung, textMitFusszeile, bezugKopf, versandAufDiesemServer,
+  antwortSenden, VersandFehler,
 } = require('../../services/mailVersand');
 
 const ordner = (path, { specialUse, flags = [], delimiter = '.', name } = {}) => ({
@@ -126,5 +129,34 @@ describe('Betreff, Fußzeile, Bezug', () => {
     expect(versandAufDiesemServer({ RUN_BACKGROUND_JOBS: 'false' })).toBe(false);
     expect(versandAufDiesemServer({ RUN_BACKGROUND_JOBS: 'true' })).toBe(true);
     expect(versandAufDiesemServer({})).toBe(true);
+  });
+});
+
+describe('antwortSenden: gewählter Status (additiv seit 12.10.2026)', () => {
+  const antwort = (status) => ({ postfach: 'support', an: 'erika@andere.example', text: 'x', vorgangId: 1, status, standardBetreff: 'x' });
+
+  it('verboten: ein ungültiger Status bricht mit 400 ab, bevor irgendetwas geschieht -- keine Abfrage, kein Versand', async () => {
+    const db = { query: vi.fn(), getClient: vi.fn() };
+    const transport = vi.spyOn(nodemailer, 'createTransport');
+    try {
+      for (const status of ['offen', 'ERLEDIGT', '', 5, ['erledigt']]) {
+        const fehler = await antwortSenden(db, antwort(status), { env: {} }).catch((err) => err);
+        expect([status, fehler instanceof VersandFehler, fehler.status, fehler.message])
+          .toEqual([status, true, 400, 'status: neu, in_arbeit, wartet, erledigt']);
+      }
+      expect(db.query).not.toHaveBeenCalled();
+      expect(db.getClient).not.toHaveBeenCalled();
+      expect(transport).not.toHaveBeenCalled();
+    } finally {
+      transport.mockRestore();
+    }
+  });
+
+  it('erlaubt: ein gültiger Status (und keiner) kommt an der Prüfung vorbei -- dann entscheidet der Versand-Schalter', async () => {
+    const db = { query: vi.fn(), getClient: vi.fn() };
+    for (const status of ['neu', 'in_arbeit', 'wartet', 'erledigt', undefined, null]) {
+      const fehler = await antwortSenden(db, antwort(status), { env: { RUN_BACKGROUND_JOBS: 'false' } }).catch((err) => err);
+      expect([status, fehler.status, fehler.message]).toEqual([status, 503, 'Auf diesem Server ist der Versand aus.']);
+    }
   });
 });

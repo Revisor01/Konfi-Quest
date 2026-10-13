@@ -81,19 +81,24 @@ function supportDaten(db) {
   };
 
   let lfd = 0;
-  /** Eine Mail; gesendet_am fest (Vorgabe: steigt je Aufruf um eine Minute). */
+  /**
+   * Eine Mail; gesendet_am fest (Vorgabe: steigt je Aufruf um eine Minute).
+   * vorgang_id (Vorgabe null = Posteingang): anfrage_id/organization_id setzt
+   * der Test selbst passend dazu.
+   */
   const mail = async (f = {}) => {
     lfd += 1;
     const m = {
-      postfach: 'moin', richtung: 'ein', anfrage_id: null, organization_id: null, von_adresse: 'absender@beispiel.example',
-      von_name: null, betreff: `Betreff ${lfd}`, text: 'Hallo', gelesen_am: null,
+      postfach: 'moin', richtung: 'ein', anfrage_id: null, organization_id: null, vorgang_id: null,
+      von_adresse: 'absender@beispiel.example', von_name: null, betreff: `Betreff ${lfd}`, text: 'Hallo', gelesen_am: null,
       gesendet_am: new Date(Date.UTC(2026, 8, 1, 8, lfd)), ...f,
     };
     const { rows: [{ id }] } = await db.query(
-      `INSERT INTO mail_nachrichten (postfach, richtung, anfrage_id, organization_id, message_id, von_adresse,
+      `INSERT INTO mail_nachrichten (postfach, richtung, anfrage_id, organization_id, vorgang_id, message_id, von_adresse,
                                      von_name, betreff, text, gesendet_am, gelesen_am)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-      [m.postfach, m.richtung, m.anfrage_id, m.organization_id, `<s${lfd}-${Math.random().toString(36).slice(2)}@x.example>`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id`,
+      [m.postfach, m.richtung, m.anfrage_id, m.organization_id, m.vorgang_id,
+        `<s${lfd}-${Math.random().toString(36).slice(2)}@x.example>`,
         m.von_adresse, m.von_name, m.betreff, m.text, m.gesendet_am, m.gelesen_am]);
     return Number(id);
   };
