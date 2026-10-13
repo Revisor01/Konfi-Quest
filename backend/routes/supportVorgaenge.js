@@ -369,7 +369,11 @@ module.exports = (db) => {
   // Notiz eines Anfrage-Vorgangs ist die Notiz der Anfrage.
   router.patch('/vorgaenge/:id', [
     id, artFeld(false), bereichFeld, dringlichkeitFeld, betreffFeld(false), gemeindeFeld,
-    body('status').optional().isIn(STATUS).withMessage(`status: ${STATUS.join(', ')}`),
+    // isString vorweg: eine Liste ['erledigt'] prüft express-validator sonst
+    // Element für Element und lässt sie durch (bis 12.10.2026 dann 500).
+    body('status').optional()
+      .isString().withMessage(`status: ${STATUS.join(', ')}`).bail()
+      .isIn(STATUS).withMessage(`status: ${STATUS.join(', ')}`),
     body('notiz').optional({ values: 'null' }).isString().withMessage('Text erwartet').bail()
       .isLength({ max: NOTIZ_MAX }).withMessage(`Höchstens ${NOTIZ_MAX} Zeichen`),
     handleValidationErrors,
@@ -460,7 +464,9 @@ module.exports = (db) => {
       .isIn(STATUS).withMessage(`status: ${STATUS.join(', ')}`),
     body('antwort_auf').optional({ values: 'null' })
       .not().isArray().withMessage('Ungültige Mail').bail()
-      .isInt({ min: 1 }).withMessage('Ungültige Mail'),
+      // Obergrenze: größere Kennungen gibt es nicht; ohne sie scheiterte eine
+      // Zahl jenseits von bigint erst an der Datenbank (500).
+      .isInt({ min: 1, max: Number.MAX_SAFE_INTEGER }).withMessage('Ungültige Mail'),
     handleValidationErrors,
   ], async (req, res) => {
     let gespeichert;
@@ -558,7 +564,9 @@ module.exports = (db) => {
     body('ids').isArray({ min: 1, max: SAMMEL_MAX }).withMessage(`ids: Liste mit 1 bis ${SAMMEL_MAX} Kennungen`),
     body('ids.*').isInt({ min: 1 }).withMessage('Ungültige ID'),
     body('aktion').isIn(AKTIONEN).withMessage(`aktion: ${AKTIONEN.join(', ')}`),
-    body('status').if(body('aktion').equals('status')).isIn(STATUS).withMessage(`status: ${STATUS.join(', ')}`),
+    body('status').if(body('aktion').equals('status'))
+      .isString().withMessage(`status: ${STATUS.join(', ')}`).bail()
+      .isIn(STATUS).withMessage(`status: ${STATUS.join(', ')}`),
     handleValidationErrors,
   ], async (req, res) => {
     const ids = [...new Set(req.body.ids.map(Number))];

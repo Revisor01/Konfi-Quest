@@ -531,9 +531,13 @@ describe('/api/support/vorgaenge', () => {
       expect((await d.vorgangZeile(v)).art).toBe('frage');
       const leer = await super_().patch(`/api/support/vorgaenge/${v}`, {});
       expect(leer.status).toBe(400);
-      for (const b of [{ art: 'x' }, { status: 'offen' }, { bereich: 'kaffee' }, { dringlichkeit: 'egal' }, { betreff: '  ' }, { notiz: 'x'.repeat(5001) }, { organization_id: 'abc' }]) {
+      // status als Liste: express-validator prüft Listen Element für Element;
+      // ohne isString kam ['erledigt'] durch und scheiterte erst am CHECK der
+      // Datenbank (500, 12.10.2026).
+      for (const b of [{ art: 'x' }, { status: 'offen' }, { status: ['erledigt'] }, { bereich: 'kaffee' }, { dringlichkeit: 'egal' }, { betreff: '  ' }, { notiz: 'x'.repeat(5001) }, { organization_id: 'abc' }]) {
         expect([b, (await super_().patch(`/api/support/vorgaenge/${v}`, b)).status]).toEqual([b, 400]);
       }
+      expect((await d.vorgangZeile(v)).status).toBe('neu');
       // Gegenprobe: Notiz mit 5000 Zeichen geht
       expect((await super_().patch(`/api/support/vorgaenge/${v}`, { notiz: 'x'.repeat(5000) })).status).toBe(200);
     });
@@ -828,7 +832,8 @@ describe('/api/support/vorgaenge', () => {
         const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: antwortAuf });
         expect([antwortAuf, res.status, res.body]).toEqual([antwortAuf, 400, { error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' }]);
       }
-      for (const antwortAuf of ['abc', 0, -1, 1.5, true, [a]]) {
+      // Auch Kennungen jenseits von bigint: 400 statt eines Datenbankfehlers (500).
+      for (const antwortAuf of ['abc', 0, -1, 1.5, true, [a], '99999999999999999999', 1e20]) {
         const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: antwortAuf });
         expect([antwortAuf, res.status, res.body.details]).toEqual([antwortAuf, 400, [{ field: 'antwort_auf', message: 'Ungültige Mail' }]]);
       }
@@ -1016,6 +1021,7 @@ describe('/api/support/vorgaenge', () => {
       [{ ids: [1], aktion: 'verschieben' }, 'aktion'],
       [{ ids: [1], aktion: 'status' }, 'status'],
       [{ ids: [1], aktion: 'status', status: 'offen' }, 'status'],
+      [{ ids: [1], aktion: 'status', status: ['erledigt'] }, 'status'],
       [{ ids: Array.from({ length: 501 }, (_, i) => i + 1), aktion: 'archivieren' }, 'ids'],
     ])('400 bei %j', async (body, feld) => {
       const v = await d.vorgang();
