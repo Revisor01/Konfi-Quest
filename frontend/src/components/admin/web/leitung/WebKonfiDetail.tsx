@@ -18,6 +18,12 @@
 // Antraege in den Aktivitaeten (Pruefen), zu verbuchende und anstehende
 // Termine in den Events (Anwesend / Nicht anwesend).
 //
+// Seiten-Interview 13.10.2026: Aktivitaeten, Events und Bonuspunkte tragen
+// vorn den Kreis ihrer Punkteart; eine verbuchte Aktivitaet mit Antrag oeffnet
+// ihn (onAntrag); die Events sind EINE Tabelle mit allen Terminen der Person,
+// Pflicht-Marke und Stand (eventListe.ts), ein Event fuehrt mit Rueckweg zur
+// Person (?person=, utils/rueckweg.ts). Kopf und rechte Spalte bleiben.
+//
 // Rahmen, Angaben-Karte und Zustaende stellt WebDetailSeite, die Tabellen
 // WebDetailListe (WebKonfiKarten; 10.10.2026). Vor dem Namen steht derselbe
 // Kreis wie in der Liste (WebKonfis): Initialen, gruen bei erreichtem Ziel.
@@ -53,15 +59,15 @@ import {
   AktivitaetenKarte,
   BefoerdernKarte,
   BonusKarte,
-  EventPunkteKarte,
+  EventListeKarte,
   KonfiHistorieKarte,
   KonfiZeitKarte,
   KonfirmationKarte,
   RueckblickKarte,
   StempelKarte,
-  TeamerEventsKarte,
   ZertifikateKarte,
 } from './WebKonfiKarten';
+import { konfiEventZeilen, teamerEventZeilen } from './eventListe';
 import type { WebKonfiDetailProps } from './konfiDetailTypen';
 
 const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
@@ -207,10 +213,18 @@ const WebKonfiDetail: React.FC<WebKonfiDetailProps> = (p) => {
         onEintragen={p.onAktivitaetEintragen}
         onLoeschen={p.onAktivitaetLoeschen}
         onFoto={p.onFoto}
+        onAntrag={p.onAntrag}
       />
-      {istTeamer
-        ? <TeamerEventsKarte events={p.teamerEvents} termine={p.termine} kannVerbuchen={p.kannVerbuchen} isOnline={isOnline} onAnwesenheit={p.onAnwesenheit} />
-        : <EventPunkteKarte eventPunkte={p.eventPunkte} konfi={konfi} termine={p.termine} kannVerbuchen={p.kannVerbuchen} isOnline={isOnline} onAnwesenheit={p.onAnwesenheit} />}
+      <EventListeKarte
+        zeilen={istTeamer ? teamerEventZeilen(p.teamerEvents, p.termine) : konfiEventZeilen(p.alleTermine, p.termine, p.eventPunkte)}
+        istTeamer={istTeamer}
+        konfi={konfi}
+        personId={p.konfiId}
+        personName={name}
+        kannVerbuchen={p.kannVerbuchen}
+        isOnline={isOnline}
+        onAnwesenheit={p.onAnwesenheit}
+      />
       {!istTeamer && (
         <BonusKarte bonus={p.bonus} konfi={konfi} summe={p.punkte.bonus} onVergeben={p.onBonusVergeben} onLoeschen={p.onBonusLoeschen} />
       )}

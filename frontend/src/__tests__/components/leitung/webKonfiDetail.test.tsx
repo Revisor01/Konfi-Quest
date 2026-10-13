@@ -117,7 +117,8 @@ const TEAMER = {
     { id: 301, name: 'Konfi-Wochenende', event_date: '2026-09-13', location: 'Jugendhaus', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '2026-08-01', attendance_status: 'present' },
     { id: 303, name: 'Adventsbasar', event_date: '2026-10-01', location: 'Gemeindehaus', teamer_only: false, teamer_needed: true, booking_status: 'waitlist', booking_date: '2026-09-20', attendance_status: null },
     { id: 304, name: 'Freizeit-Planung', event_date: '2026-09-24', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-09-01', attendance_status: 'absent' },
-    { id: 305, name: 'Teamer-Treffen', event_date: '2026-10-22', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-10-01', attendance_status: null },
+    // Kuenftig, gleich wann der Test laeuft: steht als anstehend oben in der Liste.
+    { id: 305, name: 'Teamer-Treffen', event_date: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(), location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-10-01', attendance_status: null },
   ],
   konfiHistory: { history: [{ id: 1, title: 'Gottesdienstbesuch', points: 1, category: 'gottesdienst', date: '2024-12-02', source_type: 'activity' }], totals: { gottesdienst: 9, gemeinde: 11, total: 20 } },
 };
@@ -426,7 +427,12 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(kartenIn('seite')).not.toContain('Events');
   });
 
-  it('Events: eine Tabelle mit Eventdatum statt Verbuchungsdatum, Punkten und Punkteart', async () => {
+  // Seit 13.10.2026 steht unter "Eingetragen von" der Stand des Events (eine
+  // Liste fuer alles, Simon: „das soll eine liste sein"); wer die Punkte
+  // vergeben hat, steht am Punktwert (title). Gewollte Aenderung: Die
+  // Erwartung prueft den Stand statt des Namens. Ohne `alleTermine` (Server
+  // davor, gemerkter Stand) kommt die Liste aus den Event-Punkten.
+  it('Events: eine Tabelle mit Eventdatum statt Verbuchungsdatum, Punkten, Punkteart und Stand', async () => {
     await oeffnen();
     const e = zeilen('Events');
     expect(e).toHaveLength(2);
@@ -434,9 +440,10 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(zelle(e[0], 1)).toHaveTextContent('04.09.2026');
     expect(zelle(e[0], 2)).toHaveTextContent('Gemeinde');
     expect(zelle(e[0], 3)).toHaveTextContent('+2');
-    expect(zelle(e[0], 4)).toHaveTextContent('Alex Beispiel');
+    expect(within(zelle(e[0], 3)).getByText('+2')).toHaveAttribute('title', 'vergeben von Alex Beispiel');
+    expect(zelle(e[0], 4)).toHaveTextContent('Anwesend');
     expect(zelle(e[1], 0)).toHaveTextContent('Taizé-Abend');
-    expect(screen.getByText('3 Punkte aus 2 Events', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+    expect(screen.getByText('2 Events · 3 Punkte', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
   });
 
   it('Aktivitaeten, Events und Bonuspunkte haben dieselben festen Spaltenbreiten', async () => {
@@ -502,24 +509,34 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(h.stand.fenster.some((f) => (f.props as { antragId?: number }).antragId === 71)).toBe(true);
   });
 
-  it('Events: offene Anwesenheit und anstehende Termine oben; Anwesend ruft die Route des Termins', async () => {
+  // Seit 13.10.2026 EINE Tabelle statt Zeilen darueber (Simon: „das soll eine
+  // liste sein"): Offenes steht weiter oben -- jetzt als erste Zeilen der
+  // Tabelle, "Anwesend" und "Nicht anwesend" in der Zeile. Gewollte
+  // Aenderung: geprueft wird die Tabelle statt der Liste darueber; der Link
+  // fuehrt mit Rueckweg zur Person (?person=). Hier ohne `alleTermine`: die
+  // Liste aus `termine` und den Event-Punkten (gemerkter Stand von vorher).
+  it('Events: zu verbuchende und anstehende Termine oben in der Tabelle; Anwesend ruft die Route des Termins', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, termine: [
       { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: true },
       { booking_id: 502, event_id: 42, event_name: 'Laternenumzug', event_date: '2026-11-11T17:00:00Z', booking_status: 'waitlist', art: 'anstehend', darf_verbuchen: true },
     ] });
     await oeffnen();
     const ev = karte('Events');
-    const oben = within(within(ev).getByRole('list', { name: 'Offene und anstehende Events' }));
-    expect(oben.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
-    expect(oben.getByText('Warteliste')).toBeInTheDocument();
+    expect(within(ev).queryByRole('list', { name: 'Offene und anstehende Events' })).toBeNull();
+    const e = zeilen('Events');
+    expect(e.map((z) => [zelle(z, 0).textContent, zelle(z, 4).textContent])).toEqual([
+      ['Konfisamstag', 'Ausstehend'],
+      ['Laternenumzug', 'Warteliste'],
+      ['Konfi-Wochenende', 'Anwesend'],
+      ['Taizé-Abend', 'Anwesend'],
+    ].map(([name, stand]) => [expect.stringContaining(name), stand]));
     // Anstehende Termine haben keinen Knopf.
-    expect(oben.queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
-    // Der Name fuehrt in den Termin -- derselbe Link wie in der Terminliste.
-    expect(oben.getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', '/admin/events/41');
-    expect(oben.getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', '/admin/events/42');
-    // Der Untertitel zaehlt weiter nur die Event-Punkte.
-    expect(ev).toHaveTextContent('3 Punkte aus 2 Events');
-    await act(async () => { fireEvent.click(oben.getByRole('button', { name: 'Konfisamstag: anwesend' })); });
+    expect(within(e[1]).queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
+    // Der Name fuehrt in den Termin -- mit dem Rueckweg zu dieser Konfi.
+    expect(within(e[0]).getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', `/admin/events/41?person=${ID}`);
+    expect(within(e[1]).getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', `/admin/events/42?person=${ID}`);
+    expect(ev).toHaveTextContent('4 Events · 3 Punkte');
+    await act(async () => { fireEvent.click(within(e[0]).getByRole('button', { name: 'Konfisamstag: anwesend' })); });
     expect(h.apiPut).toHaveBeenCalledWith('/events/41/participants/501/attendance', { attendance_status: 'present' });
     await waitFor(() => expect(h.triggerRefresh).toHaveBeenCalledWith('events'));
     expect(h.triggerRefresh).toHaveBeenCalledWith('konfis');
@@ -530,9 +547,10 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
       { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: false },
     ] });
     await oeffnen();
-    const oben = within(within(karte('Events')).getByRole('list', { name: 'Offene und anstehende Events' }));
-    expect(oben.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
-    expect(oben.queryByRole('button')).toBeNull();
+    const erste = zeilen('Events')[0];
+    expect(zelle(erste, 0)).toHaveTextContent('Konfisamstag');
+    expect(zelle(erste, 4)).toHaveTextContent('Ausstehend');
+    expect(within(erste).queryByRole('button')).toBeNull();
   });
 
   it('Stempel: dasselbe Raster wie die Badges, erhalten in der Challenge-Farbe, offen gedaempft', async () => {
@@ -642,13 +660,18 @@ describe('Teamer-Detail (Web)', () => {
     expect(kartenIn('haupt').slice(0, 3)).toEqual(['Aktivitäten', 'Events', 'Zertifikate']);
     expect(kartenIn('seite')).not.toContain('Events');
     const events = zeilen('Events');
+    // Seit 13.10.2026 in der Ordnung der einen Eventliste (eventListe.ts):
+    // Anstehendes oben, dann nach Datum absteigend (vorher die Reihenfolge des
+    // Servers). Gewollte Aenderung der Reihenfolge, die Staende bleiben.
     expect(events.map((z) => [zelle(z, 0).textContent, zelle(z, 2).textContent])).toEqual([
-      ['Konfi-Wochenende', 'Anwesend'],
-      ['Adventsbasar', 'Warteliste'],
-      ['Freizeit-Planung', 'Abwesend'],
       // Gebucht, aber noch nicht verbucht -- vorher stand hier "Anwesend".
       ['Teamer-Treffen', 'Gebucht'],
+      ['Adventsbasar', 'Warteliste'],
+      ['Freizeit-Planung', 'Abwesend'],
+      ['Konfi-Wochenende', 'Anwesend'],
     ]);
+    // Auch hier fuehrt ein Event mit Rueckweg zur Teamer:in.
+    expect(within(events[0]).getByRole('link', { name: 'Teamer-Treffen' })).toHaveAttribute('href', `/admin/events/305?person=${ID}`);
     // Dieselben Breiten wie die Aktivitaeten darueber: Stand steht unter "Eingetragen von".
     expect(kopfBreiten('Events')).toEqual(kopfBreiten('Aktivitäten'));
   });

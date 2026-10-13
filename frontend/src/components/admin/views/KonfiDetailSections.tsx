@@ -14,7 +14,6 @@ import {
   ICON_DATEI,
   ICON_HINZUFUEGEN_GEFUELLT,
   ICON_GOTTESDIENST,
-  ICON_GOTTESDIENST_GEFUELLT,
   ICON_LOESCHEN_GEFUELLT,
   ICON_OFFLINE,
   ICON_PERSON,
@@ -31,6 +30,8 @@ import {
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
 import ActivityRings from './ActivityRings';
+// Die Kreise vor Aktivitaeten, Events und Bonuspunkten -- dieselben im Browser (13.10.2026).
+import { aktivitaetSymbol, BONUS_SYMBOL, EVENT_SYMBOL } from './punkteartSymbole';
 import { EmptyState } from '../../shared';
 import { getIconFromString } from '../../../utils/badgeIcons';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
@@ -123,6 +124,12 @@ export interface Activity {
    * Server), gilt wie in der Antragsliste: ja.
    */
   darfEntscheiden?: boolean;
+  /**
+   * Verbuchte Aktivitaet: der Antrag, aus dem sie beim Genehmigen entstand
+   * (user_activities.request_id, Migration 214, 13.10.2026). null bei allem,
+   * was die Leitung selbst eingetragen hat; fehlt bei aelteren Servern.
+   */
+  request_id?: number | null;
 }
 
 /**
@@ -512,7 +519,7 @@ export const BonusSection = React.memo<BonusSectionProps>(({
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-icon-circle app-icon-circle--bonus">
-                          <IonIcon icon={ICON_BONUS_GEFUELLT} />
+                          <IonIcon icon={BONUS_SYMBOL} />
                         </div>
                         <div className="app-list-item__content">
                           <div className="app-list-item__title app-list-item__title--badge-space">
@@ -741,7 +748,7 @@ export const EventPointsSection = React.memo<EventPointsSectionProps>(({
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
                     <div className="app-icon-circle app-icon-circle--events">
-                      <IonIcon icon={ICON_PODIUM} />
+                      <IonIcon icon={EVENT_SYMBOL} />
                     </div>
                     <div className="app-list-item__content">
                       <div className="app-list-item__title app-list-item__title--badge-space">
@@ -1007,9 +1014,7 @@ export const ActivitiesSection = React.memo<ActivitiesSectionProps>(({
                         >
                           {/* Teamer-Aktivitaeten haben keinen Typ — ohne den
                               Zweig bekaemen sie immer das Gemeinde-Icon. */}
-                          <IonIcon icon={activity.isPending ? ICON_UHRZEIT_GEFUELLT
-                            : isTeamer ? ICON_ABZEICHEN_GEFUELLT
-                            : activity.type === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT : ICON_AKTION_GEFUELLT} />
+                          <IonIcon icon={activity.isPending ? ICON_UHRZEIT_GEFUELLT : aktivitaetSymbol(activity.type, isTeamer)} />
                         </div>
                         <div className="app-list-item__content">
                           <div

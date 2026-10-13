@@ -407,6 +407,22 @@
   gap: var(--app-abstand-eng);
 }
 
+/* Der Name neben Marken (Pflicht, deaktiviert) kuerzt mit Auslassungspunkten,
+   statt aus der Zelle zu laufen (Personenseite, 13.10.2026). */
+.web-tabelle--punkte .web-zelle-mit-knopf > .web-zelle-titel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* "Anwesend" / "Nicht anwesend" unter dem Namen eines zu verbuchenden Events
+   in der Eventliste der Personenseite (13.10.2026). */
+.web-zeile-knoepfe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-eng);
+  margin-top: var(--app-abstand-kompakt);
+}
+
 .web-zelle-symbol {
   color: var(--app-text-teamer);
   font-size: var(--app-text-gross);
