@@ -49,6 +49,7 @@ import { useVorgangDetail } from '../../../components/support/useVorgangDetail';
 import { useAntwortEditor, vorgewaehlterEmpfaenger, type AntwortFormularProps } from '../../../components/support/useAntwortEditor';
 import { usePostDetail } from '../../../components/support/usePostDetail';
 import { useDirektEinsortieren, useEinsortieren } from '../../../components/support/useEinsortieren';
+import { OFFLINE_AKTION_MELDUNG } from '../../../utils/offlineAktion';
 import { useGemeindeAnlegen } from '../../../components/support/useGemeindeAnlegen';
 import { useEinordnenFormular } from '../../../components/support/useEinordnenFormular';
 import { useLizenzAendern } from '../../../components/support/useLizenzAendern';
@@ -201,6 +202,23 @@ describe('useVorgangDetail: Status, Ablehnen, Abschluss', () => {
     expect(gesetzt).toBe(true);
     expect(nachAbschluss).toHaveBeenCalledTimes(1);
     expect(nachAbschluss).toHaveBeenCalledWith('erledigt', 1);
+  });
+
+  it('die beantwortete Mail liegt inzwischen in einem anderen Vorgang (400): der Vorgang lädt neu, der nächste Versuch nennt die dann jüngste eingehende', async () => {
+    const { result } = await geladen(1);
+    expect(result.current.antwort!.antwortAuf).toBe(13);
+    // Auf einem anderen Gerät verschoben -- dieses Fenster weiß davon nichts.
+    server.stand.mails.find((m) => m.id === 13)!.vorgang_id = 6;
+    const vorher = server.aufrufe('get', '/support/vorgaenge/1').length;
+    let fehler: unknown = null;
+    await act(async () => {
+      try { await result.current.antwort!.senden({ text: 'Hallo', antwort_auf: 13 }); } catch (err) { fehler = err; }
+    });
+    expect(fehler).toMatchObject({ response: { status: 400, data: { error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' } } });
+    await waitFor(() => expect(result.current.antwort!.antwortAuf).toBe(11));
+    expect(server.aufrufe('get', '/support/vorgaenge/1')).toHaveLength(vorher + 1);
+    // Nichts ging hinaus: im Vorgang weiter nur die eine ausgehende Mail (12).
+    expect(server.stand.mails.filter((m) => m.vorgang_id === 1 && m.richtung === 'aus').map((m) => m.id)).toEqual([12]);
   });
 
   it('statusSetzen scheitert: Meldung, kein Abschluss; ein anderer Status als Erledigt ist kein Abschluss', async () => {
@@ -662,6 +680,21 @@ describe('useEinsortieren: Ziel und was mitgeht', () => {
     expect(onFertig).toHaveBeenCalledWith(6);
   });
 
+  it('mit Vorgabe, dann „Neuer Vorgang“: Meldung und Ziel nennen den neuen Vorgang, nicht den vorgewählten', async () => {
+    const onFertig = vi.fn();
+    const { result } = renderHook(() => useEinsortieren({ id: 52, betreff: 'Re: Frage' }, onFertig, { vorgabe: { vorgangId: 6, organizationId: 7 } }));
+    await waitFor(() => expect(result.current.gewaehlterVorgang?.id).toBe(6));
+    act(() => result.current.setModus('neu'));
+    act(() => result.current.aendernNeu({ art: 'sonstiges' }));
+    await act(async () => { await result.current.absenden(); });
+    expect(server.aufrufe('post', '/support/mail/nachrichten/52/einsortieren').map((a) => a.koerper)).toEqual([
+      { neu: { art: 'sonstiges', dringlichkeit: 'normal', betreff: 'Frage', organization_id: 7 } },
+    ]);
+    // Die Attrappe legt wie der Server einen neuen Vorgang an (100) und nennt ihn.
+    expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 100 einsortiert');
+    expect(onFertig).toHaveBeenCalledWith(100);
+  });
+
   it('eine Vorgabe ohne Vorgang belegt nur die Gemeinde vor; beim Verschieben aus einem Vorgang gilt keine Vorgabe', async () => {
     const nurGemeinde = renderHook(() => useEinsortieren({ id: 52, betreff: 'Re: Frage' }, undefined, { vorgabe: { vorgangId: null, organizationId: 8 } }));
     await waitFor(() => expect(nurGemeinde.result.current.vorgaenge).not.toBeNull());
@@ -710,6 +743,9 @@ describe('useEinsortieren: Ziel und was mitgeht', () => {
     const offline = renderHook(() => useDirektEinsortieren(52, onFertig));
     await act(async () => { ok = await offline.result.current.einsortieren(6); });
     expect(ok).toBe(false);
+    expect(h.setError).toHaveBeenCalledWith(OFFLINE_AKTION_MELDUNG);
+    // Ohne Mail: online, damit nur die fehlende Mail den Aufruf verhindern kann.
+    h.online = true;
     const ohneMail = renderHook(() => useDirektEinsortieren(null, onFertig));
     await act(async () => { ok = await ohneMail.result.current.einsortieren(6); });
     expect(ok).toBe(false);

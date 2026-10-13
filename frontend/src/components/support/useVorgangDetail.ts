@@ -442,7 +442,17 @@ export function useVorgangDetail(vorgangId: number, optionen?: (() => void) | Vo
       empfaengerFehlt: false,
       empfaengerVorgabe: vorgabe,
       // Der Körper der Antwort des Servers -- „Danach" liest daraus, ob der Status gesetzt ist.
-      senden: async (koerper: MailAntwortDaten) => (await api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper)).data,
+      // Ein 400 heißt meist: Die beantwortete Mail (antwort_auf) liegt inzwischen in einem anderen
+      // Vorgang (verschoben auf einem anderen Gerät). Dann den Stand neu laden, damit der nächste
+      // Versuch die dann jüngste eingehende nennt; der Entwurf bleibt, die Meldung sagt der Editor.
+      senden: async (koerper: MailAntwortDaten) => {
+        try {
+          return (await api.post(`/support/vorgaenge/${vorgang.id}/antworten`, koerper)).data;
+        } catch (err) {
+          if (fehlerStatus(err) === 400) meldeSupportGeaendert();
+          throw err;
+        }
+      },
       danach,
       beantwortet,
       // Auf sie beziehen sich In-Reply-To und „Re:" -- dieselbe Mail, die „Du antwortest auf" nennt.

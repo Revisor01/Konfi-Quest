@@ -345,6 +345,22 @@ describe('Mail (Web): der Absender gehört zu einer Gemeinde (Frage 11, absender
     expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/5?mail=31');
   });
 
+  it('mit getippter Antwort fragt auch „Einsortieren" im Kopf erst nach -- „Abbrechen" lässt Entwurf stehen und öffnet keinen Dialog', async () => {
+    bekannt();
+    await oeffnen();
+    fireEvent.click(antwortzeile()!);
+    fireEvent.change(screen.getByLabelText('Text der Antwort'), { target: { value: 'Hallo Anna, gleich …' } });
+    await act(async () => { fireEvent.click(knopf('Einsortieren')); });
+    expect(h.alert).toMatchObject({ header: 'Ungespeicherte Änderungen', message: 'Die Antwort ist noch nicht gesendet. Möchtest du sie verwerfen?' });
+    await bestaetigen('Abbrechen');
+    expect(screen.queryByRole('dialog', { name: 'Mail einsortieren' })).toBeNull();
+    expect((screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement).value).toBe('Hallo Anna, gleich …');
+
+    await act(async () => { fireEvent.click(knopf('Einsortieren')); });
+    await bestaetigen('Verwerfen');
+    expect(await screen.findByRole('dialog', { name: 'Mail einsortieren' })).toBeInTheDocument();
+  });
+
   it('kein offener Vorgang: „kein offener Vorgang", kein Knopf -- Einsortieren bleibt der Weg', async () => {
     server.stand.bekannteAbsender['anna@example.org'] = 8;
     await oeffnen();

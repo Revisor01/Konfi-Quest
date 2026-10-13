@@ -183,7 +183,7 @@ const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht,
     <KopfKnopf key={a} {...MAIL_DETAIL_TEXT.wiederherstellen} icon={ICON_RUECKGAENGIG} symbol="unter600" onClick={() => { void wiederherstellen(); }} disabled={!isOnline} />
   )));
   const haupt = stand.haupt === 'einsortieren' ? (
-    <KopfKnopf {...MAIL_DETAIL_TEXT.einsortieren} icon={ICON_WECHSEL} art="primaer" onClick={() => setEinsortieren(true)} disabled={!isOnline} />
+    <KopfKnopf {...MAIL_DETAIL_TEXT.einsortieren} icon={ICON_WECHSEL} art="primaer" onClick={() => entwurfSchutz({ antwort: stelle.hatEntwurf(), notiz: false }, () => setEinsortieren(true))} disabled={!isOnline} />
   ) : null;
 
   const wer = letzteEingehende && letzteEingehende.richtung === 'ein'

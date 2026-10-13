@@ -144,6 +144,14 @@ describe('Vorgänge (App): Liste', () => {
       ['support-listenzeile__marken', 'DringendNeu'],
     ]);
     expect(datumUhrzeit('2026-10-03T08:30:00Z')).toBe('03.10.2026, 10:30');
+    // Jede Angabe ein eigener Block (inline-block): Die Zeile bricht zwischen den Angaben um, nicht
+    // in „Kirchengemeinde Musterdorf" oder im Datum, und der Punkt bleibt am Zeilenende. Derselbe
+    // Text als ein einziger Knoten sähe im textContent gleich aus -- deshalb die Blöcke selbst.
+    expect([...inhalt.querySelectorAll('.support-listenzeile__meta > .support-listenzeile__angabe')].map((b) => b.textContent)).toEqual([
+      'Nr. 1 ·', 'Fehler · Chat ·', 'Kirchengemeinde Musterdorf ·', '03.10.2026, 10:30',
+    ]);
+    const listenCss = readFileSync(resolve(process.cwd(), 'src/components/support/SupportVorgangTeile.css'), 'utf8');
+    expect(listenCss).toMatch(/\.support-listenzeile__angabe\s*\{\s*display:\s*inline-block;\s*\}/);
     // Keine erzwungene Silbentrennung mehr am Betreff.
     expect((inhalt.children[0] as HTMLElement).getAttribute('style')).toBeNull();
     // Rechts neben dem Inhalt steht nur noch der Pfeil -- keine Marke nimmt dem Betreff die Breite.

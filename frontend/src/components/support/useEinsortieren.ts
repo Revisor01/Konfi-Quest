@@ -147,7 +147,10 @@ export function useEinsortieren(
     }
     setSendet(true);
     try {
-      const id = await einsortierenSenden(mail.id, koerper, gewaehlterVorgang?.id ?? null);
+      // Die Wahl unter „Bestehender Vorgang“ zählt nur in diesem Modus -- sonst nennt der Server
+      // den neuen Vorgang. Bis 13.10.2026 galt sie immer: Mit der Vorbelegung aus absender_bekannt
+      // meldete „Neuer Vorgang“ den vorgewählten und öffnete ihn, die Mail lag aber im neuen.
+      const id = await einsortierenSenden(mail.id, koerper, modus === 'bestehend' ? gewaehlterVorgang?.id ?? null : null);
       setSuccess(einsortiertText(id));
       meldeSupportGeaendert();
       onFertig?.(id);
