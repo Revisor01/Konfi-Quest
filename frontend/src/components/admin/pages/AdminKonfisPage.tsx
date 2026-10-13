@@ -176,6 +176,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Dialog auch genau das tun. Vorher kam die volle Rollenauswahl inklusive
   // Admin, und ein so angelegter Admin tauchte in der Teamer-Liste nicht auf
   // (Nutzerhinweis 22.08.2026). Admins legt man in der Nutzerverwaltung an.
+  // Nach dem Anlegen laedt die Team-Liste neu (teamStand) -- in der App wie
+  // im Browser. In der App fehlte das bis 13.10.2026: Die Neue erschien erst
+  // nach einem Wechsel Konfis/Team (Befund 11.10.2026).
+  const [teamStand, setTeamStand] = useState(0);
   const [presentTeamerModalHook, dismissTeamerModalHook] = useIonModal(UserManagementModal, {
     userId: null,
     festeRolle: 'teamer',
@@ -183,13 +187,12 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     onSuccess: () => {
       dismissTeamerModalHook();
       refreshKonfis();
+      setTeamStand((n) => n + 1);
     }
   });
   // Im Browser ab 992 px dasselbe Formular als eigener Dialog
   // (web/leitung/WebBenutzerDialog.tsx, dieselbe Logik useBenutzerFormular).
-  // Nach dem Anlegen laedt die Team-Liste der Web-Fassung neu (teamStand).
   const [teamerDialogOffen, setTeamerDialogOffen] = useState(false);
-  const [teamStand, setTeamStand] = useState(0);
 
   // Memoized refresh function for live updates
   const refreshAll = useCallback(() => {
@@ -522,6 +525,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             onDeleteTeamer={handleDeleteTeamer}
             selectedKonfiId={selectedKonfiId}
             ohneJahrgang={ohneJahrgang}
+            teamStand={teamStand}
           />
         )}
       </IonContent>

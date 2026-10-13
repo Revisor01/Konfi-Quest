@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton ,
   IonSpinner} from '@ionic/react';
 import {
@@ -75,7 +75,11 @@ interface KonfisViewProps {
    * keine sehen" -- der Leerzustand sagt das jetzt (Rollen-Bericht 26.08.2026).
    */
   ohneJahrgang?: boolean;
-
+  /**
+   * Zaehlt hoch, wenn die Team-Liste neu geladen werden soll -- nach
+   * "Teamer:in anlegen" im Fenster der Seite (wie `teamStand` in WebKonfis).
+   */
+  teamStand?: number;
 }
 
 const KonfisView: React.FC<KonfisViewProps> = ({
@@ -87,7 +91,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   selectedKonfiId,
   ohneJahrgang = false,
   onViewModeChange,
-  initialViewMode = 'konfis'
+  initialViewMode = 'konfis',
+  teamStand = 0
 }) => {
   const { user } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -99,6 +104,12 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   // Die Team-Liste laedt erst, wenn das Segment "Team" gewaehlt ist (Hook
   // geteilt mit der Web-Fassung, useTeamerListe.ts).
   const { teamers, laedt: teamerLoading, laden: loadTeamers } = useTeamerListe(viewMode === 'teamer');
+  // Eine neue Teamer:in (Fenster der Seite): die Team-Liste neu laden. Bis
+  // 13.10.2026 erschien sie erst nach einem Wechsel Konfis/Team -- die Seite
+  // lud danach nur die Konfi-Liste neu (Befund 11.10.2026).
+  useEffect(() => {
+    if (teamStand > 0) void loadTeamers();
+  }, [teamStand, loadTeamers]);
   // Hier lud bis 28.09.2026 jeder Mount GET /organizations/:id (samt sechs
   // Zaehlabfragen im Server) fuer eine "X von Y Konfis"-Anzeige, die es nie
   // gab -- der Wert wurde gesetzt, aber nie gelesen (Audit Screens Leitung

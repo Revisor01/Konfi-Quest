@@ -425,10 +425,6 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   unbegrenztes Event im App-Formular als begrenzt (`=== 0`). Die Antwortform
   bleibt (ausgelieferte Apps); umwandeln gehört in die App (`Number()` beim
   Füllen des Formulars) (11.10.2026).
-- **Team-Liste der App lädt nach „Teamer:in anlegen" nicht neu.** Das
-  App-Modal ruft danach nur `refreshKonfis`; `useTeamerListe` lädt erst beim
-  nächsten Wechsel zwischen Konfis und Team. Im Browser behoben
-  (`teamStand` in `WebKonfis`) (11.10.2026).
 - **Kompakte Fenster im Browser: Feinschliff aus der Bilderprüfung**
   (11.10.2026, alle Fenster bei 1440 und 1280, hell und dunkel angesehen;
   kein Feld abgeschnitten, keine Überlappung):

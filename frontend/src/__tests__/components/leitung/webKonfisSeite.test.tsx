@@ -170,6 +170,31 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  // Befund 11.10.2026 (docs/offene-befunde.md): In der App erschien eine neu
+  // angelegte Teamer:in erst nach einem Wechsel Konfis/Team -- das Fenster
+  // rief danach nur die Konfi-Liste neu ab, die Team-Liste nicht.
+  it('schmal: nach "Teamer:in anlegen" steht die Neue sofort in der Team-Liste, ohne Wechsel Konfis/Team', async () => {
+    h.breit = false;
+    const frieda = { id: 21, name: 'Frieda Muster', username: 'frieda', badge_count: 2, cert_count: 1 };
+    const tina = { id: 88, name: 'Tina Team', username: 'tina.team', badge_count: 0, cert_count: 0 };
+    let team = [frieda];
+    h.apiGet.mockImplementation(async (url: string) => (url === '/admin/konfis/teamer' ? { data: team } : { data: [], headers: {} }));
+    render(<AdminKonfisPage />);
+    fireEvent.click(screen.getByRole('tab', { name: /^Team/ }));
+    expect(await screen.findByText('Frieda Muster')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' }));
+    const fenster = h.stand.fenster.find((f) => f.komponente === UserManagementModal)!;
+    const abrufeVorher = h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer').length;
+
+    team = [frieda, tina];
+    await act(async () => { (fenster.props.onSuccess as () => void)(); });
+
+    expect(await screen.findByText('Tina Team')).toBeInTheDocument();
+    expect(screen.getByText('Frieda Muster')).toBeInTheDocument();
+    expect(h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer')).toHaveLength(abrufeVorher + 1);
+    expect(h.refresh).toHaveBeenCalledTimes(1);
+  });
+
   it('breit: Loeschen fragt wie in der App nach und ruft erst nach der Bestaetigung die Route', async () => {
     render(<AdminKonfisPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Anna Müller löschen' }));
