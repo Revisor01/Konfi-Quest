@@ -128,6 +128,8 @@ export interface KonfiFormDaten {
 /** Antwort von POST /admin/konfis. */
 export interface KonfiAngelegtAntwort {
   id: number;
+  /** Der erzeugte, systemweit freie Benutzername (docs/api/konfis-events.yaml). */
+  username?: string;
   /** Einmalpasswort — nur direkt beim Anlegen in der Antwort enthalten. */
   temporaryPassword?: string;
 }

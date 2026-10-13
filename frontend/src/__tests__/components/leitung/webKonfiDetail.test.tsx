@@ -324,20 +324,33 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
     expect(fenster(BonusModal)).toHaveLength(0);
   });
 
-  it('Bearbeiten: das Formular mit Name und Jahrgang der Konfi; die Gemeindeleitung sieht alle Jahrgaenge', async () => {
+  // Seit 13.10.2026 ein eigener Dialog der Web-Fassung (WebKonfiDialog,
+  // dieselbe Logik useKonfiFormular); Formular und Speichern:
+  // webKonfiBearbeitenFenster.test.tsx.
+  it('Bearbeiten: der Dialog mit Name und Jahrgang der Konfi; die Gemeindeleitung sieht alle Jahrgaenge, kein App-Fenster', async () => {
+    h.antworten.set('/admin/jahrgaenge', [{ id: 12, name: 'Jahrgang 2026' }, { id: 13, name: 'Jahrgang 2027' }]);
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Konfi bearbeiten' }));
-    const f = fenster(KonfiModal)[0];
-    expect(f.props.konfi).toEqual(expect.objectContaining({ id: ID, display_name: 'Anna Müller', jahrgang_id: 12 }));
-    expect(f.props.jahrgaenge).toEqual([{ id: 12, name: 'Jahrgang 2026' }]);
-    expect(f.props.eigeneJahrgangIds).toBeUndefined();
+    const dialog = screen.getByRole('dialog', { name: 'Konfi bearbeiten' });
+    expect(within(dialog).getByLabelText('Name')).toHaveValue('Anna Müller');
+    const jahrgang = within(dialog).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement;
+    expect(jahrgang.value).toBe('12');
+    expect([...jahrgang.options].map((o) => o.textContent)).toEqual(['Jahrgang 2026', 'Jahrgang 2027']);
+    // Die Gemeindeleitung sieht alle Jahrgaenge: kein Hinweis, die Konfi aus der eigenen Liste zu verlieren.
+    fireEvent.change(jahrgang, { target: { value: '13' } });
+    expect(within(dialog).getByText('Was der Wechsel bewirkt')).toBeInTheDocument();
+    expect(within(dialog).queryByText(/nicht zugewiesen/)).toBeNull();
+    expect(fenster(KonfiModal)).toHaveLength(0);
   });
 
-  it('Bearbeiten als Leitung: das Fenster bekommt die eigenen Jahrgaenge fuer die Warnung beim Wechsel', async () => {
+  it('Bearbeiten als Leitung: der Dialog warnt mit den eigenen Jahrgaengen beim Wechsel', async () => {
     h.user = konto('admin', [12]);
+    h.antworten.set('/admin/jahrgaenge', [{ id: 12, name: 'Jahrgang 2026' }, { id: 13, name: 'Jahrgang 2027' }]);
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Konfi bearbeiten' }));
-    expect(fenster(KonfiModal)[0].props.eigeneJahrgangIds).toEqual([12]);
+    const dialog = screen.getByRole('dialog', { name: 'Konfi bearbeiten' });
+    fireEvent.change(within(dialog).getByRole('combobox', { name: 'Jahrgang' }), { target: { value: '13' } });
+    expect(within(dialog).getByText('Achtung: Du bist Jahrgang 2027 nicht zugewiesen — nach dem Speichern siehst du Anna Müller nicht mehr in deiner Liste.')).toBeInTheDocument();
   });
 
   it('Passwort zuruecksetzen: erst die Rueckfrage, dann die Route -- und das Einmalpasswort wird gezeigt', async () => {
@@ -380,10 +393,15 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(k.getByText('Psalm 23,1')).toBeInTheDocument();
     expect(k.getByText('Der Herr ist mein Hirte.')).toBeInTheDocument();
     expect(k.getByText('5 von 6 besucht · 83 %')).toBeInTheDocument();
-    fireEvent.click(k.getByRole('button', { name: /Anwesenheit ansehen/ }));
-    expect(fenster(AttendanceMatrixModal)[0].props).toEqual(expect.objectContaining({
-      initialJahrgangId: 12, jahrgaenge: [{ id: 12, name: 'Jahrgang 2026' }],
-    }));
+    // Seit 13.10.2026 ein eigener Dialog der Web-Fassung (WebAnwesenheitDialog):
+    // auf den Jahrgang der Konfi vorausgewaehlt, nur dieser zur Wahl.
+    h.antworten.set('/admin/jahrgaenge/12/attendance-matrix', { jahrgang: { id: 12, name: 'Jahrgang 2026' }, konfis: [], events: [], bookings: [] });
+    await act(async () => { fireEvent.click(k.getByRole('button', { name: /Anwesenheit ansehen/ })); });
+    const dialog = screen.getByRole('dialog', { name: 'Anwesenheit' });
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/jahrgaenge/12/attendance-matrix');
+    const jahrgang = within(dialog).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement;
+    expect([...jahrgang.options].map((o) => [o.value, o.textContent])).toEqual([['12', 'Jahrgang 2026']]);
+    expect(fenster(AttendanceMatrixModal)).toHaveLength(0);
   });
 
   it('Badges: die erreichten mit Namen und in ihrer Farbe, geladen ueber die Route der Konfi', async () => {

@@ -1896,6 +1896,13 @@ mark.web-treffer {
   max-width: 720px;
 }
 
+/* Fuer eine Tabelle, die in die Breite waechst (Anwesenheit: eine Spalte je
+   Pflicht-Event). Was dann noch nicht passt, rollt innerhalb des Fensters
+   (theme/web/leitung.css, .web-anwesenheit__huelle). */
+.web-dialog--weit {
+  max-width: 1120px;
+}
+
 .web-dialog *,
 .web-dialog *::before,
 .web-dialog *::after {

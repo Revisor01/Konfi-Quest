@@ -94,6 +94,8 @@ beforeEach(() => {
     // Das Formular "Teamer:in anlegen" laedt Rollen und Jahrgaenge.
     if (url === '/roles') return { data: [{ id: 2, name: 'admin' }, { id: 3, name: 'teamer' }] };
     if (url === '/admin/jahrgaenge') return { data: [{ id: 12, name: 'Jahrgang 2026' }] };
+    // Die Anwesenheit des Jahrgangs (Dialog der Web-Fassung, 13.10.2026).
+    if (url === '/admin/jahrgaenge/12/attendance-matrix') return { data: { jahrgang: { id: 12, name: 'Jahrgang 2026' }, konfis: [], events: [], bookings: [] } };
     return { data: [{ id: 21, name: 'Frieda Muster', username: 'frieda', jahrgang_name: 'Jahrgang 2026', badge_count: 2, cert_count: 1 }], headers: {} };
   });
   h.apiDelete.mockResolvedValue({ data: {} });
@@ -117,14 +119,21 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     expect(screen.getByText('Ben Schmidt')).toBeInTheDocument();
   });
 
-  it('breit: Konfi anlegen, Anwesenheit und Teamer:in anlegen oeffnen die Fenster der Seite', () => {
+  // Seit 13.10.2026 eigene Dialoge der Web-Fassung (WebKonfiDialog,
+  // WebAnwesenheitDialog); Formular, Speichern und Matrix:
+  // webKonfiFenster.test.tsx. Die App-Fenster gehen breit nicht mehr auf.
+  it('breit: Konfi anlegen und Anwesenheit oeffnen die Dialoge der Web-Fassung mit den Jahrgaengen der Seite', async () => {
     render(<AdminKonfisPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Konfi anlegen' }));
-    expect(h.stand.fenster[0].komponente).toBe(KonfiModal);
-    expect(h.stand.fenster[0].props).toEqual(expect.objectContaining({ jahrgaenge: JAHRGAENGE }));
-    fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' }));
-    expect(h.stand.fenster[1].komponente).toBe(AttendanceMatrixModal);
-    expect(h.stand.fenster[1].props).toEqual(expect.objectContaining({ jahrgaenge: JAHRGAENGE }));
+    const anlegen = screen.getByRole('dialog', { name: 'Konfi anlegen' });
+    const jahrgang = within(anlegen).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement;
+    expect([...jahrgang.options].map((o) => o.textContent)).toEqual(['Bitte wählen', 'Jahrgang 2026']);
+    fireEvent.click(within(anlegen).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' })); });
+    const anwesenheit = screen.getByRole('dialog', { name: 'Anwesenheit' });
+    expect((within(anwesenheit).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement).value).toBe('12');
+    expect(h.stand.fenster.filter((f) => f.komponente === KonfiModal || f.komponente === AttendanceMatrixModal)).toHaveLength(0);
   });
 
   // Seit 11.10.2026 steht das Formular im Browser als eigener Dialog

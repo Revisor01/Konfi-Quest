@@ -1,4 +1,4 @@
-import { endgueltigAbgelehnt, fehlerDaten, fehlerStatus, fehlerText } from '../../../utils/fehler';
+import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useCallback } from 'react';
 import {
   IonPage,
@@ -24,6 +24,8 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import WebKonfis from '../web/leitung/WebKonfis';
 import WebBenutzerDialog from '../web/leitung/WebBenutzerDialog';
+import WebKonfiDialog from '../web/leitung/WebKonfiDialog';
+import WebAnwesenheitDialog from '../web/leitung/WebAnwesenheitDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
@@ -36,9 +38,16 @@ import AdminUpdate230WalkthroughModal from '../modals/AdminUpdate230WalkthroughM
 import { useOnboardingWithUpdateOnce } from '../../../hooks/useOnboardingOnce';
 import NeuerungenBanner from '../../shared/NeuerungenBanner';
 import MitmachenErklaerungModal from '../../shared/MitmachenErklaerungModal';
-import type { ApiFehlerAntwort } from '../../../utils/fehler';
-import type { KonfiFormDaten, KonfiAngelegtAntwort } from '../../../types/user';
-import type { AxiosResponse } from 'axios';
+import type { KonfiFormDaten } from '../../../types/user';
+import {
+  EINMALPASSWORT_TITEL,
+  KEINE_ANTWORT_TITEL,
+  KONFI_NAME_VERGEBEN,
+  LIMIT_RUECKFRAGE_TITEL,
+  TARIF_GRENZE_TITEL,
+  einmalpasswortText,
+  konfiAnlegen,
+} from '../useKonfiFormular';
 import type { TeamerListenEintrag } from '../../../types/user';
 
 interface Konfi {
@@ -156,6 +165,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     jahrgaenge: jahrgaenge || [],
     onClose: () => dismissMatrixModal()
   });
+  // Im Browser ab 992 px öffnen „Konfi anlegen" und die Anwesenheit eigene
+  // Dialoge (web/leitung/WebKonfiDialog, WebAnwesenheitDialog; Simon,
+  // 13.10.2026). Logik wie im Modal der App (useKonfiFormular,
+  // useAnwesenheitsMatrix).
+  const [webFenster, setWebFenster] = useState<'konfi' | 'anwesenheit' | null>(null);
 
   // Welche Liste zeigt die Ansicht gerade? Der Plus-Button in der Kopfzeile
   // legt danach eine Konfi ODER eine Teamer:in an — vorher oeffnete er im
@@ -309,13 +323,12 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // bis 28.09.2026 vor dem Passwort-Dialog ein Aufruf GET
   // /admin/jahrgaenge/:id -- eine Route, die es nicht gibt: ein 404 je
   // Anlage, danach wurde der Fehler geschluckt (Audit Screens Leitung BF-06).
-  const handleKonfiCreated = async (response: AxiosResponse<KonfiAngelegtAntwort>, konfiData: KonfiFormDaten) => {
-    const tempPassword = response.data.temporaryPassword;
+  const handleKonfiCreated = async (tempPassword: string | undefined, konfiData: KonfiFormDaten) => {
     if (tempPassword) {
       presentAlert({
-        header: 'Einmalpasswort',
+        header: EINMALPASSWORT_TITEL,
         subHeader: tempPassword,
-        message: `Konfi "${konfiData.name}" erstellt. Kopiere das Passwort und gib es dem Konfi weiter.`,
+        message: einmalpasswortText(konfiData.name),
         buttons: [
           {
             text: 'Kopieren',
@@ -335,19 +348,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   };
 
   // Grace-Bestätigungsdialog: legt den Konfi nach "Trotzdem anlegen" mit confirm-Flag erneut an
-  const presentGraceDialog = (konfiData: KonfiFormDaten, data: ApiFehlerAntwort | undefined) => {
-    const count = data?.count;
-    const limit = data?.limit;
-    const nextTier = data?.next_tier;
-    const standText =
-      count !== undefined && limit !== undefined ? `${count} von ${limit} Konfis` : 'das Konfi-Limit';
-    const tarifHinweis = nextTier
-      ? `Der nächste Tarif gibt dir Platz für bis zu ${nextTier} Konfis.`
-      : 'Eine höhere Tarif-Stufe ist nicht verfügbar.';
-
+  const presentGraceDialog = (konfiData: KonfiFormDaten, text: string) => {
     presentAlert({
-      header: 'Konfi-Limit erreicht',
-      message: `Du hast ${standText} angelegt. Du kannst noch bis zu 5 weitere Konfis anlegen, danach ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
+      header: LIMIT_RUECKFRAGE_TITEL,
+      message: text,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -360,50 +364,48 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     });
   };
 
+  // Anlegen und Einordnen der Antwort stehen in useKonfiFormular
+  // (konfiAnlegen) -- dieselben wie im Dialog des Browsers (WebKonfiDialog).
+  // Die App zeigt das Ergebnis nach dem Schliessen des Modals hier an.
   const handleAddKonfi = async (konfiData: KonfiFormDaten) => {
-    try {
-      const response = await api.post('/admin/konfis', konfiData);
-      await handleKonfiCreated(response, konfiData);
-    } catch (err) {
-      const daten = fehlerDaten(err);
-      const errorCode = daten?.error_code;
-
-      if (errorCode === 'limit_grace') {
+    const ergebnis = await konfiAnlegen(konfiData);
+    switch (ergebnis.art) {
+      case 'angelegt':
+        await handleKonfiCreated(ergebnis.passwort, konfiData);
+        break;
+      case 'limit-rueckfrage':
         // 409 Grace: Bestätigungsdialog mit Tarif-Hinweis und "Trotzdem anlegen"
-        presentGraceDialog(konfiData, daten);
-      } else if (errorCode === 'limit_exceeded') {
+        presentGraceDialog(konfiData, ergebnis.text);
+        break;
+      case 'tarif-grenze':
         // 403 Hard-Block: nur Hinweis, kein Override
-        const nextTier = daten?.next_tier;
-        const tarifHinweis = nextTier
-          ? `Der nächste Tarif gibt dir Platz für bis zu ${nextTier} Konfis.`
-          : 'Bitte wende dich an den Support für ein passendes Angebot.';
         presentAlert({
-          header: 'Tarif-Upgrade nötig',
-          message: `Das Konfi-Limit ist ausgeschöpft. Um weitere Konfis anzulegen, ist ein Tarif-Upgrade nötig. ${tarifHinweis}`,
+          header: TARIF_GRENZE_TITEL,
+          message: ergebnis.text,
           buttons: [{ text: 'Verstanden', role: 'cancel' }]
         });
-      } else if (errorCode === 'bereits_angelegt') {
-        // Wiederholung, aber das Konto hat sich schon angemeldet: kein neues
-        // Passwort, kein zweites Konto. Der Server sagt, wo es weitergeht.
-        setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
-      } else if (fehlerStatus(err) === 409) {
+        break;
+      case 'name-vergeben':
         // Username-Kollision (unverändert)
-        setError('Ein Konfi mit diesem Namen existiert bereits.');
-      } else if (konfiData.client_id && !endgueltigAbgelehnt(fehlerStatus(err))) {
+        setError(KONFI_NAME_VERGEBEN);
+        break;
+      case 'keine-antwort':
         // Keine Antwort, Zeitlimit oder Serverfehler: Ob das Konto steht, ist
         // offen. Ein zweiter Versuch mit derselben Kennung legt kein zweites
         // an, sondern liefert dasselbe Konto mit neuem Einmalpasswort.
         presentAlert({
-          header: 'Keine Antwort vom Server',
-          message: `Ob "${konfiData.name}" angelegt wurde, ist unklar. Ein neuer Versuch legt kein zweites Konto an.`,
+          header: KEINE_ANTWORT_TITEL,
+          message: ergebnis.text,
           buttons: [
             { text: 'Abbrechen', role: 'cancel' },
             { text: 'Erneut versuchen', handler: () => { handleAddKonfi(konfiData); } }
           ]
         });
-      } else {
-        setError(fehlerText(err, 'Fehler beim Hinzufügen des Konfis'));
-      }
+        break;
+      default:
+        // Auch 409 bereits_angelegt: kein neues Passwort, kein zweites Konto;
+        // der Text des Servers sagt, wo es weitergeht.
+        setError(ergebnis.text);
     }
   };
 
@@ -448,10 +450,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         laedt={loading}
         ohneJahrgang={ohneJahrgang}
         pageRef={pageRef}
-        onKonfiAnlegen={presentKonfiModal}
+        onKonfiAnlegen={() => setWebFenster('konfi')}
         onTeamAnlegen={() => setTeamerDialogOffen(true)}
         teamStand={teamStand}
-        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement, cssClass: 'app-modal-breit' })}
+        onMatrix={() => setWebFenster('anwesenheit')}
         onKonfiLoeschen={handleDeleteKonfi}
         onTeamerLoeschen={handleDeleteTeamer}
         banner={(
@@ -468,6 +470,16 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         overlays={(
           <>
             {ueberlagerungen}
+            {webFenster === 'konfi' && (
+              <WebKonfiDialog
+                jahrgaenge={jahrgaenge || []}
+                onGespeichert={refreshKonfis}
+                onSchliessen={() => setWebFenster(null)}
+              />
+            )}
+            {webFenster === 'anwesenheit' && (
+              <WebAnwesenheitDialog jahrgaenge={jahrgaenge || []} onSchliessen={() => setWebFenster(null)} />
+            )}
             {teamerDialogOffen && (
               <WebBenutzerDialog
                 userId={null}
