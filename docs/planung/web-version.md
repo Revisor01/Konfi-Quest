@@ -342,11 +342,21 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     (`WebDatum`), Meldungen im Dialog statt als Toast.
   - *Bewusst beim Weg der App:* Rückfragen vor Löschen, Sperren und
     Zurücksetzen bleiben `useIonAlert` — `WebDialog` ist nur für Formulare.
+    Seit 13.10.2026 sehen sie im breiten Fenster trotzdem aus wie die
+    Web-Fenster (Symbol oben, Knopfleiste rechts, destructive-Knopf rot
+    gefüllt): `utils/rueckfragenOptik.ts` kennzeichnet jede Rückfrage mit
+    einem destructive-Knopf beim Öffnen, `theme/rueckfragen.css` gestaltet
+    sie — ohne eine Aufrufstelle anzufassen.
     Fragt ein offener Dialog selbst nach (ungespeicherte Änderungen bei Event
     und Badge, Datei löschen im Material), ist das ein zweiter kleiner Dialog
     bzw. eine Zeile im Dialog (bis 12.10.2026 lag ein `ion-alert` zudem
     unter dem Dialog; seitdem hängt `WebDialog` in `ion-app`, in derselben
     Ebene wie Ionics Alerts und Toasts, und diese stehen darüber).
+    Diese Rückfragen (auch „Eingaben verwerfen?" beim Anlegen einer Gemeinde
+    und „Beitrag ausblenden") sehen aus wie die aus `useIonAlert` im breiten
+    Fenster: `WebDialog` mit `rueckfrage` zeigt dasselbe Symbol über dem
+    Titel und füllt den Gefahr-Knopf rot, die Zeile im Material ebenso
+    (`theme/rueckfragen.css`, Teil 4).
     Der Datei-Betrachter bleibt Vollbild; der Material-Dialog tritt beiseite,
     solange er offen ist (Blob-Adressen ohne Dateinamen, Popup-Sperren nach
     dem Laden). Das große Nachweisfoto und „Ansehen" der eigenen Meldung sind

@@ -448,6 +448,7 @@ const WebEventDialog: React.FC<WebEventDialogProps> = ({
       <WebDialog
         titel="Ungespeicherte Änderungen"
         beschreibung="Möchtest du die Änderungen verwerfen?"
+        rueckfrage="warnung"
         onSchliessen={() => setRueckfrage(false)}
         aktionen={(
           <>

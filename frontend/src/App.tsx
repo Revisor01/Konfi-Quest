@@ -6,6 +6,7 @@ import { IonReactRouter } from '@ionic/react-router';
 import { iosTransitionAnimation, popoverEnterAnimation, popoverLeaveAnimation } from '@rdlabo/ionic-theme-ios27';
 import { segmentGlasAnschalten } from './utils/segmentGlas';
 import { modalNamenAnschalten } from './utils/modalNamen';
+import { rueckfragenOptikAnschalten } from './utils/rueckfragenOptik';
 // Material Design 3 Animationen
 import { mdTransitionAnimation } from '@rdlabo/ionic-theme-md3';
 // Icons sind jetzt in MainTabs.tsx
@@ -88,6 +89,12 @@ import './theme/web-ansicht.css';
    (11.10.2026). Wirkt nur unter html[data-layout='breit'], das in den Apps
    nie steht. Nach web-ansicht.css, weil sie dieselben Tokens liest. */
 import './theme/web-modale.css';
+/* Rückfragen vor dem Löschen: Symbol im Kopf, roter Knopf auf Android, im
+   breiten Browserfenster die Optik der Web-Fenster (13.10.2026). Die Klassen
+   setzt utils/rueckfragenOptik.ts beim Öffnen; die Web-Regeln lesen die
+   --web-Aliasse aus web-ansicht.css und wirken nur unter
+   html[data-layout='breit']. */
+import './theme/rueckfragen.css';
 import { bewegungReduziert } from './utils/bewegung';
 import { anmeldeHinweisMerken } from './utils/anmeldeHinweis';
 
@@ -121,6 +128,12 @@ const AppContent: React.FC = () => {
   // in modalNamen.ts). Ebenfalls einmal fuer die ganze App: Es gilt fuer die
   // 92 per useIonModal geoeffneten Modale und jedes kuenftige.
   useEffect(() => modalNamenAnschalten(), []);
+
+  // Rueckfragen mit einem folgenreichen Knopf (role 'destructive') tragen
+  // beim Oeffnen eine Klasse und ein Symbol (Begruendung in
+  // rueckfragenOptik.ts). Einmal fuer die ganze App: Es gilt fuer jede der
+  // rund 70 Rueckfragen aus useIonAlert, ohne dass eine daran denken muss.
+  useEffect(() => rueckfragenOptikAnschalten(), []);
 
   // Mindestversion und Wartungshinweis (E-05, 27.09.2026): EINE Pruefung
   // fuer die ganze App, beim Start und bei jeder Rueckkehr in die App.

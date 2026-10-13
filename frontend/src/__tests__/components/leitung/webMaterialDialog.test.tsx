@@ -95,6 +95,7 @@ vi.mock('../../../hooks/useOfflineQuery', async () => {
 import AdminMaterialPage from '../../../components/admin/pages/AdminMaterialPage';
 import MaterialFormModal from '../../../components/admin/modals/MaterialFormModal';
 import FileViewerModal from '../../../components/shared/FileViewerModal';
+import { erwarteWebRueckfrage } from '../web/webRueckfrageErwartung';
 
 const LISTE = [
   { id: 1, title: 'Liederbuch Freizeit', file_count: 2, link_count: 1, link_url: 'https://beispiel.example/lieder', event_count: 1, ist_global: false, created_by: 5, created_by_name: 'Sam Muster', jahrgaenge: [{ id: 12, name: 'Jahrgang 2027' }], created_at: '2026-08-01T10:00:00Z' },
@@ -419,6 +420,8 @@ describe('Dateien', () => {
     await klick(within(d).getByRole('button', { name: 'lieder.pdf löschen' }));
     const rueckfrage = within(d).getByRole('group', { name: 'lieder.pdf löschen' });
     expect(rueckfrage).toHaveTextContent('„lieder.pdf“ wirklich löschen?');
+    // Wie die Rückfragen der App im Browser: Mülleimer vorn, „Löschen" rot gefüllt.
+    erwarteWebRueckfrage(rueckfrage, 'loeschen', 'Löschen');
     expect(h.stand.alert).toBeNull();
     expect(h.apiDelete).not.toHaveBeenCalled();
     await klick(within(rueckfrage).getByRole('button', { name: 'Abbrechen' }));

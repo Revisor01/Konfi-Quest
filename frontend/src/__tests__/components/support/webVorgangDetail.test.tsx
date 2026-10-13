@@ -61,6 +61,7 @@ import WebVorgangDetail from '../../../components/support/web/WebVorgangDetail';
 import { LESE_RAHMEN_NEUTRAL, LeseRahmenProvider, type LeseRahmen } from '../../../components/support/web/WebLeseRahmen';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 import { meldeSupportGeaendert } from '../../../utils/supportAktualisieren';
+import { erwarteWebRueckfrage } from '../web/webRueckfrageErwartung';
 
 // Erfundener Wert fuer das Passwortfeld. Zusammengesetzt statt als
 // Zeichenkette, damit Geheimnis-Scanner (GitGuardian, PR #220) einen
@@ -1448,6 +1449,8 @@ describe('Vorgang (Web): Gemeinde anlegen im Dialog', () => {
     const frage = dialog('Eingaben verwerfen?');
     expect(frage).toHaveAccessibleDescription('Die Angaben zur neuen Gemeinde und ein vorgeschlagenes Passwort gehen verloren.');
     expect(knoepfe(frage)).toEqual(['Weiter bearbeiten', 'Verwerfen']);
+    // Wie die Rückfragen der App im Browser: Warndreieck, „Verwerfen" rot gefüllt.
+    erwarteWebRueckfrage(frage, 'warnung', 'Verwerfen');
     // Obenauf: nach dem Dialog an <body> gehängt, der Fokus steht darin.
     expect(offeneDialoge()).toEqual(['Gemeinde anlegen', 'Eingaben verwerfen?']);
     expect(frage).toContainElement(document.activeElement as HTMLElement);
