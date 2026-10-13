@@ -550,15 +550,62 @@ describe('Team (Web): Reiter in der Adresse', () => {
     expect(h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer')).toHaveLength(1);
   });
 
-  it('ein Fehler beim Laden zeigt am Reiter keine Zahl (er ist kein leeres Team)', async () => {
+  // Befund 13.10.2026: Das Team laedt beim Oeffnen der Seite, auch wenn der
+  // Reiter "Konfis" offen ist -- die Startseite der Leitung. Scheitert der
+  // Abruf dort (Funkloch), fehlt nur die Zahl am Reiter; ein roter Toast fuer
+  // etwas, das niemand geoeffnet hat, waere falsch. Der Wechsel auf "Team"
+  // versucht es neu, wie vor dem 13.10.2026 jeder Wechsel.
+  const teamAbrufe = () => h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer').length;
+
+  it('ein Fehler beim Laden im Hintergrund zeigt am Reiter keine Zahl (er ist kein leeres Team) und keinen Toast; der Wechsel auf "Team" versucht es neu', async () => {
     h.standort = { pathname: '/admin/konfis', search: '' };
     h.apiGet.mockRejectedValueOnce(new Error('Netz weg'));
     const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
     zeigen();
-    await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Das Team konnte nicht geladen werden'));
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
     expect(within(screen.getByRole('button', { name: /^Team/ })).queryByText(/\d/)).toBeNull();
     expect(screen.getByRole('button', { name: /^Konfis\s*5$/ })).toBeInTheDocument();
+    expect(h.setError).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
+    expect(await screen.findByRole('table', { name: 'Team' })).toBeInTheDocument();
+    expect(namen('Team')).toEqual(['Frieda Muster', 'Gero B.']);
+    expect(screen.getByRole('button', { name: /^Team\s*2$/ })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
     stumm.mockRestore();
+  });
+
+  it('scheitert auch der neue Versuch beim Wechsel auf "Team", meldet die Seite es -- einmal, ohne Schleife', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    h.apiGet.mockRejectedValue(new Error('Netz weg'));
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    zeigen();
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    expect(h.setError).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Das Team konnte nicht geladen werden.');
+    await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Das Team konnte nicht geladen werden'));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(h.setError).toHaveBeenCalledTimes(1);
+    expect(teamAbrufe()).toBe(2);
+    // Der Reiter heisst nur "Team" -- ohne Zahl, auch nicht 0.
+    expect(screen.getByRole('button', { name: 'Team' })).toHaveAttribute('aria-pressed', 'true');
+    stumm.mockRestore();
+  });
+
+  // Befund 13.10.2026: Ein Signal 'users', das waehrend einer Unterbrechung
+  // des Sockets verloren geht (App im Hintergrund), holte bis dahin der
+  // naechste Wechsel auf "Team" nach. Seit das Team nur beim Oeffnen laedt,
+  // laedt es nach der Unterbrechung neu (sync:reconnect, wie useOfflineQuery).
+  it('nach einer Unterbrechung der Verbindung (sync:reconnect) laedt das Team still neu, und die Zahl folgt', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    zeigen();
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+    h.apiGet.mockResolvedValue({ data: [TEAM[0]] });
+    await act(async () => { window.dispatchEvent(new CustomEvent('sync:reconnect')); });
+    expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
   });
 
   it('nach "Teamer:in anlegen" (teamStand) laedt das Team neu, und die Zahl am Reiter folgt', async () => {

@@ -28,7 +28,7 @@
 // Anlegen, Loeschen und die Anwesenheit sind die Fenster und Rueckfragen der
 // Seite. Neu ist nur die Darstellung.
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_CHECKBOX,
@@ -94,7 +94,10 @@ export interface WebKonfisProps {
   pageRef?: React.Ref<HTMLElement>;
   onKonfiAnlegen: () => void;
   onTeamAnlegen: () => void;
-  /** Zaehlt hoch, wenn die Team-Liste neu geladen werden soll (nach "Teamer:in anlegen"). */
+  /**
+   * Zaehlt hoch, wenn die Team-Liste neu geladen werden soll: nach "Teamer:in
+   * anlegen" und bei einer Meldung 'users' des Servers (useTeamerListe).
+   */
   teamStand?: number;
   onMatrix: () => void;
   onKonfiLoeschen: (konfi: KonfiListenEintrag) => void;
@@ -372,21 +375,17 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   useSucheMessung(ansicht === 'team' ? 'team' : 'konfis', suche);
   const [jahrgang, setJahrgang] = useState('alle');
 
+  const istTeam = ansicht === 'team';
   // Die Team-Liste laedt beim Oeffnen der Seite, damit der Reiter "Team"
   // seine Anzahl gleich zeigt (Simon, 13.10.2026); der Reiterwechsel fragt
-  // nicht erneut (useTeamerListe).
-  const team = useTeamerListe();
-  // Eine neue Teamer:in (Dialog der Seite) oder eine Aenderung, die der
-  // Server meldet: die Team-Liste neu laden.
-  const teamLaden = team.laden;
-  useEffect(() => {
-    if (teamStand > 0) void teamLaden();
-  }, [teamStand, teamLaden]);
+  // nicht erneut. Ein neuer `teamStand` (Dialog der Seite, Meldung des
+  // Servers) laedt sie neu; ein Fehler meldet sich nur bei offenem Team, im
+  // Hintergrund fehlt nur die Zahl am Reiter (useTeamerListe).
+  const team = useTeamerListe({ offen: istTeam, stand: teamStand });
 
   // Die Jahrgaenge dieses Kontos: die Gemeindeleitung alle, eine Leitung ihre zugewiesenen.
   const meineJahrgaenge = useMemo(() => sichtbareJahrgaenge(jahrgaenge, user), [jahrgaenge, user]);
   const sucht = suchbegriff(suche) !== '';
-  const istTeam = ansicht === 'team';
 
   const konfiKennzahlen = useMemo(() => ({
     punkteSumme: konfis.reduce((s, k) => s + konfiPunkte(k).gesamt, 0),

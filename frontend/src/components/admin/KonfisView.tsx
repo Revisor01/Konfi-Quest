@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { IonIcon, IonLabel, IonList, IonListHeader, IonItemGroup, IonItemSliding, IonItemOptions, IonItemOption, IonItem, IonInput, IonSelect, IonSelectOption, IonSegment, IonSegmentButton ,
   IonSpinner} from '@ionic/react';
 import {
@@ -77,7 +77,8 @@ interface KonfisViewProps {
   ohneJahrgang?: boolean;
   /**
    * Zaehlt hoch, wenn die Team-Liste neu geladen werden soll -- nach
-   * "Teamer:in anlegen" im Fenster der Seite (wie `teamStand` in WebKonfis).
+   * "Teamer:in anlegen" im Fenster der Seite, beim Herunterziehen und bei
+   * einer Meldung 'users' (wie `teamStand` in WebKonfis; useTeamerListe).
    */
   teamStand?: number;
 }
@@ -103,14 +104,15 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   useSucheMessung(viewMode === 'teamer' ? 'team' : 'konfis', searchTerm);
   // Die Team-Liste laedt beim Oeffnen der Seite, damit der Umschalter die
   // Anzahl des Teams gleich zeigt (Simon, 13.10.2026); der Wechsel fragt
-  // nicht erneut (Hook geteilt mit der Web-Fassung, useTeamerListe.ts).
-  const { teamers, laedt: teamerLoading, laden: loadTeamers, geladen: teamGeladen, fehler: teamFehler } = useTeamerListe();
-  // Eine neue Teamer:in (Fenster der Seite): die Team-Liste neu laden. Bis
-  // 13.10.2026 erschien sie erst nach einem Wechsel Konfis/Team -- die Seite
-  // lud danach nur die Konfi-Liste neu (Befund 11.10.2026).
-  useEffect(() => {
-    if (teamStand > 0) void loadTeamers();
-  }, [teamStand, loadTeamers]);
+  // nicht erneut (Hook geteilt mit der Web-Fassung, useTeamerListe.ts). Ein
+  // neuer `teamStand` -- etwa nach "Teamer:in anlegen" -- laedt sie neu; bis
+  // 13.10.2026 erschien eine neue Teamer:in erst nach einem Wechsel
+  // Konfis/Team (Befund 11.10.2026). Ein Fehler meldet sich nur bei offenem
+  // Team, im Hintergrund fehlt nur die Zahl am Umschalter.
+  const { teamers, laedt: teamerLoading, laden: loadTeamers, geladen: teamGeladen, fehler: teamFehler } = useTeamerListe({
+    offen: viewMode === 'teamer',
+    stand: teamStand,
+  });
   // Hier lud bis 28.09.2026 jeder Mount GET /organizations/:id (samt sechs
   // Zaehlabfragen im Server) fuer eine "X von Y Konfis"-Anzeige, die es nie
   // gab -- der Wert wurde gesetzt, aber nie gelesen (Audit Screens Leitung

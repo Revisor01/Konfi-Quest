@@ -211,6 +211,69 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     expect(teamAbrufe()).toBe(1);
   });
 
+  // Befund 13.10.2026: /admin/konfis ist die Startseite der Leitung, und das
+  // Team laedt dort beim Oeffnen. Im Funkloch meldete es sich mit einem roten
+  // Toast, obwohl niemand das Team geoeffnet hatte, und lud nicht neu, wenn
+  // das Netz zurueckkam. Jetzt fehlt im Hintergrund nur die Zahl am
+  // Umschalter -- keine "Team (0)", denn ein Fehler ist kein leeres Team.
+  const appReiter = () => screen.getAllByRole('tab').map((t) => t.textContent);
+  const FRIEDA = { id: 21, name: 'Frieda Muster', username: 'frieda', badge_count: 2, cert_count: 1 };
+  const teamAntwortet = (wie: { ok: boolean; team?: unknown[] }) => h.apiGet.mockImplementation(async (url: string) => {
+    if (url !== '/admin/konfis/teamer') return { data: [], headers: {} };
+    if (!wie.ok) throw new Error('Netz weg');
+    return { data: wie.team ?? [FRIEDA] };
+  });
+
+  it('schmal: scheitert das Team beim Oeffnen, heisst der Reiter nur "Team" -- ohne Zahl, ohne Toast; der Wechsel auf "Team" versucht es neu', async () => {
+    h.breit = false;
+    const antwort = { ok: false };
+    teamAntwortet(antwort);
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminKonfisPage />);
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    expect(appReiter()).toEqual(['Konfis (2)', 'Team']);
+    expect(h.setError).not.toHaveBeenCalled();
+
+    antwort.ok = true;
+    await act(async () => { fireEvent.click(screen.getByRole('tab', { name: 'Team' })); });
+    expect(await screen.findByText('Frieda Muster')).toBeInTheDocument();
+    expect(appReiter()).toEqual(['Konfis (2)', 'Team (1)']);
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
+    stumm.mockRestore();
+  });
+
+  it('schmal: scheitert auch der neue Versuch bei offenem Team, kommt der Toast -- einmal', async () => {
+    h.breit = false;
+    teamAntwortet({ ok: false });
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminKonfisPage />);
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    await act(async () => { fireEvent.click(screen.getByRole('tab', { name: 'Team' })); });
+    await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Das Team konnte nicht geladen werden'));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(h.setError).toHaveBeenCalledTimes(1);
+    expect(teamAbrufe()).toBe(2);
+    expect(appReiter()).toEqual(['Konfis (2)', 'Team']);
+    stumm.mockRestore();
+  });
+
+  it.each([false, true])('ohne Netz beim Oeffnen (breit: %s): kommt die Verbindung zurueck (sync:reconnect), laedt das Team still und die Zahl steht da', async (breit) => {
+    h.breit = breit;
+    const antwort = { ok: false };
+    teamAntwortet(antwort);
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminKonfisPage />);
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    antwort.ok = true;
+    await act(async () => { window.dispatchEvent(new CustomEvent('sync:reconnect')); });
+    if (breit) expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    else expect(await screen.findByRole('tab', { name: 'Team (1)' })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
+    stumm.mockRestore();
+  });
+
   it('schmal: Herunterziehen laedt Konfis und Team neu', async () => {
     h.breit = false;
     render(<AdminKonfisPage />);
@@ -243,6 +306,26 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     expect(h.konfisLive).not.toHaveBeenCalled();
     act(() => { h.live.events(); });
     expect(h.konfisLive).toHaveBeenCalledTimes(1);
+  });
+
+  // Befund 13.10.2026: Wechselt das Fenster ueber 992 px die Fassung, haengt
+  // sich die andere neu ein -- mit einem Stand > 0, wenn vorher schon einmal
+  // neu geladen wurde (Herunterziehen, Anlegen, Signal 'users'). Dann liefen
+  // der erste Abruf und einer fuer den Stand: zwei GET fuer dieselbe Liste.
+  it.each([true, false])('wechselt die Breite nach einem neuen Stand (vorher breit: %s), laedt die andere Fassung das Team genau einmal', async (vorherBreit) => {
+    h.breit = vorherBreit;
+    const { rerender } = render(<AdminKonfisPage />);
+    if (vorherBreit) await screen.findByRole('button', { name: /^Team\s*1$/ });
+    else await screen.findByRole('tab', { name: 'Team (1)' });
+    await act(async () => { h.live.users(); });
+    await waitFor(() => expect(teamAbrufe()).toBe(2));
+
+    h.breit = !vorherBreit;
+    rerender(<AdminKonfisPage />);
+    if (vorherBreit) expect(await screen.findByRole('tab', { name: 'Team (1)' })).toBeInTheDocument();
+    else expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(teamAbrufe()).toBe(3);
   });
 
   // Befund 11.10.2026 (docs/offene-befunde.md): In der App erschien eine neu
