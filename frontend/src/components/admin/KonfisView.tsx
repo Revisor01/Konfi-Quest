@@ -101,9 +101,10 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
   useSucheMessung(viewMode === 'teamer' ? 'team' : 'konfis', searchTerm);
-  // Die Team-Liste laedt erst, wenn das Segment "Team" gewaehlt ist (Hook
-  // geteilt mit der Web-Fassung, useTeamerListe.ts).
-  const { teamers, laedt: teamerLoading, laden: loadTeamers } = useTeamerListe(viewMode === 'teamer');
+  // Die Team-Liste laedt beim Oeffnen der Seite, damit der Umschalter die
+  // Anzahl des Teams gleich zeigt (Simon, 13.10.2026); der Wechsel fragt
+  // nicht erneut (Hook geteilt mit der Web-Fassung, useTeamerListe.ts).
+  const { teamers, laedt: teamerLoading, laden: loadTeamers, geladen: teamGeladen, fehler: teamFehler } = useTeamerListe();
   // Eine neue Teamer:in (Fenster der Seite): die Team-Liste neu laden. Bis
   // 13.10.2026 erschien sie erst nach einem Wechsel Konfis/Team -- die Seite
   // lud danach nur die Konfi-Liste neu (Befund 11.10.2026).
@@ -219,12 +220,20 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)', maxWidth: 'calc(100% - 32px)' }}
       >
         {/* Reiter aus der gemeinsamen Beschreibung (seiten/konfisLeitung.ts);
-            die App führt „Team" intern als `teamer`. */}
-        {inFassung(KONFIS_ANSICHT, 'app').map((a) => (
-          <IonSegmentButton key={a.schluessel} value={a.schluessel === 'team' ? 'teamer' : a.schluessel}>
-            <IonLabel>{a.kurz ?? a.label}</IonLabel>
-          </IonSegmentButton>
-        ))}
+            die App führt „Team" intern als `teamer`. Die Anzahl steht in
+            Klammern (wie die Reiter im Betrieb), beim Team sobald die Liste
+            da ist -- nicht erst nach dem Wechsel (Simon, 13.10.2026). Ein
+            Fehler zeigt keine Zahl. */}
+        {inFassung(KONFIS_ANSICHT, 'app').map((a) => {
+          const anzahl = a.schluessel === 'team'
+            ? (teamGeladen && !teamFehler ? teamers.length : undefined)
+            : konfis.length;
+          return (
+            <IonSegmentButton key={a.schluessel} value={a.schluessel === 'team' ? 'teamer' : a.schluessel}>
+              <IonLabel>{a.kurz ?? a.label}{anzahl !== undefined ? ` (${anzahl})` : ''}</IonLabel>
+            </IonSegmentButton>
+          );
+        })}
       </IonSegment>
 
       {/* Suche & Filter */}

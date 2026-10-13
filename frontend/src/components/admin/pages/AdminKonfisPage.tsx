@@ -204,6 +204,14 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Subscribe to live updates for konfis
   useLiveRefresh('konfis', refreshAll);
 
+  // Die Team-Liste laedt einmal beim Oeffnen der Seite (useTeamerListe), nicht
+  // mehr bei jedem Wechsel auf "Team" (13.10.2026). Neu geladen wird, wenn der
+  // Server eine Aenderung an Konten meldet ('users': anlegen, aendern,
+  // loeschen, Konfi zur Teamer:in befoerdern) -- auch fuer Aenderungen, die
+  // auf einer anderen Seite oder von jemand anderem kamen.
+  const teamNeuLaden = useCallback(() => setTeamStand((n) => n + 1), [setTeamStand]);
+  useLiveRefresh('users', teamNeuLaden);
+
   const handleDeleteKonfi = async (konfi: Konfi) => {
     if (offlineBlockiert(isOnline, setError)) return;
     presentAlert({
@@ -495,6 +503,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshAll();
+          teamNeuLaden();
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>

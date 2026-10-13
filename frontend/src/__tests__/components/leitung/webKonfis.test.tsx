@@ -452,17 +452,58 @@ describe('Team (Web): Reiter in der Adresse', () => {
     expect(screen.getByRole('group', { name: 'Badges: 8' })).toBeInTheDocument();
   });
 
-  it('die Konfi-Liste wird erst gar nicht nach dem Team gefragt, solange der Reiter "Konfis" offen ist', () => {
+  // Simon, 13.10.2026: "ich sehe die anzahl der konfis in den reiter aber
+  // nicht die anzahl des teams. das erscheint erst wenn ich es anklicke."
+  // Bis dahin lud die Team-Liste erst mit dem Klick auf "Team".
+  it('der Reiter "Team" zeigt seine Anzahl gleich beim Oeffnen der Seite, ohne Klick -- dieselbe Zahl wie die Team-Liste', async () => {
     h.standort = { pathname: '/admin/konfis', search: '' };
     zeigen();
-    expect(h.apiGet).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: /^Team\s*2$/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /^Konfis\s*5$/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(h.apiGet.mock.calls).toEqual([['/admin/konfis/teamer']]);
+    // Die Zahl ist die Zahl der Zeilen im Team.
+    fireEvent.click(screen.getByRole('button', { name: /^Team\s*2$/ }));
+    expect(zeilen('Team')).toHaveLength(2);
   });
 
-  it('Reiter wechseln: Klick auf "Team" laedt das Team, Suche beginnt leer', async () => {
+  it('der Wechsel zwischen den Reitern fragt das Team nicht erneut', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    zeigen();
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+    fireEvent.click(screen.getByRole('button', { name: /^Team\s*2$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Konfis\s*5$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Team\s*2$/ }));
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('table', { name: 'Team' })).toBeInTheDocument();
+    expect(h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer')).toHaveLength(1);
+  });
+
+  it('ein Fehler beim Laden zeigt am Reiter keine Zahl (er ist kein leeres Team)', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    h.apiGet.mockRejectedValueOnce(new Error('Netz weg'));
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    zeigen();
+    await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Das Team konnte nicht geladen werden'));
+    expect(within(screen.getByRole('button', { name: /^Team/ })).queryByText(/\d/)).toBeNull();
+    expect(screen.getByRole('button', { name: /^Konfis\s*5$/ })).toBeInTheDocument();
+    stumm.mockRestore();
+  });
+
+  it('nach "Teamer:in anlegen" (teamStand) laedt das Team neu, und die Zahl am Reiter folgt', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    const { rerender } = zeigen();
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+    h.apiGet.mockResolvedValue({ data: [...TEAM, { id: 23, name: 'Hanna Neu', username: 'hanna', badge_count: 0, cert_count: 0 }] });
+    rerender(<WebKonfis konfis={KONFIS} jahrgaenge={JAHRGAENGE} laedt={false} ohneJahrgang={false} {...aktionen} teamStand={1} />);
+    expect(await screen.findByRole('button', { name: /^Team\s*3$/ })).toBeInTheDocument();
+    expect(h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer')).toHaveLength(2);
+  });
+
+  it('Reiter wechseln: Klick auf "Team" zeigt das Team, Suche beginnt leer', async () => {
     h.standort = { pathname: '/admin/konfis', search: '' };
     zeigen();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Konfi suchen' }), { target: { value: 'anna' } });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Team' })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
     await screen.findByRole('table', { name: 'Team' });
     expect(screen.getByRole('searchbox', { name: 'Im Team suchen' })).toHaveValue('');
     expect(screen.getByRole('button', { name: /^Team\s*2$/ })).toHaveAttribute('aria-pressed', 'true');
@@ -492,9 +533,13 @@ describe('Team (Web): Reiter in der Adresse', () => {
     zeigen();
     await screen.findByRole('table', { name: 'Team' });
     h.apiGet.mockClear();
+    h.apiGet.mockResolvedValue({ data: [TEAM[1]] });
     await act(async () => { fireEvent.click(within(zeilen('Team')[0]).getByRole('button', { name: 'Frieda Muster löschen' })); });
     expect(aktionen.onTeamerLoeschen).toHaveBeenCalledWith(expect.objectContaining({ id: 21 }));
     await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/admin/konfis/teamer'));
+    // Die Zahl am Reiter folgt der neuen Liste.
+    expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    expect(namen('Team')).toEqual(['Gero B.']);
   });
 
   it('Leitung (nicht Gemeindeleitung): kein Loeschen im Team, ein Fehler ist kein leeres Team', async () => {

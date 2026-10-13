@@ -340,8 +340,12 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   useSucheMessung(ansicht === 'team' ? 'team' : 'konfis', suche);
   const [jahrgang, setJahrgang] = useState('alle');
 
-  const team = useTeamerListe(ansicht === 'team');
-  // Eine neue Teamer:in (Dialog der Seite): die Team-Liste neu laden.
+  // Die Team-Liste laedt beim Oeffnen der Seite, damit der Reiter "Team"
+  // seine Anzahl gleich zeigt (Simon, 13.10.2026); der Reiterwechsel fragt
+  // nicht erneut (useTeamerListe).
+  const team = useTeamerListe();
+  // Eine neue Teamer:in (Dialog der Seite) oder eine Aenderung, die der
+  // Server meldet: die Team-Liste neu laden.
   const teamLaden = team.laden;
   useEffect(() => {
     if (teamStand > 0) void teamLaden();
@@ -389,7 +393,9 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
     ? (team.laedt && team.teamers.length === 0 ? 'Das Team wird geladen' : `${mitEinheit(team.teamers.length, 'Person', 'Personen')} im Team`)
     : `${mitEinheit(konfis.length, 'Konfi', 'Konfis')} in ${mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgängen')}`;
 
-  // Die Zahl am Reiter "Team" steht erst da, wenn die Liste einmal geladen ist.
+  // Die Zahl am Reiter "Team" steht da, sobald die Liste geladen ist -- beim
+  // Oeffnen der Seite, nicht erst nach dem Wechsel auf "Team"; ein Fehler
+  // zeigt keine Zahl (er ist kein leeres Team).
   const teamGeladen = team.geladen && !team.fehler;
 
   // Was beide Reiter gemeinsam haben: Kopf, Reiter, Ansicht.

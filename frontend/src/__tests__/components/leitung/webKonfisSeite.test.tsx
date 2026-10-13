@@ -8,6 +8,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { konto, neuerStand, type LeitungTestStand } from './leitungTestHilfe';
+import { ziehenZumAktualisieren } from '../support/ionicAttrappe';
 
 const h = vi.hoisted(() => ({
   apiGet: vi.fn(),
@@ -20,6 +21,8 @@ const h = vi.hoisted(() => ({
   stand: { alert: null, fenster: [], push: vi.fn() } as unknown as LeitungTestStand,
   user: {} as Record<string, unknown>,
   standort: { pathname: '/admin/konfis', search: '' },
+  // Was die Seite bei Meldungen des Servers neu laedt (useLiveRefresh), je Art.
+  live: {} as Record<string, () => void>,
 }));
 
 vi.mock('@ionic/react', async () => (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand));
@@ -34,7 +37,9 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 vi.mock('../../../contexts/ModalContext', () => ({ useModalPage: () => ({ pageRef: { current: null }, presentingElement: null }) }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({
-  useLiveRefresh: () => {},
+  useLiveRefresh: (arten: string | string[], rueckruf: () => void) => {
+    for (const art of [arten].flat()) h.live[art] = rueckruf;
+  },
   useLiveUpdate: () => ({ triggerRefresh: vi.fn() }),
 }));
 vi.mock('../../../hooks/useOfflineQuery', () => ({
@@ -82,6 +87,7 @@ beforeEach(() => {
   h.breit = true;
   h.user = konto('org_admin');
   h.standort = { pathname: '/admin/konfis', search: '' };
+  h.live = {};
   h.apiGet.mockImplementation(async (url: string) => {
     // Das Formular "Teamer:in anlegen" laedt Rollen und Jahrgaenge.
     if (url === '/roles') return { data: [{ id: 2, name: 'admin' }, { id: 3, name: 'teamer' }] };
@@ -162,12 +168,52 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
   it('schmal, Ansicht Team: das Plus oeffnet weiter das Fenster der App mit fester Rolle Teamer -- kein Dialog', () => {
     h.breit = false;
     render(<AdminKonfisPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Team' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Team/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' }));
     const fenster = h.stand.fenster.filter((f) => f.komponente === UserManagementModal);
     expect(fenster).toHaveLength(1);
     expect(fenster[0].props).toEqual(expect.objectContaining({ userId: null, festeRolle: 'teamer' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  // Simon, 13.10.2026: die Zahl des Teams erschien erst nach dem Klick auf
+  // "Team". In der App stand am Umschalter gar keine Zahl; jetzt beide in
+  // Klammern, das Team geladen beim Oeffnen der Seite.
+  const teamAbrufe = () => h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer').length;
+
+  it('schmal: der Umschalter zeigt die Anzahl der Konfis und des Teams gleich beim Oeffnen; der Wechsel fragt nicht erneut', async () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    expect(await screen.findByRole('tab', { name: 'Team (1)' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tab', { name: 'Konfis (2)' })).toHaveAttribute('aria-selected', 'true');
+    expect(teamAbrufe()).toBe(1);
+    fireEvent.click(screen.getByRole('tab', { name: 'Team (1)' }));
+    expect(screen.getByText('Frieda Muster')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Konfis (2)' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Team (1)' }));
+    await act(async () => { await Promise.resolve(); });
+    expect(teamAbrufe()).toBe(1);
+  });
+
+  it('schmal: Herunterziehen laedt Konfis und Team neu', async () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    await screen.findByRole('tab', { name: 'Team (1)' });
+    await act(async () => { ziehenZumAktualisieren(); });
+    await waitFor(() => expect(teamAbrufe()).toBe(2));
+  });
+
+  it.each([false, true])('meldet der Server eine Aenderung an Konten (breit: %s), laedt das Team neu und die Zahl folgt', async (breit) => {
+    h.breit = breit;
+    render(<AdminKonfisPage />);
+    if (breit) await screen.findByRole('button', { name: /^Team\s*1$/ });
+    else await screen.findByRole('tab', { name: 'Team (1)' });
+    const neu = { id: 22, name: 'Gero Beispiel', username: 'gero', badge_count: 0, cert_count: 0 };
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/admin/konfis/teamer' ? [{ id: 21, name: 'Frieda Muster', username: 'frieda' }, neu] : [], headers: {} }));
+    await act(async () => { h.live.users(); });
+    if (breit) expect(await screen.findByRole('button', { name: /^Team\s*2$/ })).toBeInTheDocument();
+    else expect(await screen.findByRole('tab', { name: 'Team (2)' })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
   });
 
   // Befund 11.10.2026 (docs/offene-befunde.md): In der App erschien eine neu
