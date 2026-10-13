@@ -689,17 +689,24 @@ describe('/api/support/vorgaenge', () => {
     // ------------------------------------------------------------------------
     // antwort_auf (additiv seit 12.10.2026): die beantwortete Mail als Bezug
     // ------------------------------------------------------------------------
-    /** Ein Vorgang mit drei Mails: Frage A, Nachfrage B (Antwort auf A), danach unsere Antwort C (die juengste). */
+    /**
+     * Ein Vorgang mit drei Mails: Frage A, Nachfrage B (Antwort auf A), danach
+     * unsere Antwort C (die juengste). Die drei Betreffe ergeben drei
+     * VERSCHIEDENE Antwortbetreffe -- nur so zeigt der Betreff, von welcher
+     * Mail er stammt (mit "Frage A", "AW: Frage A" und "Re: Frage A" waeren es
+     * dreimal "Re: Frage A [Vorgang v]", und ein Betreff aus der juengsten Mail
+     * fiele nicht auf; Pruefung vom 13.10.2026).
+     */
     const vorgangMitFaden = async () => {
       const v = await d.vorgang({ organization_id: 2, betreff: 'Kalender' });
       const a = await d.mail({ vorgang_id: v, message_id: '<a@andere.example>', betreff: 'Frage A', von_adresse: 'erika@andere.example' });
       const b = await d.mail({
         vorgang_id: v, message_id: '<b@andere.example>', in_reply_to: '<a@andere.example>', referenzen: ['<a@andere.example>'],
-        betreff: 'AW: Frage A', von_adresse: 'paul@andere.example',
+        betreff: 'AW: Nachfrage B', von_adresse: 'paul@andere.example',
       });
       const c = await d.mail({
         vorgang_id: v, richtung: 'aus', message_id: '<kq-c@konfi-quest.de>', in_reply_to: '<b@andere.example>',
-        referenzen: ['<a@andere.example>', '<b@andere.example>'], betreff: `Re: Frage A [Vorgang ${v}]`, von_adresse: 'support@konfi-quest.de',
+        referenzen: ['<a@andere.example>', '<b@andere.example>'], betreff: `Re: Ganz anders [Vorgang ${v}]`, von_adresse: 'support@konfi-quest.de',
       });
       return { v, a, b, c };
     };
@@ -717,7 +724,7 @@ describe('/api/support/vorgaenge', () => {
       expect(aufB.status).toBe(201);
       const kopfB = await simpleParser(sendMail.mock.calls[1][0].raw);
       expect([kopfB.inReplyTo, kopfB.references, kopfB.subject])
-        .toEqual(['<b@andere.example>', ['<a@andere.example>', '<b@andere.example>'], `Re: Frage A [Vorgang ${v}]`]);
+        .toEqual(['<b@andere.example>', ['<a@andere.example>', '<b@andere.example>'], `Re: Nachfrage B [Vorgang ${v}]`]);
       expect(await d.mailZeile(aufB.body.nachricht.id))
         .toMatchObject({ in_reply_to: '<b@andere.example>', referenzen: ['<a@andere.example>', '<b@andere.example>'] });
     });
@@ -731,6 +738,9 @@ describe('/api/support/vorgaenge', () => {
       expect(zweite.status).toBe(201);
       expect([(await gesendet(0)).inReplyTo, (await gesendet(1)).inReplyTo])
         .toEqual(['<kq-c@konfi-quest.de>', erste.body.nachricht.message_id]);
+      // der Betreff ebenso von der juengsten Mail (C, danach die erste Antwort)
+      expect([(await gesendet(0)).betreff, (await gesendet(1)).betreff])
+        .toEqual([`Re: Ganz anders [Vorgang ${v}]`, `Re: Ganz anders [Vorgang ${v}]`]);
     });
 
     it('antwort_auf einer Mail aus einem anderen Vorgang, aus dem Posteingang oder ohne Mail: 400 VOR dem Versand, nichts geht hinaus', async () => {
@@ -758,7 +768,9 @@ describe('/api/support/vorgaenge', () => {
     it('antwort_auf und status zusammen: Bezug auf die genannte Mail, Status gesetzt', async () => {
       const { v, a } = await vorgangMitFaden();
       const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', antwort_auf: a, status: 'wartet' });
-      expect([res.status, res.body.vorgang.status, (await gesendet()).inReplyTo]).toEqual([201, 'wartet', '<a@andere.example>']);
+      const mail = await gesendet();
+      expect([res.status, res.body.vorgang.status, mail.inReplyTo, mail.betreff])
+        .toEqual([201, 'wartet', '<a@andere.example>', `Re: Frage A [Vorgang ${v}]`]);
     });
 
     it('502: scheitert der Versand, wird nichts gespeichert und der Status bleibt', async () => {
