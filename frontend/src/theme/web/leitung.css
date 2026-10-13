@@ -866,6 +866,15 @@
   white-space: nowrap;
 }
 
+/* Der Stand in der Eventliste der Personenseite steht in der schmalen Spalte
+   von "Eingetragen von". Seine Woerter kommen aus den Regeln der App und der
+   Teilnehmerliste ("Anwesenheit ausstehend", "Abgemeldet (nachgetragen)",
+   Pruefung 13.10.2026) und brechen in der Marke um, statt in die
+   Nachbarspalte zu laufen. Darunter leise, wer verbucht hat. */
+.web-spalte-stand .web-pill {
+  white-space: normal;
+}
+
 /* --- g4-material: Material anlegen, bearbeiten, ansehen (WebMaterialDialog) --- */
 /* Eine Datei im Dialog: die Zeile zum Ansehen, daneben Entfernen oder Loeschen;
    darunter beim Laden der Balken. */

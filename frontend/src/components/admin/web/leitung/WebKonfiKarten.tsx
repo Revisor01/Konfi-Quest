@@ -308,8 +308,9 @@ export const BonusKarte: React.FC<{
 // Pflicht und Konfirmation als Marken wie in der Terminliste (WebMerkmale).
 //
 // Dieselben Spaltenbreiten wie Aktivitaeten und Bonuspunkte (Simon,
-// 07.10.2026): der Stand steht unter "Eingetragen von", die Aktionsspalte
-// bleibt leer. Bei einer Teamer:in ohne Art und Punkte (wie ihre Aktivitaeten).
+// 07.10.2026): der Stand steht unter "Eingetragen von", darunter leise, wer
+// verbucht hat; die Aktionsspalte bleibt leer. Bei einer Teamer:in ohne Art
+// und Punkte (wie ihre Aktivitaeten).
 //
 // Ein Event fuehrt mit Rueckweg zur Person (`?person=`, utils/rueckweg.ts;
 // Simon: „zurück ins profil?").
@@ -388,18 +389,31 @@ export const EventListeKarte: React.FC<{
       breite: SPALTE.punkte,
       sortWert: (z: EventZeile) => z.punkte,
       zelle: (z: EventZeile) => (z.punkte > 0
-        ? <strong title={z.von ? `vergeben von ${z.von}` : undefined}>+{z.punkte}</strong>
+        ? <strong>+{z.punkte}</strong>
         : <span className="web-gedaempft">–</span>),
     }] : []),
     {
       schluessel: 'stand',
       kopf: 'Stand',
       breite: SPALTE.von,
+      // Die Woerter der Regeln sind laenger als die Spalte breit ist
+      // ("Anwesenheit ausstehend"): sie brechen in der Marke um (leitung.css).
+      klasse: 'web-spalte-stand',
       // Die Reihe steht bei allen Status-Reihen (utils/statusReihenfolge.ts).
       sortWert: (z) => personEventStatusRang(eventStand(z).text),
       zelle: (z) => {
         const stand = eventStand(z);
-        return <WebPill ton={stand.ton}>{stand.text}</WebPill>;
+        // Wer verbucht hat, sichtbar als leise Zeile darunter -- an der Stelle,
+        // an der Aktivitaeten und Bonuspunkte "Eingetragen/Vergeben von"
+        // zeigen. Bis zur Pruefung vom 13.10.2026 stand der Name nur als
+        // title am Punktwert: mit Tastatur, Touch und Screenreader nicht
+        // erreichbar.
+        return (
+          <>
+            <WebPill ton={stand.ton}>{stand.text}</WebPill>
+            {z.von && <span className="web-zelle-leise">verbucht von {z.von}</span>}
+          </>
+        );
       },
     },
     // Leer, aber gleich breit: Die Spalten stehen unter denen von Aktivitaeten und Bonuspunkten.

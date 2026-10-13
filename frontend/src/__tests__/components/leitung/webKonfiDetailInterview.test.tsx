@@ -153,6 +153,8 @@ const oeffnen = async () => {
 const karte = (name: string) => screen.getByRole('region', { name });
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
+/** Das Wort des Stands (die Marke), ohne die leise Zeile darunter. */
+const standWort = (z: HTMLElement) => zelle(z, 4).querySelector('.web-pill')?.textContent;
 /** Der Kreis vor dem Namen einer Zeile: Farbe (Klasse) und Symbol. */
 const kreis = (z: HTMLElement) => {
   const k = zelle(z, 0).querySelector('.web-symbol') as HTMLElement | null;
@@ -191,6 +193,9 @@ describe('1. Kreis der Punkteart vor Aktivitäten, Events und Bonuspunkten', () 
     for (const [ton, token] of [['gottesdienst', 'gottesdienst'], ['gemeinde', 'gemeinde'], ['events', 'events'], ['bonus', 'bonus']]) {
       expect(css).toContain(`.web-symbol--${ton} { background: var(--app-color-${token}); }`);
     }
+    // Und die Marke des Stands bricht in ihrer schmalen Spalte um.
+    const leitung = fs.readFileSync(path.join(__dirname, '../../../theme/web/leitung.css'), 'utf8');
+    expect(leitung).toMatch(/\.web-spalte-stand \.web-pill \{\s*white-space: normal;\s*\}/);
   });
 
   it('Teamer:in: ihre Aktivitäten im Kreis der Teamer-Farbe mit dem Abzeichen', async () => {
@@ -248,7 +253,7 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       within(zelle(z, 0)).getByRole('link').textContent,
       zelle(z, 2).textContent,
       zelle(z, 3).textContent,
-      zelle(z, 4).textContent,
+      standWort(z),
     ])).toEqual([
       // Woerter der App (personTerminStand) fuer Offenes und Anstehendes,
       // der Teilnehmerliste (teilnahmeDarstellung) fuer den Rest -- seit der
@@ -265,8 +270,15 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       ['Pflicht-Treffen', '–', '–', 'Abgemeldet'],
       ['Taizé-Abend', 'Gottesdienst', '+1', 'Anwesend'],
     ]);
-    // Wer die Punkte vergeben hat, steht am Punktwert.
-    expect(within(zelle(e[4], 3)).getByText('+2')).toHaveAttribute('title', 'vergeben von Alex Beispiel');
+    // Wer die Punkte vergeben hat, steht sichtbar als leise Zeile unter dem
+    // Stand (Pruefung 13.10.2026: vorher nur als title am Punktwert -- mit
+    // Tastatur, Touch und Screenreader nicht erreichbar).
+    expect(within(zelle(e[4], 4)).getByText('verbucht von Alex Beispiel')).toHaveClass('web-zelle-leise');
+    // Die Stand-Spalte bricht lange Woerter in der Marke um (leitung.css).
+    expect(zelle(e[0], 4)).toHaveClass('web-spalte-stand');
+    expect(zelle(e[4], 3).querySelector('[title]')).toBeNull();
+    // Ohne vergebende Person keine zweite Zeile (Taizé-Abend).
+    expect(zelle(e[9], 4).querySelector('.web-zelle-leise')).toBeNull();
     expect(karte('Events')).toHaveTextContent('10 Events · 3 Punkte');
   });
 
@@ -304,7 +316,7 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
     await oeffnen();
     const tabelle = screen.getByRole('table', { name: 'Events' });
     await act(async () => { fireEvent.click(within(within(tabelle).getByRole('columnheader', { name: /Stand/ })).getByRole('button')); });
-    expect(zeilen('Events').map((z) => zelle(z, 4).textContent)).toEqual([
+    expect(zeilen('Events').map(standWort)).toEqual([
       'Anwesenheit ausstehend', 'Angemeldet', 'Warteliste', 'Anwesend', 'Anwesend', 'Anwesend',
       'Abwesend', 'Abgemeldet (nachgetragen)', 'Abgemeldet', 'Abgesagt',
     ]);

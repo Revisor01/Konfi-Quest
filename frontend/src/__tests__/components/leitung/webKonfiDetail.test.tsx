@@ -154,6 +154,8 @@ const kopf = () => within(screen.getByRole('heading', { level: 1 }).closest('hea
 const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
+/** Das Wort des Stands in der Eventliste (die Marke), ohne die leise Zeile darunter. */
+const standWort = (z: HTMLElement) => zelle(z, 4).querySelector('.web-pill')?.textContent;
 /** Die Ueberschriften der Karten einer Spalte, von oben nach unten. */
 const kartenIn = (spalte: 'haupt' | 'seite') =>
   [...document.querySelectorAll(`.web-spalten__${spalte} .web-karte`)].map((k) => k.getAttribute('aria-labelledby'))
@@ -428,10 +430,10 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
   });
 
   // Seit 13.10.2026 steht unter "Eingetragen von" der Stand des Events (eine
-  // Liste fuer alles, Simon: „das soll eine liste sein"); wer die Punkte
-  // vergeben hat, steht am Punktwert (title). Gewollte Aenderung: Die
-  // Erwartung prueft den Stand statt des Namens. Ohne `alleTermine` (Server
-  // davor, gemerkter Stand) kommt die Liste aus den Event-Punkten.
+  // Liste fuer alles, Simon: „das soll eine liste sein"); wer verbucht hat,
+  // steht als leise Zeile darunter. Gewollte Aenderung: Die Erwartung prueft
+  // den Stand und den Namen darunter. Ohne `alleTermine` (Server davor,
+  // gemerkter Stand) kommt die Liste aus den Event-Punkten.
   it('Events: eine Tabelle mit Eventdatum statt Verbuchungsdatum, Punkten, Punkteart und Stand', async () => {
     await oeffnen();
     const e = zeilen('Events');
@@ -440,8 +442,10 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(zelle(e[0], 1)).toHaveTextContent('04.09.2026');
     expect(zelle(e[0], 2)).toHaveTextContent('Gemeinde');
     expect(zelle(e[0], 3)).toHaveTextContent('+2');
-    expect(within(zelle(e[0], 3)).getByText('+2')).toHaveAttribute('title', 'vergeben von Alex Beispiel');
-    expect(zelle(e[0], 4)).toHaveTextContent('Anwesend');
+    // Wer verbucht hat, steht sichtbar unter dem Stand (Pruefung 13.10.2026;
+    // davor nur als title am Punktwert, davor als Spalte "Verbucht von").
+    expect(standWort(e[0])).toBe('Anwesend');
+    expect(within(zelle(e[0], 4)).getByText('verbucht von Alex Beispiel')).toBeInTheDocument();
     expect(zelle(e[1], 0)).toHaveTextContent('Taizé-Abend');
     expect(screen.getByText('2 Events · 3 Punkte', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
   });
@@ -524,7 +528,7 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     const ev = karte('Events');
     expect(within(ev).queryByRole('list', { name: 'Offene und anstehende Events' })).toBeNull();
     const e = zeilen('Events');
-    expect(e.map((z) => [zelle(z, 0).textContent, zelle(z, 4).textContent])).toEqual([
+    expect(e.map((z) => [zelle(z, 0).textContent, standWort(z)])).toEqual([
       ['Konfisamstag', 'Anwesenheit ausstehend'],
       ['Laternenumzug', 'Warteliste'],
       ['Konfi-Wochenende', 'Anwesend'],
