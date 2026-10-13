@@ -84,6 +84,7 @@ const ANGELEGT = { data: { id: 42, username: 'kim.test', temporaryPassword: EINM
 const antwortFehler = (status: number, data: Record<string, unknown>) =>
   Object.assign(new Error(`Request failed with status code ${status}`), { response: { status, data } });
 const KEIN_NETZ = Object.assign(new Error('Network Error'), { code: 'ERR_NETWORK' });
+const GESENDET = 'E-Mail an deine Adresse gesendet';
 
 const MATRIX_12 = {
   jahrgang: { id: 12, name: 'Jahrgang 2026' },
@@ -435,6 +436,47 @@ describe('Anwesenheit im Browser: eigener, breiter Dialog', () => {
     await absenden(dialog, 'Per E-Mail an dich senden');
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Mailserver nicht erreichbar');
     expect(h.setError).not.toHaveBeenCalled();
+  });
+
+  // Gegenprüfung 13.10.2026: Die Meldung im Fenster gehört zu dem Jahrgang und
+  // der Ansicht, für die sie kam. In der App war sie ein kurzer Toast; im
+  // Fenster blieb sie nach dem Wechsel stehen -- ein roter Ladefehler über einer
+  // fehlerfrei geladenen Tabelle, „E-Mail gesendet" über den Konfisprüchen, die
+  // niemand verschickt hatte.
+  it('nach einem Ladefehler: der Wechsel auf einen ladbaren Jahrgang räumt die Meldung weg', async () => {
+    h.apiGet.mockImplementation(async (url: string) => {
+      if (url === '/admin/jahrgaenge/13/attendance-matrix') return { data: MATRIX_13 };
+      throw antwortFehler(500, {});
+    });
+    const dialog = await oeffnen();
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Fehler beim Laden der Anwesenheit');
+    await act(async () => { tippen(within(dialog).getByRole('combobox', { name: 'Jahrgang' }), '13'); });
+    await warten();
+    expect(zeilen(dialog)).toEqual([['Cleo Neu', 'Offen', '0/1']]);
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+  });
+
+  it('die Bestätigung der E-Mail gilt der Ansicht, aus der gesendet wurde: nach dem Umschalten ist sie weg', async () => {
+    h.apiPost.mockResolvedValue({ data: {} });
+    const dialog = await oeffnen();
+    await absenden(dialog, 'Per E-Mail an dich senden');
+    expect(within(dialog).getByText(GESENDET)).toBeInTheDocument();
+
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Konfispruch' })); });
+    await warten();
+    const sprueche = screen.getByRole('dialog', { name: 'Konfisprüche' });
+    expect(zeilen(sprueche).map(([name]) => name)).toEqual(['Anna Müller', 'Ben Schmidt']);
+    expect(within(sprueche).queryByText(GESENDET)).toBeNull();
+
+    // Und umgekehrt: aus den Konfisprüchen gesendet, zurück zur Anwesenheit
+    // (dort wird nichts neu geladen).
+    await absenden(sprueche, 'Per E-Mail an dich senden');
+    expect(h.apiPost).toHaveBeenLastCalledWith('/admin/jahrgaenge/12/matrix-email', { type: 'sprueche' });
+    expect(within(sprueche).getByText(GESENDET)).toBeInTheDocument();
+    await act(async () => { fireEvent.click(within(sprueche).getByRole('button', { name: 'Anwesenheit' })); });
+    const anwesenheit = screen.getByRole('dialog', { name: 'Anwesenheit' });
+    expect(zeilen(anwesenheit).map(([name]) => name)).toEqual(['Anna Müller', 'Ben Schmidt']);
+    expect(within(anwesenheit).queryByText(GESENDET)).toBeNull();
   });
 
   // Gegenprüfung 13.10.2026: Escape im gefüllten Suchfeld leert nur das Feld

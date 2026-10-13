@@ -112,17 +112,32 @@ export interface AnwesenheitsMatrixOptionen {
 
 export function useAnwesenheitsMatrix({ jahrgaenge, initialJahrgangId, meldungenImFenster = false }: AnwesenheitsMatrixOptionen) {
   const { setError, setSuccess } = useApp();
-  const [jahrgangId, setJahrgangId] = useState<number | null>(
+  const [jahrgangId, setJahrgangIdState] = useState<number | null>(
     initialJahrgangId ?? (jahrgaenge.length > 0 ? jahrgaenge[0].id : null)
   );
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<MatrixAntwort | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<MatrixAnsicht>('anwesenheit');
+  const [viewMode, setViewModeState] = useState<MatrixAnsicht>('anwesenheit');
   const [sprueche, setSprueche] = useState<SpruchZeile[] | null>(null);
   const [spruecheLoading, setSpruecheLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [meldung, setMeldung] = useState<MatrixMeldung | null>(null);
+
+  // Eine Meldung im Fenster gilt dem Jahrgang und der Ansicht, für die sie
+  // kam; ein Wechsel räumt sie weg (Gegenprüfung 13.10.2026: Sonst stand ein
+  // Ladefehler über der fehlerfrei geladenen Tabelle des nächsten Jahrgangs
+  // und „E-Mail gesendet" über den Konfisprüchen, die niemand verschickt
+  // hatte). In der App ist `meldung` immer leer; ihre Meldungen sind Toasts,
+  // die von selbst gehen.
+  const setJahrgangId = (id: number | null) => {
+    setMeldung(null);
+    setJahrgangIdState(id);
+  };
+  const setViewMode = (ansicht: MatrixAnsicht) => {
+    setMeldung(null);
+    setViewModeState(ansicht);
+  };
 
   const meldeFehler = (text: string) => {
     if (meldungenImFenster) setMeldung({ art: 'fehler', text });
