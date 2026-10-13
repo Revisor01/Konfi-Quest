@@ -3721,6 +3721,17 @@ paths:
         Zaehlern. Für alle außer super_admin und org_admin wird auf die
         Jahrgänge aus assigned_jahrgaenge mit can_view eingeschraenkt.
         Geloeschte Konfis (deleted_at) sind ausgeschlossen.
+        ADDITIV 13.10.2026: pflicht_besucht und pflicht_faellig (integer, nie
+        null) -- "3 von 5" Pflicht-Events je Konfi. Faellig ist ein
+        Pflicht-Event (events.mandatory) der Gemeinde, das die Konfi sieht
+        (eigener Jahrgang oder Termin ohne jeden Jahrgang, nie "Nur Team";
+        backend/utils/konfiTerminSicht.js), nicht abgesagt und schon begonnen
+        (event_date in der Vergangenheit). Besucht heisst Anwesenheit
+        "anwesend" (attendance_status present); entschuldigt, abwesend,
+        abgemeldet oder nicht eingetragen zaehlt als nicht besucht. Dieselbe
+        Regel wie total_mandatory/attended in GET
+        /api/admin/konfis/{id}/attendance-stats (backend/utils/pflichtTermine.js),
+        eine Abfrage fuer die ganze Liste. Antwort bleibt ein Array.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -3728,7 +3739,7 @@ paths:
         objekt-pruefung: "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter für alle außer is_super_admin/org_admin"
       responses:
         "200":
-          description: "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)"
+          description: "Array von Konfis (id, name, username, gottesdienst_points, gemeinde_points, jahrgang_name, jahrgang_id, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde, badgeCount). ADDITIV 13.10.2026: pflicht_besucht, pflicht_faellig (integer, siehe Beschreibung)."
           headers:
             # NACHDOKUMENTIERT 2026-09-01: Der Header existiert seit dem
             # 26.08.2026 im Code, fehlte hier aber.
@@ -4223,8 +4234,17 @@ paths:
       tags: ["Konfis (Verwaltung)"]
       summary: Anwesenheitsstatistik bei Pflicht-Events
       description: >
-        Zaehlt Pflicht-Events des Jahrgangs, tatsaechliche Teilnahmen, Quote
-        und verpasste Termine.
+        Zaehlt die faelligen Pflicht-Events der Konfi, tatsaechliche
+        Teilnahmen, Quote und verpasste Termine. Seit 13.10.2026 dieselbe
+        Regel wie pflicht_faellig/pflicht_besucht in GET /api/admin/konfis
+        (backend/utils/pflichtTermine.js): faellig ist ein Pflicht-Event der
+        Gemeinde, das die Konfi sieht (eigener Jahrgang oder Termin ohne
+        jeden Jahrgang, nie "Nur Team"), nicht abgesagt und schon begonnen;
+        besucht nur mit Anwesenheit "anwesend".
+        GEAENDERT 13.10.2026 (Antwortform unveraendert): Bis dahin zaehlte
+        die Route nur Termine des eigenen Jahrgangs -- ein Pflicht-Event ohne
+        Jahrgang fehlte, ein "Nur Team"-Termin mit Jahrgang zaehlte mit, und
+        eine Konfi ohne Jahrgang bekam immer total_mandatory 0.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]

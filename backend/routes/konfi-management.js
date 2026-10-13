@@ -20,6 +20,8 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
 const { termineDerPersonFuerLeitung } = require('../utils/terminLeitungSicht');
+// Pflicht-Events "x von y" -- eine Regel fuer Liste und Statistik (13.10.2026).
+const { pflichtFaelligSql, pflichtBesuchtSql, pflichtStandCteSql } = require('../utils/pflichtTermine');
 const { istMitgliedDerOrganisation, ladeRolleInGemeinde } = require('../utils/orgMitglieder');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
@@ -107,17 +109,25 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 params.push(...viewableJahrgaenge);
             }
 
+            // ADDITIV (13.10.2026): pflicht_besucht und pflicht_faellig --
+            // "3 von 5" Pflicht-Events je Konfi in der Liste (Simon). Dieselbe
+            // Regel wie die Anwesenheits-Statistik unten
+            // (utils/pflichtTermine.js); eine Abfrage fuer die ganze Liste.
             const query = `
+                WITH ${pflichtStandCteSql({ org: '$1' })}
                 SELECT u.id, u.display_name as name, u.username,
                        kp.gottesdienst_points, kp.gemeinde_points,
                        j.name as jahrgang_name, j.id as jahrgang_id,
                        j.gottesdienst_enabled, j.gemeinde_enabled,
                        j.target_gottesdienst, j.target_gemeinde,
-                       (SELECT COUNT(*) FROM user_badges WHERE user_id = u.id) as "badgeCount"
+                       (SELECT COUNT(*) FROM user_badges WHERE user_id = u.id) as "badgeCount",
+                       COALESCE(ps.pflicht_besucht, 0) AS pflicht_besucht,
+                       COALESCE(ps.pflicht_faellig, 0) AS pflicht_faellig
                 FROM users u
                 JOIN roles r ON u.role_id = r.id
                 LEFT JOIN konfi_profiles kp ON u.id = kp.user_id
                 LEFT JOIN jahrgaenge j ON kp.jahrgang_id = j.id
+                LEFT JOIN pflicht_stand ps ON ps.user_id = u.id
                 WHERE r.name = 'konfi' AND u.organization_id = $1 AND u.deleted_at IS NULL ${jahrgangFilter}
                 ORDER BY j.name DESC, u.display_name
             `;
@@ -1394,13 +1404,13 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                 return res.status(403).json({ error: 'Kein Zugriff auf diesen Konfi' });
             }
 
-            const jahrgangId = zugriff.jahrgangId;
-
-            if (!jahrgangId) {
-                return res.json({ total_mandatory: 0, attended: 0, percentage: 100, missed_events: [] });
-            }
-
-            // Alle vergangenen Pflicht-Events des Jahrgangs mit Booking-Status
+            // Die faelligen Pflicht-Events mit Buchungsstand -- dieselbe Regel
+            // wie die Spalte "Pflicht-Events" der Konfi-Liste
+            // (utils/pflichtTermine.js, 13.10.2026). Bis dahin stand hier
+            // eine eigene Bedingung (nur Termine des eigenen Jahrgangs): Ein
+            // Pflicht-Event ohne Jahrgang fehlte, "Nur Team" mit Jahrgang
+            // zaehlte mit, und eine Konfi ohne Jahrgang bekam immer 0 von 0.
+            // Antwortform unveraendert.
             const { rows } = await db.query(`
                 SELECT
                     e.id as event_id,
@@ -1409,24 +1419,20 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                     e.location,
                     eb.status as booking_status,
                     eb.attendance_status,
-                    eb.opt_out_reason
+                    eb.opt_out_reason,
+                    COALESCE(${pflichtBesuchtSql('eb')}, false) AS besucht
                 FROM events e
-                JOIN event_jahrgang_assignments eja ON e.id = eja.event_id
                 LEFT JOIN event_bookings eb ON e.id = eb.event_id AND eb.user_id = $1
-                WHERE eja.jahrgang_id = $2
-                    AND e.mandatory = true
-                    AND e.event_date < NOW()
-                    AND (e.cancelled IS NOT TRUE)
-                    AND e.organization_id = $3
+                WHERE ${pflichtFaelligSql({ jahrgang: '$2::int', org: '$3' })}
                 ORDER BY e.event_date DESC
-            `, [konfiId, jahrgangId, req.user.organization_id]);
+            `, [konfiId, zugriff.jahrgangId ?? null, req.user.organization_id]);
 
             const total_mandatory = rows.length;
-            const attended = rows.filter(r => r.attendance_status === 'present').length;
+            const attended = rows.filter(r => r.besucht).length;
             const percentage = total_mandatory > 0 ? Math.round((attended / total_mandatory) * 100) : 100;
 
             const missed_events = rows
-                .filter(r => r.attendance_status !== 'present')
+                .filter(r => !r.besucht)
                 .map(r => ({
                     event_id: r.event_id,
                     event_name: r.event_name,
