@@ -398,7 +398,98 @@ async function termineDerPersonFuerLeitung(db, req, personId) {
   return rows.map((r) => ({ ...r, darf_verbuchen: r.darf_verbuchen === true }));
 }
 
+/**
+ * ALLE Termine einer Konfi fuer ihre Detailseite (Simon, Seiten-Interview
+ * 13.10.2026: "ich sehe events die angemeldeten, dann nochmal eine
+ * zuordnung mit teilgenommenen events -- das soll eine liste sein, pflicht
+ * events sollten da auch gekennzeichnet sein"). Feld `alleTermine` von
+ * GET /admin/konfis/:id, additiv neben `termine` (oben, offen und
+ * anstehend) und GET /:id/event-points (Punkte), die beide bleiben.
+ *
+ * Je Buchung der Person in der Gemeinde eine Zeile -- angemeldet, Warteliste,
+ * anwesend, abwesend, abgemeldet, auch abgesagte Termine (cancelled) --,
+ * dazu Event-Punkte ohne Buchung (Buchung spaeter entfernt), damit die Liste
+ * mindestens zeigt, was die Punkte-Liste bisher zeigte.
+ *
+ *   art 'verbuchen'  begonnen, nicht abgesagt, `confirmed`, ohne Anwesenheit
+ *                    (dieselbe Bedingung wie `termine`)
+ *   art 'anstehend'  noch nicht begonnen, nicht abgesagt, `confirmed`,
+ *                    `waitlist` oder `pending`
+ *   art 'erledigt'   alles andere: verbucht, abgemeldet, abgesagt, die
+ *                    Warteliste eines vergangenen Termins
+ *
+ * KEIN Sichtfilter nach Terminen: Die Liste ist die Geschichte DIESER Konfi,
+ * und wer sie sehen darf, entscheidet die Route (darfKonfi am Kopf). Bisher
+ * zeigte die Punkte-Liste ebenso alle Termine mit Punkten, auch aus einem
+ * frueheren Jahrgang. `darf_verbuchen` je Zeile aus derselben Bedingung wie
+ * die Anwesenheits-Route (darfVerbuchenBedingung); fuer Teamer:innen als
+ * Aufrufer immer false (die Route ist requireAdmin).
+ *
+ * Reihenfolge Eventdatum absteigend; Offenes nach oben ordnet die Oberflaeche.
+ *
+ * @param {object} db
+ * @param {object} req       req.user mit organization_id, type, role_name,
+ *   assigned_jahrgaenge
+ * @param {number|string} personId
+ * @returns {Promise<Array<{ booking_id: number|null, event_id: number,
+ *   event_name: string, event_date: string, location: string|null,
+ *   mandatory: boolean, is_konfirmation: boolean, cancelled: boolean,
+ *   booking_status: string|null, attendance_status: string|null,
+ *   art: 'verbuchen'|'anstehend'|'erledigt', darf_verbuchen: boolean,
+ *   points: number, point_type: string|null, points_von: string|null }>>}
+ */
+async function alleTermineDerPerson(db, req, personId) {
+  const params = [personId, req.user.organization_id];
+  const darf = req.user.type === 'admin' ? darfVerbuchenBedingung(req.user, params) : 'false';
+  const { rows } = await db.query(
+    `WITH punkte AS (
+       SELECT ep.event_id,
+              SUM(ep.points)::int AS points,
+              (ARRAY_AGG(ep.point_type ORDER BY ep.id))[1] AS point_type,
+              (ARRAY_AGG(u.display_name ORDER BY ep.id))[1] AS points_von
+         FROM event_points ep
+         LEFT JOIN users u ON u.id = ep.admin_id
+        WHERE ep.konfi_id = $1 AND ep.organization_id = $2
+        GROUP BY ep.event_id
+     ),
+     zeilen AS (
+       SELECT eb.id AS booking_id, e.id AS event_id, eb.status AS booking_status,
+              eb.attendance_status
+         FROM event_bookings eb
+         JOIN events e ON e.id = eb.event_id
+        WHERE eb.user_id = $1 AND e.organization_id = $2
+       UNION ALL
+       SELECT NULL, p.event_id, NULL, NULL
+         FROM punkte p
+        WHERE NOT EXISTS (
+          SELECT 1 FROM event_bookings eb2 WHERE eb2.user_id = $1 AND eb2.event_id = p.event_id
+        )
+     )
+     SELECT z.booking_id, e.id AS event_id, e.name AS event_name, e.event_date, e.location,
+            (e.mandatory IS TRUE) AS mandatory,
+            (e.is_konfirmation IS TRUE) AS is_konfirmation,
+            (e.cancelled IS TRUE) AS cancelled,
+            z.booking_status, z.attendance_status,
+            CASE
+              WHEN z.booking_id IS NOT NULL AND e.cancelled IS NOT TRUE AND e.event_date < NOW()
+                   AND z.booking_status = 'confirmed' AND z.attendance_status IS NULL THEN 'verbuchen'
+              WHEN z.booking_id IS NOT NULL AND e.cancelled IS NOT TRUE AND e.event_date >= NOW()
+                   AND z.booking_status IN ('confirmed', 'waitlist', 'pending') THEN 'anstehend'
+              ELSE 'erledigt'
+            END AS art,
+            (${darf}) AS darf_verbuchen,
+            COALESCE(p.points, 0) AS points, p.point_type, p.points_von
+       FROM zeilen z
+       JOIN events e ON e.id = z.event_id AND e.organization_id = $2
+       LEFT JOIN punkte p ON p.event_id = z.event_id
+      ORDER BY e.event_date DESC NULLS LAST, e.id DESC`,
+    params
+  );
+  return rows.map((r) => ({ ...r, darf_verbuchen: r.darf_verbuchen === true }));
+}
+
 module.exports = {
+  alleTermineDerPerson,
   termineDerPersonFuerLeitung,
   darfVerbuchenBedingung,
   darfTerminVerbuchen,

@@ -3972,6 +3972,25 @@ paths:
         (von der Leitung eingetragen; Altbestand ohne eindeutigen Antrag).
         Abrufbar ueber GET /api/admin/activities/requests/{id} mit dessen
         Rechten.
+        ERGAENZT 13.10.2026, additiv (nur Konfis als Zielobjekt):
+        `alleTermine` -- ALLE Termine der Konfi in einer Liste
+        (utils/terminLeitungSicht.js, alleTermineDerPerson): je Buchung in
+        der Gemeinde eine Zeile (angemeldet, Warteliste, anwesend, abwesend,
+        abgemeldet, auch abgesagte Termine), dazu Event-Punkte ohne Buchung.
+        Je Eintrag `booking_id` (null bei Punkten ohne Buchung), `event_id`,
+        `event_name`, `event_date`, `location`, `mandatory`,
+        `is_konfirmation`, `cancelled`, `booking_status`,
+        `attendance_status`, `art` ('verbuchen' | 'anstehend' | 'erledigt';
+        'verbuchen' und 'anstehend' wie bei `termine`), `darf_verbuchen`
+        (dieselbe Pruefung wie bei `termine`), `points` (Summe der
+        Event-Punkte dieser Konfi am Termin, 0 ohne), `point_type` und
+        `points_von` (vergebende Person). Reihenfolge Eventdatum
+        absteigend. KEIN Sichtfilter nach Terminen: Die Liste ist die
+        Geschichte der Konfi, wer sie sehen darf, entscheidet die
+        Jahrgangs-Bindung der Route -- wie bisher GET /:id/event-points.
+        Bei Teamer:innen fehlt das Feld (ihre Buchungen stehen in
+        `teamerEvents`, die Event-Punkte der Konfi-Zeit in `konfiHistory`).
+        `termine` und GET /:id/event-points bleiben unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]

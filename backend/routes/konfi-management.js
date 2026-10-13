@@ -19,7 +19,7 @@ const { getKonfiBadgeProgress } = require('../utils/konfiBadgeProgress');
 // super_admin sind ausgenommen, admin und teamer brauchen die Zuweisung.
 // Hier immer mit { edit: true }: Anlegen und Verschieben sind Schreibwege.
 const { darfJahrgang, darfKonfi } = require('../utils/jahrgangsZugriff');
-const { termineDerPersonFuerLeitung } = require('../utils/terminLeitungSicht');
+const { alleTermineDerPerson, termineDerPersonFuerLeitung } = require('../utils/terminLeitungSicht');
 const { istMitgliedDerOrganisation, ladeRolleInGemeinde } = require('../utils/orgMitglieder');
 const PushService = require('../services/pushService');
 const liveUpdate = require('../utils/liveUpdate');
@@ -1278,10 +1278,21 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // utils/terminLeitungSicht.js. Alte Apps lesen das Feld nicht.
             const termine = await termineDerPersonFuerLeitung(db, req, konfiId);
 
+            // ALLE Termine einer Konfi in einer Liste (13.10.2026, additiv):
+            // angemeldet, Warteliste, anwesend, abwesend, abgemeldet -- mit
+            // Pflicht, Punkten und darf_verbuchen (utils/terminLeitungSicht.js,
+            // alleTermineDerPerson). Nur bei Konfis: Eine Teamer:in hat ihre
+            // Buchungen in teamerEvents, und die Event-Punkte ihrer Konfi-Zeit
+            // stehen in konfiHistory -- hier kaemen sie ein zweites Mal.
+            const alleTermine = konfi.role_name === 'konfi'
+                ? await alleTermineDerPerson(db, req, konfiId)
+                : undefined;
+
             res.json({
                 ...konfi,
                 konfspruch,
                 termine,
+                ...(alleTermine ? { alleTermine } : {}),
                 activities: activities || [],
                 bonusPoints: bonusPoints || [],
                 badgeCount: badgeResult ? badgeResult.badgeCount : 0,
