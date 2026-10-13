@@ -316,8 +316,9 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
   - *Eine Stelle für alle App-Modale:* Der Rahmen schreibt im breiten Layout
     `data-layout="breit"` an `<html>` (`navigation/layoutImDokument.ts`, in
     den Apps nie); `theme/web-modale.css` stellt darunter jedes App-Modal
-    kompakt — 560 px breit, so hoch wie der Inhalt, die Anwesenheit 880 px,
-    Datumswähler in Kalendergröße. Ausgenommen: Vollbild-Ansichten
+    kompakt — 560 px breit, so hoch wie der Inhalt, Datumswähler in
+    Kalendergröße (die Anwesenheit hatte hier bis 13.10.2026 eigene 880 px;
+    seitdem ist sie ein eigener Dialog, unten). Ausgenommen: Vollbild-Ansichten
     (Rückblick, Datei-Betrachter, alles mit `data-dialogname`) und die
     Chat-Fenster der Web-Fassung mit eigener Größe (`theme/web/chat.css`).
   - *Eigene Dialoge (`WebDialog`) für die häufigen Formulare:* Event anlegen,
@@ -325,8 +326,11 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     prüfen (Leitung) und melden (Konfi, Team); Material anlegen, bearbeiten
     und ansehen; Badge; Kategorie, Level, Zertifikat; Benutzer:in (auch
     „Teamer:in anlegen") und Jahrgang; Passwort und E-Mail in allen drei
-    Rollen. Je Formular ein Hook, den App-Modal und Dialog teilen
-    (`useEventFormular`, `useAktivitaetEintragen`, `useBadgeFormular` …);
+    Rollen; seit 13.10.2026 auch Konfi anlegen und bearbeiten (mit
+    Einmalpasswort und Rückfragen im Fenster) und die Anwesenheit (bis
+    1120 px breit, die Tabelle rollt im Fenster). Je Formular ein Hook, den
+    App-Modal und Dialog teilen (`useEventFormular`, `useAktivitaetEintragen`,
+    `useBadgeFormular`, `useKonfiFormular`, `useAnwesenheitsMatrix` …);
     das App-Modal sieht aus und verhält sich wie vorher, bis auf die Fehler,
     die dabei behoben wurden (Badge-Auswahl beim Bearbeiten und Zeitraum ohne
     eigene Wahl, deutsches Datum beim Melden, gemerkte Liste beim Eintragen
@@ -349,11 +353,10 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     Ansichten, keine Formulare. Die Meldung „… sobald du wieder online bist"
     bleibt ein Toast, weil der Dialog dann schon zu ist.
   - *Offen — im Browser noch App-Modal, kompakt:* Challenge anlegen und
-    bearbeiten (`ChallengeManageModal`) und Beitrag einreichen, Konfi anlegen
-    und bearbeiten (`KonfiModal`), Teilnehmende hinzufügen
-    (`ParticipantManagementModal`), Zertifikat zuweisen, Aktivität im
-    Katalog (`ActivityManagementModal`), Person einladen, Event absagen,
-    Abmeldung nachtragen und Notiz in der Teilnehmerliste, die Anwesenheit,
+    bearbeiten (`ChallengeManageModal`) und Beitrag einreichen, Teilnehmende
+    hinzufügen (`ParticipantManagementModal`), Zertifikat zuweisen, Aktivität
+    im Katalog (`ActivityManagementModal`), Person einladen, Event absagen,
+    Abmeldung nachtragen und Notiz in der Teilnehmerliste,
     Abmelden vom Event (Konfi, `UnregisterModal`) und Absage (Team und
     eigene Absage der Leitung, `TeamerAbsageModal`), Punkte-Übersicht,
     Konfispruch, Bibelübersetzung, Funktionsbeschreibung,

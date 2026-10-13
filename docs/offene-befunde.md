@@ -458,8 +458,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   - Im Dunkeln hebt sich der Datumswähler über einem App-Modal kaum ab
     (gleicher Grund wie die Karte darunter), und der Knopf der Schalter ist
     schwarz statt weiß.
-  - Die Anwesenheit nutzt die 880 px schlecht: Namensspalte schmal und
-    zentriert, die Σ-Spalte nimmt die rechte Hälfte ein.
+  - Die Anwesenheit ist im Browser seit 13.10.2026 ein eigenes Fenster
+    (bis 1120 px, Namen links und beim Rollen stehend) statt des App-Modals
+    mit 880 px; das Fenster ist noch nicht am Bild geprüft (Spaltenbreiten
+    bei wenigen und bei vielen Pflicht-Events, Breite der Σ-Spalte).
 
 ### Tests und CI
 
@@ -648,6 +650,25 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Fehlermessung (`trackFehler`); die App misst sie weiter, die
   Support-Fenster schon bisher nicht. Mitzählen hieße: ein Weg im
   `AppContext`, der misst, ohne einen Toast zu zeigen (11.10.2026).
+- **Anwesenheit: Summe der Tabelle und „x von y besucht“ zählen
+  verschieden.** Die Konfi-Liste und die Konfirmations-Karte zählen besuchte
+  von bisher fälligen Pflicht-Events: entschuldigt zählt als nicht besucht,
+  Events ohne Jahrgang zählen mit, künftige nicht (Simon, 13.10.2026: „3 von
+  5, entschuldigt zählt als nicht besucht“; `backend/utils/pflichtTermine.js`).
+  Die Spalte Σ der Anwesenheit (App und Browser,
+  `berechneZeilenStats` in `frontend/src/utils/anwesenheitsMatrix.ts`) zählt
+  anwesend von allen Pflicht-Events des Jahrgangs ohne Abmeldungen:
+  Selbstabmeldung und nachgetragene Entschuldigung fallen aus dem Nenner
+  (Befund 4, 25.08.2026; 12.09.2026), künftige Events zählen mit, Events ohne
+  Jahrgang fehlen, weil die Tabelle für sie keine Spalte hat. Beispiel:
+  anwesend am 04.10., entschuldigt am 10.10. — Karte „1 von 2 besucht“, Σ
+  „1/1“; so auch schon vor dem 13.10.2026. Die Anwesenheit per E-Mail rechnet
+  ein drittes Mal anders: Sie zieht nur Selbstabmeldungen ab (dort „1 von
+  2“), auch wenn die Konfi danach doch als anwesend eingetragen wurde
+  (`matrix-email` in `backend/routes/jahrgaenge.js`). Soll Σ derselben Regel
+  folgen wie Liste und Karte (dann auch die E-Mail und die Spalten für Events
+  ohne Jahrgang), oder bleibt Σ „ohne Abmeldungen“ und die E-Mail wird daran
+  angeglichen? (13.10.2026)
 
 ## Geplant
 
