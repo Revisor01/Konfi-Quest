@@ -2,7 +2,8 @@
 
 Stand: **umgesetzt am 11.10.2026** — Pakete 1 bis 5 und der
 [Lizenz-Vorgang](#der-lizenz-vorgang), nach Simons Antworten vom 11.10.2026
-([unten](#fragen-an-simon)); Paket 6 und die Fragen 10 und 11 sind offen.
+([unten](#fragen-an-simon)); Paket 6 mit Frage 11 am 13.10.2026, Frage 10
+entfällt (Simon, 12.10.2026).
 Nachgemessen am 12.10.2026 ([Messbarer Gewinn](#messbarer-gewinn)). Wie die
 Seiten jetzt arbeiten: [betrieb/support-ansicht.md](../betrieb/support-ansicht.md).
 Baut auf [support-vorgaenge.md](support-vorgaenge.md) (Entscheidung 7),
@@ -348,9 +349,10 @@ Sammelüberschrift „Gemeinde, Anfrage und Notiz".
   entfällt (heute dreimal). Keine Angaben-Karte, sie wiederholte nur den
   Kopf.
 - Nach dem Einsortieren geht es wie heute in den Vorgang.
-- **Optional, Backend additiv (Frage 11):** ein Feld `absender_bekannt` an
-  `GET /support/mail/nachrichten/:id` für die Zeile „Absender gehört zu
-  Test-Gemeinde St. Martin · 2 offene Vorgänge [In Vorgang 2 einsortieren]".
+- **Backend additiv (Frage 11, umgesetzt 13.10.2026):** ein Feld
+  `absender_bekannt` an `GET /support/mail/nachrichten/:id` für die Zeile
+  „Absender gehört zu Test-Gemeinde St. Martin · 2 offene Vorgänge [In
+  Vorgang 2 einsortieren]"; Einsortieren ist damit vorbelegt.
 
 ### E. Mail, die in einem Vorgang liegt
 
@@ -463,6 +465,7 @@ das Ende der Mail und „Antwort senden" zugleich zu sehen sind
   der Liste statt eines leeren Lesebereichs (Frage 6).
 - **Optional (Frage 10):** Suche in den Listenkopf, Untertitel weg; bringt
   ≈ 80 px Lesehöhe, weicht aber vom Kopf aller anderen Web-Listen ab.
+  Entfällt (Simon, 12.10.2026).
 
 ## In der App (390 × 844)
 
@@ -587,6 +590,23 @@ eine ≈ 90 px schmale Spalte über vier Zeilen mit Silbentrennung). Art,
 Gemeinde und Suche wandern hinter einen Filter-Knopf: die erste Karte bei
 y ≈ 200 statt 431. Die Postfach-Karte des Posteingangs wird eine Zeile: die
 erste Mail bei y ≈ 200 statt 611.
+
+**Umgesetzt am 13.10.2026 (Paket 6), gemessen** gegen den lokalen
+Testbestand, 390 × 844, iPhone- und Pixel-Kennung, hell und dunkel gleich:
+
+| | iOS vorher | iOS nachher | Android vorher | Android nachher |
+|---|---|---|---|---|
+| Vorgänge: erste Karte (y) | 504 | 239 | 431 | 202 |
+| Vorgänge: Höhe der ersten Karte | 249 | 150 | 280 | 159 |
+| Vorgänge: Betreff (Breite, Zeilen) | 96 px, 5 | 230 px, 2 | 98 px, 5 | 232 px, 2 |
+| Posteingang, zwei Postfächer ohne Zugangsdaten: erste Mail (y) | 616 | 289 | 623 | 252 |
+| Posteingang, Postfächer in Ordnung: erste Mail (y) | 251 | 251 | 214 | 214 |
+| Posteingang: Höhe der drei Mails | 159 / 271 / 241 | 132 / 171 / 169 | 178 / 308 / 271 | 138 / 183 / 177 |
+
+Mit aufgeklapptem Filter oder Art in der Adresse steht die erste Karte
+wieder bei 504 bzw. 431 — die Felder stehen dann offen, weil sie
+eingrenzen. Der Knopf zählt Art, Gemeinde und Suche (im Browser zählt er
+die Suche nicht, sie steht dort daneben).
 
 ## Der Lizenz-Vorgang
 
@@ -817,10 +837,12 @@ die verfehlt sind"):
 
 ## Umsetzung in Paketen
 
-**Stand 12.10.2026:** Pakete 1 bis 5 und der Lizenz-Vorgang sind gebaut
-(Branches `support-detail/*`, Doku gesammelt im letzten Schritt). Paket 6 ist
-offen; davon steht `vorgang_id` an den neuesten Mails der Übersicht in
-[offene-befunde.md](../offene-befunde.md).
+**Stand 13.10.2026:** Pakete 1 bis 6 und der Lizenz-Vorgang sind gebaut.
+Aus Paket 6 entfällt der kompakte Rahmen (Frage 10); die übrigen Teile —
+Listen am Handy, `vorgang_id` an den neuesten Mails der Übersicht,
+`status` und `antwort_auf` an `POST /support/vorgaenge/:id/antworten`,
+`absender_bekannt` — sind additiv und in
+[betrieb/support-ansicht.md](../betrieb/support-ansicht.md) beschrieben.
 
 Jedes Paket für sich auslieferbar, ein Commit je Paket, im selben Commit
 CHANGELOG, `docs/betrieb/support-ansicht.md` und Tests. Keine Route und
@@ -849,8 +871,9 @@ betroffen.
    Weiterleitung einsortierter Mails auf `?mail=`; Links der Übersicht; Menü
    (···) an der Mail; „Breit lesen" mit ‹ ›; nächster Eintrag nach dem
    Abschluss (Frage 6).
-6. **Optional, eigener Schritt** — Listen am Handy, Web-Listenzeile mit
-   Kreis, kompakter Rahmen (Frage 10), additive Backend-Felder
+6. **Optional, eigener Schritt (gebaut 13.10.2026, ohne Frage 10)** —
+   Listen am Handy, Web-Listenzeile mit Kreis, kompakter Rahmen (Frage 10),
+   additive Backend-Felder
    (`absender_bekannt`, `status` an `POST …/antworten`, `antwort_auf`), je
    mit Backend-Test, Eintrag in der exakten Feldliste von
    `backend/tests/routes/supportVorgaenge.test.js` und in
@@ -925,7 +948,9 @@ dieselben Daten.
    Kennzeichen. Messen; falls es stört, Ablehnen nur im Einordnen-Dialog.
 5. **„Danach" braucht zwei Aufrufe.** Scheitert der zweite, muss „Gesendet,
    Status nicht gesetzt" kommen. Sauberer wäre ein additives Feld `status`
-   an `POST …/antworten` (Paket 6).
+   an `POST …/antworten` (Paket 6). *Erledigt 13.10.2026:* Der Status geht
+   mit der Antwort und wird in derselben Transaktion gesetzt; der PATCH
+   bleibt nur als Rückfallebene für einen Server ohne das Feld.
 6. **Die Weiterleitung `/post/:id` braucht replace**, sonst landet „Zurück"
    wieder in ihr. Das Menü „In anderen Vorgang verschieben" muss vorher
    stehen, sonst fehlt der Weg zum Umsortieren.
@@ -971,10 +996,11 @@ ist alles außer den Fragen 10 und 11, die offen bleiben.
    Schalter je Gerät.
 10. **Kompakter Rahmen:** Suche in den Listenkopf, Untertitel weg (≈ 80 px
     mehr Lesehöhe, weicht von den anderen Web-Listen ab)? *Vorschlag: erst
-    nach Paket 5 messen.* **Offen** — nicht umgesetzt.
+    nach Paket 5 messen.* **Antwort:** nein, entfällt (Simon, 12.10.2026).
 11. **Absender einer bekannten Gemeinde** im Posteingang anzeigen und beim
     Einsortieren vorbelegen (Backend additiv)? *Vorschlag: später,
-    Paket 6.* **Offen** — nicht umgesetzt.
+    Paket 6.* **Antwort:** ja, mit Paket 6 (Simon, 12.10.2026); umgesetzt
+    am 13.10.2026 mit „In Vorgang N einsortieren“ ohne Dialog.
 12. **Wort für den Bereich „termine":** im Support „Events", im Formular und
     in den Mails „Termin". *Vorschlag: „Events", wie überall in der App.*
     **Antwort:** „Events". Im Code hieß der Bereich schon so; die Skizzen

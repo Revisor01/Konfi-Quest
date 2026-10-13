@@ -332,22 +332,23 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   zweiten Fenster, wie Event und Badge. Damit auch die beiden Toasts, die
   noch unter einem Fenster lagen: „Fehler beim Öffnen der Datei“ im Material
   und „Foto erfolgreich gelöscht“ beim Prüfen einer Aktivität.
+- [x] 13.10.2026 — Support-Detailseiten Paket 6 (Simon, 12.10.2026: „Genau
+  so wie du sagst“), ohne den kompakten Rahmen (Frage 10): Listen von
+  Vorgängen und Posteingang am Handy (erste Karte iOS y 504 → 239, Android
+  431 → 202; erste Mail bei zwei gestörten Postfächern 616 → 289 bzw.
+  623 → 252), „Absender gehört zu …“ mit „In Vorgang N einsortieren“ und
+  vorbelegtem Einsortieren (Frage 11), „Danach“ in einem Aufruf mit der
+  Antwort, Antwort-Kopfzeilen auf die beantwortete Mail, die Antwort aus
+  dem Posteingang an die angezeigte Person, und die neuesten Mails der
+  Übersicht führen direkt in ihren Vorgang. Alle Felder additiv
+  ([planung/support-detailseiten.md](planung/support-detailseiten.md);
+  Branch `claude/fervent-edison-wp5yfj`).
 
 
 ## Offen
 
 ### Code
 
-- **Übersicht: neueste Mails ohne Vorgang.** `GET /support/uebersicht`
-  liefert in `neueste_mails` kein `vorgang_id`:
-  `backend/routes/supportUebersicht.js` (`neuesteMails`) wählt es nicht
-  aus, und `ZUORDNUNG_SPALTEN` in `backend/utils/mailNachrichten.js` nennt
-  nur `anfrage_id`, `organization_id` und `gemeinde_name`. Ein Klick auf eine
-  der neuesten Mails geht deshalb über die Seite der Mail, die sich dann
-  durch den Vorgang ersetzt. Mit dem Feld (additiv, Paket 6 der
-  Detailseiten) führte die Übersicht direkt in den Vorgang; die Oberfläche
-  kann es schon (`WebUebersicht`, Test in `webUebersicht.test.tsx`)
-  (12.10.2026).
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird
@@ -462,6 +463,19 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Tests und CI
 
+- **Cron-Leader-Anzeige sieht Locks anderer Datenbanken.**
+  `cronLeaderVorhanden` (`backend/utils/cronLeader.js`) sucht den
+  Advisory-Lock in `pg_locks` ohne Bedingung auf die Spalte `database`.
+  Advisory-Locks gelten je Datenbank, `pg_locks` zeigt aber die des ganzen
+  Clusters: Läuft ein zweiter Konfi-Quest-Server gegen eine andere
+  Datenbank desselben Clusters, meldet `/api/status` `cron_leader: true`,
+  auch wenn in der eigenen niemand den Lock hält. Gesehen am 13.10.2026
+  lokal: Mit einem laufenden Server auf der Datenbank `live` scheitern die
+  Tests in `cronLeader.test.js` und `statusBetrieb.test.js`, die
+  `konfi_test` im selben Cluster nutzen. Ob in Produktion eine zweite
+  Datenbank im Cluster läuft, ist nicht geprüft. Vorschlag:
+  `AND database = (SELECT oid FROM pg_database WHERE datname = current_database())`
+  mit Test (13.10.2026).
 - **Komponenten ohne eigenen Test.** 123 von 422 Dateien unter
   `frontend/src/components/` kommen in keiner Testdatei als Pfad vor
   (09.10.2026, 86 davon Web-Fassung; viele laufen in gerenderten
@@ -564,6 +578,21 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
+- **Support am Handy: Filter-Knopf zählt die Suche mit.** In der App steht
+  die Suche hinter dem Knopf „Filter“ und zählt deshalb mit („Filter, 1
+  aktiv“, sobald etwas gesucht wird); im Browser steht sie daneben und zählt
+  nicht. So lassen, weil sonst eine Suche hinter dem zugeklappten Knopf
+  unbemerkt eingrenzt, oder wie im Browser nur Art und Gemeinde zählen?
+  (13.10.2026)
+- **Support: Antwort aus dem Posteingang nur auf Mails im Posteingang.** Die
+  Antwort von der Seite einer Mail im Posteingang geht an die jüngste
+  eingehende Mail des Gesprächs, die selbst noch im Posteingang liegt. Liegt
+  eine jüngere Mail desselben Gesprächs schon in einem Vorgang, wird sie
+  übergangen — sonst bekäme die Antwort die Zuordnung dieses Vorgangs und
+  stünde nicht mehr im Posteingang. So lassen, oder in dem Fall auf den
+  Vorgang verweisen („Die jüngste Mail liegt in Vorgang N“)?
+  (`posteingangsAntwortAuf` in `frontend/src/utils/supportMail.ts`;
+  13.10.2026)
 - **Support-Detailseiten: Kreis der Art im schmalen Lesebereich.** Unter
   600 px Lesebreite — bei 1280 px Fensterbreite neben der Liste — blendet
   der Kopf den Kreis der Art aus; mit Kreis rutschten die Knöpfe in eine

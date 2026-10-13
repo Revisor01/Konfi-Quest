@@ -118,12 +118,9 @@ Die Übersicht im Browser liest `GET /api/support/uebersicht`:
 - **Neueste offene Vorgänge und Mails** (je fünf), **Testphasen, die in den
   nächsten 14 Tagen enden**, und Gemeinden je Landeskirche. Die Mails stehen
   mit dem Kern des Betreffs (ohne „Re:“, „AW:“ und `[Vorgang 12]`), der volle
-  Betreff im Tooltip. Ein Klick führt über die Seite der Mail; liegt sie in
-  einem Vorgang, ersetzt sich die Seite durch ihn (unten, „Mails beantworten
-  und einsortieren“). Direkt in den Vorgang führte er, wenn der Server zu
-  jeder Mail `vorgang_id` liefert — das tut er heute nicht
-  ([offene-befunde.md](../offene-befunde.md), „Übersicht: neueste Mails
-  ohne Vorgang“).
+  Betreff im Tooltip. Liegt die Mail in einem Vorgang (`vorgang_id` an jeder
+  Mail), öffnet ein Klick ihn direkt, mit der Mail aufgeklappt; eine Mail
+  im Posteingang öffnet ihre eigene Seite.
 
 Monate und Wochen rechnen in deutscher Zeit. Konten zählen wie in der
 Statistik: nicht gelöscht, nicht gesperrt, Support-Konten ohne Gemeinde
@@ -167,12 +164,19 @@ CHECK in Migration 195 hält die Datenbank dazu.
 
 **Liste** (Bereich **Vorgänge**): im Browser links neben dem Lesebereich, je
 Zeile Kreis der Art, Betreff, Zeit der letzten Aktivität, Nummer, Art,
-Gemeinde, ungelesene Mails, Dringlichkeit und Status; in der App eine Liste.
+Gemeinde, ungelesene Mails, Dringlichkeit und Status. In der App ist es eine
+Liste: vor jeder Zeile der Kreis der Art mit der Zahl ungelesener Mails, der
+Betreff über die ganze Breite, darunter Nummer, Art, Bereich, Gemeinde und
+Zeit und eine Zeile mit Dringlichkeit und Status.
 Filter **Offen** (Neu, In Arbeit, Wartet),
 **Neu**, **In Arbeit**, **Wartet** und **Archiv** (darin die erledigten),
-dazu Art, Gemeinde (hinter „Filter“) und eine Suche über Betreff,
-Beschreibung, Kontakt, Gemeinde und die Mails des Vorgangs; „#12“ findet
-Vorgang 12. Im Browser lassen sich mehrere Zeilen ankreuzen („Alle
+dazu Art, Gemeinde und eine Suche über Betreff, Beschreibung, Kontakt,
+Gemeinde und die Mails des Vorgangs; „#12“ findet Vorgang 12. Art und
+Gemeinde stehen hinter dem Knopf **Filter**, im Browser mit der Suche
+daneben. In der App steht der Knopf oben in der Kopfzeile und klappt die
+Suche mit auf. Er zählt, was gerade eingrenzt (in der App auch die Suche);
+kommt man mit Art oder Gemeinde in der Adresse (`?art=…`, `?gemeinde=…`),
+stehen die Felder offen. Im Browser lassen sich mehrere Zeilen ankreuzen („Alle
 auswählen“ steht oben in der Liste) und gemeinsam archivieren,
 wiederherstellen, löschen oder auf einen Status setzen. **Neuer Vorgang**
 legt einen an — mit Text geht zugleich eine Mail von support@ hinaus, an eine
@@ -620,7 +624,10 @@ nicht der Altbestand. Auf einer Instanz mit `RUN_BACKGROUND_JOBS=false` wird
 weder abgeholt noch versendet. Den Zustand zeigt der Bereich **Posteingang**
 oben in einer Zeile („moin@ und support@ … zuletzt abgeholt …“); ist ein
 Postfach nicht eingerichtet, auf diesem Server aus oder meldet einen Fehler,
-steht dort je Postfach ein Kasten mit dem Grund.
+steht dort der Grund — im Browser je Postfach ein Kasten, in der App eine
+Zeile je Postfach („support@ · Fehler beim Abholen: …“); zwei Postfächer mit
+demselben Grund teilen sich eine Zeile („moin@ und support@ · Zugangsdaten
+fehlen: …“).
 
 Übernommen werden der Text und von Anhängen nur Name, Typ und Größe. Eine
 Mail über 10 MB (`MAX_MAIL_GROESSE` in `services/mailAbholung.js`) lädt der
@@ -648,7 +655,9 @@ Arbeit zurück.
 
 Der **Posteingang** zeigt nur die eingehenden Mails beider Postfächer, die
 keinem Vorgang zugeordnet und nicht archiviert sind; Filter „Alle“,
-„Ungelesen“, „moin@“, „support@“ und „Archiv“.
+„Ungelesen“, „moin@“, „support@“ und „Archiv“. In der App steht der Betreff
+über die ganze Breite, darunter Absender, Zeit und Anhänge, zwei Zeilen der
+Mail und das Postfach als Marke.
 
 **Eine Mail im Posteingang** hat oben den Kern des Betreffs (ohne „Re:“,
 „AW:“ und `[Vorgang 12]`), darunter „Von Name <adresse> · an support@“, die
@@ -656,14 +665,30 @@ Zeit und, wenn es sie gibt, die Zahl der Mails im Faden und der Anhänge; im
 Browser mit dem Kreis der Initialen davor, in der App mit den Kacheln Mails,
 Neu und Anhänge und dem Postfach als Marke in der Karte „Stand“. Darunter
 steht der Verlauf wie im Vorgang, ohne Menü zum Verschieben, mit der
-Antwortzeile unter der jüngsten Mail. Je Mail:
+Antwortzeile unter der jüngsten Mail.
+
+Gehört die Absenderadresse zu genau einem aktiven Konto der Leitung oder des
+Teams in genau einer Gemeinde (dieselbe Regel wie beim Zuordnen, Schritt 4),
+steht über dem Verlauf, in der App in der Karte „Stand“: „Absender gehört zu
+Test-Gemeinde · 2 offene Vorgänge“. Hat die Gemeinde einen offenen Vorgang,
+steht daneben **In Vorgang N einsortieren** — N ist der jüngste offene; ein
+Klick legt die Mail ohne Dialog dorthin und öffnet den Vorgang. Steht ein
+ungesendeter Entwurf da, fragt der Browser vorher nach. Konfis zählen dabei
+nicht; eine Adresse mit mehreren Konten oder Gemeinden ist nicht eindeutig,
+dann fehlt die Zeile.
+
+Je Mail:
 
 - **Einsortieren** — der Hauptknopf, denn der Posteingang ist zum Zuordnen
   da — in einen bestehenden Vorgang (mit Suche) oder in einen neuen mit Art,
   Bereich, Dringlichkeit, Betreff und Gemeinde; der ganze Faden geht mit,
-  soweit er noch im Posteingang liegt. Danach öffnet sich der Vorgang mit
-  dieser Mail.
-- **Antworten** daneben, direkt an den Absender.
+  soweit er noch im Posteingang liegt. Kennt der Server den Absender, sind
+  der jüngste offene Vorgang seiner Gemeinde und, für einen neuen Vorgang,
+  die Gemeinde vorgewählt. Danach öffnet sich der Vorgang mit dieser Mail.
+- **Antworten** daneben, an den Absender der jüngsten eingehenden Mail des
+  Gesprächs, die noch im Posteingang liegt, von ihrem Postfach — an die
+  Person, die der Editor nennt, auch wenn man eine ältere Mail des Gesprächs
+  geöffnet hat.
 - **Archivieren** (aus dem Eingang ins Archiv, wiederherstellbar) und
   **Löschen** (mit Rückfrage; nur aus Konfi Quest, im Postfach bleibt sie) —
   im Browser als Symbole im Kopf, in der App Archivieren oben in der
@@ -725,8 +750,10 @@ Zeit“ mit drei Zeilen der Mail, „ganz lesen“ zeigt sie ganz. Der Editor:
   eingeklappte **Vorschau mit Fußzeile**.
 - **Danach** — der Status, den der Vorgang nach dem Senden bekommt:
   vorgewählt „Wartet auf Rückmeldung“, zur Wahl „In Arbeit“ und „Erledigt“;
-  bei einer Anfrage, die noch nicht angelegt ist, ohne Erledigt. Gesetzt
-  wird er erst, wenn die Mail hinaus ist. Klappt das nicht, steht dort
+  bei einer Anfrage, die noch nicht angelegt ist, ohne Erledigt. Er geht mit
+  der Antwort an den Server, der ihn setzt, sobald die Mail hinaus ist — im
+  selben Schritt, in dem er sie speichert. Bestätigt der Server ihn nicht,
+  setzt die Oberfläche ihn danach eigens; klappt auch das nicht, steht dort
   „Gesendet, Status nicht gesetzt.“ statt der Erfolgsmeldung. „Danach“ gibt
   es nur, solange der Vorgang offen ist: Eine Antwort auf einen erledigten
   oder archivierten Vorgang — auch auf eine abgelehnte Anfrage — lässt den
@@ -735,10 +762,12 @@ Zeit“ mit drei Zeilen der Mail, „ganz lesen“ zeigt sie ganz. Der Editor:
 Vor dem Senden kommt eine Rückfrage; Hinweise zu einem nicht eingerichteten
 Postfach, „Senden ist aus“ und die Fehler 502 und 503 stehen im Editor wie
 bisher. Der Server setzt die Fußzeile darunter, `[Vorgang 12]` in den
-Betreff, die Antwort-Kopfzeilen auf die letzte Mail des Verlaufs und legt die
-Antwort in den Ordner „Gesendet" des Postfachs (fehlt er, legt er „Sent"
-an). Eine Anfrage antwortet von moin@, alles andere von support@. Eine
-Antwort auf einen neuen Vorgang setzt ihn auf „In Arbeit". Scheitert der
+Betreff, die Antwort-Kopfzeilen (`In-Reply-To`, `References`) auf die
+beantwortete Mail — im Vorgang die jüngste eingehende, in der App die unter
+„Du antwortest auf“ — und legt die Antwort in den Ordner „Gesendet" des
+Postfachs (fehlt er, legt er „Sent" an). Eine Anfrage antwortet von moin@,
+alles andere von support@. Eine Antwort ohne „Danach“ auf einen neuen
+Vorgang setzt ihn auf „In Arbeit". Scheitert der
 Versand, wird nichts gespeichert; der Entwurf bleibt stehen.
 
 **Textbausteine und Fußzeile** (Bereich **Textbausteine**): Bausteine für
