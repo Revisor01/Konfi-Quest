@@ -10,6 +10,13 @@ Versionsüberschrift.
 ## [Unreleased] - 2.4.0
 
 ### Hinzugefügt
+- In der Konfi-Liste der Leitung im Browser steht je Konfi, wie viele der
+  bisher fälligen Pflicht-Events sie besucht hat („3 von 5“), als eigene,
+  sortierbare Spalte und auf den Kacheln; entschuldigt zählt als nicht
+  besucht.
+- Ein Klick auf eine Aktivität, die aus einem Antrag stammt, öffnet im Browser
+  auf der Detailseite einer Konfi diesen Antrag mit Datum, Kommentar, Foto und
+  wer entschieden hat.
 - Umfragen im Chat lassen sich auf eine einzige Antwort festlegen: Wer
   abgestimmt hat, kann die Stimme danach nicht mehr ändern — etwa für ein
   Quiz. Bei Mehrfachauswahl wird erst ausgewählt und dann „Antwort abgeben"
@@ -179,6 +186,32 @@ Versionsüberschrift.
   „Ablehnen".
 
 ### Geändert
+- Der Reiter „Team“ zeigt seine Anzahl gleich beim Öffnen der Konfi-Seite; in
+  der App stehen die Zahlen am Umschalter Konfis/Team.
+- Der Knopf „Anwesenheit“ steht nur noch bei den Konfis, nicht beim Team.
+- Die besuchten Pflicht-Events auf der Detailseite einer Konfi zählen auch
+  Termine für die ganze Gemeinde mit und keine Termine „Nur Team“ mehr, auch
+  bei einer Konfi ohne Jahrgang.
+- Im Browser öffnen „Konfi anlegen“ und „Konfi bearbeiten“ ein eigenes Fenster;
+  Benutzername und Einmalpasswort, die Rückfrage zum Konfi-Limit und Fehler
+  stehen darin.
+- Die Anwesenheit öffnet im Browser ein eigenes, breites Fenster mit dem Namen
+  jedes Events im Kopf, einer Legende und den Konfisprüchen; die Tabelle rollt
+  im Fenster, Namen und Kopfzeile bleiben dabei stehen.
+- Auf der Detailseite einer Konfi im Browser tragen Aktivitäten, Events und
+  Bonuspunkte vorn ein Symbol in der Farbe ihrer Punkteart: Gottesdienst blau,
+  Gemeinde grün, Events rot, Bonus orange.
+- Die Events einer Konfi stehen im Browser in einer einzigen Liste: Offenes und
+  Anstehendes oben, Pflicht-Events gekennzeichnet, mit Stand, Punkten und wer
+  verbucht hat. Die Leitung sieht darin nur Termine ihrer Jahrgänge.
+- Aus einem Event, das man im Browser von der Detailseite einer Person geöffnet
+  hat, führt „Zurück“ wieder zu dieser Person.
+- Rückfragen vor dem Löschen zeigen oben einen Mülleimer, vor anderen
+  folgenreichen Schritten wie Abmelden, Verwerfen oder Sperren ein
+  Warndreieck.
+- Der Knopf, mit dem du in einer Rückfrage löschst oder verwirfst, ist auch
+  auf Android rot; im Browser ist er rot gefüllt, und alle Rückfragen sehen
+  dort aus wie die übrigen Fenster.
 - Im Browser öffnen sich alle Fenster der App kompakt: mittig, so groß wie ihr
   Inhalt und mit derselben Form wie die übrigen Fenster im Browser, statt
   immer gleich groß mit leerer Fläche oder abgeschnittenem Rand. Der Kalender
@@ -365,6 +398,12 @@ Versionsüberschrift.
   neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
+- Eine neu angelegte Teamer:in erscheint in der App sofort in der Team-Liste.
+- Nach dem Eintragen der Anwesenheit zeigt die Konfi-Liste Punkte und
+  Pflicht-Events gleich auf dem neuen Stand.
+- Wer einen genehmigten Antrag zurücksetzt, nimmt nur noch die Aktivität
+  dieses Antrags zurück, nicht die eines anderen Antrags oder eine Eintragung
+  der Leitung, deren Punkte sonst doppelt abgezogen wurden.
 - Im Browser stehen Rückfragen und Meldungen aus einem Fenster über dem
   Fenster; bisher lagen sie dahinter — etwa beim Anlegen einer Gemeinde aus
   einer Anfrage, das deshalb nicht weiterging, oder bei „Nicht möglich“ unter

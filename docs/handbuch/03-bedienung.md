@@ -206,6 +206,7 @@ denselben Grenzen wie in der App, nur die
 reichen weiter. Das gilt für:
 
 - Event anlegen, bearbeiten und kopieren
+- Konfi anlegen und bearbeiten
 - Aktivität eintragen und Bonuspunkte vergeben, auf der Seite einer Person
 - Aktivität melden (Konfis und Team) und Aktivität prüfen (Leitung)
 - Material anlegen, bearbeiten und ansehen
@@ -238,13 +239,21 @@ In diesen Fenstern gilt:
 
 In den übrigen Fenstern bleiben Titel und Knöpfe oben in der Kopfzeile stehen,
 und der Kalender zum Datum öffnet sich als kleines Fenster über dem Formular.
-Die Anwesenheit der Konfis bekommt mehr Breite, weil sie für jedes
-Pflicht-Event eine Spalte hat.
 
-Rückfragen vor dem Löschen oder Zurücksetzen kommen wie in der App und stehen
-über dem Fenster, ebenso Meldungen wie „Gespeichert"; nur wenn du im
-Material-Fenster eine Datei löschst, steht die Rückfrage in der Zeile der
-Datei.
+Die **Anwesenheit** der Konfis hat ein besonders breites Fenster mit Suche,
+Jahrgang und dem Umschalter zwischen Anwesenheit und Konfispruch. Die Tabelle
+hat eine Spalte je Pflicht-Event, im Kopf Datum und Name des Events, und
+rollt im Fenster; Kopfzeile und Namen bleiben dabei stehen. Escape leert
+zuerst die Suche, ein zweites Escape schließt das Fenster. „Per E-Mail an dich
+senden" schickt die gezeigte Ansicht an deine Adresse; die Bestätigung steht
+im Fenster.
+
+Rückfragen vor dem Löschen oder einem anderen folgenreichen Schritt sehen aus
+wie die übrigen Fenster: oben ein Symbol — ein Mülleimer vor dem Löschen, sonst
+ein Warndreieck —, darunter Titel und Text, rechts unten **Abbrechen** und der
+rot gefüllte Knopf. Sie stehen über dem Fenster, ebenso Meldungen wie
+„Gespeichert"; nur wenn du im Material-Fenster eine Datei löschst, steht die
+Rückfrage in der Zeile der Datei.
 Was ohne Netz geht, ist dasselbe wie in der App (siehe
 [Ohne Internet weiterarbeiten](#ohne-internet-weiterarbeiten)).
 
@@ -625,9 +634,12 @@ allem anderen.
 > **Immer nach links, nie nach rechts.** Es gibt in der ganzen App keine
 > einzige Liste, die andersherum funktioniert.
 
-**Vor dem Löschen kommt immer eine Rückfrage** — mit „Abbrechen" und einem roten
-Knopf daneben. Sie sagt auch, was genau verschwindet, etwa: „Der Jahrgang und
-sein Chatverlauf werden unwiderruflich entfernt."
+**Vor dem Löschen kommt immer eine Rückfrage** — oben ein Mülleimer, darunter
+„Abbrechen" und ein roter Knopf. Sie sagt auch, was genau verschwindet, etwa:
+„Der Jahrgang und sein Chatverlauf werden unwiderruflich entfernt." Vor anderen
+folgenreichen Schritten — Abmelden, Änderungen verwerfen, ein Konto sperren,
+einen Beitrag ausblenden — steht oben ein Warndreieck, der Knopf ist ebenso
+rot.
 
 ### Andere Wisch-Aktionen erkennen
 
