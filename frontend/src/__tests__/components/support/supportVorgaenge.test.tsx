@@ -294,13 +294,16 @@ describe('Vorgänge (App): Filter, Auswahl, Suche', () => {
 });
 
 describe('Vorgänge (App): Art, Gemeinde und Suche hinter dem Knopf „Filter“', () => {
-  it('ohne Auswahl ist der Bereich zu: keine Felder, der Knopf sagt „Filter“ und zeigt auf den Bereich', async () => {
+  it('ohne Auswahl ist der Bereich zu: keine Felder, der Knopf sagt „Filter“ und „zu“', async () => {
     await zeigen();
     expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
     for (const feld of ['Art filtern', 'Gemeinde filtern', 'Suche']) expect(screen.queryByLabelText(feld), feld).toBeNull();
     expect(filterKnopf()).toHaveAttribute('aria-label', 'Filter');
     expect(filterKnopf()).toHaveAttribute('aria-expanded', 'false');
-    expect(filterKnopf().getAttribute('aria-controls')).toMatch(/\S/);
+    // Kein aria-controls: Ionic reicht es an den Knopf im Shadow-DOM weiter, der
+    // Bereich liegt im Light-DOM -- die Verweis-ID löst über diese Grenze kein
+    // Vorleseprogramm auf, und zugeklappt zeigte sie ins Leere (12.10.2026).
+    expect(filterKnopf()).not.toHaveAttribute('aria-controls');
     // Keine Zahl am Knopf, solange nichts eingrenzt.
     expect(filterKnopf().textContent).toBe('');
     // Die Reiter stehen immer da.
@@ -312,7 +315,6 @@ describe('Vorgänge (App): Art, Gemeinde und Suche hinter dem Knopf „Filter“
     fireEvent.click(filterKnopf());
     expect(filterKnopf()).toHaveAttribute('aria-expanded', 'true');
     const bereich = screen.getByRole('group', { name: 'Filter' });
-    expect(bereich.id).toBe(filterKnopf().getAttribute('aria-controls'));
     expect(within(bereich).getByLabelText('Art filtern')).toBeInTheDocument();
     expect(within(bereich).getByLabelText('Gemeinde filtern')).toBeInTheDocument();
     expect(within(bereich).getByLabelText('Suche')).toBeInTheDocument();

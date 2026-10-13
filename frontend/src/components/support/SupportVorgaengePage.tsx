@@ -15,7 +15,7 @@
 // Die Logik steht in components/support/useVorgangsliste.ts und
 // useNeuerVorgang.ts, dieselbe wie in der Web-Fassung.
 
-import React, { useId, useState } from 'react';
+import React, { useState } from 'react';
 import {
   IonButton,
   IonContent,
@@ -179,7 +179,6 @@ const Vorgaenge: React.FC = () => {
   // schon etwas gewählt (?art=…, ?gemeinde=…), steht der Bereich offen, sonst
   // filterte etwas, das man nicht sieht. Ionic hält die Seite im Speicher;
   // setzt eine neue Adresse Art oder Gemeinde, klappt er ebenso auf.
-  const filterId = useId();
   const aktiveFilter = [mitArt, mitGemeinde, sucht].filter(Boolean).length;
   const [filterOffen, setFilterOffen] = useState(eingegrenzt);
   const filterSchluessel = `${auswahl.art}|${auswahl.gemeinde}`;
@@ -204,8 +203,11 @@ const Vorgaenge: React.FC = () => {
               // Element) schreibt React 19 ein true als leeres Attribut -- am
               // Knopf im Shadow-DOM stand dann aria-expanded="" (gemessen
               // 12.10.2026), was kein Vorleseprogramm als offen liest.
+              // Ohne aria-controls: Ionic reicht es an den Knopf im Shadow-DOM
+              // weiter, der Bereich liegt im Light-DOM -- über diese Grenze löst
+              // kein Vorleseprogramm die ID auf. Der Bereich folgt direkt auf
+              // die Reiter.
               aria-expanded={filterOffen ? 'true' : 'false'}
-              aria-controls={filterId}
               onClick={() => setFilterOffen((o) => !o)}
             >
               <IonIcon icon={ICON_FILTER} slot="icon-only" aria-hidden="true" />
@@ -237,7 +239,7 @@ const Vorgaenge: React.FC = () => {
         </div>
 
         {filterOffen && (
-          <div id={filterId} role="group" aria-label="Filter">
+          <div role="group" aria-label="Filter">
             <IonList style={{ background: 'transparent' }}>
               <IonItem lines="full" style={{ '--background': 'transparent' }}>
                 <IonLabel position="stacked">Art</IonLabel>

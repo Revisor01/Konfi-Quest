@@ -59,31 +59,50 @@ import { useBreitesLayout } from '../../navigation/breitesLayout';
 import WebPosteingang from './web/WebPosteingang';
 import './SupportVorgangTeile.css';
 
-/**
- * Ein gestörtes Postfach als eine Zeile: Postfach und Grund, mit denselben
- * Sätzen wie im Browser (web/WebPosteingang). Bis 12.10.2026 stand je Postfach
- * ein Kasten mit Adresse, Marke, Aufgabe und einem eigenen Hinweis-Kasten --
- * bei zwei nicht eingerichteten Postfächern begann die erste Mail erst bei
- * y 616 bis 623.
- */
-const PostfachStoerung: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
+type StoerungTon = 'fehler' | 'warnung' | 'hinweis';
+
+/** Grund und Ton eines gestörten Postfachs, mit denselben Sätzen wie im Browser (web/WebPosteingang). */
+const stoerungVon = (p: MailPostfachStatus): { name: string; grund: string; ton: StoerungTon } => {
   const aus = !aufDiesemServer(p);
   const gruende = [
     aus ? SERVER_AUS_HINWEIS : null,
     !p.eingerichtet && !aus ? `${ZUGANGSDATEN_FEHLEN.titel}: ${ZUGANGSDATEN_FEHLEN.text}` : null,
     p.fehler ? `Fehler beim Abholen: ${p.fehler}${p.fehler_am ? ` (${datumUhrzeit(p.fehler_am)})` : ''}` : null,
   ].filter((g): g is string => Boolean(g));
-  const ton = p.fehler ? 'fehler' : aus ? 'warnung' : 'hinweis';
-  return (
-    <li className={`support-postfach-stoerung support-postfach-stoerung--${ton}`}>
-      <IonIcon icon={ton === 'hinweis' ? ICON_INFO : ICON_WARNHINWEIS} aria-hidden="true" />
-      <span>
-        <strong>{POSTFACH_INFO[p.postfach]?.kurz || p.adresse || p.postfach}</strong>
-        {` · ${gruende.join(' · ')}`}
-      </span>
-    </li>
-  );
+  return {
+    name: POSTFACH_INFO[p.postfach]?.kurz || p.adresse || p.postfach,
+    grund: gruende.join(' · '),
+    ton: p.fehler ? 'fehler' : aus ? 'warnung' : 'hinweis',
+  };
 };
+
+/**
+ * Gestörte Postfächer als Zeilen: Postfach und Grund. Haben mehrere denselben
+ * Grund, steht er einmal da („moin@ und support@ · Zugangsdaten fehlen: …“).
+ * Bis 12.10.2026 stand je Postfach ein Kasten mit Adresse, Marke, Aufgabe und
+ * einem eigenen Hinweis-Kasten -- bei zwei nicht eingerichteten Postfächern
+ * begann die erste Mail erst bei y 616 bis 623.
+ */
+const stoerungsZeilen = (gestoert: MailPostfachStatus[]) => {
+  const zeilen: { namen: string[]; grund: string; ton: StoerungTon }[] = [];
+  for (const p of gestoert) {
+    const s = stoerungVon(p);
+    const gleich = zeilen.find((z) => z.grund === s.grund && z.ton === s.ton);
+    if (gleich) gleich.namen.push(s.name);
+    else zeilen.push({ namen: [s.name], grund: s.grund, ton: s.ton });
+  }
+  return zeilen;
+};
+
+const PostfachStoerung: React.FC<{ namen: string[]; grund: string; ton: StoerungTon }> = ({ namen, grund, ton }) => (
+  <li className={`support-postfach-stoerung support-postfach-stoerung--${ton}`}>
+    <IonIcon icon={ton === 'hinweis' ? ICON_INFO : ICON_WARNHINWEIS} aria-hidden="true" />
+    <span>
+      <strong>{namen.join(' und ')}</strong>
+      {` · ${grund}`}
+    </span>
+  </li>
+);
 
 const Posteingang: React.FC = () => {
   const router = useIonRouter();
@@ -114,7 +133,7 @@ const Posteingang: React.FC = () => {
         ) : status && status.length > 0 ? (
           <div role="status" aria-label="Postfächer">
             <ul className="support-postfach-stoerungen">
-              {stoerungen.map((p) => <PostfachStoerung key={p.postfach} p={p} />)}
+              {stoerungsZeilen(stoerungen).map((z) => <PostfachStoerung key={z.namen.join('+')} {...z} />)}
             </ul>
           </div>
         ) : status ? (
