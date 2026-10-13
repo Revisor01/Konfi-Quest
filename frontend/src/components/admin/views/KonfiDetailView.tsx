@@ -48,7 +48,7 @@ import type { Konfi, Activity, PersonTermin, AnwesenheitWahl } from './KonfiDeta
 import ActivityRequestModal from '../modals/ActivityRequestModal';
 import { anwesenheitSetzen } from '../../../utils/anwesenheitSetzen';
 import { darfTermineVerwalten } from '../../../utils/terminRechte';
-import type { BonusEintrag, EventPunkteEintrag } from '../../../types/user';
+import type { BonusEintrag, EventPunkteEintrag, KonfiFormDaten } from '../../../types/user';
 import { datumKurz } from '../../../utils/dateUtils';
 
 /**
@@ -82,6 +82,7 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import WebKonfiDetail from '../web/leitung/WebKonfiDetail';
 import WebAktivitaetDialog from '../web/leitung/WebAktivitaetDialog';
 import WebBonusDialog from '../web/leitung/WebBonusDialog';
+import { AENDERUNGEN_GESPEICHERT, konfiAendern, type KonfiZumBearbeiten } from '../useKonfiFormular';
 import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
@@ -421,26 +422,30 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     ];
   })();
 
+  // Was das Formular bekommt (useKonfiFormular).
+  const konfiZumBearbeiten: KonfiZumBearbeiten | undefined = currentKonfi ? {
+    id: currentKonfi.id,
+    display_name: currentKonfi.display_name || currentKonfi.name,
+    jahrgang_id: currentKonfi.jahrgang_id ?? null,
+    gottesdienst_points: currentKonfi.gottesdienst_points ?? currentKonfi.points?.gottesdienst,
+    gemeinde_points: currentKonfi.gemeinde_points ?? currentKonfi.points?.gemeinde
+  } : undefined;
+  // Nur fuer `admin` von Bedeutung: org_admin sieht ohnehin alle Jahrgaenge,
+  // die Warnung waere dort schlicht falsch.
+  const eigeneJahrgangIds = user?.role_name === 'admin'
+    ? (user.assigned_jahrgaenge || []).filter((j) => j.can_view !== false).map((j) => j.id)
+    : undefined;
+
   const [presentBearbeitenModal, dismissBearbeitenModal] = useIonModal(KonfiModal, {
     jahrgaenge: jahrgaengeFuersModal,
-    konfi: currentKonfi ? {
-      id: currentKonfi.id,
-      display_name: currentKonfi.display_name || currentKonfi.name,
-      jahrgang_id: currentKonfi.jahrgang_id ?? null,
-      gottesdienst_points: currentKonfi.gottesdienst_points ?? currentKonfi.points?.gottesdienst,
-      gemeinde_points: currentKonfi.gemeinde_points ?? currentKonfi.points?.gemeinde
-    } : undefined,
-    // Nur fuer `admin` von Bedeutung: org_admin sieht ohnehin alle Jahrgaenge,
-    // die Warnung waere dort schlicht falsch.
-    eigeneJahrgangIds: user?.role_name === 'admin'
-      ? (user.assigned_jahrgaenge || []).filter((j) => j.can_view !== false).map((j) => j.id)
-      : undefined,
+    konfi: konfiZumBearbeiten,
+    eigeneJahrgangIds,
     onClose: () => dismissBearbeitenModal(),
     dismiss: () => dismissBearbeitenModal(),
-    onSave: async (daten: { name: string; jahrgang_id: number }) => {
-      await api.put(`/admin/konfis/${konfiId}`, daten);
+    onSave: async (daten: KonfiFormDaten) => {
+      await konfiAendern(konfiId, daten);
       dismissBearbeitenModal();
-      setSuccess('Änderungen gespeichert');
+      setSuccess(AENDERUNGEN_GESPEICHERT);
       await loadKonfiData();
       triggerRefresh('konfis');
     }
