@@ -224,7 +224,9 @@ describe('theme/web-modale.css: App-Modale im breiten Browserfenster', () => {
   });
 
   it('jeder Selektor beginnt mit dem Merkmal des breiten Layouts -- die Apps bleiben unberührt', () => {
-    expect(alle.length).toBe(8);
+    // 7 seit 13.10.2026: Die Regel fuer die Anwesenheit (app-modal-breit) entfiel,
+    // im Browser ist sie ein eigener Dialog (WebAnwesenheitDialog).
+    expect(alle.length).toBe(7);
     const fremd = alle.flatMap(([sel]) => teileObersteEbene(sel)).filter((teil) => !teil.startsWith(`${BREIT} ion-modal`));
     expect(fremd).toEqual([]);
   });

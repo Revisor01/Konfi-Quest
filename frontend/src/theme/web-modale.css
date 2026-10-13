@@ -65,13 +65,9 @@ html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-dat
   padding-top: 0;
 }
 
-/* Breite Inhalte: Die Anwesenheit (eine Spalte je Pflicht-Event) bekommt
-   mehr Breite. Gesetzt beim Öffnen über cssClass. Dieselbe Kette wie oben
-   plus eine Klasse, damit die Regel sie schlägt. */
-html[data-layout='breit'] ion-modal.app-modal-breit:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) {
-  --width: min(880px, calc(100% - 48px));
-  --max-width: 880px;
-}
+/* Die Anwesenheit (eine Spalte je Pflicht-Event) hatte hier bis 13.10.2026
+   eine breitere Regel (app-modal-breit); im Browser ist sie seitdem ein
+   eigener Dialog der Web-Fassung (WebAnwesenheitDialog, bis 1120 px). */
 
 /* Kamera (QR-Code scannen): Das Bild füllt die Fläche; ohne feste Höhe
    hätte es keine. */

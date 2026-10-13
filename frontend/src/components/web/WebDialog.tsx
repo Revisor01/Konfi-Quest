@@ -48,6 +48,12 @@ export interface WebDialogProps {
    */
   breit?: boolean;
   /**
+   * Noch breiter (bis 1120 px) für eine Tabelle, die in die Breite wächst --
+   * die Anwesenheit mit einer Spalte je Pflicht-Event. Was dann noch nicht
+   * passt, rollt innerhalb des Fensters (WebAnwesenheitDialog).
+   */
+  weit?: boolean;
+  /**
    * Es wird gerade gesendet: Das X ist gesperrt, Escape und ein Klick auf
    * den Grund schliessen nicht -- wie das X der App-Modale
    * (`disabled={isSubmitting}`). Sonst ginge ein Fehler des Servers ins
@@ -59,7 +65,7 @@ export interface WebDialogProps {
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false, gesperrt = false }) => {
+const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false, weit = false, gesperrt = false }) => {
   const titelId = useId();
   const beschreibungId = useId();
   const fenster = useRef<HTMLDivElement>(null);
@@ -118,7 +124,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
     <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget && !gesperrt) schliessen.current(); }}>
       <div
         ref={fenster}
-        className={breit ? 'web-dialog web-dialog--breit' : 'web-dialog'}
+        className={weit ? 'web-dialog web-dialog--weit' : breit ? 'web-dialog web-dialog--breit' : 'web-dialog'}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titelId}

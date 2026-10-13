@@ -82,6 +82,8 @@ import { tastaturKlick } from '../../../utils/tastatur';
 import WebKonfiDetail from '../web/leitung/WebKonfiDetail';
 import WebAktivitaetDialog from '../web/leitung/WebAktivitaetDialog';
 import WebBonusDialog from '../web/leitung/WebBonusDialog';
+import WebKonfiDialog from '../web/leitung/WebKonfiDialog';
+import WebAnwesenheitDialog from '../web/leitung/WebAnwesenheitDialog';
 import { AENDERUNGEN_GESPEICHERT, konfiAendern, type KonfiZumBearbeiten } from '../useKonfiFormular';
 import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
@@ -132,8 +134,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Im breiten Layout oeffnen "Aktivitaet eintragen" und "Bonuspunkte
   // vergeben" eigene Dialoge der Web-Fassung (Simon, 11.10.2026: „Web braucht
   // eigene kompaktere Modale überall"); Logik und Folgen sind dieselben wie in
-  // den Modalen der App (useAktivitaetEintragen, useBonusVergeben).
-  const [webDialog, setWebDialog] = useState<'aktivitaet' | 'bonus' | null>(null);
+  // den Modalen der App (useAktivitaetEintragen, useBonusVergeben). Ebenso
+  // "Konfi bearbeiten" und die Anwesenheit (Simon, 13.10.2026: „Konfi
+  // bearbeiten hat noch kein eigenes web modal"; useKonfiFormular,
+  // useAnwesenheitsMatrix).
+  const [webDialog, setWebDialog] = useState<'aktivitaet' | 'bonus' | 'bearbeiten' | 'anwesenheit' | null>(null);
   const pageRef = React.useRef<HTMLElement>(null);
   const [presentingElement, setPresentingElement] = useState<HTMLElement | null>(null);
 
@@ -422,7 +427,8 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     ];
   })();
 
-  // Was das Formular bekommt (useKonfiFormular).
+  // Was das Formular bekommt -- dasselbe fuer das Modal der App und den
+  // Dialog im Browser (WebKonfiDialog).
   const konfiZumBearbeiten: KonfiZumBearbeiten | undefined = currentKonfi ? {
     id: currentKonfi.id,
     display_name: currentKonfi.display_name || currentKonfi.name,
@@ -969,13 +975,13 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         ausSpeicher={ausSpeicher}
         pageRef={pageRef}
         onNeuLaden={() => { setLoading(true); void loadKonfiData(); }}
-        onBearbeiten={() => presentBearbeitenModal({ presentingElement: presentingElement || undefined })}
+        onBearbeiten={() => setWebDialog('bearbeiten')}
         onAktivitaetEintragen={() => setWebDialog('aktivitaet')}
         onBonusVergeben={() => setWebDialog('bonus')}
         onZertifikatZuweisen={handleAssignCertificate}
         onPasswort={handlePasswordAction}
         onBefoerdern={handlePromoteToTeamer}
-        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement ?? undefined, cssClass: 'app-modal-breit' })}
+        onMatrix={() => setWebDialog('anwesenheit')}
         onAktivitaetLoeschen={handleDeleteActivity}
         onBonusLoeschen={handleDeleteBonus}
         onZertifikatEntfernen={handleDeleteCertificate}
@@ -999,6 +1005,22 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
           personName={personName}
           punkteartFlags={punkteartFlags}
           onGespeichert={nachDemSpeichern}
+          onSchliessen={() => setWebDialog(null)}
+        />
+      )}
+      {webDialog === 'bearbeiten' && konfiZumBearbeiten && (
+        <WebKonfiDialog
+          jahrgaenge={jahrgaengeFuersModal}
+          konfi={konfiZumBearbeiten}
+          eigeneJahrgangIds={eigeneJahrgangIds}
+          onGespeichert={nachDemSpeichern}
+          onSchliessen={() => setWebDialog(null)}
+        />
+      )}
+      {webDialog === 'anwesenheit' && (
+        <WebAnwesenheitDialog
+          jahrgaenge={konfiJahrgang}
+          initialJahrgangId={currentKonfi?.jahrgang_id}
           onSchliessen={() => setWebDialog(null)}
         />
       )}

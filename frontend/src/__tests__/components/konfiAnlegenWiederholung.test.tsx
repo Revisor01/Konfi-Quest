@@ -162,10 +162,12 @@ describe('Konfi anlegen: Wiederholung mit derselben Kennung', () => {
   });
 });
 
-// Seit 13.10.2026 steht die Logik des Formulars in useKonfiFormular.
+// Seit 13.10.2026 steht die Logik des Formulars in useKonfiFormular, die das
+// Modal der App und der Dialog des Browsers (WebKonfiDialog) teilen.
 describe('Das Anlage-Fenster traegt eine Kennung je offenem Fenster', () => {
   const formular = readFileSync(join(__dirname, '../../components/admin/useKonfiFormular.ts'), 'utf8');
   const modal = readFileSync(join(__dirname, '../../components/admin/modals/KonfiModal.tsx'), 'utf8');
+  const dialog = readFileSync(join(__dirname, '../../components/admin/web/leitung/WebKonfiDialog.tsx'), 'utf8');
 
   it('einmal je Fenster erzeugt, nur beim Anlegen mitgeschickt', () => {
     expect(formular).toContain('const anlegeKennung = useRef(safeUUID());');
@@ -174,8 +176,10 @@ describe('Das Anlage-Fenster traegt eine Kennung je offenem Fenster', () => {
     expect(formular).not.toContain('client_id: safeUUID()');
   });
 
-  it('das Modal holt Felder und Kennung aus dem Formular und erzeugt keine eigene', () => {
-    expect(modal).toContain('useKonfiFormular(');
-    expect(modal).not.toContain('safeUUID');
+  it('Modal und Dialog holen Felder und Kennung aus dem Formular, keins erzeugt eine eigene', () => {
+    for (const quelle of [modal, dialog]) {
+      expect(quelle).toContain('useKonfiFormular(');
+      expect(quelle).not.toContain('safeUUID');
+    }
   });
 });

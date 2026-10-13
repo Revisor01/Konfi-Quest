@@ -627,6 +627,202 @@
   min-width: 0;
 }
 
+/* --- Konfi anlegen und bearbeiten (WebKonfiDialog, 13.10.2026): was ein
+   Wechsel des Jahrgangs bewirkt, als Liste im Hinweis --- */
+.web-wechsel-folgen {
+  margin: 0 0 var(--app-abstand-eng);
+  padding-left: var(--app-abstand-gross);
+}
+
+/* --- Anwesenheit im Fenster (WebAnwesenheitDialog, 13.10.2026): Werkzeuge,
+   eine Tabelle mit einer Spalte je Pflicht-Event, die Zeichen der App in
+   ihren Farben (wie .attendance-matrix__dot in variables.css) und eine
+   Legende --- */
+.web-anwesenheit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-mittel);
+  min-width: 0;
+}
+
+.web-anwesenheit__werkzeuge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-anwesenheit__werkzeuge > .web-suche {
+  flex: 1 1 240px;
+  min-width: 200px;
+}
+
+.web-anwesenheit__werkzeuge > .web-feld {
+  flex: 0 1 240px;
+  min-width: 160px;
+}
+
+.web-anwesenheit__zahl {
+  margin: 0;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+/* Die Tabelle rollt hier, nicht das ganze Fenster: Nur so bleiben Kopfzeile
+   (oben) und Namen (links) beim Rollen in beide Richtungen stehen. */
+.web-anwesenheit__huelle {
+  overflow: auto;
+  max-height: calc(100vh - 380px);
+  min-height: 160px;
+  border: 1px solid var(--web-linie-leise);
+  border-radius: var(--app-radius-knopf);
+}
+
+.web-anwesenheit__huelle:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: 2px;
+}
+
+.web-anwesenheit__tabelle {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--app-text-sekundaer);
+}
+
+.web-anwesenheit__tabelle th,
+.web-anwesenheit__tabelle td {
+  padding: var(--app-abstand-eng) var(--app-abstand-kompakt);
+  border-bottom: 1px solid var(--web-linie-leise);
+  background: var(--web-karte);
+  text-align: center;
+  vertical-align: middle;
+}
+
+.web-anwesenheit__tabelle thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  border-bottom-color: var(--web-linie);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+  font-weight: var(--app-schrift-halbfett);
+}
+
+.web-anwesenheit__tabelle tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.web-anwesenheit__tabelle tbody tr:hover > * {
+  background: var(--web-hover);
+}
+
+/* Die Namen bleiben links stehen, mit einer Kante zu den Zellen. */
+.web-anwesenheit__tabelle .web-anwesenheit__name {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  max-width: 200px;
+  overflow: hidden;
+  padding-left: var(--app-abstand-mittel);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  box-shadow: 1px 0 0 var(--web-linie-leise);
+}
+
+.web-anwesenheit__tabelle tbody .web-anwesenheit__name {
+  color: var(--web-text);
+  font-weight: var(--app-schrift-normal);
+}
+
+.web-anwesenheit__tabelle thead .web-anwesenheit__name {
+  z-index: 3;
+}
+
+.web-anwesenheit__datum {
+  display: block;
+  color: var(--web-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Der Name des Events unter dem Datum, gekürzt; ganz im Tooltip. */
+.web-anwesenheit__eventname {
+  display: block;
+  max-width: 88px;
+  overflow: hidden;
+  font-weight: var(--app-schrift-normal);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.web-anwesenheit__tabelle .web-anwesenheit__summe {
+  background: var(--web-grund);
+  color: var(--web-text);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--app-schrift-halbfett);
+  white-space: nowrap;
+}
+
+.web-anwesenheit__punkt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: var(--app-text-untertitel);
+  vertical-align: middle;
+}
+
+.web-anwesenheit__punkt--present {
+  color: var(--app-color-success-frisch);
+}
+
+.web-anwesenheit__punkt--absent {
+  color: var(--app-color-danger-hell);
+}
+
+.web-anwesenheit__punkt--open {
+  color: var(--app-color-neutral-hell);
+}
+
+/* Abgemeldet, selbst oder nachgetragen: dasselbe Grau, unterschieden in der Legende. */
+.web-anwesenheit__punkt--opted_out,
+.web-anwesenheit__punkt--excused {
+  color: var(--app-color-neutral);
+}
+
+/* Konfisprüche: Text links; der Spruch bricht um, statt die Tabelle zu sprengen. */
+.web-anwesenheit__tabelle--sprueche th,
+.web-anwesenheit__tabelle--sprueche td {
+  text-align: left;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.web-anwesenheit__tabelle--sprueche td:last-child {
+  min-width: 280px;
+  white-space: normal;
+}
+
+.web-anwesenheit__legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-basis);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+}
+
+.web-anwesenheit__legende-eintrag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+}
+
 /* --- Betrieb: Urteil, Anteile, Vergleich und Last --- */
 .web-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;

@@ -24,6 +24,8 @@ import { CACHE_TTL } from '../../../services/offlineCache';
 import KonfisView from '../KonfisView';
 import WebKonfis from '../web/leitung/WebKonfis';
 import WebBenutzerDialog from '../web/leitung/WebBenutzerDialog';
+import WebKonfiDialog from '../web/leitung/WebKonfiDialog';
+import WebAnwesenheitDialog from '../web/leitung/WebAnwesenheitDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import KonfiModal from '../modals/KonfiModal';
@@ -197,6 +199,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Nach dem Anlegen laedt die Team-Liste der Web-Fassung neu (teamStand).
   const [teamerDialogOffen, setTeamerDialogOffen] = useState(false);
   const [teamStand, setTeamStand] = useState(0);
+  // Ebenso „Konfi anlegen" und die Anwesenheit (web/leitung/WebKonfiDialog,
+  // WebAnwesenheitDialog; Simon, 13.10.2026). Logik wie im Modal der App
+  // (useKonfiFormular, useAnwesenheitsMatrix).
+  const [webFenster, setWebFenster] = useState<'konfi' | 'anwesenheit' | null>(null);
 
   // Memoized refresh function for live updates
   const refreshAll = useCallback(() => {
@@ -422,10 +428,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         laedt={loading}
         ohneJahrgang={ohneJahrgang}
         pageRef={pageRef}
-        onKonfiAnlegen={presentKonfiModal}
+        onKonfiAnlegen={() => setWebFenster('konfi')}
         onTeamAnlegen={() => setTeamerDialogOffen(true)}
         teamStand={teamStand}
-        onMatrix={() => presentMatrixModal({ presentingElement: presentingElement, cssClass: 'app-modal-breit' })}
+        onMatrix={() => setWebFenster('anwesenheit')}
         onKonfiLoeschen={handleDeleteKonfi}
         onTeamerLoeschen={handleDeleteTeamer}
         banner={(
@@ -442,6 +448,16 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         overlays={(
           <>
             {ueberlagerungen}
+            {webFenster === 'konfi' && (
+              <WebKonfiDialog
+                jahrgaenge={jahrgaenge || []}
+                onGespeichert={refreshKonfis}
+                onSchliessen={() => setWebFenster(null)}
+              />
+            )}
+            {webFenster === 'anwesenheit' && (
+              <WebAnwesenheitDialog jahrgaenge={jahrgaenge || []} onSchliessen={() => setWebFenster(null)} />
+            )}
             {teamerDialogOffen && (
               <WebBenutzerDialog
                 userId={null}
