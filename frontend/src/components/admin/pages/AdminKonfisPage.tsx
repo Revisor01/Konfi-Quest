@@ -165,6 +165,11 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     jahrgaenge: jahrgaenge || [],
     onClose: () => dismissMatrixModal()
   });
+  // Im Browser ab 992 px öffnen „Konfi anlegen" und die Anwesenheit eigene
+  // Dialoge (web/leitung/WebKonfiDialog, WebAnwesenheitDialog; Simon,
+  // 13.10.2026). Logik wie im Modal der App (useKonfiFormular,
+  // useAnwesenheitsMatrix).
+  const [webFenster, setWebFenster] = useState<'konfi' | 'anwesenheit' | null>(null);
 
   // Welche Liste zeigt die Ansicht gerade? Der Plus-Button in der Kopfzeile
   // legt danach eine Konfi ODER eine Teamer:in an — vorher oeffnete er im
@@ -199,10 +204,6 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Nach dem Anlegen laedt die Team-Liste der Web-Fassung neu (teamStand).
   const [teamerDialogOffen, setTeamerDialogOffen] = useState(false);
   const [teamStand, setTeamStand] = useState(0);
-  // Ebenso „Konfi anlegen" und die Anwesenheit (web/leitung/WebKonfiDialog,
-  // WebAnwesenheitDialog; Simon, 13.10.2026). Logik wie im Modal der App
-  // (useKonfiFormular, useAnwesenheitsMatrix).
-  const [webFenster, setWebFenster] = useState<'konfi' | 'anwesenheit' | null>(null);
 
   // Memoized refresh function for live updates
   const refreshAll = useCallback(() => {
