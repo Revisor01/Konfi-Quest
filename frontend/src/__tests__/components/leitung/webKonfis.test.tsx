@@ -105,7 +105,7 @@ describe('Konfis (Web): Tabelle', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Konfis' })).toBeInTheDocument();
     expect(screen.getByText('5 Konfis in 2 Jahrgängen')).toBeInTheDocument();
     expect(within(tabelle('Konfis')).getAllByRole('columnheader').map((c) => c.textContent))
-      .toEqual(['Name', 'Jahrgang', 'Gottesdienst', 'Gemeinde', 'Gesamt', 'Badges', 'Aktionen']);
+      .toEqual(['Name', 'Jahrgang', 'Gottesdienst', 'Gemeinde', 'Gesamt', 'Pflicht-Events', 'Badges', 'Aktionen']);
     // Standard: nach Name, A bis Z.
     expect(namen()).toEqual(['Anna Müller', 'Ben Schmidt', 'Clara Beispiel', 'Dora Test', 'Emil Probe']);
     const anna = zeileVon('Anna Müller');
@@ -115,7 +115,7 @@ describe('Konfis (Web): Tabelle', () => {
     expect(within(zelle(anna, 2)).getByText('7 / 10')).toBeInTheDocument();
     expect(within(zelle(anna, 3)).getByText('5 / 10')).toBeInTheDocument();
     expect(within(zelle(anna, 4)).getByText('12 / 20')).toBeInTheDocument();
-    expect(zelle(anna, 5)).toHaveTextContent('3');
+    expect(zelle(anna, 6)).toHaveTextContent('3');
   });
 
   it('eine abgeschaltete Punkteart zaehlt nicht: Strich statt Zahl, Ziel und Summe nur der aktiven Art', () => {
@@ -156,8 +156,8 @@ describe('Konfis (Web): Tabelle', () => {
     unmount();
     zeigen({ konfis: [{ ...KONFIS[0], letzte_aktivitaet: '2026-09-28T10:00:00Z' }, KONFIS[1]] });
     expect(within(tabelle('Konfis')).getByRole('columnheader', { name: 'Letzte Aktivität' })).toBeInTheDocument();
-    expect(zelle(zeileVon('Anna Müller'), 6)).toHaveTextContent('28.09.2026');
-    expect(zelle(zeileVon('Ben Schmidt'), 6)).toHaveTextContent('–');
+    expect(zelle(zeileVon('Anna Müller'), 7)).toHaveTextContent('28.09.2026');
+    expect(zelle(zeileVon('Ben Schmidt'), 7)).toHaveTextContent('–');
   });
 
   it('laedt: Platzhalter statt Tabelle; keine Konfis: Leerzustand mit Anlegen', () => {
@@ -169,6 +169,69 @@ describe('Konfis (Web): Tabelle', () => {
     expect(screen.getByText('Noch keine Konfis angelegt.')).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Konfi anlegen' })[1]);
     expect(aktionen.onKonfiAnlegen).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Pflicht-Events "3 von 5" (Simon, 13.10.2026): besucht von bisher faelligen,
+// entschuldigt zaehlt als nicht besucht. Die Zahlen kommen vom Server
+// (GET /admin/konfis, pflicht_besucht/pflicht_faellig); ein aelterer Server
+// liefert sie nicht -- dann ein Strich, keine 0.
+const PFLICHT: Record<number, { pflicht_besucht: number; pflicht_faellig: number }> = {
+  1: { pflicht_besucht: 3, pflicht_faellig: 5 },
+  2: { pflicht_besucht: 5, pflicht_faellig: 5 },
+  3: { pflicht_besucht: 1, pflicht_faellig: 5 },
+  4: { pflicht_besucht: 0, pflicht_faellig: 0 },
+  5: { pflicht_besucht: 2, pflicht_faellig: 4 },
+};
+const MIT_PFLICHT = KONFIS.map((k) => ({ ...k, ...PFLICHT[k.id] }));
+
+describe('Konfis (Web): Pflicht-Events "x von y"', () => {
+  it('eigene Spalte: "3 von 5" je Konfi, auch "0 von 0"', () => {
+    zeigen({ konfis: MIT_PFLICHT });
+    const spalte = within(tabelle('Konfis')).getAllByRole('columnheader').map((c) => c.textContent).indexOf('Pflicht-Events');
+    expect(spalte).toBe(5);
+    expect(zeilen().map((z) => [within(z).getAllByRole('cell')[0].querySelector('a')!.textContent, zelle(z, spalte).textContent]))
+      .toEqual([
+        ['Anna Müller', '3 von 5'],
+        ['Ben Schmidt', '5 von 5'],
+        ['Clara Beispiel', '1 von 5'],
+        ['Dora Test', '0 von 0'],
+        ['Emil Probe', '2 von 4'],
+      ]);
+    expect(within(zelle(zeileVon('Anna Müller'), spalte)).getByTitle('3 von 5 fälligen Pflicht-Events besucht')).toBeInTheDocument();
+  });
+
+  it('ein aelterer Server ohne die Felder: die Spalte zeigt "–"', () => {
+    zeigen();
+    expect(zeilen().map((z) => zelle(z, 5).textContent)).toEqual(['–', '–', '–', '–', '–']);
+  });
+
+  it('sortierbar: erster Klick meiste besucht (Anteil), zweiter wenigste; 0 von 0 steht beide Male unten', () => {
+    zeigen({ konfis: MIT_PFLICHT });
+    const kopf = () => within(tabelle('Konfis')).getByRole('columnheader', { name: 'Pflicht-Events' });
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'descending');
+    expect(namen()).toEqual(['Ben Schmidt', 'Anna Müller', 'Emil Probe', 'Clara Beispiel', 'Dora Test']);
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen()).toEqual(['Clara Beispiel', 'Emil Probe', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+  });
+
+  it('Kacheln: die Karte nennt "3 von 5 Pflicht-Events besucht"; ohne Angabe des Servers fehlt die Zeile; dieselbe Sortierung', () => {
+    const { unmount } = zeigen({ konfis: MIT_PFLICHT });
+    waehle('Kacheln');
+    expect(within(karteVon('Anna Müller')).getByRole('list', { name: 'Angaben' })).toHaveTextContent('3 von 5 Pflicht-Events besucht');
+    expect(karteVon('Dora Test')).toHaveTextContent('0 von 0 Pflicht-Events besucht');
+    sortiereKacheln('pflicht:auf');
+    expect(kartenNamen()).toEqual(['Clara Beispiel', 'Emil Probe', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+    // Die Beschriftung sagt, wonach geordnet wird: nach dem Anteil (dass 3 von 3
+    // vor 4 von 5 steht, prueft konfiListe.test.ts); 0 von 0 steht unten.
+    sortiereKacheln('pflicht:ab');
+    expect(within(sortierAuswahl()).getByRole('option', { selected: true })).toHaveTextContent('Höchster Anteil Pflicht-Events');
+    expect(kartenNamen()).toEqual(['Ben Schmidt', 'Anna Müller', 'Emil Probe', 'Clara Beispiel', 'Dora Test']);
+    unmount();
+    zeigen();
+    expect(karteVon('Anna Müller')).not.toHaveTextContent('Pflicht-Events');
   });
 });
 
@@ -365,6 +428,20 @@ describe('Konfis (Web): Rechte', () => {
       .toEqual(['Alle Jahrgänge', 'Jahrgang 2025', 'Jahrgang 2026']);
   });
 
+  // Simon, 13.10.2026: "anwesenheiten den button brauche ich nur bei konfis nicht bei teamern."
+  it.each(['org_admin', 'admin'] as const)('%s: "Anwesenheit" steht nur im Reiter Konfis, nicht beim Team', async (rolle) => {
+    h.user = konto(rolle, [11, 12]);
+    zeigen();
+    expect(screen.getByRole('button', { name: 'Anwesenheit' })).toBeInTheDocument();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
+    await screen.findByRole('table', { name: 'Team' });
+    expect(screen.queryByRole('button', { name: 'Anwesenheit' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Teamer:in anlegen' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /^Konfis/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' }));
+    expect(aktionen.onMatrix).toHaveBeenCalledTimes(1);
+  });
+
   it('Leitung mit einem Jahrgang: nur dieser im Filter und in den Zahlen, kein Einladen', () => {
     h.user = konto('admin', [12]);
     zeigen({ konfis: [KONFIS[0], KONFIS[1], KONFIS[4]] });
@@ -452,17 +529,105 @@ describe('Team (Web): Reiter in der Adresse', () => {
     expect(screen.getByRole('group', { name: 'Badges: 8' })).toBeInTheDocument();
   });
 
-  it('die Konfi-Liste wird erst gar nicht nach dem Team gefragt, solange der Reiter "Konfis" offen ist', () => {
+  // Simon, 13.10.2026: "ich sehe die anzahl der konfis in den reiter aber
+  // nicht die anzahl des teams. das erscheint erst wenn ich es anklicke."
+  // Bis dahin lud die Team-Liste erst mit dem Klick auf "Team".
+  it('der Reiter "Team" zeigt seine Anzahl gleich beim Oeffnen der Seite, ohne Klick -- dieselbe Zahl wie die Team-Liste', async () => {
     h.standort = { pathname: '/admin/konfis', search: '' };
     zeigen();
-    expect(h.apiGet).not.toHaveBeenCalled();
+    expect(await screen.findByRole('button', { name: /^Team\s*2$/ })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: /^Konfis\s*5$/ })).toHaveAttribute('aria-pressed', 'true');
+    expect(h.apiGet.mock.calls).toEqual([['/admin/konfis/teamer']]);
+    // Die Zahl ist die Zahl der Zeilen im Team.
+    fireEvent.click(screen.getByRole('button', { name: /^Team\s*2$/ }));
+    expect(zeilen('Team')).toHaveLength(2);
   });
 
-  it('Reiter wechseln: Klick auf "Team" laedt das Team, Suche beginnt leer', async () => {
+  it('der Wechsel zwischen den Reitern fragt das Team nicht erneut', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    zeigen();
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+    fireEvent.click(screen.getByRole('button', { name: /^Team\s*2$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Konfis\s*5$/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Team\s*2$/ }));
+    await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('table', { name: 'Team' })).toBeInTheDocument();
+    expect(h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer')).toHaveLength(1);
+  });
+
+  // Befund 13.10.2026: Das Team laedt beim Oeffnen der Seite, auch wenn der
+  // Reiter "Konfis" offen ist -- die Startseite der Leitung. Scheitert der
+  // Abruf dort (Funkloch), fehlt nur die Zahl am Reiter; ein roter Toast fuer
+  // etwas, das niemand geoeffnet hat, waere falsch. Der Wechsel auf "Team"
+  // versucht es neu, wie vor dem 13.10.2026 jeder Wechsel.
+  const teamAbrufe = () => h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer').length;
+
+  it('ein Fehler beim Laden im Hintergrund zeigt am Reiter keine Zahl (er ist kein leeres Team) und keinen Toast; der Wechsel auf "Team" versucht es neu', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    h.apiGet.mockRejectedValueOnce(new Error('Netz weg'));
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    zeigen();
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    expect(within(screen.getByRole('button', { name: /^Team/ })).queryByText(/\d/)).toBeNull();
+    expect(screen.getByRole('button', { name: /^Konfis\s*5$/ })).toBeInTheDocument();
+    expect(h.setError).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
+    expect(await screen.findByRole('table', { name: 'Team' })).toBeInTheDocument();
+    expect(namen('Team')).toEqual(['Frieda Muster', 'Gero B.']);
+    expect(screen.getByRole('button', { name: /^Team\s*2$/ })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
+    stumm.mockRestore();
+  });
+
+  it('scheitert auch der neue Versuch beim Wechsel auf "Team", meldet die Seite es -- einmal, ohne Schleife', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    h.apiGet.mockRejectedValue(new Error('Netz weg'));
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    zeigen();
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    expect(h.setError).not.toHaveBeenCalled();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
+    expect(await screen.findByRole('alert')).toHaveTextContent('Das Team konnte nicht geladen werden.');
+    await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Das Team konnte nicht geladen werden'));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(h.setError).toHaveBeenCalledTimes(1);
+    expect(teamAbrufe()).toBe(2);
+    // Der Reiter heisst nur "Team" -- ohne Zahl, auch nicht 0.
+    expect(screen.getByRole('button', { name: 'Team' })).toHaveAttribute('aria-pressed', 'true');
+    stumm.mockRestore();
+  });
+
+  // Befund 13.10.2026: Ein Signal 'users', das waehrend einer Unterbrechung
+  // des Sockets verloren geht (App im Hintergrund), holte bis dahin der
+  // naechste Wechsel auf "Team" nach. Seit das Team nur beim Oeffnen laedt,
+  // laedt es nach der Unterbrechung neu (sync:reconnect, wie useOfflineQuery).
+  it('nach einer Unterbrechung der Verbindung (sync:reconnect) laedt das Team still neu, und die Zahl folgt', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    zeigen();
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+    h.apiGet.mockResolvedValue({ data: [TEAM[0]] });
+    await act(async () => { window.dispatchEvent(new CustomEvent('sync:reconnect')); });
+    expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
+  });
+
+  it('nach "Teamer:in anlegen" (teamStand) laedt das Team neu, und die Zahl am Reiter folgt', async () => {
+    h.standort = { pathname: '/admin/konfis', search: '' };
+    const { rerender } = zeigen();
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+    h.apiGet.mockResolvedValue({ data: [...TEAM, { id: 23, name: 'Hanna Neu', username: 'hanna', badge_count: 0, cert_count: 0 }] });
+    rerender(<WebKonfis konfis={KONFIS} jahrgaenge={JAHRGAENGE} laedt={false} ohneJahrgang={false} {...aktionen} teamStand={1} />);
+    expect(await screen.findByRole('button', { name: /^Team\s*3$/ })).toBeInTheDocument();
+    expect(h.apiGet.mock.calls.filter(([url]) => url === '/admin/konfis/teamer')).toHaveLength(2);
+  });
+
+  it('Reiter wechseln: Klick auf "Team" zeigt das Team, Suche beginnt leer', async () => {
     h.standort = { pathname: '/admin/konfis', search: '' };
     zeigen();
     fireEvent.change(screen.getByRole('searchbox', { name: 'Konfi suchen' }), { target: { value: 'anna' } });
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Team' })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Team/ })); });
     await screen.findByRole('table', { name: 'Team' });
     expect(screen.getByRole('searchbox', { name: 'Im Team suchen' })).toHaveValue('');
     expect(screen.getByRole('button', { name: /^Team\s*2$/ })).toHaveAttribute('aria-pressed', 'true');
@@ -492,9 +657,13 @@ describe('Team (Web): Reiter in der Adresse', () => {
     zeigen();
     await screen.findByRole('table', { name: 'Team' });
     h.apiGet.mockClear();
+    h.apiGet.mockResolvedValue({ data: [TEAM[1]] });
     await act(async () => { fireEvent.click(within(zeilen('Team')[0]).getByRole('button', { name: 'Frieda Muster löschen' })); });
     expect(aktionen.onTeamerLoeschen).toHaveBeenCalledWith(expect.objectContaining({ id: 21 }));
     await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/admin/konfis/teamer'));
+    // Die Zahl am Reiter folgt der neuen Liste.
+    expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    expect(namen('Team')).toEqual(['Gero B.']);
   });
 
   it('Leitung (nicht Gemeindeleitung): kein Loeschen im Team, ein Fehler ist kein leeres Team', async () => {
@@ -665,6 +834,11 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
       ['jahrgang:ab', 'Jahrgang Z–A'],
       ['badges:ab', 'Meiste Badges'],
       ['badges:auf', 'Wenigste Badges'],
+      // Geordnet wird nach dem Anteil besucht/faellig (3 von 3 vor 4 von 5),
+      // die Beschriftung sagt das (Befund 13.10.2026: "Meiste ... besucht"
+      // versprach die Anzahl).
+      ['pflicht:ab', 'Höchster Anteil Pflicht-Events'],
+      ['pflicht:auf', 'Niedrigster Anteil Pflicht-Events'],
       ['gottesdienst:ab', 'Meiste Gottesdienst-Punkte'],
       ['gottesdienst:auf', 'Wenigste Gottesdienst-Punkte'],
       ['gemeinde:ab', 'Meiste Gemeinde-Punkte'],

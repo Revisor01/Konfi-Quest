@@ -28,7 +28,7 @@
 // Anlegen, Loeschen und die Anwesenheit sind die Fenster und Rueckfragen der
 // Seite. Neu ist nur die Darstellung.
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
 import {
   ICON_CHECKBOX,
@@ -47,6 +47,8 @@ import {
   initialen,
   jahrgangVon,
   konfiPunkte,
+  pflichtStand,
+  pflichtText,
   sichtbareJahrgaenge,
   sortiereKonfis,
   sortiereTeam,
@@ -92,7 +94,10 @@ export interface WebKonfisProps {
   pageRef?: React.Ref<HTMLElement>;
   onKonfiAnlegen: () => void;
   onTeamAnlegen: () => void;
-  /** Zaehlt hoch, wenn die Team-Liste neu geladen werden soll (nach "Teamer:in anlegen"). */
+  /**
+   * Zaehlt hoch, wenn die Team-Liste neu geladen werden soll: nach "Teamer:in
+   * anlegen" und bei einer Meldung 'users' des Servers (useTeamerListe).
+   */
   teamStand?: number;
   onMatrix: () => void;
   onKonfiLoeschen: (konfi: KonfiListenEintrag) => void;
@@ -119,6 +124,12 @@ const KONFI_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 
   { schluessel: 'jahrgang', richtung: 'ab', label: 'Jahrgang Z–A' },
   { schluessel: 'badges', richtung: 'ab', label: 'Meiste Badges' },
   { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
+  // Nach dem Anteil besucht/faellig (utils/konfiListe, sortiereKonfis) -- so
+  // stehen Konfis mit verschieden vielen faelligen Terminen richtig
+  // zueinander. Die Beschriftung sagt das; "Meiste ... besucht" versprach
+  // die Anzahl, 3 von 3 stand aber vor 4 von 5 (Befund 13.10.2026).
+  { schluessel: 'pflicht', richtung: 'ab', label: 'Höchster Anteil Pflicht-Events' },
+  { schluessel: 'pflicht', richtung: 'auf', label: 'Niedrigster Anteil Pflicht-Events' },
   { schluessel: 'gottesdienst', richtung: 'ab', label: 'Meiste Gottesdienst-Punkte' },
   { schluessel: 'gottesdienst', richtung: 'auf', label: 'Wenigste Gottesdienst-Punkte' },
   { schluessel: 'gemeinde', richtung: 'ab', label: 'Meiste Gemeinde-Punkte' },
@@ -150,6 +161,17 @@ const TEAM_SORTIERUNG: WebListenSortierung<TeamerListenEintrag> = {
 };
 
 // --- Spalten und Karten -------------------------------------------------------------
+
+/**
+ * Pflicht-Events "3 von 5" (Simon, 13.10.2026): besucht von bisher faelligen,
+ * entschuldigt zaehlt als nicht besucht. Liefert der Server die Zahlen nicht
+ * (aeltere Fassung), steht ein Strich da.
+ */
+const pflichtZelle = (k: KonfiListenEintrag) => {
+  const p = pflichtStand(k);
+  if (!p) return <span className="web-gedaempft" title="Pflicht-Events: keine Angabe">–</span>;
+  return <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.events} zahl={pflichtText(p)} title={`${pflichtText(p)} fälligen Pflicht-Events besucht`} />;
+};
 
 /** Die Spalten der Konfi-Liste; "Letzte Aktivität" nur, wenn die Liste sie liefert. */
 const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<KonfiListenEintrag>> => [
@@ -206,6 +228,14 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
     },
   },
   {
+    schluessel: 'pflicht',
+    kopf: 'Pflicht-Events',
+    sortierbar: true,
+    zahl: true,
+    breite: '132px',
+    zelle: pflichtZelle,
+  },
+  {
     schluessel: 'badges',
     kopf: 'Badges',
     sortierbar: true,
@@ -227,10 +257,13 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
 /**
  * Die Karte einer Konfi, gebaut wie die Challenge-Karte (Simon, 07.10.2026):
  * im Kopf Initialen, Jahrgang und Name -- gruen, wenn das Punkteziel erreicht
- * ist --, darunter Benutzername, die drei Balken, Badges und letzte Aktivitaet.
+ * ist --, darunter Benutzername, die drei Balken, Pflicht-Events ("3 von 5",
+ * 13.10.2026; ohne Angabe des Servers fehlt die Zeile), Badges und letzte
+ * Aktivitaet.
  */
 const konfiKarte = (suche: string) => (k: KonfiListenEintrag) => {
   const p = konfiPunkte(k);
+  const pflicht = pflichtStand(k);
   return {
     akzent: p.erreicht ? 'var(--app-color-success)' : 'var(--app-color-konfis)',
     akzentDunkel: p.erreicht ? 'var(--app-color-success-strong)' : 'var(--app-color-konfis-dunkel)',
@@ -242,6 +275,7 @@ const konfiKarte = (suche: string) => (k: KonfiListenEintrag) => {
     href: `/admin/konfis/${k.id}`,
     unterzeile: k.username ? <WebTreffer text={k.username} suche={suche} /> : undefined,
     angaben: [
+      pflicht && { ...KENNZAHL_SYMBOL.events, inhalt: `${pflichtText(pflicht)} Pflicht-Events besucht` },
       { ...KENNZAHL_SYMBOL.badges, inhalt: mitEinheit(k.badgeCount || 0, 'Badge', 'Badges') },
       k.letzte_aktivitaet && { icon: ICON_UHRZEIT, inhalt: `Zuletzt aktiv ${datumKurz(k.letzte_aktivitaet)}` },
     ],
@@ -330,6 +364,10 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   // Dieselben Regeln wie in der App: Anlegen und Anwesenheit fuer Leitung und
   // Gemeindeleitung, Einladen fuer die Gemeindeleitung, Teamer:innen loeschen
   // nur die Gemeindeleitung (DELETE /users/:id verlangt requireOrgAdmin).
+  // Anwesenheit und Einladen nur im Reiter "Konfis": Die Uebersicht zeigt
+  // Pflicht-Events und Konfisprueche der Konfis, nicht das Team (Simon,
+  // 13.10.2026: "anwesenheiten den button brauche ich nur bei konfis nicht
+  // bei teamern").
   const darfVerwalten = rolle === 'org_admin' || rolle === 'admin';
   const istGemeindeleitung = rolle === 'org_admin';
   const darfTeamLoeschen = rolle === 'org_admin' || user?.is_super_admin === true;
@@ -340,17 +378,17 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
   useSucheMessung(ansicht === 'team' ? 'team' : 'konfis', suche);
   const [jahrgang, setJahrgang] = useState('alle');
 
-  const team = useTeamerListe(ansicht === 'team');
-  // Eine neue Teamer:in (Dialog der Seite): die Team-Liste neu laden.
-  const teamLaden = team.laden;
-  useEffect(() => {
-    if (teamStand > 0) void teamLaden();
-  }, [teamStand, teamLaden]);
+  const istTeam = ansicht === 'team';
+  // Die Team-Liste laedt beim Oeffnen der Seite, damit der Reiter "Team"
+  // seine Anzahl gleich zeigt (Simon, 13.10.2026); der Reiterwechsel fragt
+  // nicht erneut. Ein neuer `teamStand` (Dialog der Seite, Meldung des
+  // Servers) laedt sie neu; ein Fehler meldet sich nur bei offenem Team, im
+  // Hintergrund fehlt nur die Zahl am Reiter (useTeamerListe).
+  const team = useTeamerListe({ offen: istTeam, stand: teamStand });
 
   // Die Jahrgaenge dieses Kontos: die Gemeindeleitung alle, eine Leitung ihre zugewiesenen.
   const meineJahrgaenge = useMemo(() => sichtbareJahrgaenge(jahrgaenge, user), [jahrgaenge, user]);
   const sucht = suchbegriff(suche) !== '';
-  const istTeam = ansicht === 'team';
 
   const konfiKennzahlen = useMemo(() => ({
     punkteSumme: konfis.reduce((s, k) => s + konfiPunkte(k).gesamt, 0),
@@ -368,10 +406,12 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
 
   const aktionen = darfVerwalten ? (
     <>
-      <WebKnopf onClick={onMatrix}>
-        <IonIcon icon={ICON_CHECKBOX} aria-hidden="true" />
-        Anwesenheit
-      </WebKnopf>
+      {!istTeam && (
+        <WebKnopf onClick={onMatrix}>
+          <IonIcon icon={ICON_CHECKBOX} aria-hidden="true" />
+          Anwesenheit
+        </WebKnopf>
+      )}
       {istGemeindeleitung && !istTeam && (
         <WebKnopf href="/admin/settings/invite">
           <IonIcon icon={ICON_QRCODE} aria-hidden="true" />
@@ -389,7 +429,9 @@ const WebKonfis: React.FC<WebKonfisProps> = ({
     ? (team.laedt && team.teamers.length === 0 ? 'Das Team wird geladen' : `${mitEinheit(team.teamers.length, 'Person', 'Personen')} im Team`)
     : `${mitEinheit(konfis.length, 'Konfi', 'Konfis')} in ${mitEinheit(meineJahrgaenge.length, 'Jahrgang', 'Jahrgängen')}`;
 
-  // Die Zahl am Reiter "Team" steht erst da, wenn die Liste einmal geladen ist.
+  // Die Zahl am Reiter "Team" steht da, sobald die Liste geladen ist -- beim
+  // Oeffnen der Seite, nicht erst nach dem Wechsel auf "Team"; ein Fehler
+  // zeigt keine Zahl (er ist kein leeres Team).
   const teamGeladen = team.geladen && !team.fehler;
 
   // Was beide Reiter gemeinsam haben: Kopf, Reiter, Ansicht.

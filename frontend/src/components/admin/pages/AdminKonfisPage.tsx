@@ -176,6 +176,10 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Dialog auch genau das tun. Vorher kam die volle Rollenauswahl inklusive
   // Admin, und ein so angelegter Admin tauchte in der Teamer-Liste nicht auf
   // (Nutzerhinweis 22.08.2026). Admins legt man in der Nutzerverwaltung an.
+  // Nach dem Anlegen laedt die Team-Liste neu (teamStand) -- in der App wie
+  // im Browser. In der App fehlte das bis 13.10.2026: Die Neue erschien erst
+  // nach einem Wechsel Konfis/Team (Befund 11.10.2026).
+  const [teamStand, setTeamStand] = useState(0);
   const [presentTeamerModalHook, dismissTeamerModalHook] = useIonModal(UserManagementModal, {
     userId: null,
     festeRolle: 'teamer',
@@ -183,13 +187,12 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
     onSuccess: () => {
       dismissTeamerModalHook();
       refreshKonfis();
+      setTeamStand((n) => n + 1);
     }
   });
   // Im Browser ab 992 px dasselbe Formular als eigener Dialog
   // (web/leitung/WebBenutzerDialog.tsx, dieselbe Logik useBenutzerFormular).
-  // Nach dem Anlegen laedt die Team-Liste der Web-Fassung neu (teamStand).
   const [teamerDialogOffen, setTeamerDialogOffen] = useState(false);
-  const [teamStand, setTeamStand] = useState(0);
 
   // Memoized refresh function for live updates
   const refreshAll = useCallback(() => {
@@ -200,6 +203,24 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
 
   // Subscribe to live updates for konfis
   useLiveRefresh('konfis', refreshAll);
+
+  // Anwesenheit und Check-in, Austragen, Absagen und Aendern von Terminen
+  // aendern die Pflicht-Events "x von y" und die Punkte der Liste. Der Server
+  // meldet sie nur als 'events' (routes/events/anwesenheit.js, checkin.js,
+  // buchung.js, verwaltung.js), nicht als 'konfis'. Die Seite ist ein Reiter
+  // und bleibt eingehaengt: Ohne diesen Horcher stand nach dem Eintragen der
+  // Anwesenheit der alte Stand in der Liste, bis jemand herunterzog (Befund
+  // 13.10.2026). Nicht gefiltert: Auch das Stornieren einer Buchung kann
+  // Punkte und Anwesenheit zuruecknehmen (buchung.js, DELETE /:id/book).
+  useLiveRefresh('events', refreshKonfisLive);
+
+  // Die Team-Liste laedt einmal beim Oeffnen der Seite (useTeamerListe), nicht
+  // mehr bei jedem Wechsel auf "Team" (13.10.2026). Neu geladen wird, wenn der
+  // Server eine Aenderung an Konten meldet ('users': anlegen, aendern,
+  // loeschen, Konfi zur Teamer:in befoerdern) -- auch fuer Aenderungen, die
+  // auf einer anderen Seite oder von jemand anderem kamen.
+  const teamNeuLaden = useCallback(() => setTeamStand((n) => n + 1), [setTeamStand]);
+  useLiveRefresh('users', teamNeuLaden);
 
   const handleDeleteKonfi = async (konfi: Konfi) => {
     if (offlineBlockiert(isOnline, setError)) return;
@@ -473,9 +494,13 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         titel={seitenTitel}
         rechts={['org_admin', 'admin'].includes(user?.role_name || '') ? (
           <>
-            <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
-              <IonIcon icon={ICON_CHECKBOX} />
-            </IonButton>
+            {/* Die Anwesenheit gehoert zu den Konfis, nicht zum Team (Simon,
+                13.10.2026) -- wie im Browser. */}
+            {viewMode !== 'teamer' && (
+              <IonButton aria-label="Anwesenheit und Konfisprüche anzeigen" onClick={() => presentMatrixModal({ presentingElement: presentingElement })}>
+                <IonIcon icon={ICON_CHECKBOX} />
+              </IonButton>
+            )}
             <IonButton
               aria-label={viewMode === 'teamer' ? 'Neue Teamer:in anlegen' : 'Neuen Konfi anlegen'}
               onClick={() => viewMode === 'teamer'
@@ -492,6 +517,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
         
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshAll();
+          teamNeuLaden();
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent></IonRefresherContent>
@@ -522,6 +548,7 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
             onDeleteTeamer={handleDeleteTeamer}
             selectedKonfiId={selectedKonfiId}
             ohneJahrgang={ohneJahrgang}
+            teamStand={teamStand}
           />
         )}
       </IonContent>
