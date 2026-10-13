@@ -29,6 +29,13 @@ export interface KonfiListenEintrag {
   activities_count?: number;
   /** Optional: der Zeitpunkt der letzten Aktivitaet, sobald die Liste ihn liefert. */
   letzte_aktivitaet?: string | null;
+  /**
+   * Pflicht-Events "x von y" (GET /admin/konfis, additiv seit 13.10.2026):
+   * besucht von bisher faelligen; entschuldigt zaehlt als nicht besucht
+   * (backend/utils/pflichtTermine.js). Ein aelterer Server liefert sie nicht.
+   */
+  pflicht_besucht?: number | null;
+  pflicht_faellig?: number | null;
 }
 
 export interface KonfiPunkte {
@@ -75,6 +82,26 @@ export const konfiPunkte = (k: KonfiListenEintrag): KonfiPunkte => {
   };
 };
 
+/** Pflicht-Events einer Konfi: besucht von faellig. */
+export interface PflichtStand {
+  besucht: number;
+  faellig: number;
+}
+
+/**
+ * Der Stand der Pflicht-Events aus der Liste -- null, wenn der Server die
+ * Felder nicht liefert (aeltere Fassung); dann steht "–" da, keine 0.
+ */
+export const pflichtStand = (k: Pick<KonfiListenEintrag, 'pflicht_besucht' | 'pflicht_faellig'>): PflichtStand | null => {
+  const besucht = k.pflicht_besucht;
+  const faellig = k.pflicht_faellig;
+  if (typeof besucht !== 'number' || typeof faellig !== 'number') return null;
+  return { besucht, faellig };
+};
+
+/** "3 von 5" -- so, wie Simon es haben wollte (13.10.2026). */
+export const pflichtText = (p: PflichtStand): string => `${p.besucht} von ${p.faellig}`;
+
 /** Zwei Buchstaben fuer den Kreis: erster und letzter Name, bei einem Namen dessen Anfang; ohne Namen leer. */
 export const initialen = (name: string | undefined | null): string => {
   const woerter = (name ?? '').trim().split(/\s+/).filter(Boolean);
@@ -87,7 +114,7 @@ export const initialen = (name: string | undefined | null): string => {
 export const jahrgangVon = (k: Pick<KonfiListenEintrag, 'jahrgang_name' | 'jahrgang'>): string =>
   k.jahrgang_name || k.jahrgang || '';
 
-export type KonfiSortierSchluessel = 'name' | 'jahrgang' | 'gottesdienst' | 'gemeinde' | 'punkte' | 'badges' | 'aktivitaet';
+export type KonfiSortierSchluessel = 'name' | 'jahrgang' | 'gottesdienst' | 'gemeinde' | 'punkte' | 'badges' | 'aktivitaet' | 'pflicht';
 export type Richtung = 'auf' | 'ab';
 
 /** Die Richtung, mit der eine Spalte beim ersten Klick beginnt: Zahlen und Daten groesste/neueste zuerst, Namen A-Z. */
@@ -99,6 +126,7 @@ export const ERSTE_RICHTUNG: Record<KonfiSortierSchluessel, Richtung> = {
   punkte: 'ab',
   badges: 'ab',
   aktivitaet: 'ab',
+  pflicht: 'ab',
 };
 
 const text = (a: string, b: string): number => a.localeCompare(b, 'de');
@@ -137,6 +165,11 @@ function ordne<T>(liste: readonly T[], wert: (x: T) => number | string | null, r
  * Reihenfolge nicht vom Zufall der Antwort abhaengt. Die Liste selbst bleibt
  * unveraendert. Eine abgeschaltete Punkteart, eine fehlende letzte
  * Aktivitaet und ein fehlender Jahrgang stehen in beiden Richtungen unten.
+ *
+ * Pflicht-Events ordnen nach dem Anteil besucht/faellig -- so stehen Konfis
+ * verschiedener Jahrgaenge mit verschieden vielen faelligen Terminen richtig
+ * zueinander. Ohne faellige Pflicht-Events (0 von 0) oder ohne Angabe des
+ * Servers gibt es keinen Anteil: unten.
  */
 export function sortiereKonfis<T extends KonfiListenEintrag>(konfis: readonly T[], nach: KonfiSortierSchluessel, richtung: Richtung): T[] {
   const wert = (k: T): number | string | null => {
@@ -146,6 +179,7 @@ export function sortiereKonfis<T extends KonfiListenEintrag>(konfis: readonly T[
       case 'gemeinde': { const p = konfiPunkte(k); return p.gemeindeAn ? p.gemeinde : null; }
       case 'badges': return k.badgeCount || 0;
       case 'aktivitaet': return zeitpunkt(k.letzte_aktivitaet);
+      case 'pflicht': { const p = pflichtStand(k); return p && p.faellig > 0 ? p.besucht / p.faellig : null; }
       case 'jahrgang': return jahrgangVon(k);
       default: return k.name || '';
     }

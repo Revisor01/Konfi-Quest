@@ -105,7 +105,7 @@ describe('Konfis (Web): Tabelle', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Konfis' })).toBeInTheDocument();
     expect(screen.getByText('5 Konfis in 2 Jahrgängen')).toBeInTheDocument();
     expect(within(tabelle('Konfis')).getAllByRole('columnheader').map((c) => c.textContent))
-      .toEqual(['Name', 'Jahrgang', 'Gottesdienst', 'Gemeinde', 'Gesamt', 'Badges', 'Aktionen']);
+      .toEqual(['Name', 'Jahrgang', 'Gottesdienst', 'Gemeinde', 'Gesamt', 'Pflicht-Events', 'Badges', 'Aktionen']);
     // Standard: nach Name, A bis Z.
     expect(namen()).toEqual(['Anna Müller', 'Ben Schmidt', 'Clara Beispiel', 'Dora Test', 'Emil Probe']);
     const anna = zeileVon('Anna Müller');
@@ -115,7 +115,7 @@ describe('Konfis (Web): Tabelle', () => {
     expect(within(zelle(anna, 2)).getByText('7 / 10')).toBeInTheDocument();
     expect(within(zelle(anna, 3)).getByText('5 / 10')).toBeInTheDocument();
     expect(within(zelle(anna, 4)).getByText('12 / 20')).toBeInTheDocument();
-    expect(zelle(anna, 5)).toHaveTextContent('3');
+    expect(zelle(anna, 6)).toHaveTextContent('3');
   });
 
   it('eine abgeschaltete Punkteart zaehlt nicht: Strich statt Zahl, Ziel und Summe nur der aktiven Art', () => {
@@ -156,8 +156,8 @@ describe('Konfis (Web): Tabelle', () => {
     unmount();
     zeigen({ konfis: [{ ...KONFIS[0], letzte_aktivitaet: '2026-09-28T10:00:00Z' }, KONFIS[1]] });
     expect(within(tabelle('Konfis')).getByRole('columnheader', { name: 'Letzte Aktivität' })).toBeInTheDocument();
-    expect(zelle(zeileVon('Anna Müller'), 6)).toHaveTextContent('28.09.2026');
-    expect(zelle(zeileVon('Ben Schmidt'), 6)).toHaveTextContent('–');
+    expect(zelle(zeileVon('Anna Müller'), 7)).toHaveTextContent('28.09.2026');
+    expect(zelle(zeileVon('Ben Schmidt'), 7)).toHaveTextContent('–');
   });
 
   it('laedt: Platzhalter statt Tabelle; keine Konfis: Leerzustand mit Anlegen', () => {
@@ -169,6 +169,64 @@ describe('Konfis (Web): Tabelle', () => {
     expect(screen.getByText('Noch keine Konfis angelegt.')).toBeInTheDocument();
     fireEvent.click(screen.getAllByRole('button', { name: 'Konfi anlegen' })[1]);
     expect(aktionen.onKonfiAnlegen).toHaveBeenCalledTimes(1);
+  });
+});
+
+// Pflicht-Events "3 von 5" (Simon, 13.10.2026): besucht von bisher faelligen,
+// entschuldigt zaehlt als nicht besucht. Die Zahlen kommen vom Server
+// (GET /admin/konfis, pflicht_besucht/pflicht_faellig); ein aelterer Server
+// liefert sie nicht -- dann ein Strich, keine 0.
+const PFLICHT: Record<number, { pflicht_besucht: number; pflicht_faellig: number }> = {
+  1: { pflicht_besucht: 3, pflicht_faellig: 5 },
+  2: { pflicht_besucht: 5, pflicht_faellig: 5 },
+  3: { pflicht_besucht: 1, pflicht_faellig: 5 },
+  4: { pflicht_besucht: 0, pflicht_faellig: 0 },
+  5: { pflicht_besucht: 2, pflicht_faellig: 4 },
+};
+const MIT_PFLICHT = KONFIS.map((k) => ({ ...k, ...PFLICHT[k.id] }));
+
+describe('Konfis (Web): Pflicht-Events "x von y"', () => {
+  it('eigene Spalte: "3 von 5" je Konfi, auch "0 von 0"', () => {
+    zeigen({ konfis: MIT_PFLICHT });
+    const spalte = within(tabelle('Konfis')).getAllByRole('columnheader').map((c) => c.textContent).indexOf('Pflicht-Events');
+    expect(spalte).toBe(5);
+    expect(zeilen().map((z) => [within(z).getAllByRole('cell')[0].querySelector('a')!.textContent, zelle(z, spalte).textContent]))
+      .toEqual([
+        ['Anna Müller', '3 von 5'],
+        ['Ben Schmidt', '5 von 5'],
+        ['Clara Beispiel', '1 von 5'],
+        ['Dora Test', '0 von 0'],
+        ['Emil Probe', '2 von 4'],
+      ]);
+    expect(within(zelle(zeileVon('Anna Müller'), spalte)).getByTitle('3 von 5 fälligen Pflicht-Events besucht')).toBeInTheDocument();
+  });
+
+  it('ein aelterer Server ohne die Felder: die Spalte zeigt "–"', () => {
+    zeigen();
+    expect(zeilen().map((z) => zelle(z, 5).textContent)).toEqual(['–', '–', '–', '–', '–']);
+  });
+
+  it('sortierbar: erster Klick meiste besucht (Anteil), zweiter wenigste; 0 von 0 steht beide Male unten', () => {
+    zeigen({ konfis: MIT_PFLICHT });
+    const kopf = () => within(tabelle('Konfis')).getByRole('columnheader', { name: 'Pflicht-Events' });
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'descending');
+    expect(namen()).toEqual(['Ben Schmidt', 'Anna Müller', 'Emil Probe', 'Clara Beispiel', 'Dora Test']);
+    fireEvent.click(within(kopf()).getByRole('button'));
+    expect(kopf()).toHaveAttribute('aria-sort', 'ascending');
+    expect(namen()).toEqual(['Clara Beispiel', 'Emil Probe', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+  });
+
+  it('Kacheln: die Karte nennt "3 von 5 Pflicht-Events besucht"; ohne Angabe des Servers fehlt die Zeile; dieselbe Sortierung', () => {
+    const { unmount } = zeigen({ konfis: MIT_PFLICHT });
+    waehle('Kacheln');
+    expect(within(karteVon('Anna Müller')).getByRole('list', { name: 'Angaben' })).toHaveTextContent('3 von 5 Pflicht-Events besucht');
+    expect(karteVon('Dora Test')).toHaveTextContent('0 von 0 Pflicht-Events besucht');
+    sortiereKacheln('pflicht:auf');
+    expect(kartenNamen()).toEqual(['Clara Beispiel', 'Emil Probe', 'Anna Müller', 'Ben Schmidt', 'Dora Test']);
+    unmount();
+    zeigen();
+    expect(karteVon('Anna Müller')).not.toHaveTextContent('Pflicht-Events');
   });
 });
 
@@ -724,6 +782,8 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
       ['jahrgang:ab', 'Jahrgang Z–A'],
       ['badges:ab', 'Meiste Badges'],
       ['badges:auf', 'Wenigste Badges'],
+      ['pflicht:ab', 'Meiste Pflicht-Events besucht'],
+      ['pflicht:auf', 'Wenigste Pflicht-Events besucht'],
       ['gottesdienst:ab', 'Meiste Gottesdienst-Punkte'],
       ['gottesdienst:auf', 'Wenigste Gottesdienst-Punkte'],
       ['gemeinde:ab', 'Meiste Gemeinde-Punkte'],

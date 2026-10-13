@@ -9,6 +9,8 @@ import {
   sortiereTeam,
   sichtbareJahrgaenge,
   teamerName,
+  pflichtStand,
+  pflichtText,
   ERSTE_RICHTUNG,
   TEAM_ERSTE_RICHTUNG,
   type KonfiListenEintrag,
@@ -110,8 +112,46 @@ describe('sortiereKonfis', () => {
   });
 
   it('erste Richtung: Namen A-Z, Zahlen und Daten groesste zuerst', () => {
-    expect(ERSTE_RICHTUNG).toEqual({ name: 'auf', jahrgang: 'auf', gottesdienst: 'ab', gemeinde: 'ab', punkte: 'ab', badges: 'ab', aktivitaet: 'ab' });
+    expect(ERSTE_RICHTUNG).toEqual({ name: 'auf', jahrgang: 'auf', gottesdienst: 'ab', gemeinde: 'ab', punkte: 'ab', badges: 'ab', aktivitaet: 'ab', pflicht: 'ab' });
     expect(TEAM_ERSTE_RICHTUNG).toEqual({ name: 'auf', jahrgaenge: 'auf', badges: 'ab', zertifikate: 'ab', seit: 'ab' });
+  });
+});
+
+// Pflicht-Events "3 von 5" (Simon, 13.10.2026): besucht von bisher faelligen.
+describe('pflichtStand, pflichtText und Ordnen nach Pflicht-Events', () => {
+  it('liest besucht und faellig; 0 von 0 bleibt 0 von 0', () => {
+    expect(pflichtStand(konfi(1, 'A', { pflicht_besucht: 3, pflicht_faellig: 5 }))).toEqual({ besucht: 3, faellig: 5 });
+    expect(pflichtText({ besucht: 3, faellig: 5 })).toBe('3 von 5');
+    expect(pflichtStand(konfi(1, 'A', { pflicht_besucht: 0, pflicht_faellig: 0 }))).toEqual({ besucht: 0, faellig: 0 });
+    expect(pflichtText({ besucht: 0, faellig: 0 })).toBe('0 von 0');
+  });
+
+  it('ein aelterer Server ohne die Felder (oder mit null) ergibt keinen Stand, keine 0', () => {
+    expect(pflichtStand(konfi(1, 'A'))).toBeNull();
+    expect(pflichtStand(konfi(1, 'A', { pflicht_besucht: null, pflicht_faellig: 5 }))).toBeNull();
+    expect(pflichtStand(konfi(1, 'A', { pflicht_besucht: 2 }))).toBeNull();
+  });
+
+  it('ordnet nach dem Anteil besucht/faellig; 0 von 0 und ohne Angabe stehen in beiden Richtungen unten', () => {
+    const liste = [
+      konfi(1, 'Ben', { pflicht_besucht: 5, pflicht_faellig: 5 }),
+      konfi(2, 'Anna', { pflicht_besucht: 3, pflicht_faellig: 5 }),
+      konfi(3, 'Cem', { pflicht_besucht: 1, pflicht_faellig: 5 }),
+      konfi(4, 'Dora', { pflicht_besucht: 0, pflicht_faellig: 0 }),
+      konfi(5, 'Emil', { pflicht_besucht: 2, pflicht_faellig: 4 }),
+      konfi(6, 'Alt'),
+    ];
+    expect(namen(sortiereKonfis(liste, 'pflicht', 'ab'))).toEqual(['Ben', 'Anna', 'Emil', 'Cem', 'Alt', 'Dora']);
+    expect(namen(sortiereKonfis(liste, 'pflicht', 'auf'))).toEqual(['Cem', 'Emil', 'Anna', 'Ben', 'Alt', 'Dora']);
+  });
+
+  it('der Anteil, nicht die Zahl: 3 von 3 steht vor 4 von 5; gleicher Anteil nach Name', () => {
+    const liste = [
+      konfi(1, 'Vier', { pflicht_besucht: 4, pflicht_faellig: 5 }),
+      konfi(2, 'Drei', { pflicht_besucht: 3, pflicht_faellig: 3 }),
+      konfi(3, 'Alle', { pflicht_besucht: 6, pflicht_faellig: 6 }),
+    ];
+    expect(namen(sortiereKonfis(liste, 'pflicht', 'ab'))).toEqual(['Alle', 'Drei', 'Vier']);
   });
 });
 

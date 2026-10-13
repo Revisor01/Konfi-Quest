@@ -216,7 +216,7 @@ export const WebSymbol: React.FC<{ icon: string; ton?: SymbolTon; farbe?: string
  * Tabellenzelle -- dasselbe Symbol in derselben Bereichsfarbe wie auf der
  * Karte und der Kennzahl-Kachel (KENNZAHL_SYMBOL).
  */
-export const WebZahlMitSymbol: React.FC<{ symbol: KennzahlSymbol; zahl: number; title: string }> = ({ symbol, zahl, title }) => (
+export const WebZahlMitSymbol: React.FC<{ symbol: KennzahlSymbol; zahl: number | string; title: string }> = ({ symbol, zahl, title }) => (
   <span className="web-zahl-mit-symbol" title={title}>
     <IonIcon icon={symbol.icon} className="web-zahl-mit-symbol__symbol" style={{ color: symbol.farbe }} aria-hidden="true" />
     {zahl}

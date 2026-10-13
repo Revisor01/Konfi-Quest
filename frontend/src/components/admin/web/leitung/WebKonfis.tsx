@@ -47,6 +47,8 @@ import {
   initialen,
   jahrgangVon,
   konfiPunkte,
+  pflichtStand,
+  pflichtText,
   sichtbareJahrgaenge,
   sortiereKonfis,
   sortiereTeam,
@@ -119,6 +121,9 @@ const KONFI_SORTIERUNGEN: ReadonlyArray<{ schluessel: string; richtung: 'auf' | 
   { schluessel: 'jahrgang', richtung: 'ab', label: 'Jahrgang Z–A' },
   { schluessel: 'badges', richtung: 'ab', label: 'Meiste Badges' },
   { schluessel: 'badges', richtung: 'auf', label: 'Wenigste Badges' },
+  // Nach dem Anteil besucht/faellig (utils/konfiListe, sortiereKonfis).
+  { schluessel: 'pflicht', richtung: 'ab', label: 'Meiste Pflicht-Events besucht' },
+  { schluessel: 'pflicht', richtung: 'auf', label: 'Wenigste Pflicht-Events besucht' },
   { schluessel: 'gottesdienst', richtung: 'ab', label: 'Meiste Gottesdienst-Punkte' },
   { schluessel: 'gottesdienst', richtung: 'auf', label: 'Wenigste Gottesdienst-Punkte' },
   { schluessel: 'gemeinde', richtung: 'ab', label: 'Meiste Gemeinde-Punkte' },
@@ -150,6 +155,17 @@ const TEAM_SORTIERUNG: WebListenSortierung<TeamerListenEintrag> = {
 };
 
 // --- Spalten und Karten -------------------------------------------------------------
+
+/**
+ * Pflicht-Events "3 von 5" (Simon, 13.10.2026): besucht von bisher faelligen,
+ * entschuldigt zaehlt als nicht besucht. Liefert der Server die Zahlen nicht
+ * (aeltere Fassung), steht ein Strich da.
+ */
+const pflichtZelle = (k: KonfiListenEintrag) => {
+  const p = pflichtStand(k);
+  if (!p) return <span className="web-gedaempft" title="Pflicht-Events: keine Angabe">–</span>;
+  return <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.events} zahl={pflichtText(p)} title={`${pflichtText(p)} fälligen Pflicht-Events besucht`} />;
+};
 
 /** Die Spalten der Konfi-Liste; "Letzte Aktivität" nur, wenn die Liste sie liefert. */
 const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<KonfiListenEintrag>> => [
@@ -206,6 +222,14 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
     },
   },
   {
+    schluessel: 'pflicht',
+    kopf: 'Pflicht-Events',
+    sortierbar: true,
+    zahl: true,
+    breite: '132px',
+    zelle: pflichtZelle,
+  },
+  {
     schluessel: 'badges',
     kopf: 'Badges',
     sortierbar: true,
@@ -227,10 +251,13 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
 /**
  * Die Karte einer Konfi, gebaut wie die Challenge-Karte (Simon, 07.10.2026):
  * im Kopf Initialen, Jahrgang und Name -- gruen, wenn das Punkteziel erreicht
- * ist --, darunter Benutzername, die drei Balken, Badges und letzte Aktivitaet.
+ * ist --, darunter Benutzername, die drei Balken, Pflicht-Events ("3 von 5",
+ * 13.10.2026; ohne Angabe des Servers fehlt die Zeile), Badges und letzte
+ * Aktivitaet.
  */
 const konfiKarte = (suche: string) => (k: KonfiListenEintrag) => {
   const p = konfiPunkte(k);
+  const pflicht = pflichtStand(k);
   return {
     akzent: p.erreicht ? 'var(--app-color-success)' : 'var(--app-color-konfis)',
     akzentDunkel: p.erreicht ? 'var(--app-color-success-strong)' : 'var(--app-color-konfis-dunkel)',
@@ -242,6 +269,7 @@ const konfiKarte = (suche: string) => (k: KonfiListenEintrag) => {
     href: `/admin/konfis/${k.id}`,
     unterzeile: k.username ? <WebTreffer text={k.username} suche={suche} /> : undefined,
     angaben: [
+      pflicht && { ...KENNZAHL_SYMBOL.events, inhalt: `${pflichtText(pflicht)} Pflicht-Events besucht` },
       { ...KENNZAHL_SYMBOL.badges, inhalt: mitEinheit(k.badgeCount || 0, 'Badge', 'Badges') },
       k.letzte_aktivitaet && { icon: ICON_UHRZEIT, inhalt: `Zuletzt aktiv ${datumKurz(k.letzte_aktivitaet)}` },
     ],
