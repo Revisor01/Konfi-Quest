@@ -20,6 +20,15 @@
 // den Jahrgang der Konfi): Ein Pflicht-Event ohne Jahrgang fehlte, ein
 // "Nur Team"-Termin mit Jahrgang zaehlte mit, und eine Konfi ohne Jahrgang
 // bekam immer 0 von 0. Die Antwortform der Statistik bleibt dieselbe.
+//
+// NOCH NICHT auf dieser Regel: die Summe der Anwesenheits-Matrix
+// (frontend/src/utils/anwesenheitsMatrix.ts: auch kuenftige Termine,
+// entschuldigt und abgemeldet nicht im Nenner) und die Anwesenheitsliste per
+// E-Mail (routes/jahrgaenge.js, matrix-email: auch kuenftige, nur abgemeldet
+// nicht im Nenner). Offen bei Simon: docs/offene-befunde.md, "Pflicht-Events:
+// drei Zaehlweisen fuer dieselbe Konfi"; ebenso, ob Termine vor dem Eintritt
+// in den Jahrgang faellig sind ("Pflicht-Events vor dem Eintritt in den
+// Jahrgang").
 
 const { konfiSiehtTerminSql } = require('./konfiTerminSicht');
 

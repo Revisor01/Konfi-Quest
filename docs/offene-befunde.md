@@ -574,6 +574,40 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ## Bei Simon zu entscheiden
 
+- **Pflicht-Events: drei Zählweisen für dieselbe Konfi.** Die Spalte
+  „Pflicht-Events“ der Konfi-Liste und die Statistik der Konfi-Detailseite
+  zählen nach Simons Vorgabe vom 13.10.2026 („3 von 5“, besucht von bisher
+  fälligen, „entschuldigt zählt als nicht besucht“; eine Regel in
+  `backend/utils/pflichtTermine.js`): nur vergangene Termine, eigener
+  Jahrgang und Termine ohne Jahrgang, nie „Nur Team“; entschuldigt, abwesend,
+  abgemeldet und nicht eingetragen stehen im Nenner. Die Anwesenheits-Matrix
+  (Knopf „Anwesenheit“ auf derselben Seite) rechnet ihre Summe Σ anders:
+  alle Pflicht-Termine des Jahrgangs, auch künftige, ohne die Termine ohne
+  Jahrgang; „entschuldigt“ und „abgemeldet“ stehen nicht im Nenner
+  (`frontend/src/utils/anwesenheitsMatrix.ts`, Festlegungen vom 25.08. und
+  12.09.2026). Die Anwesenheitsliste per E-Mail hat eine dritte Regel: alle
+  Termine des Jahrgangs, auch künftige, abzüglich nur der Abgemeldeten
+  (`backend/routes/jahrgaenge.js`, `matrix-email`). Beispiel: 5 vergangene
+  Pflicht-Events (3 anwesend, 1 entschuldigt, 1 abwesend) und 2 künftige —
+  die Liste zeigt „3 von 5“, die Matrix „3/6“, die E-Mail „3/7“. Gilt
+  „entschuldigt“ (und „abgemeldet“) überall als nicht besucht oder überall
+  als nicht im Nenner, und zählen künftige Termine in Matrix und E-Mail mit?
+  Danach Matrix-Σ und E-Mail auf dieselbe Regel stellen (gemeinsamer
+  Baustein oder die Zahlen des Servers). (13.10.2026)
+- **Pflicht-Events vor dem Eintritt in den Jahrgang.** Fällig ist ein
+  Pflicht-Event, sobald sein Termin vorbei ist — gleich, seit wann die Konfi
+  zum Jahrgang gehört (`pflichtFaelligSql` in
+  `backend/utils/pflichtTermine.js`). Wer später dazukommt (Einladungscode)
+  oder den Jahrgang wechselt, hat sofort alle vergangenen Pflicht-Events des
+  neuen Jahrgangs als nicht besucht; die besuchten des alten Jahrgangs fallen
+  weg. Eingebucht wird beim Anlegen und beim Wechsel nur in künftige
+  Pflicht-Events (`konfi-management.js`). Beispiel: Jahrgang B hatte 4
+  Pflicht-Events, eine Konfi wechselt aus A (dort 4 von 4) nach B — die
+  Liste zeigt „0 von 4“. Die Statistik der Detailseite zählte schon vorher
+  so, die Liste zeigt es jetzt in jeder Zeile. Soll ein Termin nur fällig
+  sein, wenn die Konfi für ihn gebucht war, oder nur, wenn er nach ihrem
+  Eintritt lag? Für das zweite fehlt ein Datum: `konfi_profiles` kennt nur
+  das Anlegen (`created_at`), nicht den Wechsel des Jahrgangs. (13.10.2026)
 - **Support am Handy: Filter-Knopf zählt die Suche mit.** In der App steht
   die Suche hinter dem Knopf „Filter“ und zählt deshalb mit („Filter, 1
   aktiv“, sobald etwas gesucht wird); im Browser steht sie daneben und zählt

@@ -12,6 +12,11 @@
 // das dieselbe Aussage — keine Punkte, kein Fehlen im Sinne von
 // unentschuldigt — und die Matrix behandelt es deshalb wie 'opted_out': eigener
 // Zellstatus, grauer Punkt, nicht im Pflicht-Nenner.
+//
+// Die Spalte "Pflicht-Events" der Konfi-Liste zählt seit 13.10.2026 anders
+// (Simon: "entschuldigt zählt als nicht besucht", nur bisher fällige Termine;
+// backend/utils/pflichtTermine.js). Welche Regel für beide gilt, ist offen:
+// docs/offene-befunde.md, "Pflicht-Events: drei Zählweisen für dieselbe Konfi".
 
 export type MatrixZellStatus = 'present' | 'absent' | 'excused' | 'opted_out' | 'open';
 
