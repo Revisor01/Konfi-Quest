@@ -3512,6 +3512,11 @@ paths:
         (in Produktion bis 1524 ms). Antwortform unverändert:
         { message, newBadges } mit newBadges = { count, badges } beim
         Genehmigen und 0 beim Ablehnen.
+        ERGAENZT 13.10.2026 (Migration 214): Die beim Genehmigen angelegte
+        Zuordnung traegt den Antrag (user_activities.request_id); die
+        Detailansicht GET /api/admin/konfis/{id} liefert ihn je Aktivitaet
+        als activities[].request_id, die Web-Fassung oeffnet darueber den
+        Antrag. Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateRequestUpdate]
@@ -3577,9 +3582,13 @@ paths:
         wieder abgezogen.
         Abgezogen wird seit 26.09.2026 der Wert, der an der entfernten
         Zuordnung steht (user_activities.points, Migration 163) — nicht der
-        aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben). Die
-        Zuordnung ist weiterhin die juengste zu user/activity (eine eigene
-        Verknuepfung Antrag -> Zuordnung gibt es nicht). Gibt es keine
+        aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben).
+        BEHOBEN 13.10.2026 (Migration 214): Zurueckgenommen wird die Zuordnung
+        DIESES Antrags (user_activities.request_id). Bis dahin war es die
+        juengste zu user/activity -- beim Zuruecksetzen des aelteren von zwei
+        genehmigten Antraegen derselben Aktivitaet traf es die Zeile des
+        juengeren. Altbestand ohne Zuordnung: wie bisher die juengste, aber
+        nur unter den Zeilen OHNE Antrag. Gibt es keine
         Zuordnung mehr (bereits ueber DELETE /api/admin/konfis/{id}/activities/{activityId}
         entfernt, dort wurden die Punkte abgezogen), wird nichts mehr
         abgezogen; vorher lief der Abzug ein zweites Mal.
@@ -3957,6 +3966,12 @@ paths:
         Anwesenheits-Route (darfTerminVerbuchen, Recht "Events verbuchen");
         fuer Teamer:innen als Aufrufer immer false (die Route ist
         requireAdmin). Aeltere Apps lesen das Feld nicht.
+        ERGAENZT 13.10.2026, additiv: Jeder Eintrag in `activities` traegt
+        `request_id` (user_activities.request_id, Migration 214) -- der
+        Antrag, aus dem die Aktivitaet beim Genehmigen entstand, sonst null
+        (von der Leitung eingetragen; Altbestand ohne eindeutigen Antrag).
+        Abrufbar ueber GET /api/admin/activities/requests/{id} mit dessen
+        Rechten.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
