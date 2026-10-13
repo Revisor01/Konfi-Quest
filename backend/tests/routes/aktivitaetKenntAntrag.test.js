@@ -130,7 +130,7 @@ describe('user_activities.request_id: Genehmigen, Detailantwort, Zuruecksetzen',
     expect(Number(nachher)).toBe(Number(vorher) - 1);
   });
 
-  it('Altbestand ohne Antrag: das Zuruecksetzen nimmt wie bisher die juengste Zeile ohne Antrag', async () => {
+  it('Altbestand ohne Antrag: das Zuruecksetzen nimmt die Zeile ohne Antrag am Tag des Antrags', async () => {
     const id = await antrag('2026-09-27', { status: 'approved' });
     // Wie vor Migration 214 genehmigt: die Zeile ohne request_id.
     await db.query(
@@ -140,6 +140,39 @@ describe('user_activities.request_id: Genehmigen, Detailantwort, Zuruecksetzen',
     );
     await zuruecksetzen(id);
     expect(await zeilen()).toEqual([]);
+  });
+
+  // VERBOTEN (Pruefung 13.10.2026): Der Rueckfall auf Zeilen ohne Antrag galt
+  // fuer JEDE solche Zeile, egal an welchem Tag. War die Zeile des Antrags
+  // schon auf der Detailseite geloescht (Punkt dort abgezogen), traf das
+  // Zuruecksetzen die Eintragung der Leitung an einem anderen Tag und zog den
+  // Punkt ein zweites Mal ab.
+  it('Zeile des Antrags schon geloescht: die Eintragung der Leitung an einem anderen Tag bleibt samt Punkt', async () => {
+    const id = await antrag('2026-09-27');
+    await genehmigen(id);
+    const eingetragen = await request(app)
+      .post('/api/admin/activities/assign-activity')
+      .set('Authorization', `Bearer ${generateToken('admin1')}`)
+      .send({ konfiId: KONFI, activityId: AKTIVITAET, completed_date: '2026-09-20' });
+    expect(eingetragen.status).toBe(200);
+    await warteAufNachwehen(app);
+    expect(await zeilen()).toEqual([['2026-09-20', null], ['2026-09-27', id]]);
+
+    // Die Leitung loescht die Aktivitaet des Antrags auf der Detailseite.
+    const { rows: [vomAntrag] } = await db.query('SELECT id FROM user_activities WHERE request_id = $1', [id]);
+    const geloescht = await request(app)
+      .delete(`/api/admin/konfis/${KONFI}/activities/${vomAntrag.id}`)
+      .set('Authorization', `Bearer ${generateToken('admin1')}`);
+    expect(geloescht.status).toBe(200);
+    await warteAufNachwehen(app);
+    const punkte = async () => Number((await db.query(
+      'SELECT gottesdienst_points AS p FROM konfi_profiles WHERE user_id = $1', [KONFI]
+    )).rows[0].p);
+    const vorher = await punkte();
+
+    await zuruecksetzen(id);
+    expect(await zeilen()).toEqual([['2026-09-20', null]]);
+    expect(await punkte()).toBe(vorher);
   });
 
   it('der Antrag wird geloescht: die Aktivitaet bleibt, ohne Antrag (ON DELETE SET NULL)', async () => {

@@ -3587,11 +3587,17 @@ paths:
         DIESES Antrags (user_activities.request_id). Bis dahin war es die
         juengste zu user/activity -- beim Zuruecksetzen des aelteren von zwei
         genehmigten Antraegen derselben Aktivitaet traf es die Zeile des
-        juengeren. Altbestand ohne Zuordnung: wie bisher die juengste, aber
-        nur unter den Zeilen OHNE Antrag. Gibt es keine
+        juengeren. Altbestand ohne Zuordnung: eine Zeile OHNE Antrag am Tag
+        des Antrags (completed_date = requested_date, so schreibt die
+        Genehmigung). Gibt es keine
         Zuordnung mehr (bereits ueber DELETE /api/admin/konfis/{id}/activities/{activityId}
         entfernt, dort wurden die Punkte abgezogen), wird nichts mehr
         abgezogen; vorher lief der Abzug ein zweites Mal.
+        BEHOBEN 13.10.2026 (Pruefung des Pakets): Der Rueckfall auf Zeilen
+        ohne Antrag galt zuerst fuer jede solche Zeile, egal an welchem Tag
+        -- war die Zeile des Antrags schon geloescht, traf das Zuruecksetzen
+        eine Eintragung der Leitung an einem anderen Tag und zog deren Punkte
+        ein zweites Mal ab. Seitdem nur noch am Tag des Antrags.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]

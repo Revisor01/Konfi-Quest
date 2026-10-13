@@ -661,11 +661,16 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         if (oldStatus === 'approved') {
           // Die Zuordnung, die die Genehmigung angelegt hat: seit Migration
           // 214 (13.10.2026) die Zeile mit request_id = dieser Antrag. Ohne
-          // sie (Altbestand ohne eindeutige Zuordnung) wie bisher die jüngste
-          // zu user/activity -- aber nur unter den Zeilen OHNE Antrag: Eine
-          // Zeile, die zu einem ANDEREN Antrag gehört, wird nie genommen.
-          // Bis dahin traf das Zurücksetzen eines älteren Antrags die Zeile
-          // des jüngeren (zwei Gottesdienste, zwei Meldungen).
+          // sie (Altbestand ohne eindeutige Zuordnung) eine Zeile OHNE Antrag
+          // an GENAU dem Tag des Antrags -- so schreibt die Genehmigung die
+          // Zeile (completed_date = requested_date). Eine Zeile, die zu einem
+          // ANDEREN Antrag gehört, wird nie genommen; bis dahin traf das
+          // Zurücksetzen eines älteren Antrags die Zeile des jüngeren (zwei
+          // Gottesdienste, zwei Meldungen). Und eine Eintragung der Leitung
+          // an einem anderen Tag auch nicht: War die Zeile des Antrags schon
+          // auf der Detailseite gelöscht (Punkt dort abgezogen), nahm der
+          // Rückfall bis zur Prüfung vom 13.10.2026 diese Eintragung und zog
+          // den Punkt ein zweites Mal ab.
           // Abgezogen wird der Wert, der an DIESER Zeile steht
           // (user_activities.points, Migration 163) — nicht der aktuelle Wert
           // der Aktivität. Bis 26.09.2026 zog das Zurücksetzen a.points ab:
@@ -682,7 +687,15 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                FROM user_activities ua
                JOIN activities a ON a.id = ua.activity_id
               WHERE ua.user_id = $1 AND ua.activity_id = $2
-                AND (ua.request_id = $3 OR ua.request_id IS NULL)
+                AND (
+                  ua.request_id = $3
+                  OR (
+                    ua.request_id IS NULL
+                    AND ua.completed_date IS NOT DISTINCT FROM (
+                      SELECT ar.requested_date FROM activity_requests ar WHERE ar.id = $3
+                    )
+                  )
+                )
               ORDER BY (ua.request_id IS NOT DISTINCT FROM $3) DESC, ua.completed_date DESC, ua.id DESC
               LIMIT 1`,
             [request.user_id, request.activity_id, request.id]
