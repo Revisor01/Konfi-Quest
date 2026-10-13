@@ -86,6 +86,7 @@ import WebKonfiDialog from '../web/leitung/WebKonfiDialog';
 import WebAnwesenheitDialog from '../web/leitung/WebAnwesenheitDialog';
 import { AENDERUNGEN_GESPEICHERT, konfiAendern, type KonfiZumBearbeiten } from '../useKonfiFormular';
 import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
+import type { AlleTermineEintrag } from '../web/leitung/konfiDetailTypen';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 
@@ -147,6 +148,9 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Termine der Person, Feld `termine` von GET /admin/konfis/:id. Aeltere
   // Server liefern es nicht -- dann bleibt die Liste wie bisher.
   const [termine, setTermine] = useState<PersonTermin[]>([]);
+  // Alle Termine einer Konfi in einer Liste (Feld `alleTermine`, 13.10.2026)
+  // -- nur die Web-Fassung liest es; null, wenn der Server es nicht liefert.
+  const [alleTermine, setAlleTermine] = useState<AlleTermineEintrag[] | null>(null);
   const [bonusEntries, setBonusEntries] = useState<BonusEintrag[]>([]);
   const [eventPoints, setEventPoints] = useState<EventPunkteEintrag[]>([]);
   const [currentKonfi, setCurrentKonfi] = useState<Konfi | null>(null);
@@ -163,7 +167,11 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
   // Im breiten Layout öffnet „Prüfen" eines offenen Antrags den Dialog der
   // Web-Fassung (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale
   // überall"); Logik und Folgen wie im Modal der App (useAntragPruefen).
-  const [webPruefAntrag, setWebPruefAntrag] = useState<{ id: number; mitFoto: boolean } | null>(null);
+  // Derselbe Dialog zeigt seit 13.10.2026 den Antrag einer VERBUCHTEN
+  // Aktivität („klick auf eine aktivität sollte den antrag öffnen"):
+  // nurAnsehen -- „Aktivität ansehen" mit Datum, Kommentar, Foto und
+  // Entscheidung, wie bei den entschiedenen Anträgen unter Mitmachen.
+  const [webPruefAntrag, setWebPruefAntrag] = useState<{ id: number; mitFoto: boolean; nurAnsehen?: boolean } | null>(null);
   // Anwesenheit eintragen ist Leitungssache (requireAdmin an der Route); je
   // Termin entscheidet zusaetzlich darf_verbuchen.
   const kannVerbuchen = darfTermineVerwalten(user);
@@ -236,6 +244,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
       teamerEvents?: typeof teamerEvents;
       konfiHistory?: typeof konfiHistory;
       termine?: PersonTermin[];
+      alleTermine?: AlleTermineEintrag[];
     };
     antraege: OffenerAntrag[];
     bewahrteStempel: ChallengeMark[];
@@ -689,6 +698,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
     // Offene Anträge OBEN in der Liste, danach das Verbuchte.
     setActivities([...pendingRequests, ...enhancedActivities]);
     setTermine(Array.isArray(konfiData.termine) ? konfiData.termine : []);
+    setAlleTermine(Array.isArray(konfiData.alleTermine) ? konfiData.alleTermine : null);
   };
 
   const getGottesdienstPoints = () => {
@@ -962,6 +972,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         eventPunkte={eventPoints}
         teamerEvents={teamerEvents}
         termine={termine}
+        alleTermine={alleTermine}
         kannVerbuchen={kannVerbuchen}
         onAnwesenheit={handleAnwesenheit}
         zertifikate={certificates}
@@ -986,6 +997,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         onBonusLoeschen={handleDeleteBonus}
         onZertifikatEntfernen={handleDeleteCertificate}
         onFoto={handlePhotoClick}
+        onAntrag={(a) => { if (a.request_id != null) setWebPruefAntrag({ id: a.request_id, mitFoto: false, nurAnsehen: true }); }}
         onRueckblick={setWrappedModalData}
         onTeamerSeit={handleTeamerSeit}
       />
@@ -1028,6 +1040,7 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         <WebAntragPruefenDialog
           requestId={webPruefAntrag.id}
           mitFoto={webPruefAntrag.mitFoto}
+          nurAnsehen={webPruefAntrag.nurAnsehen}
           onGespeichert={nachAntragEntschieden}
           onSchliessen={() => setWebPruefAntrag(null)}
         />

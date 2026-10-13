@@ -5,6 +5,12 @@
 // Aktionen die Funktionen der Seite -- dieselben Fenster und Rueckfragen wie in
 // der App. Jede Tabelle ist eine WebDetailListe (Karte, Tabelle, Leerzustand,
 // "Alle anzeigen"; 10.10.2026).
+//
+// Seiten-Interview 13.10.2026 (Simon): Aktivitaeten, Events und Bonuspunkte
+// tragen vorn den Kreis ihrer Punkteart wie in der App (Gottesdienst blau,
+// Gemeinde gruen, Events rot, Bonus orange); eine verbuchte Aktivitaet mit
+// Antrag oeffnet ihn; die Events sind EINE Liste (eventListe.ts) mit
+// Pflicht-Marke, und ein Event fuehrt mit Rueckweg zur Person.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
@@ -15,7 +21,6 @@ import {
   ICON_CHALLENGE_GEFUELLT,
   ICON_FUNKELN,
   ICON_HINZUFUEGEN,
-  ICON_PODIUM,
   ICON_TERMIN,
   ICON_UHRZEIT,
   ICON_WEITER_GEFUELLT,
@@ -27,15 +32,16 @@ import { punkteText } from '../../../../utils/punkteText';
 import { konfiZeitTerminStatus } from '../../../../utils/konfiZeit';
 import { nachAnzeigeDatumAbsteigend, punkteAnzeigeDatum } from '../../../../utils/punkteDatum';
 import { mitEinheit } from '../../../../utils/supportStatistik';
-import { teilnahmeDarstellung, type TeilnahmeDarstellung } from '../../../../utils/teilnahmeStatus';
-import type { PillTon } from '../../../../utils/supportWeb';
-import type { BonusEintrag, EventPunkteEintrag } from '../../../../types/user';
+import { eventMitRueckweg, personNameMerken } from '../../../../utils/rueckweg';
+import type { BonusEintrag } from '../../../../types/user';
 import type { KonfiZeit } from '../../../../types/konfiZeit';
 import type { ChallengeMark, OffenerStempel } from '../../../../types/challenges';
 import type { WrappedHistoryEntry } from '../../../../types/wrapped';
-import { personTerminStand, type Activity, type AnwesenheitWahl, type Konfi, type PersonTermin } from '../../views/KonfiDetailSections';
+import type { Activity, AnwesenheitWahl, Konfi, PersonTermin } from '../../views/KonfiDetailSections';
+import { aktivitaetSymbol, BONUS_SYMBOL, EVENT_SYMBOL } from '../../views/punkteartSymbole';
 import WebKarte from '../../../web/WebKarte';
 import WebKnopf from '../../../web/WebKnopf';
+import WebKreis, { type WebKreisSymbolTon } from '../../../web/WebKreis';
 import WebPill from '../../../web/WebPill';
 import WebLink from '../../../web/WebLink';
 import WebAngaben from '../../../web/WebAngaben';
@@ -44,9 +50,13 @@ import StempelInfo from '../../../web/StempelInfo';
 import WebAuszeichnungen, { type WebAuszeichnung } from '../../../web/WebAuszeichnungen';
 import { WebDetailListe } from '../../../web/WebDetailSeite';
 import type { WebSpalte } from '../../../web/WebListe';
+import { WebMerkmale } from '../../../shared/web/termine/WebTerminBausteine';
 import '../../../../theme/web/leitung.css';
-import type { Anwesenheit, KonfiHistorie, TeamerTermin, Zertifikat } from './konfiDetailTypen';
-import { konfiZeitStatusRang, teilnahmeStatusRang } from '../../../../utils/statusReihenfolge';
+// web-link--knopf (der Name als Knopf, der die Zeile ueberspannt) steht dort.
+import '../../../../theme/web/termine.css';
+import type { Anwesenheit, KonfiHistorie, Zertifikat } from './konfiDetailTypen';
+import { eventStand, type EventZeile } from './eventListe';
+import { konfiZeitStatusRang, personEventStatusRang } from '../../../../utils/statusReihenfolge';
 
 const ZEILEN_KURZ = 10;
 
@@ -68,11 +78,11 @@ const artAus = (konfi: Konfi | null, art?: string): boolean =>
 /** Ein Datum zum Sortieren; ohne Datum steht die Zeile unten. */
 const alsDatum = (iso?: string | null): Date | null => (iso ? new Date(iso) : null);
 
-// --- Offenes oben in der Liste ---------------------------------------------------
+// --- Offene Antraege oben in den Aktivitaeten --------------------------------------
 //
-// Offene Antraege stehen oben in den Aktivitaeten, zu verbuchende und
-// anstehende Termine oben in den Events (Simon, 09.10.2026) -- als Zeilen
-// ueber der Tabelle, die selbst nur Verbuchtes zeigt und zaehlt.
+// Offene Antraege stehen oben in den Aktivitaeten (Simon, 09.10.2026) -- als
+// Zeilen ueber der Tabelle, die selbst nur Verbuchtes zeigt und zaehlt. (Die
+// offenen und anstehenden Termine stehen seit 13.10.2026 IN der Eventliste.)
 
 const OffeneAntraegeZeilen: React.FC<{ antraege: readonly Activity[]; isOnline: boolean; onFoto: (a: Activity) => void }> = ({ antraege, isOnline, onFoto }) => (
   <ul className="web-feed" aria-label="Offene Anträge">
@@ -103,39 +113,34 @@ const OffeneAntraegeZeilen: React.FC<{ antraege: readonly Activity[]; isOnline: 
   </ul>
 );
 
-const OffeneTermineZeilen: React.FC<{
-  termine: readonly PersonTermin[];
-  kannVerbuchen: boolean;
-  isOnline: boolean;
-  onAnwesenheit: (t: PersonTermin, status: AnwesenheitWahl) => void;
-}> = ({ termine, kannVerbuchen, isOnline, onAnwesenheit }) => (
-  <ul className="web-feed" aria-label="Offene und anstehende Events">
-    {termine.map((t) => {
-      const offen = t.art === 'verbuchen';
-      return (
-        <li key={t.booking_id} className="web-feed__zeile" data-termin-art={t.art}>
-          <div className="web-feed__haupt">
-            {/* In den Termin -- derselbe Link wie in der Terminliste (WebEventsTabelle). */}
-            <WebLink href={`/admin/events/${t.event_id}`} className="web-feed__titel web-link--text">{t.event_name}</WebLink>
-            <span className="web-feed__meta"><span>{datumKurz(t.event_date)}</span></span>
-          </div>
-          <div className="web-feed__rechts">
-            <WebPill ton={offen ? 'warnung' : 'info'} punkt>{personTerminStand(t)}</WebPill>
-            {offen && kannVerbuchen && t.darf_verbuchen && (
-              <>
-                <WebKnopf klein vorn disabled={!isOnline} onClick={() => onAnwesenheit(t, 'present')} aria-label={`${t.event_name}: anwesend`}>
-                  Anwesend
-                </WebKnopf>
-                <WebKnopf klein vorn disabled={!isOnline} onClick={() => onAnwesenheit(t, 'absent')} aria-label={`${t.event_name}: nicht anwesend`}>
-                  Nicht anwesend
-                </WebKnopf>
-              </>
-            )}
-          </div>
-        </li>
-      );
-    })}
-  </ul>
+// --- Der Kreis vor dem Namen ---------------------------------------------------------
+//
+// Simon, 13.10.2026: „aktivitaeten events bonus duerften gerne auch ein icon
+// bekommen vorne und color coded entsprechend ihrer kategorien sein gruen blau
+// rot orange". Dieselben Symbole wie die Kreise der App (KonfiDetailSections:
+// aktivitaetSymbol, EVENT_SYMBOL, BONUS_SYMBOL), dieselben Farben.
+
+/** Farbe des Kreises einer Aktivitaet: Gottesdienst blau, Gemeinde gruen, bei einer Teamer:in die Teamer-Farbe. */
+const artTon = (art: string | undefined, istTeamer: boolean): WebKreisSymbolTon =>
+  istTeamer ? 'teamer' : art === 'gottesdienst' ? 'gottesdienst' : 'gemeinde';
+
+/** Der Name einer Zeile mit dem Kreis davor; dahinter Marken, darunter Knoepfe der Zeile. */
+const NameMitKreis: React.FC<{
+  kreis: React.ReactNode;
+  name: React.ReactNode;
+  dahinter?: React.ReactNode;
+  darunter?: React.ReactNode;
+}> = ({ kreis, name, dahinter, darunter }) => (
+  <span className="web-person-zelle">
+    {kreis}
+    <span className="web-person-zelle__text">
+      <span className="web-zelle-mit-knopf">
+        {name}
+        {dahinter}
+      </span>
+      {darunter}
+    </span>
+  </span>
 );
 
 // --- Aktivitaeten -----------------------------------------------------------------
@@ -150,7 +155,13 @@ export const AktivitaetenKarte: React.FC<{
   onEintragen: () => void;
   onLoeschen: (a: Activity) => void;
   onFoto: (a: Activity) => void;
-}> = ({ aktivitaeten, offene = [], isOnline = true, konfi, istTeamer, onEintragen, onLoeschen, onFoto }) => {
+  /**
+   * Eine verbuchte Aktivitaet mit Antrag (request_id): Klick auf die Zeile
+   * oeffnet den Antrag (13.10.2026). Ohne Antrag -- von der Leitung
+   * eingetragen -- bleibt die Zeile ohne Klick.
+   */
+  onAntrag?: (a: Activity) => void;
+}> = ({ aktivitaeten, offene = [], isOnline = true, konfi, istTeamer, onEintragen, onLoeschen, onFoto, onAntrag }) => {
   const summe = aktivitaeten.reduce((s, a) => s + (a.points || 0), 0);
 
   const spalten: Array<WebSpalte<Activity>> = [
@@ -158,17 +169,37 @@ export const AktivitaetenKarte: React.FC<{
       schluessel: 'name',
       kopf: 'Aktivität',
       sortWert: (a) => a.name,
-      zelle: (a) => (
-        <span className="web-zelle-mit-knopf">
-          <span className="web-zelle-titel">{a.name}</span>
-          {!istTeamer && artAus(konfi, a.type) && <WebPill>deaktiviert</WebPill>}
-          {a.hasPhoto && (
-            <WebKnopf art="text" klein symbol onClick={() => onFoto(a)} aria-label={`Nachweisfoto zu ${a.name} ansehen`} title="Nachweisfoto ansehen">
-              <IonIcon icon={ICON_BILD} aria-hidden="true" />
-            </WebKnopf>
-          )}
-        </span>
-      ),
+      zelle: (a) => {
+        const mitAntrag = Boolean(onAntrag) && a.request_id != null;
+        return (
+          <NameMitKreis
+            kreis={<WebKreis icon={aktivitaetSymbol(a.type, istTeamer)} ton={artTon(a.type, istTeamer)} />}
+            name={mitAntrag ? (
+              // Der Name ist ein Knopf, dessen Netz die ganze Zeile ueberspannt
+              // (web-link--zeile); Foto und Loeschen liegen darueber (vorn).
+              <button
+                type="button"
+                className="web-link web-link--zeile web-link--text web-link--knopf web-zelle-titel"
+                aria-label={`Antrag zu ${a.name} ansehen`}
+                title="Antrag ansehen"
+                onClick={() => onAntrag?.(a)}
+              >
+                {a.name}
+              </button>
+            ) : <span className="web-zelle-titel">{a.name}</span>}
+            dahinter={(
+              <>
+                {!istTeamer && artAus(konfi, a.type) && <WebPill>deaktiviert</WebPill>}
+                {a.hasPhoto && (
+                  <WebKnopf art="text" klein symbol vorn onClick={() => onFoto(a)} aria-label={`Nachweisfoto zu ${a.name} ansehen`} title="Nachweisfoto ansehen">
+                    <IonIcon icon={ICON_BILD} aria-hidden="true" />
+                  </WebKnopf>
+                )}
+              </>
+            )}
+          />
+        );
+      },
     },
     { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (a) => alsDatum(a.completed_date || a.date), zelle: (a) => datumKurz(a.completed_date || a.date) },
     ...(!istTeamer ? [{
@@ -233,10 +264,11 @@ export const BonusKarte: React.FC<{
       kopf: 'Grund',
       sortWert: (b) => b.description || 'Bonuspunkte',
       zelle: (b) => (
-        <span className="web-zelle-mit-knopf">
-          <span className="web-zelle-titel">{b.description || 'Bonuspunkte'}</span>
-          {artAus(konfi, b.type) && <WebPill>deaktiviert</WebPill>}
-        </span>
+        <NameMitKreis
+          kreis={<WebKreis icon={BONUS_SYMBOL} ton="bonus" />}
+          name={<span className="web-zelle-titel">{b.description || 'Bonuspunkte'}</span>}
+          dahinter={artAus(konfi, b.type) ? <WebPill>deaktiviert</WebPill> : undefined}
+        />
       ),
     },
     // `bonus.date` gibt es in dieser Antwort nicht -- sie liefert bp.* aus bonus_points.
@@ -266,103 +298,143 @@ export const BonusKarte: React.FC<{
   );
 };
 
-// --- Events mit Punkten (Konfi) -----------------------------------------------------
+// --- Events: EINE Liste (Konfi und Teamer:in) ----------------------------------------
+//
+// Simon, 13.10.2026: „ich sehe events die angemeldeten, dann nochmal eine
+// zuordnung mit teilgenommenen events -- das soll eine liste sein, pflicht
+// events sollten da auch gekennzeichnet sein". Alle Termine der Person in einer
+// Tabelle (eventListe.ts): zu verbuchende oben mit „Anwesend" und „Nicht
+// anwesend" in der Zeile, dann anstehende, dann der Rest nach Datum.
+// Pflicht und Konfirmation als Marken wie in der Terminliste (WebMerkmale).
+//
+// Dieselben Spaltenbreiten wie Aktivitaeten und Bonuspunkte (Simon,
+// 07.10.2026): der Stand steht unter "Eingetragen von", darunter leise, wer
+// verbucht hat; die Aktionsspalte bleibt leer. Bei einer Teamer:in ohne Art
+// und Punkte (wie ihre Aktivitaeten).
+//
+// Ein Event fuehrt mit Rueckweg zur Person (`?person=`, utils/rueckweg.ts;
+// Simon: „zurück ins profil?").
 
-interface TermineOben {
-  termine?: readonly PersonTermin[];
+const nichtsTun = () => {};
+
+export const EventListeKarte: React.FC<{
+  zeilen: readonly EventZeile[];
+  istTeamer: boolean;
+  konfi: Konfi | null;
+  /** Die Person dieser Seite: Ziel des Rueckwegs aus dem Event. */
+  personId: number;
+  /** Ihr Name -- die Eventseite zeigt ihn am Rueckweg schon beim Laden. */
+  personName?: string;
   kannVerbuchen?: boolean;
   isOnline?: boolean;
   onAnwesenheit?: (t: PersonTermin, status: AnwesenheitWahl) => void;
-}
-const nichtsTun = () => {};
+}> = ({ zeilen, istTeamer, konfi, personId, personName, kannVerbuchen = false, isOnline = true, onAnwesenheit = nichtsTun }) => {
+  React.useEffect(() => {
+    if (personName) personNameMerken(personId, personName);
+  }, [personId, personName]);
 
-export const EventPunkteKarte: React.FC<{ eventPunkte: readonly EventPunkteEintrag[]; konfi: Konfi | null } & TermineOben> = ({
-  eventPunkte, konfi, termine = [], kannVerbuchen = false, isOnline = true, onAnwesenheit = nichtsTun,
-}) => {
-  const summe = eventPunkte.reduce((s, e) => s + (e.points || 0), 0);
-  const geordnet = nachAnzeigeDatumAbsteigend(eventPunkte);
-  // Dieselbe Tabelle wie Aktivitaeten und Bonuspunkte darueber und darunter,
-  // mit denselben festen Spaltenbreiten (Simon, 07.10.2026: Events als Liste
-  // zwischen den beiden, „immer die gleichen spaltenbreite").
-  const spalten: Array<WebSpalte<EventPunkteEintrag>> = [
+  const summe = zeilen.reduce((s, z) => s + z.punkte, 0);
+  const anzahl = mitEinheit(zeilen.length, 'Event', 'Events');
+  const aus = (z: EventZeile) => !istTeamer && artAus(konfi, z.punkteArt ?? undefined);
+
+  const spalten: Array<WebSpalte<EventZeile>> = [
     {
       schluessel: 'event',
       kopf: 'Event',
-      sortWert: (e) => e.event_name || 'Event',
-      zelle: (e) => (
-        <span className="web-zelle-mit-knopf">
-          <span className="web-zelle-titel">{e.event_name || 'Event'}</span>
-          {artAus(konfi, e.point_type) && <WebPill>deaktiviert</WebPill>}
-        </span>
-      ),
+      sortWert: (z) => z.name,
+      zelle: (z) => {
+        const knoepfe = z.art === 'verbuchen' && z.termin && kannVerbuchen && z.termin.darf_verbuchen ? z.termin : null;
+        return (
+          <NameMitKreis
+            kreis={<WebKreis icon={EVENT_SYMBOL} ton="events" />}
+            // In den Termin -- mit Rueckweg zu dieser Person; ein Termin
+            // ausserhalb der eigenen Sicht ohne Link (er antwortete 403).
+            name={z.oeffnen
+              ? <WebLink href={eventMitRueckweg(z.event_id, personId)} className="web-link--zeile web-link--text web-zelle-titel">{z.name}</WebLink>
+              : <span className="web-zelle-titel">{z.name}</span>}
+            dahinter={(
+              <>
+                <WebMerkmale
+                  event={{ mandatory: z.pflicht, is_konfirmation: z.konfirmation, teamer_only: false, teamer_needed: false, is_series: false }}
+                  teamZeigen={false}
+                />
+                {aus(z) && <WebPill>deaktiviert</WebPill>}
+              </>
+            )}
+            darunter={knoepfe ? (
+              <span className="web-zeile-knoepfe">
+                <WebKnopf klein vorn disabled={!isOnline} onClick={() => onAnwesenheit(knoepfe, 'present')} aria-label={`${z.name}: anwesend`}>
+                  Anwesend
+                </WebKnopf>
+                <WebKnopf klein vorn disabled={!isOnline} onClick={() => onAnwesenheit(knoepfe, 'absent')} aria-label={`${z.name}: nicht anwesend`}>
+                  Nicht anwesend
+                </WebKnopf>
+              </span>
+            ) : undefined}
+          />
+        );
+      },
     },
-    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (e) => alsDatum(punkteAnzeigeDatum(e)), zelle: (e) => datumKurz(punkteAnzeigeDatum(e)) },
-    { schluessel: 'art', kopf: 'Art', breite: SPALTE.art, sortWert: (e) => e.point_type, zelle: (e) => <ArtMarke art={e.point_type} /> },
-    { schluessel: 'punkte', kopf: 'Punkte', zahl: true, breite: SPALTE.punkte, sortWert: (e) => e.points, zelle: (e) => <strong>+{e.points}</strong> },
-    { schluessel: 'von', kopf: 'Verbucht von', breite: SPALTE.von, optional: true, sortWert: (e) => e.admin_name || 'Leitung', zelle: (e) => e.admin_name || 'Leitung' },
-    // Leer, aber gleich breit: Die Spalten stehen unter denen von Aktivitaeten und Bonuspunkten.
-    { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },
-  ];
-  return (
-    <WebDetailListe
-      titel="Events"
-      untertitel={`${punkteText(summe)} aus ${mitEinheit(eventPunkte.length, 'Event', 'Events')}`}
-      oben={termine.length > 0 ? <OffeneTermineZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} /> : undefined}
-      leer={{ icon: ICON_PODIUM, titel: 'Keine Event-Punkte', text: 'Noch keine Event-Punkte erhalten.' }}
-      spalten={spalten}
-      zeilen={geordnet}
-      zeileSchluessel={(e) => e.id}
-      zeileKlasse={(e) => (artAus(konfi, e.point_type) ? 'web-zeile--leise' : undefined)}
-      mittig
-      klasse="web-tabelle--punkte"
-    />
-  );
-};
-
-// --- Events einer Teamer:in -----------------------------------------------------------
-
-// Stand einer Teamer:in bei einem Event: dieselbe Regel wie die
-// Teilnehmerliste (teilnahmeDarstellung) -- Anwesend/Abwesend aus der
-// Anwesenheit, sonst Gebucht, Warteliste oder Abgemeldet.
-const STAND_TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
-  success: 'erfolg', danger: 'fehler', warning: 'warnung', info: 'info', neutral: 'neutral',
-};
-
-export const TeamerEventsKarte: React.FC<{ events: readonly TeamerTermin[] } & TermineOben> = ({
-  events: alleEvents, termine = [], kannVerbuchen = false, isOnline = true, onAnwesenheit = nichtsTun,
-}) => {
-  // Was oben steht, steht in der Tabelle nicht noch einmal; der Untertitel
-  // zaehlt wie bisher alle Events.
-  const oben = new Set(termine.map((t) => t.event_id));
-  const events = alleEvents.filter((e) => !oben.has(e.id));
-  // Steht links unter den Aktivitaeten (Simon, 07.10.2026) und teilt deren
-  // Spaltenbreiten: Event, Datum, Stand an der Stelle von "Eingetragen von".
-  const spalten: Array<WebSpalte<TeamerTermin>> = [
-    { schluessel: 'event', kopf: 'Event', sortWert: (e) => e.name, zelle: (e) => <span className="web-zelle-titel">{e.name}</span> },
-    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (e) => alsDatum(e.event_date), zelle: (e) => datumKurz(e.event_date) },
+    { schluessel: 'datum', kopf: 'Datum', breite: SPALTE.datum, sortWert: (z) => alsDatum(z.datum), zelle: (z) => datumKurz(z.datum) },
+    ...(!istTeamer ? [{
+      schluessel: 'art',
+      kopf: 'Art',
+      breite: SPALTE.art,
+      sortWert: (z: EventZeile) => z.punkteArt ?? '',
+      zelle: (z: EventZeile) => (z.punkte > 0 && z.punkteArt ? <ArtMarke art={z.punkteArt} /> : <span className="web-gedaempft">–</span>),
+    }, {
+      schluessel: 'punkte',
+      kopf: 'Punkte',
+      zahl: true,
+      breite: SPALTE.punkte,
+      sortWert: (z: EventZeile) => z.punkte,
+      zelle: (z: EventZeile) => (z.punkte > 0
+        ? <strong>+{z.punkte}</strong>
+        : <span className="web-gedaempft">–</span>),
+    }] : []),
     {
       schluessel: 'stand',
       kopf: 'Stand',
       breite: SPALTE.von,
-      sortWert: (e) => teilnahmeStatusRang(teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status }).statusText),
-      zelle: (e) => {
-        const stand = teilnahmeDarstellung({ status: e.booking_status, attendance_status: e.attendance_status });
-        return <WebPill ton={STAND_TON[stand.farbe]}>{stand.statusText}</WebPill>;
+      // Die Woerter der Regeln sind laenger als die Spalte breit ist
+      // ("Anwesenheit ausstehend"): sie brechen in der Marke um (leitung.css).
+      klasse: 'web-spalte-stand',
+      // Die Reihe steht bei allen Status-Reihen (utils/statusReihenfolge.ts).
+      sortWert: (z) => personEventStatusRang(eventStand(z).text),
+      zelle: (z) => {
+        const stand = eventStand(z);
+        // Wer verbucht hat, sichtbar als leise Zeile darunter -- an der Stelle,
+        // an der Aktivitaeten und Bonuspunkte "Eingetragen/Vergeben von"
+        // zeigen. Bis zur Pruefung vom 13.10.2026 stand der Name nur als
+        // title am Punktwert: mit Tastatur, Touch und Screenreader nicht
+        // erreichbar.
+        return (
+          <>
+            <WebPill ton={stand.ton}>{stand.text}</WebPill>
+            {z.von && <span className="web-zelle-leise">verbucht von {z.von}</span>}
+          </>
+        );
       },
     },
+    // Leer, aber gleich breit: Die Spalten stehen unter denen von Aktivitaeten und Bonuspunkten.
     { schluessel: 'aktionen', kopf: 'Aktionen', kopfVersteckt: true, klasse: 'web-spalte-aktionen-schmal', zelle: () => null },
   ];
+
   return (
     <WebDetailListe
       titel="Events"
-      untertitel={mitEinheit(alleEvents.length, 'Event', 'Events')}
-      oben={termine.length > 0 ? <OffeneTermineZeilen termine={termine} kannVerbuchen={kannVerbuchen} isOnline={isOnline} onAnwesenheit={onAnwesenheit} /> : undefined}
-      // Auch leer anzeigen: sonst ist "war bei keinem Event" nicht von "nicht geladen" zu unterscheiden.
-      leer={{ icon: ICON_TERMIN, titel: 'Keine Events', text: 'Noch bei keinem Event dabei gewesen.' }}
+      untertitel={istTeamer ? anzahl : `${anzahl} · ${punkteText(summe)}`}
+      // Auch leer anzeigen: sonst ist "kein Event" nicht von "nicht geladen" zu unterscheiden.
+      leer={{
+        icon: ICON_TERMIN,
+        titel: 'Keine Events',
+        text: istTeamer ? 'Noch bei keinem Event dabei gewesen.' : 'Noch bei keinem Event angemeldet.',
+      }}
       kurz={ZEILEN_KURZ}
       spalten={spalten}
-      zeilen={events}
-      zeileSchluessel={(e) => e.id}
+      zeilen={zeilen}
+      zeileSchluessel={(z) => z.schluessel}
+      zeileKlasse={(z) => (aus(z) ? 'web-zeile--leise' : undefined)}
       mittig
       klasse="web-tabelle--punkte"
     />

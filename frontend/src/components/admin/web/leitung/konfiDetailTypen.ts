@@ -22,6 +22,36 @@ export interface TeamerTermin {
   attendance_status?: string | null;
 }
 
+/**
+ * Ein Termin einer Konfi aus `alleTermine` (GET /admin/konfis/:id, seit
+ * 13.10.2026; backend utils/terminLeitungSicht.js, alleTermineDerPerson):
+ * jede Buchung mit Pflicht, Punkten und Recht, dazu Event-Punkte ohne Buchung
+ * (booking_id null).
+ */
+export interface AlleTermineEintrag {
+  booking_id: number | null;
+  event_id: number;
+  event_name: string;
+  event_date: string;
+  location?: string | null;
+  mandatory: boolean;
+  is_konfirmation?: boolean;
+  cancelled?: boolean;
+  booking_status: string | null;
+  attendance_status: string | null;
+  art: 'verbuchen' | 'anstehend' | 'erledigt';
+  darf_verbuchen: boolean;
+  /**
+   * Sieht die Leitung den Termin (darf ihn oeffnen)? false nur bei
+   * Event-Punkten an einem Termin ausserhalb ihrer Sicht (Pruefung
+   * 13.10.2026); fehlt bei einem Stand davor.
+   */
+  darf_oeffnen?: boolean;
+  points: number;
+  point_type?: string | null;
+  points_von?: string | null;
+}
+
 export interface Zertifikat {
   id: number;
   certificate_type_id: number;
@@ -75,6 +105,12 @@ export interface WebKonfiDetailProps {
    * (GET /admin/konfis/:id, Feld `termine`, seit 09.10.2026).
    */
   termine: PersonTermin[];
+  /**
+   * Alle Termine einer Konfi in einer Liste (Feld `alleTermine`, seit
+   * 13.10.2026). Fehlt es (Teamer:in, gemerkter Stand von vorher), baut die
+   * Liste aus `termine` und den Event-Punkten (eventListe.ts).
+   */
+  alleTermine?: AlleTermineEintrag[] | null;
   /** Darf die angemeldete Person ueberhaupt Anwesenheit eintragen (Leitung)? */
   kannVerbuchen: boolean;
   zertifikate: Zertifikat[];
@@ -107,6 +143,11 @@ export interface WebKonfiDetailProps {
   onZertifikatEntfernen: (zertifikat: { id: number; name: string }) => void;
   /** Foto ansehen -- bei einem offenen Antrag mit Recht: "Aktivität prüfen". */
   onFoto: (aktivitaet: Activity) => void;
+  /**
+   * Eine verbuchte Aktivitaet mit Antrag (request_id) anklicken: der Antrag
+   * der Konfi (Datum, Kommentar, Foto, Entscheidung; 13.10.2026).
+   */
+  onAntrag?: (aktivitaet: Activity) => void;
   onAnwesenheit: (termin: PersonTermin, status: AnwesenheitWahl) => void;
   onRueckblick: (eintrag: WrappedHistoryEntry) => void;
   /** Datum als 'JJJJ-MM-TT'. */

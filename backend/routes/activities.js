@@ -659,9 +659,19 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
 
         // SCHRITT 1: Alte Entscheidung rückgängig machen
         if (oldStatus === 'approved') {
-          // Die Zuordnung, die die Genehmigung angelegt hat: die jüngste zu
-          // user/activity (eine eigene Verknüpfung Antrag -> Zuordnung gibt
-          // es nicht). Abgezogen wird der Wert, der an DIESER Zeile steht
+          // Die Zuordnung, die die Genehmigung angelegt hat: seit Migration
+          // 214 (13.10.2026) die Zeile mit request_id = dieser Antrag. Ohne
+          // sie (Altbestand ohne eindeutige Zuordnung) eine Zeile OHNE Antrag
+          // an GENAU dem Tag des Antrags -- so schreibt die Genehmigung die
+          // Zeile (completed_date = requested_date). Eine Zeile, die zu einem
+          // ANDEREN Antrag gehört, wird nie genommen; bis dahin traf das
+          // Zurücksetzen eines älteren Antrags die Zeile des jüngeren (zwei
+          // Gottesdienste, zwei Meldungen). Und eine Eintragung der Leitung
+          // an einem anderen Tag auch nicht: War die Zeile des Antrags schon
+          // auf der Detailseite gelöscht (Punkt dort abgezogen), nahm der
+          // Rückfall bis zur Prüfung vom 13.10.2026 diese Eintragung und zog
+          // den Punkt ein zweites Mal ab.
+          // Abgezogen wird der Wert, der an DIESER Zeile steht
           // (user_activities.points, Migration 163) — nicht der aktuelle Wert
           // der Aktivität. Bis 26.09.2026 zog das Zurücksetzen a.points ab:
           // Hatte die Leitung den Punktwert nach der Genehmigung geändert,
@@ -677,9 +687,18 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
                FROM user_activities ua
                JOIN activities a ON a.id = ua.activity_id
               WHERE ua.user_id = $1 AND ua.activity_id = $2
-              ORDER BY ua.completed_date DESC, ua.id DESC
+                AND (
+                  ua.request_id = $3
+                  OR (
+                    ua.request_id IS NULL
+                    AND ua.completed_date IS NOT DISTINCT FROM (
+                      SELECT ar.requested_date FROM activity_requests ar WHERE ar.id = $3
+                    )
+                  )
+                )
+              ORDER BY (ua.request_id IS NOT DISTINCT FROM $3) DESC, ua.completed_date DESC, ua.id DESC
               LIMIT 1`,
-            [request.user_id, request.activity_id]
+            [request.user_id, request.activity_id, request.id]
           );
 
           if (zuordnung) {
@@ -793,9 +812,12 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
           // BF-02).
           // type: ebenso die Art (Migration 200) -- Ruecknahme, Liste und
           // Historie bleiben in der Saeule, in die gebucht wurde.
+          // request_id: der Antrag, aus dem die Zeile entsteht (Migration 214,
+          // 13.10.2026) -- die Detailseite der Konfi oeffnet ihn von der
+          // Aktivitaet aus, das Zuruecksetzen nimmt genau diese Zeile zurueck.
           await client.query(
-            "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points, type) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-            [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id, request.points, request.type || null]
+            "INSERT INTO user_activities (user_id, activity_id, admin_id, completed_date, organization_id, points, type, request_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
+            [request.user_id, request.activity_id, req.user.id, request.requested_date, req.user.organization_id, request.points, request.type || null, request.id]
           );
 
           // Punkte nur für Konfi-Activities (Teamer-Activities sind nur Nachweis)

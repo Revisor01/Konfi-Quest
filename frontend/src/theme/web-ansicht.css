@@ -2510,6 +2510,11 @@ a.web-auszeichnung__knopf {
 .web-symbol--wrapped { background: var(--app-color-wrapped); }
 .web-symbol--users { background: var(--app-color-users); }
 .web-symbol--erfolg { background: var(--app-color-success-strong); }
+/* Die Punktearten der Personenseite (Aktivitaeten, Events, Bonuspunkte), wie die Kreise der App. */
+.web-symbol--gottesdienst { background: var(--app-color-gottesdienst); }
+.web-symbol--gemeinde { background: var(--app-color-gemeinde); }
+.web-symbol--events { background: var(--app-color-events); }
+.web-symbol--bonus { background: var(--app-color-bonus); }
 
 /* --- Werkzeugleiste: Auswahl neben der Suche --- */
 .web-filterauswahl {

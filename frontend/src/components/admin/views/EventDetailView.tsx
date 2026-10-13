@@ -68,6 +68,7 @@ import { anwesenheitSetzen } from '../../../utils/anwesenheitSetzen';
 import { datumLang } from '../../../utils/dateUtils';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebTerminDetailLeitung from '../web/termine/WebTerminDetailLeitung';
+import { rueckwegZurPerson } from '../../../utils/rueckweg';
 import WebEventDialog from '../web/termine/WebEventDialog';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
@@ -93,9 +94,16 @@ interface EventDetailViewProps {
   // Im iPad-Split-View ist die Liste links dauerhaft sichtbar -> kein
   // Zurück-Button nötig.
   hideBackButton?: boolean;
+  /**
+   * Die Abfrage der Adresse (`?person=9`), von ParamSeite (MainTabs)
+   * durchgereicht. Kam das Event von der Detailseite einer Person, führt
+   * „Zurück" im Browser dorthin statt zu „Alle Events" (13.10.2026,
+   * utils/rueckweg.ts).
+   */
+  abfrage?: string;
 }
 
-const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton }) => {
+const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hideBackButton, abfrage }) => {
   const pageRef = useRef<HTMLElement>(null);
   const slidingRefs = useRef<Map<number, SlidingRef>>(new Map());
   const { user, setSuccess, setError, isOnline } = useApp();
@@ -1437,10 +1445,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       const oeffnen = wen === 'konfi' ? presentKonfiModal : wen === 'team' ? presentTeamerModal : presentLeitungModal;
       oeffnen({ presentingElement: presentingElement || undefined });
     };
+    // Zurück zur Person, von deren Detailseite das Event geöffnet wurde
+    // (?person=), beschriftet mit ihrem Namen aus den Teilnehmenden bzw.
+    // Abmeldungen; ohne Herkunft „Alle Events".
+    const zurueckZurPerson = rueckwegZurPerson(abfrage, (personId) =>
+      participants.find((p) => p.user_id === personId)?.participant_name
+      ?? unregistrations.find((u) => u.user_id === personId)?.konfi_name);
     return (
       <>
       <WebTerminDetailLeitung
         pageRef={pageRef}
+        zurueck={zurueckZurPerson ?? undefined}
         laedt={loading}
         jahrgangFehlt={jahrgangFehlt}
         eventData={eventData}

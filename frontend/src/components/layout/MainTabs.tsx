@@ -113,6 +113,11 @@ export const ParamSeite: React.FC<{
   // RouteComponentProps mehr) — sie kommen ueber useParams.
   const params = useParams();
   const router = useIonRouter();
+  // Die Abfrage der Adresse (`?person=9`) als Prop `abfrage` (13.10.2026):
+  // So liest eine Seite ihre Herkunft, ohne selbst den Router zu fragen --
+  // ein Event fuehrt zurueck zur Person, von deren Seite es kam
+  // (utils/rueckweg.ts). Seiten, die sie nicht brauchen, uebergehen sie.
+  const { search } = useAppLocation();
 
   // Kommt man ueber einen Push herein, laedt AppContext die App HART neu
   // (window.location.href, AppContext.tsx) — der Verlauf ist danach LEER.
@@ -130,7 +135,7 @@ export const ParamSeite: React.FC<{
     }
   };
 
-  return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={zurueck} />;
+  return <Seite {...{ [prop]: parseInt(params[param] ?? '0', 10) }} onBack={zurueck} abfrage={search} />;
 };
 
 const MainTabs: React.FC = () => {
