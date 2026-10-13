@@ -3175,6 +3175,7 @@ paths:
         "400": { description: "Validierungsfehler ({ error: 'Validierungsfehler', details }, auch fuer einen ungueltigen status oder ein antwort_auf, das keine positive ganze Zahl ist); antwort_auf gehoert nicht zu diesem Vorgang ({ error: 'Die beantwortete Mail gehört nicht zu diesem Vorgang' }); Adresse nicht unter den Empfaengern ('Diese Adresse gehört nicht zu den Empfängern dieses Vorgangs.'); kein Empfaenger bekannt. In allen Faellen geht nichts hinaus." }
         "403": { description: "Kein Super-Admin" }
         "404": { description: "{ error: 'Vorgang nicht gefunden' }" }
+        "500": { description: "{ error: 'Die Mail wurde gesendet, aber nicht gespeichert.' } -- die Mail ist hinausgegangen, das Speichern scheiterte (Datenbankfehler nach dem Versand). Mail und Status stehen in EINER Transaktion: Scheitert der Statusschritt, ist auch die Mail nicht gespeichert; scheitert das Speichern, ist auch der Status nicht gesetzt und die Anfrage dahinter nicht mitgegangen (mit status: additiv seit 12.10.2026, durch Tests abgesichert seit 13.10.2026)" }
         "502": { description: "Versand gescheitert -- nichts gespeichert, Status unveraendert" }
         "503": { description: "Postfach nicht eingerichtet oder 'Auf diesem Server ist der Versand aus.' (RUN_BACKGROUND_JOBS=false)" }
       x-berechtigung:

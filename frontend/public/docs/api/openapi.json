@@ -4366,6 +4366,9 @@
           "404": {
             "description": "{ error: 'Vorgang nicht gefunden' }"
           },
+          "500": {
+            "description": "{ error: 'Die Mail wurde gesendet, aber nicht gespeichert.' } -- die Mail ist hinausgegangen, das Speichern scheiterte (Datenbankfehler nach dem Versand). Mail und Status stehen in EINER Transaktion: Scheitert der Statusschritt, ist auch die Mail nicht gespeichert; scheitert das Speichern, ist auch der Status nicht gesetzt und die Anfrage dahinter nicht mitgegangen (mit status: additiv seit 12.10.2026, durch Tests abgesichert seit 13.10.2026)"
+          },
           "502": {
             "description": "Versand gescheitert -- nichts gespeichert, Status unveraendert"
           },

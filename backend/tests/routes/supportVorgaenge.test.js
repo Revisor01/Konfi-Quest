@@ -687,6 +687,81 @@ describe('/api/support/vorgaenge', () => {
     });
 
     // ------------------------------------------------------------------------
+    // status und Mail in EINER Transaktion (Pruefung vom 13.10.2026). Der
+    // Fehler kommt aus der DATENBANK (Trigger, Muster absageMeldetAb.test.js),
+    // damit der echte Weg umfaellt und kein nachgebauter. Zwei Stellen, weil
+    // jede eine andere Abweichung zeigt:
+    //  - der Statusschritt selbst scheitert -> auch die Mail ist nicht
+    //    gespeichert (rot, wenn der Status erst nach dem COMMIT geschrieben
+    //    wird);
+    //  - erst das COMMIT scheitert (aufgeschobener Trigger auf
+    //    mail_nachrichten, gleich in welcher Reihenfolge die Schritte davor
+    //    laufen) -> auch der Status ist nicht gesetzt und die Anfrage nicht
+    //    mitgegangen (rot, wenn der Status vor oder neben der Transaktion
+    //    geschrieben wird).
+    // Die Meldung im Protokoll zeigt, dass genau diese Stelle getroffen ist;
+    // die Gegenprobe ohne Trigger, dass derselbe Aufruf sonst etwas aendert.
+    // ------------------------------------------------------------------------
+    /** Fuehrt fn mit einem Trigger aus (anlegen/entfernen: SQL) und liefert { res, meldungen } (console.error). */
+    const mitBremse = async (anlegen, entfernen, fn) => {
+      await db.query(anlegen);
+      const fehler = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const res = await fn();
+        return { res, meldungen: fehler.mock.calls.map((aufruf) => aufruf.join(' ')) };
+      } finally {
+        fehler.mockRestore();
+        await db.query(entfernen);
+      }
+    };
+    const GESENDET_NICHT_GESPEICHERT = { error: 'Die Mail wurde gesendet, aber nicht gespeichert.' };
+
+    it('status in derselben Transaktion: scheitert der Statusschritt nach dem Versand, ist auch die Mail nicht gespeichert', async () => {
+      const v = await d.vorgang({ status: 'in_arbeit', kontakt_email: 'erika@andere.example' });
+      const vorher = await d.vorgangZeile(v);
+      const antworten = () => super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'x', status: 'erledigt' });
+      const { res, meldungen } = await mitBremse(`
+        CREATE OR REPLACE FUNCTION test_status_bremse() RETURNS trigger AS $$
+        BEGIN RAISE EXCEPTION 'Statusschritt gebremst'; END; $$ LANGUAGE plpgsql;
+        CREATE TRIGGER test_status_bremse BEFORE UPDATE ON support_vorgaenge
+          FOR EACH ROW WHEN (OLD.status IS DISTINCT FROM NEW.status) EXECUTE FUNCTION test_status_bremse();`,
+      'DROP TRIGGER IF EXISTS test_status_bremse ON support_vorgaenge; DROP FUNCTION IF EXISTS test_status_bremse();',
+      antworten);
+      expect([res.status, res.body]).toEqual([500, GESENDET_NICHT_GESPEICHERT]);
+      expect(meldungen).toEqual(['Mail-Versand (support): gesendet, aber nicht gespeichert (P0001 Statusschritt gebremst)']);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      expect(await d.anzahl('mail_nachrichten')).toBe(0);
+      expect(await d.vorgangZeile(v)).toEqual(vorher);
+      // Gegenprobe: ohne Trigger setzt derselbe Aufruf den Status und speichert die Mail
+      const ok = await antworten();
+      expect([ok.status, ok.body.vorgang.status, ok.body.vorgang.archiviert_am === null]).toEqual([201, 'erledigt', false]);
+      expect(await d.anzahl('mail_nachrichten')).toBe(1);
+    });
+
+    it('status in derselben Transaktion: scheitert erst das COMMIT, ist auch der Status nicht gesetzt -- die Anfrage nicht mitgegangen', async () => {
+      const { anfrage, vorgang } = await d.anfrageMitVorgang({ status: 'in_arbeit' });
+      const stand = async () => ({ vorgang: await d.vorgangZeile(vorgang), anfrage: await d.anfrageZeile(anfrage) });
+      const vorher = await stand();
+      const antworten = () => super_().post(`/api/support/vorgaenge/${vorgang}/antworten`, { text: 'x', status: 'erledigt' });
+      const { res, meldungen } = await mitBremse(`
+        CREATE OR REPLACE FUNCTION test_speichern_bremse() RETURNS trigger AS $$
+        BEGIN RAISE EXCEPTION 'Speichern gebremst'; END; $$ LANGUAGE plpgsql;
+        CREATE CONSTRAINT TRIGGER test_speichern_bremse AFTER INSERT ON mail_nachrichten
+          DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION test_speichern_bremse();`,
+      'DROP TRIGGER IF EXISTS test_speichern_bremse ON mail_nachrichten; DROP FUNCTION IF EXISTS test_speichern_bremse();',
+      antworten);
+      expect([res.status, res.body]).toEqual([500, GESENDET_NICHT_GESPEICHERT]);
+      expect(meldungen).toEqual(['Mail-Versand (moin): gesendet, aber nicht gespeichert (P0001 Speichern gebremst)']);
+      expect(sendMail).toHaveBeenCalledTimes(1);
+      expect(await d.anzahl('mail_nachrichten')).toBe(0);
+      expect(await stand()).toEqual(vorher);
+      // Gegenprobe: ohne Trigger geht der Vorgang auf erledigt und die Anfrage mit (ohne Gemeinde: abgelehnt)
+      const ok = await antworten();
+      expect([ok.status, ok.body.vorgang.status, (await d.anfrageZeile(anfrage)).status]).toEqual([201, 'erledigt', 'abgelehnt']);
+      expect(await d.anzahl('mail_nachrichten')).toBe(1);
+    });
+
+    // ------------------------------------------------------------------------
     // antwort_auf (additiv seit 12.10.2026): die beantwortete Mail als Bezug
     // ------------------------------------------------------------------------
     /**
