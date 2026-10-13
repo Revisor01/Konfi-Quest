@@ -43,6 +43,7 @@
 const {
   vorgangFuerAnfrage, offenerVorgangDerGemeinde, vorgangFuerGemeinde, mailSpalten,
 } = require('./supportVorgaenge');
+const { nichtGesperrtIn } = require('./orgMitglieder');
 
 const KENNUNG_VORGANG = /\[\s*Vorgang\s+(\d{1,15})\s*\]/i;
 const KENNUNG_ANFRAGE = /\[\s*Anfrage\s+(\d{1,15})\s*\]/i;
@@ -145,8 +146,12 @@ async function regelAnfrageAdresse(db, adresse) {
  * Die Gemeinde, zu der eine Adresse gehoert: das EINE aktive Konto (nicht
  * Konfi) mit Gemeinde -- sonst null. Beide Quellen der Zugehoerigkeit, die
  * Rolle je Gemeinde; ein Konto in mehreren Gemeinden oder mehrere Konten mit
- * derselben Adresse sind nicht eindeutig. Gebraucht fuer Regel 4 und fuer
- * das Formular auf der Homepage (routes/anliegen.js).
+ * derselben Adresse sind nicht eindeutig. Eine Gemeinde, in der das Konto
+ * gesperrt ist (Sperre je Gemeinde, utils/orgMitglieder.js), zaehlt nicht
+ * (seit 13.10.2026; vorher zaehlte sie mit und machte eine Teamer:in, die nur
+ * in einer zweiten Gemeinde gesperrt ist, "nicht eindeutig"). Gebraucht fuer
+ * Regel 4, fuer absender_bekannt (routes/supportMail.js) und fuer das
+ * Formular auf der Homepage (routes/anliegen.js).
  *
  * @returns {Promise<number|null>} Kennung der Gemeinde
  */
@@ -162,6 +167,7 @@ async function gemeindeDesKontos(db, adresse) {
           AND u.organization_id IS NOT NULL
           AND r.name <> 'konfi'
           AND u.is_active = true AND u.deleted_at IS NULL
+          AND ${nichtGesperrtIn('u', 'u.organization_id')}
        UNION
        SELECT u.id AS user_id, uo.organization_id
          FROM user_organizations uo
@@ -170,6 +176,7 @@ async function gemeindeDesKontos(db, adresse) {
         WHERE lower(btrim(u.email)) = $1
           AND r.name <> 'konfi'
           AND u.is_active = true AND u.deleted_at IS NULL
+          AND uo.is_active IS DISTINCT FROM false
      ) k`, [a]);
   const konten = new Set(rows.map((r) => Number(r.user_id)));
   const gemeinden = new Set(rows.map((r) => Number(r.organization_id)));

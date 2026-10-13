@@ -3548,10 +3548,15 @@ paths:
         Abholen (Regel 4, utils/mailZuordnung.js gemeindeDesKontos): genau ein
         aktives Konto (nicht Konfi, nicht geloescht) mit dieser Adresse (ohne
         Unterschied Gross/klein, ohne Leerraum), Mitglied in genau einer
-        Gemeinde (beide Quellen der Zugehoerigkeit, Rolle je Gemeinde). Sonst
-        -- unbekannte Adresse, mehrere Konten, ein Konto in mehreren
-        Gemeinden, Konfi-Konto, gesperrtes Konto, ausgehende Mail, Mail in
-        einem Vorgang -- null. Interne Gemeinden zaehlen wie jede andere.
+        Gemeinde (beide Quellen der Zugehoerigkeit, Rolle je Gemeinde). Eine
+        Gemeinde, in der das Konto gesperrt ist (Sperre je Gemeinde,
+        user_organizations.is_active), zaehlt nicht (behoben 13.10.2026: sie
+        zaehlte mit; eine Teamer:in, die nur in einer zweiten Gemeinde
+        gesperrt ist, galt als "mehrere Gemeinden", eine Team-Mitgliedschaft
+        nur in einer gesperrten Gemeinde ergab diese Gemeinde). Sonst --
+        unbekannte Adresse, mehrere Konten, ein Konto in mehreren Gemeinden,
+        Konfi-Konto, gesperrtes Konto, ausgehende Mail, Mail in einem Vorgang
+        -- null. Interne Gemeinden zaehlen wie jede andere.
       parameters:
         - { name: id, in: path, required: true, schema: { type: integer } }
       responses:

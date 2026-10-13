@@ -647,7 +647,8 @@ ansehen."
    Absenderadresse — so landen auch Antworten auf die Bestätigungsmail
    einer Anfrage richtig,
 4. bei support@ in einen **neuen Vorgang** der Gemeinde, wenn genau ein
-   aktives Konto (nicht Konfi) mit genau einer Gemeinde diese Adresse hat,
+   aktives Konto (nicht Konfi) mit genau einer Gemeinde diese Adresse hat —
+   eine Gemeinde, in der das Konto gesperrt ist, zählt dabei nicht,
 5. sonst in den **Posteingang**.
 
 Ein archivierter Vorgang, zu dem eine Mail kommt, kehrt mit dem Status In
@@ -674,8 +675,9 @@ Test-Gemeinde · 2 offene Vorgänge“. Hat die Gemeinde einen offenen Vorgang,
 steht daneben **In Vorgang N einsortieren** — N ist der jüngste offene; ein
 Klick legt die Mail ohne Dialog dorthin und öffnet den Vorgang. Steht ein
 ungesendeter Entwurf da, fragt der Browser vorher nach. Konfis zählen dabei
-nicht; eine Adresse mit mehreren Konten oder Gemeinden ist nicht eindeutig,
-dann fehlt die Zeile.
+nicht, ebenso wenig eine Gemeinde, in der das Konto gesperrt ist; eine
+Adresse mit mehreren Konten oder Gemeinden ist nicht eindeutig, dann fehlt
+die Zeile.
 
 Je Mail:
 

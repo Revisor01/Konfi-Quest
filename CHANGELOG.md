@@ -556,6 +556,10 @@ Versionsüberschrift.
   ging sie bisher an deren Absender.
 - Ein Klick auf eine der neuesten Mails in der Übersicht im Browser öffnet
   ihren Vorgang direkt, statt erst über die Seite der Mail zu gehen.
+- Eine Mail an support@ von jemandem, der in einer zweiten Gemeinde gesperrt
+  ist, kommt in einen neuen Vorgang der eigenen Gemeinde statt in den
+  Posteingang; eine Gemeinde, in der das Konto gesperrt ist, zählt bei der
+  Zuordnung nicht mehr mit.
 - Die roten Zahlen im Chat laufen nach dem Verlassen eines Chats live weiter.
 - Ein bevorstehendes Pflicht-Event heißt in der Liste der Leitung „Pflicht"
   statt „Geschlossen".

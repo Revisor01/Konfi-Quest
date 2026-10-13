@@ -608,7 +608,10 @@ describe('/api/support/vorgaenge', () => {
     // status im Koerper (additiv seit 12.10.2026): "Danach" in einem Schritt
     // ------------------------------------------------------------------------
     it('status „wartet“: gesetzt mit dem Speichern, statt des Schritts neu → in Arbeit; die Antwort meldet den Stand', async () => {
-      const v = await d.vorgang({ status: 'neu', status_seit: '2026-09-01T08:00:00Z', kontakt_email: 'erika@andere.example' });
+      // updated_at alt angelegt -- sonst stuende es schon vor der Antwort auf jetzt, und die
+      // Pruefung unten ("bewegt") koennte nicht fallen.
+      const v = await d.vorgang({ status: 'neu', status_seit: '2026-09-01T08:00:00Z', updated_at: '2026-09-01T08:00:00Z', kontakt_email: 'erika@andere.example' });
+      expect((await d.vorgangZeile(v)).updated_at.toISOString()).toBe('2026-09-01T08:00:00.000Z');
       const res = await super_().post(`/api/support/vorgaenge/${v}/antworten`, { text: 'Wir melden uns', status: 'wartet' });
       expect(res.status).toBe(201);
       expect(sendMail).toHaveBeenCalledTimes(1);

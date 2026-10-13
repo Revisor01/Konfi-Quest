@@ -454,6 +454,20 @@ describe('/api/support -- Support-Mail', () => {
       });
     });
 
+    it('Sperre je Gemeinde: Konfi in Gemeinde 1, im Team nur in Gemeinde 2 -- dort gesperrt: null; Gegenprobe dort frei: Gemeinde 2', async () => {
+      await adresse(USERS.konfi1.id, 'gesperrt-gast@x.example');
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, false)',
+        [USERS.konfi1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+      const offen = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'neu' });
+      const m = await mail({ von_adresse: 'gesperrt-gast@x.example' });
+      // Kein „In Vorgang N einsortieren" für eine Gemeinde, in der das Konto gesperrt ist.
+      expect((await detail(m)).absender_bekannt).toBeNull();
+      await db.query('UPDATE user_organizations SET is_active = true WHERE user_id = $1', [USERS.konfi1.id]);
+      expect((await detail(m)).absender_bekannt).toEqual({
+        organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde', offene_vorgaenge: 1, vorgang_id: offen,
+      });
+    });
+
     it('verboten: ausgehende Mail und Mail in einem Vorgang -- null, auch bei bekanntem Absender; Gegenprobe im Posteingang: bekannt', async () => {
       await adresse(USERS.orgAdmin2.id, 'leitung@andere.example');
       const v = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'in_arbeit' });
