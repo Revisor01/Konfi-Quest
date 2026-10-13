@@ -14,6 +14,7 @@ import {
   LIZENZ_TEXT,
   LOESCHEN_RUECKFRAGE,
   MAIL_ARCHIV_SATZ,
+  MAIL_DETAIL_TEXT,
   MAIL_MENUE,
   STAND_TEXT,
 } from '../../seiten/supportDetail';
@@ -78,5 +79,17 @@ describe('Danach, Mail, Rahmen', () => {
     expect(MAIL_MENUE).toEqual({ verschieben: 'In anderen Vorgang verschieben', herausloesen: 'In neuen Vorgang herauslösen', kopfzeilen: 'Kopfzeilen zeigen' });
     expect(EINSORTIEREN_HINWEIS.allein).toBe('Nur diese Mail wird verschoben; der Rest des Vorgangs bleibt, wo er ist.');
     expect(BREIT_LESEN.zurueck('Alle Vorgänge')).toBe('Zurück zu „Alle Vorgänge“');
+  });
+});
+
+describe('Mail im Posteingang: der bekannte Absender (Frage 11)', () => {
+  it('die Zeile mit Zahlwort (Zahl und Wort geschützt verbunden) und der Knopf mit Tooltip -- ein Wortlaut für App und Web', () => {
+    expect(MAIL_DETAIL_TEXT.absender('Test-Gemeinde St. Martin', 2)).toBe('Absender gehört zu Test-Gemeinde St. Martin · 2\u00a0offene Vorgänge');
+    expect(MAIL_DETAIL_TEXT.absender('Test-Gemeinde St. Martin', 1)).toBe('Absender gehört zu Test-Gemeinde St. Martin · 1\u00a0offener Vorgang');
+    expect(MAIL_DETAIL_TEXT.absender('Test-Gemeinde St. Martin', 0)).toBe('Absender gehört zu Test-Gemeinde St. Martin · kein offener Vorgang');
+    expect(MAIL_DETAIL_TEXT.inVorgang(2)).toEqual({
+      label: 'In Vorgang 2 einsortieren',
+      titel: 'Die Mail in Vorgang 2 legen – den jüngsten offenen Vorgang dieser Gemeinde',
+    });
   });
 });

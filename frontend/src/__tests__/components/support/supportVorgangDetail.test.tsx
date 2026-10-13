@@ -500,7 +500,7 @@ describe('Vorgang (App): Verlauf und Antworten', () => {
     }
   });
 
-  it('Senden in der Kopfzeile: Rückfrage, dann die Antwort an die Adresse, danach der gewählte Status; das Modal schließt', async () => {
+  it('Senden in der Kopfzeile: Rückfrage, dann EIN Aufruf mit Adresse, gewähltem Status und der beantworteten Mail; das Modal schließt', async () => {
     await oeffnen();
     fireEvent.click(haupt());
     const modal = dialog('Antworten');
@@ -510,11 +510,14 @@ describe('Vorgang (App): Verlauf und Antworten', () => {
     expect(h.alert?.header).toBe('Antwort senden');
     expect(server.aufrufe('post', /antworten$/)).toHaveLength(0);
     await bestaetigen('Senden');
+    // Seit 12.10.2026 geht „Danach" im Körper mit, dazu die Mail aus „Du antwortest auf" (11, die jüngste eingehende --
+    // nicht die eigene Antwort 12 danach). Der Server bestätigt den Status: kein PATCH mehr (bis dahin ein zweiter Aufruf).
     expect(server.aufrufe('post', '/support/vorgaenge/1/antworten')[0].koerper).toEqual({
-      text: 'Danke für die Rückmeldung.', betreff: 'Re: Chat zeigt nichts Neues', an: 'lena.probe@example.org',
+      text: 'Danke für die Rückmeldung.', betreff: 'Re: Chat zeigt nichts Neues', an: 'lena.probe@example.org', status: 'in_arbeit', antwort_auf: 11,
     });
-    await waitFor(() => expect(server.aufrufe('patch', '/support/vorgaenge/1').map((a) => a.koerper)).toEqual([{ status: 'in_arbeit' }]));
-    expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
+    await waitFor(() => expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet'));
+    expect(patches()).toEqual([]);
+    expect(server.stand.vorgaenge[0].status).toBe('in_arbeit');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Antworten' })).toBeNull());
     await waitFor(() => expect(mailZeilen()).toHaveLength(3));
   });
@@ -540,6 +543,10 @@ describe('Vorgang (App): Verlauf und Antworten', () => {
     await waitFor(() => expect(server.aufrufe('post', '/support/vorgaenge/3/antworten')).toHaveLength(1));
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     expect(patches()).toEqual([]);
+    // Ohne „Danach" auch kein Status im Körper -- nur die beantwortete Mail.
+    const koerper = server.aufrufe('post', '/support/vorgaenge/3/antworten')[0].koerper as Record<string, unknown>;
+    expect(koerper.antwort_auf).toBe(31);
+    expect(Object.keys(koerper).sort()).toEqual(['antwort_auf', 'betreff', 'text']);
     expect(server.aufrufe('post', '/support/vorgaenge/3/wiederherstellen')).toEqual([]);
   });
 

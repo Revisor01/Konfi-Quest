@@ -15,11 +15,12 @@
 // Liste, was früher „Anfragen" hieß, als offene und neueste Vorgänge -- aus
 // GET /support/vorgaenge?filter=offen. Die Kachel „Posteingang" zählt dieselben
 // Mails wie die rote Zahl der Leiste. Eine der „Neuesten Mails", deren Vorgang
-// die Antwort nennt (vorgang_id), führt direkt dorthin (mailWeiterleitung,
-// …?mail=). Ohne -- so liefert GET /support/uebersicht heute -- führt sie zur
-// Seite der Mail: Die kennt den Vorgang und ersetzt sich durch ihn, die Mail
-// offen. Anfrage oder Gemeinde allein träfen die Mail nicht. Ihr Betreff
-// steht als Kern wie in Liste und Kopf, der rohe im Tooltip.
+// die Antwort nennt (vorgang_id, additiv seit 12.10.2026), führt direkt
+// dorthin (mailWeiterleitung, …?mail=). Ohne -- im Posteingang, oder ein
+// älterer Server ohne das Feld -- führt sie zur Seite der Mail: Die kennt den
+// Vorgang und ersetzt sich durch ihn, die Mail offen. Anfrage oder Gemeinde
+// allein träfen die Mail nicht. Ihr Betreff steht als Kern wie in Liste und
+// Kopf, der rohe im Tooltip.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';

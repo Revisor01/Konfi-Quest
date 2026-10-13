@@ -14,6 +14,11 @@
 // Seite leitet dann mit replace dorthin (`?mail=`), der Server lehnt
 // Archivieren und Löschen solcher Mails ohnehin ab (409).
 //
+// Seit 12.10.2026 (Paket 6, Frage 11) auch, was der Server über den Absender
+// weiß (`absender_bekannt`, gelesen von mailMitVorgangLesen): die Zeile
+// „Absender gehört zu …" und die Vorbelegung des Einsortierens (`absender`).
+// Ein älterer Server liefert das Feld nicht -- dann null.
+//
 // Jede Änderung meldet „Support-Daten geändert" (utils/supportAktualisieren.ts):
 // Mail, Posteingang und rote Zahlen laden danach von selbst neu.
 
@@ -23,10 +28,14 @@ import api from '../../services/api';
 import type { MailAntwortDaten, MailNachricht } from '../../types/support';
 import {
   fadenAus,
+  mailAbsenderAngabe,
   mailKennzahlen,
+  mailMitVorgangLesen,
   mailStand,
+  posteingangsAntwortAuf,
   standardBetreff,
   ungeleseneIds,
+  type MailAbsenderAngabe,
   type MailMitVorgang,
   type MailStandAngabe,
 } from '../../utils/supportMail';
@@ -61,8 +70,8 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     }
     try {
       const antwort = await api.get(`/support/mail/nachrichten/${nachrichtId}`);
-      const daten = antwort.data && typeof antwort.data === 'object' ? antwort.data as MailMitVorgang : null;
-      if (!daten || typeof daten.id !== 'number') {
+      const daten = mailMitVorgangLesen(antwort.data);
+      if (!daten) {
         setMail(null);
         setNichtGefunden(true);
         return;
@@ -97,11 +106,10 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     return holen(true);
   };
 
-  // Antwort an den Absender der letzten eingehenden Mail des Fadens.
-  const letzteEingehende = useMemo(
-    () => [...faden].reverse().find((m) => m.richtung === 'ein') ?? mail,
-    [faden, mail]
-  );
+  // Antwort an den Absender der jüngsten eingehenden Mail des Fadens, die im
+  // Posteingang liegt (posteingangsAntwortAuf) -- nicht an eine Mail desselben
+  // Fadens aus einem Vorgang: Die Antwort bekäme dessen Zuordnung.
+  const letzteEingehende = useMemo(() => posteingangsAntwortAuf(faden, mail), [faden, mail]);
   const betreffVorschlag = standardBetreff(faden[faden.length - 1]?.betreff ?? mail?.betreff);
 
   // Abgeleitetes -- fuer beide Fassungen gleich.
@@ -115,20 +123,30 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
   /** Liegt die Mail woanders: das Ziel. Die Seite leitet mit replace weiter (router.push(ziel, 'none', 'replace')). */
   const weiterleitung = stand?.weiterleitung ?? null;
   const kennzahlen: Kennzahl[] = useMemo(() => (mail ? mailKennzahlen(faden, neu.size) : []), [mail, faden, neu]);
+  /** „Absender gehört zu …" (nur im Posteingang, nur wenn der Server die Gemeinde kennt); sonst null. */
+  const absender: MailAbsenderAngabe | null = useMemo(() => (mail ? mailAbsenderAngabe(mail) : null), [mail]);
 
   /**
-   * Das Antwortformular für App und Web: vom Postfach der Mail an den
-   * Absender der letzten eingehenden. Nur, wenn der Stand Antworten anbietet
-   * (Posteingang, nicht im Archiv); sonst null.
+   * Das Antwortformular für App und Web: an den Absender der jüngsten
+   * eingehenden Mail im Posteingang, von ihrem Postfach. Nur, wenn der Stand
+   * Antworten anbietet (Posteingang, nicht im Archiv); sonst null.
+   *
+   * Der Aufruf geht an die angezeigte, beantwortete Mail
+   * (POST /support/mail/nachrichten/<ihre ID>/antworten): Der Server antwortet
+   * an ihren Absender, von ihrem Postfach, mit ihr als Bezug (In-Reply-To,
+   * „Re:"), und gibt der Antwort ihre Zuordnung. Bis 12.10.2026 ging er an
+   * die Mail aus der Adresse -- öffnete man eine ältere Mail des Fadens,
+   * nannte die Anzeige die jüngste eingehende, die Antwort ging aber an den
+   * Absender der älteren, mit ihr als Bezug.
    */
   const antwort: AntwortFormularProps | null = useMemo(() => {
     if (!mail || !stand?.neben.includes('antworten') || !letzteEingehende || letzteEingehende.richtung !== 'ein') return null;
-    const id = mail.id;
+    const beantwortetId = letzteEingehende.id;
     return {
-      postfach: mail.postfach,
+      postfach: letzteEingehende.postfach,
       betreffVorschlag,
       an: letzteEingehende.von_adresse,
-      senden: (koerper: MailAntwortDaten) => api.post(`/support/mail/nachrichten/${id}/antworten`, koerper),
+      senden: async (koerper: MailAntwortDaten) => (await api.post(`/support/mail/nachrichten/${beantwortetId}/antworten`, koerper)).data,
       beantwortet: letzteEingehende,
     };
   }, [mail, stand, letzteEingehende, betreffVorschlag]);
@@ -163,6 +181,7 @@ export function usePostDetail(nachrichtId: number, nachLoeschen?: () => void) {
     antwort,
     imPosteingang,
     weiterleitung,
+    absender,
   };
 }
 

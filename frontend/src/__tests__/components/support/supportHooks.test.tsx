@@ -48,7 +48,7 @@ vi.mock('../../../contexts/AppContext', () => ({
 import { useVorgangDetail } from '../../../components/support/useVorgangDetail';
 import { useAntwortEditor, vorgewaehlterEmpfaenger, type AntwortFormularProps } from '../../../components/support/useAntwortEditor';
 import { usePostDetail } from '../../../components/support/usePostDetail';
-import { useEinsortieren } from '../../../components/support/useEinsortieren';
+import { useDirektEinsortieren, useEinsortieren } from '../../../components/support/useEinsortieren';
 import { useGemeindeAnlegen } from '../../../components/support/useGemeindeAnlegen';
 import { useEinordnenFormular } from '../../../components/support/useEinordnenFormular';
 import { useLizenzAendern } from '../../../components/support/useLizenzAendern';
@@ -284,7 +284,38 @@ describe('useVorgangDetail: Status, Ablehnen, Abschluss', () => {
     expect(result.current.vorgang?.betreff).toBe('Chat lädt nicht');
   });
 
-  it('„Danach“ setzt den Status leise -- ohne eigene Meldung; Erledigt meldet den Abschluss', async () => {
+  it('die Antwort trägt die angezeigte Mail (antwort_auf = die jüngste eingehende), auch wenn der Support zuletzt schrieb', async () => {
+    server.stand.mails.push(mail(14, 1, { richtung: 'aus', von_adresse: 'support@konfi-quest.example', von_name: 'Support', an_adressen: ['lena.probe@example.org'],
+      betreff: 'Re: Chat zeigt nichts Neues [Vorgang 1]', text: 'Klappt es?', gesendet_am: '2026-10-03T08:30:00Z', gelesen_am: '2026-10-03T08:30:00Z' }));
+    const { result } = await geladen(1);
+    expect(result.current.beantwortet?.id).toBe(13);
+    expect(result.current.antwort?.antwortAuf).toBe(13);
+    // Im Posteingang steht die beantwortete Mail in der Adresse des Aufrufs -- kein Feld im Körper.
+    const post = renderHook(() => usePostDetail(52));
+    await waitFor(() => expect(post.result.current.antwort).not.toBeNull());
+    expect(post.result.current.antwort?.antwortAuf).toBeUndefined();
+  });
+
+  it('„Danach“ aus der Antwort: bestätigt nur derselbe Vorgang mit genau diesem Status; Erledigt meldet dann den Abschluss -- ohne PATCH', async () => {
+    const nachAbschluss = vi.fn();
+    const { result } = await geladen(1, { nachAbschluss });
+    const danach = result.current.antwort!.danach!;
+    const stand = (status: string, id = 1) => ({ nachricht: { id: 99 }, vorgang: { id, status, status_seit: '2026-10-03T09:00:00Z', archiviert_am: null } });
+    expect(danach.ausAntwort!(stand('wartet'), 'wartet')).toBe(true);
+    expect(nachAbschluss).not.toHaveBeenCalled();
+    // Ein älterer Server ({ nachricht }), ein anderer Status, ein anderer Vorgang, ein kaputtes Feld: nicht bestätigt.
+    expect(danach.ausAntwort!({ nachricht: { id: 99 } }, 'wartet')).toBe(false);
+    expect(danach.ausAntwort!(stand('in_arbeit'), 'wartet')).toBe(false);
+    expect(danach.ausAntwort!(stand('wartet', 2), 'wartet')).toBe(false);
+    expect(danach.ausAntwort!({ vorgang: 'wartet' }, 'wartet')).toBe(false);
+    expect(nachAbschluss).not.toHaveBeenCalled();
+    expect(danach.ausAntwort!({ nachricht: { id: 99 }, vorgang: { id: 1, status: 'erledigt', status_seit: '2026-10-03T09:00:00Z', archiviert_am: '2026-10-03T09:00:00Z' } }, 'erledigt')).toBe(true);
+    expect(nachAbschluss).toHaveBeenCalledTimes(1);
+    expect(nachAbschluss).toHaveBeenCalledWith('erledigt', 1);
+    expect(server.aufrufe('patch')).toEqual([]);
+  });
+
+  it('„Danach“ per PATCH (die Rückfallebene für ältere Server) setzt den Status leise -- ohne eigene Meldung; Erledigt meldet den Abschluss', async () => {
     const nachAbschluss = vi.fn();
     const { result } = await geladen(1, { nachAbschluss });
     expect(result.current.antwort?.danach?.wahlen).toEqual(['wartet', 'in_arbeit', 'erledigt']);
@@ -316,9 +347,12 @@ describe('useVorgangDetail: der Stand nach Nachfassen und Wiederherstellen in de
     expect(result.current.stand).toMatchObject({ fall: '5', haupt: 'antworten', satz: 'Wartet seit 03.10., 12:00 auf Pastorin Lena Probe – nachfassen?' });
     expect(result.current.antwort?.danach?.vorgabe).toBe('wartet');
 
-    // Was der Editor tut: senden, dann „Danach" mit der Vorgabe; die Meldung lädt neu.
-    await act(async () => { await result.current.antwort!.senden({ betreff: 'Re: Chat', text: 'Klappt es inzwischen?', an: 'lena.probe@example.org' }); });
-    await act(async () => { await result.current.antwort!.danach!.setzen('wartet'); });
+    // Was der Editor tut (seit 12.10.2026): senden mit „Danach" (Vorgabe) im Körper; der Server bestätigt den
+    // Status in der Antwort -- kein PATCH. Die Meldung lädt neu.
+    let antwort: unknown;
+    await act(async () => { antwort = await result.current.antwort!.senden({ betreff: 'Re: Chat', text: 'Klappt es inzwischen?', an: 'lena.probe@example.org', status: 'wartet', antwort_auf: 91 }); });
+    expect(result.current.antwort!.danach!.ausAntwort!(antwort, 'wartet')).toBe(true);
+    expect(server.aufrufe('patch')).toEqual([]);
     await act(async () => { meldeSupportGeaendert(); });
     await waitFor(() => expect(result.current.vorgang?.verlauf.length).toBe(3));
     expect(result.current.vorgang?.status_seit).toBe('2026-10-03T10:00:00Z');
@@ -379,24 +413,40 @@ describe('useAntwortEditor: „Danach“, feste Zeile, Wahl', () => {
     await act(async () => { await new Promise((fertig) => setTimeout(fertig, 0)); });
   };
 
-  it('nach dem Senden setzt „Danach“ den gewählten Status; Erfolg heißt „Antwort gesendet“', async () => {
+  it('„Danach“ geht im Körper mit; bestätigt die Antwort des Servers den Status, kein zweiter Aufruf -- Erfolg heißt „Antwort gesendet“', async () => {
     const setzen = vi.fn().mockResolvedValue(true);
+    const ausAntwort = vi.fn().mockReturnValue(true);
     const onGesendet = vi.fn();
-    const p = props({ danach: { wahlen: ['wartet', 'in_arbeit', 'erledigt'], vorgabe: 'wartet', setzen }, onGesendet });
+    const antwortDesServers = { nachricht: { id: 99 }, vorgang: { id: 1, status: 'in_arbeit', status_seit: '2026-10-03T09:00:00Z', archiviert_am: null } };
+    const p = props({ danach: { wahlen: ['wartet', 'in_arbeit', 'erledigt'], vorgabe: 'wartet', setzen, ausAntwort }, onGesendet, antwortAuf: 13, senden: vi.fn().mockResolvedValue(antwortDesServers) });
     const hook = await editor(p);
     expect(hook.result.current.danachStatus).toBe('wartet');
     expect(hook.result.current.danachWahlen).toEqual(['wartet', 'in_arbeit', 'erledigt']);
     act(() => hook.result.current.setDanachStatus('in_arbeit'));
     await tippenUndSenden(hook);
-    expect(p.senden).toHaveBeenCalledWith({ text: 'Hallo', betreff: 'Re: Frage', an: 'lena.probe@example.org' });
-    expect(setzen).toHaveBeenCalledTimes(1);
-    expect(setzen).toHaveBeenCalledWith('in_arbeit');
+    expect(p.senden).toHaveBeenCalledWith({ text: 'Hallo', betreff: 'Re: Frage', an: 'lena.probe@example.org', status: 'in_arbeit', antwort_auf: 13 });
+    expect(ausAntwort).toHaveBeenCalledWith(antwortDesServers, 'in_arbeit');
+    expect(setzen).not.toHaveBeenCalled();
     expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
     expect(h.setError).not.toHaveBeenCalled();
     expect(onGesendet).toHaveBeenCalledTimes(1);
     // Danach steht wieder die Vorgabe da, der Text ist leer.
     expect(hook.result.current.danachStatus).toBe('wartet');
     expect(hook.result.current.entwurf.text).toBe('');
+  });
+
+  it('bestätigt die Antwort den Status nicht (älterer Server), setzt ihn die Rückfallebene: genau ein PATCH über `setzen`', async () => {
+    const setzen = vi.fn().mockResolvedValue(true);
+    const ausAntwort = vi.fn().mockReturnValue(false);
+    const p = props({ danach: { wahlen: ['wartet', 'in_arbeit'], vorgabe: 'wartet', setzen, ausAntwort }, senden: vi.fn().mockResolvedValue({ nachricht: { id: 99 } }) });
+    const hook = await editor(p);
+    await tippenUndSenden(hook);
+    expect(p.senden).toHaveBeenCalledWith({ text: 'Hallo', betreff: 'Re: Frage', an: 'lena.probe@example.org', status: 'wartet' });
+    expect(ausAntwort).toHaveBeenCalledWith({ nachricht: { id: 99 } }, 'wartet');
+    expect(setzen).toHaveBeenCalledTimes(1);
+    expect(setzen).toHaveBeenCalledWith('wartet');
+    expect(h.setSuccess).toHaveBeenCalledWith('Antwort gesendet');
+    expect(h.setError).not.toHaveBeenCalled();
   });
 
   it('scheitert der Status: „Gesendet, Status nicht gesetzt.“ -- nie Stille, keine Erfolgsmeldung; der Entwurf ist trotzdem gesendet und leer', async () => {
@@ -499,12 +549,63 @@ describe('usePostDetail: Stand, Antwort, Weiterleitung', () => {
     expect(server.aufrufe('post', '/support/mail/nachrichten/52/antworten')).toHaveLength(1);
   });
 
+  it('eine ältere Mail des Fadens geöffnet: geantwortet wird auf die jüngste eingehende -- an sie geht auch der Aufruf', async () => {
+    const { result } = await geoeffnet(51);
+    expect(result.current.antwort?.beantwortet?.id).toBe(52);
+    expect(result.current.antwort?.an).toBe('ben@example.org');
+    await act(async () => { await result.current.antwort!.senden({ text: 'Hallo' }); });
+    // Bis 12.10.2026 an /51/antworten: Der Server antwortete dann an den Absender von 51, mit 51 als Bezug.
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/52/antworten']);
+  });
+
+  it('ein Faden über Posteingang und Vorgang: geantwortet wird auf die jüngste eingehende IM POSTEINGANG -- die Antwort bleibt dort', async () => {
+    // 54 gehört über die Kopfzeilen zum selben Faden, liegt aber in Vorgang 1
+    // (etwa dieselbe Mail an moin@ und support@: moin@ Posteingang, support@ Regel 4).
+    server.stand.mails.push(mail(54, 1, { faden: 'post', postfach: 'support', von_adresse: 'lena.probe@example.org', von_name: 'Pastorin Lena Probe', betreff: 'Re: Frage', gesendet_am: '2026-10-03T09:00:00Z' }));
+    const { result } = await geoeffnet(51);
+    expect(result.current.faden.map((m) => m.id)).toEqual([51, 52, 54]);
+    expect(result.current.letzteEingehende?.id).toBe(52);
+    expect(result.current.antwort).toMatchObject({ postfach: 'moin', an: 'ben@example.org' });
+    expect(result.current.antwort?.beantwortet?.id).toBe(52);
+    await act(async () => { await result.current.antwort!.senden({ text: 'Hallo' }); });
+    // Ginge sie an 54, gehörte die Antwort wie 54 zu Vorgang 1 (der Server übernimmt die Zuordnung der beantworteten Mail).
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/52/antworten']);
+    expect(server.stand.mails.filter((m) => m.richtung === 'aus' && m.text === 'Hallo').map((m) => m.vorgang_id)).toEqual([null]);
+  });
+
+  it('die jüngste eingehende im Posteingang kam an das andere Postfach: das Formular nennt ihr Postfach -- von dort sendet der Server', async () => {
+    server.stand.mails.push(mail(55, null, { faden: 'post', postfach: 'support', von_adresse: 'ben@example.org', von_name: 'Ben Beispiel', betreff: 'Re: Frage', gesendet_am: '2026-10-03T09:00:00Z' }));
+    const { result } = await geoeffnet(51);
+    expect(result.current.mail?.postfach).toBe('moin');
+    expect(result.current.antwort?.beantwortet?.id).toBe(55);
+    expect(result.current.antwort).toMatchObject({ postfach: 'support', an: 'ben@example.org' });
+  });
+
   it('eine Mail in einem Vorgang: kein Antworten, kein Archivieren, kein Löschen -- die Weiterleitung mit ?mail=', async () => {
     const { result } = await geoeffnet(13);
     expect(result.current.imPosteingang).toBe(false);
     expect(result.current.weiterleitung).toBe('/admin/support/vorgaenge/1?mail=13');
     expect(result.current.antwort).toBeNull();
     expect(result.current.stand).toMatchObject({ haupt: null, neben: [], archivierbar: false, loeschbar: false });
+  });
+
+  it('absender_bekannt: die Angabe für Zeile und Vorbelegung -- nur im Posteingang; ohne Angabe oder bei einem älteren Server null', async () => {
+    const ohne = await geoeffnet(52);
+    expect(ohne.result.current.absender).toBeNull();
+    ohne.unmount();
+
+    server.stand.bekannteAbsender['ben@example.org'] = 7;
+    const mit = await geoeffnet(52);
+    // Offen in Gemeinde 7: 1 (in Arbeit) und 6 (in Arbeit) -- 4 ist erledigt; der jüngste ist 6 (gleiche Zeit, höhere Nummer).
+    expect(mit.result.current.absender).toEqual({ satz: 'Absender gehört zu Kirchengemeinde Musterdorf · 2\u00a0offene Vorgänge', organizationId: 7, vorgangId: 6 });
+    expect(mit.result.current.mail?.absender_bekannt).toEqual({ organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: 2, vorgang_id: 6 });
+    mit.unmount();
+
+    server = vorgaengeServer({ alterServer: true, vorgaenge: server.stand.vorgaenge, mails: server.stand.mails, bekannteAbsender: { 'ben@example.org': 7 } });
+    server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete, put: h.apiPut });
+    const alt = await geoeffnet(52);
+    expect(alt.result.current.mail?.absender_bekannt).toBeNull();
+    expect(alt.result.current.absender).toBeNull();
   });
 
   it('im Archiv: kein Antworten; Wiederherstellen daneben und der Satz, dass Einsortieren sie zurückholt', async () => {
@@ -522,6 +623,72 @@ describe('useEinsortieren: Ziel und was mitgeht', () => {
     expect(result.current.vorgaenge!.map((v) => v.id).sort()).toEqual([1, 3, 6, 7]);
     expect(result.current.hinweis).toBe(EINSORTIEREN_HINWEIS.faden);
     expect(result.current.modus).toBe('bestehend');
+  });
+
+  it('mit Vorgabe (Absender bekannt): der Vorgang ist gewählt, beim neuen Vorgang die Gemeinde -- Absenden nimmt die Wahl', async () => {
+    const onFertig = vi.fn();
+    const { result } = renderHook(() => useEinsortieren({ id: 52, betreff: 'Re: Frage' }, onFertig, { vorgabe: { vorgangId: 6, organizationId: 7 } }));
+    await waitFor(() => expect(result.current.vorgaenge).not.toBeNull());
+    expect(result.current.vorgangWahl).toBe('6');
+    expect(result.current.gewaehlterVorgang?.id).toBe(6);
+    expect(result.current.neu).toEqual({ art: '', bereich: '', dringlichkeit: 'normal', betreff: 'Frage', organizationId: '7' });
+    await act(async () => { await result.current.absenden(); });
+    expect(server.aufrufe('post', '/support/mail/nachrichten/52/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 6 }]);
+    expect(onFertig).toHaveBeenCalledWith(6);
+  });
+
+  it('eine Vorgabe ohne Vorgang belegt nur die Gemeinde vor; beim Verschieben aus einem Vorgang gilt keine Vorgabe', async () => {
+    const nurGemeinde = renderHook(() => useEinsortieren({ id: 52, betreff: 'Re: Frage' }, undefined, { vorgabe: { vorgangId: null, organizationId: 8 } }));
+    await waitFor(() => expect(nurGemeinde.result.current.vorgaenge).not.toBeNull());
+    expect(nurGemeinde.result.current.vorgangWahl).toBe('');
+    expect(nurGemeinde.result.current.neu.organizationId).toBe('8');
+
+    const verschieben = renderHook(() => useEinsortieren({ id: 13, betreff: 'AW: Re: Chat' }, undefined, { ausVorgang: 1, vorgabe: { vorgangId: 6, organizationId: 7 } }));
+    await waitFor(() => expect(verschieben.result.current.vorgaenge).not.toBeNull());
+    expect(verschieben.result.current.vorgangWahl).toBe('');
+    expect(verschieben.result.current.gewaehlterVorgang).toBeNull();
+    expect(verschieben.result.current.neu.organizationId).toBe('');
+  });
+
+  it('useDirektEinsortieren: derselbe Aufruf wie aus dem Dialog ({ vorgang_id }), dieselbe Folge -- Meldung, „Support-Daten geändert", onFertig', async () => {
+    const onFertig = vi.fn();
+    const geaendert = vi.fn();
+    const ab = abonniereSupportGeaendert(geaendert);
+    try {
+      const { result } = renderHook(() => useDirektEinsortieren(52, onFertig));
+      let ok = false;
+      await act(async () => { ok = await result.current.einsortieren(6); });
+      expect(ok).toBe(true);
+      expect(server.aufrufe('post', '/support/mail/nachrichten/52/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 6 }]);
+      expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 6 einsortiert');
+      expect(geaendert).toHaveBeenCalledTimes(1);
+      expect(onFertig).toHaveBeenCalledWith(6);
+      // Wie der Server: Der Faden geht aus dem Posteingang mit.
+      expect(server.stand.mails.filter((m) => m.faden === 'post').map((m) => m.vorgang_id)).toEqual([6, 6]);
+    } finally {
+      ab();
+    }
+  });
+
+  it('useDirektEinsortieren: ein Fehler kommt als Meldung, kein onFertig; ohne Netz und ohne Mail kein Aufruf', async () => {
+    const onFertig = vi.fn();
+    server.stand.fehler.set('POST /support/mail/nachrichten/52/einsortieren', Object.assign(new Error('x'), { response: { status: 404, data: { error: 'Vorgang nicht gefunden' } } }));
+    const { result } = renderHook(() => useDirektEinsortieren(52, onFertig));
+    let ok = true;
+    await act(async () => { ok = await result.current.einsortieren(6); });
+    expect(ok).toBe(false);
+    expect(h.setError).toHaveBeenCalledWith('Vorgang nicht gefunden');
+    expect(onFertig).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    h.online = false;
+    const offline = renderHook(() => useDirektEinsortieren(52, onFertig));
+    await act(async () => { ok = await offline.result.current.einsortieren(6); });
+    expect(ok).toBe(false);
+    const ohneMail = renderHook(() => useDirektEinsortieren(null, onFertig));
+    await act(async () => { ok = await ohneMail.result.current.einsortieren(6); });
+    expect(ok).toBe(false);
+    expect(server.aufrufe('post', /einsortieren$/)).toHaveLength(1);
   });
 
   it('aus einem Vorgang: der eigene steht nicht zur Wahl, nur diese Mail geht; Herauslösen beginnt mit „neu“', async () => {

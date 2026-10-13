@@ -409,6 +409,58 @@ describe('Mail (App): einsortieren im Modal', () => {
   });
 });
 
+describe('Mail (App): der Absender gehört zu einer Gemeinde (Frage 11, absender_bekannt)', () => {
+  const hinweis = () => document.querySelector('.support-stand__hinweis') as HTMLElement | null;
+
+  it('ohne Angabe des Servers kein Hinweis in der Karte „Stand"', async () => {
+    await oeffnen();
+    expect(hinweis()).toBeNull();
+    expect(knoepfe().map((k) => k.textContent)).toEqual(['Einsortieren', 'Antworten']);
+  });
+
+  it('der Hinweis in der Karte „Stand", darunter „In Vorgang N einsortieren" -- es sortiert ohne Modal ein, der Vorgang ersetzt die Seite', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    await oeffnen();
+    expect(hinweis()).toHaveTextContent('Absender gehört zu Kirchengemeinde Musterdorf · 1 offener Vorgang');
+    // Hauptknopf und Nebenknopf bleiben, wie sie waren; der neue Knopf steht im Hinweis, nicht in einem anderen Knopf.
+    expect(knoepfe().map((k) => k.textContent)).toEqual(['Einsortieren', 'Antworten']);
+    const direkt = within(hinweis()!).getByRole('button', { name: 'In Vorgang 1 einsortieren' });
+    expect(direkt.closest('.support-stand__knoepfe')).toBeNull();
+    await act(async () => { fireEvent.click(direkt); });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 1 }]);
+    expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 1 einsortiert');
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/1?mail=31', 'forward', 'replace');
+  });
+
+  it('kein offener Vorgang der Gemeinde: der Satz sagt es, kein Knopf', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 8;
+    await oeffnen();
+    expect(hinweis()).toHaveTextContent('Absender gehört zu Kirchengemeinde Wiesengrund · kein offener Vorgang');
+    expect(within(hinweis()!).queryByRole('button')).toBeNull();
+  });
+
+  it('ohne Netz ist der Knopf gesperrt', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    h.online = false;
+    await oeffnen();
+    expect(within(hinweis()!).getByRole('button', { name: 'In Vorgang 1 einsortieren' })).toBeDisabled();
+  });
+
+  it('das Modal „Einsortieren" ist vorbelegt: der Vorgang gewählt, beim neuen Vorgang die Gemeinde', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    await oeffnen();
+    const modal = await einsortieren();
+    expect(vorgangWahl().value).toBe('1');
+    fireEvent.click(modal.getByRole('tab', { name: 'Neuer Vorgang' }));
+    await waitFor(() => expect((modal.getByLabelText('Gemeinde') as HTMLSelectElement).options.length).toBeGreaterThan(1));
+    expect((modal.getByLabelText('Gemeinde') as HTMLSelectElement).value).toBe('7');
+    fireEvent.click(modal.getByRole('tab', { name: 'Bestehender Vorgang' }));
+    await act(async () => { fireEvent.click(modal.getByRole('button', { name: 'Einsortieren' })); });
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 1 }]);
+  });
+});
+
 describe('Mail (App): archivieren, wiederherstellen, löschen', () => {
   it('Archivieren (Kopfzeile): eine Anfrage an die Mail; danach der Archiv-Satz und „Wiederherstellen“', async () => {
     await oeffnen();
@@ -477,6 +529,46 @@ describe('Mail (App): antworten', () => {
     await waitFor(() => expect(server.aufrufe('get', '/support/mail/nachrichten/31').length).toBe(abrufeVorher + 1));
     expect(screen.queryByRole('dialog', { name: 'Antworten' })).toBeNull();
     await waitFor(() => expect(mailZeilen()).toHaveLength(4));
+  });
+
+  it('eine ältere Mail des Fadens geöffnet: die Antwort geht an die angezeigte, beantwortete Mail -- Empfänger und Bezug wie im Modal', async () => {
+    // Die jüngste eingehende Mail kam von einer anderen Adresse als die geöffnete ältere (29).
+    const juengste = server.stand.mails.find((m) => m.id === 31)!;
+    juengste.von_adresse = 'sekretariat@example.org';
+    juengste.von_name = 'Sekretariat Lindenau';
+    await oeffnen(29);
+    const modal = await antworten();
+    expect(modal.getByText(/^Du antwortest auf/)).toHaveTextContent('Sekretariat Lindenau');
+    expect(modal.getByText('Sekretariat Lindenau <sekretariat@example.org>', { selector: 'strong' })).toBeInTheDocument();
+    fireEvent.change(modal.getByLabelText('Text der Antwort'), { target: { value: 'Hallo zusammen' } });
+    fireEvent.click(modal.getByRole('button', { name: 'Antwort senden' }));
+    expect(h.alert?.message).toBe('An sekretariat@example.org: „Re: Frage zum Zugang“ von moin@ senden?');
+    await bestaetigen('Senden');
+    // Bis 12.10.2026 ging sie an die Mail aus der Adresse (29): an anna@ statt an die angezeigte Adresse,
+    // mit 29 als Bezug -- die Anzeige nannte die jüngste eingehende Mail des Fadens.
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/31/antworten']);
+    expect(server.stand.mails.find((m) => m.richtung === 'aus' && m.text === 'Hallo zusammen')?.an_adressen).toEqual(['sekretariat@example.org']);
+  });
+
+  it('ein Faden über Posteingang und Vorgang: Modal, Rückfrage und Aufruf nennen die jüngste eingehende IM POSTEINGANG -- die Antwort bleibt dort', async () => {
+    // 32 gehört über die Kopfzeilen zum selben Faden, liegt aber in Vorgang 2 und kam an support@.
+    server.stand.mails.push(mail(32, 2, {
+      faden: 'zugang', postfach: 'support', von_adresse: 'sekretariat@example.org', von_name: 'Sekretariat Lindenau',
+      betreff: 'AW: Frage zum Zugang', gesendet_am: '2026-10-03T10:00:00Z', text: 'Wir hängen uns dran.',
+    }));
+    await oeffnen(31);
+    expect(mailZeilen()).toHaveLength(4);
+    const modal = await antworten();
+    expect(modal.getByText(/^Du antwortest auf/)).toHaveTextContent('Anna Beispiel');
+    expect(modal.getByText('Anna Beispiel <anna@example.org>', { selector: 'strong' })).toBeInTheDocument();
+    fireEvent.change(modal.getByLabelText('Text der Antwort'), { target: { value: 'Hallo Anna' } });
+    fireEvent.click(modal.getByRole('button', { name: 'Antwort senden' }));
+    expect(h.alert?.message).toBe('An anna@example.org: „Re: Frage zum Zugang“ von moin@ senden?');
+    await bestaetigen('Senden');
+    // An 32 ginge sie an sekretariat@, von support@, und gehörte wie 32 zu Vorgang 2.
+    expect(server.aufrufe('post', /\/antworten$/).map((a) => a.pfad)).toEqual(['/support/mail/nachrichten/31/antworten']);
+    const gesendet = server.stand.mails.filter((m) => m.richtung === 'aus' && m.text === 'Hallo Anna');
+    expect(gesendet.map((m) => [m.an_adressen, m.postfach, m.vorgang_id])).toEqual([[['anna@example.org'], 'moin', null]]);
   });
 
   it('ein Fehler beim Senden: das Modal bleibt offen, der Text steht noch da', async () => {

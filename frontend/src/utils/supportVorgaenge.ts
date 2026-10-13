@@ -331,6 +331,32 @@ export function vorgangDetailLesen(daten: unknown): VorgangDetail | null {
   };
 }
 
+/**
+ * Der Stand des Vorgangs nach einer Antwort: POST /support/vorgaenge/:id/antworten
+ * antwortet seit 12.10.2026 (additiv) mit `{ nachricht, vorgang: { id, status,
+ * status_seit, archiviert_am } }` -- dem Stand nach der Transaktion, in der
+ * auch ein mitgeschickter Status gesetzt wurde.
+ */
+export interface AntwortVorgangStand {
+  id: number;
+  status: VorgangStatus;
+  status_seit: string | null;
+  archiviert_am: string | null;
+}
+
+/**
+ * `vorgang` aus der Antwort auf POST …/antworten lesen. Ein älterer Server
+ * liefert nur `{ nachricht }` -- dann, wie bei einem kaputten Feld (keine
+ * Kennung, unbekannter Status), null: Der Status gilt als nicht bestätigt.
+ */
+export function antwortVorgangLesen(daten: unknown): AntwortVorgangStand | null {
+  if (!istObjekt(daten) || !istObjekt(daten.vorgang)) return null;
+  const v = daten.vorgang;
+  const id = kennungOderNull(v.id);
+  if (id === null || !STATUS_WERTE.includes(v.status as string)) return null;
+  return { id, status: v.status as VorgangStatus, status_seit: textOderNull(v.status_seit), archiviert_am: textOderNull(v.archiviert_am) };
+}
+
 // --- Kontakt ------------------------------------------------------------------------
 
 /** Wer den Vorgang gestellt hat -- aus dem Formular oder, bei einer Anfrage, aus deren Angaben. */

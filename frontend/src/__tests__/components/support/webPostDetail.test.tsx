@@ -293,6 +293,97 @@ describe('Mail (Web): einsortieren', () => {
   });
 });
 
+describe('Mail (Web): der Absender gehört zu einer Gemeinde (Frage 11, absender_bekannt)', () => {
+  /** Anna gehört zu Musterdorf (7); dort sind 1 und -- jünger -- 5 offen, 6 ist erledigt. */
+  const bekannt = () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    server.stand.vorgaenge.push(
+      vorgang(5, { status: 'wartet', art: 'frage', bereich: 'chat', betreff: 'Chat-Benachrichtigungen', organization_id: 7, created_at: '2026-10-03T08:00:00Z' }),
+      vorgang(6, { status: 'erledigt', art: 'zugang', bereich: null, betreff: 'Konto entsperrt', organization_id: 7, created_at: '2026-10-03T09:00:00Z', archiviert_am: '2026-10-03T09:30:00Z' }),
+    );
+  };
+  const zeile = () => lesen().querySelector('.web-absender') as HTMLElement | null;
+
+  it('kennt der Server den Absender nicht (oder ein älterer Server), steht keine Zeile da', async () => {
+    await oeffnen();
+    expect(zeile()).toBeNull();
+    expect(within(lesen()).queryByRole('button', { name: /^In Vorgang/ })).toBeNull();
+  });
+
+  it('die Zeile nennt Gemeinde und offene Vorgänge; der Knopf daneben den jüngsten offenen -- er sortiert ohne Dialog ein, wie aus dem Dialog', async () => {
+    bekannt();
+    await oeffnen();
+    expect(zeile()).toHaveTextContent('Absender gehört zu Kirchengemeinde Musterdorf · 2 offene Vorgänge');
+    const direkt = within(zeile()!).getByRole('button', { name: 'In Vorgang 5 einsortieren' });
+    expect(direkt).toHaveAttribute('title', 'Die Mail in Vorgang 5 legen – den jüngsten offenen Vorgang dieser Gemeinde');
+    // Kein Knopf im Knopf: der Knopf steht neben dem Satz, die Zeile selbst ist keiner.
+    expect(zeile()!.querySelectorAll('button')).toHaveLength(1);
+    expect(zeile()!.closest('button')).toBeNull();
+    await act(async () => { fireEvent.click(direkt); });
+    expect(screen.queryByRole('dialog', { name: 'Mail einsortieren' })).toBeNull();
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 5 }]);
+    expect(h.setSuccess).toHaveBeenCalledWith('Mail in Vorgang 5 einsortiert');
+    expect(h.push).toHaveBeenCalledWith('/admin/support/vorgaenge/5?mail=31');
+    expect(server.stand.mails.filter((m) => m.faden === 'zugang').map((m) => [m.id, m.vorgang_id]).sort()).toEqual([[29, 5], [30, 5], [31, 5]]);
+  });
+
+  it('kein offener Vorgang: „kein offener Vorgang", kein Knopf -- Einsortieren bleibt der Weg', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 8;
+    await oeffnen();
+    expect(zeile()).toHaveTextContent('Absender gehört zu Kirchengemeinde Wiesengrund · kein offener Vorgang');
+    expect(within(zeile()!).queryByRole('button')).toBeNull();
+  });
+
+  it('ein Vorgang offen: die Einzahl', async () => {
+    server.stand.bekannteAbsender['anna@example.org'] = 7;
+    await oeffnen();
+    expect(zeile()).toHaveTextContent('Absender gehört zu Kirchengemeinde Musterdorf · 1 offener Vorgang');
+    expect(within(zeile()!).getByRole('button', { name: 'In Vorgang 1 einsortieren' })).toBeEnabled();
+  });
+
+  it('der Dialog „Einsortieren" ist vorbelegt: der jüngste offene Vorgang der Gemeinde, beim neuen Vorgang die Gemeinde', async () => {
+    bekannt();
+    await oeffnen();
+    fireEvent.click(knopf('Einsortieren'));
+    await screen.findByRole('dialog', { name: 'Mail einsortieren' });
+    await waitFor(() => expect(within(dialog()).queryAllByRole('radio').length).toBe(3));
+    expect(within(dialog()).getByRole('radio', { name: /Nr\. 5/ })).toBeChecked();
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Neuer Vorgang' }));
+    expect((within(dialog()).getByLabelText('Gemeinde') as HTMLSelectElement).value).toBe('7');
+    // Zurück zu „Bestehender Vorgang": die Wahl ist noch da; Einsortieren nimmt sie.
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Bestehender Vorgang' }));
+    await act(async () => { fireEvent.click(within(dialog()).getByRole('button', { name: 'Einsortieren' })); });
+    expect(server.aufrufe('post', '/support/mail/nachrichten/31/einsortieren').map((a) => a.koerper)).toEqual([{ vorgang_id: 5 }]);
+  });
+
+  it('ohne Absender bleibt der Dialog unbelegt: kein Vorgang gewählt, keine Gemeinde', async () => {
+    await oeffnen();
+    fireEvent.click(knopf('Einsortieren'));
+    await screen.findByRole('dialog', { name: 'Mail einsortieren' });
+    await waitFor(() => expect(within(dialog()).queryAllByRole('radio').length).toBe(2));
+    expect(within(dialog()).queryAllByRole('radio', { checked: true })).toHaveLength(0);
+    fireEvent.click(within(dialog()).getByRole('button', { name: 'Neuer Vorgang' }));
+    expect((within(dialog()).getByLabelText('Gemeinde') as HTMLSelectElement).value).toBe('');
+  });
+
+  it('ohne Netz ist der Knopf gesperrt; ein Fehler des Servers kommt als Meldung, nichts öffnet sich', async () => {
+    bekannt();
+    h.online = false;
+    const { unmount } = render(<SupportPostDetailPage nachrichtId={31} />);
+    await screen.findByRole('article', { name: 'Frage zum Zugang' });
+    expect(within(zeile()!).getByRole('button', { name: 'In Vorgang 5 einsortieren' })).toBeDisabled();
+    unmount();
+
+    h.online = true;
+    server.stand.fehler.set('POST /support/mail/nachrichten/31/einsortieren', Object.assign(new Error('x'), { response: { status: 500, data: { error: 'Datenbankfehler' } } }));
+    await oeffnen();
+    await act(async () => { fireEvent.click(within(zeile()!).getByRole('button', { name: 'In Vorgang 5 einsortieren' })); });
+    expect(h.setError).toHaveBeenCalledWith('Datenbankfehler');
+    expect(h.push).not.toHaveBeenCalled();
+    expect(server.stand.mails.find((m) => m.id === 31)?.vorgang_id).toBeNull();
+  });
+});
+
 describe('Mail (Web): archivieren, wiederherstellen, löschen', () => {
   it('im Archiv: der Archiv-Satz (Fehler vorab 6) ohne zweite Marke „Archiv", Wiederherstellen statt Antworten und Archivieren; Einsortieren bleibt Hauptknopf', async () => {
     server.stand.mails.find((m) => m.id === 31)!.archiviert_am = '2026-10-02T12:00:00Z';
