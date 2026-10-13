@@ -348,6 +348,11 @@ Entscheidungen 2 bis 8 und 10 bis 15; Betrieb:
     bzw. eine Zeile im Dialog (bis 12.10.2026 lag ein `ion-alert` zudem
     unter dem Dialog; seitdem hängt `WebDialog` in `ion-app`, in derselben
     Ebene wie Ionics Alerts und Toasts, und diese stehen darüber).
+    Diese Rückfragen (auch „Eingaben verwerfen?" beim Anlegen einer Gemeinde
+    und „Beitrag ausblenden") sehen aus wie die aus `useIonAlert` im breiten
+    Fenster: `WebDialog` mit `rueckfrage` zeigt dasselbe Symbol über dem
+    Titel und füllt den Gefahr-Knopf rot, die Zeile im Material ebenso
+    (`theme/rueckfragen.css`, Teil 4).
     Der Datei-Betrachter bleibt Vollbild; der Material-Dialog tritt beiseite,
     solange er offen ist (Blob-Adressen ohne Dateinamen, Popup-Sperren nach
     dem Laden). Das große Nachweisfoto und „Ansehen" der eigenen Meldung sind

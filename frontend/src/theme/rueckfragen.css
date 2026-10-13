@@ -16,7 +16,7 @@
    solchen Knopf (Einmalpasswort, „Zu viele Anfragen") bekommen keine Klasse
    und bleiben, wie sie sind.
 
-   DREI TEILE
+   VIER TEILE
    1. Der rote Knopf in der App. Das iOS-Theme (ios27) färbt den
       destructive-Knopf schon rot (sein --ios-theme-destructive-color);
       Ionics Android-Modus (md) nicht -- dort stand „Löschen" blau wie
@@ -34,6 +34,14 @@
       „Abbrechen" als sekundärer Knopf, der destructive-Knopf rot gefüllt.
       Die Farben dort sind die --web-Aliasse aus theme/web-ansicht.css,
       damit Rückfrage und Fenster im Hellen wie im Dunkeln gleich aussehen.
+   4. Rückfragen, die selbst ein Fenster der Web-Fassung sind (WebDialog mit
+      `rueckfrage`: „Ungespeicherte Änderungen" bei Event und Badge,
+      „Eingaben verwerfen?", „Beitrag ausblenden") oder eine Zeile darin
+      („Datei löschen" im Material). Ein ion-alert läge dort bis 12.10.2026
+      unter dem Fenster; sie sehen aus wie Teil 2 und 3: dasselbe Symbol
+      (components/web/WebRueckfrageSymbol.tsx), derselbe rot gefüllte Knopf.
+      Die Klassen .web-rueckfrage und .web-rueckfrage-symbol setzen nur
+      Bausteine der Web-Fassung.
 
    REGELN
    - Farben nur über Tokens; der Test rechnet die Kontraste hell und dunkel
@@ -271,4 +279,77 @@ html[data-layout='breit'] ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper 
 html[data-layout='breit'] ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper .alert-button-group .alert-button:focus-visible {
   outline: 2px solid var(--ion-color-primary);
   outline-offset: 2px;
+}
+
+/* --- 4. Rückfragen der Web-Fenster (.web-rueckfrage) ---
+   WebDialog mit `rueckfrage` (Kennzeichen am Fenster) und die Rückfrage in
+   einer Zeile (Datei löschen im Material). Symbol und Knopf wie in Teil 2
+   und 3 im breiten Fenster: dieselbe Größe, dieselben Farben -- der Test
+   vergleicht die Werte mit den Regeln dort. */
+
+/* Das Symbol: Kreis mit Mülleimer (Löschen, im Rot des Knopfs) bzw.
+   Warndreieck (Warnung, Bernstein auf Orange). Das Icon nimmt die
+   Schriftgröße und currentColor. */
+.web-rueckfrage-symbol {
+  --app-rueckfrage-farbe: var(--ion-color-danger);
+  --app-rueckfrage-kreis: color-mix(in srgb, var(--app-rueckfrage-farbe) 14%, transparent);
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-rueckfrage-kreis);
+  color: var(--app-rueckfrage-farbe);
+  font-size: 24px;
+}
+
+.web-rueckfrage-symbol--warnung {
+  --app-rueckfrage-farbe: var(--app-text-warnung);
+  --app-rueckfrage-kreis: color-mix(in srgb, var(--app-color-warning) 18%, transparent);
+}
+
+/* In einer Zeile so hoch wie ihre kleinen Knöpfe. */
+.web-rueckfrage-symbol--klein {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+}
+
+/* Im Kopf des Fensters: Symbol und X in der ersten Zeile, der Titel darunter
+   über die ganze Breite. Schlägt das flex von .web-dialog__kopf
+   (theme/web-ansicht.css). */
+.web-rueckfrage .web-dialog__kopf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  row-gap: var(--app-abstand-mittel);
+}
+
+.web-rueckfrage .web-dialog__kopf > .web-rueckfrage-symbol {
+  grid-area: 1 / 1;
+}
+
+.web-rueckfrage .web-dialog__kopf > .web-knopf {
+  grid-area: 1 / 2;
+}
+
+.web-rueckfrage .web-dialog__kopf > .web-dialog__titel {
+  grid-area: 2 / 1 / 3 / 3;
+}
+
+/* Der folgenreiche Knopf (WebKnopf art 'gefahr'): rot gefüllt wie der
+   destructive-Knopf in Teil 3 -- Ionics danger-Paar, das die Dunkel-Palette
+   gemeinsam umstellt. Schlägt .web-knopf, .web-knopf:hover und
+   .web-knopf--gefahr an Spezifität. */
+.web-rueckfrage .web-knopf--gefahr {
+  border-color: var(--ion-color-danger);
+  background: var(--ion-color-danger);
+  color: var(--ion-color-danger-contrast);
+}
+
+.web-rueckfrage .web-knopf--gefahr:hover {
+  border-color: var(--ion-color-danger-shade);
+  background: var(--ion-color-danger-shade);
 }

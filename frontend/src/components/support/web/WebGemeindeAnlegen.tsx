@@ -194,6 +194,7 @@ const WebGemeindeAnlegen: React.FC<{ anfrage: GemeindeAnfrage; d: GemeindeAnlege
       <WebDialog
         titel={VERWERFEN.titel}
         beschreibung={VERWERFEN.message}
+        rueckfrage="warnung"
         onSchliessen={() => setRueckfrage(null)}
         aktionen={(
           <>

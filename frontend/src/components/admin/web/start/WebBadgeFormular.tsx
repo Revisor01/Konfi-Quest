@@ -424,6 +424,7 @@ const WebBadgeFormular: React.FC<WebBadgeFormularProps> = ({ badgeId, targetRole
       <WebDialog
         titel="Ungespeicherte Änderungen"
         beschreibung="Möchtest du die Änderungen verwerfen?"
+        rueckfrage="warnung"
         onSchliessen={() => setRueckfrage(false)}
         aktionen={(
           <>

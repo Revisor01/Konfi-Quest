@@ -255,11 +255,15 @@ describe('theme/rueckfragen.css', () => {
     expect(css).not.toContain('@keyframes');
   });
 
-  it('die App berührt es nur an zwei Stellen: am destructive-Knopf (md) und an gekennzeichneten Rückfragen; alles andere nur im breiten Fenster', () => {
+  it('die App berührt es nur an zwei Stellen: am destructive-Knopf (md) und an gekennzeichneten Rückfragen; alles andere nur im breiten Fenster oder an Klassen der Web-Fassung', () => {
     const teile = alleRegeln.flatMap(({ selektor }) => teileObersteEbene(selektor).map((t) => t.trim()));
     expect(teile.length).toBeGreaterThan(20);
     const ohneBreit = teile.filter((t) => !t.startsWith(`${BREIT} `));
-    expect(ohneBreit.filter((t) => !t.startsWith('ion-alert.app-rueckfrage') && !/^ion-alert\.ios\.app-rueckfrage--/.test(t)))
+    // Die Rückfragen der Web-Fenster (Teil 4) hängen an .web-rueckfrage und
+    // .web-rueckfrage-symbol -- Klassen, die nur Bausteine der Web-Fassung
+    // setzen (geprüft im nächsten Test).
+    expect(ohneBreit.filter((t) => t.startsWith('.web-rueckfrage')).length).toBeGreaterThan(5);
+    expect(ohneBreit.filter((t) => !t.startsWith('ion-alert.app-rueckfrage') && !/^ion-alert\.ios\.app-rueckfrage--/.test(t) && !t.startsWith('.web-rueckfrage')))
       .toEqual(['ion-alert.md .alert-button.alert-button-role-destructive']);
     // Die Web-Optik nur für gekennzeichnete Rückfragen -- das Einmalpasswort bleibt auch im Browser, wie es ist.
     expect(teile.filter((t) => t.startsWith(`${BREIT} `) && !t.startsWith(`${BREIT} ion-alert.app-rueckfrage`))).toEqual([]);
@@ -392,5 +396,99 @@ describe('theme/rueckfragen.css', () => {
     expect(symbol).toContain(`mask: var(${RUECKFRAGE_SYMBOL}) center`);
     expect(symbol).toContain(`-webkit-mask: var(${RUECKFRAGE_SYMBOL}) center`);
     expect(rumpf('ion-alert.app-rueckfrage--warnung')).toMatch(/--app-rueckfrage-farbe:\s*var\(--app-text-warnung\);/);
+  });
+
+  // Teil 4: Rückfragen, die selbst ein Fenster der Web-Fassung sind
+  // (WebDialog mit `rueckfrage`) oder eine Zeile darin (Datei löschen im
+  // Material). Sie sollen aussehen wie die ion-alerts im breiten Fenster.
+  describe('Rückfragen der Web-Fenster (.web-rueckfrage)', () => {
+    const rumpf = (sel: string) => alleRegeln.find(({ selektor }) => selektor === sel)?.rumpf ?? '';
+    /** Die Erklärungen eines Rumpfs als Eigenschaft -> Wert. */
+    const erklaerungen = (text: string) => Object.fromEntries(text.split(';').map((d) => d.split(':')).filter((t) => t.length === 2).map(([e, w]) => [e.trim(), w.trim()]));
+    const ALERT_ROT = `${BREIT} ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper .alert-button-group .alert-button.alert-button-role-destructive`;
+
+    it('die Klassen setzen nur Bausteine der Web-Fassung -- die App unter 992 px bleibt unberührt', () => {
+      const dateien = (ordner: string): string[] => readdirSync(ordner).flatMap((n) => {
+        const p = join(ordner, n);
+        if (statSync(p).isDirectory()) return n === '__tests__' ? [] : dateien(p);
+        return /\.tsx?$/.test(n) ? [p] : [];
+      });
+      const mitKlasse = dateien(resolve(process.cwd(), 'src')).filter((d) => readFileSync(d, 'utf8').includes('web-rueckfrage'));
+      const relativ = mitKlasse.map((d) => d.slice(resolve(process.cwd(), 'src').length + 1).replace(/\\/g, '/')).sort();
+      expect(relativ).toEqual([
+        'components/admin/web/leitung/WebMaterialDialog.tsx',
+        'components/web/WebDialog.tsx',
+        'components/web/WebRueckfrageSymbol.tsx',
+      ]);
+    });
+
+    it('der folgenreiche Knopf ist rot gefüllt -- dasselbe Rot wie bei den Rückfragen der App im Browser, mit dunklerem Rot beim Überfahren', () => {
+      const rot = erklaerungen(rumpf('.web-rueckfrage .web-knopf--gefahr'));
+      const alert = erklaerungen(rumpf(ALERT_ROT));
+      expect(rot).toEqual({
+        'border-color': 'var(--ion-color-danger)',
+        background: 'var(--ion-color-danger)',
+        color: 'var(--ion-color-danger-contrast)',
+      });
+      expect(alert).toEqual(rot);
+      const ueber = erklaerungen(rumpf('.web-rueckfrage .web-knopf--gefahr:hover'));
+      expect(ueber).toEqual({ 'border-color': 'var(--ion-color-danger-shade)', background: 'var(--ion-color-danger-shade)' });
+      expect(erklaerungen(rumpf(`${ALERT_ROT}:hover`))).toEqual(ueber);
+    });
+
+    it('der rote Knopf schlägt jede Regel der Web-Fassung für .web-knopf, die Farbe, Grund oder Rand setzt -- die Ladereihenfolge ist egal', () => {
+      const FARBE = /^(?:color|background(?:-color)?|border(?:-color)?)$/;
+      const webDateien = [
+        'src/theme/web-ansicht.css',
+        ...readdirSync(resolve(process.cwd(), 'src/theme/web')).filter((n) => n.endsWith('.css')).map((n) => `src/theme/web/${n}`),
+      ];
+      const fremde = webDateien.flatMap((datei) => regeln(ohneKommentare(lies(datei))).flatMap(({ selektor, rumpf: r }) => {
+        const setztFarbe = Object.keys(erklaerungen(r)).some((e) => FARBE.test(e));
+        return setztFarbe ? teileObersteEbene(selektor).map((t) => t.trim()) : [];
+      }))
+        // Was einen Knopf trifft: .web-knopf selbst oder eine Art davon, nicht .web-knopf__text.
+        .filter((sel) => /\.web-knopf(?:--[\w-]+)?(?![\w_-])/.test(letzterVerbund(sel)))
+        // Primär und Text sind eigene Arten; ein Gefahr-Knopf ist keins von beiden.
+        .filter((sel) => !/\.web-knopf--(?:primaer|text)\b/.test(sel));
+      expect(fremde).toEqual(expect.arrayContaining(['.web-knopf', '.web-knopf:hover', '.web-knopf--gefahr']));
+      const eigen = spezifitaet('.web-rueckfrage .web-knopf--gefahr');
+      const eigenUeber = spezifitaet('.web-rueckfrage .web-knopf--gefahr:hover');
+      const verlierer = fremde.filter((sel) => vergleich(sel.includes(':hover') ? eigenUeber : eigen, spezifitaet(sel)) <= 0);
+      expect(verlierer).toEqual([]);
+    });
+
+    it('das Symbol: Kreis in derselben Größe und denselben Farben wie bei den Rückfragen der App im Browser', () => {
+      const symbol = erklaerungen(rumpf('.web-rueckfrage-symbol'));
+      const imBrowser = erklaerungen(rumpf(`${BREIT} ion-alert.app-rueckfrage:is(.ios, .md)`));
+      const kreis = erklaerungen(rumpf('ion-alert.app-rueckfrage'))['--app-rueckfrage-kreis'];
+      expect(kreis).toBe('color-mix(in srgb, var(--app-rueckfrage-farbe) 14%, transparent)');
+      expect(symbol).toMatchObject({
+        // Löschen: das Rot, das die Rückfrage der App im Browser trägt.
+        '--app-rueckfrage-farbe': erklaerungen(rumpf(`${BREIT} ion-alert.app-rueckfrage--loeschen:is(.ios, .md)`))['--app-rueckfrage-farbe'],
+        '--app-rueckfrage-kreis': kreis,
+        width: imBrowser['--app-rueckfrage-groesse'],
+        height: imBrowser['--app-rueckfrage-groesse'],
+        'font-size': imBrowser['--app-rueckfrage-symbolgroesse'],
+        'border-radius': 'var(--app-radius-kreis)',
+        background: 'var(--app-rueckfrage-kreis)',
+        color: 'var(--app-rueckfrage-farbe)',
+      });
+      expect(symbol['--app-rueckfrage-farbe']).toBe('var(--ion-color-danger)');
+      // Warnung: Bernstein auf Orange, wie bei der App (Kontraste oben gerechnet).
+      const warnung = erklaerungen(rumpf('ion-alert.app-rueckfrage--warnung'));
+      expect(erklaerungen(rumpf('.web-rueckfrage-symbol--warnung'))).toEqual({
+        '--app-rueckfrage-farbe': warnung['--app-rueckfrage-farbe'],
+        '--app-rueckfrage-kreis': warnung['--app-rueckfrage-kreis'],
+      });
+    });
+
+    it('im Kopf des Fensters: Symbol und X in der ersten Zeile, der Titel darunter über die ganze Breite', () => {
+      expect(rumpf('.web-rueckfrage .web-dialog__kopf')).toMatch(/display:\s*grid;/);
+      expect(rumpf('.web-rueckfrage .web-dialog__kopf > .web-rueckfrage-symbol')).toMatch(/grid-area:\s*1 \/ 1;/);
+      expect(rumpf('.web-rueckfrage .web-dialog__kopf > .web-knopf')).toMatch(/grid-area:\s*1 \/ 2;/);
+      expect(rumpf('.web-rueckfrage .web-dialog__kopf > .web-dialog__titel')).toMatch(/grid-area:\s*2 \/ 1 \/ 3 \/ 3;/);
+      // Schlägt das flex des Kopfs aus web-ansicht.css.
+      expect(vergleich(spezifitaet('.web-rueckfrage .web-dialog__kopf'), spezifitaet('.web-dialog__kopf'))).toBeGreaterThan(0);
+    });
   });
 });

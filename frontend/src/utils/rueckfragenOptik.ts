@@ -71,8 +71,12 @@ export function rueckfrageArt(knoepfe: readonly RueckfrageKnopf[] | null | undef
   return folgenreich.some((knopf) => LOESCHT.test(knopf.text ?? '')) ? 'loeschen' : 'warnung';
 }
 
-/** Das Symbol je Art, aus der zentralen Icon-Datei. */
-const SYMBOL: Record<RueckfrageArt, string> = {
+/**
+ * Das Symbol je Art, aus der zentralen Icon-Datei. Auch die Rückfragen, die
+ * selbst ein Fenster der Web-Fassung sind, nehmen es von hier
+ * (components/web/WebRueckfrageSymbol.tsx).
+ */
+export const RUECKFRAGE_SYMBOLE: Readonly<Record<RueckfrageArt, string>> = {
   loeschen: ICON_LOESCHEN_GEFUELLT,
   warnung: ICON_WARNUNG_GEFUELLT,
 };
@@ -88,7 +92,7 @@ export function rueckfrageKennzeichnen(alert: HTMLElement): RueckfrageArt | null
   alert.style.removeProperty(RUECKFRAGE_SYMBOL);
   if (!art) return null;
   alert.classList.add(RUECKFRAGE_KLASSE, `${RUECKFRAGE_KLASSE}--${art}`);
-  alert.style.setProperty(RUECKFRAGE_SYMBOL, `url("${SYMBOL[art]}")`);
+  alert.style.setProperty(RUECKFRAGE_SYMBOL, `url("${RUECKFRAGE_SYMBOLE[art]}")`);
   return art;
 }
 
