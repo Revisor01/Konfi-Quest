@@ -15,6 +15,8 @@ const h = vi.hoisted(() => ({
   apiDelete: vi.fn(),
   apiPost: vi.fn(),
   refresh: vi.fn(),
+  // refreshLive der Konfi-Liste (useOfflineQuery 'admin:konfis:...').
+  konfisLive: vi.fn(),
   setError: vi.fn(),
   setSuccess: vi.fn(),
   breit: true,
@@ -46,7 +48,7 @@ vi.mock('../../../hooks/useOfflineQuery', () => ({
   useOfflineQuery: (schluessel: string) => ({
     data: schluessel.startsWith('admin:konfis') ? KONFIS : schluessel.startsWith('admin:jahrgaenge') ? JAHRGAENGE : {},
     loading: false, error: null, isStale: false, isOffline: false,
-    refresh: h.refresh, refreshLive: vi.fn(),
+    refresh: h.refresh, refreshLive: schluessel.startsWith('admin:konfis') ? h.konfisLive : vi.fn(),
   }),
 }));
 vi.mock('../../../hooks/useOnboardingOnce', () => ({
@@ -228,6 +230,19 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     if (breit) expect(await screen.findByRole('button', { name: /^Team\s*2$/ })).toBeInTheDocument();
     else expect(await screen.findByRole('tab', { name: 'Team (2)' })).toBeInTheDocument();
     expect(teamAbrufe()).toBe(2);
+  });
+
+  // Befund 13.10.2026: Die Leitung traegt unter Events die Anwesenheit ein und
+  // wechselt zurueck in den Reiter Konfis. Die Seite bleibt eingehaengt
+  // (Reiter), und der Server meldet Anwesenheit und Check-in nur als 'events'
+  // -- die Spalte "Pflicht-Events" (und die Punkte) blieben auf dem alten
+  // Stand, bis jemand herunterzog.
+  it.each([false, true])('meldet der Server eine Aenderung an Events (Anwesenheit, breit: %s), laedt die Konfi-Liste neu', (breit) => {
+    h.breit = breit;
+    render(<AdminKonfisPage />);
+    expect(h.konfisLive).not.toHaveBeenCalled();
+    act(() => { h.live.events(); });
+    expect(h.konfisLive).toHaveBeenCalledTimes(1);
   });
 
   // Befund 11.10.2026 (docs/offene-befunde.md): In der App erschien eine neu

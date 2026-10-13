@@ -204,6 +204,16 @@ const AdminKonfisPage: React.FC<AdminKonfisPageProps> = ({ onSelectKonfi, select
   // Subscribe to live updates for konfis
   useLiveRefresh('konfis', refreshAll);
 
+  // Anwesenheit und Check-in, Austragen, Absagen und Aendern von Terminen
+  // aendern die Pflicht-Events "x von y" und die Punkte der Liste. Der Server
+  // meldet sie nur als 'events' (routes/events/anwesenheit.js, checkin.js,
+  // buchung.js, verwaltung.js), nicht als 'konfis'. Die Seite ist ein Reiter
+  // und bleibt eingehaengt: Ohne diesen Horcher stand nach dem Eintragen der
+  // Anwesenheit der alte Stand in der Liste, bis jemand herunterzog (Befund
+  // 13.10.2026). Nicht gefiltert: Auch das Stornieren einer Buchung kann
+  // Punkte und Anwesenheit zuruecknehmen (buchung.js, DELETE /:id/book).
+  useLiveRefresh('events', refreshKonfisLive);
+
   // Die Team-Liste laedt einmal beim Oeffnen der Seite (useTeamerListe), nicht
   // mehr bei jedem Wechsel auf "Team" (13.10.2026). Neu geladen wird, wenn der
   // Server eine Aenderung an Konten meldet ('users': anlegen, aendern,
