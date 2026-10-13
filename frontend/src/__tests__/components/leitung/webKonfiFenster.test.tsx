@@ -428,7 +428,12 @@ describe('Anwesenheit im Browser: eigener, breiter Dialog', () => {
   });
 
   it('Fehler beim Laden und beim Senden stehen im Fenster, nicht oben', async () => {
-    h.apiGet.mockImplementation(async () => { throw antwortFehler(500, {}); });
+    // Nur die Anwesenheit scheitert: Was die Seite selbst lädt (Liste,
+    // Team), meldet sie selbst -- das ist nicht Sache des Fensters.
+    h.apiGet.mockImplementation(async (url: string) => {
+      if (url.endsWith('/attendance-matrix')) throw antwortFehler(500, {});
+      return { data: [], headers: {} };
+    });
     const dialog = await oeffnen();
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Fehler beim Laden der Anwesenheit');
     expect(within(dialog).getByText('Keine Daten')).toBeInTheDocument();
@@ -445,8 +450,9 @@ describe('Anwesenheit im Browser: eigener, breiter Dialog', () => {
   // niemand verschickt hatte.
   it('nach einem Ladefehler: der Wechsel auf einen ladbaren Jahrgang räumt die Meldung weg', async () => {
     h.apiGet.mockImplementation(async (url: string) => {
+      if (url === '/admin/jahrgaenge/12/attendance-matrix') throw antwortFehler(500, {});
       if (url === '/admin/jahrgaenge/13/attendance-matrix') return { data: MATRIX_13 };
-      throw antwortFehler(500, {});
+      return { data: [], headers: {} };
     });
     const dialog = await oeffnen();
     expect(within(dialog).getByRole('alert')).toHaveTextContent('Fehler beim Laden der Anwesenheit');
