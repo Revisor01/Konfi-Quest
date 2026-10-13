@@ -135,8 +135,10 @@ describe('Vorgänge (Web): Liste und Lesebereich', () => {
     await zeigen();
     const z = zeilen()[0];
     // Derselbe Kreis wie im Kopf des Vorgangs, nur kleiner; Zierde -- die Art steht als Wort daneben.
-    const kreis = z.querySelector('.web-vorgang-kreis')!;
-    expect(kreis.className).toBe('web-vorgang-kreis web-vorgang-kreis--fehler');
+    const kreis = z.querySelector('.web-vorgang-kreis') as HTMLElement;
+    expect(kreis.className).toBe('web-vorgang-kreis');
+    // Die Farbe der Art aus ART_FARBE, derselben Zuordnung wie der Kreis der App.
+    expect(kreis.style.getPropertyValue('--web-vorgang-kreis-farbe')).toBe('var(--app-color-danger)');
     expect(kreis).toHaveAttribute('aria-hidden', 'true');
     expect(z.querySelector('.web-postfachzeile__titel')).toHaveTextContent('Chat zeigt nichts Neues');
     expect(z.querySelector('.web-postfachzeile__mitte')!.textContent).toBe('Nr. 1 · Fehler · Kirchengemeinde Musterdorf');
