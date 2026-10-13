@@ -56,7 +56,7 @@ import '../../../../theme/web/leitung.css';
 import '../../../../theme/web/termine.css';
 import type { Anwesenheit, KonfiHistorie, Zertifikat } from './konfiDetailTypen';
 import { eventStand, type EventZeile } from './eventListe';
-import { konfiZeitStatusRang } from '../../../../utils/statusReihenfolge';
+import { konfiZeitStatusRang, personEventStatusRang } from '../../../../utils/statusReihenfolge';
 
 const ZEILEN_KURZ = 10;
 
@@ -314,13 +314,6 @@ export const BonusKarte: React.FC<{
 // Ein Event fuehrt mit Rueckweg zur Person (`?person=`, utils/rueckweg.ts;
 // Simon: „zurück ins profil?").
 
-/** Reihenfolge der Woerter beim Sortieren nach Stand: Offenes zuerst. */
-const STAND_REIHE = ['Ausstehend', 'Gebucht', 'Warteliste', 'Anwesend', 'Abwesend', 'Entschuldigt', 'Abgemeldet', 'Abgesagt'];
-const standRang = (text: string): number => {
-  const i = STAND_REIHE.indexOf(text);
-  return i === -1 ? STAND_REIHE.length : i;
-};
-
 const nichtsTun = () => {};
 
 export const EventListeKarte: React.FC<{
@@ -402,7 +395,8 @@ export const EventListeKarte: React.FC<{
       schluessel: 'stand',
       kopf: 'Stand',
       breite: SPALTE.von,
-      sortWert: (z) => standRang(eventStand(z).text),
+      // Die Reihe steht bei allen Status-Reihen (utils/statusReihenfolge.ts).
+      sortWert: (z) => personEventStatusRang(eventStand(z).text),
       zelle: (z) => {
         const stand = eventStand(z);
         return <WebPill ton={stand.ton}>{stand.text}</WebPill>;

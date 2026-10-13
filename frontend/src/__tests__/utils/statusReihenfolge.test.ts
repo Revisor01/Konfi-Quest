@@ -8,6 +8,7 @@ import {
   ANTRAG_STATUS_REIHE,
   CHALLENGE_STATUS_REIHE,
   KONFI_ZEIT_STATUS_REIHE,
+  PERSON_EVENT_STATUS_REIHE,
   TEILNAHME_STATUS_REIHE,
   TERMIN_STATUS_REIHE,
   antragStatusRang,
@@ -16,6 +17,7 @@ import {
   konfiZeitStatusRang,
   konfispruchStatusRang,
   kontoStatusRang,
+  personEventStatusRang,
   teilnahmeStatusRang,
   terminStatusRang,
   vorgangStatusRang,
@@ -23,6 +25,7 @@ import {
 } from '../../utils/statusReihenfolge';
 import { teilnahmeDarstellung } from '../../utils/teilnahmeStatus';
 import { konfiZeitTerminStatus } from '../../utils/konfiZeit';
+import { eventStand, type EventZeile } from '../../components/admin/web/leitung/eventListe';
 
 /** Sortiert Werte mit einem Rang auf- oder absteigend, wie die Tabelle es tut. */
 const ordne = <T>(werte: readonly T[], rang: (w: T) => number | null, richtung: 'auf' | 'ab' = 'auf') =>
@@ -52,7 +55,7 @@ describe('nachReihe', () => {
 
 describe('die Reihen', () => {
   it('kein Wert steht doppelt', () => {
-    for (const reihe of [ANTRAG_STATUS_REIHE, TERMIN_STATUS_REIHE, TEILNAHME_STATUS_REIHE, KONFI_ZEIT_STATUS_REIHE, CHALLENGE_STATUS_REIHE]) {
+    for (const reihe of [ANTRAG_STATUS_REIHE, TERMIN_STATUS_REIHE, TEILNAHME_STATUS_REIHE, KONFI_ZEIT_STATUS_REIHE, PERSON_EVENT_STATUS_REIHE, CHALLENGE_STATUS_REIHE]) {
       expect(new Set(reihe).size).toBe(reihe.length);
     }
   });
@@ -107,6 +110,35 @@ describe('die Reihen', () => {
     const woerter = ordne(termine, (t) => konfiZeitStatusRang(konfiZeitTerminStatus(t))).map((t) => konfiZeitTerminStatus(t));
     expect(woerter).toEqual(['Angemeldet', 'Warteliste', 'Dabei', 'Punkte erhalten', 'Nicht da', 'Abgemeldet', 'Abgesagt']);
     expect(woerter.every((w) => KONFI_ZEIT_STATUS_REIHE.includes(w))).toBe(true);
+  });
+
+  // Die Eventliste der Personenseite (Browser, web/leitung/eventListe.ts):
+  // offene und anstehende Buchungen mit den Woertern der App
+  // (personTerminStand), alles andere mit denen der Teilnehmerliste
+  // (teilnahmeDarstellung). Bis zur Pruefung vom 13.10.2026 stand die Reihe
+  // lokal in WebKonfiKarten.tsx, mit eigenen, kuerzeren Woertern.
+  it('Eventliste der Personenseite: jedes Wort aus eventStand steht in der Reihe, in Ablauf-Ordnung', () => {
+    type Fall = Pick<EventZeile, 'abgesagt' | 'art' | 'booking_status' | 'attendance_status'>;
+    const fall = (z: Partial<Fall>): Fall => ({ abgesagt: false, art: 'erledigt', booking_status: 'confirmed', attendance_status: null, ...z });
+    const faelle = [
+      fall({ abgesagt: true, attendance_status: 'excused' }),
+      fall({ booking_status: 'opted_out' }),
+      fall({ attendance_status: 'excused' }),
+      fall({ attendance_status: 'absent' }),
+      fall({ booking_status: null }),
+      fall({ booking_status: 'waitlist' }),
+      fall({}),
+      fall({ art: 'anstehend', booking_status: 'pending' }),
+      fall({ art: 'anstehend' }),
+      fall({ art: 'verbuchen' }),
+    ];
+    const woerter = ordne(faelle, (f) => personEventStatusRang(eventStand(f).text)).map((f) => eventStand(f).text);
+    expect(woerter).toEqual([
+      'Anwesenheit ausstehend', 'Angemeldet', 'Gebucht', 'Warteliste', 'Warteliste',
+      'Anwesend', 'Abwesend', 'Abgemeldet (nachgetragen)', 'Abgemeldet', 'Abgesagt',
+    ]);
+    // Und umgekehrt: Die Reihe traegt kein Wort, das eventStand nicht bildet.
+    expect([...new Set(woerter)]).toEqual([...PERSON_EVENT_STATUS_REIHE]);
   });
 
   it('Challenges: Läuft, Geplant, Entwurf, Beendet', () => {

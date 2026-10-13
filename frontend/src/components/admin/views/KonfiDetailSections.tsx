@@ -151,8 +151,12 @@ export interface PersonTermin {
   darf_verbuchen: boolean;
 }
 
-/** Was eine Termin-Zeile ueber ihren Stand sagt. */
-export const personTerminStand = (t: PersonTermin): string =>
+/**
+ * Was eine Termin-Zeile ueber ihren Stand sagt. Dieselben Woerter in der
+ * Eventliste der Personenseite im Browser (web/leitung/eventListe.ts,
+ * eventStand) -- dort fuer offene und anstehende Buchungen.
+ */
+export const personTerminStand = (t: Pick<PersonTermin, 'art' | 'booking_status'>): string =>
   t.art === 'verbuchen'
     ? 'Anwesenheit ausstehend'
     : (t.booking_status === 'waitlist' || t.booking_status === 'pending') ? 'Warteliste' : 'Angemeldet';

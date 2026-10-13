@@ -10,7 +10,8 @@ import {
   teamerEventZeilen,
   type EventZeile,
 } from '../../../components/admin/web/leitung/eventListe';
-import type { PersonTermin } from '../../../components/admin/views/KonfiDetailSections';
+import { personTerminStand, type PersonTermin } from '../../../components/admin/views/KonfiDetailSections';
+import { teilnahmeDarstellung } from '../../../utils/teilnahmeStatus';
 
 const JETZT = Date.parse('2026-10-13T12:00:00Z');
 const zeile = (name: string, art: EventZeile['art'], datum: string): EventZeile => ({
@@ -38,20 +39,37 @@ describe('Ordnung', () => {
   });
 });
 
+// Pruefung 13.10.2026: Die Woerter kommen aus den vorhandenen Regeln --
+// offene und anstehende Buchungen wie in der App (personTerminStand),
+// alles andere wie in der Teilnehmerliste (teilnahmeDarstellung). Vorher
+// eigene, kuerzere Woerter ("Ausstehend", "Entschuldigt"): dieselbe Buchung
+// hiess im Browser anders als in der App.
 describe('Stand', () => {
   const stand = (z: Partial<EventZeile>) => eventStand({ abgesagt: false, art: 'erledigt', booking_status: 'confirmed', attendance_status: null, ...z });
   it.each([
-    [{ abgesagt: true, attendance_status: 'excused' }, 'Abgesagt', 'neutral'],
-    [{ art: 'verbuchen' as const }, 'Ausstehend', 'warnung'],
-    [{ art: 'anstehend' as const }, 'Gebucht', 'info'],
+    [{ abgesagt: true, attendance_status: 'excused' }, 'Abgesagt', 'fehler'],
+    [{ art: 'verbuchen' as const }, 'Anwesenheit ausstehend', 'warnung'],
+    [{ art: 'anstehend' as const }, 'Angemeldet', 'info'],
     [{ art: 'anstehend' as const, booking_status: 'waitlist' }, 'Warteliste', 'warnung'],
+    [{ art: 'anstehend' as const, booking_status: 'pending' }, 'Warteliste', 'warnung'],
     [{ attendance_status: 'present' }, 'Anwesend', 'erfolg'],
     [{ attendance_status: 'absent' }, 'Abwesend', 'fehler'],
-    [{ attendance_status: 'excused' }, 'Entschuldigt', 'neutral'],
+    [{ attendance_status: 'excused' }, 'Abgemeldet (nachgetragen)', 'neutral'],
     [{ booking_status: 'opted_out' }, 'Abgemeldet', 'fehler'],
+    [{ booking_status: 'waitlist' }, 'Warteliste', 'warnung'],
+    [{}, 'Gebucht', 'info'],
     [{ booking_status: null }, 'Anwesend', 'erfolg'],
   ])('%o -> %s', (z, text, ton) => {
     expect(stand(z)).toEqual({ text, ton });
+  });
+
+  it('offen und anstehend: dasselbe Wort wie die App (personTerminStand), der Rest wie die Teilnehmerliste', () => {
+    for (const [art, booking_status] of [['verbuchen', 'confirmed'], ['anstehend', 'confirmed'], ['anstehend', 'waitlist'], ['anstehend', 'pending']] as const) {
+      expect(stand({ art, booking_status }).text).toBe(personTerminStand({ art, booking_status }));
+    }
+    for (const [booking_status, attendance_status] of [['confirmed', 'present'], ['confirmed', 'absent'], ['confirmed', 'excused'], ['opted_out', null], ['excused', null], ['waitlist', null]] as const) {
+      expect(stand({ booking_status, attendance_status }).text).toBe(teilnahmeDarstellung({ status: booking_status, attendance_status }).statusText);
+    }
   });
 });
 
@@ -93,9 +111,9 @@ describe('Quellen', () => {
       { id: 3, name: 'Vergangen ohne Recht', event_date: '2026-09-03', location: '', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '', attendance_status: null },
     ], [termin(1, 'verbuchen'), termin(7, 'anstehend', { event_name: 'Nur in termine', event_date: '2026-11-01T10:00:00Z' })], JETZT);
     expect(z.map((e) => [e.name, e.art, eventStand(e).text, e.termin?.booking_id ?? null])).toEqual([
-      ['Vergangen offen', 'verbuchen', 'Ausstehend', 501],
-      ['Kuenftig', 'anstehend', 'Gebucht', null],
-      ['Nur in termine', 'anstehend', 'Gebucht', 507],
+      ['Vergangen offen', 'verbuchen', 'Anwesenheit ausstehend', 501],
+      ['Kuenftig', 'anstehend', 'Angemeldet', null],
+      ['Nur in termine', 'anstehend', 'Angemeldet', 507],
       ['Vergangen ohne Recht', 'erledigt', 'Gebucht', null],
     ]);
   });

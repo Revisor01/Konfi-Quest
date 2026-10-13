@@ -250,13 +250,17 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       zelle(z, 3).textContent,
       zelle(z, 4).textContent,
     ])).toEqual([
-      ['Konfisamstag', '–', '–', 'Ausstehend'],
+      // Woerter der App (personTerminStand) fuer Offenes und Anstehendes,
+      // der Teilnehmerliste (teilnahmeDarstellung) fuer den Rest -- seit der
+      // Pruefung vom 13.10.2026 statt eigener Woerter ("Ausstehend",
+      // "Gebucht" fuer Anstehendes, "Entschuldigt").
+      ['Konfisamstag', '–', '–', 'Anwesenheit ausstehend'],
       ['Laternenumzug', '–', '–', 'Warteliste'],
-      ['Konfirmation', '–', '–', 'Gebucht'],
+      ['Konfirmation', '–', '–', 'Angemeldet'],
       ['Ausflug', '–', '–', 'Abgesagt'],
       ['Konfi-Wochenende', 'Gemeinde', '+2', 'Anwesend'],
       ['Jugendabend', '–', '–', 'Abwesend'],
-      ['Gemeindefest', '–', '–', 'Entschuldigt'],
+      ['Gemeindefest', '–', '–', 'Abgemeldet (nachgetragen)'],
       ['Pflicht-Gottesdienst', '–', '–', 'Anwesend'],
       ['Pflicht-Treffen', '–', '–', 'Abgemeldet'],
       ['Taizé-Abend', 'Gottesdienst', '+1', 'Anwesend'],
@@ -296,6 +300,16 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
     await waitFor(() => expect(h.triggerRefresh).toHaveBeenCalledWith('events'));
   });
 
+  it('ein Klick auf „Stand" ordnet nach der Reihe aus statusReihenfolge.ts, Offenes zuerst', async () => {
+    await oeffnen();
+    const tabelle = screen.getByRole('table', { name: 'Events' });
+    await act(async () => { fireEvent.click(within(within(tabelle).getByRole('columnheader', { name: /Stand/ })).getByRole('button')); });
+    expect(zeilen('Events').map((z) => zelle(z, 4).textContent)).toEqual([
+      'Anwesenheit ausstehend', 'Angemeldet', 'Warteliste', 'Anwesend', 'Anwesend', 'Anwesend',
+      'Abwesend', 'Abgemeldet (nachgetragen)', 'Abgemeldet', 'Abgesagt',
+    ]);
+  });
+
   it('ohne Recht am Termin: der Stand steht da, die Knöpfe nicht', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, {
       ...KONFI,
@@ -303,7 +317,7 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
     });
     await oeffnen();
     const [erste] = zeilen('Events');
-    expect(zelle(erste, 4)).toHaveTextContent('Ausstehend');
+    expect(zelle(erste, 4)).toHaveTextContent('Anwesenheit ausstehend');
     expect(within(erste).queryAllByRole('button')).toEqual([]);
   });
 });

@@ -525,7 +525,7 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(within(ev).queryByRole('list', { name: 'Offene und anstehende Events' })).toBeNull();
     const e = zeilen('Events');
     expect(e.map((z) => [zelle(z, 0).textContent, zelle(z, 4).textContent])).toEqual([
-      ['Konfisamstag', 'Ausstehend'],
+      ['Konfisamstag', 'Anwesenheit ausstehend'],
       ['Laternenumzug', 'Warteliste'],
       ['Konfi-Wochenende', 'Anwesend'],
       ['Taizé-Abend', 'Anwesend'],
@@ -549,7 +549,7 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     await oeffnen();
     const erste = zeilen('Events')[0];
     expect(zelle(erste, 0)).toHaveTextContent('Konfisamstag');
-    expect(zelle(erste, 4)).toHaveTextContent('Ausstehend');
+    expect(zelle(erste, 4)).toHaveTextContent('Anwesenheit ausstehend');
     expect(within(erste).queryByRole('button')).toBeNull();
   });
 
@@ -664,8 +664,10 @@ describe('Teamer-Detail (Web)', () => {
     // Anstehendes oben, dann nach Datum absteigend (vorher die Reihenfolge des
     // Servers). Gewollte Aenderung der Reihenfolge, die Staende bleiben.
     expect(events.map((z) => [zelle(z, 0).textContent, zelle(z, 2).textContent])).toEqual([
-      // Gebucht, aber noch nicht verbucht -- vorher stand hier "Anwesend".
-      ['Teamer-Treffen', 'Gebucht'],
+      // Angemeldet, noch nicht begonnen -- das Wort der App fuer anstehende
+      // Termine (personTerminStand; vorher stand hier "Anwesend", zwischen-
+      // zeitlich "Gebucht").
+      ['Teamer-Treffen', 'Angemeldet'],
       ['Adventsbasar', 'Warteliste'],
       ['Freizeit-Planung', 'Abwesend'],
       ['Konfi-Wochenende', 'Anwesend'],

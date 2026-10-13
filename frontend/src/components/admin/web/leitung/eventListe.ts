@@ -26,7 +26,7 @@ import { teilnahmeDarstellung, type TeilnahmeDarstellung } from '../../../../uti
 import { punkteAnzeigeDatum } from '../../../../utils/punkteDatum';
 import type { PillTon } from '../../../../utils/supportWeb';
 import type { EventPunkteEintrag } from '../../../../types/user';
-import type { PersonTermin } from '../../views/KonfiDetailSections';
+import { personTerminStand, type PersonTermin } from '../../views/KonfiDetailSections';
 import type { AlleTermineEintrag, TeamerTermin } from './konfiDetailTypen';
 
 /** Eine Zeile der Eventliste einer Person. */
@@ -69,21 +69,28 @@ const STAND_TON: Record<TeilnahmeDarstellung['farbe'], PillTon> = {
 };
 
 /**
- * Der Stand einer Zeile. Grundlage ist DIESELBE Regel wie in der
- * Teilnehmerliste eines Events (teilnahmeDarstellung); drei Woerter sind
- * kuerzer, weil die Spalte so schmal ist wie "Eingetragen von" darueber:
- *   - zu verbuchen: "Ausstehend" (die Knoepfe stehen in der Zeile)
- *   - von der Leitung nachgetragene Abmeldung: "Entschuldigt" statt
- *     "Abgemeldet (nachgetragen)"
- *   - abgesagter Termin: "Abgesagt"
- * Event-Punkte ohne Buchung waren da: "Anwesend".
+ * Der Stand einer Zeile -- aus den Regeln, die es schon gibt, damit dieselbe
+ * Buchung im Browser heisst wie in der App (Pruefung 13.10.2026; vorher
+ * eigene, kuerzere Woerter: "Ausstehend", "Entschuldigt", "Gebucht" fuer
+ * Anstehendes):
+ *   - zu verbuchen und anstehend: die Woerter der App fuer die Termine oben
+ *     in der Eventliste (personTerminStand: "Anwesenheit ausstehend",
+ *     "Angemeldet", "Warteliste")
+ *   - alles andere: die Teilnehmerliste eines Events (teilnahmeDarstellung)
+ *   - abgesagter Termin: "Abgesagt", rot wie in der Terminliste
+ *     (utils/termineWeb.ts)
+ * Event-Punkte ohne Buchung gibt es nur nach "anwesend": "Anwesend".
+ * Die Sortier-Reihe dazu: utils/statusReihenfolge.ts, PERSON_EVENT_STATUS_REIHE.
  */
 export const eventStand = (z: Pick<EventZeile, 'abgesagt' | 'art' | 'booking_status' | 'attendance_status'>): EventStand => {
-  if (z.abgesagt) return { text: 'Abgesagt', ton: 'neutral' };
-  if (z.art === 'verbuchen') return { text: 'Ausstehend', ton: 'warnung' };
-  if (!z.booking_status) return { text: 'Anwesend', ton: 'erfolg' };
-  const d = teilnahmeDarstellung({ status: z.booking_status, attendance_status: z.attendance_status });
-  if (d.istNachgetragen) return { text: 'Entschuldigt', ton: 'neutral' };
+  if (z.abgesagt) return { text: 'Abgesagt', ton: 'fehler' };
+  if (z.art !== 'erledigt') {
+    const text = personTerminStand({ art: z.art, booking_status: z.booking_status ?? 'confirmed' });
+    return { text, ton: z.art === 'verbuchen' || text === 'Warteliste' ? 'warnung' : 'info' };
+  }
+  const d = teilnahmeDarstellung(z.booking_status
+    ? { status: z.booking_status, attendance_status: z.attendance_status }
+    : { attendance_status: 'present' });
   return { text: d.statusText, ton: STAND_TON[d.farbe] };
 };
 
