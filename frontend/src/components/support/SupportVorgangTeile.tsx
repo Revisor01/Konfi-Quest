@@ -3,8 +3,10 @@
 // Simon, 11.10.2026: Hauptknopf oben in der Karte „Stand").
 //
 //   - StandKarte: Marken (antippen öffnet „Einordnen"), der Satz, wer dran ist,
-//     die Zusatzzeile (Lizenz), der Hauptknopf 2 : Nebenknopf 1 und die Notiz.
-//     Allgemein gehalten -- die Mail im Posteingang nutzt sie ebenso.
+//     die Zusatzzeile (Lizenz), ein Hinweis mit eigenem Knopf (Mail: „Absender
+//     gehört zu …" und „In Vorgang N einsortieren"), der Hauptknopf 2 :
+//     Nebenknopf 1 und die Notiz. Allgemein gehalten -- die Mail im
+//     Posteingang nutzt sie ebenso.
 //   - NotizZeile: die interne Notiz als Zeile der Karte; antippen öffnet das Modal.
 //   - Antwortzeile: unter der jüngsten Mail, öffnet das Modal „Antworten".
 //   - AngabenAbschnitte: die Karten aus vorgangAngaben (Lizenz, Anfrage,
@@ -58,11 +60,19 @@ export interface StandKarteMarke {
   beschriftung?: string;
 }
 
+/** Ein Hinweis in der Karte, mit einem eigenen Knopf darunter (nicht darin -- kein Knopf im Knopf). */
+export interface StandKarteHinweis {
+  text: string;
+  knopf?: StandKnopf | null;
+}
+
 export interface StandKarteProps {
   marken: readonly StandKarteMarke[];
   satz: string | null;
   ton: StandTon | null;
   zusatz?: { text: string; ton: StandTon } | null;
+  /** Unter Satz und Zusatz, über den Knöpfen (Mail: „Absender gehört zu …"). */
+  hinweis?: StandKarteHinweis | null;
   haupt: StandKnopf | null;
   neben: readonly StandKnopf[];
   /** Unter den Knöpfen, durch eine Linie getrennt: die Notiz. */
@@ -91,7 +101,7 @@ const Knopf: React.FC<{ k: StandKnopf; haupt: boolean }> = ({ k, haupt }) => (
  * die Knöpfe -- der Hauptknopf folgt dem Stand (2 : 1 zum Nebenknopf; mit zwei
  * Nebenknöpfen steht er allein darüber) -- und zuletzt die Notiz.
  */
-export const StandKarte: React.FC<StandKarteProps> = ({ marken, satz, ton, zusatz = null, haupt, neben, notiz, beschriftung = 'Stand' }) => {
+export const StandKarte: React.FC<StandKarteProps> = ({ marken, satz, ton, zusatz = null, hinweis = null, haupt, neben, notiz, beschriftung = 'Stand' }) => {
   const knoepfe = haupt ? neben.length : 0;
   const reihe = knoepfe === 0 ? ' support-stand__knoepfe--allein' : knoepfe >= 2 ? ' support-stand__knoepfe--drei' : '';
   return (
@@ -110,6 +120,24 @@ export const StandKarte: React.FC<StandKarteProps> = ({ marken, satz, ton, zusat
       )}
       {satz && <p className={`support-stand__satz support-stand__satz--${ton ?? 'neutral'}`}>{satz}</p>}
       {zusatz && <p className={`support-stand__zusatz support-stand__zusatz--${zusatz.ton}`}>{zusatz.text}</p>}
+      {hinweis && (
+        <div className="support-stand__hinweis">
+          <p className="support-stand__hinweis-text">{hinweis.text}</p>
+          {hinweis.knopf && (
+            <IonButton
+              className="support-stand__hinweis-knopf"
+              fill="outline"
+              size="small"
+              title={hinweis.knopf.titel}
+              disabled={hinweis.knopf.gesperrt}
+              onClick={hinweis.knopf.onKlick}
+            >
+              {hinweis.knopf.icon && <IonIcon icon={hinweis.knopf.icon} slot="start" aria-hidden="true" />}
+              {hinweis.knopf.label}
+            </IonButton>
+          )}
+        </div>
+      )}
       {(haupt || neben.length > 0) && (
         <div className={`support-stand__knoepfe${reihe}`}>
           {haupt && <Knopf k={haupt} haupt />}

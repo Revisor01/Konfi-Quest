@@ -103,10 +103,17 @@ export function ionicAttrappe(optionen: {
     IonItemSliding: durch,
     IonItemOptions: () => null,
     IonItemOption: () => null,
-    IonButton: ({ children, onClick, disabled, 'aria-label': label, title }: Kinder & {
-      onClick?: () => void; disabled?: boolean; 'aria-label'?: string; title?: string;
+    // Aufklappen (Filter der Vorgänge, 12.10.2026): aria-expanded und
+    // aria-controls reicht Ionic an den Knopf im Shadow-DOM weiter, die
+    // Attrappe an den nativen Knopf -- mit derselben Falle wie echt: React 19
+    // schreibt ein boolean true an ein Ionic-Element als leeres Attribut
+    // (gemessen mit dem echten IonButton in jsdom: true -> "", false ->
+    // "false", "true" -> "true"). Wer aria-expanded={true} übergibt, sieht
+    // hier wie am Gerät aria-expanded="".
+    IonButton: ({ children, onClick, disabled, 'aria-label': label, title, 'aria-expanded': offen, 'aria-controls': steuert }: Kinder & {
+      onClick?: () => void; disabled?: boolean; 'aria-label'?: string; title?: string; 'aria-expanded'?: boolean | 'true' | 'false'; 'aria-controls'?: string;
     }) => (
-      <button type="button" aria-label={label} title={title} disabled={disabled} onClick={onClick}>{children}</button>
+      <button type="button" aria-label={label} title={title} disabled={disabled} aria-expanded={offen === true ? ('' as unknown as boolean) : offen} aria-controls={steuert} onClick={onClick}>{children}</button>
     ),
     IonInput: ({ 'aria-label': label, 'aria-required': pflicht, value, type, disabled, onIonInput }: {
       'aria-label'?: string; 'aria-required'?: string; value?: string | number | null; type?: string; disabled?: boolean;

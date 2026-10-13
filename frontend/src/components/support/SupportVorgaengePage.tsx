@@ -4,11 +4,13 @@
 // Jedes Anliegen -- Anfrage von der Homepage, Support-Formular, Mail, vom
 // Support angelegt -- ist ein Vorgang mit Nummer, Art, Bereich, Dringlichkeit,
 // Status und Gemeinde. Die App zeigt sie als einfache Liste mit denselben
-// Filtern wie der Browser (Offen, Neu, In Arbeit, Wartet, Archiv -- darin auch
-// die erledigten), der Auswahl nach Art und Gemeinde und einer Suche; ein
-// Antippen öffnet den Vorgang. Das Plus oben rechts legt einen neuen Vorgang an
-// (bei gewählter Gemeinde heißt es „Schreiben"). Sammelaktionen gibt es nur im
-// Browser. Im breiten Browserfenster steht die Tabelle der Web-Fassung.
+// Reitern wie der Browser (Offen, Neu, In Arbeit, Wartet, Archiv -- darin auch
+// die erledigten); ein Antippen öffnet den Vorgang. Art, Gemeinde und Suche
+// stehen hinter dem Knopf „Filter" oben rechts (12.10.2026: vorher standen sie
+// offen über der Liste, und die erste Karte begann erst bei y 431 bis 504).
+// Das Plus daneben legt einen neuen Vorgang an (bei gewählter Gemeinde heißt
+// es „Gemeinde anschreiben"). Sammelaktionen gibt es nur im Browser. Im
+// breiten Browserfenster steht die Liste der Web-Fassung.
 //
 // Die Logik steht in components/support/useVorgangsliste.ts und
 // useNeuerVorgang.ts, dieselbe wie in der Web-Fassung.
@@ -35,13 +37,15 @@ import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import EmptyState from '../shared/EmptyState';
 import ZaehlerKugel from '../shared/ZaehlerKugel';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { ICON_HINZUFUEGEN, ICON_LISTE, ICON_ORGANISATION, ICON_UHRZEIT, ICON_WEITER_GEFUELLT } from '../shared/icons';
+import { ICON_FILTER, ICON_HINZUFUEGEN, ICON_LISTE, ICON_WEITER_GEFUELLT } from '../shared/icons';
 import { datumUhrzeit } from '../../utils/dateUtils';
 import { tastaturKlick } from '../../utils/tastatur';
 import { triggerPullHaptic } from '../../utils/haptics';
 import { empfaengerText, gemeindeName } from '../../utils/supportMail';
 import {
   ARTEN,
+  ART_FARBE,
+  ART_SYMBOL,
   BEREICHE,
   DRINGLICHKEITEN,
   VORGANG_STATUS,
@@ -59,7 +63,7 @@ import {
 } from '../../utils/supportVorgaenge';
 import { SUPPORT_START } from '../../navigation/supportMenue';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
-import { Abschnitt, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
+import { Abschnitt, Angabenzeile, Feld, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 import { useVorgangsliste } from './useVorgangsliste';
 import { useVorgangsAuswahl } from './useVorgangsAuswahl';
@@ -76,6 +80,7 @@ import {
   VORGANG_STAENDE,
   VORGANG_STAENDE_BESCHRIFTUNG,
 } from '../../seiten/supportVorgaenge';
+import './SupportVorgangTeile.css';
 
 /** Farbe der Marke je Status -- dieselben Farben wie die Marken der Web-Fassung. */
 const STATUS_FARBE: Record<VorgangStatus, string> = {
@@ -164,7 +169,24 @@ const Vorgaenge: React.FC = () => {
   const { sichtbar, gemeinden, laedt, fehler, neuLaden, zaehlen } = liste;
   const [neuOffen, setNeuOffen] = useState(false);
   const mitGemeinde = auswahl.gemeinde !== 'alle';
-  const eingegrenzt = suchbegriff(auswahl.suche) !== '' || auswahl.art !== 'alle' || mitGemeinde;
+  const mitArt = auswahl.art !== 'alle';
+  const sucht = suchbegriff(auswahl.suche) !== '';
+  const eingegrenzt = sucht || mitArt || mitGemeinde;
+
+  // Art, Gemeinde und Suche stehen hinter dem Knopf „Filter", wie im Browser
+  // (web/WebListenSeite): Der Knopf zählt, was gerade eingrenzt -- hier auch
+  // die Suche, denn sie steht mit im zugeklappten Bereich. Ist beim Laden
+  // schon etwas gewählt (?art=…, ?gemeinde=…), steht der Bereich offen, sonst
+  // filterte etwas, das man nicht sieht. Ionic hält die Seite im Speicher;
+  // setzt eine neue Adresse Art oder Gemeinde, klappt er ebenso auf.
+  const aktiveFilter = [mitArt, mitGemeinde, sucht].filter(Boolean).length;
+  const [filterOffen, setFilterOffen] = useState(eingegrenzt);
+  const filterSchluessel = `${auswahl.art}|${auswahl.gemeinde}`;
+  const [gesehenerFilter, setGesehenerFilter] = useState(filterSchluessel);
+  if (filterSchluessel !== gesehenerFilter) {
+    setGesehenerFilter(filterSchluessel);
+    if (mitArt || mitGemeinde) setFilterOffen(true);
+  }
 
   return (
     <IonPage>
@@ -173,9 +195,28 @@ const Vorgaenge: React.FC = () => {
         onZurueck={zurueck}
         gemeindeUmschalter={false}
         rechts={(
-          <IonButton aria-label={mitGemeinde ? 'Gemeinde anschreiben' : 'Neuer Vorgang'} onClick={() => setNeuOffen((o) => !o)}>
-            <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
-          </IonButton>
+          <>
+            <IonButton
+              className="support-filterknopf"
+              aria-label={aktiveFilter > 0 ? `Filter, ${aktiveFilter} aktiv` : 'Filter'}
+              // Als Wort, nicht als boolean: An ein Ionic-Element (Custom
+              // Element) schreibt React 19 ein true als leeres Attribut -- am
+              // Knopf im Shadow-DOM stand dann aria-expanded="" (gemessen
+              // 12.10.2026), was kein Vorleseprogramm als offen liest.
+              // Ohne aria-controls: Ionic reicht es an den Knopf im Shadow-DOM
+              // weiter, der Bereich liegt im Light-DOM -- über diese Grenze löst
+              // kein Vorleseprogramm die ID auf. Der Bereich folgt direkt auf
+              // die Reiter.
+              aria-expanded={filterOffen ? 'true' : 'false'}
+              onClick={() => setFilterOffen((o) => !o)}
+            >
+              <IonIcon icon={ICON_FILTER} slot="icon-only" aria-hidden="true" />
+              {aktiveFilter > 0 && <span className="support-filterknopf__zahl" aria-hidden="true">{aktiveFilter}</span>}
+            </IonButton>
+            <IonButton aria-label={mitGemeinde ? 'Gemeinde anschreiben' : 'Neuer Vorgang'} onClick={() => setNeuOffen((o) => !o)}>
+              <IonIcon icon={ICON_HINZUFUEGEN} slot="icon-only" />
+            </IonButton>
+          </>
         )}
       />
       <IonContent className="app-gradient-background" fullscreen>
@@ -197,25 +238,29 @@ const Vorgaenge: React.FC = () => {
           </IonSegment>
         </div>
 
-        <IonList style={{ background: 'transparent' }}>
-          <IonItem lines="full" style={{ '--background': 'transparent' }}>
-            <IonLabel position="stacked">Art</IonLabel>
-            <IonSelect aria-label="Art filtern" interface="popover" value={auswahl.art}
-              onIonChange={(e) => setArt(String(e.detail.value ?? 'alle') as VorgangArt | 'alle')}>
-              <IonSelectOption value="alle">{ALLE_ARTEN}</IonSelectOption>
-              {ARTEN.map((a) => <IonSelectOption key={a.wert} value={a.wert}>{a.label}</IonSelectOption>)}
-            </IonSelect>
-          </IonItem>
-          <IonItem lines="full" style={{ '--background': 'transparent' }}>
-            <IonLabel position="stacked">Gemeinde</IonLabel>
-            <IonSelect aria-label="Gemeinde filtern" interface="popover" value={auswahl.gemeinde}
-              onIonChange={(e) => setGemeinde(String(e.detail.value ?? 'alle'))}>
-              <IonSelectOption value="alle">{ALLE_GEMEINDEN}</IonSelectOption>
-              {gemeinden.map((g) => <IonSelectOption key={g.id} value={String(g.id)}>{g.name}</IonSelectOption>)}
-            </IonSelect>
-          </IonItem>
-          <Feld label="Suche" wert={auswahl.suche} onWert={setSuche} hinweis="Nummer, Betreff oder Gemeinde" />
-        </IonList>
+        {filterOffen && (
+          <div role="group" aria-label="Filter">
+            <IonList style={{ background: 'transparent' }}>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Art</IonLabel>
+                <IonSelect aria-label="Art filtern" interface="popover" value={auswahl.art}
+                  onIonChange={(e) => setArt(String(e.detail.value ?? 'alle') as VorgangArt | 'alle')}>
+                  <IonSelectOption value="alle">{ALLE_ARTEN}</IonSelectOption>
+                  {ARTEN.map((a) => <IonSelectOption key={a.wert} value={a.wert}>{a.label}</IonSelectOption>)}
+                </IonSelect>
+              </IonItem>
+              <IonItem lines="full" style={{ '--background': 'transparent' }}>
+                <IonLabel position="stacked">Gemeinde</IonLabel>
+                <IonSelect aria-label="Gemeinde filtern" interface="popover" value={auswahl.gemeinde}
+                  onIonChange={(e) => setGemeinde(String(e.detail.value ?? 'alle'))}>
+                  <IonSelectOption value="alle">{ALLE_GEMEINDEN}</IonSelectOption>
+                  {gemeinden.map((g) => <IonSelectOption key={g.id} value={String(g.id)}>{g.name}</IonSelectOption>)}
+                </IonSelect>
+              </IonItem>
+              <Feld label="Suche" wert={auswahl.suche} onWert={setSuche} hinweis="Nummer, Betreff oder Gemeinde" />
+            </IonList>
+          </div>
+        )}
 
         {laedt ? (
           <LoadingSpinner message="Vorgänge werden geladen..." />
@@ -238,6 +283,17 @@ const Vorgaenge: React.FC = () => {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {sichtbar.map((v) => {
                 const status = VORGANG_STATUS[v.status];
+                // Der Betreff hat die volle Breite zwischen Kreis und Pfeil;
+                // Nummer, Art, Bereich, Gemeinde und Zeit stehen darunter, die
+                // Marken in einer eigenen Zeile (12.10.2026: vorher standen die
+                // Marken rechts daneben, der Betreff lief in einer 90 px schmalen
+                // Spalte über fünf Zeilen, mit erzwungener Silbentrennung).
+                const angaben = [
+                  `Nr. ${v.id}`,
+                  `${artKurz(v.art)}${v.bereich ? ` · ${bereichLabel(v.bereich)}` : ''}`,
+                  istZugeordnet(v) ? v.gemeinde_name ?? `Gemeinde ${v.organization_id}` : ohneGemeindeText(v),
+                  datumUhrzeit(v.letzte_aktivitaet),
+                ];
                 return (
                   <div
                     key={v.id}
@@ -251,27 +307,24 @@ const Vorgaenge: React.FC = () => {
                     <div className="app-list-item__row">
                       <div className="app-list-item__main">
                         <div className="app-zaehler-anker">
-                          <div className="app-icon-circle app-icon-circle--lg app-icon-circle--organizations">
-                            <IonIcon icon={ICON_ORGANISATION} />
+                          {/* Symbol und Farbe der Art, dieselbe Zuordnung wie im Browser
+                              (ART_SYMBOL, ART_FARBE); bis 12.10.2026 trug jede Zeile
+                              dasselbe Gebäude. */}
+                          <div className={`app-icon-circle app-icon-circle--lg app-icon-circle--${ART_FARBE[v.art] ?? 'neutral'}`}>
+                            <IonIcon icon={ART_SYMBOL[v.art] ?? ART_SYMBOL.sonstiges} />
                           </div>
                           <ZaehlerKugel anzahl={v.ungelesen} label="ungelesene Mails" />
                         </div>
                         <div className="app-list-item__content">
-                          <div className="app-list-item__title" style={{ hyphens: 'auto', overflowWrap: 'break-word' }}>{v.betreff || '(ohne Betreff)'}</div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">Nr. {v.id}</span>
-                            <span className="app-list-item__meta-item">{artKurz(v.art)}{v.bereich ? ` · ${bereichLabel(v.bereich)}` : ''}</span>
-                            <span className="app-list-item__meta-item">{istZugeordnet(v) ? v.gemeinde_name ?? `Gemeinde ${v.organization_id}` : ohneGemeindeText(v)}</span>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />
-                              {datumUhrzeit(v.letzte_aktivitaet)}
-                            </span>
+                          <div className="app-list-item__title">{v.betreff || '(ohne Betreff)'}</div>
+                          <Angabenzeile angaben={angaben} />
+                          <div className="support-listenzeile__marken">
+                            {v.dringlichkeit === 'dringend' && <Marke text="Dringend" farbe="var(--app-color-danger)" />}
+                            <Marke text={status.kurz} farbe={STATUS_FARBE[v.status]} />
                           </div>
                         </div>
                       </div>
-                      {v.dringlichkeit === 'dringend' && <span style={{ marginRight: 'var(--app-abstand-eng)' }}><Marke text="Dringend" farbe="var(--app-color-danger)" /></span>}
-                      <Marke text={status.kurz} farbe={STATUS_FARBE[v.status]} />
-                      <IonIcon icon={ICON_WEITER_GEFUELLT} aria-hidden="true" style={{ color: 'var(--app-text-system)', marginLeft: 'var(--app-abstand-eng)' }} />
+                      <IonIcon icon={ICON_WEITER_GEFUELLT} aria-hidden="true" className="support-listenzeile__pfeil" />
                     </div>
                   </div>
                 );

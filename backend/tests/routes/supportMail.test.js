@@ -16,6 +16,7 @@ const { generateToken } = require('../helpers/auth');
 const { invalidateUserCache } = require('../../middleware/rbac');
 const { SUPPORT, supportKontoAnlegen, supportToken } = require('../helpers/kontoOhneGemeinde');
 const { STANDARD_EINSTELLUNGEN } = require('../../utils/mailEinstellungen');
+const { vorgaengeDaten } = require('../helpers/vorgaengeDaten');
 
 const MAIL_ENV = Object.freeze({
   MAIL_IMAP_HOST: 'imap.example.test',
@@ -351,10 +352,12 @@ describe('/api/support -- Support-Mail', () => {
       const { m1, m2, m3, m4 } = await faden();
       const res = await als(SUPER()).get(`/api/support/mail/nachrichten/${m4}`);
       expect(res.status).toBe(200);
-      expect(Object.keys(res.body).sort()).toEqual([...NACHRICHT_FELDER, 'verlauf'].sort());
+      // absender_bekannt: additiv seit 12.10.2026, nur an der obersten Ebene
+      expect(Object.keys(res.body).sort()).toEqual([...NACHRICHT_FELDER, 'verlauf', 'absender_bekannt'].sort());
       expect(res.body).toMatchObject({ id: m4, richtung: 'aus', message_id: '<kq-4@konfi-quest.de>', in_reply_to: '<m3@x>' });
+      expect(res.body.absender_bekannt).toBeNull();
       expect(res.body.verlauf.map((m) => m.id)).toEqual([m1, m2, m3, m4]);
-      expect(Object.keys(res.body.verlauf[0]).sort()).toEqual(NACHRICHT_FELDER);
+      for (const m of res.body.verlauf) expect(Object.keys(m).sort()).toEqual(NACHRICHT_FELDER);
     });
 
     it('eine Mail ohne Bezug: der Verlauf ist nur sie selbst', async () => {
@@ -365,6 +368,117 @@ describe('/api/support -- Support-Mail', () => {
     it('404 ohne Mail, 400 bei ungültiger Kennung', async () => {
       expect((await als(SUPER()).get('/api/support/mail/nachrichten/999999')).status).toBe(404);
       expect((await als(SUPER()).get('/api/support/mail/nachrichten/abc')).status).toBe(400);
+    });
+  });
+
+  // ==========================================================================
+  // absender_bekannt (additiv seit 12.10.2026): gehoert der Absender einer
+  // Mail im Posteingang zu einer Gemeinde? Regel-Stelle gemeindeDesKontos.
+  // ==========================================================================
+  describe('GET /mail/nachrichten/:id -- absender_bekannt', () => {
+    const detail = async (id) => {
+      const res = await als(SUPER()).get(`/api/support/mail/nachrichten/${id}`);
+      expect(res.status).toBe(200);
+      return res.body;
+    };
+    const adresse = (userId, email) => db.query('UPDATE users SET email = $2 WHERE id = $1', [userId, email]);
+    const vorgang = (f) => vorgaengeDaten(db).vorgang(f);
+
+    it('erlaubt: das eine Konto der Gemeindeleitung (eine Gemeinde), ohne offenen Vorgang -- 0 und vorgang_id null; nicht im Verlauf', async () => {
+      await adresse(USERS.orgAdmin2.id, ' Leitung@Andere.example ');
+      const m = await mail({ von_adresse: 'leitung@andere.example', postfach: 'support' });
+      // zaehlen nicht: erledigt, von Hand archiviert, Vorgang einer anderen Gemeinde
+      await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'erledigt' });
+      await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'in_arbeit', archiviert_am: new Date() });
+      await vorgang({ organization_id: ORGS.testGemeinde.id, status: 'neu' });
+      const body = await detail(m);
+      expect(body.absender_bekannt).toEqual({
+        organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde', offene_vorgaenge: 0, vorgang_id: null,
+      });
+      expect(body.verlauf.map((x) => Object.keys(x).sort())).toEqual([NACHRICHT_FELDER]);
+    });
+
+    it('erlaubt: ein offener Vorgang -- 1 und seine Kennung', async () => {
+      await adresse(USERS.admin2.id, 'admin@andere.example');
+      const offen = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'wartet' });
+      const m = await mail({ von_adresse: 'admin@andere.example' });
+      expect((await detail(m)).absender_bekannt).toEqual({
+        organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde', offene_vorgaenge: 1, vorgang_id: offen,
+      });
+    });
+
+    it('erlaubt: zwei offene Vorgänge -- 2 und der zuletzt angelegte (nach created_at, nicht nach Kennung)', async () => {
+      await adresse(USERS.teamer2.id, 'teamer@andere.example');
+      const juenger = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'in_arbeit', created_at: '2026-10-05T08:00:00Z' });
+      const aelter = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'neu', created_at: '2026-10-01T08:00:00Z' });
+      expect(aelter).toBeGreaterThan(juenger);
+      const m = await mail({ von_adresse: 'teamer@andere.example' });
+      expect((await detail(m)).absender_bekannt).toEqual({
+        organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde', offene_vorgaenge: 2, vorgang_id: juenger,
+      });
+    });
+
+    it('gemeinde_name ist der Anzeigename der Gemeinde, ohne ihn der Name; beide Quellen der Zugehörigkeit zählen', async () => {
+      // Konto mit Konfi-Stamm-Gemeinde 1 und Teamer-Mitgliedschaft in Gemeinde 2 (user_organizations)
+      await adresse(USERS.konfi1.id, 'gast@x.example');
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.konfi1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+      await db.query("UPDATE organizations SET display_name = 'Ev.-Luth. Kirchengemeinde Anders' WHERE id = $1", [ORGS.andereGemeinde.id]);
+      const m = await mail({ von_adresse: 'gast@x.example' });
+      expect((await detail(m)).absender_bekannt).toMatchObject({ organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Ev.-Luth. Kirchengemeinde Anders' });
+      await db.query("UPDATE organizations SET display_name = '  ' WHERE id = $1", [ORGS.andereGemeinde.id]);
+      expect((await detail(m)).absender_bekannt).toMatchObject({ organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde' });
+    });
+
+    it('verboten: unbekannt, ohne Absender, Konfi-Konto, gesperrtes Konto, zwei Konten mit der Adresse -- null', async () => {
+      await adresse(USERS.konfi3.id, 'konfi@x.example');
+      await adresse(USERS.admin1.id, 'doppelt@x.example');
+      await adresse(USERS.admin2.id, 'doppelt@x.example');
+      await adresse(USERS.teamer2.id, 'gesperrt@x.example');
+      await db.query('UPDATE users SET is_active = false WHERE id = $1', [USERS.teamer2.id]);
+      for (const von of ['niemand@x.example', null, 'konfi@x.example', 'gesperrt@x.example', 'doppelt@x.example']) {
+        const m = await mail({ von_adresse: von });
+        expect([von, (await detail(m)).absender_bekannt]).toEqual([von, null]);
+      }
+    });
+
+    it('verboten: ein Konto in zwei Gemeinden ist nicht eindeutig -- null; Gegenprobe ohne die zweite Gemeinde: bekannt', async () => {
+      await adresse(USERS.teamer1.id, 'zwei@x.example');
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
+        [USERS.teamer1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+      const m = await mail({ von_adresse: 'zwei@x.example' });
+      expect((await detail(m)).absender_bekannt).toBeNull();
+      await db.query('DELETE FROM user_organizations WHERE user_id = $1', [USERS.teamer1.id]);
+      expect((await detail(m)).absender_bekannt).toEqual({
+        organization_id: ORGS.testGemeinde.id, gemeinde_name: 'Test-Gemeinde St. Martin', offene_vorgaenge: 0, vorgang_id: null,
+      });
+    });
+
+    it('Sperre je Gemeinde: Konfi in Gemeinde 1, im Team nur in Gemeinde 2 -- dort gesperrt: null; Gegenprobe dort frei: Gemeinde 2', async () => {
+      await adresse(USERS.konfi1.id, 'gesperrt-gast@x.example');
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, false)',
+        [USERS.konfi1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+      const offen = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'neu' });
+      const m = await mail({ von_adresse: 'gesperrt-gast@x.example' });
+      // Kein „In Vorgang N einsortieren" für eine Gemeinde, in der das Konto gesperrt ist.
+      expect((await detail(m)).absender_bekannt).toBeNull();
+      await db.query('UPDATE user_organizations SET is_active = true WHERE user_id = $1', [USERS.konfi1.id]);
+      expect((await detail(m)).absender_bekannt).toEqual({
+        organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde', offene_vorgaenge: 1, vorgang_id: offen,
+      });
+    });
+
+    it('verboten: ausgehende Mail und Mail in einem Vorgang -- null, auch bei bekanntem Absender; Gegenprobe im Posteingang: bekannt', async () => {
+      await adresse(USERS.orgAdmin2.id, 'leitung@andere.example');
+      const v = await vorgang({ organization_id: ORGS.andereGemeinde.id, status: 'in_arbeit' });
+      const aus = await mail({ richtung: 'aus', von_adresse: 'leitung@andere.example' });
+      const imVorgang = await vorgaengeDaten(db).mail({ vorgang_id: v, von_adresse: 'leitung@andere.example' });
+      const posteingang = await mail({ von_adresse: 'leitung@andere.example' });
+      expect((await detail(aus)).absender_bekannt).toBeNull();
+      expect((await detail(imVorgang)).absender_bekannt).toBeNull();
+      expect((await detail(posteingang)).absender_bekannt).toEqual({
+        organization_id: ORGS.andereGemeinde.id, gemeinde_name: 'Andere Gemeinde', offene_vorgaenge: 1, vorgang_id: v,
+      });
     });
   });
 

@@ -11,6 +11,7 @@
 // Form der Vertrag offenlaesst. Die Seiten tragen nur Darstellung und Aufrufe.
 
 import type {
+  AbsenderBekannt,
   GemeindeKurz,
   MailAntwortDaten,
   MailBaustein,
@@ -24,8 +25,8 @@ import type {
 } from '../types/support';
 import { datumKurz } from './dateUtils';
 // Nur Typen: supportVorgaenge liest zur Laufzeit von hier, nicht umgekehrt.
-import type { Kennzahl, StandTon } from './supportVorgaenge';
-import { MAIL_ARCHIV_SATZ, kennzahlLabel } from '../seiten/supportDetail';
+import type { Kennzahl, StandTon, VorgangStatus } from './supportVorgaenge';
+import { MAIL_ARCHIV_SATZ, MAIL_DETAIL_TEXT, kennzahlLabel } from '../seiten/supportDetail';
 
 // --- Postfaecher -------------------------------------------------------------
 
@@ -269,15 +270,27 @@ export function bausteinEinfuegen(
   return { betreff, text: neuerText };
 }
 
+/** Was nur die Antwort im Vorgang mitschickt (additiv seit 12.10.2026). */
+export interface AntwortZusatz {
+  /** „Danach": der Status nach dem Senden. */
+  status?: VorgangStatus | null;
+  /** Die angezeigte, beantwortete Mail (ihre ID). */
+  antwortAuf?: number | null;
+}
+
 /**
  * Koerper fuer POST …/antworten: Text ohne Leerraum am Ende, Betreff nur,
  * wenn einer dasteht (sonst setzt ihn der Server), `an` nur bei Gemeinden.
+ * Im Vorgang dazu `status` („Danach") und `antwort_auf` (die beantwortete
+ * Mail) -- jeweils nur, wenn es sie gibt; ältere Server übergehen beide.
  */
-export function antwortKoerper(entwurf: AntwortEntwurf, an?: string | null): MailAntwortDaten {
+export function antwortKoerper(entwurf: AntwortEntwurf, an?: string | null, zusatz: AntwortZusatz = {}): MailAntwortDaten {
   const koerper: MailAntwortDaten = { text: entwurf.text.replace(/\s+$/, '') };
   const betreff = entwurf.betreff.trim();
   if (betreff) koerper.betreff = betreff;
   if (an) koerper.an = an;
+  if (zusatz.status) koerper.status = zusatz.status;
+  if (typeof zusatz.antwortAuf === 'number' && Number.isInteger(zusatz.antwortAuf) && zusatz.antwortAuf > 0) koerper.antwort_auf = zusatz.antwortAuf;
   return koerper;
 }
 
@@ -549,8 +562,67 @@ export function gemeindenSortiert(gemeinden: readonly GemeindeKurz[]): GemeindeK
 
 // --- Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E) ----------
 
-/** GET /support/mail/nachrichten/:id mit den Feldern, die der Server zusätzlich liefert. */
-export type MailMitVorgang = MailVerlauf & { vorgang_id?: number | null; archiviert_am?: string | null };
+/**
+ * GET /support/mail/nachrichten/:id mit den Feldern, die der Server zusätzlich
+ * liefert: `vorgang_id` und `archiviert_am` (Migration 195), `absender_bekannt`
+ * (additiv seit 12.10.2026; ältere Server liefern es nicht).
+ */
+export type MailMitVorgang = MailVerlauf & {
+  vorgang_id?: number | null;
+  archiviert_am?: string | null;
+  absender_bekannt?: AbsenderBekannt | null;
+};
+
+const kennungOderNull = (wert: unknown): number | null => (typeof wert === 'number' && Number.isInteger(wert) && wert > 0 ? wert : null);
+
+/**
+ * `absender_bekannt` lesen. Fehlt das Feld (älterer Server) oder ist es
+ * kaputt -- keine Gemeinde, kein Name, keine Zahl, eine Vorgangs-Kennung, die
+ * keine ist --, dann null: Die Zeile „Absender gehört zu …" entfällt.
+ */
+export function absenderBekanntLesen(roh: unknown): AbsenderBekannt | null {
+  if (!roh || typeof roh !== 'object' || Array.isArray(roh)) return null;
+  const a = roh as Record<string, unknown>;
+  const organizationId = kennungOderNull(a.organization_id);
+  const name = textOderNull(a.gemeinde_name);
+  const offene = a.offene_vorgaenge;
+  if (organizationId === null || name === null || typeof offene !== 'number' || !Number.isInteger(offene) || offene < 0) return null;
+  const vorgangId = a.vorgang_id === null || a.vorgang_id === undefined ? null : kennungOderNull(a.vorgang_id);
+  if (vorgangId === null && a.vorgang_id !== null && a.vorgang_id !== undefined) return null;
+  return { organization_id: organizationId, gemeinde_name: name, offene_vorgaenge: offene, vorgang_id: vorgangId };
+}
+
+/**
+ * GET /support/mail/nachrichten/:id lesen: die Mail, wie der Server sie
+ * schickt, mit `absender_bekannt` durch den Leser (immer da: Angabe oder
+ * null). Ohne Kennung: null.
+ */
+export function mailMitVorgangLesen(daten: unknown): MailMitVorgang | null {
+  if (!daten || typeof daten !== 'object' || Array.isArray(daten)) return null;
+  const roh = daten as MailMitVorgang & { absender_bekannt?: unknown };
+  if (typeof roh.id !== 'number') return null;
+  return { ...roh, absender_bekannt: absenderBekanntLesen(roh.absender_bekannt) };
+}
+
+/** Die Zeile „Absender gehört zu …" einer Mail im Posteingang (Frage 11). */
+export interface MailAbsenderAngabe {
+  /** „Absender gehört zu {Gemeinde} · 2 offene Vorgänge" bzw. „· kein offener Vorgang". */
+  satz: string;
+  organizationId: number;
+  /** Der jüngste offene Vorgang der Gemeinde: Knopf „In Vorgang N einsortieren" und Vorbelegung; null ohne. */
+  vorgangId: number | null;
+}
+
+/**
+ * Was die Seite einer Mail über ihren Absender sagt: nur im Posteingang und
+ * nur, wenn der Server die Gemeinde kennt (`absender_bekannt`, Regel-Stelle
+ * gemeindeDesKontos im Server). Sonst null -- auch bei einem älteren Server.
+ */
+export function mailAbsenderAngabe(m: MailMitVorgang): MailAbsenderAngabe | null {
+  const a = m.absender_bekannt ?? null;
+  if (!a || !mailImPosteingang(m)) return null;
+  return { satz: MAIL_DETAIL_TEXT.absender(a.gemeinde_name, a.offene_vorgaenge), organizationId: a.organization_id, vorgangId: a.vorgang_id };
+}
 
 /**
  * Liegt die Mail im Posteingang? Nur, wenn sie weder einem Vorgang noch einer
@@ -561,6 +633,25 @@ export type MailMitVorgang = MailVerlauf & { vorgang_id?: number | null; archivi
  */
 export function mailImPosteingang(m: Pick<MailNachricht, 'anfrage_id' | 'organization_id'> & { vorgang_id?: number | null }): boolean {
   return (m.vorgang_id ?? null) === null && m.anfrage_id === null && m.organization_id === null;
+}
+
+/**
+ * Worauf im Posteingang geantwortet wird: die jüngste eingehende Mail des
+ * Fadens (chronologisch, fadenAus), die selbst im Posteingang liegt -- sonst
+ * die geöffnete. Der Faden läuft über die Kopfzeilen
+ * (backend/utils/mailNachrichten.js, fadenIds) und kann Mails aus Vorgängen
+ * enthalten; der Server gibt der Antwort die Zuordnung und das Postfach der
+ * beantworteten Mail (backend/routes/supportMail.js,
+ * POST /mail/nachrichten/:id/antworten). So bleibt eine Antwort von der Seite
+ * einer Mail im Posteingang dort, wie damals, als sie an die Mail aus der
+ * Adresse ging. Fehlen an einem Eintrag die Spalten der Zuordnung, gilt er als
+ * nicht zugeordnet.
+ */
+export function posteingangsAntwortAuf(faden: readonly MailNachricht[], mail: MailNachricht | null): MailNachricht | null {
+  const imPosteingang = (m: MailNachricht) => mailImPosteingang({
+    vorgang_id: m.vorgang_id ?? null, anfrage_id: m.anfrage_id ?? null, organization_id: m.organization_id ?? null,
+  });
+  return [...faden].reverse().find((m) => m.richtung === 'ein' && imPosteingang(m)) ?? mail;
 }
 
 /**

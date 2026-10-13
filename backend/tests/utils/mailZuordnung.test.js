@@ -254,6 +254,16 @@ describe('mailZuordnen', () => {
       await email(USERS.orgAdmin2.id, 'leitung@andere.example');
       expect((await zuordnen({ vonAdresse: 'leitung@andere.example' })).regel).toBe(5);
     });
+
+    it('eine Gemeinde, in der das Konto gesperrt ist, zählt nicht: in der zweiten gesperrt -> neuer Vorgang der Stamm-Gemeinde', async () => {
+      await email(USERS.teamer1.id, 'team@test.example');
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, false)',
+        [USERS.teamer1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+      expect(await support('team@test.example')).toEqual(NEU(ORGS.testGemeinde.id));
+      // Gegenprobe: dort frei -> zwei Gemeinden, nicht eindeutig.
+      await db.query('UPDATE user_organizations SET is_active = true WHERE user_id = $1', [USERS.teamer1.id]);
+      expect((await support('team@test.example')).regel).toBe(5);
+    });
   });
 
   describe('gemeindeDesKontos (Regel 4 und das Formular auf der Homepage)', () => {
@@ -265,6 +275,29 @@ describe('mailZuordnen', () => {
       await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id) VALUES ($1, $2, $3)',
         [USERS.konfi1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
       expect(await gemeindeDesKontos(db, 'gast@x.example')).toBe(ORGS.andereGemeinde.id);
+    });
+
+    it('Sperre je Gemeinde (user_organizations.is_active): eine gesperrte Gemeinde zählt nicht, in der Stamm-Gemeinde wie in einer weiteren', async () => {
+      const zeile = (orgId, roleId, aktiv) => db.query(
+        `INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (user_id, organization_id) DO UPDATE SET is_active = EXCLUDED.is_active`,
+        [USERS.teamer1.id, orgId, roleId, aktiv]);
+      await email(USERS.teamer1.id, 'sperre@x.example');
+      // Stamm-Gemeinde frei, in der weiteren gesperrt: die Stamm-Gemeinde.
+      await zeile(ORGS.andereGemeinde.id, ROLES.teamer2.id, false);
+      expect(await gemeindeDesKontos(db, 'sperre@x.example')).toBe(ORGS.testGemeinde.id);
+      // In der Stamm-Gemeinde gesperrt (ihre Zeile), in der weiteren frei: die weitere.
+      await zeile(ORGS.andereGemeinde.id, ROLES.teamer2.id, true);
+      await zeile(ORGS.testGemeinde.id, USERS.teamer1.role_id, false);
+      expect(await gemeindeDesKontos(db, 'sperre@x.example')).toBe(ORGS.andereGemeinde.id);
+      // In beiden gesperrt: keine.
+      await zeile(ORGS.andereGemeinde.id, ROLES.teamer2.id, false);
+      expect(await gemeindeDesKontos(db, 'sperre@x.example')).toBeNull();
+      // Konfi in der Stamm-Gemeinde, Team-Mitgliedschaft nur in einer gesperrten Gemeinde: keine.
+      await email(USERS.konfi1.id, 'konfi-gast@x.example');
+      await db.query('INSERT INTO user_organizations (user_id, organization_id, role_id, is_active) VALUES ($1, $2, $3, false)',
+        [USERS.konfi1.id, ORGS.andereGemeinde.id, ROLES.teamer2.id]);
+      expect(await gemeindeDesKontos(db, 'konfi-gast@x.example')).toBeNull();
     });
 
     it('sonst null: unbekannt, leer, Konfi, zwei Konten, zwei Gemeinden', async () => {

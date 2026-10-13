@@ -32,8 +32,12 @@ import {
   zaehlerLesen,
   zitateTrennen,
   mailImPosteingang,
+  posteingangsAntwortAuf,
   mailKennzahlen,
   mailStand,
+  absenderBekanntLesen,
+  mailAbsenderAngabe,
+  mailMitVorgangLesen,
   mailWeiterleitung,
   type MailMitVorgang,
 } from '../../utils/supportMail';
@@ -245,6 +249,18 @@ describe('Antworten senden', () => {
     expect(antwortKoerper({ betreff: '', text: 'Hallo' }, 'leitung@example.org')).toEqual({ text: 'Hallo', an: 'leitung@example.org' });
   });
 
+  it('Koerper im Vorgang (additiv seit 12.10.2026): „Danach" als status und die beantwortete Mail als antwort_auf -- nur, wenn es sie gibt', () => {
+    expect(antwortKoerper({ betreff: 'Re: Frage', text: 'Hallo' }, 'leitung@example.org', { status: 'wartet', antwortAuf: 13 }))
+      .toEqual({ text: 'Hallo', betreff: 'Re: Frage', an: 'leitung@example.org', status: 'wartet', antwort_auf: 13 });
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { status: 'erledigt' })).toEqual({ text: 'Hallo', status: 'erledigt' });
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { antwortAuf: 13 })).toEqual({ text: 'Hallo', antwort_auf: 13 });
+    // Ohne „Danach" und ohne beantwortete Mail bleibt der Körper, wie er war -- auch keine leeren Felder.
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { status: null, antwortAuf: null })).toEqual({ text: 'Hallo' });
+    // Keine Kennung: kein antwort_auf (der Server lehnte sonst mit 400 ab).
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { antwortAuf: 0 })).toEqual({ text: 'Hallo' });
+    expect(antwortKoerper({ betreff: '', text: 'Hallo' }, null, { antwortAuf: 1.5 })).toEqual({ text: 'Hallo' });
+  });
+
   it('vor dem Senden: Empfaenger (wenn noetig), dann Text', () => {
     expect(antwortFehler({ betreff: '', text: 'x' }, true, '')).toBe('Bitte einen Empfänger wählen');
     expect(antwortFehler({ betreff: '', text: '  ' })).toBe('Bitte einen Text schreiben');
@@ -379,6 +395,31 @@ describe('Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E)
     expect(mailImPosteingang({ anfrage_id: null, organization_id: 7, vorgang_id: null })).toBe(false);
   });
 
+  it('worauf im Posteingang geantwortet wird: die jüngste eingehende Mail des Fadens, die selbst im Posteingang liegt -- sonst die geöffnete', () => {
+    // Der Faden läuft über die Kopfzeilen und kann Mails aus Vorgängen, Anfragen und Gemeinden enthalten;
+    // der Server gibt der Antwort die Zuordnung der beantworteten Mail.
+    const geoeffnet = mail(1, { gesendet_am: '2026-10-01T08:00:00Z' });
+    const faden: Array<MailNachricht> = [
+      geoeffnet,
+      mail(2, { gesendet_am: '2026-10-02T08:00:00Z', postfach: 'support' }),
+      mail(3, { gesendet_am: '2026-10-03T08:00:00Z', vorgang_id: 9 }),
+      mail(4, { gesendet_am: '2026-10-04T08:00:00Z', anfrage_id: 41 }),
+      mail(5, { gesendet_am: '2026-10-05T08:00:00Z', organization_id: 7 }),
+      mail(6, { gesendet_am: '2026-10-06T08:00:00Z', richtung: 'aus' }),
+    ];
+    expect(posteingangsAntwortAuf(faden, geoeffnet)?.id).toBe(2);
+    // Keine andere eingehende im Posteingang: die geöffnete selbst.
+    expect(posteingangsAntwortAuf([geoeffnet, ...faden.slice(2)], geoeffnet)?.id).toBe(1);
+    // Ohne Faden (noch nicht geladen): die geöffnete; ohne beides null.
+    expect(posteingangsAntwortAuf([], geoeffnet)?.id).toBe(1);
+    expect(posteingangsAntwortAuf([], null)).toBeNull();
+    // Fehlen die Spalten der Zuordnung an einem Eintrag, gilt er als nicht zugeordnet.
+    const ohneSpalten = { ...mail(7, { gesendet_am: '2026-10-07T08:00:00Z' }) } as Partial<MailNachricht>;
+    delete ohneSpalten.anfrage_id;
+    delete ohneSpalten.organization_id;
+    expect(posteingangsAntwortAuf([...faden, ohneSpalten as MailNachricht], geoeffnet)?.id).toBe(7);
+  });
+
   it('Weiterleitung: in den Vorgang mit der Mail offen, sonst Anfrage oder Gemeinde; im Posteingang keine', () => {
     expect(mailWeiterleitung({ id: 5, vorgang_id: 2, anfrage_id: 41, organization_id: 7 })).toBe('/admin/support/vorgaenge/2?mail=5');
     expect(mailWeiterleitung({ id: 5, vorgang_id: null, anfrage_id: 41, organization_id: null })).toBe('/admin/support/anfragen/41');
@@ -407,6 +448,48 @@ describe('Detailseite einer Mail (docs/planung/support-detailseiten.md, D und E)
     });
     // Auch eine ältere Zuordnung nur über die Anfrage zählt.
     expect(mailStand(mitVorgang({ anfrage_id: 41 }))).toMatchObject({ archivierbar: false, loeschbar: false, weiterleitung: '/admin/support/anfragen/41' });
+  });
+
+  it('absender_bekannt lesen: die Angabe, wie der Server sie schickt -- fehlt sie oder ist sie kaputt, null', () => {
+    const gut = { organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: 2, vorgang_id: 5 };
+    expect(absenderBekanntLesen(gut)).toEqual(gut);
+    expect(absenderBekanntLesen({ ...gut, offene_vorgaenge: 0, vorgang_id: null })).toEqual({ ...gut, offene_vorgaenge: 0, vorgang_id: null });
+    // Der Name ohne Leerraum drumherum; ein fehlender vorgang_id gilt als keiner.
+    expect(absenderBekanntLesen({ organization_id: 7, gemeinde_name: ' Musterdorf ', offene_vorgaenge: 1 })).toEqual({ organization_id: 7, gemeinde_name: 'Musterdorf', offene_vorgaenge: 1, vorgang_id: null });
+    for (const kaputt of [
+      undefined, null, 'Musterdorf', [gut], {},
+      { ...gut, organization_id: null }, { ...gut, organization_id: '7' }, { ...gut, organization_id: 0 },
+      { ...gut, gemeinde_name: '' }, { ...gut, gemeinde_name: '  ' }, { ...gut, gemeinde_name: null },
+      { ...gut, offene_vorgaenge: -1 }, { ...gut, offene_vorgaenge: 1.5 }, { ...gut, offene_vorgaenge: '2' },
+      { ...gut, vorgang_id: 'fünf' }, { ...gut, vorgang_id: 0 },
+    ]) {
+      expect(absenderBekanntLesen(kaputt), JSON.stringify(kaputt)).toBeNull();
+    }
+  });
+
+  it('das Mail-Detail lesen: absender_bekannt immer durch den Leser (älterer Server: null); ohne Kennung keine Mail', () => {
+    const roh = { ...mail(5), verlauf: [], vorgang_id: null, archiviert_am: null };
+    expect(mailMitVorgangLesen(roh)?.absender_bekannt).toBeNull();
+    expect(mailMitVorgangLesen({ ...roh, absender_bekannt: { organization_id: 7 } })?.absender_bekannt).toBeNull();
+    expect(mailMitVorgangLesen({ ...roh, absender_bekannt: { organization_id: 7, gemeinde_name: 'Musterdorf', offene_vorgaenge: 0, vorgang_id: null } })?.absender_bekannt)
+      .toEqual({ organization_id: 7, gemeinde_name: 'Musterdorf', offene_vorgaenge: 0, vorgang_id: null });
+    expect(mailMitVorgangLesen({ ...roh, id: '5' })).toBeNull();
+    expect(mailMitVorgangLesen(null)).toBeNull();
+    expect(mailMitVorgangLesen([roh])).toBeNull();
+  });
+
+  it('die Zeile über den Absender: nur im Posteingang und nur mit Angabe des Servers; Zahlwort für 0, 1 und mehr', () => {
+    const absender = (offene: number, vorgang_id: number | null) => ({ organization_id: 7, gemeinde_name: 'Kirchengemeinde Musterdorf', offene_vorgaenge: offene, vorgang_id });
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: absender(2, 5) })))
+      .toEqual({ satz: 'Absender gehört zu Kirchengemeinde Musterdorf · 2\u00a0offene Vorgänge', organizationId: 7, vorgangId: 5 });
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: absender(1, 5) }))?.satz).toBe('Absender gehört zu Kirchengemeinde Musterdorf · 1\u00a0offener Vorgang');
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: absender(0, null) })))
+      .toEqual({ satz: 'Absender gehört zu Kirchengemeinde Musterdorf · kein offener Vorgang', organizationId: 7, vorgangId: null });
+    expect(mailAbsenderAngabe(mitVorgang())).toBeNull();
+    expect(mailAbsenderAngabe(mitVorgang({ absender_bekannt: null }))).toBeNull();
+    // Liegt die Mail woanders, leitet die Seite weiter -- keine Zeile.
+    expect(mailAbsenderAngabe(mitVorgang({ vorgang_id: 2, absender_bekannt: absender(2, 5) }))).toBeNull();
+    expect(mailAbsenderAngabe(mitVorgang({ anfrage_id: 41, absender_bekannt: absender(2, 5) }))).toBeNull();
   });
 
   it('Kennzahlen: Mails im Faden · Neu · Anhänge', () => {

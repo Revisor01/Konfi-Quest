@@ -157,6 +157,14 @@ describe('Gemeinde nur mit organization_id: Listen', () => {
     expect(zwei).not.toHaveTextContent('Kirchengemeinde Heide');
     expect(screen.getByRole('button', { name: /^Vorgang 3:/ })).toHaveTextContent('Noch nicht angelegt');
     expect(screen.getByRole('button', { name: /^Vorgang 1:/ })).toHaveTextContent('Kirchengemeinde Musterdorf');
+    // Die Zeile unter dem Betreff (12.10.2026) wie im Browser: Nr. · Art · Bereich · Gemeinde · Zeit.
+    const angaben = (n: number) => screen.getByRole('button', { name: new RegExp(`^Vorgang ${n}:`) })
+      .querySelector('.support-listenzeile__meta')!.textContent!.replace(/ · \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}$/, '');
+    expect([1, 2, 3].map(angaben)).toEqual([
+      'Nr. 1 · Fehler · Chat · Kirchengemeinde Musterdorf',
+      'Nr. 2 · Frage · Konten und Einladungen · Nicht zugeordnet',
+      'Nr. 3 · Neue Gemeinde · Noch nicht angelegt',
+    ]);
   });
 
   it('Übersicht: die neuesten Vorgänge nennen nur zugeordnete Gemeinden', async () => {

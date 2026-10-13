@@ -43,6 +43,7 @@ import WebPill from '../../web/WebPill';
 import WebTextfeld from '../../web/WebTextfeld';
 import {
   ARTEN,
+  ART_FARBE,
   ART_SYMBOL,
   BEREICHE,
   DRINGLICHKEITEN,
@@ -92,11 +93,16 @@ export const DringlichPill: React.FC<{ dringlichkeit: Dringlichkeit }> = ({ drin
 
 /**
  * Der Kreis vor dem Titel eines Vorgangs und in seiner Listenzeile: das
- * Symbol der Art (ART_SYMBOL) auf ihrer Farbe. Zierde (aria-hidden) -- die
- * Art steht immer auch als Wort daneben.
+ * Symbol der Art (ART_SYMBOL) auf ihrer Farbe (ART_FARBE, dieselbe Zuordnung
+ * wie der Kreis der App). Zierde (aria-hidden) -- die Art steht immer auch
+ * als Wort daneben.
  */
 export const VorgangKreis: React.FC<{ art: VorgangArt; gross?: boolean }> = ({ art, gross = false }) => (
-  <span className={`web-vorgang-kreis web-vorgang-kreis--${art}${gross ? ' web-vorgang-kreis--gross' : ''}`} aria-hidden="true">
+  <span
+    className={`web-vorgang-kreis${gross ? ' web-vorgang-kreis--gross' : ''}`}
+    style={{ '--web-vorgang-kreis-farbe': `var(--app-color-${ART_FARBE[art] ?? 'neutral'})` } as React.CSSProperties}
+    aria-hidden="true"
+  >
     <IonIcon icon={ART_SYMBOL[art] ?? ART_SYMBOL.sonstiges} />
   </span>
 );

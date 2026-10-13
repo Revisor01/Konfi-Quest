@@ -131,6 +131,11 @@ Versionsüberschrift.
   lassen sich dort ändern, auch per „Wunschlizenz übernehmen“.
 - Jede Mail eines Vorgangs lässt sich über ihr Menü in einen anderen Vorgang
   verschieben oder in einen neuen Vorgang herauslösen.
+- Gehört der Absender einer Mail im Posteingang zur Leitung oder zum Team
+  genau einer Gemeinde, steht darüber „Absender gehört zu … · 2 offene
+  Vorgänge“; „In Vorgang N einsortieren“ legt die Mail mit einem Klick in den
+  jüngsten offenen Vorgang dieser Gemeinde, und „Einsortieren“ ist mit diesem
+  Vorgang und der Gemeinde vorbelegt.
 - Im Browser lässt sich ein Vorgang oder eine Mail ohne Liste breit lesen,
   die Wahl gilt je Gerät; die Werkzeuge der Liste treten dann mit ihr
   zurück, damit die jüngste Mail gleich im Bild ist, ‹ › und die Pfeiltasten
@@ -197,8 +202,9 @@ Versionsüberschrift.
   jüngsten Mail, mit dem Fokus im Text; in der App zeigt das Fenster
   „Antworten“ die Mail, auf die man antwortet.
 - Nach einer Antwort auf einen offenen Vorgang lässt sich wählen, welchen
-  Status er bekommt (vorgewählt „Wartet auf Rückmeldung“); klappt das nicht,
-  steht dort „Gesendet, Status nicht gesetzt.“
+  Status er bekommt (vorgewählt „Wartet auf Rückmeldung“); er wird zusammen
+  mit dem Senden gesetzt. Klappt das nicht, steht dort „Gesendet, Status
+  nicht gesetzt.“
 - Als Empfänger einer Antwort stehen alle zur Wahl, die im Vorgang
   geschrieben haben, jeweils mit ihrer Herkunft.
 - Einordnen wird auch in der App erst mit „Speichern“ übernommen, und dabei
@@ -216,6 +222,12 @@ Versionsüberschrift.
 - In den Listen von Vorgängen und Posteingang im Browser steht vor jeder
   Zeile das Symbol der Art bzw. die Initialen des Absenders, bei Vorgängen
   darunter Nummer, Art und Gemeinde.
+- In der App nutzt der Betreff in den Listen von Vorgängen und Posteingang
+  die ganze Breite, vor jedem Vorgang steht das Symbol seiner Art, und
+  Art, Gemeinde und Suche stehen hinter dem Knopf „Filter“ in der
+  Kopfzeile, der zeigt, wie viele davon gesetzt sind. Im Posteingang steht
+  ein gestörtes Postfach als eine Zeile mit dem Grund statt als Kasten; zwei
+  Postfächer mit demselben Grund teilen sich eine Zeile.
 - Im Browser stehen zwei oder mehr Filter einer Liste hinter dem Knopf
   „Filter"; sie klappen darunter auf, und die Zeile mit Reitern und Suche
   bricht nicht mehr um.
@@ -536,6 +548,18 @@ Versionsüberschrift.
 - Vorleseprogramme lesen in den Listen von Vorgängen und Posteingang zu jeder
   Zeile auch Art, Gemeinde, Status und ungelesene Mails bzw. Postfach und
   Anhänge, nicht nur Nummer bzw. Absender und Betreff.
+- Eine Antwort im Vorgang bezieht sich im Mailprogramm der Empfänger:innen
+  auf die Mail, die unter „Du antwortest auf“ steht, statt auf die letzte
+  Mail des Verlaufs, die auch eine eigene Antwort sein konnte.
+- Eine Antwort aus dem Posteingang geht an die Person und von dem Postfach,
+  die über dem Editor stehen; öffnete man eine ältere Mail eines Gesprächs,
+  ging sie bisher an deren Absender.
+- Ein Klick auf eine der neuesten Mails in der Übersicht im Browser öffnet
+  ihren Vorgang direkt, statt erst über die Seite der Mail zu gehen.
+- Eine Mail an support@ von jemandem, der in einer zweiten Gemeinde gesperrt
+  ist, kommt in einen neuen Vorgang der eigenen Gemeinde statt in den
+  Posteingang; eine Gemeinde, in der das Konto gesperrt ist, zählt bei der
+  Zuordnung nicht mehr mit.
 - Die roten Zahlen im Chat laufen nach dem Verlassen eines Chats live weiter.
 - Ein bevorstehendes Pflicht-Event heißt in der Liste der Leitung „Pflicht"
   statt „Geschlossen".

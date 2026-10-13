@@ -11,6 +11,11 @@
 //   Ein Stand-Satz nur im Archiv („Im Archiv seit … · wird nach 180 Tagen
 //     gelöscht · Einsortieren holt sie zurück."); sonst keiner, und keine
 //     Karte mit Angaben -- sie wiederholte nur den Kopf.
+//   Kennt der Server den Absender (Frage 11, `absender_bekannt`, seit
+//     12.10.2026): eine Zeile „Absender gehört zu {Gemeinde} · 2 offene
+//     Vorgänge" und rechts „In Vorgang N einsortieren" -- ohne Dialog in den
+//     jüngsten offenen Vorgang der Gemeinde. Der Dialog „Einsortieren" ist
+//     dann vorbelegt (Vorgang bzw. Gemeinde).
 //   Der Verlauf flach (MailGespraeche), ohne Aktionen je Mail; darunter die
 //     Antwortzeile, ein Klick öffnet den Editor an dieser Stelle (G).
 //   Liegt die Mail in einem Vorgang (oder gehört sie zu einer Anfrage oder
@@ -26,13 +31,14 @@
 // Mail (Frage 6); ohne Rahmen bleibt sie stehen.
 
 import React, { useEffect, useState } from 'react';
-import { useIonRouter } from '@ionic/react';
-import { ICON_ANTWORTEN, ICON_ARCHIV, ICON_LISTE, ICON_LOESCHEN, ICON_MAIL, ICON_RUECKGAENGIG, ICON_WARNHINWEIS, ICON_WECHSEL } from '../../shared/icons';
-import { POSTFACH_INFO, betreffKern } from '../../../utils/supportMail';
+import { IonIcon, useIonRouter } from '@ionic/react';
+import { ICON_ANTWORTEN, ICON_ARCHIV, ICON_LISTE, ICON_LOESCHEN, ICON_MAIL, ICON_ORGANISATION, ICON_RUECKGAENGIG, ICON_WARNHINWEIS, ICON_WECHSEL } from '../../shared/icons';
+import { POSTFACH_INFO, betreffKern, type MailAbsenderAngabe } from '../../../utils/supportMail';
 import { mailsText, standZeit } from '../../../utils/supportVorgaenge';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 import { MAIL_DETAIL_TEXT, VERLAUF_TEXT } from '../../../seiten/supportDetail';
 import { usePostDetail } from '../usePostDetail';
+import { useDirektEinsortieren } from '../useEinsortieren';
 import { useMailWeiterleitung } from '../useMailWeiterleitung';
 import MailGespraeche from '../MailGespraeche';
 import WebKnopf from '../../web/WebKnopf';
@@ -58,12 +64,33 @@ export interface WebPostDetailProps {
   onEinsortiert?: () => void;
 }
 
+/**
+ * „Absender gehört zu {Gemeinde} · 2 offene Vorgänge" unter dem Kopf, rechts
+ * der Knopf „In Vorgang N einsortieren" (nur mit offenem Vorgang). Der Knopf
+ * steht neben dem Satz, nicht in ihm -- kein Knopf im Knopf.
+ */
+const AbsenderZeile: React.FC<{ absender: MailAbsenderAngabe; onEinsortieren: (vorgangId: number) => void; gesperrt: boolean }> = ({
+  absender, onEinsortieren, gesperrt,
+}) => {
+  const ziel = absender.vorgangId;
+  const knopf = ziel !== null ? MAIL_DETAIL_TEXT.inVorgang(ziel) : null;
+  return (
+    <div className="web-absender">
+      <IonIcon icon={ICON_ORGANISATION} className="web-absender__symbol" aria-hidden="true" />
+      <p className="web-absender__satz">{absender.satz}</p>
+      {ziel !== null && knopf && (
+        <WebKnopf klein title={knopf.titel} disabled={gesperrt} onClick={() => onEinsortieren(ziel)}>{knopf.label}</WebKnopf>
+      )}
+    </div>
+  );
+};
+
 const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht, onEinsortiert }) => {
   const rahmen = useLeseRahmen();
   const mitRahmen = rahmen !== LESE_RAHMEN_NEUTRAL;
   const {
     isOnline, mail, faden, neu, laedt, fehler, nichtGefunden, laden, letzteEingehende, archivieren, wiederherstellen, loeschenFragen,
-    stand, kennzahlen, antwort, weiterleitung,
+    stand, kennzahlen, antwort, weiterleitung, absender,
   } = usePostDetail(nachrichtId, mitRahmen ? () => rahmen.abgeschlossen(nachrichtId) : onGeloescht);
   // Nur, was schon beim Öffnen woanders lag; wird sie später einsortiert, bleibt der Posteingang stehen.
   const leitet = useMailWeiterleitung(weiterleitung, { mailId: mail?.id ?? null });
@@ -71,6 +98,12 @@ const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht,
   const stelle = useAntwortStelle();
   const [einsortieren, setEinsortieren] = useState(false);
   const router = useIonRouter();
+  // Einsortiert (Dialog oder „In Vorgang N einsortieren"): in den Vorgang, mit dieser Mail offen und hervorgehoben (E).
+  const nachEinsortieren = (id: number | null) => {
+    onEinsortiert?.();
+    if (id && mail) router.push(`/admin/support/vorgaenge/${id}?mail=${mail.id}`);
+  };
+  const direkt = useDirektEinsortieren(mail?.id ?? null, nachEinsortieren);
 
   // Ein getippter Entwurf ginge verloren, wenn der Rahmen nach Archivieren die nächste Mail öffnet:
   // vorher fragen (wie im Vorgang). Die Sammelleiste der Liste lässt eine Mail mit Entwurf offen.
@@ -150,7 +183,7 @@ const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht,
     <KopfKnopf key={a} {...MAIL_DETAIL_TEXT.wiederherstellen} icon={ICON_RUECKGAENGIG} symbol="unter600" onClick={() => { void wiederherstellen(); }} disabled={!isOnline} />
   )));
   const haupt = stand.haupt === 'einsortieren' ? (
-    <KopfKnopf {...MAIL_DETAIL_TEXT.einsortieren} icon={ICON_WECHSEL} art="primaer" onClick={() => setEinsortieren(true)} disabled={!isOnline} />
+    <KopfKnopf {...MAIL_DETAIL_TEXT.einsortieren} icon={ICON_WECHSEL} art="primaer" onClick={() => entwurfSchutz({ antwort: stelle.hatEntwurf(), notiz: false }, () => setEinsortieren(true))} disabled={!isOnline} />
   ) : null;
 
   const wer = letzteEingehende && letzteEingehende.richtung === 'ein'
@@ -165,6 +198,14 @@ const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht,
       aktionen={<KopfAktionen symbole={symbole} neben={neben} haupt={haupt} />}
     >
       {stand.satz && <StandZeile satz={stand.satz} ton={stand.ton ?? 'hinweis'} />}
+      {absender && (
+        // Nach dem Einsortieren gibt es hier kein Antworten mehr: ein getippter Entwurf ginge verloren -- erst fragen.
+        <AbsenderZeile
+          absender={absender}
+          onEinsortieren={(id) => entwurfSchutz({ antwort: stelle.hatEntwurf(), notiz: false }, () => { void direkt.einsortieren(id); })}
+          gesperrt={!isOnline || direkt.sendet}
+        />
+      )}
 
       <MailGespraeche
         key={mail.id}
@@ -179,8 +220,8 @@ const WebPostDetail: React.FC<WebPostDetailProps> = ({ nachrichtId, onGeloescht,
         <WebEinsortieren
           mail={{ id: mail.id, betreff: mail.betreff }}
           onSchliessen={() => setEinsortieren(false)}
-          // In den Vorgang, mit dieser Mail offen und hervorgehoben (E).
-          onFertig={(id) => { onEinsortiert?.(); if (id) router.push(`/admin/support/vorgaenge/${id}?mail=${mail.id}`); }}
+          vorgabe={absender ? { vorgangId: absender.vorgangId, organizationId: absender.organizationId } : null}
+          onFertig={nachEinsortieren}
         />
       )}
     </WebLesen>

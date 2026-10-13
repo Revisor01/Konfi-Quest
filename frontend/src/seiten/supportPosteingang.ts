@@ -54,4 +54,6 @@ export const POSTEINGANG_FILTER_BESCHRIFTUNG = 'Mails filtern';
 export const ZUGANGSDATEN_FEHLEN = {
   titel: 'Zugangsdaten fehlen',
   text: 'Ohne Benutzer, Passwort und IMAP-Server auf dem Server wird dieses Postfach nicht gelesen.',
+  /** Dieselbe Störung an mehreren Postfächern in einer Zeile („moin@ und support@ · …“). */
+  textMehrere: 'Ohne Benutzer, Passwort und IMAP-Server auf dem Server werden diese Postfächer nicht gelesen.',
 } as const;

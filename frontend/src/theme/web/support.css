@@ -505,7 +505,9 @@
    ändern (11.10.2026, web/WebVorgangTeile.tsx und die Dialoge daneben).
    =================================================================== */
 
-/* Der Kreis der Art -- im Kopf groß, in der Listenzeile klein. */
+/* Der Kreis der Art -- im Kopf groß, in der Listenzeile klein. Die Farbe
+   setzt VorgangKreis (web/WebVorgangTeile) aus ART_FARBE in
+   utils/supportVorgaenge.ts, derselben Zuordnung wie der Kreis der App. */
 .web-vorgang-kreis {
   --web-vorgang-kreis-farbe: var(--app-color-neutral);
   display: inline-flex;
@@ -525,15 +527,6 @@
   height: 44px;
   font-size: var(--app-text-titel);
 }
-
-.web-vorgang-kreis--neue_gemeinde { --web-vorgang-kreis-farbe: var(--app-color-success); }
-.web-vorgang-kreis--frage { --web-vorgang-kreis-farbe: var(--app-color-info); }
-.web-vorgang-kreis--fehler { --web-vorgang-kreis-farbe: var(--app-color-danger); }
-.web-vorgang-kreis--wunsch { --web-vorgang-kreis-farbe: var(--app-color-purple); }
-.web-vorgang-kreis--zugang { --web-vorgang-kreis-farbe: var(--app-color-warning); }
-.web-vorgang-kreis--lizenz { --web-vorgang-kreis-farbe: var(--app-color-categories); }
-.web-vorgang-kreis--datenschutz { --web-vorgang-kreis-farbe: var(--app-color-users); }
-.web-vorgang-kreis--sonstiges { --web-vorgang-kreis-farbe: var(--app-color-neutral); }
 
 /* Eine Marke, die Einordnen öffnet (Bereich fehlt, Keine Gemeinde). */
 .web-markenknopf {
@@ -735,6 +728,36 @@
 .web-stand__zusatz--warnung {
   color: var(--app-text-warnung);
   font-weight: var(--app-schrift-halbfett);
+}
+
+/* Eine Mail im Posteingang, deren Absender der Server kennt
+   (absender_bekannt): „Absender gehört zu {Gemeinde} · 2 offene Vorgänge",
+   rechts daneben „In Vorgang N einsortieren". Schmal bricht der Knopf unter
+   den Satz. Im Ton eines Hinweises -- der Satz sagt es auch. */
+.web-absender {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--app-abstand-eng) var(--app-abstand-mittel);
+  padding: var(--app-abstand-kompakt) var(--app-abstand-mittel);
+  border: 1px solid var(--app-rand-hinweis);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-flaeche-hinweis);
+  color: var(--app-text-hinweis-dunkel);
+}
+
+.web-absender__symbol {
+  flex: 0 0 auto;
+  font-size: var(--app-text-standard);
+}
+
+.web-absender__satz {
+  flex: 1 1 16em;
+  min-width: 0;
+  margin: 0;
+  font-size: var(--app-text-sekundaer);
+  font-weight: var(--app-schrift-mittel);
+  overflow-wrap: anywhere;
 }
 
 /* Die interne Notiz oben: höchstens drei Zeilen, dann „mehr". */

@@ -2,8 +2,8 @@
 // (docs/planung/support-vorgaenge.md, Entscheidung 7).
 //
 // Oben der Zustand der Postfächer -- eine Zeile, solange beide laufen, sonst
-// je gestörtem Postfach der Grund (nicht eingerichtet, Fehler beim Abholen,
-// auf diesem Server aus) --, darunter die Mails, die in keinem
+// je gestörtem Postfach eine Zeile mit dem Grund (nicht eingerichtet, Fehler
+// beim Abholen, auf diesem Server aus) --, darunter die Mails, die in keinem
 // Vorgang liegen und nicht archiviert sind -- neueste zuerst, ungelesene
 // hervorgehoben. Filter: Alle, Ungelesen, moin@, support@ und Archiv. Ein
 // Antippen öffnet die Mail mit ihrem Faden, zum Einsortieren, Archivieren,
@@ -30,11 +30,10 @@ import AppKopfzeile, { AppKopfzeileGross } from '../shared/AppKopfzeile';
 import EmptyState from '../shared/EmptyState';
 import LoadingSpinner from '../common/LoadingSpinner';
 import {
-  ICON_ANHANG,
   ICON_ARCHIV,
-  ICON_AT_ZEICHEN,
+  ICON_INFO,
   ICON_MAIL,
-  ICON_UHRZEIT,
+  ICON_WARNHINWEIS,
   ICON_WEITER_GEFUELLT,
 } from '../shared/icons';
 import type { MailPostfachStatus } from '../../types/support';
@@ -53,46 +52,59 @@ import {
   ZUGANGSDATEN_FEHLEN,
 } from '../../seiten/supportPosteingang';
 import { SUPPORT_START } from '../../navigation/supportMenue';
-import { Abschnitt, Ladefehler, Marke, NurSupport } from './SupportBausteine';
-import { Hinweis } from './SupportMailTeile';
+import { Abschnitt, Angabenzeile, Ladefehler, Marke, NurSupport } from './SupportBausteine';
 import { useSupportZurueck } from './useSupportZurueck';
 import { usePosteingang } from './usePosteingang';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
 import WebPosteingang from './web/WebPosteingang';
+import './SupportVorgangTeile.css';
 
-/** Der Zustand eines Postfachs: eingerichtet, zuletzt abgeholt, Fehler. */
-const PostfachZustand: React.FC<{ p: MailPostfachStatus }> = ({ p }) => {
-  const info = POSTFACH_INFO[p.postfach];
-  return (
-    <div style={{ padding: 'var(--app-abstand-eng) 0', borderBottom: '1px solid var(--app-border-soft)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-eng)', flexWrap: 'wrap' }}>
-        <strong style={{ color: 'var(--app-text-emphasis)', overflowWrap: 'anywhere' }}>{p.adresse || info?.kurz}</strong>
-        <Marke
-          text={p.eingerichtet ? 'Eingerichtet' : 'Nicht eingerichtet'}
-          farbe={p.eingerichtet ? 'var(--app-color-success)' : 'var(--app-color-neutral)'}
-        />
-      </div>
-      <div style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)', marginTop: 'var(--app-abstand-mini)' }}>
-        {info?.aufgabe}
-        {' · '}
-        {p.abgeholt_am ? `zuletzt abgeholt ${datumUhrzeit(p.abgeholt_am)}` : 'noch nicht abgeholt'}
-      </div>
-      {!aufDiesemServer(p) && (
-        <Hinweis art="warnung" titel={SERVER_AUS_HINWEIS} />
-      )}
-      {!p.eingerichtet && aufDiesemServer(p) && (
-        <Hinweis art="hinweis" titel={ZUGANGSDATEN_FEHLEN.titel}>
-          {ZUGANGSDATEN_FEHLEN.text}
-        </Hinweis>
-      )}
-      {p.fehler && (
-        <Hinweis art="fehler" titel="Fehler beim Abholen">
-          {p.fehler}{p.fehler_am ? ` (${datumUhrzeit(p.fehler_am)})` : ''}
-        </Hinweis>
-      )}
-    </div>
-  );
+type StoerungTon = 'fehler' | 'warnung' | 'hinweis';
+
+/** Grund und Ton eines gestörten Postfachs, mit denselben Sätzen wie im Browser (web/WebPosteingang). */
+const stoerungVon = (p: MailPostfachStatus): { name: string; grund: string; grundMehrere: string; ton: StoerungTon } => {
+  const aus = !aufDiesemServer(p);
+  const ohneZugang = !p.eingerichtet && !aus;
+  const abholFehler = p.fehler ? `Fehler beim Abholen: ${p.fehler}${p.fehler_am ? ` (${datumUhrzeit(p.fehler_am)})` : ''}` : null;
+  const gruende = (zugang: string) => [aus ? SERVER_AUS_HINWEIS : null, ohneZugang ? `${ZUGANGSDATEN_FEHLEN.titel}: ${zugang}` : null, abholFehler]
+    .filter((g): g is string => Boolean(g))
+    .join(' · ');
+  return {
+    name: POSTFACH_INFO[p.postfach]?.kurz || p.adresse || p.postfach,
+    grund: gruende(ZUGANGSDATEN_FEHLEN.text),
+    // Stehen mehrere Postfächer in einer Zeile, spricht der Text in der Mehrzahl.
+    grundMehrere: gruende(ZUGANGSDATEN_FEHLEN.textMehrere),
+    ton: p.fehler ? 'fehler' : aus ? 'warnung' : 'hinweis',
+  };
 };
+
+/**
+ * Gestörte Postfächer als Zeilen: Postfach und Grund. Haben mehrere denselben
+ * Grund, steht er einmal da („moin@ und support@ · Zugangsdaten fehlen: …“).
+ * Bis 12.10.2026 stand je Postfach ein Kasten mit Adresse, Marke, Aufgabe und
+ * einem eigenen Hinweis-Kasten -- bei zwei nicht eingerichteten Postfächern
+ * begann die erste Mail erst bei y 616 bis 623.
+ */
+const stoerungsZeilen = (gestoert: MailPostfachStatus[]) => {
+  const zeilen: { namen: string[]; grund: string; grundMehrere: string; ton: StoerungTon }[] = [];
+  for (const p of gestoert) {
+    const s = stoerungVon(p);
+    const gleich = zeilen.find((z) => z.grund === s.grund && z.ton === s.ton);
+    if (gleich) gleich.namen.push(s.name);
+    else zeilen.push({ namen: [s.name], grund: s.grund, grundMehrere: s.grundMehrere, ton: s.ton });
+  }
+  return zeilen.map(({ namen, grund, grundMehrere, ton }) => ({ namen, grund: namen.length > 1 ? grundMehrere : grund, ton }));
+};
+
+const PostfachStoerung: React.FC<{ namen: string[]; grund: string; ton: StoerungTon }> = ({ namen, grund, ton }) => (
+  <li className={`support-postfach-stoerung support-postfach-stoerung--${ton}`}>
+    <IonIcon icon={ton === 'hinweis' ? ICON_INFO : ICON_WARNHINWEIS} aria-hidden="true" />
+    <span>
+      <strong>{namen.join(' und ')}</strong>
+      {` · ${grund}`}
+    </span>
+  </li>
+);
 
 const Posteingang: React.FC = () => {
   const router = useIonRouter();
@@ -112,28 +124,28 @@ const Posteingang: React.FC = () => {
           <IonRefresherContent />
         </IonRefresher>
 
-        {/* Laufen beide Postfächer, steht nur eine Zeile da; der Kasten mit dem
-            Grund erscheint erst bei einer Störung (Simon, 10.10.2026: „mega
-            unübersichtlich"). */}
+        {/* Laufen beide Postfächer, steht nur eine Zeile da; stört eines, eine
+            Zeile je gestörtem Postfach mit dem Grund (Simon, 10.10.2026: „mega
+            unübersichtlich"; als Zeilen statt Kästen seit 12.10.2026). */}
         {status && status.length > 0 && stoerungen.length === 0 ? (
-          <p role="status" style={{ margin: '0 var(--app-abstand-basis)', fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)' }}>
+          <p role="status" className="support-postfach-zeile">
             {status.map((p) => POSTFACH_INFO[p.postfach]?.kurz ?? p.postfach).join(' und ')} eingerichtet
             {zuletztAbgeholt ? ` · zuletzt abgeholt ${datumUhrzeit(zuletztAbgeholt)}` : ''}
           </p>
+        ) : status && status.length > 0 ? (
+          <div role="status" aria-label="Postfächer">
+            <ul className="support-postfach-stoerungen">
+              {stoerungsZeilen(stoerungen).map((z) => <PostfachStoerung key={z.namen.join('+')} {...z} />)}
+            </ul>
+          </div>
+        ) : status ? (
+          <p role="status" className="support-postfach-zeile">Der Server meldet keine Postfächer.</p>
+        ) : laedt ? (
+          <p className="support-postfach-zeile">Zustand der Postfächer wird geladen...</p>
         ) : (
-          <Abschnitt icon={ICON_AT_ZEICHEN} titel="Postfächer" farbe="organizations">
-            {status ? (
-              status.length === 0
-                ? <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Der Server meldet keine Postfächer.</p>
-                : stoerungen.map((p) => <PostfachZustand key={p.postfach} p={p} />)
-            ) : laedt ? (
-              <p style={{ margin: 0, color: 'var(--app-text-system)' }}>Zustand wird geladen...</p>
-            ) : (
-              <p role="status" style={{ margin: 0, color: 'var(--app-text-fehler)' }}>
-                Der Zustand der Postfächer konnte nicht geladen werden.
-              </p>
-            )}
-          </Abschnitt>
+          <p role="status" className="support-postfach-zeile support-postfach-zeile--fehler">
+            Der Zustand der Postfächer konnte nicht geladen werden.
+          </p>
         )}
 
         <div style={{ margin: 'var(--app-abstand-basis)' }}>
@@ -161,6 +173,14 @@ const Posteingang: React.FC = () => {
                 const absender = m.von_name?.trim() || m.von_adresse;
                 const betreff = m.betreff?.trim() || '(ohne Betreff)';
                 const anhaenge = (m.anhaenge ?? []).length;
+                // Wie die Zeile eines Vorgangs: Betreff über die volle Breite,
+                // darunter Absender und Zeit, der Auszug und das Postfach als
+                // Marke (bis 12.10.2026 stand die Marke rechts neben dem Betreff).
+                const angaben = [
+                  absender,
+                  datumUhrzeit(m.gesendet_am),
+                  anhaenge > 0 ? (anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`) : null,
+                ];
                 return (
                   <div
                     key={m.id}
@@ -177,32 +197,18 @@ const Posteingang: React.FC = () => {
                           <IonIcon icon={ICON_MAIL} />
                         </div>
                         <div className="app-list-item__content">
-                          <div className="app-list-item__title" style={{ fontWeight: ungelesen ? 'var(--app-schrift-fett)' : 'var(--app-schrift-normal)', hyphens: 'auto', overflowWrap: 'break-word' }}>
+                          <div className="app-list-item__title" style={{ fontWeight: ungelesen ? 'var(--app-schrift-fett)' : 'var(--app-schrift-normal)' }}>
                             {betreff}
                           </div>
-                          <div className="app-list-item__meta">
-                            <span className="app-list-item__meta-item">{absender}</span>
-                            <span className="app-list-item__meta-item">
-                              <IonIcon icon={ICON_UHRZEIT} style={{ color: 'var(--app-text-users)' }} />
-                              {datumUhrzeit(m.gesendet_am)}
-                            </span>
-                            {anhaenge > 0 && (
-                              <span className="app-list-item__meta-item">
-                                <IonIcon icon={ICON_ANHANG} style={{ color: 'var(--app-text-users)' }} />
-                                {anhaenge === 1 ? '1 Anhang' : `${anhaenge} Anhänge`}
-                              </span>
-                            )}
+                          <Angabenzeile angaben={angaben} />
+                          {m.auszug && <div className="support-listenzeile__auszug">{m.auszug}</div>}
+                          <div className="support-listenzeile__marken">
+                            <Marke text={POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach} farbe="var(--app-color-neutral)" />
                           </div>
-                          {m.auszug && (
-                            <div style={{ fontSize: 'var(--app-text-meta)', color: 'var(--app-text-system)', marginTop: 'var(--app-abstand-mini)' }}>
-                              {m.auszug}
-                            </div>
-                          )}
                         </div>
                       </div>
-                      {ungelesen && <span className="app-ungelesen-punkt" aria-hidden="true" style={{ marginRight: 'var(--app-abstand-eng)' }} />}
-                      <Marke text={POSTFACH_INFO[m.postfach]?.kurz ?? m.postfach} farbe="var(--app-color-neutral)" />
-                      <IonIcon icon={ICON_WEITER_GEFUELLT} aria-hidden="true" style={{ color: 'var(--app-text-system)', marginLeft: 'var(--app-abstand-eng)' }} />
+                      {ungelesen && <span className="app-ungelesen-punkt support-listenzeile__punkt" aria-hidden="true" />}
+                      <IonIcon icon={ICON_WEITER_GEFUELLT} aria-hidden="true" className="support-listenzeile__pfeil" />
                     </div>
                   </div>
                 );

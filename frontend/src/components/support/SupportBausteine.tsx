@@ -131,6 +131,28 @@ export const Ladefehler: React.FC<{ text: string; onErneut: () => void }> = ({ t
   </div>
 );
 
+/**
+ * Die Zeile mit den Angaben unter dem Betreff einer Listenzeile der App
+ * („Nr. 2 · Fehler · Events · Gemeinde · Zeit"). Jede Angabe ist ein Block
+ * für sich: Die Zeile bricht zwischen den Angaben um, der Punkt bleibt am
+ * Zeilenende, und „St. Martin" oder „11.10.2026, 15:23" zerfallen nicht;
+ * nur eine Angabe, die allein nicht in die Zeile passt, bricht in sich um.
+ * Die Klassen stehen in SupportVorgangTeile.css (Listen am Handy).
+ */
+export const Angabenzeile: React.FC<{ angaben: ReadonlyArray<string | null | false | undefined> }> = ({ angaben }) => {
+  const teile = angaben.filter((a): a is string => Boolean(a));
+  return (
+    <div className="app-list-item__meta support-listenzeile__meta">
+      {teile.map((t, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && ' '}
+          <span className="support-listenzeile__angabe">{i < teile.length - 1 ? `${t} ·` : t}</span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+};
+
 /** Kleine farbige Marke (Status einer Anfrage, eines Kontos). */
 export const Marke: React.FC<{ text: string; farbe: string }> = ({ text, farbe }) => (
   <span style={{

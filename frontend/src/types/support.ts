@@ -7,6 +7,7 @@
 // sind hier `| null`.
 
 import type { LizenzSchluessel } from '../utils/lizenzen';
+import type { VorgangStatus } from '../utils/supportVorgaenge';
 
 /** Status einer Anfrage aus dem Formular der Homepage. */
 export type AnfrageStatus = 'neu' | 'in_arbeit' | 'angelegt' | 'abgelehnt';
@@ -149,6 +150,11 @@ export interface MailNachricht {
   /** Zugeordnet zu einer Anfrage ODER einer Gemeinde -- oder keins (Posteingang). */
   anfrage_id: number | null;
   organization_id: number | null;
+  /**
+   * Der Vorgang der Mail (Migration 195); null im Posteingang. Der Server
+   * liefert ihn an jeder Mail, auch an den Einträgen eines Fadens.
+   */
+  vorgang_id?: number | null;
   message_id?: string | null;
   in_reply_to?: string | null;
   referenzen?: string[] | null;
@@ -171,6 +177,23 @@ export interface MailNachricht {
 /** GET /support/mail/nachrichten/:id — eine Mail mit allen Mails desselben Fadens. */
 export interface MailVerlauf extends MailNachricht {
   verlauf: MailNachricht[];
+}
+
+/**
+ * GET /support/mail/nachrichten/:id, Feld `absender_bekannt` (additiv seit
+ * 12.10.2026, nur an der obersten Ebene): Die Adresse einer eingehenden Mail
+ * ohne Vorgang gehört zu genau einem aktiven Konto (nicht Konfi) in genau
+ * einer Gemeinde -- dieselbe Regel wie beim Abholen
+ * (backend/utils/mailZuordnung.js, gemeindeDesKontos). Sonst null.
+ */
+export interface AbsenderBekannt {
+  organization_id: number;
+  /** Anzeigename der Gemeinde. */
+  gemeinde_name: string;
+  /** Offene Vorgänge der Gemeinde (nicht im Archiv; neu, in Arbeit, wartet). */
+  offene_vorgaenge: number;
+  /** Der jüngste offene Vorgang der Gemeinde; null ohne. */
+  vorgang_id: number | null;
 }
 
 /** GET /support/mail/eingang — ein Eintrag (nicht zugeordnet, neueste zuerst). */
@@ -276,6 +299,19 @@ export interface MailAntwortDaten {
   betreff?: string;
   /** Nur bei Gemeinden: eine Adresse aus /empfaenger. */
   an?: string;
+  /**
+   * Nur im Vorgang (POST /support/vorgaenge/:id/antworten, additiv seit
+   * 12.10.2026): der Status danach („Danach"), gesetzt in derselben
+   * Transaktion wie das Speichern der Antwort. Ältere Server übergehen das Feld.
+   */
+  status?: VorgangStatus;
+  /**
+   * Nur im Vorgang (additiv seit 12.10.2026): die Mail, auf die geantwortet
+   * wird -- In-Reply-To, References und „Re:" beziehen sich auf sie statt auf
+   * die jüngste Mail des Vorgangs. Sie muss zum Vorgang gehören, sonst 400
+   * (vor dem Versand). Ältere Server übergehen das Feld.
+   */
+  antwort_auf?: number;
 }
 
 /** Eine Gemeinde, wie GET /organizations sie liefert (nur, was die Support-Mail braucht). */

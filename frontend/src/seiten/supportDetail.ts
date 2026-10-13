@@ -371,4 +371,16 @@ export const MAIL_DETAIL_TEXT = {
   verschoben: (vorgang: number | null): string =>
     (vorgang !== null ? `Die Mail liegt inzwischen in Vorgang ${vorgang}.` : 'Die Mail ist inzwischen zugeordnet.'),
   verschobenOeffnen: (vorgang: number | null): string => (vorgang !== null ? `Im Vorgang ${vorgang} öffnen` : 'Dort öffnen'),
+  /**
+   * Die Zeile über den Absender (Frage 11; Feld `absender_bekannt`): Er gehört
+   * zu einem Konto genau einer Gemeinde. Danach, wie viele Vorgänge dort offen sind.
+   */
+  absender: (gemeinde: string, offene: number): string => `Absender gehört zu ${gemeinde} · ${MAIL_DETAIL_TEXT.offeneVorgaenge(offene)}`,
+  /** Zahl und Wort mit geschütztem Leerzeichen: Am Handy brach „· 1" sonst allein ans Zeilenende (12.10.2026). */
+  offeneVorgaenge: (n: number): string => (n <= 0 ? 'kein offener Vorgang' : n === 1 ? '1\u00a0offener Vorgang' : `${n}\u00a0offene Vorgänge`),
+  /** Der Knopf daneben: direkt in den jüngsten offenen Vorgang der Gemeinde, ohne Fenster. */
+  inVorgang: (vorgang: number): { label: string; titel: string } => ({
+    label: `In Vorgang ${vorgang} einsortieren`,
+    titel: `Die Mail in Vorgang ${vorgang} legen – den jüngsten offenen Vorgang dieser Gemeinde`,
+  }),
 } as const;
