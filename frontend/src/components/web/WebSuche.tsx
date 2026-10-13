@@ -1,6 +1,12 @@
 // Suchfeld der Web-Fassung: ein natives <input type="search"> mit Symbol und
 // Leeren-Knopf -- Live-Suche, ohne Absenden. Der Name fuer Vorleseprogramme
 // ist `beschriftung` (aria-label), der Platzhalter nur ein Beispiel.
+//
+// Escape mit Text leert nur das Feld und laeuft nicht weiter: Steht die Suche
+// in einem Fenster (WebDialog, z. B. die Anwesenheit), schloss dasselbe
+// Escape bis 13.10.2026 auch das Fenster. Wie die Rueckfrage im
+// Material-Dialog und das Menue einer Nachricht. Ist das Feld leer, geht
+// Escape durch und schliesst das Fenster.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
@@ -26,7 +32,12 @@ const WebSuche: React.FC<WebSucheProps> = ({ beschriftung, platzhalter, wert, on
       autoComplete="off"
       spellCheck={false}
       onChange={(e) => onWert(e.target.value)}
-      onKeyDown={(e) => { if (e.key === 'Escape' && wert) { e.preventDefault(); onWert(''); } }}
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape' || !wert) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onWert('');
+      }}
     />
     {wert && (
       <span className="web-suche__leeren">

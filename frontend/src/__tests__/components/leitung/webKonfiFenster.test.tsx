@@ -437,6 +437,22 @@ describe('Anwesenheit im Browser: eigener, breiter Dialog', () => {
     expect(h.setError).not.toHaveBeenCalled();
   });
 
+  // Gegenprüfung 13.10.2026: Escape im gefüllten Suchfeld leert nur das Feld
+  // (WebSuche). Das Ereignis lief weiter bis zum Fenster und schloss es samt
+  // gewähltem Jahrgang und Ansicht.
+  it('Escape in der gefüllten Suche leert nur das Feld; erst das nächste Escape schließt das Fenster', async () => {
+    const dialog = await oeffnen();
+    const suche = within(dialog).getByRole('searchbox', { name: 'Konfi suchen' });
+    tippen(suche, 'ben');
+    expect(zeilen(dialog).map(([name]) => name)).toEqual(['Ben Schmidt']);
+    fireEvent.keyDown(suche, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Anwesenheit' })).toBe(dialog);
+    expect(suche).toHaveValue('');
+    expect(zeilen(dialog).map(([name]) => name)).toEqual(['Anna Müller', 'Ben Schmidt']);
+    fireEvent.keyDown(suche, { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
   it('Tastatur wie bei den anderen Dialogen: Tab bleibt im Fenster, Escape schließt', async () => {
     const dialog = await oeffnen();
     const schliessen = within(dialog).getAllByRole('button', { name: 'Schließen' });
