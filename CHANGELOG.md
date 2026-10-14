@@ -405,6 +405,9 @@ Versionsüberschrift.
   öffnen; bisher blieb die Seite weiß.
 - Wer mit der App 2.2 eine Konfi anlegt, bekommt wieder die Daten des
   Jahrgangs für den Jahrgangs-Chat; die Anfrage lief bisher ins Leere.
+- Das Öffnen einer Teamer:in erzeugt keine Fehlermeldungen „nicht gefunden“
+  mehr im Betrieb; die Seite fragte Punkte und Anwesenheit ab, die es nur für
+  Konfis gibt.
 - Auf schmaleren Bildschirmen ist der Name in der Konfi-Liste wieder ganz zu
   lesen: Gottesdienst, Gemeinde und Gesamt zeigen dann nur die Zahlen ohne
   Balken (Hinweis von Malte).
