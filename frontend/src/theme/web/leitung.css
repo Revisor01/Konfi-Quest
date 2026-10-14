@@ -164,6 +164,67 @@
   color: var(--web-text-leise);
 }
 
+/* --- Konfi-Liste (WebKonfis): die Spalten Gottesdienst, Gemeinde, Gesamt ---
+   Breit steht die Zahl ueber dem Balken. Wird die Tabelle schmal, zeigen die
+   drei Spalten nur noch die Zahl und geben ihren Platz dem Namen (Tester,
+   14.10.2026: bei 1366 x 768 war der Name abgeschnitten; gemessen mit
+   offener Leiste: Tabelle 1060 px, Spalte Name 112 px).
+   Massgeblich ist die Breite der Tabelle (Container .web-tabelle-huelle wie
+   bei den Spalten, die unter 1000 px weichen), nicht des Fensters: Die
+   eingeklappte Leiste gibt Platz.
+   Die Grenze 1200 px: Breit nehmen die festen Spalten 800 px und 14 % fuer
+   den Jahrgang; ab 1200 px Tabelle bleiben dem Namen gut 230 px. Schmal
+   sparen die drei Spalten 152 px (bei 1060 px: Name 264 statt 112 px).
+   Die Spalten muessen ihren Kopf mit Pfeil fassen ("Gottesdienst" ist der
+   laengste). */
+.web-spalte-punkte--gottesdienst,
+.web-spalte-punkte--gemeinde {
+  width: 160px;
+}
+
+.web-spalte-punkte--gesamt {
+  width: 184px;
+}
+
+@container (max-width: 1200px) {
+  .web-tabelle .web-spalte-punkte--gottesdienst {
+    width: 128px;
+  }
+
+  .web-tabelle .web-spalte-punkte--gemeinde,
+  .web-tabelle .web-spalte-punkte--gesamt {
+    width: 112px;
+  }
+
+  .web-tabelle .web-spalte-punkte .web-punktebalken {
+    min-width: 0;
+  }
+
+  /* Der Haken steht gleich hinter der Zahl, nicht am Ende eines Balkens. */
+  .web-tabelle .web-spalte-punkte .web-punktebalken__wert {
+    justify-content: flex-start;
+  }
+
+  /* "110 %" weicht: Die Zahl "22 / 20" sagt es schon. Der Haken bleibt --
+     ohne den gruenen Balken ist er das Zeichen fuer "Ziel erreicht", das
+     nicht an der Farbe allein haengt. */
+  .web-tabelle .web-spalte-punkte .web-punktebalken__prozent {
+    display: none;
+  }
+
+  /* Der Balken ist nicht mehr zu sehen, bleibt aber fuer Vorleseprogramme
+     (wie .web-nur-vorlesen): Er ist der progressbar mit "7 von 10", die Zahl
+     darueber ist aria-hidden. */
+  .web-tabelle .web-spalte-punkte .web-punktebalken__spur {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
 /* --- Zeile, die per Knopf ein Fenster oeffnet: das Netz spannt sich ueber die Zeile --- */
 .web-zeilenknopf {
   display: block;

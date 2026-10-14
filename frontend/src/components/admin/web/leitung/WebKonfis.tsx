@@ -173,7 +173,13 @@ const pflichtZelle = (k: KonfiListenEintrag) => {
   return <WebZahlMitSymbol symbol={KENNZAHL_SYMBOL.events} zahl={pflichtText(p)} title={`${pflichtText(p)} fälligen Pflicht-Events besucht`} />;
 };
 
-/** Die Spalten der Konfi-Liste; "Letzte Aktivität" nur, wenn die Liste sie liefert. */
+/**
+ * Die Spalten der Konfi-Liste; "Letzte Aktivität" nur, wenn die Liste sie liefert.
+ * Die Breiten von Gottesdienst, Gemeinde und Gesamt stehen in leitung.css
+ * (`web-spalte-punkte`): Ist die Tabelle hoechstens 1200 px breit, zeigen sie
+ * nur die Zahl ohne Balken und werden schmaler, damit der Name lesbar bleibt
+ * (Rueckmeldung eines Testers, 14.10.2026).
+ */
 const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<KonfiListenEintrag>> => [
   {
     schluessel: 'name',
@@ -199,7 +205,7 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
     schluessel: 'gottesdienst',
     kopf: 'Gottesdienst',
     sortierbar: true,
-    breite: '160px',
+    klasse: 'web-spalte-punkte web-spalte-punkte--gottesdienst',
     optional: true,
     zelle: (k) => {
       const p = konfiPunkte(k);
@@ -210,7 +216,7 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
     schluessel: 'gemeinde',
     kopf: 'Gemeinde',
     sortierbar: true,
-    breite: '160px',
+    klasse: 'web-spalte-punkte web-spalte-punkte--gemeinde',
     optional: true,
     zelle: (k) => {
       const p = konfiPunkte(k);
@@ -221,7 +227,7 @@ const konfiSpalten = (suche: string, mitAktivitaet: boolean): Array<WebSpalte<Ko
     schluessel: 'punkte',
     kopf: 'Gesamt',
     sortierbar: true,
-    breite: '184px',
+    klasse: 'web-spalte-punkte web-spalte-punkte--gesamt',
     zelle: (k) => {
       const p = konfiPunkte(k);
       return <WebFortschritt wert={p.gesamt} ziel={p.zielGesamt} art="gesamt" name="Punkte gesamt" prozent={p.prozentGesamt} />;

@@ -10,7 +10,9 @@
 // Liste | Kacheln (die Leitung beginnt mit der Liste) und Balken, die ihren
 // Wert zeigen. Vorher schluckte ein gleichnamiges Stylesheet der Konfi-Seite
 // die Balken und den Kreis der Liste (webCssKlassen.test.ts).
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { KopfzeileAttrappe } from '../support/ionicAttrappe';
@@ -319,6 +321,148 @@ describe('Konfis (Web): Balken der Punkte', () => {
     expect(godi).toHaveTextContent('Gottesdienst-Punkte: für diesen Jahrgang abgeschaltet');
     // Das Gesamtziel zaehlt nur die aktive Art: 8 von 10 -> 80 Prozent.
     expect(balken(zelle(zeileVon('Dora Test'), 4), 'Punkte gesamt')).toHaveAttribute('aria-valuenow', '80');
+  });
+});
+
+// Rueckmeldung eines Testers (Simon, 14.10.2026): „Auf schmalerem Screen ist
+// der Konfi-Name nicht mehr zu lesen, abgeschnitten. […] 1366x768:
+// Gottesdienst, Gemeinde und Gesamt könnten da auf Zahlen wechseln und den
+// Strich weglassen." Gemessen im Browser: Bei 1366 x 768 mit offener Leiste
+// ist die Tabelle 1060 px breit, die Spalte Name blieb 112 px (bei 1440 x 900:
+// 1134 px Tabelle, 175 px Name).
+//
+// Maßgeblich ist die Breite der Tabelle, nicht des Fensters (Container-Abfrage
+// an .web-tabelle-huelle wie bei den Spalten, die unter 1000 px weichen): Die
+// eingeklappte Leiste gibt Platz. jsdom rechnet keine Container-Abfragen;
+// beiTabellenBreite oeffnet die Bloecke, deren Bedingung bei der Breite gilt,
+// und laesst die anderen weg -- so liest getComputedStyle die Regeln, die der
+// Browser bei dieser Breite anwendet.
+const STYLESHEETS = ['../../../theme/web-ansicht.css', '../../../theme/web/leitung.css']
+  .map((pfad) => readFileSync(resolve(__dirname, pfad), 'utf8'));
+
+function beiTabellenBreite(css: string, breite: number): string {
+  const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const kopf = /@container\s*\(\s*(min|max)-width:\s*(\d+)px\s*\)\s*\{/g;
+  let raus = '';
+  let rest = 0;
+  for (let treffer = kopf.exec(ohneKommentare); treffer; treffer = kopf.exec(ohneKommentare)) {
+    let tiefe = 1;
+    let ende = kopf.lastIndex;
+    for (; tiefe > 0; ende++) {
+      if (ohneKommentare[ende] === '{') tiefe++;
+      else if (ohneKommentare[ende] === '}') tiefe--;
+    }
+    const grenze = Number(treffer[2]);
+    const gilt = treffer[1] === 'max' ? breite <= grenze : breite >= grenze;
+    raus += ohneKommentare.slice(rest, treffer.index) + (gilt ? ohneKommentare.slice(kopf.lastIndex, ende - 1) : '');
+    rest = ende;
+    kopf.lastIndex = ende;
+  }
+  raus += ohneKommentare.slice(rest);
+  // Eine Abfrage in anderer Form fiele sonst still durch.
+  expect(raus).not.toContain('@container');
+  return raus;
+}
+
+describe('Konfis (Web): wird die Tabelle schmal, zeigen die Punkte nur Zahlen -- der Name behält Platz', () => {
+  let stile: HTMLStyleElement[] = [];
+  const tabelleSoBreit = (breite: number) => {
+    stile = STYLESHEETS.map((css) => {
+      const stil = document.createElement('style');
+      stil.textContent = beiTabellenBreite(css, breite);
+      document.head.appendChild(stil);
+      return stil;
+    });
+  };
+  afterEach(() => {
+    stile.forEach((s) => s.remove());
+    stile = [];
+  });
+
+  // Mehr als das Ziel: 22 / 20, dazu "110 %" und der Haken.
+  const UEBER_ZIEL = { ...KONFIS[0], id: 6, name: 'Fritz Über', username: 'fritz.ueber', gottesdienst_points: 12, gemeinde_points: 10 };
+  // Erst wenn die Team-Liste da ist (Zahl am Reiter), steht die Seite still.
+  const mitUeberZiel = async () => {
+    zeigen({ konfis: [...KONFIS, UEBER_ZIEL] });
+    await screen.findByRole('button', { name: /^Team\s*2$/ });
+  };
+  const PUNKTE_SPALTEN = ['Gottesdienst', 'Gemeinde', 'Gesamt'];
+  const kopfBreiten = () => PUNKTE_SPALTEN.map((k) => getComputedStyle(within(tabelle('Konfis')).getByRole('columnheader', { name: k })).width);
+  const stilVon = (el: Element) => {
+    const s = getComputedStyle(el);
+    return { position: s.position, width: s.width, height: s.height, overflow: s.overflow, clipPath: s.clipPath };
+  };
+  // Nicht zu sehen, fuer Vorleseprogramme aber da (wie .web-nur-vorlesen):
+  // Der Balken ist der progressbar mit "7 von 10"; die Zahl darueber ist
+  // aria-hidden. Mit display: none haette ein Vorleseprogramm schmal nichts.
+  const NUR_VORLESEN = { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)' };
+  const SICHTBAR = { position: 'static', width: 'auto', height: '8px', overflow: 'hidden', clipPath: 'none' };
+  // 6 Zeilen x 3 Balken, ohne den abgeschalteten Gottesdienst von Dora Test.
+  const ALLE_BALKEN = 17;
+
+  it.each([
+    [1060, '1366 x 768, Leiste offen'],
+    [1134, '1440 x 900, Leiste offen'],
+  ])('%i px (%s): Zahlen ohne Balken und ohne Prozent, der Haken bleibt; die drei Spalten werden schmaler', async (breite) => {
+    tabelleSoBreit(breite);
+    await mitUeberZiel();
+    expect(kopfBreiten()).toEqual(['128px', '112px', '112px']);
+    const balkenAlle = within(tabelle('Konfis')).getAllByRole('progressbar');
+    expect(balkenAlle).toHaveLength(ALLE_BALKEN);
+    expect(balkenAlle.map(stilVon)).toEqual(Array(ALLE_BALKEN).fill(NUR_VORLESEN));
+
+    const fritz = zeileVon('Fritz Über');
+    expect(within(zelle(fritz, 2)).getByText('12 / 10')).toBeVisible();
+    expect(within(zelle(fritz, 3)).getByText('10 / 10')).toBeVisible();
+    expect(within(zelle(fritz, 4)).getByText('22 / 20')).toBeVisible();
+    // Der Balken bleibt im Baum und traegt seinen Wert weiter.
+    expect(balken(zelle(fritz, 4), 'Punkte gesamt')).toHaveAttribute('aria-valuetext', '22 von 20, Ziel erreicht');
+    // "110 %" weicht -- die Zahl 22 / 20 sagt es schon --, der Haken bleibt:
+    // Ohne den gruenen Balken ist er das Zeichen fuer "Ziel erreicht", das
+    // nicht nur an der Farbe haengt.
+    expect(zelle(fritz, 4).querySelector('.web-punktebalken__prozent')).toHaveTextContent('110 %');
+    expect(zelle(fritz, 4).querySelector('.web-punktebalken__prozent')).not.toBeVisible();
+    for (const i of [2, 3, 4]) expect(zelle(fritz, i).querySelector('.web-punktebalken__haken')).toBeVisible();
+    // Abgeschaltet bleibt der Strich.
+    expect(zelle(zeileVon('Dora Test'), 2).querySelector('.web-punktebalken__wert')).toHaveTextContent('–');
+  });
+
+  it('unter 1000 px (Gottesdienst und Gemeinde weichen ganz): Gesamt bleibt bei der Zahl', async () => {
+    tabelleSoBreit(900);
+    await mitUeberZiel();
+    const koepfe = within(tabelle('Konfis')).getAllByRole('columnheader').map((c) => c.textContent);
+    expect(koepfe).toEqual(['Name', 'Jahrgang', 'Gesamt', 'Pflicht-Events', 'Aktionen']);
+    expect(getComputedStyle(within(tabelle('Konfis')).getByRole('columnheader', { name: 'Gesamt' })).width).toBe('112px');
+    // Die verborgenen Zellen zaehlen nicht mit: Gesamt ist die dritte.
+    const gesamt = zelle(zeileVon('Fritz Über'), 2);
+    expect(within(gesamt).getByText('22 / 20')).toBeVisible();
+    expect(stilVon(balken(gesamt, 'Punkte gesamt'))).toEqual(NUR_VORLESEN);
+    expect(gesamt.querySelector('.web-punktebalken__prozent')).not.toBeVisible();
+  });
+
+  it.each([
+    [1244, '1366 x 768, Leiste eingeklappt'],
+    [1358, '1920 x 1080'],
+  ])('%i px (%s): alles wie bisher -- Zahl über dem Balken, Prozent, die alten Spaltenbreiten', async (breite) => {
+    tabelleSoBreit(breite);
+    await mitUeberZiel();
+    expect(kopfBreiten()).toEqual(['160px', '160px', '184px']);
+    const balkenAlle = within(tabelle('Konfis')).getAllByRole('progressbar');
+    expect(balkenAlle.map(stilVon)).toEqual(Array(ALLE_BALKEN).fill(SICHTBAR));
+    const gesamt = zelle(zeileVon('Fritz Über'), 4);
+    expect(within(gesamt).getByText('22 / 20')).toBeVisible();
+    expect(gesamt.querySelector('.web-punktebalken__prozent')).toBeVisible();
+    expect(gesamt.querySelector('.web-punktebalken__haken')).toBeVisible();
+  });
+
+  it('die Kacheln behalten ihre Balken, auch wenn die Fläche schmal ist', async () => {
+    tabelleSoBreit(1060);
+    await mitUeberZiel();
+    waehle('Kacheln');
+    const balkenAlle = within(kartenListe()).getAllByRole('progressbar');
+    expect(balkenAlle).toHaveLength(ALLE_BALKEN);
+    expect(balkenAlle.map(stilVon)).toEqual(Array(ALLE_BALKEN).fill(SICHTBAR));
+    expect(karteVon('Fritz Über').querySelector('.web-punktebalken__prozent')).toBeVisible();
   });
 });
 
