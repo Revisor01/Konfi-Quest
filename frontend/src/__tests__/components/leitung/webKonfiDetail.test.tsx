@@ -532,12 +532,12 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
   });
 
   // Seit 13.10.2026 EINE Tabelle statt Zeilen darueber (Simon: „das soll eine
-  // liste sein"): Offenes steht weiter oben -- jetzt als erste Zeilen der
-  // Tabelle, "Anwesend" und "Nicht anwesend" in der Zeile. Gewollte
-  // Aenderung: geprueft wird die Tabelle statt der Liste darueber; der Link
-  // fuehrt mit Rueckweg zur Person (?person=). Hier ohne `alleTermine`: die
-  // Liste aus `termine` und den Event-Punkten (gemerkter Stand von vorher).
-  it('Events: zu verbuchende und anstehende Termine oben in der Tabelle; Anwesend ruft die Route des Termins', async () => {
+  // liste sein"), seit 14.10.2026 nur nach Datum, das spaeteste oben (Simon:
+  // „mach sie bitte chronologisch") -- das Offene steht an seinem Datum,
+  // "Anwesend" und "Nicht anwesend" in der Zeile. Der Link fuehrt mit
+  // Rueckweg zur Person (?person=). Hier ohne `alleTermine`: die Liste aus
+  // `termine` und den Event-Punkten (gemerkter Stand von vorher).
+  it('Events: offene und anstehende Termine nach Datum in der Tabelle; Anwesend ruft die Route des Termins', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, termine: [
       { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: true },
       { booking_id: 502, event_id: 42, event_name: 'Laternenumzug', event_date: '2026-11-11T17:00:00Z', booking_status: 'waitlist', art: 'anstehend', darf_verbuchen: true },
@@ -547,18 +547,18 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(within(ev).queryByRole('list', { name: 'Offene und anstehende Events' })).toBeNull();
     const e = zeilen('Events');
     expect(e.map((z) => [zelle(z, 0).textContent, standWort(z)])).toEqual([
-      ['Konfisamstag', 'Anwesenheit ausstehend'],
       ['Laternenumzug', 'Warteliste'],
+      ['Konfisamstag', 'Anwesenheit ausstehend'],
       ['Konfi-Wochenende', 'Anwesend'],
       ['Taizé-Abend', 'Anwesend'],
     ].map(([name, stand]) => [expect.stringContaining(name), stand]));
     // Anstehende Termine haben keinen Knopf.
-    expect(within(e[1]).queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
+    expect(within(e[0]).queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
     // Der Name fuehrt in den Termin -- mit dem Rueckweg zu dieser Konfi.
-    expect(within(e[0]).getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', `/admin/events/41?person=${ID}`);
-    expect(within(e[1]).getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', `/admin/events/42?person=${ID}`);
+    expect(within(e[1]).getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', `/admin/events/41?person=${ID}`);
+    expect(within(e[0]).getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', `/admin/events/42?person=${ID}`);
     expect(ev).toHaveTextContent('4 Events · 3 Punkte');
-    await act(async () => { fireEvent.click(within(e[0]).getByRole('button', { name: 'Konfisamstag: anwesend' })); });
+    await act(async () => { fireEvent.click(within(e[1]).getByRole('button', { name: 'Konfisamstag: anwesend' })); });
     expect(h.apiPut).toHaveBeenCalledWith('/events/41/participants/501/attendance', { attendance_status: 'present' });
     await waitFor(() => expect(h.triggerRefresh).toHaveBeenCalledWith('events'));
     expect(h.triggerRefresh).toHaveBeenCalledWith('konfis');

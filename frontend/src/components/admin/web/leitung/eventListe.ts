@@ -5,11 +5,12 @@
 //
 // Bis dahin standen oben die offenen und anstehenden Termine (`termine`) und
 // darunter eine Tabelle -- bei Konfis die Event-Punkte, bei Teamer:innen ihre
-// uebrigen Buchungen. Jetzt ist es eine Tabelle, in dieser Ordnung:
-//
-//   1. zu verbuchen (begonnen, angemeldet, Anwesenheit offen), neueste zuerst
-//   2. anstehend (angemeldet oder Warteliste), naechste zuerst
-//   3. alles andere nach Eventdatum, neueste zuerst
+// uebrigen Buchungen. Jetzt ist es eine Tabelle, nur nach dem Eventdatum
+// geordnet, das spaeteste oben (Simon, 14.10.2026: „mach sie bitte
+// chronologisch. das ist total irritierend, wenn die kommenden von oben nach
+// unten und dann von unten nach oben die anwesenden sind"). Bis dahin standen
+// erst die zu verbuchenden, dann die anstehenden (naechste zuerst), dann der
+// Rest (neueste zuerst) -- zwei Richtungen in einer Liste.
 //
 // Quellen:
 //   Konfi       `alleTermine` (GET /admin/konfis/:id, seit 13.10.2026) --
@@ -102,14 +103,13 @@ const zeit = (iso: string): number => {
   return Number.isNaN(t) ? 0 : t;
 };
 
-const RANG: Record<EventZeile['art'], number> = { verbuchen: 0, anstehend: 1, erledigt: 2 };
-
-/** Offenes oben, Anstehendes darunter (naechstes zuerst), dann der Rest nach Datum absteigend. */
+/**
+ * Nach Eventdatum absteigend, das spaeteste oben -- gleich, ob zu verbuchen,
+ * anstehend oder erledigt. Bei gleicher Zeit bleibt die Reihenfolge der
+ * Quelle (sort ist stabil).
+ */
 export const eventZeilenOrdnen = (zeilen: readonly EventZeile[]): EventZeile[] =>
-  [...zeilen].sort((a, b) => {
-    if (a.art !== b.art) return RANG[a.art] - RANG[b.art];
-    return a.art === 'anstehend' ? zeit(a.datum) - zeit(b.datum) : zeit(b.datum) - zeit(a.datum);
-  });
+  [...zeilen].sort((a, b) => zeit(b.datum) - zeit(a.datum));
 
 /** Eine Zeile aus `alleTermine` (Konfi). */
 const ausAllenTerminen = (t: AlleTermineEintrag): EventZeile => ({
