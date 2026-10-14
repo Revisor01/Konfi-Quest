@@ -23,8 +23,11 @@ const termin = (event_id: number, art: PersonTermin['art'], zusatz: Partial<Pers
   booking_status: 'confirmed', art, darf_verbuchen: true, ...zusatz,
 });
 
+// Simon, 14.10.2026: „mach sie bitte chronologisch. das ist total irritierend,
+// wenn die kommenden von oben nach unten und dann von unten nach oben die
+// anwesenden sind" -- eine Richtung fuer alle, das spaeteste Datum oben.
 describe('Ordnung', () => {
-  it('zu verbuchen (neueste zuerst), anstehend (naechste zuerst), dann der Rest (neueste zuerst)', () => {
+  it('nur nach Datum, das spaeteste oben -- gleich, ob zu verbuchen, anstehend oder erledigt', () => {
     const geordnet = eventZeilenOrdnen([
       zeile('alt erledigt', 'erledigt', '2026-08-01'),
       zeile('spaet anstehend', 'anstehend', '2026-12-01'),
@@ -34,8 +37,18 @@ describe('Ordnung', () => {
       zeile('neu offen', 'verbuchen', '2026-10-10'),
     ]);
     expect(geordnet.map((z) => z.name)).toEqual([
-      'neu offen', 'alt offen', 'bald anstehend', 'spaet anstehend', 'neu erledigt', 'alt erledigt',
+      'spaet anstehend', 'bald anstehend', 'neu offen', 'neu erledigt', 'alt offen', 'alt erledigt',
     ]);
+  });
+
+  it('am selben Datum: die spaetere Uhrzeit oben, bei gleicher Zeit bleibt die Reihenfolge der Quelle', () => {
+    const geordnet = eventZeilenOrdnen([
+      zeile('morgens', 'erledigt', '2026-10-04T08:00:00Z'),
+      zeile('abends', 'anstehend', '2026-10-04T18:00:00Z'),
+      zeile('gleich A', 'erledigt', '2026-10-04T12:00:00Z'),
+      zeile('gleich B', 'verbuchen', '2026-10-04T12:00:00Z'),
+    ]);
+    expect(geordnet.map((z) => z.name)).toEqual(['abends', 'gleich A', 'gleich B', 'morgens']);
   });
 });
 
@@ -74,15 +87,15 @@ describe('Stand', () => {
 });
 
 describe('Quellen', () => {
-  it('Konfi ohne alleTermine: termine oben, Event-Punkte darunter, kein Termin doppelt', () => {
+  it('Konfi ohne alleTermine: termine und Event-Punkte nach Datum, kein Termin doppelt', () => {
     const z = konfiEventZeilen(undefined, [termin(41, 'verbuchen'), termin(42, 'anstehend', { event_date: '2026-11-11T17:00:00Z' })], [
       { id: 1, event_id: 9, points: 2, point_type: 'gemeinde', event_name: 'Wochenende', event_date: '2026-09-04', admin_name: 'Alex' },
       // Derselbe Termin wie oben (kann es nicht geben, darf aber nicht doppelt stehen).
       { id: 2, event_id: 41, points: 1, point_type: 'gemeinde', event_name: 'Termin 41', event_date: '2026-10-01' },
     ]);
     expect(z.map((e) => [e.name, e.art, e.punkte, e.termin?.booking_id ?? null])).toEqual([
-      ['Termin 41', 'verbuchen', 0, 541],
       ['Termin 42', 'anstehend', 0, 542],
+      ['Termin 41', 'verbuchen', 0, 541],
       ['Wochenende', 'erledigt', 2, null],
     ]);
   });
@@ -111,9 +124,9 @@ describe('Quellen', () => {
       { id: 3, name: 'Vergangen ohne Recht', event_date: '2026-09-03', location: '', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '', attendance_status: null },
     ], [termin(1, 'verbuchen'), termin(7, 'anstehend', { event_name: 'Nur in termine', event_date: '2026-11-01T10:00:00Z' })], JETZT);
     expect(z.map((e) => [e.name, e.art, eventStand(e).text, e.termin?.booking_id ?? null])).toEqual([
-      ['Vergangen offen', 'verbuchen', 'Anwesenheit ausstehend', 501],
-      ['Kuenftig', 'anstehend', 'Angemeldet', null],
       ['Nur in termine', 'anstehend', 'Angemeldet', 507],
+      ['Kuenftig', 'anstehend', 'Angemeldet', null],
+      ['Vergangen offen', 'verbuchen', 'Anwesenheit ausstehend', 501],
       ['Vergangen ohne Recht', 'erledigt', 'Gebucht', null],
     ]);
   });

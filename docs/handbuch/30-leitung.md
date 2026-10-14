@@ -211,10 +211,11 @@ Aktivitäten, die die Leitung direkt eingetragen hat, haben keinen Antrag.
 **Events** steht als eine Liste: alle Events der Person mit ihrem Stand — wie
 in der Teilnehmerliste des Events, etwa **Anwesenheit ausstehend**,
 **Angemeldet**, **Gebucht**, **Warteliste**, **Anwesend**, **Abwesend** oder
-**Abgemeldet** —, den Punkten und wer verbucht hat. Oben steht, was noch zu
-verbuchen ist, mit **Anwesend** und **Nicht anwesend** in der Zeile, dann das
-Anstehende, darunter das Erledigte, das neueste zuerst; Pflicht-Events tragen
-die Marke **Pflicht**. Die Leitung sieht dort nur die Events ihrer Jahrgänge
+**Abgemeldet** —, den Punkten und wer verbucht hat. Die Liste ist nach Datum
+geordnet, das späteste Event oben: erst das Kommende, dann das Vergangene bis
+zum ältesten ganz unten. Was noch zu verbuchen ist, steht an seinem Datum mit
+**Anwesend** und **Nicht anwesend** in der Zeile; Pflicht-Events tragen die
+Marke **Pflicht**. Die Leitung sieht dort nur die Events ihrer Jahrgänge
 und die ohne Jahrgang, die Gemeindeleitung alle. Über den Aktivitäten stehen die gemeldeten
 mit **Prüfen**. Der Name eines Events führt in das Event, und **‹** mit dem
 Namen der Person führt von dort zurück auf ihre Seite — wie in

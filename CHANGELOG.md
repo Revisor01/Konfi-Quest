@@ -201,9 +201,10 @@ Versionsüberschrift.
 - Auf der Detailseite einer Konfi im Browser tragen Aktivitäten, Events und
   Bonuspunkte vorn ein Symbol in der Farbe ihrer Punkteart: Gottesdienst blau,
   Gemeinde grün, Events rot, Bonus orange.
-- Die Events einer Konfi stehen im Browser in einer einzigen Liste: Offenes und
-  Anstehendes oben, Pflicht-Events gekennzeichnet, mit Stand, Punkten und wer
-  verbucht hat. Die Leitung sieht darin nur Termine ihrer Jahrgänge.
+- Die Events einer Konfi stehen im Browser in einer einzigen Liste, nach Datum
+  geordnet mit dem spätesten oben, Pflicht-Events gekennzeichnet, mit Stand,
+  Punkten und wer verbucht hat. Die Leitung sieht darin nur Termine ihrer
+  Jahrgänge.
 - Aus einem Event, das man im Browser von der Detailseite einer Person geöffnet
   hat, führt „Zurück“ wieder zu dieser Person.
 - Rückfragen vor dem Löschen zeigen oben einen Mülleimer, vor anderen

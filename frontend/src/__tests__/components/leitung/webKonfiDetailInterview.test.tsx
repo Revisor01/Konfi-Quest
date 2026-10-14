@@ -245,7 +245,10 @@ describe('2. Klick auf eine verbuchte Aktivität öffnet ihren Antrag', () => {
 });
 
 describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () => {
-  it('Offenes oben, Anstehendes (nächstes zuerst), dann der Rest nach Datum -- mit Stand, Art und Punkten', async () => {
+  // Simon, 14.10.2026: „mach sie bitte chronologisch […] das weitest
+  // entfernte ganz oben" -- nur nach Datum, das spaeteste oben; das Offene
+  // steht an seinem Datum.
+  it('nur nach Datum, das späteste oben -- mit Stand, Art und Punkten', async () => {
     await oeffnen();
     expect(within(karte('Events')).queryByRole('list', { name: 'Offene und anstehende Events' })).toBeNull();
     const e = zeilen('Events');
@@ -259,9 +262,9 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       // der Teilnehmerliste (teilnahmeDarstellung) fuer den Rest -- seit der
       // Pruefung vom 13.10.2026 statt eigener Woerter ("Ausstehend",
       // "Gebucht" fuer Anstehendes, "Entschuldigt").
-      ['Konfisamstag', '–', '–', 'Anwesenheit ausstehend'],
-      ['Laternenumzug', '–', '–', 'Warteliste'],
       ['Konfirmation', '–', '–', 'Angemeldet'],
+      ['Laternenumzug', '–', '–', 'Warteliste'],
+      ['Konfisamstag', '–', '–', 'Anwesenheit ausstehend'],
       ['Ausflug', '–', '–', 'Abgesagt'],
       ['Konfi-Wochenende', 'Gemeinde', '+2', 'Anwesend'],
       ['Jugendabend', '–', '–', 'Abwesend'],
@@ -289,9 +292,9 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       [...zelle(z, 0).querySelectorAll('.web-pill')].map((p) => p.textContent),
     ]);
     expect(marken).toEqual([
-      ['Konfisamstag', ['Pflicht']],
-      ['Laternenumzug', []],
       ['Konfirmation', ['Konfirmation']],
+      ['Laternenumzug', []],
+      ['Konfisamstag', ['Pflicht']],
       ['Ausflug', []],
       ['Konfi-Wochenende', []],
       ['Jugendabend', []],
@@ -306,8 +309,8 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
     await oeffnen();
     const e = zeilen('Events');
     expect(e.map((z) => within(z).queryAllByRole('button').map((b) => b.getAttribute('aria-label'))))
-      .toEqual([['Konfisamstag: anwesend', 'Konfisamstag: nicht anwesend'], [], [], [], [], [], [], [], [], []]);
-    await act(async () => { fireEvent.click(within(e[0]).getByRole('button', { name: 'Konfisamstag: nicht anwesend' })); });
+      .toEqual([[], [], ['Konfisamstag: anwesend', 'Konfisamstag: nicht anwesend'], [], [], [], [], [], [], []]);
+    await act(async () => { fireEvent.click(within(e[2]).getByRole('button', { name: 'Konfisamstag: nicht anwesend' })); });
     expect(h.apiPut).toHaveBeenCalledWith('/events/41/participants/501/attendance', { attendance_status: 'absent' });
     await waitFor(() => expect(h.triggerRefresh).toHaveBeenCalledWith('events'));
   });
@@ -328,9 +331,10 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       alleTermine: ALLE_TERMINE.map((t) => (t.event_id === 41 ? { ...t, darf_verbuchen: false } : t)),
     });
     await oeffnen();
-    const [erste] = zeilen('Events');
-    expect(zelle(erste, 4)).toHaveTextContent('Anwesenheit ausstehend');
-    expect(within(erste).queryAllByRole('button')).toEqual([]);
+    const konfisamstag = zeilen('Events')[2];
+    expect(zelle(konfisamstag, 0)).toHaveTextContent('Konfisamstag');
+    expect(zelle(konfisamstag, 4)).toHaveTextContent('Anwesenheit ausstehend');
+    expect(zeilen('Events').flatMap((z) => within(z).queryAllByRole('button'))).toEqual([]);
   });
 });
 
@@ -338,7 +342,7 @@ describe('4. Ein Event führt mit Rückweg zur Person', () => {
   it('jeder Eventname ist ein Link in den Termin mit ?person=<Konfi>', async () => {
     await oeffnen();
     const links = zeilen('Events').map((z) => within(zelle(z, 0)).getByRole('link').getAttribute('href'));
-    expect(links).toEqual([41, 42, 43, 55, 51, 52, 53, 50, 54, 56].map((id) => `/admin/events/${id}?person=${ID}`));
+    expect(links).toEqual([43, 42, 41, 55, 51, 52, 53, 50, 54, 56].map((id) => `/admin/events/${id}?person=${ID}`));
   });
 
   // Pruefung 13.10.2026: Event-Punkte an einem Termin, den die Leitung nicht
