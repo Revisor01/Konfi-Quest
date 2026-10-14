@@ -54,6 +54,12 @@ const hoch = vi.hoisted(() => ({
   presentAlert: vi.fn(),
   presentActionSheet: vi.fn(),
   modale: { geoeffnet: [] as Array<{ name: string; props: Record<string, unknown> }> },
+  /**
+   * Jedes IonPage-Element, das je eingehaengt wurde. Eine Seite, die beim
+   * Umschalten ihre IonPage neu baut, hinterlaesst hier ein zweites -- im
+   * Browser bliebe die neue weiss (ion-page-invisible).
+   */
+  ionSeiten: new Set<HTMLElement>(),
 }));
 
 /** Der gemeinsame Zustand: Tests setzen ihn, die Attrappen lesen ihn. */
@@ -150,7 +156,14 @@ vi.mock('@ionic/react', () => {
   return {
     // Wie die echte IonPage ein div.ion-page: Die Tests pruefen daran, dass
     // eine Seite ihre IonPage beim Umschalten behaelt (webMitmachenLeitung).
-    IonPage: React.forwardRef<HTMLDivElement, K>(({ children }, ref) => <div ref={ref} className="ion-page">{children}</div>),
+    IonPage: React.forwardRef<HTMLDivElement, K>(({ children }, ref) => {
+      const merke = React.useCallback((el: HTMLDivElement | null) => {
+        if (el) h.ionSeiten.add(el);
+        if (typeof ref === 'function') ref(el);
+        else if (ref) ref.current = el;
+      }, [ref]);
+      return <div ref={merke} className="ion-page">{children}</div>;
+    }),
     IonHeader: durch, IonToolbar: durch, IonTitle: durch, IonContent: durch, IonButtons: durch,
     IonItemOptions: durch, IonBadge: durch, IonChip: durch,
     IonList: ({ children }: K) => <section>{children}</section>,
@@ -265,6 +278,7 @@ export const zuruecksetzen = () => {
     f.mockReset();
   }
   h.modale.geoeffnet.length = 0;
+  h.ionSeiten.clear();
   h.api.get.mockResolvedValue({ data: [] });
   h.api.put.mockResolvedValue({ data: {} });
   h.api.post.mockResolvedValue({ data: {} });
