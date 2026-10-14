@@ -349,6 +349,23 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 
 ### Code
 
+- **Weiße Seite nach Größenänderung des Fensters.** Rund 40 Seiten wählen
+  über `useBreitesLayout` zwischen der App-Fassung (eigene IonPage) und der
+  Web-Fassung (`WebSeite`, eigene IonPage). Zieht man das Browserfenster zur
+  Laufzeit über oder unter 992 px, tauscht die Seite ihre IonPage, und die
+  neue bleibt weiß (`ion-page-invisible`), bis eine echte Navigation folgt —
+  dasselbe Muster wie beim behobenen Wechsel unter Mitmachen (14.10.2026).
+  Nur bei Größenänderung, nicht nachgestellt; Liste der Stellen aus der Suche
+  vom 14.10.2026 neu erzeugen, bevor man es angeht. Kandidat für eine
+  gemeinsame Lösung (eine IonPage außen, beide Fassungen mit `ohneIonPage`).
+- **IonPage in IonPage beim Laden (App).** `AdminCategoriesPage`,
+  `AdminCertificatesPage` und `AdminDashboardSettingsPage` zeigen im
+  Ladezustand `LoadingSpinner fullScreen` (eigene IonPage) innerhalb ihrer
+  IonPage. Nach dem Ionic-Code könnte die äußere Seite `ion-page-invisible`
+  behalten; der Kommentar in `TeamerDashboardPage.tsx` nennt diese Seiten
+  aber als unauffällig. Am Gerät prüfen (Mehr → Kategorien, Zertifikate,
+  Dashboard), erst dann ändern. (14.10.2026)
+
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).
   Am 08.10.2026 keine belastbare Ursache gefunden. Kandidaten: Der Raum wird
@@ -575,6 +592,18 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   Keins davon bricht die App heute; 2 und 3 werden mit Android 16 sichtbar.
 
 ## Bei Simon zu entscheiden
+
+- **Mindestversion setzen?** `GET /api/app-version` meldet `min_version:
+  null`; Apps 2.2.x laufen also weiter. Sie riefen nach „Konfi anlegen“ eine
+  Route, die es nie gab (seit 14.10.2026 nachgerüstet, nur lesend). Mit einer
+  Mindestversion 2.3.0 fiele dieser Pfad weg, und die Route ließe sich wieder
+  entfernen. (14.10.2026)
+- **Gewollte 404 im Performance-Dashboard.** Ein unbekannter Einladungscode
+  (`GET /api/auth/validate-invite/:code`) und eine Challenge, die noch nicht
+  begonnen hat (`GET /api/challenges/konfi/:id`), antworten bewusst mit 404 —
+  die Oberfläche zeigt dazu den passenden Hinweis. Sie stehen trotzdem als
+  404-Gruppen in der Fehlerliste. Sollen solche fachlichen 404 dort getrennt
+  oder gar nicht erscheinen? (14.10.2026)
 
 - **Pflicht-Events: drei Zählweisen für dieselbe Konfi.** Die Spalte
   „Pflicht-Events“ der Konfi-Liste und die Statistik der Konfi-Detailseite
