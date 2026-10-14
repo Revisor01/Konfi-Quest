@@ -399,6 +399,8 @@ Versionsüberschrift.
   neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
+- Unter Mitmachen bleibt die Seite im Browser nicht mehr weiß, wenn die
+  Leitung von den Events zu den Aktivitäten wechselt (Hinweis von Malte).
 - Eine neu angelegte Teamer:in erscheint in der App sofort in der Team-Liste.
 - Nach dem Eintragen der Anwesenheit zeigt die Konfi-Liste Punkte und
   Pflicht-Events gleich auf dem neuen Stand.

@@ -148,7 +148,9 @@ const SegmentKontext = React.createContext<((wert: string) => void) | null>(null
 vi.mock('@ionic/react', () => {
   const durch = ({ children }: K) => <>{children}</>;
   return {
-    IonPage: React.forwardRef<HTMLDivElement, K>(({ children }, ref) => <div ref={ref}>{children}</div>),
+    // Wie die echte IonPage ein div.ion-page: Die Tests pruefen daran, dass
+    // eine Seite ihre IonPage beim Umschalten behaelt (webMitmachenLeitung).
+    IonPage: React.forwardRef<HTMLDivElement, K>(({ children }, ref) => <div ref={ref} className="ion-page">{children}</div>),
     IonHeader: durch, IonToolbar: durch, IonTitle: durch, IonContent: durch, IonButtons: durch,
     IonItemOptions: durch, IonBadge: durch, IonChip: durch,
     IonList: ({ children }: K) => <section>{children}</section>,
