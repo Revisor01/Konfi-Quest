@@ -401,6 +401,9 @@ Versionsüberschrift.
 ### Behoben
 - Unter Mitmachen bleibt die Seite im Browser nicht mehr weiß, wenn die
   Leitung von den Events zu den Aktivitäten wechselt (Hinweis von Malte).
+- Auf schmaleren Bildschirmen ist der Name in der Konfi-Liste wieder ganz zu
+  lesen: Gottesdienst, Gemeinde und Gesamt zeigen dann nur die Zahlen ohne
+  Balken (Hinweis von Malte).
 - Eine neu angelegte Teamer:in erscheint in der App sofort in der Team-Liste.
 - Nach dem Eintragen der Anwesenheit zeigt die Konfi-Liste Punkte und
   Pflicht-Events gleich auf dem neuen Stand.
