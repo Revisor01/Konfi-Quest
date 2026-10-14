@@ -98,6 +98,36 @@ module.exports = (db, rbacVerifier, { requireOrgAdmin, requireAdmin, requireTeam
     }
   });
 
+  // GET einen Jahrgang (14.10.2026) -- fuer ausgelieferte Apps 2.2.x.
+  //
+  // Die App 2.2.x ruft nach „Konfi anlegen" GET /admin/jahrgaenge/<id>, um den
+  // Namen fuer den Jahrgangs-Chat zu holen (AdminKonfisPage,
+  // createOrJoinJahrgangChat). Die Route gab es nie: jede so angelegte Konfi
+  // ergab eine 404 im Performance-Dashboard, der Chat wurde von dieser App nicht
+  // angelegt. Ab 2.3.0 ruft die App sie nicht mehr; eine Mindestversion ist
+  // nicht gesetzt. Nur lesend, eine Zeile wie in der Liste und nach derselben
+  // Regel: Org-Admin jeden Jahrgang der Gemeinde, Admin und Teamer:in nur
+  // zugewiesene (can_view). Fremde Gemeinde und unbekannte Nummer: 404.
+  router.get('/:id', rbacVerifier, requireTeamer, validateJahrgangId, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      const { rows } = await db.query(`SELECT j.*,
+        (SELECT COUNT(*) FROM konfi_profiles kp JOIN users u ON kp.user_id = u.id WHERE kp.jahrgang_id = j.id AND u.organization_id = j.organization_id)::int as konfi_count,
+        (SELECT COALESCE(SUM(kp.gottesdienst_points), 0) FROM konfi_profiles kp WHERE kp.jahrgang_id = j.id AND kp.gottesdienst_points > 0)::int as gottesdienst_points_total,
+        (SELECT COALESCE(SUM(kp.gemeinde_points), 0) FROM konfi_profiles kp WHERE kp.jahrgang_id = j.id AND kp.gemeinde_points > 0)::int as gemeinde_points_total
+      FROM jahrgaenge j WHERE j.id = $1 AND j.organization_id = $2`, [id, req.user.organization_id]);
+      if (rows.length === 0) return res.status(404).json({ error: 'Jahrgang nicht gefunden' });
+      if (!req.user.is_super_admin && req.user.role_name !== 'org_admin') {
+        const sichtbar = (req.user.assigned_jahrgaenge || []).some((j) => j.id === id && j.can_view);
+        if (!sichtbar) return res.status(403).json({ error: 'Kein Zugriff auf diesen Jahrgang' });
+      }
+      res.json(rows[0]);
+    } catch (err) {
+      console.error('Database error in GET /api/admin/jahrgaenge/:id:', err);
+      res.status(500).json({ error: 'Datenbankfehler' });
+    }
+  });
+
   // POST a new jahrgang
   //
   // Nur noch org_admin (Simons Entscheidung 01.09.2026, woertlich: "Admin darf

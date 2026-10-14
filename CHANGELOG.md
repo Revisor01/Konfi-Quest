@@ -403,6 +403,8 @@ Versionsüberschrift.
   Leitung von den Events zu den Aktivitäten wechselt (Hinweis von Malte).
 - Teamer:innen sehen im Browser ein Event wieder, das sie unter Mitmachen
   öffnen; bisher blieb die Seite weiß.
+- Wer mit der App 2.2 eine Konfi anlegt, bekommt wieder die Daten des
+  Jahrgangs für den Jahrgangs-Chat; die Anfrage lief bisher ins Leere.
 - Auf schmaleren Bildschirmen ist der Name in der Konfi-Liste wieder ganz zu
   lesen: Gottesdienst, Gemeinde und Gesamt zeigen dann nur die Zahlen ohne
   Balken (Hinweis von Malte).

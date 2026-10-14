@@ -717,6 +717,29 @@ paths:
           der Jahrgang existiert dann ohne Chat.
 
   /api/admin/jahrgaenge/{id}:
+    get:
+      tags: ["Jahrgänge"]
+      summary: Ein Jahrgang der eigenen Organisation (für ausgelieferte Apps 2.2.x)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: integer }, description: "ID des Jahrgangs" }
+      responses:
+        "200": { description: "Ein Objekt wie ein Eintrag von GET /api/admin/jahrgaenge: jahrgaenge.* + konfi_count, gottesdienst_points_total, gemeinde_points_total" }
+        "400": { description: "id ist keine positive Ganzzahl" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/ServerError" }
+      x-berechtigung:
+        rollen: [org_admin, admin, teamer]
+        middleware: [verifyTokenRBAC, requireTeamer]
+        org-scope: true
+        objekt-pruefung: "WHERE j.id = :id AND j.organization_id = req.user.organization_id (sonst 404); admin/teamer zusaetzlich zugewiesen mit can_view (sonst 403) -- dieselbe Regel wie die Liste"
+        hinweis: >
+          Seit 14.10.2026. Die App 2.2.x ruft die Route nach „Konfi anlegen“,
+          um den Namen für den Jahrgangs-Chat zu holen; die Route gab es bis
+          dahin nicht, jede so angelegte Konfi ergab eine 404. Ab 2.3.0 ruft
+          die App sie nicht mehr. Nur lesend; kann entfallen, sobald keine
+          App 2.2.x mehr zugreift (Mindestversion).
     put:
       tags: ["Jahrgänge"]
       summary: Jahrgang bearbeiten (mit Warnungen bei Deaktivierung belegter Punkt-Kategorien)
