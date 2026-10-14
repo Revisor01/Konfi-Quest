@@ -3512,6 +3512,11 @@ paths:
         (in Produktion bis 1524 ms). Antwortform unverändert:
         { message, newBadges } mit newBadges = { count, badges } beim
         Genehmigen und 0 beim Ablehnen.
+        ERGAENZT 13.10.2026 (Migration 214): Die beim Genehmigen angelegte
+        Zuordnung traegt den Antrag (user_activities.request_id); die
+        Detailansicht GET /api/admin/konfis/{id} liefert ihn je Aktivitaet
+        als activities[].request_id, die Web-Fassung oeffnet darueber den
+        Antrag. Antwortform unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, validateRequestUpdate]
@@ -3577,12 +3582,22 @@ paths:
         wieder abgezogen.
         Abgezogen wird seit 26.09.2026 der Wert, der an der entfernten
         Zuordnung steht (user_activities.points, Migration 163) — nicht der
-        aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben). Die
-        Zuordnung ist weiterhin die juengste zu user/activity (eine eigene
-        Verknuepfung Antrag -> Zuordnung gibt es nicht). Gibt es keine
+        aktuelle Wert der Aktivität (Punkte/Termine BF-02, behoben).
+        BEHOBEN 13.10.2026 (Migration 214): Zurueckgenommen wird die Zuordnung
+        DIESES Antrags (user_activities.request_id). Bis dahin war es die
+        juengste zu user/activity -- beim Zuruecksetzen des aelteren von zwei
+        genehmigten Antraegen derselben Aktivitaet traf es die Zeile des
+        juengeren. Altbestand ohne Zuordnung: eine Zeile OHNE Antrag am Tag
+        des Antrags (completed_date = requested_date, so schreibt die
+        Genehmigung). Gibt es keine
         Zuordnung mehr (bereits ueber DELETE /api/admin/konfis/{id}/activities/{activityId}
         entfernt, dort wurden die Punkte abgezogen), wird nichts mehr
         abgezogen; vorher lief der Abzug ein zweites Mal.
+        BEHOBEN 13.10.2026 (Pruefung des Pakets): Der Rueckfall auf Zeilen
+        ohne Antrag galt zuerst fuer jede solche Zeile, egal an welchem Tag
+        -- war die Zeile des Antrags schon geloescht, traf das Zuruecksetzen
+        eine Eintragung der Leitung an einem anderen Tag und zog deren Punkte
+        ein zweites Mal ab. Seitdem nur noch am Tag des Antrags.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin, param-id-Validierung]
@@ -3721,6 +3736,17 @@ paths:
         Zaehlern. Für alle außer super_admin und org_admin wird auf die
         Jahrgänge aus assigned_jahrgaenge mit can_view eingeschraenkt.
         Geloeschte Konfis (deleted_at) sind ausgeschlossen.
+        ADDITIV 13.10.2026: pflicht_besucht und pflicht_faellig (integer, nie
+        null) -- "3 von 5" Pflicht-Events je Konfi. Faellig ist ein
+        Pflicht-Event (events.mandatory) der Gemeinde, das die Konfi sieht
+        (eigener Jahrgang oder Termin ohne jeden Jahrgang, nie "Nur Team";
+        backend/utils/konfiTerminSicht.js), nicht abgesagt und schon begonnen
+        (event_date in der Vergangenheit). Besucht heisst Anwesenheit
+        "anwesend" (attendance_status present); entschuldigt, abwesend,
+        abgemeldet oder nicht eingetragen zaehlt als nicht besucht. Dieselbe
+        Regel wie total_mandatory/attended in GET
+        /api/admin/konfis/{id}/attendance-stats (backend/utils/pflichtTermine.js),
+        eine Abfrage fuer die ganze Liste. Antwort bleibt ein Array.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -3728,7 +3754,7 @@ paths:
         objekt-pruefung: "u.organization_id = Token-Org; zusaetzlich Jahrgangs-Filter für alle außer is_super_admin/org_admin"
       responses:
         "200":
-          description: "Array von Konfis (id, name, username, Punkte, Jahrgang, badge_count, activity_count)"
+          description: "Array von Konfis (id, name, username, gottesdienst_points, gemeinde_points, jahrgang_name, jahrgang_id, gottesdienst_enabled, gemeinde_enabled, target_gottesdienst, target_gemeinde, badgeCount). ADDITIV 13.10.2026: pflicht_besucht, pflicht_faellig (integer, siehe Beschreibung)."
           headers:
             # NACHDOKUMENTIERT 2026-09-01: Der Header existiert seit dem
             # 26.08.2026 im Code, fehlte hier aber.
@@ -3957,6 +3983,41 @@ paths:
         Anwesenheits-Route (darfTerminVerbuchen, Recht "Events verbuchen");
         fuer Teamer:innen als Aufrufer immer false (die Route ist
         requireAdmin). Aeltere Apps lesen das Feld nicht.
+        ERGAENZT 13.10.2026, additiv: Jeder Eintrag in `activities` traegt
+        `request_id` (user_activities.request_id, Migration 214) -- der
+        Antrag, aus dem die Aktivitaet beim Genehmigen entstand, sonst null
+        (von der Leitung eingetragen; Altbestand ohne eindeutigen Antrag).
+        Abrufbar ueber GET /api/admin/activities/requests/{id} mit dessen
+        Rechten.
+        ERGAENZT 13.10.2026, additiv (nur Konfis als Zielobjekt):
+        `alleTermine` -- ALLE Termine der Konfi in einer Liste
+        (utils/terminLeitungSicht.js, alleTermineDerPerson): je Buchung in
+        der Gemeinde eine Zeile (angemeldet, Warteliste, anwesend, abwesend,
+        abgemeldet, auch abgesagte Termine), dazu Event-Punkte ohne Buchung.
+        Je Eintrag `booking_id` (null bei Punkten ohne Buchung), `event_id`,
+        `event_name`, `event_date`, `location`, `mandatory`,
+        `is_konfirmation`, `cancelled`, `booking_status`,
+        `attendance_status`, `art` ('verbuchen' | 'anstehend' | 'erledigt';
+        'verbuchen' und 'anstehend' wie bei `termine`), `darf_verbuchen`
+        (dieselbe Pruefung wie bei `termine`), `darf_oeffnen` (sieht der
+        Aufrufer den Termin, darf er ihn also oeffnen), `points` (Summe der
+        Event-Punkte dieser Konfi am Termin, 0 ohne), `point_type` und
+        `points_von` (vergebende Person). Reihenfolge Eventdatum
+        absteigend. SICHT: Buchungen nur an Terminen, die der Aufrufer
+        sieht -- dieselbe Regel wie `termine` (Org-Leitung alles; Admin und
+        Teamer:in die can_view-Jahrgaenge, Termine "Nur Team" und ohne
+        Jahrgang). Event-Punkte bleiben ungefiltert wie bei GET
+        /:id/event-points; an einem Termin ausserhalb der Sicht stehen sie
+        als Punkte-Zeile ohne Buchung (`booking_id` null) mit
+        `darf_oeffnen` false.
+        BEHOBEN 13.10.2026 (Pruefung des Pakets): Zuerst kam `alleTermine`
+        ohne Sichtfilter -- ein Termin eines fremden Jahrgangs (alte
+        Buchung nach einem Jahrgangswechsel) stand bei Admin und Teamer:in
+        als "zu verbuchen" in der Liste, obwohl `termine` ihn wegliess, der
+        Reiter "Verbuchen" ihn nicht zaehlte und das Event 403 antwortete.
+        Bei Teamer:innen fehlt das Feld (ihre Buchungen stehen in
+        `teamerEvents`, die Event-Punkte der Konfi-Zeit in `konfiHistory`).
+        `termine` und GET /:id/event-points bleiben unveraendert.
       x-berechtigung:
         rollen: [org_admin, admin, teamer]
         middleware: [verifyTokenRBAC, requireTeamer]
@@ -4223,8 +4284,17 @@ paths:
       tags: ["Konfis (Verwaltung)"]
       summary: Anwesenheitsstatistik bei Pflicht-Events
       description: >
-        Zaehlt Pflicht-Events des Jahrgangs, tatsaechliche Teilnahmen, Quote
-        und verpasste Termine.
+        Zaehlt die faelligen Pflicht-Events der Konfi, tatsaechliche
+        Teilnahmen, Quote und verpasste Termine. Seit 13.10.2026 dieselbe
+        Regel wie pflicht_faellig/pflicht_besucht in GET /api/admin/konfis
+        (backend/utils/pflichtTermine.js): faellig ist ein Pflicht-Event der
+        Gemeinde, das die Konfi sieht (eigener Jahrgang oder Termin ohne
+        jeden Jahrgang, nie "Nur Team"), nicht abgesagt und schon begonnen;
+        besucht nur mit Anwesenheit "anwesend".
+        GEAENDERT 13.10.2026 (Antwortform unveraendert): Bis dahin zaehlte
+        die Route nur Termine des eigenen Jahrgangs -- ein Pflicht-Event ohne
+        Jahrgang fehlte, ein "Nur Team"-Termin mit Jahrgang zaehlte mit, und
+        eine Konfi ohne Jahrgang bekam immer total_mandatory 0.
       x-berechtigung:
         rollen: [org_admin, admin]
         middleware: [verifyTokenRBAC, requireAdmin]

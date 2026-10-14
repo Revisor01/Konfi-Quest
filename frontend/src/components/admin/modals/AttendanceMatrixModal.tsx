@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -37,197 +36,31 @@ import {
   ICON_TERMIN,
   ICON_ZUSAGE_GEFUELLT,
 } from '../../shared/icons';
-import api from '../../../services/api';
-import { useApp } from '../../../contexts/AppContext';
 import EmptyState from '../../shared/EmptyState';
-import {
-  getZellStatus,
-  berechneZeilenStats,
-  MatrixZellStatus,
-  MatrixZeilenStats
-} from '../../../utils/anwesenheitsMatrix';
 import { datumKurz, uhrzeit } from '../../../utils/dateUtils';
+import { LEERE_ZEILE, matrixDatum, useAnwesenheitsMatrix, type MatrixEvent, type MatrixJahrgang } from './useAnwesenheitsMatrix';
 
-interface Jahrgang {
-  id: number;
-  name: string;
-}
-
-interface KonfiRow {
-  user_id: number;
-  display_name: string;
-  username?: string;
-}
-
-interface EventCol {
-  id: number;
-  name: string;
-  event_date: string;
-}
-
-interface Booking {
-  event_id: number;
-  user_id: number;
-  status: string | null;
-  // 'excused' (12.09.2026): von der Leitung nachgetragene Abmeldung.
-  attendance_status: 'present' | 'absent' | 'excused' | null;
-  excuse_reason?: string | null;
-  attendance_note?: string | null;
-}
-
-interface MatrixResponse {
-  jahrgang: { id: number; name: string };
-  konfis: KonfiRow[];
-  events: EventCol[];
-  bookings: Booking[];
-}
-
-interface Konfspruch {
-  source: 'liste' | 'freitext';
-  id?: number;
-  reference?: string | null;
-  text: string;
-  translation?: string | null;
-}
-
-interface SpruchRow {
-  user_id: number;
-  display_name: string;
-  konfspruch: Konfspruch | null;
-  konfirmation_date?: string | null;
-}
-
-type ViewMode = 'anwesenheit' | 'sprueche';
+// Laden, Suche, Umschalten, Zellen und Summe stehen in useAnwesenheitsMatrix --
+// dieselbe Logik wie im Dialog der Web-Fassung (web/leitung/WebAnwesenheitDialog).
 
 interface AttendanceMatrixModalProps {
-  jahrgaenge: Jahrgang[];
+  jahrgaenge: MatrixJahrgang[];
   initialJahrgangId?: number;
   onClose: () => void;
 }
-
-const formatShortDate = (iso: string): string => {
-  try {
-    const d = new Date(iso);
-    return datumKurz(d, { ohneJahr: true });
-  } catch {
-    return iso;
-  }
-};
 
 const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
   jahrgaenge,
   initialJahrgangId,
   onClose
 }) => {
-  const { setError, setSuccess } = useApp();
-  const [jahrgangId, setJahrgangId] = useState<number | null>(
-    initialJahrgangId ?? (jahrgaenge.length > 0 ? jahrgaenge[0].id : null)
-  );
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<MatrixResponse | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState<ViewMode>('anwesenheit');
-  const [sprueche, setSprueche] = useState<SpruchRow[] | null>(null);
-  const [spruecheLoading, setSpruecheLoading] = useState(false);
-  const [sending, setSending] = useState(false);
+  const {
+    jahrgangId, setJahrgangId, loading, data, searchTerm, setSearchTerm, viewMode, setViewMode,
+    sprueche, spruecheLoading, sending, handleSendEmail, filteredSprueche, filteredKonfis,
+    getCellStatus, zellHinweis, konfiStats,
+  } = useAnwesenheitsMatrix({ jahrgaenge, initialJahrgangId });
   // Popover: Tipp auf ein Datum im Tabellenkopf zeigt den Event-Titel
-  const [eventPopover, setEventPopover] = useState<{ anchor: Event; event: EventCol } | null>(null);
-
-  const loadMatrix = async (id: number) => {
-    setLoading(true);
-    try {
-      const res = await api.get(`/admin/jahrgaenge/${id}/attendance-matrix`);
-      setData(res.data);
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Laden der Anwesenheit'));
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadSprueche = async (id: number) => {
-    setSprueche(null); // alte Sprueche sofort verwerfen (kein kurzes Aufblitzen beim Jahrgang-Wechsel)
-    setSpruecheLoading(true);
-    try {
-      const res = await api.get(`/admin/jahrgaenge/${id}/sprueche`);
-      setSprueche(res.data);
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Laden der Konfisprüche'));
-      setSprueche(null);
-    } finally {
-      setSpruecheLoading(false);
-    }
-  };
-
-  React.useEffect(() => {
-    if (jahrgangId) loadMatrix(jahrgangId);
-  }, [jahrgangId]);
-
-  React.useEffect(() => {
-    if (jahrgangId && viewMode === 'sprueche') loadSprueche(jahrgangId);
-  }, [jahrgangId, viewMode]);
-
-  // Schickt die aktuelle Ansicht (Anwesenheit oder Sprüche) per E-Mail an die eigene Adresse.
-  const handleSendEmail = async () => {
-    if (!jahrgangId) return;
-    setSending(true);
-    try {
-      await api.post(`/admin/jahrgaenge/${jahrgangId}/matrix-email`, { type: viewMode });
-      setSuccess('E-Mail an deine Adresse gesendet');
-    } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Senden der E-Mail'));
-    } finally {
-      setSending(false);
-    }
-  };
-
-  // Sprüche-Liste nach Suchbegriff filtern (gleiches Suchfeld wie die Matrix).
-  const filteredSprueche = useMemo(() => {
-    if (!sprueche) return [];
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return sprueche;
-    return sprueche.filter(s => s.display_name.toLowerCase().includes(term));
-  }, [sprueche, searchTerm]);
-
-  // Schneller Lookup: bookings nach (user, event) gruppieren
-  const bookingMap = useMemo(() => {
-    const map = new Map<string, Booking>();
-    if (data) {
-      data.bookings.forEach(b => map.set(`${b.user_id}-${b.event_id}`, b));
-    }
-    return map;
-  }, [data]);
-
-  // Zellstatus kommt aus utils/anwesenheitsMatrix (Befund 4, 25.08.2026):
-  // Abgemeldete ('opted_out') sind ein eigener Status und fallen nicht mehr
-  // auf "ausstehend" — sie waren sonst von "noch nicht verbucht" nicht
-  // unterscheidbar (Prod-Events 105, 129, 132).
-  const getCellStatus = (userId: number, eventId: number): MatrixZellStatus =>
-    getZellStatus(bookingMap.get(`${userId}-${eventId}`));
-
-  // Pro-Konfi-Statistik (inkl. Nenner ohne Abmeldungen, Befund 4)
-  const konfiStats = useMemo(() => {
-    const stats = new Map<number, MatrixZeilenStats>();
-    if (!data) return stats;
-    data.konfis.forEach(k => {
-      stats.set(k.user_id, berechneZeilenStats(
-        data.events.map(e => getCellStatus(k.user_id, e.id))
-      ));
-    });
-    return stats;
-  }, [data, bookingMap]);
-
-  // Live-Suche: Konfi-Zeilen nach Name/Benutzername filtern
-  const filteredKonfis = useMemo(() => {
-    if (!data) return [];
-    const term = searchTerm.trim().toLowerCase();
-    if (!term) return data.konfis;
-    return data.konfis.filter(k =>
-      k.display_name.toLowerCase().includes(term) ||
-      (k.username || '').toLowerCase().includes(term)
-    );
-  }, [data, searchTerm]);
+  const [eventPopover, setEventPopover] = React.useState<{ anchor: Event; event: MatrixEvent } | null>(null);
 
   return (
     <IonPage>
@@ -296,7 +129,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
         <div className="app-segment-wrapper">
           <IonSegment
             value={viewMode}
-            onIonChange={(e) => setViewMode(e.detail.value as ViewMode)}
+            onIonChange={(e) => setViewMode(e.detail.value as typeof viewMode)}
           >
             <IonSegmentButton value="anwesenheit">
               <IonLabel>Anwesenheit</IonLabel>
@@ -410,7 +243,7 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                           title={e.name}
                           onClick={(ev) => setEventPopover({ anchor: ev.nativeEvent, event: e })}
                         >
-                          <div className="attendance-matrix__event-date">{formatShortDate(e.event_date)}</div>
+                          <div className="attendance-matrix__event-date">{matrixDatum(e.event_date)}</div>
                         </th>
                       ))}
                       <th className="attendance-matrix__th-summary">Σ</th>
@@ -418,22 +251,17 @@ const AttendanceMatrixModal: React.FC<AttendanceMatrixModalProps> = ({
                   </thead>
                   <tbody>
                     {filteredKonfis.map(k => {
-                      const stats = konfiStats.get(k.user_id)
-                        || { present: 0, absent: 0, excused: 0, open: 0, opted_out: 0, nenner: 0 };
+                      const stats = konfiStats.get(k.user_id) || LEERE_ZEILE;
                       return (
                         <tr key={k.user_id}>
                           <td className="attendance-matrix__td-konfi">{k.display_name}</td>
                           {data.events.map(e => {
                             const s = getCellStatus(k.user_id, e.id);
-                            const b = bookingMap.get(`${k.user_id}-${e.id}`);
                             // Grund und Notiz als Tooltip an der Zelle: Die
                             // Matrix ist die Uebersicht, in der die Kolleginnen
                             // nachsehen -- ohne das waere nur das graue Zeichen
                             // da und die Frage "warum?" unbeantwortet.
-                            const hinweis = [
-                              s === 'excused' ? b?.excuse_reason : null,
-                              b?.attendance_note
-                            ].filter(Boolean).join(' · ');
+                            const hinweis = zellHinweis(k.user_id, e.id);
                             return (
                               <td key={e.id} className="attendance-matrix__td-cell" title={hinweis || undefined}>
                                 <span className={`attendance-matrix__dot attendance-matrix__dot--${s}`}>

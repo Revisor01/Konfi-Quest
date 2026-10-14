@@ -42,8 +42,10 @@ unter
 ![Die Konfi-Liste der Leitung: oben die Zahlen zur Gemeinde, darunter Suche, Filter und die Liste mit den Punkteständen.](/docs/bilder/iphone/leitung-konfis.png)
 
 Die zentrale Liste im Reiter **Konfis**, umschaltbar zwischen **Konfis** und
-**Team**; der Titel oben zeigt, welche der beiden offen ist. Zu jeder Person
-siehst du die Punkte nach **Godi**, **Gemeinde** und **Gesamt**.
+**Team**; am Umschalter steht gleich beim Öffnen, wie viele es sind, etwa
+„Konfis (12)" und „Team (4)", und der Titel oben zeigt, welche der beiden offen
+ist. Zu jeder Person siehst du die Punkte nach **Godi**, **Gemeinde** und
+**Gesamt**. Herunterziehen aktualisiert Konfis und Team.
 
 Über das Plus legst du an, was gerade geöffnet ist. Dabei erzeugt die App ein
 [Einmalpasswort](35-passwoerter.md#wie-die-einmalpasswoerter-aussehen), das du
@@ -56,9 +58,9 @@ angemeldet, gibt es auf diesem Weg kein neues Passwort — dann
 [per QR-Code ein](35-passwoerter.md#konfis-mit-einem-einladungscode-aufnehmen),
 statt jeden Konfi einzeln anzulegen.
 
-Oben findest du die **Anwesenheits-Matrix**: eine Tabelle über alle Konfis mit
-Pflicht-Anwesenheit und Konfisprüchen, die du dir auch per E-Mail schicken
-lassen kannst.
+Solange **Konfis** gewählt ist, findest du oben die **Anwesenheits-Matrix**:
+eine Tabelle über alle Konfis mit Pflicht-Anwesenheit und Konfisprüchen, die
+du dir auch per E-Mail schicken lassen kannst. Beim Team gibt es sie nicht.
 
 ### Die Detailansicht einer Person nutzen
 
@@ -132,9 +134,13 @@ Im Browser — ab einer Fensterbreite von 992 Pixeln, siehe
 [Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen);
 die Leitung beginnt mit der Tabelle. Der Titel zeigt, ob **Konfis** oder
 **Team** offen ist; darunter steht, wie viele Konfis in wie vielen Jahrgängen
-oder wie viele Personen im Team stehen. Oben rechts stehen **Anwesenheit** (die
-Anwesenheits-Matrix), **Konfi anlegen** beziehungsweise **Teamer:in anlegen**
-und, für die Gemeindeleitung in der Konfi-Ansicht, **Konfis einladen**. Vier
+oder wie viele Personen im Team stehen. Oben rechts stehen in der
+Konfi-Ansicht **Anwesenheit** (die Anwesenheits-Matrix) und, für die
+Gemeindeleitung, **Konfis einladen**, dazu **Konfi anlegen** beziehungsweise
+**Teamer:in anlegen**. Anlegen und Anwesenheit öffnen ein eigenes Fenster,
+siehe [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen);
+nach dem Anlegen zeigt es Benutzername und Einmalpasswort mit **Passwort
+kopieren**. Vier
 Kacheln fassen zusammen: bei den Konfis die Zahl der Konfis und Jahrgänge, die
 Punkte gesamt und wie viele ihr Ziel erreicht haben; beim Team die Zahl der
 Personen, der Zertifikate und der Badges. Jede Kachel trägt das Symbol ihrer
@@ -142,21 +148,30 @@ Kennzahl in der Farbe ihres Bereichs; Badges und Zertifikate stehen in Liste
 und Kacheln mit demselben farbigen Symbol.
 
 Darüber wechselst du mit **Konfis** und **Team** zwischen den beiden Gruppen —
-die Zahl am Knopf zählt die Personen —, suchst nach Name und Benutzername und
+die Zahl am Knopf zählt die Personen und steht bei beiden gleich beim Öffnen
+da —, suchst nach Name und Benutzername und
 grenzt die Konfis mit **Jahrgang** ein; als Leitung stehen dort nur deine
 Jahrgänge. Ganz rechts steht die Wahl zwischen Liste und Kacheln; sie gilt für
 beide Gruppen. Bei der Suche darfst du Umlaute umschreiben („mueller" findet
 „Müller"), die Escape-Taste leert das Feld. In der Liste sortiert ein Klick auf
-eine Spaltenüberschrift — bei den Konfis nach Name, Jahrgang, Gesamt oder
-Badges, beim Team nach Name, Badges oder Zertifikaten —, ein zweiter Klick
-kehrt die Richtung um; wer keinen Jahrgang hat, steht beim Sortieren nach
-Jahrgang in beiden Richtungen unten. In den Kacheln sortiert die Auswahl
+eine Spaltenüberschrift — bei den Konfis nach Name, Jahrgang, Gesamt,
+Pflicht-Events oder Badges, beim Team nach Name, Badges oder Zertifikaten —,
+ein zweiter Klick kehrt die Richtung um; wer keinen Jahrgang hat, steht beim
+Sortieren nach Jahrgang in beiden Richtungen unten. Pflicht-Events ordnen nach
+dem Anteil; wer noch keine fälligen hat („0 von 0"), steht in beiden
+Richtungen unten. In den Kacheln sortiert die Auswahl
 **Sortieren** neben der Wahl; beide stellen dieselbe Sortierung ein.
 
 Eine Konfi zeigt den Kreis mit ihren Initialen, Name und Benutzername,
 Jahrgang, je einen Balken für Gottesdienst, Gemeinde und Gesamt mit dem Stand
 darüber, etwa „7 / 10" — ein Haken zeigt das erreichte Ziel, ein Strich steht
-dort, wo der Jahrgang die Punkteart abgeschaltet hat — und die Zahl der Badges.
+dort, wo der Jahrgang die Punkteart abgeschaltet hat —, die besuchten
+**Pflicht-Events**, etwa „3 von 5", und die Zahl der Badges. Gezählt werden die
+bisher fälligen Pflicht-Events: die des eigenen Jahrgangs und die ohne
+Jahrgang, die schon begonnen haben und nicht abgesagt sind, nie „Nur Team".
+Besucht ist nur, wer als anwesend eingetragen ist; entschuldigt, abgemeldet,
+abwesend oder nicht eingetragen zählt als nicht besucht. Die Liste folgt dem
+Eintragen der Anwesenheit von selbst.
 **Löschen** unten auf der Karte löscht die Konfi nach einer Rückfrage.
 Punkte vergibst du auf der Detailseite der Konfi, mit **Aktivität eintragen**
 und **Bonuspunkte vergeben**. Eine Teamer:in zeigt Name, Jahrgänge, Badges,
@@ -187,15 +202,22 @@ Symbol in der Farbe ihres Bereichs, wie in den Listen und Karten.
 
 Links folgen die Tabelle **Aktivitäten** — mit Datum, Art, Punkten, wer sie
 eingetragen hat, einem Symbol für das Nachweisfoto und dem Löschen —, darunter
-**Events** und bei einer Konfi **Bonuspunkte**. Bei einer Konfi zeigt
-**Events** die Events, die Punkte gebracht haben, mit ihrem Datum, Art und
-Punkten; bei einer Teamer:in die Events, für die sie eingetragen ist, mit
-ihrem Stand — **Anwesend** oder **Abwesend**, sobald die Anwesenheit verbucht
-ist, vorher **Gebucht**, dazu **Warteliste** und **Abgemeldet**, wie in der
-Teilnehmerliste des Events. Über den Tabellen steht, was offen ist: über den
-Aktivitäten die gemeldeten mit **Prüfen**, über den Events die zu verbuchenden
-mit **Anwesend** und **Nicht anwesend** und die anstehenden mit ihrem Stand;
-der Name eines Events führt in das Event — wie in
+**Events** und bei einer Konfi **Bonuspunkte**. Vor jeder Zeile steht ein Kreis
+in der Farbe ihrer Art: Gottesdienst blau, Gemeinde grün, Events rot, Bonus
+orange. Stammt eine Aktivität aus einem Antrag, öffnet ein Klick auf ihren
+Namen den Antrag mit Datum, Kommentar, Foto und wer entschieden hat;
+Aktivitäten, die die Leitung direkt eingetragen hat, haben keinen Antrag.
+
+**Events** steht als eine Liste: alle Events der Person mit ihrem Stand — wie
+in der Teilnehmerliste des Events, etwa **Anwesenheit ausstehend**,
+**Angemeldet**, **Gebucht**, **Warteliste**, **Anwesend**, **Abwesend** oder
+**Abgemeldet** —, den Punkten und wer verbucht hat. Oben steht, was noch zu
+verbuchen ist, mit **Anwesend** und **Nicht anwesend** in der Zeile, dann das
+Anstehende, darunter das Erledigte, das neueste zuerst; Pflicht-Events tragen
+die Marke **Pflicht**. Die Leitung sieht dort nur die Events ihrer Jahrgänge
+und die ohne Jahrgang, die Gemeindeleitung alle. Über den Aktivitäten stehen die gemeldeten
+mit **Prüfen**. Der Name eines Events führt in das Event, und **‹** mit dem
+Namen der Person führt von dort zurück auf ihre Seite — wie in
 [Offenes einer Person direkt bestätigen](#offenes-einer-person-direkt-bestaetigen).
 Alle drei Tabellen haben dieselben Spalten in
 derselben Breite; wird das Fenster schmal, fällt die Spalte, wer eingetragen hat, in allen

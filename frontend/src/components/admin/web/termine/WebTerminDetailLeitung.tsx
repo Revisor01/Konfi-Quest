@@ -71,6 +71,11 @@ export interface LeitungDetailAktionen extends TeilnehmerAktionen {
 
 export interface WebTerminDetailLeitungProps {
   pageRef: React.Ref<HTMLElement>;
+  /**
+   * Der Weg zurueck, wenn das Event von der Detailseite einer Person kam
+   * (?person=, utils/rueckweg.ts; 13.10.2026). Ohne: „Alle Events".
+   */
+  zurueck?: { href: string; text: string };
   laedt: boolean;
   /** Der Termin gehoert zu einem Jahrgang, dem diese Person nicht zugewiesen ist (403). */
   jahrgangFehlt: boolean;
@@ -111,6 +116,7 @@ const zeitpunkt = (wert?: string | null): number | null => {
 const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   const { eventData, teilnehmende, aktionen, isOnline, darfVerwalten, darfEintragen } = p;
   const darfVerbuchen = darfVerwalten && p.darfVerbuchen !== false;
+  const zurueck = p.zurueck ?? ZURUECK;
 
   // Laden, fremder Jahrgang (Push oder Link: derselbe Wortlaut wie in der App), Fehler --
   // unter demselben Kopf wie das Event.
@@ -119,7 +125,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
       <WebDetailSeite
         bereich="Mitmachen"
         titel="Event"
-        zurueck={ZURUECK}
+        zurueck={zurueck}
         pageRef={p.pageRef}
         laden={p.laedt ? 'Das Event wird geladen.' : undefined}
         leer={p.jahrgangFehlt ? {
@@ -385,7 +391,7 @@ const WebTerminDetailLeitung: React.FC<WebTerminDetailLeitungProps> = (p) => {
   return (
     <WebDetailSeite
       bereich="Mitmachen"
-      zurueck={ZURUECK}
+      zurueck={zurueck}
       titel={eventData.name}
       kreis={<WebTerminSymbol status={status} event={event} gross />}
       kennzeichen={(

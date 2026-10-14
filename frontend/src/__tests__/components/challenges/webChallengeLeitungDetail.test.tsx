@@ -61,6 +61,7 @@ vi.mock('../../../components/shared/AppKopfzeile', () => ({
 
 import ChallengeLeitungPage from '../../../components/shared/ChallengeLeitungPage';
 import { offlineCache } from '../../../services/offlineCache';
+import { erwarteWebRueckfrage } from '../web/webRueckfrageErwartung';
 
 const JETZT = new Date('2026-10-03T08:30:00Z').getTime();
 const tage = (n: number) => new Date(JETZT + n * 24 * 3600 * 1000).toISOString();
@@ -376,6 +377,8 @@ describe('Challenge fuer Team und Leitung (Web): Moderation ueber dieselben Funk
     fireEvent.click(screen.getByRole('button', { name: 'Ausblenden: Mara Probe' }));
     const dialog = screen.getByRole('dialog', { name: 'Beitrag ausblenden' });
     expect(dialog).toHaveTextContent('Der Beitrag von Mara Probe wird für die Gruppe nicht mehr sichtbar sein.');
+    // Wie dieselbe Rückfrage der App (ion-alert, „Ausblenden" destructive): Warndreieck, rot gefüllt.
+    erwarteWebRueckfrage(dialog, 'warnung', 'Ausblenden');
     fireEvent.change(within(dialog).getByLabelText('Begründung (optional)'), { target: { value: '  Passt nicht zur Aufgabe  ' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Ausblenden' }));
     await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/challenges/admin/submissions/3/moderate', { action: 'hide', reason: 'Passt nicht zur Aufgabe' }));

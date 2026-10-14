@@ -117,7 +117,8 @@ const TEAMER = {
     { id: 301, name: 'Konfi-Wochenende', event_date: '2026-09-13', location: 'Jugendhaus', teamer_only: false, teamer_needed: true, booking_status: 'confirmed', booking_date: '2026-08-01', attendance_status: 'present' },
     { id: 303, name: 'Adventsbasar', event_date: '2026-10-01', location: 'Gemeindehaus', teamer_only: false, teamer_needed: true, booking_status: 'waitlist', booking_date: '2026-09-20', attendance_status: null },
     { id: 304, name: 'Freizeit-Planung', event_date: '2026-09-24', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-09-01', attendance_status: 'absent' },
-    { id: 305, name: 'Teamer-Treffen', event_date: '2026-10-22', location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-10-01', attendance_status: null },
+    // Kuenftig, gleich wann der Test laeuft: steht als anstehend oben in der Liste.
+    { id: 305, name: 'Teamer-Treffen', event_date: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(), location: 'Gemeindehaus', teamer_only: true, teamer_needed: false, booking_status: 'confirmed', booking_date: '2026-10-01', attendance_status: null },
   ],
   konfiHistory: { history: [{ id: 1, title: 'Gottesdienstbesuch', points: 1, category: 'gottesdienst', date: '2024-12-02', source_type: 'activity' }], totals: { gottesdienst: 9, gemeinde: 11, total: 20 } },
 };
@@ -153,6 +154,8 @@ const kopf = () => within(screen.getByRole('heading', { level: 1 }).closest('hea
 const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
 const zeilen = (name: string) => within(screen.getByRole('table', { name })).getAllByRole('row').slice(1);
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
+/** Das Wort des Stands in der Eventliste (die Marke), ohne die leise Zeile darunter. */
+const standWort = (z: HTMLElement) => zelle(z, 4).querySelector('.web-pill')?.textContent;
 /** Die Ueberschriften der Karten einer Spalte, von oben nach unten. */
 const kartenIn = (spalte: 'haupt' | 'seite') =>
   [...document.querySelectorAll(`.web-spalten__${spalte} .web-karte`)].map((k) => k.getAttribute('aria-labelledby'))
@@ -324,20 +327,33 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
     expect(fenster(BonusModal)).toHaveLength(0);
   });
 
-  it('Bearbeiten: das Formular mit Name und Jahrgang der Konfi; die Gemeindeleitung sieht alle Jahrgaenge', async () => {
+  // Seit 13.10.2026 ein eigener Dialog der Web-Fassung (WebKonfiDialog,
+  // dieselbe Logik useKonfiFormular); Formular und Speichern:
+  // webKonfiBearbeitenFenster.test.tsx.
+  it('Bearbeiten: der Dialog mit Name und Jahrgang der Konfi; die Gemeindeleitung sieht alle Jahrgaenge, kein App-Fenster', async () => {
+    h.antworten.set('/admin/jahrgaenge', [{ id: 12, name: 'Jahrgang 2026' }, { id: 13, name: 'Jahrgang 2027' }]);
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Konfi bearbeiten' }));
-    const f = fenster(KonfiModal)[0];
-    expect(f.props.konfi).toEqual(expect.objectContaining({ id: ID, display_name: 'Anna Müller', jahrgang_id: 12 }));
-    expect(f.props.jahrgaenge).toEqual([{ id: 12, name: 'Jahrgang 2026' }]);
-    expect(f.props.eigeneJahrgangIds).toBeUndefined();
+    const dialog = screen.getByRole('dialog', { name: 'Konfi bearbeiten' });
+    expect(within(dialog).getByLabelText('Name')).toHaveValue('Anna Müller');
+    const jahrgang = within(dialog).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement;
+    expect(jahrgang.value).toBe('12');
+    expect([...jahrgang.options].map((o) => o.textContent)).toEqual(['Jahrgang 2026', 'Jahrgang 2027']);
+    // Die Gemeindeleitung sieht alle Jahrgaenge: kein Hinweis, die Konfi aus der eigenen Liste zu verlieren.
+    fireEvent.change(jahrgang, { target: { value: '13' } });
+    expect(within(dialog).getByText('Was der Wechsel bewirkt')).toBeInTheDocument();
+    expect(within(dialog).queryByText(/nicht zugewiesen/)).toBeNull();
+    expect(fenster(KonfiModal)).toHaveLength(0);
   });
 
-  it('Bearbeiten als Leitung: das Fenster bekommt die eigenen Jahrgaenge fuer die Warnung beim Wechsel', async () => {
+  it('Bearbeiten als Leitung: der Dialog warnt mit den eigenen Jahrgaengen beim Wechsel', async () => {
     h.user = konto('admin', [12]);
+    h.antworten.set('/admin/jahrgaenge', [{ id: 12, name: 'Jahrgang 2026' }, { id: 13, name: 'Jahrgang 2027' }]);
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Konfi bearbeiten' }));
-    expect(fenster(KonfiModal)[0].props.eigeneJahrgangIds).toEqual([12]);
+    const dialog = screen.getByRole('dialog', { name: 'Konfi bearbeiten' });
+    fireEvent.change(within(dialog).getByRole('combobox', { name: 'Jahrgang' }), { target: { value: '13' } });
+    expect(within(dialog).getByText('Achtung: Du bist Jahrgang 2027 nicht zugewiesen — nach dem Speichern siehst du Anna Müller nicht mehr in deiner Liste.')).toBeInTheDocument();
   });
 
   it('Passwort zuruecksetzen: erst die Rueckfrage, dann die Route -- und das Einmalpasswort wird gezeigt', async () => {
@@ -380,10 +396,15 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(k.getByText('Psalm 23,1')).toBeInTheDocument();
     expect(k.getByText('Der Herr ist mein Hirte.')).toBeInTheDocument();
     expect(k.getByText('5 von 6 besucht · 83 %')).toBeInTheDocument();
-    fireEvent.click(k.getByRole('button', { name: /Anwesenheit ansehen/ }));
-    expect(fenster(AttendanceMatrixModal)[0].props).toEqual(expect.objectContaining({
-      initialJahrgangId: 12, jahrgaenge: [{ id: 12, name: 'Jahrgang 2026' }],
-    }));
+    // Seit 13.10.2026 ein eigener Dialog der Web-Fassung (WebAnwesenheitDialog):
+    // auf den Jahrgang der Konfi vorausgewaehlt, nur dieser zur Wahl.
+    h.antworten.set('/admin/jahrgaenge/12/attendance-matrix', { jahrgang: { id: 12, name: 'Jahrgang 2026' }, konfis: [], events: [], bookings: [] });
+    await act(async () => { fireEvent.click(k.getByRole('button', { name: /Anwesenheit ansehen/ })); });
+    const dialog = screen.getByRole('dialog', { name: 'Anwesenheit' });
+    expect(h.apiGet).toHaveBeenCalledWith('/admin/jahrgaenge/12/attendance-matrix');
+    const jahrgang = within(dialog).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement;
+    expect([...jahrgang.options].map((o) => [o.value, o.textContent])).toEqual([['12', 'Jahrgang 2026']]);
+    expect(fenster(AttendanceMatrixModal)).toHaveLength(0);
   });
 
   it('Badges: die erreichten mit Namen und in ihrer Farbe, geladen ueber die Route der Konfi', async () => {
@@ -426,7 +447,12 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(kartenIn('seite')).not.toContain('Events');
   });
 
-  it('Events: eine Tabelle mit Eventdatum statt Verbuchungsdatum, Punkten und Punkteart', async () => {
+  // Seit 13.10.2026 steht unter "Eingetragen von" der Stand des Events (eine
+  // Liste fuer alles, Simon: „das soll eine liste sein"); wer verbucht hat,
+  // steht als leise Zeile darunter. Gewollte Aenderung: Die Erwartung prueft
+  // den Stand und den Namen darunter. Ohne `alleTermine` (Server davor,
+  // gemerkter Stand) kommt die Liste aus den Event-Punkten.
+  it('Events: eine Tabelle mit Eventdatum statt Verbuchungsdatum, Punkten, Punkteart und Stand', async () => {
     await oeffnen();
     const e = zeilen('Events');
     expect(e).toHaveLength(2);
@@ -434,9 +460,12 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(zelle(e[0], 1)).toHaveTextContent('04.09.2026');
     expect(zelle(e[0], 2)).toHaveTextContent('Gemeinde');
     expect(zelle(e[0], 3)).toHaveTextContent('+2');
-    expect(zelle(e[0], 4)).toHaveTextContent('Alex Beispiel');
+    // Wer verbucht hat, steht sichtbar unter dem Stand (Pruefung 13.10.2026;
+    // davor nur als title am Punktwert, davor als Spalte "Verbucht von").
+    expect(standWort(e[0])).toBe('Anwesend');
+    expect(within(zelle(e[0], 4)).getByText('verbucht von Alex Beispiel')).toBeInTheDocument();
     expect(zelle(e[1], 0)).toHaveTextContent('Taizé-Abend');
-    expect(screen.getByText('3 Punkte aus 2 Events', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
+    expect(screen.getByText('2 Events · 3 Punkte', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
   });
 
   it('Aktivitaeten, Events und Bonuspunkte haben dieselben festen Spaltenbreiten', async () => {
@@ -502,24 +531,34 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(h.stand.fenster.some((f) => (f.props as { antragId?: number }).antragId === 71)).toBe(true);
   });
 
-  it('Events: offene Anwesenheit und anstehende Termine oben; Anwesend ruft die Route des Termins', async () => {
+  // Seit 13.10.2026 EINE Tabelle statt Zeilen darueber (Simon: „das soll eine
+  // liste sein"): Offenes steht weiter oben -- jetzt als erste Zeilen der
+  // Tabelle, "Anwesend" und "Nicht anwesend" in der Zeile. Gewollte
+  // Aenderung: geprueft wird die Tabelle statt der Liste darueber; der Link
+  // fuehrt mit Rueckweg zur Person (?person=). Hier ohne `alleTermine`: die
+  // Liste aus `termine` und den Event-Punkten (gemerkter Stand von vorher).
+  it('Events: zu verbuchende und anstehende Termine oben in der Tabelle; Anwesend ruft die Route des Termins', async () => {
     h.antworten.set(`/admin/konfis/${ID}`, { ...KONFI, termine: [
       { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: true },
       { booking_id: 502, event_id: 42, event_name: 'Laternenumzug', event_date: '2026-11-11T17:00:00Z', booking_status: 'waitlist', art: 'anstehend', darf_verbuchen: true },
     ] });
     await oeffnen();
     const ev = karte('Events');
-    const oben = within(within(ev).getByRole('list', { name: 'Offene und anstehende Events' }));
-    expect(oben.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
-    expect(oben.getByText('Warteliste')).toBeInTheDocument();
+    expect(within(ev).queryByRole('list', { name: 'Offene und anstehende Events' })).toBeNull();
+    const e = zeilen('Events');
+    expect(e.map((z) => [zelle(z, 0).textContent, standWort(z)])).toEqual([
+      ['Konfisamstag', 'Anwesenheit ausstehend'],
+      ['Laternenumzug', 'Warteliste'],
+      ['Konfi-Wochenende', 'Anwesend'],
+      ['Taizé-Abend', 'Anwesend'],
+    ].map(([name, stand]) => [expect.stringContaining(name), stand]));
     // Anstehende Termine haben keinen Knopf.
-    expect(oben.queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
-    // Der Name fuehrt in den Termin -- derselbe Link wie in der Terminliste.
-    expect(oben.getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', '/admin/events/41');
-    expect(oben.getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', '/admin/events/42');
-    // Der Untertitel zaehlt weiter nur die Event-Punkte.
-    expect(ev).toHaveTextContent('3 Punkte aus 2 Events');
-    await act(async () => { fireEvent.click(oben.getByRole('button', { name: 'Konfisamstag: anwesend' })); });
+    expect(within(e[1]).queryByRole('button', { name: /Laternenumzug/ })).toBeNull();
+    // Der Name fuehrt in den Termin -- mit dem Rueckweg zu dieser Konfi.
+    expect(within(e[0]).getByRole('link', { name: 'Konfisamstag' })).toHaveAttribute('href', `/admin/events/41?person=${ID}`);
+    expect(within(e[1]).getByRole('link', { name: 'Laternenumzug' })).toHaveAttribute('href', `/admin/events/42?person=${ID}`);
+    expect(ev).toHaveTextContent('4 Events · 3 Punkte');
+    await act(async () => { fireEvent.click(within(e[0]).getByRole('button', { name: 'Konfisamstag: anwesend' })); });
     expect(h.apiPut).toHaveBeenCalledWith('/events/41/participants/501/attendance', { attendance_status: 'present' });
     await waitFor(() => expect(h.triggerRefresh).toHaveBeenCalledWith('events'));
     expect(h.triggerRefresh).toHaveBeenCalledWith('konfis');
@@ -530,9 +569,10 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
       { booking_id: 501, event_id: 41, event_name: 'Konfisamstag', event_date: '2026-10-03T09:00:00Z', booking_status: 'confirmed', art: 'verbuchen', darf_verbuchen: false },
     ] });
     await oeffnen();
-    const oben = within(within(karte('Events')).getByRole('list', { name: 'Offene und anstehende Events' }));
-    expect(oben.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
-    expect(oben.queryByRole('button')).toBeNull();
+    const erste = zeilen('Events')[0];
+    expect(zelle(erste, 0)).toHaveTextContent('Konfisamstag');
+    expect(zelle(erste, 4)).toHaveTextContent('Anwesenheit ausstehend');
+    expect(within(erste).queryByRole('button')).toBeNull();
   });
 
   it('Stempel: dasselbe Raster wie die Badges, erhalten in der Challenge-Farbe, offen gedaempft', async () => {
@@ -642,13 +682,20 @@ describe('Teamer-Detail (Web)', () => {
     expect(kartenIn('haupt').slice(0, 3)).toEqual(['Aktivitäten', 'Events', 'Zertifikate']);
     expect(kartenIn('seite')).not.toContain('Events');
     const events = zeilen('Events');
+    // Seit 13.10.2026 in der Ordnung der einen Eventliste (eventListe.ts):
+    // Anstehendes oben, dann nach Datum absteigend (vorher die Reihenfolge des
+    // Servers). Gewollte Aenderung der Reihenfolge, die Staende bleiben.
     expect(events.map((z) => [zelle(z, 0).textContent, zelle(z, 2).textContent])).toEqual([
-      ['Konfi-Wochenende', 'Anwesend'],
+      // Angemeldet, noch nicht begonnen -- das Wort der App fuer anstehende
+      // Termine (personTerminStand; vorher stand hier "Anwesend", zwischen-
+      // zeitlich "Gebucht").
+      ['Teamer-Treffen', 'Angemeldet'],
       ['Adventsbasar', 'Warteliste'],
       ['Freizeit-Planung', 'Abwesend'],
-      // Gebucht, aber noch nicht verbucht -- vorher stand hier "Anwesend".
-      ['Teamer-Treffen', 'Gebucht'],
+      ['Konfi-Wochenende', 'Anwesend'],
     ]);
+    // Auch hier fuehrt ein Event mit Rueckweg zur Teamer:in.
+    expect(within(events[0]).getByRole('link', { name: 'Teamer-Treffen' })).toHaveAttribute('href', `/admin/events/305?person=${ID}`);
     // Dieselben Breiten wie die Aktivitaeten darueber: Stand steht unter "Eingetragen von".
     expect(kopfBreiten('Events')).toEqual(kopfBreiten('Aktivitäten'));
   });

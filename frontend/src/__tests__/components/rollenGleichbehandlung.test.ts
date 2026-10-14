@@ -27,7 +27,11 @@ describe('Gottesdienst traegt ueberall dasselbe Zeichen', () => {
 
   it('die Admin-Aktivitaetenliste nutzt das Haus, nicht den Schulhut', () => {
     const detail = lies('src/components/admin/views/KonfiDetailSections.tsx');
-    expect(detail).toContain("activity.type === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT");
+    // Das Zeichen einer Aktivitaet steht seit 13.10.2026 an EINER Stelle fuer
+    // App und Browser (punkteartSymbole.ts); die Liste der App liest es dort.
+    const symbole = lies('src/components/admin/views/punkteartSymbole.ts');
+    expect(symbole).toContain("art === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT");
+    expect(detail).toContain('aktivitaetSymbol(activity.type, isTeamer)');
     expect(detail).toContain("entry.category === 'gottesdienst' ? ICON_GOTTESDIENST");
     // Der Schulhut steht hier nur noch fuer Jahrgaenge, nicht fuer Gottesdienst.
     expect(detail).not.toContain("'gottesdienst' ? ICON_JAHRGANG_GEFUELLT");

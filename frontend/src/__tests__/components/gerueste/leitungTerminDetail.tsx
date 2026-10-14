@@ -172,11 +172,14 @@ export const zuruecksetzen = () => {
   });
 };
 
-/** Die Ansicht rendern und warten, bis Laden und Nachladen durch sind. */
-export const oeffne = async (eventId = 7) => {
+/**
+ * Die Ansicht rendern und warten, bis Laden und Nachladen durch sind.
+ * `zusatz`: weitere Requisiten, wie ParamSeite sie gibt (z. B. `abfrage`).
+ */
+export const oeffne = async (eventId = 7, zusatz: Record<string, unknown> = {}) => {
   const EventDetailView = await ladeAnsicht();
   const onBack = vi.fn();
-  const r = render(<EventDetailView eventId={eventId} onBack={onBack} />);
+  const r = render(<EventDetailView eventId={eventId} onBack={onBack} {...zusatz} />);
   for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
   return { ...r, onBack };
 };

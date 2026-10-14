@@ -375,6 +375,7 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
         <WebDialog
           titel="Beitrag ausblenden"
           beschreibung={`Der Beitrag von ${ausblenden.konfi_name || 'dieser Person'} wird für die Gruppe nicht mehr sichtbar sein. Die einreichende Person sieht ihren Beitrag weiterhin — und die Begründung, falls du eine einträgst.`}
+          rueckfrage="warnung"
           onSchliessen={() => setAusblenden(null)}
           onAbsenden={ausblendenAbschicken}
           aktionen={(

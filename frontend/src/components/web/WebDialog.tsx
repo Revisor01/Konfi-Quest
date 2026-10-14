@@ -5,7 +5,11 @@
 // Modale, und die uebrigen App-Modale stehen im Browser kompakt
 // (theme/web-modale.css).
 // Rueckfragen vor dem Loeschen oder Sperren bleiben bei der App (useIonAlert);
-// dies hier ist nur fuer Formulare.
+// dies hier ist fuer Formulare. Fragt ein offenes Fenster selbst nach
+// (Ungespeicherte Aenderungen, Beitrag ausblenden), ist die Rueckfrage ein
+// zweites WebDialog darueber -- mit `rueckfrage` in der Optik der
+// Rueckfragen der App im Browser (theme/rueckfragen.css): Symbol ueber dem
+// Titel, der Knopf mit art 'gefahr' rot gefuellt (13.10.2026).
 //
 // Verhalten wie ein echter Dialog:
 //   - role="dialog", aria-modal, benannt nach seiner Ueberschrift;
@@ -26,6 +30,8 @@ import React, { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { IonIcon } from '@ionic/react';
 import { ICON_SCHLIESSEN } from '../shared/icons';
+import type { RueckfrageArt } from '../../utils/rueckfragenOptik';
+import WebRueckfrageSymbol from './WebRueckfrageSymbol';
 
 export interface WebDialogProps {
   titel: string;
@@ -48,6 +54,12 @@ export interface WebDialogProps {
    */
   breit?: boolean;
   /**
+   * Noch breiter (bis 1120 px) für eine Tabelle, die in die Breite wächst --
+   * die Anwesenheit mit einer Spalte je Pflicht-Event. Was dann noch nicht
+   * passt, rollt innerhalb des Fensters (WebAnwesenheitDialog).
+   */
+  weit?: boolean;
+  /**
    * Es wird gerade gesendet: Das X ist gesperrt, Escape und ein Klick auf
    * den Grund schliessen nicht -- wie das X der App-Modale
    * (`disabled={isSubmitting}`). Sonst ginge ein Fehler des Servers ins
@@ -55,11 +67,19 @@ export interface WebDialogProps {
    * zweites Mal abschicken (Gegenpruefung 11.10.2026).
    */
   gesperrt?: boolean;
+  /**
+   * Das Fenster ist eine Rueckfrage vor etwas Folgenreichem: Ueber dem Titel
+   * steht das Symbol (Muelleimer bei 'loeschen', Warndreieck bei 'warnung'),
+   * der Knopf mit art 'gefahr' ist rot gefuellt -- wie die Rueckfragen der
+   * App im Browser. Welche Art, entscheidet dieselbe Regel wie dort
+   * (rueckfrageArt): loescht, entfernt oder leert der Knopf, 'loeschen'.
+   */
+  rueckfrage?: RueckfrageArt;
 }
 
 const FOKUSSIERBAR = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false, gesperrt = false }) => {
+const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, aktionen, beschreibung, onAbsenden, breit = false, weit = false, gesperrt = false, rueckfrage }) => {
   const titelId = useId();
   const beschreibungId = useId();
   const fenster = useRef<HTMLDivElement>(null);
@@ -118,7 +138,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
     <div className="web-dialog-grund" onMouseDown={(e) => { if (e.target === e.currentTarget && !gesperrt) schliessen.current(); }}>
       <div
         ref={fenster}
-        className={breit ? 'web-dialog web-dialog--breit' : 'web-dialog'}
+        className={['web-dialog', weit ? 'web-dialog--weit' : breit ? 'web-dialog--breit' : '', rueckfrage ? 'web-rueckfrage' : ''].filter(Boolean).join(' ')}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titelId}
@@ -127,6 +147,7 @@ const WebDialog: React.FC<WebDialogProps> = ({ titel, onSchliessen, children, ak
         onKeyDown={taste}
       >
         <header className="web-dialog__kopf">
+          {rueckfrage && <WebRueckfrageSymbol art={rueckfrage} />}
           <h2 id={titelId} className="web-dialog__titel">{titel}</h2>
           <button type="button" className="web-knopf web-knopf--text web-knopf--symbol" aria-label="Schließen" disabled={gesperrt} onClick={() => schliessen.current()}>
             <IonIcon icon={ICON_SCHLIESSEN} aria-hidden="true" />

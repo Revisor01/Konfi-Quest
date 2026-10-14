@@ -46,6 +46,7 @@ import WebFeld from '../../../web/WebFeld';
 import WebHinweis from '../../../web/WebHinweis';
 import WebKnopf from '../../../web/WebKnopf';
 import WebMehrfachAuswahl from '../../../web/WebMehrfachAuswahl';
+import WebRueckfrageSymbol from '../../../web/WebRueckfrageSymbol';
 import WebTextfeld from '../../../web/WebTextfeld';
 import { WebExternLink, WebExternSymbol } from './WebLeitungBausteine';
 import '../../../../theme/web/leitung.css';
@@ -124,7 +125,7 @@ const VorhandeneDateien: React.FC<{ f: MaterialFormularZustand; loeschen?: Datei
             {/* Escape bricht nur die Rückfrage ab; der Dialog mit allen
                 Eingaben bleibt. */}
             <div
-              className="web-material-rueckfrage"
+              className="web-material-rueckfrage web-rueckfrage"
               role="group"
               aria-label={`${datei.original_name} löschen`}
               onKeyDown={(ereignis) => {
@@ -133,6 +134,9 @@ const VorhandeneDateien: React.FC<{ f: MaterialFormularZustand; loeschen?: Datei
                 if (!loeschen.loescht) loeschen.abbrechen(zeile);
               }}
             >
+              {/* Wie die Rückfragen der App im Browser: Mülleimer vorn,
+                  „Löschen" rot gefüllt (theme/rueckfragen.css, Teil 4). */}
+              <WebRueckfrageSymbol art="loeschen" klein />
               <p className="web-material-rueckfrage__text">„{datei.original_name}“ wirklich löschen?</p>
               <WebKnopf klein onClick={() => loeschen.abbrechen(zeile)} disabled={loeschen.loescht}>Abbrechen</WebKnopf>
               <WebKnopf klein art="gefahr" onClick={() => loeschen.bestaetigen(datei, zeile)} disabled={loeschen.loescht}>Löschen</WebKnopf>

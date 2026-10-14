@@ -8,18 +8,23 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { konto, neuerStand, type LeitungTestStand } from './leitungTestHilfe';
+import { ziehenZumAktualisieren } from '../support/ionicAttrappe';
 
 const h = vi.hoisted(() => ({
   apiGet: vi.fn(),
   apiDelete: vi.fn(),
   apiPost: vi.fn(),
   refresh: vi.fn(),
+  // refreshLive der Konfi-Liste (useOfflineQuery 'admin:konfis:...').
+  konfisLive: vi.fn(),
   setError: vi.fn(),
   setSuccess: vi.fn(),
   breit: true,
   stand: { alert: null, fenster: [], push: vi.fn() } as unknown as LeitungTestStand,
   user: {} as Record<string, unknown>,
   standort: { pathname: '/admin/konfis', search: '' },
+  // Was die Seite bei Meldungen des Servers neu laedt (useLiveRefresh), je Art.
+  live: {} as Record<string, () => void>,
 }));
 
 vi.mock('@ionic/react', async () => (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand));
@@ -34,14 +39,16 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 vi.mock('../../../contexts/ModalContext', () => ({ useModalPage: () => ({ pageRef: { current: null }, presentingElement: null }) }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({
-  useLiveRefresh: () => {},
+  useLiveRefresh: (arten: string | string[], rueckruf: () => void) => {
+    for (const art of [arten].flat()) h.live[art] = rueckruf;
+  },
   useLiveUpdate: () => ({ triggerRefresh: vi.fn() }),
 }));
 vi.mock('../../../hooks/useOfflineQuery', () => ({
   useOfflineQuery: (schluessel: string) => ({
     data: schluessel.startsWith('admin:konfis') ? KONFIS : schluessel.startsWith('admin:jahrgaenge') ? JAHRGAENGE : {},
     loading: false, error: null, isStale: false, isOffline: false,
-    refresh: h.refresh, refreshLive: vi.fn(),
+    refresh: h.refresh, refreshLive: schluessel.startsWith('admin:konfis') ? h.konfisLive : vi.fn(),
   }),
 }));
 vi.mock('../../../hooks/useOnboardingOnce', () => ({
@@ -82,10 +89,13 @@ beforeEach(() => {
   h.breit = true;
   h.user = konto('org_admin');
   h.standort = { pathname: '/admin/konfis', search: '' };
+  h.live = {};
   h.apiGet.mockImplementation(async (url: string) => {
     // Das Formular "Teamer:in anlegen" laedt Rollen und Jahrgaenge.
     if (url === '/roles') return { data: [{ id: 2, name: 'admin' }, { id: 3, name: 'teamer' }] };
     if (url === '/admin/jahrgaenge') return { data: [{ id: 12, name: 'Jahrgang 2026' }] };
+    // Die Anwesenheit des Jahrgangs (Dialog der Web-Fassung, 13.10.2026).
+    if (url === '/admin/jahrgaenge/12/attendance-matrix') return { data: { jahrgang: { id: 12, name: 'Jahrgang 2026' }, konfis: [], events: [], bookings: [] } };
     return { data: [{ id: 21, name: 'Frieda Muster', username: 'frieda', jahrgang_name: 'Jahrgang 2026', badge_count: 2, cert_count: 1 }], headers: {} };
   });
   h.apiDelete.mockResolvedValue({ data: {} });
@@ -109,14 +119,21 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     expect(screen.getByText('Ben Schmidt')).toBeInTheDocument();
   });
 
-  it('breit: Konfi anlegen, Anwesenheit und Teamer:in anlegen oeffnen die Fenster der Seite', () => {
+  // Seit 13.10.2026 eigene Dialoge der Web-Fassung (WebKonfiDialog,
+  // WebAnwesenheitDialog); Formular, Speichern und Matrix:
+  // webKonfiFenster.test.tsx. Die App-Fenster gehen breit nicht mehr auf.
+  it('breit: Konfi anlegen und Anwesenheit oeffnen die Dialoge der Web-Fassung mit den Jahrgaengen der Seite', async () => {
     render(<AdminKonfisPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Konfi anlegen' }));
-    expect(h.stand.fenster[0].komponente).toBe(KonfiModal);
-    expect(h.stand.fenster[0].props).toEqual(expect.objectContaining({ jahrgaenge: JAHRGAENGE }));
-    fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' }));
-    expect(h.stand.fenster[1].komponente).toBe(AttendanceMatrixModal);
-    expect(h.stand.fenster[1].props).toEqual(expect.objectContaining({ jahrgaenge: JAHRGAENGE }));
+    const anlegen = screen.getByRole('dialog', { name: 'Konfi anlegen' });
+    const jahrgang = within(anlegen).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement;
+    expect([...jahrgang.options].map((o) => o.textContent)).toEqual(['Bitte wählen', 'Jahrgang 2026']);
+    fireEvent.click(within(anlegen).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' })); });
+    const anwesenheit = screen.getByRole('dialog', { name: 'Anwesenheit' });
+    expect((within(anwesenheit).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement).value).toBe('12');
+    expect(h.stand.fenster.filter((f) => f.komponente === KonfiModal || f.komponente === AttendanceMatrixModal)).toHaveLength(0);
   });
 
   // Seit 11.10.2026 steht das Formular im Browser als eigener Dialog
@@ -159,15 +176,190 @@ describe('/admin/konfis: breit die Tabelle, schmal die App', () => {
     await waitFor(() => expect(h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer')).toHaveLength(2));
   });
 
+  // Simon, 13.10.2026: die Anwesenheit nur bei den Konfis, nicht beim Team.
+  it('schmal: der Knopf "Anwesenheit" steht nur bei den Konfis; beim Team nur das Plus', async () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    await screen.findByRole('tab', { name: 'Team (1)' });
+    fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit und Konfisprüche anzeigen' }));
+    expect(h.stand.fenster.filter((f) => f.komponente === AttendanceMatrixModal)).toHaveLength(1);
+    fireEvent.click(screen.getByRole('tab', { name: 'Team (1)' }));
+    expect(screen.queryByRole('button', { name: 'Anwesenheit und Konfisprüche anzeigen' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Konfis (2)' }));
+    expect(screen.getByRole('button', { name: 'Anwesenheit und Konfisprüche anzeigen' })).toBeInTheDocument();
+  });
+
   it('schmal, Ansicht Team: das Plus oeffnet weiter das Fenster der App mit fester Rolle Teamer -- kein Dialog', () => {
     h.breit = false;
     render(<AdminKonfisPage />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Team' }));
+    fireEvent.click(screen.getByRole('tab', { name: /^Team/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' }));
     const fenster = h.stand.fenster.filter((f) => f.komponente === UserManagementModal);
     expect(fenster).toHaveLength(1);
     expect(fenster[0].props).toEqual(expect.objectContaining({ userId: null, festeRolle: 'teamer' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  // Simon, 13.10.2026: die Zahl des Teams erschien erst nach dem Klick auf
+  // "Team". In der App stand am Umschalter gar keine Zahl; jetzt beide in
+  // Klammern, das Team geladen beim Oeffnen der Seite.
+  const teamAbrufe = () => h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer').length;
+
+  it('schmal: der Umschalter zeigt die Anzahl der Konfis und des Teams gleich beim Oeffnen; der Wechsel fragt nicht erneut', async () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    expect(await screen.findByRole('tab', { name: 'Team (1)' })).toHaveAttribute('aria-selected', 'false');
+    expect(screen.getByRole('tab', { name: 'Konfis (2)' })).toHaveAttribute('aria-selected', 'true');
+    expect(teamAbrufe()).toBe(1);
+    fireEvent.click(screen.getByRole('tab', { name: 'Team (1)' }));
+    expect(screen.getByText('Frieda Muster')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Konfis (2)' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Team (1)' }));
+    await act(async () => { await Promise.resolve(); });
+    expect(teamAbrufe()).toBe(1);
+  });
+
+  // Befund 13.10.2026: /admin/konfis ist die Startseite der Leitung, und das
+  // Team laedt dort beim Oeffnen. Im Funkloch meldete es sich mit einem roten
+  // Toast, obwohl niemand das Team geoeffnet hatte, und lud nicht neu, wenn
+  // das Netz zurueckkam. Jetzt fehlt im Hintergrund nur die Zahl am
+  // Umschalter -- keine "Team (0)", denn ein Fehler ist kein leeres Team.
+  const appReiter = () => screen.getAllByRole('tab').map((t) => t.textContent);
+  const FRIEDA = { id: 21, name: 'Frieda Muster', username: 'frieda', badge_count: 2, cert_count: 1 };
+  const teamAntwortet = (wie: { ok: boolean; team?: unknown[] }) => h.apiGet.mockImplementation(async (url: string) => {
+    if (url !== '/admin/konfis/teamer') return { data: [], headers: {} };
+    if (!wie.ok) throw new Error('Netz weg');
+    return { data: wie.team ?? [FRIEDA] };
+  });
+
+  it('schmal: scheitert das Team beim Oeffnen, heisst der Reiter nur "Team" -- ohne Zahl, ohne Toast; der Wechsel auf "Team" versucht es neu', async () => {
+    h.breit = false;
+    const antwort = { ok: false };
+    teamAntwortet(antwort);
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminKonfisPage />);
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    expect(appReiter()).toEqual(['Konfis (2)', 'Team']);
+    expect(h.setError).not.toHaveBeenCalled();
+
+    antwort.ok = true;
+    await act(async () => { fireEvent.click(screen.getByRole('tab', { name: 'Team' })); });
+    expect(await screen.findByText('Frieda Muster')).toBeInTheDocument();
+    expect(appReiter()).toEqual(['Konfis (2)', 'Team (1)']);
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
+    stumm.mockRestore();
+  });
+
+  it('schmal: scheitert auch der neue Versuch bei offenem Team, kommt der Toast -- einmal', async () => {
+    h.breit = false;
+    teamAntwortet({ ok: false });
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminKonfisPage />);
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    await act(async () => { fireEvent.click(screen.getByRole('tab', { name: 'Team' })); });
+    await waitFor(() => expect(h.setError).toHaveBeenCalledWith('Das Team konnte nicht geladen werden'));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(h.setError).toHaveBeenCalledTimes(1);
+    expect(teamAbrufe()).toBe(2);
+    expect(appReiter()).toEqual(['Konfis (2)', 'Team']);
+    stumm.mockRestore();
+  });
+
+  it.each([false, true])('ohne Netz beim Oeffnen (breit: %s): kommt die Verbindung zurueck (sync:reconnect), laedt das Team still und die Zahl steht da', async (breit) => {
+    h.breit = breit;
+    const antwort = { ok: false };
+    teamAntwortet(antwort);
+    const stumm = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<AdminKonfisPage />);
+    await waitFor(() => expect(stumm).toHaveBeenCalledTimes(1));
+    antwort.ok = true;
+    await act(async () => { window.dispatchEvent(new CustomEvent('sync:reconnect')); });
+    if (breit) expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    else expect(await screen.findByRole('tab', { name: 'Team (1)' })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+    expect(h.setError).not.toHaveBeenCalled();
+    stumm.mockRestore();
+  });
+
+  it('schmal: Herunterziehen laedt Konfis und Team neu', async () => {
+    h.breit = false;
+    render(<AdminKonfisPage />);
+    await screen.findByRole('tab', { name: 'Team (1)' });
+    await act(async () => { ziehenZumAktualisieren(); });
+    await waitFor(() => expect(teamAbrufe()).toBe(2));
+  });
+
+  it.each([false, true])('meldet der Server eine Aenderung an Konten (breit: %s), laedt das Team neu und die Zahl folgt', async (breit) => {
+    h.breit = breit;
+    render(<AdminKonfisPage />);
+    if (breit) await screen.findByRole('button', { name: /^Team\s*1$/ });
+    else await screen.findByRole('tab', { name: 'Team (1)' });
+    const neu = { id: 22, name: 'Gero Beispiel', username: 'gero', badge_count: 0, cert_count: 0 };
+    h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/admin/konfis/teamer' ? [{ id: 21, name: 'Frieda Muster', username: 'frieda' }, neu] : [], headers: {} }));
+    await act(async () => { h.live.users(); });
+    if (breit) expect(await screen.findByRole('button', { name: /^Team\s*2$/ })).toBeInTheDocument();
+    else expect(await screen.findByRole('tab', { name: 'Team (2)' })).toBeInTheDocument();
+    expect(teamAbrufe()).toBe(2);
+  });
+
+  // Befund 13.10.2026: Die Leitung traegt unter Events die Anwesenheit ein und
+  // wechselt zurueck in den Reiter Konfis. Die Seite bleibt eingehaengt
+  // (Reiter), und der Server meldet Anwesenheit und Check-in nur als 'events'
+  // -- die Spalte "Pflicht-Events" (und die Punkte) blieben auf dem alten
+  // Stand, bis jemand herunterzog.
+  it.each([false, true])('meldet der Server eine Aenderung an Events (Anwesenheit, breit: %s), laedt die Konfi-Liste neu', (breit) => {
+    h.breit = breit;
+    render(<AdminKonfisPage />);
+    expect(h.konfisLive).not.toHaveBeenCalled();
+    act(() => { h.live.events(); });
+    expect(h.konfisLive).toHaveBeenCalledTimes(1);
+  });
+
+  // Befund 13.10.2026: Wechselt das Fenster ueber 992 px die Fassung, haengt
+  // sich die andere neu ein -- mit einem Stand > 0, wenn vorher schon einmal
+  // neu geladen wurde (Herunterziehen, Anlegen, Signal 'users'). Dann liefen
+  // der erste Abruf und einer fuer den Stand: zwei GET fuer dieselbe Liste.
+  it.each([true, false])('wechselt die Breite nach einem neuen Stand (vorher breit: %s), laedt die andere Fassung das Team genau einmal', async (vorherBreit) => {
+    h.breit = vorherBreit;
+    const { rerender } = render(<AdminKonfisPage />);
+    if (vorherBreit) await screen.findByRole('button', { name: /^Team\s*1$/ });
+    else await screen.findByRole('tab', { name: 'Team (1)' });
+    await act(async () => { h.live.users(); });
+    await waitFor(() => expect(teamAbrufe()).toBe(2));
+
+    h.breit = !vorherBreit;
+    rerender(<AdminKonfisPage />);
+    if (vorherBreit) expect(await screen.findByRole('tab', { name: 'Team (1)' })).toBeInTheDocument();
+    else expect(await screen.findByRole('button', { name: /^Team\s*1$/ })).toBeInTheDocument();
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    expect(teamAbrufe()).toBe(3);
+  });
+
+  // Befund 11.10.2026 (docs/offene-befunde.md): In der App erschien eine neu
+  // angelegte Teamer:in erst nach einem Wechsel Konfis/Team -- das Fenster
+  // rief danach nur die Konfi-Liste neu ab, die Team-Liste nicht.
+  it('schmal: nach "Teamer:in anlegen" steht die Neue sofort in der Team-Liste, ohne Wechsel Konfis/Team', async () => {
+    h.breit = false;
+    const frieda = { id: 21, name: 'Frieda Muster', username: 'frieda', badge_count: 2, cert_count: 1 };
+    const tina = { id: 88, name: 'Tina Team', username: 'tina.team', badge_count: 0, cert_count: 0 };
+    let team = [frieda];
+    h.apiGet.mockImplementation(async (url: string) => (url === '/admin/konfis/teamer' ? { data: team } : { data: [], headers: {} }));
+    render(<AdminKonfisPage />);
+    fireEvent.click(screen.getByRole('tab', { name: /^Team/ }));
+    expect(await screen.findByText('Frieda Muster')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Teamer:in anlegen' }));
+    const fenster = h.stand.fenster.find((f) => f.komponente === UserManagementModal)!;
+    const abrufeVorher = h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer').length;
+
+    team = [frieda, tina];
+    await act(async () => { (fenster.props.onSuccess as () => void)(); });
+
+    expect(await screen.findByText('Tina Team')).toBeInTheDocument();
+    expect(screen.getByText('Frieda Muster')).toBeInTheDocument();
+    expect(h.apiGet.mock.calls.filter(([u]) => u === '/admin/konfis/teamer')).toHaveLength(abrufeVorher + 1);
+    expect(h.refresh).toHaveBeenCalledTimes(1);
   });
 
   it('breit: Loeschen fragt wie in der App nach und ruft erst nach der Bestaetigung die Route', async () => {

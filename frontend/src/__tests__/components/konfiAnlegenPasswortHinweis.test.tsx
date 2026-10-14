@@ -42,10 +42,15 @@ describe('Konfi anlegen: der Hinweis zum Passwort stimmt', () => {
   });
 
   it('das Verhalten, das der Hinweis beschreibt, gibt es so', () => {
-    // Einmal angezeigt: der Dialog nach dem Anlegen mit Kopieren-Knopf.
+    // Einmal angezeigt: der Dialog nach dem Anlegen mit Kopieren-Knopf. Das
+    // Passwort kommt aus der Antwort des Anlegens (useKonfiFormular, seit
+    // 13.10.2026 dieselbe Stelle für die App und den Dialog des Browsers).
+    const formular = lies('src/components/admin/useKonfiFormular.ts');
+    expect(formular).toContain('passwort: antwort.data?.temporaryPassword');
+    expect(formular).toContain("export const EINMALPASSWORT_TITEL = 'Einmalpasswort';");
     const liste = lies('src/components/admin/pages/AdminKonfisPage.tsx');
-    expect(liste).toContain('const tempPassword = response.data.temporaryPassword;');
-    expect(liste).toContain("header: 'Einmalpasswort'");
+    expect(liste).toContain('await handleKonfiCreated(ergebnis.passwort, konfiData);');
+    expect(liste).toContain('header: EINMALPASSWORT_TITEL');
     // Danach nur neu erzeugen: die Detailansicht ruft regenerate-password,
     // eine Route, die ein bestehendes Passwort liefert, gibt es nicht.
     const detail = lies('src/components/admin/views/KonfiDetailView.tsx');

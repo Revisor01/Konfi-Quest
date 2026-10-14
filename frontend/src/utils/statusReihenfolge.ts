@@ -75,6 +75,28 @@ export const TEILNAHME_STATUS_REIHE: readonly TeilnahmeStatusText[] = [
 ];
 export const teilnahmeStatusRang = nachReihe(TEILNAHME_STATUS_REIHE);
 
+/**
+ * Die Eventliste der Personenseite im Browser (admin/web/leitung/eventListe.ts,
+ * eventStand): offene und anstehende Buchungen mit den Woertern der App
+ * (personTerminStand), alles andere mit denen der Teilnehmerliste
+ * (teilnahmeDarstellung), abgesagte Termine "Abgesagt". Erst was zu tun ist,
+ * dann was bevorsteht, dann was gelaufen ist, zuletzt Abgemeldetes und
+ * Abgesagtes. Stand bis zur Pruefung vom 13.10.2026 lokal in
+ * WebKonfiKarten.tsx, mit eigenen Woertern.
+ */
+export const PERSON_EVENT_STATUS_REIHE: readonly string[] = [
+  'Anwesenheit ausstehend',
+  'Angemeldet',
+  'Gebucht',
+  'Warteliste',
+  'Anwesend',
+  'Abwesend',
+  'Abgemeldet (nachgetragen)',
+  'Abgemeldet',
+  'Abgesagt',
+];
+export const personEventStatusRang = nachReihe(PERSON_EVENT_STATUS_REIHE);
+
 /** Events der Konfi-Zeit (utils/konfiZeit.ts): wie die Teilnahme, Abgesagtes zuletzt. */
 export const KONFI_ZEIT_STATUS_REIHE: readonly string[] = [
   'Angemeldet',

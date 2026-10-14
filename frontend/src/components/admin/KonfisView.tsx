@@ -75,7 +75,12 @@ interface KonfisViewProps {
    * keine sehen" -- der Leerzustand sagt das jetzt (Rollen-Bericht 26.08.2026).
    */
   ohneJahrgang?: boolean;
-
+  /**
+   * Zaehlt hoch, wenn die Team-Liste neu geladen werden soll -- nach
+   * "Teamer:in anlegen" im Fenster der Seite, beim Herunterziehen und bei
+   * einer Meldung 'users' (wie `teamStand` in WebKonfis; useTeamerListe).
+   */
+  teamStand?: number;
 }
 
 const KonfisView: React.FC<KonfisViewProps> = ({
@@ -87,7 +92,8 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   selectedKonfiId,
   ohneJahrgang = false,
   onViewModeChange,
-  initialViewMode = 'konfis'
+  initialViewMode = 'konfis',
+  teamStand = 0
 }) => {
   const { user } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,9 +102,17 @@ const KonfisView: React.FC<KonfisViewProps> = ({
   const [viewMode, setViewMode] = useState<'konfis' | 'teamer'>(initialViewMode);
   // Anonyme Messung (docs/messung/umami.md, S15): wird gesucht? Nie der Begriff.
   useSucheMessung(viewMode === 'teamer' ? 'team' : 'konfis', searchTerm);
-  // Die Team-Liste laedt erst, wenn das Segment "Team" gewaehlt ist (Hook
-  // geteilt mit der Web-Fassung, useTeamerListe.ts).
-  const { teamers, laedt: teamerLoading, laden: loadTeamers } = useTeamerListe(viewMode === 'teamer');
+  // Die Team-Liste laedt beim Oeffnen der Seite, damit der Umschalter die
+  // Anzahl des Teams gleich zeigt (Simon, 13.10.2026); der Wechsel fragt
+  // nicht erneut (Hook geteilt mit der Web-Fassung, useTeamerListe.ts). Ein
+  // neuer `teamStand` -- etwa nach "Teamer:in anlegen" -- laedt sie neu; bis
+  // 13.10.2026 erschien eine neue Teamer:in erst nach einem Wechsel
+  // Konfis/Team (Befund 11.10.2026). Ein Fehler meldet sich nur bei offenem
+  // Team, im Hintergrund fehlt nur die Zahl am Umschalter.
+  const { teamers, laedt: teamerLoading, laden: loadTeamers, geladen: teamGeladen, fehler: teamFehler } = useTeamerListe({
+    offen: viewMode === 'teamer',
+    stand: teamStand,
+  });
   // Hier lud bis 28.09.2026 jeder Mount GET /organizations/:id (samt sechs
   // Zaehlabfragen im Server) fuer eine "X von Y Konfis"-Anzeige, die es nie
   // gab -- der Wert wurde gesetzt, aber nie gelesen (Audit Screens Leitung
@@ -208,12 +222,20 @@ const KonfisView: React.FC<KonfisViewProps> = ({
         style={{ margin: '0 var(--app-abstand-basis) var(--app-abstand-eng)', maxWidth: 'calc(100% - 32px)' }}
       >
         {/* Reiter aus der gemeinsamen Beschreibung (seiten/konfisLeitung.ts);
-            die App führt „Team" intern als `teamer`. */}
-        {inFassung(KONFIS_ANSICHT, 'app').map((a) => (
-          <IonSegmentButton key={a.schluessel} value={a.schluessel === 'team' ? 'teamer' : a.schluessel}>
-            <IonLabel>{a.kurz ?? a.label}</IonLabel>
-          </IonSegmentButton>
-        ))}
+            die App führt „Team" intern als `teamer`. Die Anzahl steht in
+            Klammern (wie die Reiter im Betrieb), beim Team sobald die Liste
+            da ist -- nicht erst nach dem Wechsel (Simon, 13.10.2026). Ein
+            Fehler zeigt keine Zahl. */}
+        {inFassung(KONFIS_ANSICHT, 'app').map((a) => {
+          const anzahl = a.schluessel === 'team'
+            ? (teamGeladen && !teamFehler ? teamers.length : undefined)
+            : konfis.length;
+          return (
+            <IonSegmentButton key={a.schluessel} value={a.schluessel === 'team' ? 'teamer' : a.schluessel}>
+              <IonLabel>{a.kurz ?? a.label}{anzahl !== undefined ? ` (${anzahl})` : ''}</IonLabel>
+            </IonSegmentButton>
+          );
+        })}
       </IonSegment>
 
       {/* Suche & Filter */}

@@ -13,8 +13,15 @@ import { IonIcon } from '@ionic/react';
 
 /** Farben fuer Initialen: Rolle bzw. Stand einer Person. */
 export type WebKreisPersonTon = 'konfis' | 'erreicht' | 'teamer' | 'users' | 'leitung' | 'neutral';
-/** Farben fuer ein Symbol: der Bereich, zu dem die Zeile gehoert. */
-export type WebKreisSymbolTon = 'categories' | 'level' | 'jahrgang' | 'teamer' | 'material' | 'wrapped' | 'users' | 'erfolg' | 'neutral';
+/**
+ * Farben fuer ein Symbol: der Bereich, zu dem die Zeile gehoert. Die vier
+ * Punktearten der Personenseite (13.10.2026, Simon: „color coded entsprechend
+ * ihrer kategorien ... grün blau rot orange"): Gottesdienst blau, Gemeinde
+ * gruen, Events rot, Bonus orange -- dieselben Farben wie die Kreise der App.
+ */
+export type WebKreisSymbolTon =
+  | 'categories' | 'level' | 'jahrgang' | 'teamer' | 'material' | 'wrapped' | 'users' | 'erfolg' | 'neutral'
+  | 'gottesdienst' | 'gemeinde' | 'events' | 'bonus';
 
 export type WebKreisProps =
   | {

@@ -58,8 +58,10 @@ beforeEach(() => {
 describe('Konfis und Team: eine Beschreibung', () => {
   it('die App zeigt die Reiter der Beschreibung', async () => {
     await appKonfis();
-    expect(appReiter(screen.getByRole('tablist'))).toEqual(inFassung(KONFIS_ANSICHT, 'app').map((a) => a.label));
-    expect(appReiter(screen.getByRole('tablist'))).toEqual(['Konfis', 'Team']);
+    // Seit 13.10.2026 mit der Anzahl in Klammern (Simon: die Zahl des Teams gleich sehen).
+    const ohneAnzahl = appReiter(screen.getByRole('tablist')).map((t) => t.replace(/ \(\d+\)$/, ''));
+    expect(ohneAnzahl).toEqual(inFassung(KONFIS_ANSICHT, 'app').map((a) => a.label));
+    expect(appReiter(screen.getByRole('tablist'))).toEqual(['Konfis (1)', 'Team (0)']);
   });
 
   it('der Browser zeigt dieselben Reiter als Chips', async () => {

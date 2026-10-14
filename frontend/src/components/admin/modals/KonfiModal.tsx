@@ -1,5 +1,4 @@
-import React, { useRef, useState } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -31,19 +30,22 @@ import {
 import { useApp } from '../../../contexts/AppContext';
 import type { KonfiFormDaten } from '../../../types/user';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { safeUUID } from '../../../utils/uuid';
+import {
+  ANLEGEN_HINWEIS,
+  BEARBEITEN_HINWEIS,
+  WECHSEL_BLEIBT,
+  WECHSEL_FOLGEN,
+  useKonfiFormular,
+  type KonfiJahrgang,
+  type KonfiZumBearbeiten,
+} from '../useKonfiFormular';
 
-interface Jahrgang {
-  id: number;
-  name: string;
-  // Punktearten des Jahrgangs. Sie kommen aus GET /jahrgaenge (SELECT j.*)
-  // und werden fuer die Warnung beim Wechsel gebraucht.
-  gottesdienst_enabled?: boolean;
-  gemeinde_enabled?: boolean;
-}
+// Felder, Prüfung, Kennung und die Warnungen beim Jahrgangswechsel stehen in
+// useKonfiFormular -- dieselbe Logik wie im Dialog der Web-Fassung
+// (web/leitung/WebKonfiDialog).
 
 interface KonfiModalProps {
-  jahrgaenge: Jahrgang[];
+  jahrgaenge: KonfiJahrgang[];
   onClose: () => void;
   onSave: (konfiData: KonfiFormDaten) => void;
   dismiss?: () => void;
@@ -55,27 +57,17 @@ interface KonfiModalProps {
    * Hinweis und die Warnungen unterscheiden sich. Zwei Dateien waeren genau
    * die Kopie, die in diesem Projekt regelmaessig auseinanderlaeuft.
    */
-  konfi?: {
-    id: number;
-    display_name: string;
-    jahrgang_id: number | null;
-    gottesdienst_points?: number;
-    gemeinde_points?: number;
-  };
+  konfi?: KonfiZumBearbeiten;
   /** Jahrgaenge, denen die angemeldete Person zugewiesen ist (nur `admin`). */
   eigeneJahrgangIds?: number[];
 }
 
 const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, dismiss, konfi, eigeneJahrgangIds }) => {
   const { isOnline } = useApp();
-  const bearbeiten = !!konfi;
-  const [name, setName] = useState(konfi?.display_name ?? '');
-  const [jahrgangId, setJahrgangId] = useState<number | null>(konfi?.jahrgang_id ?? null);
-  const { isSubmitting, guard } = useActionGuard();
-  // Wiederholungsschutz beim Anlegen: eine Kennung je offenem Fenster. Ein
-  // zweiter Versuch (keine Antwort, "Erneut versuchen", "Trotzdem anlegen")
-  // legt damit kein zweites Konto an.
-  const anlegeKennung = useRef(safeUUID());
+  const {
+    bearbeiten, name, setName, jahrgangId, setJahrgangId, isSubmitting, guard, isValid, daten,
+    wechselt, wechselAchtung,
+  } = useKonfiFormular({ jahrgaenge, konfi, eigeneJahrgangIds });
 
   const handleClose = () => {
     if (dismiss) {
@@ -86,50 +78,12 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
   };
 
   const handleSave = async () => {
-    if (!name.trim() || jahrgangId === null) return;
+    if (!isValid) return;
 
     await guard(async () => {
-      const konfiData: KonfiFormDaten = {
-        name: name.trim(),
-        jahrgang_id: jahrgangId,
-        ...(bearbeiten ? {} : { client_id: anlegeKennung.current })
-      };
-
-      await onSave(konfiData);
+      await onSave(daten());
     });
   };
-
-  const isValid = name.trim().length > 0 && jahrgangId !== null;
-
-  // --- Warnungen beim Jahrgangswechsel (Entscheidungen 27.08.2026) ---
-  //
-  // Beide warnen nur, sie blockieren nicht: Der Wechsel ist ein legitimer
-  // Vorgang — meist "falsch angelegt, muss in den richtigen Jahrgang".
-  // Ueberraschend sind nur die Folgen, und genau die stehen hier.
-  const wechselt = bearbeiten && jahrgangId !== null && jahrgangId !== konfi!.jahrgang_id;
-  const ziel = jahrgaenge.find((jg) => jg.id === jahrgangId);
-
-  // 1. Punktearten: Ist im Ziel-Jahrgang eine Punkteart abgeschaltet, die die
-  //    Konfi schon gesammelt hat, verschwinden diese Punkte aus jeder Anzeige.
-  //    Sie bleiben in der Datenbank — sichtbar sind sie dort nicht mehr.
-  const verlorenePunkte: string[] = [];
-  if (wechselt && ziel) {
-    if (ziel.gottesdienst_enabled === false && (konfi!.gottesdienst_points ?? 0) > 0) {
-      verlorenePunkte.push(`${konfi!.gottesdienst_points} Gottesdienstpunkte`);
-    }
-    if (ziel.gemeinde_enabled === false && (konfi!.gemeinde_points ?? 0) > 0) {
-      verlorenePunkte.push(`${konfi!.gemeinde_points} Gemeindepunkte`);
-    }
-  }
-
-  // 2. Eigene Zuweisung: Ein `admin` sieht nur Konfis seiner Jahrgaenge. Schiebt
-  //    er eine Konfi in einen fremden, verschwindet sie aus seiner Liste.
-  //    `eigeneJahrgangIds` bleibt fuer org_admin leer — dort gibt es die Grenze
-  //    nicht, also auch keine Warnung.
-  const verliertSicht = wechselt
-    && Array.isArray(eigeneJahrgangIds)
-    && eigeneJahrgangIds.length > 0
-    && !eigeneJahrgangIds.includes(jahrgangId!);
 
   return (
     <IonPage>
@@ -257,31 +211,18 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                   Es gelten die Regeln des neuen Jahrgangs:
                 </p>
                 <ul style={{ margin: 0, paddingLeft: 'var(--app-abstand-gross)', fontSize: 'var(--app-text-basis)', lineHeight: '1.6' }}>
-                  <li>Anmeldungen zu künftigen Events des alten Jahrgangs fallen weg.</li>
-                  <li>Pflicht-Events des neuen Jahrgangs kommen dazu.</li>
-                  <li>Der Jahrgangs-Chat wechselt mit.</li>
-                  <li>Der Jahresrückblick erscheint erst wieder, wenn der neue
-                      Jahrgang freigegeben ist.</li>
+                  {WECHSEL_FOLGEN.map((folge) => <li key={folge}>{folge}</li>)}
                 </ul>
                 <p style={{ margin: 'var(--app-abstand-schmal) 0 0', fontSize: 'var(--app-text-sekundaer)', lineHeight: '1.5', opacity: 0.85 }}>
-                  Bereits erfasste Anwesenheiten und vergangene Events bleiben
-                  unberührt.
+                  {WECHSEL_BLEIBT}
                 </p>
 
-                {verlorenePunkte.length > 0 && (
-                  <p style={{ margin: 'var(--app-abstand-mittel) 0 0', fontSize: 'var(--app-text-basis)', lineHeight: '1.5', fontWeight: 'var(--app-schrift-halbfett)'}}>
-                    Achtung: In {ziel?.name} {verlorenePunkte.length === 1 ? 'ist diese Punkteart' : 'sind diese Punktearten'} abgeschaltet
-                    — {verlorenePunkte.join(' und ')} werden dort nicht mehr angezeigt.
+                {/* Punktearten abgeschaltet, eigene Zuweisung fehlt (useKonfiFormular). */}
+                {wechselAchtung.map((satz) => (
+                  <p key={satz} style={{ margin: 'var(--app-abstand-mittel) 0 0', fontSize: 'var(--app-text-basis)', lineHeight: '1.5', fontWeight: 'var(--app-schrift-halbfett)'}}>
+                    {satz}
                   </p>
-                )}
-
-                {verliertSicht && (
-                  <p style={{ margin: 'var(--app-abstand-mittel) 0 0', fontSize: 'var(--app-text-basis)', lineHeight: '1.5', fontWeight: 'var(--app-schrift-halbfett)'}}>
-                    Achtung: Du bist {ziel?.name} nicht zugewiesen — nach dem
-                    Speichern siehst du {name.trim() || 'diese Konfi'} nicht mehr
-                    in deiner Liste.
-                  </p>
-                )}
+                ))}
               </IonCardContent>
             </IonCard>
           </IonList>
@@ -302,7 +243,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
                   {/* Das Passwort wird gehasht gespeichert und nur im Dialog
                       nach dem Anlegen gezeigt; die Detailansicht kann nur ein
                       neues erzeugen (Audit Screens Leitung BF-05). */}
-                  Benutzername und Passwort werden automatisch generiert. Das Passwort wird dir nach dem Anlegen einmal angezeigt — kopiere es und gib es weiter. Einsehen lässt es sich danach nicht mehr; in der Detailansicht kannst du nur ein neues erzeugen.
+                  {ANLEGEN_HINWEIS}
                 </p>
               </IonCardContent>
             </IonCard>
@@ -323,8 +264,7 @@ const KonfiModal: React.FC<KonfiModalProps> = ({ jahrgaenge, onClose, onSave, di
             <IonCard className="app-card" style={{ background: 'rgba(var(--app-color-konfis-rgb), 0.08)', border: '1px solid rgba(var(--app-color-konfis-rgb), 0.2)' }}>
               <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
                 <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: '1.5', color: 'var(--app-text-konfis)' }}>
-                  Der Benutzername zum Anmelden ändert sich nicht — auch dann
-                  nicht, wenn du den Namen korrigierst.
+                  {BEARBEITEN_HINWEIS}
                 </p>
               </IonCardContent>
             </IonCard>
