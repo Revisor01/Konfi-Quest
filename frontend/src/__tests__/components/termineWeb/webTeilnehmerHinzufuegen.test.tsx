@@ -151,6 +151,28 @@ const zeitfenster = (fassung: Fassung, id: number) => {
   fireEvent.change(feld, { target: { value: fassung === 'app' ? JSON.stringify(id) : String(id) } });
 };
 
+/** Der Jahrgang-Filter: in der App die Auswahl der App (Werte als JSON), im Browser ein <select>. */
+const jahrgangFeld = (fassung: Fassung) => (fassung === 'app'
+  ? screen.getByLabelText('Jahrgang')
+  : screen.getByRole('combobox', { name: 'Jahrgang' }));
+const jahrgangOptionen = (fassung: Fassung): string[] =>
+  within(jahrgangFeld(fassung)).getAllByRole('option').map((o) => o.textContent ?? '');
+const jahrgangWaehlen = (fassung: Fassung, wert: string) => {
+  fireEvent.change(jahrgangFeld(fassung), { target: { value: fassung === 'app' ? JSON.stringify(wert) : wert } });
+};
+
+/** „Alle" / „Keine": in der App der Knopf am Kopf der Liste, im Browser „… auswählen". */
+const alleKnopf = (fassung: Fassung, art: 'Alle' | 'Keine') =>
+  screen.getByRole('button', { name: fassung === 'app' ? art : `${art} auswählen` });
+
+/**
+ * Ist niemand gewählt, lässt sich nichts eintragen: In der App fehlt der
+ * Haken oben, im Browser ist „Hinzufügen" gesperrt.
+ */
+const eintragenGesperrt = (fassung: Fassung): boolean => (fassung === 'app'
+  ? screen.queryByRole('button', { name: 'Teilnehmer:innen hinzufügen' }) === null
+  : (within(screen.getAllByRole('dialog')[0]).getByRole('button', { name: /^(\d+ )?hinzufügen$/i }) as HTMLButtonElement).disabled);
+
 /** Die Meldung: in der App oben (setError), im Browser im Dialog -- derselbe Text. */
 const erwarteMeldung = async (fassung: Fassung, text: string) => {
   if (fassung === 'app') {
@@ -201,6 +223,46 @@ describe.each<Fassung>(['app', 'web'])('Teilnehmende hinzufügen (%s): dieselbe 
     expect(document.body).not.toHaveTextContent('Angeboten werden nur Personen');
     fireEvent.change(screen.getByLabelText('Person suchen'), { target: { value: 'ben' } });
     expect(namen(fassung)).toEqual(['Teamer Ben']);
+  });
+
+  it('Jahrgang-Filter: ohne Jahrgang des Events alle Jahrgänge zur Wahl; „JG B" lässt nur Konfi Bela stehen', async () => {
+    termin = { id: 7, jahrgaenge: [], participants: [] };
+    await oeffnen(fassung, 'konfi', 'Konfi Bela');
+    expect(namen(fassung)).toEqual(['Konfi Anna', 'Konfi Bela', 'Konfi Carl']);
+    expect(jahrgangOptionen(fassung)).toEqual(['Alle Jahrgänge', 'JG A', 'JG B']);
+    jahrgangWaehlen(fassung, 'JG B');
+    expect(namen(fassung)).toEqual(['Konfi Bela']);
+    jahrgangWaehlen(fassung, 'alle');
+    expect(namen(fassung)).toEqual(['Konfi Anna', 'Konfi Bela', 'Konfi Carl']);
+  });
+
+  it('Jahrgang-Filter bei mehreren Jahrgängen des Events: nur diese stehen zur Wahl', async () => {
+    termin = { id: 7, jahrgaenge: [{ id: JG_A, name: 'JG A' }, { id: JG_B, name: 'JG B' }], participants: [] };
+    await oeffnen(fassung, 'konfi', 'Konfi Bela');
+    expect(jahrgangOptionen(fassung)).toEqual(['Alle Event-Jahrgänge', 'JG A', 'JG B']);
+    jahrgangWaehlen(fassung, 'JG A');
+    expect(namen(fassung)).toEqual(['Konfi Anna', 'Konfi Carl']);
+  });
+
+  it('„Alle" wählt alle sichtbaren Personen, „Keine" hebt die Wahl auf; Eintragen schickt je Person POST /events/7/participants', async () => {
+    termin = { id: 7, jahrgaenge: [], participants: [] };
+    await oeffnen(fassung, 'konfi', 'Konfi Bela');
+    // Nur die sichtbaren: Bela aus JG B steht nicht in der Liste und bleibt außen vor.
+    jahrgangWaehlen(fassung, 'JG A');
+    expect(eintragenGesperrt(fassung)).toBe(true);
+    fireEvent.click(alleKnopf(fassung, 'Alle'));
+    expect(eintragenGesperrt(fassung)).toBe(false);
+    fireEvent.click(alleKnopf(fassung, 'Keine'));
+    expect(eintragenGesperrt(fassung)).toBe(true);
+
+    fireEvent.click(alleKnopf(fassung, 'Alle'));
+    expect(alleKnopf(fassung, 'Keine')).toBeInTheDocument();
+    await hinzufuegen(fassung);
+    await waitFor(() => expect(fertig).toHaveBeenCalledTimes(1));
+    expect(h.apiPost.mock.calls).toEqual([
+      ['/events/7/participants', { user_id: 1, status: 'confirmed', ueberbuchen: false }],
+      ['/events/7/participants', { user_id: 3, status: 'confirmed', ueberbuchen: false }],
+    ]);
   });
 
   it('Eintragen: je Person POST /events/7/participants mit Status, ohne Zeitfenster, ueberbuchen ausdrücklich false', async () => {

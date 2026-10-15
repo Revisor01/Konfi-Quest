@@ -59,6 +59,11 @@ export interface WebMaterialDialogProps {
   onSchliessen: () => void;
   /** Nach dem Speichern bzw. Einreihen: Die Seite schließt den Dialog und lädt neu. */
   onGespeichert: () => void;
+  /**
+   * „Material angesehen" hier zählen (Vorgabe). Aus einem Event zählt schon
+   * das Laden (WebTerminMaterialDialog über useMaterialAnsicht) -- dann false.
+   */
+  angesehenMelden?: boolean;
 }
 
 const GRENZE_MB = Math.round(UPLOAD_GRENZE.material / (1024 * 1024));
@@ -243,7 +248,7 @@ const MaterialLesen: React.FC<{ material: Material | null; f: MaterialFormularZu
   );
 };
 
-const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLesen, onSchliessen, onGespeichert }) => {
+const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLesen, onSchliessen, onGespeichert, angesehenMelden }) => {
   // Solange der Betrachter der App offen ist, steht der Dialog nicht da: Der
   // Betrachter ist ein ion-modal und laege sonst darunter. Die Eingaben
   // bleiben im Hook und stehen danach wieder in den Feldern.
@@ -254,6 +259,7 @@ const WebMaterialDialog: React.FC<WebMaterialDialogProps> = ({ material, nurLese
     onSuccess: onGespeichert,
     fehlerImFenster: true,
     betrachter: { vorher: () => setBetrachterOffen(true), nachher: () => setBetrachterOffen(false) },
+    angesehenMelden,
   });
   const [rueckfrage, setRueckfrage] = useState<number | null>(null);
   const [loescht, setLoescht] = useState(false);

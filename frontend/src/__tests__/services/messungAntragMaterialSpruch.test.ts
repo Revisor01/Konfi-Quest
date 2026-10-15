@@ -435,8 +435,9 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
 
   // Seit 15.10.2026 laedt der Hook useMaterialAnsicht -- fuer das Modal der App
   // (TeamerMaterialDetailPage) und das Fenster des Browsers aus den Events.
-  // Das Fenster zaehlt selbst (Lese-Ansicht von useMaterialFormular) und
-  // schaltet die Messung hier ab (angesehenMelden: false).
+  // Beide zaehlen hier; das Fenster schaltet die eigene Zaehlung von
+  // WebMaterialDialog ab (angesehenMelden={false}; im Verhalten geprueft in
+  // components/termineWeb/webMaterialAusEvent.test.tsx).
   it('Material an einem Event: angesehen erst nach der erfolgreichen Antwort, einmal je Öffnen', () => {
     const quelle = lies('src/components/teamer/pages/useMaterialAnsicht.ts');
     // Nach materialDetailLaden und nur mit einer Antwort des Servers — ein
@@ -447,7 +448,7 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
       "trackHandlung('material-angesehen', {"
     );
     expect(quelle).toMatch(
-      /if \(angesehenMelden && !ausSpeicher && !angesehenGemeldet\.current\) \{\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
+      /if \(!ausSpeicher && !angesehenGemeldet\.current\) \{\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
     );
     expect(quelle).toContain('const angesehenGemeldet = useRef(false);');
     // Das Modal der App laedt ueber den Hook, mit Messung (ohne Abschalten).

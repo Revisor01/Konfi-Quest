@@ -9,13 +9,16 @@
 // dasselbe nur zum Lesen -- wie in der App, wo Material aus einem Event nur
 // angesehen wird --, öffnen Dateien über denselben Weg (useDateiOeffnen, mit
 // dem Betrachter der App) und Links über die Hülle der App, und beide zählen
-// „Material angesehen" genau einmal.
+// „Material angesehen" genau einmal -- nur nach einer Antwort des Servers
+// (ein Stand nur vom Gerät zählt nicht) und mit Links nur, wenn sie mit
+// http(s) beginnen (docs/messung/umami.md).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act, cleanup, within } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   apiGet: vi.fn(),
+  cacheGet: vi.fn(),
   track: vi.fn(),
   dateiOeffnen: vi.fn(),
   linkOeffnen: vi.fn(),
@@ -34,7 +37,8 @@ vi.mock('../../../contexts/AppContext', () => ({
 }));
 vi.mock('../../../services/offlineCache', () => ({
   CACHE_TTL: { PROFILE: 1000, STAMMDATEN: 1000 },
-  offlineCache: { get: vi.fn(async () => null), set: vi.fn(async () => undefined), remove: vi.fn(async () => undefined), isStale: () => false },
+  // Der zuletzt gemerkte Stand (ohne Netz): je Test einstellbar, sonst keiner.
+  offlineCache: { get: (k: string) => h.cacheGet(k), set: vi.fn(async () => undefined), remove: vi.fn(async () => undefined), isStale: () => false },
 }));
 vi.mock('../../../services/networkMonitor', () => ({
   networkMonitor: { isOnline: true, subscribe: () => () => undefined },
@@ -78,6 +82,7 @@ beforeEach(() => {
     return { data: [] };
   });
   h.dateiOeffnen.mockResolvedValue(true);
+  h.cacheGet.mockResolvedValue(null);
 });
 afterEach(() => cleanup());
 
@@ -111,6 +116,25 @@ describe.each<Fassung>(['app', 'web'])('Material aus einem Event (%s): dieselbe 
     await oeffnen(fassung);
     await waitFor(() => expect(screen.getByText('Packliste.pdf')).toBeInTheDocument());
     expect(h.track.mock.calls.filter(([n]) => n === 'material-angesehen')).toEqual([['material-angesehen', { inhalt: 'beides' }]]);
+  });
+
+  it('ohne Netz, nur der gemerkte Stand: das Material steht da, „Material angesehen" zählt nicht', async () => {
+    // Keine Antwort des Servers (Netz weg) -- der zuletzt geladene Stand vom Gerät.
+    h.apiGet.mockRejectedValue(new Error('Network Error'));
+    h.cacheGet.mockResolvedValue({ data: MATERIAL });
+    await oeffnen(fassung);
+    await waitFor(() => expect(screen.getByText('Packliste.pdf')).toBeInTheDocument());
+    expect(h.apiGet).toHaveBeenCalledWith('/material/11');
+    expect(h.track.mock.calls.filter(([n]) => n === 'material-angesehen')).toEqual([]);
+  });
+
+  it('ein Link ohne http(s) zählt nicht als Link: mit Datei heißt der Inhalt „datei"', async () => {
+    h.apiGet.mockImplementation(async (pfad: string) => (pfad === '/material/11'
+      ? { data: { ...MATERIAL, links: [{ id: 1, url: 'www.beispiel.de' }] } }
+      : { data: [] }));
+    await oeffnen(fassung);
+    await waitFor(() => expect(screen.getByText('Packliste.pdf')).toBeInTheDocument());
+    expect(h.track.mock.calls.filter(([n]) => n === 'material-angesehen')).toEqual([['material-angesehen', { inhalt: 'datei' }]]);
   });
 
   it('eine Datei öffnet über den gemeinsamen Weg und zählt als abgerufen', async () => {

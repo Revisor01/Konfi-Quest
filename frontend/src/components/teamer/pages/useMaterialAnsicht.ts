@@ -13,9 +13,12 @@
 // der Server nicht mehr führt.
 //
 // Anonyme Messung „Material angesehen" (Simon, 27.09.2026): EINMAL je
-// Oeffnen, nur nach einer Antwort des Servers. Das Fenster des Browsers
-// zählt selbst (useMaterialFormular in der Lese-Ansicht) und schaltet es
-// hier ab (`angesehenMelden: false`) -- sonst zählte es doppelt.
+// Oeffnen, nur nach einer Antwort des Servers (docs/messung/umami.md: ein
+// Stand nur aus dem Zwischenspeicher zaehlt nicht), die Art des Inhalts
+// ueber materialLinks (nur http/https). Das gilt fuer App und Browser
+// gleich: Das Fenster des Browsers zaehlt ueber diesen Hook und schaltet die
+// eigene Zaehlung von WebMaterialDialog ab (`angesehenMelden={false}`) --
+// sonst zaehlte es doppelt, auch ohne Netz.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { materialDetailLaden, type MaterialDateiVerweis } from '../../../services/materialDetail';
@@ -28,7 +31,7 @@ interface MaterialGrund {
   links?: { url: string }[];
 }
 
-export function useMaterialAnsicht<T extends MaterialGrund>(materialId: number, { angesehenMelden = true }: { angesehenMelden?: boolean } = {}) {
+export function useMaterialAnsicht<T extends MaterialGrund>(materialId: number) {
   // Die Seite wird als Modal jedes Mal neu montiert; Aktualisieren und
   // Wiederverbinden laden erneut und duerfen nicht noch einmal zaehlen.
   const angesehenGemeldet = useRef(false);
@@ -41,7 +44,7 @@ export function useMaterialAnsicht<T extends MaterialGrund>(materialId: number, 
       // Nur nach einer Antwort des Servers — ein Stand nur vom Gerät
       // (offline) zaehlt nicht. Nur die Art des Inhalts, kein Titel, keine
       // Kennung.
-      if (angesehenMelden && !ausSpeicher && !angesehenGemeldet.current) {
+      if (!ausSpeicher && !angesehenGemeldet.current) {
         angesehenGemeldet.current = true;
         trackHandlung('material-angesehen', {
           inhalt: materialInhalt((daten?.files?.length ?? 0) > 0, materialLinks(daten ?? {}).length > 0)
@@ -51,7 +54,7 @@ export function useMaterialAnsicht<T extends MaterialGrund>(materialId: number, 
     } catch {
       return null;
     }
-  }, [materialId, angesehenMelden]);
+  }, [materialId]);
 
   useEffect(() => {
     if (!materialId) return;

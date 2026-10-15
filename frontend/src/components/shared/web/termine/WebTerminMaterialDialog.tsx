@@ -11,6 +11,11 @@
 // Dateien öffnen über den gemeinsamen Weg mit dem Betrachter der App
 // (useDateiOeffnen), Links im Browser. Solange geladen wird oder wenn das
 // Material fehlt, steht das im Fenster selbst.
+//
+// „Material angesehen" zählt wie in der App der Hook beim Laden -- nur nach
+// einer Antwort des Servers, nicht für einen Stand nur vom Gerät, und die Art
+// des Inhalts nur mit http(s)-Links. Die eigene Zählung von WebMaterialDialog
+// ist hier abgeschaltet, sonst zählte es doppelt.
 
 import React from 'react';
 import { useMaterialAnsicht } from '../../../teamer/pages/useMaterialAnsicht';
@@ -26,8 +31,7 @@ export interface WebTerminMaterialDialogProps {
 }
 
 const WebTerminMaterialDialog: React.FC<WebTerminMaterialDialogProps> = ({ materialId, onSchliessen }) => {
-  // Die Lese-Ansicht von WebMaterialDialog zählt „Material angesehen" selbst.
-  const { material, loading } = useMaterialAnsicht<Material>(materialId, { angesehenMelden: false });
+  const { material, loading } = useMaterialAnsicht<Material>(materialId);
 
   if (loading || !material) {
     return (
@@ -43,7 +47,7 @@ const WebTerminMaterialDialog: React.FC<WebTerminMaterialDialogProps> = ({ mater
     );
   }
 
-  return <WebMaterialDialog material={material} nurLesen onSchliessen={onSchliessen} onGespeichert={onSchliessen} />;
+  return <WebMaterialDialog material={material} nurLesen angesehenMelden={false} onSchliessen={onSchliessen} onGespeichert={onSchliessen} />;
 };
 
 export default WebTerminMaterialDialog;
