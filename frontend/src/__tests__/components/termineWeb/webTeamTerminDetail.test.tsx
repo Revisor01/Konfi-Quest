@@ -76,8 +76,8 @@ const karte = (titel: string | RegExp) => screen.getByRole('region', { name: tit
 const kopf = () => screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement;
 /** Die Knöpfe im Kopf in der Reihenfolge der Seite (Aktionen sind Knöpfe oben rechts). */
 const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim());
-/** Was direkt unter dem Kopf steht, vor den Kennzahlen: Hinweise. */
-const ersterBlock = () => document.querySelector('.web-detail')!.firstElementChild as HTMLElement;
+/** Die Hinweise der Seite (WebHinweis meldet sich als status bzw. alert), je mit ihrem Text. */
+const hinweise = () => [...screen.queryAllByRole('status'), ...screen.queryAllByRole('alert')].map((x) => x.textContent);
 const angabe = (label: string) => screen.getByText(label, { selector: 'dt' }).closest('div')!.querySelector('dd')!.textContent;
 
 describe('Kopf: Titel, Zurück, Aktionen', () => {
@@ -88,9 +88,9 @@ describe('Kopf: Titel, Zurück, Aktionen', () => {
     expect(zurueck).toHaveAttribute('href', '/teamer/events');
     fireEvent.click(zurueck);
     expect(routerPush).toHaveBeenCalledWith('/teamer/events', 'none', 'push');
-    // Status als Marke, Zeitraum als Text.
-    expect(screen.getByText('Dabei', { selector: '.web-pill' })).toBeInTheDocument();
-    expect(screen.getByText('Team gesucht', { selector: '.web-pill' })).toBeInTheDocument();
+    // Status und Team-Suche stehen als Wort im Kopf.
+    expect(within(kopf()).getByText('Dabei')).toBeInTheDocument();
+    expect(within(kopf()).getByText('Team gesucht')).toBeInTheDocument();
   });
 
   it('Chat (nur mit Chat-Raum) und QR-Code rufen dieselben Funktionen wie die App', async () => {
@@ -207,21 +207,21 @@ describe('Kopf: Zusage und Absage', () => {
 
   it('reines Konfi-Event: "Nur zur Info - keine Anmeldung" als Hinweis, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(403);
-    expect(ersterBlock()).toHaveTextContent('Nur zur Info - keine Anmeldung');
+    expect(hinweise()).toEqual([expect.stringContaining('Nur zur Info - keine Anmeldung')]);
     expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
   it('abgesagtes Event: der Hinweis mit Grund steht einmal, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(405);
-    expect(ersterBlock()).toHaveTextContent('Dieses Event ist abgesagt');
-    expect(ersterBlock()).toHaveTextContent('Grund: Sturmwarnung');
+    expect(hinweise()).toEqual([expect.stringContaining('Dieses Event ist abgesagt')]);
+    expect(hinweise()[0]).toContain('Grund: Sturmwarnung');
     expect(screen.getAllByText('Dieses Event ist abgesagt')).toHaveLength(1);
     expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
   it('vergangen und angemeldet: "Anwesend" als Auskunft, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(406);
-    expect(ersterBlock()).toHaveTextContent('Anwesend');
+    expect(hinweise()).toEqual([expect.stringContaining('Anwesend')]);
     expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
@@ -232,7 +232,7 @@ describe('Kopf: Zusage und Absage', () => {
     await oeffne('team');
     for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
     expect(screen.getByRole('heading', { level: 1, name: 'Gemeindefest' })).toBeInTheDocument();
-    expect(ersterBlock()).toHaveClass('web-detail__kennzahlen');
+    expect(hinweise()).toEqual([]);
     expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 });

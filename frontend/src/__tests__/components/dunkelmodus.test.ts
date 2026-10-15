@@ -105,9 +105,9 @@ const GLEICH_IN_BEIDEN_MODI: Record<string, string> = {
   '--app-wrapped-rose': 'Wrapped-Folien bringen eigene dunkle Hintergruende mit',
   '--app-aurora-tuerkis-rgb': 'Schatten des Aurora-Verlaufs, der gleich bleibt',
   '--app-surface-dark': 'Video-Platzhalter, ist schon dunkel',
-  '--app-gradient-teamer': 'Rollen-Verlauf mit weissem Text, farbTokens.test.ts nagelt den Wert fest',
-  '--app-gradient-konfi': 'Rollen-Verlauf mit weissem Text, farbTokens.test.ts nagelt den Wert fest',
-  '--app-gradient-admin': 'Rollen-Verlauf mit weissem Text, farbTokens.test.ts nagelt den Wert fest',
+  '--app-gradient-teamer': 'Rollen-Verlauf mit weissem Text; farbTokens.test.ts haelt genau einen Verlauf je Rolle fest',
+  '--app-gradient-konfi': 'Rollen-Verlauf mit weissem Text; farbTokens.test.ts haelt genau einen Verlauf je Rolle fest',
+  '--app-gradient-admin': 'Rollen-Verlauf mit weissem Text; farbTokens.test.ts haelt genau einen Verlauf je Rolle fest',
   '--app-gradient-neutral': 'Schieferverlauf mit weissem Text',
   '--app-gradient-wrapped': 'farbige Kachel mit weissem Text',
   '--app-gradient-wrapped-hover': 'farbige Kachel mit weissem Text',
@@ -201,9 +201,10 @@ describe('Dunkelmodus: jedes Farbtoken hat eine dunkle Entsprechung', () => {
     // AUSGENOMMEN seit 26.09.2026 die BEREICHSFARBEN: Sie sollen ausdruecklich
     // gleich bleiben (Simon am Geraet: "Die Farben sind furchtbar, koennen
     // original bleiben"). Sie stehen als grosse Flaeche -- ein aufgehellter
-    // Wert laesst den Kopfbereich auf schwarzem Grund blenden. Der Test
-    // darunter haelt fest, dass sie WIRKLICH gleich sind; hier geht es nur
-    // darum, dass jedes andere Token seinen eigenen dunklen Wert hat.
+    // Wert laesst den Kopfbereich auf schwarzem Grund blenden. Ob sie gleich
+    // bleiben, ist Gestaltung und wird nicht geprueft (Simon, 15.10.2026);
+    // hier geht es nur darum, dass jedes andere Token seinen eigenen dunklen
+    // Wert hat.
     const gleich = [...dunkleTokens.entries()]
       .filter(([n, w]) => helleTokens.get(n) === w)
       .map(([n]) => n)

@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render } from '@testing-library/react';
 import ChallengesManageView from '../../../components/admin/views/ChallengesManageView';
+import { ICON_UHRZEIT } from '../../../components/shared/icons';
 import type { AdminChallenge } from '../../../types/challenges';
 
 // Freigaben-Badge am einzelnen Challenge-Eintrag der Leitung: das orange
@@ -72,11 +73,18 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(queryAllByLabelText(/Freigabe$/).filter((el) => el.classList.contains('app-corner-badge'))).toHaveLength(1);
   });
 
-  it('traegt keine Zahl -- bei einem wie bei zwoelf Beitraegen; die Zahl steht im Vorlesetext', () => {
+  it('traegt nur die Uhr, keine Zahl -- bei einem wie bei zwoelf Beitraegen; die Zahl steht im Vorlesetext', () => {
+    // Die Uhr ist neben der Farbe das einzige, was dieses Feld von den
+    // anderen Eck-Badges (Eingereicht, Status) unterscheidet; die Legende
+    // erklaert es als "Oranges Feld mit Uhr". Ohne sie truege nur noch die
+    // Farbe die Information (WCAG 1.4.1).
     for (const n of [1, 2, 12]) {
       const { getByLabelText, unmount } = renderListe({ 40: n });
       const badge = getByLabelText(n === 1 ? '1 Beitrag wartet auf Freigabe' : `${n} Beiträge warten auf Freigabe`);
       expect(badge.textContent).toBe('');
+      const symbole = badge.querySelectorAll('[data-testid="icon"]');
+      expect(symbole).toHaveLength(1);
+      expect(symbole[0].getAttribute('data-icon')).toBe(ICON_UHRZEIT);
       unmount();
     }
   });
@@ -85,7 +93,7 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     // Der Server meldet nichts Neues (neueBeitraege leer): Die drei warten
     // schon, seit die Challenge zuletzt offen war.
     const { getByLabelText, container } = renderListe({ 31: 3 }, {});
-    expect(getByLabelText('3 Beiträge warten auf Freigabe')).toBeInTheDocument();
+    getByLabelText('3 Beiträge warten auf Freigabe');
     expect(container.querySelectorAll('.app-zaehler-kugel')).toHaveLength(0);
   });
 

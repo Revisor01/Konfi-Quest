@@ -28,6 +28,12 @@ const INHALT: WebDetailRumpfProps = {
 const ohneKennungen = (html: string) => html.replace(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g, 'ID');
 
 describe('WebDetailRumpf', () => {
+  it('Hinweis und Kennzahlen stehen auf der Seite -- die Kennzahlen je als benannte Gruppe', () => {
+    render(<WebDetailRumpf {...INHALT} />);
+    expect(screen.getByRole('status')).toHaveTextContent('Abgesagt am 02.10.2026');
+    expect(screen.getAllByRole('group').map((g) => g.getAttribute('aria-label'))).toEqual(['Mails: 3', 'Neu: 1', 'Tage offen: 2']);
+  });
+
   it('das Eigentliche, die Angaben-Karte mit Vorspann (leere Werte als Strich) und die übrige Seite', () => {
     render(<WebDetailRumpf {...INHALT} />);
     expect(screen.getByRole('region', { name: 'Verlauf' })).toBeInTheDocument();
@@ -39,9 +45,9 @@ describe('WebDetailRumpf', () => {
     expect(spalte).toHaveTextContent('Gemeinde-Karte');
   });
 
-  it('ohne Kennzahlen kein Raster, ohne Angaben nur die übrige Seite; die Spalte lässt sich anders benennen', () => {
-    const { container } = render(<WebDetailRumpf haupt={<p>Haupt</p>} seite={<p>Karten</p>} seiteBeschriftung="Angaben zum Vorgang" />);
-    expect(container.querySelector('.web-detail__kennzahlen')).toBeNull();
+  it('ohne Kennzahlen keine Kennzahl, ohne Angaben nur die übrige Seite; die Spalte lässt sich anders benennen', () => {
+    render(<WebDetailRumpf haupt={<p>Haupt</p>} seite={<p>Karten</p>} seiteBeschriftung="Angaben zum Vorgang" />);
+    expect(screen.queryAllByRole('group')).toEqual([]);
     const spalte = screen.getByRole('complementary', { name: 'Angaben zum Vorgang' });
     expect(spalte.textContent).toBe('Karten');
   });

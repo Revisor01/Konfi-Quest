@@ -41,19 +41,24 @@ describe('WebFeld und WebTextfeld', () => {
     expect(onWert).toHaveBeenCalledWith('anna.beispiel');
   });
 
-  it('Pflicht: aria-required am Feld -- ein Stern steht nicht im Namen', () => {
+  it('Pflicht: aria-required am Feld und der Stern aus dem Stylesheet -- nicht im Namen', () => {
     render(<WebFeld label="Passwort" pflicht typ="password" wert="" onWert={() => {}} autocomplete="new-password" />);
     const feld = screen.getByLabelText('Passwort');
     expect(feld).toHaveAttribute('aria-required', 'true');
     expect(feld).toHaveAttribute('type', 'password');
     expect(feld).toHaveAttribute('autocomplete', 'new-password');
+    // aria-required hilft nur Vorleseprogrammen. Sichtbar macht die Pflicht
+    // allein diese Klasse: Das Stylesheet setzt den Stern dahinter
+    // (.web-feld__label--pflicht::after in theme/web-ansicht.css; WCAG 3.3.2).
+    expect(screen.getByText('Passwort').className).toContain('web-feld__label--pflicht');
     expect(screen.getByText('Passwort').textContent).toBe('Passwort');
   });
 
-  it('ohne Pflicht kein aria-required; deaktiviert laesst sich nicht bedienen', () => {
+  it('ohne Pflicht kein aria-required und kein Stern; deaktiviert laesst sich nicht bedienen', () => {
     render(<WebFeld label="Telefon" typ="tel" wert="" onWert={() => {}} deaktiviert />);
     const feld = screen.getByLabelText('Telefon');
     expect(feld).not.toHaveAttribute('aria-required');
+    expect(screen.getByText('Telefon').className).not.toContain('web-feld__label--pflicht');
     expect(feld).toBeDisabled();
   });
 

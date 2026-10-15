@@ -48,7 +48,6 @@ vi.mock('../../contexts/AppContext', () => ({
 }));
 
 import OrgSwitcherButton from '../../components/shared/OrgSwitcherButton';
-import { ICON_WECHSEL } from '../../components/shared/icons';
 
 const oeffnen = () => {
   const r = render(<OrgSwitcherButton />);
@@ -98,6 +97,5 @@ describe('Der Name am Knopf', () => {
     const knopf = container.querySelector('.app-org-switcher-btn')!;
     expect(knopf.querySelector('.app-org-switcher-btn__name')?.textContent).toBe('Hennstedt');
     expect(knopf.getAttribute('aria-label')).toBe('Gemeinde wechseln, gerade Kirchengemeinde Hennstedt');
-    expect(knopf.querySelector('[data-testid="icon"]')?.getAttribute('data-icon')).toBe(ICON_WECHSEL);
   });
 });

@@ -181,9 +181,11 @@ describe('Support-Uebersicht: Bereiche, neue Vorgänge und Abmelden', () => {
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 62' });
     const eintrag = (label: string) => screen.getByText(label, { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
-    expect(await within(eintrag('Posteingang')).findByText('4')).toBeInTheDocument();
-    expect(within(eintrag('Vorgänge')).getByText('5')).toBeInTheDocument();
-    expect(eintrag('Gemeinden').querySelector('.app-zaehler-kugel')).toBeNull();
+    // Die Zahl ist die Mitteilungs-Zahl (ZaehlerKugel): sichtbar die Zahl,
+    // für Vorleseprogramme, was gezählt wird.
+    expect(await within(eintrag('Posteingang')).findByLabelText('4 ungelesene Mails')).toHaveTextContent(/^4$/);
+    expect(within(eintrag('Vorgänge')).getByLabelText('5 Vorgänge zu bearbeiten')).toHaveTextContent(/^5$/);
+    expect(within(eintrag('Gemeinden')).queryByLabelText(/ungelesene Mails|Vorgänge zu bearbeiten/)).toBeNull();
     expect(h.apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
   });
 

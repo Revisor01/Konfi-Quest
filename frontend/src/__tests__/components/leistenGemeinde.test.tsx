@@ -331,6 +331,25 @@ describe('Eingeklappte Leiste', () => {
     expect(k.getAttribute('title')).toBe('Kirchspiel West');
     expect(k.getAttribute('aria-label')).toBe('Gemeinde wechseln, gerade Kirchspiel West, Gemeindeleitung');
   });
+
+  /** Regeln der eingeklappten Leiste, die Liste oder Eintraege der Gemeinden ausblenden. */
+  const verbergenListe = (css: string) => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selektor]) => selektor.split(',').some((s) =>
+      s.includes('.app-seitenleiste--eingeklappt') && /\.app-leistengemeinde__(?:liste|eintrag)\b/.test(s)))
+    .filter(([, , rumpf]) => /display:\s*none|visibility:\s*hidden/.test(rumpf))
+    .map(([, selektor]) => selektor.trim());
+
+  it('die Liste bleibt auch eingeklappt erreichbar: keine Regel der eingeklappten Leiste blendet sie aus', () => {
+    // Eingeklappt ist nur das Symbol zu sehen; die Gemeinde muss sich trotzdem
+    // wechseln lassen. Die Liste liegt im selben Baum wie der Knopf und darf
+    // nicht mit Text und Pfeil verschwinden. jsdom wertet kein Stylesheet aus,
+    // deshalb liest dieser Test die Regeln; wie die Leiste eingeklappt
+    // aussieht, legt er nicht fest.
+    expect(verbergenListe(lies('src/components/layout/Seitenleiste.css'))).toEqual([]);
+    // Gegenprobe der Suche selbst: eine solche Regel faellt auf.
+    expect(verbergenListe('.app-seitenleiste--eingeklappt .app-leistengemeinde__liste { display: none; }')).toHaveLength(1);
+    expect(verbergenListe('.a, .app-seitenleiste--eingeklappt .app-leistengemeinde__eintrag:hover { visibility: hidden }')).toHaveLength(1);
+  });
 });
 
 describe('Stylesheet: Tokens, sichtbarer Fokus, Bewegung', () => {

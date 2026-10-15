@@ -10,8 +10,8 @@
 // Seite (5 Fenster, 1440 und 1024 px), die Meldung steht obenauf.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 
 vi.mock('@ionic/react', async () => (await import('../support/ionicAttrappe')).ionicAttrappe({}));
@@ -56,5 +56,35 @@ describe('WebDialog: in der Ebene von Ionics Rückfragen und Meldungen', () => {
     const z = /z-index:\s*(\d+)/.exec(regel![1]);
     expect(z).not.toBeNull();
     expect(Number(z![1])).toBeLessThan(20000);
+  });
+
+  it('... und ueber jeder Ebene der Seite: z-index hoeher als alles, was Seite, Leiste und Chat stapeln', () => {
+    // Laege der Grund niedriger, deckte etwa die Ablage im Chat-Raum oder ein
+    // offenes Menue Teile des Fensters ab -- es waere verdeckt und nicht
+    // bedienbar. Verglichen wird mit jeder Stufe der Stylesheets von Seite,
+    // Seitenleiste und Web-Bereichen unterhalb von Ionics Overlays (Modals ab
+    // 20000); Sperrbildschirm und Abdeckung liegen bewusst darueber. Welcher
+    // Wert, legt der Test nicht fest.
+    const theme = resolve(__dirname, '../../../theme');
+    const dateien = [
+      join(theme, 'variables.css'),
+      join(theme, 'web-ansicht.css'),
+      resolve(__dirname, '../../../components/layout/Seitenleiste.css'),
+      ...readdirSync(join(theme, 'web')).filter((d) => d.endsWith('.css')).map((d) => join(theme, 'web', d)),
+    ];
+    let grund = NaN;
+    const seite: string[] = [];
+    for (const datei of dateien) {
+      const css = readFileSync(datei, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+      for (const [, selektor, rumpf] of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const z = /z-index:\s*(-?\d+)/.exec(rumpf);
+        if (!z) continue;
+        if (/^\.web-dialog-grund$/.test(selektor.trim())) grund = Number(z[1]);
+        else if (Number(z[1]) < 20000) seite.push(`${selektor.trim()}: ${z[1]}`);
+      }
+    }
+    expect(seite.length).toBeGreaterThan(5);
+    const hoechste = Math.max(...seite.map((r) => Number(r.split(': ').pop())));
+    expect(grund, `hoechste Stufe der Seite: ${seite.find((r) => r.endsWith(`: ${hoechste}`))}`).toBeGreaterThan(hoechste);
   });
 });

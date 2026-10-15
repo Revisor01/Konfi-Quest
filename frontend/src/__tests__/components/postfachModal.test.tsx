@@ -80,7 +80,7 @@ vi.mock('../../utils/pushNavigation', async (original) => {
 });
 
 import PostfachModal, { POSTFACH_SEITENGROESSE } from '../../components/common/PostfachModal';
-import { mitteilungsTitel, oeffnePostfach, postfachBereich } from '../../utils/postfach';
+import { mitteilungsTitel, oeffnePostfach } from '../../utils/postfach';
 import { pushZielMelden } from '../../utils/pushNavigation';
 import { getIconFromIoniconsName } from '../../utils/badgeIcons';
 import { ICON_ABZEICHEN_GEFUELLT } from '../../components/shared/icons';
@@ -435,29 +435,6 @@ describe('PostfachModal', () => {
       expect(mitteilungsTitel({ title: 'Neues Badge erhalten! star', data: {} })).toBe('Neues Badge erhalten! star');
       // Ein Titel, der nur zufaellig so endet wie ein anderes Symbol, bleibt.
       expect(mitteilungsTitel({ title: 'Neues Badge erhalten! star', data: { badge_icon: 'trophy' } })).toBe('Neues Badge erhalten! star');
-    });
-  });
-
-  describe('postfachBereich -- die Farbregel, ohne Rendern', () => {
-    it('ordnet die vier Arten aus Produktion zu', () => {
-      expect(postfachBereich('badge_earned')).toBe('badges');
-      expect(postfachBereich('new_activity_request')).toBe('activities');
-      expect(postfachBereich('activity_request_submitted')).toBe('activities');
-      expect(postfachBereich('activity_request_decision')).toBe('activities');
-    });
-
-    it('kennt die Push-Arten fuer Termine, Chat und Challenges', () => {
-      expect(postfachBereich('event_reminder')).toBe('events');
-      expect(postfachBereich('new_event')).toBe('events');
-      expect(postfachBereich('waitlist_promotion')).toBe('events');
-      expect(postfachBereich('chat')).toBe('chat');
-      expect(postfachBereich('challenge_new')).toBe('challenges');
-    });
-
-    it('eine unbekannte Art bekommt die neutrale Hinweisfarbe -- nie eine geratene', () => {
-      expect(postfachBereich('irgendwas')).toBe('info');
-      expect(postfachBereich(undefined)).toBe('info');
-      expect(postfachBereich(null)).toBe('info');
     });
   });
 });
