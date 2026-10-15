@@ -373,3 +373,103 @@ describe('Neuer Chat: App und Browser schicken dasselbe', () => {
     expect(web).toEqual(app);
   });
 });
+
+// --- Nur der Browser: Schliessen waehrend des Sendens und per Escape oder Klick daneben ----
+// Die App sperrt ihr X waehrend des Sendens (SimpleCreateChatModal,
+// `disabled={creating}`). Im Browser gilt dasselbe fuer jeden Weg aus dem
+// Dialog: X, Abbrechen, Escape, Klick auf den Grund. Sonst ginge eine
+// Ablehnung des Servers ins Leere, und nach erneutem Oeffnen liesse sich
+// derselbe Chat sofort ein zweites Mal anlegen.
+describe('Neuer Chat (web): solange gesendet wird, bleibt der Dialog', () => {
+  /** Die Anfrage haengt, bis der Test sie ablehnt. */
+  const sendenHaengt = () => {
+    const ausgang: { ablehnen: (grund: unknown) => void } = { ablehnen: () => undefined };
+    h.apiPost.mockReturnValue(new Promise((_ok, nein) => { ausgang.ablehnen = nein; }));
+    return ausgang;
+  };
+
+  /** Jeder Weg hinaus: X, Abbrechen, Escape, Klick daneben. */
+  const allesVersuchen = (dialog: HTMLElement) => {
+    const knopf = (name: string) => within(dialog).getByRole('button', { name });
+    fireEvent.click(knopf('Schließen'));
+    fireEvent.click(knopf('Abbrechen'));
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    fireEvent.mouseDown(dialog.parentElement as HTMLElement);
+    expect(zu).not.toHaveBeenCalled();
+    // Auch keine Rueckfrage: Der Dialog bleibt, wie er ist.
+    expect(screen.queryByRole('dialog', { name: 'Ungespeicherte Änderungen' })).not.toBeInTheDocument();
+    // X und Abbrechen zeigen es: gesperrt, wie das X der App.
+    expect(knopf('Schließen')).toBeDisabled();
+    expect(knopf('Abbrechen')).toBeDisabled();
+  };
+
+  it('Direktnachricht: waehrend POST /chat/direct schliesst nichts; die Ablehnung steht danach im Dialog, dann schliesst Escape', async () => {
+    const senden = sendenHaengt();
+    await oeffnen('web');
+    const dialog = screen.getByRole('dialog', { name: 'Neue Direktnachricht' });
+    await tippePerson('web', 'Theo Teamer');
+    expect(h.apiPost.mock.calls).toEqual([['/chat/direct', { target_user_id: 13, target_user_type: 'teamer' }]]);
+
+    allesVersuchen(dialog);
+    expect(screen.getByRole('dialog', { name: 'Neue Direktnachricht' })).toBe(dialog);
+
+    await act(async () => { senden.ablehnen({ response: { status: 403, data: { error: 'Diese Person ist nicht für deinen Jahrgang zuständig.' } } }); });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Diese Person ist nicht für deinen Jahrgang zuständig.');
+    expect(fertig).not.toHaveBeenCalled();
+    expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeEnabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(zu).toHaveBeenCalledTimes(1);
+  });
+
+  it('Gruppenchat: waehrend POST /chat/rooms schliesst nichts und fragt nichts; nach der Ablehnung fragt Escape nach, Verwerfen schliesst', async () => {
+    const senden = sendenHaengt();
+    await oeffnen('web');
+    waehleArt('web', 'Gruppenchat');
+    await waitFor(() => expect(namen('web')).toContain('Lena Leitung'));
+    gruppenname('web', 'Freizeit-Team');
+    await tippePerson('web', 'Karl Konfi');
+    await erstellen();
+    expect(h.apiPost.mock.calls).toEqual([['/chat/rooms', {
+      name: 'Freizeit-Team', type: 'group', participants: [{ user_id: 21, user_type: 'konfi' }],
+    }]]);
+    const dialog = screen.getByRole('dialog', { name: 'Neuer Gruppenchat' });
+    expect(within(dialog).getByRole('button', { name: 'Gruppenchat erstellen' })).toBeDisabled();
+
+    allesVersuchen(dialog);
+    expect(screen.getByRole('dialog', { name: 'Neuer Gruppenchat' })).toBe(dialog);
+
+    await act(async () => { senden.ablehnen(new Error('Netzwerkfehler')); });
+    expect(within(dialog).getByRole('alert')).toHaveTextContent('Fehler beim Erstellen des Gruppenchats: Netzwerkfehler');
+    expect(fertig).not.toHaveBeenCalled();
+    // Wieder frei -- und weil Name und Person noch da sind, fragt Escape erst nach.
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(zu).not.toHaveBeenCalled();
+    const rueckfrage = screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
+    fireEvent.click(within(rueckfrage).getByRole('button', { name: 'Verwerfen' }));
+    expect(zu).toHaveBeenCalledTimes(1);
+  });
+
+  it('mit Gruppenname fragen auch Escape und ein Klick daneben nach, statt sofort zu schliessen', async () => {
+    await oeffnen('web');
+    waehleArt('web', 'Gruppenchat');
+    gruppenname('web', 'Freizeit-Team');
+    const dialog = screen.getByRole('dialog', { name: 'Neuer Gruppenchat' });
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(zu).not.toHaveBeenCalled();
+    let rueckfrage = screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
+    expect(rueckfrage).toHaveAccessibleDescription('Möchtest du die Änderungen verwerfen?');
+    // Escape in der Rueckfrage schliesst nur sie; der Dialog mit dem Namen bleibt.
+    fireEvent.keyDown(rueckfrage, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Ungespeicherte Änderungen' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Gruppenname' })).toHaveValue('Freizeit-Team');
+    expect(zu).not.toHaveBeenCalled();
+
+    fireEvent.mouseDown(dialog.parentElement as HTMLElement);
+    expect(zu).not.toHaveBeenCalled();
+    rueckfrage = screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
+    fireEvent.click(within(rueckfrage).getByRole('button', { name: 'Verwerfen' }));
+    expect(zu).toHaveBeenCalledTimes(1);
+    expect(h.apiPost).not.toHaveBeenCalled();
+  });
+});
