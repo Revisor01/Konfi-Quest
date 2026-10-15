@@ -65,6 +65,8 @@ import WebSeite from '../../web/WebSeite';
 import { WebFehler, WebLaden } from '../../web/WebZustaende';
 import { WebRueckblickHinweis } from '../../konfi/web/WebStartKarten';
 import WebTeamerStart from '../web/WebTeamerStart';
+import WebBibelUebersetzungDialog from '../../shared/web/konto/WebBibelUebersetzungDialog';
+import WebKonfispruchDialog from '../../konfi/web/WebKonfispruchDialog';
 
 
 
@@ -435,6 +437,10 @@ const TeamerDashboardPage: React.FC = () => {
     presentKonfispruchModal();
   };
 
+  // Im Browser (breit) öffnen Bibelübersetzung und Konfispruch Dialoge der
+  // Web-Fassung mit derselben Logik und denselben Aufrufen (Simon, 15.10.2026).
+  const [webDialog, setWebDialog] = useState<'uebersetzung' | 'konfispruch' | null>(null);
+
   const getFirstName = (name: string) => name.split(' ')[0];
 
   const getGreeting = (displayName: string): string => {
@@ -560,11 +566,26 @@ const TeamerDashboardPage: React.FC = () => {
                 show_losung: config?.show_losung !== false,
               }}
               sectionOrder={mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER)}
-              onUebersetzung={() => presentBibleModal()}
-              onKonfispruch={openKonfispruch}
+              onUebersetzung={() => setWebDialog('uebersetzung')}
+              onKonfispruch={() => setWebDialog('konfispruch')}
               symbolFuer={getIconFromString}
             />
           </>
+        )}
+        {webDialog === 'uebersetzung' && (
+          <WebBibelUebersetzungDialog
+            currentTranslation={selectedTranslation}
+            onSelect={(code) => { void handleTranslationChange(code); setWebDialog(null); }}
+            onSchliessen={() => setWebDialog(null)}
+          />
+        )}
+        {webDialog === 'konfispruch' && (
+          <WebKonfispruchDialog
+            current={dashboardData?.konfspruch ?? null}
+            apiBasePath="/teamer"
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); refreshDashboard(); }}
+          />
         )}
         {showOnboarding && (
           <TeamerOnboardingModal

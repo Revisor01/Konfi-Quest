@@ -1,11 +1,13 @@
 // Das Profil der Leitung in der Web-Fassung (Browser ab 992 px): zweispaltig. Links
 // die Person mit ihren Angaben, rechts die Einstellungen, offene Einladungen und
-// das Löschen des Kontos. Abmelden steht, wie in der App, nicht im Profil -- in
-// der Web-Fassung sitzt es unten in der Seitenleiste.
+// die Karte „Konto" mit Abmelden und Konto löschen. Abmelden steht seit
+// 15.10.2026 auch hier, wie bei Konfis und Team -- die Karte kündigte es an,
+// hatte aber keinen Knopf; dieselbe Rückfrage wie unten in der Seitenleiste.
 //
 // Die Seite lädt und speichert nichts selbst: Die Handgriffe (Funktionsbeschreibung,
-// E-Mail, Passwort, Konto löschen) sind die der App
-// (admin/pages/AdminProfilePage.tsx) und kommen hier als Funktionen an.
+// E-Mail, Passwort, Abmelden, Konto löschen) kommen von der Seite
+// (admin/pages/AdminProfilePage.tsx) als Funktionen an -- im Browser öffnen sie
+// die Dialoge der Web-Fassung mit der Logik der App (Simon, 15.10.2026).
 
 import React from 'react';
 import { ICON_AKTENTASCHE, ICON_GALERIE, ICON_MAIL, ICON_SCHLUESSEL } from '../../../shared/icons';
@@ -37,9 +39,8 @@ export interface WebAdminProfilProps {
   onEmail: () => void;
   onPasswort: () => void;
   onCache: () => void;
+  onAbmelden: () => void;
   onLoeschen: () => void;
-  /** Die Seite, über der die Auswahl der Benachrichtigungen erscheint. */
-  presentingElement?: () => HTMLElement | null | undefined;
 }
 
 const WebAdminProfil: React.FC<WebAdminProfilProps> = (props) => {
@@ -79,11 +80,11 @@ const WebAdminProfil: React.FC<WebAdminProfilProps> = (props) => {
         <WebEinstellung icon={ICON_SCHLUESSEL} titel="Passwort" wert="Sicherheitseinstellungen" knopf="Ändern" onClick={props.onPasswort} />
         {/* Wie bei Konfis und Team (in der App unter Mehr › Konto). Simon,
             06.10.2026: dass sie der Leitung im Browser fehlte, war nicht gewollt. */}
-        <WebPushZeile variante="users" presentingElement={props.presentingElement} />
+        <WebPushZeile />
         <WebEinstellung icon={ICON_GALERIE} titel="Medien-Cache" wert={props.cacheLabel} knopf="Leeren" onClick={props.onCache} />
       </WebEinstellungenKarte>
 
-      <WebKontoKarte onLoeschen={props.onLoeschen} />
+      <WebKontoKarte onAbmelden={props.onAbmelden} onLoeschen={props.onLoeschen} />
     </>
   );
 

@@ -6,11 +6,12 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import './zeitrahmen';
 import React from 'react';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 
 const h = vi.hoisted(() => ({
   breit: true,
   apiGet: vi.fn(),
+  apiPut: vi.fn(),
   push: vi.fn(),
   modale: [] as Array<{ name: string; props: Record<string, unknown>; optionen: Record<string, unknown> | undefined }>,
   alerts: [] as unknown[],
@@ -30,6 +31,8 @@ vi.mock('../../../components/teamer/modals/TeamerOnboardingModal', () => ({ defa
 vi.mock('../../../components/teamer/modals/TeamerUpdate230WalkthroughModal', () => ({ default: () => null }));
 vi.mock('../../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
 vi.mock('../../../components/shared/BibleTranslationModal', async () => ({
+  // Die Liste der Übersetzungen ist echt: Der Dialog der Web-Fassung zeigt sie.
+  BIBLE_TRANSLATIONS: (await vi.importActual<typeof import('../../../components/shared/BibleTranslationModal')>('../../../components/shared/BibleTranslationModal')).BIBLE_TRANSLATIONS,
   default: (await import('./ionicStart')).modalAttrappe('BibleTranslationModal'),
   getTranslationName: (code: string) => (code === 'LUT' ? 'Lutherbibel 2017' : code),
 }));
@@ -46,10 +49,10 @@ vi.mock('../../../services/offlineCache', () => ({
   offlineCache: { get: vi.fn(async () => null), set: vi.fn(async () => undefined), isStale: () => false },
 }));
 vi.mock('../../../services/networkMonitor', () => ({ networkMonitor: { isOnline: true, subscribe: () => () => undefined } }));
-vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, put: vi.fn() } }));
+vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, put: h.apiPut } }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({ useLiveRefresh: vi.fn() }));
 vi.mock('../../../contexts/AppContext', () => ({
-  useApp: () => ({ user: h.user, setError: vi.fn(), setSuccess: vi.fn() }),
+  useApp: () => ({ user: h.user, setError: vi.fn(), setSuccess: vi.fn(), isOnline: true }),
 }));
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
@@ -248,25 +251,37 @@ describe('Team-Start (Web): Karten', () => {
     expect(within(k).getByRole('link', { name: 'Challenges ansehen' })).toHaveAttribute('href', '/teamer/challenges');
   });
 
-  it('Konfispruch: der Text; „ändern" oeffnet die Auswahl gegen die Team-Endpunkte', async () => {
+  // Seit 15.10.2026 (Simon: im Browser ein kompaktes Web-Fenster statt des
+  // App-Modals) öffnen Konfispruch und Übersetzung Dialoge der Web-Fassung --
+  // mit derselben Logik und denselben Aufrufen wie die App; Einzelheiten in
+  // start/webKonfispruchDialog und shared/webProfilDialoge.
+  it('Konfispruch: der Text; „ändern" oeffnet den Dialog gegen die Team-Endpunkte, kein App-Modal', async () => {
     await zeige();
     const k = await waitFor(() => karte('Dein Konfispruch'));
     expect(within(k).getByText(/Seid fröhlich in Hoffnung\./)).toBeInTheDocument();
     expect(within(k).getByText('Römer 12,12')).toBeInTheDocument();
     fireEvent.click(within(k).getByRole('button', { name: 'Konfispruch ändern' }));
-    expect(h.modale).toHaveLength(1);
-    expect(h.modale[0].name).toBe('KonfispruchSelectModal');
-    expect(h.modale[0].props).toMatchObject({ apiBasePath: '/teamer', variant: 'teamer', current: DASHBOARD.konfspruch });
+    const dialog = screen.getByRole('dialog', { name: 'Dein Konfispruch' });
+    await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/teamer/konfsprueche'));
+    expect(h.modale).toEqual([]);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('Tageslosung mit Uebersetzung; „Übersetzung ändern" oeffnet die Auswahl', async () => {
+  it('Tageslosung mit Uebersetzung; „Übersetzung ändern" oeffnet den Dialog -- die Wahl geht als PUT /teamer/bible-translation', async () => {
+    h.apiPut.mockResolvedValue({ data: {} });
     await zeige();
     const k = await waitFor(() => karte('Tageslosung'));
     expect(within(k).getByText(/Der Herr ist mein Hirte\./)).toBeInTheDocument();
     expect(within(k).getByText('Lutherbibel 2017')).toBeInTheDocument();
     fireEvent.click(within(k).getByRole('button', { name: 'Übersetzung ändern' }));
-    expect(h.modale.map((m) => m.name)).toEqual(['BibleTranslationModal']);
-    expect(h.modale[0].props.currentTranslation).toBe('LUT');
+    const dialog = screen.getByRole('dialog', { name: 'Bibelübersetzung' });
+    expect(h.modale).toEqual([]);
+    const knoepfe = within(dialog).getAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'));
+    expect(knoepfe.find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent).toMatch(/^Lutherbibel 2017/);
+    await act(async () => { fireEvent.click(knoepfe.find((b) => b.textContent?.startsWith('Gute Nachricht Bibel')) as HTMLElement); });
+    expect(h.apiPut.mock.calls).toEqual([['/teamer/bible-translation', { translation: 'GNB' }]]);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('Badges: Zahlen, neue Markierung, Dialog; ein noch nicht erreichtes Badge bleibt aus der Karte', async () => {
@@ -335,5 +350,18 @@ describe('Team-Start: Zustaende und die App', () => {
     expect(container.querySelector('.web-seite')).toBeNull();
     expect(container.querySelector('.web-karte')).toBeNull();
     expect(container.textContent).toContain('Guten Morgen, Jonas!');
+  });
+
+  it('Konfispruch und Übersetzung öffnen dort die Modale der App, keinen Dialog; die Wahl der Übersetzung geht an dieselbe Route', async () => {
+    h.breit = false;
+    h.apiPut.mockResolvedValue({ data: {} });
+    render(<TeamerDashboardPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /zum Ändern tippen/ }));
+    fireEvent.click(screen.getByRole('button', { name: /KONFISPRUCH/ }));
+    expect(h.modale.map((m) => m.name)).toEqual(['BibleTranslationModal', 'KonfispruchSelectModal']);
+    expect(h.modale[1].props).toMatchObject({ apiBasePath: '/teamer', variant: 'teamer', current: DASHBOARD.konfspruch });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await act(async () => { (h.modale[0].props.onSelect as (c: string) => void)('GNB'); });
+    expect(h.apiPut.mock.calls).toEqual([['/teamer/bible-translation', { translation: 'GNB' }]]);
   });
 });

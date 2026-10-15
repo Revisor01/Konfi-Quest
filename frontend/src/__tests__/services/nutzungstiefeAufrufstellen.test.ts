@@ -128,7 +128,7 @@ const STELLEN: Array<{
     vorher: 'const res = await api.post(`/teamer/events/${eventData.id}/zusage`, body)'
   },
   {
-    datei: 'src/components/shared/PushAuswahl.tsx',
+    datei: 'src/components/shared/usePushAuswahl.ts',
     handlung: 'push-gruppe-umgeschaltet',
     vorher: "await api.put('/notifications/preferences', aenderung)"
   },

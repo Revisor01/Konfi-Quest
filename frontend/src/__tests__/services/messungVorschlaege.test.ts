@@ -374,7 +374,7 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S9: Gruppe und Hauptschalter tragen ihre Kennung mit', () => {
-    const q = lies('src/components/shared/PushAuswahl.tsx');
+    const q = lies('src/components/shared/usePushAuswahl.ts');
     expect(q).toContain('speichern({ stumm }, { gruppe: id, an });');
     expect(q).toContain("speichern({ push_enabled: an }, { gruppe: 'alle', an })");
   });

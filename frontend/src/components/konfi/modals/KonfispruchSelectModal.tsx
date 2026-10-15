@@ -1,5 +1,8 @@
-import { fehlerStatus, fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect } from 'react';
+// Das Modal der App für „Dein Konfispruch" (Konfis und Team). Die Logik --
+// was zur Wahl steht, Prüfung, Aufruf, Messung, Meldungen -- steht in
+// konfi/useKonfispruchWahl und gilt ebenso für den Dialog des Browsers
+// (konfi/web/WebKonfispruchDialog).
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -21,7 +24,6 @@ import {
   IonSegment,
   IonSegmentButton,
   IonText,
-  useIonToast
 } from '@ionic/react';
 import {
   ICON_BEARBEITEN,
@@ -31,65 +33,18 @@ import {
   ICON_OFFLINE,
   ICON_SCHLIESSEN,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { trackKonfispruchWahl, type KonfispruchOrt, type KonfispruchWahl } from '../../../services/analytics';
-
-type Translation = 'luther2017' | 'bigs' | 'gute_nachricht' | 'elberfelder';
-
-const TRANSLATION_LABELS: Record<Translation, string> = {
-  luther2017: 'Luther 2017',
-  bigs: 'Bibel in gerechter Sprache',
-  gute_nachricht: 'Gute Nachricht',
-  elberfelder: 'Elberfelder'
-};
-
-const TRANSLATION_KEYS: Translation[] = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];
-
-// Messwert je Uebersetzung fuer die anonyme Nutzungsmessung (Simon,
-// 27.09.2026: „welche Übersetzung"). Eigene, feste Werte statt der Schluessel:
-// Umami-Merkmale bleiben Kleinbuchstaben mit Bindestrich, und
-// services/analytics.ts (trackKonfispruchWahl) laesst genau diese vier durch.
-const BIBEL_MESSWERT: Record<Translation, string> = {
-  luther2017: 'luther',
-  bigs: 'bigs',
-  gute_nachricht: 'gute-nachricht',
-  elberfelder: 'elberfelder'
-};
-
-// Quellenangabe je Uebersetzung. Pflicht, kein Schmuck: Die Deutsche
-// Bibelgesellschaft erlaubt Einzelverse in kostenlosen Veroeffentlichungen
-// einer Gemeinde einer ACK-Mitgliedskirche ohne vorherige Anfrage — gegen
-// Quellenangabe an geeigneter Stelle. Genau die steht hier.
-//
-// BIGS und Elberfelder sind noch nicht befuellt (andere Verlage, Anfrage
-// laeuft); ihr Vermerk steht schon bereit, damit er beim Nachtragen der
-// Texte nicht vergessen wird.
-const TRANSLATION_COPYRIGHT: Record<Translation, string> = {
-  luther2017: 'Lutherbibel, revidiert 2017 © 2016 Deutsche Bibelgesellschaft, Stuttgart',
-  bigs: 'Bibel in gerechter Sprache © 2006 Gütersloher Verlagshaus, Gütersloh',
-  gute_nachricht: 'Gute Nachricht Bibel, revidiert 2018 © 2018 Deutsche Bibelgesellschaft, Stuttgart',
-  elberfelder: 'Elberfelder Bibel © 2006 SCM R. Brockhaus, Witten'
-};
-
-interface Konfspruch {
-  id: number;
-  reference: string;
-  book: string;
-  chapter: number;
-  verse: number;
-  uebersetzungen: Record<Translation, string>;
-}
-
-interface CurrentKonfspruch {
-  source: 'liste' | 'freitext';
-  id?: number;
-  reference?: string;
-  text?: string;
-  translation?: string;
-}
+import {
+  EIGENER_SPRUCH_HINWEIS,
+  SPRUCHLISTE_FEHLER,
+  TRANSLATION_COPYRIGHT,
+  TRANSLATION_KEYS,
+  TRANSLATION_LABELS,
+  useKonfispruchWahl,
+  type CurrentKonfspruch,
+  type KonfispruchModus,
+  type Translation,
+} from '../useKonfispruchWahl';
 
 interface KonfispruchSelectModalProps {
   onClose: () => void;
@@ -102,152 +57,12 @@ interface KonfispruchSelectModalProps {
   variant?: 'konfi' | 'teamer';
 }
 
-const isTranslation = (value?: string): value is Translation =>
-  value === 'luther2017' || value === 'bigs' || value === 'gute_nachricht' || value === 'elberfelder';
-
-/**
- * Der Spruch, den die App vor dem Speichern anzeigt, in der Form der Messung
- * (docs/messung/umami.md, S1) -- kein eigener Abruf. Ohne gespeicherten
- * Spruch null: Dann ist die naechste Wahl die erste.
- */
-function wahlAusAnzeige(current?: CurrentKonfspruch | null): KonfispruchWahl | null {
-  if (current?.source === 'liste' && current.id) {
-    const t = isTranslation(current.translation) ? current.translation : 'luther2017';
-    return { quelle: 'vorschlag', id: current.id, stelle: current.reference || '', bibel: BIBEL_MESSWERT[t] };
-  }
-  if (current?.source === 'freitext' && (current.text || '').trim()) {
-    return { quelle: 'eigen', text: current.text || '', stelle: current.reference || '' };
-  }
-  return null;
-}
-
 const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose, onSuccess, current, apiBasePath = '/konfi', variant = 'konfi' }) => {
-  const { isOnline, user, organizations, activeOrgId } = useApp();
-  // Wo gewaehlt wird: die aktive Gemeinde aus GET /auth/my-organizations,
-  // sonst die Stamm-Gemeinde; der Name notfalls aus dem Konto (aeltere
-  // Server oder Liste noch nicht geladen).
-  const aktiveGemeinde = (organizations || []).find((o) => o.id === (activeOrgId ?? user?.organization_id))
-    ?? (organizations || []).find((o) => o.is_primary);
-  const ort: KonfispruchOrt = {
-    gemeinde: aktiveGemeinde?.display_name || aktiveGemeinde?.name || user?.organization,
-    kirchenkreis: aktiveGemeinde?.kirchenkreis,
-    landeskirche: aktiveGemeinde?.landeskirche,
-  };
-  const { isSubmitting, guard } = useActionGuard();
-  const [presentToast] = useIonToast();
-
-  const [mode, setMode] = useState<'liste' | 'freitext'>(
-    current?.source === 'freitext' ? 'freitext' : 'liste'
-  );
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
-  const [sprueche, setSprueche] = useState<Konfspruch[]>([]);
-  const [translation, setTranslation] = useState<Translation>(
-    isTranslation(current?.translation) ? current!.translation as Translation : 'luther2017'
-  );
-  const [selectedSpruchId, setSelectedSpruchId] = useState<number | null>(
-    current?.source === 'liste' && current?.id ? current.id : null
-  );
-  const [freitext, setFreitext] = useState<string>(
-    current?.source === 'freitext' ? (current.text || '') : ''
-  );
-  const [freitextReferenz, setFreitextReferenz] = useState<string>(
-    current?.source === 'freitext' ? (current.reference || '') : ''
-  );
-
-  useEffect(() => {
-    const loadSprueche = async () => {
-      try {
-        const response = await api.get(`${apiBasePath}/konfsprueche`);
-        const liste = Array.isArray(response.data) ? response.data : [];
-        setSprueche(liste);
-        setLoadError(false);
-        // WR-05: Falls die zuvor gewaehlte ID nicht mehr in der Liste ist
-        // (deaktiviert/entfernt/Org gewechselt), Auswahl zuruecksetzen.
-        setSelectedSpruchId((prev) =>
-          prev != null && liste.some((s: Konfspruch) => s.id === prev) ? prev : null
-        );
-      } catch (err) {
-        // WR-04: Ladefehler sichtbar machen, damit ein Netzwerkfehler nicht
-        // wie "keine Sprueche vorhanden" aussieht.
-        console.error('Fehler beim Laden der Konfsprueche:', err);
-        setLoadError(true);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadSprueche();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const showError = (message: string) => {
-    presentToast({ message, duration: 3000, color: 'danger', position: 'top' });
-  };
-
-  const handleSave = async () => {
-    if (mode === 'liste') {
-      if (!selectedSpruchId) {
-        showError('Bitte wähle einen Spruch aus der Liste aus');
-        return;
-      }
-      const vorher = wahlAusAnzeige(current);
-      await guard(async () => {
-        try {
-          await api.patch(`${apiBasePath}/profile`, {
-            konfspruch_id: selectedSpruchId,
-            translation
-          });
-          // Anonyme Messung NACH der erfolgreichen Antwort: Spruch, Uebersetzung
-          // und Gemeinde, nie die Person (docs/messung/umami.md, S1).
-          // Unveraendert erneut gespeichert meldet nichts.
-          const spruch = sprueche.find((s) => s.id === selectedSpruchId);
-          trackKonfispruchWahl(
-            { quelle: 'vorschlag', id: selectedSpruchId, stelle: spruch?.reference || '', bibel: BIBEL_MESSWERT[translation] },
-            vorher,
-            ort
-          );
-          presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
-          onSuccess();
-        } catch (err) {
-          // WR-05: 404 = der gewaehlte Spruch ist nicht mehr verfuegbar -> klare Meldung
-          if (fehlerStatus(err) === 404) {
-            setSelectedSpruchId(null);
-            showError('Der gewählte Spruch ist nicht mehr verfügbar. Bitte wähle einen anderen.');
-          } else {
-            showError(fehlerText(err, 'Der Konfispruch konnte nicht gespeichert werden'));
-          }
-        }
-      });
-    } else {
-      const referenz = freitextReferenz.trim();
-      const text = freitext.trim();
-      if (!text) {
-        showError('Bitte gib deinen Spruchtext ein');
-        return;
-      }
-      if (!referenz) {
-        showError('Bitte gib die Stellenangabe an');
-        return;
-      }
-      const vorher = wahlAusAnzeige(current);
-      await guard(async () => {
-        try {
-          await api.patch(`${apiBasePath}/profile`, {
-            konfspruch_freitext: text,
-            konfspruch_freitext_referenz: referenz
-          });
-          // Eigener Spruch im Wortlaut mit Stellenangabe (Simon, 09.10.2026:
-          // „insbesondere die, die selbst eingetragen werden"), gesaeubert
-          // und gekuerzt in services/analytics.ts.
-          trackKonfispruchWahl({ quelle: 'eigen', text, stelle: referenz }, vorher, ort);
-          presentToast({ message: 'Dein Konfispruch wurde gespeichert', duration: 2000, color: 'success', position: 'top' });
-          onSuccess();
-        } catch (err) {
-          showError(fehlerText(err, 'Der Konfispruch konnte nicht gespeichert werden'));
-        }
-      });
-    }
-  };
+  const {
+    isOnline, isSubmitting, mode, setMode, loading, loadError, sprueche, translation, setTranslation,
+    selectedSpruchId, setSelectedSpruchId, freitext, setFreitext, freitextReferenz, setFreitextReferenz, speichern,
+  } = useKonfispruchWahl({ current, apiBasePath, onErfolg: onSuccess });
+  const handleSave = () => { void speichern(); };
 
   return (
     <IonPage>
@@ -280,7 +95,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
       <IonContent className="app-gradient-background">
         {/* Modus-Umschaltung: Aus Liste / Eigener Spruch (ohne Icons -> einzeilig) */}
         <div className="app-segment-wrapper">
-          <IonSegment value={mode} onIonChange={(e) => setMode(e.detail.value as 'liste' | 'freitext')}>
+          <IonSegment value={mode} onIonChange={(e) => setMode(e.detail.value as KonfispruchModus)}>
             <IonSegmentButton value="liste">
               <IonLabel>Aus Liste</IonLabel>
             </IonSegmentButton>
@@ -326,7 +141,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
                   ) : loadError ? (
                     <div className="app-info-box app-info-box--neutral" style={{ textAlign: 'center' }}>
                       <IonText color="danger">
-                        Die Spruchliste konnte nicht geladen werden. Bitte versuche es später erneut.
+                        {SPRUCHLISTE_FEHLER}
                       </IonText>
                     </div>
                   ) : sprueche.length === 0 ? (
@@ -433,7 +248,7 @@ const KonfispruchSelectModal: React.FC<KonfispruchSelectModalProps> = ({ onClose
             <IonCard className="app-card app-info-box--purple">
               <IonCardContent className="app-info-box">
                 <p style={{ margin: 0 }}>
-                  Bei einem eigenen Spruch ist die Stellenangabe verpflichtend.
+                  {EIGENER_SPRUCH_HINWEIS}
                 </p>
               </IonCardContent>
             </IonCard>

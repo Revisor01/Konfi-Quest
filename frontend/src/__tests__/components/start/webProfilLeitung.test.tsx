@@ -1,14 +1,15 @@
 // Profil der Leitung in der Web-Fassung, gerendert (03.10.2026,
 // docs/planung/web-alle-bereiche.md, Entscheidung 6): zweispaltig -- links die
-// Person mit ihren Angaben, rechts Einladungen, Einstellungen und das Loeschen
-// des Kontos. Abmelden steht, wie in der App, nicht im Profil. Die Handgriffe
-// sind die der App: dieselben Modale mit denselben Eigenschaften. Die Farbe
-// folgt der Rolle: Gemeindeleitung indigo, Leitung petrol.
+// Person mit ihren Angaben, rechts Einladungen, Einstellungen und die Karte
+// „Konto" mit Abmelden (seit 15.10.2026, wie bei Konfis und Team) und Konto
+// löschen. Die Handgriffe öffnen seit 11. und 15.10.2026 Dialoge der
+// Web-Fassung mit der Logik der App (start/webProfilFenster,
+// shared/webProfilDialoge). Die Farbe folgt der Rolle: Gemeindeleitung indigo,
+// Leitung petrol.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import './zeitrahmen';
 import React from 'react';
 import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
-import type { ModalAufruf } from './ionicStart';
 
 const h = vi.hoisted(() => ({
   breit: true,
@@ -61,7 +62,6 @@ const LEITUNG = { id: 3, role_name: 'admin', display_name: 'Lena Leitung', usern
 const ORG_LEITUNG = { ...LEITUNG, id: 2, role_name: 'org_admin', display_name: 'Olaf Orgleitung', username: 'olaf.orgleitung', email: 'olaf@example.org' };
 
 const knopfInZeile = (titel: string, knopf: string) => screen.getByRole('button', { name: `${titel}: ${knopf}` });
-const modal = (name: string): ModalAufruf | undefined => h.modale.find((m) => m.name === name);
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -121,18 +121,19 @@ describe('Profil der Leitung (Web): Person', () => {
 });
 
 describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in der App', () => {
-  it('Funktionsbeschreibung oeffnet das Modal mit der aktuellen Bezeichnung', async () => {
+  it('Funktionsbeschreibung oeffnet den Dialog mit der aktuellen Bezeichnung, kein App-Modal', async () => {
     await zeige();
     expect(screen.getByRole('list', { name: 'Konto-Einstellungen' })).toHaveTextContent('FunktionsbeschreibungAktuell: Gemeindepädagogin');
     fireEvent.click(knopfInZeile('Funktionsbeschreibung', 'Ändern'));
-    expect(modal('ChangeRoleTitleModal')?.props.initialRoleTitle).toBe('Gemeindepädagogin');
-    expect(modal('ChangeRoleTitleModal')?.optionen?.presentingElement).toBe(h.seite);
+    const dialog = screen.getByRole('dialog', { name: 'Funktionsbeschreibung' });
+    expect(within(dialog).getByRole('textbox', { name: 'Funktionsbeschreibung' })).toHaveValue('Gemeindepädagogin');
+    expect(h.modale).toEqual([]);
   });
 
   // Seit 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale überall")
   // öffnen E-Mail und Passwort im Browser eigene Dialoge statt der App-Modale;
   // Einzelheiten in start/webKontoUmschaltung und shared/webKontoDialoge.
-  it('E-Mail und Passwort öffnen die Dialoge der Web-Fassung, Konto loeschen das Modal der App', async () => {
+  it('E-Mail, Passwort und Konto loeschen öffnen die Dialoge der Web-Fassung, kein App-Modal', async () => {
     h.antworten['/auth/me'] = { email: 'lena@example.org' };
     await zeige();
     expect(screen.getByRole('list', { name: 'Konto-Einstellungen' })).toHaveTextContent('E-Mail-AdresseAktuell: lena@example.org');
@@ -145,8 +146,8 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     fireEvent.click(within(passwort).getByRole('button', { name: 'Abbrechen' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Konto löschen' }));
-    expect(modal('DeleteAccountModal')?.optionen?.presentingElement).toBe(h.seite);
-    expect(h.modale.map((m) => m.name)).toEqual(['DeleteAccountModal']);
+    expect(screen.getByRole('dialog', { name: 'Konto löschen' })).toBeInTheDocument();
+    expect(h.modale).toEqual([]);
   });
 
   it('Medien-Cache zeigt seinen Stand und leert ihn', async () => {
@@ -156,13 +157,14 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     expect(h.cacheLeeren).toHaveBeenCalledTimes(1);
   });
 
-  it('wie in der App: kein Abmelden im Profil', async () => {
+  it('die Karte „Konto" hat Abmelden und Konto löschen -- wie bei Konfis und Team (15.10.2026)', async () => {
     await zeige();
-    expect(screen.queryByRole('button', { name: 'Abmelden' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Konto löschen' })).toBeInTheDocument();
+    const konto = screen.getByRole('heading', { name: 'Konto' }).closest('section') as HTMLElement;
+    expect(within(konto).getByRole('button', { name: 'Abmelden' })).toBeInTheDocument();
+    expect(within(konto).getByRole('button', { name: 'Konto löschen' })).toBeInTheDocument();
   });
 
-  it('Benachrichtigungen wie bei Konfis und Team: die Auswahl der App in der Farbe der Leitung (Simon, 06.10.2026)', async () => {
+  it('Benachrichtigungen wie bei Konfis und Team: dieselbe Auswahl wie in der App (Simon, 06.10.2026)', async () => {
     // In der App steht die Zeile unter Mehr › Konto; im Browser fehlte sie der
     // Leitung ganz -- „nicht gewollt".
     h.antworten['/notifications/preferences'] = {
@@ -175,8 +177,11 @@ describe('Profil der Leitung (Web): Einstellungen -- dieselben Handgriffe wie in
     await zeige();
     expect(await screen.findByText('1 von 2 Gruppen aufs Handy')).toBeInTheDocument();
     fireEvent.click(knopfInZeile('Benachrichtigungen', 'Auswählen'));
-    expect(modal('PushAuswahlModal')?.props.variante).toBe('users');
-    expect(modal('PushAuswahlModal')?.optionen?.presentingElement).toBe(h.seite);
+    // Seit 15.10.2026 der Dialog der Web-Fassung (usePushAuswahl, dieselbe Logik).
+    const dialog = screen.getByRole('dialog', { name: 'Benachrichtigungen' });
+    expect(await within(dialog).findByRole('switch', { name: 'Anträge' })).not.toBeChecked();
+    expect(within(dialog).getByRole('switch', { name: 'Chat' })).toBeChecked();
+    expect(h.modale).toEqual([]);
   });
 
   it('keine Kennzahlen-Zeile: über Zahl und Push entscheidet allein das Recht (Simon, 09.10.2026)', async () => {

@@ -4,8 +4,9 @@
 // die Neuerungen.
 //
 // Die Seite lädt und speichert nichts selbst: Die Handgriffe (Funktionsbeschreibung,
-// E-Mail, Passwort, Bibelübersetzung, Abmelden, Konto löschen) sind die der App
-// (teamer/pages/TeamerProfilePage.tsx) und kommen hier als Funktionen an.
+// E-Mail, Passwort, Bibelübersetzung, Abmelden, Konto löschen) kommen von der
+// Seite (teamer/pages/TeamerProfilePage.tsx) als Funktionen an -- im Browser
+// öffnen sie die Dialoge der Web-Fassung mit der Logik der App (Simon, 15.10.2026).
 
 import React from 'react';
 import {
@@ -60,7 +61,6 @@ export interface WebTeamerProfilProps {
   uebersetzung: string;
   cacheLabel: string;
   rueckblicke: WrappedHistoryEntry[];
-  presentingElement: () => HTMLElement | null;
   onRueckblick: (eintrag: WrappedHistoryEntry) => void;
   onFunktion: () => void;
   onEmail: () => void;
@@ -110,7 +110,7 @@ const WebTeamerProfil: React.FC<WebTeamerProfilProps> = (props) => {
         <WebEinstellung icon={ICON_SCHLUESSEL} titel="Passwort" wert="Sicherheitseinstellungen" knopf="Ändern" onClick={props.onPasswort} />
         <WebEinstellung icon={ICON_BUCH} titel="Bibelübersetzung" wert={props.uebersetzung} knopf="Ändern" onClick={props.onUebersetzung} />
         <WebEinstellung icon={ICON_KOMPASS} titel="App-Tour" wert="Kurze Einführung durch die App" knopf="Ansehen" onClick={props.onTour} />
-        <WebPushZeile variante="teamer" presentingElement={props.presentingElement} />
+        <WebPushZeile />
         <WebEinstellung icon={ICON_GALERIE} titel="Medien-Cache" wert={props.cacheLabel} knopf="Leeren" onClick={props.onCache} />
       </WebEinstellungenKarte>
 
