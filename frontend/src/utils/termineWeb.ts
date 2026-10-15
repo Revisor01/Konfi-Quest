@@ -838,8 +838,36 @@ export interface AnmeldeKontext {
   laeuft: boolean;
   /** Ein anderes Konfirmations-Event ist schon gebucht. */
   hatKonfirmationGebucht: boolean;
+  /** Die Zeitfenster eines Zeitfenster-Events (zeitfensterStand); fehlt: 'da'. */
+  zeitfenster?: ZeitfensterStand;
   jetzt?: Date;
 }
+
+/**
+ * Wie es um die Zeitfenster eines Events steht -- fuer die Anmeldung:
+ *   da      kein Zeitfenster-Event, oder die Zeitfenster sind geladen;
+ *   laedt   noch nicht geladen;
+ *   keine   geladen, aber keine eingetragen;
+ *   fehler  konnten nicht geladen werden.
+ */
+export type ZeitfensterStand = 'da' | 'laedt' | 'keine' | 'fehler';
+
+export function zeitfensterStand(
+  event: Pick<Event, 'has_timeslots'>,
+  zeitfenster: { anzahl: number; geladen: boolean; fehler: boolean },
+): ZeitfensterStand {
+  if (!event.has_timeslots || zeitfenster.anzahl > 0) return 'da';
+  if (zeitfenster.fehler) return 'fehler';
+  return zeitfenster.geladen ? 'keine' : 'laedt';
+}
+
+/** Zeitfenster-Event ohne eingetragene Zeitfenster -- derselbe Satz wie die Rueckfrage der App. */
+export const ZEITFENSTER_KEINE = 'Für dieses Event sind noch keine Zeitfenster eingetragen. Melde dich bei deinem Team.';
+/**
+ * Die Zeitfenster kamen nicht an. Die App sagt „Zieh die Seite nach unten";
+ * im Browser gibt es die Geste nicht, dort laedt die Seite neu.
+ */
+export const ZEITFENSTER_NICHT_GELADEN_WEB = 'Die Zeitfenster konnten nicht geladen werden. Lade die Seite neu, um es erneut zu versuchen.';
 
 /** Bis zwei Tage vorher darf sich abmelden, wer angemeldet ist. */
 export const kannAbmelden = (event: Pick<Event, 'is_registered' | 'event_date'>, jetzt: Date = new Date()): boolean => {
@@ -852,8 +880,26 @@ export const kannAbmelden = (event: Pick<Event, 'is_registered' | 'event_date'>,
  * Der Zustand des Feldes "Bist du dabei?" der Konfi-Detailansicht -- dieselbe
  * Entscheidungskette wie die der App (konfi/views/EventDetailView, "AN-/
  * ABMELDUNG"), als Daten: ein Hinweis, ein Knopf, eine Erklaerung.
+ *
+ * Dazu im Browser (15.10.2026): An einem Zeitfenster-Event ohne Zeitfenster
+ * ist "Anmelden" gesperrt, und der Grund steht daneben -- wie beim schon
+ * gebuchten Konfirmationstermin. Die App laesst den Knopf frei und sagt es
+ * erst beim Tippen in einer Rueckfrage ("Zeitfenster nicht geladen").
+ * Solange die Zeitfenster noch laden, ist der Knopf gesperrt, ohne Grund --
+ * wie waehrend einer Anmeldung. Ohne Netz bleibt es bei "Du bist offline".
  */
 export function konfiAnmeldeZustand(event: Event, kontext: AnmeldeKontext): AnmeldeZustand {
+  const zustand = anmeldeZustandOhneZeitfenster(event, kontext);
+  const stand = kontext.zeitfenster ?? 'da';
+  const knopf = zustand.knopf;
+  if (stand === 'da' || !knopf || !kontext.online || (knopf.aktion !== 'anmelden' && knopf.aktion !== 'wiederAnmelden')) {
+    return zustand;
+  }
+  const grund = stand === 'keine' ? ZEITFENSTER_KEINE : stand === 'fehler' ? ZEITFENSTER_NICHT_GELADEN_WEB : null;
+  return { ...zustand, knopf: { ...knopf, sperrt: true }, ...(grund ? { gesperrt: { text: grund } } : {}) };
+}
+
+function anmeldeZustandOhneZeitfenster(event: Event, kontext: AnmeldeKontext): AnmeldeZustand {
   const { online, laeuft, hatKonfirmationGebucht } = kontext;
   const jetzt = kontext.jetzt ?? new Date();
   const abgesagt = istAbgesagt(event);

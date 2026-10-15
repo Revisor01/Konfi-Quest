@@ -338,6 +338,33 @@
   }
 }
 
+/* --- b13-absage: Zeitslot auswählen (WebZeitfensterDialog, 15.10.2026) ---
+   Die Zeitfenster stehen in der Liste der Auswahl (.web-wahl__liste); jede
+   Zeile ist ein Knopf, ein Klick meldet an. Ein ausgebuchtes Zeitfenster
+   bleibt erreichbar (aria-disabled) und sagt beim Klick, warum es nicht geht. */
+.web-zeitfenster-wahl__zeile {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-zeitfenster-wahl__zeile[aria-disabled='true'],
+.web-zeitfenster-wahl__zeile:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.web-zeitfenster-wahl__zeile:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
 /* --- g1-event: Event anlegen, bearbeiten und kopieren (WebEventDialog) --- */
 /* Ein Zeitfenster: Start, Ende, Plaetze und Entfernen in einer Zeile, die
    Nummer als Legende im Rahmen. */

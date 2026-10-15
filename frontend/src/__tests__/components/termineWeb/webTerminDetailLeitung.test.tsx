@@ -581,7 +581,9 @@ describe('Rechte', () => {
     await act(async () => { fireEvent.click(within(kopf()).getByRole('button', { name: 'Dabei' })); });
     expect(api.post).toHaveBeenCalledWith('/teamer/events/7/zusage', { dabei: true });
     fireEvent.click(within(kopf()).getByRole('button', { name: /Nicht/ }));
-    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
+    // Im Browser das Absage-Fenster der Web-Fassung (15.10.2026), nicht das Modal der App.
+    expect(screen.getByRole('dialog', { name: 'Absage' })).toBeInTheDocument();
+    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(0);
   });
 });
 

@@ -32,6 +32,8 @@ export const setSuccess = vi.fn();
 export const setError = vi.fn();
 export const enqueue = vi.fn();
 export const presentAlert = vi.fn();
+/** Das Aktionsmenü der App (Zeitslot auswählen): mitgeschrieben samt Knöpfen. */
+export const presentActionSheet = vi.fn();
 export const modale = {
   geoeffnet: [] as Array<{ name: string; props: Record<string, unknown> }>,
 };
@@ -107,7 +109,7 @@ vi.mock('@ionic/react', () => {
       return [() => { modale.geoeffnet.push({ name, props }); }, vi.fn()];
     },
     useIonAlert: () => [presentAlert, vi.fn()],
-    useIonActionSheet: () => [vi.fn(), vi.fn()],
+    useIonActionSheet: () => [presentActionSheet, vi.fn()],
     useIonRouter: () => ({ push: vi.fn() }),
   };
 });
@@ -148,7 +150,7 @@ export const zuruecksetzen = () => {
   zustand.zeitfenster = [];
   zustand.laedt = false;
   querySchluessel.length = 0;
-  for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, enqueue, presentAlert]) f.mockReset();
+  for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, enqueue, presentAlert, presentActionSheet]) f.mockReset();
   modale.geoeffnet.length = 0;
   api.get.mockImplementation(async (pfad: string) => {
     if (pfad === '/konfi/events') return { data: zustand.events };

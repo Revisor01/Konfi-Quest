@@ -76,6 +76,7 @@ import WebNotizDialog from '../web/termine/WebNotizDialog';
 import WebTerminAbsagenDialog from '../web/termine/WebTerminAbsagenDialog';
 import WebQrDialog from '../../shared/web/termine/WebQrDialog';
 import WebTerminMaterialDialog from '../../shared/web/termine/WebTerminMaterialDialog';
+import WebAbsageDialog from '../../shared/web/termine/WebAbsageDialog';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
@@ -254,8 +255,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
    */
   const darfVerbuchen = darfVerwalten && eventData?.darf_verbuchen !== false;
 
-  const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
-    if (!eventData || zusageLaeuft) return;
+  // `melden`: wohin eine Ablehnung geht -- in der App oben (setError), im
+  // Absage-Fenster des Browsers in das Fenster. Das Ergebnis sagt dem
+  // Fenster, ob es schliessen darf.
+  const setzeEigeneZusage = async (dabei: boolean, grund?: string, melden: (text: string) => void = setError): Promise<boolean> => {
+    if (!eventData || zusageLaeuft) return false;
     setZusageLaeuft(true);
     const body = grund && grund.trim() ? { dabei, reason: grund.trim() } : { dabei };
     try {
@@ -271,10 +275,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
       setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
       loadEventData();
+      return true;
     } catch (err) {
       // Das Backend lehnt eine Absage nach Zusage ohne Grund mit
       // error_code 'grund_erforderlich' ab -- die Meldung durchreichen.
-      setError(fehlerText(err, 'Anmeldung fehlgeschlagen'));
+      melden(fehlerText(err, 'Anmeldung fehlgeschlagen'));
+      return false;
     } finally {
       setZusageLaeuft(false);
     }
@@ -302,7 +308,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     dismiss: (data?: string, role?: string) => dismissEigeneAbsageModal(data, role)
   });
 
+  // Im Browser ab 992 px ein Fenster statt des Modals (Simon, 15.10.2026) --
+  // dieselben Regeln (shared/useAbsageFormular.ts), dieselbe Funktion.
+  // Gemerkt wird, fuer WELCHES Event es offen ist (die Ansicht bleibt beim
+  // Wechsel des Events dieselbe Instanz).
+  const [webEigeneAbsageFuer, setWebEigeneAbsageFuer] = useState<number | null>(null);
+
   const oeffneEigeneAbsage = () => {
+    if (breit) {
+      setWebEigeneAbsageFuer(eventId);
+      return;
+    }
     presentEigeneAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
@@ -1637,6 +1653,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       )}
       {webFenster?.art === 'material' && (
         <WebTerminMaterialDialog materialId={webFenster.id} onSchliessen={() => setWebFenster(null)} />
+      )}
+      {/* Die eigene Absage als Fenster (15.10.2026), wie das Modal des Teams. */}
+      {webEigeneAbsageFuer === eventId && eventData && (
+        <WebAbsageDialog
+          rolle="team"
+          pflicht={absageBrauchtGrund(eigeneZusage)}
+          eventName={eventData.name}
+          onAbsage={(grund, melden) => setzeEigeneZusage(false, grund, melden)}
+          onSchliessen={() => setWebEigeneAbsageFuer(null)}
+        />
       )}
       </>
     );

@@ -10,7 +10,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within, act } from '@testing-library/react';
 import {
-  zustand, zuruecksetzen, termin, oeffne, knopf, dabeiKarte, api, setError, setSuccess, presentAlert, modale, zuletztGeoeffnet, inTagen,
+  zustand, zuruecksetzen, termin, oeffne, knopf, dabeiKarte, api, setError, setSuccess, presentAlert, modale, inTagen,
 } from '../gerueste/konfiTerminDetail';
 import { cleanup } from '@testing-library/react';
 import { konfiAnmeldeZustand } from '../../../utils/termineWeb';
@@ -122,11 +122,14 @@ describe('Kopf: Anmelden', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('Zeitfenster-Event ohne Zeitfenster: kein POST, ein Hinweis', async () => {
+  it('Zeitfenster-Event ohne Zeitfenster: "Anmelden" gesperrt, der Grund daneben -- keine Rückfrage, kein POST (15.10.2026)', async () => {
     await oeffne(SOMMERFEST({ has_timeslots: true }));
-    await act(async () => { fireEvent.click(within(kopf()).getByRole('button', { name: 'Anmelden (4/10)' })); });
+    const anmelden = within(kopf()).getByRole('button', { name: 'Anmelden (4/10)' });
+    expect(anmelden).toBeDisabled();
+    expect(hinweise()).toEqual(['Für dieses Event sind noch keine Zeitfenster eingetragen. Melde dich bei deinem Team.']);
+    fireEvent.click(anmelden);
     expect(api.post).not.toHaveBeenCalled();
-    expect(presentAlert.mock.calls.at(-1)![0].header).toBe('Zeitfenster nicht geladen');
+    expect(presentAlert).not.toHaveBeenCalled();
   });
 
   it('Konfirmation, wenn schon ein anderer Termin gebucht ist: kein Knopf, die Erklärung als Hinweis', async () => {
@@ -146,8 +149,10 @@ describe('Kopf: Abmelden', () => {
     await oeffne(angemeldet());
     const abmelden = within(kopf()).getByRole('button', { name: 'Abmelden' });
     fireEvent.click(abmelden);
-    expect(geoeffnet('UnregisterModal')).toHaveLength(1);
-    expect(zuletztGeoeffnet('UnregisterModal')!.props.mandatory).toBeUndefined();
+    // Im Browser das Fenster der Web-Fassung (15.10.2026), nicht das Modal der App.
+    expect(screen.getByRole('dialog', { name: 'Abmeldung' })).toHaveAccessibleDescription('Abmeldung von Sommerfest');
+    expect(screen.queryByText('Deine Eltern müssen die Abmeldung noch bei uns bestätigen.')).toBe(null);
+    expect(geoeffnet('UnregisterModal')).toHaveLength(0);
     expect(api.delete).not.toHaveBeenCalled();
   });
 
@@ -161,16 +166,19 @@ describe('Kopf: Abmelden', () => {
     await oeffne(SOMMERFEST({ booking_status: 'waitlist', waitlist_position: 2, registered_count: 10 }));
     expect(hinweise()).toEqual(['Du stehst auf Platz 2 der Warteliste']);
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Von der Warteliste abmelden' }));
-    expect(geoeffnet('UnregisterModal')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Abmeldung' })).toBeInTheDocument();
+    expect(geoeffnet('UnregisterModal')).toHaveLength(0);
   });
 
   it('Pflicht-Event: automatisch angemeldet; Abmelden öffnet das Fenster mit Grund', async () => {
     await oeffne(angemeldet({ mandatory: true, registration_status: 'mandatory', points: 0 }));
     expect(hinweise()).toEqual(['Du bist automatisch angemeldet']);
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Abmelden' }));
-    // Dasselbe Fenster, aber im Pflicht-Modus (Grund mit mindestens 5 Zeichen).
-    expect(geoeffnet('UnregisterModal')).toHaveLength(1);
-    expect(zuletztGeoeffnet('UnregisterModal')!.props.mandatory).toBe(true);
+    // Dasselbe Fenster, aber im Pflicht-Modus (Grund mit mindestens 5 Zeichen, Satz über die Eltern).
+    const fenster = screen.getByRole('dialog', { name: 'Abmeldung' });
+    expect(within(fenster).getByText('Deine Eltern müssen die Abmeldung noch bei uns bestätigen.')).toBeInTheDocument();
+    expect(within(fenster).getByText('0/5 Zeichen')).toBeInTheDocument();
+    expect(geoeffnet('UnregisterModal')).toHaveLength(0);
   });
 
   it('Pflicht-Event, abgemeldet: "Wieder anmelden" ruft POST /opt-in', async () => {

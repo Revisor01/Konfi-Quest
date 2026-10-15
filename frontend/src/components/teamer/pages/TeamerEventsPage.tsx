@@ -99,6 +99,7 @@ import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
 import WebAktivitaetMeldenDialog from '../../shared/web/termine/WebAktivitaetMeldenDialog';
+import WebAbsageDialog from '../../shared/web/termine/WebAbsageDialog';
 import { mitgliedSegmentAusAdresse, type EigenerAntragFilter, type TeamEventFilter } from '../../shared/web/termine/terminFilter';
 import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
 import { EIGENE_ANTRAEGE_START, MITGLIED_BEREICHE, TEAM_EVENTS, TEAM_EVENTS_LEER_TITEL } from '../../../seiten/mitmachenMitglied';
@@ -598,7 +599,11 @@ const TeamerEventsPage: React.FC = () => {
   // TeamerAbsageModal (oeffneAbsage unten); durchgesetzt wird die Regel im
   // Backend, das ohne Grund mit error_code 'grund_erforderlich' ablehnt —
   // dieser Handler zeigt dann die Server-Meldung an.
-  const handleZusage = async (event: Event, dabei: boolean, reason?: string) => {
+  //
+  // `melden`: wohin eine Ablehnung geht -- in der App oben (setError), im
+  // Absage-Fenster des Browsers in das Fenster. Das Ergebnis sagt dem
+  // Fenster, ob es schliessen darf (angekommen oder eingereiht).
+  const handleZusage = async (event: Event, dabei: boolean, reason?: string, melden: (text: string) => void = setError): Promise<boolean> => {
     setBookingLoading(true);
     const body = reason && reason.trim() ? { dabei, reason: reason.trim() } : { dabei };
     try {
@@ -653,8 +658,10 @@ const TeamerEventsPage: React.FC = () => {
         }
       }
       refreshLive();
+      return true;
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Speichern'));
+      melden(fehlerText(err, 'Fehler beim Speichern'));
+      return false;
     } finally {
       setBookingLoading(false);
     }
@@ -672,7 +679,17 @@ const TeamerEventsPage: React.FC = () => {
     dismiss: (data?: string, role?: string) => dismissAbsageModal(data, role)
   });
 
+  // Im Browser ab 992 px ein Fenster statt des Modals (Simon, 15.10.2026) --
+  // dieselben Regeln (shared/useAbsageFormular.ts), dieselbe Funktion.
+  // Gemerkt wird, fuer WELCHES Event es offen ist: Fuehrt die Zurueck-Taste
+  // des Browsers weg, geht es nicht beim naechsten Event wieder auf.
+  const [webAbsageFuer, setWebAbsageFuer] = useState<number | null>(null);
+
   const oeffneAbsage = () => {
+    if (breit) {
+      setWebAbsageFuer(selectedEvent?.id ?? null);
+      return;
+    }
     presentAbsageModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
@@ -2209,6 +2226,15 @@ const TeamerEventsPage: React.FC = () => {
       )}
       {webFenster?.art === 'material' && webFenster.id && gewaehlt?.id === webFenster.eventId && (
         <WebTerminMaterialDialog materialId={webFenster.id} onSchliessen={() => setWebFenster(null)} />
+      )}
+      {gewaehlt && webAbsageFuer === gewaehlt.id && (
+        <WebAbsageDialog
+          rolle="team"
+          pflicht={absageBrauchtGrund(gewaehlt.booking_status)}
+          eventName={gewaehlt.name}
+          onAbsage={(grund, melden) => handleZusage(gewaehlt, false, grund, melden)}
+          onSchliessen={() => setWebAbsageFuer(null)}
+        />
       )}
       </>
     );

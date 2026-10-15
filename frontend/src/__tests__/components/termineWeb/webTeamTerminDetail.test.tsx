@@ -171,7 +171,10 @@ describe('Kopf: Zusage und Absage', () => {
     await oeffneEvent(402);
     expect(within(kopf()).queryByRole('button', { name: 'Dabei' })).toBe(null);
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Nicht mehr dabei' }));
-    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
+    // Im Browser das Fenster der Web-Fassung (15.10.2026); nach der Zusage ist der Grund Pflicht.
+    const fenster = screen.getByRole('dialog', { name: 'Absage' });
+    expect(within(fenster).getByRole('textbox', { name: 'Grund für die Absage' })).toHaveAttribute('aria-required', 'true');
+    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(0);
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -188,7 +191,9 @@ describe('Kopf: Zusage und Absage', () => {
   it('"Nicht dabei" öffnet das Absage-Fenster (der Grund ist dort freiwillig)', async () => {
     await oeffneEvent(401);
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Nicht dabei' }));
-    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
+    const fenster = screen.getByRole('dialog', { name: 'Absage' });
+    expect(within(fenster).getByRole('textbox', { name: 'Grund (freiwillig)' })).not.toHaveAttribute('aria-required');
+    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(0);
     expect(api.post).not.toHaveBeenCalled();
   });
 
