@@ -352,9 +352,9 @@ describe('Chat (Web): /…/chat/room/:id -- dieselbe Ansicht mit dem Raum', () =
     expect(within(rechts).getByRole('textbox', { name: 'Nachricht schreiben' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Chat auswählen' })).not.toBeInTheDocument();
 
+    // Nur dieser eine Raum heisst fuer Vorleseprogramme "geöffnet".
     const offen = within(liste()).getByRole('link', { name: /Jahrgang 2026\/27.*geöffnet/ });
-    expect(offen).toHaveClass('web-chat-zeile--offen');
-    expect(zeilen().filter((z) => z.classList.contains('web-chat-zeile--offen'))).toHaveLength(1);
+    expect(within(liste()).getAllByRole('link', { name: /, geöffnet$/ })).toEqual([offen]);
   });
 
   it('der Raum aus der Adresse wird geladen und gelesen -- und nur dieser', async () => {

@@ -304,9 +304,9 @@ describe('Konfis (Web): Balken der Punkte', () => {
 // Breite was weicht und wie breit die Spalten sind, ist Layout und wird nicht
 // festgeschrieben (Simon, 15.10.2026). Bei JEDER Breite gilt aber: Ein Balken
 // in einer sichtbaren Zelle ist nie ganz weg -- er ist zu sehen oder nur fuer
-// Vorleseprogramme verborgen (die Zahl darueber ist aria-hidden) --, und der
-// Haken fuer "Ziel erreicht" bleibt zu sehen, damit es nicht an der Farbe
-// allein haengt.
+// Vorleseprogramme verborgen --, die Zahl darueber (aria-hidden) bleibt fuer
+// Sehende zu sehen, und der Haken fuer "Ziel erreicht" bleibt zu sehen, damit
+// es nicht an der Farbe allein haengt.
 //
 // Maßgeblich ist die Breite der Tabelle, nicht des Fensters (Container-Abfrage
 // an .web-tabelle-huelle). jsdom rechnet keine Container-Abfragen;
@@ -340,7 +340,7 @@ function beiTabellenBreite(css: string, breite: number): string {
   return raus;
 }
 
-describe('Konfis (Web): bei jeder Breite der Tabelle bleibt der Wert fuer Vorleseprogramme da', () => {
+describe('Konfis (Web): bei jeder Breite der Tabelle bleiben Zahl, Wert fuer Vorleseprogramme und Haken da', () => {
   let stile: HTMLStyleElement[] = [];
   const tabelleSoBreit = (breite: number) => {
     stile = STYLESHEETS.map((css) => {
@@ -358,9 +358,15 @@ describe('Konfis (Web): bei jeder Breite der Tabelle bleibt der Wert fuer Vorles
 
   // Ueber dem Ziel in allen drei Arten: 12 / 10, 10 / 10, 22 / 20 -- jeder Balken mit Haken.
   const UEBER_ZIEL = { ...KONFIS[0], id: 6, name: 'Fritz Über', username: 'fritz.ueber', gottesdienst_points: 12, gemeinde_points: 10 };
+  // Je Balken (Name fuer Vorleseprogramme): die Zahl fuer Sehende und der Wert fuer Vorleseprogramme.
+  const FRITZ: Record<string, { zahl: string; vorlesen: string }> = {
+    'Gottesdienst-Punkte': { zahl: '12 / 10', vorlesen: '12 von 10, Ziel erreicht' },
+    'Gemeinde-Punkte': { zahl: '10 / 10', vorlesen: '10 von 10, Ziel erreicht' },
+    'Punkte gesamt': { zahl: '22 / 20', vorlesen: '22 von 20, Ziel erreicht' },
+  };
 
   // Breiten von schmal bis breit, ohne die Grenzen zu kennen, an denen etwas weicht.
-  it.each([800, 900, 1000, 1060, 1134, 1200, 1244, 1358, 1600])('bei %i px: ein Balken in einer sichtbaren Zelle ist nie ganz weg, und der Haken fuer "Ziel erreicht" bleibt zu sehen', async (breite) => {
+  it.each([800, 900, 1000, 1060, 1134, 1200, 1244, 1358, 1600])('bei %i px: in jeder sichtbaren Zelle stehen die Zahl, der Wert fuer Vorleseprogramme und der Haken fuer "Ziel erreicht"; die Summe ist immer dabei', async (breite) => {
     tabelleSoBreit(breite);
     zeigen({ konfis: [...KONFIS, UEBER_ZIEL] });
     // Erst wenn die Team-Liste da ist (Zahl am Reiter), steht die Seite still.
@@ -368,13 +374,20 @@ describe('Konfis (Web): bei jeder Breite der Tabelle bleibt der Wert fuer Vorles
     // Nur die sichtbaren Zellen: Was mit seiner Spalte weicht, weicht ganz.
     const zellen = within(zeileVon('Fritz Über')).getAllByRole('cell')
       .filter((z) => within(z).queryByRole('progressbar', { hidden: true }));
-    expect(zellen.length).toBeGreaterThan(0);
-    for (const z of zellen) {
-      const b = within(z).getByRole('progressbar', { hidden: true });
+    const gesehen = zellen.map((z) => {
+      // Ohne { hidden: true }: Der Balken muss im Baum der Vorleseprogramme stehen.
+      const b = within(z).getByRole('progressbar');
+      const name = b.getAttribute('aria-label') ?? '';
+      expect(Object.keys(FRITZ), name).toContain(name);
       expect(b).toBeVisible();
-      expect(b.getAttribute('aria-valuetext')).toMatch(/^\d+ von \d+, Ziel erreicht$/);
-      expect(z.querySelector('.web-punktebalken__haken')).toBeVisible();
-    }
+      expect(b).toHaveAttribute('aria-valuetext', FRITZ[name].vorlesen);
+      // Die Zahl ueber dem Balken ist aria-hidden; fuer Sehende muss sie zu sehen sein.
+      expect(within(z).getByText(FRITZ[name].zahl)).toBeVisible();
+      expect(z.querySelector('.web-punktebalken__haken'), name).toBeVisible();
+      return name;
+    });
+    // Welche Punktarten bei schmaler Tabelle weichen, ist Layout; die Summe bleibt.
+    expect(gesehen).toContain('Punkte gesamt');
   });
 });
 

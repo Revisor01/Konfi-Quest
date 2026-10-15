@@ -56,6 +56,21 @@ describe('theme/web-ansicht.css: eigenes Stylesheet der Web-Fassungen', () => {
     expect([...gelesen].filter((t) => !definiert.has(t))).toEqual([]);
   });
 
+  // WCAG 2.4.11 (Fokus nicht verdeckt). Gemessen 11.10.2026 per Tab bei
+  // 1280 x 800: Ohne scroll-padding-bottom lag „Anmeldung ab sofort" (Event)
+  // hinter der klebenden Knopfleiste, ebenso „Link hinzufügen" (Material).
+  // Ob die Leiste klebt und wie viel Abstand der Dialog freihält, ist Layout;
+  // klebt sie, muss der Dialog aber Abstand freihalten.
+  it('klebt die Knopfleiste unten im Dialog, scrollt der Fokus nicht dahinter (scroll-padding-bottom)', () => {
+    const alle = regeln(rein);
+    const klebtUnten = alle.some(([s, rumpf]) => s.includes('.web-dialog__aktionen')
+      && /position:\s*sticky;/.test(rumpf) && /(?:^|[\s;])bottom\s*:/.test(rumpf));
+    const dialog = alle.find(([s]) => s === '.web-dialog')?.[1] ?? '';
+    const freiraum = dialog.match(/scroll-padding-bottom:\s*([^;]+);/)?.[1].trim() ?? '0';
+    const haeltFrei = !/^0(?:px|rem)?$/.test(freiraum);
+    expect(klebtUnten && !haeltFrei, `.web-dialog__aktionen klebt, .web-dialog haelt unten nichts frei (scroll-padding-bottom: ${freiraum})`).toBe(false);
+  });
+
   it('der Dunkelmodus legt nur Aliasse auf Tokens um, keine Farbwerte', () => {
     const von = rein.indexOf('@media (prefers-color-scheme: dark)');
     expect(von).toBeGreaterThan(-1);

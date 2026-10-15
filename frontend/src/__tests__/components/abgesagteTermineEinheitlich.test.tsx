@@ -156,6 +156,15 @@ describe('AbsageBlock als Kasten (Detailansichten aller drei Rollen)', () => {
     expect(screen.getByText('Geändert von Bernd Schulz, 16.09.')).toBeTruthy();
   });
 
+  it('die Namen stehen ohne Vorspann -- die Beschriftung "Abgesagt von" sagt, was sie bedeuten', () => {
+    // Positives Gegenstueck zu "eine alte Absage ohne Urheber behauptet nicht
+    // 'von unbekannt'" unten: Fehlte die Beschriftung ganz, bestuende jener
+    // Test, ohne den Fehlerfall je zu erreichen.
+    render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
+    expect(screen.getByText('Abgesagt von')).toBeTruthy();
+    expect(screen.getByText('Anna Meier, 15.09.')).toBeTruthy();
+  });
+
   it('nennt NICHT zweimal denselben Namen, wenn Absage und Grund von derselben Person stammen', () => {
     render(
       <AbsageBlock
@@ -225,6 +234,31 @@ describe('AbsageBlock als Zeile (Listen und Dashboard-Kacheln)', () => {
   it('ohne Grund bleibt die Zeile leer -- das Eck-Badge sagt "Abgesagt" schon', () => {
     const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="zeile" />);
     expect(container.textContent).toBe('');
+  });
+
+  // aufDunkel gibt es nur fuer die Dashboard-Kacheln mit Farbverlauf
+  // (Konfi- und Team-Startseite): Dort waere das Grau der Text-Tokens auf dem
+  // dunklen Verlauf nicht zu lesen. Welche helle Farbe es ist, ist
+  // Gestaltung; dass die Eigenschaft die Farbe von Grund- und Urheberzeilen
+  // ueberhaupt umstellt, ist Lesbarkeit.
+  it('aufDunkel faerbt Grund und Urheber anders als auf hellem Grund', () => {
+    const farben = (aufDunkel: boolean) => {
+      const { container, unmount } = render(<AbsageBlock event={abgesagtMitGrund} variante="zeile" aufDunkel={aufDunkel} />);
+      const zeilen = Array.from(container.querySelectorAll<HTMLElement>(':scope > div'));
+      const raus = zeilen.map((z) => [z.textContent, z.style.color]);
+      unmount();
+      return raus;
+    };
+    const hell = farben(false);
+    const dunkel = farben(true);
+    expect(dunkel.map(([text]) => text)).toEqual([
+      'Abgesagt: Heizung im Gemeindehaus defekt',
+      'Abgesagt von Anna Meier, 15.09.',
+      'Grund geändert von Bernd Schulz, 16.09.',
+    ]);
+    expect(hell.map(([text]) => text)).toEqual(dunkel.map(([text]) => text));
+    // Jede Zeile traegt auf dunklem Grund eine eigene Farbe, keine der hellen Variante.
+    expect(dunkel.map(([, farbe], i) => farbe !== '' && farbe !== hell[i][1])).toEqual([true, true, true]);
   });
 });
 

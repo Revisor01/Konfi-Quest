@@ -167,15 +167,14 @@ describe('Challenge fuer Team und Leitung (Web): Aufbau wie jede Detailseite', (
     expect(reihe.querySelector('[aria-label="Beiträge: 6"]')).toHaveTextContent('3 im Feed');
   });
 
-  it('Teilnehmende zaehlen Personen, nicht Beitraege; die Kachel wartender Freigaben hebt sich nur mit Wartendem hervor', async () => {
+  it('Teilnehmende zaehlen Personen, nicht Beitraege; die Kachel wartender Freigaben nennt ihre Zahl, auch 0', async () => {
     antworten(LAUFEND, [beitrag(1, 31, 'Lena Beispiel'), beitrag(2, 31, 'Lena Beispiel'), beitrag(3, 33, 'Mara Probe', { moderation_status: 'pending' })]);
     await zeigen();
     expect(kennzahlen()).toEqual(['Beiträge: 3', 'Teilnehmende: 2', 'Warten auf Freigabe: 1', 'Laufzeit: Noch 9 Tage']);
-    expect(screen.getByRole('group', { name: 'Warten auf Freigabe: 1' })).toHaveClass('web-kachel--achtung');
     cleanup();
     antworten(LAUFEND, [beitrag(1, 31, 'Lena Beispiel')]);
     await zeigen();
-    expect(screen.getByRole('group', { name: 'Warten auf Freigabe: 0' })).not.toHaveClass('web-kachel--achtung');
+    expect(kennzahlen()).toEqual(['Beiträge: 1', 'Teilnehmende: 1', 'Warten auf Freigabe: 0', 'Laufzeit: Noch 9 Tage']);
   });
 
   it('ohne Freigabe-Pflicht keine Kachel fuer wartende Beitraege', async () => {

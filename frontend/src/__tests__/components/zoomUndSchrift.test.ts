@@ -145,10 +145,14 @@ describe('Die Schrift folgt der Systemgroesse (UI BF-07b)', () => {
     expect(treffer).toEqual([]);
   });
 
-  it('die Textstufen der Skala sind rem und wachsen damit mit', () => {
-    const skala = [...lies('src/theme/typografie.css').matchAll(/(--app-text-[\w-]+):\s*([^;]+);/g)];
-    expect(skala.length).toBeGreaterThanOrEqual(15);
-    expect(skala.filter(([, name, wert]) => name !== '--app-text-hinweispunkt' && !/^[\d.]+rem$/.test(wert.trim())).map((m) => `${m[1]}: ${m[2]}`)).toEqual([]);
+  // Auch die Anzeigestufen (grosse Zahlen, Avatar-Initialen, Schriftzug):
+  // Stuende eine davon in px, wuechse dieser Text nicht mit der Systemschrift.
+  // Welche Stufen es gibt und wie gross sie sind, ist Gestaltung.
+  it('die Text- und Anzeigestufen der Skala sind rem und wachsen damit mit', () => {
+    const skala = [...lies('src/theme/typografie.css').matchAll(/(--app-(text|anzeige)-[\w-]+):\s*([^;]+);/g)];
+    expect(skala.filter((m) => m[2] === 'text').length).toBeGreaterThanOrEqual(15);
+    expect([...new Set(skala.map((m) => m[2]))].sort()).toEqual(['anzeige', 'text']);
+    expect(skala.filter(([, name, , wert]) => name !== '--app-text-hinweispunkt' && !/^[\d.]+rem$/.test(wert.trim())).map((m) => `${m[1]}: ${m[3]}`)).toEqual([]);
   });
 
   it('Android: die WebView wird nicht per setTextZoom von der Systemschrift abgekoppelt', () => {

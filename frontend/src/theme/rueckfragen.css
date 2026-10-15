@@ -45,7 +45,8 @@
 
    REGELN
    - Farben nur über Tokens; der Test rechnet die Kontraste hell und dunkel
-     nach (__tests__/utils/rueckfragenOptik.test.tsx):
+     nach und prüft, dass die Regeln hier genau diese Paare benutzen
+     (__tests__/utils/rueckfragenOptik.test.tsx):
      * roter Text auf Android: --app-color-danger, 4,53:1 hell und 4,55:1
        dunkel auf der Karte. Ionics --ion-color-danger käme dunkel auf der
        Karte der App (#242426) nur auf 4,39:1.
@@ -56,9 +57,10 @@
      * Symbol auf seinem Kreis mindestens 3:1 (Grafik).
    - Keine Übergänge, keine Animationen.
    - Die Web-Regeln schlagen die Regeln der Themes ios27 (iPad) und md3
-     (Desktop) an Spezifität, je Element; der Test rechnet es nach. Deshalb
-     tragen sie :is(.ios, .md) und die Kette .alert-wrapper .alert-button-group
-     wie die Themes selbst.
+     (Desktop) an Spezifität, je Element. Deshalb tragen sie :is(.ios, .md)
+     und die Kette .alert-wrapper .alert-button-group wie die Themes selbst.
+     Ein Test rechnet das nicht nach (Layout, Simon 15.10.2026); wer hier
+     ändert, sieht es sich im Browser an.
    =================================================================== */
 
 /* --- 1. Der rote Knopf auf Android (Ionic-Modus md) ---
@@ -284,8 +286,8 @@ html[data-layout='breit'] ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper 
 /* --- 4. Rückfragen der Web-Fenster (.web-rueckfrage) ---
    WebDialog mit `rueckfrage` (Kennzeichen am Fenster) und die Rückfrage in
    einer Zeile (Datei löschen im Material). Symbol und Knopf wie in Teil 2
-   und 3 im breiten Fenster: dieselbe Größe, dieselben Farben -- der Test
-   vergleicht die Werte mit den Regeln dort. */
+   und 3 im breiten Fenster: dieselbe Größe, dieselben Farben. Der Test prüft
+   davon nur die Farbpaare, deren Kontrast er rechnet. */
 
 /* Das Symbol: Kreis mit Mülleimer (Löschen, im Rot des Knopfs) bzw.
    Warndreieck (Warnung, Bernstein auf Orange). Das Icon nimmt die

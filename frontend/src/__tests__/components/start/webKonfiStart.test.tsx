@@ -445,6 +445,10 @@ describe('Konfi-Start (Web): Hinweise', () => {
 
     fireEvent.click(within(hinweis).getByRole('button', { name: 'Rückblick ansehen' }));
     expect(h.modale.map((m) => m.name)).toEqual(['WrappedModal']);
+    // Die Klasse nimmt den Rueckblick von der Kompakt-Regel fuer App-Modale im
+    // breiten Fenster aus (theme/web-modale.css) -- genau dort laeuft diese
+    // Seite. Ohne sie stuende er in einem 560 px breiten Modal mit Hoehe auto.
+    expect(h.modale[0].optionen).toEqual({ cssClass: 'wrapped-modal-fullscreen' });
     expect(h.modale[0].props).toMatchObject({ displayName: 'Mia Beispiel', jahrgangName: '2026/27', wrappedType: 'konfi' });
 
     fireEvent.click(within(hinweis).getByRole('button', { name: 'Hinweis ausblenden' }));

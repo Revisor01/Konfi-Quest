@@ -1223,12 +1223,21 @@ describe('Vorgang (Web): Notiz', () => {
     expect(within(screen.getByRole('region', { name: 'Interne Notiz' })).getByRole('button', { name: 'Bearbeiten' })).toHaveFocus();
   });
 
-  it('eine lange Notiz hat „mehr"; aufgeklappt heißt der Knopf „weniger"', async () => {
+  // Wie weit gekuerzt wird, ist Layout. Dass „mehr" die Kuerzung wirklich
+  // aufhebt, ist Verhalten: Sonst bliebe der Text abgeschnitten, waehrend
+  // aria-expanded="true" behauptet, er sei aufgeklappt.
+  it('eine lange Notiz ist gekürzt und hat „mehr"; aufgeklappt ist sie ganz da und der Knopf heißt „weniger"', async () => {
     server.stand.vorgaenge[0].notiz = 'Eins\nZwei\nDrei\nVier';
     await oeffnen();
     const notiz = screen.getByRole('region', { name: 'Interne Notiz' });
-    fireEvent.click(within(notiz).getByRole('button', { name: 'mehr' }));
+    const mehr = within(notiz).getByRole('button', { name: 'mehr' });
+    expect(mehr).toHaveAttribute('aria-expanded', 'false');
+    const text = document.getElementById(mehr.getAttribute('aria-controls')!)!;
+    expect(text).toHaveTextContent('Eins Zwei Drei Vier');
+    expect(text).toHaveClass('web-notiz__text--kurz');
+    fireEvent.click(mehr);
     expect(within(notiz).getByRole('button', { name: 'weniger' })).toHaveAttribute('aria-expanded', 'true');
+    expect(text).not.toHaveClass('web-notiz__text--kurz');
   });
 
   it('ein Fehler beim Speichern: Meldung, die Eingabe bleibt', async () => {

@@ -107,13 +107,17 @@ describe('Auch die Stylesheets haengen an der Skala', () => {
 
   it('WrappedModal.css: rem-Werte an der Skala, px und clamp bleiben pixelfest', () => {
     // Die Story-Folien sind ein pixelfestes Layout mit eigenen responsiven
-    // Tokens (--w-*, clamp). px-Werte bleiben dort bewusst stehen; die
-    // beiden Folien-Schmuckstuecke 5rem/16rem sind dokumentierte
-    // Einzelstuecke (Highlight-Zahl und Hintergrund-Symbol).
+    // Tokens (--w-*, clamp). px-Werte bleiben dort bewusst stehen. Die
+    // beiden Folien-Schmuckstuecke (Highlight-Zahl und Hintergrund-Symbol)
+    // sind dokumentierte Einzelstuecke: Ausgenommen ist ihre Regel, nicht ein
+    // bestimmter Wert -- wie gross sie sind, ist Gestaltung.
+    const SCHMUCK = ['.highlight-zahl', '.highlight-bg-icon'];
     const css = lies('src/components/wrapped/WrappedModal.css');
-    const rest = fontDeklarationen(css, 'font-size')
-      .filter(w => !w.startsWith('var(') && !w.startsWith('clamp(') && !/^[\d.]+px$/.test(w))
-      .filter(w => w !== '5rem' && w !== '16rem');
+    const regeln = [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+    expect(regeln.filter(([, selektor]) => SCHMUCK.includes(selektor.trim()))).toHaveLength(SCHMUCK.length);
+    const ohneSchmuck = regeln.filter(([, selektor]) => !SCHMUCK.includes(selektor.trim())).map(([, , rumpf]) => rumpf).join('\n');
+    const rest = fontDeklarationen(ohneSchmuck, 'font-size')
+      .filter(w => !w.startsWith('var(') && !w.startsWith('clamp(') && !/^[\d.]+px$/.test(w));
     expect(rest).toEqual([]);
     expect(fontDeklarationen(css, 'font-weight').filter(w => !w.startsWith('var('))).toEqual([]);
   });

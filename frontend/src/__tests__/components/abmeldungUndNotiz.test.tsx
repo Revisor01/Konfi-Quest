@@ -26,8 +26,8 @@
 // (Simon, 15.10.2026); geprueft wird, was die Zeile sagt.
 //
 // Was hier noch Quelltext liest, sind Waechter: die Gefahren-Knoepfe der
-// Profile (kein abgeschriebenes Aussehen neben der globalen Klasse) und der
-// Inhalt des Handbuch-Kapitels.
+// Profile (kein abgeschriebenes Aussehen neben der globalen Klasse, ein
+// Beruehrungsziel von mindestens 48 px) und der Inhalt des Handbuch-Kapitels.
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'fs';
@@ -370,6 +370,25 @@ describe('Selbst-Check-in per QR-Code kennzeichnen', () => {
 
 // Waechter: Profile, Handbuch.
 describe('Gefahren-Knoepfe nutzen eine globale Klasse (Stil-Waechter)', () => {
+  // Beruehrungsziel (Android 48 dp): Das md3-Theme setzt ion-button.md auf
+  // 40 px; erst die globale Klasse hebt die Gefahren-Knoepfe der Profile
+  // (Konto loeschen, Abmelden) darueber. Wie hoch genau, ist Layout.
+  it('die Klasse macht die Knoepfe mindestens 48 px hoch', () => {
+    const tokens = lies('src/theme/abstaende.css') + lies('src/theme/variables.css');
+    const inPixel = (wert: string): number => {
+      const px = wert.match(/^([\d.]+)px$/);
+      if (px) return Number(px[1]);
+      const rem = wert.match(/^([\d.]+)rem$/);
+      if (rem) return Number(rem[1]) * 16;
+      const token = wert.match(/^var\((--[\w-]+)\)$/)?.[1];
+      const definition = token ? tokens.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1] : undefined;
+      return definition ? inPixel(definition.trim()) : NaN;
+    };
+    const regel = lies('src/theme/variables.css').match(/\.app-gefahr-knopf\s*\{([^}]*)\}/)?.[1] ?? '';
+    const hoehe = regel.match(/(?:^|[;\s])(?:min-)?height:\s*([^;]+);/)?.[1].trim() ?? '';
+    expect(inPixel(hoehe), `.app-gefahr-knopf { height: ${hoehe} }`).toBeGreaterThanOrEqual(48);
+  });
+
   it('die Profile schreiben das Aussehen nicht mehr selbst ab', () => {
     const konfiProfil = lies('src/components/konfi/views/ProfileView.tsx');
     const teamerProfil = lies('src/components/teamer/pages/TeamerProfilePage.tsx');

@@ -118,12 +118,11 @@ describe('Benutzer:innen (Web): Tabelle', () => {
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 
-  it('Status, Gast und letzte Anmeldung; gesperrte Zeilen sind gekennzeichnet', async () => {
+  it('Status, Gast und letzte Anmeldung; gesperrte Zeilen sagen "Gesperrt"', async () => {
     render(<AdminUsersPage />);
     expect(zelle(zeileVon('Robin Probe'), 3)).toHaveTextContent('Aktiv');
+    expect(zelle(zeileVon('Robin Probe'), 3)).not.toHaveTextContent('Gesperrt');
     expect(zelle(zeileVon('Charlie Demo'), 3)).toHaveTextContent('Gesperrt');
-    expect(zeileVon('Charlie Demo').className).toContain('web-zeile--gesperrt');
-    expect(zeileVon('Robin Probe').className).not.toContain('web-zeile--gesperrt');
     expect(zelle(zeileVon('Gast Beispiel'), 3)).toHaveTextContent('Gast');
     expect(zelle(zeileVon('Robin Probe'), 3)).not.toHaveTextContent('Gast');
     expect(zelle(zeileVon('Robin Probe'), 4)).toHaveTextContent('30.09.2026');

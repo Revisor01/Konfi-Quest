@@ -427,8 +427,6 @@ describe('Challenges (Web): leere Zustaende, Stempel und Laden', () => {
     fireEvent.mouseLeave(foto.parentElement!);
     expect(info).not.toBeVisible();
     const offen = within(stempel).getByRole('link', { name: 'Fürbitter:in' });
-    expect(offen.closest('li')).toHaveClass('web-auszeichnung--offen');
-    expect(offen.querySelector('.web-abzeichen-symbol')).toHaveClass('web-abzeichen-symbol--offen');
     expect(document.getElementById(offen.getAttribute('aria-describedby')!)).toHaveTextContent('Noch nicht erhalten');
     // Challenges, die es nur geplant gibt, bringen keinen Stempel zum Holen (Befund Simon, 18.09.2026).
     expect(within(stempel).queryByText('Versfinder:in')).toBeNull();
@@ -759,6 +757,11 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       zeigen();
       const knopf = within(zeile('Fürbitten zum Erntedank')).getByRole('button', { name: 'Bearbeiten: Fürbitten zum Erntedank' });
       expect(knopf).toHaveAttribute('title', 'Bearbeiten');
+      // Das Netz des Zeilen-Links (.web-link--zeile::after) liegt ueber der
+      // ganzen Zeile; erst web-vorn hebt den Knopf darueber. Ohne sie traefe
+      // ein echter Klick den Link -- jsdom prueft nicht, was unter dem Zeiger
+      // liegt, fireEvent.click allein bliebe gruen.
+      expect(knopf).toHaveClass('web-vorn');
       fireEvent.click(knopf);
       expect(h.push).not.toHaveBeenCalled();
     });

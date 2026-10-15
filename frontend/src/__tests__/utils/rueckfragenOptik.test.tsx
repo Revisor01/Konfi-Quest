@@ -9,7 +9,8 @@
 //      vollständig (wie in mindestversionHinweis.test.tsx), geöffnet über
 //      useIonAlert wie an den rund 70 Stellen der App;
 //   3. am Stylesheet theme/rueckfragen.css nur, was nicht Optik ist: nur
-//      Tokens, Kontraste hell und dunkel nachgerechnet, sichtbarer Fokus.
+//      Tokens, Kontraste hell und dunkel nachgerechnet (und dass das
+//      Stylesheet genau die gerechneten Farbpaare benutzt), sichtbarer Fokus.
 //      Wie die Rückfragen aussehen, legt kein Test fest (Simon, 15.10.2026:
 //      das Layout bleibt frei änderbar).
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
@@ -264,6 +265,37 @@ describe('theme/rueckfragen.css', () => {
     // Die Anteile im Stylesheet sind die hier gerechneten.
     expect(css).toContain('color-mix(in srgb, var(--app-rueckfrage-farbe) 14%, transparent)');
     expect(css).toContain('color-mix(in srgb, var(--app-color-warning) 18%, transparent)');
+  });
+
+  // Die Rechnung oben gilt nur, wenn das Stylesheet genau diese Paare
+  // benutzt. Welche Farbe die Rückfragen tragen, ist Gestaltung; wechselt
+  // aber etwa der Text auf Android auf Ionics Rot (dunkel auf der Karte unter
+  // 4,5:1) oder das Warndreieck auf das Orange selbst (auf seinem Kreis unter
+  // 3:1), bliebe die Rechnung grün, während die Rückfrage durchfällt.
+  it('das Stylesheet benutzt genau die Farbpaare, deren Kontrast oben gerechnet ist', () => {
+    const erklaerungen = (sel: string): Record<string, string> => {
+      const rumpf = alleRegeln.find(({ selektor }) => selektor === sel)?.rumpf ?? '';
+      return Object.fromEntries(rumpf.split(';').map((d) => d.split(':')).filter((t) => t.length === 2).map(([e, w]) => [e.trim(), w.trim()]));
+    };
+    const ALERT_ROT = `${BREIT} ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper .alert-button-group .alert-button.alert-button-role-destructive`;
+    const WARNUNG = { '--app-rueckfrage-farbe': 'var(--app-text-warnung)', '--app-rueckfrage-kreis': 'color-mix(in srgb, var(--app-color-warning) 18%, transparent)' };
+
+    // Roter Text auf Android: --app-color-danger auf der Karte.
+    expect(erklaerungen('ion-alert.md .alert-button.alert-button-role-destructive').color).toBe('var(--app-color-danger)');
+    // Gefüllter Knopf im Browser, als ion-alert und als Fenster der Web-Fassung: Ionics danger-Paar.
+    for (const sel of [ALERT_ROT, '.web-rueckfrage .web-knopf--gefahr']) {
+      expect(erklaerungen(sel), sel).toMatchObject({ background: 'var(--ion-color-danger)', color: 'var(--ion-color-danger-contrast)' });
+    }
+    // Das Symbol: Mülleimer in der App im Rot der App, im Browser in Ionics Rot; Warndreieck Bernstein auf Orange.
+    expect(erklaerungen('ion-alert.app-rueckfrage')['--app-rueckfrage-farbe']).toBe('var(--app-color-danger)');
+    expect(erklaerungen(`${BREIT} ion-alert.app-rueckfrage--loeschen:is(.ios, .md)`)['--app-rueckfrage-farbe']).toBe('var(--ion-color-danger)');
+    expect(erklaerungen('.web-rueckfrage-symbol')['--app-rueckfrage-farbe']).toBe('var(--ion-color-danger)');
+    expect(erklaerungen('ion-alert.app-rueckfrage--warnung')).toMatchObject(WARNUNG);
+    expect(erklaerungen('.web-rueckfrage-symbol--warnung')).toMatchObject(WARNUNG);
+    // ... und gemalt wird das Symbol in --app-rueckfrage-farbe auf --app-rueckfrage-kreis.
+    expect(erklaerungen('ion-alert.app-rueckfrage .alert-head::before').background).toBe('var(--app-rueckfrage-kreis)');
+    expect(erklaerungen('ion-alert.app-rueckfrage .alert-head::after').background).toBe('var(--app-rueckfrage-farbe)');
+    expect(erklaerungen('.web-rueckfrage-symbol')).toMatchObject({ background: 'var(--app-rueckfrage-kreis)', color: 'var(--app-rueckfrage-farbe)' });
   });
 
   it('im breiten Fenster zeigen die Knöpfe den Tastaturfokus', () => {
