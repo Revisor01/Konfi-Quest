@@ -186,6 +186,10 @@ Versionsüberschrift.
   „Ablehnen".
 
 ### Geändert
+- Im Browser öffnen im Chat „Neuer Chat“, „Umfrage erstellen“ und
+  „Mitglieder“ ein eigenes Fenster wie die übrigen Formulare; Angaben, Regeln
+  und Auswahl bleiben dieselben wie in der App. Im neuen Gruppenchat legt Enter
+  im Gruppennamen die Gruppe an.
 - Der Reiter „Team“ zeigt seine Anzahl gleich beim Öffnen der Konfi-Seite; in
   der App stehen die Zahlen am Umschalter Konfis/Team.
 - Der Knopf „Anwesenheit“ steht nur noch bei den Konfis, nicht beim Team.
@@ -659,6 +663,11 @@ Versionsüberschrift.
 ### Sonstiges
 - Die automatischen Prüfungen des Servers laufen in vier Teilen gleichzeitig;
   eine neue Fassung ist dadurch schneller geprüft und ausgeliefert.
+- Die automatischen Prüfungen halten das Aussehen nicht mehr fest, nur noch
+  Verhalten, Rechte, Daten und Barrierefreiheit; das Layout bleibt so frei
+  änderbar.
+- Die Produktseite im App Store nennt für das iPhone die unterstützte
+  Bedienungshilfe „Reduzierte Bewegung“.
 - Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,
   Kennzahlen, Inhalt und Angaben; Laden, Fehler und „nicht gefunden" sehen
   auf jeder Detailseite gleich aus.

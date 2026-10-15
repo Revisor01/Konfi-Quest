@@ -543,14 +543,25 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
 ### Release
 
 - **Barrierefreiheitsangaben im App Store.** Apple fragt je Gerät ab, welche
-  Bedienungshilfen die App unterstützt. Heute angebbar: Dunkelmodus, „Nicht
-  nur über Farbe" und „Bewegung reduzieren" (Ringe und Zähler seit
-  09.10.2026, [Handbuch](handbuch/03-bedienung.md#bewegung-reduzieren)). Kontrast im Hellmodus nicht: 25 von 51
-  Text-Tokens mit festem Farbwert im Hellmodus
-  (`frontend/src/theme/variables.css`) bleiben auf Weiß unter 4,5:1
-  (gemessen 08.10.2026; siehe [Zurückgestellt](#zurückgestellt), „Kontrast
-  im Hellmodus"). VoiceOver, Sprachsteuerung und größere Schrift erst nach
-  dem Test am iPhone ([Am Gerät](#am-gerät), „Bedienung am Gerät").
+  Bedienungshilfen die App unterstützt; die App läuft nur auf dem iPhone.
+  Geprüft am 15.10.2026, Anleitung und Begründung je Merkmal in
+  [betrieb/app-store-barrierefreiheit.md](betrieb/app-store-barrierefreiheit.md).
+  Angebbar ist nur „Reduzierte Bewegung", und erst, wenn 2.4.0 live ist (in
+  2.3.0 bauen sich die Ringe noch auf). Nicht angebbar, mit Ursache:
+  - *Dunkle Benutzeroberfläche:* Der Startbildschirm der iPhone-App ist ein
+    deckend weißes Bild ohne dunkle Variante; bei jedem Kaltstart im
+    Dunkelmodus blitzt er weiß auf.
+  - *Ohne Farben unterscheiden:* Ausgewählte Einträge in Mehrfachauswahlen
+    (Event anlegen, Teilnehmende hinzufügen, Gruppenchat, Chat-Mitglieder)
+    tragen nur eine Tönung der Bereichsfarbe, keinen Haken; Rollen sind dort,
+    wo eine Funktionsbeschreibung steht, nur an der Farbe zu erkennen.
+  - *Ausreichender Kontrast:* siehe [Zurückgestellt](#zurückgestellt),
+    „Kontrast im Hellmodus"; die App reagiert nicht auf „Kontrast erhöhen".
+  - *VoiceOver, Sprachsteuerung, Größerer Text:* erst nach dem Test am iPhone
+    ([Am Gerät](#am-gerät)); im Code fehlen u. a. Namen an Symbolen und Fotos,
+    die Zellen der Anwesenheitsmatrix sind für VoiceOver stumm.
+  - *Untertitel, Audiobeschreibungen:* Videos und Sprachaufnahmen von
+    Nutzer:innen (Chat, Challenges) lassen sich nicht untertiteln.
 - **Play Console empfiehlt vier Änderungen an der Android-App** (Release
   2.3.0, abgelesen von Simon am 07.10.2026). Am Code geprüft:
   1. *Randlose Anzeige ab Android 15:* Die App zielt auf SDK 36; Google rät,
