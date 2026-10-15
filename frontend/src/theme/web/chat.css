@@ -1290,6 +1290,72 @@ a.web-chat-zeile:focus-visible {
   font-size: var(--app-text-titel-gross);
 }
 
+/* --- Fenster des Raums: Neue Umfrage, Mitglieder (WebUmfrageDialog,
+   WebMitgliederDialog; Simon, 15.10.2026) --- */
+
+/* Eine Antwortmoeglichkeit, rechts daneben das Entfernen. */
+.web-umfrage-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--app-abstand-eng);
+}
+
+/* Die Mitglieder: Kreis in der Rollenfarbe, Name, Rolle bzw. Jahrgang. */
+.web-chat-mitglieder {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+}
+
+.web-chat-mitglied {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-chat-mitglied:last-child {
+  border-bottom: 0;
+}
+
+.web-chat-mitglied__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-chat-mitglied__name {
+  font-weight: var(--app-schrift-halbfett);
+  overflow-wrap: anywhere;
+}
+
+.web-chat-mitglied__zeile {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  overflow-wrap: anywhere;
+}
+
+/* Die Auswahl zum Hinzufuegen: Zeilen der Auswahlliste (web-wahl) mit Kreis,
+   mehr Platz als die Vorgabe -- es sind oft alle Konfis eines Jahrgangs. */
+.web-chat-personen {
+  max-height: min(50vh, 420px);
+}
+
+.web-chat-person {
+  align-items: center;
+}
+
+.web-chat-person .web-wahl__haken {
+  margin: 0;
+}
+
 /* Eine Datei ueber den Raum ziehen */
 .web-chat-ablage {
   position: absolute;

@@ -116,7 +116,6 @@ vi.mock('../../../components/chat/modals/MembersModal', () => ({ default: () => 
 
 import { socketNachbau, scrollAufrufe } from './webChatAttrappe';
 import WebChatRaum from '../../../components/chat/web/WebChatRaum';
-import MembersModal from '../../../components/chat/modals/MembersModal';
 import { entwuerfeZuruecksetzen } from '../../../components/chat/web/chatEntwuerfe';
 import { gezeigteTrennerAnkerLeeren } from '../../../components/chat/chatVerlauf';
 
@@ -192,15 +191,22 @@ describe('Raum (Web): Kopf', () => {
     expect(screen.queryByRole('button', { name: 'Mitglieder anzeigen' })).not.toBeInTheDocument();
   });
 
-  it('Mitglieder anzeigen oeffnet das Fenster dieses Raums, als breiten Dialog (web-chat-modal) und ohne Kartenform', async () => {
-    IM_RAUM([m()]);
+  // Bis 15.10.2026 oeffnete der Knopf das Modal der App (MembersModal, breit
+  // per web-chat-modal). Seitdem ein eigenes Fenster der Web-Fassung (Simon:
+  // „mitglieder modal ist noch app design"); mehr in webChatRaumFenster.test.tsx.
+  it('Mitglieder anzeigen oeffnet das Fenster des Browsers mit den Mitgliedern dieses Raums, nicht das Modal der App', async () => {
+    h.apiGet.mockImplementation(async (url: string) => {
+      if (url.includes('/messages')) return { data: [m()] };
+      if (url === '/chat/rooms/7/participants') return { data: [{ user_id: 21, user_type: 'konfi', name: 'Lena Probe', joined_at: '2026-09-01T10:00:00Z' }] };
+      throw new Error(`unerwartet: ${url}`);
+    });
     await zeigen();
     fireEvent.click(screen.getByRole('button', { name: 'Mitglieder anzeigen' }));
-    expect(h.modal).toHaveBeenCalledTimes(1);
-    const { komponente, props, opts } = h.modal.mock.calls[0][0];
-    expect(komponente).toBe(MembersModal);
-    expect(props).toMatchObject({ roomId: 7, roomType: 'jahrgang' });
-    expect(opts).toEqual({ presentingElement: undefined, cssClass: 'web-chat-modal' });
+    const fenster = screen.getByRole('dialog', { name: 'Mitglieder' });
+    expect(await within(fenster).findByRole('list', { name: 'Mitglieder (1)' })).toHaveTextContent('Lena Probe');
+    // Im Jahrgangs-Chat ergeben sich die Mitglieder von selbst: nichts zu verwalten.
+    expect(within(fenster).queryByRole('button', { name: 'Mitglieder hinzufügen' })).toBeNull();
+    expect(h.modal).not.toHaveBeenCalled();
   });
 
   it('Umfragen anlegen kann nur die Leitung', async () => {

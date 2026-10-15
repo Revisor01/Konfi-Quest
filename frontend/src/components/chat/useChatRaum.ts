@@ -65,11 +65,9 @@ interface ChatRaumDeps {
    * den Tab wieder ansieht. In der App ist die Seite immer sichtbar.
    */
   lesenNurSichtbar?: boolean;
-  /** Klasse fuer die Fenster Mitglieder und Umfrage (die Web-Fassung macht sie breiter). */
-  modalKlasse?: string;
 }
 
-export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false, modalKlasse }: ChatRaumDeps) {
+export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar = false }: ChatRaumDeps) {
   const { user, setError, isOnline } = useApp();
   const { markRoomAsRead: badgeMarkRoomAsRead, refreshAllCounts, chatUnreadByRoom } = useBadge();
   // Nachzug nach dem Senden (Sprung ans Ende, Nachladen ohne Socket-Antwort)
@@ -309,9 +307,10 @@ export function useChatRaum({ room, onBack, presentingElement, lesenNurSichtbar 
     roomId: room?.id ?? 0 // ?? statt || für klarere Intention
   });
 
+  // Die Fenster der App. Die Web-Fassung (web/WebChatRaum) oeffnet eigene
+  // Dialoge mit derselben Logik (useChatMitglieder, useUmfrageFormular).
   const modalOptionen = () => ({
     presentingElement: presentingElement || undefined,
-    ...(modalKlasse ? { cssClass: modalKlasse } : {}),
   });
 
   const openPollModal = () => {
