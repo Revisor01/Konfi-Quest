@@ -52,7 +52,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Account löschen</IonTitle>
+          <IonTitle>Konto löschen</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={ICON_SCHLIESSEN} />
@@ -142,7 +142,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
             ) : isSubmitting ? (
               <IonSpinner name="crescent" />
             ) : (
-              <><IonIcon slot="start" icon={ICON_LOESCHEN} /> Account endgültig löschen</>
+              <><IonIcon slot="start" icon={ICON_LOESCHEN} /> Konto endgültig löschen</>
             )}
           </IonButton>
         </IonList>

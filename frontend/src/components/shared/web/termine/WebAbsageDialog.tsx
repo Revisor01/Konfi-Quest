@@ -47,7 +47,7 @@ export interface WebAbsageDialogProps {
 
 const WebAbsageDialog: React.FC<WebAbsageDialogProps> = ({ rolle, pflicht, eventName, onAbsage, onSchliessen }) => {
   const {
-    texte, grund, setGrund, mindestens, offlineGesperrt, isSubmitting, absenden, zaehler, fehler, fehlerLeeren,
+    texte, grund, setGrund, mindestens, isSubmitting, absenden, zaehler, fehler, fehlerLeeren,
   } = useAbsageFormular({
     rolle,
     pflicht,
@@ -70,15 +70,12 @@ const WebAbsageDialog: React.FC<WebAbsageDialogProps> = ({ rolle, pflicht, event
       aktionen={(
         <>
           <WebKnopf onClick={schliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
-          <WebKnopf art="gefahr" absenden disabled={isSubmitting || offlineGesperrt}>{texte.bestaetigen}</WebKnopf>
+          <WebKnopf art="gefahr" absenden disabled={isSubmitting}>{texte.bestaetigen}</WebKnopf>
         </>
       )}
     >
       <div className="web-formular">
         {fehler && <WebHinweis art="fehler" rolle="alert">{fehler}</WebHinweis>}
-        {offlineGesperrt && (
-          <WebHinweis art="warnung">Du bist offline. Abmelden geht erst wieder mit Internetverbindung.</WebHinweis>
-        )}
         {texte.elternHinweis && (
           <WebHinweis art="hinweis">
             {texte.erklaerung} <strong>{texte.elternHinweis}</strong>

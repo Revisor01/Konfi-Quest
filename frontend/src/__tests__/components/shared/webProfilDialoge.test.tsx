@@ -250,7 +250,7 @@ describe.each<Fassung>(['app', 'web'])('Konto löschen (%s): dieselbe Sicherung 
     else render(<WebKontoLoeschenDialog onSchliessen={zu} />);
   };
   const passwort = () => screen.getByLabelText('Dein Passwort') as HTMLInputElement;
-  const loeschenKnopf = () => screen.getByRole('button', { name: fassung === 'app' ? 'Account endgültig löschen' : 'Konto endgültig löschen' });
+  const loeschenKnopf = () => screen.getByRole('button', { name: 'Konto endgültig löschen' });
 
   it('nennt, was mit dem Konto verschwindet -- im Team auch, was der Gemeinde bleibt; bei Konfis ohne diesen Satz', () => {
     oeffnen();

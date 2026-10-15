@@ -115,6 +115,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton
+              aria-label={isEditMode ? 'Speichern' : 'Challenge anlegen'}
               onClick={() => handleSave()}
               disabled={loading || isSubmitting || !isFormValid}
               className="app-modal-submit-btn app-modal-submit-btn--challenges"

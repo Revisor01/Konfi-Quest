@@ -31,7 +31,7 @@ import {
   zeitpunktText,
 } from '../../utils/postfach';
 import { useBreitesLayout } from '../../navigation/breitesLayout';
-import { eintragSymbol, usePostfach, usePostfachSchalter } from './usePostfach';
+import { eintragSymbol, POSTFACH_OFFLINE_WAS, usePostfach, usePostfachSchalter } from './usePostfach';
 import WebPostfachDialog from './web/WebPostfachDialog';
 
 /** Wie viele Mitteilungen je Seite geladen werden (steht in usePostfach). */
@@ -168,7 +168,7 @@ const PostfachAppModal: React.FC<PostfachAppModalProps> = ({ offen, praesentiert
                 )}
 
                 {ladefehler && listeLeer && (
-                  <OfflinePlatzhalter was="Deine Mitteilungen" />
+                  <OfflinePlatzhalter was={POSTFACH_OFFLINE_WAS} />
                 )}
 
                 {!laedt && !ladefehler && listeLeer && (

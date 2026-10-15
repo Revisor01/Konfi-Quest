@@ -158,14 +158,15 @@ describe.each<Fassung>(['app', 'web'])('Absage und Abmeldung (%s): dieselbe Logi
     erwarteGesendet(fassung, 'krank');
   });
 
-  it('Konfi ohne Netz: gesperrt, „Du bist offline"', async () => {
+  // Abmelden braucht kein Netz (30.08.2026): Die Seite reiht ein.
+  it('Konfi ohne Netz: Absenden bleibt möglich (die Seite reiht ein)', async () => {
     h.online = false;
     oeffnen(fassung, 'konfi', false);
     tippe(fassung, 'konfi', false, 'Urlaub');
-    expect(knopf('konfi')).toBeDisabled();
-    expect(screen.getByText(/Du bist offline/)).toBeInTheDocument();
-    fireEvent.click(knopf('konfi'));
-    expect(gesendet).not.toHaveBeenCalled();
+    expect(knopf('konfi')).toBeEnabled();
+    expect(screen.queryByText(/Du bist offline/)).toBe(null);
+    await absenden('konfi');
+    erwarteGesendet(fassung, 'Urlaub');
   });
 
   it('Team ohne Netz: Absenden bleibt möglich (die Seite reiht ein)', async () => {

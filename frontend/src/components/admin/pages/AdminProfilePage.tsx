@@ -420,7 +420,7 @@ const AdminProfilePage: React.FC = () => {
             }}
           >
             <IonIcon icon={ICON_LOESCHEN} slot="start" />
-            Account löschen
+            Konto löschen
           </IonButton>
         </div>
 

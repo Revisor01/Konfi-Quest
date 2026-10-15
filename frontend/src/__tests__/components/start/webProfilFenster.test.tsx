@@ -258,7 +258,7 @@ describe.each([LEITUNG, TEAM, KONFI])('Konto löschen $rolle', (r) => {
 
   it('App und schmales Fenster: das Modal der App über der Seite', async () => {
     await zeige(r, 'app');
-    fireEvent.click(screen.getByRole('button', { name: /Account löschen/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Konto löschen/ }));
     expect(modalNamen()).toEqual(['DeleteAccountModal']);
     expect(h.modale[0].optionen?.presentingElement).toBe(h.seite);
     expect(screen.queryByRole('dialog')).toBeNull();

@@ -20,7 +20,6 @@ import {
 import {
   ICON_CHAT,
   ICON_HAKEN,
-  ICON_OFFLINE,
   ICON_SCHLIESSEN,
   ICON_TERMIN,
 } from '../../shared/icons';
@@ -45,14 +44,13 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
   dismiss
 }) => {
   const {
-    texte, grund: reason, setGrund: setReason, gueltig: isValid, isSubmitting, absenden: handleSubmit, offlineGesperrt, zaehler,
+    texte, grund: reason, setGrund: setReason, gueltig: isValid, isSubmitting, absenden: handleSubmit, zaehler,
   } = useAbsageFormular({
     rolle: 'konfi',
     pflicht: !!mandatory,
     onAbsage: (grund) => onUnregister(grund),
     onFertig: (grund) => dismiss(grund, 'confirm'),
   });
-  const isOnline = !offlineGesperrt;
 
   const handleClose = () => {
     dismiss(undefined, 'cancel');
@@ -69,8 +67,8 @@ const UnregisterModal: React.FC<UnregisterModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            <IonButton aria-label={texte.bestaetigen} className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting || !isOnline}>
-              {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : <IonIcon icon={ICON_HAKEN} />}
+            <IonButton aria-label={texte.bestaetigen} className="app-modal-submit-btn app-modal-submit-btn--konfi" onClick={handleSubmit} disabled={!isValid || isSubmitting}>
+              <IonIcon icon={ICON_HAKEN} />
             </IonButton>
           </IonButtons>
         </IonToolbar>

@@ -271,7 +271,7 @@ describe('PostfachModal', () => {
     mockGet.mockRejectedValue(new Error('Network Error'));
     render(<PostfachModal />);
     await oeffnen();
-    expect(await screen.findByText(/Deine Mitteilungen/)).toBeTruthy();
+    expect(await screen.findByText('Dein Postfach ist offline nicht verfügbar.')).toBeTruthy();
     expect(screen.getByText('Abmeldung Sommerfest')).toBeTruthy();
   });
   describe('Die Mitteilung in der Liste', () => {

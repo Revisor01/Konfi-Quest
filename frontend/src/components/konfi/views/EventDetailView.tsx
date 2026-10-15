@@ -762,6 +762,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshEvents();
+          // Auch Zeitfenster und Teilnehmerliste neu laden: Die Rückfrage
+          // „Zeitfenster nicht geladen" verspricht genau das.
+          setDetailEpoch((n) => n + 1);
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />

@@ -272,7 +272,7 @@ const TeamerProfilePage: React.FC = () => {
   const handleLogout = () => {
     presentAlert({
       header: 'Abmelden',
-      message: 'Willst du dich wirklich abmelden?',
+      message: 'Möchtest du dich wirklich abmelden?',
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -764,7 +764,7 @@ const TeamerProfilePage: React.FC = () => {
             onClick={() => presentDeleteAccount({ presentingElement: pageRef.current ?? undefined })}
           >
             <IonIcon icon={ICON_LOESCHEN} slot="start" />
-            Account löschen
+            Konto löschen
           </IonButton>
         </div>
 

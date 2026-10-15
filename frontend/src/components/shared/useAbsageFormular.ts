@@ -19,7 +19,9 @@
 //           die Seite reiht ein.
 //   Konfi   Ein Grund gehört immer dazu: mindestens ein Zeichen, am
 //           Pflicht-Event (`pflicht`) fünf -- die Eltern bestätigen die
-//           Abmeldung später. Ohne Netz ist der Haken gesperrt.
+//           Abmeldung später. Ohne Netz bleibt Absenden möglich wie beim
+//           Team: Die Seite reiht die Abmeldung ein (Simon, 30.08.2026);
+//           ein Platz wird frei, nicht belegt.
 //
 // Gesendet wird von der Seite (onAbsage): Sie kennt Route, Warteschlange und
 // was danach neu geladen wird. In der App wie bisher ohne Warten -- das Modal
@@ -29,7 +31,6 @@
 // erst, wenn die Absage angekommen oder eingereiht ist.
 
 import { useState } from 'react';
-import { useApp } from '../../contexts/AppContext';
 import { useActionGuard } from '../../hooks/useActionGuard';
 
 export type AbsageRolle = 'team' | 'konfi';
@@ -125,7 +126,6 @@ export interface AbsageFormularOptionen {
 }
 
 export function useAbsageFormular({ rolle, pflicht, onAbsage, onFertig, fehlerImDialog = false }: AbsageFormularOptionen) {
-  const { isOnline } = useApp();
   const [grund, setGrund] = useState('');
   const [fehler, setFehler] = useState<string | null>(null);
   const { isSubmitting, guard } = useActionGuard();
@@ -134,8 +134,6 @@ export function useAbsageFormular({ rolle, pflicht, onAbsage, onFertig, fehlerIm
   const mindestens = absageMindestens(rolle, pflicht);
   const laenge = grund.trim().length;
   const gueltig = laenge >= mindestens;
-  /** Konfis melden sich nur mit Netz ab (der Haken der App sagt „Du bist offline"). */
-  const offlineGesperrt = rolle === 'konfi' && !isOnline;
 
   const absenden = async () => {
     if (!gueltig) {
@@ -143,7 +141,6 @@ export function useAbsageFormular({ rolle, pflicht, onAbsage, onFertig, fehlerIm
       if (fehlerImDialog) setFehler(texte.fehlt);
       return;
     }
-    if (offlineGesperrt) return;
     const text = grund.trim();
     await guard(async () => {
       if (!fehlerImDialog) {
@@ -163,7 +160,6 @@ export function useAbsageFormular({ rolle, pflicht, onAbsage, onFertig, fehlerIm
     setGrund,
     mindestens,
     gueltig,
-    offlineGesperrt,
     isSubmitting,
     absenden,
     /** Team, Pflicht: Solange der Grund fehlt, steht in der App der Satz in Rot darunter. */

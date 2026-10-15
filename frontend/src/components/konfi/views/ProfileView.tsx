@@ -776,7 +776,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           onClick={() => presentDeleteAccount({ presentingElement: pageRef?.current || presentingElement || undefined })}
         >
           <IonIcon icon={ICON_LOESCHEN} slot="start" />
-          Account löschen
+          Konto löschen
         </IonButton>
       </div>
 

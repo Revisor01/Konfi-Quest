@@ -87,7 +87,7 @@ export const VISIBILITY_OPTIONS: { value: ChallengeVisibility; label: string; hi
 export const MEDIA_OPTIONS: { value: ChallengeMediaType; label: string; hint: string }[] = [
   { value: 'text', label: 'Text', hint: 'Geschriebene Beiträge' },
   { value: 'photo', label: 'Foto', hint: 'Aufnahme oder Bild aus der Galerie' },
-  { value: 'audio', label: 'Audio', hint: 'Sprachaufnahme oder Musikdatei (Upload)' },
+  { value: 'audio', label: 'Audio', hint: 'Sprachaufnahme, direkt aufgenommen' },
   { value: 'video', label: 'Video', hint: 'Videodatei (Upload)' },
   { value: 'link', label: 'Link', hint: 'Verweis auf eine Seite, ein Lied oder ein Video' }
 ];

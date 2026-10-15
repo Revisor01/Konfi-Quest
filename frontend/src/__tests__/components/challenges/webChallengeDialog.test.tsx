@@ -161,9 +161,10 @@ const datum = (fassung: Fassung, name: 'Start' | 'Ende', lokal: string) => fireE
   { target: { value: fassung === 'app' ? `${lokal}:00` : lokal } },
 );
 
-/** Speichern: in der App der Haken oben rechts (ohne eigenen Namen), im Browser der Knopf mit seinem Namen. */
+/** Speichern: in der App der Haken oben rechts, im Browser der Knopf -- beide
+ *  mit demselben Namen, damit Vorlesehilfen den Haken der App benennen. */
 const speicherKnopf = (fassung: Fassung, name = 'Challenge anlegen'): HTMLButtonElement => (fassung === 'app'
-  ? within(screen.getByTestId('knoepfe-end')).getByRole('button')
+  ? within(screen.getByTestId('knoepfe-end')).getByRole('button', { name })
   : screen.getByRole('button', { name })) as HTMLButtonElement;
 
 const speichern = async (fassung: Fassung, name = 'Challenge anlegen') => {

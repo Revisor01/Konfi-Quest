@@ -303,8 +303,8 @@ describe.each<Fassung>(['app', 'web'])('Postfach (%s): dieselbe Logik in App und
     h.gescheitert = [gescheitertEintrag('f1', 'Abmeldung Sommerfest')];
     h.apiGet.mockRejectedValue(new Error('Network Error'));
     await oeffnen(fassung);
-    const hinweis = await screen.findByText('Deine Mitteilungen ist offline nicht verfügbar.');
-    if (fassung === 'web') expect(screen.getByRole('alert')).toHaveTextContent('Deine Mitteilungen ist offline nicht verfügbar.');
+    const hinweis = await screen.findByText('Dein Postfach ist offline nicht verfügbar.');
+    if (fassung === 'web') expect(screen.getByRole('alert')).toHaveTextContent('Dein Postfach ist offline nicht verfügbar.');
     else expect(hinweis).toBeInTheDocument();
     expect(screen.getByText('Abmeldung Sommerfest')).toBeInTheDocument();
     expect(screen.queryByText(POSTFACH_LEER.titel)).not.toBeInTheDocument();

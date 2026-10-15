@@ -69,7 +69,7 @@ export const POSTFACH_LEER = {
 } as const;
 
 /** Was fehlt, wenn die Mitteilungen nicht kommen (OfflinePlatzhalter: „… ist offline nicht verfügbar."). */
-export const POSTFACH_OFFLINE_WAS = 'Deine Mitteilungen';
+export const POSTFACH_OFFLINE_WAS = 'Dein Postfach';
 
 /** Klartext des Punkts an einer ungelesenen Mitteilung. */
 export const POSTFACH_UNGELESEN_TEXT = 'Neu — ungelesen';

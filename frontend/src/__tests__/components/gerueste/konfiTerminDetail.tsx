@@ -100,7 +100,12 @@ vi.mock('@ionic/react', () => {
     IonIcon: ({ icon, 'aria-hidden': verborgen }: { icon?: string; 'aria-hidden'?: boolean | 'true' | 'false' }) => (
       <i data-icon={icon} aria-hidden={verborgen} />
     ),
-    IonSpinner: () => null, IonRefresher: () => null, IonRefresherContent: () => null,
+    IonSpinner: () => null, IonRefresherContent: () => null,
+    // „Nach unten ziehen" als Klick auf ein Element ohne Knopf-Rolle -- Tests,
+    // die Knöpfe zählen, sehen es nicht.
+    IonRefresher: ({ onIonRefresh }: { onIonRefresh?: (e: { detail: { complete: () => void } }) => void }) => (
+      <div data-testid="nach-unten-ziehen" onClick={() => onIonRefresh?.({ detail: { complete: () => undefined } })} />
+    ),
     IonButton: ({ children, onClick, disabled, color, fill, 'aria-label': label }: K & {
       onClick?: () => void; disabled?: boolean; color?: string; fill?: string; 'aria-label'?: string;
     }) => (
