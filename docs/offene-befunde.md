@@ -809,7 +809,10 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   liegen auf Weiß unter 4,5:1 — deshalb keine Kontrast-Angabe bei Apple.
   Dazu gehören die Links und Aktionen der Support-Detailseiten in der App
   (`--app-text-users`, 3,66:1; gemessen 11.10.2026) sowie im Mail-Verlauf
-  der Kreis „KQ“ (1,95:1) und die Marke „Gesendet“ (1,98:1).
+  der Kreis „KQ“ (1,95:1) und die Marke „Gesendet“ (1,98:1). Auf dem
+  Sperrbildschirm erreicht die weiße Schrift des Abmelden-Knopfs auf der
+  hellsten Verlaufsstufe 3,23:1, mit dem durchscheinenden Knopfgrund rund
+  2,8:1 (gerechnet 15.10.2026; ein Test sichert nur die Untergrenze 3:1).
 - **react-router 6.** Zwei moderate Meldungen (Open Redirect über Backslash,
   Constructor Injection bei SSR-Hydration) treffen die App nicht: kein SSR,
   Navigationsziele nur aus festen Pfaden mit eingesetzten Kennungen; Push-,
