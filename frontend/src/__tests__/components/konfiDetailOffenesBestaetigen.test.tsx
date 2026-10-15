@@ -80,10 +80,6 @@ describe('Events: offene Anwesenheit und anstehende Termine oben', () => {
     expect(reihe.indexOf('Konfisamstag')).toBeLessThan(reihe.indexOf('Laternenumzug'));
     expect(reihe.indexOf('Laternenumzug')).toBeLessThan(reihe.indexOf('Konfi-Wochenende'));
     expect(screen.getByText('Events (2)')).toBeInTheDocument();
-    const offen = document.querySelector('[data-termin-art="verbuchen"]')!;
-    const bald = document.querySelector('[data-termin-art="anstehend"]')!;
-    expect(offen.className).toContain('app-list-item--warning');
-    expect(bald.className).toContain('app-list-item--info');
     expect(screen.getByText('Anwesenheit ausstehend')).toBeInTheDocument();
     expect(screen.getByText('Warteliste')).toBeInTheDocument();
     // Anstehende Termine haben keinen Knopf.

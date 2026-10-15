@@ -1,180 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { BADGES_TITEL } from '../../seiten/badgesKonfi';
 
 // Angeglichene Rollen-Unterschiede (Simon, 05.09.2026).
 //
 // Die Token-Konsolidierung hat sichtbar gemacht, was vorher in hunderten
 // Fundstellen verborgen lag: Dieselbe Sache trug bei admin, teamer und konfi
-// verschiedene Zeichen und Abstaende. Simon hat entschieden, was angeglichen
-// wird; diese Tests halten die Entscheidungen fest.
+// verschiedene Zeichen und Abstaende. Welche Zeichen, Farben und Abstaende
+// das sind, ist Layout und wird nicht festgeschrieben (Simon, 15.10.2026).
+// Geblieben ist, was Verhalten oder eine einzige Quelle sichert.
 //
-// Sie pruefen bewusst die VERDRAHTUNG in den Quellen und nicht das Rendern: Der Fehlerfall ist
-// "jemand setzt an EINER Stelle wieder ein anderes Zeichen", und genau das
-// faengt ein Quelltest zuverlaessiger als ein Rendertest je Ansicht.
+// Die Tests pruefen bewusst die VERDRAHTUNG in den Quellen und nicht das
+// Rendern: Der Fehlerfall ist "jemand baut an EINER Stelle wieder etwas
+// Eigenes", und genau das faengt ein Quelltest zuverlaessiger als ein
+// Rendertest je Ansicht.
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
-describe('Gottesdienst traegt ueberall dasselbe Zeichen', () => {
-  // Vorher drei: Haus in allen Terminlisten (10 Fundstellen), Stern im
-  // Punkteverlauf, Schulhut in der Admin-Aktivitaetenliste. Das Haus war die
-  // klare Mehrheit, die anderen beiden wurden darauf gezogen.
-  it('der Punkteverlauf nutzt das Haus, nicht den Stern', () => {
-    const verlauf = lies('src/components/konfi/modals/PointsHistoryModal.tsx');
-    expect(verlauf).toContain("case 'gottesdienst': return ICON_GOTTESDIENST_GEFUELLT;");
-  });
-
-  it('die Admin-Aktivitaetenliste nutzt das Haus, nicht den Schulhut', () => {
-    const detail = lies('src/components/admin/views/KonfiDetailSections.tsx');
+describe('Das Zeichen einer Aktivitaet steht an einer Stelle', () => {
+  it('die Admin-Aktivitaetenliste liest es aus punkteartSymbole.ts, wie der Browser', () => {
     // Das Zeichen einer Aktivitaet steht seit 13.10.2026 an EINER Stelle fuer
     // App und Browser (punkteartSymbole.ts); die Liste der App liest es dort.
-    const symbole = lies('src/components/admin/views/punkteartSymbole.ts');
-    expect(symbole).toContain("art === 'gottesdienst' ? ICON_GOTTESDIENST_GEFUELLT");
+    const detail = lies('src/components/admin/views/KonfiDetailSections.tsx');
     expect(detail).toContain('aktivitaetSymbol(activity.type, isTeamer)');
-    expect(detail).toContain("entry.category === 'gottesdienst' ? ICON_GOTTESDIENST");
-    // Der Schulhut steht hier nur noch fuer Jahrgaenge, nicht fuer Gottesdienst.
-    expect(detail).not.toContain("'gottesdienst' ? ICON_JAHRGANG_GEFUELLT");
-  });
-});
-
-describe('Abzeichen tragen ueberall dasselbe Zeichen', () => {
-  // Vorher vier: Stern im Konfi-Tab und -Onboarding, Pokal auf der
-  // Konfi-Badges-Seite, Band bei Teamer und Leitung. Ein Konfi sah fuer
-  // dieselbe Sache Stern (Tab) UND Pokal (Seite). Jetzt ueberall das Band.
-  it('der Konfi-Tab nutzt das Band', () => {
-    const baeume = lies('src/navigation/rollenBaeume.ts');
-    const zeile = baeume.split('\n').find(z => z.includes("tab: 'badges'")) || '';
-    expect(zeile).toContain('ICON_ABZEICHEN_GEFUELLT');
-    expect(zeile).not.toContain('ICON_STERN');
-  });
-
-  it('die Konfi-Badges-Seite nutzt das Band statt des Pokals', () => {
-    const seite = lies('src/components/konfi/views/BadgesView.tsx');
-    // Die Ueberschriften der Seite -- der Text steht seit 09.10.2026 in
-    // seiten/badgesKonfi.ts (App und Browser lesen ihn dort).
-    expect(BADGES_TITEL).toBe('Deine Badges');
-    expect(seite).toContain('title={BADGES_TITEL}');
-    const kopf = seite.slice(seite.indexOf('title={BADGES_TITEL}'));
-    expect(kopf.slice(0, 400)).toContain('ICON_ABZEICHEN_GEFUELLT');
-    // Der Pokal bleibt fuer die Kategorie "Punkte-Sammler" -- das ist eine
-    // Abzeichenart, keine Ueberschrift fuer Abzeichen insgesamt.
-    expect(seite).toContain("key: 'total_points'");
-  });
-
-  it('alle drei Rollen nutzen im Onboarding dasselbe Zeichen', () => {
-    const konfi = lies('src/components/konfi/modals/KonfiOnboardingModal.tsx');
-    const teamer = lies('src/components/teamer/modals/TeamerOnboardingModal.tsx');
-    const admin = lies('src/components/admin/modals/AdminOnboardingModal.tsx');
-    for (const quelle of [konfi, teamer, admin]) {
-      expect(quelle).toContain('ICON_ABZEICHEN');
-    }
-    expect(konfi).not.toContain('icon: ICON_STERN,');
-  });
-});
-
-describe('Der Reiter "Mitmachen" traegt bei allen Rollen dasselbe Zeichen', () => {
-  // Vorher: Leitung Blitz, Teamer und Konfi Kalender -- gleiche Beschriftung,
-  // anderes Zeichen.
-  it('admin, teamer und konfi nutzen den Kalender', () => {
-    const baeume = lies('src/navigation/rollenBaeume.ts');
-    const zeilen = baeume.split('\n').filter(z => z.includes("label: 'Mitmachen'"));
-    expect(zeilen.length).toBe(3);
-    for (const z of zeilen) {
-      expect(z).toContain('ICON_TERMIN_GEFUELLT');
-    }
-  });
-});
-
-describe('Das Passwort-Auge ist ueberall dieselbe Strichstaerke', () => {
-  // Vorher: Auth-Seiten gefuellt, Modals als Kontur -- der Admin-Passwort-
-  // Reset zeigte ein anderes Auge als die Konfi-Registrierung. Jetzt
-  // durchgehend Kontur, passend zum feineren Zurueck-Pfeil.
-  const dateien = [
-    'src/components/auth/LoginView.tsx',
-    'src/components/auth/ResetPasswordPage.tsx',
-    'src/components/auth/KonfiRegisterPage.tsx',
-    'src/components/shared/ChangePasswordModal.tsx',
-    'src/components/shared/DeleteAccountModal.tsx',
-    'src/components/admin/modals/AdminPasswordResetModal.tsx',
-  ];
-
-  it('keine Seite nutzt die gefuellte Variante', () => {
-    const treffer: string[] = [];
-    for (const d of dateien) {
-      const s = lies(d);
-      if (s.includes('ICON_SICHTBAR_GEFUELLT') || s.includes('ICON_VERBORGEN_GEFUELLT')) {
-        treffer.push(d);
-      }
-    }
-    expect(treffer).toEqual([]);
-  });
-
-  it('alle sechs Stellen nutzen die Kontur', () => {
-    for (const d of dateien) {
-      expect(lies(d)).toContain('ICON_SICHTBAR');
-    }
-  });
-});
-
-describe('Gleiche Elemente haben bei allen Rollen denselben Abstand', () => {
-  // Vorher: Profil-Kopf konfi 50px gegen admin/teamer 70px; Ladehinweis 50
-  // gegen 80; Auth-Hero 50/60/90. Alles auf je einen Wert gezogen.
-  it('der Profil-Kopf ist bei allen drei Rollen gleich hoch', () => {
-    const konfi = lies('src/components/konfi/views/ProfileView.tsx');
-    const teamer = lies('src/components/teamer/pages/TeamerProfilePage.tsx');
-    const admin = lies('src/components/admin/pages/AdminProfilePage.tsx');
-    for (const quelle of [konfi, teamer, admin]) {
-      expect(quelle).toContain('var(--app-freiraum-kopf-l)');
-    }
-  });
-
-  it('der Ladehinweis steht bei allen Rollen gleich hoch', () => {
-    const dateien = [
-      'src/components/konfi/pages/KonfiProfilePage.tsx',
-      'src/components/konfi/pages/KonfiDashboardPage.tsx',
-      'src/components/teamer/pages/TeamerKonfiStatsPage.tsx',
-      'src/components/teamer/pages/TeamerProfilePage.tsx',
-    ];
-    for (const d of dateien) {
-      expect(lies(d)).toContain("marginTop: 'var(--app-freiraum-kopf-m)'");
-    }
-  });
-
-  it('alle Anmelde-Seiten setzen denselben Kopfabstand', () => {
-    const dateien = [
-      'src/components/auth/LoginView.tsx',
-      'src/components/auth/ForgotPasswordPage.tsx',
-      'src/components/auth/ResetPasswordPage.tsx',
-      'src/components/auth/KonfiRegisterPage.tsx',
-      'src/components/common/ErrorBoundary.tsx',
-    ];
-    for (const d of dateien) {
-      const s = lies(d);
-      // Der Klassenname kommt mehrfach vor (auch an Ueberschriften darin) --
-      // gesucht ist der Container, der den Kopfabstand setzt.
-      const zeile = s.split('\n').find(z => z.includes('app-auth-hero"') && z.includes('marginTop')) || '';
-      expect(zeile).toContain('var(--app-freiraum-kopf-m)');
-    }
-  });
-});
-
-describe('Banner haben ueberall Abstand zum Rand', () => {
-  // Simon, 06.09.2026: "das banner version 2.0.0 hat keine richtigen
-  // abstaende nach links und rechts, fuellt die volle breite."
-  //
-  // Ursache: StoreUpdateBanner hatte keinen Standard-style. Konfi- und
-  // Teamer-Startseite gaben je einen mit, die Leitungsansicht nicht -- dort
-  // klebte das Banner an beiden Raendern. Derselbe Fehlertyp wie so oft:
-  // Drei Rollenbaeume, einer wird vergessen.
-  it('StoreUpdateBanner bringt seinen eigenen Abstand mit', () => {
-    const banner = lies('src/components/shared/StoreUpdateBanner.tsx');
-    expect(banner).toContain("style = { margin: 'var(--app-abstand-eng) var(--app-abstand-basis) 0' }");
-  });
-
-  it('NeuerungenBanner ebenso', () => {
-    const banner = lies('src/components/shared/NeuerungenBanner.tsx');
-    expect(banner).toContain("style = { margin: 'var(--app-abstand-basis)' }");
   });
 });
 
@@ -196,117 +44,12 @@ describe('Die App kennt ihre eigene Version', () => {
   });
 });
 
-describe('Leerzustaende tragen die Farbe ihres Bereichs', () => {
-  // Simon, 06.09.2026: "unter challenges wenn noch nichts da ist, unter
-  // aktuelles geplant und archiv im admin immer noch das Pink auf den Icons."
-  //
-  // Alle drei Leerzustaende der Challenge-Verwaltung standen auf
-  // --app-color-teamer, dem Beerenrot des Team-Bereichs. Ein Rest davon, dass
-  // Challenges frueher dieselbe Farbe trugen -- nach dem Wechsel auf Indigo
-  // fiel es auf. Die Konfi-Ansicht war korrekt, nur die Leitung nicht:
-  // wieder der Fall "drei Rollenbaeume, einer wird vergessen".
-  it('die Challenge-Verwaltung nutzt die Challenges-Farbe', () => {
-    const seite = lies('src/components/admin/views/ChallengesManageView.tsx');
-    const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
-    expect(treffer.length).toBe(3);   // Aktuell, Geplant, Archiv
-    for (const t of treffer) expect(t).toBe('var(--app-color-challenges)');
-  });
-
-  it('die Konfi-Challenges ebenso', () => {
-    const seite = lies('src/components/konfi/views/ChallengesView.tsx');
-    for (const t of [...seite.matchAll(/iconColor="([^"]+)"/g)].map((m) => m[1])) {
-      expect(t).toBe('var(--app-color-challenges)');
-    }
-  });
-
-  it('keine Ansicht nutzt mehr die Teamer-Farbe fuer Challenges', () => {
-    const seite = lies('src/components/admin/views/ChallengesManageView.tsx');
-    expect(seite).not.toContain('var(--app-color-teamer)');
-  });
-
-  // Simon, 25.09.2026, an einer Gemeinde ohne Level: "Bei Level wenn es keine
-  // gibt ist leider das Icon in der falschen Farben. Nicht das Level Design
-  // Farbe." Der Leerzustand zog sein Icon aus --app-color-konfis (Violett),
-  // Kopfzeile und Liste derselben Seite aus --app-color-level (Pink). Fiel
-  // erst auf, weil Hennstedt bis dahin keine Level hatte -- bei allen anderen
-  // Gemeinden war der Leerzustand nie zu sehen.
-  it('die Level-Verwaltung nutzt die Level-Farbe', () => {
-    const seite = lies('src/components/admin/pages/AdminLevelsPage.tsx');
-    const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
-    expect(treffer).toEqual(['var(--app-color-level)']);
-  });
-
-  // Dieselbe Fehlerklasse an der Zertifikat-Verwaltung (Simon, 25.09.2026:
-  // "Die leerzustände bitte reparieren"): Der Leerzustand zog sein Icon aus
-  // --app-color-teamer (Pink-Rot), obwohl es --app-color-zertifikate gibt.
-  // Gegenprobe beim Aufraeumen: KonfisView zieht fuer die TEAM-Liste bewusst
-  // die Teamer-Farbe -- dort ist sie richtig, das ist kein Fehler derselben Art.
-  it('die Zertifikat-Verwaltung nutzt die Zertifikat-Farbe', () => {
-    const seite = lies('src/components/admin/pages/AdminCertificatesPage.tsx');
-    const treffer = [...seite.matchAll(/emptyIconColor="([^"]+)"/g)].map((m) => m[1]);
-    expect(treffer).toEqual(['var(--app-color-zertifikate)']);
-  });
-});
-
-describe('Chat: erst filtern, dann suchen', () => {
-  // Simon, 06.09.2026: "im chat finde ich das suche und filter unter die
-  // tableiste muss. alle ungelesen konfis team. dann filtert man erst und
-  // dann sucht man."
-  //
-  // Vorher stand die Suche ueber den Reitern: Man tippte einen Namen und
-  // schraenkte die Menge erst danach ein -- gegen die eigene Erwartung.
-  // Alle drei Rollen nutzen dieselbe Datei, die Reihenfolge gilt also
-  // ueberall.
-  it('die Reiter stehen vor der Suche', () => {
-    const seite = lies('src/components/chat/ChatOverview.tsx');
-    const reiter = seite.indexOf('app-segment-wrapper');
-    const suche = seite.indexOf('Chaträume durchsuchen');
-    expect(reiter).toBeGreaterThan(0);
-    expect(suche).toBeGreaterThan(0);
-    expect(reiter).toBeLessThan(suche);
-  });
-
+describe('Chat: die Reiter kommen aus der gemeinsamen Beschreibung', () => {
   it('die Reiter heissen Alle, Ungelesen, Konfis und Team', () => {
     // Seit 09.10.2026 aus der gemeinsamen Beschreibung (seiten/chats.ts); dass
     // App und Browser genau diese Reiter zeigen, prueft __tests__/seiten/chats.test.tsx gerendert.
     const seite = lies('src/components/chat/ChatOverview.tsx');
     expect(seite).toContain("from '../../seiten/chats'");
     expect(seite).toContain('chatReiterFuer(gehoertZumTeam).map(');
-  });
-});
-
-describe('Termine: erst filtern, dann suchen -- in allen drei Rollen', () => {
-  // Simon, 06.09.2026: "das muessten wir suche & filter bei events auch
-  // machen. aktuell verbuchen vergangen unter die leiste events aktivitaeten
-  // schieben."
-  //
-  // Dieselbe Reihenfolge wie im Chat. Bewusst in ALLEN drei Ansichten
-  // geprueft: Jede Rolle hat hier eine eigene Datei -- genau die Konstellation,
-  // in der bisher immer eine vergessen wurde.
-  const ansichten = [
-    'src/components/admin/EventsView.tsx',
-    'src/components/konfi/views/EventsView.tsx',
-    'src/components/teamer/pages/TeamerEventsPage.tsx',
-  ];
-
-  it('die Reiter stehen ueberall vor der Suche', () => {
-    for (const datei of ansichten) {
-      const seite = lies(datei);
-      // Die Platzhaltertexte unterscheiden sich je Ansicht ("Event
-      // suchen...", "Events durchsuchen..."), deshalb am Eingabefeld
-      // festgemacht statt am Wortlaut.
-      const reiter = seite.indexOf('app-segment-wrapper');
-      const suche = seite.search(/placeholder="[^"]*(suchen|durchsuchen)/);
-      expect(reiter, datei).toBeGreaterThan(0);
-      expect(suche, datei).toBeGreaterThan(0);
-      expect(reiter, datei).toBeLessThan(suche);
-    }
-  });
-
-  it('der Abschnitt heisst nur noch "Suche", nicht mehr "Suche & Filter"', () => {
-    // Der Filter steht jetzt darueber und gehoert nicht mehr dazu.
-    for (const datei of [...ansichten, 'src/components/chat/ChatOverview.tsx']) {
-      expect(lies(datei), datei).not.toContain('Suche & Filter</IonLabel>');
-    }
   });
 });

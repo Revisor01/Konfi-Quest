@@ -4,14 +4,12 @@
 // Archiv -- darin auch die erledigten), Auswahl nach Art und Gemeinde und
 // Suche hinter dem Knopf „Filter“ (12.10.2026), „Neuer Vorgang“ als
 // Abschnitt der Seite. Die Tabelle mit Sammelaktionen steht in
-// webVorgaenge.test.tsx -- beide teilen die Logik.
+// webVorgaenge.test.tsx -- beide teilen die Logik. Symbol und Farbe der Art
+// sowie der Aufbau der Zeile sind Layout und werden nicht festgeschrieben
+// (Simon, 15.10.2026).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
 import { mail, vorgang, vorgaengeServer } from './vorgaengeServer';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
-import { ART_SYMBOL, type VorgangArt } from '../../../utils/supportVorgaenge';
 import { datumUhrzeit } from '../../../utils/dateUtils';
 
 const h = vi.hoisted(() => ({
@@ -27,12 +25,8 @@ const h = vi.hoisted(() => ({
   standort: { pathname: '/admin/support/vorgaenge', search: '', state: null } as { pathname: string; search: string; state: null },
 }));
 
-vi.mock('@ionic/react', async () => ({
-  ...(await import('./ionicAttrappe')).ionicAttrappe({
-    router: { push: h.push, goBack: vi.fn(), canGoBack: () => false },
-  }),
-  // Das Symbol sichtbar machen: Der Kreis der Zeile trägt das der Art.
-  IonIcon: ({ icon, className }: { icon?: string; className?: string }) => <span data-icon={icon} className={className} />,
+vi.mock('@ionic/react', async () => (await import('./ionicAttrappe')).ionicAttrappe({
+  router: { push: h.push, goBack: vi.fn(), canGoBack: () => false },
 }));
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('./ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/common/LoadingSpinner', () => ({ default: ({ message }: { message: string }) => <p>{message}</p> }));
@@ -45,7 +39,6 @@ vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => fa
 vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => h.standort }));
 
 import SupportVorgaengePage from '../../../components/support/SupportVorgaengePage';
-import { VorgangKreis } from '../../../components/support/web/WebVorgangTeile';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 
 let server: ReturnType<typeof vorgaengeServer>;
@@ -79,24 +72,6 @@ const zeigen = async () => {
 const eintraege = () => screen.getAllByRole('button', { name: /^Vorgang \d+:/ }).map((e) => e.getAttribute('aria-label'));
 const nummern = () => screen.queryAllByRole('button', { name: /^Vorgang \d+:/ }).map((e) => /^Vorgang (\d+):/.exec(e.getAttribute('aria-label') ?? '')![1]);
 const segment = (name: string | RegExp) => screen.getByRole('tab', { name });
-/**
- * Die Farbe je Art, ausgeschrieben -- nicht aus der Zuordnung des Codes
- * abgeleitet, sonst prüfte der Test sie gegen sich selbst. Dieselben Farben
- * wie der Kreis im Browser. Alle acht Arten (Prüfung 12.10.2026: vorher nur
- * die vier aus dem Bestand oben).
- */
-const ART_FARBEN_ERWARTET: ReadonlyArray<readonly [VorgangArt, string]> = [
-  ['neue_gemeinde', 'success'],
-  ['frage', 'info'],
-  ['fehler', 'danger'],
-  ['wunsch', 'purple'],
-  ['zugang', 'warning'],
-  ['lizenz', 'categories'],
-  ['datenschutz', 'users'],
-  ['sonstiges', 'neutral'],
-];
-/** Zu welcher Art ein Symbol gehört (ART_SYMBOL rückwärts), sonst das Symbol selbst. */
-const artDesSymbols = (symbol: string) => Object.entries(ART_SYMBOL).find(([, s]) => s === symbol)?.[0] ?? symbol;
 
 const filterKnopf = () => screen.getByRole('button', { name: /^Filter/ });
 /** Klappt Art, Gemeinde und Suche auf (sie stehen hinter dem Knopf „Filter“). */
@@ -124,78 +99,17 @@ describe('Vorgänge (App): Liste', () => {
     expect(screen.getByRole('button', { name: /^Vorgang 3:/ }).querySelector('.app-zaehler-kugel')).toBeNull();
   });
 
-  it('die Zeile: Kreis mit dem Symbol der Art, Betreff über die volle Breite, darunter Angaben und Marken (12.10.2026)', async () => {
+  it('die Zeile: Betreff, Angaben mit Datum der letzten Aktivität und Marken (12.10.2026)', async () => {
     await zeigen();
     const zeile = (n: number) => screen.getByRole('button', { name: new RegExp(`^Vorgang ${n}:`) });
-    const kreis = (n: number) => zeile(n).querySelector('.app-icon-circle') as HTMLElement;
-    const symbol = (n: number) => kreis(n).querySelector('[data-icon]')!.getAttribute('data-icon');
-    // Je Art ein eigenes Symbol auf ihrer Farbe -- bis dahin trug jede Zeile dasselbe Gebäude.
-    expect([1, 2, 3, 4].map((n) => [symbol(n), [...kreis(n).classList].filter((k) => k !== 'app-icon-circle' && k !== 'app-icon-circle--lg')])).toEqual([
-      [ART_SYMBOL.fehler, ['app-icon-circle--danger']],
-      [ART_SYMBOL.frage, ['app-icon-circle--info']],
-      [ART_SYMBOL.neue_gemeinde, ['app-icon-circle--success']],
-      [ART_SYMBOL.lizenz, ['app-icon-circle--categories']],
-    ]);
-    // Der Inhalt: Betreff, Angaben, Marken -- in dieser Reihenfolge untereinander.
-    const inhalt = zeile(1).querySelector('.app-list-item__content') as HTMLElement;
-    expect([...inhalt.children].map((k) => [k.className, k.textContent])).toEqual([
-      ['app-list-item__title', 'Chat zeigt nichts Neues'],
-      ['app-list-item__meta support-listenzeile__meta', `Nr. 1 · Fehler · Chat · Kirchengemeinde Musterdorf · ${datumUhrzeit('2026-10-03T08:30:00Z')}`],
-      ['support-listenzeile__marken', 'DringendNeu'],
-    ]);
+    expect(zeile(1).querySelector('.app-list-item__title')!.textContent).toBe('Chat zeigt nichts Neues');
+    expect(zeile(1).querySelector('.support-listenzeile__meta')!.textContent)
+      .toBe(`Nr. 1 · Fehler · Chat · Kirchengemeinde Musterdorf · ${datumUhrzeit('2026-10-03T08:30:00Z')}`);
+    expect(zeile(1).querySelector('.support-listenzeile__marken')!.textContent).toBe('DringendNeu');
     expect(datumUhrzeit('2026-10-03T08:30:00Z')).toBe('03.10.2026, 10:30');
-    // Jede Angabe ein eigener Block (inline-block): Die Zeile bricht zwischen den Angaben um, nicht
-    // in „Kirchengemeinde Musterdorf" oder im Datum, und der Punkt bleibt am Zeilenende. Derselbe
-    // Text als ein einziger Knoten sähe im textContent gleich aus -- deshalb die Blöcke selbst.
-    expect([...inhalt.querySelectorAll('.support-listenzeile__meta > .support-listenzeile__angabe')].map((b) => b.textContent)).toEqual([
-      'Nr. 1 ·', 'Fehler · Chat ·', 'Kirchengemeinde Musterdorf ·', '03.10.2026, 10:30',
-    ]);
-    const listenCss = readFileSync(resolve(process.cwd(), 'src/components/support/SupportVorgangTeile.css'), 'utf8');
-    expect(listenCss).toMatch(/\.support-listenzeile__angabe\s*\{\s*display:\s*inline-block;\s*\}/);
-    // Keine erzwungene Silbentrennung mehr am Betreff.
-    expect((inhalt.children[0] as HTMLElement).getAttribute('style')).toBeNull();
-    // Rechts neben dem Inhalt steht nur noch der Pfeil -- keine Marke nimmt dem Betreff die Breite.
-    const reihe = zeile(1).querySelector('.app-list-item__row') as HTMLElement;
-    expect([...reihe.children].map((k) => k.className)).toEqual(['app-list-item__main', 'support-listenzeile__pfeil']);
-    // Ohne Bereich und ohne Dringend: nur der Status in der Zeile der Marken.
+    // Ohne Bereich und ohne Dringend: nur der Status bei den Marken.
     expect(zeile(3).querySelector('.support-listenzeile__marken')!.textContent).toBe('Wartet');
     expect(zeile(3).querySelector('.support-listenzeile__meta')!.textContent).toMatch(/^Nr\. 3 · Neue Gemeinde · Noch nicht angelegt · /);
-  });
-
-  it('jede der acht Arten: ihr Symbol auf ihrer Farbe, und jede Farbe hat ihre Regel in variables.css', async () => {
-    server = vorgaengeServer({
-      vorgaenge: ART_FARBEN_ERWARTET.map(([art], i) => vorgang(i + 1, { art, betreff: `Art ${art}`, created_at: `2026-10-0${9 - i}T07:00:00Z` })),
-    });
-    server.installieren({ get: h.apiGet, post: h.apiPost, patch: h.apiPatch, delete: h.apiDelete });
-    render(<SupportVorgaengePage />);
-    await screen.findByRole('button', { name: /^Vorgang 1:/ });
-    const symbole: string[] = [];
-    const zeigt = ART_FARBEN_ERWARTET.map(([art], i) => {
-      const kreis = screen.getByRole('button', { name: new RegExp(`^Vorgang ${i + 1}:`) }).querySelector('.app-icon-circle')!;
-      const symbol = kreis.querySelector('[data-icon]')!.getAttribute('data-icon') ?? '';
-      symbole.push(symbol);
-      const farben = [...kreis.classList].filter((k) => k !== 'app-icon-circle' && k !== 'app-icon-circle--lg');
-      // Das Symbol als Name seiner Art -- lesbarer als das SVG, wenn es abweicht.
-      return [art, artDesSymbols(symbol), farben];
-    });
-    expect(zeigt).toEqual(ART_FARBEN_ERWARTET.map(([art, farbe]) => [art, art, [`app-icon-circle--${farbe}`]]));
-    // Acht Arten, acht verschiedene Symbole.
-    expect(new Set(symbole).size).toBe(8);
-    // Ein Modifier ohne Regel ließe den Kreis ohne Fläche -- weiß auf weiß.
-    const css = readFileSync(resolve(process.cwd(), 'src/theme/variables.css'), 'utf8');
-    const ohneRegel = ART_FARBEN_ERWARTET.filter(([, farbe]) => !new RegExp(`^\\.app-icon-circle--${farbe} \\{ background-color: var\\(--app-color-[a-z]+\\); \\}`, 'm').test(css));
-    expect(ohneRegel).toEqual([]);
-  });
-
-  it('der Kreis im Browser zeigt je Art dasselbe Symbol auf derselben Farbe wie die App (eine Zuordnung, ART_FARBE)', () => {
-    const zeigt = ART_FARBEN_ERWARTET.map(([art]) => {
-      const { container, unmount } = render(<VorgangKreis art={art} />);
-      const kreis = container.querySelector('.web-vorgang-kreis') as HTMLElement;
-      const ergebnis = [art, artDesSymbols(kreis.querySelector('[data-icon]')!.getAttribute('data-icon') ?? ''), kreis.style.getPropertyValue('--web-vorgang-kreis-farbe')];
-      unmount();
-      return ergebnis;
-    });
-    expect(zeigt).toEqual(ART_FARBEN_ERWARTET.map(([art, farbe]) => [art, art, `var(--app-color-${farbe})`]));
   });
 
   it('lädt die offenen Vorgänge -- das Archiv erst, wenn der Filter es zeigt', async () => {

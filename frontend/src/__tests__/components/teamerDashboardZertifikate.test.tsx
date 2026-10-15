@@ -109,7 +109,6 @@ const zeige = async (certificates: unknown[], config: Record<string, unknown> = 
 
 const block = (c: HTMLElement) => c.querySelector('.app-dashboard-section--zertifikate') as HTMLElement | null;
 const karten = (c: HTMLElement) => [...c.querySelectorAll('.app-cert-card')].map((k) => k.querySelector('span')?.textContent);
-const raster = (c: HTMLElement) => (block(c)?.querySelector('.app-dashboard-section__content > div') as HTMLElement | null)?.style.gridTemplateColumns;
 const chip = (c: HTMLElement) => block(c)?.querySelector('.app-dashboard-glass-chip')?.textContent;
 
 beforeEach(() => cleanup());
@@ -138,20 +137,6 @@ describe('Teamer-Dashboard: Zertifikate', () => {
     expect(block(container)).toBeNull();
   });
 
-  it('nutzt eine Spalte, wenn es genau eins gibt', async () => {
-    // Sonst stand die einzelne Karte auf halber Breite neben einer leeren Haelfte.
-    const { container } = await zeige([
-      zertifikat(1, 'Juleica', 'valid'),
-      ...VIER_TYPEN.slice(1).map(([id, name]) => zertifikat(id, name, 'not_earned')),
-    ]);
-    expect(raster(container)).toBe('1fr');
-  });
-
-  it('und zwei, sobald es mehrere gibt', async () => {
-    const { container } = await zeige([zertifikat(1, 'Juleica', 'valid'), zertifikat(2, 'Erste Hilfe', 'valid')]);
-    expect(raster(container)).toBe('repeat(2, 1fr)');
-  });
-
   it('rendert nur die erhaltenen, nicht die Rohliste', async () => {
     const { container } = await zeige([
       zertifikat(1, 'Juleica', 'valid'),
@@ -170,15 +155,5 @@ describe('Teamer-Dashboard: Zertifikate', () => {
     // Der Bruch bleibt nur fuer den Fall, in dem er etwas aussagt.
     const mitAbgelaufenem = await zeige([zertifikat(1, 'Juleica', 'valid'), zertifikat(3, 'Kinderschutz', 'expired')]);
     expect(chip(mitAbgelaufenem.container)).toBe('1/2 GÜLTIG');
-  });
-});
-
-describe('Teamer-Dashboard: Kopfbereich', () => {
-  it('nutzt den gemeinsamen Teamer-Verlauf', async () => {
-    // Dritte Stelle mit eigenem, hellerem Rot (#e11d48) — nach Profil und
-    // Wrapped-Kachel. Jetzt ziehen alle drei aus derselben Variablen.
-    const { container } = await zeige([]);
-    const kopf = container.querySelector('.app-dashboard-header') as HTMLElement | null;
-    expect(kopf?.style.background).toBe('var(--app-gradient-teamer)');
   });
 });

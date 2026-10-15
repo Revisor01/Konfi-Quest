@@ -1,10 +1,11 @@
 // Detailseite einer Konfi bzw. Teamer:in in der Web-Fassung (/admin/konfis/:id),
 // gerendert. Aufbau wie jede Detailseite (WebDetailSeite; Simon, 06.10.2026:
 // „Person gleich auch noch erledigen"): Kopf mit Jahrgang und Benutzername und
-// allen Aktionen, Kennzahlen (Punkte und Ziele, Badges), links Aktivitaeten,
-// Events und Bonuspunkte mit gleichen Spaltenbreiten, rechts Angaben,
-// Konfirmation, Badges, Antraege, Stempel, Rueckblick; Badges und Stempel als
-// ein Raster mit Info bei Hover und Fokus (Simon, 07.10.2026). Die Seite
+// allen Aktionen, Kennzahlen (Punkte und Ziele, Badges), Aktivitaeten, Events
+// und Bonuspunkte, daneben Angaben, Konfirmation, Badges, Antraege, Stempel,
+// Rueckblick; Badges und Stempel mit Info bei Hover und Fokus (Simon,
+// 07.10.2026). Spalten, Breiten und Farben sind Layout und werden nicht
+// festgeschrieben (Simon, 15.10.2026). Die Seite
 // (KonfiDetailView) haelt Daten und Aktionen und oeffnet dieselben Fenster und
 // Rueckfragen wie in der App; geprueft wird, dass die Web-Fassung genau diese
 // ruft -- mit den richtigen Werten --, und dass die App-Darstellung bleibt.
@@ -156,13 +157,6 @@ const zeilen = (name: string) => within(screen.getByRole('table', { name })).get
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
 /** Das Wort des Stands in der Eventliste (die Marke), ohne die leise Zeile darunter. */
 const standWort = (z: HTMLElement) => zelle(z, 4).querySelector('.web-pill')?.textContent;
-/** Die Ueberschriften der Karten einer Spalte, von oben nach unten. */
-const kartenIn = (spalte: 'haupt' | 'seite') =>
-  [...document.querySelectorAll(`.web-spalten__${spalte} .web-karte`)].map((k) => k.getAttribute('aria-labelledby'))
-    .map((id) => document.getElementById(id ?? '')?.textContent);
-/** Die Breiten der Spaltenkoepfe einer Tabelle, wie sie im Stil stehen. */
-const kopfBreiten = (name: string) =>
-  within(screen.getByRole('table', { name })).getAllByRole('columnheader').map((c) => (c as HTMLElement).style.width);
 /** Der Knopf eines Eintrags im Raster aus Badges bzw. Stempeln und seine Info. */
 const eintrag = (bereich: string, name: string) => {
   const knopf = within(karte(bereich)).getByRole('button', { name: new RegExp(name) });
@@ -206,16 +200,12 @@ describe('Konfi-Detail (Web): Person und Punkte', () => {
     expect(screen.queryByTestId('ringe')).toBeNull();
   });
 
-  it('gleicher Aufbau wie jede Detailseite: links Aktivitaeten und Bonus, rechts die Angaben', async () => {
-    const { container } = await oeffnen();
-    const spalten = container.querySelector('.web-spalten') as HTMLElement;
-    expect(spalten.classList.contains('web-spalten--links')).toBe(false);
-    const [links, rechts] = [...spalten.children] as HTMLElement[];
-    expect(within(links).getByRole('region', { name: 'Aktivitäten' })).toBeInTheDocument();
-    expect(within(links).getByRole('region', { name: 'Bonuspunkte' })).toBeInTheDocument();
-    expect(rechts.tagName).toBe('ASIDE');
-    expect(rechts.getAttribute('aria-label')).toBe('Angaben');
-    const angaben = within(within(rechts).getByRole('region', { name: 'Angaben' }));
+  it('Aktivitaeten und Bonus als Bereiche, die Angaben als eigener Bereich daneben (Landmarke "Angaben")', async () => {
+    await oeffnen();
+    expect(screen.getByRole('region', { name: 'Aktivitäten' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Bonuspunkte' })).toBeInTheDocument();
+    const daneben = screen.getByRole('complementary', { name: 'Angaben' });
+    const angaben = within(within(daneben).getByRole('region', { name: 'Angaben' }));
     expect(angaben.getByText('Jahrgang').nextElementSibling).toHaveTextContent('Jahrgang 2026');
     expect(angaben.getByText('Benutzername').nextElementSibling).toHaveTextContent('@anna.mueller');
     // Keine eigene Karte "Aktionen" mehr: die Knoepfe stehen im Kopf.
@@ -305,10 +295,9 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
     ]);
     await oeffnen();
     const aktionen = kopf();
-    // Alle Aktionen stehen im Kopf, die wichtigste als Hauptknopf.
+    // Alle Aktionen stehen im Kopf.
     expect(aktionen.getAllByRole('button').map((b) => b.textContent))
       .toEqual(['Passwort zurücksetzen', 'Konfi bearbeiten', 'Bonuspunkte vergeben', 'Aktivität eintragen']);
-    expect(aktionen.getByRole('button', { name: 'Aktivität eintragen' }).classList.contains('web-knopf--primaer')).toBe(true);
     fireEvent.click(aktionen.getByRole('button', { name: 'Aktivität eintragen' }));
     const aktivitaet = screen.getByRole('dialog', { name: 'Aktivität eintragen' });
     expect(aktivitaet).toHaveAccessibleDescription('Für Anna Müller');
@@ -416,13 +405,13 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(fenster(AttendanceMatrixModal)).toHaveLength(0);
   });
 
-  it('Badges: die erreichten mit Namen und in ihrer Farbe, geladen ueber die Route der Konfi', async () => {
+  it('Badges: die erreichten mit Namen und in der Farbe, die das Badge mitbringt, geladen ueber die Route der Konfi', async () => {
     await oeffnen();
     expect(h.apiGet).toHaveBeenCalledWith(`/admin/konfis/${ID}/badges`);
     const erste = eintrag('Badges (2)', 'Erste Schritte');
+    // Die Farbe ist eine Angabe des Badges (color aus der Route), kein Layout.
     const kreis = erste.knopf.querySelector('.web-abzeichen-symbol') as HTMLElement;
     expect(kreis.style.background).toBe('rgb(16, 185, 129)');
-    expect(kreis).not.toHaveClass('web-abzeichen-symbol--offen');
     expect(eintrag('Badges (2)', 'Helfende Hand').knopf).toBeInTheDocument();
   });
 
@@ -450,12 +439,6 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(info).not.toBeVisible();
   });
 
-  it('Events stehen links zwischen Aktivitaeten und Bonuspunkten, nicht mehr rechts', async () => {
-    await oeffnen();
-    expect(kartenIn('haupt')).toEqual(['Aktivitäten', 'Events', 'Bonuspunkte']);
-    expect(kartenIn('seite')).not.toContain('Events');
-  });
-
   // Seit 13.10.2026 steht unter "Eingetragen von" der Stand des Events (eine
   // Liste fuer alles, Simon: „das soll eine liste sein"); wer verbucht hat,
   // steht als leise Zeile darunter. Gewollte Aenderung: Die Erwartung prueft
@@ -475,17 +458,6 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(within(zelle(e[0], 4)).getByText('verbucht von Alex Beispiel')).toBeInTheDocument();
     expect(zelle(e[1], 0)).toHaveTextContent('Taizé-Abend');
     expect(screen.getByText('2 Events · 3 Punkte', { selector: '.web-karte__untertitel' })).toBeInTheDocument();
-  });
-
-  it('Aktivitaeten, Events und Bonuspunkte haben dieselben festen Spaltenbreiten', async () => {
-    await oeffnen();
-    const aktivitaeten = kopfBreiten('Aktivitäten');
-    expect(aktivitaeten).toEqual(['', '100px', '118px', '68px', '128px', '']);
-    expect(kopfBreiten('Events')).toEqual(aktivitaeten);
-    expect(kopfBreiten('Bonuspunkte')).toEqual(aktivitaeten);
-    for (const name of ['Aktivitäten', 'Events', 'Bonuspunkte']) {
-      expect(screen.getByRole('table', { name })).toHaveClass('web-tabelle--punkte');
-    }
   });
 
   // Offenes steht OBEN in der jeweiligen Liste, kein eigener Bereich
@@ -582,17 +554,6 @@ describe('Konfi-Detail (Web): rechte Spalte', () => {
     expect(zelle(erste, 0)).toHaveTextContent('Konfisamstag');
     expect(zelle(erste, 4)).toHaveTextContent('Anwesenheit ausstehend');
     expect(within(erste).queryByRole('button')).toBeNull();
-  });
-
-  it('Stempel: dasselbe Raster wie die Badges, erhalten in der Challenge-Farbe, offen gedaempft', async () => {
-    await oeffnen();
-    const s = karte('Stempel');
-    expect(s.querySelector('.web-auszeichnungen')).not.toBeNull();
-    const frueh = eintrag('Stempel', 'Früh');
-    expect((frueh.knopf.querySelector('.web-abzeichen-symbol') as HTMLElement).style.background).toBe('var(--app-color-challenges)');
-    const foto = eintrag('Stempel', 'Foto');
-    expect(foto.knopf.querySelector('.web-abzeichen-symbol')).toHaveClass('web-abzeichen-symbol--offen');
-    expect(foto.knopf.closest('li')).toHaveClass('web-auszeichnung--offen');
   });
 
   it('Stempel: Info bei Hover und Fokus mit Challenge, "erhalten am" bzw. "noch nicht erhalten"', async () => {
@@ -699,10 +660,8 @@ describe('Teamer-Detail (Web)', () => {
     expect((f.props.availableTypes as Array<{ name: string }>).map((t) => t.name)).toEqual(['Ersthelfer:in']);
   });
 
-  it('Events der Teamer:in links zwischen Aktivitaeten und Zertifikaten, als Tabelle mit Status', async () => {
+  it('Events der Teamer:in als Tabelle mit Status', async () => {
     await oeffnen();
-    expect(kartenIn('haupt').slice(0, 3)).toEqual(['Aktivitäten', 'Events', 'Zertifikate']);
-    expect(kartenIn('seite')).not.toContain('Events');
     const events = zeilen('Events');
     // Seit 13.10.2026 in der Ordnung der einen Eventliste (eventListe.ts):
     // Anstehendes oben, dann nach Datum absteigend (vorher die Reihenfolge des
@@ -718,8 +677,6 @@ describe('Teamer-Detail (Web)', () => {
     ]);
     // Auch hier fuehrt ein Event mit Rueckweg zur Teamer:in.
     expect(within(events[0]).getByRole('link', { name: 'Teamer-Treffen' })).toHaveAttribute('href', `/admin/events/305?person=${ID}`);
-    // Dieselben Breiten wie die Aktivitaeten darueber: Stand steht unter "Eingetragen von".
-    expect(kopfBreiten('Events')).toEqual(kopfBreiten('Aktivitäten'));
   });
 
   it('Badges ueber die Route der Teamer:innen, Konfi-Historie', async () => {

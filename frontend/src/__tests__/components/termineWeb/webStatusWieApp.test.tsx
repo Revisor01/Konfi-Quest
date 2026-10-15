@@ -3,8 +3,9 @@
 // Zwei Rechnungen derselben Regel laufen auseinander, sobald jemand nur eine
 // ändert. Dieser Test hält sie zusammen: Er rendert die ECHTEN Listen der App
 // mit einer Matrix aus Zeit, Anmeldestand, Buchung, Anwesenheit, Pflicht,
-// Konfirmation und Absage und vergleicht, was die App zeigt (Status-Marke,
-// Farbe, Ausgrauen), mit dem, was die Web-Fassung rechnet.
+// Konfirmation und Absage und vergleicht, was die App zeigt (Status-Marke und
+// Zahlen), mit dem, was die Web-Fassung rechnet. Farbe und Ausgrauen sind
+// Layout und werden nicht festgeschrieben (Simon, 15.10.2026).
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, fireEvent, cleanup, act } from '@testing-library/react';
 import { h, zuruecksetzen, richteEin, oeffne, termin, inTagen, JETZT } from './geruestWeb';
@@ -30,11 +31,11 @@ const MERKMAL_TITEL = ['Nur Team', 'Team gesucht', 'Konfirmation', 'Pflichtveran
 const normFakt = (t: string | null | undefined) => (t ?? '').replace(/∞/g, '').replace(/\s+/g, ' ').trim();
 const faktenAnKarte = (karte: Element) => [...(karte.querySelector('.app-list-item__meta')?.querySelectorAll('.app-list-item__meta-item') ?? [])].map((f) => normFakt(f.textContent));
 
-/** Was die App auf einer Karte als Status zeigt: Wort und Farbe -- oder nichts. */
+/** Was die App auf einer Karte als Status zeigt: das Wort -- oder nichts. */
 const statusAnKarte = (karte: Element) => {
   const marke = [...karte.querySelectorAll('.app-corner-badges .app-corner-badge[title]')]
     .find((m) => !MERKMAL_TITEL.includes(m.getAttribute('title')!)) as HTMLElement | undefined;
-  return marke ? { text: marke.getAttribute('title')!, farbe: marke.style.backgroundColor } : null;
+  return marke ? { text: marke.getAttribute('title')! } : null;
 };
 
 /** Zahlen, die die Karte zeigt (Plätze, Team, Warteliste, Punkte, Art) -- reihum verschieden, damit jede Zeile der Karte vorkommt. */
@@ -110,10 +111,9 @@ describe('Konfis: die Liste der Web-Fassung rechnet wie die Liste der App', () =
       const event = events.find((e) => e.name === name)!;
       const web = konfiListeStatus(event, gebucht);
       const app = statusAnKarte(karte);
-      const erwartet = web.zeigtStatus ? { text: web.text, farbe: web.farbe } : null;
-      const gedaempft = (karte as HTMLElement).style.opacity === '0.6';
-      if (JSON.stringify(app) !== JSON.stringify(erwartet) || gedaempft !== (web.gedaempft || web.gesperrt)) {
-        abweichungen.push(`${name}: App ${JSON.stringify(app)} gedämpft ${gedaempft}, Web ${JSON.stringify(erwartet)} gedämpft ${web.gedaempft || web.gesperrt}`);
+      const erwartet = web.zeigtStatus ? { text: web.text } : null;
+      if (JSON.stringify(app) !== JSON.stringify(erwartet)) {
+        abweichungen.push(`${name}: App ${JSON.stringify(app)}, Web ${JSON.stringify(erwartet)}`);
       }
       const fakten = konfiFakten(event).map((f) => normFakt(f.text));
       if (JSON.stringify(faktenAnKarte(karte)) !== JSON.stringify(fakten)) abweichungen.push(`${name}: Zahlen App ${JSON.stringify(faktenAnKarte(karte))}, Web ${JSON.stringify(fakten)}`);
@@ -121,13 +121,13 @@ describe('Konfis: die Liste der Web-Fassung rechnet wie die Liste der App', () =
     return { karten: karten.length, abweichungen };
   };
 
-  it.each(['meine', 'alle', 'konfirmation'] as const)('Reiter %s ohne gebuchte Konfirmation: Marke, Farbe, Ausgrauen und Zahlen stimmen für jedes Event', (tab) => {
+  it.each(['meine', 'alle', 'konfirmation'] as const)('Reiter %s ohne gebuchte Konfirmation: Marke und Zahlen stimmen für jedes Event', (tab) => {
     const { karten, abweichungen } = vergleiche(ohneGebuchteKonfirmation, tab);
     expect(karten).toBeGreaterThan(100);
     expect(abweichungen).toEqual([]);
   });
 
-  it.each(['meine', 'alle', 'konfirmation'] as const)('Reiter %s mit gebuchter Konfirmation (andere sind gesperrt): Marke, Farbe, Ausgrauen und Zahlen stimmen', (tab) => {
+  it.each(['meine', 'alle', 'konfirmation'] as const)('Reiter %s mit gebuchter Konfirmation (andere sind gesperrt): Marke und Zahlen stimmen', (tab) => {
     const { karten, abweichungen } = vergleiche(alleFaelle, tab);
     expect(karten).toBeGreaterThan(100);
     expect(abweichungen).toEqual([]);
@@ -175,7 +175,7 @@ describe('Leitung: die Tabelle der Web-Fassung rechnet wie die Liste der App', (
     return alle;
   };
 
-  it('Marke, Farbe, Ausgrauen und Zahlen stimmen für jedes Event', () => {
+  it('Marke und Zahlen stimmen für jedes Event', () => {
     const alle = leitungsFaelle();
     const abweichungen: string[] = [];
     let karten = 0;
@@ -192,9 +192,8 @@ describe('Leitung: die Tabelle der Web-Fassung rechnet wie die Liste der App', (
         // 'mandatory' fehlte in ihrer Textkette, die Farbe kannte ihn). Jetzt sagen beide "Pflicht".
         const wortDerApp = web.text;
         const app = statusAnKarte(karte);
-        const gedaempft = (karte as HTMLElement).style.opacity === '0.6';
-        if (JSON.stringify(app) !== JSON.stringify({ text: wortDerApp, farbe: web.farbe }) || gedaempft !== web.gedaempft) {
-          abweichungen.push(`${name}: App ${JSON.stringify(app)} gedämpft ${gedaempft}, Web ${wortDerApp} ${web.farbe} gedämpft ${web.gedaempft}`);
+        if (JSON.stringify(app) !== JSON.stringify({ text: wortDerApp })) {
+          abweichungen.push(`${name}: App ${JSON.stringify(app)}, Web ${wortDerApp}`);
         }
         const fakten = leitungFakten(event).map((f) => normFakt(f.text));
         if (JSON.stringify(faktenAnKarte(karte)) !== JSON.stringify(fakten)) abweichungen.push(`${name}: Zahlen App ${JSON.stringify(faktenAnKarte(karte))}, Web ${JSON.stringify(fakten)}`);
@@ -248,7 +247,7 @@ describe('Team: die Karten der Web-Fassung rechnen wie die Liste der App', () =>
     return alle;
   };
 
-  it('Reiter "Alle": Marke, Farbe, Ausgrauen und Zahlen stimmen für jedes Event', async () => {
+  it('Reiter "Alle": Marke und Zahlen stimmen für jedes Event', async () => {
     h.breit = false;
     const alle = teamFaelle();
     richteEin({ nutzer: 'teamer', pfad: '/teamer/events', daten: { 'teamer:events:': alle, 'teamer:requests:': [] } });
@@ -261,10 +260,9 @@ describe('Team: die Karten der Web-Fassung rechnen wie die Liste der App', () =>
       const event = alle.find((e) => name.startsWith(e.name))!;
       const web = teamListeStatus(event);
       const app = statusAnKarte(karte);
-      const erwartet = web.zeigtStatus ? { text: web.text, farbe: web.farbe } : null;
-      const gedaempft = (karte as HTMLElement).style.opacity === '0.6';
-      if (JSON.stringify(app) !== JSON.stringify(erwartet) || gedaempft !== web.gedaempft) {
-        abweichungen.push(`${name}: App ${JSON.stringify(app)} gedämpft ${gedaempft}, Web ${JSON.stringify(erwartet)} gedämpft ${web.gedaempft}`);
+      const erwartet = web.zeigtStatus ? { text: web.text } : null;
+      if (JSON.stringify(app) !== JSON.stringify(erwartet)) {
+        abweichungen.push(`${name}: App ${JSON.stringify(app)}, Web ${JSON.stringify(erwartet)}`);
       }
       const fakten = teamFakten(event).map((f) => normFakt(f.text));
       if (JSON.stringify(faktenAnKarte(karte)) !== JSON.stringify(fakten)) abweichungen.push(`${name}: Zahlen App ${JSON.stringify(faktenAnKarte(karte))}, Web ${JSON.stringify(fakten)}`);

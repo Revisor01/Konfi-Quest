@@ -128,19 +128,11 @@ describe('Konfis (Web): Tabelle', () => {
     expect(within(zelle(dora, 4)).getByText('8 / 10')).toBeInTheDocument();
   });
 
-  it('wer das Ziel erreicht hat, traegt den gruenen Balken', () => {
-    zeigen();
-    expect(zelle(zeileVon('Ben Schmidt'), 4).querySelector('.web-punktebalken--erreicht')).not.toBeNull();
-    expect(zelle(zeileVon('Anna Müller'), 4).querySelector('.web-punktebalken--erreicht')).toBeNull();
-  });
-
-  it('der Kreis vor dem Namen zeigt die Initialen, gruen wer das Ziel erreicht hat', () => {
+  it('der Kreis vor dem Namen zeigt die Initialen', () => {
     zeigen();
     const kreis = (name: string) => zelle(zeileVon(name), 0).querySelector('.web-initialen')!;
     expect(kreis('Anna Müller').textContent).toBe('AM');
-    expect(kreis('Anna Müller').className).toBe('web-initialen web-initialen--konfis');
     expect(kreis('Ben Schmidt').textContent).toBe('BS');
-    expect(kreis('Ben Schmidt').className).toBe('web-initialen web-initialen--erreicht');
   });
 
   it('Kennzahlen: Konfis, Punkte gesamt, Ziel erreicht, Jahrgaenge', () => {
@@ -272,24 +264,6 @@ describe('Konfis (Web): Balken der Punkte', () => {
     expect(fuellung(leer).style.width).toBe('0%');
   });
 
-  it('die Zahl steht ueber dem Balken, nicht darin: Kopf mit "1 / 10", Spur und Fuellung ohne Text', () => {
-    zeigen();
-    const zelleGemeinde = zelle(zeileVon('Clara Beispiel'), 3);
-    expect(zelleGemeinde.querySelector('.web-punktebalken__kopf')).toHaveTextContent('1 / 10');
-    expect(zelleGemeinde.querySelector('.web-punktebalken__spur')!.textContent).toBe('');
-    // Der Balken liegt UNTER der Zahl (Reihenfolge im Baustein), nicht neben oder auf ihr.
-    const kinder = [...zelleGemeinde.querySelector('.web-punktebalken')!.children].map((c) => c.className);
-    expect(kinder).toEqual(['web-punktebalken__kopf', 'web-punktebalken__spur']);
-  });
-
-  it('Farben der Punktarten: Gottesdienst, Gemeinde und Gesamt tragen je ihre Klasse', () => {
-    zeigen();
-    const anna = zeileVon('Anna Müller');
-    expect(zelle(anna, 2).querySelector('.web-punktebalken--gottesdienst')).not.toBeNull();
-    expect(zelle(anna, 3).querySelector('.web-punktebalken--gemeinde')).not.toBeNull();
-    expect(zelle(anna, 4).querySelector('.web-punktebalken--gesamt')).not.toBeNull();
-  });
-
   it('Ziel erreicht: Balken voll, Haken und der Satz "Ziel erreicht" fuer Vorleseprogramme; sonst keines von beiden', () => {
     zeigen();
     const ben = balken(zelle(zeileVon('Ben Schmidt'), 4), 'Punkte gesamt');
@@ -325,15 +299,17 @@ describe('Konfis (Web): Balken der Punkte', () => {
 });
 
 // Rueckmeldung eines Testers (Simon, 14.10.2026): „Auf schmalerem Screen ist
-// der Konfi-Name nicht mehr zu lesen, abgeschnitten. […] 1366x768:
-// Gottesdienst, Gemeinde und Gesamt könnten da auf Zahlen wechseln und den
-// Strich weglassen." Gemessen im Browser: Bei 1366 x 768 mit offener Leiste
-// ist die Tabelle 1060 px breit, die Spalte Name blieb 112 px (bei 1440 x 900:
-// 1134 px Tabelle, 175 px Name).
+// der Konfi-Name nicht mehr zu lesen, abgeschnitten." Wird die Tabelle
+// schmal, weichen deshalb Balken, Prozent und ganze Spalten. Ab welcher
+// Breite was weicht und wie breit die Spalten sind, ist Layout und wird nicht
+// festgeschrieben (Simon, 15.10.2026). Bei JEDER Breite gilt aber: Ein Balken
+// in einer sichtbaren Zelle ist nie ganz weg -- er ist zu sehen oder nur fuer
+// Vorleseprogramme verborgen (die Zahl darueber ist aria-hidden) --, und der
+// Haken fuer "Ziel erreicht" bleibt zu sehen, damit es nicht an der Farbe
+// allein haengt.
 //
 // Maßgeblich ist die Breite der Tabelle, nicht des Fensters (Container-Abfrage
-// an .web-tabelle-huelle wie bei den Spalten, die unter 1000 px weichen): Die
-// eingeklappte Leiste gibt Platz. jsdom rechnet keine Container-Abfragen;
+// an .web-tabelle-huelle). jsdom rechnet keine Container-Abfragen;
 // beiTabellenBreite oeffnet die Bloecke, deren Bedingung bei der Breite gilt,
 // und laesst die anderen weg -- so liest getComputedStyle die Regeln, die der
 // Browser bei dieser Breite anwendet.
@@ -364,7 +340,7 @@ function beiTabellenBreite(css: string, breite: number): string {
   return raus;
 }
 
-describe('Konfis (Web): wird die Tabelle schmal, zeigen die Punkte nur Zahlen -- der Name behält Platz', () => {
+describe('Konfis (Web): bei jeder Breite der Tabelle bleibt der Wert fuer Vorleseprogramme da', () => {
   let stile: HTMLStyleElement[] = [];
   const tabelleSoBreit = (breite: number) => {
     stile = STYLESHEETS.map((css) => {
@@ -374,95 +350,31 @@ describe('Konfis (Web): wird die Tabelle schmal, zeigen die Punkte nur Zahlen --
       return stil;
     });
   };
-  afterEach(() => {
+  const stileWeg = () => {
     stile.forEach((s) => s.remove());
     stile = [];
-  });
+  };
+  afterEach(stileWeg);
 
-  // Mehr als das Ziel: 22 / 20, dazu "110 %" und der Haken.
+  // Ueber dem Ziel in allen drei Arten: 12 / 10, 10 / 10, 22 / 20 -- jeder Balken mit Haken.
   const UEBER_ZIEL = { ...KONFIS[0], id: 6, name: 'Fritz Über', username: 'fritz.ueber', gottesdienst_points: 12, gemeinde_points: 10 };
-  // Erst wenn die Team-Liste da ist (Zahl am Reiter), steht die Seite still.
-  const mitUeberZiel = async () => {
+
+  // Breiten von schmal bis breit, ohne die Grenzen zu kennen, an denen etwas weicht.
+  it.each([800, 900, 1000, 1060, 1134, 1200, 1244, 1358, 1600])('bei %i px: ein Balken in einer sichtbaren Zelle ist nie ganz weg, und der Haken fuer "Ziel erreicht" bleibt zu sehen', async (breite) => {
+    tabelleSoBreit(breite);
     zeigen({ konfis: [...KONFIS, UEBER_ZIEL] });
+    // Erst wenn die Team-Liste da ist (Zahl am Reiter), steht die Seite still.
     await screen.findByRole('button', { name: /^Team\s*2$/ });
-  };
-  const PUNKTE_SPALTEN = ['Gottesdienst', 'Gemeinde', 'Gesamt'];
-  const kopfBreiten = () => PUNKTE_SPALTEN.map((k) => getComputedStyle(within(tabelle('Konfis')).getByRole('columnheader', { name: k })).width);
-  const stilVon = (el: Element) => {
-    const s = getComputedStyle(el);
-    return { position: s.position, width: s.width, height: s.height, overflow: s.overflow, clipPath: s.clipPath };
-  };
-  // Nicht zu sehen, fuer Vorleseprogramme aber da (wie .web-nur-vorlesen):
-  // Der Balken ist der progressbar mit "7 von 10"; die Zahl darueber ist
-  // aria-hidden. Mit display: none haette ein Vorleseprogramm schmal nichts.
-  const NUR_VORLESEN = { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)' };
-  const SICHTBAR = { position: 'static', width: 'auto', height: '8px', overflow: 'hidden', clipPath: 'none' };
-  // 6 Zeilen x 3 Balken, ohne den abgeschalteten Gottesdienst von Dora Test.
-  const ALLE_BALKEN = 17;
-
-  it.each([
-    [1060, '1366 x 768, Leiste offen'],
-    [1134, '1440 x 900, Leiste offen'],
-  ])('%i px (%s): Zahlen ohne Balken und ohne Prozent, der Haken bleibt; die drei Spalten werden schmaler', async (breite) => {
-    tabelleSoBreit(breite);
-    await mitUeberZiel();
-    expect(kopfBreiten()).toEqual(['128px', '112px', '112px']);
-    const balkenAlle = within(tabelle('Konfis')).getAllByRole('progressbar');
-    expect(balkenAlle).toHaveLength(ALLE_BALKEN);
-    expect(balkenAlle.map(stilVon)).toEqual(Array(ALLE_BALKEN).fill(NUR_VORLESEN));
-
-    const fritz = zeileVon('Fritz Über');
-    expect(within(zelle(fritz, 2)).getByText('12 / 10')).toBeVisible();
-    expect(within(zelle(fritz, 3)).getByText('10 / 10')).toBeVisible();
-    expect(within(zelle(fritz, 4)).getByText('22 / 20')).toBeVisible();
-    // Der Balken bleibt im Baum und traegt seinen Wert weiter.
-    expect(balken(zelle(fritz, 4), 'Punkte gesamt')).toHaveAttribute('aria-valuetext', '22 von 20, Ziel erreicht');
-    // "110 %" weicht -- die Zahl 22 / 20 sagt es schon --, der Haken bleibt:
-    // Ohne den gruenen Balken ist er das Zeichen fuer "Ziel erreicht", das
-    // nicht nur an der Farbe haengt.
-    expect(zelle(fritz, 4).querySelector('.web-punktebalken__prozent')).toHaveTextContent('110 %');
-    expect(zelle(fritz, 4).querySelector('.web-punktebalken__prozent')).not.toBeVisible();
-    for (const i of [2, 3, 4]) expect(zelle(fritz, i).querySelector('.web-punktebalken__haken')).toBeVisible();
-    // Abgeschaltet bleibt der Strich.
-    expect(zelle(zeileVon('Dora Test'), 2).querySelector('.web-punktebalken__wert')).toHaveTextContent('–');
-  });
-
-  it('unter 1000 px (Gottesdienst und Gemeinde weichen ganz): Gesamt bleibt bei der Zahl', async () => {
-    tabelleSoBreit(900);
-    await mitUeberZiel();
-    const koepfe = within(tabelle('Konfis')).getAllByRole('columnheader').map((c) => c.textContent);
-    expect(koepfe).toEqual(['Name', 'Jahrgang', 'Gesamt', 'Pflicht-Events', 'Aktionen']);
-    expect(getComputedStyle(within(tabelle('Konfis')).getByRole('columnheader', { name: 'Gesamt' })).width).toBe('112px');
-    // Die verborgenen Zellen zaehlen nicht mit: Gesamt ist die dritte.
-    const gesamt = zelle(zeileVon('Fritz Über'), 2);
-    expect(within(gesamt).getByText('22 / 20')).toBeVisible();
-    expect(stilVon(balken(gesamt, 'Punkte gesamt'))).toEqual(NUR_VORLESEN);
-    expect(gesamt.querySelector('.web-punktebalken__prozent')).not.toBeVisible();
-  });
-
-  it.each([
-    [1244, '1366 x 768, Leiste eingeklappt'],
-    [1358, '1920 x 1080'],
-  ])('%i px (%s): alles wie bisher -- Zahl über dem Balken, Prozent, die alten Spaltenbreiten', async (breite) => {
-    tabelleSoBreit(breite);
-    await mitUeberZiel();
-    expect(kopfBreiten()).toEqual(['160px', '160px', '184px']);
-    const balkenAlle = within(tabelle('Konfis')).getAllByRole('progressbar');
-    expect(balkenAlle.map(stilVon)).toEqual(Array(ALLE_BALKEN).fill(SICHTBAR));
-    const gesamt = zelle(zeileVon('Fritz Über'), 4);
-    expect(within(gesamt).getByText('22 / 20')).toBeVisible();
-    expect(gesamt.querySelector('.web-punktebalken__prozent')).toBeVisible();
-    expect(gesamt.querySelector('.web-punktebalken__haken')).toBeVisible();
-  });
-
-  it('die Kacheln behalten ihre Balken, auch wenn die Fläche schmal ist', async () => {
-    tabelleSoBreit(1060);
-    await mitUeberZiel();
-    waehle('Kacheln');
-    const balkenAlle = within(kartenListe()).getAllByRole('progressbar');
-    expect(balkenAlle).toHaveLength(ALLE_BALKEN);
-    expect(balkenAlle.map(stilVon)).toEqual(Array(ALLE_BALKEN).fill(SICHTBAR));
-    expect(karteVon('Fritz Über').querySelector('.web-punktebalken__prozent')).toBeVisible();
+    // Nur die sichtbaren Zellen: Was mit seiner Spalte weicht, weicht ganz.
+    const zellen = within(zeileVon('Fritz Über')).getAllByRole('cell')
+      .filter((z) => within(z).queryByRole('progressbar', { hidden: true }));
+    expect(zellen.length).toBeGreaterThan(0);
+    for (const z of zellen) {
+      const b = within(z).getByRole('progressbar', { hidden: true });
+      expect(b).toBeVisible();
+      expect(b.getAttribute('aria-valuetext')).toMatch(/^\d+ von \d+, Ziel erreicht$/);
+      expect(z.querySelector('.web-punktebalken__haken')).toBeVisible();
+    }
   });
 });
 
@@ -843,18 +755,6 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
     expect(window.localStorage.getItem(ansichtSchluessel('konfis'))).toBeNull();
   });
 
-  it('der Umschalter ist das letzte Element der Werkzeugzeile, rechts hinter Reitern, Suche und Jahrgang', () => {
-    zeigen();
-    const zeile = umschalter().closest('.web-werkzeuge')!;
-    expect([...zeile.children].map((c) => c.className.split(' ')[0])).toEqual(['web-chips', 'web-suche', 'web-auswahl', 'web-werkzeuge__rechts']);
-    expect(zeile.lastElementChild!.lastElementChild).toBe(umschalter());
-    // Dieselbe Stelle in der Ansicht Kacheln (dort steht davor die Auswahl "Sortieren").
-    waehle('Kacheln');
-    const kachelZeile = umschalter().closest('.web-werkzeuge')!;
-    expect(kachelZeile.lastElementChild!.lastElementChild).toBe(umschalter());
-    expect(kachelZeile.lastElementChild).toContainElement(sortierAuswahl());
-  });
-
   it('Kacheln zeigen dieselben Konfis in derselben Reihenfolge, je eine Karte mit Link auf die Detailseite', () => {
     zeigen();
     expect(namen()).toEqual(ALLE_NAMEN);
@@ -873,15 +773,11 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
     zeigen();
     waehle('Kacheln');
     const anna = karteVon('Anna Müller');
-    // Aufbau der Challenge-Karte (Simon, 07.10.2026): Kopf in der Konfi-Farbe mit Initialen und Jahrgang.
     expect(anna.querySelector('.web-bildkarte__initialen')!.textContent).toBe('AM');
-    expect((anna.querySelector('.web-bildkarte') as HTMLElement).style.getPropertyValue('--web-bildkarte-akzent')).toBe('var(--app-color-konfis)');
-    // Der Name steht im Kopf, darueber der Jahrgang (Simon: „konfi name in den kopf").
-    expect(anna.querySelector('.web-bildkarte__kopf')).toHaveTextContent('AMJahrgang 2026Anna Müller');
     expect(anna).toHaveTextContent('anna.mueller');
     expect(anna).toHaveTextContent('Jahrgang 2026');
     expect(anna).toHaveTextContent('3 Badges');
-    // Beschriftung und Zahl stehen ueber dem Balken: "Gottesdienst 7 / 10" -- wie in der App.
+    // Beschriftung und Zahl je Balken: "Gottesdienst 7 / 10" -- wie in der App.
     const kopfzeilen = [...anna.querySelectorAll('.web-punktebalken__kopf')].map((k) => k.textContent);
     expect(kopfzeilen).toEqual(['Gottesdienst7 / 10', 'Gemeinde5 / 10', 'Gesamt12 / 20']);
     expect(within(anna).getAllByRole('progressbar').map((b) => [b.getAttribute('aria-label'), b.getAttribute('aria-valuenow'), b.getAttribute('aria-valuetext')])).toEqual([
@@ -894,11 +790,10 @@ describe('Konfis (Web): Umschalter Liste | Kacheln', () => {
     expect(karteVon('Dora Test')).not.toHaveTextContent('1 Badges');
   });
 
-  it('Karte: wer das Ziel erreicht hat, hat den gruenen Kreis und den vollen Balken; eine abgeschaltete Punkteart hat keinen Balken', () => {
+  it('Karte: wer das Ziel erreicht hat, traegt "Ziel erreicht" und den vollen Balken; eine abgeschaltete Punkteart hat keinen Balken', () => {
     zeigen();
     waehle('Kacheln');
     const ben = karteVon('Ben Schmidt');
-    expect((ben.querySelector('.web-bildkarte') as HTMLElement).style.getPropertyValue('--web-bildkarte-akzent')).toBe('var(--app-color-success)');
     expect(ben.querySelector('.web-bildkarte__label')!.textContent).toMatch(/ · Ziel erreicht$/);
     expect(within(ben).getByRole('progressbar', { name: 'Punkte gesamt' })).toHaveAttribute('aria-valuetext', '20 von 20, Ziel erreicht');
     const dora = karteVon('Dora Test');
@@ -1079,14 +974,12 @@ describe('Team (Web): Kacheln', () => {
     expect(kartenNamen('Team')).toEqual(['Frieda Muster', 'Gero B.']);
     expect(kartenLinks('Team')).toEqual(['/admin/konfis/21', '/admin/konfis/22']);
     const [frieda, gero] = karten('Team');
-    expect((frieda.querySelector('.web-bildkarte') as HTMLElement).style.getPropertyValue('--web-bildkarte-akzent')).toBe('var(--app-color-teamer)');
     expect(frieda.querySelector('.web-bildkarte__initialen')!.textContent).toBe('FM');
     expect(frieda).toHaveTextContent('frieda');
     expect(frieda).toHaveTextContent('Jahrgang 2026');
     expect(frieda).toHaveTextContent('2 Badges');
     expect(frieda).toHaveTextContent('1 Zertifikat');
     expect(frieda).not.toHaveTextContent('1 Zertifikate');
-    expect(frieda.querySelector('.web-bildkarte__kopf')).toHaveTextContent('Teamer:in · im Team seit 2024Frieda Muster');
     expect(gero).toHaveTextContent('Jahrgang 2025, Jahrgang 2026');
     expect(gero).toHaveTextContent('6 Badges');
     expect(gero).toHaveTextContent('3 Zertifikate');

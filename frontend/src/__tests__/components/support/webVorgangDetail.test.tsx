@@ -20,7 +20,8 @@
 //
 // Die Logik ist die der App (useVorgangDetail, useGemeindeAnlegen,
 // useAntwortEditor, useEinordnenFormular, useEinsortieren). Der Lizenz-Vorgang
-// steht in webLizenzVorgang.test.tsx.
+// steht in webLizenzVorgang.test.tsx. Lage, Spalten, Farben und Töne sind
+// Layout und werden nicht festgeschrieben (Simon, 15.10.2026).
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act, waitFor, within } from '@testing-library/react';
@@ -61,7 +62,6 @@ import WebVorgangDetail from '../../../components/support/web/WebVorgangDetail';
 import { LESE_RAHMEN_NEUTRAL, LeseRahmenProvider, type LeseRahmen } from '../../../components/support/web/WebLeseRahmen';
 import { supportMailZaehlerZuruecksetzen } from '../../../navigation/supportMailZaehler';
 import { meldeSupportGeaendert } from '../../../utils/supportAktualisieren';
-import { erwarteWebRueckfrage } from '../web/webRueckfrageErwartung';
 
 // Erfundener Wert fuer das Passwortfeld. Zusammengesetzt statt als
 // Zeichenkette, damit Geheimnis-Scanner (GitGuardian, PR #220) einen
@@ -164,8 +164,6 @@ const stand = () => document.querySelector('.web-stand') as HTMLElement;
 const kennzahlen = () => [...document.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.textContent!.trim());
 const karte = (titel: string) => screen.getByRole('region', { name: titel });
 const kartenTitel = () => [...document.querySelectorAll('.web-vorgang-karte .web-vorgang-karte__titel')].map((t) => t.textContent!.trim());
-/** Wo eine Adresse umbrechen darf: jede Umbruchstelle (<wbr>) als „|". */
-const umbruchStellen = (el: Element) => [...el.childNodes].map((n) => (n.nodeName === 'WBR' ? '|' : n.textContent)).join('');
 const zeile = (k: HTMLElement, label: string) => [...k.querySelectorAll('.web-angaben__zeile')].find((z) => z.querySelector('dt')!.textContent === label)?.querySelector('dd') as HTMLElement;
 const mails = () => [...document.querySelectorAll('li.mail-zeile')] as HTMLElement[];
 const mailKopf = (m: HTMLElement) => m.querySelector('button.mail-zeile__kopf') as HTMLButtonElement;
@@ -193,10 +191,8 @@ describe('Vorgang (Web): Kopf', () => {
   it('Kreis der Art, Betreff als Überschrift, Kennzeichen: Nr., Status, Dringend, Art › Bereich und die Gemeinde als Verweis', async () => {
     await oeffnen();
     expect(within(lesen()).getByRole('heading', { level: 2, name: 'Chat zeigt nichts Neues' })).toHaveAttribute('title', 'Chat zeigt nichts Neues');
-    const kreis = kopf().querySelector('.web-lesen__kreis > span') as HTMLElement;
-    expect(kreis.className).toBe('web-vorgang-kreis web-vorgang-kreis--gross');
-    // Die Farbe der Art aus ART_FARBE, derselben Zuordnung wie der Kreis der App.
-    expect(kreis.style.getPropertyValue('--web-vorgang-kreis-farbe')).toBe('var(--app-color-danger)');
+    // Der Kreis ist Zierde -- die Art steht als Wort in den Kennzeichen.
+    const kreis = kopf().querySelector('.web-vorgang-kreis') as HTMLElement;
     expect(kreis).toHaveAttribute('aria-hidden', 'true');
     expect(teile(kennzeichen())).toEqual(['Nr. 1', 'Neu', 'Dringend', 'Fehler › Chat', 'Kirchengemeinde Musterdorf']);
     expect(within(kennzeichen()).getByRole('link', { name: 'Kirchengemeinde Musterdorf' })).toHaveAttribute('href', '/admin/organizations?gemeinde=7');
@@ -216,21 +212,14 @@ describe('Vorgang (Web): Kopf', () => {
     expect(auswahl('Bereich').value).toBe('');
   });
 
-  it('alle Aktionen rechts: Löschen, Archivieren, Einordnen, die Nebenknöpfe -- ganz rechts der Hauptknopf; jeder trägt einen Tooltip', async () => {
+  it('alle Aktionen: Löschen, Archivieren, Einordnen, die Nebenknöpfe -- zuletzt der Hauptknopf; jeder trägt einen Tooltip', async () => {
     await oeffnen();
     // Fall 3: Die jüngste Mail kam von außen -- Antworten ist dran, Erledigt daneben.
     expect(aktionNamen()).toEqual(['Löschen', 'Archivieren', 'Einordnen', 'Erledigt', 'Antworten']);
-    expect(hauptknopf().className).toContain('web-knopf--primaer');
-    expect(aktionen().filter((k) => k.className.includes('web-knopf--primaer'))).toHaveLength(1);
     expect(aktionen().map((k) => k.getAttribute('title'))).toEqual([
       'Löschen', 'Archivieren', 'Status, Art, Bereich, Gemeinde und Betreff', 'Als erledigt ins Archiv legen', 'Antwort schreiben',
     ]);
-    // Löschen und Archivieren sind immer nur Symbole; der Hauptknopf trägt immer Text.
-    expect(aktionen()[0].className).toContain('web-knopf--symbol');
-    expect(aktionen()[0].className).toContain('web-knopf--gefahr');
-    expect(aktionen()[1].className).toContain('web-knopf--symbol');
-    expect(aktionen()[2].className).toContain('web-kopfknopf--unter760');
-    expect(aktionen()[3].className).toContain('web-kopfknopf--unter600');
+    // Der Hauptknopf heißt nach seinem sichtbaren Text.
     expect(hauptknopf()).not.toHaveAttribute('aria-label');
     expect(hauptknopf()).toHaveTextContent('Antworten');
   });
@@ -245,13 +234,11 @@ describe('Vorgang (Web): Kopf', () => {
     await waitFor(() => expect(aktionNamen()).toEqual(['Löschen', 'Einordnen', 'Wiederherstellen']));
   });
 
-  it('eine Anfrage: Ablehnen als Symbol neben Einordnen, Gemeinde anlegen daneben, die Zahlen der Anfrage im Kopf (schmal)', async () => {
+  it('eine Anfrage: Ablehnen neben Einordnen, Gemeinde anlegen daneben, die Zahlen der Anfrage im Kopf', async () => {
     await oeffnen(3, /Lindenau/);
     expect(aktionNamen()).toEqual(['Löschen', 'Archivieren', 'Einordnen', 'Ablehnen', 'Gemeinde anlegen', 'Antworten']);
-    expect(aktionen()[3].className).toContain('web-knopf--symbol');
     // Bei einer Anfrage sagt der Kreis die Art; im Kopf steht, dass sie noch nicht angelegt ist.
     expect(teile(kennzeichen())).toEqual(['Nr. 3', 'Neu', 'Noch nicht angelegt', '25 Konfis · 6 Teamer:innen']);
-    expect(kennzeichen().lastElementChild!.className).toBe('web-lesen__nur-schmal');
   });
 
   it('ohne Netz sind die Aktionen gesperrt', async () => {
@@ -263,10 +250,9 @@ describe('Vorgang (Web): Kopf', () => {
 });
 
 describe('Vorgang (Web): Stand und Kennzahlen', () => {
-  it('die Stand-Zeile sagt, wer dran ist und seit wann -- im Ton des Falls', async () => {
+  it('die Stand-Zeile sagt, wer dran ist und seit wann', async () => {
     await oeffnen();
     expect(stand()).toHaveAttribute('role', 'status');
-    expect(stand().className).toBe('web-stand web-stand--warnung');
     expect(stand()).toHaveTextContent('Pastorin Lena Probe wartet seit heute, 10:00 auf Antwort.');
   });
 
@@ -276,14 +262,12 @@ describe('Vorgang (Web): Stand und Kennzahlen', () => {
     server.stand.vorgaenge[0].status_seit = '2026-10-03T08:30:00Z';
     await oeffnen();
     expect(stand()).toHaveTextContent('Wartet seit heute, 10:30 auf Pastorin Lena Probe.');
-    expect(stand().className).toBe('web-stand web-stand--neutral');
     expect(hauptknopf()).toHaveTextContent('Erledigt');
   });
 
   it('erledigt und im Archiv: der Satz sagt, wann, und dass eine neue Mail ihn zurückholt', async () => {
     await oeffnen(4, /Konto entsperrt/);
     expect(stand()).toHaveTextContent('Erledigt am 02.10.2026. Eine neue Mail holt ihn zurück.');
-    expect(stand().className).toBe('web-stand web-stand--hinweis');
     expect(hauptknopf()).toHaveTextContent('Wiederherstellen');
   });
 
@@ -311,19 +295,6 @@ describe('Vorgang (Web): Stand und Kennzahlen', () => {
     unmount();
     await oeffnen(3, /Lindenau/);
     expect(kennzahlen()).toEqual(['Konfis25', 'Teamer:innen6', 'Mails2']);
-  });
-
-  it('Reihenfolge im Rumpf: Stand, Kennzahlen, Notiz, Verlauf; die Karten in der Seitenspalte', async () => {
-    await oeffnen();
-    const rumpf = lesen().querySelector('.web-lesen__inhalt > .web-detail')!;
-    expect(rumpf.firstElementChild).toBe(stand());
-    expect(rumpf.children[1].className).toContain('web-detail__kennzahlen');
-    const hauptspalte = rumpf.querySelector('.web-spalten__haupt')!;
-    expect(hauptspalte.firstElementChild!.className).toContain('web-notiz');
-    expect(within(hauptspalte as HTMLElement).getByRole('region', { name: 'Verlauf' })).toBeInTheDocument();
-    expect(rumpf.querySelector('.web-spalten__seite .web-vorgang-karten')).not.toBeNull();
-    // Kein Akkordeon mehr.
-    expect(screen.queryByRole('button', { name: /Gemeinde, Anfrage und Notiz/ })).toBeNull();
   });
 });
 
@@ -397,12 +368,12 @@ describe('Vorgang (Web): Verlauf', () => {
     expect(screen.getByText('Noch keine Mails in diesem Vorgang.')).toBeInTheDocument();
   });
 
-  it('nur ein Anliegen, keine Mails: das Anliegen steht da, die Antwortzeile direkt darunter', async () => {
+  it('nur ein Anliegen, keine Mails: das Anliegen steht da, die Antwortzeile auch', async () => {
     await oeffnen(2, /Jahrgang/);
     const anliegen = screen.getByRole('region', { name: 'Anliegen aus dem Formular' });
     expect(anliegen).toHaveTextContent('Wir sind neu dabei.');
     expect(mails()).toHaveLength(0);
-    expect(antwortzeile().closest('li')!.previousElementSibling).toBe(anliegen.closest('li'));
+    expect(antwortzeile()).not.toBeNull();
   });
 });
 
@@ -610,11 +581,6 @@ describe('Vorgang (Web): Einordnen im Dialog', () => {
     expect(optionen(auswahl('Status'))).toEqual(['Neu', 'In Arbeit', 'Wartet auf Rückmeldung', 'Erledigt']);
     await waitFor(() => expect(auswahl('Gemeinde').value).toBe('7'));
     expect(dialog()).toHaveAccessibleDescription('Vorgang 1: Chat zeigt nichts Neues');
-    // Status und Dringlichkeit, Art und Bereich je zu zweit; die Gemeinde über die ganze Breite.
-    const paare = [...dialog().querySelectorAll('.web-feldpaar')].map((p) => [...p.querySelectorAll('select')].map((s) => s.labels[0].textContent));
-    expect(paare).toEqual([['Status', 'Dringlichkeit'], ['Art', 'Bereich']]);
-    expect(auswahl('Gemeinde').closest('.web-feldpaar')).toBeNull();
-    expect(feld('Betreff', dialog()).closest('.web-feldpaar')).toBeNull();
   });
 
   it('Ändern speichert noch nichts; „Speichern“ schickt einen Aufruf mit genau den geänderten Feldern und schließt', async () => {
@@ -709,13 +675,13 @@ describe('Vorgang (Web): Einordnen im Dialog', () => {
     expect(auswahl('Status')).toHaveAccessibleDescription('Erledigt lehnt die Anfrage ab; sie wird nach 180 Tagen gelöscht.');
   });
 
-  it('Frage, Fehler und Wunsch ohne Bereich: der Bereich trägt den Stern und sagt, dass er dazugehört', async () => {
+  it('Frage, Fehler und Wunsch ohne Bereich: der Bereich ist Pflicht und sagt, dass er dazugehört', async () => {
     await oeffnen(2, /Jahrgang/);
     einordnen();
     expect(auswahl('Bereich').value).toBe('');
     expect(optionen(auswahl('Bereich'))[0]).toBe('Bitte wählen');
     expect(auswahl('Bereich')).toHaveAccessibleDescription('Bei Frage, Fehler und Wunsch gehört ein Bereich dazu.');
-    expect(within(dialog()).getByText('Bereich').className).toContain('web-feld__label--pflicht');
+    expect(auswahl('Bereich')).toHaveAttribute('aria-required', 'true');
   });
 
   it('ein Fehler beim Speichern: Meldung, der Dialog bleibt, der Stand vom Server kommt zurück', async () => {
@@ -744,8 +710,6 @@ describe('Vorgang (Web): Angaben als Karten', () => {
     expect(zeile(kontakt, 'Person')).toHaveTextContent('Pastorin Lena Probe (Gemeindeleitung)');
     const adresse = within(zeile(kontakt, 'E-Mail')).getByRole('link', { name: 'lena.probe@example.org' });
     expect(adresse).toHaveAttribute('href', 'mailto:lena.probe@example.org');
-    // Eine lange Adresse bricht vor dem @ und vor Punkten um, nicht mitten im Wort.
-    expect(umbruchStellen(adresse)).toBe('lena|.probe|@example|.org');
     expect(zeile(kontakt, 'Eingang')).toHaveTextContent('Support-Formular auf der Homepage');
     expect(zeile(kontakt, 'Gemeinde')).toBeUndefined();
   });
@@ -763,7 +727,6 @@ describe('Vorgang (Web): Angaben als Karten', () => {
     expect(within(leitung).getByText('Pastorin Lena Probe')).toBeInTheDocument();
     const adresse = within(leitung).getByRole('link', { name: 'lena.probe@example.org' });
     expect(adresse).toHaveAttribute('href', 'mailto:lena.probe@example.org');
-    expect(umbruchStellen(adresse)).toBe('lena|.probe|@example|.org');
     expect(leitung).toHaveTextContent('zuletzt angemeldet 02.10.2026');
   });
 
@@ -873,13 +836,11 @@ describe('Vorgang (Web): Angaben als Karten', () => {
 });
 
 describe('Vorgang (Web): Antworten', () => {
-  it('unter der jüngsten Mail steht die Antwortzeile mit Name und Postfach; ein Klick öffnet den Editor an derselben Stelle', async () => {
+  it('die Antwortzeile nennt Name und Postfach; ein Klick öffnet den Editor an ihrer Stelle, Verwerfen schließt ihn', async () => {
     await oeffnen();
     expect(antwortzeile()).toHaveTextContent('Antwort an Pastorin Lena Probe schreiben …von support@');
-    const juengste = mails()[2];
-    expect(antwortzeile().closest('li')!.previousElementSibling).toBe(juengste);
     fireEvent.click(antwortzeile());
-    expect(editor().closest('li')!.previousElementSibling).toBe(juengste);
+    expect(editor()).toBeInTheDocument();
     expect(antwortzeile()).toBeNull();
     fireEvent.click(within(editor()).getByRole('button', { name: 'Verwerfen' }));
     expect(screen.queryByRole('region', { name: 'Antwort schreiben' })).toBeNull();
@@ -916,7 +877,6 @@ describe('Vorgang (Web): Antworten', () => {
     fireEvent.click(senden);
     await bestaetigen('Senden');
     await waitFor(() => expect(mails()).toHaveLength(4));
-    expect(antwortzeile().closest('li')!.previousElementSibling).toBe(mails()[3]);
     expect(antwortzeile()).toHaveFocus();
   });
 
@@ -1263,13 +1223,11 @@ describe('Vorgang (Web): Notiz', () => {
     expect(within(screen.getByRole('region', { name: 'Interne Notiz' })).getByRole('button', { name: 'Bearbeiten' })).toHaveFocus();
   });
 
-  it('eine lange Notiz ist auf drei Zeilen gekürzt und hat „mehr"', async () => {
+  it('eine lange Notiz hat „mehr"; aufgeklappt heißt der Knopf „weniger"', async () => {
     server.stand.vorgaenge[0].notiz = 'Eins\nZwei\nDrei\nVier';
     await oeffnen();
     const notiz = screen.getByRole('region', { name: 'Interne Notiz' });
-    expect(notiz.querySelector('.web-notiz__text')!.className).toContain('web-notiz__text--kurz');
     fireEvent.click(within(notiz).getByRole('button', { name: 'mehr' }));
-    expect(notiz.querySelector('.web-notiz__text')!.className).not.toContain('web-notiz__text--kurz');
     expect(within(notiz).getByRole('button', { name: 'weniger' })).toHaveAttribute('aria-expanded', 'true');
   });
 
@@ -1364,7 +1322,6 @@ describe('Vorgang (Web): Ablehnen einer Anfrage', () => {
     await oeffnen(3, /Lindenau/);
     expect(aktionNamen()).toEqual(['Löschen', 'Einordnen', 'Gemeinde anlegen', 'Wiederherstellen']);
     expect(stand()).toHaveTextContent('Anfrage abgelehnt am 02.10.2026. Sie wird nach 180 Tagen gelöscht; Wiederherstellen holt sie zurück.');
-    expect(stand().className).toBe('web-stand web-stand--hinweis');
     // Eine abgelehnte Anfrage bleibt anlegbar.
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Gemeinde anlegen' }));
     expect(dialog('Gemeinde anlegen')).toBeInTheDocument();
@@ -1396,10 +1353,10 @@ describe('Vorgang (Web): Gemeinde anlegen im Dialog', () => {
   const knoepfe = (d: HTMLElement) => [...d.querySelectorAll('.web-dialog__aktionen button')].map((b) => b.textContent);
   const offeneDialoge = () => screen.getAllByRole('dialog').map((d) => d.querySelector('h2')!.textContent);
 
-  it('breit und in zwei Spalten: Gemeinde links, erste Gemeindeleitung rechts; oben die Kurzzeile der Anfrage', async () => {
+  it('zwei benannte Gruppen: Gemeinde und erste Gemeindeleitung; dazu die Kurzzeile der Anfrage', async () => {
     const d = await oeffneAnlegen();
-    expect(d.className).toBe('web-dialog web-dialog--breit');
-    expect([...d.querySelectorAll('fieldset.web-anlegen__spalte > legend')].map((l) => l.textContent)).toEqual(['Gemeinde', 'Erste Gemeindeleitung']);
+    expect(within(d).getByRole('group', { name: 'Gemeinde' }).tagName).toBe('FIELDSET');
+    expect(within(d).getByRole('group', { name: 'Erste Gemeindeleitung' }).tagName).toBe('FIELDSET');
     expect(d.querySelector('.web-anlegen__kurz')).toHaveTextContent('Aus der Anfrage: Anna Beispiel (Pastorin) · 25 Konfis · 6 Teamer:innen · Wunsch: Standard');
   });
 
@@ -1449,8 +1406,6 @@ describe('Vorgang (Web): Gemeinde anlegen im Dialog', () => {
     const frage = dialog('Eingaben verwerfen?');
     expect(frage).toHaveAccessibleDescription('Die Angaben zur neuen Gemeinde und ein vorgeschlagenes Passwort gehen verloren.');
     expect(knoepfe(frage)).toEqual(['Weiter bearbeiten', 'Verwerfen']);
-    // Wie die Rückfragen der App im Browser: Warndreieck, „Verwerfen" rot gefüllt.
-    erwarteWebRueckfrage(frage, 'warnung', 'Verwerfen');
     // Obenauf: nach dem Dialog an <body> gehängt, der Fokus steht darin.
     expect(offeneDialoge()).toEqual(['Gemeinde anlegen', 'Eingaben verwerfen?']);
     expect(frage).toContainElement(document.activeElement as HTMLElement);

@@ -78,10 +78,10 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 // 15.10.2026: Layout bleibt frei aenderbar (Simon), reine Layout-Waechter
 // sind geloescht -- Reiter-Unterlaengen, Android-Kopfleiste, Datumsfelder im
 // Termin-Fenster, md3LayoutPasst, tabLeisteAndroid, zusageKarteHoehe,
-// wrappedBildNichtVerdeckt, challenges/challengeIconFarbe;
-// wrappedSeitenHabenBilder prueft nur noch, dass die Bilddateien da sind,
-// und liest keinen Quelltext mehr.
-const OBERGRENZE = 75;
+// wrappedBildNichtVerdeckt, challenges/challengeIconFarbe, listenAbstaendeProfil,
+// support/mailZeileKonto; wrappedSeitenHabenBilder prueft nur noch, dass die
+// Bilddateien da sind, und liest keinen Quelltext mehr.
+const OBERGRENZE = 73;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -116,7 +116,6 @@ const BEKANNT: string[] = [
   '__tests__/components/keinStillesOfflineScheitern.test.ts',
   '__tests__/components/klickbareElementeBedienbar.test.ts',
   '__tests__/components/kontoModaleAlleDreiAnsichten.test.ts',
-  '__tests__/components/listenAbstaendeProfil.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
   '__tests__/components/onboardingTourGeteilt.test.ts',
@@ -124,7 +123,6 @@ const BEKANNT: string[] = [
   '__tests__/components/rankingFeldnamen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
   '__tests__/components/stylesheetsParsen.test.ts',
-  '__tests__/components/support/mailZeileKonto.test.ts',
   '__tests__/components/tabZaehlerIos.test.ts',
   '__tests__/components/tageUndKalendertag.test.ts',
   '__tests__/components/typografieTokens.test.ts',

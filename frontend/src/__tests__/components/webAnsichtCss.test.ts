@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { join, resolve } from 'path';
-import { spezifitaet, vergleich, regeln as themeRegeln, teileObersteEbene } from '../cssSpezifitaet';
+import { teileObersteEbene } from '../cssSpezifitaet';
 
 // Das eigene Stylesheet der Web-Fassungen (theme/web-ansicht.css, 03.10.2026,
 // docs/planung/support-web.md, Entscheidung 2). Es gilt nur dort, wo eine
@@ -56,29 +56,12 @@ describe('theme/web-ansicht.css: eigenes Stylesheet der Web-Fassungen', () => {
     expect([...gelesen].filter((t) => !definiert.has(t))).toEqual([]);
   });
 
-  // Gemessen 11.10.2026: „Neuer Jahrgang" (520 px, ohne breit) bei 1280 x 800
-  // -- die Knoepfe lagen bei 809-845 px, der Dialog endete bei 776 px.
-  it('die Knopfleiste jedes Dialogs bleibt beim Scrollen unten im Bild, nicht nur im breiten', () => {
-    const alle = regeln(rein);
-    const leiste = alle.find(([s]) => s === '.web-dialog__aktionen')?.[1] ?? '';
-    expect(leiste).toMatch(/position:\s*sticky;/);
-    expect(leiste).toMatch(/bottom:\s*calc\(-1 \* var\(--app-abstand-gross\)\);/);
-    expect(leiste).toMatch(/background:\s*var\(--web-karte\);/);
-    expect(alle.filter(([s]) => /\.web-dialog--breit\s+\.web-dialog__aktionen/.test(s))).toEqual([]);
-    // Was den Fokus bekommt, scrollt der Browser ueber die Leiste statt dahinter.
-    const dialog = alle.find(([s]) => s === '.web-dialog')?.[1] ?? '';
-    expect(dialog).toMatch(/scroll-padding-bottom:\s*calc\(6 \* var\(--app-abstand-gross\)\);/);
-  });
-
-  it('der Dunkelmodus legt nur Aliasse um -- Seitengrund und Hover --, keine Farbwerte', () => {
+  it('der Dunkelmodus legt nur Aliasse auf Tokens um, keine Farbwerte', () => {
     const von = rein.indexOf('@media (prefers-color-scheme: dark)');
     expect(von).toBeGreaterThan(-1);
     // Die schliessende Klammer des Blocks steht als einzige in Spalte 0.
     const block = rein.slice(von, rein.indexOf('\n}', von));
-    expect(block).toContain('--web-grund');
-    expect(block).toContain('--web-hover');
     const werte = [...block.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]);
-    expect(werte.map(([name]) => name)).toEqual(['--web-grund', '--web-hover']);
     expect(werte.filter(([, wert]) => !/^var\(--(?:app|ion)-[\w-]+\)$/.test(wert))).toEqual([]);
   });
 
@@ -181,23 +164,6 @@ describe('theme/web/*.css: Stylesheets der Bereiche', () => {
     expect(ionRegeln.map(([sel]) => sel)).toEqual([]);
     expect(text.split('\n').filter((z) => /^\s*font-size\s*:\s*[\d.]+(?:px|rem|em)\b/.test(z))).toEqual([]);
   });
-
-  // Filterzeile der Challenges (offene Befunde, 07.10.2026: zweizeilig bis
-  // etwa 1400 px Fensterbreite). Ursache: Suche und Umschalter meldeten mit
-  // der Wunschbreite der Suche (360 px) rund 470 px an und brachen die Zeile
-  // unter 1100 px Inhaltsbreite um. Gemessen am 08.10.2026 im Browser an der
-  // gerenderten Leiste: vorher einzeilig ab 1100 px, jetzt ab 910 px.
-  // jsdom rechnet kein Layout; festgehalten werden die Werte, die das tragen.
-  it('challenges.css: Suche und Umschalter der Filterzeile melden hoechstens 280 px an', () => {
-    const text = ohneKommentare(readFileSync(join(ordner, 'challenges.css'), 'utf8'));
-    const regel = (selektor: string) => regeln(text).find(([sel]) => sel === selektor)?.[1] ?? '';
-    const rechts = regel('.web-challenge-filter__zeile > .web-werkzeuge__rechts');
-    expect(rechts).toMatch(/flex:\s*1 1 280px;/);
-    expect(rechts).toMatch(/min-width:\s*0;/);
-    const suche = regel('.web-challenge-filter__zeile > .web-werkzeuge__rechts > .web-suche');
-    expect(suche).toMatch(/flex:\s*1 1 200px;/);
-    expect(suche).toMatch(/min-width:\s*200px;/);
-  });
 });
 
 // Die Modale der App im breiten Browserfenster (theme/web-modale.css,
@@ -206,10 +172,8 @@ describe('theme/web/*.css: Stylesheets der Bereiche', () => {
 // und nicht web-ansicht.css (Regel oben: kein Eingriff in Ionic). Damit sie
 // nie die Apps trifft, beginnt jeder Selektor mit html[data-layout='breit'];
 // das Merkmal setzt nur die Web-Version ab 992 px (layoutImDokument.ts,
-// geprüft in seitenleiste.test.tsx). Wie groß die Modale dann sind, misst
-// jsdom nicht; gemessen im Browser am 11.10.2026 (1440 x 900): Neue
-// Kategorie 600 x 600 -> 560 x 350, Neues Event 600 x 600 -> 560 x 804
-// (scrollt), auf dem iPad 936 x 836 -> 560 x 349.
+// geprüft in seitenleiste.test.tsx). Wie groß die Modale dann sind, ist
+// Layout und wird nicht festgeschrieben (Simon, 15.10.2026).
 describe('theme/web-modale.css: App-Modale im breiten Browserfenster', () => {
   const quelle = lies('src/theme/web-modale.css');
   const text = ohneKommentare(quelle);
@@ -224,57 +188,23 @@ describe('theme/web-modale.css: App-Modale im breiten Browserfenster', () => {
   });
 
   it('jeder Selektor beginnt mit dem Merkmal des breiten Layouts -- die Apps bleiben unberührt', () => {
-    // 7 seit 13.10.2026: Die Regel fuer die Anwesenheit (app-modal-breit) entfiel,
-    // im Browser ist sie ein eigener Dialog (WebAnwesenheitDialog).
-    expect(alle.length).toBe(7);
     const fremd = alle.flatMap(([sel]) => teileObersteEbene(sel)).filter((teil) => !teil.startsWith(`${BREIT} ion-modal`));
     expect(fremd).toEqual([]);
   });
 
-  it('nimmt Vollbild-Ansichten, Chat-Fenster und Datumswähler aus der allgemeinen Regel aus', () => {
-    const kern = alle.find(([sel]) => sel === KERN)?.[1] ?? '';
-    expect(kern).toMatch(/--width:\s*min\(560px, calc\(100% - 48px\)\);/);
-    expect(kern).toMatch(/--height:\s*auto;/);
-    expect(kern).toMatch(/--max-height:\s*calc\(100% - 96px\);/);
-    // Ohne die Regel fuer die innere Seite fiel jedes Hook-Modal bei Hoehe auto auf 0 px.
+  it('ein Hook-Modal fällt nicht auf 0 px zusammen: die innere Seite steht relativ', () => {
+    // Ohne die Regel fuer die innere Seite fiel jedes Hook-Modal bei Hoehe auto
+    // auf 0 px -- ein leeres Fenster, nichts mehr bedienbar.
     const innen = alle.find(([sel]) => sel === `${KERN} > .ion-page > .ion-page`)?.[1] ?? '';
     expect(innen).toMatch(/position:\s*relative;/);
     expect(innen).toMatch(/contain:\s*layout style;/);
   });
 
-  it('nur Tokens für Radius und Schatten, keine Abdunklung, keine Bewegung, keine Farbwerte', () => {
+  it('nur Tokens, keine Farbwerte, keine Bewegung', () => {
     expect(text.match(/#[0-9a-fA-F]{3,8}\b/g) ?? []).toEqual([]);
     expect(text.match(/\b(?:rgb|rgba|hsl|hsla)\(/g) ?? []).toEqual([]);
     expect([...text.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]).filter((v) => !/^--(?:app|ion)-/.test(v))).toEqual([]);
-    const radien = [...text.matchAll(/--border-radius:\s*([^;]+);/g)].map((m) => m[1].trim());
-    expect(radien).toEqual(['var(--app-radius-karte)', 'var(--app-radius-karte)']);
-    const schatten = [...text.matchAll(/box-shadow:\s*([^;]+);/g)].map((m) => m[1].trim());
-    expect(schatten).toEqual(['var(--app-schatten-modal)', 'var(--app-schatten-modal)']);
-    // Ionic nimmt dem zweiten von zwei Modalen die Abdunklung; eine eigene liesse jede Stufe nachdunkeln.
-    expect(text).not.toContain('--backdrop-opacity');
     expect(text).not.toMatch(/(?:^|[\s;{])(?:transition|animation)(?:-[a-z]+)?\s*:/);
     expect(text).not.toContain('@keyframes');
-  });
-
-  // Die Themes setzen Groesse und Radius der Modale selbst (ios27: Karte
-  // 936 px, md3: Radius 24 px). Die eigene Regel muss jede ihrer Regeln
-  // rechnerisch schlagen -- dann ist die Ladereihenfolge egal.
-  it('schlägt jede Größen- und Radius-Regel der Themes ios27 und md3', () => {
-    const themeDateien = [
-      'node_modules/@rdlabo/ionic-theme-ios27/dist/css/components/ion-modal.css',
-      'node_modules/@rdlabo/ionic-theme-md3/dist/css/components/ion-modal.css',
-    ];
-    const gegner = themeDateien.flatMap((datei) => themeRegeln(lies(datei)))
-      .filter(({ rumpf }) => /--(?:width|height|border-radius)\s*:/.test(rumpf))
-      .flatMap(({ selektor }) => teileObersteEbene(selektor))
-      .filter((sel) => /ion-modal/.test(sel) && !/modal-sheet|datetime/.test(sel));
-    expect(gegner.length).toBeGreaterThan(2);
-    const verlierer = gegner.filter((sel) => vergleich(spezifitaet(KERN), spezifitaet(sel)) <= 0);
-    expect(verlierer).toEqual([]);
-    // Die Datumswaehler-Regel schlaegt das ios27-Fenster von 580 x 660 px.
-    const datum = `${BREIT} ion-modal.ion-datetime-button-overlay`;
-    const ios = gegner.filter((sel) => /\.ios/.test(sel) && !/modal-card/.test(sel));
-    expect(ios.length).toBeGreaterThan(0);
-    expect(ios.filter((sel) => vergleich(spezifitaet(datum), spezifitaet(sel)) <= 0)).toEqual([]);
   });
 });

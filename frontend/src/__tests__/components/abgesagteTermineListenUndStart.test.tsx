@@ -3,12 +3,13 @@
 // 09.10.2026 am Quelltext geprueft in abgesagteTermineAnsichten.test.ts, dort
 // steht der Befund).
 //
-// Befund A: Alle Terminlisten streichen abgesagte Titel durch und grauen sie
-// aus. Befund D: Die Startseiten zeigten den Grund gar nicht -- ausgerechnet
+// Befund D: Die Startseiten zeigten den Grund gar nicht -- ausgerechnet
 // dort, wo man nach dem Push "Termin abgesagt" ZUERST landet. Und der Wisch
-// der Leitung: Ruecknahme gruen, Grund bearbeiten warnfarben, am offenen
-// Termin weiter "Event absagen". Wer welche Wisch-Aktion sieht, pruefen
+// der Leitung: am abgesagten Termin Ruecknahme und Grund bearbeiten, am
+// offenen Termin weiter "Event absagen". Wer welche Wisch-Aktion sieht, pruefen
 // terminListeRechteGerendert.test.tsx und teamerTerminAbsagen.test.tsx.
+// Durchstreichen, Ausgrauen und die Farben der Wisch-Knoepfe (Befund A) sind
+// Layout und werden nicht festgeschrieben (Simon, 15.10.2026).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, within, act } from '@testing-library/react';
@@ -133,18 +134,8 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); });
 
 const zeileMit = (name: string) => screen.getAllByTestId('termin').find((z) => z.textContent?.includes(name)) as HTMLElement;
-const titelVon = (zeile: HTMLElement) => zeile.querySelector('.app-list-item__title') as HTMLElement;
 
 describe('Leitungsliste: abgesagte Termine', () => {
-  it('Befund A: streicht durch und graut aus -- den offenen Termin nicht', () => {
-    termine = [offen(31, 'Konfi-Freizeit')];
-    abgesagteTermine = [abgesagt(32, 'Konfi-Tag')];
-    render(<AdminEventsPage />);
-    expect(titelVon(zeileMit('Konfi-Tag')).style.textDecoration).toBe('line-through');
-    expect(titelVon(zeileMit('Konfi-Tag')).style.color).toBe('var(--app-text-muted)');
-    expect(titelVon(zeileMit('Konfi-Freizeit')).style.textDecoration).toBe('none');
-  });
-
   it('der Absageblock steht in der Zeile: Grund einmal, beide Urheber', () => {
     abgesagteTermine = [abgesagt(32, 'Konfi-Tag')];
     render(<AdminEventsPage />);
@@ -152,15 +143,6 @@ describe('Leitungsliste: abgesagte Termine', () => {
     expect(within(zeile).getAllByText(GRUND)).toHaveLength(1);
     expect(within(zeile).getAllByText('Abgesagt von Anna Meier, 15.09.')).toHaveLength(1);
     expect(within(zeile).getAllByText('Grund geändert von Bernd Schulz, 16.09.')).toHaveLength(1);
-  });
-
-  it('die Ruecknahme ist gruen, das Bearbeiten des Grundes warnfarben', () => {
-    abgesagteTermine = [abgesagt(32, 'Konfi-Tag')];
-    render(<AdminEventsPage />);
-    const zeile = zeileMit('Konfi-Tag');
-    const kreis = (name: string) => within(zeile).getByRole('button', { name }).querySelector('.app-icon-circle')!.className;
-    expect(kreis('Absage zurücknehmen')).toBe('app-icon-circle app-icon-circle--lg app-icon-circle--success');
-    expect(kreis('Absagegrund bearbeiten')).toBe('app-icon-circle app-icon-circle--lg app-icon-circle--warning');
   });
 
   it('an einem NICHT abgesagten Termin bietet derselbe Wisch weiter "Event absagen" -- und keine Ruecknahme', () => {
@@ -174,32 +156,27 @@ describe('Leitungsliste: abgesagte Termine', () => {
 });
 
 describe('Konfi-Startseite: die Kachel', () => {
-  it('Befund D: streicht durch, sagt ABGESAGT und zeigt Grund samt Urhebern', () => {
+  it('Befund D: sagt ABGESAGT und zeigt Grund samt Urhebern', () => {
     render(<EventCard event={abgesagt(32, 'Konfi-Tag') as never} onClick={() => undefined} />);
     expect(screen.getByText('ABGESAGT')).toBeTruthy();
-    expect((screen.getByText('Konfi-Tag') as HTMLElement).style.textDecoration).toBe('line-through');
     expect(screen.getAllByText(GRUND)).toHaveLength(1);
     expect(screen.getAllByText('Abgesagt von Anna Meier, 15.09.')).toHaveLength(1);
   });
 
-  it('ein offener Termin bleibt ungestrichen und ohne Absage', () => {
+  it('ein offener Termin bleibt ohne Absage', () => {
     render(<EventCard event={offen(31, 'Konfi-Freizeit') as never} onClick={() => undefined} />);
-    expect((screen.getByText('Konfi-Freizeit') as HTMLElement).style.textDecoration).toBe('none');
     expect(screen.queryByText('ABGESAGT')).toBeNull();
   });
 });
 
 describe('Team-Startseite: die Kachel', () => {
-  it('Befund D: streicht durch, sagt ABGESAGT und zeigt den Grund', async () => {
+  it('Befund D: sagt ABGESAGT und zeigt den Grund', async () => {
     dashboard.events = [abgesagt(32, 'Konfi-Tag'), offen(31, 'Konfi-Freizeit')];
     render(<TeamerDashboardPage />);
     await act(async () => { await Promise.resolve(); });
     const kachel = screen.getByText('Konfi-Tag').closest('.app-dashboard-glass-card') as HTMLElement;
     expect(within(kachel).getByText('ABGESAGT')).toBeTruthy();
-    expect((within(kachel).getByText('Konfi-Tag') as HTMLElement).style.textDecoration).toBe('line-through');
     expect(within(kachel).getAllByText(GRUND)).toHaveLength(1);
     expect(within(kachel).getAllByText('Abgesagt von Anna Meier, 15.09.')).toHaveLength(1);
-    const andere = screen.getByText('Konfi-Freizeit').closest('.app-dashboard-glass-card') as HTMLElement;
-    expect((within(andere).getByText('Konfi-Freizeit') as HTMLElement).style.textDecoration).toBe('none');
   });
 });

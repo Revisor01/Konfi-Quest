@@ -131,24 +131,17 @@ describe('Vorgänge (Web): Liste und Lesebereich', () => {
     expect(screen.getByText('4 Vorgänge offen')).toBeInTheDocument();
   });
 
-  it('Kreis der Art, Betreff, „Nr. · Art · Gemeinde", darunter in eigener Zeile die Marken: ungelesene Mails, Dringend, Status', async () => {
+  it('Kreis der Art, Betreff, „Nr. · Art · Gemeinde", dazu die Marken: ungelesene Mails, Dringend, Status', async () => {
     await zeigen();
     const z = zeilen()[0];
-    // Derselbe Kreis wie im Kopf des Vorgangs, nur kleiner; Zierde -- die Art steht als Wort daneben.
+    // Der Kreis ist Zierde -- die Art steht als Wort daneben.
     const kreis = z.querySelector('.web-vorgang-kreis') as HTMLElement;
-    expect(kreis.className).toBe('web-vorgang-kreis');
-    // Die Farbe der Art aus ART_FARBE, derselben Zuordnung wie der Kreis der App.
-    expect(kreis.style.getPropertyValue('--web-vorgang-kreis-farbe')).toBe('var(--app-color-danger)');
     expect(kreis).toHaveAttribute('aria-hidden', 'true');
     expect(z.querySelector('.web-postfachzeile__titel')).toHaveTextContent('Chat zeigt nichts Neues');
     expect(z.querySelector('.web-postfachzeile__mitte')!.textContent).toBe('Nr. 1 · Fehler · Kirchengemeinde Musterdorf');
-    // Drei Zeilen untereinander: oben, Mitte, Marken -- die Marken nicht mehr neben der Gemeinde.
-    expect([...z.querySelector('.web-postfachzeile__inhalt')!.children].map((c) => c.className)).toEqual([
-      'web-postfachzeile__oben', 'web-postfachzeile__mitte', 'web-postfachzeile__marken',
-    ]);
     expect(statusIn(z)).toBe('Neu');
     expect(within(z).getByText('Dringend')).toBeInTheDocument();
-    const zahl = z.querySelector('.web-chip__zahl--rot');
+    const zahl = z.querySelector('.web-chip__zahl');
     expect(zahl).toHaveTextContent('2');
     // Die Zeit ist die letzte Aktivitaet: die juengste Mail (08:30 UTC).
     expect(z.querySelector('time')).toHaveAttribute('dateTime', '2026-10-03T08:30:00Z');
@@ -163,7 +156,7 @@ describe('Vorgänge (Web): Liste und Lesebereich', () => {
     expect(z.querySelector('.web-postfachzeile__mitte')!.textContent).toBe('Nr. 4 · Lizenz · Nicht zugeordnet');
     expect(within(z).queryByText('Dringend')).toBeNull();
     expect(within(z).queryByText('Normal')).toBeNull();
-    expect(z.querySelector('.web-chip__zahl--rot')).toBeNull();
+    expect(z.querySelector('.web-chip__zahl')).toBeNull();
     expect(knopf(z)).toHaveAccessibleDescription('Lizenz · Nicht zugeordnet · Neu');
   });
 
@@ -218,10 +211,9 @@ describe('Vorgänge (Web): Liste und Lesebereich', () => {
     expect(`${window.location.pathname}${window.location.search}`).toBe('/admin/support/vorgaenge/1?gemeinde=7');
   });
 
-  it('neue und ungelesene Vorgänge stehen fett mit Punkt; in Arbeit ohne Ungelesenes nicht', async () => {
+  it('neue und ungelesene Vorgänge tragen einen Punkt; in Arbeit ohne Ungelesenes nicht', async () => {
     await zeigen();
     expect(nummern()).toEqual(['1', '3', '2', '4']);
-    expect(zeilen().map((z) => z.classList.contains('web-postfachzeile--ungelesen'))).toEqual([true, false, false, true]);
     expect(zeilen().map((z) => z.querySelector('.app-ungelesen-punkt') !== null)).toEqual([true, false, false, true]);
     expect(within(liste()).getByRole('button', { name: 'Vorgang 1: Chat zeigt nichts Neues, ungelesen' })).toBeInTheDocument();
   });
@@ -242,8 +234,6 @@ describe('Vorgänge (Web): Filter-Chips', () => {
     expect(chip(/^Neu/)).toHaveTextContent('2');
     expect(chip(/^In Arbeit/)).toHaveTextContent('1');
     expect(chip(/^Wartet/)).toHaveTextContent('1');
-    // Die Neuen sind Arbeit: ihre Zahl ist rot.
-    expect(chip(/^Neu/).querySelector('.web-chip__zahl--rot')).not.toBeNull();
     expect(chip(/^Archiv/)).toHaveTextContent(/^Archiv$/);
   });
 
@@ -512,17 +502,17 @@ describe('Vorgänge (Web): Neuer Vorgang', () => {
     expect(server.aufrufe('post', '/support/vorgaenge')).toHaveLength(0);
   });
 
-  it('Frage, Fehler und Wunsch brauchen einen Bereich -- der Stern erscheint, andere Arten brauchen keinen', async () => {
+  it('Frage, Fehler und Wunsch brauchen einen Bereich -- das Feld wird Pflicht, andere Arten brauchen keinen', async () => {
     await oeffnen();
     const d = within(dialog());
-    expect(d.getByText('Bereich').className).not.toContain('--pflicht');
+    expect(d.getByLabelText('Bereich')).not.toHaveAttribute('aria-required');
     fireEvent.change(d.getByLabelText('Art'), { target: { value: 'fehler' } });
-    expect(d.getByText('Bereich').className).toContain('web-feld__label--pflicht');
+    expect(d.getByLabelText('Bereich')).toHaveAttribute('aria-required', 'true');
     fireEvent.change(d.getByLabelText('Betreff'), { target: { value: 'Chat' } });
     fireEvent.click(d.getByRole('button', { name: 'Vorgang anlegen' }));
     expect(d.getByRole('alert')).toHaveTextContent('Bitte einen Bereich wählen');
     fireEvent.change(d.getByLabelText('Art'), { target: { value: 'sonstiges' } });
-    expect(d.getByText('Bereich').className).not.toContain('--pflicht');
+    expect(d.getByLabelText('Bereich')).not.toHaveAttribute('aria-required');
   });
 
   it('legt den Vorgang mit genau den gewählten Werten an und öffnet ihn', async () => {
@@ -660,12 +650,6 @@ describe('Vorgänge: zwei Gesichter, eine Seite', () => {
 });
 
 describe('Vorgänge (Web): Auswahl und Lesebereich zusammen', () => {
-  it('„Alle auswählen“ steht oben in der Liste, nicht als eigene Zeile über der Seite', async () => {
-    await zeigen();
-    const kasten = within(liste()).getByRole('checkbox', { name: 'Alle auswählen' });
-    expect(kasten.closest('.web-postfach__listekopf')).not.toBeNull();
-  });
-
   it('ein Kästchen anzukreuzen öffnet den Vorgang nicht -- Wählen und Ankreuzen sind getrennt', async () => {
     await zeigen();
     fireEvent.click(within(zeileNr(2)).getByRole('checkbox'));

@@ -1,14 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
-import {
-  ROLLEN_FARBEN,
-  rollenDarstellung,
-  rollenFarbe,
-  rollenFarbeVar,
-  rollenTextFarbeVar,
-  rollenTonVar,
-} from '../../utils/rollenNamen';
+import { ROLLEN_FARBEN, rollenDarstellung } from '../../utils/rollenNamen';
 
 /**
  * Rollenfarben (Simon, TestFlight 233, 29.09.2026): "Es braucht noch eine
@@ -18,6 +11,10 @@ import {
  * Bis dahin trugen org_admin UND admin --app-color-users (Indigo), und vier
  * Ansichten rechneten die Farbe je mit eigener switch-Anweisung aus. Jetzt:
  * eine Zuordnung in utils/rollenNamen, ein eigenes Token fuer die Leitung.
+ *
+ * Welche Rolle welche Farbe traegt, ist Layout und wird nicht festgeschrieben
+ * (Simon, 15.10.2026). Geprueft werden die eine Stelle der Zuordnung, die
+ * Lesbarkeit (Kontrast, Dunkelmodus) und dass jedes Token existiert.
  */
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
@@ -46,51 +43,8 @@ const kontrast = (a: string, b: string) => {
   const [h, d] = [helligkeit(a), helligkeit(b)].sort((x, y) => y - x);
   return (h + 0.05) / (d + 0.05);
 };
-/** CIE-Lab (D65) und der Abstand CIE76 -- genuegt, um "deutlich anders" zu pruefen. */
-const lab = (hex: string): [number, number, number] => {
-  const [r, g, b] = hexZuRgb(hex).map(linear);
-  const x = (r * 0.4124 + g * 0.3576 + b * 0.1805) / 0.95047;
-  const y = r * 0.2126 + g * 0.7152 + b * 0.0722;
-  const z = (r * 0.0193 + g * 0.1192 + b * 0.9505) / 1.08883;
-  const f = (t: number) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
-  return [116 * f(y) - 16, 500 * (f(x) - f(y)), 200 * (f(y) - f(z))];
-};
-const abstand = (a: string, b: string) => {
-  const [l1, a1, b1] = lab(a);
-  const [l2, a2, b2] = lab(b);
-  return Math.hypot(l1 - l2, a1 - a2, b1 - b2);
-};
 
-describe('Rolle -> Farbe: eindeutig, an einer Stelle', () => {
-  it('jede Rolle hat ihre eigene Farbe -- keine zwei Rollen teilen eine', () => {
-    expect(ROLLEN_FARBEN).toEqual({ org_admin: 'users', admin: 'leitung', teamer: 'teamer', konfi: 'konfis' });
-    const werte = Object.values(ROLLEN_FARBEN);
-    expect(new Set(werte).size).toBe(werte.length);
-  });
-
-  it('die Leitung ist nicht mehr die Farbe der Org-Leitung', () => {
-    expect(rollenFarbe('admin')).toBe('leitung');
-    expect(rollenFarbe('org_admin')).toBe('users');
-    expect(rollenFarbe('admin')).not.toBe(rollenFarbe('org_admin'));
-    expect(rollenFarbe('teamer')).toBe('teamer');
-  });
-
-  it('unbekannte Rollen: neutral, oder der angegebene Rueckfall', () => {
-    expect(rollenFarbe('super_admin')).toBe('neutral');
-    expect(rollenFarbe(undefined)).toBe('neutral');
-    expect(rollenFarbe(null, 'teamer')).toBe('teamer');
-    expect(rollenFarbe('admin', 'teamer')).toBe('leitung');
-  });
-
-  it('die Hilfen liefern Token-Verweise, keine Rohwerte', () => {
-    expect(rollenFarbeVar('admin')).toBe('var(--app-color-leitung)');
-    expect(rollenFarbeVar('org_admin')).toBe('var(--app-color-users)');
-    expect(rollenFarbeVar('teamer')).toBe('var(--app-color-teamer)');
-    expect(rollenTonVar('admin')).toBe('rgba(var(--app-color-leitung-rgb), 0.08)');
-    expect(rollenTextFarbeVar('admin')).toBe('var(--app-text-leitung)');
-    expect(rollenTextFarbeVar('unbekannt')).toBe('var(--app-text-system)');
-  });
-
+describe('Rolle -> Farbe: jedes Token existiert', () => {
   it('jedes Token, auf das die Zuordnung zeigt, existiert hell und dunkel (Flaeche, -rgb, Text)', () => {
     for (const farbe of new Set(Object.values(ROLLEN_FARBEN))) {
       for (const name of [`--app-color-${farbe}`, `--app-color-${farbe}-rgb`, `--app-text-${farbe}`]) {
@@ -101,11 +55,10 @@ describe('Rolle -> Farbe: eindeutig, an einer Stelle', () => {
   });
 });
 
-describe('Die Farbe der Leitung: lesbar und deutlich anders', () => {
+describe('Die Farbe der Leitung: lesbar', () => {
   const leitung = token(hell, '--app-color-leitung');
   const orgLeitung = token(hell, '--app-color-users');
   const teamer = token(hell, '--app-color-teamer');
-  const konfis = token(hell, '--app-color-konfis');
 
   it('weisse Schrift und Symbole darauf: mindestens 4,5:1 (AA)', () => {
     expect(kontrast('#ffffff', leitung)).toBeGreaterThanOrEqual(4.5);
@@ -115,63 +68,31 @@ describe('Die Farbe der Leitung: lesbar und deutlich anders', () => {
     expect(kontrast('#ffffff', orgLeitung)).toBeGreaterThanOrEqual(3);
   });
 
-  it('als Flaeche im Dunkeln unveraendert, wie jede Bereichsfarbe', () => {
-    expect(token(dunkelBlock, '--app-color-leitung')).toBe(leitung);
-  });
-
-  it('deutlich anders als Org-Leitung, Teamer:in und Konfi (Lab-Abstand ueber 25)', () => {
-    for (const [name, andere] of [['Org-Leitung', orgLeitung], ['Teamer:in', teamer], ['Konfi', konfis]] as const) {
-      expect(abstand(leitung, andere), name).toBeGreaterThan(25);
-    }
-  });
-
-  it('nicht zu verwechseln mit Warn- und Fehlerfarbe (hell und dunkel)', () => {
-    for (const signal of ['--app-color-warning', '--app-color-danger']) {
-      expect(abstand(leitung, token(hell, signal)), `${signal} hell`).toBeGreaterThan(40);
-      expect(abstand(leitung, token(dunkelBlock, signal)), `${signal} dunkel`).toBeGreaterThan(40);
-    }
-  });
-
-  it('als Schrift im Dunkeln: mindestens 4,5:1 auf Karte und beiden Seitengruenden', () => {
+  it('als Schrift: mindestens 4,5:1, im Dunkeln auf Karte und beiden Seitengruenden, hell auf der Karte', () => {
     const text = token(dunkelBlock, '--app-text-leitung');
     for (const grund of [token(dunkelBlock, '--app-surface-card'), '#000000', '#121212']) {
       expect(kontrast(text, grund), grund).toBeGreaterThanOrEqual(4.5);
     }
-    // Hell ist das Text-Token die Flaechenfarbe selbst.
-    expect(token(hell, '--app-text-leitung')).toBe(leitung);
+    expect(kontrast(token(hell, '--app-text-leitung'), token(hell, '--app-surface-card'))).toBeGreaterThanOrEqual(4.5);
   });
 });
 
-describe('Personenlisten (rollenDarstellung): jede Klasse liest das Token ihrer Rolle', () => {
+describe('Personenlisten (rollenDarstellung): die Schrift bleibt im Dunkeln lesbar', () => {
   // 02.10.2026, Paket 2.4.0, Punkt 6: Strich, Kreis, Eck-Marke und Schrift
-  // kommen als Klassen aus utils/rollenNamen. Die gerenderten Tests der Listen
-  // pruefen die Klassen; hier steht, dass jede Klasse im Stylesheet die
-  // Farbe ihrer Rolle traegt -- Flaeche ueber --app-color-*, Schrift ueber
-  // --app-text-* (im Dunkeln aufgehellt).
+  // kommen als Klassen aus utils/rollenNamen. Die Schrift liest das
+  // Text-Token ihrer Rolle (--app-text-*), das im Dunkeln aufgehellt ist --
+  // nicht die Flaechenfarbe, die auf dunklem Grund zu wenig Kontrast haette.
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const regel = (selektor: string): string => {
     const m = hell.match(new RegExp(`(^|[\\s,}])${esc(selektor)}\\s*(,[^{]*)?\\{([^}]*)\\}`, 'm'));
     if (!m) throw new Error(`${selektor} fehlt im Stylesheet`);
     return m[3];
   };
-  const FLAECHE: Record<string, string> = {
-    users: 'users', leitung: 'leitung', teamer: 'teamer', konfis: 'konfis', neutral: 'neutral',
-  };
 
-  it.each(['org_admin', 'admin', 'teamer', 'konfi', 'unbekannt'])('%s: Strich, Kreis, Marke und Schrift', (rolle) => {
+  it.each(['org_admin', 'admin', 'teamer', 'konfi', 'unbekannt'])('%s: die Schrift liest das Text-Token ihrer Rolle', (rolle) => {
     const d = rollenDarstellung(rolle);
-    const token = FLAECHE[d.farbe];
-    expect(regel(`.${d.strich}`)).toMatch(new RegExp(`border-left-color:\\s*var\\(--app-color-${token}\\)`));
-    expect(regel(`.${d.kreis}`)).toMatch(new RegExp(`background-color:\\s*var\\(--app-color-${token}\\)`));
-    expect(regel(`.${d.marke}`)).toMatch(new RegExp(`background-color:\\s*var\\(--app-color-${token}\\)`));
-    const schrift = d.farbe === 'neutral' ? 'var\\(--app-text-system\\)' : `var\\(--app-text-${token}\\)`;
+    const schrift = d.farbe === 'neutral' ? 'var\\(--app-text-system\\)' : `var\\(--app-text-${d.farbe}\\)`;
     expect(regel(`.${d.schrift}`)).toMatch(new RegExp(`color:\\s*${schrift}`));
-  });
-
-  it.each(['org_admin', 'admin', 'teamer', 'konfi'])('%s: ausgewaehlt mit zartem Grund in der Rollenfarbe', (rolle) => {
-    const d = rollenDarstellung(rolle);
-    expect(regel(`.${d.strich}.app-list-item--selected`))
-      .toMatch(new RegExp(`background:\\s*rgba\\(var\\(--app-color-${FLAECHE[d.farbe]}-rgb\\),\\s*0\\.08\\)`));
   });
 });
 

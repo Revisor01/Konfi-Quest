@@ -37,18 +37,13 @@ describe('Kleine Knoepfe mit 44-px-Trefffläche (UI BF-13)', () => {
     render(<LoginView />);
     const auge = screen.getByRole('button', { name: 'Passwort anzeigen' });
     expect(auge.tagName).toBe('BUTTON');
-    expect(auge.classList.contains('app-auth-input__toggle')).toBe(true);
     expect(auge.classList.contains('app-beruehrungsziel')).toBe(true);
   });
 
-  it('X der Neuigkeiten-Karte: ein <button> mit app-beruehrungsziel, die Karte selbst nicht', () => {
+  it('X der Neuigkeiten-Karte: ein <button> mit app-beruehrungsziel', () => {
     render(<UpdateHinweisKarte onOpen={() => {}} onDismiss={() => {}} />);
     const x = screen.getByRole('button', { name: 'Hinweis ausblenden' });
     expect(x.tagName).toBe('BUTTON');
-    expect(x.classList.contains('app-whatsnew__close')).toBe(true);
     expect(x.classList.contains('app-beruehrungsziel')).toBe(true);
-    // Die Karte ist ohnehin gross genug; sie bekommt kein Pseudo-Element, das ueber den Rand ragt.
-    const karte = x.closest('.app-whatsnew')!;
-    expect(karte.classList.contains('app-beruehrungsziel')).toBe(false);
   });
 });

@@ -151,8 +151,6 @@ describe('Posteingang (Web): Liste', () => {
     expect(z.map((x) => teil(x, 'titel'))).toEqual(['Pastorin Lena Probe', 'Sam Muster', 'info@beispiel-verein.example', 'Jan Vorlage', 'Presseverteiler']);
     expect(z.map((x) => teil(x, 'marken'))).toEqual(['moin@', 'support@', 'support@', 'moin@', 'moin@']);
     expect(teil(z[0], 'text')).toBe('Vielen Dank für die schnelle Rückmeldung!');
-    // Der Auszug in eigener Spanne -- nur so kürzt er mit „…" statt mitten im Buchstaben (gesehen 11.10.2026).
-    expect(teil(z[0], 'auszug')).toBe('Vielen Dank für die schnelle Rückmeldung!');
     // Heute die Uhrzeit, gestern „gestern, …“, sonst das Datum -- in deutscher Zeit.
     expect(z.map((x) => teil(x, 'zeit'))).toEqual(['10:18', '09:35', '05:30', 'gestern, 12:30', '28.09., 12:30']);
     expect(z[0].querySelector('time')).toHaveAttribute('title', '03.10.2026, 10:18');
@@ -166,16 +164,14 @@ describe('Posteingang (Web): Liste', () => {
     await zeigen();
     expect(zeilen().map((z) => z.querySelector('.web-mail-kreis')?.textContent)).toEqual(['PL', 'SM', 'I', 'JV', 'P']);
     expect(zeilen()[0].querySelector('.web-mail-kreis')).toHaveAttribute('aria-hidden', 'true');
-    expect(zeilen()[0].querySelector('button')!.className).toContain('web-postfachzeile__knopf--kreis');
     expect(betreffe()[0]).toBe('Rückfrage zur Lizenz');
     expect(zeilenKnopf('Rückfrage zur Lizenz')).toHaveAccessibleName('Pastorin Lena Probe: Rückfrage zur Lizenz, ungelesen');
   });
 
-  it('ungelesene Mails tragen einen Punkt, stehen fett und sagen es dem Vorleseprogramm; gelesene nicht', async () => {
+  it('ungelesene Mails tragen einen Punkt und sagen es dem Vorleseprogramm; gelesene nicht', async () => {
     await zeigen();
     const z = zeilen();
     expect(z.map((x) => x.querySelector('.app-ungelesen-punkt') !== null)).toEqual([true, true, true, false, false]);
-    expect(z.map((x) => x.classList.contains('web-postfachzeile--ungelesen'))).toEqual([true, true, true, false, false]);
     expect(z[0].querySelector('button')).toHaveAccessibleName('Pastorin Lena Probe: Rückfrage zur Lizenz, ungelesen');
     expect(z[3].querySelector('button')).toHaveAccessibleName('Jan Vorlage: Angebot');
   });
@@ -184,7 +180,6 @@ describe('Posteingang (Web): Liste', () => {
     await zeigen();
     const lese = await waehlen('Frage zu den Jahrgängen');
     expect(zeilenKnopf('Frage zu den Jahrgängen')).toHaveAttribute('aria-current', 'true');
-    expect(zeileVon('Frage zu den Jahrgängen').classList.contains('web-postfachzeile--gewaehlt')).toBe(true);
     expect(within(liste()).getAllByRole('button', { current: true })).toHaveLength(1);
     expect(within(lese).getByRole('heading', { level: 2, name: 'Frage zu den Jahrgängen' })).toBeInTheDocument();
     expect(await within(lese).findByText('Guten Morgen, wir möchten den neuen Jahrgang anlegen.', { selector: 'p' })).toBeInTheDocument();
@@ -234,7 +229,7 @@ describe('Posteingang (Web): Filter', () => {
     expect(chip(/^support@/)).toHaveTextContent('2');
   });
 
-  it('Ungelesen trägt die rote Zahl -- aus demselben Zähler wie die Leiste, nicht aus der Liste', async () => {
+  it('Ungelesen trägt die Zahl -- aus demselben Zähler wie die Leiste, nicht aus der Liste', async () => {
     const vorher = h.apiGet.getMockImplementation()!;
     h.apiGet.mockImplementation((pfad: string, o?: unknown) => (pfad === '/support/mail/zaehler'
       ? Promise.resolve({ data: { ...server.zaehler(), posteingang: 7 } })
@@ -242,17 +237,15 @@ describe('Posteingang (Web): Filter', () => {
     await zeigen();
     await waitFor(() => expect(chip(/^Ungelesen/)).toHaveTextContent('7'));
     const zahl = chip(/^Ungelesen/).querySelector('.web-chip__zahl') as HTMLElement;
-    expect(zahl.className).toContain('web-chip__zahl--rot');
     expect(zahl).toHaveTextContent('7 ungelesen');
   });
 
-  it('ohne ungelesene Mails steht die Zahl 0 am Chip -- nicht rot', async () => {
+  it('ohne ungelesene Mails steht die Zahl 0 am Chip', async () => {
     server.stand.mails.forEach((m) => { m.gelesen_am = '2026-10-03T08:00:00Z'; });
     await zeigen();
     await waitFor(() => expect(server.aufrufe('get', '/support/mail/zaehler').length).toBeGreaterThan(0));
     const zahl = chip(/^Ungelesen/).querySelector('.web-chip__zahl') as HTMLElement;
     expect(zahl.textContent).toBe('0');
-    expect(zahl.className).not.toContain('--rot');
   });
 
   it('Ungelesen zeigt genau die ungelesenen; moin@ und support@ je Postfach; Alle holt alles zurück', async () => {
@@ -433,10 +426,9 @@ describe('Posteingang (Web): mehrere Mails auswählen', () => {
   const kasten = (betreff: string) => within(zeileVon(betreff)).getByRole('checkbox') as HTMLInputElement;
   const leiste = () => within(screen.getByRole('group', { name: 'Auswahl' }));
 
-  it('die Kästchen sind benannt; die Leiste steht oben in der Liste: ohne Auswahl nur „Alle auswählen“, mit Auswahl Zahl und Aktionen', async () => {
+  it('die Kästchen sind benannt; die Leiste: ohne Auswahl nur „Alle auswählen“, mit Auswahl Zahl und Aktionen', async () => {
     await zeigen();
     expect(kasten('Frage zu den Jahrgängen')).toHaveAccessibleName('Auswählen: Sam Muster: Frage zu den Jahrgängen');
-    expect(liste().contains(screen.getByRole('group', { name: 'Auswahl' }))).toBe(true);
     expect(leiste().getByText('Alle auswählen')).toBeInTheDocument();
     expect(leiste().queryByRole('button')).toBeNull();
     fireEvent.click(kasten('Frage zu den Jahrgängen'));
@@ -596,9 +588,9 @@ describe('Posteingang (Web): Einsortieren', () => {
     fireEvent.click(d.getByRole('button', { name: 'Neuer Vorgang' }));
     fireEvent.click(d.getByRole('button', { name: 'Einsortieren' }));
     expect(d.getByRole('alert')).toHaveTextContent('Bitte eine Art wählen');
-    expect(d.getByText('Bereich').className).not.toContain('--pflicht');
+    expect(d.getByLabelText('Bereich')).not.toHaveAttribute('aria-required');
     fireEvent.change(d.getByLabelText('Art'), { target: { value: 'frage' } });
-    expect(d.getByText('Bereich').className).toContain('web-feld__label--pflicht');
+    expect(d.getByLabelText('Bereich')).toHaveAttribute('aria-required', 'true');
     fireEvent.click(d.getByRole('button', { name: 'Einsortieren' }));
     expect(d.getByRole('alert')).toHaveTextContent('Bitte einen Bereich wählen');
     fireEvent.change(d.getByLabelText('Art'), { target: { value: 'lizenz' } });
@@ -674,11 +666,9 @@ describe('Posteingang (Web): Zustand der Postfächer', () => {
     ]);
     await zeigen();
     const moin = screen.getByText('moin@konfi-quest.example').closest('.web-status') as HTMLElement;
-    expect(moin.className).toContain('web-status--fehler');
     expect(moin).toHaveTextContent('Fehler beim Abholen: Anmeldung abgelehnt (03.10.2026, 09:01)');
     const support = screen.getByText('support@konfi-quest.example').closest('.web-status') as HTMLElement;
     expect(support).toHaveTextContent('Auf diesem Server aus');
-    expect(support.className).toContain('web-status--warnung');
     expect(document.querySelector('.web-postfachstand')).toBeNull();
   });
 

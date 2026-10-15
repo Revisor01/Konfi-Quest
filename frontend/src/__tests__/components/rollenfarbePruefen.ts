@@ -6,7 +6,9 @@
 // (utils/rollenNamen) -- keine Klasse einer anderen Rolle, nicht mehr die
 // allgemeine Team-Farbe (app-list-item--team, app-icon-circle--team) und keine
 // Inline-Farbe, die die Klasse ueberstimmen koennte. Welche Farbe jede Klasse
-// im Stylesheet traegt, prueft __tests__/utils/rollenFarben.test.ts.
+// im Stylesheet traegt, ist Layout und wird nicht festgeschrieben (Simon,
+// 15.10.2026); dass die Schrift im Dunkeln lesbar bleibt, prueft
+// __tests__/utils/rollenFarben.test.ts.
 import { expect } from 'vitest';
 import { rollenDarstellung, type RollenDarstellung } from '../../utils/rollenNamen';
 

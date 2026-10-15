@@ -1,6 +1,7 @@
 // Die Bausteine der Web-Fassung (components/web/): Diagramme in
 // eigenem SVG (Tooltip, Tastatur, Tabelle fuer Vorleseprogramme), Chips,
-// Akkordeon, Tabelle, Marken, Links.
+// Akkordeon, Tabelle, Marken, Links. Formen, Breiten, Abstaende und Farben
+// sind Layout und werden nicht festgeschrieben (Simon, 15.10.2026).
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
@@ -45,35 +46,13 @@ const bild = () => screen.getByRole('img', { name: 'Neue Konten: Juli bis Oktobe
 const treffer = () => [...bild().querySelectorAll('rect.web-diagramm__treffer')];
 
 describe('WebDiagramm', () => {
-  it('gestapelt: eine Saeule je Monat, Segmente nur fuer Werte ueber 0, die oberste oben gerundet', () => {
+  it('gestapelt: eine Saeule je Monat, Segmente nur fuer Werte ueber 0, die Achse in runden Zehnern', () => {
     diagramm('gestapelt');
     expect(bild().querySelectorAll('.web-saeule')).toHaveLength(4);
     expect([...bild().querySelectorAll('.web-saeule')].map((s) => s.querySelectorAll('path.web-balken').length)).toEqual([2, 2, 2, 1]);
     // Der hoechste Stapel ist 33 (September): die Achse laeuft in runden Zehnern bis 40.
     expect([...bild().querySelectorAll('text.web-diagramm__text--rechts')].map((t) => t.textContent)).toEqual(['0', '10', '20', '30', '40']);
     expect([...bild().querySelectorAll('text.web-diagramm__text--mitte')].map((t) => t.textContent)).toEqual(['Jul', 'Aug', 'Sep', 'Okt']);
-    // Zwischen den Segmenten eines Stapels bleiben 2 px: Oberkante des unteren minus Unterkante des oberen.
-    const [unten, oben] = [...bild().querySelectorAll('.web-saeule')[0].querySelectorAll('path.web-balken')].map((p) => p.getAttribute('d')!);
-    const obenDesUnteren = Number(/V([\d.]+)L/.exec(unten)![1]);
-    const untenDesOberen = Number(/^M[\d.]+,([\d.]+)/.exec(oben)![1]);
-    expect(obenDesUnteren - untenDesOberen).toBeCloseTo(2, 5);
-    // Das untere Segment ist oben gerade (kein Bogen), das obere gerundet.
-    expect(unten).not.toContain('Q');
-    expect(oben).toContain('Q');
-  });
-
-  it('keine Saeule dicker als 24 px, auch bei breiter Flaeche', () => {
-    diagramm('gestapelt');
-    const breite = (d: string) => {
-      const links = Number(/^M([\d.]+),/.exec(d)![1]);
-      const rechts = Number((/Q([\d.]+),[\d.]+ [\d.]+,[\d.]+V/.exec(d) ?? /H([\d.]+)L/.exec(d))![1]);
-      return rechts - links;
-    };
-    const breiten = [...bild().querySelectorAll('path.web-balken')].map((p) => breite(p.getAttribute('d')!));
-    expect(breiten.length).toBe(7);
-    for (const b of breiten) expect(b).toBeLessThanOrEqual(24.001);
-    // Bei 520 px und vier Monaten fuellt die Saeule den Platz nicht: Luft bleibt.
-    expect(Math.max(...breiten)).toBeCloseTo(24, 5);
   });
 
   it('gruppiert: die Reihen stehen nebeneinander; ein Wert 0 hat keine Saeule', () => {
@@ -81,18 +60,16 @@ describe('WebDiagramm', () => {
     expect([...bild().querySelectorAll('.web-saeule')].map((s) => s.querySelectorAll('path.web-balken').length)).toEqual([2, 2, 2, 1]);
   });
 
-  it('flaeche mit einer Reihe: Linie, zarte Flaeche, Punkt und Wert am Ende, keine Legende', () => {
+  it('flaeche mit einer Reihe: eine Linie, Wert am Ende, keine Legende', () => {
     diagramm('flaeche', [reihen[0]]);
     expect(bild().querySelectorAll('path.web-diagramm__linie')).toHaveLength(1);
-    expect(bild().querySelectorAll('path.web-diagramm__flaeche-fuellung')).toHaveLength(1);
     expect(bild().querySelector('text.web-diagramm__text--stark')?.textContent).toBe('0');
     expect(screen.queryByRole('list', { name: 'Legende' })).toBeNull();
   });
 
-  it('flaeche mit mehreren Reihen: je Reihe eine Linie, keine Flaeche, keine Endwerte (sie laegen uebereinander), Legende da', () => {
+  it('flaeche mit mehreren Reihen: je Reihe eine Linie, keine Endwerte (sie laegen uebereinander), Legende da', () => {
     diagramm('flaeche');
     expect(bild().querySelectorAll('path.web-diagramm__linie')).toHaveLength(2);
-    expect(bild().querySelectorAll('path.web-diagramm__flaeche-fuellung')).toHaveLength(0);
     expect(bild().querySelectorAll('text.web-diagramm__text--stark')).toHaveLength(0);
     expect(within(screen.getByRole('list', { name: 'Legende' })).getAllByRole('listitem').map((l) => l.textContent)).toEqual(['Konfis', 'Team']);
   });
@@ -125,14 +102,6 @@ describe('WebDiagramm', () => {
     expect(document.querySelector('.web-diagramm__tooltip')).toBeNull();
   });
 
-  it('Tooltip: in der linken Haelfte rechts neben der Saeule, in der rechten links davon', () => {
-    diagramm('gestapelt');
-    fireEvent.mouseEnter(treffer()[0]);
-    expect(document.querySelector('.web-diagramm__tooltip')?.className).not.toContain('--links');
-    fireEvent.mouseEnter(treffer()[3]);
-    expect(document.querySelector('.web-diagramm__tooltip')?.className).toContain('--links');
-  });
-
   it('Tastatur: Pfeiltasten gehen durch die Werte, Pos1/Ende springen, Escape und Verlassen schliessen', () => {
     diagramm('gestapelt');
     const flaeche = screen.getByRole('group', { name: 'Neue Konten. Mit den Pfeiltasten durch die Werte gehen.' });
@@ -159,14 +128,6 @@ describe('WebDiagramm', () => {
     expect(monat()).toBeNull();
   });
 
-  it('die Linie hat bei Auswahl einen Punkt und eine Fuehrungslinie am gewaehlten Monat', () => {
-    diagramm('flaeche', [reihen[0]]);
-    expect(bild().querySelectorAll('circle')).toHaveLength(1);
-    fireEvent.mouseEnter(treffer()[1]);
-    expect(bild().querySelectorAll('circle')).toHaveLength(2);
-    expect(bild().querySelector('line.web-diagramm__fuehrung')).not.toBeNull();
-  });
-
   it('Teilstriche mit Tausenderpunkt', () => {
     diagramm('flaeche', [{ schluessel: 'g', name: 'Gesamt', farbe: 'var(--web-reihe-gesamt)', werte: [650, 900, 1200, 1501] }]);
     expect([...bild().querySelectorAll('text.web-diagramm__text--rechts:not(.web-diagramm__text--stark)')].map((t) => t.textContent)).toEqual(['0', '500', '1.000', '1.500', '2.000']);
@@ -175,7 +136,7 @@ describe('WebDiagramm', () => {
 });
 
 describe('WebBalkenListe', () => {
-  it('eine Zeile je Eintrag mit Wert am Balken; lange Namen gekuerzt, voller Name als Titel', () => {
+  it('eine Zeile je Eintrag mit Wert am Balken; der volle Name als Titel', () => {
     render(
       <WebBalkenListe
         titel="Gemeinden je Landeskirche"
@@ -192,9 +153,7 @@ describe('WebBalkenListe', () => {
     const zeilen = bildListe.querySelectorAll('.web-balkenzeile');
     expect(zeilen).toHaveLength(2);
     const name = zeilen[0].querySelector('text.web-balkenliste__name') as SVGTextElement;
-    // Der sichtbare Text (erster Knoten) ist gekuerzt; das <title> traegt den vollen Namen.
-    expect(name.firstChild?.textContent).toMatch(/^Evangelische.*…$/);
-    expect(name.firstChild!.textContent!.length).toBeLessThan('Evangelische Kirche mit sehr langem Namen im Süden'.length);
+    // Das <title> traegt den vollen Namen (wie weit der sichtbare Text gekuerzt wird, ist Layout).
     expect(name.querySelector('title')?.textContent).toBe('Evangelische Kirche mit sehr langem Namen im Süden');
     expect(zeilen[1].querySelector('text.web-balkenliste__name')?.textContent).toBe('Kurz');
     expect(zeilen[1].querySelector('path.web-balken')?.getAttribute('d')).toBe(''); // Wert 0: kein Balken
@@ -207,12 +166,10 @@ describe('WebBalkenListe', () => {
 });
 
 describe('WebSpark', () => {
-  it('eine kleine Linie mit Punkt am Ende, fuer Vorleseprogramme verborgen; unter zwei Werten nichts', () => {
+  it('eine kleine Linie, fuer Vorleseprogramme verborgen; unter zwei Werten nichts', () => {
     const { container, rerender } = render(<WebSpark werte={[1, 3, 2, 5]} farbe="var(--web-reihe-konfi)" />);
     const svg = container.querySelector('svg')!;
     expect(svg.getAttribute('aria-hidden')).toBe('true');
-    expect(svg.querySelectorAll('path')).toHaveLength(1);
-    expect(svg.querySelectorAll('circle')).toHaveLength(1);
     rerender(<WebSpark werte={[3]} farbe="var(--web-reihe-konfi)" />);
     expect(container.querySelector('svg')).toBeNull();
   });
@@ -220,7 +177,7 @@ describe('WebSpark', () => {
 
 describe('WebChips', () => {
   type W = 'a' | 'b';
-  it('genau einer ist gewaehlt (aria-pressed); die rote Zahl nur ueber 0', () => {
+  it('genau einer ist gewaehlt (aria-pressed); die Zahl traegt ihren Vorlesetext', () => {
     const onWert = vi.fn();
     const { rerender } = render(
       <WebChips<W> beschriftung="Filter" wert="a" onWert={onWert} chips={[
@@ -231,7 +188,7 @@ describe('WebChips', () => {
     expect(screen.getByRole('group', { name: 'Filter' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Alle/ })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: /^Offen/ })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByRole('button', { name: /^Offen/ }).querySelector('.web-chip__zahl--rot')).toHaveTextContent('3 ungelesen');
+    expect(screen.getByRole('button', { name: /^Offen/ }).querySelector('.web-chip__zahl')).toHaveTextContent('3 ungelesen');
     fireEvent.click(screen.getByRole('button', { name: /^Offen/ }));
     expect(onWert).toHaveBeenCalledWith('b');
     rerender(
@@ -240,7 +197,6 @@ describe('WebChips', () => {
         { wert: 'b', label: 'Offen', zahl: 0, rot: true },
       ]} />,
     );
-    expect(screen.getByRole('button', { name: /^Offen/ }).querySelector('.web-chip__zahl--rot')).toBeNull();
     expect(screen.getByRole('button', { name: /^Offen/ })).toHaveAttribute('aria-pressed', 'true');
   });
 });
@@ -278,7 +234,7 @@ describe('WebAkkordeon', () => {
 });
 
 describe('WebListe', () => {
-  it('Kopfzeile mit scope, Zahlen rechts, optionale Spalten markiert, verborgener Kopf nur fuer Vorleseprogramme', () => {
+  it('Kopfzeile mit scope, verborgener Kopf nur fuer Vorleseprogramme', () => {
     render(
       <WebListe<{ id: number; name: string; n: number }>
         beschriftung="Beispiel"
@@ -294,33 +250,16 @@ describe('WebListe', () => {
       />,
     );
     const tabelle = screen.getByRole('table', { name: 'Beispiel' });
-    expect(tabelle.className).toContain('web-tabelle--fest');
     const koepfe = within(tabelle).getAllByRole('columnheader');
     expect(koepfe.map((k) => k.getAttribute('scope'))).toEqual(['col', 'col', 'col']);
-    expect(koepfe[1].className).toContain('web-zahl');
-    expect(koepfe[1].className).toContain('web-optional');
-    expect((koepfe[1] as HTMLElement).style.width).toBe('80px');
     expect(koepfe[2].querySelector('.web-nur-vorlesen')?.textContent).toBe('Aktionen');
-    const zeilen = within(tabelle).getAllByRole('row').slice(1);
-    expect(zeilen.map((z) => z.className)).toEqual(['web-zeile', 'web-zeile web-zeile--ungelesen']);
-    expect(within(zeilen[1]).getAllByRole('cell')[1].className).toContain('web-zahl');
   });
 });
 
 describe('WebPill und WebKachel', () => {
-  it('Ton als Klasse; neutral ohne; Postfach eckig; Punkt fuer Vorleseprogramme verborgen', () => {
-    const { container } = render(
-      <>
-        <WebPill>neutral</WebPill>
-        <WebPill ton="erfolg" punkt>ok</WebPill>
-        <WebPill ton="fehler" postfach>moin@</WebPill>
-      </>,
-    );
-    const [a, b, c] = [...container.querySelectorAll('.web-pill')];
-    expect(a.className).toBe('web-pill');
-    expect(b.className).toBe('web-pill web-pill--erfolg');
-    expect(b.querySelector('.web-pill__punkt')?.getAttribute('aria-hidden')).toBe('true');
-    expect(c.className).toBe('web-pill web-pill--fehler web-pill--postfach');
+  it('WebPill: der Punkt ist fuer Vorleseprogramme verborgen', () => {
+    const { container } = render(<WebPill ton="erfolg" punkt>ok</WebPill>);
+    expect(container.querySelector('.web-pill__punkt')?.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('die Kachel: Etikett, Zahl, Zeilen darunter; mit Link ein <a> mit Namen "Etikett: Zahl"', () => {
@@ -335,7 +274,6 @@ describe('WebPill und WebKachel', () => {
     expect(g.querySelectorAll('.web-kachel__zusatz > span')).toHaveLength(2); // leere Zeilen fallen weg
     const a = screen.getByRole('link', { name: 'Offene Anfragen: 5' });
     expect(a).toHaveAttribute('href', '/admin/support/anfragen');
-    expect(a.className).toContain('web-kachel--achtung');
     fireEvent.click(a);
     expect(h.push).toHaveBeenCalledWith('/admin/support/anfragen', 'none', 'push');
   });

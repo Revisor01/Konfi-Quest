@@ -34,7 +34,6 @@ vi.mock('../../../contexts/AppContext', () => ({
 
 import WebBadgeFormular from '../../../components/admin/web/start/WebBadgeFormular';
 import { OFFLINE_AKTION_MELDUNG } from '../../../utils/offlineAktion';
-import { erwarteWebRueckfrage } from '../web/webRueckfrageErwartung';
 
 const BADGES = [
   gespeichertesBadge({ id: 7 }),
@@ -81,7 +80,6 @@ const farbe = (dialog: HTMLElement) => im(dialog).getByLabelText('Farbe') as HTM
 describe('Badge-Formular (Web): neues Badge', () => {
   it('ein Dialog mit benannten Feldern und der Vorbelegung fuer Konfis', async () => {
     const dialog = await oeffnen(null);
-    expect(dialog).toHaveClass('web-dialog--breit');
     expect(feld(dialog, 'Name')).toHaveValue('');
     expect(feld(dialog, 'Name')).toHaveAttribute('aria-required', 'true');
     expect(feld(dialog, 'Beschreibung')).toHaveValue('');
@@ -367,8 +365,6 @@ describe('Badge-Formular (Web): schliessen und abbrechen', () => {
     fireEvent.keyDown(dialog, { key: 'Escape' });
     const frage = screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
     expect(frage).toHaveAccessibleDescription('Möchtest du die Änderungen verwerfen?');
-    // Wie die Rückfragen der App im Browser: Warndreieck, „Verwerfen" rot gefüllt.
-    erwarteWebRueckfrage(frage, 'warnung', 'Verwerfen');
     expect(props.onSchliessen).not.toHaveBeenCalled();
     fireEvent.click(within(frage).getByRole('button', { name: 'Abbrechen' }));
     expect(screen.queryByRole('dialog', { name: 'Ungespeicherte Änderungen' })).toBeNull();

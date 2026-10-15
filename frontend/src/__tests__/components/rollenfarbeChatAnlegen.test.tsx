@@ -86,7 +86,7 @@ describe('Chat anlegen als Leitung: Rollenfarbe an allen vier Stellen', () => {
     erwarteRollenfarbe(karteVon('Karl Konfi'), 'konfi', 'Konfi', { schrift: false });
   });
 
-  it('Gruppenchat: die Auswahl faerbt den Grund in der Rollenfarbe, nicht pauschal Beere', async () => {
+  it('Gruppenchat: die Auswahl markiert die Person, ihre Rolle bleibt erkennbar', async () => {
     await oeffne();
     fireEvent.click(screen.getByText('Gruppenchat'));
     for (let i = 0; i < 5; i += 1) await act(async () => { await Promise.resolve(); });
@@ -94,7 +94,6 @@ describe('Chat anlegen als Leitung: Rollenfarbe an allen vier Stellen', () => {
     fireEvent.click(karteVon('Greta Gemeindeleitung'));
     const greta = karteVon('Greta Gemeindeleitung');
     expect(greta.classList.contains('app-list-item--selected')).toBe(true);
-    expect(greta.classList.contains('app-list-item--users')).toBe(true);
     expect(greta.style.background).toBe('');
     erwarteRollenfarbe(greta, 'org_admin', 'Gemeindeleitung ausgewaehlt');
   });

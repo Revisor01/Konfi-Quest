@@ -93,7 +93,6 @@ describe('Klickbare Nicht-Knoepfe per Tastatur (UI BF-03)', () => {
     const titel = await screen.findByText('App sperren');
     const zeile = titel.closest<HTMLElement>('[role="button"]')!;
     expect(zeile).not.toBeNull();
-    expect(zeile.classList.contains('app-list-item')).toBe(true);
     expect(zeile.tabIndex).toBe(0);
     fireEvent.keyDown(zeile, { key: 'Enter' });
     await waitFor(() => expect(mockAuswahl).toHaveBeenCalledTimes(1));

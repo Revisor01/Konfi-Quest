@@ -11,7 +11,6 @@ import { render, screen, fireEvent, within, waitFor } from '@testing-library/rea
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import type { ModalAufruf } from './ionicStart';
-import { START_WASSERZEICHEN } from '../../../components/konfi/web/startFarben';
 
 const h = vi.hoisted(() => ({
   breit: true,
@@ -446,7 +445,6 @@ describe('Konfi-Start (Web): Hinweise', () => {
 
     fireEvent.click(within(hinweis).getByRole('button', { name: 'Rückblick ansehen' }));
     expect(h.modale.map((m) => m.name)).toEqual(['WrappedModal']);
-    expect(h.modale[0].optionen).toEqual({ cssClass: 'wrapped-modal-fullscreen' });
     expect(h.modale[0].props).toMatchObject({ displayName: 'Mia Beispiel', jahrgangName: '2026/27', wrappedType: 'konfi' });
 
     fireEvent.click(within(hinweis).getByRole('button', { name: 'Hinweis ausblenden' }));
@@ -463,59 +461,25 @@ describe('Konfi-Start (Web): Hinweise', () => {
 
 // Farbkacheln wie in der App (Simon, 10.10.2026: "die dashboards der konfis
 // bitte in den gleichen farbkacheln bauen wie in der daschboards der app").
-// Der Verlauf kommt aus der Klasse der App, nicht aus einer zweiten Quelle.
+// Wie die Kacheln aussehen, ist Layout und wird nicht festgeschrieben (Simon,
+// 15.10.2026); geprueft werden der Zierschriftzug fuer Vorleseprogramme und
+// die eine Quelle der Verlaeufe.
 describe('Konfi-Start (Web): Farbkacheln der App', () => {
-  it('jeder Abschnitt steht auf dem Verlauf seines App-Abschnitts, mit dem blassen Wort der App', async () => {
+  it('der blasse Schriftzug jeder Farbkachel ist Zierde: fuer Vorleseprogramme verborgen', async () => {
     await zeige();
     await waitFor(() => expect(ueberschriften()).toHaveLength(8));
-    const erwartet: Array<[string, string, string]> = [
-      ['Deine Konfirmation', 'konfirmation', 'DEINEKONFIRMATION'],
-      ['Laufende Challenges', 'challenges', 'DEINECHALLENGE'],
-      ['Dein Konfispruch', 'konfispruch', 'DEINKONFISPRUCH'],
-      ['Deine Events', 'events', 'DEINEEVENTS'],
-      ['Tageslosung', 'tageslosung', 'TAGESLOSUNG'],
-      ['Deine Badges', 'badges', 'DEINEBADGES'],
-      ['Deine Rangliste', 'ranking', 'DEINRANKING'],
-    ];
-    for (const [titel, farbe, wort] of erwartet) {
-      const k = karte(titel);
-      expect(k.className.split(' '), titel).toEqual(['web-farbkarte', 'web-auf-farbe', 'app-dashboard-section', `app-dashboard-section--${farbe}`]);
-      const zeichen = k.querySelector('.app-dashboard-section__bg-text') as HTMLElement;
-      expect(zeichen.getAttribute('aria-hidden')).toBe('true');
-      expect(zeichen.textContent).toBe(wort);
+    for (const titel of ['Deine Konfirmation', 'Laufende Challenges', 'Dein Konfispruch', 'Deine Events', 'Tageslosung', 'Deine Badges', 'Deine Rangliste']) {
+      const zeichen = karte(titel).querySelector('.app-dashboard-section__bg-text') as HTMLElement;
+      expect(zeichen.getAttribute('aria-hidden'), titel).toBe('true');
     }
-    // Keine weisse Karte mehr auf der Startseite.
-    expect(document.querySelectorAll('.web-karte')).toHaveLength(0);
   });
 
-  it('„Deine Punkte" steht auf dem violetten Kopf der App, darunter die Kacheln im Raster', async () => {
-    await zeige();
-    const punkte = karte('Deine Punkte');
-    expect(punkte.classList.contains('app-dashboard-header')).toBe(true);
-    expect(punkte.classList.contains('web-auf-farbe')).toBe(true);
-    expect(punkte.querySelectorAll('.app-dashboard-header__circle')).toHaveLength(3);
-    const raster = karte('Deine Events').parentElement as HTMLElement;
-    expect(raster.className).toBe('web-start-raster');
-    await waitFor(() => expect(raster.querySelectorAll(':scope > .app-dashboard-section')).toHaveLength(7));
-  });
-
-  // Eine Quelle: Die Verlaeufe stehen nur in der App-Klasse (variables.css);
+  // Eine Quelle: Die Verlaeufe stehen nur in den Klassen der App (variables.css);
   // das Stylesheet der Web-Fassung legt keinen zweiten an.
-  it('jeder Abschnitt hat seinen Verlauf in der App-Klasse; start.css legt keinen eigenen an', () => {
+  it('start.css legt keine eigenen Verlaeufe an', () => {
     const ohneKommentare = (q: string) => q.replace(/\/\*[\s\S]*?\*\//g, '');
-    const lies = (pfad: string) => ohneKommentare(readFileSync(resolve(process.cwd(), pfad), 'utf8'));
-    const variablen = lies('src/theme/variables.css');
-    const start = lies('src/theme/web/start.css');
-    const abschnitte = Object.keys(START_WASSERZEICHEN);
-    expect(abschnitte).toEqual(['konfirmation', 'challenges', 'konfispruch', 'events', 'tageslosung', 'badges', 'ranking', 'zertifikate']);
-    for (const a of abschnitte) {
-      const von = variablen.indexOf(`.app-dashboard-section--${a} {`);
-      expect(von, a).toBeGreaterThan(-1);
-      expect(variablen.slice(von, variablen.indexOf('}', von)), a).toMatch(/background:\s*(?:linear-gradient|var\(--app-gradient-)/);
-    }
+    const start = ohneKommentare(readFileSync(resolve(process.cwd(), 'src/theme/web/start.css'), 'utf8'));
     expect(start.match(/linear-gradient/g) ?? []).toEqual([]);
-    // Rückblick-Hinweis (schon vorher) und der Kopf des Teams lesen die Variablen der App.
-    expect([...start.matchAll(/var\((--app-gradient-[\w-]+)\)/g)].map((m) => m[1]).sort()).toEqual(['--app-gradient-teamer', '--app-gradient-wrapped']);
   });
 });
 
