@@ -393,6 +393,8 @@ describe('Challenge fuer Team und Leitung (Web): Moderation ueber dieselben Funk
     expect(h.presentAlert).toHaveBeenCalledWith(expect.objectContaining({ header: 'Beitrag anonym stellen' }));
     expect(h.apiPut).not.toHaveBeenCalled();
     const anonym = h.presentAlert.mock.calls[0][0].buttons.find((b: { text: string }) => b.text === 'Anonym stellen');
+    // Endgültig: die Rückfrage mit Warndreieck (utils/rueckfragenOptik.ts, 15.10.2026).
+    expect(anonym.role).toBe('destructive');
     anonym.handler();
     await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/challenges/admin/submissions/1/moderate', { action: 'anonymize' }));
 

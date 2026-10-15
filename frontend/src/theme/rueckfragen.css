@@ -13,8 +13,11 @@
      .app-rueckfrage--warnung    sonst (Abmelden, Verwerfen, Sperren, ...)
    und setzt das Symbol aus components/shared/icons.ts als
    --app-rueckfrage-symbol (Mülleimer bzw. Warndreieck). Rückfragen ohne
-   solchen Knopf (Einmalpasswort, „Zu viele Anfragen") bekommen keine Klasse
-   und bleiben, wie sie sind.
+   solchen Knopf (Einmalpasswort, „Zu viele Anfragen") bekommen in der App
+   keine Klasse und bleiben, wie sie sind; im breiten Browserfenster
+   (15.10.2026) dagegen
+     .app-rueckfrage.app-rueckfrage--neutral   ohne Symbol
+   und damit die Optik der Web-Fenster aus Teil 3 (Teil 3b).
 
    VIER TEILE
    1. Der rote Knopf in der App. Das iOS-Theme (ios27) färbt den
@@ -281,6 +284,32 @@ html[data-layout='breit'] ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper 
 html[data-layout='breit'] ion-alert.app-rueckfrage:is(.ios, .md) .alert-wrapper .alert-button-group .alert-button:focus-visible {
   outline: 2px solid var(--ion-color-primary);
   outline-offset: 2px;
+}
+
+/* --- 3b. Rückfragen ohne folgenreichen Knopf im breiten Browserfenster ---
+   Simon, 15.10.2026: Auch „Absage zurücknehmen", „Chat erstellen?", „Alle
+   bestätigen?" und das Einmalpasswort sehen im Browser aus wie die Fenster
+   der Web-Fassung, nicht wie Android. utils/rueckfragenOptik.ts setzt dafür
+   nur im breiten Layout .app-rueckfrage.app-rueckfrage--neutral; Karte,
+   Titel, Text und Knopfleiste kommen aus Teil 3. Hier nur, was anders ist:
+   kein Symbol im Kopf (Kreis und Maske aus Teil 2 entfallen), und der
+   bestätigende Knopf ist gefüllt wie der Hauptknopf eines Web-Fensters
+   (.web-knopf--primaer) -- „Abbrechen" (role 'cancel') bleibt sekundär.
+   Die Knopf-Regeln stehen nach Teil 3: gleiche Spezifität, die spätere gilt. */
+ion-alert.app-rueckfrage--neutral .alert-head::before,
+ion-alert.app-rueckfrage--neutral .alert-head::after {
+  content: none;
+}
+
+html[data-layout='breit'] ion-alert.app-rueckfrage--neutral:is(.ios, .md) .alert-wrapper .alert-button-group .alert-button:not(.alert-button-role-cancel) {
+  border-color: var(--ion-color-primary);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+}
+
+html[data-layout='breit'] ion-alert.app-rueckfrage--neutral:is(.ios, .md) .alert-wrapper .alert-button-group .alert-button:not(.alert-button-role-cancel):hover {
+  border-color: var(--ion-color-primary-shade, var(--ion-color-primary));
+  background: var(--ion-color-primary-shade, var(--ion-color-primary));
 }
 
 /* --- 4. Rückfragen der Web-Fenster (.web-rueckfrage) ---

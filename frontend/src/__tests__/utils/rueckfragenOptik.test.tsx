@@ -8,6 +8,10 @@
 //   2. der Beobachter mit ECHTEN Rückfragen: ion-alert rendert in jsdom
 //      vollständig (wie in mindestversionHinweis.test.tsx), geöffnet über
 //      useIonAlert wie an den rund 70 Stellen der App;
+//   2b. im breiten Browserfenster (15.10.2026, Simon: jede Rückfrage im
+//      Browser sieht aus wie eine des Browsers): auch Rückfragen ohne
+//      folgenreichen Knopf tragen das Kennzeichen, auf das das Stylesheet
+//      hört (app-rueckfrage--neutral, ohne Symbol) -- in der App nicht;
 //   3. am Stylesheet theme/rueckfragen.css nur, was nicht Optik ist: nur
 //      Tokens, Kontraste hell und dunkel nachgerechnet (und dass das
 //      Stylesheet genau die gerechneten Farbpaare benutzt), sichtbarer Fokus.
@@ -24,6 +28,7 @@ import {
   rueckfrageArt,
   rueckfrageKennzeichnen,
   rueckfragenOptikAnschalten,
+  RUECKFRAGE_NEUTRAL,
   RUECKFRAGE_SYMBOL,
   type RueckfrageKnopf,
 } from '../../utils/rueckfragenOptik';
@@ -50,6 +55,9 @@ describe('rueckfrageArt: welche Rückfrage die Knöpfe ergeben', () => {
     ['„Ausblenden" (Beitrag)', gefahr('Ausblenden'), 'warnung'],
     ['„Deaktivieren" (Gemeinde)', gefahr('Deaktivieren'), 'warnung'],
     ['„Zurückziehen" (Einladung)', gefahr('Zurückziehen'), 'warnung'],
+    // Seit 15.10.2026 folgenreich markiert (AdminEventsPage, useChallengeLeitung).
+    ['„Zurücksetzen" (Aktivität: nimmt Punkte zurück)', gefahr('Zurücksetzen'), 'warnung'],
+    ['„Anonym stellen" (Beitrag: lässt sich nicht rückgängig machen)', gefahr('Anonym stellen'), 'warnung'],
     ['„Löschung beantragen" ist kein Löschen-Wort', gefahr('Löschung beantragen'), 'warnung'],
     ['ohne destructive: Einmalpasswort (Kopieren, Fertig)', [{ text: 'Kopieren' }, { text: 'Fertig', role: 'cancel' }], null],
     ['„Löschen" ohne destructive zählt nicht', [abbrechen, { text: 'Löschen' }], null],
@@ -80,6 +88,42 @@ describe('rueckfrageKennzeichnen: Klassen und Symbol am ion-alert', () => {
     expect(rueckfrageKennzeichnen(el)).toBe('warnung');
     expect([...el.classList]).toEqual(['app-rueckfrage', 'app-rueckfrage--warnung']);
     expect(el.style.getPropertyValue(RUECKFRAGE_SYMBOL)).toBe(`url("${ICON_WARNUNG_GEFUELLT}")`);
+  });
+
+  describe('im breiten Browserfenster (html[data-layout="breit"])', () => {
+    beforeEach(() => { document.documentElement.setAttribute('data-layout', 'breit'); });
+    afterEach(() => { document.documentElement.removeAttribute('data-layout'); });
+
+    it('ohne folgenreichen Knopf: neutral -- die Klasse der Web-Optik, kein Symbol', () => {
+      const el = alert([abbrechen, { text: 'Erstellen' }]);
+      expect(rueckfrageKennzeichnen(el)).toBe('neutral');
+      expect([...el.classList]).toEqual(['app-rueckfrage', RUECKFRAGE_NEUTRAL]);
+      expect(el.style.getPropertyValue(RUECKFRAGE_SYMBOL)).toBe('');
+    });
+
+    it('mit folgenreichem Knopf bleibt es Löschen bzw. Warnung, nie zusätzlich neutral', () => {
+      const el = alert(gefahr('Löschen'));
+      expect(rueckfrageKennzeichnen(el)).toBe('loeschen');
+      expect([...el.classList]).toEqual(['app-rueckfrage', 'app-rueckfrage--loeschen']);
+      Object.assign(el, { buttons: gefahr('Zurücksetzen') });
+      expect(rueckfrageKennzeichnen(el)).toBe('warnung');
+      expect([...el.classList]).toEqual(['app-rueckfrage', 'app-rueckfrage--warnung']);
+    });
+
+    it('wiederverwendet: aus Löschen wird neutral, Symbol und Lösch-Klasse sind weg', () => {
+      const el = alert(gefahr('Löschen'));
+      rueckfrageKennzeichnen(el);
+      Object.assign(el, { buttons: ['OK'] });
+      expect(rueckfrageKennzeichnen(el)).toBe('neutral');
+      expect([...el.classList]).toEqual(['app-rueckfrage', RUECKFRAGE_NEUTRAL]);
+      expect(el.style.getPropertyValue(RUECKFRAGE_SYMBOL)).toBe('');
+    });
+  });
+
+  it('in der App (ohne breites Layout) bleibt eine Rückfrage ohne folgenreichen Knopf ohne Kennzeichen', () => {
+    const el = alert([abbrechen, { text: 'Erstellen' }]);
+    expect(rueckfrageKennzeichnen(el)).toBeNull();
+    expect([...el.classList]).toEqual([]);
   });
 
   it('wiederverwendetes Element: neue Knöpfe ohne destructive räumen Klassen und Symbol ab, fremde Klassen bleiben', () => {
@@ -174,6 +218,27 @@ describe('rueckfragenOptikAnschalten: echte Rückfragen aus useIonAlert', () => 
     const alert = await oeffne(EINMALPASSWORT);
     expect([...alert.classList].filter((k) => k.startsWith('app-'))).toEqual([]);
     expect(alert.getAttribute('style') ?? '').not.toContain(RUECKFRAGE_SYMBOL);
+  });
+
+  it('im breiten Browserfenster tragen auch „Chat erstellen?" und das Einmalpasswort das Kennzeichen der Web-Optik, ohne Symbol', async () => {
+    document.documentElement.setAttribute('data-layout', 'breit');
+    try {
+      const frage = await oeffne({ header: 'Chat erstellen?', message: 'Einen Chat für dieses Event anlegen?', buttons: [abbrechen, { text: 'Erstellen' }] });
+      expect(frage).toHaveClass('app-rueckfrage', RUECKFRAGE_NEUTRAL);
+      expect(frage.style.getPropertyValue(RUECKFRAGE_SYMBOL)).toBe('');
+      cleanup();
+      document.querySelectorAll('ion-alert').forEach((el) => el.remove());
+      const passwort = await oeffne(EINMALPASSWORT);
+      expect(passwort).toHaveClass('app-rueckfrage', RUECKFRAGE_NEUTRAL);
+      // Löschen bleibt Löschen -- mit Symbol, ohne neutral.
+      cleanup();
+      document.querySelectorAll('ion-alert').forEach((el) => el.remove());
+      const loeschen = await oeffne(LOESCHEN);
+      expect(loeschen).toHaveClass('app-rueckfrage', 'app-rueckfrage--loeschen');
+      expect(loeschen).not.toHaveClass(RUECKFRAGE_NEUTRAL);
+    } finally {
+      document.documentElement.removeAttribute('data-layout');
+    }
   });
 
   it('ohne Anschalten keine Kennzeichnung -- die Klasse kommt vom Beobachter', async () => {
@@ -296,6 +361,13 @@ describe('theme/rueckfragen.css', () => {
     expect(erklaerungen('ion-alert.app-rueckfrage .alert-head::before').background).toBe('var(--app-rueckfrage-kreis)');
     expect(erklaerungen('ion-alert.app-rueckfrage .alert-head::after').background).toBe('var(--app-rueckfrage-farbe)');
     expect(erklaerungen('.web-rueckfrage-symbol')).toMatchObject({ background: 'var(--app-rueckfrage-kreis)', color: 'var(--app-rueckfrage-farbe)' });
+  });
+
+  it('das Stylesheet hört auf das Kennzeichen der neutralen Rückfrage (sonst bliebe sie im Browser im Android-Aussehen)', () => {
+    // Die Web-Optik aus Teil 3 hängt an .app-rueckfrage, das Weglassen des
+    // Symbols an .app-rueckfrage--neutral. Wie es aussieht, prüft kein Test.
+    expect(alleRegeln.some(({ selektor }) => selektor.startsWith(`${BREIT} ion-alert.app-rueckfrage:is(.ios, .md)`))).toBe(true);
+    expect(alleRegeln.some(({ selektor }) => selektor.includes(`ion-alert.${RUECKFRAGE_NEUTRAL}`))).toBe(true);
   });
 
   it('im breiten Fenster zeigen die Knöpfe den Tastaturfokus', () => {

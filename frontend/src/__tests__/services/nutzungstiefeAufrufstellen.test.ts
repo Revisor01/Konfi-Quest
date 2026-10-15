@@ -137,7 +137,9 @@ const STELLEN: Array<{
     vorher: "await api.put('/notifications/preferences', aenderung)"
   },
   {
-    datei: 'src/components/admin/modals/EinladungModal.tsx',
+    // Seit 15.10.2026 im Hook, den das Modal der App und der Dialog der
+    // Web-Fassung teilen.
+    datei: 'src/components/admin/usePersonEinladen.ts',
     handlung: 'einladung-gesendet',
     vorher: "await api.post('/einladungen', { kennung: kennung.trim(), role_id: rolleId })"
   },

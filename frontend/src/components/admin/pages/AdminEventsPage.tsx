@@ -769,6 +769,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Zurücksetzen',
+          // Folgenreich: Eine genehmigte Aktivität nimmt ihre Punkte zurück.
+          // Mit role 'destructive' zeigt die Rückfrage das Warndreieck
+          // (utils/rueckfragenOptik.ts; Simon, 15.10.2026).
+          role: 'destructive',
           handler: async () => {
             try {
               await api.put(`/admin/activities/requests/${request.id}/reset`);

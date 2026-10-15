@@ -331,7 +331,9 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
       message: `Der Beitrag von ${submission.konfi_name || 'dieser Person'} erscheint dann ohne Namen — in der Galerie wie im Export. Das lässt sich nicht rückgängig machen; ihr in der Leitung seht weiterhin, von wem er stammt.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
-        { text: 'Anonym stellen', handler: () => { moderate(submission, 'anonymize'); } }
+        // Endgültig: role 'destructive' gibt der Rückfrage das Warndreieck
+        // (utils/rueckfragenOptik.ts; Simon, 15.10.2026).
+        { text: 'Anonym stellen', role: 'destructive', handler: () => { moderate(submission, 'anonymize'); } }
       ]
     });
   };

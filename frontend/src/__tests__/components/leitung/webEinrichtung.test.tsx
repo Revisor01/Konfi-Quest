@@ -269,17 +269,22 @@ describe('Konfis einladen (Web)', () => {
     expect(screen.getByLabelText('Jahrgang')).toHaveValue('11');
   });
 
-  it('Verlaengern fragt wie in der App nach den Tagen und ruft erst danach die Route', async () => {
+  // Seit 15.10.2026 fragt der Browser in einem Fenster der Web-Fassung nach
+  // den Tagen (WebEinladungVerlaengernDialog) statt mit der Rückfrage der App;
+  // App und Browser im Vergleich: webEinladungVerlaengern.test.tsx.
+  it('Verlaengern fragt im Fenster der Web-Fassung nach den Tagen und ruft erst danach die Route', async () => {
     h.apiPost.mockResolvedValue({ data: { expires_at: mittags(19) } });
     render(<AdminInvitePage onClose={vi.fn()} />);
     await warten();
     fireEvent.click(screen.getByRole('button', { name: 'Einladung ABC123 verlängern' }));
-    expect(h.stand.alert?.header).toBe('Einladung verlängern');
-    const optionen = (h.stand.alert as unknown as { inputs: Array<{ value: number; label: string }> }).inputs;
-    expect(optionen.map((o) => o.value)).toEqual([7, 14, 30, 60, 90]);
-    expect(optionen[4].label).toMatch(/^Bis .* — länger als 90 Tage geht nicht$/);
+    expect(h.stand.alert).toBeNull();
+    const dialog = screen.getByRole('dialog', { name: 'Einladung verlängern' });
+    const auswahl = within(dialog).getByRole('combobox', { name: 'Um wie viele Tage?' }) as HTMLSelectElement;
+    expect([...auswahl.options].map((o) => o.value)).toEqual(['7', '14', '30', '60', '90']);
+    expect(auswahl.options[4].textContent).toMatch(/^Bis .* — länger als 90 Tage geht nicht$/);
     expect(h.apiPost).not.toHaveBeenCalledWith('/auth/invite-codes/1/extend', expect.anything());
-    await bestaetigen('Verlängern', 14);
+    fireEvent.change(auswahl, { target: { value: '14' } });
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Verlängern' })); });
     expect(h.apiPost).toHaveBeenCalledWith('/auth/invite-codes/1/extend', { tage: 14 });
     expect(h.setSuccess).toHaveBeenCalledWith(expect.stringMatching(/^Einladung gilt bis \d{2}\.\d{2}\.\d{4}$/));
   });
