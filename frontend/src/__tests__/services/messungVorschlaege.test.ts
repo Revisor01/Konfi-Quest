@@ -362,7 +362,9 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S8: Postfach geöffnet, Mitteilung angetippt — nur die Art', () => {
-    const q = lies('src/components/common/PostfachModal.tsx');
+    // Seit 15.10.2026 steht die Logik des Postfachs fuer App-Modal und
+    // Web-Dialog gemeinsam in usePostfach (common/PostfachModal liest sie).
+    const q = lies('src/components/common/usePostfach.ts');
     expect(q).toMatch(/setOffen\(true\);[\s\S]{0,200}trackHandlung\('postfach-angesehen'\);/);
     expect(q).toContain("trackHandlung('mitteilung-angetippt', { art: serverSchluesselMesswert(eintrag.type) });");
   });
