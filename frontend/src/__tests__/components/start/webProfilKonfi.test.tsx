@@ -242,13 +242,13 @@ describe('Profil der Konfis (Web): Punkte', () => {
     expect(screen.getByRole('link', { name: 'Events: 6' })).toHaveAttribute('href', '/konfi/events');
     const aktivitaeten = screen.getByRole('link', { name: 'Aktivitäten: 9' });
     expect(aktivitaeten).toHaveAttribute('href', '/konfi/events?segment=antraege');
-    expect(aktivitaeten).toHaveTextContent('2 Anträge warten');
+    expect(aktivitaeten).toHaveTextContent('2 offen');
   });
 
   it('ein einzelner Antrag und keiner stehen in der Einzahl bzw. als „Keine"', async () => {
     h.profil = { ...PROFIL, pending_requests: 1 };
     const { unmount } = await zeige();
-    expect(screen.getByRole('link', { name: 'Aktivitäten: 9' })).toHaveTextContent('1 Antrag wartet');
+    expect(screen.getByRole('link', { name: 'Aktivitäten: 9' })).toHaveTextContent('1 offen');
     unmount();
     h.profil = { ...PROFIL, pending_requests: 0 };
     await zeige();

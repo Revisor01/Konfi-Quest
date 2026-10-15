@@ -365,7 +365,7 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     // support/supportAnsichtRechte.test.tsx).
     expect(mehr).toContain('rechts={istSuperAdmin(user) ? (');
     expect(mehr).toContain('aria-label="Support-Ansicht öffnen"');
-    expect(mehr).toContain('aria-label="Performance anzeigen"');
+    expect(mehr).toContain('aria-label="Betrieb anzeigen"');
 
     const termine = lies('src/components/admin/pages/AdminEventsPage.tsx');
     expect(termine).toContain('rechts={!isAntraege && canCreate ? (');
@@ -399,15 +399,20 @@ describe('Die Leitung baut keine eigene Kopfzeile mehr', () => {
     expect(lies('src/components/admin/pages/AdminWrappedPage.tsx')).toContain("disabled={!istLeitung && segment === 'teamer'}");
   });
 
-  it('AdminInvitePage ist ein Modal und behaelt bewusst seine eigene Kopfzeile', () => {
-    // Liegt unter pages/, wird aber aus "Mehr" per useIonModal praesentiert
-    // (AdminSettingsPage) und hat einen Schliessen-Knopf. In einem Modal
+  it('AdminInvitePage behaelt als Modal seine eigene Kopfzeile; als Seite traegt sie die gemeinsame mit Zurueck', () => {
+    // Liegt unter pages/, wird aus "Mehr" per useIonModal praesentiert
+    // (AdminSettingsPage) und hat dort einen Schliessen-Knopf. In einem Modal
     // haetten Glocke und Gemeinde-Umschalter nichts zu suchen -- ein
     // Gemeinde-Wechsel unter einem offenen Modal fuehrt ins Leere.
+    // Als Seite unter /admin/settings/invite (ohne onClose) zeigte sie bis
+    // 15.10.2026 dasselbe X, das ins Leere rief; dort steht jetzt die
+    // gemeinsame Kopfzeile mit Zurueck (gerendert geprueft in
+    // leitung/webEinrichtung.test.tsx).
     const einladen = lies('src/components/admin/pages/AdminInvitePage.tsx');
-    expect(einladen).not.toContain('AppKopfzeile');
     expect(zaehle(einladen, '<IonHeader>')).toBe(1);
     expect(einladen).toContain('aria-label="Schließen"');
+    expect(zaehle(einladen, '<AppKopfzeile ')).toBe(1);
+    expect(einladen).toContain('onZurueck={() => window.history.back()}');
     expect(lies('src/components/admin/pages/AdminSettingsPage.tsx')).toContain('useIonModal(AdminInvitePage, {');
   });
 });

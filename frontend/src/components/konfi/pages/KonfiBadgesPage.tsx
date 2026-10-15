@@ -16,7 +16,7 @@ import api from '../../../services/api';
 import { writeQueue } from '../../../services/writeQueue';
 import { networkMonitor } from '../../../services/networkMonitor';
 import BadgesView from '../views/BadgesView';
-import type { BadgesStatus } from '../../../seiten/badgesKonfi';
+import { BADGES_TITEL, BADGES_UNTERTITEL, type BadgesStatus } from '../../../seiten/badgesKonfi';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { safeUUID } from '../../../utils/uuid';
@@ -189,7 +189,7 @@ const KonfiBadgesPage: React.FC = () => {
 
   if (breit) {
     return (
-      <WebSeite bereich="Badges" titel="Deine Badges" untertitel="Sammle alle Erfolge!" pageRef={pageRef}>
+      <WebSeite bereich="Badges" titel={BADGES_TITEL} untertitel={BADGES_UNTERTITEL} pageRef={pageRef}>
         {loading ? (
           <WebLaden kacheln={4} karten={2} text="Badges werden geladen." />
         ) : (

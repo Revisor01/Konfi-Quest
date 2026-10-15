@@ -13,6 +13,7 @@ import {
   ICON_WARNUNG,
 } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
+import { NurSupport } from '../../support/SupportBausteine';
 import { fehlerStatus } from '../../../utils/fehler';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
@@ -268,7 +269,7 @@ const RoutenListe: React.FC<{ zeilen: RoutenZeile[] }> = ({ zeilen }) => (
   </div>
 );
 
-const AdminMetricsPage: React.FC = () => {
+const BetriebSeite: React.FC = () => {
   // Im Browser ab 992 px Kennzahlen, Tabellen und Reiter (web/leitung/WebBetrieb.tsx);
   // Laden, Aktualisieren und alle Urteile dieser Seite bleiben dieselben.
   const breit = useBreitesLayout();
@@ -824,6 +825,15 @@ const VerlaufListe: React.FC<{
       ))}
     </div>
   </>
+);
+
+// Der Betrieb gehoert zur Support-Ansicht: nur fuer Konten mit
+// Super-Admin-Recht. Ohne das Recht (Leitung per eingetippter Adresse) zeigte
+// die Seite bis 15.10.2026 ihre App-Fassung bzw. im Browser eine Fehlerkarte,
+// nachdem der Server mit 403 geantwortet hatte; jetzt wie die uebrigen Seiten
+// der Ansicht den Hinweis "Nur fuer den Support" (NurSupport), ohne Abruf.
+const AdminMetricsPage: React.FC = () => (
+  <NurSupport titel="Betrieb"><BetriebSeite /></NurSupport>
 );
 
 export default AdminMetricsPage;

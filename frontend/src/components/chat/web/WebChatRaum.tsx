@@ -29,6 +29,7 @@ import WebMitgliederDialog from './WebMitgliederDialog';
 import WebUmfrageDialog from './WebUmfrageDialog';
 import { useUntenBleiben } from './useUntenBleiben';
 import { listenMerker } from './chatListenMerker';
+import { nachrichtHerunterladen } from '../dateiImBrowser';
 import '../../../theme/web/chat.css';
 
 export interface WebChatRaumProps {
@@ -233,6 +234,7 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
           onAntworten={(message) => { setReplyToMessage(message); feldRef.current?.focus(); }}
           onKopieren={kopieren}
           onTeilen={(message) => { void handleShareMessage(message); }}
+          onHerunterladen={(message) => { void nachrichtHerunterladen(message, setError); }}
           onLoeschen={deleteMessage}
           onReaktion={toggleReaction}
           onPickerOeffnen={openReactionPicker}

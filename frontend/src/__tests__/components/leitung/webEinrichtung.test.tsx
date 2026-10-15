@@ -127,31 +127,31 @@ describe('Dashboard einrichten (Web)', () => {
 
   it('Titel, Weg zurueck nach "Mehr" und die Bereiche in der gespeicherten Reihenfolge', () => {
     render(<AdminDashboardSettingsPage />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Dashboard' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Startseiten' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
-    expect(bereiche('Konfi-Dashboard')).toEqual(['Events', 'Countdown', 'Challenges', 'Konfispruch', 'Tageslosung', 'Badges', 'Ranking']);
-    expect(bereiche('Team-Dashboard')).toEqual(['Zertifikate', 'Challenges', 'Konfispruch', 'Events', 'Badges', 'Tageslosung']);
+    expect(bereiche('Startseite der Konfis')).toEqual(['Events', 'Countdown', 'Challenges', 'Konfispruch', 'Tageslosung', 'Badges', 'Ranking']);
+    expect(bereiche('Startseite des Teams')).toEqual(['Zertifikate', 'Challenges', 'Konfispruch', 'Events', 'Badges', 'Tageslosung']);
     expect(screen.getByText('5 von 7 Bereichen sichtbar')).toBeInTheDocument();
     expect(screen.getByText('5 von 6 Bereichen sichtbar')).toBeInTheDocument();
   });
 
   it('die Schalter zeigen, was eingestellt ist: ausgeschaltet ist nur, was die Einstellungen ausschalten', () => {
     render(<AdminDashboardSettingsPage />);
-    expect(liste('Konfi-Dashboard').getByRole('switch', { name: 'Ranking' })).not.toBeChecked();
-    expect(liste('Konfi-Dashboard').getByRole('switch', { name: 'Tageslosung' })).not.toBeChecked();
-    expect(liste('Konfi-Dashboard').getByRole('switch', { name: 'Events' })).toBeChecked();
+    expect(liste('Startseite der Konfis').getByRole('switch', { name: 'Ranking' })).not.toBeChecked();
+    expect(liste('Startseite der Konfis').getByRole('switch', { name: 'Tageslosung' })).not.toBeChecked();
+    expect(liste('Startseite der Konfis').getByRole('switch', { name: 'Events' })).toBeChecked();
     // Fuers Team gilt die Einstellung des Teams, nicht die der Konfis: Dort ist die Tageslosung an.
-    expect(liste('Team-Dashboard').getByRole('switch', { name: 'Tageslosung' })).toBeChecked();
-    expect(liste('Team-Dashboard').getByRole('switch', { name: 'Badges' })).not.toBeChecked();
-    expect(liste('Team-Dashboard').getByRole('switch', { name: 'Zertifikate' })).toBeChecked();
+    expect(liste('Startseite des Teams').getByRole('switch', { name: 'Tageslosung' })).toBeChecked();
+    expect(liste('Startseite des Teams').getByRole('switch', { name: 'Badges' })).not.toBeChecked();
+    expect(liste('Startseite des Teams').getByRole('switch', { name: 'Zertifikate' })).toBeChecked();
   });
 
   it('ein Schalter speichert sofort: Konfi mit "dashboard_", Team mit "teamer_dashboard_"', async () => {
     render(<AdminDashboardSettingsPage />);
-    fireEvent.click(within(screen.getByRole('list', { name: 'Konfi-Dashboard' })).getByRole('switch', { name: 'Events' }));
+    fireEvent.click(within(screen.getByRole('list', { name: 'Startseite der Konfis' })).getByRole('switch', { name: 'Events' }));
     await warten();
     expect(h.apiPut).toHaveBeenCalledWith('/settings', { dashboard_show_events: false });
-    fireEvent.click(within(screen.getByRole('list', { name: 'Team-Dashboard' })).getByRole('switch', { name: 'Zertifikate' }));
+    fireEvent.click(within(screen.getByRole('list', { name: 'Startseite des Teams' })).getByRole('switch', { name: 'Zertifikate' }));
     await warten();
     expect(h.apiPut).toHaveBeenLastCalledWith('/settings', { teamer_dashboard_show_zertifikate: false });
     expect(h.apiPut).toHaveBeenCalledTimes(2);
@@ -160,7 +160,7 @@ describe('Dashboard einrichten (Web)', () => {
   it('scheitert das Speichern, springt der Schalter zurueck und die Meldung steht da', async () => {
     h.apiPut.mockRejectedValue(new Error('Netz weg'));
     render(<AdminDashboardSettingsPage />);
-    const events = within(screen.getByRole('list', { name: 'Konfi-Dashboard' })).getByRole('switch', { name: 'Events' });
+    const events = within(screen.getByRole('list', { name: 'Startseite der Konfis' })).getByRole('switch', { name: 'Events' });
     fireEvent.click(events);
     await warten();
     expect(h.setError).toHaveBeenCalledWith('Fehler beim Speichern');
@@ -169,17 +169,17 @@ describe('Dashboard einrichten (Web)', () => {
 
   it('die Pfeile verschieben einen Bereich und speichern die neue Reihenfolge; am Rand sind sie gesperrt', async () => {
     render(<AdminDashboardSettingsPage />);
-    expect(liste('Konfi-Dashboard').getByRole('button', { name: 'Events nach oben' })).toBeDisabled();
-    expect(liste('Konfi-Dashboard').getByRole('button', { name: 'Ranking nach unten' })).toBeDisabled();
-    fireEvent.click(liste('Konfi-Dashboard').getByRole('button', { name: 'Events nach unten' }));
+    expect(liste('Startseite der Konfis').getByRole('button', { name: 'Events nach oben' })).toBeDisabled();
+    expect(liste('Startseite der Konfis').getByRole('button', { name: 'Ranking nach unten' })).toBeDisabled();
+    fireEvent.click(liste('Startseite der Konfis').getByRole('button', { name: 'Events nach unten' }));
     await warten();
-    expect(bereiche('Konfi-Dashboard').slice(0, 3)).toEqual(['Countdown', 'Events', 'Challenges']);
+    expect(bereiche('Startseite der Konfis').slice(0, 3)).toEqual(['Countdown', 'Events', 'Challenges']);
     expect(h.apiPut).toHaveBeenCalledWith('/settings', {
       dashboard_section_order: JSON.stringify(['konfirmation', 'events', 'challenges', 'konfispruch', 'losung', 'badges', 'ranking']),
     });
-    expect(liste('Konfi-Dashboard').getByRole('button', { name: 'Countdown nach oben' })).toBeDisabled();
+    expect(liste('Startseite der Konfis').getByRole('button', { name: 'Countdown nach oben' })).toBeDisabled();
     // Das Team hat eine eigene Reihenfolge, gespeichert unter eigenem Schluessel.
-    fireEvent.click(liste('Team-Dashboard').getByRole('button', { name: 'Zertifikate nach unten' }));
+    fireEvent.click(liste('Startseite des Teams').getByRole('button', { name: 'Zertifikate nach unten' }));
     await warten();
     expect(h.apiPut).toHaveBeenLastCalledWith('/settings', {
       teamer_dashboard_section_order: JSON.stringify(['challenges', 'zertifikate', 'konfispruch', 'events', 'badges', 'losung']),
@@ -190,8 +190,8 @@ describe('Dashboard einrichten (Web)', () => {
     h.breit = false;
     const { container } = render(<AdminDashboardSettingsPage />);
     expect(container.querySelector('.web-seite')).toBeNull();
-    expect(screen.queryByRole('list', { name: 'Konfi-Dashboard' })).toBeNull();
-    expect(screen.getAllByRole('heading', { level: 1, name: 'Dashboard' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('list', { name: 'Startseite der Konfis' })).toBeNull();
+    expect(screen.getAllByRole('heading', { level: 1, name: 'Startseiten' }).length).toBeGreaterThan(0);
   });
 });
 
@@ -337,6 +337,35 @@ describe('Konfis einladen (Web)', () => {
     expect(container.querySelector('.web-seite')).toBeNull();
     expect(screen.queryByRole('table')).toBeNull();
   });
+
+  // Unter 992 px zeigte die Seite /admin/settings/invite (Link „Konfis
+  // einladen" auf der Konfi-Seite des Browsers) das X des Fensters -- es rief
+  // ein onClose, das die Route nie mitgibt: TypeError, man kam nicht zurueck
+  // (Befund 15.10.2026). Als Seite steht jetzt der Weg zurueck im Verlauf.
+  it('schmal als Seite (ohne onClose): Zurück im Verlauf statt des X', async () => {
+    h.breit = false;
+    const zurueck = vi.spyOn(window.history, 'back').mockImplementation(() => undefined);
+    try {
+      render(<AdminInvitePage />);
+      await warten();
+      expect(screen.queryByRole('button', { name: 'Schließen' })).toBeNull();
+      fireEvent.click(screen.getByRole('button', { name: 'Zurück' }));
+      expect(zurueck).toHaveBeenCalledTimes(1);
+      expect(screen.getAllByRole('heading', { name: 'Konfis einladen' }).length).toBeGreaterThan(0);
+    } finally {
+      zurueck.mockRestore();
+    }
+  });
+
+  it('als Fenster aus „Mehr" bleibt das X und schließt das Fenster', async () => {
+    h.breit = false;
+    const schliessen = vi.fn();
+    render(<AdminInvitePage onClose={vi.fn()} dismiss={schliessen} />);
+    await warten();
+    expect(screen.queryByRole('button', { name: 'Zurück' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }));
+    expect(schliessen).toHaveBeenCalledTimes(1);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -418,20 +447,84 @@ describe('Jahresrueckblick (Web)', () => {
     expect(h.apiGet.mock.calls.filter(([u]) => u === '/wrapped/ausgaben')).toHaveLength(2);
   });
 
-  it('ein eigener Name geht als Titel mit; ohne Jahrgang kein Aufruf, sondern die Meldung', async () => {
+  it('ein eigener Name geht als Titel mit; ohne Jahrgang kein Aufruf, sondern die Meldung im Fenster', async () => {
     await oeffnen();
     fireEvent.click(screen.getByRole('button', { name: 'Neuer Rückblick' }));
     let dialog = screen.getByRole('dialog', { name: 'Neuer Rückblick' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Rückblick erstellen und freigeben' }));
     await warten();
     expect(h.apiPost).not.toHaveBeenCalled();
-    expect(h.setError).toHaveBeenCalledWith('Bitte einen Jahrgang wählen');
+    // Im Fenster, nicht oben: Die Meldung oben laege unter dem Grund des Fensters.
+    expect(within(screen.getByRole('dialog', { name: 'Neuer Rückblick' })).getByRole('alert')).toHaveTextContent('Bitte einen Jahrgang wählen');
+    expect(h.setError).not.toHaveBeenCalled();
     dialog = screen.getByRole('dialog', { name: 'Neuer Rückblick' });
     fireEvent.change(within(dialog).getByLabelText('Jahrgang'), { target: { value: '11' } });
     fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Rückblick nach der Freizeit' } });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Rückblick erstellen und freigeben' }));
     await warten();
     expect(h.apiPost).toHaveBeenCalledWith('/wrapped/generate/11', { titel: 'Rückblick nach der Freizeit' });
+  });
+
+  // Das Fenster „Neuer Rückblick" sperrte beim Erstellen nicht und meldete
+  // Fehler oben -- dort lagen sie unter dem abgedunkelten Grund (Befund
+  // 15.10.2026). Wie die übrigen Fenster: gesperrt, solange erstellt wird;
+  // die Meldung steht im Fenster, das Fenster bleibt offen.
+  it('solange erstellt wird, schließt nichts das Fenster; danach ist es zu', async () => {
+    let fertig: (wert: { data: unknown }) => void = () => undefined;
+    h.apiPost.mockImplementation(() => new Promise((r) => { fertig = r; }));
+    await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: 'Neuer Rückblick' }));
+    const dialog = screen.getByRole('dialog', { name: 'Neuer Rückblick' });
+    fireEvent.change(within(dialog).getByLabelText('Jahrgang'), { target: { value: '12' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rückblick erstellen und freigeben' }));
+    await warten();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+    expect(within(dialog).getByRole('button', { name: 'Schließen' })).toBeDisabled();
+    expect(within(dialog).getByRole('button', { name: 'Abbrechen' })).toBeDisabled();
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Neuer Rückblick' })).toBeInTheDocument();
+    await act(async () => { fertig({ data: {} }); });
+    await warten();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(h.setSuccess).toHaveBeenCalledWith('Rückblick erstellt und freigegeben');
+  });
+
+  it('lehnt der Server ab, steht seine Meldung im Fenster; das Fenster bleibt offen und lässt sich wieder schließen', async () => {
+    h.apiPost.mockRejectedValue({ response: { status: 409, data: { error: 'Für diesen Jahrgang läuft gerade ein Rückblick.' } } });
+    await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: 'Neuer Rückblick' }));
+    const dialog = screen.getByRole('dialog', { name: 'Neuer Rückblick' });
+    fireEvent.change(within(dialog).getByLabelText('Jahrgang'), { target: { value: '12' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Rückblick erstellen und freigeben' }));
+    await warten();
+    expect(h.apiPost).toHaveBeenCalledWith('/wrapped/generate/12', { titel: 'Zwischenstand 2' });
+    expect(within(screen.getByRole('dialog', { name: 'Neuer Rückblick' })).getByRole('alert')).toHaveTextContent('Für diesen Jahrgang läuft gerade ein Rückblick.');
+    expect(h.setError).not.toHaveBeenCalled();
+    expect(h.setSuccess).not.toHaveBeenCalled();
+    // Eine Änderung räumt die Meldung weg; danach schließt Abbrechen wieder.
+    fireEvent.change(within(dialog).getByLabelText('Jahrgang'), { target: { value: '11' } });
+    expect(within(dialog).queryByRole('alert')).toBeNull();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('schmal: die App meldet wie bisher oben (setError), mit demselben Aufruf', async () => {
+    h.breit = false;
+    h.apiPost.mockRejectedValue({ response: { status: 409, data: { error: 'Für diesen Jahrgang läuft gerade ein Rückblick.' } } });
+    await oeffnen();
+    fireEvent.click(screen.getByRole('button', { name: 'Neuen Rückblick anlegen' }));
+    // Ohne Jahrgang: dieselbe Meldung, oben.
+    fireEvent.click(screen.getByRole('button', { name: 'Rückblick erstellen und freigeben' }));
+    await warten();
+    expect(h.apiPost).not.toHaveBeenCalled();
+    expect(h.setError).toHaveBeenCalledWith('Bitte einen Jahrgang wählen');
+    fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Rückblick erstellen und freigeben' }));
+    await warten();
+    expect(h.apiPost).toHaveBeenCalledTimes(1);
+    expect(h.apiPost.mock.calls[0][0]).toBe('/wrapped/generate/12');
+    expect(h.setError).toHaveBeenCalledTimes(2);
+    expect(h.setError).toHaveBeenLastCalledWith('Für diesen Jahrgang läuft gerade ein Rückblick.');
   });
 
   it('Abbrechen und Escape schliessen den Dialog ohne Aufruf', async () => {

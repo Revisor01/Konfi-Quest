@@ -119,7 +119,7 @@ const AdminSettingsPage: React.FC = () => {
       ],
     },
     dashboard: {
-      title: 'Dashboard', icon: ICON_APPS, color: 'var(--app-color-organizations)',
+      title: 'Startseiten', icon: ICON_APPS, color: 'var(--app-color-organizations)',
       paragraphs: [
         'Lege fest, welche Bereiche auf den Startseiten von Konfis und Team angezeigt werden.',
         'So blendest du z.B. die Tageslosung, die Bestenliste oder einzelne Karten ein oder aus — passend zu deiner Gemeinde.',
@@ -147,7 +147,7 @@ const AdminSettingsPage: React.FC = () => {
         'Jeder Konfi gehört zu einem Jahrgang. Hier legst du neue Jahrgänge an und verwaltest die bestehenden.',
         'Pro Jahrgang legst du die Punkteziele für Gottesdienst und Gemeinde fest — also wie viele Punkte deine Konfis in jedem Bereich erreichen sollen.',
         'Außerdem gibst du hier frei, ab wann die Konfis ihren Konfispruch selbst auswählen dürfen.',
-        'Am Jahrgangsende kannst du das Wrapped freigeben: einen persönlichen Jahresrückblick für jeden Konfi.',
+        'Den Jahresrückblick der Konfis gibst du nicht hier frei, sondern unter „Jahresrückblick“: Dort legst du für einen Jahrgang eine Ausgabe an, und sie wird sofort freigegeben.',
       ],
     },
     categories: {
@@ -266,7 +266,7 @@ const AdminSettingsPage: React.FC = () => {
             <IonButton onClick={() => router.push('/admin/support')} title="Support" aria-label="Support-Ansicht öffnen">
               <IonIcon slot="icon-only" icon={ICON_SUPPORT} />
             </IonButton>
-            <IonButton onClick={() => router.push('/admin/metrics')} title="Performance" aria-label="Performance anzeigen">
+            <IonButton onClick={() => router.push('/admin/metrics')} title="Betrieb" aria-label="Betrieb anzeigen">
               <IonIcon slot="icon-only" icon={ICON_PULS} />
             </IonButton>
           </>
@@ -409,11 +409,11 @@ const AdminSettingsPage: React.FC = () => {
                       <IonIcon icon={ICON_APPS} />
                       </div>
                       <div className="app-list-item__content">
-                      <div className="app-list-item__title">Dashboard</div>
+                      <div className="app-list-item__title">Startseiten</div>
                       <div className="app-list-item__meta"><span className="app-list-item__meta-item">Sichtbare Bereiche für Konfis und Team</span></div>
                       </div>
                       </div>
-                      <IonButton fill="clear" aria-label="Info zum Dashboard" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-text-organizations)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
+                      <IonButton fill="clear" aria-label="Info zu Startseiten" onClick={(e) => { e.stopPropagation(); openInfo(INFOS.dashboard); }} style={{ '--color': 'var(--app-text-organizations)', '--padding-start': 'var(--app-abstand-kompakt)', '--padding-end': 'var(--app-abstand-kompakt)', margin: 0 }}>
                       <IonIcon icon={ICON_INFO} slot="icon-only" style={{ fontSize: 'var(--app-text-titel-gross)' }} />
                       </IonButton>
                     </div>
@@ -445,7 +445,7 @@ const AdminSettingsPage: React.FC = () => {
           </IonList>
         )}
 
-        {/* System-Administration (Organisationen + Performance) liegt fuer
+        {/* System-Administration (Gemeinden + Betrieb) liegt fuer
             super_admins jetzt als Buttons oben rechts im Header — nicht mehr als
             Listen-Eintrag. */}
 

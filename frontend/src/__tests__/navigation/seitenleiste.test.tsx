@@ -404,6 +404,22 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
     expect(aktiv[0].getAttribute('href')).toBe(erwartet);
   });
 
+  // Beim Team hatten die Badges (/teamer/badges, Ziel der Badge-Pushes) und
+  // die alte Adresse des Materials (/teamer/material) keinen Eintrag -- markiert
+  // war gar nichts (Befund 15.10.2026). Sie gehoeren zu Profil bzw. Material,
+  // wie /teamer/profile/badges und /teamer/profile/material.
+  it.each([
+    ['/teamer/badges', '/teamer/profile'],
+    ['/teamer/material', '/teamer/profile/material'],
+    ['/teamer/profile/badges', '/teamer/profile'],
+  ])('Team auf %s: markiert ist %s', (pfad, erwartet) => {
+    zustand.konto = KONTEN.teamer;
+    zeigeLeiste(pfad);
+    const aktiv = leiste()!.querySelectorAll('[aria-current="page"]');
+    expect(aktiv).toHaveLength(1);
+    expect(aktiv[0].getAttribute('href')).toBe(erwartet);
+  });
+
   it('Simons Konto: Gemeinden und Betrieb markieren ihren Support-Eintrag, nicht „Mehr"', () => {
     zustand.konto = KONTEN.simon;
     zeigeLeiste('/admin/organizations');

@@ -19,7 +19,7 @@ import WebKnopf from '../../../web/WebKnopf';
 import WebSchalter from '../../../web/WebSchalter';
 import { WebLaden } from '../../../web/WebZustaende';
 import { verschiebeEintrag } from './dashboardReihenfolge';
-import { DASHBOARD_LISTE_TITEL } from '../../../../seiten/dashboardEinstellungen';
+import { DASHBOARD_LISTE_TITEL, DASHBOARD_TITEL } from '../../../../seiten/dashboardEinstellungen';
 
 export type DashboardZielgruppe = 'konfi' | 'teamer';
 
@@ -89,7 +89,7 @@ const WebDashboardEinstellungen: React.FC<WebDashboardEinstellungenProps> = ({ k
 
   if (laedt) {
     return (
-      <WebSeite bereich="Verwaltung" titel="Dashboard" zurueck={zurueck}>
+      <WebSeite bereich="Verwaltung" titel={DASHBOARD_TITEL} zurueck={zurueck}>
         <WebLaden karten={2} text="Die Einstellungen werden geladen." />
       </WebSeite>
     );
@@ -98,7 +98,7 @@ const WebDashboardEinstellungen: React.FC<WebDashboardEinstellungenProps> = ({ k
   return (
     <WebSeite
       bereich="Verwaltung"
-      titel="Dashboard"
+      titel={DASHBOARD_TITEL}
       untertitel="Welche Bereiche Konfis und Team sehen – und in welcher Reihenfolge"
       zurueck={zurueck}
     >

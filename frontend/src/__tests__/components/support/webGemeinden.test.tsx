@@ -442,12 +442,33 @@ describe('Gemeinden: zwei Gesichter, eine Seite', () => {
     expect(document.querySelector('.web-seite')).toBeNull();
   });
 
-  it('breit, aber ohne Super-Admin-Recht (Leitung per Adresse): die Liste der App, kein 403 der neuen Route', async () => {
+  // Ohne Super-Admin-Recht (Leitung per eingetippter Adresse) stand bis
+  // 15.10.2026 die Liste der App da -- leer, weil der Server mit 403 antwortet.
+  // Wie die übrigen Seiten der Support-Ansicht: der Hinweis „Nur für den
+  // Support", die Seite wird gar nicht montiert und ruft nichts ab.
+  it.each([
+    ['breit', true],
+    ['schmal', false],
+  ])('%s ohne Super-Admin-Recht (Leitung per Adresse): „Nur für den Support“, keine Liste, kein Abruf', async (_name, breit) => {
+    h.breit = breit;
     h.user = { id: 5, display_name: 'Leitung', role_name: 'org_admin' };
     antworten();
     render(<AdminOrganizationsPage />);
+    expect(screen.getByText('Nur für den Support')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Gemeinden' }).length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('Gemeinde suchen')).toBeNull();
+    expect(screen.queryByRole('table')).toBeNull();
+    await act(async () => { await Promise.resolve(); });
+    expect(h.apiGet).not.toHaveBeenCalled();
+  });
+
+  it('erlaubt: Simons Konto (Gemeindeleitung mit Merkmal) sieht im schmalen Fenster die Liste der App', async () => {
+    h.breit = false;
+    h.user = { id: 1, display_name: 'Simon', role_name: 'org_admin', is_super_admin: true };
+    antworten();
+    render(<AdminOrganizationsPage />);
     expect(await screen.findByLabelText('Gemeinde suchen')).toBeInTheDocument();
-    expect(h.apiGet).not.toHaveBeenCalledWith('/support/gemeinden');
+    expect(screen.queryByText('Nur für den Support')).toBeNull();
   });
 });
 

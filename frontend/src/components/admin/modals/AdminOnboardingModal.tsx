@@ -96,8 +96,8 @@ export const SLIDES: OnboardingSlide[] = [
     icon: ICON_STATISTIK,
     color: 'var(--app-color-level)',
     rgb: '--app-color-level-rgb',
-    title: 'Level & Wrapped',
-    text: 'Über Level machst du den Fortschritt sichtbar und vergibst Belohnungen. Am Jahrgangsende gibt es das Wrapped: ein persönlicher Rückblick für jeden Konfi, den du pro Jahrgang freigibst.',
+    title: 'Level & Jahresrückblick',
+    text: 'Über Level machst du den Fortschritt sichtbar und vergibst Belohnungen. Mit dem Jahresrückblick schaut jeder Konfi auf die eigene Konfi-Zeit zurück; du legst ihn je Jahrgang an und gibst ihn damit frei.',
   },
   {
     icon: ICON_ORDNER,

@@ -171,7 +171,7 @@ const WrappedModal: React.FC<WrappedModalProps> = ({ onClose, displayName, jahrg
       })
       .catch((err) => {
         if (err.response?.status === 404) {
-          setError('Dein Wrapped wird bald freigeschaltet');
+          setError('Dein Jahresrückblick wird bald freigeschaltet');
         } else {
           setError('Fehler beim Laden');
         }

@@ -94,6 +94,8 @@ describe('Benutzer:innen (Web): Tabelle', () => {
   it('Spalten und Reihenfolge: Gemeindeleitung, Leitung, dann Team -- darin nach Name', async () => {
     render(<AdminUsersPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Benutzer:innen' })).toBeInTheDocument();
+    // Der Weg zurück nach „Mehr" wie auf den übrigen Seiten dort (fehlte bis 15.10.2026).
+    expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
     expect(within(tabelle()).getAllByRole('columnheader').map((c) => c.textContent))
       .toEqual(['Name', 'Rolle', 'Jahrgänge', 'Status', 'Zuletzt angemeldet', 'Aktionen']);
     expect(namen()).toEqual(['Alex Beispiel', 'Lou Exempel', 'Sam Muster', 'Charlie Demo', 'Gast Beispiel', 'Geschützt Person', 'Robin Probe']);

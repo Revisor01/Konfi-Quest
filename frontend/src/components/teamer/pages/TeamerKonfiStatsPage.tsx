@@ -270,7 +270,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">
-                          Dein Konfi-Wrapped {konfiWrapped.year}
+                          Dein Konfi-Jahresrückblick {konfiWrapped.year}
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">

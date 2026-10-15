@@ -5,7 +5,8 @@
 
 import { wahlen } from './beschreibung';
 
-export const BADGES_TITEL = 'Deine Badges';
+// Ein Name je Bereich: der Reiter heisst „Badges“, die Seite auch (15.10.2026).
+export const BADGES_TITEL = 'Badges';
 export const BADGES_UNTERTITEL = 'Sammle alle Erfolge!';
 
 interface BadgeStand {

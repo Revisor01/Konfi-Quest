@@ -687,10 +687,12 @@ const TeamerProfilePage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent>
               {/* Abzeichen (Simon, 04.09.2026): Aus der Tab-Leiste ins
-                  Profil geholt -- unter "Inhalt" steht danach nur noch das. */}
+                  Profil geholt -- unter "Inhalt" steht danach nur noch das.
+                  Unter dem Profil wie im Browser (/teamer/profile/badges),
+                  nicht auf der alten Adresse /teamer/badges (15.10.2026). */}
               <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--badges"
-                onClick={() => router.push('/teamer/badges')}
+                onClick={() => router.push('/teamer/profile/badges')}
               >
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">

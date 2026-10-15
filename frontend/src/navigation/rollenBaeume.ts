@@ -353,6 +353,14 @@ export const BAEUME: Record<Rolle, RollenBaum> = {
       { tab: 'teamer-material', href: '/teamer/profile/material', icon: ICON_DATEI_GEFUELLT, label: 'Material' },
     ],
     profil: { path: '/teamer/profile', label: 'Profil', icon: ICON_PERSON_GEFUELLT },
+    // Wie bei der Leitung: Seiten ohne eigenen Eintrag in der Leiste markieren
+    // ihren Eintrag. Die Badges stehen im Profil (/teamer/badges ist das Ziel
+    // der Badge-Pushes), /teamer/material ist die alte Adresse des Materials
+    // (Befund 15.10.2026: auf beiden war nichts markiert).
+    zugehoerig: [
+      { von: '/teamer/badges', zu: '/teamer/profile' },
+      { von: '/teamer/material', zu: '/teamer/profile/material' },
+    ],
   },
 
   konfi: {

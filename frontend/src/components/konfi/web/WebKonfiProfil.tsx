@@ -177,7 +177,7 @@ const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
         <WebKachel
           label="Aktivitäten"
           wert={String(p.activity_count || 0)}
-          zusatz={[p.pending_requests > 0 ? `${p.pending_requests} ${p.pending_requests === 1 ? 'Antrag wartet' : 'Anträge warten'}` : 'Keine Anträge offen']}
+          zusatz={[p.pending_requests > 0 ? `${p.pending_requests} offen` : 'Keine Anträge offen']}
           href="/konfi/events?segment=antraege"
         />
       </div>

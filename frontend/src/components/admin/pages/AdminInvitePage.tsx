@@ -51,6 +51,7 @@ import { tageBis } from '../../shared/eventFormatting';
 import { teilenImBrowser } from '../../../services/systemDialoge';
 import { datumKurz } from '../../../utils/dateUtils';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import AppKopfzeile from '../../shared/AppKopfzeile';
 import WebEinladung from '../web/leitung/WebEinladung';
 import WebEinladungVerlaengernDialog from '../web/leitung/WebEinladungVerlaengernDialog';
 import {
@@ -79,7 +80,12 @@ interface ExistingInvite {
 }
 
 interface AdminInviteModalProps {
-  onClose: () => void;
+  /**
+   * Als Fenster aus "Mehr" (useIonModal): onClose und dismiss schliessen es.
+   * Als Seite unter /admin/settings/invite gibt die Route keines von beiden
+   * mit -- dann steht oben der Weg zurueck im Verlauf statt des X.
+   */
+  onClose?: () => void;
   dismiss?: () => void;
 }
 
@@ -90,11 +96,14 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   // (web/leitung/WebEinladung.tsx); als Fenster aus "Mehr" (dismiss gesetzt)
   // bleibt es bei der Darstellung der App. Zustand und Aktionen bleiben dieselben.
   const breit = useBreitesLayout();
+  // Als Seite (Route ohne onClose/dismiss): Das X rief bis 15.10.2026 ein
+  // onClose, das es dort nicht gibt (TypeError, man sass unter 992 px fest).
+  const alsSeite = !dismiss && !onClose;
   const handleClose = () => {
     if (dismiss) {
       dismiss();
     } else {
-      onClose();
+      onClose?.();
     }
   };
 
@@ -383,16 +392,20 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={handleClose} aria-label="Schließen">
-              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Konfis einladen</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      {alsSeite ? (
+        <AppKopfzeile titel="Konfis einladen" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
+      ) : (
+        <IonHeader>
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonButton onClick={handleClose} aria-label="Schließen">
+                <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
+              </IonButton>
+            </IonButtons>
+            <IonTitle>Konfis einladen</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+      )}
 
       <IonContent className="app-gradient-background">
 

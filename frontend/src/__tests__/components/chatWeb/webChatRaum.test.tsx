@@ -33,6 +33,7 @@ const h = vi.hoisted(() => ({
   datei: null as File | null,
   fehlgeschlagene: [] as unknown[],
   gezeichnet: vi.fn(),
+  herunterladen: vi.fn(),
 }));
 
 vi.mock('@ionic/react', async () => (await import('./webChatAttrappe')).ionicAttrappe({
@@ -93,6 +94,10 @@ vi.mock('../../../components/chat/chatTeilen', () => ({
   nachrichtTeilen: vi.fn(),
   chatVerlaufExportieren: (...args: unknown[]) => h.exportieren(...args),
 }));
+vi.mock('../../../components/chat/dateiImBrowser', async (original) => ({
+  ...(await original<typeof import('../../../components/chat/dateiImBrowser')>()),
+  nachrichtHerunterladen: (...args: unknown[]) => h.herunterladen(...args),
+}));
 vi.mock('../../../components/chat/useChatDateien', () => ({
   useChatDateien: () => ({
     selectedFile: h.datei,
@@ -116,6 +121,7 @@ vi.mock('../../../components/chat/modals/MembersModal', () => ({ default: () => 
 
 import { socketNachbau, scrollAufrufe } from './webChatAttrappe';
 import WebChatRaum from '../../../components/chat/web/WebChatRaum';
+import { nachrichtTeilen } from '../../../components/chat/chatTeilen';
 import { entwuerfeZuruecksetzen } from '../../../components/chat/web/chatEntwuerfe';
 import { gezeigteTrennerAnkerLeeren } from '../../../components/chat/chatVerlauf';
 
@@ -713,6 +719,54 @@ describe('Raum (Web): Loeschen, Kopieren, Teilen', () => {
     } finally {
       Reflect.deleteProperty(navigator, 'share');
     }
+  });
+
+  // „Teilen" einer Datei reichte im Browser einen leeren Cache-Pfad weiter
+  // (Befund 15.10.2026). Eine Datei teilt der Browser nur, wenn er Dateien
+  // teilen kann (navigator.canShare mit files) -- sonst steht dort
+  // „Herunterladen". Textnachrichten bleiben, wie sie sind.
+  describe('Dateien', () => {
+    const datei = () => m({ id: 510, message_type: 'file', file_path: 'cd34', file_name: 'plan.pdf', content: '' });
+    afterEach(() => {
+      Reflect.deleteProperty(navigator, 'share');
+      Reflect.deleteProperty(navigator, 'canShare');
+    });
+
+    it('kann der Browser keine Dateien teilen: „Herunterladen" statt „Teilen" -- es speichert genau diese Datei', async () => {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: vi.fn() });
+      IM_RAUM([datei(), fremde()]);
+      await zeigen();
+      const b = blase('plan.pdf');
+      expect(within(b).queryByRole('button', { name: 'Teilen' })).not.toBeInTheDocument();
+      fireEvent.click(within(b).getByRole('button', { name: 'Herunterladen' }));
+      expect(h.herunterladen).toHaveBeenCalledTimes(1);
+      expect((h.herunterladen.mock.calls[0][0] as Message).id).toBe(510);
+      expect(nachrichtTeilen).not.toHaveBeenCalled();
+      // Der Text daneben wird weiter geteilt, nicht heruntergeladen.
+      expect(within(blase('Fremde Nachricht')).getByRole('button', { name: 'Teilen' })).toBeInTheDocument();
+      expect(within(blase('Fremde Nachricht')).queryByRole('button', { name: 'Herunterladen' })).not.toBeInTheDocument();
+    });
+
+    it('ohne Teilen-Fenster ueberhaupt (Firefox): „Herunterladen" fuer Dateien, nichts fuer Text', async () => {
+      IM_RAUM([datei(), fremde()]);
+      await zeigen();
+      expect(within(blase('plan.pdf')).getByRole('button', { name: 'Herunterladen' })).toBeInTheDocument();
+      expect(within(blase('Fremde Nachricht')).queryByRole('button', { name: 'Teilen' })).not.toBeInTheDocument();
+      expect(within(blase('Fremde Nachricht')).queryByRole('button', { name: 'Herunterladen' })).not.toBeInTheDocument();
+    });
+
+    it('kann er Dateien teilen: „Teilen" gibt diese Nachricht weiter, kein „Herunterladen"', async () => {
+      Object.defineProperty(navigator, 'share', { configurable: true, value: vi.fn() });
+      Object.defineProperty(navigator, 'canShare', { configurable: true, value: vi.fn(() => true) });
+      IM_RAUM([datei()]);
+      await zeigen();
+      const b = blase('plan.pdf');
+      expect(within(b).queryByRole('button', { name: 'Herunterladen' })).not.toBeInTheDocument();
+      fireEvent.click(within(b).getByRole('button', { name: 'Teilen' }));
+      expect(nachrichtTeilen).toHaveBeenCalledTimes(1);
+      expect((vi.mocked(nachrichtTeilen).mock.calls[0][0] as Message).id).toBe(510);
+      expect(h.herunterladen).not.toHaveBeenCalled();
+    });
   });
 });
 

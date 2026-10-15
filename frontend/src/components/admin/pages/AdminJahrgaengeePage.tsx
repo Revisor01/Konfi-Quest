@@ -545,7 +545,7 @@ const AdminJahrgaengeePage: React.FC = () => {
           <>
             <SectionHeader
               title="Jahrgänge"
-              subtitle="Konfirmand:innen verwalten"
+              subtitle="Punkteziele und Konfisprüche verwalten"
               icon={ICON_JAHRGANG_GEFUELLT}
               preset="jahrgang"
               stats={[

@@ -99,6 +99,8 @@ const SNAP = {
 
 describe('Betrieb: eine Beschreibung', () => {
   beforeEach(() => {
+    // Der Betrieb gehoert zur Support-Ansicht (NurSupport): Simons Konto.
+    h.user = { ...konto('org_admin'), is_super_admin: true };
     h.apiGet.mockImplementation(async (url: string) => ({ data: url === '/metrics' ? SNAP : { snapshots: [] } }));
   });
 

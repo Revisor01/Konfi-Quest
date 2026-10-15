@@ -5,6 +5,7 @@ import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 import api, { DATEI_TIMEOUT_MS } from '../../services/api';
 import { getMediaBlob } from '../../services/mediaCache';
 import { Message } from '../../types/chat';
+import { dateiImBrowserWeitergeben } from './dateiImBrowser';
 
 /**
  * Teilen und Exportieren aus dem Chat (beim Aufteilen von ChatRoom.tsx
@@ -25,6 +26,16 @@ export async function nachrichtTeilen(
       // trotzdem noch einmal vom Server.
       const blob = await getMediaBlob(message.file_path);
       const fileName = message.file_name || 'file';
+
+      // Im Browser gibt es den Cache des Geraets nicht: Bis 15.10.2026 kam
+      // dort ein leerer Pfad am Teilen-Fenster an statt der Datei. Jetzt geht
+      // die Datei selbst an das Teilen-Fenster -- oder sie wird
+      // heruntergeladen, wenn der Browser keine Dateien teilen kann
+      // (dateiImBrowser.ts).
+      if (!Capacitor.isNativePlatform()) {
+        await dateiImBrowserWeitergeben(blob, fileName, 'Datei aus Konfi Quest');
+        return;
+      }
 
       // In den CACHE schreiben, nicht nach Documents (29.09.2026). Documents
       // ist auf Android der OEFFENTLICHE Ordner "Dokumente" -- dort lesen

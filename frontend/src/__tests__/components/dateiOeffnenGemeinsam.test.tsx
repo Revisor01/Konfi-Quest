@@ -61,6 +61,7 @@ import FileViewerModal from '../../components/shared/FileViewerModal';
 import { nachrichtTeilen } from '../../components/chat/chatTeilen';
 import { clearMediaCache } from '../../services/mediaCache';
 import type { Message } from '../../types/chat';
+import { Capacitor } from '@capacitor/core';
 
 beforeEach(async () => {
   await clearMediaCache();
@@ -188,12 +189,19 @@ describe('Der Betrachter holt weitere Dateien über den Cache', () => {
 
 describe('Teilen aus dem Chat nimmt die Datei vom Gerät', () => {
   it('zweimal dieselbe Datei teilen: ein Download', async () => {
-    const nachricht = { id: 1, file_path: 'ef56', file_name: 'plan.pdf', content: '' } as unknown as Message;
+    // Der Weg der App; im Browser teilt das Teilen-Fenster die Datei selbst
+    // (chatTeilenImBrowser.test.ts).
+    const nativ = vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true);
+    try {
+      const nachricht = { id: 1, file_path: 'ef56', file_name: 'plan.pdf', content: '' } as unknown as Message;
 
-    await nachrichtTeilen(nachricht, vi.fn());
-    await nachrichtTeilen(nachricht, vi.fn());
+      await nachrichtTeilen(nachricht, vi.fn());
+      await nachrichtTeilen(nachricht, vi.fn());
 
-    expect(apiGet.mock.calls.map(([r]) => r)).toEqual(['/chat/files/ef56']);
-    expect(teilen).toHaveBeenCalledTimes(2);
+      expect(apiGet.mock.calls.map(([r]) => r)).toEqual(['/chat/files/ef56']);
+      expect(teilen).toHaveBeenCalledTimes(2);
+    } finally {
+      nativ.mockRestore();
+    }
   });
 });

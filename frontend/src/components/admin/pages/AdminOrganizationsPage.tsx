@@ -9,7 +9,6 @@ import {
   IonButton,
   IonIcon,
 } from '@ionic/react';
-import { useApp } from '../../../contexts/AppContext';
 import { useLiveRefresh } from '../../../contexts/LiveUpdateContext';
 import api from '../../../services/api';
 import { useOfflineQuery } from '../../../hooks/useOfflineQuery';
@@ -19,8 +18,8 @@ import WartungsHinweis from '../../shared/WartungsHinweis';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
-import { istSuperAdmin } from '../../../utils/superAdmin';
 import WebGemeinden from '../../support/web/WebGemeinden';
+import { NurSupport } from '../../support/SupportBausteine';
 import { useGemeindeAktionen } from './useGemeindeAktionen';
 
 interface Organization {
@@ -112,13 +111,15 @@ const GemeindenApp: React.FC = () => {
 };
 
 // Zwei Gesichter, eine Seite (docs/planung/support-web.md, Entscheidung 1):
-// im breiten Browserfenster fuer Konten mit Super-Admin-Recht die Tabelle der
-// Support-Ansicht (GET /support/gemeinden, nur Super-Admin), sonst die
-// Darstellung der App -- unveraendert.
+// im breiten Browserfenster die Tabelle der Support-Ansicht (GET
+// /support/gemeinden, nur Super-Admin), sonst die Darstellung der App --
+// unveraendert. Ohne Super-Admin-Recht (Leitung per eingetippter Adresse)
+// stand bis 15.10.2026 die Liste der App da, leer, weil der Server 403
+// antwortet; jetzt wie die uebrigen Seiten der Support-Ansicht der Hinweis
+// "Nur fuer den Support" (NurSupport), ohne Abruf.
 const AdminOrganizationsPage: React.FC = () => {
   const breit = useBreitesLayout();
-  const { user } = useApp();
-  return breit && istSuperAdmin(user) ? <WebGemeinden /> : <GemeindenApp />;
+  return <NurSupport titel="Gemeinden">{breit ? <WebGemeinden /> : <GemeindenApp />}</NurSupport>;
 };
 
 export default AdminOrganizationsPage;

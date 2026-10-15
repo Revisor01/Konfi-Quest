@@ -187,6 +187,7 @@ const WebBenutzer: React.FC<WebBenutzerProps> = ({
       aktionen={laedt ? undefined : aktionen}
       pageRef={pageRef}
       wartung
+      zurueck={{ href: '/admin/settings', text: 'Mehr' }}
       laden={laedt ? { text: 'Die Benutzer:innen werden geladen.', kacheln: 3, karten: 1 } : undefined}
       kennzahlen={[
         { label: 'Gesamt', wert: String(zahlen.alle) },
