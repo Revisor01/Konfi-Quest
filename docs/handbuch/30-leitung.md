@@ -166,7 +166,10 @@ Eine Konfi zeigt den Kreis mit ihren Initialen, Name und Benutzername,
 Jahrgang, je einen Balken für Gottesdienst, Gemeinde und Gesamt mit dem Stand
 darüber, etwa „7 / 10" — ein Haken zeigt das erreichte Ziel, ein Strich steht
 dort, wo der Jahrgang die Punkteart abgeschaltet hat —, die besuchten
-**Pflicht-Events**, etwa „3 von 5", und die Zahl der Badges. Gezählt werden die
+**Pflicht-Events**, etwa „3 von 5", und die Zahl der Badges. Ist die Tabelle
+schmal, etwa bei 1366 Pixeln Breite mit offener Seitenleiste, zeigen
+Gottesdienst, Gemeinde und Gesamt nur die Zahlen mit Haken, ohne Balken und
+Prozent, damit der Name ganz lesbar bleibt. Gezählt werden die
 bisher fälligen Pflicht-Events: die des eigenen Jahrgangs und die ohne
 Jahrgang, die schon begonnen haben und nicht abgesagt sind, nie „Nur Team".
 Besucht ist nur, wer als anwesend eingetragen ist; entschuldigt, abgemeldet,

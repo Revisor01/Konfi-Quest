@@ -1986,11 +1986,16 @@ describe('Wrapped Routes', () => {
   describe('Zahlen im Konfi-Snapshot', () => {
     const JAHR = new Date().getFullYear();
 
-    // Zeitraum ohne Konfirmations-Termin: 1.9.(JAHR-1) .. 31.8.(JAHR).
+    // Der Konfi-Rueckblick laeuft vom Beginn der Konfi-Zeit bis HEUTE. Die
+    // Daten unten muessen deshalb an JEDEM Tag des Jahres auf derselben
+    // Seite von heute liegen: Bis zum 14.10.2026 stand NACH_ZEITRAUM auf dem
+    // 15.10. des laufenden Jahres -- ab dem 15.10. lag der Termin "danach"
+    // in der Vergangenheit, zaehlte mit, und die CI war rot. AUGUST lag
+    // ebenso vom 1.1. bis 14.8. in der Zukunft.
     const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
-    const AUGUST = `${JAHR}-08-15`;          // frueher aus dem Fallback gefallen
-    const VOR_ZEITRAUM = `${JAHR - 1}-06-15`; // liegt davor
-    const NACH_ZEITRAUM = `${JAHR}-10-15`;    // liegt danach
+    const AUGUST = `${JAHR - 1}-08-15`;       // frueher aus dem Fallback gefallen, immer vergangen
+    const VOR_ZEITRAUM = `${JAHR - 1}-06-15`; // liegt vor KONFI_BEGINN
+    const NACH_ZEITRAUM = `${JAHR + 1}-10-15`; // liegt immer nach heute
 
     /** Termin anlegen und dem Jahrgang zuordnen; gibt die Event-ID zurueck. */
     async function termin(name, datum, opts = {}) {
@@ -2587,24 +2592,34 @@ describe('Wrapped Routes', () => {
     // Zeit-/Rhythmus-Seiten: Spanne und Wochentag.
     // ------------------------------------------------------------
     it('Der lange Atem misst die Spanne zwischen erstem und letztem Termin', async () => {
-      // 14.09. bis 12.04. -- 210 Tage.
-      const daten = [`${JAHR - 1}-09-14`, `${JAHR - 1}-12-01`, `${JAHR}-01-10`,
-                     `${JAHR}-02-20`, `${JAHR}-04-12`];
+      // 14.09. bis 12.04. -- 210 Tage, mit einem 29. Februar dazwischen 211.
+      // Alle Termine liegen ein Jahr zurueck: Der Rueckblick zaehlt bis
+      // HEUTE, und Termine im laufenden Jahr lagen vom 1.1. bis 11.4. noch
+      // in der Zukunft (Pruefung 15.10.2026: rot ab dem 1.1.2027).
+      const daten = [`${JAHR - 2}-09-14`, `${JAHR - 2}-12-01`, `${JAHR - 1}-01-10`,
+                     `${JAHR - 1}-02-20`, `${JAHR - 1}-04-12`];
       for (const d of daten) await buchung(USERS.konfi1.id, await termin(`T ${d}`, d));
 
       const snap = await snapshotVonKonfi1();
       expect(snap.slides.langer_atem.termine).toBe(5);
-      expect(snap.slides.langer_atem.erster).toBe(`${JAHR - 1}-09-14`);
-      expect(snap.slides.langer_atem.letzter).toBe(`${JAHR}-04-12`);
-      expect(snap.slides.langer_atem.tage).toBe(210);
+      expect(snap.slides.langer_atem.erster).toBe(`${JAHR - 2}-09-14`);
+      expect(snap.slides.langer_atem.letzter).toBe(`${JAHR - 1}-04-12`);
+      const TAG = 24 * 60 * 60 * 1000;
+      expect(snap.slides.langer_atem.tage).toBe((Date.UTC(JAHR - 1, 3, 12) - Date.UTC(JAHR - 2, 8, 14)) / TAG);
     });
 
     it('Der Wochentag kommt aus dem Berliner Kalendertag', async () => {
       // Vier Termine an Montagen, jeweils kurz nach Mitternacht Berliner
       // Zeit -- also genau die Zeitstempel, bei denen sich UTC und Berlin
       // im Kalendertag unterscheiden.
-      const montagsNaechte = [`${JAHR - 1}-11-17`, `${JAHR - 1}-11-24`,
-                              `${JAHR - 1}-12-01`, `${JAHR - 1}-12-08`];
+      //
+      // Der erste Montag ab dem 17.11. des Vorjahres, dann je eine Woche
+      // spaeter. Fest auf den 17.11. gesetzt traf es nur 2025 einen Montag
+      // (Pruefung 15.10.2026: rot ab dem 1.1.2027, der 17.11.2026 ist ein
+      // Dienstag).
+      const bisMontag = (8 - new Date(Date.UTC(JAHR - 1, 10, 17)).getUTCDay()) % 7;
+      const montagsNaechte = [0, 7, 14, 21].map((plus) =>
+        new Date(Date.UTC(JAHR - 1, 10, 17 + bisMontag + plus)).toISOString().slice(0, 10));
       for (const d of montagsNaechte) {
         const { rows: [e] } = await db.query(
           `INSERT INTO events (name, event_date, organization_id, mandatory, max_participants, point_type, points)
@@ -2643,7 +2658,9 @@ describe('Wrapped Routes', () => {
         const { rows: [r] } = await client.query(
           `SELECT EXTRACT(DOW FROM $1::timestamptz)::int AS ohne_umrechnung,
                   EXTRACT(DOW FROM ($1::timestamptz AT TIME ZONE 'Europe/Berlin'))::int AS mit_umrechnung`,
-          [`${JAHR - 1}-11-17 00:30:00+01`]
+          // Ein fester Montag: Die Abfrage kennt keinen Zeitraum, und
+          // `${JAHR - 1}-11-17` war nur 2025 ein Montag.
+          ['2025-11-17 00:30:00+01']
         );
         // Ohne Umrechnung: Sonntag (0) -- der Termin rutscht auf den Vortag.
         expect(r.ohne_umrechnung).toBe(0);

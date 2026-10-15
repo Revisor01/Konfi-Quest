@@ -605,15 +605,22 @@ const KonfiDetailView: React.FC<KonfiDetailViewProps> = ({ konfiId, onBack, hide
         }
       }
 
-      try {
-        const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
-        stand.eventPoints = eventPointsRes.data || [];
-      } catch { /* leer */ }
+      // Event-Punkte und Anwesenheit gibt es nur fuer Konfis. Bis 14.10.2026
+      // fragte die Seite sie auch fuer Teamer:innen ab; der Server suchte nur
+      // unter den Konfis und antwortete 404 -- je Oeffnen zwei 404 im
+      // Performance-Dashboard. (Der Server antwortet fuer Teamer:innen
+      // inzwischen 200 ohne Inhalt, fuer die Store-App, die weiter fragt.)
+      if (konfiData.role_name !== 'teamer') {
+        try {
+          const eventPointsRes = await api.get(`/admin/konfis/${konfiId}/event-points`);
+          stand.eventPoints = eventPointsRes.data || [];
+        } catch { /* leer */ }
 
-      try {
-        const attendanceRes = await api.get(`/admin/konfis/${konfiId}/attendance-stats`);
-        stand.attendanceStats = attendanceRes.data ?? null;
-      } catch { /* ohne Anwesenheit */ }
+        try {
+          const attendanceRes = await api.get(`/admin/konfis/${konfiId}/attendance-stats`);
+          stand.attendanceStats = attendanceRes.data ?? null;
+        } catch { /* ohne Anwesenheit */ }
+      }
 
       standZeigen(stand);
       setAusSpeicher(false);

@@ -84,6 +84,12 @@ export interface WebEventsLeitungProps {
   oben?: React.ReactNode;
   /** Fuer die Modale, die ueber dieser Seite aufklappen (useModalPage). */
   pageRef?: React.Ref<HTMLElement>;
+  /**
+   * Ohne eigene IonPage: Mitmachen haelt EINE IonPage fuer beide Reiter
+   * (WebMitmachenLeitung). Bringt jeder Reiter seine eigene mit, baut React
+   * sie beim Wechsel neu, und die neue bleibt weiss (ion-page-invisible).
+   */
+  ohneIonPage?: boolean;
 }
 
 /** Datum als Zeitpunkt zum Sortieren; fehlt es oder ist es unlesbar, steht die Zeile unten. */
@@ -188,7 +194,7 @@ const eventSpalten = (suche: string, darfVerwalten: boolean, aktionen: TerminAkt
 ];
 
 const WebEventsLeitung: React.FC<WebEventsLeitungProps> = ({
-  events, abgesagte, jahrgaenge, darfVerwalten, aktionen, laedt = false, fehler, kopfAktionen, oben, pageRef,
+  events, abgesagte, jahrgaenge, darfVerwalten, aktionen, laedt = false, fehler, kopfAktionen, oben, pageRef, ohneIonPage = false,
 }) => {
   const [zeit, setZeit] = useFilterAusAdresse<ZeitFilter>('/admin/events', ZEIT_FILTER, 'aktuell');
   const [suche, setSuche] = useState('');
@@ -267,6 +273,7 @@ const WebEventsLeitung: React.FC<WebEventsLeitungProps> = ({
       untertitel={LEITUNG_EVENTS_UNTERTITEL}
       aktionen={kopfAktionen}
       pageRef={pageRef}
+      ohneIonPage={ohneIonPage}
       oben={oben}
       reiter={{
         beschriftung: LEITUNG_ZEITRAUM_BESCHRIFTUNG,

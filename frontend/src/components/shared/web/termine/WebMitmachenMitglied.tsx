@@ -37,6 +37,13 @@ export interface WebMitmachenMitgliedProps {
   basisPfad: string;
   segment: MitgliedSegment;
   pageRef: React.Ref<HTMLElement>;
+  /**
+   * Ohne eigene IonPage: Die Seite haelt EINE IonPage fuer Liste und Event
+   * (TeamerEventsPage im Browser; Konfis oeffnen ein Event auf eigener Route und brauchen das nicht). Bringt jede Ansicht ihre eigene mit, baut
+   * React sie beim Wechsel ueber ?eventId= neu, und die neue bleibt weiss
+   * (ion-page-invisible), weil auf derselben Route kein Uebergang laeuft.
+   */
+  ohneIonPage?: boolean;
   presentingElement?: HTMLElement | null;
   /** Die Liste der Events, wie die Rolle sie zeigt. */
   eventsInhalt: React.ReactNode;
@@ -131,6 +138,7 @@ const WebMitmachenMitglied: React.FC<WebMitmachenMitgliedProps> = (p) => {
       untertitel={antraege ? MITGLIED_ANTRAEGE_UNTERTITEL : MITGLIED_EVENTS_UNTERTITEL}
       aktionen={aktionen}
       pageRef={p.pageRef}
+      ohneIonPage={p.ohneIonPage}
     >
       <WebReiter
         beschriftung={MITGLIED_BEREICHE_BESCHRIFTUNG}

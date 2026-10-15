@@ -2116,63 +2116,75 @@ const TeamerEventsPage: React.FC = () => {
   // Weg wie die Links aus Dashboard und Push): Die Karten der Liste sind echte
   // Links, der Weg zurück führt auf /teamer/events. Der Effekt oben wählt das
   // Event aus der Liste; bis dahin steht ein Ladezustand da.
+  //
+  // EINE IonPage fuer Liste und Event: ?eventId= wechselt auf derselben Route
+  // (und nach dem Laden auch ohne Adressaenderung: Event nicht in der Liste,
+  // dann 403 vom Server). Brachten Liste und Event je eine eigene IonPage mit,
+  // baute React sie beim Wechsel neu, Ionic haengte ihr `ion-page-invisible`
+  // an, und ohne Routenwechsel nahm kein Uebergang die Klasse wieder ab: Die
+  // Seite blieb weiss, sobald eine Teamer:in im Browser ein Event oeffnete
+  // (gefunden 14.10.2026; dasselbe Muster wie Mitmachen der Leitung).
   if (breit) {
     const adresseOeffnet = !!queryEventId;
     const gewaehlt = adresseOeffnet && selectedEvent && String(selectedEvent.id) === queryEventId ? selectedEvent : null;
     const wartetAufAuswahl = adresseOeffnet && !gewaehlt && !jahrgangHinweis
       && (loading || (!!events && handledEventId !== queryEventId));
-    if (adresseOeffnet && (jahrgangHinweis || gewaehlt || wartetAufAuswahl)) {
-      return (
-        <WebTeamTerminDetail
-          pageRef={pageRef}
-          jahrgangFehlt={jahrgangHinweis}
-          laedt={wartetAufAuswahl}
-          event={gewaehlt}
-          teilnehmende={eventTeilnehmer}
-          materialien={eventMaterials}
-          zeitfenster={eventTimeslots}
-          isOnline={isOnline}
-          bucht={bookingLoading}
-          aktionen={{
-            zusage: (dabei) => { if (gewaehlt) void handleZusage(gewaehlt, dabei); },
-            absage: oeffneAbsage,
-            qr: () => presentQRDisplayModal({ presentingElement: pageRef.current || presentingElement || undefined }),
-            chat: () => router.push(`/teamer/chat/room/${gewaehlt?.chat_room_id}`, 'root'),
-            material: (id) => {
-              materialIdRef.current = id;
-              presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
-            },
-            neuLaden: () => {
-              void refresh();
-              if (gewaehlt) void ladeTerminDetail(gewaehlt.id);
-            },
-          }}
-        />
-      );
-    }
+    const zeigtEvent = adresseOeffnet && (jahrgangHinweis || gewaehlt || wartetAufAuswahl);
     return (
       <>
-      <WebMitmachenMitglied
-        rolle="team"
-        basisPfad="/teamer/events"
-        segment={mitgliedSegmentAusAdresse(routerLocation.search)}
-        pageRef={pageRef}
-        presentingElement={presentingElement}
-        eventsInhalt={<WebTeamEvents events={safeEvents} />}
-        eventsLaden={loading}
-        antraege={Array.isArray(requests) ? requests : []}
-        antraegeLaden={requestsLoading}
-        standardFilterAntraege={EIGENE_ANTRAEGE_START.team.web}
-        wartend={wartend}
-        gescheitert={gescheitert}
-        onVergessen={(id) => { void vergessen(id); }}
-        onScannen={() => presentScannerModal()}
-        onNeueAktivitaet={() => setMeldenOffen(true)}
-        onAntragOeffnen={handleSelectRequest}
-        onAntragLoeschen={handleDeleteRequest}
-        neuLaden={refresh}
-        antraegeNeuLaden={refreshRequests}
-      />
+      <IonPage ref={pageRef}>
+        {zeigtEvent ? (
+          <WebTeamTerminDetail
+            pageRef={pageRef}
+            ohneIonPage
+            jahrgangFehlt={jahrgangHinweis}
+            laedt={wartetAufAuswahl}
+            event={gewaehlt}
+            teilnehmende={eventTeilnehmer}
+            materialien={eventMaterials}
+            zeitfenster={eventTimeslots}
+            isOnline={isOnline}
+            bucht={bookingLoading}
+            aktionen={{
+              zusage: (dabei) => { if (gewaehlt) void handleZusage(gewaehlt, dabei); },
+              absage: oeffneAbsage,
+              qr: () => presentQRDisplayModal({ presentingElement: pageRef.current || presentingElement || undefined }),
+              chat: () => router.push(`/teamer/chat/room/${gewaehlt?.chat_room_id}`, 'root'),
+              material: (id) => {
+                materialIdRef.current = id;
+                presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
+              },
+              neuLaden: () => {
+                void refresh();
+                if (gewaehlt) void ladeTerminDetail(gewaehlt.id);
+              },
+            }}
+          />
+        ) : (
+          <WebMitmachenMitglied
+            rolle="team"
+            basisPfad="/teamer/events"
+            segment={mitgliedSegmentAusAdresse(routerLocation.search)}
+            pageRef={pageRef}
+            ohneIonPage
+            presentingElement={presentingElement}
+            eventsInhalt={<WebTeamEvents events={safeEvents} />}
+            eventsLaden={loading}
+            antraege={Array.isArray(requests) ? requests : []}
+            antraegeLaden={requestsLoading}
+            standardFilterAntraege={EIGENE_ANTRAEGE_START.team.web}
+            wartend={wartend}
+            gescheitert={gescheitert}
+            onVergessen={(id) => { void vergessen(id); }}
+            onScannen={() => presentScannerModal()}
+            onNeueAktivitaet={() => setMeldenOffen(true)}
+            onAntragOeffnen={handleSelectRequest}
+            onAntragLoeschen={handleDeleteRequest}
+            neuLaden={refresh}
+            antraegeNeuLaden={refreshRequests}
+          />
+        )}
+      </IonPage>
       {meldenOffen && (
         <WebAktivitaetMeldenDialog
           rolle="team"

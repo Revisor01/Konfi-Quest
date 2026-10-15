@@ -3,7 +3,7 @@
   "info": {
     "title": "Konfi Quest API",
     "version": "1.0.0",
-    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n328 Operationen."
+    "description": "Vollstaendige Schnittstellenbeschreibung. Die Berechtigungen stehen je Operation in der Erweiterung x-berechtigung: welche Rollen zugreifen duerfen, welche Middleware greift, ob nach Organisation gefiltert wird und welche zusaetzlichen Objektpruefungen es gibt.\n\n329 Operationen."
   },
   "servers": [
     {
@@ -11410,7 +11410,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Array von Event-Punkten (ep.* + event_name, event_date, admin_name; leeres Array, wenn keine)"
+            "description": "Array von Event-Punkten (ep.* + event_name, event_date, admin_name; leeres Array, wenn keine). Seit 14.10.2026 auch für eine Teamer:in der aktiven Gemeinde (Stamm oder Einladung, dieselbe Bedingung wie GET /api/admin/konfis/{id}): leeres Array statt 404 -- die Seite einer Teamer:in fragte die Route ab, und jedes Öffnen ergab eine 404 im Performance-Dashboard"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -11499,7 +11499,7 @@
         ],
         "responses": {
           "200": {
-            "description": "total_mandatory, attended, percentage, missed_events"
+            "description": "total_mandatory, attended, percentage, missed_events. Seit 14.10.2026 für eine Teamer:in der aktiven Gemeinde (Stamm oder Einladung) null statt 404 -- dasselbe, was die Apps nach der 404 zeigten (keine Anwesenheit); kein leeres Objekt, sonst stünde bei früheren Konfis im Team „0 von 0“"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -19457,6 +19457,57 @@
       }
     },
     "/api/admin/jahrgaenge/{id}": {
+      "get": {
+        "tags": [
+          "Jahrgänge"
+        ],
+        "summary": "Ein Jahrgang der eigenen Organisation (für ausgelieferte Apps 2.2.x)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID des Jahrgangs"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ein Objekt wie ein Eintrag von GET /api/admin/jahrgaenge: jahrgaenge.* + konfi_count, gottesdienst_points_total, gemeinde_points_total"
+          },
+          "400": {
+            "description": "id ist keine positive Ganzzahl"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "x-berechtigung": {
+          "rollen": [
+            "org_admin",
+            "admin",
+            "teamer"
+          ],
+          "middleware": [
+            "verifyTokenRBAC",
+            "requireTeamer"
+          ],
+          "org-scope": true,
+          "objekt-pruefung": "WHERE j.id = :id AND j.organization_id = req.user.organization_id (sonst 404); admin/teamer zusaetzlich zugewiesen mit can_view (sonst 403) -- dieselbe Regel wie die Liste",
+          "hinweis": "Seit 14.10.2026. Die App 2.2.x ruft die Route nach „Konfi anlegen“, um den Namen für den Jahrgangs-Chat zu holen; die Route gab es bis dahin nicht, jede so angelegte Konfi ergab eine 404. Ab 2.3.0 ruft die App sie nicht mehr. Nur lesend; kann entfallen, sobald keine App 2.2.x mehr zugreift (Mindestversion).\n"
+        }
+      },
       "put": {
         "tags": [
           "Jahrgänge"

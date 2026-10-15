@@ -387,6 +387,15 @@ describe('Konfi-Detail (Web): Aktionen oeffnen die Fenster der App', () => {
   });
 });
 
+describe('Konfi-Detail (Web): Event-Punkte und Anwesenheit nur für Konfis', () => {
+  it('bei einer Konfi fragt die Seite beides ab', async () => {
+    await oeffnen();
+    const pfade = h.apiGet.mock.calls.map(([pfad]) => String(pfad));
+    expect(pfade).toContain(`/admin/konfis/${ID}/event-points`);
+    expect(pfade).toContain(`/admin/konfis/${ID}/attendance-stats`);
+  });
+});
+
 describe('Konfi-Detail (Web): rechte Spalte', () => {
   it('Konfirmation: Termin, Spruch und Pflicht-Events; "Anwesenheit ansehen" oeffnet die Matrix fuer den Jahrgang', async () => {
     await oeffnen();
@@ -634,6 +643,19 @@ describe('Teamer-Detail (Web)', () => {
     expect(screen.queryByRole('region', { name: 'Bonuspunkte' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Konfi bearbeiten' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Zur Teamer:in befördern' })).toBeNull();
+  });
+
+  // Event-Punkte und Anwesenheit gibt es nur für Konfis. Bis 14.10.2026 fragte
+  // die Seite sie auch für Teamer:innen ab -- der Server suchte nur unter den
+  // Konfis und antwortete 404: je Öffnen zwei 404 im Performance-Dashboard
+  // (Simon: „Routen die abgerufen aber nicht gefunden werden").
+  it('fragt weder Event-Punkte noch Anwesenheit ab -- die gibt es nur für Konfis', async () => {
+    await oeffnen();
+    const pfade = h.apiGet.mock.calls.map(([pfad]) => String(pfad));
+    expect(pfade).toContain(`/admin/konfis/${ID}`);
+    expect(pfade).toContain(`/teamer/${ID}/konfi-zeit`);
+    expect(pfade).not.toContain(`/admin/konfis/${ID}/event-points`);
+    expect(pfade).not.toContain(`/admin/konfis/${ID}/attendance-stats`);
   });
 
   it('Selbstbeschreibung im Kopf: statt "Teamer:in" steht, was sie im eigenen Profil eingetragen hat', async () => {

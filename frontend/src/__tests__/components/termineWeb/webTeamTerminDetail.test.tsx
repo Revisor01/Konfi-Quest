@@ -345,6 +345,44 @@ describe('Adresse: ?eventId=', () => {
   });
 });
 
+// Gefunden bei der Suche nach demselben Fehlermuster wie unter Mitmachen der
+// Leitung (14.10.2026): Im Browser blieb die Seite weiß, sobald eine
+// Teamer:in ein Event öffnete. Liste (WebMitmachenMitglied) und Event
+// (WebTeamTerminDetail) brachten je eine eigene IonPage mit; ?eventId=
+// wechselt auf derselben Route, React baute die IonPage neu, und ohne
+// Routenwechsel nahm kein Übergang `ion-page-invisible` wieder ab. Die Seite
+// hält deshalb EINE IonPage für Liste und Event.
+describe('Liste und Event: eine IonPage', () => {
+  it('Liste -> Event -> Liste: dieselbe IonPage, der Inhalt wechselt', async () => {
+    antworten({ eventId: 402 });
+    richteEin({ nutzer: 'teamer', pfad: '/teamer/events', suche: '', daten: { 'teamer:events:': EVENTS, 'teamer:requests:': [] } });
+    const seite = await oeffne('team');
+    expect(screen.getByRole('navigation', { name: 'Bereiche von Mitmachen' })).toBeInTheDocument();
+    expect(h.ionSeiten.size).toBe(1);
+
+    await seite.wechsleAdresse('/teamer/events', '?eventId=402');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('heading', { level: 1, name: 'Konfi-Freizeit' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Bereiche von Mitmachen' })).toBe(null);
+
+    await seite.wechsleAdresse('/teamer/events', '');
+    expect(screen.getByRole('navigation', { name: 'Bereiche von Mitmachen' })).toBeInTheDocument();
+    expect(seite.container.querySelectorAll('.ion-page')).toHaveLength(1);
+    expect(h.ionSeiten.size).toBe(1);
+  });
+
+  it('Event nicht in der Liste, dann 403 vom Server: Laden, Liste, Erklärung -- immer dieselbe IonPage', async () => {
+    h.api.get.mockImplementation((pfad: string) => (pfad === '/events/999'
+      ? Promise.reject(Object.assign(new Error('x'), { response: { status: 403, data: { error_code: 'jahrgang_nicht_zugewiesen' } } }))
+      : Promise.resolve({ data: [] })));
+    richteEin({ nutzer: 'teamer', pfad: '/teamer/events', suche: '?eventId=999', daten: { 'teamer:events:': EVENTS, 'teamer:requests:': [] } });
+    await oeffne('team');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('heading', { name: 'Nicht deinem Jahrgang zugeordnet' })).toBeInTheDocument();
+    expect(h.ionSeiten.size).toBe(1);
+  });
+});
+
 describe('Schmales Fenster: die App bleibt, wie sie ist', () => {
   it('?eventId= zeigt die Detailansicht der App: Kopfzeile mit dem Event, kein Link "Alle Events"', async () => {
     h.breit = false;

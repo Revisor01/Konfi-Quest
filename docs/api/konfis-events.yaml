@@ -4246,7 +4246,7 @@ paths:
           admin/teamer 403; jetzt 404 (siehe L7 im Kopf).
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "Array von Event-Punkten (ep.* + event_name, event_date, admin_name; leeres Array, wenn keine)" }
+        "200": { description: "Array von Event-Punkten (ep.* + event_name, event_date, admin_name; leeres Array, wenn keine). Seit 14.10.2026 auch für eine Teamer:in der aktiven Gemeinde (Stamm oder Einladung, dieselbe Bedingung wie GET /api/admin/konfis/{id}): leeres Array statt 404 -- die Seite einer Teamer:in fragte die Route ab, und jedes Öffnen ergab eine 404 im Performance-Dashboard" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: "Konfi ohne Profil in der aktiven Gemeinde (seit 01.09.2026; vorher leeres Array. Konfi einer anderen Gemeinde seit 27.09.2026)" }
@@ -4308,7 +4308,7 @@ paths:
           Daten. Teamer:innen haben hier keinen Zugriff.
       parameters: [ { $ref: '#/components/parameters/pathId' } ]
       responses:
-        "200": { description: "total_mandatory, attended, percentage, missed_events" }
+        "200": { description: "total_mandatory, attended, percentage, missed_events. Seit 14.10.2026 für eine Teamer:in der aktiven Gemeinde (Stamm oder Einladung) null statt 404 -- dasselbe, was die Apps nach der 404 zeigten (keine Anwesenheit); kein leeres Objekt, sonst stünde bei früheren Konfis im Team „0 von 0“" }
         "401": { $ref: '#/components/responses/Unauthorized' }
         "403": { $ref: '#/components/responses/Forbidden' }
         "404": { description: "Konfi nicht in der aktiven Gemeinde (seit 29.09.2026 über darfKonfi, Audit Sicherheit BF-16 -- vorher 403 für fremde Konfis, das die Kennung bestätigte)" }

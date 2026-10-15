@@ -1322,6 +1322,29 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
         }
     });
 
+    // Teamer:in DIESER Gemeinde -- dieselbe Bedingung wie GET /:id oben
+    // (Stamm-Gemeinde mit Rolle teamer oder per Einladung in
+    // user_organizations). Die Seite einer Teamer:in fragt Event-Punkte und
+    // Anwesenheit ab, auch in der Store-App 2.3.0; beide Routen suchten nur
+    // unter den Konfis und antworteten mit 404 -- je Oeffnen zwei 404 im
+    // Performance-Dashboard (14.10.2026). Fuer Teamer:innen gibt es diese
+    // Daten nicht; die Routen antworten 200 ohne Inhalt ([] bzw. null), was
+    // die Apps nach der 404 ohnehin zeigten: nichts.
+    const istTeamerDerGemeinde = async (userId, organisation) => {
+        const { rows } = await db.query(`
+            SELECT 1
+            FROM users u
+            JOIN roles r ON u.role_id = r.id
+            LEFT JOIN user_organizations uo
+              ON uo.user_id = u.id AND uo.organization_id = $2
+             AND u.organization_id IS DISTINCT FROM $2
+            LEFT JOIN roles uo_r ON uo_r.id = uo.role_id
+            WHERE u.id = $1 AND u.deleted_at IS NULL
+              AND ((u.organization_id = $2 AND r.name = 'teamer') OR uo_r.name = 'teamer')
+        `, [userId, organisation]);
+        return rows.length > 0;
+    };
+
     // GET event points for konfi
     router.get('/:id/event-points', rbacVerifier, requireTeamer, async (req, res) => {
         const konfiId = req.params.id;
@@ -1333,6 +1356,7 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // Detailansicht GET /:id, die dieselben Daten zeigt.
             const zugriff = await darfKonfi(db, req, konfiId);
             if (!zugriff.gefunden) {
+                if (await istTeamerDerGemeinde(konfiId, req.user.organization_id)) return res.json([]);
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
             if (!zugriff.erlaubt) {
@@ -1411,6 +1435,9 @@ module.exports = (db, rbacVerifier, { requireAdmin, requireTeamer }, checkAndAwa
             // liefert den Jahrgang gleich mit (wie GET /:id/event-points).
             const zugriff = await darfKonfi(db, req, konfiId);
             if (!zugriff.gefunden) {
+                // Teamer:in der Gemeinde: keine Pflicht-Events, null wie die
+                // Apps es nach der 404 schon hatten (keine "0 von 0").
+                if (await istTeamerDerGemeinde(konfiId, req.user.organization_id)) return res.json(null);
                 return res.status(404).json({ error: 'Konfi nicht gefunden' });
             }
             if (!zugriff.erlaubt) {

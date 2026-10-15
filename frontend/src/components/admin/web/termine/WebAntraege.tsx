@@ -81,6 +81,12 @@ export interface WebAntraegeProps {
   oben?: React.ReactNode;
   /** Fuer die Modale, die ueber dieser Seite aufklappen (useModalPage). */
   pageRef?: React.Ref<HTMLElement>;
+  /**
+   * Ohne eigene IonPage: Mitmachen haelt EINE IonPage fuer beide Reiter
+   * (WebMitmachenLeitung). Bringt jeder Reiter seine eigene mit, baut React
+   * sie beim Wechsel neu, und die neue bleibt weiss (ion-page-invisible).
+   */
+  ohneIonPage?: boolean;
 }
 
 /** Darf die Leitung ueber diesen offenen Antrag entscheiden? Dann "Pruefen", sonst "Ansehen". */
@@ -108,7 +114,7 @@ const AntragKnoepfe: React.FC<{ antrag: AntragZeile; aktionen: AntragAktionen; m
   )
 );
 
-const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, aktionen, laedt = false, kopfAktionen, oben, pageRef }) => {
+const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, aktionen, laedt = false, kopfAktionen, oben, pageRef, ohneIonPage = false }) => {
   // Defensive: bei kaputten oder gecachten Antworten (Objekt statt Array) leer.
   const antraege = useMemo<AntragZeile[]>(() => (Array.isArray(roh) ? [...roh] : []), [roh]);
   const [filter, setFilter] = useFilterAusAdresse<AntragFilter>('/admin/events', ANTRAG_FILTER, 'offen');
@@ -245,6 +251,7 @@ const WebAntraege: React.FC<WebAntraegeProps> = ({ antraege: roh, ohneJahrgang, 
       untertitel={LEITUNG_ANTRAEGE_UNTERTITEL}
       aktionen={kopfAktionen}
       pageRef={pageRef}
+      ohneIonPage={ohneIonPage}
       oben={(
         <>
           {oben}

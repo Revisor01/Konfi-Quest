@@ -68,6 +68,13 @@ export interface TeamDetailAktionen {
 
 export interface WebTeamTerminDetailProps {
   pageRef: React.Ref<HTMLElement>;
+  /**
+   * Ohne eigene IonPage: Die Seite haelt EINE IonPage fuer Liste und Event
+   * (TeamerEventsPage im Browser). Bringt jede Ansicht ihre eigene mit, baut
+   * React sie beim Wechsel ueber ?eventId= neu, und die neue bleibt weiss
+   * (ion-page-invisible), weil auf derselben Route kein Uebergang laeuft.
+   */
+  ohneIonPage?: boolean;
   /** Der Termin gehoert zu einem Jahrgang, dem diese Person nicht zugewiesen ist (403). */
   jahrgangFehlt: boolean;
   /** Der Termin wird noch ausgewaehlt (Adresse ist gesetzt, die Liste noch nicht da). */
@@ -125,6 +132,7 @@ const WebTeamTerminDetail: React.FC<WebTeamTerminDetailProps> = (p) => {
         titel="Event"
         zurueck={ZURUECK}
         pageRef={p.pageRef}
+        ohneIonPage={p.ohneIonPage}
         // Solange der Termin ausgewaehlt wird, sagt die Seite es in Worten (wie bisher), nicht mit Platzhaltern.
         leer={p.jahrgangFehlt ? {
           icon: ICON_JAHRGANG,
@@ -227,6 +235,7 @@ const WebTeamTerminDetail: React.FC<WebTeamTerminDetailProps> = (p) => {
       angabenBeschriftung="Angaben zum Event"
       seite={<WebTerminMaterial materialien={p.materialien} onOeffnen={aktionen.material} />}
       pageRef={p.pageRef}
+      ohneIonPage={p.ohneIonPage}
     />
   );
 };

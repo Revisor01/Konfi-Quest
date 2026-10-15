@@ -122,6 +122,48 @@ describe('Kopf und Reiter', () => {
   });
 });
 
+// Rückmeldung eines Testers, 14.10.2026: „wenn ich auf der Webversion von Events ->
+// Aktivitäten wechsel unter Mitmachen lädt es häufig nicht. Lade ich dann die
+// Seite neu, lädts." Die Seite war weiß, obwohl die Aktivitäten geladen waren.
+// Ursache: Events und Aktivitäten brachten je eine EIGENE IonPage mit
+// (WebEventsLeitung und WebAntraege über WebListenSeite -> WebSeite). Beim
+// Wechsel per ?segment= -- gleiche Route -- baute React die IonPage neu, Ionic
+// hängte ihr `ion-page-invisible` an, und ohne Routenwechsel lief kein
+// Übergang, der die Klasse wieder abnimmt (dasselbe Muster wie
+// KonfiDashboardPage, WebDetailSeite, Challenges). Die Seite hält deshalb EINE
+// IonPage für beide Reiter und tauscht nur den Inhalt.
+describe('Reiter wechseln: eine IonPage für Events und Aktivitäten', () => {
+  it('Events -> Aktivitäten -> Events: dieselbe IonPage, der Inhalt wechselt', async () => {
+    const seite = await oeffneEvents();
+    const seiten = () => seite.container.querySelectorAll('.ion-page');
+    expect(seiten()).toHaveLength(1);
+    const ionPage = seiten()[0];
+    expect(screen.getByRole('table', { name: 'Events' })).toBeInTheDocument();
+
+    await seite.wechsleAdresse('/admin/events', '?segment=antraege');
+    expect(screen.getByRole('heading', { level: 1, name: 'Aktivitäten' })).toBeInTheDocument();
+    expect(screen.queryByRole('table', { name: 'Events' })).toBe(null);
+    expect(seiten()).toHaveLength(1);
+    expect(seiten()[0]).toBe(ionPage);
+
+    await seite.wechsleAdresse('/admin/events', '');
+    expect(screen.getByRole('table', { name: 'Events' })).toBeInTheDocument();
+    expect(seiten()).toHaveLength(1);
+    expect(seiten()[0]).toBe(ionPage);
+  });
+
+  it('Einstieg direkt auf Aktivitäten (?segment=antraege) und zurück zu Events: dieselbe IonPage', async () => {
+    const seite = await oeffneEvents('leitung', '?segment=antraege');
+    const ionPage = seite.container.querySelector('.ion-page');
+    expect(ionPage).not.toBe(null);
+    expect(screen.getByRole('heading', { level: 1, name: 'Aktivitäten' })).toBeInTheDocument();
+    await seite.wechsleAdresse('/admin/events', '');
+    expect(screen.getByRole('table', { name: 'Events' })).toBeInTheDocument();
+    expect(seite.container.querySelectorAll('.ion-page')).toHaveLength(1);
+    expect(seite.container.querySelector('.ion-page')).toBe(ionPage);
+  });
+});
+
 describe('Events: Zeitraum', () => {
   it('Aktuell (Standard): kommende Events nach Datum, auch das abgesagte -- nichts Vergangenes', async () => {
     await oeffneEvents();

@@ -10,9 +10,19 @@
 // herein. Hier stehen nur die Knoepfe im Kopf und die Weiche: Beide Reiter
 // sind eigene Listen-Seiten (WebListenSeite: WebEventsLeitung, WebAntraege),
 // die Reiter von Mitmachen stehen bei beiden ueber der Werkzeugzeile.
+//
+// EINE IonPage fuer beide Reiter (Rueckmeldung eines Testers, 14.10.2026: „wenn ich auf der
+// Webversion von Events -> Aktivitäten wechsel unter Mitmachen lädt es
+// häufig nicht"): Bis dahin brachte jeder Reiter seine eigene IonPage mit.
+// Der Wechsel laeuft ueber ?segment= auf derselben Route -- React verwarf
+// die IonPage und baute eine neue, Ionic haengte ihr `ion-page-invisible` an,
+// und ohne Routenwechsel lief kein Uebergang, der die Klasse wieder abnimmt:
+// weisse Seite, obwohl die Aktivitaeten geladen waren. Jetzt steht die
+// IonPage hier, und die Reiter zeichnen nur ihren Inhalt (`ohneIonPage`) --
+// dasselbe Muster wie Challenges und WebDetailSeite.
 
 import React from 'react';
-import { IonIcon } from '@ionic/react';
+import { IonIcon, IonPage } from '@ionic/react';
 import { ICON_AKTUALISIEREN, ICON_HINZUFUEGEN } from '../../../shared/icons';
 import WebKnopf from '../../../web/WebKnopf';
 import WebLegendeKnopf from '../../../shared/web/termine/WebLegendeKnopf';
@@ -52,7 +62,7 @@ export interface WebMitmachenLeitungProps {
 }
 
 const WebMitmachenLeitung: React.FC<WebMitmachenLeitungProps> = (p) => {
-  const { segment } = p;
+  const { segment, pageRef } = p;
 
   const aktionen = (
     <>
@@ -72,33 +82,33 @@ const WebMitmachenLeitung: React.FC<WebMitmachenLeitungProps> = (p) => {
 
   const reiter = <WebLeitungReiter segment={segment} wartendVerbuchen={p.wartendVerbuchen} wartendeAntraege={p.wartendeAntraege} />;
 
-  if (segment === 'antraege') {
-    return (
-      <WebAntraege
-        antraege={p.antraege}
-        ohneJahrgang={p.ohneJahrgang}
-        aktionen={p.antragAktionen}
-        laedt={p.antraegeLaden}
-        kopfAktionen={aktionen}
-        oben={reiter}
-        pageRef={p.pageRef}
-      />
-    );
-  }
-
   return (
-    <WebEventsLeitung
-      events={p.events}
-      abgesagte={p.abgesagte}
-      jahrgaenge={p.jahrgaenge}
-      darfVerwalten={p.darfVerwalten}
-      aktionen={p.terminAktionen}
-      laedt={p.eventsLaden}
-      fehler={p.eventsFehler ? { onErneut: () => { void p.neuLaden(); } } : undefined}
-      kopfAktionen={aktionen}
-      oben={reiter}
-      pageRef={p.pageRef}
-    />
+    <IonPage ref={pageRef}>
+      {segment === 'antraege' ? (
+        <WebAntraege
+          antraege={p.antraege}
+          ohneJahrgang={p.ohneJahrgang}
+          aktionen={p.antragAktionen}
+          laedt={p.antraegeLaden}
+          kopfAktionen={aktionen}
+          oben={reiter}
+          ohneIonPage
+        />
+      ) : (
+        <WebEventsLeitung
+          events={p.events}
+          abgesagte={p.abgesagte}
+          jahrgaenge={p.jahrgaenge}
+          darfVerwalten={p.darfVerwalten}
+          aktionen={p.terminAktionen}
+          laedt={p.eventsLaden}
+          fehler={p.eventsFehler ? { onErneut: () => { void p.neuLaden(); } } : undefined}
+          kopfAktionen={aktionen}
+          oben={reiter}
+          ohneIonPage
+        />
+      )}
+    </IonPage>
   );
 };
 
