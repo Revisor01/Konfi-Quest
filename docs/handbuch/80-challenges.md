@@ -131,7 +131,7 @@ Foto.
 |---|---|---|
 | **Text** | frei schreiben, keine Längenbegrenzung | darf nicht leer sein |
 | **Foto** | aufnehmen oder aus der Galerie wählen | 50 MB |
-| **Audio** | in der App aufnehmen oder Datei wählen | 50 MB |
+| **Audio** | direkt in der App aufnehmen (eine Datei lässt sich nicht wählen) | 50 MB |
 | **Video** | aufnehmen oder Datei wählen | 50 MB |
 | **Link** | Lied aus einem Musikdienst teilen | nur Spotify, Apple Music, YouTube Music und Deezer |
 
@@ -284,8 +284,14 @@ Darüber filterst du und suchst:
   Jahrgang. Umlaute darfst du umschreiben: „fuerbitten" findet „Fürbitten".
   Die Escape-Taste leert das Feld.
 
-**Neue Challenge** oben rechts öffnet dasselbe Formular wie das Plus in der
-App (siehe [Eine Challenge anlegen](#eine-challenge-anlegen)).
+**Neue Challenge** oben rechts, **Bearbeiten** in der Liste und **Challenge
+bearbeiten** auf der Seite einer Challenge öffnen das Formular in einem
+eigenen, kompakten Fenster (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen))
+— mit denselben Angaben wie in der App (siehe
+[Eine Challenge anlegen](#eine-challenge-anlegen)). Start und Ende wählst du im
+Datumsfeld des Browsers; was nach dem Start gesperrt ist, trägt „(gesperrt)" in
+der Beschriftung. Fehlt etwas oder lehnt der Server ab, steht der Grund im Fenster.
 
 Die Seite einer Challenge ist aufgebaut wie jede andere, siehe
 [Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
@@ -307,6 +313,13 @@ darunter ihre Stempel. Auf der Seite einer Challenge steht oben rechts
 Beiträge, die Laufzeit und ob der Stempel schon da ist. Links stehen die
 Aufgabe und der Feed ihrer Gruppe oder ihre eigenen Beiträge, rechts Angaben
 und Stempel.
+
+**Beitrag einreichen** öffnet bei Konfis wie im Team das Fenster **Dein
+Beitrag**: Text, Foto, Video, Aufnahme oder Musik-Link, je nachdem, was die
+Challenge [erlaubt](#festlegen-womit-geantwortet-werden-darf), und bei „Selbst
+entscheiden" die Wahl, wer den Beitrag sieht. Fotos werden wie in der App
+verkleinert. Während des Hochladens zeigt das Fenster den Fortschritt und lässt
+sich nicht schließen.
 
 ---
 

@@ -37,7 +37,7 @@ und in welcher Reihenfolge, stellt deine Gemeinde ein:
   drei mit Namen und Punkten. Stehst du weiter hinten, zeigt die Karte neben
   dir nur die Plätze direkt vor und hinter dir, ohne Namen und Punkte. Die
   Gemeindeleitung kann das Ranking unter
-  [Mehr › Dashboard](30-leitung.md#verwaltung-nur-gemeindeleitung) ausschalten.
+  [Mehr › Startseiten](30-leitung.md#verwaltung-nur-gemeindeleitung) ausschalten.
 
 ### Im Browser die Startseite als Karten lesen
 
@@ -45,8 +45,9 @@ Im Browser am Laptop oder am großen Bildschirm — ab einer Fensterbreite von
 992 Pixeln, siehe
 [Im Browser mit der Leiste links arbeiten](03-bedienung.md#im-browser-mit-der-leiste-links-arbeiten)
 — begrüßt dich die Startseite mit deinem Vornamen; darunter steht dein
-Jahrgang. Oben rechts öffnet **Punkte-Übersicht** dieselbe Aufstellung wie das
-Antippen der Ringe in der App. Ist dein Jahresrückblick freigegeben, steht über
+Jahrgang. Oben rechts führt **Punkte-Übersicht** in dein Profil zur Tabelle
+**Punkte-Verlauf** — dieselben Einträge wie beim Antippen der Ringe in der App.
+Ist dein Jahresrückblick freigegeben, steht über
 den Karten ein farbiges Feld mit **Rückblick ansehen** und **Hinweis
 ausblenden**.
 
@@ -75,7 +76,9 @@ jeweiligen Bereich. Bei den Events steht rechts, wie nah das Event ist („in 2
 Tagen"), oder **Warteliste** mit deinem Platz; fällt ein Event aus, steht es als
 **Abgesagt** mit dem Grund da. Ein Klick auf ein Badge zeigt seine Einzelheiten
 in einem Fenster, das die Escape-Taste schließt. **Konfispruch ändern** und
-**Übersetzung ändern** öffnen dieselben Fenster wie in der App.
+**Übersetzung ändern** öffnen ein eigenes, kompaktes Fenster mit derselben
+Auswahl wie in der App (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)).
 
 ## Mit deinem Team schreiben
 
@@ -204,6 +207,8 @@ Oben rechts steht der eine Knopf, der gerade gilt: **Anmelden**, **Warteliste
 offen**, **Abmelden**, **Von der Warteliste abmelden** oder **Wieder anmelden**.
 Wann welcher Knopf da ist, ist dasselbe wie in der App, siehe
 [Events](#events); geht es nicht, steht der Grund als Hinweis unter dem Kopf.
+Welche Fenster **Abmelden** und **Anmelden** mit Zeitfenstern öffnen, steht
+unter [Sich im Browser zu einem Event an- und abmelden](70-termine.md#sich-im-browser-zu-einem-event-an-und-abmelden).
 Daneben öffnet **Einchecken** den QR-Scanner und **Chat** den Event-Chat, wenn
 es einen gibt. Die Kennzahlen zeigen **Frei**, **Punkte** und **Dabei**. Links
 stehen die Beschreibung und die Namen der Teilnehmenden, rechts die Angaben,
@@ -229,7 +234,8 @@ im Kapitel [Badges](60-badges.md#die-passende-bedingung-waehlen).
 
 ### Im Browser Badges filtern und ansehen
 
-Im Browser zeigen vier Kacheln oben, wo du stehst: **Erreicht** (von den
+Im Browser heißt die Seite wie der Reiter **Badges**. Vier Kacheln oben zeigen,
+wo du stehst: **Erreicht** (von den
 sichtbaren Badges), **Geheim** (nur, wenn es geheime Badges gibt), **In Arbeit**
 und **Geschafft** in Prozent. Darunter suchst du in Name und Beschreibung und
 filterst mit **Alle**, **Erhalten**, **Offen** und **In Arbeit** — die Zahl am
@@ -276,21 +282,25 @@ Jahrgang, Benutzername, E-Mail-Adresse und „Dabei seit" —, deine Konfirmatio
 mit Datum, Uhrzeit und Ort, sobald das Datum feststeht (der Ort ist ein Link auf
 die Karte), die **Konto-Einstellungen** und das **Konto**. Die Einstellungen sind
 Zeilen mit je einem Knopf: App-Tour, E-Mail-Adresse, Passwort,
-Bibelübersetzung, Benachrichtigungen und Medien-Cache. E-Mail-Adresse und
-Passwort änderst du im Browser in einem eigenen, kompakten Fenster (siehe
+Bibelübersetzung, Benachrichtigungen und Medien-Cache. E-Mail-Adresse,
+Passwort, Bibelübersetzung und Benachrichtigungen öffnen im Browser ein
+eigenes, kompaktes Fenster (siehe
 [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
-die übrigen Knöpfe öffnen dieselben Fenster wie in der App. **Abmelden** und
-**Konto löschen** stehen im Kasten **Konto**; was beim Löschen passiert, steht
+App-Tour und Medien-Cache arbeiten wie in der App. **Abmelden** und
+**Konto löschen** stehen im Kasten **Konto**; **Konto löschen** fragt in einem
+eigenen Fenster nach deinem Passwort. Was beim Löschen passiert, steht
 unter [Ein Konto löschen](05-rollen.md#ein-konto-loeschen).
 
 Rechts stehen, falls du in eine weitere Gemeinde eingeladen bist, die Einladung
 mit **Annehmen** und **Ablehnen**, dann Kacheln für **Punkte gesamt** (mit
 Gottesdienst und Gemeinde), **Badges**, **Challenges** (gesammelte Stempel),
-**Events** und **Aktivitäten** — die Kacheln ab **Badges** sind Links in den
+**Events** und **Aktivitäten** (mit der Zahl deiner offenen Anträge, etwa
+„2 offen") — die Kacheln ab **Badges** sind Links in den
 jeweiligen Bereich —, die Karte **So setzen sich deine Punkte zusammen** mit dem
 Anteil von Gottesdienst und Gemeinde und, wenn es welche gibt, dem Bonus, und
 der **Punkte-Verlauf**. Er ist die Punkte-Übersicht als Tabelle mit Datum,
 „Wofür", Art und Punkten, mit allen Einträgen, die neuesten zuerst; ein
 Klick auf einen Spaltenkopf ordnet die ganze Liste danach. Der Knopf
-**Punkte-Übersicht** öffnet dasselbe Fenster wie in der App. Darunter stehen, wenn es welche gibt, **Meine
+**Punkte-Übersicht** an der Karte **So setzen sich deine Punkte zusammen**
+springt zu dieser Tabelle. Darunter stehen, wenn es welche gibt, **Meine
 Rückblicke**, jeder mit **Ansehen**.

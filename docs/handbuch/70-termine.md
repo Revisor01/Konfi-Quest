@@ -590,7 +590,7 @@ Anmeldung, denn dort kann sie zählen (Warteliste, wer zuerst da war). Das
 gilt auch innerhalb der Zeitfenster.
 
 **Einzeln** geht es in der Teilnehmerliste: Tipp auf den Eintrag, dann
-**Anwesend**, **Abwesend** oder **Abgemeldet**. Punkte werden sofort vergeben
+**Anwesend**, **Abwesend** oder **Abgemeldet eintragen**. Punkte werden sofort vergeben
 oder abgezogen, und bei „Anwesend" und „Abwesend" bekommt die Person einen
 Push. Das Menü gibt es auch bei Leuten, die sich
 [selbst abgemeldet haben](#eine-selbstabmeldung-nachtraeglich-verbuchen).
@@ -598,11 +598,11 @@ Push. Das Menü gibt es auch bei Leuten, die sich
 ### Eine Abmeldung nachtragen
 
 Wird jemand außerhalb der App abgemeldet — die Mutter ruft an, das Kind ist
-krank —, tippst du den Eintrag an und wählst **Abgemeldet**. Es öffnet sich ein
+krank —, tippst du den Eintrag an und wählst **Abgemeldet eintragen**. Es öffnet sich ein
 Fenster mit zwei Feldern: dem **Grund** und einer **Notiz**. Der Grund gehört
 zur Abmeldung („krank, Mutter hat angerufen"), die Notiz zu allem anderen, was
 festgehalten gehört („Attest liegt vor"). Beides ist freiwillig, beides lässt
-sich später über denselben Weg ändern.
+sich später über denselben Weg ändern; er heißt dann **Abmeldung bearbeiten**.
 
 Nach dem Speichern wird der Eintrag grau, der Grund steht direkt in der
 Teilnehmerliste, und alle im Team sehen ihn.
@@ -673,7 +673,7 @@ einer Abmeldung, die der Konfi selbst in der App vorgenommen hat.
 
 Hat sich jemand selbst von einem Pflicht-Event abgemeldet und kommt dann doch,
 tippst du den Eintrag genauso an wie jeden anderen. Du bekommst dasselbe Menü:
-**Anwesend**, **Abwesend**, **Abgemeldet** und die **Notiz**.
+**Anwesend**, **Abwesend**, **Abgemeldet eintragen** und die **Notiz**.
 
 Sobald du etwas einträgst, richtet sich die Anzeige danach: Der Eintrag wird
 grün, in der Anwesenheits-Matrix steht ein grüner Punkt, und das Event zählt
@@ -1295,8 +1295,8 @@ Trägst du dich selbst ein, bekommst du nichts aufs eigene Handy.
 
 In der Teilnehmerliste der Detailansicht wischst du eine Person nach links:
 
-- **Entfernen** trägt sie nach der Rückfrage „Anmeldung entfernen?" aus dem
-  Event aus.
+- **Anmeldung entfernen** trägt sie nach der Rückfrage „Anmeldung entfernen?"
+  aus dem Event aus.
 - **Auf die Warteliste setzen** (bei bestätigten Konfis) nimmt ihr den festen
   Platz, nach der Rückfrage „Auf die Warteliste setzen?".
 
@@ -1368,9 +1368,11 @@ Wischen der App: **Event kopieren**,
 **Neues Event** und **Event kopieren** — wie auf der Seite eines Events
 **Bearbeiten** und **Kopieren** — öffnen das Formular in einem eigenen,
 kompakten Fenster (siehe
-[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen));
-Absagen und Löschen öffnen dieselben Fenster und stellen dieselben Rückfragen
-wie in der App.
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
+ebenso **Event absagen** und **Absagegrund bearbeiten**. **Event löschen**
+stellt dieselben Rückfragen wie in der App; gehört das Event zu einer Serie,
+fragt vorher ein kleines Fenster, was gehen soll: nur dieses Event, dieses
+und alle folgenden (wenn danach noch welche kommen) oder die ganze Serie.
 
 ### Gemeldete Aktivitäten in der Tabelle entscheiden
 
@@ -1400,7 +1402,10 @@ Den Katalog dessen, was gemeldet werden kann, pflegst du wie in der App unter
 Ein Klick auf den Namen öffnet die Seite des Events; **Alle Events** führt
 zurück in die Liste. Unter dem Namen stehen Status und Zeitraum, rechts oben die
 Knöpfe **Chat**, **QR-Code**, **Kopieren**, **Bearbeiten** und **Event
-absagen** — an einem abgesagten Event **Absage zurücknehmen**. Sucht das Event
+absagen** — an einem abgesagten Event **Absage zurücknehmen**. Speicherst du
+in **Bearbeiten**, bleibt die Seite des Events offen und zeigt den neuen Stand.
+**QR-Code** zeigt den Code groß in einem Fenster, mit dem
+[Zähler](#den-zaehler-unter-dem-code-lesen) und **Drucken**. Sucht das Event
 Team, stehen dort auch deine eigene Zusage und Absage
 ([Selbst zu- oder absagen](#selbst-zu-oder-absagen)). Darunter folgen der Grund
 einer Absage und die Kennzahlen — je nach Event Teilnehmer:innen, Team, Punkte
@@ -1423,14 +1428,20 @@ Die drei Punkte am Zeilenende öffnen **Weitere Aktionen**:
 - **Notiz hinzufügen** oder **Notiz bearbeiten** und **Eintrag zurücksetzen** —
   beide nur bei einer Person mit Eintrag
 - **Auf Warteliste setzen** bei bestätigten Konfis
-- **Teilnahme entfernen**
+- **Anmeldung entfernen**
+
+Abmeldung und Notiz trägst du in einem eigenen, kleinen Fenster ein; lehnt der
+Server ab, steht der Grund darin, und es bleibt offen.
 
 Bei einem Pflicht-Event lassen sich Konfis weder entfernen noch auf die
 Warteliste setzen. In der Warteliste stehen statt der Anwesenheit **Bestätigen**
 und ein Knopf zum Entfernen. In der Kopfzeile der Tabellen stehen **Alle
 bestätigen (n)**, das nach einer Rückfrage die offenen Einträge der Tabelle als
 anwesend verbucht, sowie **Konfi hinzufügen**, **Team hinzufügen** und
-**Leitung hinzufügen**. Ohne Netz sind die Knöpfe gesperrt und sagen, warum.
+**Leitung hinzufügen**. Sie öffnen ein Fenster, in dem du Personen suchst und
+auswählst — **Alle auswählen** nimmt alle, die gerade zu sehen sind; ist das
+Event voll, fragt ein kleines Fenster, ob du trotzdem einträgst.
+Ohne Netz sind die Knöpfe gesperrt und sagen, warum.
 Was die Handgriffe bewirken, steht unter
 [Die Anwesenheit verbuchen](#die-anwesenheit-verbuchen),
 [Teilnehmende von Hand hinzufügen](#teilnehmende-von-hand-hinzufuegen) und
@@ -1450,10 +1461,25 @@ Konfis finden dort den einen Knopf, der gerade gilt: **Anmelden**, **Warteliste
 offen**, **Abmelden**, **Von der Warteliste abmelden** oder **Wieder anmelden**.
 Bis wann das geht, steht unter
 [Wissen, bis wann Konfis sich abmelden können](#wissen-bis-wann-konfis-sich-abmelden-koennen);
-geht es nicht, steht der Grund als Hinweis unter dem Kopf. Teamer:innen finden
-**Dabei** und **Nicht dabei**, danach nur noch den Weg zurück, wie unter
-[Selbst zu- oder absagen](#selbst-zu-oder-absagen) beschrieben. An einem
-abgesagten Event steht statt der Knöpfe der Hinweis mit dem Grund.
+geht es nicht, steht der Grund als Hinweis unter dem Kopf. **Abmelden** und
+**Von der Warteliste abmelden** öffnen das Fenster **Abmeldung** mit dem Feld
+für den Grund; am Pflicht-Event braucht er mindestens fünf Zeichen, und das
+Fenster sagt, dass die Eltern die Abmeldung noch bestätigen müssen. Hat das Event
+[Zeitfenster](#wissen-wie-das-buchen-ablaeuft), öffnet **Anmelden** das Fenster
+**Zeitslot auswählen**: Ein Klick auf ein Zeitfenster meldet an, ein volles mit
+offener Warteliste setzt dich dort auf die Warteliste, ein ausgebuchtes nennt
+den Grund. Fehlen die Zeitfenster, ist **Anmelden** gesperrt, und der Grund
+steht daneben — es sind noch keine eingetragen, oder sie ließen sich nicht
+laden; dann hilft es, die Seite neu zu laden.
+
+Teamer:innen finden **Dabei** und **Nicht dabei**, danach nur noch den Weg
+zurück, wie unter [Selbst zu- oder absagen](#selbst-zu-oder-absagen)
+beschrieben; die Leitung findet dieselben Knöpfe an Events, die Team suchen.
+**Nicht dabei** und **Nicht mehr dabei** öffnen das Fenster **Absage**; nach
+einer Zusage ist der Grund Pflicht, sonst freiwillig. Lehnt der Server eine
+Absage, eine Abmeldung oder die Anmeldung mit Zeitfenster ab, steht der Grund
+im Fenster, und es bleibt offen. An einem abgesagten Event steht statt der
+Knöpfe der Hinweis mit dem Grund.
 
 ## Häufige Stolpersteine nachschlagen
 

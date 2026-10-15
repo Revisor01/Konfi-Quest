@@ -101,7 +101,7 @@ steht bei den Bereichen:
 Die Leiste markiert den Bereich, in dem du bist — auch auf Seiten ohne eigenen
 Eintrag. Bei der Leitung gehören die Seiten, die du über **Mehr** erreichst, zu
 **Mehr**: Aktivitäten, Benutzer:innen, Badges, Material, Jahresrückblick,
-Kategorien, Level, Jahrgänge, Zertifikate, Einladungen und Dashboard. Ein
+Kategorien, Level, Jahrgänge, Zertifikate, Konfis einladen und Startseiten. Ein
 Event, eine Person oder eine Challenge markiert ihren Bereich — Mitmachen,
 Konfis, Challenges —, bei den Teamer:innen stehen Badges und Konfi-Historie
 unter **Profil**.
@@ -197,7 +197,7 @@ eine geöffnete Datei — bleiben, wie sie sind. Schließen kannst du jedes
 Fenster mit dem Kreuz oben, mit der Escape-Taste oder mit einem Klick neben
 das Fenster.
 
-Die Formulare, die du am häufigsten brauchst, haben im Browser ein **eigenes
+Die meisten Formulare und Ansichten haben im Browser ein **eigenes
 Fenster**: dieselben Angaben und Regeln wie in der App, aber mit beschrifteten
 Feldern, zusammengehörige Felder nebeneinander, Auswahl- und Ankreuzlisten
 statt Kacheln und Zahlen als Feld oder Auswahl statt Schieberegler — in
@@ -205,16 +205,34 @@ denselben Grenzen wie in der App, nur die
 [benötigten Punkte eines Levels](40-punkte.md#level-anlegen-und-pflegen)
 reichen weiter. Das gilt für:
 
-- Event anlegen, bearbeiten und kopieren
+- Event anlegen, bearbeiten, kopieren und absagen, den Absagegrund bearbeiten
+  und ein Event einer Serie löschen
+- auf der Seite eines Events: Konfi, Team oder Leitung hinzufügen — ist das
+  Event voll, fragt ein kleines Fenster „Trotzdem eintragen" —, Abgemeldet
+  eintragen, Abmeldung und Notiz zur Anwesenheit, der QR-Code zum Einchecken
+  (groß, mit Zähler und Drucken) und Material aus dem Event zum Lesen
+- die Legende der Events
+- die Absage von Team und Leitung, das Abmelden der Konfis von Event oder
+  Warteliste und die Wahl eines Zeitfensters
 - Konfi anlegen und bearbeiten
 - Aktivität eintragen und Bonuspunkte vergeben, auf der Seite einer Person
 - Aktivität melden (Konfis und Team) und Aktivität prüfen (Leitung)
+- Aktivität im Katalog anlegen und bearbeiten
+- Challenge anlegen und bearbeiten, Beitrag einreichen
 - Material anlegen, bearbeiten und ansehen
 - Badges anlegen und bearbeiten
 - Kategorien, Level und Zertifikate
-- Benutzer:innen — auch „Teamer:in anlegen" — und Jahrgänge
+- Benutzer:innen — auch „Teamer:in anlegen" und „Person einladen" — und
+  Jahrgänge
+- unter Konfis einladen: Einladung verlängern
 - im Chat: Neuer Chat, Umfrage erstellen und Mitglieder
-- Passwort und E-Mail-Adresse ändern, in jeder Rolle
+- im Profil: Passwort und E-Mail-Adresse ändern, Funktionsbeschreibung (Team
+  und Leitung), Bibelübersetzung (Konfis und Team), Benachrichtigungen und
+  Konto löschen
+- auf der Startseite von Konfis und Team: „Dein Konfispruch" und die
+  Bibelübersetzung der Tageslosung
+- das Postfach hinter der Glocke (siehe
+  [Mitteilungen im Postfach nachlesen](#mitteilungen-im-postfach-nachlesen))
 
 In diesen Fenstern gilt:
 
@@ -234,9 +252,26 @@ In diesen Fenstern gilt:
 - **Warten, bis gespeichert ist:** Solange gespeichert oder gesendet wird,
   geht das Fenster nicht zu — Kreuz und **Abbrechen** sind gesperrt, Escape
   und ein Klick daneben wirken erst danach wieder. So geht keine Antwort des
-  Servers verloren.
-- **Änderungen verwerfen:** Hast du im Event- oder im Badge-Formular etwas
-  geändert, fragt das Fenster beim Schließen nach.
+  Servers verloren. Das gilt auch für **Neuer Rückblick**: Das Fenster bleibt
+  offen, solange der Rückblick entsteht, und ein Fehler steht darin.
+- **Änderungen verwerfen:** Hast du im Formular eines Events, eines Badges,
+  einer Benutzer:in — dort auch nur einen Jahrgang oder ein Recht —, einer
+  Aktivität im Katalog, einer Challenge oder in „Neuer Chat" etwas geändert,
+  fragt das Fenster beim Schließen nach.
+
+Ein paar Fenster haben ihre Eigenheiten:
+
+- **Punkte-Übersicht** öffnet im Browser kein Fenster, sondern springt zur
+  Tabelle **Punkte-Verlauf**, die dieselben Einträge zeigt — im Profil der
+  Konfis, auch von der Startseite aus, und in der Konfi-Historie des Teams.
+  Mitteilungen über Punkte führen ebenfalls dorthin.
+- **Benachrichtigungen:** Jeder Schalter speichert sofort. Solange gespeichert
+  wird, wartet der Schalter kurz; der Fokus bleibt auf ihm, sodass du mit der
+  Tastatur gleich den nächsten umlegen kannst.
+- **Konto löschen** ist eine Rückfrage mit dem Mülleimer: Sie nennt, was
+  verschwindet, und verlangt dein Passwort. Erst **Konto endgültig löschen**
+  löscht das Konto, danach bist du abgemeldet (siehe
+  [Ein Konto löschen](05-rollen.md#ein-konto-loeschen)).
 
 In den übrigen Fenstern bleiben Titel und Knöpfe oben in der Kopfzeile stehen,
 und der Kalender zum Datum öffnet sich als kleines Fenster über dem Formular.
@@ -252,7 +287,12 @@ im Fenster.
 Rückfragen vor dem Löschen oder einem anderen folgenreichen Schritt sehen aus
 wie die übrigen Fenster: oben ein Symbol — ein Mülleimer vor dem Löschen, sonst
 ein Warndreieck —, darunter Titel und Text, rechts unten **Abbrechen** und der
-rot gefüllte Knopf. Sie stehen über dem Fenster, ebenso Meldungen wie
+rot gefüllte Knopf. Das Warndreieck tragen auch „Aktivität zurücksetzen", weil
+es die Punkte einer verbuchten Aktivität zurücknimmt, und „Beitrag anonym
+stellen", weil es sich nicht rückgängig machen lässt. Alle übrigen Rückfragen —
+etwa „Chat erstellen?" oder „Alle bestätigen?" — sehen ebenso aus, nur ohne
+Symbol; ihr bestätigender Knopf ist gefüllt wie der Hauptknopf der anderen
+Fenster. Rückfragen stehen über dem Fenster, ebenso Meldungen wie
 „Gespeichert"; nur wenn du im Material-Fenster eine Datei löschst, steht die
 Rückfrage in der Zeile der Datei.
 Was ohne Netz geht, ist dasselbe wie in der App (siehe
@@ -335,11 +375,13 @@ Badges, in die Antragsliste, an das Event, bei einem Stempel, einem neuen
 oder ausgeblendeten Beitrag in die Challenge, bei einem Level-Aufstieg auf
 die Startseite. Punkte — aus einem
 Event, als Bonus oder für eine eingetragene Aktivität — öffnen die
-Punkte-Übersicht im Profil; der Jahresrückblick öffnet genau die Ausgabe, um
-die es geht. **„Alle gelesen"** räumt auf einmal auf.
+Punkte-Übersicht im Profil, im Browser die Tabelle **Punkte-Verlauf**; der
+Jahresrückblick öffnet genau die Ausgabe, um die es geht. **„Alle gelesen"**
+räumt auf einmal auf.
 **„Ältere Mitteilungen laden"** holt, was weiter zurückliegt; nach einem Jahr
 werden Mitteilungen nachts entfernt. Das Kreuz oben links schließt das
-Postfach.
+Postfach. Im Browser öffnet es sich als Fenster in der Mitte (siehe
+[Im Browser ein Fenster bedienen](#im-browser-ein-fenster-bedienen)).
 
 Jede Mitteilung trägt die Farbe ihres Bereichs, wie überall in der App:
 Badges in der Badge-Farbe, Anträge in der Aktivitätenfarbe, Events in
@@ -379,7 +421,9 @@ stehen.
 Wer in **mehreren Gemeinden** mitarbeitet, sieht die Mitteilungen aller
 Gemeinden im selben Postfach, jede mit dem Namen ihrer Gemeinde. Antippen
 wechselt bei Bedarf zuerst in diese Gemeinde — so, wie es ein angetippter Push
-auch tut. Was in den anderen Gemeinden noch offen ist, zeigt der
+auch tut. Im Browser steht im Fenster so lange „Mitteilung wird geöffnet …"
+mit dem Namen der Gemeinde, in die gewechselt wird; bis dahin lässt es sich
+nicht schließen. Was in den anderen Gemeinden noch offen ist, zeigt der
 Gemeinde-Umschalter an jedem Eintrag seiner Liste — in der App oben links in
 der Kopfzeile, im Browser mit der Leiste links unten in der Leiste (siehe
 [Sehen, wo etwas offen ist](05-rollen.md#sehen-wo-etwas-offen-ist)).
@@ -418,7 +462,7 @@ Teamer:innen — das Material.
 
 **Die Leitung** hat stattdessen den fünften Reiter **„Mehr"**. Er führt zu drei
 Bereichen: *Konto* (das eigene Profil), *Verwaltung* (Benutzer:innen,
-Einladungen) und *Inhalt* (Aktivitäten, Badges, Jahrgänge, Kategorien,
+Startseiten, Konfis einladen) und *Inhalt* (Aktivitäten, Badges, Jahrgänge, Kategorien,
 Level, Material, Jahresrückblick, Zertifikate).
 
 ## Im Dunkelmodus arbeiten
@@ -639,8 +683,8 @@ allem anderen.
 „Abbrechen" und ein roter Knopf. Sie sagt auch, was genau verschwindet, etwa:
 „Der Jahrgang und sein Chatverlauf werden unwiderruflich entfernt." Vor anderen
 folgenreichen Schritten — Abmelden, Änderungen verwerfen, ein Konto sperren,
-einen Beitrag ausblenden — steht oben ein Warndreieck, der Knopf ist ebenso
-rot.
+einen Beitrag ausblenden oder anonym stellen, eine verbuchte Aktivität
+zurücksetzen — steht oben ein Warndreieck, der Knopf ist ebenso rot.
 
 ### Andere Wisch-Aktionen erkennen
 
@@ -653,7 +697,7 @@ Rückfrage** sofort los:
 | Challenges | **Bearbeiten** (öffnet den Dialog) und Löschen |
 | Anträge auf Aktivitäten | nur **Zurücksetzen** — kein Löschen |
 | Events | **Absagen** und Löschen |
-| Teilnehmerliste | **Auf die Warteliste setzen** und Entfernen |
+| Teilnehmerliste | **Auf die Warteliste setzen** und **Anmeldung entfernen** |
 
 Faustregel: **Löschen fragt immer nach. Andere Aktionen nicht.**
 
@@ -913,7 +957,7 @@ Empfang, aber nichts kommt durch. Eine Abmeldung von einem Event, eine
 gemeldete Aktivität, eine Zu- oder Absage im Team, die Wahl der
 Bibelübersetzung und als Leitung das **Bearbeiten** von Badges, Leveln,
 Aktivitäten, Kategorien, Zertifikaten und Jahrgängen sowie die
-Dashboard-Einstellungen landen dann trotzdem unter **„Wird gesendet…"** statt
+Einstellungen der **Startseiten** landen dann trotzdem unter **„Wird gesendet…"** statt
 in einer Fehlermeldung. Was der Server bei einem zweiten Eingang doppelt
 ausführen könnte — Bonuspunkte vergeben, etwas **neu anlegen** —, meldet in
 diesem Fall einen Fehler; versuche es dann später noch einmal.

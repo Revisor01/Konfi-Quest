@@ -42,8 +42,9 @@ Dabei passiert zweierlei:
 1. Für jede aktive Person wird der Rückblick berechnet und gespeichert.
    Gelöschte Konten werden übersprungen.
 2. Alle bekommen **eine** Mitteilung mit dem Text „Schau dir jetzt deinen
-   persönlichen Jahresrückblick an!" — bei Konfis unter **„Deine Konfi-Zeit
-   Wrapped ist da!"**, beim Team unter **„Dein Team-Jahr Wrapped ist da!"**
+   persönlichen Jahresrückblick an!" — bei Konfis unter **„Dein
+   Konfi-Jahresrückblick ist da!"**, beim Team unter **„Dein
+   Team-Jahresrückblick ist da!"**
 
 > Schlägt die Mitteilung fehl, bleibt der Rückblick trotzdem bestehen. Er ist
 > dann da, nur hat niemand eine Benachrichtigung bekommen.
@@ -516,8 +517,9 @@ Zeichen dafür, dass die Zuweisung fehlt, nicht dass niemand betreut wurde.
 Solange er freigegeben ist, liegt er als auffällige Karte oben auf dem
 Dashboard. Bei Konfis trägt sie violett den Namen der Ausgabe und darunter „Dein
 Rückblick - bis jetzt! Hier tippen."; ohne Namen steht dort „Dein
-Jahresrückblick ist da!". Bei Teamer:innen heißt sie „Dein Team-Jahr Wrapped ist
-da!" mit dem Zusatz „Schau dir deinen Jahresrückblick an". Beide Karten lassen
+Jahresrückblick ist da!". Bei Teamer:innen heißt sie „Dein
+Team-Jahresrückblick ist da!" mit dem Zusatz „Schau dir deinen Jahresrückblick
+an". Beide Karten lassen
 sich über das X ausblenden; die nächste Ausgabe meldet sich wieder.
 
 Ältere Rückblicke stehen im **Profil** unter **„Meine Rückblicke“**:

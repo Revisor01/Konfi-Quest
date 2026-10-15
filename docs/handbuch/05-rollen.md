@@ -61,7 +61,7 @@ zusätzlich:
   [Festlegen, wer entscheiden, verbuchen und freigeben darf](#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf))
 - **Jahrgänge anlegen** und dabei gleich auswählen, welche Personen der Leitung
   und welche Teamer:innen den neuen Jahrgang sehen und bearbeiten dürfen
-- **Gemeinde-Einstellungen** — Dashboard, Einladungscode, Konfis einladen
+- **Gemeinde-Einstellungen** — Startseiten, Einladungscode, Konfis einladen
 - **Jahresrückblick freigeben** und wieder zurückziehen
 - **Jedes Material bearbeiten und löschen**, auch fremdes und solches, dessen
   erstellende Person die Gemeinde verlassen hat
@@ -409,7 +409,7 @@ zeigen einen Gegenstand, der zu genau einer Gemeinde gehört; ein Wechsel
 führte ins Leere, weil es ihn in der anderen Gemeinde nicht gibt. Und die
 **Unterseiten** unter „Mehr" beziehungsweise im Profil — Profil,
 Benutzer:innen, Aktivitäten, Badges, Jahrgänge, Kategorien, Level, Material,
-Jahresrückblick, Zertifikate, Dashboard, Gemeinden, Betrieb — gehören
+Jahresrückblick, Zertifikate, Startseiten, Gemeinden, Betrieb — gehören
 entweder zum Konto oder zu genau der Gemeinde, aus der man sie geöffnet hat.
 Ein Tippen auf den Namen öffnet die Liste aller eigenen Gemeinden mit ihren
 vollen Namen; die aktive steht **fett** und leicht hinterlegt. Nach dem
@@ -615,7 +615,7 @@ Gemeinde gehört ([Konfi oder Team, nie beides](#in-mehreren-gemeinden-mitarbeit
 
 Ein Konto verschwindet auf fünf Wegen, und auf jedem geschieht dasselbe:
 
-- Die Person löscht es selbst, ganz unten im Profil unter **Account löschen**,
+- Die Person löscht es selbst, ganz unten im Profil unter **Konto löschen**,
   mit ihrem Passwort. Ist sie in einer ihrer Gemeinden die letzte
   Gemeindeleitung, lehnt die App das ab, bis sie die Rechte dort an jemanden
   weitergegeben hat.

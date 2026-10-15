@@ -753,6 +753,11 @@ Tab-Taste —, erscheint darüber eine kleine Leiste: **Reagieren**, **Antworten
 [Eine Nachricht löschen](#eine-nachricht-loeschen). Der Reaktions-Picker klappt
 unter der Nachricht auf; Escape schließt ihn.
 
+An einer Datei gibt **Teilen** die Datei selbst an das Teilen-Fenster des
+Browsers, mit der Bildunterschrift als Text, sonst mit dem Dateinamen — wie das
+Teilen in der App. Kann der Browser keine Dateien teilen, steht an der Datei
+stattdessen **Herunterladen**, und sie landet im Download-Ordner.
+
 Konnte eine Nachricht nicht gesendet werden, stehen direkt darunter der Grund und
 die Wege weiter: **Erneut senden** und **Verwerfen** — bei einer abgelehnten
 Nachricht nur **Verwerfen**.
