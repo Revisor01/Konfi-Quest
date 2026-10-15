@@ -345,7 +345,8 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S6: nur das Anlegen, nicht das Bearbeiten', () => {
-    const q = lies('src/components/admin/modals/ChallengeManageModal.tsx');
+    // Seit 15.10.2026 im Hook des Formulars (App-Modal und Web-Dialog).
+    const q = lies('src/components/admin/modals/useChallengeManageFormular.ts');
     const put = q.indexOf('await api.put(`/challenges/admin/${challenge.id}`, payload);');
     const post = q.indexOf("await api.post('/challenges/admin', payload);");
     const messung = q.indexOf("trackHandlung('challenge-angelegt'");

@@ -447,10 +447,14 @@ describe('Challenge fuer Team und Leitung (Web): Aktionen', () => {
     expect(h.bearbeiten).toHaveBeenCalledWith(expect.objectContaining({ id: 7, title: 'Fürbitten zum Erntedank' }));
   });
 
-  it('Beitrag einreichen oeffnet das Einreich-Formular der App, solange die Challenge laeuft', async () => {
+  // Seit 15.10.2026 (Simon: im Browser jedes Formular als Fenster der
+  // Web-Fassung) das Fenster „Dein Beitrag" statt des Modals der App; die
+  // Abläufe darin prüft webBeitragDialog.test.tsx.
+  it('Beitrag einreichen oeffnet das Fenster „Dein Beitrag" der Web-Fassung, solange die Challenge laeuft', async () => {
     await zeigen();
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' }));
-    expect(h.presentModal).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Dein Beitrag' })).toBeInTheDocument();
+    expect(h.presentModal).not.toHaveBeenCalled();
   });
 
   it('einmal pro Person: nach dem eigenen Beitrag kein Einreichen mehr', async () => {

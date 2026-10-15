@@ -110,7 +110,9 @@ const STELLEN: Array<{
     vorher: "api.post('/admin/badges', badgeData)"
   },
   {
-    datei: 'src/components/admin/modals/ChallengeManageModal.tsx',
+    // Seit 15.10.2026 im Hook, den das Modal der App und der Dialog der
+    // Web-Fassung (WebChallengeDialog) gemeinsam nutzen.
+    datei: 'src/components/admin/modals/useChallengeManageFormular.ts',
     handlung: 'challenge-angelegt',
     vorher: "await api.post('/challenges/admin', payload)"
   },
@@ -255,7 +257,9 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
     expect(anmeldung).toContain("track('event-angemeldet'");
     expect(anmeldung).not.toContain("trackHandlung('event-angemeldet'");
 
-    const beitrag = lies('src/components/konfi/modals/ChallengeSubmitModal.tsx');
+    // Seit 15.10.2026 im Hook, den das Modal der App und der Dialog der
+    // Web-Fassung (WebBeitragDialog) gemeinsam nutzen.
+    const beitrag = lies('src/components/konfi/modals/useChallengeBeitrag.ts');
     expect(beitrag).toContain("track('challenge-beitrag'");
     expect(beitrag).not.toContain('trackHandlung(');
   });

@@ -167,6 +167,8 @@ describe('Andere Upload-Stellen lesen die Datei sofort aus (Waechter)', () => {
   // Muster, das in keiner Datei vorkommen soll.
   const dateien = [
     'src/components/konfi/modals/ChallengeSubmitModal.tsx',
+    // Die Auswahl der Challenge-Abgabe steht seit 15.10.2026 im Hook (App und Browser).
+    'src/components/konfi/modals/useChallengeBeitrag.ts',
     'src/components/konfi/modals/ActivityRequestModal.tsx',
     'src/components/teamer/modals/TeamerActivityRequestModal.tsx',
     'src/components/shared/useAktivitaetMelden.ts',

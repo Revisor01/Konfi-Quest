@@ -3,8 +3,8 @@
 // (components/web/WebDetailSeite.tsx; Simon, 06.10.2026: „Inhalt links,
 // Angaben rechts").
 //
-// Im Kopf Titel, Kennzeichen und die Aktion "Beitrag einreichen" (das
-// Einreich-Formular der App, ChallengeSubmitModal); was bisher unter
+// Im Kopf Titel, Kennzeichen und die Aktion "Beitrag einreichen" (seit
+// 15.10.2026 das Fenster der Web-Fassung, WebBeitragDialog); was bisher unter
 // "Mitmachen" stand -- wer den Beitrag sieht, warum es keinen Knopf gibt --,
 // steht als Hinweis ueber den Kennzahlen. Darunter die Kennzahlen (Beitraege
 // im Feed, eigene Beitraege, Laufzeit, Stempel). Links breit die Aufgabe und
@@ -84,7 +84,7 @@ export interface WebKonfiChallengeDetailProps {
   loading: boolean;
   /** Ohne Netz und ohne gespeicherten Stand: die Beitraege fehlen. */
   offlineOhneStand: boolean;
-  /** Oeffnet das Einreich-Formular der App (ChallengeSubmitModal). */
+  /** Oeffnet das Einreich-Formular (im Browser WebBeitragDialog, KonfiChallengeDetailPage). */
   onSubmit: () => void;
 }
 

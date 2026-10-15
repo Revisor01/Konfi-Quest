@@ -90,7 +90,7 @@ export interface WebChallengeLeitungDetailProps {
   onEdit?: (challenge: AdminChallenge) => void;
   /** Nach jeder Moderation und nach eigenem Einreichen: Liste und Zaehler aktuell halten. */
   onChanged?: () => void;
-  /** Die IonPage der Seite -- fuer die Card-Optik des Einreich-Modals. */
+  /** Die IonPage der Seite (der Hook braucht sie fuer das Modal der App). */
   seitenRef?: RefObject<HTMLElement | null>;
   /** Liste dieser Rolle (/admin/challenges): der Weg zurueck. */
   listenPfad: string;
@@ -118,6 +118,7 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
     darfFreigeben,
     handleExport,
     oeffneEinreichen,
+    einreichFenster,
   } = useChallengeLeitung({ challenge, onChanged, seitenRef });
 
   // Die Zahl, die beim Oeffnen noch rot an der Karte stand -- festgehalten in
@@ -371,6 +372,8 @@ const WebChallengeLeitungDetail: React.FC<WebChallengeLeitungDetailProps> = ({
       aktionen={kopfAktionen}
       {...(challenge ? inhaltVon(challenge) : challengeZustand(hinweisArt, onBack, onNochmal))}
     >
+      {/* „Beitrag einreichen" im Browser: der Dialog der Web-Fassung (WebBeitragDialog). */}
+      {einreichFenster}
       {ausblenden && (
         <WebDialog
           titel="Beitrag ausblenden"
