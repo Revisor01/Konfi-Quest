@@ -10,7 +10,10 @@
 //     einmalige_antwort, namen_spaeter, expires_in_hours }
 //
 // Fehler meldet der Hook über `meldeFehler`: in der App oben (setError), im
-// Dialog des Browsers im Fenster selbst.
+// Dialog des Browsers im Fenster selbst. Die Senke heißt hier bewusst
+// `setError` und bekommt die Texte direkt: Der Wächter der Positivliste
+// (__tests__/utils/bekannteFehlertexte.test.ts) findet Fehlertexte nur an
+// solchen Aufrufstellen.
 
 import { useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -66,8 +69,8 @@ export interface UmfrageFormularOptionen {
 }
 
 export function useUmfrageFormular({ roomId, meldeFehler }: UmfrageFormularOptionen) {
-  const { setError } = useApp();
-  const melden = meldeFehler ?? setError;
+  const app = useApp();
+  const setError = meldeFehler ?? app.setError;
 
   const [question, setQuestionRoh] = useState('');
   const [options, setOptions] = useState<string[]>(['', '']);
@@ -128,10 +131,13 @@ export function useUmfrageFormular({ roomId, meldeFehler }: UmfrageFormularOptio
     if (an) setMultipleChoice(false);
   };
 
+  const frageFehlt = !question.trim();
+  const zuWenigOptionen = options.filter((opt) => opt.trim()).length < OPTIONEN_MIN;
+
   /** Was fehlt, als Satz; null, wenn alles da ist. */
   const pruefen = (): string | null => {
-    if (!question.trim()) return UMFRAGE_FRAGE_FEHLT;
-    if (options.filter((opt) => opt.trim()).length < OPTIONEN_MIN) return UMFRAGE_ZU_WENIG_OPTIONEN;
+    if (frageFehlt) return UMFRAGE_FRAGE_FEHLT;
+    if (zuWenigOptionen) return UMFRAGE_ZU_WENIG_OPTIONEN;
     return null;
   };
 
@@ -153,9 +159,12 @@ export function useUmfrageFormular({ roomId, meldeFehler }: UmfrageFormularOptio
    */
   const erstellen = async (): Promise<boolean> => {
     if (creating) return false;
-    const fehlt = pruefen();
-    if (fehlt) {
-      melden(fehlt);
+    if (frageFehlt) {
+      setError(UMFRAGE_FRAGE_FEHLT);
+      return false;
+    }
+    if (zuWenigOptionen) {
+      setError(UMFRAGE_ZU_WENIG_OPTIONEN);
       return false;
     }
     return guard(async () => {
@@ -164,7 +173,7 @@ export function useUmfrageFormular({ roomId, meldeFehler }: UmfrageFormularOptio
         resetForm();
         return true;
       } catch (err) {
-        melden(UMFRAGE_FEHLER);
+        setError(UMFRAGE_FEHLER);
         console.error('Error creating poll:', err);
         return false;
       }

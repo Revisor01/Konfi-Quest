@@ -1376,9 +1376,10 @@ a.web-chat-zeile:focus-visible {
   pointer-events: none;
 }
 
-/* Die Fenster Mitglieder, Umfrage und Neuer Chat: auf dem breiten Bildschirm
-   ein Dialog in lesbarer Groesse (Ionic setzt sonst 600 x 500). Die Klasse
-   steht am Fenster selbst (cssClass). */
+/* Das Fenster Neuer Chat: auf dem breiten Bildschirm ein Dialog in lesbarer
+   Groesse (Ionic setzt sonst 600 x 500). Die Klasse steht am Fenster selbst
+   (cssClass). Mitglieder und Umfrage sind im Browser eigene Dialoge
+   (WebMitgliederDialog, WebUmfrageDialog). */
 .web-chat-modal {
   --width: 640px;
   --height: min(82vh, 780px);

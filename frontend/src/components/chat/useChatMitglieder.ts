@@ -18,7 +18,10 @@
 // selbst, der Server lehnt dort Hinzufügen und Entfernen ab.
 //
 // Fehler meldet der Hook über `meldeFehler`: in der App oben (setError), im
-// Dialog des Browsers im Fenster selbst.
+// Dialog des Browsers im Fenster selbst. Die Senke heißt hier bewusst
+// `setError` und bekommt die Texte direkt: Der Wächter der Positivliste
+// (__tests__/utils/bekannteFehlertexte.test.ts) findet Fehlertexte nur an
+// solchen Aufrufstellen.
 
 import { useEffect, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -114,8 +117,8 @@ export interface ChatMitgliederOptionen {
 }
 
 export function useChatMitglieder({ roomId, roomType, meldeFehler }: ChatMitgliederOptionen) {
-  const { user, setError, isOnline } = useApp();
-  const melden = meldeFehler ?? setError;
+  const { user, setError: appSetError, isOnline } = useApp();
+  const setError = meldeFehler ?? appSetError;
 
   const [participants, setParticipants] = useState<ChatTeilnehmer[]>([]);
   const [allUsers, setAllUsers] = useState<ChatUser[]>([]);
@@ -134,7 +137,7 @@ export function useChatMitglieder({ roomId, roomType, meldeFehler }: ChatMitglie
       const response = await api.get(`/chat/rooms/${roomId}/participants`);
       setParticipants(response.data);
     } catch (err) {
-      melden(MITGLIEDER_LADEN_FEHLER);
+      setError(MITGLIEDER_LADEN_FEHLER);
       console.error('Error loading participants:', err);
     } finally {
       setLoading(false);
@@ -247,7 +250,7 @@ export function useChatMitglieder({ roomId, roomType, meldeFehler }: ChatMitglie
       await loadParticipants();
       return true;
     } catch (err) {
-      melden(MITGLIEDER_HINZUFUEGEN_FEHLER);
+      setError(MITGLIEDER_HINZUFUEGEN_FEHLER);
       console.error('Error adding participants:', err);
       return false;
     } finally {
@@ -256,7 +259,7 @@ export function useChatMitglieder({ roomId, roomType, meldeFehler }: ChatMitglie
   };
 
   /** Vor der Rückfrage: offline geht Entfernen nicht (Meldung, true = abbrechen). */
-  const entfernenOfflineBlockiert = (): boolean => offlineBlockiert(isOnline, melden);
+  const entfernenOfflineBlockiert = (): boolean => offlineBlockiert(isOnline, setError);
 
   /** Nach der Rückfrage: entfernen. true, wenn es geklappt hat. */
   const mitgliedEntfernen = async (participant: ChatTeilnehmer): Promise<boolean> => {
@@ -265,7 +268,7 @@ export function useChatMitglieder({ roomId, roomType, meldeFehler }: ChatMitglie
       await loadParticipants();
       return true;
     } catch (err) {
-      melden(MITGLIED_ENTFERNEN_FEHLER);
+      setError(MITGLIED_ENTFERNEN_FEHLER);
       console.error('Error removing participant:', err);
       return false;
     }
