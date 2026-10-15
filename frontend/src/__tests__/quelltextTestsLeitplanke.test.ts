@@ -66,16 +66,19 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  09.10.2026 +1: ohneTestLeitplanke.test.ts -- Leitplanke wie diese: sie
  *  liest die Testdateien, um zu sehen, ob jede Datei in utils/, hooks/ und
  *  services/ in einem Test vorkommt; rendern laesst sich dabei nichts. */
-// 83 seit 10.10.2026: kopfleisteAndroid prueft wie tabLeisteAndroid eine
-// Regel in variables.css; jsdom rechnet die Kaskade der Ionic-Variablen nicht,
-// rendern zeigte nichts.
+// 83 seit 10.10.2026: ein Waechter fuer die Android-Kopfleiste prueft wie
+// tabLeisteAndroid eine Regel in variables.css; jsdom rechnet die Kaskade der
+// Ionic-Variablen nicht, rendern zeigte nichts.
 // 84 seit 12.10.2026: components/support/mailZeileKonto.test.ts -- Stil-Waechter
 // fuer die Zeile einer ausgehenden Mail im Verlauf: „Support“ bleibt ganz, das
 // Konto kuerzt zuerst. jsdom rechnet kein Flex-Layout; der Test liest die
 // Flex-Regeln aus MailGespraeche.css und rechnet das Kuerzen nach der
 // Spezifikation mit gemessenen Breiten nach (gegen die Messung im Browser
 // abgeglichen). Rendern saehe den Befund („S…“ bei 390 px) nicht.
-const OBERGRENZE = 84;
+// 81 seit 15.10.2026: drei reine Layout-Waechter geloescht (Reiter-
+// Unterlaengen, Android-Kopfleiste, Datumsfelder im Termin-Fenster) -- das
+// Layout bleibt frei aenderbar (Simon, 15.10.2026).
+const OBERGRENZE = 81;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -118,15 +121,12 @@ const BEKANNT: string[] = [
   '__tests__/components/onboardingTourGeteilt.test.ts',
   '__tests__/components/popoverBreite.test.ts',
   '__tests__/components/rankingFeldnamen.test.ts',
-  '__tests__/components/reiterUnterlaengen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
-  '__tests__/components/kopfleisteAndroid.test.ts',
   '__tests__/components/stylesheetsParsen.test.ts',
   '__tests__/components/support/mailZeileKonto.test.ts',
   '__tests__/components/tabLeisteAndroid.test.ts',
   '__tests__/components/tabZaehlerIos.test.ts',
   '__tests__/components/tageUndKalendertag.test.ts',
-  '__tests__/components/terminModalDatumsfelder.test.ts',
   '__tests__/components/typografieTokens.test.ts',
   '__tests__/components/umlauteUndZurueckIcon.test.ts',
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',

@@ -99,14 +99,10 @@ describe('Support-Konten (Web): Tabelle', () => {
     expect(zelle(zeile('support2'), 4)).toHaveTextContent('noch nie');
   });
 
-  it('der Status ist eine Marke: aktiv oder gesperrt -- und ein gesperrtes Konto ist als Zeile gekennzeichnet', async () => {
+  it('der Status steht in der Zeile: aktiv oder gesperrt', async () => {
     await oeffnen();
     expect(zelle(zeile('support2'), 3)).toHaveTextContent('Aktiv');
-    expect(zelle(zeile('support2'), 3).querySelector('.web-pill')!.className).toContain('web-pill--erfolg');
     expect(zelle(zeile('support3'), 3)).toHaveTextContent('Gesperrt');
-    expect(zelle(zeile('support3'), 3).querySelector('.web-pill')!.className).not.toContain('web-pill--erfolg');
-    expect(zeile('support3').className).toContain('web-zeile--gesperrt');
-    expect(zeile('support2').className).not.toContain('web-zeile--gesperrt');
   });
 
   it('das eigene Konto bietet weder Sperren noch Loeschen an, die anderen schon', async () => {

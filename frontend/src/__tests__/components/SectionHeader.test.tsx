@@ -27,32 +27,6 @@ describe('SectionHeader', () => {
     expect(screen.getByText('Aktiv')).toBeInTheDocument();
   });
 
-  it('nutzt Preset-Farben fuer "events" (rot)', () => {
-    const { container } = render(
-      <SectionHeader {...defaultProps} preset="events" />
-    );
-    const banner = container.querySelector('.app-header-banner') as HTMLElement;
-    expect(banner).toBeTruthy();
-    // Seit 25.09.2026 als CSS-Variable, damit der Kopf dem Dunkelmodus folgt
-    // (vorher stand hier der helle Hexwert #dc2626, einmal beim Laden gelesen).
-    expect(banner.style.background).toContain('var(--app-color-events)');
-    expect(banner.style.background).toContain('var(--app-color-events-dunkel)');
-    expect(banner.style.boxShadow).toContain('rgba(var(--app-color-events-rgb), 0.25)');
-  });
-
-  it('nutzt custom colors wenn uebergeben', () => {
-    const { container } = render(
-      <SectionHeader
-        {...defaultProps}
-        colors={{ primary: '#00ff00', secondary: '#008800' }}
-      />
-    );
-    const banner = container.querySelector('.app-header-banner') as HTMLElement;
-    expect(banner.style.background).toContain('rgb(0, 255, 0)');
-    // Hexwert eines Aufrufers: Schatten wird weiterhin aus dem Hex gerechnet.
-    expect(banner.style.boxShadow).toContain('rgba(0, 255, 0, 0.25)');
-  });
-
   it('rendert die korrekte Anzahl von Stats-Items', () => {
     const { container } = render(<SectionHeader {...defaultProps} />);
     const statItems = container.querySelectorAll('.app-stats-row__item');
@@ -62,7 +36,6 @@ describe('SectionHeader', () => {
   it('rendert Stats ohne onClick als reine Anzeige (kein Button)', () => {
     const { container } = render(<SectionHeader {...defaultProps} />);
     expect(container.querySelectorAll('button.app-stats-row__item').length).toBe(0);
-    expect(container.querySelectorAll('.app-stats-row__item--clickable').length).toBe(0);
   });
 
   it('macht Stats mit onClick zu Buttons und meldet den Klick', () => {
@@ -80,8 +53,7 @@ describe('SectionHeader', () => {
     const buttons = container.querySelectorAll('button.app-stats-row__item--clickable');
     expect(buttons.length).toBe(1);
 
-    // Die aktive Kachel ist als solche markiert (Optik + Screenreader).
-    expect(buttons[0].classList.contains('app-stats-row__item--active')).toBe(true);
+    // Die aktive Kachel ist fuer Screenreader als solche markiert.
     expect(buttons[0].getAttribute('aria-current')).toBe('true');
 
     fireEvent.click(screen.getByText('Gesamt'));

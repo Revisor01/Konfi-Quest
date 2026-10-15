@@ -217,7 +217,7 @@ const linkNamen = (nav: HTMLElement) =>
 // ---------------------------------------------------------------------------
 
 describe('Die Leiste erscheint nur in der Web-Version im breiten Fenster', () => {
-  it('Web, 992 px und breiter: Leiste links, das Outlet ist der Hauptbereich der Split-Pane', () => {
+  it('Web, breites Fenster: Leiste da, das Outlet ist der Hauptbereich der Split-Pane', () => {
     halter.breit = true;
     const { container } = zeigeRahmen();
     expect(leiste()).not.toBeNull();
@@ -226,8 +226,6 @@ describe('Die Leiste erscheint nur in der Web-Version im breiten Fenster', () =>
     // Was der Rahmen Ionic uebergibt (jsdom reicht es nicht bis ins Element).
     expect(splitPaneProps).toMatchObject({ when: true, contentId: INHALT_ID });
     expect(screen.getByTestId('outlet').id).toBe(INHALT_ID);
-    // Die Leiste steht vor dem Hauptbereich (links).
-    expect(rahmen.firstElementChild?.tagName).toBe('NAV');
   });
 
   it('Web, schmales Fenster: keine Leiste; die Split-Pane steht trotzdem (zeigt aber nichts daneben)', () => {
@@ -275,66 +273,6 @@ describe('Die Leiste erscheint nur in der Web-Version im breiten Fenster', () =>
       expect(screen.getByTestId('breit').textContent, `nativ=${nativ} breit=${breit}`).toBe(erwartet);
       unmount();
     }
-  });
-});
-
-describe('Rollenfarbe der gewählten Filter (Simon, 06.10.2026)', () => {
-  afterEach(() => { delete document.documentElement.dataset.rolle; });
-
-  it.each([
-    ['konfi', 'konfis'], ['teamer', 'teamer'], ['leitung', 'leitung'], ['admin', 'users'],
-  ] as const)('Web: der Rahmen schreibt für %s data-rolle="%s" an <html>', (konto, farbe) => {
-    zustand.konto = KONTEN[konto];
-    halter.breit = true;
-    zeigeRahmen();
-    expect(document.documentElement.dataset.rolle).toBe(farbe);
-  });
-
-  it('auch im schmalen Fenster der Web-Version -- die Filter stehen dort nicht, die Farbe schadet nicht', () => {
-    zustand.konto = KONTEN.teamer;
-    halter.breit = false;
-    zeigeRahmen();
-    expect(document.documentElement.dataset.rolle).toBe('teamer');
-  });
-
-  it('in den Apps setzt der Rahmen nichts -- dort gibt es keine Web-Filter', () => {
-    zustand.konto = KONTEN.konfi;
-    halter.nativ = true;
-    zeigeRahmen();
-    expect(document.documentElement.dataset.rolle).toBeUndefined();
-  });
-});
-
-describe('Kompakte Modale im breiten Fenster (Simon, 11.10.2026)', () => {
-  // theme/web-modale.css wirkt nur unter html[data-layout="breit"]. Das
-  // Merkmal setzt der Rahmen -- aus derselben Quelle wie die Leiste.
-  afterEach(() => { delete document.documentElement.dataset.layout; });
-
-  it('Web, 992 px und breiter: data-layout="breit" an <html>', () => {
-    halter.breit = true;
-    zeigeRahmen();
-    expect(document.documentElement.dataset.layout).toBe('breit');
-  });
-
-  it('Web, schmales Fenster: kein Merkmal -- dort bleiben die Modale der App', () => {
-    zeigeRahmen();
-    expect(document.documentElement.dataset.layout).toBeUndefined();
-  });
-
-  it('App auf dem Geraet, auch breit (iPad quer): nie ein Merkmal', () => {
-    halter.nativ = true;
-    halter.breit = true;
-    zeigeRahmen();
-    expect(document.documentElement.dataset.layout).toBeUndefined();
-  });
-
-  it('folgt dem Fenster: schmal gezogen verschwindet es, breit kommt es wieder', () => {
-    zeigeRahmen();
-    expect(document.documentElement.dataset.layout).toBeUndefined();
-    setzeBreite(true);
-    expect(document.documentElement.dataset.layout).toBe('breit');
-    setzeBreite(false);
-    expect(document.documentElement.dataset.layout).toBeUndefined();
   });
 });
 
@@ -443,7 +381,6 @@ describe('Eintraege je Rolle aus den Rollenbaeumen', () => {
     const aktiv = leiste()!.querySelectorAll('[aria-current="page"]');
     expect(aktiv).toHaveLength(1);
     expect(aktiv[0].getAttribute('href')).toBe('/teamer/profile/material');
-    expect(aktiv[0].classList.contains('app-seitenleiste__link--aktiv')).toBe(true);
   });
 
   // Seiten, die ueber „Mehr" erreicht werden, haben keinen eigenen Eintrag
@@ -688,21 +625,10 @@ describe('Gemeinde-Umschalter in der Leiste', () => {
     { id: 2, name: 'Kirchengemeinde Heide', slug: 'kirchengemeinde-heide', role_name: 'admin' },
   ];
 
-  it('erscheint bei mehreren Gemeinden als eigene Flaeche -- nicht mehr als Knopf der Kopfzeile', () => {
+  it('erscheint bei mehreren Gemeinden', () => {
     zustand.organizations = MEHRERE;
     zeigeLeiste('/admin/konfis');
     expect(leiste()!.querySelector('.app-leistengemeinde__knopf')).not.toBeNull();
-    expect(leiste()!.querySelector('.app-org-switcher-btn')).toBeNull();
-    expect(leiste()!.querySelector('ion-button')).toBeNull();
-  });
-
-  it('steht unten im Fuss, vor Profil und Abmelden', () => {
-    zustand.organizations = MEHRERE;
-    zeigeLeiste('/admin/konfis');
-    const fuss = leiste()!.querySelector('.app-seitenleiste__fuss') as HTMLElement;
-    const reihenfolge = [...fuss.querySelectorAll('.app-leistengemeinde__knopf, a, button')]
-      .map((el) => (el.classList.contains('app-leistengemeinde__knopf') ? 'Gemeinde' : el.textContent));
-    expect(reihenfolge).toEqual(['Gemeinde', 'Profil', 'Abmelden']);
   });
 
   it('fehlt bei nur einer Gemeinde', () => {

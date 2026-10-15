@@ -107,7 +107,6 @@ const eventModalGeoeffnet = () => modale.geoeffnet.filter((m) => m.name === 'Eve
 describe('Bearbeiten im breiten Fenster', () => {
   it('öffnet den Dialog „Event bearbeiten", nicht das App-Modal', async () => {
     const { d } = await bearbeiten();
-    expect(d).toHaveClass('web-dialog--breit');
     expect(within(d).getByRole('button', { name: 'Speichern' })).toBeInTheDocument();
     expect(eventModalGeoeffnet()).toHaveLength(0);
   });

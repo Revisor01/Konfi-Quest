@@ -17,7 +17,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { zustand, zuruecksetzen, termin, oeffne } from './gerueste/konfiTerminDetail';
 import OfflinePlatzhalter from '../../components/shared/OfflinePlatzhalter';
-import { ICON_OFFLINE } from '../../components/shared/icons';
 
 beforeEach(zuruecksetzen);
 
@@ -54,10 +53,9 @@ describe('Der Platzhalter selbst', () => {
     expect(screen.getByText('Die Punkte-Historie ist offline nicht verfügbar.')).toBeInTheDocument();
   });
 
-  it('ist als Information gestaltet, nicht als Fehler: Wolke statt Warnzeichen, keine Alarm-Rolle', () => {
-    const { container } = render(<OfflinePlatzhalter was="Die Teilnehmerliste" />);
-    expect(container.querySelector('i')!.getAttribute('data-icon')).toBe(ICON_OFFLINE);
-    expect(container.firstElementChild).toHaveClass('app-offline-platzhalter');
+  it('ist eine Information, kein Fehler: keine Alarm-Rolle', () => {
+    render(<OfflinePlatzhalter was="Die Teilnehmerliste" />);
+    expect(screen.getByText('Die Teilnehmerliste ist offline nicht verfügbar.')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
   });
 

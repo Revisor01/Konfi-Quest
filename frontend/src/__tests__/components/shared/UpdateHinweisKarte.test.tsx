@@ -18,20 +18,12 @@ describe('UpdateHinweisKarte', () => {
     return { onOpen, onDismiss };
   };
 
-  it('zeigt Titel und Untertitel im "Was ist neu"-Look', () => {
+  it('zeigt Titel und Untertitel', () => {
     setup();
     expect(screen.getByText(TITEL)).toBeInTheDocument();
     expect(
       screen.getByText('Das Postfach unter der Glocke, selbst wählen was aufs Handy kommt, Dunkelmodus — hier tippen für den Überblick.')
     ).toBeInTheDocument();
-    // Knopf ist der Text, die Karte (.app-whatsnew) ihr Rahmen -- kein Knopf
-    // im Knopf (hinweisKartenKeinKnopfImKnopf.test.tsx).
-    expect(
-      screen.getByRole('button', { name: KNOPF })
-    ).toHaveClass('app-whatsnew__text');
-    expect(
-      screen.getByRole('button', { name: KNOPF }).parentElement
-    ).toHaveClass('app-whatsnew');
   });
 
   it('Tippen auf die Karte öffnet den Walkthrough (onOpen), ohne auszublenden', () => {

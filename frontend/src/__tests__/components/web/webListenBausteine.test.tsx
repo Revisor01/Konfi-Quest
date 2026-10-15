@@ -30,7 +30,7 @@ import { WebBildKarteSymbol } from '../../../components/web/WebBildKarte';
 import { KENNZAHL_SYMBOL } from '../../../components/web/kennzahlSymbole';
 import { ansichtSchluessel } from '../../../components/web/useAnsicht';
 import { wahlen } from '../../../seiten/beschreibung';
-import { ICON_ABZEICHEN, ICON_GRUPPE } from '../../../components/shared/icons';
+import { ICON_GRUPPE } from '../../../components/shared/icons';
 
 afterEach(() => {
   window.localStorage.clear();
@@ -54,22 +54,17 @@ const namen = (name = 'Leute') => within(tabelle(name)).getAllByRole('row').slic
 const kopf = (name: string, t = 'Leute') => within(tabelle(t)).getByRole('columnheader', { name });
 
 describe('WebKreis', () => {
-  it('Initialen: Klasse in der Farbe der Rolle, gross auf Wunsch, fuer Vorleseprogramme versteckt', () => {
-    const { container } = render(<><WebKreis text="AM" /><WebKreis text="BS" ton="erreicht" gross /></>);
-    const [a, b] = [...container.querySelectorAll('span')];
-    expect(a.className).toBe('web-initialen web-initialen--konfis');
+  it('Initialen: der Text steht im Kreis, fuer Vorleseprogramme versteckt', () => {
+    const { container } = render(<WebKreis text="AM" />);
+    const a = container.querySelector('span') as HTMLElement;
     expect(a.textContent).toBe('AM');
     expect(a).toHaveAttribute('aria-hidden', 'true');
-    expect(b.className).toBe('web-initialen web-initialen--erreicht web-initialen--gross');
   });
 
-  it('Symbol: Ton als Klasse, Datenfarbe als Hintergrund; ohne Ton neutral', () => {
-    const { container } = render(<><WebKreis icon={ICON_GRUPPE} ton="jahrgang" /><WebKreis icon={ICON_ABZEICHEN} farbe="rgb(1, 2, 3)" /></>);
-    const [a, b] = [...container.querySelectorAll<HTMLElement>('span.web-symbol')];
-    expect(a.className).toBe('web-symbol web-symbol--jahrgang');
+  it('Symbol: das uebergebene Symbol steht im Kreis', () => {
+    const { container } = render(<WebKreis icon={ICON_GRUPPE} ton="jahrgang" />);
+    const a = container.querySelector<HTMLElement>('span.web-symbol') as HTMLElement;
     expect(within(a).getByTestId('symbol')).toHaveAttribute('data-icon', ICON_GRUPPE);
-    expect(b.className).toBe('web-symbol web-symbol--neutral');
-    expect(b.style.background).toBe('rgb(1, 2, 3)');
   });
 });
 
@@ -127,7 +122,7 @@ describe('WebListe: Sortieren', () => {
 });
 
 describe('WebListe: Namenszelle, Aktionen, Leerzustand', () => {
-  it('Namenszelle mit Kreis: Link einzeilig, Unterzeile leise; ohne Ziel ein Titel ohne Link', () => {
+  it('Namenszelle mit Kreis und Unterzeile; ohne Ziel ein Titel ohne Link', () => {
     render(
       <WebListe<Person>
         beschriftung="Leute"
@@ -144,7 +139,6 @@ describe('WebListe: Namenszelle, Aktionen, Leerzustand', () => {
     );
     const [bea, aenne] = within(tabelle()).getAllByRole('row').slice(1);
     expect(within(bea).getByRole('link', { name: 'Bea' })).toHaveAttribute('href', '/p/1');
-    expect(within(bea).getByRole('link')).toHaveClass('web-link--zeile', 'web-einzeilig');
     expect(bea.querySelector('.web-person-zelle .web-initialen')).toHaveTextContent('BE');
     expect(bea.querySelector('.web-zelle-leise')).toHaveTextContent('bea.b');
     expect(within(aenne).queryByRole('link')).toBeNull();
@@ -170,7 +164,6 @@ describe('WebListe: Namenszelle, Aktionen, Leerzustand', () => {
         loeschen={{ onKlick: loeschen, beschriftung: (p) => `${p.name} löschen`, titel: () => 'Person löschen' }} />,
     );
     expect(within(tabelle()).getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Name', 'Punkte', 'Gruppe', 'Aktionen']);
-    expect(kopf('Aktionen')).toHaveStyle({ width: '112px' });
     fireEvent.click(screen.getByRole('button', { name: 'Carl löschen' }));
     expect(loeschen).toHaveBeenCalledTimes(1);
     expect(loeschen.mock.calls[0][0].id).toBe(3);
@@ -180,10 +173,9 @@ describe('WebListe: Namenszelle, Aktionen, Leerzustand', () => {
     expect(screen.getByRole('button', { name: 'Bea bearbeiten' })).toHaveAttribute('title', 'Bea bearbeiten');
   });
 
-  it('nur Loeschen: schmale Spalte; ohne Aktionen keine Spalte', () => {
+  it('nur Loeschen: kein Bearbeiten-Knopf; ohne Aktionen keine Spalte', () => {
     const { unmount } = render(<WebListe beschriftung="Leute" spalten={SPALTEN} zeilen={LEUTE} zeileSchluessel={(p) => p.id}
       loeschen={{ onKlick: vi.fn(), beschriftung: (p) => `${p.name} löschen` }} />);
-    expect(kopf('Aktionen')).toHaveClass('web-spalte-aktionen-schmal');
     expect(screen.queryByRole('button', { name: /bearbeiten/ })).toBeNull();
     unmount();
     render(<WebListe beschriftung="Leute" spalten={SPALTEN} zeilen={LEUTE} zeileSchluessel={(p) => p.id} />);
@@ -212,12 +204,10 @@ describe('WebKacheln', () => {
     href: `/p/${p.id}`,
   });
 
-  it('ein Raster, je Eintrag eine Karte in derselben Reihenfolge, Titel als Link', () => {
+  it('je Eintrag eine Karte in derselben Reihenfolge, Titel als Link', () => {
     render(<WebKacheln beschriftung="Leute" eintraege={LEUTE} schluessel={(p) => p.id} karte={karte} />);
     const liste = screen.getByRole('list', { name: 'Leute' });
-    expect(liste).toHaveClass('web-bildkarten');
     const eintraege = [...liste.children] as HTMLElement[];
-    expect(eintraege.map((e) => e.className)).toEqual(['web-bildkarten__eintrag', 'web-bildkarten__eintrag', 'web-bildkarten__eintrag']);
     expect(eintraege.map((e) => within(e).getByRole('link').textContent)).toEqual(['Bea', 'Änne', 'Carl']);
     expect(eintraege.map((e) => within(e).getByRole('link').getAttribute('href'))).toEqual(['/p/1', '/p/2', '/p/3']);
     // Ohne Aktionen kein Fuss.
@@ -293,44 +283,28 @@ const waehle = (a: 'Liste' | 'Kacheln') => fireEvent.click(within(umschalter()).
 const kartenNamen = () => [...screen.getByRole('list', { name: 'Leute' }).children].map((k) => within(k as HTMLElement).getByRole('link').textContent);
 
 describe('WebListenSeite: Kopf und Kennzahlen', () => {
-  it('Titel, Kennzahlen als Kacheln mit Symbol in der Bereichsfarbe, Reiter mit Zahl', () => {
+  it('Titel, Kennzahlen als Kacheln mit Symbol, Reiter mit Zahl', () => {
     render(<Seite />);
     expect(screen.getByRole('heading', { level: 1, name: 'Leute' })).toBeInTheDocument();
     const kachel = screen.getByRole('group', { name: 'Leute: 3' });
     expect(within(kachel).getByTestId('symbol')).toHaveAttribute('data-icon', KENNZAHL_SYMBOL.konfis.icon);
-    expect(within(kachel).getByTestId('symbol').style.color).toBe('var(--app-color-konfis)');
     expect(screen.getByRole('group', { name: 'Punkte: 17' })).toBeInTheDocument();
     const reiter = screen.getByRole('group', { name: 'Leute oder Team' });
     expect(within(reiter).getAllByRole('button').map((b) => b.textContent)).toEqual(['Leute3', 'Team']);
   });
 });
 
-describe('WebListenSeite: Farbe und Vorlesesatz der Reiter-Zahl', () => {
+describe('WebListenSeite: Vorlesesatz der Reiter-Zahl', () => {
   const MIT_SATZ = wahlen([
     { schluessel: 'leute', label: 'Leute', zahlText: (n: number) => `${n} warten (Satz der App)` },
     { schluessel: 'team', label: 'Team' },
   ]);
   const zahlAn = (name: RegExp) => within(screen.getByRole('group', { name: 'Leute oder Team' })).getByRole('button', { name }).querySelector('.web-chip__zahl')!;
 
-  it('ohne `farbe` und `zahlTexte`: graue Zahl, Vorlesesatz aus der Wahl', () => {
+  it('ohne `zahlTexte`: Vorlesesatz aus der Wahl', () => {
     render(<Seite reiter={{ beschriftung: 'Leute oder Team', wahlen: MIT_SATZ, wert: 'leute', onWert: () => {}, zahlen: { leute: 3, team: 2 } }} />);
-    expect(zahlAn(/^Leute/).className).toBe('web-chip__zahl');
     expect(zahlAn(/^Leute/)).toHaveTextContent('3 3 warten (Satz der App)');
     expect(zahlAn(/^Team/)).toHaveTextContent(/^2$/);
-  });
-
-  it('`farbe`: rot oder orange je Reiter, nur solange die Zahl groesser als 0 ist', () => {
-    render(<Seite reiter={{
-      beschriftung: 'Leute oder Team', wahlen: REITER, wert: 'leute', onWert: () => {},
-      zahlen: { leute: 3, team: 0 }, farbe: { leute: 'orange', team: 'rot' },
-    }} />);
-    expect(zahlAn(/^Leute/).className).toBe('web-chip__zahl web-chip__zahl--orange');
-    expect(zahlAn(/^Team/).className).toBe('web-chip__zahl');
-  });
-
-  it('rot an einer Zahl groesser als 0', () => {
-    render(<Seite reiter={{ beschriftung: 'Leute oder Team', wahlen: REITER, wert: 'leute', onWert: () => {}, zahlen: { team: 4 }, farbe: { team: 'rot' } }} />);
-    expect(zahlAn(/^Team/).className).toBe('web-chip__zahl web-chip__zahl--rot');
   });
 
   it('`zahlTexte` ersetzt den Satz der Wahl ganz: wo er fehlt, steht keiner', () => {
@@ -407,12 +381,10 @@ describe('WebListenSeite: Filter aus der Seitenbeschreibung', () => {
     expect(screen.getByText('Andere Suchbegriffe versuchen.')).toBeInTheDocument();
   });
 
-  it('Reihenfolge der Werkzeugzeile: Reiter, Filter-Chips, Suche, rechts Zaehlzeile, eigene Knoepfe und ganz rechts der Umschalter', () => {
+  it('eigene Knoepfe (`werkzeuge`) stehen in der Werkzeugzeile', () => {
     render(<Seite werkzeuge={<button type="button">Neu</button>} />);
-    const zeile = umschalter().closest('.web-werkzeuge')!;
-    expect([...zeile.children].map((c) => c.className.split(' ')[0])).toEqual(['web-chips', 'web-chips', 'web-suche', 'web-werkzeuge__rechts']);
-    expect(zeile.lastElementChild!.lastElementChild).toBe(umschalter());
-    expect(within(zeile.lastElementChild as HTMLElement).getByRole('button', { name: 'Neu' })).toBeInTheDocument();
+    const zeile = umschalter().closest('.web-werkzeuge') as HTMLElement;
+    expect(within(zeile).getByRole('button', { name: 'Neu' })).toBeInTheDocument();
   });
 });
 
@@ -455,7 +427,6 @@ describe('WebListenSeite: ab zwei Filtern hinter dem Knopf "Filter"', () => {
     const leiste = screen.getByRole('group', { name: 'Filter' });
     expect(knopf).toHaveAttribute('aria-expanded', 'true');
     expect(knopf).toHaveAttribute('aria-controls', leiste.id);
-    expect(leiste.previousElementSibling).toBe(zeile);
     fireEvent.change(within(leiste).getByRole('combobox', { name: 'Art' }), { target: { value: 'b' } });
     expect(namen()).toEqual(['Bea']);
     expect(knopf).toHaveAccessibleName('Filter, 1 aktiv');
@@ -463,11 +434,10 @@ describe('WebListenSeite: ab zwei Filtern hinter dem Knopf "Filter"', () => {
     expect(screen.getByText('Niemand gefunden')).toBeInTheDocument();
     expect(knopf).toHaveAccessibleName('Filter, 2 aktiv');
 
-    // Zugeklappt filtert es weiter -- der Knopf sagt, dass etwas aktiv ist.
+    // Zugeklappt filtert es weiter.
     fireEvent.click(knopf);
     expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
     expect(screen.getByText('Niemand gefunden')).toBeInTheDocument();
-    expect(knopf).toHaveClass('web-filterknopf--aktiv');
   });
 
   it('ist beim Laden schon ein Filter gesetzt, steht die Leiste offen', () => {
@@ -481,12 +451,9 @@ describe('WebListenSeite: Liste oder Kacheln', () => {
   it('Vorgabe aus `ansicht`, Wechsel zeigt dieselben Eintraege als Karten, die Wahl wird je Seite gemerkt', () => {
     const { unmount } = render(<Seite />);
     expect(namen()).toEqual(['Bea', 'Änne', 'Carl']);
-    expect(tabelle().closest('.web-karte')).not.toBeNull();
     waehle('Kacheln');
     expect(screen.queryByRole('table')).toBeNull();
     expect(kartenNamen()).toEqual(['Bea', 'Änne', 'Carl']);
-    // Kacheln stehen frei im Raster, nicht in einer Karte.
-    expect(screen.getByRole('list', { name: 'Leute' }).closest('.web-karte')).toBeNull();
     expect(window.localStorage.getItem(ansichtSchluessel('konfis'))).toBe('kacheln');
     unmount();
     render(<Seite />);
@@ -528,7 +495,6 @@ describe('WebListenSeite: Liste oder Kacheln', () => {
     const auswahl = screen.getByRole('combobox', { name: 'Sortieren' });
     expect(auswahl).toHaveValue('punkte:auf');
     expect(kartenNamen()).toEqual(['Carl', 'Bea', 'Änne']);
-    expect(umschalter().closest('.web-werkzeuge')).toHaveClass('web-werkzeuge--kacheln');
     fireEvent.change(auswahl, { target: { value: 'name:auf' } });
     expect(kartenNamen()).toEqual(['Änne', 'Bea', 'Carl']);
     waehle('Liste');
@@ -555,20 +521,20 @@ describe('WebListenSeite: Laden, Fehler, leer', () => {
     expect(erneut).toHaveBeenCalledTimes(1);
   });
 
-  it('nur der Inhalt laedt oder scheitert: Kennzahlen und Werkzeugzeile bleiben, der Hinweis steht in der Karte', () => {
+  it('nur der Inhalt laedt oder scheitert: Kennzahlen und Werkzeugzeile bleiben, der Hinweis steht da', () => {
     const { unmount } = render(<Seite inhaltLaden="Das Team wird geladen." />);
     expect(screen.getByRole('status')).toHaveTextContent('Das Team wird geladen.');
     expect(screen.getByRole('searchbox', { name: 'Person suchen' })).toBeInTheDocument();
     expect(screen.queryByRole('table')).toBeNull();
     unmount();
     render(<Seite inhaltFehler={{ text: 'Das Team konnte nicht geladen werden.', onErneut: vi.fn() }} />);
-    expect(screen.getByRole('alert').closest('.web-karte')).not.toBeNull();
+    expect(screen.getByRole('alert')).toHaveTextContent('Das Team konnte nicht geladen werden.');
     expect(screen.getByRole('group', { name: 'Leute: 3' })).toBeInTheDocument();
   });
 
-  it('keine Eintraege: Leerzustand in der Karte -- in beiden Ansichten, ohne Auswahl "Sortieren"', () => {
+  it('keine Eintraege: Leerzustand -- in beiden Ansichten, ohne Auswahl "Sortieren"', () => {
     render(<Seite eintraege={[]} sortierung={{ start: { schluessel: 'name', richtung: 'auf' }, sortiere: (l) => [...l], auswahl: [{ schluessel: 'name', richtung: 'auf', label: 'Name A–Z' }] }} />);
-    expect(screen.getByText('Noch niemand.').closest('.web-karte')).not.toBeNull();
+    expect(screen.getByText('Noch niemand.')).toBeInTheDocument();
     waehle('Kacheln');
     expect(screen.getByText('Noch niemand.')).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'Leute' })).toBeNull();

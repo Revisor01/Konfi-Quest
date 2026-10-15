@@ -42,39 +42,15 @@ const SOMMERFEST = (zusatz: Partial<Parameters<typeof termin>[0]> = {}) => termi
   points: 2, max_participants: 10, registered_count: 4, can_register: true, ...zusatz,
 });
 
-describe('Aufbau wie jede Detailseite', () => {
-  it('Aktionen im Kopf: der Weg zur Anmeldung rechts als primärer Knopf -- keine eigene Karte "Bist du dabei?"', async () => {
+describe('Aktionen im Kopf', () => {
+  it('Platz frei: nur der Weg zur Anmeldung', async () => {
     await oeffne(SOMMERFEST());
     expect(knoepfeImKopf()).toEqual(['Anmelden (4/10)']);
-    expect(within(kopf()).getByRole('button', { name: 'Anmelden (4/10)' })).toHaveClass('web-knopf--primaer');
-    expect(screen.queryByRole('region', { name: 'Bist du dabei?' })).toBe(null);
   });
 
-  it('mit Chat-Raum und Anmeldung: Chat, Einchecken, Abmelden in dieser Reihenfolge, Abmelden als Gefahr', async () => {
+  it('mit Chat-Raum und Anmeldung: Chat, Einchecken, Abmelden', async () => {
     await oeffne(SOMMERFEST({ chat_room_id: 55, is_registered: true, booking_status: 'confirmed' }));
     expect(knoepfeImKopf()).toEqual(['Chat', 'Einchecken', 'Abmelden']);
-    expect(within(kopf()).getByRole('button', { name: 'Abmelden' })).toHaveClass('web-knopf--gefahr');
-    expect(within(kopf()).getByRole('button', { name: 'Einchecken' })).not.toHaveClass('web-knopf--primaer');
-  });
-
-  it('die Kennzahlen stehen in einer Reihe unter dem Kopf, vor den Spalten', async () => {
-    await oeffne(SOMMERFEST());
-    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
-    expect([...reihe.querySelectorAll('.web-kachel')].map((k) => k.getAttribute('aria-label'))).toEqual(['Frei: 6', 'Punkte: 2', 'Dabei: 4']);
-    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('links der Inhalt (Beschreibung, wer dabei ist), rechts der Block "Angaben"', async () => {
-    zustand.teilnehmer = [{ id: 1, display_name: 'Mia Muster' }];
-    await oeffne(SOMMERFEST());
-    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
-    expect(seite.tagName).toBe('ASIDE');
-    expect(seite).toHaveAttribute('aria-label', 'Angaben');
-    expect(within(haupt).getByRole('region', { name: 'Beschreibung' })).toBeInTheDocument();
-    expect(within(haupt).getByRole('region', { name: 'Teilnehmer:innen (1)' })).toBeInTheDocument();
-    expect(within(seite).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
-    expect(within(seite).queryByRole('region', { name: 'Beschreibung' })).toBe(null);
   });
 });
 
@@ -107,10 +83,9 @@ describe('Kopf, Kennzahlen und Angaben', () => {
 });
 
 describe('Kopf: Anmelden', () => {
-  it('Platz frei: primärer Knopf "Anmelden (4/10)"; ein Klick schickt POST /register ohne Zeitfenster', async () => {
+  it('Platz frei: Knopf "Anmelden (4/10)"; ein Klick schickt POST /register ohne Zeitfenster', async () => {
     await oeffne(SOMMERFEST());
     const anmelden = within(kopf()).getByRole('button', { name: 'Anmelden (4/10)' });
-    expect(anmelden).toHaveClass('web-knopf--primaer');
     await act(async () => { fireEvent.click(anmelden); });
     expect(api.post).toHaveBeenCalledWith('/konfi/events/5/register', {});
     expect(setError).not.toHaveBeenCalled();
@@ -127,7 +102,6 @@ describe('Kopf: Anmelden', () => {
     api.post.mockResolvedValue({ data: { status: 'waitlist' } });
     await oeffne(SOMMERFEST({ registered_count: 10, waitlist_enabled: true, waitlist_count: 1, max_waitlist_size: 5 }));
     const knopfWarteliste = within(kopf()).getByRole('button', { name: 'Warteliste offen (1/5)' });
-    expect(knopfWarteliste).toHaveClass('web-knopf--primaer');
     await act(async () => { fireEvent.click(knopfWarteliste); });
     expect(api.post).toHaveBeenCalledWith('/konfi/events/5/register', {});
     expect(setSuccess).toHaveBeenCalledWith('Du bist auf der Warteliste. Wird ein Platz frei, rückst du automatisch nach.');
@@ -168,10 +142,9 @@ describe('Kopf: Anmelden', () => {
 describe('Kopf: Abmelden', () => {
   const angemeldet = (zusatz: Parameters<typeof termin>[0] = {}) => SOMMERFEST({ is_registered: true, booking_status: 'confirmed', ...zusatz });
 
-  it('angemeldet, mehr als 2 Tage vorher: roter Knopf "Abmelden" öffnet das Abmelde-Fenster, sendet noch nichts', async () => {
+  it('angemeldet, mehr als 2 Tage vorher: "Abmelden" öffnet das Abmelde-Fenster, sendet noch nichts', async () => {
     await oeffne(angemeldet());
     const abmelden = within(kopf()).getByRole('button', { name: 'Abmelden' });
-    expect(abmelden).toHaveClass('web-knopf--gefahr');
     fireEvent.click(abmelden);
     expect(geoeffnet('UnregisterModal')).toHaveLength(1);
     expect(zuletztGeoeffnet('UnregisterModal')!.props.mandatory).toBeUndefined();
@@ -204,7 +177,6 @@ describe('Kopf: Abmelden', () => {
     await oeffne(SOMMERFEST({ mandatory: true, registration_status: 'mandatory', points: 0, is_opted_out: true, booking_status: 'opted_out' }));
     expect(hinweise()).toEqual(['Du hast dich abgemeldet']);
     const wieder = within(kopf()).getByRole('button', { name: 'Wieder anmelden' });
-    expect(wieder).toHaveClass('web-knopf--primaer');
     await act(async () => { fireEvent.click(wieder); });
     expect(api.post).toHaveBeenCalledWith('/konfi/events/5/opt-in');
   });
@@ -220,13 +192,12 @@ describe('Kopf: Einchecken, Hinweise, Teilnehmende', () => {
   it('schon anwesend: "Anwesend" als Hinweis, kein Einchecken mehr', async () => {
     await oeffne(SOMMERFEST({ is_registered: true, booking_status: 'confirmed', attendance_status: 'present', event_date: inTagen(-1) }));
     expect(hinweise()).toContain('Anwesend');
-    expect(document.querySelector('.web-detail > .web-hinweis--erfolg')).toHaveTextContent('Anwesend');
     expect(within(kopf()).queryByRole('button', { name: 'Einchecken' })).toBe(null);
   });
 
   it('abgesagt: der Hinweis mit Grund steht einmal, "Abgemeldet" statt "Frei", keine Knöpfe', async () => {
     await oeffne(SOMMERFEST({ registration_status: 'cancelled', cancelled: true, cancelled_reason: 'Sturmwarnung', abgemeldet_count: 3 }));
-    expect(document.querySelector('.web-detail')!.firstElementChild).toHaveTextContent('Grund: Sturmwarnung');
+    expect(document.querySelector('.web-detail')).toHaveTextContent('Grund: Sturmwarnung');
     expect(screen.getAllByText('Dieses Event ist abgesagt')).toHaveLength(1);
     expect(screen.getByRole('group', { name: 'Abgemeldet: 3' })).toBeInTheDocument();
     expect(knoepfeImKopf()).toEqual([]);

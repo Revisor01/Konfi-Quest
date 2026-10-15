@@ -136,8 +136,6 @@ describe('Aktivität prüfen im Browser: eigener Dialog', () => {
     expect(foto).toHaveAttribute('data-antrag', '71');
     expect(foto).toHaveAttribute('data-leitung', 'ja');
     expect(within(dialog).getByRole('button', { name: 'Foto löschen' })).toBeInTheDocument();
-    // Mit Foto zwei Spalten: der breite Dialog.
-    expect(dialog).toHaveClass('web-dialog--breit');
     const grund = within(dialog).getByRole('textbox', { name: 'Grund für die Ablehnung' });
     expect(grund).toHaveValue('');
     expect(grund).toHaveAttribute('placeholder', 'Bitte gib einen Grund für die Ablehnung an...');
@@ -274,14 +272,13 @@ describe('Aktivität prüfen im Browser: eigener Dialog', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
-  it('„Foto löschen" ruft DELETE auf das Foto; danach steht kein Foto mehr da und der Dialog wird schmal', async () => {
+  it('„Foto löschen" ruft DELETE auf das Foto; danach steht kein Foto mehr da', async () => {
     await oeffneListe();
     const dialog = await dialogVon('Aktivität von Mia Muster prüfen', 'Aktivität prüfen');
     await klick(dialog, 'Foto löschen');
     expect(api.delete.mock.calls).toEqual([['/admin/activities/requests/71/photo']]);
     expect(setSuccess).toHaveBeenCalledWith('Foto erfolgreich gelöscht');
     expect(within(dialog).queryByRole('img', { name: 'Foto zur Aktivität' })).toBeNull();
-    expect(dialog).not.toHaveClass('web-dialog--breit');
   });
 
   it('erledigt: „Ansehen" zeigt den Bearbeitungsstand mit Kommentar und nur „Schließen"', async () => {
@@ -307,8 +304,6 @@ describe('Aktivität prüfen im Browser: eigener Dialog', () => {
     const dialog = await dialogVon('Aktivität von Tim Teamer prüfen', 'Aktivität prüfen');
     expect(angaben(dialog).map(([label]) => label)).toEqual(['Von', 'Aktivität', 'Teilnahmedatum', 'Eingereicht']);
     expect(angaben(dialog)[1]).toEqual(['Aktivität', 'Freizeit begleitetTeam']);
-    // Ohne Foto: der schmale Dialog.
-    expect(dialog).not.toHaveClass('web-dialog--breit');
     await klick(dialog, 'Genehmigen');
     expect(api.put).toHaveBeenCalledWith('/admin/activities/requests/74', { status: 'approved', admin_comment: '' });
     expect(m.messen).toHaveBeenCalledWith('antrag-entschieden', { entscheidung: 'angenommen', antrag_von: 'teamer' });

@@ -28,29 +28,15 @@ const INHALT: WebDetailRumpfProps = {
 const ohneKennungen = (html: string) => html.replace(/_r_[0-9a-z]+_|«r[0-9a-z]+»|:r[0-9a-z]+:/g, 'ID');
 
 describe('WebDetailRumpf', () => {
-  it('Reihenfolge: Hinweis, Kennzahlen über beide Spalten, dann die Spalten', () => {
-    const { container } = render(<WebDetailRumpf {...INHALT} />);
-    const rumpf = container.firstElementChild as HTMLElement;
-    expect(rumpf.className).toBe('web-detail');
-    const [hinweis, kennzahlen, spalten] = [...rumpf.children] as HTMLElement[];
-    expect(hinweis).toHaveTextContent('Abgesagt am 02.10.2026');
-    expect(kennzahlen.className).toBe('web-raster web-raster--kacheln web-detail__kennzahlen');
-    expect([...kennzahlen.children].map((k) => k.textContent)).toEqual(['Mails3', 'Neu1', 'Tage offen2']);
-    expect(spalten.className).toContain('web-spalten');
-    expect(rumpf.children).toHaveLength(3);
-  });
-
-  it('links das Eigentliche, rechts zuerst die Angaben-Karte mit Vorspann, dann die übrige Seite', () => {
+  it('das Eigentliche, die Angaben-Karte mit Vorspann (leere Werte als Strich) und die übrige Seite', () => {
     render(<WebDetailRumpf {...INHALT} />);
-    expect(screen.getByRole('region', { name: 'Verlauf' }).closest('.web-spalten__haupt')).not.toBeNull();
+    expect(screen.getByRole('region', { name: 'Verlauf' })).toBeInTheDocument();
     const spalte = screen.getByRole('complementary', { name: 'Angaben' });
-    const [angaben, gemeinde] = [...spalte.children] as HTMLElement[];
-    expect(within(angaben).getByRole('heading', { level: 2 }).textContent).toBe('Angaben');
-    expect(angaben).toHaveTextContent('Offline nicht aktuell');
-    const liste = within(angaben).getByLabelText('Angaben zum Vorgang');
+    expect(within(spalte).getByRole('heading', { level: 2 }).textContent).toBe('Angaben');
+    expect(spalte).toHaveTextContent('Offline nicht aktuell');
+    const liste = within(spalte).getByLabelText('Angaben zum Vorgang');
     expect([...liste.querySelectorAll('dd')].map((d) => d.textContent)).toEqual(['2026', '–']);
-    expect(gemeinde).toHaveTextContent('Gemeinde-Karte');
-    expect(spalte.children).toHaveLength(2);
+    expect(spalte).toHaveTextContent('Gemeinde-Karte');
   });
 
   it('ohne Kennzahlen kein Raster, ohne Angaben nur die übrige Seite; die Spalte lässt sich anders benennen', () => {

@@ -1,15 +1,12 @@
-// Jahrgang anlegen, "Zugriff für Leitung & Team": die Personen in der Farbe
-// ihrer Rolle (02.10.2026, Paket 2.4.0, Punkt 6).
-//
-// Nachgestellt: Jede Person trug den Strich in der Jahrgangsfarbe
-// (app-list-item--jahrgang), die Auswahl einen Indigo-Grund -- auch fuer
-// Teamer:innen; das Rollenwort stand grau. Jetzt Strich, Auswahl-Grund und
-// Rollenwort aus rollenDarstellung (utils/rollenNamen). Angeboten werden nur
-// Leitung und Teamer:innen (die Gemeindeleitung sieht ohnehin alle Jahrgaenge).
+// Jahrgang anlegen, "Zugriff für Leitung & Team" (02.10.2026, Paket 2.4.0,
+// Punkt 6): jede Person mit dem Wort ihrer Rolle, Antippen waehlt sie aus.
+// Angeboten werden nur Leitung und Teamer:innen (die Gemeindeleitung sieht
+// ohnehin alle Jahrgaenge). Die Farben legt kein Test fest (Simon,
+// 15.10.2026).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { karteVon, erwarteRollenfarbe } from './rollenfarbePruefen';
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import { karteVon } from './rollenfarbePruefen';
 
 const apiGet = vi.fn();
 let formular: { Komponente: React.ComponentType<Record<string, unknown>>; props: Record<string, unknown> } | null = null;
@@ -74,24 +71,18 @@ const oeffneFormular = async () => {
   await screen.findByText('Anna Leitung', {}, { timeout: 3000 });
 };
 
-describe('Zugriff für Leitung & Team: Leitung Petrol, Teamer:in Beere', () => {
-  it('Strich und Rollenwort in der Rollenfarbe; die Gemeindeleitung steht nicht zur Wahl', async () => {
+describe('Zugriff für Leitung & Team', () => {
+  it('jede Person mit dem Wort ihrer Rolle; die Gemeindeleitung steht nicht zur Wahl', async () => {
     await oeffneFormular();
-    const anna = karteVon('Anna Leitung');
-    const tim = karteVon('Tim Teamer');
-    erwarteRollenfarbe(anna, 'admin', 'Leitung', { kreis: false, marke: false });
-    erwarteRollenfarbe(tim, 'teamer', 'Teamer:in', { kreis: false, marke: false });
-    expect(anna.querySelector('.app-rollen-schrift--leitung')?.textContent).toBe('Leitung');
-    expect(tim.querySelector('.app-rollen-schrift--teamer')?.textContent).toBe('Teamer:in');
+    expect(within(karteVon('Anna Leitung')).getByText('Leitung')).toBeInTheDocument();
+    expect(within(karteVon('Tim Teamer')).getByText('Teamer:in')).toBeInTheDocument();
     expect(screen.queryByText('Olga Gemeindeleitung')).toBe(null);
   });
 
-  it('ausgewaehlt: zarter Grund in der Rollenfarbe statt pauschal Indigo', async () => {
+  it('Antippen waehlt die Person aus', async () => {
     await oeffneFormular();
+    expect(karteVon('Tim Teamer').classList.contains('app-list-item--selected')).toBe(false);
     fireEvent.click(karteVon('Tim Teamer'));
-    const tim = karteVon('Tim Teamer');
-    expect(tim.classList.contains('app-list-item--selected')).toBe(true);
-    expect(tim.style.background).toBe('');
-    erwarteRollenfarbe(tim, 'teamer', 'Teamer:in ausgewaehlt', { kreis: false, marke: false });
+    expect(karteVon('Tim Teamer').classList.contains('app-list-item--selected')).toBe(true);
   });
 });

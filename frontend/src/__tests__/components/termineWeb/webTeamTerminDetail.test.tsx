@@ -108,40 +108,15 @@ describe('Kopf: Titel, Zurück, Aktionen', () => {
   });
 });
 
-describe('Aufbau wie jede Detailseite', () => {
-  it('Aktionen im Kopf: Chat, QR-Code und die Zusage -- keine eigene Karte "Bist du dabei?"', async () => {
+describe('Aktionen im Kopf', () => {
+  it('noch nichts gesagt: QR-Code und beide Wege der Zusage', async () => {
     await oeffneEvent(401);
     expect(knoepfeImKopf()).toEqual(['QR-Code', 'Nicht dabei', 'Dabei']);
-    expect(within(kopf()).getByRole('button', { name: 'Dabei' })).toHaveClass('web-knopf--primaer');
-    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toHaveClass('web-knopf--gefahr');
-    expect(screen.queryByRole('region', { name: 'Bist du dabei?' })).toBe(null);
   });
 
-  it('mit Chat-Raum und Zusage steht der Chat vorn und nur der Weg zur Absage am Ende', async () => {
+  it('mit Chat-Raum und Zusage: Chat, QR-Code und nur der Weg zur Absage', async () => {
     await oeffneEvent(402);
     expect(knoepfeImKopf()).toEqual(['Chat', 'QR-Code', 'Nicht mehr dabei']);
-  });
-
-  it('die Kennzahlen stehen in einer Reihe unter dem Kopf, vor den Spalten', async () => {
-    await oeffneEvent(402);
-    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
-    expect([...reihe.querySelectorAll('.web-kachel')].map((k) => k.getAttribute('aria-label'))).toEqual(['Konfis: 18', 'Team: 3', 'Punkte: 3']);
-    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  it('links der Inhalt (Beschreibung, wer kommt), rechts der Block "Angaben" mit Angaben und Material', async () => {
-    await oeffneEvent(402, { teilnehmende: TEILNEHMENDE, material: MATERIAL });
-    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
-    expect(seite.tagName).toBe('ASIDE');
-    expect(seite).toHaveAttribute('aria-label', 'Angaben');
-    expect(within(haupt).getByRole('region', { name: 'Beschreibung' })).toBeInTheDocument();
-    expect(within(haupt).getByRole('region', { name: 'Konfis (2)' })).toBeInTheDocument();
-    expect(within(haupt).getByRole('region', { name: 'Team (1)' })).toBeInTheDocument();
-    expect(within(seite).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
-    expect(within(seite).getByRole('region', { name: 'Material (2)' })).toBeInTheDocument();
-    expect(within(seite).queryByRole('region', { name: 'Beschreibung' })).toBe(null);
-    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBe(null);
   });
 });
 
@@ -184,7 +159,7 @@ describe('Kennzahlen, Beschreibung, Angaben, Material', () => {
 });
 
 describe('Kopf: Zusage und Absage', () => {
-  it('zugesagt: nur der rote Weg zurück -- "Nicht mehr dabei" öffnet das Absage-Fenster, sendet noch nichts', async () => {
+  it('zugesagt: nur der Weg zurück -- "Nicht mehr dabei" öffnet das Absage-Fenster, sendet noch nichts', async () => {
     await oeffneEvent(402);
     expect(within(kopf()).queryByRole('button', { name: 'Dabei' })).toBe(null);
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Nicht mehr dabei' }));
@@ -209,11 +184,10 @@ describe('Kopf: Zusage und Absage', () => {
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('eine Absage von dir: nur der grüne Weg zurück "Doch dabei"', async () => {
+  it('eine Absage von dir: nur der Weg zurück "Doch dabei"', async () => {
     const abgesagt = termin(401, 'Teamabend', { ...TEAMABEND, booking_status: 'opted_out' });
     await oeffneEvent(401, { events: [abgesagt, ...EVENTS.filter((e) => e.id !== 401)] });
     expect(knoepfeImKopf()).toEqual(['QR-Code', 'Doch dabei']);
-    expect(within(kopf()).getByRole('button', { name: 'Doch dabei' })).toHaveClass('web-knopf--primaer');
   });
 
   it('offline: die Zusage ist gesperrt ("Du bist offline"), der Weg zur Absage bleibt', async () => {
@@ -234,7 +208,6 @@ describe('Kopf: Zusage und Absage', () => {
   it('reines Konfi-Event: "Nur zur Info - keine Anmeldung" als Hinweis, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(403);
     expect(ersterBlock()).toHaveTextContent('Nur zur Info - keine Anmeldung');
-    expect(ersterBlock()).toHaveClass('web-hinweis--hinweis');
     expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 
@@ -249,7 +222,6 @@ describe('Kopf: Zusage und Absage', () => {
   it('vergangen und angemeldet: "Anwesend" als Auskunft, keine Knöpfe zur Zusage', async () => {
     await oeffneEvent(406);
     expect(ersterBlock()).toHaveTextContent('Anwesend');
-    expect(ersterBlock()).toHaveClass('web-hinweis--erfolg');
     expect(knoepfeImKopf()).toEqual(['QR-Code']);
   });
 

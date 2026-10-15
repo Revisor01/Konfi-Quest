@@ -176,13 +176,13 @@ describe('Support-Uebersicht: Bereiche, neue Vorgänge und Abmelden', () => {
 
   // Support-Mail (03.10.2026): dieselbe Zahl wie in der Leiste
   // (navigation/supportMailZaehler.ts, supportMailZahl).
-  it('rote Kugel an Vorgängen (Neu oder ungelesen) und Posteingang (ungelesen, nicht einsortiert) -- die Zahlen kommen fertig vom Server', async () => {
+  it('Zahl an Vorgängen (Neu oder ungelesen) und Posteingang (ungelesen, nicht einsortiert) -- die Zahlen kommen fertig vom Server', async () => {
     antworten(STATISTIK, [], { anfragen: 2, gemeinden: 1, eingang: 3, je_anfrage: {}, je_gemeinde: {}, vorgaenge: 5, posteingang: 4 });
     render(<SupportUebersichtPage />);
     await screen.findByRole('group', { name: 'Konfis: 62' });
     const eintrag = (label: string) => screen.getByText(label, { selector: '.app-list-item__title' }).closest('[role="button"]') as HTMLElement;
-    expect((await within(eintrag('Posteingang')).findByText('4')).className).toBe('app-zaehler-kugel');
-    expect(within(eintrag('Vorgänge')).getByText('5').className).toBe('app-zaehler-kugel');
+    expect(await within(eintrag('Posteingang')).findByText('4')).toBeInTheDocument();
+    expect(within(eintrag('Vorgänge')).getByText('5')).toBeInTheDocument();
     expect(eintrag('Gemeinden').querySelector('.app-zaehler-kugel')).toBeNull();
     expect(h.apiGet).toHaveBeenCalledWith('/support/mail/zaehler');
   });

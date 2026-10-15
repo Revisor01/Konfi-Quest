@@ -81,15 +81,6 @@ describe('Sonderseite Stavanger 2026', () => {
     expect(container.textContent!.match(/\d+/g)).toEqual(['2026', '14']);
   });
 
-  it('ist eine EIGENE Komponente, keine Kategorie-Seite', () => {
-    // KategorieSeiteSlide traegt fest eine Zahl und waehlt den Slogan ueber
-    // stufeFuer(n). Die Sonderseite traegt ihre eigene Klasse statt
-    // kategorie-seite.
-    const { container } = render(<Stavanger2026Slide isActive />);
-    const s = seite(container)!;
-    expect(s.className).toBe('wrapped-slide wrapped-slide--active stavanger-slide');
-  });
-
   it('steht in BEIDEN Rueckblicken -- Konfi und Team', () => {
     // Simon: "das sehen dann nur die teamer und konfis die dabei waren."
     const konfi = render(
@@ -134,13 +125,6 @@ describe('Sonderseite Stavanger 2026', () => {
       expect(karte!.querySelectorAll('.share-zahl')).toHaveLength(0);
       cleanup();
     }
-  });
-
-  // WAECHTER (Stylesheet): jsdom rechnet kein CSS -- ob die Klasse einen
-  // eigenen Verlauf bekommt, steht nur im Stylesheet.
-  it('hat einen eigenen Farbverlauf', () => {
-    const modalCss = readFileSync(resolve(process.cwd(), 'src/components/wrapped/WrappedModal.css'), 'utf8');
-    expect(modalCss).toMatch(/\.stavanger-slide\s*\{[^}]*--seiten-verlauf/);
   });
 
   it('zeigt den Preikestolen, und die Datei liegt da', () => {

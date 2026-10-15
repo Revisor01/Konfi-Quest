@@ -111,28 +111,7 @@ describe('PushAuswahlModal', () => {
     expect(treffer, `"im Postfach" steht ${treffer.length}x statt 1x`).toHaveLength(1);
   });
 
-  it('stellt den Hinweis im farbigen Kasten dar, wie die anderen Hinweise', async () => {
-    // GEAENDERT 26.09.2026 (Simon: "Hinweise kriegen ja so einen Kasten, wie
-    // etwa wenn du in das Modal guckst fuer E-Mail"). Vorher eine IonNote,
-    // jetzt app-info-box in eigener Karte -- dasselbe Muster wie
-    // ChangeRoleTitleModal. Die Farbe folgt der Rolle.
-    const { container } = render(<PushAuswahlModal onClose={() => {}} variante="purple" />);
-    await screen.findByText('Nachrichten');
-    // 09.10.2026: Die Rollenfarbe sitzt seitdem wie in ChangeEmailModal an
-    // der Karte, app-info-box am Karteninhalt.
-    const kasten = container.querySelector('.app-info-box');
-    expect(kasten, 'kein Hinweis im farbigen Kasten').toBeTruthy();
-    const karte = kasten!.closest('ion-card');
-    expect(karte, 'Kasten steht ausserhalb einer Karte').toBeTruthy();
-    expect(karte!.className, 'Karte traegt nicht die Rollenfarbe').toContain('app-info-box--purple');
-  });
-
-  // Simon, 09.10.2026: die Unterseiten unter Mehr › Konto sollen einheitlich
-  // aussehen. Mit IonItem und <h2>/<p> setzte das iOS-Theme den Untertext auf
-  // 16 px ueber einen Titel von 14,4 px. Die Zeilen folgen jetzt den
-  // Konto-Einstellungen (app-list-item), der Hinweis steht als eigener
-  // Abschnitt "Hinweis" in einem <p> wie in ChangeEmailModal.
-  it('Aufbau wie die Schwesterseiten: Zeilen der Konto-Einstellungen, Hinweis als eigener Abschnitt', async () => {
+  it('zeigt je Zeile Titel und Beschreibung, dazu den Abschnitt „Hinweis"', async () => {
     const { container } = render(<PushAuswahlModal onClose={() => {}} variante="teamer" />);
     await screen.findByText('Nachrichten');
     const titel = [...container.querySelectorAll('.app-list-item__title')].map((e) => e.textContent);
@@ -144,11 +123,8 @@ describe('PushAuswahlModal', () => {
       'Anmeldungen, Änderungen, Absagen und Erinnerungen',
       'Punkte, Badges, Level, Challenges und der Rückblick'
     ]);
-    // Rollenfarbe an jeder Zeile
-    expect(container.querySelectorAll('.app-list-item--teamer')).toHaveLength(4);
-    expect(container.querySelectorAll('h2')).toHaveLength(0);
     expect(screen.getByText('Hinweis')).toBeInTheDocument();
-    expect(screen.getByText(/Abgeschaltet wird nur der Weg aufs Handy/).tagName).toBe('P');
+    expect(screen.getByText(/Abgeschaltet wird nur der Weg aufs Handy/)).toBeInTheDocument();
   });
 
   it('zeigt eine vierte Gruppe, sobald der Server sie liefert (Team und Leitung)', async () => {

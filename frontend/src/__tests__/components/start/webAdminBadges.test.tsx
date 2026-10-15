@@ -129,12 +129,11 @@ beforeEach(() => {
 });
 
 describe('Badges verwalten (Web): Kopf und Kennzahlen', () => {
-  it('Seitenkopf mit Weg zurueck, Knopf „Neues Badge" und der Farbe der Leitung', async () => {
-    const { container } = await zeigeSeite();
+  it('Seitenkopf mit Weg zurueck und Knopf „Neues Badge"', async () => {
+    await zeigeSeite();
     expect(screen.getByText('Auszeichnungen und Erfolge')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
     expect(screen.getByRole('button', { name: 'Neues Badge' })).toBeInTheDocument();
-    expect(container.querySelector('.web-rolle--leitung')).not.toBeNull();
   });
 
   it('zeigt erst Platzhalter', () => {
@@ -187,8 +186,6 @@ describe('Badges verwalten (Web): Tabelle', () => {
     const champion = zeile('Event-Champion');
     expect(champion).toHaveTextContent('Inaktiv');
     expect(champion).toHaveTextContent('0×');
-    expect(champion.className).toContain('web-zeile--gesperrt');
-    expect(erster.className).not.toContain('web-zeile--gesperrt');
   });
 
   it('die Beschreibung steht unter dem Namen', async () => {

@@ -4,9 +4,9 @@
 // sind; links:
 //
 //   1. Aktivitaeten, Events und Bonuspunkte tragen vorn den Kreis ihrer
-//      Punkteart -- dasselbe Symbol wie in der App, Gottesdienst blau,
-//      Gemeinde gruen, Events rot, Bonus orange („color coded entsprechend
-//      ihrer kategorien").
+//      Punkteart („color coded entsprechend ihrer kategorien"); er ist
+//      Zierde, der Name steht als Text daneben. Farbe und Symbol legt kein
+//      Test fest (Simon, 15.10.2026).
 //   2. Eine verbuchte Aktivitaet mit Antrag oeffnet ihn („klick auf eine
 //      aktivitaet sollte den antrag oeffnen") -- im Dialog der entschiedenen
 //      Antraege (WebAntragPruefenDialog, „Aktivität ansehen"). Ohne Antrag
@@ -17,21 +17,11 @@
 //   4. Ein Event fuehrt mit Rueckweg zur Person (?person=; die Eventseite
 //      selbst: termineWeb/webTerminDetailRueckweg.test.tsx).
 //
-// Ionic ist wie in webKonfiDetail.test.tsx nachgestellt -- nur IonIcon
-// zeigt hier sein Symbol (data-symbol), damit der Kreis pruefbar ist.
+// Ionic ist wie in webKonfiDetail.test.tsx nachgestellt.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import fs from 'node:fs';
-import path from 'node:path';
 import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { konto, neuerStand, type LeitungTestStand } from './leitungTestHilfe';
-import {
-  ICON_ABZEICHEN_GEFUELLT,
-  ICON_AKTION_GEFUELLT,
-  ICON_BONUS_GEFUELLT,
-  ICON_GOTTESDIENST_GEFUELLT,
-  ICON_PODIUM,
-} from '../../../components/shared/icons';
 
 const h = vi.hoisted(() => ({
   online: true,
@@ -45,10 +35,7 @@ const h = vi.hoisted(() => ({
   triggerRefresh: vi.fn(),
 }));
 
-vi.mock('@ionic/react', async () => ({
-  ...(await (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand)),
-  IonIcon: ({ icon }: { icon?: string }) => <span data-symbol={icon} />,
-}));
+vi.mock('@ionic/react', async () => (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => true }));
 vi.mock('../../../components/shared/AppKopfzeile', () => ({ default: () => null, AppKopfzeileGross: () => null }));
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
@@ -155,11 +142,6 @@ const zeilen = (name: string) => within(screen.getByRole('table', { name })).get
 const zelle = (z: HTMLElement, i: number) => within(z).getAllByRole('cell')[i];
 /** Das Wort des Stands (die Marke), ohne die leise Zeile darunter. */
 const standWort = (z: HTMLElement) => zelle(z, 4).querySelector('.web-pill')?.textContent;
-/** Der Kreis vor dem Namen einer Zeile: Farbe (Klasse) und Symbol. */
-const kreis = (z: HTMLElement) => {
-  const k = zelle(z, 0).querySelector('.web-symbol') as HTMLElement | null;
-  return k ? { klasse: k.className, symbol: k.querySelector('[data-symbol]')?.getAttribute('data-symbol') } : null;
-};
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -173,46 +155,18 @@ beforeEach(() => {
   h.apiPut.mockResolvedValue({ data: {} });
 });
 
-describe('1. Kreis der Punkteart vor Aktivitäten, Events und Bonuspunkten', () => {
-  it('Gottesdienst blau, Gemeinde grün, Events rot, Bonus orange -- mit den Symbolen der App', async () => {
+describe('1. Aktivitäten: Kreis als Zierde, offene Anträge darüber', () => {
+  it('der Kreis vor dem Namen ist für Vorleseprogramme versteckt, der Name steht als Text', async () => {
     await oeffnen();
-    const [godi, gemeinde] = zeilen('Aktivitäten');
-    expect(kreis(godi)).toEqual({ klasse: 'web-symbol web-symbol--gottesdienst', symbol: ICON_GOTTESDIENST_GEFUELLT });
-    expect(kreis(gemeinde)).toEqual({ klasse: 'web-symbol web-symbol--gemeinde', symbol: ICON_AKTION_GEFUELLT });
-    for (const z of zeilen('Events')) {
-      expect(kreis(z)).toEqual({ klasse: 'web-symbol web-symbol--events', symbol: ICON_PODIUM });
-    }
-    expect(kreis(zeilen('Bonuspunkte')[0])).toEqual({ klasse: 'web-symbol web-symbol--bonus', symbol: ICON_BONUS_GEFUELLT });
-    // Der Name steht weiter als Text in der Zelle, der Kreis ist Zierde.
+    const [godi] = zeilen('Aktivitäten');
     expect(zelle(godi, 0)).toHaveTextContent('Gottesdienstbesuch');
     expect(zelle(godi, 0).querySelector('.web-symbol')).toHaveAttribute('aria-hidden', 'true');
   });
 
-  it('die vier Farben kommen aus den Tokens der App', () => {
-    const css = fs.readFileSync(path.join(__dirname, '../../../theme/web-ansicht.css'), 'utf8');
-    for (const [ton, token] of [['gottesdienst', 'gottesdienst'], ['gemeinde', 'gemeinde'], ['events', 'events'], ['bonus', 'bonus']]) {
-      expect(css).toContain(`.web-symbol--${ton} { background: var(--app-color-${token}); }`);
-    }
-    // Und die Marke des Stands bricht in ihrer schmalen Spalte um.
-    const leitung = fs.readFileSync(path.join(__dirname, '../../../theme/web/leitung.css'), 'utf8');
-    expect(leitung).toMatch(/\.web-spalte-stand \.web-pill \{\s*white-space: normal;\s*\}/);
-  });
-
-  it('Teamer:in: ihre Aktivitäten im Kreis der Teamer-Farbe mit dem Abzeichen', async () => {
-    h.antworten.set(`/admin/konfis/${ID}`, {
-      ...KONFI, role_name: 'teamer', bonusPoints: [],
-      activities: [{ id: 21, name: 'Teamer-Schulung', points: 0, type: 'teamer', target_role: 'teamer', date: '2026-08-03', admin_name: 'Alex Beispiel' }],
-      teamerEvents: [],
-    });
-    await oeffnen();
-    expect(kreis(zeilen('Aktivitäten')[0])).toEqual({ klasse: 'web-symbol web-symbol--teamer', symbol: ICON_ABZEICHEN_GEFUELLT });
-  });
-
-  it('offene Anträge oben behalten ihr Verhalten: Zeile über der Tabelle mit „Prüfen", ohne Kreis', async () => {
+  it('offene Anträge behalten ihr Verhalten: eigene Liste mit „Prüfen"', async () => {
     await oeffnen();
     const offen = within(karte('Aktivitäten')).getByRole('list', { name: 'Offene Anträge' });
     expect(within(offen).getByRole('button', { name: 'Aktivität Gemeindebrief austragen prüfen' })).toBeInTheDocument();
-    expect(offen.querySelector('.web-symbol')).toBeNull();
   });
 });
 
@@ -273,15 +227,13 @@ describe('3. Events: eine Liste mit allen Terminen, Pflicht gekennzeichnet', () 
       ['Pflicht-Treffen', '–', '–', 'Abgemeldet'],
       ['Taizé-Abend', 'Gottesdienst', '+1', 'Anwesend'],
     ]);
-    // Wer die Punkte vergeben hat, steht sichtbar als leise Zeile unter dem
-    // Stand (Pruefung 13.10.2026: vorher nur als title am Punktwert -- mit
-    // Tastatur, Touch und Screenreader nicht erreichbar).
-    expect(within(zelle(e[4], 4)).getByText('verbucht von Alex Beispiel')).toHaveClass('web-zelle-leise');
-    // Die Stand-Spalte bricht lange Woerter in der Marke um (leitung.css).
-    expect(zelle(e[0], 4)).toHaveClass('web-spalte-stand');
+    // Wer die Punkte vergeben hat, steht sichtbar unter dem Stand (Pruefung
+    // 13.10.2026: vorher nur als title am Punktwert -- mit Tastatur, Touch
+    // und Screenreader nicht erreichbar).
+    expect(within(zelle(e[4], 4)).getByText('verbucht von Alex Beispiel')).toBeInTheDocument();
     expect(zelle(e[4], 3).querySelector('[title]')).toBeNull();
-    // Ohne vergebende Person keine zweite Zeile (Taizé-Abend).
-    expect(zelle(e[9], 4).querySelector('.web-zelle-leise')).toBeNull();
+    // Ohne vergebende Person kein Zusatz (Taizé-Abend).
+    expect(zelle(e[9], 4)).not.toHaveTextContent('verbucht von');
     expect(karte('Events')).toHaveTextContent('10 Events · 3 Punkte');
   });
 
