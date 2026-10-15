@@ -118,8 +118,36 @@ const verlaengern = async (fassung: Fassung, tage: number) => {
   await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Verlängern' })); });
 };
 
+/** Die vorgewählte Stufe (genau eine), ohne dass jemand die Auswahl angefasst hat. */
+const vorgewaehlt = (fassung: Fassung): string => {
+  if (fassung === 'app') {
+    const inputs = (h.stand.alert as unknown as { inputs: Array<{ value: number; checked?: boolean }> }).inputs;
+    const an = inputs.filter((i) => i.checked === true);
+    expect(an).toHaveLength(1);
+    return String(an[0].value);
+  }
+  const auswahl = within(screen.getByRole('dialog', { name: 'Einladung verlängern' })).getByRole('combobox', { name: 'Um wie viele Tage?' }) as HTMLSelectElement;
+  return auswahl.value;
+};
+
+/**
+ * Bestätigt mit „Verlängern", ohne die Auswahl anzufassen. Die Rückfrage der
+ * App gibt dem Knopf den Wert des angekreuzten Auswahlknopfs -- genau das
+ * reicht der Test weiter; im Browser zählt, was im Auswahlfeld steht.
+ */
+const verlaengernWieVorgewaehlt = async (fassung: Fassung) => {
+  if (fassung === 'app') {
+    const inputs = (h.stand.alert as unknown as { inputs: Array<{ value: number; checked?: boolean }> }).inputs;
+    const knopf = h.stand.alert?.buttons?.find((b) => b.text === 'Verlängern') as { handler?: (w: unknown) => unknown };
+    await act(async () => { await knopf.handler?.(inputs.find((i) => i.checked === true)?.value); });
+    return;
+  }
+  const dialog = screen.getByRole('dialog', { name: 'Einladung verlängern' });
+  await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Verlängern' })); });
+};
+
 describe.each<Fassung>(['app', 'web'])('Einladung verlängern (%s): dieselbe Stelle in App und Browser', (fassung) => {
-  it('bietet dieselben Stufen an (die erste vorgewählt) und schickt erst nach „Verlängern" die gewählte an die Route', async () => {
+  it('bietet dieselben Stufen an und schickt erst nach „Verlängern" die gewählte an die Route', async () => {
     await oeffnen(fassung);
     fireEvent.click(verlaengernKnopf(fassung, 'ABC123'));
     if (fassung === 'web') {
@@ -140,6 +168,18 @@ describe.each<Fassung>(['app', 'web'])('Einladung verlängern (%s): dieselbe Ste
     expect(h.setSuccess).toHaveBeenCalledWith(expect.stringMatching(/^Einladung gilt bis \d{2}\.\d{2}\.\d{4}$/));
     expect(h.refresh).toHaveBeenCalled();
     expect(screen.queryByRole('dialog', { name: 'Einladung verlängern' })).not.toBeInTheDocument();
+  });
+
+  it('ohne die Auswahl anzufassen: die erste Stufe ist vorgewählt, „Verlängern" schickt genau sie', async () => {
+    await oeffnen(fassung);
+    fireEvent.click(verlaengernKnopf(fassung, 'ABC123'));
+    const erste = verlaengerungsOptionen(new Date(CODES[0].expires_at))[0].tage;
+    expect(erste).toBe(7);
+    expect(vorgewaehlt(fassung)).toBe(String(erste));
+
+    await verlaengernWieVorgewaehlt(fassung);
+    expect(h.apiPost.mock.calls).toEqual([['/auth/invite-codes/1/extend', { tage: 7 }]]);
+    expect(h.setSuccess).toHaveBeenCalledWith(expect.stringMatching(/^Einladung gilt bis \d{2}\.\d{2}\.\d{4}$/));
   });
 
   it('lehnt der Server ab, steht seine Begründung da', async () => {

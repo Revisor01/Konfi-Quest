@@ -310,6 +310,61 @@ describe.each<Fassung>(['app', 'web'])('Aktivität des Katalogs (%s): dieselbe L
   });
 });
 
+// --- Nur die App: Eingaben während des Ladens ---------------------------------------------
+// Im Modal der App steht das Namensfeld schon, während Kategorien und
+// Aktivität noch laden; der Browser zeigt die Felder erst danach. Die
+// Vorbelegung ersetzt, was in der Zeit getippt wurde (wie bis 15.10.2026) --
+// danach gilt das Formular als unverändert und schließt ohne Rückfrage.
+describe('Aktivität des Katalogs (app): was während des Ladens getippt wurde, gilt nicht als ungespeicherte Änderung', () => {
+  const wartend = () => {
+    const ausgang: { freigeben: () => void } = { freigeben: () => undefined };
+    const tor = new Promise<void>((ok) => { ausgang.freigeben = ok; });
+    return { tor, freigeben: () => ausgang.freigeben() };
+  };
+
+  it.each([
+    { fall: 'neu (die Kategorien laden)', pfad: '/admin/categories', props: { activity: null, activityId: null }, danach: '' },
+    { fall: 'bearbeiten (die Aktivität lädt)', pfad: '/admin/activities', props: { activity: AUS_DER_LISTE(7), activityId: 7 }, danach: 'Adventsmarkt' },
+    { fall: 'aus der Liste ohne Kennung', pfad: '/admin/categories', props: { activity: AUS_DER_LISTE(7), activityId: null }, danach: 'Alter Name' },
+  ])('$fall: die Vorbelegung ersetzt die Eingabe, „Schließen" schließt sofort', async ({ pfad, props, danach }) => {
+    const { tor, freigeben } = wartend();
+    h.apiGet.mockImplementation(async (p: string) => {
+      if (p === pfad) await tor;
+      if (p === '/admin/categories') return { data: KATEGORIEN };
+      if (p === '/admin/activities') return { data: AKTIVITAETEN };
+      throw new Error(`unerwartet: ${p}`);
+    });
+    render(<ActivityManagementModal {...props} targetRole="konfi" onClose={zu} onSuccess={fertig} />);
+    name('Getippt');
+    expect(screen.getByLabelText('Name')).toHaveValue('Getippt');
+
+    await act(async () => { freigeben(); });
+    await waitFor(() => expect(screen.getByText('Diakonie')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByLabelText('Name')).toHaveValue(danach));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }));
+    expect(h.alert).not.toHaveBeenCalled();
+    expect(zu).toHaveBeenCalledTimes(1);
+  });
+
+  it('wer nach dem Laden etwas ändert, wird weiter gefragt', async () => {
+    const { tor, freigeben } = wartend();
+    h.apiGet.mockImplementation(async (p: string) => {
+      await tor;
+      if (p === '/admin/categories') return { data: KATEGORIEN };
+      throw new Error(`unerwartet: ${p}`);
+    });
+    render(<ActivityManagementModal activity={null} activityId={null} targetRole="konfi" onClose={zu} onSuccess={fertig} />);
+    name('Getippt');
+    await act(async () => { freigeben(); });
+    await waitFor(() => expect(screen.getByText('Diakonie')).toBeInTheDocument());
+    name('Gemeindefest');
+    fireEvent.click(screen.getByRole('button', { name: 'Schließen' }));
+    expect(zu).not.toHaveBeenCalled();
+    expect(h.alert).toHaveBeenCalledWith(expect.objectContaining({ header: 'Ungespeicherte Änderungen' }));
+  });
+});
+
 describe('Aktivität des Katalogs: App und Browser schicken dasselbe', () => {
   const anlegen = async (fassung: Fassung) => {
     await oeffnen(fassung);

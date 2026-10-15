@@ -14,9 +14,12 @@
 // Warteschlange ohne Netz), geht in beiden als Meldung oben.
 //
 // Ungespeicherte Änderungen: `isDirty` steht, sobald jemand etwas ändert --
-// gesetzt beim Ändern selbst. Bis 15.10.2026 setzte es ein Effekt auf
-// formData, scharf erst 100 ms nach dem Laden; was in der Zeit geändert
-// wurde, zählte nicht.
+// gesetzt beim Ändern selbst. Das Laden belegt das Formular neu und nimmt
+// `isDirty` dabei wieder weg: Die Vorbelegung ersetzt, was in der App vor
+// dem Ende des Ladens getippt wurde (wie bisher), und das Schließen fragt
+// danach nicht nach Änderungen, die nicht mehr da sind. Bis 15.10.2026
+// setzte `isDirty` ein Effekt auf formData, scharf erst 100 ms nach dem
+// Laden; was in diesen 100 ms geändert wurde, zählte nicht.
 
 import { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../contexts/AppContext';
@@ -142,6 +145,7 @@ export function useAktivitaetKatalogFormular({
         if (activityData) {
           setCurrentActivity(activityData);
           setFormData(vorbelegen(activityData, targetRole));
+          setIsDirty(false);
         } else {
           console.error('Activity not found with ID:', id);
           setError('Aktivität nicht gefunden');
@@ -164,9 +168,11 @@ export function useAktivitaetKatalogFormular({
         } else if (activity) {
           setCurrentActivity(activity);
           setFormData(vorbelegen(activity, targetRole));
+          setIsDirty(false);
         } else {
           setCurrentActivity(null);
           setFormData(neu(targetRole));
+          setIsDirty(false);
         }
       } catch (error) {
         console.error('Error during initialization:', error);
