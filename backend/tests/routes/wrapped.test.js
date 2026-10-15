@@ -1986,11 +1986,16 @@ describe('Wrapped Routes', () => {
   describe('Zahlen im Konfi-Snapshot', () => {
     const JAHR = new Date().getFullYear();
 
-    // Zeitraum ohne Konfirmations-Termin: 1.9.(JAHR-1) .. 31.8.(JAHR).
+    // Der Konfi-Rueckblick laeuft vom Beginn der Konfi-Zeit bis HEUTE. Die
+    // Daten unten muessen deshalb an JEDEM Tag des Jahres auf derselben
+    // Seite von heute liegen: Bis zum 14.10.2026 stand NACH_ZEITRAUM auf dem
+    // 15.10. des laufenden Jahres -- ab dem 15.10. lag der Termin "danach"
+    // in der Vergangenheit, zaehlte mit, und die CI war rot. AUGUST lag
+    // ebenso vom 1.1. bis 14.8. in der Zukunft.
     const IM_ZEITRAUM = `${JAHR - 1}-11-15`;
-    const AUGUST = `${JAHR}-08-15`;          // frueher aus dem Fallback gefallen
-    const VOR_ZEITRAUM = `${JAHR - 1}-06-15`; // liegt davor
-    const NACH_ZEITRAUM = `${JAHR}-10-15`;    // liegt danach
+    const AUGUST = `${JAHR - 1}-08-15`;       // frueher aus dem Fallback gefallen, immer vergangen
+    const VOR_ZEITRAUM = `${JAHR - 1}-06-15`; // liegt vor KONFI_BEGINN
+    const NACH_ZEITRAUM = `${JAHR + 1}-10-15`; // liegt immer nach heute
 
     /** Termin anlegen und dem Jahrgang zuordnen; gibt die Event-ID zurueck. */
     async function termin(name, datum, opts = {}) {
