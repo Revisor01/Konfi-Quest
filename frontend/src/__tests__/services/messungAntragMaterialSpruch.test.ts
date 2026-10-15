@@ -433,19 +433,26 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
     expect(posMessung).toBeGreaterThan(posOeffnen);
   });
 
+  // Seit 15.10.2026 laedt der Hook useMaterialAnsicht -- fuer das Modal der App
+  // (TeamerMaterialDetailPage) und das Fenster des Browsers aus den Events.
+  // Das Fenster zaehlt selbst (Lese-Ansicht von useMaterialFormular) und
+  // schaltet die Messung hier ab (angesehenMelden: false).
   it('Material an einem Event: angesehen erst nach der erfolgreichen Antwort, einmal je Öffnen', () => {
-    const quelle = lies('src/components/teamer/pages/TeamerMaterialDetailPage.tsx');
+    const quelle = lies('src/components/teamer/pages/useMaterialAnsicht.ts');
     // Nach materialDetailLaden und nur mit einer Antwort des Servers — ein
     // Stand nur vom Gerät (ohne Netz) zählt nicht; einmal je Öffnen.
     hinterAufrufVorCatch(
-      'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
-      'const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(materialId);',
+      'src/components/teamer/pages/useMaterialAnsicht.ts',
+      'const { daten, ausSpeicher } = await materialDetailLaden<T>(materialId);',
       "trackHandlung('material-angesehen', {"
     );
     expect(quelle).toMatch(
-      /if \(!ausSpeicher && !angesehenGemeldet\.current\) \{\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
+      /if \(angesehenMelden && !ausSpeicher && !angesehenGemeldet\.current\) \{\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
     );
     expect(quelle).toContain('const angesehenGemeldet = useRef(false);');
+    // Das Modal der App laedt ueber den Hook, mit Messung (ohne Abschalten).
+    expect(lies('src/components/teamer/pages/TeamerMaterialDetailPage.tsx'))
+      .toContain('useMaterialAnsicht<MaterialDetail>(materialId);');
   });
 
   it.each([

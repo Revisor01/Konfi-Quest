@@ -977,7 +977,7 @@ export const TimeslotsSection = React.memo<TimeslotsSectionProps>(({
                               <IonIcon icon={ICON_ANTWORTEN} />
                             </div>
                           </IonItemOption>
-                          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
+                          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Anmeldung entfernen">
                             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
                               <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
                             </div>

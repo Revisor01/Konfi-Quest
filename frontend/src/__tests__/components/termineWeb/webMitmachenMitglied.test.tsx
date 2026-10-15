@@ -194,10 +194,13 @@ describe('Konfis: Aktionen oben', () => {
     expect(geoeffnet('QRScannerModal')).toHaveLength(1);
   });
 
+  // Seit 15.10.2026 ein Fenster der Web-Fassung statt des App-Modals (webEventFenster.test.tsx).
   it('die Legende öffnet ihr Fenster; Aktualisieren lädt die Events neu', async () => {
     await oeffneKonfi();
     fireEvent.click(screen.getByRole('button', { name: /Legende/ }));
-    expect(geoeffnet('EventLegendModal')).toHaveLength(1);
+    const legende = screen.getByRole('dialog', { name: 'Farben & Symbole' });
+    expect(geoeffnet('EventLegendModal')).toHaveLength(0);
+    fireEvent.click(within(legende).getAllByRole('button', { name: 'Schließen' })[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Aktualisieren' }));
     await act(async () => { await Promise.resolve(); });
     expect(h.neuGeladen).toEqual(['konfi:events:7']);

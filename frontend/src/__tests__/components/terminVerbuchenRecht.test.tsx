@@ -109,7 +109,7 @@ describe('VERBOTEN: darf_verbuchen false', () => {
     expect(screen.queryAllByRole('button', { name: /^Alle bestätigen/ })).toEqual([]);
     expect(document.body).toHaveTextContent(HINWEIS);
     expect(screen.getByRole('button', { name: 'Event bearbeiten' })).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Teilnahme entfernen' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Anmeldung entfernen' }).length).toBeGreaterThan(0);
   });
 
   it('der Tipp auf eine angemeldete Person öffnet nichts; die Warteliste bleibt bedienbar', async () => {

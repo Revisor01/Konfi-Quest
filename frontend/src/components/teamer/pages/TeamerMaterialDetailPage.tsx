@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   IonPage,
   IonContent,
@@ -32,7 +32,7 @@ import {
 import AppKopfzeile from '../../shared/AppKopfzeile';
 import { useApp } from '../../../contexts/AppContext';
 import { useDateiOeffnen } from '../../../hooks/useDateiOeffnen';
-import { materialDetailLaden } from '../../../services/materialDetail';
+import { useMaterialAnsicht } from './useMaterialAnsicht';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EmptyState from '../../shared/EmptyState';
 import LadeStandZeile from '../../shared/LadeStandZeile';
@@ -41,7 +41,7 @@ import { haptik, triggerPullHaptic, ImpactStyle } from '../../../utils/haptics';
 import { istWebLink, hostAus, materialLinks } from '../../../utils/linkDisplay';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { datumKurz } from '../../../utils/dateUtils';
-import { materialInhalt, trackHandlung } from '../../../services/analytics';
+import { trackHandlung } from '../../../services/analytics';
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMaterialFenster from '../web/material/WebMaterialFenster';
@@ -86,51 +86,11 @@ const TeamerMaterialDetailPage: React.FC<TeamerMaterialDetailProps> = ({ materia
   const breit = useBreitesLayout();
   const pageRef = useRef<HTMLElement>(null);
 
-  // Anonyme Messung „Material angesehen" (Simon, 27.09.2026): EINMAL je
-  // Oeffnen. Die Seite wird als Modal jedes Mal neu montiert; Aktualisieren
-  // und Wiederverbinden laden erneut und duerfen nicht noch einmal zaehlen.
-  const angesehenGemeldet = useRef(false);
-
-  // Material-Detail: erst der Server, den zuletzt geladenen Stand nur ohne
-  // Netz (27.09.2026; vorher useOfflineQuery, gemerkter Stand zuerst).
-  // Grund: Die Dateien liegen seitdem im Medien-Cache — eine inzwischen
-  // gelöschte Datei stünde sonst nach dem Öffnen kurz in der Liste und
-  // öffnete sich vom Gerät. materialDetailLaden nimmt dabei vom Gerät, was
-  // der Server nicht mehr führt.
-  const [material, setMaterial] = useState<MaterialDetail | null>(null);
-  const [loading, setLoading] = useState(!!materialId);
-  const laden = useCallback(async (): Promise<MaterialDetail | null> => {
-    try {
-      const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(materialId);
-      // Nur nach einer Antwort des Servers — ein Stand nur vom Gerät
-      // (offline) zaehlt nicht. Nur die Art des Inhalts, kein Titel, keine
-      // Kennung.
-      if (!ausSpeicher && !angesehenGemeldet.current) {
-        angesehenGemeldet.current = true;
-        trackHandlung('material-angesehen', {
-          inhalt: materialInhalt((daten?.files?.length ?? 0) > 0, materialLinks(daten ?? {}).length > 0)
-        });
-      }
-      return daten;
-    } catch {
-      return null;
-    }
-  }, [materialId]);
-
-  useEffect(() => {
-    if (!materialId) return;
-    let aktiv = true;
-    void laden().then((daten) => {
-      if (!aktiv) return;
-      setMaterial(daten);
-      setLoading(false);
-    });
-    return () => { aktiv = false; };
-  }, [materialId, laden]);
-
-  const refresh = async () => {
-    setMaterial(await laden());
-  };
+  // Laden (erst der Server, ohne Netz der zuletzt geladene Stand) und die
+  // Messung „Material angesehen" stehen in useMaterialAnsicht -- derselbe
+  // Weg wie im Fenster des Browsers ab 992 px aus den Events
+  // (shared/web/termine/WebTerminMaterialDialog; Simon, 15.10.2026).
+  const { material, loading, refresh } = useMaterialAnsicht<MaterialDetail>(materialId);
 
   // Dateien über den gemeinsamen Weg von Chat und Challenges (27.09.2026,
   // Simon: „Fotos Anträge und Material ja bitte."): Medien-Cache (zweites

@@ -93,12 +93,16 @@ describe('Kopf: Titel, Zurück, Aktionen', () => {
     expect(within(kopf()).getByText('Team gesucht')).toBeInTheDocument();
   });
 
+  // Der QR-Code seit 15.10.2026 als Fenster der Web-Fassung (webEventFenster.test.tsx):
+  // derselbe Abruf wie das Modal der App.
   it('Chat (nur mit Chat-Raum) und QR-Code rufen dieselben Funktionen wie die App', async () => {
     await oeffneEvent(402);
     fireEvent.click(screen.getByRole('button', { name: 'Event-Chat öffnen' }));
     expect(routerPush).toHaveBeenCalledWith('/teamer/chat/room/55', 'root');
-    fireEvent.click(screen.getByRole('button', { name: 'QR-Code zum Einchecken anzeigen' }));
-    expect(geoeffnet('QRDisplayModal')).toHaveLength(1);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'QR-Code zum Einchecken anzeigen' })); });
+    expect(screen.getByRole('dialog', { name: 'QR-Code zum Einchecken' })).toBeInTheDocument();
+    expect(h.api.post).toHaveBeenCalledWith('/events/402/generate-qr');
+    expect(geoeffnet('QRDisplayModal')).toHaveLength(0);
   });
 
   it('ohne Chat-Raum gibt es keinen Chat-Knopf', async () => {
@@ -147,8 +151,12 @@ describe('Kennzahlen, Beschreibung, Angaben, Material', () => {
     const material = karte('Material (2)');
     expect(within(material).getByText('1 Datei')).toBeInTheDocument();
     expect(within(material).getByText('Link')).toBeInTheDocument();
-    fireEvent.click(within(material).getByRole('button', { name: 'Packliste' }));
-    expect(geoeffnet('TeamerMaterialDetailPage')).toHaveLength(1);
+    // Seit 15.10.2026 das Fenster „Material ansehen" wie unter „Material
+    // verwalten" (webEventFenster.test.tsx) -- es lädt das Material wie die App.
+    await act(async () => { fireEvent.click(within(material).getByRole('button', { name: 'Packliste' })); });
+    expect(screen.getByRole('dialog', { name: 'Material ansehen' })).toBeInTheDocument();
+    expect(h.api.get).toHaveBeenCalledWith('/material/11');
+    expect(geoeffnet('TeamerMaterialDetailPage')).toHaveLength(0);
     expect(h.api.get).toHaveBeenCalledWith('/material/by-event/402');
   });
 

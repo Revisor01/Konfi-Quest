@@ -136,7 +136,7 @@ describe.each(['admin', 'org_admin'])('ERLAUBT: %s verwaltet den Termin', (leitu
     expect(presentActionSheet).toHaveBeenCalledTimes(1);
     fireEvent.click(zeileVon('Wanda Warteliste'));
     expect(presentActionSheet).toHaveBeenCalledTimes(2);
-    expect(screen.getAllByRole('button', { name: 'Teilnahme entfernen' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Anmeldung entfernen' }).length).toBeGreaterThan(0);
   });
 });
 
@@ -147,7 +147,7 @@ describe('VERBOTEN: Teamer:innen sehen die Detailansicht ohne Verwaltung', () =>
     await oeffne();
     for (const name of VERWALTUNG) expect(knopf(name), name).toBe(null);
     expect(screen.queryAllByRole('button', { name: /^Alle bestätigen/ })).toEqual([]);
-    expect(screen.queryAllByRole('button', { name: 'Teilnahme entfernen' })).toEqual([]);
+    expect(screen.queryAllByRole('button', { name: 'Anmeldung entfernen' })).toEqual([]);
     expect(screen.queryAllByRole('button', { name: 'Auf Warteliste setzen' })).toEqual([]);
     expect(knopf('QR-Code anzeigen')).not.toBe(null);
     // Ohne Chat gibt es fuer Teamer:innen nichts zu oeffnen (anlegen ist Leitungssache).
@@ -178,7 +178,7 @@ describe('VERBOTEN: Teamer:innen sehen die Detailansicht ohne Verwaltung', () =>
     const zeilen = screen.getAllByText('Kim Konfi').map((t) => t.closest('[data-testid="zeile"]') as HTMLElement);
     for (const z of zeilen) fireEvent.click(z);
     expect(presentActionSheet).not.toHaveBeenCalled();
-    expect(screen.queryAllByRole('button', { name: 'Teilnahme entfernen' })).toEqual([]);
+    expect(screen.queryAllByRole('button', { name: 'Anmeldung entfernen' })).toEqual([]);
   });
 });
 
@@ -235,7 +235,7 @@ describe('Abgesagter Termin (Leitung)', () => {
   it('das Entfernen von Teilnehmenden bleibt -- die Leitung muss auch am abgesagten Termin aufraeumen koennen', async () => {
     antwort = termin({ registration_status: 'cancelled', cancelled: true });
     await oeffne();
-    expect(screen.getAllByRole('button', { name: 'Teilnahme entfernen' }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: 'Anmeldung entfernen' }).length).toBeGreaterThan(0);
   });
 
   it('statt "Event absagen" steht "Absage zurücknehmen"; eintragen geht nicht mehr', async () => {

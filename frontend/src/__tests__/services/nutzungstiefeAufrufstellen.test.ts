@@ -86,9 +86,11 @@ const STELLEN: Array<{
     vorher: 'await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)'
   },
   {
-    datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+    // Seit 15.10.2026 im Hook, den das Modal der App (TeamerMaterialDetailPage)
+    // und das Fenster des Browsers aus den Events teilen.
+    datei: 'src/components/teamer/pages/useMaterialAnsicht.ts',
     handlung: 'material-angesehen',
-    vorher: 'await materialDetailLaden<MaterialDetail>(materialId)'
+    vorher: 'await materialDetailLaden<T>(materialId)'
   },
   {
     datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
@@ -214,9 +216,16 @@ describe('Gemessen wird erst nach der erfolgreichen Antwort', () => {
         if (tiefe <= 0 && /\}/.test(rest)) imCatch = false;
       }
     }
-    // Gegenprobe gegen einen leeren Lauf: jede dieser Dateien hat catch-Zweige
-    // mit Rumpf, also muessen mehr Zeilen angesehen worden sein als catch-Koepfe.
+    // Gegenprobe gegen einen leeren Lauf: hat die Datei catch-Zweige mit
+    // Rumpf, muessen mehr Zeilen angesehen worden sein als catch-Koepfe. Hat
+    // sie keinen (TeamerMaterialDetailPage seit 15.10.2026: das Laden samt
+    // catch steht in useMaterialAnsicht, eigens geprueft), steht auch das
+    // Wort catch nirgends -- dann kann kein catch-Zweig messen.
     const koepfe = zeilen.filter((z) => /\bcatch\s*(\(|\{)/.test(z)).length;
+    if (koepfe === 0) {
+      expect(/\bcatch\b/.test(quelle), `${datei}: catch ohne erkannten Kopf`).toBe(false);
+      return;
+    }
     expect(catchZeilen).toBeGreaterThan(koepfe);
   });
 });

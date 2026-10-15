@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -24,8 +24,7 @@ import {
   ICON_SCHLIESSEN,
   ICON_TEXTDOKUMENT,
 } from '../../shared/icons';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import { useApp } from '../../../contexts/AppContext';
+import { useAbmeldungFormular } from './useAnwesenheitTexte';
 
 // ABMELDUNG NACHTRAGEN (13.09.2026)
 //
@@ -56,6 +55,11 @@ import { useApp } from '../../../contexts/AppContext';
 // Folge, die in diesem Moment eintritt und nicht rueckgaengig zu machen ist
 // (Punkte weg, Push raus), gehoert dagegen an die Stelle, an der man sie
 // ausloest — deshalb bleibt EIN Satz stehen, und zwar der richtige.
+//
+// FELDER UND SPEICHERN STEHEN IN useAbmeldungFormular (useAnwesenheitTexte.ts)
+// -- derselbe Hook wie im Dialog des Browsers ab 992 px
+// (web/termine/WebAbmeldungDialog.tsx; Simon, 15.10.2026). Hier steht nur
+// die Darstellung der App.
 
 interface AbmeldungNachtragenModalProps {
   /** Name der Person, um die es geht — steht im Kopf des Modals. */
@@ -76,17 +80,8 @@ const AbmeldungNachtragenModal: React.FC<AbmeldungNachtragenModalProps> = ({
   onSave,
   dismiss,
 }) => {
-  const { isOnline } = useApp();
-  const [grundText, setGrundText] = useState(grund || '');
-  const [notizText, setNotizText] = useState(notiz || '');
-  const { isSubmitting, guard } = useActionGuard();
-
-  const handleSave = async () => {
-    await guard(async () => {
-      await onSave(grundText.trim(), notizText.trim());
-      dismiss();
-    });
-  };
+  const { isOnline, grundText, setGrundText, notizText, setNotizText, isSubmitting, handleSave } =
+    useAbmeldungFormular({ grund, notiz, onSave, onFertig: dismiss });
 
   return (
     <IonPage>

@@ -209,9 +209,11 @@ describe('eintragenMitRueckfrage: von Hand eintragen, eine Rueckfrage je Konting
   });
 });
 
+// Seit 15.10.2026 steht das Hinzufuegen im Hook, den das Modal der App und
+// der Dialog des Browsers teilen (useTeilnehmerHinzufuegen).
 describe('Das Hinzufuegen von Hand nutzt den Ablauf', () => {
   const quelle = readFileSync(
-    resolve(__dirname, '../../components/admin/modals/ParticipantManagementModal.tsx'), 'utf8'
+    resolve(__dirname, '../../components/admin/modals/useTeilnehmerHinzufuegen.ts'), 'utf8'
   );
 
   it('traegt ueber eintragenMitRueckfrage ein und schickt ueberbuchen immer ausdruecklich mit', () => {

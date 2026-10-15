@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -23,8 +23,7 @@ import {
   ICON_SCHLIESSEN,
   ICON_TEXTDOKUMENT,
 } from '../../shared/icons';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import { useApp } from '../../../contexts/AppContext';
+import { useNotizFormular } from './useAnwesenheitTexte';
 
 // NOTIZ ZUR ANWESENHEIT (13.09.2026)
 //
@@ -43,6 +42,11 @@ import { useApp } from '../../../contexts/AppContext';
 // LOESCHEN GEHOERT DAZU: Bis hierher liess sich eine Notiz setzen und
 // aendern, aber nicht entfernen. Der Knopf erscheint nur, wenn es etwas zu
 // loeschen gibt — an einer leeren Notiz waere er ohne Wirkung.
+//
+// FELD, PRUEFUNG UND SPEICHERN STEHEN IN useNotizFormular
+// (useAnwesenheitTexte.ts) -- derselbe Hook wie im Dialog des Browsers ab
+// 992 px (web/termine/WebNotizDialog.tsx; Simon, 15.10.2026). Hier steht nur
+// die Darstellung der App.
 
 interface AnwesenheitNotizModalProps {
   /** Name der Person, um die es geht — steht im Kopf des Modals. */
@@ -64,36 +68,8 @@ const AnwesenheitNotizModal: React.FC<AnwesenheitNotizModalProps> = ({
   onSave,
   dismiss,
 }) => {
-  const { isOnline } = useApp();
-  const [text, setText] = useState(notiz || '');
-  const { isSubmitting, guard } = useActionGuard();
-
-  const hatBestehendeNotiz = !!(notiz && notiz.trim().length > 0);
-  const getrimmt = text.trim();
-
-  // Speichern ist gesperrt, solange sich nichts geaendert hat, und bei einem
-  // leeren Feld ohne bestehende Notiz: Da gaebe es nichts zu schreiben und
-  // nichts zu loeschen. Ist eine Notiz vorhanden, ist das leere Feld dagegen
-  // ein gueltiger Wunsch — es loescht.
-  const hatAenderung = getrimmt !== (notiz || '').trim();
-  const darfSpeichern = hatAenderung && (getrimmt.length > 0 || hatBestehendeNotiz);
-
-  const handleSave = async () => {
-    if (!darfSpeichern) return;
-    await guard(async () => {
-      await onSave(getrimmt);
-      dismiss();
-    });
-  };
-
-  const handleLoeschen = async () => {
-    await guard(async () => {
-      // Leerer String heisst loeschen — derselbe Weg wie ein geleertes Feld,
-      // damit es nur eine Art gibt, eine Notiz zu entfernen.
-      await onSave('');
-      dismiss();
-    });
-  };
+  const { isOnline, text, setText, hatBestehendeNotiz, darfSpeichern, isSubmitting, handleSave, handleLoeschen } =
+    useNotizFormular({ notiz, onSave, onFertig: dismiss });
 
   return (
     <IonPage>

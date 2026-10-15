@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -23,9 +23,7 @@ import {
   ICON_HAKEN,
   ICON_SCHLIESSEN,
 } from '../../shared/icons';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import { useApp } from '../../../contexts/AppContext';
-import { fehlerText } from '../../../utils/fehler';
+import { absageEckdaten, absageHinweis, useTerminAbsagen } from './useTerminAbsagen';
 
 // TERMIN ABSAGEN, MIT GRUND (15.09.2026)
 //
@@ -71,6 +69,10 @@ import { fehlerText } from '../../../utils/fehler';
 // Korrektur ist keine neue Nachricht. Der Hinweis sagt das ausdruecklich,
 // damit niemand den Grund als stille Mitteilung missversteht und darauf
 // wartet, dass die Handys klingeln.
+//
+// FELD, TEXTE UND FEHLERBEHANDLUNG STEHEN IN useTerminAbsagen -- derselbe
+// Hook wie im Dialog des Browsers ab 992 px (web/termine/WebTerminAbsagenDialog.tsx;
+// Simon, 15.10.2026). Hier steht nur die Darstellung der App.
 
 interface TerminAbsagenModalProps {
   /** Name des Termins — steht im Kopf des Modals. */
@@ -100,14 +102,6 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
   onSave,
   dismiss,
 }) => {
-  const { isOnline, setError } = useApp();
-  const istGrundModus = modus === 'grund';
-  // Vorgabe nur als Startwert: Wer tippt, soll nicht bei jedem Rendern
-  // zurueckgesetzt werden. Das Modal wird pro Oeffnen neu aufgebaut, deshalb
-  // reicht der Initialwert.
-  const [grundText, setGrundText] = useState(grundVorgabe);
-  const { isSubmitting, guard } = useActionGuard();
-
   // FEHLER VOM SERVER ZEIGEN, STATT STILL STEHENZUBLEIBEN (16.09.2026)
   //
   // Bis hierher lief onSave() ohne try/catch. useActionGuard raeumt in einem
@@ -123,25 +117,15 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
   // (Builds 195-197 zeigen ihr den Wisch "Absagegrund bearbeiten" an einem
   // abgesagten Termin) bekommt seither 403. Die Leitungsansicht traegt
   // denselben Fehler -- dort faellt er nur nicht auf, weil ein Admin dieses
-  // 403 nie sieht. Der Fix sitzt deshalb HIER, im gemeinsamen Modal, und
-  // wirkt fuer beide Rollen und auch fuer alte Apps (das Modal wird
-  // mitdeployt).
+  // 403 nie sieht. Der Fix sitzt deshalb im gemeinsamen Hook
+  // (useTerminAbsagen) und wirkt fuer beide Rollen und auch fuer alte Apps
+  // (das Modal wird mitdeployt).
   //
   // Muster wie in ChangeRoleTitleModal: try/catch INNERHALB des guard,
   // setError(fehlerText(...)), und geschlossen wird nur im Erfolgsfall --
   // wer den Fehler liest, soll seinen Text noch dastehen haben.
-  const handleSave = async () => {
-    await guard(async () => {
-      try {
-        await onSave(grundText.trim());
-        dismiss();
-      } catch (err) {
-        setError(fehlerText(err, istGrundModus
-          ? 'Fehler beim Speichern des Absagegrundes'
-          : 'Fehler beim Absagen des Events'));
-      }
-    });
-  };
+  const { isOnline, istGrundModus, grundText, setGrundText, isSubmitting, handleSave } =
+    useTerminAbsagen({ modus, grundVorgabe, onSave, onFertig: dismiss });
 
   return (
     <IonPage>
@@ -182,8 +166,7 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
                   standen — damit beim Absagen sichtbar bleibt, um welchen
                   Termin es geht und wie viele Leute es trifft. */}
               <IonNote className="app-hinweis-text">
-                {terminDatum} · {konfiAnzahl} {konfiAnzahl === 1 ? 'Konfi angemeldet' : 'Konfis angemeldet'}
-                {istGrundModus ? ' · abgesagt' : ''}
+                {absageEckdaten(terminDatum, konfiAnzahl, modus)}
               </IonNote>
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
@@ -201,9 +184,7 @@ const TerminAbsagenModal: React.FC<TerminAbsagenModalProps> = ({
                 </IonItem>
               </IonList>
               <IonNote className="app-hinweis-text">
-                {istGrundModus
-                  ? 'Alle Angemeldeten sehen den Grund am Event. Es geht keine neue Mitteilung raus — die Absage ist schon gemeldet. Leerst du das Feld, fällt der Grund weg.'
-                  : 'Alle Angemeldeten sehen den Grund am Event und bekommen ihn in der Mitteilung. Ohne Grund wird nur die Absage gemeldet.'}
+                {absageHinweis(modus)}
               </IonNote>
             </IonCardContent>
           </IonCard>

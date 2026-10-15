@@ -104,6 +104,8 @@ import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
 import { EIGENE_ANTRAEGE_START, MITGLIED_BEREICHE, TEAM_EVENTS, TEAM_EVENTS_LEER_TITEL } from '../../../seiten/mitmachenMitglied';
 import WebTeamEvents from '../web/termine/WebTeamEvents';
 import WebTeamTerminDetail from '../web/termine/WebTeamTerminDetail';
+import WebQrDialog from '../../shared/web/termine/WebQrDialog';
+import WebTerminMaterialDialog from '../../shared/web/termine/WebTerminMaterialDialog';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -223,6 +225,11 @@ const TeamerEventsPage: React.FC = () => {
   // (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale überall"); Logik
   // und Folgen sind dieselben wie im Modal der App (useAktivitaetMelden).
   const [meldenOffen, setMeldenOffen] = useState(false);
+  // Im breiten Layout öffnen QR-Code und Material eines Events ein Fenster der
+  // Web-Fassung (Simon, 15.10.2026) statt der Modale der App.
+  // Mit dem Event, zu dem es gehoert: Wechselt die Adresse (etwa „Zurück"
+  // im Browser), steht es beim naechsten Event nicht wieder da.
+  const [webFenster, setWebFenster] = useState<{ art: 'qr' | 'material'; eventId: number; id?: number } | null>(null);
 
   const handleAddRequest = () => {
     presentRequestModal({
@@ -2148,12 +2155,9 @@ const TeamerEventsPage: React.FC = () => {
             aktionen={{
               zusage: (dabei) => { if (gewaehlt) void handleZusage(gewaehlt, dabei); },
               absage: oeffneAbsage,
-              qr: () => presentQRDisplayModal({ presentingElement: pageRef.current || presentingElement || undefined }),
+              qr: () => { if (gewaehlt) setWebFenster({ art: 'qr', eventId: gewaehlt.id }); },
               chat: () => router.push(`/teamer/chat/room/${gewaehlt?.chat_room_id}`, 'root'),
-              material: (id) => {
-                materialIdRef.current = id;
-                presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
-              },
+              material: (id) => { if (gewaehlt) setWebFenster({ art: 'material', eventId: gewaehlt.id, id }); },
               neuLaden: () => {
                 void refresh();
                 if (gewaehlt) void ladeTerminDetail(gewaehlt.id);
@@ -2191,6 +2195,20 @@ const TeamerEventsPage: React.FC = () => {
           onGemeldet={() => { void refreshRequests(); }}
           onSchliessen={() => setMeldenOffen(false)}
         />
+      )}
+      {/* QR-Code und Material als Fenster der Web-Fassung -- dieselbe Logik wie
+          die Modale der App (useQrAnzeige, useMaterialAnsicht). Der QR-Code
+          gehört zum offenen Event; ohne eins steht er nicht da. */}
+      {webFenster?.art === 'qr' && gewaehlt?.id === webFenster.eventId && (
+        <WebQrDialog
+          eventId={gewaehlt.id}
+          eventName={gewaehlt.name}
+          eventDate={gewaehlt.event_date}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'material' && webFenster.id && gewaehlt?.id === webFenster.eventId && (
+        <WebTerminMaterialDialog materialId={webFenster.id} onSchliessen={() => setWebFenster(null)} />
       )}
       </>
     );
