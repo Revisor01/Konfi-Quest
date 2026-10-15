@@ -44,11 +44,13 @@ export const dateiSpeichern = (blob: Blob, name: string): void => {
  * Die Datei an das Teilen-Fenster des Browsers geben -- oder, wenn er keine
  * Dateien teilen kann, herunterladen. Ein Abbruch im Teilen-Fenster wirft
  * weiter (AbortError) und löst keinen Download aus: Die Person hat abgesagt.
+ * Der Begleittext ist derselbe wie im Teilen-Blatt der App (Bildunterschrift
+ * der Nachricht, sonst der Dateiname).
  */
-export async function dateiImBrowserWeitergeben(blob: Blob, name: string, titel: string): Promise<void> {
+export async function dateiImBrowserWeitergeben(blob: Blob, name: string, titel: string, text: string): Promise<void> {
   const datei = new File([blob], name, { type: blob.type || mimeAusDateiname(name) });
   if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [datei] })) {
-    await teilenImBrowser({ files: [datei], title: titel });
+    await teilenImBrowser({ files: [datei], title: titel, text });
     return;
   }
   dateiSpeichern(blob, name);

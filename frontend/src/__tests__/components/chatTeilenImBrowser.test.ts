@@ -61,6 +61,8 @@ describe('Chat im Browser: eine Datei teilen', () => {
     expect(teilenImBrowser).toHaveBeenCalledTimes(1);
     const daten = teilenImBrowser.mock.calls[0][0];
     expect(daten.title).toBe('Datei aus Konfi Quest');
+    // Begleittext wie im Teilen-Blatt der App: ohne Bildunterschrift der Dateiname.
+    expect(daten.text).toBe('foto.jpg');
     expect(daten.url).toBeUndefined();
     expect(daten.files).toHaveLength(1);
     expect(daten.files![0].name).toBe('foto.jpg');
@@ -69,6 +71,14 @@ describe('Chat im Browser: eine Datei teilen', () => {
     expect(teilen).not.toHaveBeenCalled();
     expect(Filesystem.writeFile).not.toHaveBeenCalled();
     expect(downloads).toEqual([]);
+  });
+
+  it('die Bildunterschrift der Nachricht geht als Text mit -- wie in der App', async () => {
+    kannTeilen(true);
+    await nachrichtTeilen({ ...FOTO, content: 'Plakat für Sonntag' } as Message, vi.fn());
+    const daten = teilenImBrowser.mock.calls[0][0];
+    expect(daten.text).toBe('Plakat für Sonntag');
+    expect(daten.files![0].name).toBe('foto.jpg');
   });
 
   it('kann er es nicht (Desktop), wird die Datei heruntergeladen -- nichts geht an ein Teilen-Blatt', async () => {

@@ -26,6 +26,9 @@ export async function nachrichtTeilen(
       // trotzdem noch einmal vom Server.
       const blob = await getMediaBlob(message.file_path);
       const fileName = message.file_name || 'file';
+      // Begleittext im Teilen-Blatt: die Bildunterschrift, sonst der
+      // Dateiname -- in App und Browser derselbe.
+      const begleittext = message.content || fileName;
 
       // Im Browser gibt es den Cache des Geraets nicht: Bis 15.10.2026 kam
       // dort ein leerer Pfad am Teilen-Fenster an statt der Datei. Jetzt geht
@@ -33,7 +36,7 @@ export async function nachrichtTeilen(
       // heruntergeladen, wenn der Browser keine Dateien teilen kann
       // (dateiImBrowser.ts).
       if (!Capacitor.isNativePlatform()) {
-        await dateiImBrowserWeitergeben(blob, fileName, 'Datei aus Konfi Quest');
+        await dateiImBrowserWeitergeben(blob, fileName, 'Datei aus Konfi Quest', begleittext);
         return;
       }
 
@@ -69,7 +72,7 @@ export async function nachrichtTeilen(
 
       await teilen({
         title: 'Datei aus Konfi Quest',
-        text: message.content || fileName,
+        text: begleittext,
         url: fileUri.uri
       });
     } else {

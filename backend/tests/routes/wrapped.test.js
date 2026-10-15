@@ -55,7 +55,7 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toContain('Kein Wrapped');
+      expect(res.body.error).toBe('Kein Jahresrückblick vorhanden');
     });
 
     it('Ohne Token bekommt 401', async () => {
@@ -109,7 +109,7 @@ describe('Wrapped Routes', () => {
         .set('Authorization', `Bearer ${konfiToken}`);
 
       expect(res.status).toBe(403);
-      expect(res.body.error).toBe('Wrapped ist noch nicht freigegeben');
+      expect(res.body.error).toBe('Der Jahresrückblick ist noch nicht freigegeben');
       expect(res.body.data).toBe(undefined);
     });
 
@@ -467,7 +467,7 @@ describe('Wrapped Routes', () => {
 
       // KEIN 200 mit generated:0 mehr -- das war die eigentliche Luege.
       expect(res.status).toBe(500);
-      expect(res.body.error).toBe('Fehler beim Generieren der Teamer-Wrapped-Snapshots');
+      expect(res.body.error).toBe('Fehler beim Erstellen der Jahresrückblicke des Teams');
       // Kein Push an das ganze Team fuer einen Rueckblick, den es nicht gibt.
       expect(spy).toHaveBeenCalledTimes(0);
       // Und nichts bleibt liegen: weder die Ausgabe noch ein halber Snapshot.
@@ -1699,7 +1699,7 @@ describe('Wrapped Routes', () => {
         expect(weg.status).toBe(200);
         // Antwortform unveraendert: message + deleted (Zahl der Rueckblicke).
         expect(weg.body.deleted).toBe(1);
-        expect(weg.body.message).toBe('1 Wrapped-Snapshots gelöscht');
+        expect(weg.body.message).toBe('Jahresrückblicke gelöscht: 1');
         expect(await teamerAusgaben()).toEqual([]);
 
         const nochmal = await request(app)

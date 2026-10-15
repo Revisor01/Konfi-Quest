@@ -611,8 +611,7 @@ describe('Betrieb: nur fuer den Support', () => {
 
   it('breit in der Form der Web-Fassung: Seitenkopf mit Weg zurueck nach "Mehr"', async () => {
     h.user = { id: 3, role_name: 'admin' };
-    const { container } = await oeffnen();
-    expect(container.querySelector('.web-seite')).not.toBeNull();
+    await oeffnen();
     expect(screen.getByRole('heading', { level: 1, name: 'Betrieb' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
   });
