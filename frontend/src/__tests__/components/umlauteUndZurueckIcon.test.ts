@@ -13,7 +13,9 @@ import { ICON_ZURUECK } from '../../components/shared/icons';
 // Diese Tests lesen die Quellen, statt zu rendern: Geprüft wird, dass keine
 // Ersatzschreibweise in ANGEZEIGTEM Text zurückkommt. In Bezeichnern und
 // Kommentaren ist "ue" weiter erlaubt (spruchFuer, hintergrundFuer) — die
-// sieht niemand.
+// sieht niemand. Am Zurück-Pfeil zählt nur, was ihn im Dunkelmodus sichtbar
+// und überhaupt anzeigbar hält; wie er gezeichnet ist (Strichstärke, eigenes
+// SVG), ist Gestaltung (Simon, 15.10.2026).
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
@@ -98,18 +100,6 @@ describe('Umlaute in angezeigten Texten', () => {
 });
 
 describe('Zurueck-Icon', () => {
-  it('ist ein eigenes SVG, kein Ionicons-Name', () => {
-    // Ionicons zeichnet mit stroke-width 48 auf 512 (= 2.25 auf 24) und hat
-    // keine dünnere Variante — deshalb das eigene SVG.
-    expect(ICON_ZURUECK.startsWith('data:image/svg+xml,')).toBe(true);
-  });
-
-  it('zeichnet mit der duennen Heroicons-Strichstaerke', () => {
-    const svg = decodeURIComponent(ICON_ZURUECK.replace('data:image/svg+xml,', ''));
-    expect(svg).toContain('stroke-width="1.5"');
-    expect(svg).toContain('viewBox="0 0 24 24"');
-  });
-
   it('erbt die Farbe der Umgebung', () => {
     // Ohne currentColor bliebe der Pfeil im Dunkelmodus schwarz auf dunklem
     // Grund — der Fehler wäre erst auf dem Gerät aufgefallen.
@@ -124,25 +114,5 @@ describe('Zurueck-Icon', () => {
     expect(ICON_ZURUECK).not.toContain('#');
     expect(ICON_ZURUECK).not.toContain('"');
     expect(ICON_ZURUECK).not.toContain('<');
-  });
-});
-
-describe('Teamer-Farbe', () => {
-  it('der gemeinsame Verlauf startet auf der Teamer-Farbe, nicht heller', () => {
-    // Simon: "Ist zu pink! Eher dies dunkle das wir sonst als Teamer Farbe
-    // haben". Der Verlauf startete auf #ec4899 — deutlich heller als
-    // --app-color-teamer (#be185d).
-    const css = lies('src/theme/variables.css');
-    const zeile = css.split('\n').find(z => z.includes('--app-gradient-teamer:')) || '';
-    expect(zeile).toContain('#be185d');
-    expect(zeile).not.toContain('#ec4899');
-  });
-
-  it('die Wrapped-Kachel nutzt den gemeinsamen Verlauf statt eines eigenen', () => {
-    // Sie war beim Vereinheitlichen am 11.08.2026 als einzige übersehen
-    // worden und hatte ihren eigenen, helleren Verlauf behalten.
-    const dash = lies('src/components/teamer/pages/TeamerDashboardPage.tsx');
-    expect(dash).toContain('var(--app-gradient-teamer)');
-    expect(dash).not.toContain('#f472b6');
   });
 });

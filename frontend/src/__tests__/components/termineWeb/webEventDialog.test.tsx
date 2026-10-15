@@ -14,7 +14,6 @@ import {
   h, api, setSuccess, setError, geoeffnet,
   zuruecksetzen, richteEin, oeffne, termin, inTagen, JETZT,
 } from './geruestWeb';
-import { erwarteWebRueckfrage } from '../web/webRueckfrageErwartung';
 
 const KATEGORIEN = [{ id: 5, name: 'Gottesdienst' }, { id: 6, name: 'Freizeit' }];
 // Jahrgang 2027 hat die Punkteart Gottesdienst abgeschaltet.
@@ -108,8 +107,7 @@ const NEU_VOREINGESTELLT = {
 
 describe('Umschalten: im breiten Fenster der Dialog, im schmalen das App-Modal', () => {
   it('breit: „Neues Event anlegen" öffnet den Dialog, das App-Modal nicht', async () => {
-    const d = await neuesEvent();
-    expect(d).toHaveClass('web-dialog--breit');
+    await neuesEvent();
     expect(geoeffnet('EventModal')).toHaveLength(0);
   });
 
@@ -392,8 +390,6 @@ describe('Neues Event: Abbrechen und ohne Netz', () => {
     fireEvent.click(within(d).getByRole('button', { name: 'Schließen' }));
     const frage = screen.getByRole('dialog', { name: 'Ungespeicherte Änderungen' });
     expect(frage).toHaveAccessibleDescription('Möchtest du die Änderungen verwerfen?');
-    // Wie die Rückfragen der App im Browser: Warndreieck, „Verwerfen" rot gefüllt.
-    erwarteWebRueckfrage(frage, 'warnung', 'Verwerfen');
     // Kein Ionic-Alert: Der läge unter dem Dialog, der an <body> hängt.
     expect(h.presentAlert).not.toHaveBeenCalled();
     fireEvent.click(within(frage).getByRole('button', { name: 'Abbrechen' }));

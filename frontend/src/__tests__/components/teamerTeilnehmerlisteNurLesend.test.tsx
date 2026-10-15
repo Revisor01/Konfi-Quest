@@ -18,7 +18,7 @@ import { screen, within, fireEvent, act } from '@testing-library/react';
 import {
   zustand, zuruecksetzen, termin, teilnehmer, oeffneTermin, abschnitt, api, presentActionSheet, presentAlert, modale,
 } from './gerueste/teamerTerminSeite';
-import { teilnahmeDarstellung, listItemKlasse } from '../../utils/teilnahmeStatus';
+import { teilnahmeDarstellung } from '../../utils/teilnahmeStatus';
 
 beforeEach(zuruecksetzen);
 
@@ -58,12 +58,11 @@ describe('Teamer-Teilnehmerliste', () => {
     expect(abschnitt(/^Wer kommt/)).toBeNull();
   });
 
-  it('nimmt Text und Farbe aus der gemeinsamen Quelle (wie die Leitungsliste)', async () => {
+  it('nimmt den Text aus der gemeinsamen Quelle (wie die Leitungsliste)', async () => {
     await oeffneMitListe();
     for (const p of LISTE) {
       const darstellung = teilnahmeDarstellung(p);
       const zeile = zeileVonPerson(p.participant_name);
-      expect(zeile).toHaveClass(listItemKlasse(darstellung));
       expect(within(zeile).getByRole('img', { name: darstellung.statusText })).toBeInTheDocument();
     }
     // Stichwerte, damit die Quelle nicht mit sich selbst verglichen wird:

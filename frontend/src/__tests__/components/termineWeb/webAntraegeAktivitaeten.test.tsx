@@ -95,9 +95,6 @@ describe('Anträge: Reiter und Tabelle', () => {
     expect(chip(/^Abgelehnt/)).toHaveTextContent(/^Abgelehnt1$/);
     expect(chip(/^Alle/)).toHaveTextContent(/^Alle4$/);
     expect(chip(/^Offen/)).toHaveAttribute('aria-pressed', 'true');
-    // Rot ist nur die Zahl, hinter der eine Entscheidung wartet.
-    expect(chip(/^Offen/).querySelector('.web-chip__zahl')).toHaveClass('web-chip__zahl--rot');
-    expect(chip(/^Verbucht/).querySelector('.web-chip__zahl')!.className).toBe('web-chip__zahl');
   });
 
   it('die Zeile zeigt Person, Jahrgang, Aktivität mit Kommentar, Punkte, Foto-Hinweis und Status', async () => {
@@ -313,14 +310,6 @@ describe('Aktivitäten: Tabelle', () => {
     expect(geoeffnet('ActivityManagementModal')).toHaveLength(2);
   });
 
-  it('"Neue Aktivität" steht im Seitenkopf neben der Überschrift, nicht in der Werkzeugzeile', async () => {
-    await oeffneReiter('aktivitaeten');
-    const knopf = screen.getByRole('button', { name: 'Neue Aktivität anlegen' });
-    const kopf = screen.getByRole('heading', { level: 1, name: 'Aktivitäten' }).closest('header') as HTMLElement;
-    expect(kopf.querySelector('.web-kopf__aktionen')).toContainElement(knopf);
-    expect(document.querySelector('.web-werkzeuge')).not.toContainElement(knopf);
-  });
-
   it('Löschen fragt nach und ruft erst nach "Löschen" DELETE', async () => {
     await oeffneReiter('aktivitaeten');
     const zeile = screen.getByRole('button', { name: 'Adventsmarkt bearbeiten' }).closest('tr')!;
@@ -440,7 +429,6 @@ const umschalter = (name: 'Liste' | 'Kacheln') => within(screen.getByRole('group
 /** Die Kachel, in deren Kopf der Name steht. */
 const kachel = (name: string) => [...document.querySelectorAll<HTMLElement>('.web-bildkarte')]
   .find((k) => k.querySelector('.web-bildkarte__kopf')!.textContent!.includes(name))!;
-const akzent = (k: HTMLElement) => k.style.getPropertyValue('--web-bildkarte-akzent');
 
 describe('Anträge: Sortieren nach Spalte', () => {
   const NAMEN = ['Mia Muster', 'Ben Beispiel', 'Zoe Probe', 'Tim Teamer'];
@@ -526,17 +514,14 @@ describe('Aktivitäten: Liste oder Kacheln', () => {
     expect(tabelle('Aktivitäten')).toBeInTheDocument();
   });
 
-  it('die Kachel trägt den Namen im Kopf, in der Farbe der Art: Gottesdienst, Gemeinde, Team', () => {
+  it('die Kachel nennt im Kopf Art und Namen: Gottesdienst, Gemeinde, Team', () => {
     window.localStorage.setItem('konfiquest.ansicht.aktivitaeten', 'kacheln');
     const { unmount } = zeigeKatalog();
     expect(kachel('Sonntagsgottesdienst').querySelector('.web-bildkarte__kopf')).toHaveTextContent('GottesdienstSonntagsgottesdienst');
-    expect(akzent(kachel('Sonntagsgottesdienst'))).toBe('var(--app-color-gottesdienst)');
-    expect(akzent(kachel('Adventsmarkt'))).toBe('var(--app-color-gemeinde)');
     expect(kachel('Adventsmarkt')).toHaveTextContent('+3 Punkte');
     unmount();
     zeigeKatalog('teamer');
     expect(kachel('Freizeit begleitet').querySelector('.web-bildkarte__kopf')).toHaveTextContent('TeamFreizeit begleitet');
-    expect(akzent(kachel('Freizeit begleitet'))).toBe('var(--app-color-teamer)');
   });
 
   it('Titel und "Bearbeiten" öffnen genau diese Aktivität, "Löschen" ebenso', () => {
@@ -570,14 +555,11 @@ describe('Anträge: Liste oder Kacheln', () => {
     expect(screen.queryByRole('table')).toBe(null);
   });
 
-  it('die Kachel trägt den Namen im Kopf, in der Farbe des Stands: offen, verbucht, abgelehnt', () => {
+  it('die Kachel nennt im Kopf Namen, Art und Jahrgang; eine abgelehnte den Grund', () => {
     window.localStorage.setItem('konfiquest.ansicht.antraege', 'kacheln');
     zeigeAntraege();
     expect(kachel('Mia Muster').querySelector('.web-bildkarte__kopf')).toHaveTextContent('Mia Muster');
     expect(kachel('Mia Muster').querySelector('.web-bildkarte__kopf')).toHaveTextContent('Gemeinde · Jahrgang 2026');
-    expect(akzent(kachel('Mia Muster'))).toBe('var(--app-color-warning)');
-    expect(akzent(kachel('Ben Beispiel'))).toBe('var(--app-color-success)');
-    expect(akzent(kachel('Zoe Probe'))).toBe('var(--app-color-danger)');
     expect(kachel('Zoe Probe')).toHaveTextContent('Grund der Ablehnung: Nicht belegt');
   });
 

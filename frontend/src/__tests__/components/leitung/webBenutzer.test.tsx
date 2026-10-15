@@ -1,6 +1,6 @@
 // Benutzer:innen der Gemeinde in der Web-Fassung (/admin/users), gerendert
-// (docs/planung/web-alle-bereiche.md, Entscheidung 6): Tabelle mit Rolle in der
-// Farbe der Rolle, Jahrgaengen, Status und Aktionen, Filter und Suche, dazu die
+// (docs/planung/web-alle-bereiche.md, Entscheidung 6): Tabelle mit Rolle,
+// Jahrgaengen, Status und Aktionen, Filter und Suche, dazu die
 // offenen Einladungen. Die Rechte sind die der App: Anlegen, Einladen, Entfernen
 // und die offenen Einladungen nur fuer die Gemeindeleitung, Bearbeiten nur bei
 // can_edit. Die Seite stellt dieselben Rueckfragen wie in der App; das
@@ -100,15 +100,12 @@ describe('Benutzer:innen (Web): Tabelle', () => {
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 
-  it('die Rolle steht als Wort in der Farbe der Rolle: Gemeindeleitung, Leitung und Team haben je ihre eigene', async () => {
+  it('die Rolle steht als Wort: Gemeindeleitung, Leitung, Teamer:in', async () => {
     render(<AdminUsersPage />);
     const marke = (name: string) => zelle(zeileVon(name), 1).querySelector('.web-rollenmarke')!;
     expect(marke('Alex Beispiel')).toHaveTextContent('Gemeindeleitung');
-    expect(marke('Alex Beispiel').className).toContain('web-rollenmarke--users');
     expect(marke('Sam Muster')).toHaveTextContent('Leitung');
-    expect(marke('Sam Muster').className).toContain('web-rollenmarke--leitung');
     expect(marke('Robin Probe')).toHaveTextContent('Teamer:in');
-    expect(marke('Robin Probe').className).toContain('web-rollenmarke--teamer');
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 

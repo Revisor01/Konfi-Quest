@@ -1817,7 +1817,7 @@ ion-item {
    Kartenregel oben. Das <p> bekommt dasselbe Token ausdruecklich (nicht
    `inherit`: variables.css setzt Schriftgroessen nur ueber Tokens). Nur
    direkte <p>: Formularzeilen in der Box (IonItem, IonLabel) behalten ihre
-   eigene Groesse. Vertrag: hinweisBoxSchrift.test.ts. */
+   eigene Groesse. */
 :root.ios .app-info-box:not(.ios-theme-disabled),
 :root.md .app-info-box:not(.ios-theme-disabled),
 :root.ios .app-info-box:not(.ios-theme-disabled) > p,
@@ -3129,7 +3129,7 @@ ion-button.app-modal-submit-btn--bonus {
    "Intrinsic values return 0 at that point").
 
    Feste Breite: vorher wie nachher 320px, Sprechblase 320 x 175 --
-   deckungsgleich. Vertrag im Test: popoverBreite.test.ts. */
+   deckungsgleich. */
 .badge-popover-auto-width,
 .badge-detail-popover {
   --width: min(320px, 85vw);

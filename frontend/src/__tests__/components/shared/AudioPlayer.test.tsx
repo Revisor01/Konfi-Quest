@@ -41,8 +41,8 @@ const steuerbar = (audio: HTMLAudioElement) => {
   };
 };
 
-const oeffne = (src = 'blob:aufnahme-1', color?: string) => {
-  const r = render(<AudioPlayer src={src} color={color} />);
+const oeffne = (src = 'blob:aufnahme-1') => {
+  const r = render(<AudioPlayer src={src} />);
   const audio = r.container.querySelector('audio') as HTMLAudioElement;
   return { ...r, audio, steuer: steuerbar(audio) };
 };
@@ -161,13 +161,5 @@ describe('AudioPlayer', () => {
     expect(zeit(container)).toBe('0:00 / -:--');
     expect(screen.getByRole('button', { name: 'Abspielen' })).toBeInTheDocument();
     expect(regler().disabled).toBe(true);
-  });
-
-  it('der Knopf trägt die übergebene Farbe, ohne Angabe die Challenge-Farbe', () => {
-    const ohne = oeffne();
-    expect(screen.getByRole('button', { name: 'Abspielen' }).getAttribute('style')).toContain('background: var(--app-color-challenges)');
-    ohne.unmount();
-    oeffne('blob:x', 'rgb(1, 2, 3)');
-    expect(screen.getByRole('button', { name: 'Abspielen' }).style.background).toBe('rgb(1, 2, 3)');
   });
 });

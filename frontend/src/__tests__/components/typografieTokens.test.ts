@@ -9,7 +9,9 @@ import { resolve, join } from 'path';
 //
 // Diese Tests lesen die Quellen, statt zu rendern (wie
 // umlauteUndZurueckIcon.test.ts): Sie pruefen die Verdrahtung, damit die
-// Skala nicht still wieder auseinanderlaeuft. In diesem Projekt ist beim
+// Schrift nicht still wieder an der einen Stelle vorbeilaeuft. Welche Stufen
+// es gibt und wie gross sie sind, legen sie nicht fest -- das ist Gestaltung
+// und bleibt frei aenderbar (Simon, 15.10.2026). In diesem Projekt ist beim
 // Umbauen mehrfach eine Rolle vergessen worden — deshalb pruefen die Tests
 // admin, teamer und konfi ausdruecklich getrennt.
 
@@ -34,72 +36,7 @@ const AUSNAHMEN = ['ShareCard.tsx'];
 
 const istAusnahme = (pfad: string) => AUSNAHMEN.some(a => pfad.endsWith(a));
 
-// Die Skala, wie sie in theme/typografie.css stehen muss. Die Werte bilden
-// den gemessenen Bestand vor der Konsolidierung ab — wer hier etwas aendert,
-// aendert die Schrift der ganzen App und sollte das absichtlich tun.
-const SKALA: Record<string, string> = {
-  // --app-text-schmal (0.55rem, nur Reiter im MD3-Look) ist am 27.09.2026
-  // entfallen: Die Reiter tragen jetzt --app-text-reiter (siehe unten und
-  // zoomUndSchrift.test.ts).
-  '--app-text-winzig': '0.6rem',
-  '--app-text-mini': '0.65rem',
-  '--app-text-meta': '0.7rem',
-  // Reiter-Beschriftungen auf beiden Plattformen (UI-Audit BF-07, 27.09.2026):
-  // bei 360 px gemessen, "Challenges" passt ohne Kuerzen.
-  '--app-text-reiter': '0.7rem',
-  '--app-text-klein': '0.75rem',
-  '--app-text-hinweis': '0.8rem',
-  '--app-text-sekundaer': '0.85rem',
-  '--app-text-basis': '0.9rem',
-  '--app-text-betont': '0.95rem',
-  '--app-text-standard': '1rem',
-  '--app-text-gross': '1.1rem',
-  '--app-text-untertitel': '1.2rem',
-  '--app-text-titel': '1.3rem',
-  '--app-text-titel-gross': '1.4rem',
-  '--app-text-ueberschrift': '1.5rem',
-  '--app-text-ueberschrift-gross': '1.6rem',
-  // Von 11 auf 7 Stufen am 05.09.2026: klein/mittel/wasserzeichen/symbol
-  // lagen 0,1-0,3rem neben einer anderen Stufe und wurden 0-3 Mal genutzt.
-  '--app-anzeige-basis': '1.8rem',
-  '--app-anzeige-zahl': '2rem',
-  '--app-anzeige-gross': '2.5rem',
-  '--app-anzeige-riesig': '3rem',
-  '--app-anzeige-hero': '3.5rem',
-  '--app-anzeige-maximal': '4rem',
-  '--app-anzeige-marke': '5.8rem',
-  '--app-icon-inline': '0.9em',
-  '--app-text-hinweispunkt': '10px',
-  '--app-icon-chat-senden': '15px',
-  '--app-icon-accordion': '18px',
-  '--app-icon-chat-anhang': '22px',
-  '--app-icon-leerzustand': '64px',
-  '--app-schrift-normal': '400',
-  '--app-schrift-mittel': '500',
-  '--app-schrift-halbfett': '600',
-  '--app-schrift-fett': '700',
-  '--app-schrift-extrafett': '800',
-  '--app-schrift-schwer': '900',
-};
-
 describe('Typografie-Skala', () => {
-  const css = lies('src/theme/typografie.css');
-
-  it('definiert jede Stufe mit exakt dem vermessenen Wert', () => {
-    for (const [token, wert] of Object.entries(SKALA)) {
-      const treffer = css.match(new RegExp(`${token}: *([^;]+);`));
-      expect(treffer, `${token} fehlt in typografie.css`).not.toBeNull();
-      expect(treffer![1].trim(), token).toBe(wert);
-    }
-  });
-
-  it('definiert keine Stufen an der Skala vorbei', () => {
-    // Wer eine neue Stufe braucht, traegt sie oben in SKALA ein — sonst
-    // waechst die Datei still an der Inventur vorbei.
-    const definiert = [...css.matchAll(/(--app-[\w-]+):/g)].map(m => m[1]);
-    expect(definiert.sort()).toEqual(Object.keys(SKALA).sort());
-  });
-
   it('wird von variables.css importiert', () => {
     expect(lies('src/theme/variables.css')).toContain("@import './typografie.css';");
   });
@@ -144,13 +81,6 @@ describe('Alle drei Rollen haengen an derselben Skala', () => {
       expect(quellen.match(/fontWeight:\s*['"`]?(\d|bold|normal)/g) ?? []).toEqual([]);
     });
   }
-
-  it('der "!"-Hinweispunkt ist bei Konfi und Teamer dasselbe Token', () => {
-    // Beide Dashboards zeichnen denselben Benachrichtigungspunkt; vor der
-    // Konsolidierung stand die 10px-Groesse viermal einzeln im Code.
-    expect(lies('src/components/konfi/views/DashboardView.tsx')).toContain('var(--app-text-hinweispunkt)');
-    expect(lies('src/components/teamer/pages/TeamerDashboardPage.tsx')).toContain('var(--app-text-hinweispunkt)');
-  });
 });
 
 describe('Auch die Stylesheets haengen an der Skala', () => {

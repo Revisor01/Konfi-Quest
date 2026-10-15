@@ -89,8 +89,9 @@ const oeffnen = async (id = 1) => {
   });
 };
 const kopf = () => document.querySelector('.web-lesen__kopf') as HTMLElement;
-const aktionNamen = () => [...kopf().querySelectorAll<HTMLElement>('.web-kopfaktionen > .web-kopfknopf')].map((k) => k.getAttribute('aria-label') ?? k.textContent!.trim());
-const kartenTitel = () => [...document.querySelectorAll('.web-vorgang-karte .web-vorgang-karte__titel')].map((t) => t.textContent!.trim());
+/** Die Knöpfe im Kopf und die Karten, sortiert: welche es gibt, nicht wo sie stehen. */
+const aktionNamen = () => [...kopf().querySelectorAll<HTMLElement>('.web-kopfaktionen > .web-kopfknopf')].map((k) => k.getAttribute('aria-label') ?? k.textContent!.trim()).sort();
+const kartenTitel = () => [...document.querySelectorAll('.web-vorgang-karte .web-vorgang-karte__titel')].map((t) => t.textContent!.trim()).sort();
 const karte = (titel: string) => screen.getByRole('region', { name: titel });
 const zeilen = (k: HTMLElement) => [...k.querySelectorAll('.web-angaben__zeile')].map((z) => [z.querySelector('dt')!.textContent, z.querySelector('dd')!.textContent]);
 const dialog = () => screen.getByRole('dialog', { name: 'Lizenz ändern' });
@@ -99,9 +100,9 @@ const auswahl = (name: string) => within(dialog()).getByRole('combobox', { name 
 const gemeindeAufrufe = () => server.stand.aufrufe.filter((a) => a.pfad.startsWith('/organizations/7'));
 
 describe('Lizenz-Vorgang (Web): Karten und Kopf', () => {
-  it('die Karte „Lizenz" steht vor „Kontakt": Tarif, Konfis, Laufzeit und der Wunsch bei der Anmeldung', async () => {
+  it('die Karte „Lizenz" neben „Kontakt" und der Gemeinde: Tarif, Konfis, Laufzeit und der Wunsch bei der Anmeldung', async () => {
     await oeffnen();
-    expect(kartenTitel()).toEqual(['Lizenz', 'Kontakt', 'Kirchengemeinde Musterdorf']);
+    expect(kartenTitel()).toEqual(['Kirchengemeinde Musterdorf', 'Kontakt', 'Lizenz']);
     expect(zeilen(karte('Lizenz'))).toEqual([
       ['Tarif', 'Testphase — bis 5 Konfis · kostenlos'],
       ['Konfis', '3 von 5'],
@@ -116,17 +117,16 @@ describe('Lizenz-Vorgang (Web): Karten und Kopf', () => {
     expect(zeilen(karte('Kirchengemeinde Musterdorf')).map(([label]) => label)).toEqual(['Kreis']);
   });
 
-  it('im Kopf „Lizenz ändern" neben Erledigt, Antworten rechts außen; im Stand die Zeile „Lizenz heute"', async () => {
+  it('im Kopf auch „Lizenz ändern"; im Stand die Zeile „Lizenz heute"', async () => {
     await oeffnen();
-    expect(aktionNamen()).toEqual(['Löschen', 'Archivieren', 'Einordnen', 'Lizenz ändern', 'Erledigt', 'Antworten']);
-    expect(within(kopf()).getByRole('button', { name: 'Lizenz ändern' }).className).toContain('web-kopfknopf--unter760');
+    expect(aktionNamen()).toEqual(['Antworten', 'Archivieren', 'Einordnen', 'Erledigt', 'Lizenz ändern', 'Löschen']);
     const zusatz = document.querySelector('.web-stand__zusatz') as HTMLElement;
     expect(zusatz).toHaveTextContent('Lizenz heute: Testphase bis 02.11. · bei der Anmeldung gewünscht: Standard.');
   });
 
   it('ohne Gemeinde: „Ändern" ist gesperrt und sagt warum; „Zuordnen" öffnet Einordnen, im Kopf steht „Gemeinde zuordnen"', async () => {
     await oeffnen(2);
-    expect(kartenTitel()).toEqual(['Lizenz', 'Kontakt']);
+    expect(kartenTitel()).toEqual(['Kontakt', 'Lizenz']);
     const lizenz = karte('Lizenz');
     expect(zeilen(lizenz)).toEqual([['Gemeinde', 'Nicht zugeordnet – laut Formular: Kirchengemeinde HeideZuordnen']]);
     const aendern = within(lizenz).getByRole('button', { name: 'Ändern' });
@@ -134,7 +134,7 @@ describe('Lizenz-Vorgang (Web): Karten und Kopf', () => {
     expect(aendern).toHaveAttribute('title', 'Erst eine Gemeinde zuordnen');
     // Die Zeile steht nur in „Lizenz", nicht noch einmal in „Kontakt".
     expect(zeilen(karte('Kontakt')).map(([label]) => label)).not.toContain('Gemeinde');
-    expect(aktionNamen()).toEqual(['Löschen', 'Archivieren', 'Einordnen', 'Gemeinde zuordnen', 'Erledigt', 'Antworten']);
+    expect(aktionNamen()).toEqual(['Antworten', 'Archivieren', 'Einordnen', 'Erledigt', 'Gemeinde zuordnen', 'Löschen']);
     expect(document.querySelector('.web-stand__zusatz')).toHaveTextContent('Die Lizenz lässt sich erst ändern, wenn eine Gemeinde zugeordnet ist – laut Formular: Kirchengemeinde Heide.');
     fireEvent.click(within(lizenz).getByRole('button', { name: 'Zuordnen' }));
     expect((within(screen.getByRole('dialog', { name: 'Einordnen' })).getByRole('combobox', { name: 'Gemeinde' }) as HTMLSelectElement).value).toBe('');

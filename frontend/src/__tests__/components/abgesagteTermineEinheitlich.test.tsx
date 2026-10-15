@@ -24,7 +24,9 @@
 //      Zeilen verschwanden ganz aus dem Zeitfenster.
 //
 // Dieser Test prueft das VERHALTEN der gemeinsamen Bausteine, nicht die
-// Kommentare darueber. Wo eine Ansicht geprueft wird, ist das an dem, was
+// Kommentare darueber -- und nicht, wie es aussieht (Durchstreichen, Farben,
+// Karten-Muster): Das ist Gestaltung und bleibt frei aenderbar (Simon,
+// 15.10.2026). Wo eine Ansicht geprueft wird, ist das an dem, was
 // auf dem Bildschirm steht (getByText), nicht an einer Zeichenkette im
 // Quelltext -- genau diese Verwechslung ist im Repo schon dreimal passiert.
 
@@ -51,18 +53,11 @@ const ohneKommentare = (quelltext: string): string =>
 
 // Ionic-Bausteine durch schlichte Elemente ersetzen: Der Test interessiert
 // sich fuer Text und Zustand, nicht fuer Web Components.
-// Die Karten-Bausteine behalten ihre Klassennamen: Genau an ihnen haengt
-// die Pruefung, dass der Kasten im Karten-Muster der Nachbarabschnitte
-// steht (16.09.2026).
 vi.mock('@ionic/react', () => {
   const alsTag = (tag: string) =>
     ({ children, className }: { children?: React.ReactNode; className?: string }) =>
       React.createElement(tag, { className }, children);
   return {
-    // className muss durchgereicht werden: An ihr haengt die Pruefung, dass
-    // jede Info-Zeile ihr Icon am Anfang traegt (app-info-row__icon) und dass
-    // es rot ist (app-icon-color--danger). Das echte IonIcon setzt die Klasse
-    // ebenso -- ein Mock, der sie schluckt, machte die Pruefung wertlos.
     IonIcon: (props: { icon?: unknown; className?: string }) => (
       <span data-testid="icon" data-icon={String(props.icon)} className={props.className} />
     ),
@@ -80,16 +75,11 @@ vi.mock('@ionic/react', () => {
 import AbsageBlock from '../../components/shared/AbsageBlock';
 import {
   istAbgesagt,
-  streichtDurch,
-  titelDekoration,
   istVergangen,
 } from '../../components/shared/eventFormatting';
 import {
   teilnahmeDarstellung,
   zaehltAlsAbgemeldet,
-  listItemKlasse,
-  iconKreisKlasse,
-  eckBadgeKlasse,
 } from '../../utils/teilnahmeStatus';
 
 // --- Testdaten: ein Termin, wie ihn die Routen liefern -------------------
@@ -146,40 +136,6 @@ describe('istAbgesagt() deckt beide Felder ab', () => {
   it('null und undefined sind nicht abgesagt (statt zu werfen)', () => {
     expect(istAbgesagt(null)).toBe(false);
     expect(istAbgesagt(undefined)).toBe(false);
-  });
-});
-
-// ------------------------------------------------------------------------
-// Befund A + B: Wo wird durchgestrichen?
-// ------------------------------------------------------------------------
-
-describe('Durchstreichen: Listen und Kacheln ja, Detailansichten nein', () => {
-  it('die Liste streicht einen abgesagten Termin durch', () => {
-    expect(streichtDurch('liste', abgesagtMitGrund)).toBe(true);
-    expect(titelDekoration('liste', abgesagtMitGrund)).toBe('line-through');
-  });
-
-  it('die Dashboard-Kachel streicht ebenfalls durch', () => {
-    expect(streichtDurch('kachel', abgesagtMitGrund)).toBe(true);
-    expect(titelDekoration('kachel', abgesagtMitGrund)).toBe('line-through');
-  });
-
-  it('die Detailansicht streicht NICHT durch -- dort sagen Kopf, Farbe und Grundkasten es schon', () => {
-    expect(streichtDurch('detail', abgesagtMitGrund)).toBe(false);
-    expect(titelDekoration('detail', abgesagtMitGrund)).toBe('none');
-  });
-
-  it('ein offener Termin wird nirgends durchgestrichen', () => {
-    for (const ort of ['liste', 'detail', 'kachel'] as const) {
-      expect(titelDekoration(ort, offenerTermin)).toBe('none');
-    }
-  });
-
-  it('die Absage am registration_status streicht genauso durch wie die am Feld cancelled', () => {
-    // Genau der Fall der Teamer-Liste: Sie kommt aus GET /events und kennt
-    // nur registration_status.
-    expect(titelDekoration('liste', { registration_status: 'cancelled' })).toBe('line-through');
-    expect(titelDekoration('liste', { cancelled: true })).toBe('line-through');
   });
 });
 
@@ -261,19 +217,9 @@ describe('AbsageBlock als Zeile (Listen und Dashboard-Kacheln)', () => {
     expect(screen.getByText('Grund geändert von Bernd Schulz, 16.09.')).toBeTruthy();
   });
 
-  // Der Umbau der Karte am 16.09.2026 betrifft NUR die Variante 'kasten'.
-  // Die Zeile steht in drei Listen und zwei Dashboard-Kacheln, wo kein Platz
-  // fuer Info-Zeilen ist -- sie behaelt ihren Fliesstext mit dem fetten
-  // "Abgesagt: " davor. Ohne diese Pruefung waere "unveraendert" nur eine
-  // Behauptung.
-  it('die Zeile behaelt ihren Fliesstext mit fettem "Abgesagt: " davor', () => {
+  it('die Zeile sagt es als Fliesstext: "Abgesagt: " und der Grund', () => {
     const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="zeile" />);
-    const fett = container.querySelector('strong');
-    expect(fett?.textContent).toBe('Abgesagt: ');
     expect(container.querySelector('div')?.textContent).toBe('Abgesagt: Heizung im Gemeindehaus defekt');
-    // Und KEINE Info-Zeilen -- die gehoeren in die Karte.
-    expect(container.querySelector('.app-info-row')).toBeNull();
-    expect(container.querySelector('.app-info-row__label')).toBeNull();
   });
 
   it('ohne Grund bleibt die Zeile leer -- das Eck-Badge sagt "Abgesagt" schon', () => {
@@ -283,59 +229,20 @@ describe('AbsageBlock als Zeile (Listen und Dashboard-Kacheln)', () => {
 });
 
 // ------------------------------------------------------------------------
-// Der Kasten steht in einer Karte wie seine Nachbarn (16.09.2026)
-//
-// Simons Befund: "das feld in einem termin das abgesagt sagt ist gut. aber es
-// muss in einer weissen card stehen im gleichen stil wie alle anderen."
-//
-// Das Vorbild ist UnregistrationsSection in
-// admin/views/EventDetailSections.tsx -- und mit ihr Details, Beschreibung
-// und Material: IonList.app-section-inset > IonListHeader mit rundem
-// Abschnitts-Icon > IonCard.app-card > IonCardContent.app-card-content.
-// Geprueft wird auf genau diese Klassen, nicht auf "irgendein Element ist da".
+// Der Kasten: Ueberschrift, kein Fliesstext-Label, keine Knoepfe
 // ------------------------------------------------------------------------
 
-describe('der Kasten traegt das Karten-Muster der Nachbarabschnitte', () => {
+describe('der Kasten: Ueberschrift, kein Fliesstext-Label, keine Knoepfe', () => {
   const kasten = (extra: Record<string, unknown> = {}) =>
     render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" {...extra} />).container;
 
-  it('sitzt in ion-list.app-section-inset wie Details, Beschreibung und Abmeldungen', () => {
-    expect(kasten().querySelector('ion-list.app-section-inset')).not.toBeNull();
-  });
-
-  it('hat einen Abschnittskopf mit rundem roten Icon -- das Rot bleibt als Akzent', () => {
-    const c = kasten();
-    expect(c.querySelector('ion-list-header')).not.toBeNull();
-    expect(c.querySelector('.app-section-icon.app-section-icon--danger')).not.toBeNull();
+  it('der Kasten traegt die Ueberschrift "Absage"', () => {
+    kasten();
     expect(screen.getByText('Absage')).toBeTruthy();
   });
 
-  it('die Flaeche ist die gemeinsame weisse Karte (ion-card.app-card)', () => {
-    const c = kasten();
-    expect(c.querySelector('ion-card.app-card')).not.toBeNull();
-    expect(c.querySelector('ion-card-content.app-card-content')).not.toBeNull();
-  });
-
-  it('die rot getoente Flaeche ist weg -- sonst waere es ein Kasten IN der Karte', () => {
-    const c = kasten();
-    expect(c.querySelector('.app-reason-box')).toBeNull();
-    expect(c.querySelector('.app-reason-box--danger')).toBeNull();
-  });
-
-  it('das Rot traegt jetzt das Zeilen-Icon, nicht mehr ein fett gesetztes Wort', () => {
-    // Bis zum 16.09.2026 stand hier "Abgesagt:" als rot gefaerbtes Label vor
-    // dem Fliesstext. Mit den Info-Zeilen sitzt das Rot am Icon am Anfang der
-    // Zeile -- dieselbe Stelle wie im Abschnitt Details.
-    const c = kasten();
-    expect(c.querySelector('.app-reason-box__label')).toBeNull();
-    expect(c.querySelector('.app-info-row__icon.app-icon-color--danger')).not.toBeNull();
-  });
-
-  it('auch ohne Grund steht der Platzhaltersatz IN der Karte, nicht daneben', () => {
-    const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" />);
-    const karte = container.querySelector('ion-card-content.app-card-content');
-    expect(karte).not.toBeNull();
-    expect(karte?.textContent).toContain('Kein Grund zur Absage angegeben.');
+  it('das alte Fliesstext-Label "Abgesagt:" gibt es im Kasten nicht mehr', () => {
+    expect(kasten().textContent).not.toContain('Abgesagt:');
   });
 
   // GEAENDERTE ANFORDERUNG, KEINE AUFWEICHUNG (16.09.2026):
@@ -369,96 +276,6 @@ describe('der Kasten traegt das Karten-Muster der Nachbarabschnitte', () => {
   });
 });
 
-// ------------------------------------------------------------------------
-// Die Karte ist nach dem Muster der Info-Zeilen gebaut (16.09.2026)
-//
-// Simon: "wir brauchen ein icon am anfang ... es braucht dann nur ein icon am
-// anfang und die gleiche struktur wie bei details."
-//
-// Das Vorbild ist EventInfoCard in admin/views/EventDetailSections.tsx (dort
-// die Zeilen "Datum", "Zeitfenster", "Anmeldung"): pro Aussage eine
-// .app-info-row mit .app-info-row__icon links, .app-info-row__label als
-// kleiner Ueberschrift und .app-info-row__value als Wert. Geprueft wird auf
-// genau diese Klassen.
-// ------------------------------------------------------------------------
-
-describe('die Karte benutzt die Info-Zeilen des Details-Abschnitts', () => {
-  it('der Grund steht in einer app-info-row mit Icon, Label und Wert', () => {
-    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
-    const zeilen = container.querySelectorAll('.app-info-row');
-    expect(zeilen.length).toBe(2);
-
-    const grundZeile = zeilen[0];
-    expect(grundZeile.querySelector('.app-info-row__icon')).not.toBeNull();
-    expect(grundZeile.querySelector('.app-info-row__label')?.textContent).toBe('Grund');
-    expect(grundZeile.querySelector('.app-info-row__value')?.textContent).toBe('Heizung im Gemeindehaus defekt');
-  });
-
-  it('das Icon am Anfang jeder Zeile ist rot eingefaerbt wie der Kopf-Kreis', () => {
-    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
-    const icons = container.querySelectorAll('.app-info-row__icon.app-icon-color--danger');
-    expect(icons.length).toBe(2);
-  });
-
-  it('die Urheber stehen in einer zweiten Zeile unter dem Label "Abgesagt von"', () => {
-    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
-    const urheberZeile = container.querySelectorAll('.app-info-row')[1];
-    expect(urheberZeile.querySelector('.app-info-row__icon')).not.toBeNull();
-    expect(urheberZeile.querySelector('.app-info-row__label')?.textContent).toBe('Abgesagt von');
-    const werte = Array.from(urheberZeile.querySelectorAll('.app-info-row__value')).map(e => e.textContent);
-    // Ohne Vorspann -- das Label darueber sagt schon "Abgesagt von".
-    expect(werte).toEqual(['Anna Meier, 15.09.', 'Geändert von Bernd Schulz, 16.09.']);
-  });
-
-  it('auch der Platzhaltersatz steht als Wert in der Grund-Zeile', () => {
-    const { container } = render(<AbsageBlock event={abgesagtOhneGrund} variante="kasten" />);
-    const grundZeile = container.querySelectorAll('.app-info-row')[0];
-    expect(grundZeile.querySelector('.app-info-row__label')?.textContent).toBe('Grund');
-    expect(grundZeile.querySelector('.app-info-row__value')?.textContent).toBe('Kein Grund zur Absage angegeben.');
-  });
-
-  it('eine alte Absage ohne jeden Urheber bekommt gar keine zweite Zeile', () => {
-    // Kein "Abgesagt von unbekannt" und keine leere Zeile mit Icon.
-    const { container } = render(
-      <AbsageBlock event={{ cancelled: true, cancelled_reason: 'Sturm' }} variante="kasten" />
-    );
-    expect(container.querySelectorAll('.app-info-row').length).toBe(1);
-    expect(container.textContent).not.toContain('Abgesagt von');
-  });
-
-  it('das alte Fliesstext-Label "Abgesagt:" gibt es in der Karte nicht mehr', () => {
-    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="kasten" />);
-    expect(container.querySelector('.app-reason-box__label')).toBeNull();
-    expect(container.textContent).not.toContain('Abgesagt:');
-  });
-});
-
-describe('Zeile und dunkle Kachel bekommen KEINE Karte', () => {
-  it('die Zeile in der Liste traegt keine Karten-Auszeichnung', () => {
-    const { container } = render(<AbsageBlock event={abgesagtMitGrund} variante="zeile" />);
-    expect(container.querySelector('ion-list.app-section-inset')).toBeNull();
-    expect(container.querySelector('ion-card.app-card')).toBeNull();
-    expect(container.querySelector('.app-section-icon--danger')).toBeNull();
-    // Der Inhalt ist trotzdem da -- geprueft wird die Form, nicht die Leere.
-    expect(container.textContent).toContain('Heizung im Gemeindehaus defekt');
-  });
-
-  it('die Kachel mit Farbverlauf (aufDunkel) ebenfalls nicht', () => {
-    const { container } = render(
-      <AbsageBlock event={abgesagtMitGrund} variante="zeile" aufDunkel />
-    );
-    expect(container.querySelector('ion-list.app-section-inset')).toBeNull();
-    expect(container.querySelector('ion-card.app-card')).toBeNull();
-    expect(container.querySelector('.app-info-row')).toBeNull();
-    expect(container.textContent).toContain('Heizung im Gemeindehaus defekt');
-    // Heller Text auf dem Farbverlauf -- der Grund, warum es diese Variante
-    // gibt. Ein Umbau, der die Farbe verliert, macht den Text unlesbar.
-    const zeilen = Array.from(container.querySelectorAll('div'));
-    expect(zeilen[0].getAttribute('style')).toContain('rgba(255, 255, 255, 0.9)');
-    expect(zeilen[1].getAttribute('style')).toContain('rgba(255, 255, 255, 0.75)');
-  });
-});
-
 // Die Karte darf keine festen Farbwerte mitbringen: Ein Dunkelmodus
 // faerbt ueber die Tokens um, eine hart notierte Farbe bliebe weiss im
 // schwarzen Umfeld. Geprueft wird der Quelltext OHNE Kommentare -- eine
@@ -482,11 +299,11 @@ describe('keine festen Farbwerte in der neuen Auszeichnung', () => {
     expect(quelle).not.toMatch(/(background|color)\s*:\s*['"]?white['"]?/);
   });
 
-  it('die Karten-Klassen stehen im Code, nicht nur im Kommentar', () => {
-    // Gegenprobe zur Pruefmethode: ohneKommentare() darf die Klassennamen
-    // nicht wegschneiden -- sonst waeren die Pruefungen oben wertlos.
-    expect(quelle).toContain('app-section-inset');
-    expect(quelle).toContain('app-card-content');
+  it('der Code steht nach dem Entfernen der Kommentare noch da', () => {
+    // Gegenprobe zur Pruefmethode: ohneKommentare() darf den Code nicht
+    // wegschneiden -- sonst waeren die Pruefungen oben wertlos.
+    expect(quelle).toContain('event.cancelled_reason');
+    expect(quelle).toContain('export default AbsageBlock');
   });
 });
 
@@ -603,57 +420,30 @@ describe('Befund H: Zeitfenster- und Nicht-Zeitfenster-Liste zeigen dasselbe Lab
   // Status-Umstellung gar nichts mehr, weil der Filter sie herauswarf.
   const selbstAbgemeldet = { status: 'opted_out', attendance_status: null };
 
-  it('eine Selbstabmeldung heisst in beiden Listen "Abgemeldet" und ist rot', () => {
+  it('eine Selbstabmeldung heisst in beiden Listen "Abgemeldet"', () => {
     const d = teilnahmeDarstellung(selbstAbgemeldet);
     expect(d.statusText).toBe('Abgemeldet');
-    expect(listItemKlasse(d)).toBe('app-list-item--danger');
-    expect(iconKreisKlasse(d)).toBe('app-icon-circle--danger');
-    expect(eckBadgeKlasse(d)).toBe('app-corner-badge--danger');
   });
 
   it('eine Abmeldung in der neuen Schreibweise (status="excused") heisst genauso', () => {
     const d = teilnahmeDarstellung({ status: 'excused', attendance_status: null });
     expect(d.statusText).toBe('Abgemeldet');
-    expect(listItemKlasse(d)).toBe('app-list-item--danger');
   });
 
-  it('eine nachgetragene Abmeldung heisst "Abgemeldet (nachgetragen)" und ist grau', () => {
+  it('eine nachgetragene Abmeldung heisst "Abgemeldet (nachgetragen)"', () => {
     const d = teilnahmeDarstellung({ status: 'confirmed', attendance_status: 'excused' });
     expect(d.statusText).toBe('Abgemeldet (nachgetragen)');
-    expect(listItemKlasse(d)).toBe('app-list-item--neutral');
-    expect(eckBadgeKlasse(d)).toBe('app-corner-badge--neutral');
   });
 
-  it('wer trotz Abmeldung anwesend war, heisst "Anwesend" und ist gruen', () => {
+  it('wer trotz Abmeldung anwesend war, heisst "Anwesend"', () => {
     const d = teilnahmeDarstellung({ status: 'opted_out', attendance_status: 'present' });
     expect(d.statusText).toBe('Anwesend');
-    expect(listItemKlasse(d)).toBe('app-list-item--success');
   });
 
-  it('Abwesend, Warteliste und Gebucht behalten Text und Farbe', () => {
+  it('Abwesend, Warteliste und Gebucht behalten ihren Text', () => {
     expect(teilnahmeDarstellung({ status: 'confirmed', attendance_status: 'absent' }).statusText).toBe('Abwesend');
-    expect(listItemKlasse(teilnahmeDarstellung({ status: 'confirmed', attendance_status: 'absent' }))).toBe('app-list-item--danger');
     expect(teilnahmeDarstellung({ status: 'waitlist', attendance_status: null }).statusText).toBe('Warteliste');
-    expect(listItemKlasse(teilnahmeDarstellung({ status: 'waitlist', attendance_status: null }))).toBe('app-list-item--warning');
     expect(teilnahmeDarstellung({ status: 'confirmed', attendance_status: null }).statusText).toBe('Gebucht');
-    expect(listItemKlasse(teilnahmeDarstellung({ status: 'confirmed', attendance_status: null }))).toBe('app-list-item--info');
-  });
-
-  it('Rand, Kreis und Eck-Badge einer Zeile tragen IMMER dieselbe Farbe', () => {
-    const faelle = [
-      { status: 'opted_out', attendance_status: null },
-      { status: 'confirmed', attendance_status: 'excused' },
-      { status: 'confirmed', attendance_status: 'present' },
-      { status: 'confirmed', attendance_status: 'absent' },
-      { status: 'waitlist', attendance_status: null },
-      { status: 'confirmed', attendance_status: null },
-    ];
-    for (const fall of faelle) {
-      const d = teilnahmeDarstellung(fall);
-      expect(listItemKlasse(d)).toBe(`app-list-item--${d.farbe}`);
-      expect(iconKreisKlasse(d)).toBe(`app-icon-circle--${d.farbe}`);
-      expect(eckBadgeKlasse(d)).toBe(`app-corner-badge--${d.farbe}`);
-    }
   });
 });
 

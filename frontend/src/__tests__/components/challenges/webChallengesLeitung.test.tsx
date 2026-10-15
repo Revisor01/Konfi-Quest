@@ -266,12 +266,11 @@ describe('Challenges (Web): Filter, Zielgruppe, Jahrgang und Suche', () => {
     expect(titel()).toHaveLength(6);
   });
 
-  it('"Wartet auf Freigabe": orange Zahl der Beitraege, zeigt nur Challenges mit Wartendem -- auch beendete', () => {
+  it('"Wartet auf Freigabe": Zahl der Beitraege, zeigt nur Challenges mit Wartendem -- auch beendete', () => {
     h.zaehler.pendingChallengesByChallenge = { 11: 3, 17: 1 };
     zeigen();
     const wartet = chip(/^Wartet auf Freigabe/);
     expect(wartet).toHaveTextContent('4');
-    expect(wartet.querySelector('.web-chip__zahl--orange')).not.toBeNull();
     fireEvent.click(wartet);
     expect(titel().sort()).toEqual(['Fürbitten zum Erntedank', 'Sommerrückblick']);
   });
@@ -412,14 +411,12 @@ describe('Challenges (Web): leere Zustaende, Stempel und Laden', () => {
     expect(screen.getByRole('heading', { level: 3, name: 'Nichts wartet auf Freigabe' })).toBeInTheDocument();
   });
 
-  it('die eigenen Stempel: dasselbe Raster wie auf der Seite einer Person; die Info nennt Challenge und Stand; ein Klick fuehrt zur Challenge', () => {
+  it('die eigenen Stempel: die Info nennt Challenge und Stand; ein Klick fuehrt zur Challenge', () => {
     zeigen();
     const stempel = screen.getByRole('region', { name: 'Deine Stempel' });
     expect(stempel).toHaveTextContent('1 erhalten · 3 noch zu holen');
-    expect(stempel.querySelector('.web-auszeichnungen')).not.toBeNull();
     const foto = within(stempel).getByRole('link', { name: 'Fotograf:in' });
     expect(foto.getAttribute('href')).toBe('/admin/challenges/12');
-    expect((foto.querySelector('.web-abzeichen-symbol') as HTMLElement).style.background).toBe('var(--app-color-challenges)');
     const info = document.getElementById(foto.getAttribute('aria-describedby')!)!;
     expect(info).not.toBeVisible();
     fireEvent.mouseEnter(foto.parentElement!);
@@ -539,23 +536,17 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(zeilenTitel().sort()).toEqual(['Fürbitten zum Erntedank', 'Mein Lieblingsplatz', 'Team-Runde Camp']);
     });
 
-    it('eine Werkzeugzeile wie auf allen Listen-Seiten: Zustand, Zielgruppe, Suche, Jahrgang -- der Umschalter ganz rechts', () => {
+    it('eine Werkzeugzeile wie auf allen Listen-Seiten: Zustand und Suche; Zielgruppe und Jahrgang hinter dem Knopf "Filter"', () => {
       zeigen();
       const zeile = screen.getByRole('search').parentElement!;
-      expect(zeile).toHaveClass('web-werkzeuge');
       expect(within(zeile).getByRole('group', { name: 'Challenges nach Zustand' })).toBeInTheDocument();
       // Zielgruppe und Jahrgang (zwei Filter) stehen hinter dem Knopf "Filter"
-      // und klappen unter der Zeile auf -- vorher brach die Zeile um (10.10.2026).
+      // und klappen erst auf Wunsch auf (10.10.2026).
       expect(within(zeile).queryByRole('group', { name: 'Zielgruppe' })).toBeNull();
       fireEvent.click(within(zeile).getByRole('button', { name: 'Filter' }));
       const leiste = screen.getByRole('group', { name: 'Filter' });
-      expect(leiste.previousElementSibling).toBe(zeile);
       expect(within(leiste).getByRole('group', { name: 'Zielgruppe' })).toBeInTheDocument();
       expect(within(leiste).getByLabelText('Jahrgang')).toBeInTheDocument();
-      const rechts = umschalter().parentElement!;
-      expect(rechts).toHaveClass('web-werkzeuge__rechts');
-      expect(rechts.parentElement).toBe(zeile);
-      expect(rechts.lastElementChild).toBe(umschalter());
     });
 
     it('ohne Challenges gibt es nichts umzuschalten: keine Werkzeugleiste, kein Umschalter', () => {
@@ -727,23 +718,20 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(within(zeile('Fürbitten zum Erntedank')).getByRole('img', { name: '5 offen: 2 Beiträge warten auf Freigabe, 3 neue Beiträge' })).toHaveTextContent('5');
     });
 
-    it('die orange Zahl der wartenden Beitraege steht in der Spalte Freigabe, in Worten fuer Vorleseprogramme', () => {
+    it('die Zahl der wartenden Beitraege steht in der Spalte Freigabe, in Worten fuer Vorleseprogramme', () => {
       h.zaehler.pendingChallengesByChallenge = { 11: 3, 12: 1 };
       zeigen();
       const mehrere = zellen(zeile('Fürbitten zum Erntedank'))[4];
-      const orange = within(mehrere).getByRole('img', { name: '3 Beiträge warten auf Freigabe' });
-      expect(orange).toHaveTextContent('3');
-      expect(orange).toHaveClass('web-chip__zahl--orange');
+      const zahl = within(mehrere).getByRole('img', { name: '3 Beiträge warten auf Freigabe' });
+      expect(zahl).toHaveTextContent('3');
       expect(within(zellen(zeile('Mein Lieblingsplatz'))[4]).getByRole('img', { name: '1 Beitrag wartet auf Freigabe' })).toHaveTextContent('1');
       expect(zellen(zeile('Team-Runde Camp'))[4]).toHaveTextContent(/^–$/);
     });
 
-    it('die Zeile ist ein Link auf die Challenge: /admin/challenges/<id>, ein Klick bleibt in der App', () => {
+    it('die Zeile traegt einen Link auf die Challenge: /admin/challenges/<id>, ein Klick bleibt in der App', () => {
       zeigen();
       const link = within(zeile('Fürbitten zum Erntedank')).getByRole('link');
       expect(link.getAttribute('href')).toBe('/admin/challenges/11');
-      expect(link).toHaveClass('web-link--zeile');
-      expect(zeile('Fürbitten zum Erntedank')).toHaveClass('web-zeile');
       fireEvent.click(link);
       expect(h.push).toHaveBeenCalledWith('/admin/challenges/11', 'none', 'push');
     });
@@ -767,12 +755,10 @@ describe('Challenges (Web, Team und Leitung): Ansicht Liste | Kacheln', () => {
       expect(h.handleDelete).toHaveBeenCalledWith(expect.objectContaining({ id: 12 }));
     });
 
-    it('die Knoepfe sind Symbole mit Namen, und ein Klick darauf oeffnet nicht die Seite der Challenge', () => {
+    it('die Knoepfe tragen Namen, und ein Klick darauf oeffnet nicht die Seite der Challenge', () => {
       zeigen();
       const knopf = within(zeile('Fürbitten zum Erntedank')).getByRole('button', { name: 'Bearbeiten: Fürbitten zum Erntedank' });
-      expect(knopf).toHaveClass('web-knopf--symbol');
       expect(knopf).toHaveAttribute('title', 'Bearbeiten');
-      expect(knopf).toHaveClass('web-vorn');
       fireEvent.click(knopf);
       expect(h.push).not.toHaveBeenCalled();
     });

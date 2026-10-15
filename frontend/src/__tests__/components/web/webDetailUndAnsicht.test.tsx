@@ -44,20 +44,16 @@ describe('WebDetailSeite', () => {
     expect(screen.getByRole('navigation', { name: 'Zurück' }).querySelector('a')!.getAttribute('href')).toBe('/admin/events');
   });
 
-  it('Kennzahlen als Kacheln in der übergebenen Reihenfolge, nach dem Hinweis', () => {
+  it('Kennzahlen als Kacheln in der übergebenen Reihenfolge; der Hinweis steht da', () => {
     const { container } = seite();
     const kacheln = [...container.querySelectorAll('.web-detail__kennzahlen .web-kachel')].map((k) => k.getAttribute('aria-label'));
     expect(kacheln).toEqual(['Teilnehmende: 1 / 50', 'Punkte: 2']);
-    const detail = container.querySelector('.web-detail')!;
-    expect(detail.firstElementChild!.textContent).toBe('Abgesagt: Glatteis');
+    expect(screen.getByText('Abgesagt: Glatteis')).toBeInTheDocument();
   });
 
-  it('links das Eigentliche, rechts die Angaben -- auch im Dokument in dieser Reihenfolge', () => {
-    const { container } = seite();
-    const spalten = container.querySelector('.web-spalten')!;
-    expect(spalten.classList.contains('web-spalten--links')).toBe(false);
-    expect(spalten.children[0].textContent).toBe('Teilnehmende-Tabelle');
-    expect(spalten.children[1].tagName).toBe('ASIDE');
+  it('das Eigentliche steht da, die Angaben als eigener Randbereich "Angaben"', () => {
+    seite();
+    expect(screen.getByText('Teilnehmende-Tabelle')).toBeInTheDocument();
     expect(screen.getByRole('complementary', { name: 'Angaben' }).textContent).toBe('Angaben-Liste');
   });
 

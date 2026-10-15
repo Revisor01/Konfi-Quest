@@ -8,20 +8,6 @@ const UPDATE = `Was ist neu in Version ${NEUERUNGEN_VERSION.replace('_', '.')}? 
 const MITMACHEN = 'Events und Aktivitäten: So funktioniert der Mitmachen-Tab';
 
 describe('NeuerungenBanner', () => {
-  it('zeigt beide Banner im selben Look', () => {
-    // Der Kern des Nutzerhinweises vom 25.08.2026: rosa "Was ist neu?" und
-    // gruen "Events und Aktivitaeten" sollen ueberall 1:1 gleich aussehen.
-    render(
-      <NeuerungenBanner onUpdateOeffnen={vi.fn()} onMitmachenOeffnen={vi.fn()} />
-    );
-    // Knopf ist der Text der Karte, die Karte selbst ihr Rahmen (kein Knopf
-    // im Knopf, siehe hinweisKartenKeinKnopfImKnopf.test.tsx).
-    expect(screen.getByRole('button', { name: UPDATE }).closest('.app-whatsnew')).not.toBeNull();
-    const gruen = screen.getByRole('button', { name: MITMACHEN }).closest('.app-whatsnew');
-    expect(gruen).toHaveClass('app-whatsnew');
-    expect(gruen).toHaveClass('app-whatsnew--mitmachen');
-  });
-
   describe('im Profil und unter "Mehr" (dauerhaft)', () => {
     it('haben beide KEIN X zum Wegklicken', () => {
       render(

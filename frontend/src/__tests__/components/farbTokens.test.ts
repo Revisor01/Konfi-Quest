@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'fs';
 import { resolve, join } from 'path';
 import { FARBEN, QR_FARBEN, KRITERIUM_FARBEN } from '../../theme/colors';
-import { CRITERIA_COLORS, CRITERIA_FALLBACK_COLOR } from '../../utils/badgeCriteria';
+import { CRITERIA_FALLBACK_COLOR } from '../../utils/badgeCriteria';
 
 // Farb-Konsolidierung 05.09.2026. Vorgeschichte, dreimal derselbe Fehler:
 //
@@ -15,9 +15,10 @@ import { CRITERIA_COLORS, CRITERIA_FALLBACK_COLOR } from '../../utils/badgeCrite
 //
 // Diese Tests lesen die Quellen und pruefen die Verdrahtung, damit es kein
 // viertes Mal gibt: (a) keine rohe Hexfarbe mehr in .tsx-Komponenten,
-// (b) je Rolle GENAU EIN Verlauf, als Token, (c) die Rollen-Seiten ziehen
-// aus den Tokens, (d) der JS-Spiegel theme/colors.ts stimmt mit den Tokens
-// in variables.css ueberein.
+// (b) je Rolle GENAU EIN Verlauf, als Token, (c) der JS-Spiegel
+// theme/colors.ts stimmt mit den Tokens in variables.css ueberein. Welche
+// Farbe ein Token traegt und welche Seite welchen Verlauf zeigt, legen sie
+// nicht fest -- das ist Gestaltung (Simon, 15.10.2026).
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
 
@@ -123,31 +124,6 @@ describe('Farben kommen aus Tokens', () => {
     expect(anzahl('teamer')).toBe(1);
     expect(anzahl('konfi')).toBe(1);
     expect(anzahl('admin')).toBe(1);
-    // Und zwar mit exakt diesen Werten (optische Gleichheit zur Zeit der
-    // Konsolidierung — wer die Farbe aendern will, aendert sie HIER bewusst):
-    expect(css).toContain('--app-gradient-teamer: linear-gradient(135deg, #be185d 0%, #9d174d 55%, #831843 100%);');
-    expect(css).toContain('--app-gradient-konfi: linear-gradient(135deg, #5b21b6 0%, #4c1d95 100%);');
-    expect(css).toContain('--app-gradient-admin: linear-gradient(135deg, #818cf8 0%, #667eea 50%, #4f46e5 100%);');
-  });
-
-  it('die Rollen-Seiten ziehen ihre Verlaeufe aus den Tokens', () => {
-    // Teamer: Profilkopf und Dashboard
-    expect(lies('src/components/teamer/pages/TeamerProfilePage.tsx')).toContain('var(--app-gradient-teamer)');
-    expect(lies('src/components/teamer/pages/TeamerDashboardPage.tsx')).toContain('var(--app-gradient-teamer)');
-    // Konfi: eigener Profilkopf und die Admin-Sicht auf ein Konfi-Profil
-    expect(lies('src/components/konfi/views/ProfileView.tsx')).toContain('var(--app-gradient-konfi)');
-    const konfiDetail = lies('src/components/admin/views/KonfiDetailSections.tsx');
-    expect(konfiDetail).toContain('var(--app-gradient-konfi)');
-    expect(konfiDetail).toContain('var(--app-gradient-teamer)'); // Teamer:in im Konfi-Detail
-    // Admin: Profilkopf
-    expect(lies('src/components/admin/pages/AdminProfilePage.tsx')).toContain('var(--app-gradient-admin)');
-  });
-
-  it('die Rollen-Grundfarben stehen als Token in variables.css', () => {
-    const css = lies('src/theme/variables.css');
-    expect(css).toContain('--app-color-teamer: #be185d;');
-    expect(css).toContain('--app-color-konfis: #5b21b6;');
-    expect(css).toContain('--app-color-users: #667eea;');
   });
 
   it('mehrfach definierte Tokens tragen ueberall denselben Wert', () => {
@@ -267,18 +243,6 @@ describe('Abzeichen-Kriterienfarben leben als Tokens (Dunkelmodus-Audit BF-10)',
   const css = lies('src/theme/variables.css');
   const token = (name: string): string | undefined => css.match(new RegExp(`--${name}:\\s*([^;]+);`))?.[1].trim();
 
-  // Die Werte VOR der Ueberfuehrung (badgeCriteria.ts am Stand beb745e6).
-  // Das Aussehen darf sich nicht aendern: Wer eine Farbe aendern will, aendert
-  // sie hier bewusst mit.
-  const VORHER: Record<string, string> = {
-    total_points: '#ffd700', gottesdienst_points: '#ff9500', gemeinde_points: '#059669',
-    bonus_points: '#ff6b9d', both_categories: '#5856d6', activity_count: '#3880ff',
-    unique_activities: '#10dc60', activity_combination: '#7044ff', category_activities: '#0cd1e8',
-    category_combination: '#0891b2', specific_activity: '#ffce00', streak: '#eb445a',
-    time_based: '#8e8e93', event_count: '#e63946', mandatory_event_count: '#b91c1c',
-    teamer_year: '#5b21b6',
-  };
-
   it('jede Kriterienfarbe hat ihr Token, und der Spiegel traegt exakt dessen Wert', () => {
     const abweichungen: string[] = [];
     for (const [schluessel, wert] of Object.entries(KRITERIUM_FARBEN)) {
@@ -289,23 +253,12 @@ describe('Abzeichen-Kriterienfarben leben als Tokens (Dunkelmodus-Audit BF-10)',
     expect(Object.keys(KRITERIUM_FARBEN)).toHaveLength(17);
   });
 
-  it('das Aussehen bleibt: dieselben 16 Werte und derselbe Rueckfall wie vorher', () => {
-    expect(CRITERIA_COLORS).toEqual(VORHER);
-    expect(CRITERIA_FALLBACK_COLOR).toBe('#667eea');
+  it('der Rueckfall kommt aus dem Spiegel', () => {
     expect(CRITERIA_FALLBACK_COLOR).toBe(FARBEN.users);
   });
 
   it('badgeCriteria.ts enthaelt keinen eigenen Hexwert mehr', () => {
     const code = ohneKommentare(lies('src/utils/badgeCriteria.ts'));
     expect(code.match(HEX) ?? []).toEqual([]);
-  });
-
-  it('als Schrift gilt weiter das Text-Token: hell gleich der Flaechenfarbe', () => {
-    const abweichend: string[] = [];
-    for (const schluessel of Object.keys(KRITERIUM_FARBEN)) {
-      const n = schluessel.replace(/_/g, '-');
-      if (token(`app-text-kriterium-${n}`) !== token(`app-color-kriterium-${n}`)) abweichend.push(n);
-    }
-    expect(abweichend).toEqual([]);
   });
 });

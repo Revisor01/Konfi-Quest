@@ -96,7 +96,6 @@ describe('Dunkelmodus: Chat-Reaktionen und Metrik-Ampel kommen aus Tokens', () =
   it('MessageBubble haengt kein Alpha-Suffix mehr an die Reaktionsfarbe', () => {
     const code = ohneKommentare(lies('src/components/chat/MessageBubble.tsx'));
     expect(code).not.toMatch(/\$\{data\.color\}[0-9a-f]{2}/);
-    expect(code).toContain('rgba(${data.rgb}, 0.1)');
   });
 });
 
@@ -149,8 +148,6 @@ describe('Dunkelmodus: FARBEN nur noch fuer Flaechen mit weissem Text', () => {
     // als SVG-Ring auf Kartengrund: dort muss die Linie mit dem Modus wechseln.
     const badges = ohneKommentare(lies('src/components/konfi/views/BadgesView.tsx'));
     expect(badges).not.toMatch(/stroke=\{FARBEN\./);
-    expect(badges).toContain("style={{ stroke: 'var(--app-border)' }}");
-    expect(badges).toContain("style={{ stroke: 'var(--app-color-users)' }}");
   });
 
   it('jede Komponente, die FARBEN importiert, steht mit Grund in der Liste -- und kein Eintrag ist tot', () => {
