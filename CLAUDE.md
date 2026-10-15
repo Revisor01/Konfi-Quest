@@ -121,11 +121,22 @@ Jede Änderung an Verhalten bekommt Tests im selben Commit.
   werden.
 - **Ein grüner Test beweist nichts, wenn er den Fehlerfall nicht erreicht.**
   Gegenprobe: Fehler wieder einbauen, der Test muss fallen.
+- **Reine Layout- und Textänderungen** (CSS, Abstände, Farben, Wortlaut)
+  brauchen keinen eigenen Test; der Beleg ist ein Screenshot im Pull Request.
+  Tests bleiben Pflicht für Verhalten, Rechte, Daten und Antwortformen
+  (Simon, 15.10.2026).
+
+**Lokal** laufen nur die Testdateien, die die Änderung betreffen, dazu
+Typprüfung und Lint. Die volle Suite läuft in der CI, und erst wenn sie grün
+ist, folgen Build und Deploy. Ein zweiter voller Lauf vor dem Push kostet nur
+Zeit (Backend lokal rund 50 Minuten).
 
 Die Backend-Suites teilen sich **eine** Test-Datenbank mit festen IDs aus
 `seed.js`; `maxWorkers` steht deshalb auf 1 (die Begründung steht in
 `backend/tests/vitest.config.ts`). Wer zwei Läufe gleichzeitig braucht, trennt
-Compose-Projekt *und* Port — nicht die Worker-Zahl anheben.
+Compose-Projekt *und* Port — nicht die Worker-Zahl anheben. So macht es auch
+die CI: `backend-test` läuft in vier Teilen (`--shard`), jeder auf eigenem
+Runner mit eigener Datenbank.
 
 ## Konventionen
 

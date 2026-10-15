@@ -657,6 +657,8 @@ Versionsüberschrift.
   nicht erst nach einem Wechsel zwischen Konfis und Team.
 
 ### Sonstiges
+- Die automatischen Prüfungen des Servers laufen in vier Teilen gleichzeitig;
+  eine neue Fassung ist dadurch schneller geprüft und ausgeliefert.
 - Im Browser stehen die Detailseiten auf einem gemeinsamen Gerüst aus Kopf,
   Kennzahlen, Inhalt und Angaben; Laden, Fehler und „nicht gefunden" sehen
   auf jeder Detailseite gleich aus.
