@@ -514,21 +514,20 @@ describe('Chat (Web): wohin der Fokus nach der Wahl eines Raums geht', () => {
 });
 
 describe('Chat (Web): Neuer Chat', () => {
-  it('beide Knoepfe (Liste und Hinweis) oeffnen das Fenster als breiten Dialog; ein neuer Chat wird sofort geoeffnet', async () => {
+  // Seit 15.10.2026 der Dialog der Web-Fassung statt des App-Modals (Simon:
+  // „neuer chat modal ist noch app"); den Ablauf bis in den neuen Raum prueft
+  // webNeuerChat.test.tsx, App und Browser im Vergleich webNeuerChatDialog.test.tsx.
+  it('beide Knoepfe (Liste und Hinweis) oeffnen den Dialog der Web-Fassung, nicht das Modal der App', async () => {
     await zeigenListe();
     const knoepfe = screen.getAllByRole('button', { name: 'Neuer Chat' });
     expect(knoepfe).toHaveLength(2);
-    fireEvent.click(knoepfe[0]);
-    expect(h.modal).toHaveBeenCalledTimes(1);
-    const { komponente, props, opts } = h.modal.mock.calls[0][0];
-    expect(komponente).toBe(SimpleCreateChatModal);
-    expect(opts).toEqual({ presentingElement: undefined, cssClass: 'web-chat-modal' });
-    fireEvent.click(knoepfe[1]);
-    expect(h.modal).toHaveBeenCalledTimes(2);
-
-    // Der Chat wurde angelegt: Liste neu laden, dann in ihn springen.
-    await act(async () => { await props.onSuccess(3); });
-    expect(h.push).toHaveBeenCalledWith('/konfi/chat/room/3', 'none', 'push');
+    for (const knopf of knoepfe) {
+      fireEvent.click(knopf);
+      const dialog = await screen.findByRole('dialog', { name: 'Neue Direktnachricht' });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    }
+    expect(h.modal.mock.calls.some(([aufruf]) => aufruf.komponente === SimpleCreateChatModal)).toBe(false);
   });
 });
 

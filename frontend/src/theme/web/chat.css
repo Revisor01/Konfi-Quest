@@ -94,6 +94,40 @@
   font-size: var(--app-text-hinweis);
 }
 
+/* --- Neuer Chat (WebNeuerChatDialog) ---
+   Die Personen stehen in der Liste der Auswahl (.web-wahl__liste), vor dem
+   Namen der Kreis in der Farbe der Rolle -- deshalb mittig ausgerichtet. Bei
+   der Direktnachricht ist jede Zeile ein Knopf: Ein Klick startet sie. */
+.web-wahl__zeile.web-neuer-chat__zeile {
+  align-items: center;
+}
+
+.web-neuer-chat__zeile .web-wahl__haken {
+  margin-top: 0;
+}
+
+.web-neuer-chat__person {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-neuer-chat__person:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.web-neuer-chat__person:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
 .web-chat-liste__raeume {
   flex: 1 1 auto;
   min-height: 0;

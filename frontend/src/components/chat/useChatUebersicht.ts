@@ -123,24 +123,32 @@ export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) 
     }
   });
 
+  /**
+   * Nach "Neuer Chat" -- dem Modal der App wie dem Dialog des Browsers
+   * (web/WebNeuerChatDialog): Liste neu laden und in den Raum springen.
+   */
+  const neuerChatAngelegt = async (roomId?: number) => {
+    await refresh(); // Chatliste neu laden
+    // Direkt in den neu erstellten/gefundenen Chat springen statt auf der Liste
+    // zu bleiben. Raum frisch von der API holen (refresh-State ist evtl. noch
+    // nicht durchgereicht).
+    if (roomId) {
+      try {
+        const freshRooms: ChatRoomOverview[] = (await api.get('/chat/rooms')).data;
+        const target = freshRooms.find(r => r.id === roomId);
+        if (target) onSelectRoom(target);
+      } catch (err) {
+        console.error('Konnte neuen Chat nicht oeffnen:', err);
+      }
+    }
+  };
+
   // Modal mit useIonModal Hook
   const [presentChatModalHook, dismissChatModalHook] = useIonModal(SimpleCreateChatModal, {
     onClose: () => dismissChatModalHook(),
     onSuccess: async (roomId?: number) => {
       dismissChatModalHook();
-      await refresh(); // Chatliste neu laden
-      // Direkt in den neu erstellten/gefundenen Chat springen statt auf der Liste
-      // zu bleiben. Raum frisch von der API holen (refresh-State ist evtl. noch
-      // nicht durchgereicht).
-      if (roomId) {
-        try {
-          const freshRooms: ChatRoomOverview[] = (await api.get('/chat/rooms')).data;
-          const target = freshRooms.find(r => r.id === roomId);
-          if (target) onSelectRoom(target);
-        } catch (err) {
-          console.error('Konnte neuen Chat nicht oeffnen:', err);
-        }
-      }
+      await neuerChatAngelegt(roomId);
     }
   });
 
@@ -229,6 +237,7 @@ export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) 
     gehoertZumTeam,
     filteredRooms,
     neuenChatStarten,
+    neuerChatAngelegt,
     deleteRoom,
   };
 }
