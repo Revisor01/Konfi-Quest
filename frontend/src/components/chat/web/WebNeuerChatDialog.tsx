@@ -14,7 +14,9 @@
 //
 // Anders als in der App ist „Gruppenchat erstellen" anklickbar, solange nichts
 // gesendet wird: Fehlt der Name oder eine Person, sagt es der Dialog in sich
-// selbst, wie die übrigen Dialoge der Web-Fassung. Meldungen (Laden, Prüfung,
+// selbst, wie die übrigen Dialoge der Web-Fassung. Im Gruppenchat ist der
+// Dialog ein Formular: Enter im Gruppennamen legt die Gruppe an, Enter in der
+// Personensuche schickt nichts ab (WebSuche) -- wie in den übrigen Fenstern. Meldungen (Laden, Prüfung,
 // Server, offline) stehen oben im Dialog; die nächste Eingabe räumt sie weg.
 // Während des Sendens schließt nichts den Dialog (Abbrechen, X, Escape, Klick
 // daneben). Schließen mit Gruppenname oder gewählten Personen fragt nach
@@ -98,6 +100,13 @@ const WebNeuerChatDialog: React.FC<WebNeuerChatDialogProps> = ({ onAngelegt, onS
     else onSchliessen();
   };
 
+  /** Gruppenchat anlegen -- per Knopf und per Enter im Gruppennamen. */
+  const gruppeErstellen = () => {
+    if (creating || !isOnline) return;
+    fehlerLeeren();
+    void createGroupChat();
+  };
+
   const titel = gruppe ? 'Neuer Gruppenchat' : 'Neue Direktnachricht';
   const anzahl = `Personen (${filteredUsers.length})`;
 
@@ -161,12 +170,13 @@ const WebNeuerChatDialog: React.FC<WebNeuerChatDialogProps> = ({ onAngelegt, onS
           ? 'Gib der Gruppe einen Namen und wähle die Personen.'
           : 'Ein Klick auf eine Person startet die Direktnachricht.'}
         onSchliessen={abbrechen}
+        onAbsenden={gruppe ? gruppeErstellen : undefined}
         gesperrt={creating}
         aktionen={(
           <>
             <WebKnopf onClick={abbrechen} disabled={creating}>Abbrechen</WebKnopf>
             {gruppe && (
-              <WebKnopf art="primaer" onClick={() => { fehlerLeeren(); void createGroupChat(); }} disabled={creating || !isOnline}>
+              <WebKnopf art="primaer" absenden disabled={creating || !isOnline}>
                 Gruppenchat erstellen
               </WebKnopf>
             )}

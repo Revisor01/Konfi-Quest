@@ -473,3 +473,42 @@ describe('Neuer Chat (web): solange gesendet wird, bleibt der Dialog', () => {
     expect(h.apiPost).not.toHaveBeenCalled();
   });
 });
+
+// --- Nur der Browser: Enter wie in den übrigen Fenstern ------------------------------------
+// Handbuch „Im Browser ein Fenster bedienen": Enter in einem einzeiligen Feld
+// schickt das Formular ab, Enter in einem Suchfeld nicht.
+describe('Neuer Chat (web): Enter im Gruppennamen legt die Gruppe an, die Suche schickt nichts ab', () => {
+  it('Gruppenchat: Absenden aus dem Gruppennamen geht an POST /chat/rooms', async () => {
+    await oeffnen('web');
+    waehleArt('web', 'Gruppenchat');
+    await waitFor(() => expect(namen('web')).toContain('Theo Teamer'));
+    gruppenname('web', 'Freizeit-Team');
+    await tippePerson('web', 'Theo Teamer');
+
+    const feld = screen.getByRole('textbox', { name: 'Gruppenname' }) as HTMLInputElement;
+    await act(async () => { fireEvent.submit(feld.form as HTMLFormElement); });
+    await waitFor(() => expect(fertig).toHaveBeenCalledWith(77));
+    expect(h.apiPost.mock.calls).toEqual([['/chat/rooms', {
+      name: 'Freizeit-Team',
+      type: 'group',
+      participants: [{ user_id: 13, user_type: 'teamer' }],
+    }]]);
+  });
+
+  it('Enter in der Personensuche schickt nichts ab', async () => {
+    await oeffnen('web');
+    waehleArt('web', 'Gruppenchat');
+    await waitFor(() => expect(namen('web')).toContain('Theo Teamer'));
+    gruppenname('web', 'Freizeit-Team');
+    await tippePerson('web', 'Theo Teamer');
+    const suche = screen.getByLabelText('Person suchen');
+    // WebSuche verhindert die Voreinstellung (das Absenden des Formulars).
+    expect(fireEvent.keyDown(suche, { key: 'Enter', code: 'Enter' })).toBe(false);
+    expect(h.apiPost).not.toHaveBeenCalled();
+  });
+
+  it('Direktnachricht: kein Formular -- erst ein Klick auf eine Person legt sie an', async () => {
+    await oeffnen('web');
+    expect((screen.getByLabelText('Person suchen') as HTMLInputElement).form).toBeNull();
+  });
+});

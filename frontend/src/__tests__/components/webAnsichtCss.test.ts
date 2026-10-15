@@ -215,7 +215,7 @@ describe('theme/web-modale.css: App-Modale im breiten Browserfenster', () => {
   const text = ohneKommentare(quelle);
   const alle = regeln(text);
   const BREIT = "html[data-layout='breit']";
-  const KERN = "html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname]))";
+  const KERN = "html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal):not(:has([data-dialogname]))";
 
   it('wird global eingebunden, nach web-ansicht.css', () => {
     const app = lies('src/App.tsx');

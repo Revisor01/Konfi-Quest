@@ -33,6 +33,14 @@ const WebSuche: React.FC<WebSucheProps> = ({ beschriftung, platzhalter, wert, on
       spellCheck={false}
       onChange={(e) => onWert(e.target.value)}
       onKeyDown={(e) => {
+        // Enter in einem Suchfeld schickt nichts ab (Handbuch „Im Browser ein
+        // Fenster bedienen"): Die Suche filtert beim Tippen, und steht sie in
+        // einem Fenster mit Formular (Neuer Gruppenchat), legte Enter sonst
+        // ungefragt an, was gerade gewählt ist.
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          return;
+        }
         if (e.key !== 'Escape' || !wert) return;
         e.preventDefault();
         e.stopPropagation();

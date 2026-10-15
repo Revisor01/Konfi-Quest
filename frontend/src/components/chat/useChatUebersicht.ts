@@ -153,11 +153,8 @@ export function useChatUebersicht({ onSelectRoom, anfang }: ChatUebersichtDeps) 
   });
 
   /** Das Fenster "Neuer Chat" oeffnen (die App gibt die Seite fuer die Kartenform mit). */
-  const neuenChatStarten = (presentingElement?: HTMLElement, cssClass?: string) => {
-    presentChatModalHook({
-      presentingElement,
-      ...(cssClass ? { cssClass } : {}),
-    });
+  const neuenChatStarten = (presentingElement?: HTMLElement) => {
+    presentChatModalHook({ presentingElement });
   };
 
   /**
