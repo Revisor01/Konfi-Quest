@@ -20,6 +20,7 @@ import React from 'react';
 import { screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import {
   zustand, zuruecksetzen, termin, oeffne, knopf, api, setError, presentAlert, presentActionSheet, modale, zuletztGeoeffnet,
+  listeNeuLaden,
 } from '../gerueste/konfiTerminDetail';
 import { ZEITSLOT_AUSGEBUCHT } from '../../../components/konfi/zeitfensterWahl';
 import { ZEITFENSTER_KEINE, ZEITFENSTER_NICHT_GELADEN_WEB } from '../../../utils/termineWeb';
@@ -113,6 +114,49 @@ describe.each<Fassung>(['app', 'web'])('Konfi abmelden (%s): dieselbe Funktion, 
     await oeffne(termin({ is_registered: true, booking_status: 'confirmed' }));
     await abmelden(fassung, 'Abmelden', 'Krank');
     erwarteAblehnung(fassung, 'Abmeldung nicht mehr möglich');
+  });
+});
+
+// Was nach dem Schließen geschieht, ohne dass gesendet wurde: Das Modal der
+// App lädt bei „Abmelden" beim Schließen die Terminliste neu (dismiss ->
+// refreshEvents), das Pflicht-Modal nicht. Das Fenster tut dasselbe.
+/** Das Abmelde-Fenster der Fassung schließen, ohne zu senden. */
+const abbrechen = (fassung: Fassung) => {
+  if (fassung === 'app') {
+    const modal = zuletztGeoeffnet('UnregisterModal')!;
+    act(() => { (modal.props.dismiss as () => void)(); });
+    return;
+  }
+  fireEvent.click(within(screen.getByRole('dialog', { name: 'Abmeldung' })).getByRole('button', { name: 'Abbrechen' }));
+  expect(screen.queryByRole('dialog')).toBe(null);
+};
+
+describe.each<Fassung>(['app', 'web'])('Abmelden schließen (%s): danach lädt die Terminliste wie nach dem Modal', (fassung) => {
+  beforeEach(() => { breit.wert = fassung === 'web'; });
+
+  it('„Abmelden" geschlossen ohne zu senden: kein DELETE, die Terminliste lädt einmal neu', async () => {
+    await oeffne(termin({ is_registered: true, booking_status: 'confirmed' }));
+    listeNeuLaden.mockClear();
+    fireEvent.click(knopf('Abmelden') as HTMLElement);
+    expect(listeNeuLaden).not.toHaveBeenCalled();
+    abbrechen(fassung);
+    expect(listeNeuLaden).toHaveBeenCalledTimes(1);
+    expect(api.delete).not.toHaveBeenCalled();
+  });
+
+  it('Pflicht-Event geschlossen ohne zu senden: kein POST, die Terminliste lädt nicht neu', async () => {
+    await oeffne(termin({ mandatory: true, registration_status: 'mandatory', is_registered: true, booking_status: 'confirmed', points: 0 }));
+    listeNeuLaden.mockClear();
+    fireEvent.click(knopf('Abmelden') as HTMLElement);
+    if (fassung === 'app') {
+      const modal = zuletztGeoeffnet('UnregisterModal')!;
+      expect(modal.props.mandatory).toBe(true);
+      act(() => { (modal.props.dismiss as () => void)(); });
+    } else {
+      abbrechen(fassung);
+    }
+    expect(listeNeuLaden).not.toHaveBeenCalled();
+    expect(api.post).not.toHaveBeenCalled();
   });
 });
 
@@ -269,6 +313,65 @@ describe('Zeitfenster-Event ohne Zeitfenster', () => {
     });
     await oeffne(ZEITFENSTER_EVENT());
     await nachladen();
+    expect(knopf(/^Anmelden/)).toBeDisabled();
+    expect(screen.queryByText(ZEITFENSTER_KEINE)).toBe(null);
+    expect(screen.queryByText(ZEITFENSTER_NICHT_GELADEN_WEB)).toBe(null);
+  });
+
+  it('Browser: ohne Netz geöffnet und nichts gemerkt -- kommt das Netz zurück, kommen die Zeitfenster; kein falscher Grund', async () => {
+    breit.wert = true;
+    zustand.online = false;
+    zustand.zeitfenster = [SLOT_FREI];
+    const event = ZEITFENSTER_EVENT();
+    const ansicht = await oeffne(event);
+    await nachladen();
+    expect(api.get).not.toHaveBeenCalledWith('/konfi/events/5/timeslots');
+
+    zustand.online = true;
+    const EventDetailView = (await import('../../../components/konfi/views/EventDetailView')).default;
+    await act(async () => { ansicht.rerender(<EventDetailView eventId={event.id} onBack={() => undefined} />); });
+    await nachladen();
+    expect(api.get).toHaveBeenCalledWith('/konfi/events/5/timeslots');
+    expect(screen.queryByText(ZEITFENSTER_KEINE)).toBe(null);
+    expect(knopf(/^Anmelden/)).toBeEnabled();
+  });
+
+  it('App: ohne Netz geöffnet und nichts gemerkt -- kommt das Netz zurück, öffnet „Anmelden" die Wahl statt der Rückfrage', async () => {
+    breit.wert = false;
+    zustand.online = false;
+    zustand.zeitfenster = [SLOT_FREI];
+    const event = ZEITFENSTER_EVENT();
+    const ansicht = await oeffne(event);
+    await nachladen();
+    expect(api.get).not.toHaveBeenCalledWith('/konfi/events/5/timeslots');
+
+    zustand.online = true;
+    const EventDetailView = (await import('../../../components/konfi/views/EventDetailView')).default;
+    await act(async () => { ansicht.rerender(<EventDetailView eventId={event.id} onBack={() => undefined} />); });
+    await nachladen();
+    expect(api.get).toHaveBeenCalledWith('/konfi/events/5/timeslots');
+    await act(async () => { fireEvent.click(knopf(/^Anmelden/) as HTMLElement); });
+    expect(presentAlert).not.toHaveBeenCalled();
+    expect((presentActionSheet.mock.calls.at(-1)![0] as { header: string }).header).toBe('Zeitslot auswählen');
+  });
+
+  it('Browser: ohne Netz geöffnet und nichts gemerkt -- solange die Zeitfenster danach laden, gesperrt ohne Grund', async () => {
+    breit.wert = true;
+    zustand.online = false;
+    api.get.mockImplementation((pfad: string) => {
+      if (pfad === '/konfi/events') return Promise.resolve({ data: zustand.events });
+      if (/\/timeslots$/.test(pfad)) return new Promise(() => undefined);
+      return Promise.resolve({ data: [] });
+    });
+    const event = ZEITFENSTER_EVENT();
+    const ansicht = await oeffne(event);
+    await nachladen();
+
+    zustand.online = true;
+    const EventDetailView = (await import('../../../components/konfi/views/EventDetailView')).default;
+    await act(async () => { ansicht.rerender(<EventDetailView eventId={event.id} onBack={() => undefined} />); });
+    await nachladen();
+    expect(api.get).toHaveBeenCalledWith('/konfi/events/5/timeslots');
     expect(knopf(/^Anmelden/)).toBeDisabled();
     expect(screen.queryByText(ZEITFENSTER_KEINE)).toBe(null);
     expect(screen.queryByText(ZEITFENSTER_NICHT_GELADEN_WEB)).toBe(null);

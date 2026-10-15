@@ -149,6 +149,12 @@ const TeamerEventsPage: React.FC = () => {
    * Grund und den Weg hinaus -- siehe Effekt unten und renderJahrgangHinweis.
    */
   const [jahrgangHinweis, setJahrgangHinweis] = useState(false);
+  /**
+   * Fuer WELCHES Event das Absage-Fenster der Web-Fassung offen ist (siehe
+   * oeffneAbsage). Der Effekt unten vergisst es, sobald die Adresse ein
+   * Event (neu) oeffnet.
+   */
+  const [webAbsageFuer, setWebAbsageFuer] = useState<number | null>(null);
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
   /** Teilnehmerliste aus GET /events/:id -- nur zum Lesen, siehe Effekt unten. */
@@ -468,6 +474,12 @@ const TeamerEventsPage: React.FC = () => {
       return;
     }
     if (loading || !events || queryEventId === handledEventId) return;
+    // Ein offenes Absage-Fenster gehoert zum Event, bei dem es geoeffnet
+    // wurde. Jedes Oeffnen ueber die Adresse -- ein anderes Event oder nach
+    // Zurueck zur Liste DASSELBE wieder -- laeuft hier durch und vergisst es.
+    // Sonst ging es von selbst wieder auf, mit leerem Grund (Befund der
+    // Durchsicht, 15.10.2026).
+    setWebAbsageFuer(null);
     const eventToSelect = events.find(e => e.id === parseInt(queryEventId, 10));
     if (eventToSelect) {
       setSelectedEvent(eventToSelect);
@@ -681,9 +693,9 @@ const TeamerEventsPage: React.FC = () => {
 
   // Im Browser ab 992 px ein Fenster statt des Modals (Simon, 15.10.2026) --
   // dieselben Regeln (shared/useAbsageFormular.ts), dieselbe Funktion.
-  // Gemerkt wird, fuer WELCHES Event es offen ist: Fuehrt die Zurueck-Taste
-  // des Browsers weg, geht es nicht beim naechsten Event wieder auf.
-  const [webAbsageFuer, setWebAbsageFuer] = useState<number | null>(null);
+  // Gemerkt wird, fuer WELCHES Event es offen ist (webAbsageFuer, oben):
+  // Fuehrt die Zurueck-Taste des Browsers weg, geht es weder beim naechsten
+  // noch beim selben Event von selbst wieder auf.
 
   const oeffneAbsage = () => {
     if (breit) {

@@ -34,6 +34,8 @@ export const enqueue = vi.fn();
 export const presentAlert = vi.fn();
 /** Das Aktionsmenü der App (Zeitslot auswählen): mitgeschrieben samt Knöpfen. */
 export const presentActionSheet = vi.fn();
+/** Neu laden der Terminliste (useOfflineQuery.refresh): mitgeschrieben, z. B. nach dem Abmelde-Modal. */
+export const listeNeuLaden = vi.fn(async () => undefined);
 export const modale = {
   geoeffnet: [] as Array<{ name: string; props: Record<string, unknown> }>,
 };
@@ -56,7 +58,7 @@ vi.mock('../../../hooks/useOfflineQuery', () => ({
     querySchluessel.push(schluessel);
     return {
     data: zustand.laedt ? null : zustand.events, loading: zustand.laedt, isOffline: !zustand.online,
-    refresh: vi.fn(async () => undefined), refreshLive: vi.fn(),
+    refresh: () => listeNeuLaden(), refreshLive: vi.fn(),
     };
   },
 }));
@@ -152,6 +154,7 @@ export const zuruecksetzen = () => {
   querySchluessel.length = 0;
   for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, enqueue, presentAlert, presentActionSheet]) f.mockReset();
   modale.geoeffnet.length = 0;
+  listeNeuLaden.mockClear();
   api.get.mockImplementation(async (pfad: string) => {
     if (pfad === '/konfi/events') return { data: zustand.events };
     if (/\/participants$/.test(pfad)) return { data: zustand.teilnehmer };

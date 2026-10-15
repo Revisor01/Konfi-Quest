@@ -299,6 +299,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // (Befund 25.08.2026).
   const [detailEpoch, setDetailEpoch] = useState(0);
 
+  // Kommt das Netz zurueck, die Details neu holen (Befund der Durchsicht,
+  // 15.10.2026): Ohne Netz geoeffnet und ohne gemerkten Stand blieben die
+  // Zeitfenster sonst leer, bis man den Termin neu oeffnete -- "Anmelden"
+  // meldete dann "keine Zeitfenster eingetragen", im Browser stand der Satz
+  // fest neben dem gesperrten Knopf. Die Leitungsansicht laedt ebenso neu.
+  const warOnline = useRef(isOnline);
+  useEffect(() => {
+    if (isOnline && !warOnline.current) setDetailEpoch((n) => n + 1);
+    warOnline.current = isOnline;
+  }, [isOnline]);
+
   // Welcher Termin gerade gelten soll. Antworten, die zu einem vorher
   // geoeffneten Termin gehoeren, duerfen den Stand nicht mehr ueberschreiben.
   const aktuelleEventId = useRef(eventId);
@@ -364,7 +375,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         if (ts) setTimeslots(ts);
         if (tn) setParticipants(tn);
         setGemerkt({ teilnehmer: !!tn, zeitfenster: !!ts });
-        setZeitfensterGeladen(true);
+        // Geladen ist nur, was aus dem gemerkten Stand kam: Ohne ihn ist
+        // offen, ob es Zeitfenster gibt -- "keine eingetragen" waere falsch.
+        if (ts || !eventData.has_timeslots) setZeitfensterGeladen(true);
         return;
       }
       setTimeslotsLoadFailed(false);

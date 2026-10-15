@@ -80,3 +80,31 @@ describe.each<Fassung>(['app', 'web'])('Leitung sagt die eigene Teilnahme ab (%s
     }
   });
 });
+
+describe('Absage-Fenster (web) der Leitung gehört zu seinem Event', () => {
+  it('wechselt dieselbe Ansicht zu einem anderen Event und zurück, geht das Fenster nicht von selbst wieder auf', async () => {
+    breit.wert = true;
+    const details: Record<string, Record<string, unknown>> = {
+      '/events/7': termin({ teamer_needed: true, booking_status: 'confirmed' }),
+      '/events/8': termin({ id: 8, name: 'Teamabend', teamer_needed: true, booking_status: 'confirmed' }),
+    };
+    api.get.mockImplementation((pfad: string) => Promise.resolve({ data: details[pfad] ?? [] }));
+    const ansicht = await oeffne(7);
+    fireEvent.click(knopf('Nicht mehr dabei') as HTMLElement);
+    expect(screen.getByRole('dialog', { name: 'Absage' })).toHaveAccessibleDescription('Absage für Konfi-Freizeit');
+
+    // Dieselbe Instanz bekommt eine neue eventId (wie ParamSeite im Router),
+    // dann wieder die erste -- etwa über Zurück und Vor des Browsers.
+    const EventDetailView = (await import('../../../components/admin/views/EventDetailView')).default;
+    const zeige = async (eventId: number) => {
+      await act(async () => { ansicht.rerender(<EventDetailView eventId={eventId} onBack={ansicht.onBack} />); });
+      for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    };
+    await zeige(8);
+    expect(screen.queryByRole('dialog')).toBe(null);
+    await zeige(7);
+    expect(knopf('Nicht mehr dabei')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBe(null);
+    expect(api.post).not.toHaveBeenCalled();
+  });
+});

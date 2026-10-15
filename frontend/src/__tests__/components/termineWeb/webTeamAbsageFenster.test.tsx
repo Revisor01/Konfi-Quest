@@ -136,4 +136,55 @@ describe('Absage-Fenster (web) gehört zu seinem Event', () => {
     expect(screen.queryByRole('dialog')).toBe(null);
     expect(api.post).not.toHaveBeenCalled();
   });
+
+  it('führt die Zurück-Taste weg und öffnet man DASSELBE Event wieder, geht das Fenster nicht von selbst auf', async () => {
+    h.api.get.mockImplementation((pfad: string) => {
+      const treffer = EVENTS.find((e) => pfad === `/events/${e.id}`);
+      return Promise.resolve({ data: treffer ? { ...treffer, participants: [] } : [] });
+    });
+    richteEin({ nutzer: 'teamer', pfad: '/teamer/events', suche: '?eventId=402', daten: { 'teamer:events:': EVENTS, 'teamer:requests:': [] } });
+    h.breit = true;
+    const seite = await oeffne('team');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByRole('button', { name: 'Nicht mehr dabei' }));
+    expect(screen.getByRole('dialog', { name: 'Absage' })).toBeInTheDocument();
+
+    // Zurück zur Liste, dann dasselbe Event wieder.
+    await seite.wechsleAdresse('/teamer/events');
+    expect(screen.queryByRole('dialog')).toBe(null);
+    await seite.wechsleAdresse('/teamer/events', '?eventId=402');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('button', { name: 'Nicht mehr dabei' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBe(null);
+
+    // Wer jetzt absagen will, bekommt das Fenster wieder -- mit leerem Grund.
+    fireEvent.click(screen.getByRole('button', { name: 'Nicht mehr dabei' }));
+    const fenster = screen.getByRole('dialog', { name: 'Absage' });
+    expect(within(fenster).getByRole('textbox', { name: 'Grund für die Absage' })).toHaveValue('');
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it('springt die Adresse ohne die Liste zu einem anderen Event und zurück, geht das Fenster nicht von selbst auf', async () => {
+    h.api.get.mockImplementation((pfad: string) => {
+      const treffer = EVENTS.find((e) => pfad === `/events/${e.id}`);
+      return Promise.resolve({ data: treffer ? { ...treffer, participants: [] } : [] });
+    });
+    richteEin({ nutzer: 'teamer', pfad: '/teamer/events', suche: '?eventId=402', daten: { 'teamer:events:': EVENTS, 'teamer:requests:': [] } });
+    h.breit = true;
+    const seite = await oeffne('team');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByRole('button', { name: 'Nicht mehr dabei' }));
+    expect(screen.getByRole('dialog', { name: 'Absage' })).toBeInTheDocument();
+
+    // Etwa über einen Link im Chat direkt zum nächsten Event, dann Zurück.
+    await seite.wechsleAdresse('/teamer/events', '?eventId=401');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('button', { name: 'Nicht dabei' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBe(null);
+    await seite.wechsleAdresse('/teamer/events', '?eventId=402');
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    expect(screen.getByRole('button', { name: 'Nicht mehr dabei' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBe(null);
+    expect(api.post).not.toHaveBeenCalled();
+  });
 });

@@ -311,7 +311,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Im Browser ab 992 px ein Fenster statt des Modals (Simon, 15.10.2026) --
   // dieselben Regeln (shared/useAbsageFormular.ts), dieselbe Funktion.
   // Gemerkt wird, fuer WELCHES Event es offen ist (die Ansicht bleibt beim
-  // Wechsel des Events dieselbe Instanz).
+  // Wechsel des Events dieselbe Instanz); der Wechsel setzt es zurueck
+  // (Effekt auf eventId unten).
   const [webEigeneAbsageFuer, setWebEigeneAbsageFuer] = useState<number | null>(null);
 
   const oeffneEigeneAbsage = () => {
@@ -667,6 +668,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setWebFenster(null);
     setError('');
     setLoading(true);
+    // Ein offenes Absage-Fenster gehoert zum vorigen Termin -- sonst ginge es
+    // beim Zurueckwechseln (7 -> 8 -> 7) von selbst wieder auf.
+    setWebEigeneAbsageFuer(null);
   }, [eventId]);
 
   // isOnline in den Abhaengigkeiten: Kommt die Verbindung zurueck, muss der
