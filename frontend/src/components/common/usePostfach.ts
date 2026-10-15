@@ -3,8 +3,16 @@
 // das noch ein App-Modal oeffnet, ein kompaktes Web-Fenster). Die App zeigt es
 // im Modal (common/PostfachModal.tsx), der Browser ab 992 px im Dialog
 // (common/web/WebPostfachDialog.tsx). Was geladen wird, was als gelesen gilt,
-// wohin ein Klick fuehrt, was sich wegwischen laesst und die Texte dazu
-// stehen nur hier, damit beide nicht auseinanderlaufen.
+// wohin ein Klick fuehrt und was sich wegwischen laesst, steht nur hier,
+// damit beide nicht auseinanderlaufen.
+//
+// Die Texte stehen NICHT alle hier: Leerzustand, Offline-Zeile und der
+// Klartext des Punkts liegen unten als Konstanten, die der Dialog liest --
+// das Modal schreibt dieselben Woerter selbst aus. Die Warteschlange zeigt
+// das Modal mit der Karte der Terminseiten (shared/WartendeVorgaengeKarte),
+// der Dialog baut sie mit denselben Ueberschriften und Ersatztexten nach.
+// Dass beide Fassungen dieselben Texte zeigen, prueft
+// postfachWebDialog.test.tsx an beiden (describe.each app/web).
 //
 // Laden:          GET /notifications/postfach { limit, vor? }
 // Eine gelesen:   PUT /notifications/postfach/:id/gelesen
@@ -155,6 +163,10 @@ export const usePostfach = ({ offen, schliessen }: PostfachOptionen) => {
   const [ladefehler, setLadefehler] = useState(false);
   // Zwischen Klick und Sprung: Wechsel in die Gemeinde der Mitteilung (switchOrg).
   const [oeffnet, setOeffnet] = useState(false);
+  // Solange switchOrg laeuft: in welche Gemeinde (name null, wenn der Server
+  // keinen mitgeschickt hat). Der Dialog des Browsers sagt damit, warum er
+  // steht -- der Wechsel wartet auf die Warteschlange und den Server.
+  const [gemeindeWechsel, setGemeindeWechsel] = useState<{ name: string | null } | null>(null);
 
   // Gemeindename nur zeigen, wenn es etwas zu unterscheiden gibt.
   const mehrereGemeinden = (organizations?.length ?? 0) > 1;
@@ -220,12 +232,18 @@ export const usePostfach = ({ offen, schliessen }: PostfachOptionen) => {
         {
           getActiveOrgId: () => activeOrgId,
           getUserOrgId: () => user?.organization_id ?? null,
-          switchOrg,
+          // Ob gewechselt wird, entscheidet resolveOrgForPush allein; hier
+          // wird nur mitgeschrieben, DASS es geschieht.
+          switchOrg: (orgId: number) => {
+            setGemeindeWechsel({ name: eintrag.organization_name || null });
+            return switchOrg(orgId);
+          },
         }
       );
       ziel = buildPushTargetUrl(eintrag.type, eintrag.data, zielTyp);
     } finally {
       setOeffnet(false);
+      setGemeindeWechsel(null);
     }
 
     schliessen();
@@ -258,6 +276,7 @@ export const usePostfach = ({ offen, schliessen }: PostfachOptionen) => {
     laedt,
     ladefehler,
     oeffnet,
+    gemeindeWechsel,
     mehrereGemeinden,
     listeLeer: eintraege.length === 0,
     wartend,

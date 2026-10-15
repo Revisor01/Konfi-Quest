@@ -14,7 +14,13 @@
 //
 // Steht die Liste nicht zur Verfuegung (offline, Server nicht erreichbar),
 // sagt das ein Hinweis im Fenster. Solange nach einem Klick noch in die
-// Gemeinde der Mitteilung gewechselt wird, bleibt das Fenster stehen.
+// Gemeinde der Mitteilung gewechselt wird, bleibt das Fenster stehen -- und
+// sagt per Status (role=status), warum: Der Wechsel wartet auf die
+// Warteschlange und den Server und kann einige Sekunden dauern.
+//
+// Die Warteschlange baut der Dialog selbst; Ueberschriften und Ersatztexte
+// sind dieselben wie in der Karte, die das Modal der App zeigt
+// (shared/WartendeVorgaengeKarte) -- postfachWebDialog.test.tsx prueft beide.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
@@ -46,7 +52,7 @@ export interface WebPostfachDialogProps {
 
 const WebPostfachDialog: React.FC<WebPostfachDialogProps> = ({ onSchliessen }) => {
   const {
-    eintraege, ungelesen, weitere, laedt, ladefehler, oeffnet, mehrereGemeinden, listeLeer,
+    eintraege, ungelesen, weitere, laedt, ladefehler, oeffnet, gemeindeWechsel, mehrereGemeinden, listeLeer,
     wartend, gescheitert, hatWarteschlange, vergessen, alleVergessen,
     antippen, alleGelesen, aeltereLaden,
   } = usePostfach({ offen: true, schliessen: onSchliessen });
@@ -109,6 +115,17 @@ const WebPostfachDialog: React.FC<WebPostfachDialogProps> = ({ onSchliessen }) =
       onSchliessen={onSchliessen}
       aktionen={<WebKnopf art="primaer" onClick={onSchliessen} disabled={oeffnet}>Schließen</WebKnopf>}
     >
+      {/* Warum das Fenster gerade nicht zu geht und nichts anzuklicken ist. */}
+      {oeffnet && (
+        <WebHinweis art="hinweis" rolle="status" titel="Mitteilung wird geöffnet …">
+          {gemeindeWechsel
+            ? (gemeindeWechsel.name
+              ? `Wechsel in die Gemeinde „${gemeindeWechsel.name}“`
+              : 'Wechsel in die Gemeinde der Mitteilung')
+            : undefined}
+        </WebHinweis>
+      )}
+
       {hatWarteschlange && (
         <section className="web-postfachteil" aria-label="Warteschlange">
           {wartend.length > 0 && (

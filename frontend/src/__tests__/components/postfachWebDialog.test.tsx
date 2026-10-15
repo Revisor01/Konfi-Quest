@@ -10,7 +10,7 @@
 // dieselben Meldungen an die Zaehler der Glocke, dasselbe Wegwischen in der
 // Warteschlange. Was sich unterscheidet, steht ausdruecklich da: Nur der
 // Dialog des Browsers sperrt sich, solange nach einem Klick noch die Gemeinde
-// gewechselt wird.
+// gewechselt wird, und sagt dann per Status, warum.
 //
 // Geoeffnet wird jedes Mal wie in der App: <PostfachModal /> haengt auf
 // App-Ebene, die Glocke sagt "auf" (oeffnePostfach). Ersetzt sind Netz,
@@ -330,6 +330,30 @@ describe.each<Fassung>(['app', 'web'])('Postfach (%s): dieselbe Logik in App und
     expect(h.apiPut).not.toHaveBeenCalled();
   });
 
+  // Der Dialog des Browsers baut die Warteschlange selbst, das Modal der App
+  // nimmt die Karte der Terminseiten (WartendeVorgaengeKarte). Ueberschriften
+  // und Ersatztexte muessen trotzdem dieselben sein.
+  it('Warteschlange: dieselben Ueberschriften und Ersatztexte wie die Karte der App', async () => {
+    h.wartend = [
+      { ...wartendEintrag('Abmeldung Sommerfest'), body: { description: 'Krank am Wochenende' } },
+      wartendEintrag('Buchung Freizeit'),
+      { ...wartendEintrag(''), id: 'q-ohne-name' },
+    ];
+    h.gescheitert = [gescheitertEintrag('f1', 'Antrag Gottesdienst', '')];
+    h.apiGet.mockResolvedValue(antwort([]));
+    await oeffnen(fassung);
+    const schlange = screen.getByRole('region', { name: 'Warteschlange' });
+    expect(within(schlange).getByText('Wird gesendet...')).toBeInTheDocument();
+    expect(within(schlange).getByText('Nicht gesendet')).toBeInTheDocument();
+    // Mit Beschreibung die Beschreibung, ohne der Ersatztext; ohne Namen „Aktivität".
+    expect(within(schlange).getByText('Krank am Wochenende')).toBeInTheDocument();
+    expect(within(schlange).getAllByText('Wird gesendet sobald du online bist')).toHaveLength(2);
+    expect(within(schlange).getByText('Aktivität')).toBeInTheDocument();
+    // Gescheitert ohne Meldung des Servers.
+    expect(within(schlange).getByText('Antrag Gottesdienst')).toBeInTheDocument();
+    expect(within(schlange).getByText('Konnte nicht gesendet werden')).toBeInTheDocument();
+  });
+
   it('ohne Warteschlange kein leerer Bereich; mit nur einem Fehlschlag kein „Alle wegwischen"', async () => {
     h.apiGet.mockResolvedValue(antwort([eintrag(1)]));
     await oeffnen(fassung);
@@ -417,6 +441,9 @@ describe('Postfach (web): waehrend des Gemeinde-Wechsels ist der Dialog gesperrt
     expect(h.switchOrg).toHaveBeenCalledWith(2);
 
     const dialog = screen.getByRole('dialog', { name: 'Postfach' });
+    // Das Fenster sagt, warum es steht -- als Status, den ein Screenreader ansagt.
+    expect(within(dialog).getByRole('status')).toHaveTextContent('Mitteilung wird geöffnet …');
+    expect(within(dialog).getByRole('status')).toHaveTextContent('Wechsel in die Gemeinde „Andere Gemeinde“');
     const knoepfe = within(dialog).getAllByRole('button', { name: 'Schließen' });
     for (const knopf of knoepfe) expect(knopf).toBeDisabled();
     fireEvent.keyDown(dialog, { key: 'Escape' });
@@ -431,9 +458,28 @@ describe('Postfach (web): waehrend des Gemeinde-Wechsels ist der Dialog gesperrt
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
+  it('ohne Namen der Gemeinde sagt der Status „der Mitteilung"', async () => {
+    h.organizations = [
+      { id: 1, name: 'Test-Gemeinde', role_name: 'konfi' },
+      { id: 2, name: 'Andere Gemeinde', role_name: 'teamer' },
+    ];
+    const wechsel: { fertig: (wert: unknown) => void } = { fertig: () => undefined };
+    h.switchOrg.mockReturnValue(new Promise((ok) => { wechsel.fertig = ok; }));
+    h.apiGet.mockResolvedValue(antwort([eintrag(20, { organization_id: 2, organization_name: null })]));
+    await oeffnen('web');
+    await act(async () => { fireEvent.click(zeile('Mitteilung 20')); });
+    const status = within(screen.getByRole('dialog', { name: 'Postfach' })).getByRole('status');
+    expect(status).toHaveTextContent('Wechsel in die Gemeinde der Mitteilung');
+    await act(async () => { wechsel.fertig({ ok: true, type: 'teamer' }); });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
   it('ohne laufenden Wechsel schliessen Escape und ein Klick daneben den Dialog', async () => {
     h.apiGet.mockResolvedValue(antwort([eintrag(1)]));
     await oeffnen('web');
+    await screen.findByText('Mitteilung 1');
+    // Nichts wird geoeffnet: kein Status im Fenster.
+    expect(within(screen.getByRole('dialog', { name: 'Postfach' })).queryByRole('status')).not.toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'Postfach' }), { key: 'Escape' });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
