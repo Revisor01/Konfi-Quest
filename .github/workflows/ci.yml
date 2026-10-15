@@ -89,12 +89,30 @@ env:
 
 jobs:
   backend-test:
+    # VIER TEILE, jeder auf eigenem Runner mit EIGENER Datenbank (15.10.2026,
+    # Simon: „die schiere Masse an Tests“). In einem Job brauchte die Suite
+    # im Schnitt 24 Minuten (12 Laeufe bis 15.10.2026, hoechstens 28) und gab
+    # damit den Takt jeder CI vor. maxWorkers bleibt 1 (tests/vitest.config.ts):
+    # Parallel laufen hier nur getrennte Datenbanken, nie zwei Worker auf
+    # einer. Vitest verteilt die Dateien selbst (--shard); gezaehlt am
+    # 15.10.2026: 91/91/90/90 Dateien mit 1767/1440/1628/1430 Tests.
+    #
+    # Der Jobname bleibt backend-test: build-and-push wartet ueber `needs`
+    # auf ALLE vier Teile, und das Release-Tor prueft den ganzen Lauf.
+    # fail-fast aus, damit ein roter Teil die anderen nicht abbricht -- man
+    # sieht alle Fehler eines Laufs auf einmal.
+    name: backend-test (${{ matrix.teil }}/4)
+    strategy:
+      fail-fast: false
+      matrix:
+        teil: [1, 2, 3, 4]
     runs-on: ubuntu-latest
-    # Normal 11-12 Minuten, mit der tmpfs unten weniger. Ein Lauf hat aber
-    # schon 68 Minuten gebraucht (34120673325, am Ende gruen) -- ohne Grenze
-    # gilt GitHubs Standard von SECHS Stunden, und ein wirklich haengender
-    # Job verbrennt so lange Runner-Zeit, ohne dass jemand etwas erfaehrt.
-    timeout-minutes: 40
+    # Ein Teil braucht rund ein Viertel der frueheren 24 Minuten. Die Grenze
+    # laesst Luft fuer langsame Runner: Ein ungeteilter Lauf hat schon 68
+    # Minuten gebraucht (34120673325, am Ende gruen) -- ohne Grenze gilt
+    # GitHubs Standard von SECHS Stunden, und ein wirklich haengender Job
+    # verbrennt so lange Runner-Zeit, ohne dass jemand etwas erfaehrt.
+    timeout-minutes: 25
 
     services:
       postgres:
@@ -161,13 +179,16 @@ jobs:
       # Produktion auffallen. Der Altbestand an ungenutzten Variablen steht als
       # Warnung im Log; die Begruendung steht in backend/eslint.config.js.
       # Gemessen am 29.09.2026: 370 Dateien, 0 Fehler, 85 Warnungen, rund 22 s.
+      # Nur im ersten Teil: Lint und Audit haengen nicht an der Aufteilung.
       - name: Lint
+        if: matrix.teil == 1
         working-directory: backend
         run: npx eslint .
 
       # Ab "high" rot (26.09.2026, Release-Audit Toolchain BF-08); vorher erst ab
       # "critical". Gemessen am 26.09.2026: 0 Schwachstellen.
       - name: Security audit
+        if: matrix.teil == 1
         working-directory: backend
         run: npm audit --audit-level=high
 
@@ -182,7 +203,8 @@ jobs:
         # Vitest 4 bricht ohne gefundene Tests von selbst mit Exit 1 ab. Das Flag
         # hob genau diesen Schutz auf -- ein Tippfehler im include-Muster oder ein
         # Umzug des Testordners haette Build und Deploy mit NULL Tests durchgelassen.
-        run: npx vitest run --config tests/vitest.config.ts
+        # Das gilt je Teil: Ein Teil ohne Dateien bricht ebenso ab.
+        run: npx vitest run --config tests/vitest.config.ts --shard=${{ matrix.teil }}/4
 
   frontend-test:
     runs-on: ubuntu-latest

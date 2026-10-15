@@ -8,6 +8,8 @@ export default defineConfig({
     // id=1..). Parallele Worker wuerden sich per truncate+seed gegenseitig die
     // Daten ueberschreiben -> "duplicate key" / "FK not present". Echte
     // Parallelitaet braeuchte eine DB pro Worker (groesserer globalSetup-Umbau).
+    // Die CI teilt deshalb nicht die Worker, sondern die Dateien: vier Jobs mit
+    // --shard, jeder mit eigener Datenbank (.github/workflows/ci.yml).
     // Der pg_advisory_xact_lock in truncateAll bleibt als Haertung (schadet nie).
     maxWorkers: 1,
     minWorkers: 1,
