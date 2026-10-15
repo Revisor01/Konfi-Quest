@@ -5,8 +5,16 @@
 //
 // Dieselbe Logik wie im Modal der App (usePushAuswahl): dieselben Gruppen, die
 // der Server für die Rolle liefert, der Hauptschalter oben, jeder Wechsel geht
-// sofort an PUT /notifications/preferences. Solange gespeichert wird, sind die
-// Schalter gesperrt und nichts schließt den Dialog. Meldungen stehen im Dialog.
+// sofort an PUT /notifications/preferences. Solange gespeichert wird, nehmen
+// die Schalter keinen Wechsel an und nichts schließt den Dialog. Meldungen
+// stehen im Dialog.
+//
+// Die Schalter warten (`wartet`, aria-disabled), statt `disabled` zu werden:
+// Ein gesperrtes Feld verliert den Fokus, und das Fenster holt ihn zu sich
+// (WebDialog bei `gesperrt`). Wer per Tastatur mehrere Gruppen umlegte,
+// musste danach jedes Mal neu vom X aus hinlaufen, und ein Vorleseprogramm
+// las Titel und Beschreibung des Fensters erneut vor (Befund 15.10.2026). So
+// bleibt der Fokus am umgelegten Schalter.
 
 import React from 'react';
 import { PUSH_NICHT_ERLAUBT, PUSH_POSTFACH_HINWEIS, usePushAuswahl, type PushEinstellungen } from '../../usePushAuswahl';
@@ -55,7 +63,7 @@ const WebPushAuswahlDialog: React.FC<WebPushAuswahlDialogProps> = ({ onSchliesse
               hinweis="Hauptschalter für die Gruppen darunter"
               an={einstellungen.push_enabled}
               onAn={hauptSchalten}
-              deaktiviert={speichert}
+              wartet={speichert}
             />
             {einstellungen.gruppen.map((g) => (
               <WebSchalter
@@ -64,7 +72,8 @@ const WebPushAuswahlDialog: React.FC<WebPushAuswahlDialogProps> = ({ onSchliesse
                 hinweis={g.beschreibung || undefined}
                 an={g.aktiv}
                 onAn={(an) => gruppeSchalten(g.id, an)}
-                deaktiviert={speichert || !einstellungen.push_enabled}
+                wartet={speichert}
+                deaktiviert={!einstellungen.push_enabled}
               />
             ))}
           </fieldset>

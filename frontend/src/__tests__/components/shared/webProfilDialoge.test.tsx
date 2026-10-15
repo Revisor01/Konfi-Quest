@@ -433,3 +433,63 @@ describe.each<Fassung>(['app', 'web'])('Benachrichtigungen (%s): dieselbe Auswah
     expect(h.pushAnfordern).toHaveBeenCalledTimes(1);
   });
 });
+
+// Nur im Browser: sofort speichernde Schalter und die Tastatur (Befund
+// 15.10.2026). Solange ein Wechsel zum Server geht, ist das Fenster gesperrt.
+// Wurde der umgelegte Schalter dafür `disabled`, holte das Fenster den Fokus
+// zu sich, und nach dem Speichern gab ihn niemand zurück: Wer mehrere Gruppen
+// umlegte, musste jedes Mal neu vom X aus hinlaufen.
+describe('Benachrichtigungen im Browser: der Fokus bleibt am umgelegten Schalter', () => {
+  beforeEach(() => {
+    h.apiGet.mockResolvedValue({ data: GRUPPEN });
+  });
+
+  it('Fokus am Schalter, Wechsel, Antwort: der Fokus steht danach am selben Schalter; währenddessen geht kein zweiter Wechsel los', async () => {
+    let antworten: (v: unknown) => void = () => undefined;
+    h.apiPut.mockImplementation(() => new Promise((r) => { antworten = r; }));
+    render(<WebPushAuswahlDialog onSchliessen={zu} />);
+    const events = await screen.findByRole('switch', { name: 'Events' }) as HTMLInputElement;
+    const nachrichten = screen.getByRole('switch', { name: 'Nachrichten' }) as HTMLInputElement;
+
+    events.focus();
+    await klick(events);
+    expect(h.apiPut.mock.calls).toEqual([['/notifications/preferences', { stumm: ['konfi_termine'] }]]);
+
+    // Während gespeichert wird: Fenster gesperrt, der Schalter meldet sich als
+    // nicht verfügbar, behält aber den Fokus.
+    expect(screen.getByRole('button', { name: 'Schließen' })).toBeDisabled();
+    expect(events).toHaveAttribute('aria-disabled', 'true');
+    expect(document.activeElement).toBe(events);
+    // Ein zweiter Wechsel in dieser Zeit wird nicht angenommen.
+    await klick(nachrichten);
+    expect(h.apiPut).toHaveBeenCalledTimes(1);
+    expect(nachrichten.checked).toBe(true);
+
+    await act(async () => { antworten({ data: { push_enabled: true, stumm: ['konfi_termine'] } }); });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Schließen' })).toBeEnabled());
+    expect(events.checked).toBe(false);
+    expect(events).not.toHaveAttribute('aria-disabled');
+    expect(document.activeElement).toBe(events);
+
+    // Gleich weiter per Tastatur: der nächste Wechsel geht vom selben Schalter aus.
+    await klick(events);
+    expect(h.apiPut.mock.calls[1]).toEqual(['/notifications/preferences', { stumm: [] }]);
+    expect(document.activeElement).toBe(events);
+  });
+
+  it('auch der Hauptschalter behält beim Speichern den Fokus', async () => {
+    let antworten: (v: unknown) => void = () => undefined;
+    h.apiPut.mockImplementation(() => new Promise((r) => { antworten = r; }));
+    render(<WebPushAuswahlDialog onSchliessen={zu} />);
+    const haupt = await screen.findByRole('switch', { name: 'Alle Mitteilungen' }) as HTMLInputElement;
+    haupt.focus();
+    await klick(haupt);
+    expect(h.apiPut.mock.calls).toEqual([['/notifications/preferences', { push_enabled: false }]]);
+    expect(document.activeElement).toBe(haupt);
+    await act(async () => { antworten({ data: { push_enabled: false, stumm: [] } }); });
+    await waitFor(() => expect(haupt.checked).toBe(false));
+    expect(document.activeElement).toBe(haupt);
+    // Die Gruppen sind jetzt echt gesperrt: ohne Hauptschalter gibt es nichts zu wählen.
+    expect(screen.getByRole('switch', { name: 'Events' })).toBeDisabled();
+  });
+});
