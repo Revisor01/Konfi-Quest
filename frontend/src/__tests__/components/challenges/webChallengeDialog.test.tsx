@@ -43,7 +43,10 @@ vi.mock('@ionic/react', async () => {
   });
   return {
     ...echt,
-    IonPage: durch, IonHeader: durch, IonToolbar: durch, IonButtons: durch, IonContent: durch,
+    IonPage: durch, IonHeader: durch, IonToolbar: durch, IonContent: durch,
+    // Die Knopfgruppen im Kopf der App nach ihrem Platz: Der Haken (Speichern)
+    // steht rechts (slot="end") und hat keinen eigenen Namen.
+    IonButtons: (p: K & { slot?: string }) => R.createElement('div', { 'data-testid': `knoepfe-${p.slot}` }, p.children),
     IonList: durch, IonItem: durch, IonListHeader: durch, IonCard: durch, IonCardContent: durch,
     IonAccordion: durch, IonAccordionGroup: durch, IonModal: durch,
     IonTitle: ({ children }: K) => R.createElement('h1', null, children),
@@ -66,7 +69,9 @@ vi.mock('@ionic/react', async () => {
         'aria-label': p['aria-label'], value: p.value ?? '',
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => p.onIonChange?.({ detail: { value: e.target.value } }),
       }),
-    IonDatetimeButton: () => null,
+    // Der Knopf, der das Datumsfenster öffnet -- nach dem Fenster benannt, das er öffnet.
+    IonDatetimeButton: (p: { datetime?: string; disabled?: boolean }) =>
+      R.createElement('button', { type: 'button', disabled: !!p.disabled, 'data-testid': p.datetime }),
   };
 });
 vi.mock('../../../contexts/AppContext', () => ({
@@ -156,8 +161,13 @@ const datum = (fassung: Fassung, name: 'Start' | 'Ende', lokal: string) => fireE
   { target: { value: fassung === 'app' ? `${lokal}:00` : lokal } },
 );
 
-const speichern = async (name = 'Challenge anlegen') => {
-  await act(async () => { fireEvent.click(screen.getByRole('button', { name })); });
+/** Speichern: in der App der Haken oben rechts (ohne eigenen Namen), im Browser der Knopf mit seinem Namen. */
+const speicherKnopf = (fassung: Fassung, name = 'Challenge anlegen'): HTMLButtonElement => (fassung === 'app'
+  ? within(screen.getByTestId('knoepfe-end')).getByRole('button')
+  : screen.getByRole('button', { name })) as HTMLButtonElement;
+
+const speichern = async (fassung: Fassung, name = 'Challenge anlegen') => {
+  await act(async () => { fireEvent.click(speicherKnopf(fassung, name)); });
 };
 
 /** Die Meldung: in der App oben (setError), im Browser im Dialog -- derselbe Satz. */
@@ -168,6 +178,44 @@ const erwarteMeldung = async (fassung: Fassung, text: string) => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(text));
     expect(h.setError).not.toHaveBeenCalled();
   }
+};
+
+/**
+ * Nach dem Start gesperrt: Zielgruppe, Medienarten, Sichtbarkeit und Start;
+ * Jahrgänge und Ende bleiben frei. Im Browser sind die Felder selbst gesperrt
+ * (mit „(gesperrt)" am Namen der Gruppe); die App zeigt „Start (gesperrt)",
+ * sperrt den Knopf zum Startfenster, und ein Antippen der Zeilen ändert
+ * nichts an der Wahl.
+ */
+const erwarteSperrenNachDemStart = (fassung: Fassung) => {
+  if (fassung === 'web') {
+    const gruppe = (name: string, rolle: 'radio' | 'checkbox') => within(screen.getByRole('group', { name })).getAllByRole(rolle);
+    const zielgruppe = gruppe('Zielgruppe (gesperrt)', 'radio');
+    const medien = gruppe('Erlaubte Medienarten (gesperrt)', 'checkbox');
+    const sichtbarkeit = gruppe('Sichtbarkeit der Beiträge (gesperrt)', 'radio');
+    expect([zielgruppe.length, medien.length, sichtbarkeit.length]).toEqual([3, 5, 3]);
+    for (const feld of [...zielgruppe, ...medien, ...sichtbarkeit]) expect(feld).toBeDisabled();
+    expect(screen.getByLabelText('Start (gesperrt)')).toBeDisabled();
+    expect(screen.getByLabelText('Ende')).toBeEnabled();
+    const jahrgaenge = within(screen.getByRole('group', { name: 'Jahrgänge (mehrere möglich)' })).getAllByRole('checkbox');
+    expect(jahrgaenge).toHaveLength(2);
+    for (const feld of jahrgaenge) expect(feld).toBeEnabled();
+    return;
+  }
+  expect(screen.getByText('Start (gesperrt)')).toBeInTheDocument();
+  expect(screen.getByTestId('challenge-start-picker')).toBeDisabled();
+  expect(screen.getByTestId('challenge-end-picker')).toBeEnabled();
+  const gedrueckt = (titel: string, art: 'einzel' | 'mehrfach' = 'einzel') =>
+    (art === 'einzel' ? einzelwahl('app', titel) : mehrfachwahl('app', titel)).getAttribute('aria-pressed');
+  fireEvent.click(einzelwahl('app', 'Jahrgang und Team'));
+  fireEvent.click(mehrfachwahl('app', 'Foto'));
+  fireEvent.click(mehrfachwahl('app', 'Link'));
+  fireEvent.click(einzelwahl('app', 'Nur Leitung'));
+  expect([
+    gedrueckt('Nur die Konfis'), gedrueckt('Jahrgang und Team'),
+    gedrueckt('Foto', 'mehrfach'), gedrueckt('Link', 'mehrfach'),
+    gedrueckt('Öffentlich'), gedrueckt('Nur Leitung'),
+  ]).toEqual(['true', 'false', 'false', 'true', 'true', 'false']);
 };
 
 const pflichtfelder = () => {
@@ -192,7 +240,7 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     fireEvent.click(mehrfachwahl(fassung, 'Link'));
     fireEvent.click(einzelwahl(fassung, 'Öffentlich'));
     fireEvent.click(screen.getByLabelText('Beiträge erst nach Freigabe zeigen'));
-    await speichern();
+    await speichern(fassung);
 
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledTimes(1));
     expect(h.apiPost).toHaveBeenCalledWith('/challenges/admin', {
@@ -223,7 +271,7 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     fireEvent.click(mehrfachwahl(fassung, '2026/2027'));
     fireEvent.click(einzelwahl(fassung, 'Nur das Team'));
     expect(jahrgaengeZurWahl(fassung)).toEqual([]);
-    await speichern();
+    await speichern(fassung);
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledTimes(1));
     expect(h.apiPost.mock.calls[0][1]).toMatchObject({ audience: 'nur_team', jahrgang_ids: [] });
   });
@@ -239,7 +287,7 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     expect(screen.queryByText('Zeitraum')).toBeNull();
     expect(screen.queryByText(/^(Start|Ende)( \*)?$/)).toBeNull();
     if (fassung === 'web') expect(screen.queryByLabelText('Start')).toBeNull();
-    await speichern();
+    await speichern(fassung);
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledTimes(1));
     expect(h.apiPost.mock.calls[0][1]).toMatchObject({ is_draft: true, jahrgang_ids: [1] });
   });
@@ -250,7 +298,7 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     fireEvent.click(mehrfachwahl(fassung, '2026/2027'));
     datum(fassung, 'Start', '2026-11-10T09:00');
     datum(fassung, 'Ende', '2026-11-09T20:00');
-    await speichern();
+    await speichern(fassung);
     await erwarteMeldung(fassung, 'Das Ende muss nach dem Start liegen.');
     expect(h.apiPost).not.toHaveBeenCalled();
     expect(h.fertig).not.toHaveBeenCalled();
@@ -262,7 +310,7 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     fireEvent.click(mehrfachwahl(fassung, '2026/2027'));
     datum(fassung, 'Start', '2026-11-10T09:15');
     datum(fassung, 'Ende', '2026-11-24T20:45');
-    await speichern();
+    await speichern(fassung);
     await waitFor(() => expect(h.apiPost).toHaveBeenCalledTimes(1));
     expect(h.apiPost.mock.calls[0][1]).toMatchObject({
       starts_at: new Date('2026-11-10T09:15:00').toISOString(),
@@ -273,12 +321,12 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
   it('es fehlt etwas: nichts geht an den Server (die App sperrt den Haken, der Browser sagt, was fehlt)', async () => {
     await oeffnen(fassung);
     tippen('Titel', 'Nur ein Titel');
-    const knopf = screen.getByRole('button', { name: 'Challenge anlegen' }) as HTMLButtonElement;
+    const knopf = speicherKnopf(fassung);
     if (fassung === 'app') {
       expect(knopf.disabled).toBe(true);
     } else {
       expect(knopf.disabled).toBe(false);
-      await speichern();
+      await speichern(fassung);
       await erwarteMeldung(fassung, 'Bitte fülle Titel, Beschreibung, Stempel-Name, Medienarten, Jahrgänge und den Zeitraum aus.');
     }
     expect(h.apiPost).not.toHaveBeenCalled();
@@ -289,13 +337,14 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     expect((screen.getByLabelText('Titel') as HTMLInputElement).value).toBe('Fürbitten');
     expect((screen.getByLabelText('Beiträge erst nach Freigabe zeigen') as HTMLInputElement).disabled).toBe(true);
     expect((screen.getByLabelText('Mehrere Beiträge erlauben') as HTMLInputElement).disabled).toBe(false);
+    erwarteSperrenNachDemStart(fassung);
     // Ein Antippen der gesperrten Wahl ändert nichts (im Browser ist sie gar nicht bedienbar).
     fireEvent.click(einzelwahl(fassung, 'Nur das Team'));
     expect(jahrgaengeZurWahl(fassung)).toEqual(['2026/2027', '2025/2026']);
     expect(screen.queryByLabelText('Als Entwurf speichern')).toBeNull();
 
     tippen('Titel', 'Fürbitten zum Erntedank');
-    await speichern('Speichern');
+    await speichern(fassung, 'Speichern');
     await waitFor(() => expect(h.apiPut).toHaveBeenCalledTimes(1));
     expect(h.apiPut).toHaveBeenCalledWith('/challenges/admin/7', {
       title: 'Fürbitten zum Erntedank',
@@ -320,7 +369,7 @@ describe.each<Fassung>(['app', 'web'])('Challenge anlegen und bearbeiten (%s): d
     }));
     await oeffnen(fassung, LAUFEND);
     tippen('Titel', 'Neu');
-    await speichern('Speichern');
+    await speichern(fassung, 'Speichern');
     await erwarteMeldung(fassung, 'Nach dem Start lässt sich das nicht mehr ändern.');
     expect(h.fertig).not.toHaveBeenCalled();
     expect(h.zu).not.toHaveBeenCalled();
@@ -361,7 +410,7 @@ describe('Challenge im Browser: das Fenster', () => {
     await oeffnen('web');
     pflichtfelder();
     fireEvent.click(mehrfachwahl('web', '2026/2027'));
-    await speichern();
+    await speichern('web');
     const dialog = screen.getByRole('dialog', { name: 'Neue Challenge' });
     expect((within(dialog).getByRole('button', { name: 'Abbrechen' }) as HTMLButtonElement).disabled).toBe(true);
     expect((within(dialog).getByRole('button', { name: 'Schließen' }) as HTMLButtonElement).disabled).toBe(true);
@@ -370,6 +419,17 @@ describe('Challenge im Browser: das Fenster', () => {
     expect(screen.queryByRole('dialog', { name: 'Ungespeicherte Änderungen' })).toBeNull();
     await act(async () => { fertig({ data: { id: 99 } }); });
     await waitFor(() => expect(h.fertig).toHaveBeenCalledTimes(1));
+  });
+
+  it('nach dem Laden steht der Fokus im ersten Feld (Titel), nicht auf dem X', async () => {
+    // Vorher hat etwas anderes den Fokus (der Knopf, der den Dialog öffnet).
+    render(<button type="button">Neue Challenge</button>);
+    screen.getByRole('button', { name: 'Neue Challenge' }).focus();
+    await oeffnen('web');
+    expect(document.activeElement).toBe(screen.getByLabelText('Titel'));
+    cleanup();
+    await oeffnen('web', LAUFEND);
+    expect(document.activeElement).toBe(screen.getByLabelText('Titel'));
   });
 
   it('Enter im Titel speichert wie der Knopf', async () => {

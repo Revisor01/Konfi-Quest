@@ -81,6 +81,15 @@ const WebChallengeDialog: React.FC<WebChallengeDialogProps> = ({ challenge, onGe
     setFormData((vorher) => ({ ...vorher, ...teil }));
   };
 
+  // WebDialog setzt den Fokus beim Öffnen -- da steht noch „Wird geladen …“
+  // (GET /admin/jahrgaenge) und kein Feld, er landete auf dem X. Ist das
+  // Formular da, geht er ins erste Feld, das sich bearbeiten lässt (wie in
+  // WebBenutzerDialog); sonst schlössen Enter oder Leertaste das Fenster.
+  const formularRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!initialLoading) formularRef.current?.querySelector<HTMLElement>('input:not([disabled])')?.focus();
+  }, [initialLoading]);
+
   // Eine Meldung soll nie unter der Knopfleiste liegen.
   const aktionenRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -127,7 +136,7 @@ const WebChallengeDialog: React.FC<WebChallengeDialogProps> = ({ challenge, onGe
         {initialLoading ? (
           <p className="web-challenge-dialog__laedt" role="status">Wird geladen …</p>
         ) : (
-          <div className="web-formular">
+          <div className="web-formular" ref={formularRef}>
             {/* DIE CHALLENGE */}
             <div className="web-feldpaar">
               <WebFeld

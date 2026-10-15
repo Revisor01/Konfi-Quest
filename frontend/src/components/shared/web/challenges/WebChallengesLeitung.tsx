@@ -8,8 +8,8 @@
 // Filter (Aktuell, Geplant, Archiv, Alle, Wartet auf Freigabe -- aus
 // seiten/challengesLeitung.ts, wie die Reiter der App), Zielgruppe,
 // Jahrgang und eine Live-Suche gelten in beiden Ansichten gleich; "Neue
-// Challenge" oeffnet das Formular der App (useChallengeFormular ->
-// ChallengeManageModal).
+// Challenge" oeffnet den Dialog der Web-Fassung (useChallengeFormular ->
+// WebChallengeDialog, 15.10.2026).
 //
 // Rahmen, Werkzeugzeile und Zustaende stellt WebListenSeite (10.10.2026):
 // Zustand als Reiter (Zahl nach Zielgruppe, Jahrgang und Suche; orange am

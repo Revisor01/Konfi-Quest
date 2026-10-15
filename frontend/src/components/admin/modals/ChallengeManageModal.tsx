@@ -114,10 +114,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
             </IonButton>
           </IonButtons>
           <IonButtons slot="end">
-            {/* Der Haken hat einen Namen fuer Vorlesehilfen -- derselbe wie
-                der Knopf im Dialog der Web-Fassung (15.10.2026). */}
             <IonButton
-              aria-label={isEditMode ? 'Speichern' : 'Challenge anlegen'}
               onClick={() => handleSave()}
               disabled={loading || isSubmitting || !isFormValid}
               className="app-modal-submit-btn app-modal-submit-btn--challenges"
