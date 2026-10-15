@@ -216,11 +216,9 @@
   --karten-schleier: linear-gradient(135deg, #a21456 0%, #0a0a0a 60%);
 }
 
-/* Dieselbe Seite im Teamer-Rueckblick (09.09.2026). Bewusst als EIGENER
-   Block und nicht als Selektorliste an der Regel darueber: Der Waechter
-   (wrappedTeilenAlleSeiten.test.ts) sucht je Seite einen eigenen Block mit
-   --karten-schleier. Eine Sammelregel liest er nicht -- und ohne Schleier
-   traegt das geteilte Bild eine andere Farbe als die Seite. */
+/* Dieselbe Seite im Teamer-Rueckblick (09.09.2026), als eigener Block mit
+   --karten-schleier -- ohne Schleier traegt das geteilte Bild eine andere
+   Farbe als die Seite. */
 .share-card--teamer-challenge-beitraege {
   background: linear-gradient(135deg, #a21456 0%, #0a0a0a 60%);
   --karten-schleier: linear-gradient(135deg, #a21456 0%, #0a0a0a 60%);
@@ -387,10 +385,9 @@
 
 /* Die Slogan-Seiten stehen linksbuendig am unteren Rand -- wie im
    Rueckblick selbst. Zentriert saehen sie aus wie eine Statistikkachel. */
-/* 'stavanger-2026' steht VOR der Vierergruppe und nicht dahinter: Ein Test
-   (wrappedTeilenAlleSeiten) prueft diesen Block woertlich in genau dieser
-   Reihenfolge, weil er am 06.09.2026 bei einer Ersetzung schon einmal
-   ueberschrieben wurde. Die Gruppe bleibt deshalb unangetastet. */
+/* 'stavanger-2026' steht VOR der Vierergruppe und nicht dahinter: Der Block
+   wurde am 06.09.2026 bei einer Ersetzung schon einmal ueberschrieben; die
+   Gruppe bleibt deshalb unangetastet. */
 .share-card--stavanger-2026,
 .share-card--kategorie-seite,
 .share-card--datums-seite,

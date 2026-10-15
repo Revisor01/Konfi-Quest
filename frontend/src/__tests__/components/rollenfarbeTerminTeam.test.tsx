@@ -1,15 +1,13 @@
-// Termin: Team und Leitung hinzufügen -- die Personen in der Farbe ihrer
-// Rolle (02.10.2026, Paket 2.4.0, Punkt 6).
+// Termin: Team und Leitung hinzufügen -- das Wort nach der Rolle
+// (02.10.2026, Paket 2.4.0, Punkt 6).
 //
-// Nachgestellt: Die Auswahlliste trug fuer JEDE Person Strich und Kreis in der
-// Termin-Farbe (app-list-item--events, Rot) und schrieb fuer Gemeindeleitung
-// wie Leitung dasselbe Wort "Leitung". Jetzt: Team und Leitung in ihrer
-// Rollenfarbe (utils/rollenNamen: rollenDarstellung), das Wort nach der Rolle
-// (rollenName). Die Konfi-Auswahl bleibt, wie sie war.
+// Nachgestellt: Die Auswahlliste schrieb fuer Gemeindeleitung wie Leitung
+// dasselbe Wort "Leitung". Jetzt steht das Wort nach der Rolle (rollenName).
+// Die Farben der Rollen sind Gestaltung und bleiben frei (Simon, 15.10.2026).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { karteVon, erwarteRollenfarbe } from './rollenfarbePruefen';
+import { render, screen, waitFor } from '@testing-library/react';
+import { karteVon } from './rollenfarbePruefen';
 
 const apiGet = vi.fn();
 vi.mock('../../services/api', () => ({
@@ -58,45 +56,19 @@ beforeEach(() => {
 const rendern = (filterRole: 'konfi' | 'teamer' | 'leitung') =>
   render(<ParticipantManagementModal eventId={7} onClose={vi.fn()} onSuccess={vi.fn()} filterRole={filterRole} />);
 
-describe('Leitung hinzufügen: Gemeindeleitung Indigo, Leitung Petrol', () => {
-  it('Strich und Kreis in der Rollenfarbe, das Wort nach der Rolle', async () => {
+describe('Leitung hinzufügen: das Wort nach der Rolle', () => {
+  it('Gemeindeleitung heisst Gemeindeleitung, Leitung heisst Leitung', async () => {
     rendern('leitung');
     await waitFor(() => expect(screen.getByText('Olga Gemeindeleitung')).toBeTruthy());
-    const olga = karteVon('Olga Gemeindeleitung');
-    const anna = karteVon('Anna Leitung');
-    erwarteRollenfarbe(olga, 'org_admin', 'Gemeindeleitung', { marke: false, schrift: false });
-    erwarteRollenfarbe(anna, 'admin', 'Leitung', { marke: false, schrift: false });
-    expect(olga.querySelector('.app-list-item__subtitle')?.textContent).toBe('Gemeindeleitung');
-    expect(anna.querySelector('.app-list-item__subtitle')?.textContent).toBe('Leitung');
-  });
-
-  it('ausgewaehlt: zarter Grund in der Rollenfarbe, nicht in der Termin-Farbe', async () => {
-    rendern('leitung');
-    await waitFor(() => expect(screen.getByText('Anna Leitung')).toBeTruthy());
-    fireEvent.click(karteVon('Anna Leitung'));
-    const anna = karteVon('Anna Leitung');
-    expect(anna.classList.contains('app-list-item--selected')).toBe(true);
-    expect(anna.style.background).toBe('');
-    erwarteRollenfarbe(anna, 'admin', 'Leitung ausgewaehlt', { marke: false, schrift: false });
+    expect(karteVon('Olga Gemeindeleitung').querySelector('.app-list-item__subtitle')?.textContent).toBe('Gemeindeleitung');
+    expect(karteVon('Anna Leitung').querySelector('.app-list-item__subtitle')?.textContent).toBe('Leitung');
   });
 });
 
-describe('Teamer:in hinzufügen: Beere statt Termin-Rot', () => {
-  it('Strich und Kreis in der Teamer-Farbe', async () => {
+describe('Teamer:in hinzufügen: das Wort nach der Rolle, dazu der Jahrgang', () => {
+  it('Teamer:in · JG A', async () => {
     rendern('teamer');
     await waitFor(() => expect(screen.getByText('Tim Teamer')).toBeTruthy());
-    const tim = karteVon('Tim Teamer');
-    erwarteRollenfarbe(tim, 'teamer', 'Teamer:in', { marke: false, schrift: false });
-    expect(tim.querySelector('.app-list-item__subtitle')?.textContent).toBe('Teamer:in · JG A');
-  });
-});
-
-describe('Kind hinzufügen: die Konfi-Auswahl bleibt, wie sie war', () => {
-  it('Strich und Kreis in der Termin-Farbe', async () => {
-    rendern('konfi');
-    await waitFor(() => expect(screen.getByText('Karl Konfi')).toBeTruthy());
-    const karl = karteVon('Karl Konfi');
-    expect(karl.classList.contains('app-list-item--events')).toBe(true);
-    expect(karl.querySelector('.app-icon-circle')?.classList.contains('app-icon-circle--events')).toBe(true);
+    expect(karteVon('Tim Teamer').querySelector('.app-list-item__subtitle')?.textContent).toBe('Teamer:in · JG A');
   });
 });

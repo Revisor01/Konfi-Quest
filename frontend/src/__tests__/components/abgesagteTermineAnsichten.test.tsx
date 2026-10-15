@@ -13,8 +13,8 @@
 // zusammenbaut -- gelesen am Quelltext. Seither gerendert (Audit Tests
 // 26.09.2026, BF-02): Jede Ansicht bekommt denselben abgesagten Termin und
 // muss zeigen, was die Bausteine liefern -- den Grund genau einmal, beide
-// Urheberzeilen, durchgestrichen in Listen und Kacheln, nicht im Detail --,
-// und zwar fuer BEIDE Antwortformen: Die Listen (GET /events, GET
+// Urheberzeilen, die Absage im Kopf des Details --, und zwar fuer BEIDE
+// Antwortformen: Die Listen (GET /events, GET
 // /konfi/events) liefern nur registration_status='cancelled', die
 // Einzelabrufe zusaetzlich cancelled=true. Eine Ansicht, die nur eines der
 // Felder fragt, faellt an der anderen Form.
@@ -74,9 +74,6 @@ const oeffneKonfiDetail = async (id = 77) => {
 
 /** Wie oft ein Text im Bereich steht (genau, nicht als Teilstring). */
 const anzahl = (bereich: HTMLElement, text: string) => within(bereich).queryAllByText(text).length;
-const titelStil = (zeile: HTMLElement) => zeile.querySelector('.app-list-item__title') as HTMLElement;
-const durchgestrichen = () => [...document.querySelectorAll<HTMLElement>('[style]')]
-  .filter((el) => el.style.textDecoration === 'line-through');
 
 beforeEach(() => {
   zuruecksetzen();
@@ -131,29 +128,15 @@ describe('der Absageblock steht in jeder Ansicht -- der Grund genau einmal, beid
   });
 });
 
-describe('Befund A: die Terminlisten streichen abgesagte Titel durch', () => {
-  it.each([
-    ['Konfi-Liste', () => oeffneKonfiListe()],
-    ['Team-Liste', () => oeffneListe('alle')],
-  ])('%s streicht durch und graut aus -- den offenen Termin nicht', async (_name, oeffne) => {
-    await oeffne();
-    expect(titelStil(zeileVon('Konfi-Freizeit')).style.textDecoration).toBe('line-through');
-    expect(titelStil(zeileVon('Konfi-Freizeit')).style.color).toBe('var(--app-text-muted)');
-    expect(titelStil(zeileVon('Stadtrallye')).style.textDecoration).toBe('none');
-  });
-});
-
-describe('Befund B: keine Detailansicht streicht durch', () => {
-  it('das Konfi-Detail streicht nichts durch -- Kopf, Farbe und Kasten sagen es schon', async () => {
+describe('Befund B: die Detailansichten nennen die Absage im Kopf', () => {
+  it('das Konfi-Detail', async () => {
     await oeffneKonfiDetail();
     expect(document.querySelector('.app-header-banner__subtitle')!.textContent).toBe('Abgesagt');
-    expect(durchgestrichen()).toEqual([]);
   });
 
   it('das Team-Detail ebenso', async () => {
     await oeffneTermin('Konfi-Freizeit');
     expect(document.querySelector('.app-header-banner__subtitle')!.textContent).toBe('Abgesagt');
-    expect(durchgestrichen()).toEqual([]);
   });
 });
 
@@ -198,7 +181,6 @@ describe('alle Absage-Pruefungen laufen ueber istAbgesagt() -- beide Antwortform
     document.body.innerHTML = '';
     await oeffneKonfiListe();
     expect(within(zeileVon('Konfi-Freizeit')).getByRole('img', { name: 'Abgesagt' })).toBeTruthy();
-    expect(titelStil(zeileVon('Konfi-Freizeit')).style.textDecoration).toBe('line-through');
   });
 });
 

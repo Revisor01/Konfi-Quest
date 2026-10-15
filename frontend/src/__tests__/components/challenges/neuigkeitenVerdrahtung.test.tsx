@@ -66,7 +66,7 @@ describe('Navi-Tab: der Reiter Challenges traegt den Zaehler', () => {
   it('Konfis: die Summe ihrer Neuigkeiten', async () => {
     zustand.antworten.set('/notifications/badge-counts', zaehlerAntwort({ neuigkeitenJe: { 5: 2, 9: 1 } }));
     const reiter = await zeigeReiter('/konfi/dashboard');
-    expect(reiter.find((r) => r.tab === 'challenges')).toMatchObject({ name: 'Challenges', zahl: '3', farbe: 'danger' });
+    expect(reiter.find((r) => r.tab === 'challenges')).toMatchObject({ name: 'Challenges', zahl: '3' });
   });
 
   it('ohne Neuigkeiten keine Zahl', async () => {
@@ -169,7 +169,6 @@ describe('eine Kugel fuer Chat und Challenges statt zweier Abschriften (Waechter
     expect(konfiKugel?.textContent).toBe('9+');
     expect(leitungsKugel?.textContent).toBe('9+');
     expect(leitungsKugel?.className).toBe(konfiKugel?.className);
-    expect(leitungsKugel?.parentElement?.className).toBe(konfiKugel?.parentElement?.className);
   });
 
   it('die alte Inline-Kugel der Chat-Liste ist weg', () => {

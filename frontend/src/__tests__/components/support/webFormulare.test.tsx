@@ -41,13 +41,12 @@ describe('WebFeld und WebTextfeld', () => {
     expect(onWert).toHaveBeenCalledWith('anna.beispiel');
   });
 
-  it('Pflicht: aria-required am Feld und der Stern aus dem Stylesheet -- nicht im Namen', () => {
+  it('Pflicht: aria-required am Feld -- ein Stern steht nicht im Namen', () => {
     render(<WebFeld label="Passwort" pflicht typ="password" wert="" onWert={() => {}} autocomplete="new-password" />);
     const feld = screen.getByLabelText('Passwort');
     expect(feld).toHaveAttribute('aria-required', 'true');
     expect(feld).toHaveAttribute('type', 'password');
     expect(feld).toHaveAttribute('autocomplete', 'new-password');
-    expect(screen.getByText('Passwort').className).toContain('web-feld__label--pflicht');
     expect(screen.getByText('Passwort').textContent).toBe('Passwort');
   });
 
@@ -58,12 +57,11 @@ describe('WebFeld und WebTextfeld', () => {
     expect(feld).toBeDisabled();
   });
 
-  it('das Textfeld ist ein <textarea> mit der Zeilenzahl als Starthoehe', () => {
+  it('das Textfeld ist ein <textarea>, Pflicht traegt aria-required; Tippen meldet den Wert', () => {
     const onWert = vi.fn();
     render(<WebTextfeld label="Text der Antwort" pflicht zeilen={8} wert="Hallo" onWert={onWert} />);
     const feld = screen.getByLabelText('Text der Antwort') as HTMLTextAreaElement;
     expect(feld.tagName).toBe('TEXTAREA');
-    expect(feld.rows).toBe(8);
     expect(feld).toHaveAttribute('aria-required', 'true');
     fireEvent.change(feld, { target: { value: 'Hallo Anna' } });
     expect(onWert).toHaveBeenCalledWith('Hallo Anna');
@@ -112,10 +110,9 @@ describe('WebAuswahlSuche', () => {
     expect(onWert).toHaveBeenCalledWith('2');
   });
 
-  it('der gewaehlte Eintrag ist angekreuzt und hervorgehoben; kein Eintrag gewaehlt, wenn der Wert leer ist', () => {
+  it('der gewaehlte Eintrag ist angekreuzt, genau einer', () => {
     zeigen('3');
     expect(screen.getByRole('radio', { name: /Beispielstadt/ })).toBeChecked();
-    expect(screen.getByRole('radio', { name: /Beispielstadt/ }).closest('label')!.className).toContain('web-wahl__zeile--gewaehlt');
     expect(screen.getAllByRole('radio').filter((r) => (r as HTMLInputElement).checked)).toHaveLength(1);
   });
 
@@ -181,8 +178,8 @@ describe('WebHinweis und WebAngaben', () => {
     expect(screen.getAllByRole('alert')).toHaveLength(1);
     expect(screen.getByRole('alert')).toHaveTextContent('Versand gescheitert');
     expect(screen.getByRole('alert')).toHaveTextContent('Dein Text bleibt stehen.');
-    expect(screen.getAllByRole('status').map((s) => s.className)).toEqual([
-      'web-hinweis web-hinweis--warnung', 'web-hinweis web-hinweis--hinweis', 'web-hinweis web-hinweis--erfolg', 'web-hinweis web-hinweis--fehler',
+    expect(screen.getAllByRole('status').map((s) => s.textContent)).toEqual([
+      'Postfach noch nicht eingerichtet', 'Nur ein Hinweis.', 'Die Gemeinde ist angelegt.', 'Ruhiger Fehler',
     ]);
   });
 
@@ -208,7 +205,6 @@ describe('WebSpalten', () => {
     expect(screen.getByRole('complementary', { name: 'Angaben' })).toHaveTextContent('Seite');
     rerender(<WebSpalten haupt={<p>Haupt</p>} seite={<p>Seite</p>} seiteBeschriftung="Liste" seiteLinks />);
     expect([...container.querySelector('.web-spalten')!.children].map((k) => k.textContent)).toEqual(['Seite', 'Haupt']);
-    expect(container.querySelector('.web-spalten')!.className).toContain('web-spalten--links');
   });
 });
 
@@ -321,7 +317,7 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
   /** Der Kopf einer Mail ist ein Knopf zum Auf- und Zuklappen. */
   const kopf = (name: RegExp) => screen.getByRole('button', { name });
 
-  it('eingehend und ausgehend: der Kreis unterscheidet, ausgehende heißen „Support" und sagen „Gesendet" in Worten; nur die jüngste ist offen', () => {
+  it('eingehend und ausgehend: ausgehende heißen „Support" und sagen „Gesendet" in Worten; nur die jüngste ist offen', () => {
     render(<MailGespraeche titelKern="Eure Anfrage" mails={[
       mail(1),
       mail(2, {
@@ -333,8 +329,6 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
     const aus = kopf(/^Support/);
     expect(ein).toHaveAttribute('aria-expanded', 'false');
     expect(aus).toHaveAttribute('aria-expanded', 'true');
-    expect(ein.querySelector('.mail-kreis')!.className).toBe('mail-kreis');
-    expect(aus.querySelector('.mail-kreis')!.className).toBe('mail-kreis mail-kreis--aus');
     expect(aus.querySelector('.mail-kreis')).toHaveTextContent('KQ');
     expect(aus).toHaveTextContent('Support· Test Super-Admin');
     expect(aus).toHaveTextContent('Gesendet');
@@ -349,7 +343,7 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
     expect(screen.queryByText('Eure Anfrage')).toBeNull();
   });
 
-  it('flach, das Älteste oben, ohne Einrückung; antwortet eine Mail nicht auf die direkt davor, steht „Antwort auf …" dabei', () => {
+  it('das Älteste oben; antwortet eine Mail nicht auf die direkt davor, steht „Antwort auf …" dabei', () => {
     render(<MailGespraeche mails={[
       mail(1, { message_id: '<a@ex>' }),
       mail(2, { message_id: '<b@ex>', in_reply_to: '<a@ex>', gesendet_am: '2026-10-02T10:00:00Z', von_name: 'Ben' }),
@@ -358,7 +352,6 @@ describe('Schriftwechsel (MailGespraeche, wie im Lesebereich des Web)', () => {
     ]} />);
     fireEvent.click(screen.getByRole('button', { name: 'Alle aufklappen' }));
     const zeilen = [...document.querySelectorAll<HTMLElement>('li.mail-zeile')];
-    expect(zeilen.map((z) => z.className.match(/tiefe-(\d)/))).toEqual([null, null, null, null]);
     expect(zeilen.map((z) => z.querySelector('.mail-zeile__absender')?.textContent)).toEqual(['Anna Beispiel', 'Ben', 'Cara', 'Dora']);
     // Ben und Cara antworten auf die Mail direkt davor; Dora auf Anna -- über zwei hinweg.
     const bezug = zeilen.map((z) => z.querySelector('.mail-zeile__bezug')?.textContent ?? null);

@@ -75,10 +75,13 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
 // Flex-Regeln aus MailGespraeche.css und rechnet das Kuerzen nach der
 // Spezifikation mit gemessenen Breiten nach (gegen die Messung im Browser
 // abgeglichen). Rendern saehe den Befund („S…“ bei 390 px) nicht.
-// 81 seit 15.10.2026: drei reine Layout-Waechter geloescht (Reiter-
-// Unterlaengen, Android-Kopfleiste, Datumsfelder im Termin-Fenster) -- das
-// Layout bleibt frei aenderbar (Simon, 15.10.2026).
-const OBERGRENZE = 81;
+// 15.10.2026: Layout bleibt frei aenderbar (Simon), reine Layout-Waechter
+// sind geloescht -- Reiter-Unterlaengen, Android-Kopfleiste, Datumsfelder im
+// Termin-Fenster, md3LayoutPasst, tabLeisteAndroid, zusageKarteHoehe,
+// wrappedBildNichtVerdeckt, challenges/challengeIconFarbe;
+// wrappedSeitenHabenBilder prueft nur noch, dass die Bilddateien da sind,
+// und liest keinen Quelltext mehr.
+const OBERGRENZE = 75;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -97,7 +100,6 @@ const BEKANNT: string[] = [
   '__tests__/components/beruehrungsziele.test.ts',
   '__tests__/components/bewegungsreduktion.test.ts',
   '__tests__/components/bibelUebersetzungenVollstaendig.test.ts',
-  '__tests__/components/challenges/challengeIconFarbe.test.ts',
   '__tests__/components/challenges/challengesSeiteGeteilt.test.ts',
   '__tests__/components/challenges/stempelStattAbzeichen.test.ts',
   '__tests__/components/chatNutzertypDreiWerte.test.ts',
@@ -115,7 +117,6 @@ const BEKANNT: string[] = [
   '__tests__/components/klickbareElementeBedienbar.test.ts',
   '__tests__/components/kontoModaleAlleDreiAnsichten.test.ts',
   '__tests__/components/listenAbstaendeProfil.test.ts',
-  '__tests__/components/md3LayoutPasst.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
   '__tests__/components/onboardingTourGeteilt.test.ts',
@@ -124,7 +125,6 @@ const BEKANNT: string[] = [
   '__tests__/components/rollenGleichbehandlung.test.ts',
   '__tests__/components/stylesheetsParsen.test.ts',
   '__tests__/components/support/mailZeileKonto.test.ts',
-  '__tests__/components/tabLeisteAndroid.test.ts',
   '__tests__/components/tabZaehlerIos.test.ts',
   '__tests__/components/tageUndKalendertag.test.ts',
   '__tests__/components/typografieTokens.test.ts',
@@ -134,15 +134,12 @@ const BEKANNT: string[] = [
   '__tests__/components/webCssKlassen.test.ts',
   '__tests__/components/webDetailSeiteEinGeruest.test.ts',
   '__tests__/components/wrappedBewegungReduzieren.test.ts',
-  '__tests__/components/wrappedBildNichtVerdeckt.test.ts',
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',
-  '__tests__/components/wrappedSeitenHabenBilder.test.ts',
   '__tests__/components/wrappedSprueche.test.ts',
   '__tests__/components/wrappedTeilenAlleSeiten.test.ts',
   '__tests__/components/wrappedTexteUmlaute.test.ts',
   '__tests__/components/zentraleIcons.test.ts',
   '__tests__/components/zoomUndSchrift.test.ts',
-  '__tests__/components/zusageKarteHoehe.test.ts',
   '__tests__/contexts/badgeResync.test.ts',
   '__tests__/dateiverweiseImCode.test.ts',
   '__tests__/handbuchBadgeZielgruppen.test.ts',

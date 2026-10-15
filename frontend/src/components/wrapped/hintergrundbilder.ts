@@ -113,8 +113,9 @@ const MOTIV_DATEI: Record<Motiv, string> = {
  *
  * ACHTUNG: Diese Tabelle und KACHEL_ZWEITMOTIV müssen DIESELBEN Schlüssel
  * abdecken, und je Kachel müssen sich beide Motive unterscheiden — zweimal
- * dasselbe Bild wirkt wie ein Fehler, nicht wie Absicht. Zwei Tests wachen
- * darüber (wrappedSeitenHabenBilder, wrappedHintergrundbilder).
+ * dasselbe Bild wirkt wie ein Fehler, nicht wie Absicht. Darüber wacht
+ * wrappedHintergrundbilder; dass jede verwiesene Datei da ist, prüft
+ * zusätzlich wrappedSeitenHabenBilder.
  */
 const KACHEL_MOTIV: Partial<Record<string, Motiv>> = {
   intro: 'watt-abend',

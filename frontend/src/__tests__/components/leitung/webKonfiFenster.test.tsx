@@ -349,7 +349,7 @@ describe('Konfi anlegen im Browser: eigener Dialog', () => {
   });
 });
 
-describe('Anwesenheit im Browser: eigener, breiter Dialog', () => {
+describe('Anwesenheit im Browser: eigener Dialog', () => {
   const oeffnen = async () => {
     render(<AdminKonfisPage />);
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Anwesenheit' })); });
@@ -363,9 +363,8 @@ describe('Anwesenheit im Browser: eigener, breiter Dialog', () => {
     ...within(z).getAllByRole('cell').map((c) => c.textContent),
   ]);
 
-  it('breites Fenster, erster Jahrgang geladen, Fokus in der Suche; kein App-Fenster', async () => {
+  it('erster Jahrgang geladen, Fokus in der Suche; kein App-Fenster', async () => {
     const dialog = await oeffnen();
-    expect(dialog).toHaveClass('web-dialog--weit');
     expect(h.apiGet).toHaveBeenCalledWith('/admin/jahrgaenge/12/attendance-matrix');
     expect(document.activeElement).toBe(within(dialog).getByRole('searchbox', { name: 'Konfi suchen' }));
     expect((within(dialog).getByRole('combobox', { name: 'Jahrgang' }) as HTMLSelectElement).value).toBe('12');

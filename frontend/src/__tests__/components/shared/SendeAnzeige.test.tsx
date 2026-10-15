@@ -37,10 +37,9 @@ describe('SendeAnzeige', () => {
     expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('100');
   });
 
-  it('ist eine höfliche Live-Region und färbt den Balken in der übergebenen Farbe', () => {
+  it('ist eine höfliche Live-Region', () => {
     render(<SendeAnzeige prozent={40} was="Beitrag" farbe="rgb(10, 20, 30)" />);
     const balken = screen.getByRole('progressbar');
-    expect(balken.parentElement!.style.color).toBe('rgb(10, 20, 30)');
     expect(balken.parentElement!.parentElement!.getAttribute('aria-live')).toBe('polite');
   });
 });

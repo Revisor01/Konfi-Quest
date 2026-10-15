@@ -59,7 +59,6 @@ vi.mock('../../hooks/useWartendeVorgaenge', () => ({
 
 import PostfachGlocke, { glockeZustand } from '../../components/shared/PostfachGlocke';
 import { POSTFACH_OEFFNEN_EVENT } from '../../utils/postfach';
-import { ICON_GLOCKE } from '../../components/shared/icons';
 
 const item = (id: string): QueueItem => ({
   id, method: 'POST', url: '/x', maxRetries: 3, retryCount: 0,
@@ -130,21 +129,14 @@ describe('PostfachGlocke', () => {
     expect(container.querySelector('.app-postfach-glocke')).not.toBeNull();
     expect(container.querySelector('.app-postfach-glocke__zahl')).toBeNull();
     expect(container.querySelector('.app-postfach-glocke__punkt')).toBeNull();
-    expect(container.querySelectorAll('[data-testid="icon"]').length).toBe(1);
-    expect(container.querySelector('[data-testid="icon"]')?.getAttribute('data-icon')).toBe(ICON_GLOCKE);
   });
 
-  it('ungelesene Mitteilungen: der Punkt -- keine Zahl, kein Symbol', () => {
+  it('ungelesene Mitteilungen: der Punkt -- keine Zahl', () => {
     mockUngelesen = 3;
     const { container } = render(<PostfachGlocke />);
     const punkt = container.querySelector('.app-postfach-glocke__punkt');
     expect(punkt).not.toBeNull();
-    expect(punkt!.classList.contains('app-ungelesen-punkt')).toBe(true);
     expect(punkt!.textContent).toBe('');
-    expect(punkt!.children.length).toBe(0);
-    // Nur die Glocke ist ein Symbol -- kein Umschlag mehr daneben.
-    expect(container.querySelectorAll('[data-testid="icon"]').length).toBe(1);
-    expect(container.querySelector('[data-testid="icon"]')?.getAttribute('data-icon')).toBe(ICON_GLOCKE);
     expect(container.querySelector('.app-postfach-glocke__zahl')).toBeNull();
     expect(container.querySelector('.app-postfach-glocke')?.getAttribute('data-variante')).toBe('hinweis');
   });
@@ -206,65 +198,11 @@ describe('PostfachGlocke', () => {
   });
 });
 
-// Der Punkt (29.09.2026) statt des Briefumschlags: ein Aussehen fuer Glocke
-// und Postfach-Eintrag (.app-ungelesen-punkt), Farbe als Token -- blau aus
-// --ion-color-primary (im Dunkelmodus hellt Ionics Palette sie selbst auf).
-// An der Glocke sitzt er 3 px hoeher und 3 px weiter rechts als die Mitte
-// der Zahl der Warteschlange (Simon, 29.09.2026: "muesste sogar noch ein
-// bisschen hoeher und weiter rechts"), schraeg ueber der Ecke des Symbols.
-// Gemessen (Playwright): iOS 2,8 px rechts und 2,8 px ueber der Symbolecke,
-// Android 4 px rechts, 2 px darueber; nicht beschnitten.
-describe('Punkt an der Glocke: Token statt fester Farben, schraeg ueber der Ecke', () => {
+// Glocke und Punkt tragen keine feste Farbe: Hell und Dunkel kommen aus den
+// Tokens (Hygiene, 15.10.2026 -- wie der Punkt aussieht, bleibt frei).
+describe('Glocke und Punkt: keine feste Farbe im Stylesheet', () => {
   const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
   const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  const bloecke = (selektor: string): string[] =>
-    [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter((m) => m[1].split(',').some((s) => s.trim().replace(/\s+/g, ' ') === selektor))
-      .map((m) => m[2]);
-  const px = (quelle: string, name: string): number => {
-    const m = quelle.match(new RegExp(`\\b${name}:\\s*(-?[\\d.]+)(px|;)`));
-    if (!m) throw new Error(`${name} fehlt`);
-    return parseFloat(m[1]);
-  };
-
-  it('ein Aussehen: 10px, rund, blau aus dem Token', () => {
-    const punkt = bloecke('.app-ungelesen-punkt');
-    expect(punkt).toHaveLength(1);
-    expect(px(punkt[0], 'width')).toBe(10);
-    expect(px(punkt[0], 'height')).toBe(10);
-    expect(punkt[0]).toMatch(/border-radius:\s*var\(--app-radius-kreis\)/);
-    expect(punkt[0]).toMatch(/background:\s*var\(--ion-color-primary\)/);
-  });
-
-  it('kein Briefumschlag mehr im Stylesheet der Glocke', () => {
-    expect(ohneKommentare).not.toMatch(/app-postfach-glocke__zahl--umschlag/);
-  });
-
-  it('iOS: 3px hoeher und 3px weiter rechts als die Mitte der 18px-Zahl (.button-inner 40px)', () => {
-    const zahl = bloecke('.app-postfach-glocke__zahl')[0];
-    const punkt = bloecke('.app-postfach-glocke__punkt');
-    expect(punkt).toHaveLength(1);
-    const mitte = (top: number, right: number, groesse: number) => ({ x: 40 - right - groesse / 2, y: top + groesse / 2 });
-    const z = mitte(px(zahl, 'top'), px(zahl, 'right'), 18);
-    const p = mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10);
-    expect(z).toEqual({ x: 31, y: 9 });
-    expect(p).toEqual({ x: z.x + 3, y: z.y - 3 });
-  });
-
-  it('Android: ebenso 3px hoeher und 3px weiter rechts als die Zahl (.button-inner 48px)', () => {
-    const zahl = bloecke('.app-postfach-glocke.md .app-postfach-glocke__zahl')[0];
-    const punkt = bloecke('.app-postfach-glocke.md .app-postfach-glocke__punkt');
-    expect(punkt).toHaveLength(1);
-    const mitte = (top: number, right: number, groesse: number) => ({ x: 48 - right - groesse / 2, y: top + groesse / 2 });
-    const z = mitte(px(zahl, 'top'), px(zahl, 'right'), 18);
-    expect(mitte(px(punkt[0], 'top'), px(punkt[0], 'right'), 10)).toEqual({ x: z.x + 3, y: z.y - 3 });
-  });
-
-  it('bleibt ein schlichter Punkt: kein Symbol darin (die Linien-Variante ist verworfen)', () => {
-    const punkt = bloecke('.app-ungelesen-punkt')[0];
-    expect(punkt).not.toMatch(/display:\s*flex/);
-    expect(ohneKommentare).not.toMatch(/\.app-ungelesen-punkt[^{]*(ion-icon|svg)/);
-  });
 
   it('keine feste Farbe in den Regeln der Glocke und des Punkts', () => {
     const regeln = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
@@ -272,186 +210,5 @@ describe('Punkt an der Glocke: Token statt fester Farben, schraeg ueber der Ecke
       .map((m) => m[2])
       .join('');
     expect(regeln).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(\s*\d/);
-  });
-});
-
-// Wo die Zahl steht -- als Vertrag mit den gemessenen Massen (25.09.2026).
-//
-// Drei Befunde von Simon am Geraet, am selben Tag:
-//  1. "der blaue Indikator ist oben abgeschnitten."
-//  2. "liegt jetzt zu sehr auf dem Icon. Es muss ueber das Icon gehen."
-//  3. "Postfach badge wird durch die Rundung des Icon abgeschnitten, kann man
-//     das nicht drueber laufen lassen."
-//
-// Gemessen (Ionic 9.0.3, ios27-Theme, 393px, Playwright): Es beschneiden
-// ZWEI Knoten mit demselben Mittelpunkt wie das Symbol -- die Glas-Pille
-// (ion-buttons, Radius 23) und der Knopf selbst (.button-native im
-// Shadow-DOM, overflow hidden, border-radius 24px bei 44px: Kreis mit
-// Radius 22, also enger). Die Zahl (18px, Radius 9) waere im Knopfkreis nur
-// bis Abstand 13 ganz sichtbar; top 1 / right 2 (749d39c3) lag bei 13,45 --
-// die Spitze ragte 0,45px hinaus, am Geraet die abgeschnittene Ecke.
-//
-// Beide Knoten brauchen ihr overflow hidden auf iOS nicht (Bildvergleich:
-// Pille ohne Zahl byte-identisch, Knopf in Ruhe byte-identisch, gedrueckt
-// 15 von 65.340 Pixeln um Kanaldelta 1). Also geben beide frei, und die
-// Zahl steht mit top 0 / right 0 genau auf der rechten oberen Ecke des
-// Symbolkastens: Mitte (365, 70) gegen Ecke (365,2 / 69,8). Auf Android
-// begrenzt dasselbe overflow hidden den Ripple; dort bleibt alles wie es
-// war (eigene Werte top -8 / right 2, Lage 1px neben der Ecke).
-//
-// jsdom rechnet kein Layout, deshalb prueft der Test die CSS-Werte gegen
-// dieselbe Geometrie.
-describe('Zahl an der Glocke: auf der Ecke des Symbols, Pille und Knopf beschneiden nicht', () => {
-  const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8');
-  const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  // Findet den Block, in dessen Selektorliste der gesuchte Selektor steht.
-  // Seit 26.09.2026 traegt die Pillen-Freigabe zwei Selektoren (die scharfe
-  // gegen das Theme und die alte), deshalb kein Vergleich auf Gleichheit der
-  // ganzen Zeile mehr.
-  const block = (selektor: string): string => {
-    const treffer = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter((m) => m[1].split(',').some((s) => s.trim().replace(/\s+/g, ' ') === selektor));
-    if (treffer.length !== 1) throw new Error(`${selektor}: ${treffer.length} Bloecke`);
-    return treffer[0][2];
-  };
-  const zahl = block('.app-postfach-glocke__zahl');
-  const wert = (quelle: string, name: string): number => {
-    const m = quelle.match(new RegExp(`\\b${name}:\\s*(-?[\\d.]+)(px|;)`));
-    if (!m) throw new Error(`${name} fehlt im Block`);
-    return parseFloat(m[1]);
-  };
-
-  // Gemessen im Browser, iOS: Knopf 44x44 (Kreis Radius 22 um seine Mitte),
-  // .button-inner 40x40 bei 2px Einzug, Symbol 22,4px mittig darin (Ecke
-  // oben rechts bei 31,2 / 8,8 im .button-inner), Zahl 18px. Die Zahl haengt
-  // an .button-inner.
-  const INNER = 40;
-  const SYMBOL = 22.39;
-  const KNOPF_RADIUS = 22;
-  const ZAHL = 18;
-  const symbolEcke = { x: (INNER + SYMBOL) / 2, y: (INNER - SYMBOL) / 2 };
-  const knopfMitte = { x: INNER / 2, y: INNER / 2 };
-  const zahlMitte = (top: number, right: number) => ({ x: INNER - right - ZAHL / 2, y: top + ZAHL / 2 });
-  const abstandZurKnopfmitte = (top: number, right: number) => {
-    const m = zahlMitte(top, right);
-    return Math.hypot(m.x - knopfMitte.x, m.y - knopfMitte.y);
-  };
-  const SICHTBAR_IM_KNOPF = KNOPF_RADIUS - ZAHL / 2; // 13
-
-  it('iOS: top 0 / right 0 -- die Mitte der Zahl liegt auf der Symbolecke (0,2px daneben)', () => {
-    expect(wert(zahl, 'top')).toBe(0);
-    expect(wert(zahl, 'right')).toBe(0);
-    expect(wert(zahl, 'height')).toBe(ZAHL);
-    expect(wert(zahl, 'min-width')).toBe(ZAHL);
-    const m = zahlMitte(0, 0);
-    expect(Math.hypot(m.x - symbolEcke.x, m.y - symbolEcke.y)).toBeLessThan(0.3);
-  });
-
-  it('dort ragt sie aus dem Knopfkreis (Abstand 15,56 > 13) -- deshalb muessen Pille UND Knopf freigeben', () => {
-    expect(abstandZurKnopfmitte(0, 0)).toBeCloseTo(15.56, 1);
-    expect(abstandZurKnopfmitte(0, 0)).toBeGreaterThan(SICHTBAR_IM_KNOPF);
-    expect(block('ion-buttons:has(> .app-postfach-glocke)')).toMatch(/overflow:\s*visible/);
-    expect(block('.app-postfach-glocke::part(native)')).toMatch(/overflow:\s*visible/);
-  });
-
-  it('Gegenprobe der Formel: 1/2 (749d39c3) ragte schon 0,45px hinaus, 4/4 lag auf dem Symbol', () => {
-    expect(abstandZurKnopfmitte(1, 2)).toBeCloseTo(13.45, 1);
-    expect(abstandZurKnopfmitte(1, 2)).toBeGreaterThan(SICHTBAR_IM_KNOPF);
-    // 4/4: 9,9 vom Mittelpunkt, Ueberdeckung 13x13 -- Simon: "zu sehr auf dem Icon".
-    expect(abstandZurKnopfmitte(4, 4)).toBeCloseTo(9.9, 1);
-    const m = zahlMitte(4, 4);
-    expect(symbolEcke.x - m.x).toBeGreaterThan(4);
-    expect(m.y - symbolEcke.y).toBeGreaterThan(4);
-  });
-
-  it('nur die Pille mit der Glocke gibt frei -- nicht jede Pille im Theme', () => {
-    const pillen = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter((m) => /(^|[\s,])ion-buttons(\.|:|\s*\{|\s*$)/.test(m[1]) && /overflow:\s*visible/.test(m[2]))
-      .map((m) => m[1].trim());
-    // Jeder Selektor darin nennt die Glocke -- keine fremde Pille wird frei.
-    expect(pillen.length).toBeGreaterThan(0);
-    for (const gruppe of pillen) {
-      for (const einzeln of gruppe.split(',')) {
-        expect(einzeln, `gibt eine fremde Pille frei: ${einzeln.trim()}`)
-          .toMatch(/\.app-postfach-glocke/);
-      }
-    }
-  });
-
-  // SIMONS BEFUND (26.09.2026): "Das Postfach Kreis badge wird immer noch
-  // abgeschnitten." Die Geometrie oben stimmte, die Freigabe kam nur nie an:
-  // `ion-buttons:has(> .app-postfach-glocke)` hat die Spezifitaet (0,1,1) und
-  // verliert gegen die Theme-Pille
-  // `ion-buttons.ios:not(.ios-theme-disabled,.ios26-disabled):not(:has(...))`
-  // = (0,3,2). `overflow: hidden` blieb stehen.
-  //
-  // Dass die Theme-Regel ueberhaupt greift, liegt an Ionic: Ein IonButton in
-  // einer Toolbar bekommt `fill: 'clear'` automatisch, traegt also
-  // `.button-clear` und faellt nicht unter die `:not(:has(...))`-Ausnahme.
-  it('die Freigabe schlaegt die Theme-Pille nach Spezifitaet', () => {
-    // Grobe, aber ausreichende Zaehlung: Klassen/Pseudoklassen und Elemente.
-    const spezifitaet = (sel: string) => {
-      const klassen = (sel.match(/\.[a-zA-Z_-]|:[a-z-]+\(/g) || []).length;
-      const elemente = (sel.match(/(^|[\s>+~])[a-z][a-z0-9-]*/g) || []).length;
-      return klassen * 100 + elemente;
-    };
-    const THEME = 'ion-buttons.ios:not(.ios-theme-disabled,.ios26-disabled):not(:has(ion-button))';
-    const unsere = [...ohneKommentare.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
-      .filter((m) => /overflow:\s*visible/.test(m[2]))
-      .flatMap((m) => m[1].split(','))
-      .map((sel) => sel.trim())
-      .filter((sel) => /^ion-buttons/.test(sel) && sel.includes('.app-postfach-glocke'));
-
-    expect(unsere.length, 'keine Freigabe-Regel fuer die Pille gefunden').toBeGreaterThan(0);
-    expect(
-      unsere.some((sel) => spezifitaet(sel) >= spezifitaet(THEME)),
-      `keine Freigabe erreicht die Schaerfe der Theme-Pille: ${unsere.join(' | ')}`
-    ).toBe(true);
-  });
-
-  // Android (MD3): Knopf 48x48 (Kreis Radius 24), .button-inner 24px hoch
-  // und mittig (12px Einzug oben), Symbol 24px, Zahl 18px an .button-inner.
-  // Gerätetest (25.09.2026): "auf android ist der blaue badge abgeschnitten."
-  const MD = { KNOPF: 48, INNER_OBEN: 12, INNER_HOEHE: 24 };
-  const mdAbstandZurKnopfmitte = (top: number, right: number): number => {
-    const mitte = { x: MD.KNOPF - right - ZAHL / 2, y: MD.INNER_OBEN + top + ZAHL / 2 };
-    return Math.hypot(mitte.x - MD.KNOPF / 2, mitte.y - MD.KNOPF / 2);
-  };
-
-  it('Android: top -8 / right 2 bleibt -- die Zahl ragt 2,03px aus dem Knopfkreis, deshalb gibt der Knopf auch dort frei', () => {
-    const md = block('.app-postfach-glocke.md .app-postfach-glocke__zahl');
-    expect(wert(md, 'top')).toBe(-8);
-    expect(wert(md, 'right')).toBe(2);
-    const abstand = mdAbstandZurKnopfmitte(-8, 2);
-    expect(abstand).toBeCloseTo(17.03, 1);
-    expect(abstand + ZAHL / 2 - MD.KNOPF / 2).toBeCloseTo(2.03, 1); // so weit stand die Spitze im Beschnitt
-    // Die Freigabe gilt ohne Plattform-Klasse -- fuer .md wie fuer .ios.
-    expect(ohneKommentare).not.toMatch(/\.app-postfach-glocke\.(ios|md)::part\(native\)/);
-    expect(block('.app-postfach-glocke::part(native)')).toMatch(/overflow:\s*visible/);
-  });
-
-  it('Android: die verworfene Alternative top -7 / right 4 laege ganz im Kreis, aber 10x11px auf dem Symbol', () => {
-    expect(mdAbstandZurKnopfmitte(-7, 4)).toBeCloseTo(14.87, 1);
-    expect(mdAbstandZurKnopfmitte(-7, 4) + ZAHL / 2).toBeLessThan(MD.KNOPF / 2);
-    // Symbolkasten 24px mittig im Knopf: Ecke oben rechts bei (36, 12).
-    const mitte = { x: MD.KNOPF - 4 - ZAHL / 2, y: MD.INNER_OBEN - 7 + ZAHL / 2 };
-    expect(36 - (mitte.x - ZAHL / 2)).toBe(10);
-    expect(mitte.y + ZAHL / 2 - 12).toBe(11);
-  });
-
-  it('die Freigabe kostet auf Android keinen Ripple: Ionic zeichnet ihn "unbounded" bis maxDim, also genau bis zum Knopfkreis', () => {
-    // Die Annahme steht in Ionics Quelle. Aendert Ionic sie, faellt dieser
-    // Test -- dann ist der Ripple neu zu messen, nicht die Regel zu kippen.
-    const ionic = 'node_modules/@ionic/core/dist/collection/components/';
-    const ripple = readFileSync(join(process.cwd(), ionic, 'ripple-effect/ripple-effect.js'), 'utf8');
-    const button = readFileSync(join(process.cwd(), ionic, 'button/button.js'), 'utf8');
-    expect(ripple).toMatch(/const maxRadius = this\.unbounded \? maxDim :/);
-    expect(ripple).toMatch(/posX = width \* 0\.5;\s*posY = height \* 0\.5;/);
-    expect(ripple).toMatch(/surfaces for unbounded ripples should have it set to visible/);
-    expect(button).toMatch(/if \(hasClearFill && this\.hasIconOnly && this\.inToolbar\) \{\s*return 'unbounded';/);
-    // MD3 macht den Knopf rund: Kreis mit Radius 24 bei 48x48 -- derselbe Kreis wie der Ripple.
-    const md3 = readFileSync(join(process.cwd(), 'node_modules/@rdlabo/ionic-theme-md3/dist/css/ionic-theme-md3.css'), 'utf8');
-    expect(md3).toMatch(/ion-button\.md:not\(\.md3-disabled\)\{[^}]*--border-radius: 999px/);
-    expect(md3).toMatch(/ion-toolbar\.md:not\(\.md3-disabled\) ion-button\.button-has-icon-only:not\(\.button-small\):not\(\.button-large\)::part\(native\)\{width:48px;height:48px\}/);
   });
 });

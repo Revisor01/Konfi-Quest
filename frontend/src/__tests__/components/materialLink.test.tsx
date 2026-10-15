@@ -322,12 +322,11 @@ describe('Material als Link: Anzeige', () => {
     }],
   ];
 
-  it.each(ansichten)('%s zeigt nur http/https-Links, mit Link-Symbol und Domain', async (_name, oeffnen) => {
+  it.each(ansichten)('%s zeigt nur http/https-Links, mit Domain', async (_name, oeffnen) => {
     await oeffnen();
     const zeilen = linkZeilen();
     expect(zeilen).toHaveLength(1);
     expect(within(zeilen[0]).getByText('example.org')).toBeTruthy();
-    expect(zeilen[0].querySelector('.app-icon-circle i')!.getAttribute('data-icon')).toBe(ICON_LINK);
     expect(screen.queryByText(/javascript/)).toBeNull();
     // Nur ein gueltiger Link: die Ueberschrift sagt "Link", nicht "Links".
     expect(screen.getAllByText('Link').some((el) => el.closest('ion-list-header'))).toBe(true);
@@ -398,14 +397,12 @@ describe('Link-Zeilen im Material-Modal: entfernen per Wischen', () => {
       const optionen = wisch.querySelector('ion-item-options');
       // Ionic setzt seine Werte als Eigenschaft des Elements, nicht als Attribut.
       expect((optionen as unknown as { side?: string }).side).toBe('end');
-      expect(optionen!.classList.contains('app-swipe-actions')).toBe(true);
     }
   });
 
   it('das Entfernen haengt an der Wisch-Option: genau dieser Link geht, die Zeile schliesst', async () => {
     await formular(zweiLinks);
     const option = wischzeile(adressen()[0]).querySelector('ion-item-option[aria-label="Link entfernen"]') as HTMLElement;
-    expect(option.classList.contains('app-swipe-action')).toBe(true);
     await act(async () => { fireEvent.click(option); });
     expect(adressen().map((f) => f.value)).toEqual(['https://example.org/zwei']);
     expect(geschlossen).toHaveBeenCalledTimes(1);
@@ -418,13 +415,6 @@ describe('Link-Zeilen im Material-Modal: entfernen per Wischen', () => {
     const item = adressen()[0].closest('ion-item') as HTMLElement;
     expect(item.querySelector('ion-button')).toBeNull();
     expect(item.querySelector('[slot="end"]')).toBeNull();
-  });
-
-  it('nutzt dieselbe Darstellung wie die Datei-Zeilen: roter Kreis', async () => {
-    await formular(zweiLinks);
-    const option = wischzeile(adressen()[0]).querySelector('ion-item-option')!;
-    const kreis = option.querySelector('.app-icon-circle');
-    expect(kreis!.classList.contains('app-icon-circle--danger')).toBe(true);
   });
 
   it('im Lese-Modus deckt Wischen nichts auf, Felder sind schreibgeschuetzt, kein Hinzufuegen', async () => {

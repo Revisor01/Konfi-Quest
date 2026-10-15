@@ -13,7 +13,7 @@ type StubProps = { children?: ReactNode };
 
 vi.mock('@ionic/react', () => ({
   // presentingElement wird als Attribut sichtbar gemacht: Der Test prueft,
-  // dass das Postfach auf iOS ein Element hat, hinter das es als Karte geht.
+  // dass das Postfach ohne Router-Outlet (vor der Anmeldung) nicht abstuerzt.
   IonModal: (props: StubProps & { isOpen?: boolean; presentingElement?: HTMLElement }) =>
     (props.isOpen
       ? <div data-testid="modal" data-presenting={props.presentingElement?.tagName?.toLowerCase() ?? ''}>{props.children}</div>
@@ -79,19 +79,11 @@ vi.mock('../../utils/pushNavigation', async (original) => {
   return { ...echt, pushZielMelden: vi.fn() };
 });
 
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import PostfachModal, { POSTFACH_SEITENGROESSE } from '../../components/common/PostfachModal';
 import { mitteilungsTitel, oeffnePostfach, postfachBereich } from '../../utils/postfach';
 import { pushZielMelden } from '../../utils/pushNavigation';
 import { getIconFromIoniconsName } from '../../utils/badgeIcons';
-import {
-  ICON_ABZEICHEN_GEFUELLT,
-  ICON_MAIL_GEFUELLT,
-  ICON_ORGANISATION_GEFUELLT,
-  ICON_SCHLIESSEN,
-  ICON_TERMIN_GEFUELLT,
-} from '../../components/shared/icons';
+import { ICON_ABZEICHEN_GEFUELLT } from '../../components/shared/icons';
 
 const eintrag = (id: number, teil: Partial<PostfachEintrag> = {}): PostfachEintrag => ({
   id,
@@ -282,12 +274,8 @@ describe('PostfachModal', () => {
     expect(await screen.findByText(/Deine Mitteilungen/)).toBeTruthy();
     expect(screen.getByText('Abmeldung Sommerfest')).toBeTruthy();
   });
-  // Simon (25.09.2026, am Geraet): "Dann sollte es die Listen so aussehen
-  // wie alle unsere Listen ... Aktivitaeten mit der klassischen
-  // Aktivitaetenfarbe." Die Farbe haengt an denselben Klassen wie in jeder
-  // anderen Liste (.app-list-item--<bereich>, .app-icon-circle--<bereich>).
-  describe('Listenform wie alle Listen der App', () => {
-    it('jede Mitteilung ist ein app-list-item in einer Karte, mit Farbrand und Farbkreis je Bereich', async () => {
+  describe('Die Mitteilung in der Liste', () => {
+    it('jede Mitteilung zeigt Titel und Text', async () => {
       mockGet.mockResolvedValue(antwort([
         eintrag(3, { type: 'badge_earned' }),
         eintrag(2, { type: 'new_activity_request', data: { request_id: 9 } }),
@@ -299,29 +287,12 @@ describe('PostfachModal', () => {
 
       const zeilen = container.querySelectorAll('.app-postfach-eintrag');
       expect(zeilen.length).toBe(3);
-      zeilen.forEach(z => expect(z.classList.contains('app-list-item')).toBe(true));
-
-      // Abzeichen in der Abzeichenfarbe, Antraege in der Aktivitaetenfarbe.
-      expect(zeilen[0].classList.contains('app-list-item--badges')).toBe(true);
-      expect(zeilen[0].querySelector('.app-icon-circle--badges')).not.toBeNull();
-      expect(zeilen[1].classList.contains('app-list-item--activities')).toBe(true);
-      expect(zeilen[1].querySelector('.app-icon-circle--activities')).not.toBeNull();
-      expect(zeilen[2].classList.contains('app-list-item--activities')).toBe(true);
-      // Keine Zeile traegt eine geratene zweite Farbe.
-      zeilen.forEach(z => {
-        const farben = [...z.classList].filter(k => k.startsWith('app-list-item--'));
-        expect(farben.length).toBe(1);
-      });
-      // Titel, Text und Meta in den Feldern der Listenzeile.
       expect(zeilen[0].querySelector('.app-list-item__title')?.textContent).toBe('Mitteilung 3');
       expect(zeilen[0].querySelector('.app-list-item__subtitle')?.textContent).toBe('Text 3');
     });
 
-    it('ungelesen traegt den blauen Punkt in der Ecke (kein Wort, kein Symbol), gelesen nicht', async () => {
-      // Simon, TestFlight 233 (29.09.2026): "Das Symbol der blauen
-      // Briefkaesten fuer die Post am Postfach gefaellt mir nicht." Bis dahin
-      // ein Umschlag im Eselsohr. Jetzt derselbe Punkt wie an der Glocke;
-      // der Klartext haengt fuer Vorlesehilfen an title/aria-label.
+    it('ungelesen traegt den Punkt mit Klartext fuer Vorlesehilfen, gelesen nicht', async () => {
+      // Der Klartext haengt fuer Vorlesehilfen an title/aria-label.
       mockGet.mockResolvedValue(antwort([eintrag(12), eintrag(11, { read_at: '2026-09-24T10:00:00.000Z' })]));
       const { container } = render(<PostfachModal />);
       await oeffnen();
@@ -329,33 +300,10 @@ describe('PostfachModal', () => {
       const zeilen = container.querySelectorAll('.app-postfach-eintrag');
       const punkt = zeilen[0].querySelector('.app-postfach-eintrag__punkt') as HTMLElement;
       expect(punkt).not.toBeNull();
-      expect(punkt.classList.contains('app-ungelesen-punkt')).toBe(true);
-      expect(punkt.textContent).toBe('');
-      expect(punkt.children.length).toBe(0);
       expect(punkt.getAttribute('role')).toBe('img');
       expect(punkt.getAttribute('title')).toBe('Neu — ungelesen');
       expect(punkt.getAttribute('aria-label')).toBe('Neu — ungelesen');
-      // Kein Umschlag und kein Eselsohr mehr am Eintrag.
-      expect(zeilen[0].querySelector('.app-corner-badge')).toBeNull();
-      expect(zeilen[0].querySelector(`[data-icon="${ICON_MAIL_GEFUELLT}"]`)).toBeNull();
       expect(zeilen[1].querySelector('.app-postfach-eintrag__punkt')).toBeNull();
-    });
-
-    it('der Punkt sitzt nah an der Ecke (10px), der Titel haelt ihm Platz frei', async () => {
-      // Simon, 29.09.2026: "ein bisschen hoeher und weiter rechts" -- zuerst
-      // stand er 16px von oben und rechts, jetzt 10px.
-      const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-      const regel = css.match(/\.app-postfach-eintrag__punkt \{([^}]*)\}/);
-      expect(regel).not.toBeNull();
-      expect(regel![1]).toMatch(/position:\s*absolute/);
-      expect(regel![1]).toMatch(/top:\s*var\(--app-abstand-schmal\)/);
-      expect(regel![1]).toMatch(/right:\s*var\(--app-abstand-schmal\)/);
-      mockGet.mockResolvedValue(antwort([eintrag(12)]));
-      const { container } = render(<PostfachModal />);
-      await oeffnen();
-      await screen.findByText('Mitteilung 12');
-      const titel = container.querySelector('.app-postfach-eintrag .app-list-item__title') as HTMLElement;
-      expect(titel.style.paddingRight).toBe('var(--app-abstand-weit)');
     });
 
     it('die Zeile ist ein Knopf: Enter fuehrt zum Ziel wie ein Tipp', async () => {
@@ -370,37 +318,20 @@ describe('PostfachModal', () => {
     });
   });
 
-  // Simons Befunde am iPhone (25.09.2026): Vollbild ohne Abdunklung, ein
-  // Text-Knopf "Fertig", Datum und Gemeinde ohne Symbol, alle Abzeichen mit
-  // demselben Band -- und "sunny-outline" im Titel.
+  // Simons Befunde am iPhone (25.09.2026), soweit sie Verhalten sind:
+  // Datum und Gemeinde an der Mitteilung, jedes Abzeichen mit SEINEM Symbol
+  // -- und kein "sunny-outline" im Titel.
   describe('Befunde vom Geraet (25.09.2026)', () => {
-    it('geht auf iOS als Karte vor dem Router-Outlet auf (presentingElement), nicht als Vollbild', async () => {
-      const outlet = document.createElement('ion-router-outlet');
-      document.body.appendChild(outlet);
-      try {
-        mockGet.mockResolvedValue(antwort([]));
-        render(<PostfachModal />);
-        await oeffnen();
-        expect(screen.getByTestId('modal').getAttribute('data-presenting')).toBe('ion-router-outlet');
-      } finally {
-        outlet.remove();
-      }
-    });
-
-    it('die Karte der Mitteilungen ist eine app-card ohne eigenen Kartengrund -- den liefert die Kartenregel', async () => {
-      // Bis 25.09.2026 stand hier `white`, danach bis 26.09.2026 ein Inline-
-      // Flicken `--background: var(--app-surface-card)`, weil die Karte auf
-      // dem iPhone nicht die Tokenfarbe trug. Die Ursache war nicht das Modal,
-      // sondern die Kartenregel ion-card.app-card, die auf iOS an Spezifitaet
-      // gegen das ios27-Theme verlor (Dunkelmodus-Audit BF-03). Seit sie das
-      // Theme schlaegt (dunkelmodus.test.ts rechnet es nach), braucht keine
-      // Karte einen Flicken -- und ein neuer wuerde die Ursache nur verdecken.
+    it('die Karte der Mitteilungen traegt keinen eigenen Kartengrund inline', async () => {
+      // Bis 26.09.2026 stand hier ein Inline-Flicken `--background:
+      // var(--app-surface-card)` -- ein Symptom-Fix. Den Kartengrund setzt
+      // das Stylesheet an einer Stelle; ein neuer Flicken wuerde die Ursache
+      // nur verdecken.
       mockGet.mockResolvedValue(antwort([eintrag(1)]));
       render(<PostfachModal />);
       await oeffnen();
       await screen.findByText('Mitteilung 1');
       const karte = screen.getByTestId('postfach-karte') as HTMLElement;
-      expect(karte.classList.contains('app-card')).toBe(true);
       expect(karte.style.getPropertyValue('--background')).toBe('');
       expect(karte.style.getPropertyValue('background')).toBe('');
     });
@@ -412,19 +343,15 @@ describe('PostfachModal', () => {
       expect(screen.getByTestId('modal').getAttribute('data-presenting')).toBe('');
     });
 
-    it('schliesst ueber das Symbol wie jedes andere Modal -- kein "Fertig"', async () => {
+    it('der Knopf "Schließen" schliesst das Postfach', async () => {
       mockGet.mockResolvedValue(antwort([]));
       render(<PostfachModal />);
       await oeffnen();
-      expect(screen.queryByText('Fertig')).toBeNull();
-      const knopf = screen.getByLabelText('Schließen');
-      expect(knopf.classList.contains('app-modal-close-btn')).toBe(true);
-      expect(knopf.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_SCHLIESSEN);
-      fireEvent.click(knopf);
+      fireEvent.click(screen.getByLabelText('Schließen'));
       await waitFor(() => expect(screen.queryByTestId('modal')).toBeNull());
     });
 
-    it('Datum und Gemeinde tragen ein Symbol, wie Datum und Ort in der Terminliste', async () => {
+    it('Datum und Gemeinde stehen an der Mitteilung', async () => {
       mockOrganizations = [
         { id: 1, name: 'Test-Gemeinde', role_name: 'konfi' },
         { id: 2, name: 'Andere Gemeinde', role_name: 'teamer' },
@@ -436,15 +363,11 @@ describe('PostfachModal', () => {
       render(<PostfachModal />);
       await oeffnen();
       await screen.findByText('Mitteilung 1');
-      const zeit = screen.getByTestId('postfach-zeitpunkt');
-      expect(zeit.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_TERMIN_GEFUELLT);
-      expect(zeit.textContent).toBe('05.01.2026');
-      const gemeinde = screen.getByTestId('postfach-gemeinde');
-      expect(gemeinde.querySelector('[data-icon]')?.getAttribute('data-icon')).toBe(ICON_ORGANISATION_GEFUELLT);
-      expect(gemeinde.textContent).toBe('Andere Gemeinde');
+      expect(screen.getByTestId('postfach-zeitpunkt').textContent).toBe('05.01.2026');
+      expect(screen.getByTestId('postfach-gemeinde').textContent).toBe('Andere Gemeinde');
     });
 
-    it('bei einer Gemeinde bleibt das Datum mit Symbol, die Gemeinde-Zeile fehlt', async () => {
+    it('bei einer Gemeinde bleibt das Datum, die Gemeinde-Zeile fehlt', async () => {
       mockGet.mockResolvedValue(antwort([eintrag(1)]));
       render(<PostfachModal />);
       await oeffnen();

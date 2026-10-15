@@ -179,9 +179,6 @@ describe('Events: Zeitraum', () => {
     expect(chip(/^Abgesagt/)).toHaveTextContent(/^Abgesagt1$/);
     expect(chip(/^Aktuell/)).toHaveAttribute('aria-pressed', 'true');
     expect(chip(/^Vergangen/)).toHaveAttribute('aria-pressed', 'false');
-    // Rot ist nur die Zahl, hinter der Arbeit wartet.
-    expect(chip(/^Verbuchen/).querySelector('.web-chip__zahl')).toHaveClass('web-chip__zahl--rot');
-    expect(chip(/^Aktuell/).querySelector('.web-chip__zahl')!.className).toBe('web-chip__zahl');
   });
 
   it('Klick auf "Verbuchen": nur das Event mit offenen Buchungen, Status "Verbuchen"', async () => {
@@ -422,38 +419,21 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(window.localStorage.getItem(ansichtSchluessel('events-leitung'))).toBe(null);
   });
 
-  it('eine Werkzeugzeile wie auf allen Listen-Seiten: Zeitraum, Suche, Filter -- der Umschalter ganz rechts', async () => {
+  it('Jahrgang, Kategorie und Art klappen hinter dem Knopf "Filter" auf; der Knopf zaehlt die aktiven Filter', async () => {
     await oeffneEvents();
-    const zeile = screen.getByRole('search').parentElement!;
-    expect(zeile).toHaveClass('web-werkzeuge');
-    // Zeitraum, Suche und der Knopf "Filter" stehen in der Zeile; Jahrgang,
-    // Kategorie und Art (drei Filter) klappen darunter in einer Leiste auf --
-    // vorher brach die Zeile um (10.10.2026).
-    expect(within(zeile).getByRole('group', { name: 'Events nach Zeitraum' })).toBeInTheDocument();
-    expect(within(zeile).queryByLabelText('Jahrgang')).toBeNull();
-    const knopf = within(zeile).getByRole('button', { name: 'Filter' });
+    expect(screen.queryByLabelText('Jahrgang')).toBeNull();
+    const knopf = screen.getByRole('button', { name: 'Filter' });
     expect(knopf).toHaveAttribute('aria-expanded', 'false');
     expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
     fireEvent.click(knopf);
     expect(knopf).toHaveAttribute('aria-expanded', 'true');
     const leiste = screen.getByRole('group', { name: 'Filter' });
     expect(knopf).toHaveAttribute('aria-controls', leiste.id);
-    expect(leiste.previousElementSibling).toBe(zeile);
     for (const name of ['Jahrgang', 'Kategorie', 'Art']) expect(within(leiste).getByLabelText(name)).toBeInTheDocument();
-    const rechts = umschalter().parentElement!;
-    expect(rechts).toHaveClass('web-werkzeuge__rechts');
-    expect(rechts.parentElement).toBe(zeile);
-    expect(rechts.lastElementChild).toBe(umschalter());
-    // Auch mit "Filter zurücksetzen" bleibt er das letzte Element.
-    filterAufklappen();
     fireEvent.change(screen.getByLabelText('Jahrgang'), { target: { value: '2' } });
-    expect(rechts.firstElementChild).toHaveTextContent('Filter zurücksetzen');
-    expect(rechts.lastElementChild).toBe(umschalter());
-    // Der Knopf zaehlt die aktiven Filter.
     expect(knopf).toHaveAccessibleName('Filter, 1 aktiv');
     fireEvent.change(screen.getByLabelText('Art'), { target: { value: 'team' } });
     expect(knopf).toHaveAccessibleName('Filter, 2 aktiv');
-    expect(knopf).toHaveClass('web-filterknopf--aktiv');
     fireEvent.click(knopf);
     expect(screen.queryByRole('group', { name: 'Filter' })).toBeNull();
   });
@@ -543,22 +523,12 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(gottesdienst).toHaveTextContent('Jahrgang 2026');
     expect(gottesdienst).toHaveTextContent('Datum: 04.10.2026 · 10:00 Uhr');
     expect(gottesdienst).toHaveTextContent('Ort: Kirche Musterdorf');
-    // Titel und Kategorien stehen im farbigen Kopf (Simon, 07.10.2026).
-    expect(gottesdienst.querySelector('.web-bildkarte__kopf')).toHaveTextContent('Event · GottesdienstSonntagsgottesdienst');
+    expect(gottesdienst).toHaveTextContent('Event · Gottesdienst');
     expect(gottesdienst).toHaveTextContent('Plätze: 3/20');
     expect(gottesdienst).toHaveTextContent('Punkte: 1P');
     expect(within(gottesdienst).getByText('Offen', { selector: '.web-pill' })).toBeInTheDocument();
 
     expect(within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' })).toBeInTheDocument();
-    // Merkmale als Chips, keine Eck-Badges der App auf der Kachel (Simon, 07.10.2026).
-    expect(karte('Konfi-Tag').querySelector('.app-corner-badges')).toBeNull();
-    // Merkmal-Chips mit Farbe und Symbol wie die Eck-Badges der App (Simon, 07.10.2026).
-    const pflicht = within(karte('Konfi-Tag')).getByText('Pflicht', { selector: '.web-pill' });
-    expect(pflicht).toHaveClass('web-pill--farbig');
-    expect(pflicht.style.getPropertyValue('--web-pill-farbe')).toBe('var(--app-color-events)');
-    expect(pflicht.querySelector('[data-icon]')).not.toBeNull();
-    const nurTeam = within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' });
-    expect(nurTeam.style.getPropertyValue('--web-pill-farbe')).toBe('var(--app-color-teamer)');
     expect(karte('Konfi-Tag')).toHaveTextContent('Plätze: 12 Konfis');
     // Nur Team: die Zahl des Teams statt der Plätze, dazu die Marke.
     expect(within(karte('Teamabend')).getByText('Nur Team', { selector: '.web-pill' })).toBeInTheDocument();
@@ -572,39 +542,21 @@ describe('Ansicht: Liste und Kacheln', () => {
     expect(routerPush).toHaveBeenCalledWith('/admin/events/202', 'none', 'push');
   });
 
-  it('Liste: vor dem Namen ein Kreis mit dem Stand -- Farbe und Symbol je Stand, Pflicht im Rot des Chips', async () => {
+  it('Liste: der Kreis vor dem Namen bleibt fuer Vorleseprogramme stumm', async () => {
     await kachelnOeffnen();
     waehle('Liste');
     const kreis = (name: string) => zeileVon(name).querySelector('.web-symbol') as HTMLElement;
-    expect(kreis('Sonntagsgottesdienst')).toHaveAttribute('data-stand', 'Offen');
     expect(kreis('Sonntagsgottesdienst')).toHaveAttribute('aria-hidden', 'true');
-    expect(kreis('Konfi-Tag')).toHaveAttribute('data-stand', 'Pflicht');
-    expect(kreis('Konfi-Tag').style.background).toBe('var(--app-color-events)');
   });
 
-  it('abgesagt: Marke und Grund auf der Karte, der Titel durchgestrichen -- in Liste und Kacheln', async () => {
+  it('abgesagt: Marke und Grund auf der Karte -- in Liste und Kacheln', async () => {
     await kachelnOeffnen();
     fireEvent.click(chip(/^Abgesagt/));
     const abgesagt = karte('Fahrradtour');
     expect(within(abgesagt).getByText('Abgesagt', { selector: '.web-pill' })).toBeInTheDocument();
     expect(abgesagt).toHaveTextContent('Abgesagt: Sturmwarnung');
-    expect(within(abgesagt).getByRole('heading', { level: 3 })).toHaveStyle({ textDecoration: 'line-through' });
     waehle('Liste');
     expect(zeileVon('Fahrradtour')).toHaveTextContent('Abgesagt: Sturmwarnung');
-    expect(within(zeileVon('Fahrradtour')).getByText('Fahrradtour')).toHaveStyle({ textDecoration: 'line-through' });
-  });
-
-  it('Vergangenes, das nichts mehr zu verbuchen hat, steht blass da -- Karte und Zeile; Offenes nicht', async () => {
-    await kachelnOeffnen();
-    fireEvent.click(chip(/^Vergangen/));
-    expect(karte('Erntedank-Gottesdienst')).toHaveClass('web-termin-karte--gedaempft');
-    fireEvent.click(chip(/^Verbuchen/));
-    expect(karte('Gemeindefest')).not.toHaveClass('web-termin-karte--gedaempft');
-    fireEvent.click(chip(/^Vergangen/));
-    waehle('Liste');
-    expect(zeileVon('Erntedank-Gottesdienst')).toHaveClass('web-zeile--gedaempft');
-    fireEvent.click(chip(/^Verbuchen/));
-    expect(zeileVon('Gemeindefest')).not.toHaveClass('web-zeile--gedaempft');
   });
 
   it('Treffer der Suche sind in Titel und Ort hervorgehoben, wie in der Zeile', async () => {
@@ -678,15 +630,6 @@ describe('Ansicht: Liste und Kacheln', () => {
       expect(api.put).not.toHaveBeenCalled();
       await act(async () => { await knopfIn(frage, 'Zurücknehmen')!.handler!(); });
       expect(api.put).toHaveBeenCalledWith('/events/206/reaktivieren');
-    });
-
-    it('die Knöpfe tragen ein Wort und stehen im Fuss der Karte', async () => {
-      await kachelnOeffnen();
-      const fuss = karte('Teamabend').querySelector('footer')!;
-      expect([...fuss.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Kopieren', 'Absagen', 'Löschen']);
-      fireEvent.click(chip(/^Abgesagt/));
-      const fussAbgesagt = karte('Fahrradtour').querySelector('footer')!;
-      expect([...fussAbgesagt.querySelectorAll('button')].map((b) => b.textContent)).toEqual(['Zurücknehmen', 'Kopieren', 'Grund bearbeiten', 'Löschen']);
     });
 
     it('offline: kein Fenster, keine Rückfrage, eine Meldung je Knopf', async () => {

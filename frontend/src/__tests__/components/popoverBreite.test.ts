@@ -21,7 +21,7 @@ const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8'
  * Pfeil 19px neben der Kachelmitte -- genau Simons Bilder.
  *
  * Mit fester Breite: vorher wie nachher 320px, Sprechblase 320 x 175.
- * Geprueft wird die REGEL im Stylesheet (wie in tabLeisteAndroid.test.ts):
+ * Geprueft wird die REGEL im Stylesheet:
  * jsdom hat kein Layout, und der Fehler entsteht erst in der Animation.
  */
 describe('Popover-Breite: fest statt auto', () => {

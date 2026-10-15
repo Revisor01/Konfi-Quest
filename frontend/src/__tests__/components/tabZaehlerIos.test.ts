@@ -19,9 +19,8 @@ const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8'
  *            -> `top: 4px` beginnt 4px UNTER dem Symbol, endet bei 20 von 26px.
  *
  * Dieselbe Beziehung wie auf Android (Oberkante = Symbol - 6px) heisst auf
- * iOS `top: -6px`. Geprueft wird die REGEL im Stylesheet (wie in
- * tabLeisteAndroid.test.ts): Das gerenderte Ergebnis haengt am Theme-CSS im
- * Shadow-DOM, das jsdom nicht layoutet.
+ * iOS `top: -6px`. Geprueft wird die REGEL im Stylesheet: Das gerenderte
+ * Ergebnis haengt am Theme-CSS im Shadow-DOM, das jsdom nicht layoutet.
  */
 describe('Reiter-Zaehler auf iOS: oben rechts am Symbol', () => {
   const css = lies('src/theme/variables.css');

@@ -234,21 +234,17 @@ describe('Raum (Web): Verlauf', () => {
     expect(screen.getByText('Anfang des Chats')).toBeInTheDocument();
   });
 
-  it('eigene Nachrichten rechts ohne Namen, fremde mit Kreis und Namen -- im Direktchat ohne beides', async () => {
+  it('eigene Nachrichten ohne Namen, fremde mit Namen -- im Direktchat ohne', async () => {
     IM_RAUM([m({ content: 'Von Lena' }), m({ content: 'Von mir', sender_id: 4, sender_type: 'admin', sender_name: 'Alex Beispiel' })]);
     await zeigen();
     // Der Verlauf ist ein Protokoll: Vorleseprogramme sagen neue Nachrichten an.
     expect(screen.getByRole('log', { name: 'Nachrichten' })).toContainElement(blase('Von Lena'));
-    expect(blase('Von mir')).toHaveClass('web-chat-nachricht--eigene');
-    expect(blase('Von Lena')).toHaveClass('web-chat-nachricht--fremde');
     expect(within(blase('Von Lena')).getByText('Lena Probe')).toBeInTheDocument();
-    expect(blase('Von Lena').querySelector('.web-chat-avatar')).toHaveTextContent('L');
     expect(within(blase('Von mir')).queryByText('Alex Beispiel')).not.toBeInTheDocument();
     cleanup();
     IM_RAUM([m({ content: 'Im Direktchat', sender_id: 8, sender_name: 'Tom Teamer', sender_type: 'teamer' })]);
     await zeigen(DIREKT);
     expect(within(blase('Im Direktchat')).queryByText('Tom Teamer')).not.toBeInTheDocument();
-    expect(blase('Im Direktchat').querySelector('.web-chat-avatar')).toBeNull();
   });
 
   it('wer innerhalb von fuenf Minuten weiterschreibt, steht nur einmal mit Namen da', async () => {
@@ -260,7 +256,6 @@ describe('Raum (Web): Verlauf', () => {
     await zeigen();
     expect(within(blase('Erste')).getByText('Lena Probe')).toBeInTheDocument();
     expect(within(blase('Zweite')).queryByText('Lena Probe')).not.toBeInTheDocument();
-    expect(blase('Zweite')).toHaveClass('web-chat-nachricht--fortsetzung');
     expect(within(blase('Dritte')).getByText('Lena Probe')).toBeInTheDocument();
   });
 
