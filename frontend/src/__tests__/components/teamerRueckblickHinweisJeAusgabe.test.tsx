@@ -14,7 +14,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 // sie so verwendet: weggeklickt gilt nur für DIESE Ausgabe.
 
 const USER_ID = 3;
-const HINWEIS = 'Dein Team-Jahr Wrapped ist da!';
+const HINWEIS = 'Dein Team-Jahresrückblick ist da!';
 
 const speicher = new Map<string, string>();
 const prefSet = vi.fn(async ({ key, value }: { key: string; value: string }) => { speicher.set(key, value); });

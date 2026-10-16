@@ -3,7 +3,8 @@
 // links Person und Einstellungen, rechts die Wege zu Badges und Konfi-Historie,
 // die Konfi-Zeit, Rueckblicke und Neuerungen. Die Konfi-Historie zeigt Punkte,
 // Verlauf, Events der Konfi-Zeit, Badges und den Rueckblick der Person. Alle
-// Handgriffe sind die der App -- dieselben Modale mit denselben Eigenschaften.
+// Handgriffe tun, was die App tut -- seit 11. und 15.10.2026 in Dialogen der
+// Web-Fassung (start/webProfilFenster, shared/webProfilDialoge).
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import './zeitrahmen';
 import React from 'react';
@@ -46,6 +47,8 @@ vi.mock('../../../components/admin/modals/ChangeRoleTitleModal', async () => ({ 
 vi.mock('../../../components/konfi/modals/PointsHistoryModal', async () => ({ default: (await import('./ionicStart')).modalAttrappe('PointsHistoryModal') }));
 vi.mock('../../../components/wrapped/WrappedModal', async () => ({ default: (await import('./ionicStart')).modalAttrappe('WrappedModal') }));
 vi.mock('../../../components/shared/BibleTranslationModal', async () => ({
+  // Die Liste der Übersetzungen ist echt: Der Dialog der Web-Fassung zeigt sie.
+  BIBLE_TRANSLATIONS: (await vi.importActual<typeof import('../../../components/shared/BibleTranslationModal')>('../../../components/shared/BibleTranslationModal')).BIBLE_TRANSLATIONS,
   default: (await import('./ionicStart')).modalAttrappe('BibleTranslationModal'),
   getTranslationName: (code: string) => (code === 'LUT' ? 'Lutherbibel 2017' : code),
 }));
@@ -234,19 +237,19 @@ describe('Profil des Teams (Web): Person und Wege', () => {
 });
 
 describe('Profil des Teams (Web): Einstellungen -- dieselben Handgriffe wie in der App', () => {
-  it('Funktionsbeschreibung oeffnet das Modal mit der aktuellen Bezeichnung', async () => {
+  it('Funktionsbeschreibung oeffnet den Dialog mit der aktuellen Bezeichnung, kein App-Modal', async () => {
     await zeigeProfil();
     expect(screen.getByRole('list', { name: 'Konto-Einstellungen' })).toHaveTextContent('FunktionsbeschreibungAktuell: Jugendleiterin');
     fireEvent.click(knopfInZeile('Funktionsbeschreibung', 'Ändern'));
-    expect(modal('ChangeRoleTitleModal')?.props.initialRoleTitle).toBe('Jugendleiterin');
-    expect(modal('ChangeRoleTitleModal')?.props.sectionIconClass).toBe('app-section-icon--teamer');
-    expect(modal('ChangeRoleTitleModal')?.optionen?.presentingElement).toBe(h.seite);
+    const dialog = screen.getByRole('dialog', { name: 'Funktionsbeschreibung' });
+    expect(within(dialog).getByRole('textbox', { name: 'Funktionsbeschreibung' })).toHaveValue('Jugendleiterin');
+    expect(h.modale).toEqual([]);
   });
 
   // Seit 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale überall")
   // öffnen E-Mail und Passwort im Browser eigene Dialoge statt der App-Modale;
   // Einzelheiten in start/webKontoUmschaltung und shared/webKontoDialoge.
-  it('E-Mail und Passwort öffnen die Dialoge der Web-Fassung; Bibeluebersetzung und Konto loeschen die Modale in der Farbe des Teams', async () => {
+  it('E-Mail, Passwort, Bibeluebersetzung und Konto loeschen öffnen die Dialoge der Web-Fassung, kein App-Modal', async () => {
     h.antworten['/auth/me'] = { email: 'tjark@example.org' };
     await zeigeProfil();
     fireEvent.click(knopfInZeile('E-Mail-Adresse', 'Ändern'));
@@ -259,10 +262,12 @@ describe('Profil des Teams (Web): Einstellungen -- dieselben Handgriffe wie in d
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(h.modale).toEqual([]);
     fireEvent.click(knopfInZeile('Bibelübersetzung', 'Ändern'));
-    expect(modal('BibleTranslationModal')?.props.currentTranslation).toBe('LUT');
-    expect(modal('BibleTranslationModal')?.props.itemVariant).toBe('teamer');
+    const bibel = screen.getByRole('dialog', { name: 'Bibelübersetzung' });
+    expect(within(bibel).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent).toMatch(/^Lutherbibel 2017/);
+    fireEvent.click(within(bibel).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Konto löschen' }));
-    expect(modal('DeleteAccountModal')?.optionen?.presentingElement).toBe(h.seite);
+    expect(screen.getByRole('dialog', { name: 'Konto löschen' })).toBeInTheDocument();
+    expect(h.modale).toEqual([]);
   });
 
   it('Medien-Cache leert ihn; App-Tour und Neuerungen zeigen ihre Overlays', async () => {
@@ -278,11 +283,12 @@ describe('Profil des Teams (Web): Einstellungen -- dieselben Handgriffe wie in d
     expect(screen.getByText('Mitmachen wird erklärt')).toBeInTheDocument();
   });
 
-  it('Benachrichtigungen oeffnen die Auswahl in der Farbe des Teams', async () => {
+  it('Benachrichtigungen oeffnen den Dialog der Web-Fassung, kein App-Modal', async () => {
     await zeigeProfil();
     expect(await screen.findByText('Alle Mitteilungen aufs Handy')).toBeInTheDocument();
     fireEvent.click(knopfInZeile('Benachrichtigungen', 'Auswählen'));
-    expect(modal('PushAuswahlModal')?.props.variante).toBe('teamer');
+    expect(screen.getByRole('dialog', { name: 'Benachrichtigungen' })).toBeInTheDocument();
+    expect(h.modale).toEqual([]);
   });
 
   it('Abmelden fragt nach; erst die Bestaetigung meldet ab', async () => {
@@ -431,12 +437,25 @@ describe('Konfi-Historie des Teams (Web)', () => {
     expect(screen.queryByRole('heading', { name: 'Konfi-Rückblick' })).toBeNull();
   });
 
-  it('„Punkte-Uebersicht" oeffnet das Modal mit der Route der Konfi-Historie', async () => {
-    await zeigeHistorie();
-    fireEvent.click(screen.getByRole('button', { name: 'Punkte-Übersicht' }));
-    expect(modal('PointsHistoryModal')?.props.apiEndpoint).toBe('/teamer/konfi-history');
-    expect(modal('PointsHistoryModal')?.props.pointConfig).toEqual({ gottesdienst_enabled: true, gemeinde_enabled: true });
-    expect(modal('PointsHistoryModal')?.optionen?.presentingElement).toBe(h.seite);
+  // Seit 15.10.2026 (Simon): Die Tabelle „Punkte-Verlauf" auf dieser Seite
+  // zeigt dieselben Einträge (dieselbe Route) -- im Browser springt die
+  // Punkte-Übersicht dorthin, statt das Modal zu öffnen.
+  it('„Punkte-Uebersicht" springt zur Tabelle „Punkte-Verlauf" (Route der Konfi-Historie), kein Modal', async () => {
+    const gerollt: Element[] = [];
+    const vorher = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function rollen(this: Element) { gerollt.push(this); };
+    try {
+      await zeigeHistorie();
+      const tabelle = await screen.findByRole('table', { name: 'Punkte-Verlauf' });
+      expect(h.apiGet).toHaveBeenCalledWith('/teamer/konfi-history');
+      fireEvent.click(screen.getByRole('button', { name: 'Punkte-Übersicht' }));
+      expect(gerollt).toHaveLength(1);
+      expect(gerollt[0]).toContainElement(tabelle);
+      expect(document.activeElement).toBe(gerollt[0]);
+      expect(h.modale).toEqual([]);
+    } finally {
+      Element.prototype.scrollIntoView = vorher;
+    }
   });
 
   it('ohne Konfi-Daten sagt die Seite es', async () => {

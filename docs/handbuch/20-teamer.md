@@ -175,7 +175,9 @@ Die Seite eines Events ist aufgebaut wie jede andere, siehe
 [Im Browser eine Detailseite lesen](03-bedienung.md#im-browser-eine-detailseite-lesen).
 Oben rechts stehen **Dabei** und **Nicht dabei**, danach nur noch der Weg
 zurück: **Nicht mehr dabei** oder **Doch dabei**; daneben öffnen **Chat** (wenn
-es einen Event-Chat gibt) und **QR-Code** (zum Einchecken) ihre Fenster. Wie
+es einen Event-Chat gibt) und **QR-Code** (zum Einchecken) ihre Fenster.
+**Nicht dabei** und **Nicht mehr dabei** fragen im Fenster **Absage** nach dem
+Grund; lehnt der Server ab, steht der Grund im Fenster, und es bleibt offen. Wie
 Zusage, Absage und Warteliste ablaufen, ist wie in der App, siehe
 [Zu Events zusagen und absagen](#zu-events-zusagen-und-absagen). Die
 Kennzahlen zeigen **Konfis**, **Team** und **Punkte**, bei einem Event nur fürs
@@ -263,11 +265,13 @@ heißt **Mein Profil** und hat zwei Spalten. Links stehen deine Angaben — Name
 mit Funktionsbeschreibung, Benutzername, E-Mail-Adresse, Gemeinde und „Dabei
 seit" —, die **Konto-Einstellungen** — Funktionsbeschreibung, E-Mail-Adresse,
 Passwort, Bibelübersetzung, App-Tour, Benachrichtigungen und Medien-Cache,
-jeweils mit einem Knopf; E-Mail-Adresse und Passwort änderst du im Browser
-in einem eigenen, kompakten Fenster (siehe
+jeweils mit einem Knopf; Funktionsbeschreibung, E-Mail-Adresse, Passwort,
+Bibelübersetzung und Benachrichtigungen öffnen im Browser ein eigenes,
+kompaktes Fenster (siehe
 [Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
-die übrigen Knöpfe öffnen dieselben Fenster wie in der App — und das
-**Konto** mit **Abmelden** und **Konto löschen**.
+App-Tour und Medien-Cache arbeiten wie in der App — und das
+**Konto** mit **Abmelden** und **Konto löschen**; auch **Konto löschen** fragt
+in einem eigenen Fenster nach.
 
 Rechts stehen, falls du in eine weitere Gemeinde eingeladen bist, die Einladung
 mit **Annehmen** und **Ablehnen**, die Karte **Inhalt** mit den Wegen zu
@@ -280,9 +284,10 @@ sie heißt hier **Teamer-Badges**, und **Profil** oben links führt zurück.
 ### Im Browser die Konfi-Historie ansehen
 
 Die Seite **Konfi-Historie** öffnest du über **Konfi-Historie öffnen** im
-Profil. Oben links führt **Profil** zurück, oben rechts öffnet
-**Punkte-Übersicht** dieselbe Aufstellung wie in der App; unter dem Titel steht
-dein damaliger Jahrgang. Vier Kacheln nennen **Punkte gesamt**,
+Profil. Oben links führt **Profil** zurück, oben rechts springt
+**Punkte-Übersicht** zur Tabelle **Punkte-Verlauf** weiter unten, die dieselben
+Einträge zeigt wie die Übersicht in der App; unter dem Titel steht dein
+damaliger Jahrgang. Vier Kacheln nennen **Punkte gesamt**,
 **Gottesdienst**, **Gemeinde** und **Badges** aus der Konfi-Zeit. Links steht der
 **Punkte-Verlauf** als Tabelle mit allen Einträgen — beide Punktearten zählen
 hier immer —, darunter,

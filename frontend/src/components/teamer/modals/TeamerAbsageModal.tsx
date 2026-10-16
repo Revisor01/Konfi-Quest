@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+import React from 'react';
+import { useAbsageFormular } from '../../shared/useAbsageFormular';
 import {
   IonPage,
   IonHeader,
@@ -37,6 +37,11 @@ import { ICON_CHAT, ICON_HAKEN, ICON_SCHLIESSEN, ICON_TERMIN } from '../../share
  *     es gibt nichts, was offline unbekannt waere (dieselbe Begruendung wie
  *     bei der Konfi-Abmeldung seit 30.08.2026). Die Seite legt sie in die
  *     Warteschlange.
+ *
+ * Regeln, Texte und Absenden stehen seit 15.10.2026 in
+ * shared/useAbsageFormular.ts -- dieselben liest das Fenster des Browsers
+ * (shared/web/termine/WebAbsageDialog.tsx). Die Darstellung hier ist
+ * unveraendert.
  */
 interface TeamerAbsageModalProps {
   eventName: string;
@@ -52,20 +57,14 @@ const TeamerAbsageModal: React.FC<TeamerAbsageModalProps> = ({
   onAbsage,
   dismiss
 }) => {
-  const [reason, setReason] = useState('');
-  const { isSubmitting, guard } = useActionGuard();
-
-  const isValid = !grundPflicht || reason.trim().length > 0;
-
-  const handleSubmit = async () => {
-    if (!isValid) {
-      return;
-    }
-    await guard(async () => {
-      onAbsage(reason.trim());
-      dismiss(reason.trim(), 'confirm');
-    });
-  };
+  const {
+    texte, grund: reason, setGrund: setReason, gueltig: isValid, isSubmitting, absenden: handleSubmit, fehltSichtbar,
+  } = useAbsageFormular({
+    rolle: 'team',
+    pflicht: grundPflicht,
+    onAbsage: (grund) => onAbsage(grund),
+    onFertig: (grund) => dismiss(grund, 'confirm'),
+  });
 
   const handleClose = () => {
     dismiss(undefined, 'cancel');
@@ -75,7 +74,7 @@ const TeamerAbsageModal: React.FC<TeamerAbsageModalProps> = ({
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Absage</IonTitle>
+          <IonTitle>{texte.titel}</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={handleClose}>
               <IonIcon icon={ICON_SCHLIESSEN} />
@@ -83,7 +82,7 @@ const TeamerAbsageModal: React.FC<TeamerAbsageModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton
-              aria-label="Absage bestätigen"
+              aria-label={texte.bestaetigen}
               className="app-modal-submit-btn app-modal-submit-btn--teamer"
               onClick={handleSubmit}
               disabled={!isValid || isSubmitting}
@@ -100,7 +99,7 @@ const TeamerAbsageModal: React.FC<TeamerAbsageModalProps> = ({
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={ICON_TERMIN} />
             </div>
-            <IonLabel>Absage für</IonLabel>
+            <IonLabel>{texte.fuer}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent style={{ padding: 'var(--app-abstand-basis)' }}>
@@ -116,29 +115,27 @@ const TeamerAbsageModal: React.FC<TeamerAbsageModalProps> = ({
             <div className="app-section-icon app-section-icon--events">
               <IonIcon icon={ICON_CHAT} />
             </div>
-            <IonLabel>{grundPflicht ? 'Grund für die Absage' : 'Grund (freiwillig)'}</IonLabel>
+            <IonLabel>{texte.grund}</IonLabel>
           </IonListHeader>
           <IonCard className="app-card">
             <IonCardContent>
               <p style={{ color: 'var(--ion-color-medium)', fontSize: 'var(--app-text-sekundaer)', margin: '0 0 var(--app-abstand-eng) 0', padding: '0 var(--app-abstand-mini)' }}>
-                {grundPflicht
-                  ? 'Du hattest zugesagt. Bitte gib einen Grund an, damit die Leitung umplanen kann.'
-                  : 'Ein Grund hilft der Leitung beim Planen — du musst aber keinen angeben.'}
+                {texte.erklaerung}
               </p>
               <IonList style={{ background: 'transparent', padding: '0' }}>
                 <IonItem lines="none" style={{ '--background': 'transparent' }}>
-                  <IonTextarea aria-label={grundPflicht ? 'Warum kannst du nicht?' : 'Grund (kannst du leer lassen)'}
+                  <IonTextarea aria-label={texte.feld}
                     value={reason}
                     onIonInput={(e) => setReason(e.detail.value!)}
-                    placeholder={grundPflicht ? 'Warum kannst du nicht?' : 'Grund (kannst du leer lassen)'}
+                    placeholder={texte.platzhalter}
                     rows={4}
                     autoGrow={true}
                   />
                 </IonItem>
               </IonList>
-              {grundPflicht && reason.trim().length === 0 && (
+              {fehltSichtbar && (
                 <p style={{ color: 'var(--ion-color-danger)', fontSize: 'var(--app-text-klein)', margin: 'var(--app-abstand-mini) 0 0 var(--app-abstand-mini)' }}>
-                  Ohne Grund lässt sich eine Absage nach Zusage nicht speichern.
+                  {texte.fehlt}
                 </p>
               )}
             </IonCardContent>

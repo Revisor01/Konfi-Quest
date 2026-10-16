@@ -22,6 +22,7 @@ import {
   IonListHeader,
   IonRefresher,
   IonRefresherContent,
+  useIonAlert,
   useIonModal
 } from '@ionic/react';
 import { useApp } from '../../../contexts/AppContext';
@@ -35,6 +36,8 @@ import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import { useNeueEmailUebernehmen } from '../../shared/useEmailAendern';
 import WebEmailAendern from '../../shared/web/konto/WebEmailAendern';
 import WebPasswortAendern from '../../shared/web/konto/WebPasswortAendern';
+import WebFunktionDialog from '../../shared/web/konto/WebFunktionDialog';
+import WebKontoLoeschenDialog from '../../shared/web/konto/WebKontoLoeschenDialog';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import AbsturzberichteSchalter from '../../shared/AbsturzberichteSchalter';
@@ -49,7 +52,8 @@ import WebAdminProfil from '../web/start/WebAdminProfil';
 
 const AdminProfilePage: React.FC = () => {
   const { pageRef, presentingElement } = useModalPage('admin-profile');
-  const { user } = useApp();
+  const { user, signOut } = useApp();
+  const [presentAlert] = useIonAlert();
   const { cacheLabel, clearMediaCache: handleClearMediaCache } = useMediaCacheControl();
   // Browser ab 992 px: die Web-Fassung (web/start/WebAdminProfil), zweispaltig.
   const breit = useBreitesLayout();
@@ -64,9 +68,10 @@ const AdminProfilePage: React.FC = () => {
   // Nach einer neuen Adresse: Profil neu laden, dann die Adresse in den
   // Context und den TokenStore (App-Modal und Web-Dialog gleich).
   const emailUebernehmen = useNeueEmailUebernehmen(refreshProfile);
-  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail und Passwort einen
-  // eigenen Dialog statt des App-Modals.
-  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | null>(null);
+  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail, Passwort,
+  // Funktionsbeschreibung und Konto loeschen einen eigenen Dialog statt des
+  // App-Modals (Simon, 11.10. und 15.10.2026) -- mit derselben Logik.
+  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | 'funktion' | 'loeschen' | null>(null);
 
   // Email Modal mit useIonModal Hook
   const [presentEmailModalHook, dismissEmailModalHook] = useIonModal(ChangeEmailModal, {
@@ -125,6 +130,28 @@ const AdminProfilePage: React.FC = () => {
     });
   };
 
+  // Abmelden im Profil der Web-Fassung (15.10.2026): Die Karte „Konto"
+  // kuendigte es an, hatte aber keinen Knopf. Dieselbe Rueckfrage wie unten
+  // in der Seitenleiste (components/layout/Seitenleiste.tsx) und im Profil
+  // von Konfis und Team.
+  const handleLogout = () => {
+    presentAlert({
+      header: 'Abmelden',
+      message: 'Möchtest du dich wirklich abmelden?',
+      buttons: [
+        { text: 'Abbrechen', role: 'cancel' },
+        {
+          text: 'Abmelden',
+          role: 'destructive',
+          handler: async () => {
+            // signOut() ist failsafe -> garantiert zurueck zur Anmeldung.
+            await signOut();
+          }
+        }
+      ]
+    });
+  };
+
   if (breit) {
     const rolle = rollenName(user?.role_name, 'Leitung');
     const funktion = selbstbezeichnung(profileData?.role_title);
@@ -141,12 +168,12 @@ const AdminProfilePage: React.FC = () => {
           seit={profileData?.created_at ? datumKurz(profileData.created_at) : undefined}
           funktion={selbstbezeichnung(profileData?.role_title)}
           cacheLabel={cacheLabel}
-          onFunktion={handleOpenRoleTitleModal}
+          onFunktion={() => setWebDialog('funktion')}
           onEmail={() => setWebDialog('email')}
           onPasswort={() => setWebDialog('passwort')}
           onCache={handleClearMediaCache}
-          onLoeschen={handleOpenDeleteAccount}
-          presentingElement={() => presentingElement}
+          onAbmelden={handleLogout}
+          onLoeschen={() => setWebDialog('loeschen')}
         />
         {webDialog === 'email' && (
           <WebEmailAendern
@@ -158,6 +185,14 @@ const AdminProfilePage: React.FC = () => {
         {webDialog === 'passwort' && (
           <WebPasswortAendern onSchliessen={() => setWebDialog(null)} onGespeichert={() => setWebDialog(null)} />
         )}
+        {webDialog === 'funktion' && (
+          <WebFunktionDialog
+            initialRoleTitle={profileData?.role_title || ''}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); void refreshProfile(); }}
+          />
+        )}
+        {webDialog === 'loeschen' && <WebKontoLoeschenDialog onSchliessen={() => setWebDialog(null)} />}
       </WebSeite>
     );
   }
@@ -385,7 +420,7 @@ const AdminProfilePage: React.FC = () => {
             }}
           >
             <IonIcon icon={ICON_LOESCHEN} slot="start" />
-            Account löschen
+            Konto löschen
           </IonButton>
         </div>
 

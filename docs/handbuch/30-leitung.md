@@ -374,7 +374,7 @@ Anliegens.
 | Bereich | Wofür |
 |---|---|
 | **Benutzer:innen** | [Rollen](05-rollen.md#die-eigene-rolle-einordnen) vergeben, Jahrgänge zuweisen und [festlegen, wer dort entscheiden, verbuchen und freigeben darf](05-rollen.md#festlegen-wer-entscheiden-verbuchen-und-freigeben-darf) |
-| **Dashboard** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
+| **Startseiten** | Welche Bereiche Konfis und Team auf ihrer Startseite sehen, und in welcher Reihenfolge |
 | **Konfis einladen** | [QR-Code für die Selbstregistrierung](35-passwoerter.md#die-einladung-erzeugen) |
 
 Läuft die Lizenz der Gemeinde ab, bekommen **alle in der Gemeindeleitung** 14 Tage
@@ -403,10 +403,10 @@ Liste **Kacheln in Gruppen**. Jede Kachel ist ein Link auf ihre Seite
 einem Fenster, wofür der Bereich da ist — mit denselben Texten wie die
 Info-Fenster der App.
 
-- **Punkte und Inhalte:** Aktivitäten, Punkte und Level, Kategorien, Badges,
+- **Punkte und Inhalte:** Aktivitäten, Level, Kategorien, Badges,
   Material und Jahresrückblick.
-- **Gemeinde:** Benutzer:innen, Jahrgänge, Einladungen, Dashboard und
-  Zertifikate. Benutzer:innen, Einladungen und Dashboard sieht nur die
+- **Gemeinde:** Benutzer:innen, Jahrgänge, Konfis einladen, Startseiten und
+  Zertifikate. Benutzer:innen, Konfis einladen und Startseiten sieht nur die
   Gemeindeleitung.
 - **Konto und Hilfe:** Profil, App-Tour, **Was ist neu?**, **Events und
   Aktivitäten** — die Erklärung des Bereichs Mitmachen — und **Hilfe und
@@ -422,15 +422,21 @@ Vorgangs kommt per E-Mail. **Dringend** gilt nur, wenn die Gemeinde gerade nicht
 mit Konfi Quest arbeiten kann. Die Kachel sehen die Gemeindeleitung und die
 Leitung; in der App steht derselbe Eintrag unter **Mehr** im Abschnitt Konto.
 Konten des Betriebs von Konfi Quest sehen zusätzlich die Gruppe **Support und
-Betrieb**.
+Betrieb**. Öffnet ein anderes Konto die Seiten Gemeinden oder Betrieb, etwa über
+ihre Adresse, steht dort nur der Hinweis „Nur für den Support"; im Browser
+führt **Mehr** oben links zurück.
 
 **Profil** öffnet eine Seite mit zwei Spalten: links die Person mit
 Benutzername, E-Mail-Adresse, Rolle und Gemeinde, rechts die offenen
 Einladungen in eine weitere Gemeinde, die Einstellungen — Funktionsbeschreibung,
-E-Mail-Adresse, Passwort, **Benachrichtigungen** und Medien-Cache — und **Konto
-löschen**. **Benachrichtigungen** öffnet dieselbe Auswahl wie in der App unter
+E-Mail-Adresse, Passwort, **Benachrichtigungen** und Medien-Cache — und die
+Karte **Konto** mit **Abmelden** und **Konto löschen**. Funktionsbeschreibung,
+E-Mail-Adresse, Passwort, **Benachrichtigungen** und **Konto löschen** öffnen
+ein eigenes, kompaktes Fenster (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen));
+die Auswahl der Benachrichtigungen ist dieselbe wie in der App unter
 Mehr › Konto, siehe [Auswählen, welche Mitteilungen aufs Handy kommen](03-bedienung.md#auswaehlen-welche-mitteilungen-aufs-handy-kommen). **Abmelden**
-steht nicht im Profil, sondern unten in der Leiste.
+fragt wie unten in der Leiste nach.
 
 ### Im Browser Verwaltungsseiten als Tabellen nutzen
 
@@ -439,12 +445,12 @@ Kennzahlen darüber. Oben links führt **Mehr** zurück, oben rechts neben der
 Überschrift legst du Neues an, darunter stehen in einer Zeile Filter, Suche und
 die Wahl zwischen Liste und Kacheln. Am Ende jeder Zeile bzw. unten auf jeder
 Kachel bearbeitest und löschst du; ein Klick auf den Namen öffnet ebenfalls das
-Bearbeiten. Benutzer:innen, Kategorien, Level, Zertifikate, Jahrgänge und
-Material legst du im Browser in einem eigenen, kompakten Fenster an und
-bearbeitest sie dort (siehe
-[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen)),
-eine Aktivität im Fenster der App; die Rückfragen vor dem Löschen sind dieselben
-wie in der App. Liste und Kacheln gibt es bei Benutzer:innen, Jahrgängen,
+Bearbeiten. Benutzer:innen, Aktivitäten, Kategorien, Level, Zertifikate,
+Jahrgänge und Material legst du im Browser in einem eigenen, kompakten Fenster
+an und bearbeitest sie dort (siehe
+[Im Browser ein Fenster bedienen](03-bedienung.md#im-browser-ein-fenster-bedienen));
+die Rückfragen vor dem Löschen sind dieselben wie in der App. Liste und Kacheln
+gibt es bei Benutzer:innen, Jahrgängen,
 Kategorien, Level und Zertifikaten, siehe
 [Im Browser zwischen Liste und Kacheln wählen](03-bedienung.md#im-browser-zwischen-liste-und-kacheln-waehlen). Wer was darf, gilt wie dort, siehe
 [Rollen und Rechte](05-rollen.md#nachschlagen-wer-was-darf).
@@ -458,8 +464,8 @@ Kategorien, Level und Zertifikaten, siehe
 | **Jahrgänge** | Konfis, Punkteziele, Konfispruch frei oder gesperrt, Rückblick | Kennzahlen darüber; **Neuer Jahrgang** nur für die Gemeindeleitung |
 | **Material verwalten** | Titel mit Beschreibung, für wen sichtbar, was daran hängt, wer es angelegt hat; auch als Kacheln | Suche, Auswahl **Jahrgang** oder **Nur globales Material**; fremdes Material steht auf **Ansehen** |
 | **Jahresrückblick** | Ausgaben mit Jahrgang, Zeitraum, Zahl der Rückblicke und Stand | **Konfis** und **Team** (Team nur für die Gemeindeleitung); **Neuer Rückblick** öffnet ein Fenster |
-| **Dashboard** | zwei Listen nebeneinander, für Konfis und für das Team | je Bereich ein Schalter; die Pfeile nach oben und unten ersetzen das Ziehen der App; jede Änderung gilt sofort |
-| **Einladungen** | aktive Codes mit Jahrgang, Verwendungen und Gültigkeit | Formular für einen neuen Code; rechts der QR-Code mit **Link kopieren** und **Teilen** |
+| **Startseiten** | zwei Listen nebeneinander, **Startseite der Konfis** und **Startseite des Teams** | je Bereich ein Schalter; die Pfeile nach oben und unten ersetzen das Ziehen der App; jede Änderung gilt sofort |
+| **Konfis einladen** | aktive Codes mit Jahrgang, Verwendungen und Gültigkeit | Formular für einen neuen Code; rechts der QR-Code mit **Link kopieren** und **Teilen**; die Uhr an einem Code [verlängert ihn](35-passwoerter.md#eine-einladung-verlaengern-oder-loeschen) in einem kleinen Fenster; im schmalen Browserfenster steht die Seite wie in der App da, oben mit **Zurück** |
 | **Betrieb** | Zustand, Fehler, Routen und Verlauf des Servers, darunter eine Warnung, wenn die Support-Mail aus ist oder länger als 30 Minuten nichts abgeholt hat; im Überblick die Aufgaben im Hintergrund mit letztem Lauf, Dauer und Ergebnis | nur für Konten mit Super-Admin-Recht |
 
 **Aktivitäten** ist der Katalog dessen, was gemeldet werden kann: eine Tabelle
@@ -603,8 +609,11 @@ Pro Jahrgang legst du fest:
   und Gemeinde, jeweils einzeln abschaltbar
 - [**Konfispruch-Auswahl**](45-jahrgaenge.md#den-konfispruch-freigeben)
   freigeben
-- **Wrapped freigeben** — erzeugt den [Jahresrückblick](95-wrapped.md) und
-  benachrichtigt die Konfis
+
+Den [Jahresrückblick](95-wrapped.md#einen-rueckblick-anlegen) gibst du nicht
+im Jahrgang frei, sondern unter **Mehr › Jahresrückblick**: Dort legst du für
+einen Jahrgang eine Ausgabe an, und sie wird sofort freigegeben; die Konfis
+bekommen eine Mitteilung.
 
 Ein Jahrgang lässt sich
 [nicht löschen](45-jahrgaenge.md#einen-jahrgang-loeschen), solange ihm aktive

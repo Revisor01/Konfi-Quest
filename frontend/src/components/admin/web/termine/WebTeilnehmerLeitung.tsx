@@ -244,10 +244,12 @@ const WebTeilnehmerLeitung: React.FC<WebTeilnehmerLeitungProps> = ({
           {darfEntfernen && p.role_name === 'konfi' && p.status === 'confirmed' && (
             <WebKnopf onClick={schliesseUnd(() => aktionen.aufWarteliste(p))}>Auf Warteliste setzen</WebKnopf>
           )}
+          {/* Derselbe Wortlaut wie die Rückfrage danach („Anmeldung entfernen?")
+              und der Wisch der App (Simon, 15.10.2026). */}
           {darfEntfernen && (
             <WebKnopf art="gefahr" onClick={schliesseUnd(() => aktionen.entfernen(p))}>
               <IonIcon icon={ICON_LOESCHEN} aria-hidden="true" />
-              Teilnahme entfernen
+              Anmeldung entfernen
             </WebKnopf>
           )}
         </div>

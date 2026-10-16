@@ -1,4 +1,4 @@
-import { ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
+import { ICON_HINZUFUEGEN, ICON_HINZUFUEGEN_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile, { AppKopfzeileGross } from '../../shared/AppKopfzeile';
 import { fehlerText } from '../../../utils/fehler';
 import React, { useState, useRef } from 'react';
@@ -170,13 +170,13 @@ const AdminBadgesPage: React.FC = () => {
   if (breit) {
     return (
       <WebSeite
-        bereich="Mehr"
+        bereich="Verwaltung"
         titel="Badges"
         untertitel="Auszeichnungen und Erfolge"
         zurueck={{ href: '/admin/settings', text: 'Mehr' }}
         aktionen={(
           <WebKnopf art="primaer" onClick={presentBadgeModal}>
-            <IonIcon icon={ICON_HINZUFUEGEN_GEFUELLT} aria-hidden="true" />
+            <IonIcon icon={ICON_HINZUFUEGEN} aria-hidden="true" />
             Neues Badge
           </WebKnopf>
         )}

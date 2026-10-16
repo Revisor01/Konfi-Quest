@@ -12,6 +12,7 @@ import {
   kategorienNamen,
   kennzahlAnzeige,
   kommendeZuerst,
+  konfiAnmeldeZustand,
   konfiFakten,
   konfiKennzahlen,
   leitungFakten,
@@ -26,6 +27,9 @@ import {
   terminImJahrgang,
   terminSuchtTreffer,
   zeitspanneKurz,
+  zeitfensterStand,
+  ZEITFENSTER_KEINE,
+  ZEITFENSTER_NICHT_GELADEN_WEB,
 } from '../../utils/termineWeb';
 import type { Event } from '../../types/event';
 
@@ -267,5 +271,47 @@ describe('Angaben: Ort, Anmeldung und Material', () => {
       expect(terminAngaben(ev(zusatz), { rolle: 'konfi' }).find((a) => a.label === 'Punkte')).toBeUndefined();
     }
     expect(terminAngaben(ev({ points: 2, teamer_only: true }), { rolle: 'team' }).find((a) => a.label === 'Punkte')).toBeUndefined();
+  });
+});
+
+// Ohne Zeitfenster ist „Anmelden" im Browser gesperrt, der Grund steht daneben
+// (15.10.2026) -- die App fragt erst beim Tippen nach („Zeitfenster nicht geladen").
+describe('Anmelden an einem Zeitfenster-Event', () => {
+  const KONTEXT = { online: true, laeuft: false, hatKonfirmationGebucht: false };
+  const offen = ev({ has_timeslots: true, can_register: true, event_date: '2099-11-14T09:00:00Z' });
+
+  it('zeitfensterStand: kein Zeitfenster-Event oder Zeitfenster da, laedt, keine, Fehler', () => {
+    expect(zeitfensterStand(ev({ has_timeslots: false }), { anzahl: 0, geladen: false, fehler: true })).toBe('da');
+    expect(zeitfensterStand(offen, { anzahl: 2, geladen: true, fehler: false })).toBe('da');
+    expect(zeitfensterStand(offen, { anzahl: 0, geladen: false, fehler: false })).toBe('laedt');
+    expect(zeitfensterStand(offen, { anzahl: 0, geladen: true, fehler: false })).toBe('keine');
+    expect(zeitfensterStand(offen, { anzahl: 0, geladen: true, fehler: true })).toBe('fehler');
+  });
+
+  it('keine Zeitfenster: „Anmelden" gesperrt, daneben der Satz der App', () => {
+    const z = konfiAnmeldeZustand(offen, { ...KONTEXT, zeitfenster: 'keine' });
+    expect(z.knopf).toEqual({ aktion: 'anmelden', text: 'Anmelden (3/20)', sperrt: true, gruen: true });
+    expect(z.gesperrt).toEqual({ text: ZEITFENSTER_KEINE });
+  });
+
+  it('nicht geladen: gesperrt, der Satz für den Browser; solange es laedt: gesperrt ohne Satz', () => {
+    expect(konfiAnmeldeZustand(offen, { ...KONTEXT, zeitfenster: 'fehler' }).gesperrt).toEqual({ text: ZEITFENSTER_NICHT_GELADEN_WEB });
+    const laedt = konfiAnmeldeZustand(offen, { ...KONTEXT, zeitfenster: 'laedt' });
+    expect(laedt.knopf!.sperrt).toBe(true);
+    expect(laedt.gesperrt).toBeUndefined();
+  });
+
+  it('auch „Wieder anmelden" nach einer Abmeldung durch die Leitung', () => {
+    const z = konfiAnmeldeZustand(ev({ ...offen, booking_status: 'excused' }), { ...KONTEXT, zeitfenster: 'keine' });
+    expect(z.knopf).toEqual(expect.objectContaining({ aktion: 'wiederAnmelden', sperrt: true }));
+    expect(z.gesperrt).toEqual({ text: ZEITFENSTER_KEINE });
+  });
+
+  it('Abmelden bleibt frei, ohne Netz bleibt es bei „Du bist offline", mit Zeitfenstern unverändert', () => {
+    const angemeldet = ev({ ...offen, is_registered: true, booking_status: 'confirmed' });
+    expect(konfiAnmeldeZustand(angemeldet, { ...KONTEXT, zeitfenster: 'keine' })).toEqual(konfiAnmeldeZustand(angemeldet, KONTEXT));
+    expect(konfiAnmeldeZustand(offen, { ...KONTEXT, online: false, zeitfenster: 'keine' })).toEqual(konfiAnmeldeZustand(offen, { ...KONTEXT, online: false }));
+    expect(konfiAnmeldeZustand(offen, { ...KONTEXT, zeitfenster: 'da' })).toEqual(konfiAnmeldeZustand(offen, KONTEXT));
+    expect(konfiAnmeldeZustand(angemeldet, { ...KONTEXT, zeitfenster: 'keine' }).knopf).toEqual(expect.objectContaining({ aktion: 'abmelden', sperrt: false }));
   });
 });

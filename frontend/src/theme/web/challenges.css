@@ -292,6 +292,56 @@
   color: var(--web-text-leise);
 }
 
+/* --- Fenster „Neue Challenge"/„Challenge bearbeiten" und „Dein Beitrag"
+   (WebChallengeDialog, WebBeitragDialog; Simon, 15.10.2026) ---
+   Meldung und Sendestand stehen ueber den Knoepfen in der Leiste, die unten
+   im Bild bleibt -- auf einer eigenen Zeile. */
+.web-challenge-dialog__meldung {
+  flex: 1 0 100%;
+  min-width: 0;
+}
+
+.web-challenge-dialog__laedt {
+  margin: 0;
+  color: var(--web-text-leise);
+}
+
+.web-beitrag-fortschritt {
+  font-size: var(--app-text-klein);
+  color: var(--web-text-leise);
+}
+
+/* Die Vorschau des gewaehlten Fotos oder Videos: in der Breite des Fensters,
+   nie hoeher als ein Drittel des Bildschirms (ein Hochformat schoebe sonst
+   die Knoepfe aus dem Blick). */
+.web-beitrag-vorschau {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-beitrag-vorschau__medium {
+  display: block;
+  width: 100%;
+  max-height: 33vh;
+  object-fit: contain;
+  border-radius: var(--app-radius-knopf);
+  background: var(--app-surface-soft);
+}
+
+.web-beitrag-vorschau__text {
+  margin: 0;
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+/* Die laufende Aufnahme: die Dauer neben „Aufnahme beenden". */
+.web-beitrag-aufnahme {
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--app-color-danger);
+  font-variant-numeric: tabular-nums;
+}
+
 /* --- Ansicht Liste/Kacheln (Challenges) ---
    Die Liste ist eine Tabelle (WebChallengesTabelle); die Kacheln sind das
    Raster der Karten oben. Der Umschalter selbst steht in web-ansicht.css

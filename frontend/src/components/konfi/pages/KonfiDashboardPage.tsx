@@ -41,6 +41,8 @@ import WebSeite from '../../web/WebSeite';
 import WebKnopf from '../../web/WebKnopf';
 import { WebFehler, WebLaden } from '../../web/WebZustaende';
 import { WebRueckblickHinweis } from '../web/WebStartKarten';
+import WebKonfispruchDialog from '../web/WebKonfispruchDialog';
+import { PUNKTE_PARAMETER } from '../../../utils/pushNavigation';
 
 interface PointConfig {
   gottesdienst_enabled: boolean;
@@ -266,7 +268,14 @@ const KonfiDashboardPage: React.FC = () => {
     current: konfiProfile?.konfspruch ?? null
   });
 
+  // Im Browser (breit) ein Dialog der Web-Fassung mit derselben Logik
+  // (useKonfispruchWahl), in der App das Modal (Simon, 15.10.2026).
+  const [webKonfispruch, setWebKonfispruch] = useState(false);
   const openKonfispruch = () => {
+    if (breit) {
+      setWebKonfispruch(true);
+      return;
+    }
     presentKonfispruchModal({
       presentingElement: pageRef.current || undefined
     });
@@ -394,7 +403,10 @@ const KonfiDashboardPage: React.FC = () => {
         bereich="Start"
         titel={getGreeting(getFirstName(dashboardData.konfi.display_name))}
         untertitel={dashboardData.konfi.jahrgang_name}
-        aktionen={<WebKnopf onClick={openPointsHistory}>Punkte-Übersicht</WebKnopf>}
+        // Die Punkte-Übersicht führt im Browser zur Tabelle „Punkte-Verlauf"
+        // im Profil (?punkte=1 springt dort hin) statt ein Modal zu öffnen --
+        // dieselben Einträge stehen dort schon (Simon, 15.10.2026).
+        aktionen={<WebKnopf href={`/konfi/profile?${PUNKTE_PARAMETER}=1`}>Punkte-Übersicht</WebKnopf>}
         pageRef={pageRef}
         wartung
       >
@@ -445,6 +457,17 @@ const KonfiDashboardPage: React.FC = () => {
         {showNeuerungen && <KonfiUpdate230WalkthroughModal onClose={schliesseNeuerungen} />}
         {showUpdateWalkthrough && <KonfiUpdate230WalkthroughModal onClose={() => setShowUpdateWalkthrough(false)} />}
         {showMitmachenErklaerung && <MitmachenErklaerungModal rolle="konfi" onClose={() => setShowMitmachenErklaerung(false)} />}
+        {webKonfispruch && (
+          <WebKonfispruchDialog
+            current={konfiProfile?.konfspruch ?? null}
+            onSchliessen={() => setWebKonfispruch(false)}
+            onGespeichert={() => {
+              setWebKonfispruch(false);
+              refreshProfile();
+              refreshDashboard();
+            }}
+          />
+        )}
       </WebSeite>
     );
   }

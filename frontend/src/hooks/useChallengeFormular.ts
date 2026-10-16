@@ -1,6 +1,8 @@
-import { useRef, useState } from 'react';
+import { createElement, useRef, useState, type ReactElement } from 'react';
 import { useIonAlert, useIonModal } from '@ionic/react';
 import ChallengeManageModal from '../components/admin/modals/ChallengeManageModal';
+import WebChallengeDialog from '../components/shared/web/challenges/WebChallengeDialog';
+import { useBreitesLayout } from '../navigation/breitesLayout';
 import type { AdminChallenge } from '../types/challenges';
 
 interface ChallengeFormularOptionen {
@@ -18,15 +20,26 @@ interface ChallengeFormularOptionen {
  * im Dialog). Die Rueckfrage bei ungespeicherten Aenderungen steht deshalb
  * hier und nicht zweimal -- eine Abschrift liefe beim naechsten Umbau
  * auseinander.
+ *
+ * Im breiten Layout des Browsers (ab 992 px) oeffnet sich statt des Modals
+ * der Dialog der Web-Fassung (WebChallengeDialog; Simon, 15.10.2026: jedes
+ * Formular, das im Browser noch ein Modal der App oeffnet, bekommt ein
+ * kompaktes Web-Fenster). Er fragt bei ungespeicherten Aenderungen selbst
+ * nach; die Seite stellt ihn mit `fenster` dazu. Beide lesen dieselbe Logik
+ * (admin/modals/useChallengeManageFormular).
  */
 export function useChallengeFormular({ presentingElement, onGespeichert }: ChallengeFormularOptionen) {
   const [presentAlert] = useIonAlert();
+  const breit = useBreitesLayout();
 
   // WICHTIG: Beim Schliessen wird die Challenge NICHT auf null gesetzt.
   // useIonModal rendert das Formular während der Dismiss-Animation weiter —
   // ein null-Render liefe dort in die ErrorBoundary (clearAuth => "Rauswurf
   // zur Anmeldung"). Der Stand wird beim nächsten Oeffnen ohnehin neu gesetzt.
   const [challenge, setChallenge] = useState<AdminChallenge | null>(null);
+
+  // Der Dialog der Web-Fassung: offen mit dieser Challenge (null = neu) oder zu.
+  const [webFormular, setWebFormular] = useState<{ challenge: AdminChallenge | null } | null>(null);
 
   // "Ungespeicherte Änderungen"-Stand des Formulars, damit canDismiss auch
   // Swipe-/Backdrop-Schliessen abfangen kann.
@@ -61,6 +74,10 @@ export function useChallengeFormular({ presentingElement, onGespeichert }: Chall
   };
 
   const oeffnen = (zuBearbeiten: AdminChallenge | null) => {
+    if (breit) {
+      setWebFormular({ challenge: zuBearbeiten });
+      return;
+    }
     setChallenge(zuBearbeiten);
     presentManageModal({
       presentingElement: presentingElement(),
@@ -69,10 +86,26 @@ export function useChallengeFormular({ presentingElement, onGespeichert }: Chall
     });
   };
 
+  // Nach dem Speichern wie nach dem Modal: Fenster zu, dann onGespeichert.
+  const fenster: ReactElement | null = webFormular
+    ? createElement(WebChallengeDialog, {
+      // Je Challenge ein frisches Formular (wie das Modal je Oeffnen).
+      key: webFormular.challenge?.id ?? 'neu',
+      challenge: webFormular.challenge,
+      onSchliessen: () => setWebFormular(null),
+      onGespeichert: () => {
+        setWebFormular(null);
+        onGespeichert();
+      },
+    })
+    : null;
+
   return {
     /** Leeres Formular fuer eine neue Challenge. */
     anlegen: () => oeffnen(null),
     /** Formular mit dieser Challenge. */
     bearbeiten: (zuBearbeiten: AdminChallenge) => oeffnen(zuBearbeiten),
+    /** Der Dialog der Web-Fassung, solange er offen ist -- die Seite stellt ihn dazu. */
+    fenster,
   };
 }

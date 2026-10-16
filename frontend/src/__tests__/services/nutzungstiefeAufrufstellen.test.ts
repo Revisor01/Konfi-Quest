@@ -86,9 +86,11 @@ const STELLEN: Array<{
     vorher: 'await dateiOeffnen(file.stored_name, file.original_name, file.mime_type)'
   },
   {
-    datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
+    // Seit 15.10.2026 im Hook, den das Modal der App (TeamerMaterialDetailPage)
+    // und das Fenster des Browsers aus den Events teilen.
+    datei: 'src/components/teamer/pages/useMaterialAnsicht.ts',
     handlung: 'material-angesehen',
-    vorher: 'await materialDetailLaden<MaterialDetail>(materialId)'
+    vorher: 'await materialDetailLaden<T>(materialId)'
   },
   {
     datei: 'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
@@ -108,7 +110,9 @@ const STELLEN: Array<{
     vorher: "api.post('/admin/badges', badgeData)"
   },
   {
-    datei: 'src/components/admin/modals/ChallengeManageModal.tsx',
+    // Seit 15.10.2026 im Hook, den das Modal der App und der Dialog der
+    // Web-Fassung (WebChallengeDialog) gemeinsam nutzen.
+    datei: 'src/components/admin/modals/useChallengeManageFormular.ts',
     handlung: 'challenge-angelegt',
     vorher: "await api.post('/challenges/admin', payload)"
   },
@@ -128,12 +132,14 @@ const STELLEN: Array<{
     vorher: 'const res = await api.post(`/teamer/events/${eventData.id}/zusage`, body)'
   },
   {
-    datei: 'src/components/shared/PushAuswahl.tsx',
+    datei: 'src/components/shared/usePushAuswahl.ts',
     handlung: 'push-gruppe-umgeschaltet',
     vorher: "await api.put('/notifications/preferences', aenderung)"
   },
   {
-    datei: 'src/components/admin/modals/EinladungModal.tsx',
+    // Seit 15.10.2026 im Hook, den das Modal der App und der Dialog der
+    // Web-Fassung teilen.
+    datei: 'src/components/admin/usePersonEinladen.ts',
     handlung: 'einladung-gesendet',
     vorher: "await api.post('/einladungen', { kennung: kennung.trim(), role_id: rolleId })"
   },
@@ -214,9 +220,16 @@ describe('Gemessen wird erst nach der erfolgreichen Antwort', () => {
         if (tiefe <= 0 && /\}/.test(rest)) imCatch = false;
       }
     }
-    // Gegenprobe gegen einen leeren Lauf: jede dieser Dateien hat catch-Zweige
-    // mit Rumpf, also muessen mehr Zeilen angesehen worden sein als catch-Koepfe.
+    // Gegenprobe gegen einen leeren Lauf: hat die Datei catch-Zweige mit
+    // Rumpf, muessen mehr Zeilen angesehen worden sein als catch-Koepfe. Hat
+    // sie keinen (TeamerMaterialDetailPage seit 15.10.2026: das Laden samt
+    // catch steht in useMaterialAnsicht, eigens geprueft), steht auch das
+    // Wort catch nirgends -- dann kann kein catch-Zweig messen.
     const koepfe = zeilen.filter((z) => /\bcatch\s*(\(|\{)/.test(z)).length;
+    if (koepfe === 0) {
+      expect(/\bcatch\b/.test(quelle), `${datei}: catch ohne erkannten Kopf`).toBe(false);
+      return;
+    }
     expect(catchZeilen).toBeGreaterThan(koepfe);
   });
 });
@@ -246,7 +259,9 @@ describe('Keine Handlung wird doppelt gezaehlt', () => {
     expect(anmeldung).toContain("track('event-angemeldet'");
     expect(anmeldung).not.toContain("trackHandlung('event-angemeldet'");
 
-    const beitrag = lies('src/components/konfi/modals/ChallengeSubmitModal.tsx');
+    // Seit 15.10.2026 im Hook, den das Modal der App und der Dialog der
+    // Web-Fassung (WebBeitragDialog) gemeinsam nutzen.
+    const beitrag = lies('src/components/konfi/modals/useChallengeBeitrag.ts');
     expect(beitrag).toContain("track('challenge-beitrag'");
     expect(beitrag).not.toContain('trackHandlung(');
   });

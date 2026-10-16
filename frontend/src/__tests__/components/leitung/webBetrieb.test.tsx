@@ -16,6 +16,8 @@ const h = vi.hoisted(() => ({
   breit: true,
   stand: { alert: null, fenster: [], push: vi.fn() } as unknown as LeitungTestStand,
   apiGet: vi.fn(),
+  // Der Betrieb gehoert zur Support-Ansicht: Simons Konto (Gemeindeleitung mit Super-Admin-Merkmal).
+  user: { id: 1, role_name: 'org_admin', is_super_admin: true } as Record<string, unknown>,
 }));
 
 vi.mock('@ionic/react', async () => (await import('./leitungTestHilfe')).ionicFuerLeitung(h.stand));
@@ -23,6 +25,7 @@ vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('../support/ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../components/shared/WartungsHinweis', () => ({ default: () => null }));
 vi.mock('../../../services/api', () => ({ default: { get: (...a: unknown[]) => h.apiGet(...a) } }));
+vi.mock('../../../contexts/AppContext', () => ({ useApp: () => ({ user: h.user }) }));
 
 import AdminMetricsPage from '../../../components/admin/pages/AdminMetricsPage';
 
@@ -93,6 +96,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   Object.assign(h.stand, neuerStand());
   h.breit = true;
+  h.user = { id: 1, role_name: 'org_admin', is_super_admin: true };
   h.apiGet.mockImplementation(async (url: string) => {
     if (url === '/metrics') return { data: SNAP };
     if (url === '/metrics/history?days=14') return { data: { snapshots: HISTORIE } };
@@ -581,5 +585,41 @@ describe('Betrieb: Support-Mail', () => {
     const kasten = screen.getByRole('status', { name: 'Support-Mail' });
     expect(kasten).toHaveTextContent('Support-Mail wird nicht abgeholt');
     expect(kasten).toHaveTextContent('„moin“ zuletzt abgeholt vor 45 Min.');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Ohne Super-Admin-Recht zeigte /admin/metrics die Seite der App (schmal) bzw.
+// eine Fehlerkarte (breit), nachdem der Server mit 403 geantwortet hatte
+// (Befund 15.10.2026). Wie die uebrigen Seiten der Support-Ansicht: der
+// Hinweis "Nur fuer den Support", die Seite wird gar nicht montiert und ruft
+// nichts ab -- im Browser in der Form der Web-Fassung.
+describe('Betrieb: nur fuer den Support', () => {
+  it.each([
+    ['breit', true],
+    ['schmal', false],
+  ])('%s: eine Gemeindeleitung ohne Merkmal sieht den Hinweis und keine Kennzahlen; kein Abruf', async (_name, breit) => {
+    h.breit = breit;
+    h.user = { id: 2, role_name: 'org_admin', is_super_admin: false };
+    await oeffnen();
+    expect(screen.getByText('Nur für den Support')).toBeInTheDocument();
+    expect(screen.getByText('Diese Seite gehört zur Support-Ansicht. Sie steht nur Konten mit Super-Admin-Recht offen.')).toBeInTheDocument();
+    expect(screen.getAllByRole('heading', { name: 'Betrieb' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(h.apiGet).not.toHaveBeenCalled();
+  });
+
+  it('breit in der Form der Web-Fassung: Seitenkopf mit Weg zurueck nach "Mehr"', async () => {
+    h.user = { id: 3, role_name: 'admin' };
+    await oeffnen();
+    expect(screen.getByRole('heading', { level: 1, name: 'Betrieb' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
+  });
+
+  it('erlaubt: das Support-Konto ohne Gemeinde sieht den Betrieb und ruft ihn ab', async () => {
+    h.user = { id: 9, role_name: 'super_admin', is_super_admin: true };
+    await oeffnen();
+    expect(screen.queryByText('Nur für den Support')).toBeNull();
+    expect(aufrufe('/metrics')).toBe(1);
   });
 });

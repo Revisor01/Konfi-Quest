@@ -174,8 +174,9 @@ const ChallengeLeitungInhalt: React.FC<ChallengeLeitungInhaltProps> = ({ challen
     triggerRefresh('challenges');
   };
 
-  // Bearbeiten-Knopf in der Leiste: dasselbe Formular wie in der Liste.
-  const { bearbeiten } = useChallengeFormular({
+  // Bearbeiten-Knopf in der Leiste: dasselbe Formular wie in der Liste --
+  // im Browser ab 992 px als Dialog der Web-Fassung (`fenster`).
+  const { bearbeiten, fenster: challengeFenster } = useChallengeFormular({
     presentingElement: () => seitenRef.current || undefined,
     // Das Live-Ereignis laedt Liste und diese Seite neu (useLiveRefresh oben).
     onGespeichert: () => { triggerRefresh('challenges'); }
@@ -185,16 +186,19 @@ const ChallengeLeitungInhalt: React.FC<ChallengeLeitungInhaltProps> = ({ challen
     // Eine Komponente fuer alle Zustaende, mit einem Rahmen: laedt, Hinweis,
     // Challenge (WebChallengeLeitungDetail).
     return (
-      <WebChallengeLeitungDetail
-        challenge={challenge}
-        hinweisArt={hinweis ?? 'laedt'}
-        onBack={onBack}
-        onNochmal={() => { setHinweis('laedt'); void laden(); }}
-        onEdit={bearbeiten}
-        onChanged={geaendert}
-        seitenRef={seitenRef}
-        listenPfad={challengeListenPfad(user)}
-      />
+      <>
+        <WebChallengeLeitungDetail
+          challenge={challenge}
+          hinweisArt={hinweis ?? 'laedt'}
+          onBack={onBack}
+          onNochmal={() => { setHinweis('laedt'); void laden(); }}
+          onEdit={bearbeiten}
+          onChanged={geaendert}
+          seitenRef={seitenRef}
+          listenPfad={challengeListenPfad(user)}
+        />
+        {challengeFenster}
+      </>
     );
   }
 

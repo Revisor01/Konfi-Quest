@@ -1,6 +1,8 @@
-import { fehlerText } from '../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
-import { QR_FARBEN } from '../../theme/colors';
+// Der QR-Code zum Einchecken als Modal der App. Laden, Zähler und Drucken
+// stehen in useQrAnzeige -- derselbe Hook wie im Dialog des Browsers ab
+// 992 px (web/termine/WebQrDialog.tsx; Simon, 15.10.2026). Hier stehen nur
+// die Darstellung der App und ihre Druckregeln.
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -13,10 +15,8 @@ import {
   IonSpinner
 } from '@ionic/react';
 import { ICON_DRUCKEN, ICON_OFFLINE, ICON_SCHLIESSEN } from './icons';
-import QRCode from 'qrcode';
-import api from '../../services/api';
-import { useApp } from '../../contexts/AppContext';
 import { datumLang, uhrzeit } from '../../utils/dateUtils';
+import { useQrAnzeige } from './useQrAnzeige';
 
 interface QRDisplayModalProps {
   eventId: number;
@@ -26,13 +26,7 @@ interface QRDisplayModalProps {
 }
 
 const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eventDate, onClose }) => {
-  const { isOnline } = useApp();
-  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [checkedIn, setCheckedIn] = useState(0);
-  const [total, setTotal] = useState(0);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { isOnline, qrDataUrl, loading, error, checkedIn, total, loadQR, handlePrint } = useQrAnzeige(eventId);
 
   const formatDate = (dateString: string) => {
     return datumLang(dateString);
@@ -40,68 +34,6 @@ const QRDisplayModal: React.FC<QRDisplayModalProps> = ({ eventId, eventName, eve
 
   const formatTime = (dateString: string) => {
     return uhrzeit(dateString);
-  };
-
-  // Abbruch-Merker (14.09.2026): Die Aufraeumfunktion lief bisher ins Leere,
-  // wenn das Modal geschlossen wurde, WAEHREND loadQR noch auf den Server und
-  // die QR-Erzeugung wartete — pollRef.current war dann noch null, und der
-  // danach gesetzte Intervall fragte bis zum App-Neustart alle 10 Sekunden
-  // weiter ab, unsichtbar. Mehrfaches Oeffnen summierte die Timer.
-  const abgebrochenRef = useRef(false);
-
-  useEffect(() => {
-    abgebrochenRef.current = false;
-    loadQR();
-    return () => {
-      abgebrochenRef.current = true;
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
-      }
-    };
-  }, []);
-
-  const loadQR = async () => {
-    try {
-      setLoading(true);
-      const response = await api.post(`/events/${eventId}/generate-qr`);
-      const token = response.data.qr_token;
-
-      const dataUrl = await QRCode.toDataURL(token, {
-        width: 512,
-        margin: 2,
-        errorCorrectionLevel: 'H',
-        color: { dark: QR_FARBEN.dunkel, light: QR_FARBEN.hell }
-      });
-
-      // Inzwischen geschlossen: weder anzeigen noch mit dem Abfragen anfangen.
-      if (abgebrochenRef.current) return;
-
-      setQrDataUrl(dataUrl);
-
-      // Start polling
-      fetchAttendance();
-      pollRef.current = setInterval(fetchAttendance, 10000);
-    } catch (err) {
-      if (abgebrochenRef.current) return;
-      setError(fehlerText(err, 'QR-Code konnte nicht generiert werden'));
-    } finally {
-      if (!abgebrochenRef.current) setLoading(false);
-    }
-  };
-
-  const fetchAttendance = async () => {
-    try {
-      const response = await api.get(`/events/${eventId}/attendance-count`);
-      setCheckedIn(response.data.checked_in);
-      setTotal(response.data.total);
-    } catch {
-      // Polling-Fehler still ignorieren
-    }
-  };
-
-  const handlePrint = () => {
-    window.print();
   };
 
   return (

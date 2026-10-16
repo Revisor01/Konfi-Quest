@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, within, act } from '@testing-library/react';
 import {
   zustand, zuruecksetzen, termin, teilnahme, oeffne, api, setError, presentAlert, routerPush,
-  modale, zuletztGeoeffnet, letzteRueckfrage, knopfIn, inTagen,
+  modale, letzteRueckfrage, knopfIn, inTagen,
 } from '../gerueste/leitungTerminDetail';
 
 // Die erste Ansicht lädt die ganze Seite; in der vollen Suite unter Last reichen 5 Sekunden nicht.
@@ -135,23 +135,30 @@ describe('Kopf und Angaben', () => {
   });
 
   // Bearbeiten und Kopieren seit 11.10.2026 als eigener Dialog statt des
-  // App-Modals (webEventDialogBearbeiten.test.tsx).
+  // App-Modals (webEventDialogBearbeiten.test.tsx); QR-Code und Absagen seit
+  // 15.10.2026 ebenso (webEventFenster.test.tsx).
   it('Aktionen oben: QR-Code, Bearbeiten, Kopieren, Absagen öffnen ihre Fenster; Chat führt in den Chat-Raum', async () => {
     await oeffne();
-    fireEvent.click(screen.getByRole('button', { name: 'QR-Code anzeigen' }));
-    expect(geoeffnet('QRDisplayModal')).toHaveLength(1);
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'QR-Code anzeigen' })); });
+    expect(screen.getByRole('dialog', { name: 'QR-Code zum Einchecken' })).toBeInTheDocument();
+    expect(geoeffnet('QRDisplayModal')).toHaveLength(0);
+    await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getAllByRole('button', { name: 'Schließen' })[0]); });
+    expect(screen.queryByRole('dialog')).toBe(null);
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Event bearbeiten' })); });
     expect(screen.getByRole('dialog', { name: 'Event bearbeiten' })).toBeInTheDocument();
     await act(async () => { fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Abbrechen' })); });
     expect(screen.queryByRole('dialog')).toBe(null);
     fireEvent.click(screen.getByRole('button', { name: 'Event absagen' }));
-    expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Event absagen' })).toBeInTheDocument();
+    expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Event-Chat öffnen' }));
     expect(routerPush).toHaveBeenCalledWith('/admin/chat/room/55', 'root');
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Event kopieren' })); });
     expect(screen.getByRole('dialog', { name: 'Event kopieren' })).toBeInTheDocument();
     expect(geoeffnet('EventModal')).toHaveLength(0);
-    expect(api.post).not.toHaveBeenCalled();
+    // Kopieren legt nichts an; gesendet hat nur das Fenster des QR-Codes.
+    expect(api.post.mock.calls).toEqual([['/events/7/generate-qr']]);
   });
 
   it('Chat ohne Raum: Leitung wird gefragt und legt ihn an, das Team sieht den Knopf gar nicht', async () => {
@@ -267,7 +274,7 @@ describe('Recht "Events verbuchen"', () => {
     fireEvent.click(within(zeileVon('Kim Konfi')).getByRole('button', { name: 'Weitere Aktionen für Kim Konfi' }));
     const menue = screen.getByRole('dialog', { name: 'Kim Konfi' });
     expect(within(menue).getAllByRole('button').map((b) => b.textContent!.trim()).filter(Boolean))
-      .toEqual(['Auf Warteliste setzen', 'Teilnahme entfernen']);
+      .toEqual(['Auf Warteliste setzen', 'Anmeldung entfernen']);
     // Warteliste bestaetigen verbucht nicht -- bleibt.
     expect(within(karte('Warteliste (1)')).getByRole('button', { name: 'Wiebke Warte bestätigen' })).toBeInTheDocument();
   });
@@ -291,10 +298,11 @@ describe('Menü "Weitere Aktionen"', () => {
     return screen.getByRole('dialog', { name });
   };
 
-  it('ohne Eintrag: Abgemeldet eintragen, Auf Warteliste setzen, Teilnahme entfernen -- nichts zum Zurücksetzen', async () => {
+  // „Anmeldung entfernen" seit 15.10.2026 -- derselbe Wortlaut wie die Rückfrage danach.
+  it('ohne Eintrag: Abgemeldet eintragen, Auf Warteliste setzen, Anmeldung entfernen -- nichts zum Zurücksetzen', async () => {
     const menue = await oeffneMenue('Kim Konfi');
     expect(within(menue).getAllByRole('button').map((b) => b.textContent!.trim()).filter(Boolean))
-      .toEqual(['Abgemeldet eintragen', 'Auf Warteliste setzen', 'Teilnahme entfernen']);
+      .toEqual(['Abgemeldet eintragen', 'Auf Warteliste setzen', 'Anmeldung entfernen']);
   });
 
   it('mit Eintrag: auch Notiz und "Eintrag zurücksetzen"; das Zurücksetzen schickt null', async () => {
@@ -305,16 +313,20 @@ describe('Menü "Weitere Aktionen"', () => {
     expect(screen.queryByRole('dialog')).toBe(null);
   });
 
-  it('"Abgemeldet eintragen" und "Notiz" öffnen die Fenster der App', async () => {
+  // Seit 15.10.2026 als Fenster der Web-Fassung, nicht als Modale der App (webEventFenster.test.tsx).
+  it('"Abgemeldet eintragen" und "Notiz" öffnen ihre Fenster im Browser', async () => {
     const menue = await oeffneMenue('Mia Muster');
     fireEvent.click(within(menue).getByRole('button', { name: 'Abgemeldet eintragen' }));
-    expect(geoeffnet('AbmeldungNachtragenModal')).toHaveLength(1);
+    const abmeldung = screen.getByRole('dialog', { name: 'Abmeldung von Mia Muster' });
+    expect(geoeffnet('AbmeldungNachtragenModal')).toHaveLength(0);
+    fireEvent.click(within(abmeldung).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(within(zeileVon('Mia Muster')).getByRole('button', { name: 'Weitere Aktionen für Mia Muster' }));
     fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Notiz hinzufügen' }));
-    expect(geoeffnet('AnwesenheitNotizModal')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Notiz zu Mia Muster' })).toBeInTheDocument();
+    expect(geoeffnet('AnwesenheitNotizModal')).toHaveLength(0);
   });
 
-  it('"Auf Warteliste setzen" und "Teilnahme entfernen" fragen nach und rufen erst nach dem Ja ihre Route', async () => {
+  it('"Auf Warteliste setzen" und "Anmeldung entfernen" fragen nach und rufen erst nach dem Ja ihre Route', async () => {
     const menue = await oeffneMenue('Kim Konfi');
     fireEvent.click(within(menue).getByRole('button', { name: 'Auf Warteliste setzen' }));
     let frage = letzteRueckfrage();
@@ -324,7 +336,7 @@ describe('Menü "Weitere Aktionen"', () => {
     expect(api.put).toHaveBeenCalledWith('/events/7/participants/1/status', { status: 'waitlist' });
 
     fireEvent.click(within(zeileVon('Kim Konfi')).getByRole('button', { name: 'Weitere Aktionen für Kim Konfi' }));
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Teilnahme entfernen' }));
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Anmeldung entfernen' }));
     frage = letzteRueckfrage();
     expect(frage.header).toBe('Anmeldung entfernen?');
     expect(api.delete).not.toHaveBeenCalled();
@@ -335,7 +347,7 @@ describe('Menü "Weitere Aktionen"', () => {
   it('Pflicht-Event: Konfis lassen sich weder entfernen noch auf die Warteliste setzen', async () => {
     zustand.detail = freizeit({ mandatory: true, registration_status: 'mandatory' });
     const menue = await oeffneMenue('Kim Konfi');
-    expect(within(menue).queryByRole('button', { name: 'Teilnahme entfernen' })).toBe(null);
+    expect(within(menue).queryByRole('button', { name: 'Anmeldung entfernen' })).toBe(null);
     expect(within(menue).queryByRole('button', { name: 'Auf Warteliste setzen' })).toBe(null);
     expect(within(menue).getByRole('button', { name: 'Abgemeldet eintragen' })).toBeInTheDocument();
   });
@@ -389,14 +401,19 @@ describe('Warteliste und Team', () => {
     expect(letzteRueckfrage().header).toBe('Anmeldung entfernen?');
   });
 
+  // Seit 15.10.2026 je ein Fenster der Web-Fassung (webEventFenster.test.tsx);
+  // nur die Leitung lädt zusätzlich GET /admin/konfis/leitung -- wie das Modal mit filterRole.
   it('Team: Tabelle mit Tim Teamer; Konfi, Team und Leitung lassen sich hinzufügen (je ein Fenster mit seiner Rolle)', async () => {
     await oeffne();
     expect(within(karte('Team (1)')).getByText('Tim Teamer')).toBeInTheDocument();
-    for (const [name, rolle] of [['Konfi hinzufügen', 'konfi'], ['Team hinzufügen', 'teamer'], ['Leitung hinzufügen', 'leitung']] as const) {
-      fireEvent.click(screen.getByRole('button', { name }));
-      expect(zuletztGeoeffnet('ParticipantManagementModal')!.props.filterRole).toBe(rolle);
+    for (const name of ['Konfi hinzufügen', 'Team hinzufügen', 'Leitung hinzufügen']) {
+      api.get.mockClear();
+      await act(async () => { fireEvent.click(screen.getByRole('button', { name })); });
+      const fenster = screen.getByRole('dialog', { name });
+      expect(api.get.mock.calls.some(([pfad]) => pfad === '/admin/konfis/leitung')).toBe(name === 'Leitung hinzufügen');
+      await act(async () => { fireEvent.click(within(fenster).getByRole('button', { name: 'Abbrechen' })); });
     }
-    expect(geoeffnet('ParticipantManagementModal')).toHaveLength(3);
+    expect(geoeffnet('ParticipantManagementModal')).toHaveLength(0);
   });
 
   it('Abmeldungen: Name, Zeitpunkt und Grund', async () => {
@@ -517,8 +534,11 @@ describe('Material', () => {
     await oeffne();
     const material = karte('Material (1)');
     expect(within(material).getByText('2 Dateien')).toBeInTheDocument();
-    fireEvent.click(within(material).getByRole('button', { name: 'Packliste' }));
-    expect(geoeffnet('TeamerMaterialDetailPage')).toHaveLength(1);
+    // Seit 15.10.2026 das Fenster „Material ansehen" wie unter „Material verwalten" (webEventFenster.test.tsx).
+    await act(async () => { fireEvent.click(within(material).getByRole('button', { name: 'Packliste' })); });
+    expect(screen.getByRole('dialog', { name: 'Material ansehen' })).toBeInTheDocument();
+    expect(api.get).toHaveBeenCalledWith('/material/11');
+    expect(geoeffnet('TeamerMaterialDetailPage')).toHaveLength(0);
   });
 });
 
@@ -561,7 +581,9 @@ describe('Rechte', () => {
     await act(async () => { fireEvent.click(within(kopf()).getByRole('button', { name: 'Dabei' })); });
     expect(api.post).toHaveBeenCalledWith('/teamer/events/7/zusage', { dabei: true });
     fireEvent.click(within(kopf()).getByRole('button', { name: /Nicht/ }));
-    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(1);
+    // Im Browser das Absage-Fenster der Web-Fassung (15.10.2026), nicht das Modal der App.
+    expect(screen.getByRole('dialog', { name: 'Absage' })).toBeInTheDocument();
+    expect(geoeffnet('TeamerAbsageModal')).toHaveLength(0);
   });
 });
 

@@ -2,7 +2,7 @@
 // die Rechte an EINER Stelle stehen und sich einzeln pruefen lassen.
 //
 // Dieselben Eintraege und dieselben Bedingungen wie in der Liste der App
-// (AdminSettingsPage): Benutzer:innen, Dashboard und Einladungen fuer die
+// (AdminSettingsPage): Benutzer:innen, Startseiten und „Konfis einladen" fuer die
 // Gemeindeleitung; die Inhalte fuer Gemeindeleitung und Leitung; Support und
 // Betrieb nur fuer Konten mit Super-Admin-Recht (der Server haelt ohnehin 403).
 // "Hilfe und Support" fuehrt nach draussen auf das Support-Formular der Homepage
@@ -83,7 +83,7 @@ export function mehrGruppen(konto: MehrKonto | null | undefined): MehrGruppe[] {
       beschreibung: 'Was die Konfis tun können, wofür es Punkte gibt und was sie sehen.',
       kacheln: [
         { id: 'aktivitaeten', titel: 'Aktivitäten', text: 'Aktivitäten und Punkte verwalten', icon: ICON_AKTION_GEFUELLT, farbe: 'activities', href: '/admin/activities', info: 'activities' },
-        { id: 'level', titel: 'Punkte und Level', text: 'Punkte-Level und Belohnungen', icon: ICON_POKAL_GEFUELLT, farbe: 'level', href: '/admin/settings/levels', info: 'levels' },
+        { id: 'level', titel: 'Level', text: 'Punkte-Level und Belohnungen', icon: ICON_POKAL_GEFUELLT, farbe: 'level', href: '/admin/settings/levels', info: 'levels' },
         { id: 'kategorien', titel: 'Kategorien', text: 'Kategorien für Aktivitäten und Events', icon: ICON_KATEGORIE_GEFUELLT, farbe: 'categories', href: '/admin/settings/categories', info: 'categories' },
         { id: 'badges', titel: 'Badges', text: 'Auszeichnungen und Erfolge verwalten', icon: ICON_ABZEICHEN_GEFUELLT, farbe: 'badges', href: '/admin/badges', info: 'badges' },
         { id: 'material', titel: 'Material', text: 'Materialien und Dokumente fürs Team', icon: ICON_DATEI_GEFUELLT, farbe: 'material', href: '/admin/material', info: 'material' },
@@ -100,10 +100,10 @@ export function mehrGruppen(konto: MehrKonto | null | undefined): MehrGruppe[] {
     gemeinde.push({ id: 'jahrgaenge', titel: 'Jahrgänge', text: 'Punkteziele und Konfisprüche verwalten', icon: ICON_JAHRGANG_GEFUELLT, farbe: 'jahrgang', href: '/admin/settings/jahrgaenge', info: 'jahrgaenge' });
   }
   if (verwalten) {
-    gemeinde.push({ id: 'einladungen', titel: 'Einladungen', text: 'QR-Code und Link für die Selbstregistrierung', icon: ICON_QRCODE_GEFUELLT, farbe: 'users', href: '/admin/settings/invite', info: 'invite' });
+    gemeinde.push({ id: 'einladungen', titel: 'Konfis einladen', text: 'QR-Code und Link für die Selbstregistrierung', icon: ICON_QRCODE_GEFUELLT, farbe: 'users', href: '/admin/settings/invite', info: 'invite' });
   }
   if (gemeindeleitung) {
-    gemeinde.push({ id: 'dashboard', titel: 'Dashboard', text: 'Sichtbare Bereiche für Konfis und Team', icon: ICON_APPS, farbe: 'organizations', href: '/admin/settings/dashboard', info: 'dashboard' });
+    gemeinde.push({ id: 'dashboard', titel: 'Startseiten', text: 'Sichtbare Bereiche für Konfis und Team', icon: ICON_APPS, farbe: 'organizations', href: '/admin/settings/dashboard', info: 'dashboard' });
   }
   if (inhalte) {
     gemeinde.push({ id: 'zertifikate', titel: 'Zertifikate', text: 'Zertifikate fürs Team verwalten', icon: ICON_ABZEICHEN_GEFUELLT, farbe: 'teamer', href: '/admin/settings/certificates', info: 'certificates' });

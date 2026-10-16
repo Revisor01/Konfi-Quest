@@ -68,6 +68,10 @@ import { useActionGuard } from '../../../hooks/useActionGuard';
 import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebKonfiTerminDetail from '../web/termine/WebKonfiTerminDetail';
+import WebZeitfensterDialog from '../web/termine/WebZeitfensterDialog';
+import WebAbsageDialog from '../../shared/web/termine/WebAbsageDialog';
+import { zeitfensterOptionen, ZEITSLOT_AUSGEBUCHT } from '../zeitfensterWahl';
+import { zeitfensterStand } from '../../../utils/termineWeb';
 
 interface EventDetailViewProps {
   eventId: number;
@@ -125,6 +129,15 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Konnten die Zeitfenster nicht geladen werden? Dann darf NICHT angemeldet
   // werden — sonst landet der Konfi ohne Zeitfenster im Event.
   const [timeslotsLoadFailed, setTimeslotsLoadFailed] = useState(false);
+  // Ist das Laden der Zeitfenster DIESES Termins durch (mit Netz oder aus dem
+  // gemerkten Stand)? Erst dann heisst "keine Zeitfenster" auch keine -- im
+  // Browser steht dann der Grund neben dem gesperrten "Anmelden"
+  // (utils/termineWeb.ts, zeitfensterStand).
+  const [zeitfensterGeladen, setZeitfensterGeladen] = useState(false);
+  // Fenster der Web-Fassung (Simon, 15.10.2026): Abmelden mit Grund und die
+  // Wahl des Zeitfensters. In der App bleiben Modal und Aktionsmenue.
+  const [webAbmeldung, setWebAbmeldung] = useState<'abmelden' | 'pflicht' | null>(null);
+  const [webZeitfenster, setWebZeitfenster] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>([]);
   // Kamen Teilnehmerliste bzw. Zeitfenster ohne Netz aus dem gemerkten Stand
   // dieses Termins (services/detailSpeicher.ts)? Dann sind sie bekannt -- auch
@@ -134,10 +147,13 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const teilnehmerSchluessel = `konfi:termin-teilnehmer:${orgId}:${eventId}`;
   const zeitfensterSchluessel = `konfi:termin-zeitfenster:${orgId}:${eventId}`;
 
-  const handleOptOut = async (reason: string) => {
+  // `melden`: wohin eine Ablehnung geht -- in der App oben (setError), im
+  // Fenster des Browsers in das Fenster. Das Ergebnis sagt dem Fenster, ob es
+  // schliessen darf (angekommen oder eingereiht).
+  const handleOptOut = async (reason: string, melden: (text: string) => void = setError): Promise<boolean> => {
     if (!eventData || reason.trim().length < 5) {
       setError('Bitte gib einen Grund für die Abmeldung an (mind. 5 Zeichen)');
-      return;
+      return false;
     }
 
     const clientId = safeUUID();
@@ -170,7 +186,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       });
       if (weg === 'eingereiht') {
         setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
-        return;
+        return true;
       }
       // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
       // S4): Abmeldung von einem Pflicht-Event. Kein Grund, kein Event.
@@ -178,8 +194,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
+      return true;
     } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Abmeldung'));
+      melden(fehlerText(err, 'Fehler bei der Abmeldung'));
+      return false;
     }
   };
 
@@ -196,10 +214,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     }
   };
 
-  const handleUnregister = async (reason: string) => {
+  const handleUnregister = async (reason: string, melden: (text: string) => void = setError): Promise<boolean> => {
     if (!eventData || !reason.trim()) {
       setError('Bitte gib einen Grund für die Abmeldung an');
-      return;
+      return false;
     }
 
     // Wie beim Opt-out: Ohne Verbindung in die Warteschlange, statt den Knopf
@@ -233,7 +251,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       });
       if (weg === 'eingereiht') {
         setSuccess('Abmeldung wird gesendet sobald du wieder online bist');
-        return;
+        return true;
       }
       // Anonyme Messung (S4): Abmeldung von einem freiwilligen Event.
       trackHandlung('event-abgemeldet', { pflicht: 'false' });
@@ -241,8 +259,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       // Kein Erfolgs-Toast: der Server schickt bereits einen Push.
       await refreshEvents();
       triggerRefresh('events');
+      return true;
     } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Abmeldung'));
+      melden(fehlerText(err, 'Fehler bei der Abmeldung'));
+      return false;
     }
   };
 
@@ -279,6 +299,17 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // (Befund 25.08.2026).
   const [detailEpoch, setDetailEpoch] = useState(0);
 
+  // Kommt das Netz zurueck, die Details neu holen (Befund der Durchsicht,
+  // 15.10.2026): Ohne Netz geoeffnet und ohne gemerkten Stand blieben die
+  // Zeitfenster sonst leer, bis man den Termin neu oeffnete -- "Anmelden"
+  // meldete dann "keine Zeitfenster eingetragen", im Browser stand der Satz
+  // fest neben dem gesperrten Knopf. Die Leitungsansicht laedt ebenso neu.
+  const warOnline = useRef(isOnline);
+  useEffect(() => {
+    if (isOnline && !warOnline.current) setDetailEpoch((n) => n + 1);
+    warOnline.current = isOnline;
+  }, [isOnline]);
+
   // Welcher Termin gerade gelten soll. Antworten, die zu einem vorher
   // geoeffneten Termin gehoeren, duerfen den Stand nicht mehr ueberschreiben.
   const aktuelleEventId = useRef(eventId);
@@ -299,7 +330,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setParticipants([]);
     setHasExistingKonfirmation(false);
     setTimeslotsLoadFailed(false);
+    setZeitfensterGeladen(false);
     setGemerkt({ teilnehmer: false, zeitfenster: false });
+    // Ein offenes Fenster gehoert zum vorigen Termin.
+    setWebAbmeldung(null);
+    setWebZeitfenster(false);
   }, [eventId]);
 
   useLiveRefresh(['events'], useCallback(() => {
@@ -340,6 +375,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         if (ts) setTimeslots(ts);
         if (tn) setParticipants(tn);
         setGemerkt({ teilnehmer: !!tn, zeitfenster: !!ts });
+        // Geladen ist nur, was aus dem gemerkten Stand kam: Ohne ihn ist
+        // offen, ob es Zeitfenster gibt -- "keine eingetragen" waere falsch.
+        if (ts || !eventData.has_timeslots) setZeitfensterGeladen(true);
         return;
       }
       setTimeslotsLoadFailed(false);
@@ -357,6 +395,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           setTimeslotsLoadFailed(true);
         }
       }
+      if (gilt()) setZeitfensterGeladen(true);
       // Teilnehmerliste und Konfirmations-Check sind für die Anmeldung nicht
       // kritisch — sie duerfen weiterhin still fehlschlagen.
       try {
@@ -412,8 +451,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     anmeldungGuard(aktion).catch(() => undefined);
   };
 
-  const doRegister = async (timeslotId?: number) => {
-    if (!eventData) return;
+  // `melden` wie bei handleUnregister: oben (App) oder im Fenster (Browser).
+  const doRegister = async (timeslotId?: number, melden: (text: string) => void = setError): Promise<boolean> => {
+    if (!eventData) return false;
 
     try {
       const payload: { timeslot_id?: number } = {};
@@ -434,10 +474,16 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
       await refreshEvents();
       triggerRefresh('events');
+      return true;
     } catch (err) {
-      setError(fehlerText(err, 'Fehler bei der Anmeldung'));
+      melden(fehlerText(err, 'Fehler bei der Anmeldung'));
+      return false;
     }
   };
+
+  /** Anmelden mit Zeitfenster aus dem Fenster des Browsers -- unter derselben Sperre wie in der App. */
+  const mitZeitfensterAnmelden = (timeslotId: number, melden: (text: string) => void): Promise<boolean> =>
+    anmeldungGuard(() => doRegister(timeslotId, melden)).catch(() => false);
 
   const handleRegister = () => gesperrt(async () => {
     if (!eventData) return;
@@ -469,43 +515,26 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
     const hasTimeslots = eventData.has_timeslots && timeslots.length > 0;
     if (hasTimeslots) {
-      const waitlistEnabled = !!eventData.waitlist_enabled;
-      const maxWaitlist = eventData.max_waitlist_size || 0;
+      // Im Browser ab 992 px ein Fenster statt des Aktionsmenues (Simon,
+      // 15.10.2026) -- mit denselben Eintraegen und derselben Sperre
+      // (konfi/zeitfensterWahl.ts).
+      if (breit) {
+        setWebZeitfenster(true);
+        return;
+      }
 
-      const timeslotButtons: ActionSheetButton[] = timeslots.map((slot) => {
-        const isFull = slot.max_participants > 0 && parseInt(String(slot.registered_count || 0)) >= slot.max_participants;
-        const slotWaitlist = parseInt(String(slot.waitlist_count || 0));
-        // Auf einen vollen Slot kann man sich auf die Warteliste setzen, solange
-        // die Warteliste aktiv und nicht voll ist. Nur dann bleibt der Slot
-        // buchbar; sonst ist er wirklich dicht.
-        const waitlistPossible = isFull && waitlistEnabled && (maxWaitlist === 0 || slotWaitlist < maxWaitlist);
-        const blocked = isFull && !waitlistPossible;
-
-        const startTime = formatTime(slot.start_time);
-        const endTime = formatTime(slot.end_time);
-        const spotsLeft = Math.max(0, slot.max_participants - (slot.registered_count || 0));
-
-        let label;
-        if (waitlistPossible) {
-          label = `${startTime} - ${endTime} (voll — auf Warteliste${slotWaitlist > 0 ? `, ${slotWaitlist} warten` : ''})`;
-        } else if (blocked) {
-          label = `${startTime} - ${endTime} (ausgebucht)`;
-        } else {
-          label = `${startTime} - ${endTime} (${spotsLeft} frei)`;
-        }
-
-        return {
-          text: label,
-          handler: () => {
-            if (blocked) {
-              setError('Dieser Zeitslot ist ausgebucht und hat keine Warteliste.');
-              return false;
-            }
-            gesperrt(() => doRegister(slot.id));
-          },
-          cssClass: blocked ? 'action-sheet-disabled' : ''
-        };
-      });
+      // Eintraege, Warteliste und gesperrte Zeitfenster: konfi/zeitfensterWahl.ts.
+      const timeslotButtons: ActionSheetButton[] = zeitfensterOptionen(eventData, timeslots).map((option) => ({
+        text: option.text,
+        handler: () => {
+          if (option.gesperrt) {
+            setError(ZEITSLOT_AUSGEBUCHT);
+            return false;
+          }
+          gesperrt(() => doRegister(option.id).then(() => undefined));
+        },
+        cssClass: option.gesperrt ? 'action-sheet-disabled' : ''
+      }));
 
       timeslotButtons.push({
         text: 'Abbrechen',
@@ -595,28 +624,62 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // sonst die Darstellung der App, unverändert. Daten, Rechte und Funktionen
   // (Anmelden mit Zeitfenster-Wahl, Abmelden mit Grund, Einchecken) sind
   // dieselben; die Web-Fassung bekommt sie hereingereicht.
+  //
+  // Abmelden und die Wahl des Zeitfensters oeffnen hier Fenster der
+  // Web-Fassung statt Modal und Aktionsmenue der App (Simon, 15.10.2026) --
+  // mit denselben Regeln und denselben Funktionen (handleUnregister,
+  // handleOptOut, doRegister). Fehlen die Zeitfenster, ist "Anmelden"
+  // gesperrt und der Grund steht daneben, statt der Rueckfrage der App.
   if (breit) {
+    const abmeldungSchliessen = () => {
+      const war = webAbmeldung;
+      setWebAbmeldung(null);
+      // Wie das Modal der App: Nach dem Abmelde-Fenster laedt die Liste neu.
+      if (war === 'abmelden') void refreshEvents();
+    };
     return (
-      <WebKonfiTerminDetail
-        pageRef={pageRef}
-        laedt={loading}
-        eventData={eventData}
-        zeitfenster={timeslots}
-        teilnehmende={participants}
-        hatKonfirmationGebucht={hasExistingKonfirmation}
-        isOnline={isOnline}
-        gemerkt={gemerkt}
-        anmeldungLaeuft={anmeldungLaeuft}
-        aktionen={{
-          anmelden: handleRegister,
-          abmelden: () => presentUnregisterModal({ presentingElement: pageRef.current || undefined }),
-          pflichtAbmelden: () => presentOptOutModal({ presentingElement: pageRef.current || undefined }),
-          pflichtWiederAnmelden: () => { void handleOptIn(); },
-          einchecken: () => presentScannerModal({ presentingElement: pageRef.current || undefined }),
-          chat: () => router.push(`/konfi/chat/room/${eventData?.chat_room_id}`, 'root'),
-          neuLaden: () => { void refreshEvents(); },
-        }}
-      />
+      <>
+        <WebKonfiTerminDetail
+          pageRef={pageRef}
+          laedt={loading}
+          eventData={eventData}
+          zeitfenster={timeslots}
+          teilnehmende={participants}
+          hatKonfirmationGebucht={hasExistingKonfirmation}
+          isOnline={isOnline}
+          gemerkt={gemerkt}
+          anmeldungLaeuft={anmeldungLaeuft}
+          zeitfensterStand={eventData
+            ? zeitfensterStand(eventData, { anzahl: timeslots.length, geladen: zeitfensterGeladen, fehler: timeslotsLoadFailed })
+            : 'da'}
+          aktionen={{
+            anmelden: handleRegister,
+            abmelden: () => setWebAbmeldung('abmelden'),
+            pflichtAbmelden: () => setWebAbmeldung('pflicht'),
+            pflichtWiederAnmelden: () => { void handleOptIn(); },
+            einchecken: () => presentScannerModal({ presentingElement: pageRef.current || undefined }),
+            chat: () => router.push(`/konfi/chat/room/${eventData?.chat_room_id}`, 'root'),
+            neuLaden: () => { void refreshEvents(); },
+          }}
+        />
+        {webAbmeldung && eventData && (
+          <WebAbsageDialog
+            rolle="konfi"
+            pflicht={webAbmeldung === 'pflicht'}
+            eventName={eventData.name}
+            onAbsage={(grund, melden) => (webAbmeldung === 'pflicht' ? handleOptOut(grund, melden) : handleUnregister(grund, melden))}
+            onSchliessen={abmeldungSchliessen}
+          />
+        )}
+        {webZeitfenster && eventData && (
+          <WebZeitfensterDialog
+            optionen={zeitfensterOptionen(eventData, timeslots)}
+            onWaehlen={mitZeitfensterAnmelden}
+            laeuft={anmeldungLaeuft}
+            onSchliessen={() => setWebZeitfenster(false)}
+          />
+        )}
+      </>
     );
   }
 
@@ -699,6 +762,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
 
         <IonRefresher slot="fixed" onIonRefresh={(e) => {
           refreshEvents();
+          // Auch Zeitfenster und Teilnehmerliste neu laden: Die Rückfrage
+          // „Zeitfenster nicht geladen" verspricht genau das.
+          setDetailEpoch((n) => n + 1);
           e.detail.complete();
         }} onIonPull={triggerPullHaptic}>
           <IonRefresherContent />

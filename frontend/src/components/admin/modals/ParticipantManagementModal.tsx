@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+// Konfis, Team oder Leitung hinzufügen -- das Modal der App. Laden, Auswahl,
+// Filter, Prüfung und der Weg zum Server stehen in useTeilnehmerHinzufuegen --
+// derselbe Hook wie im Dialog des Browsers ab 992 px
+// (web/termine/WebTeilnehmerHinzufuegenDialog.tsx; Simon, 15.10.2026). Hier
+// stehen nur die Darstellung der App und ihre Rückfrage (Alert).
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -28,58 +33,10 @@ import {
   ICON_SCHLIESSEN,
   ICON_SUCHE_GEFUELLT,
 } from '../../shared/icons';
-import api from '../../../services/api';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import type { Participant } from '../../../types/event';
-// Die Jahrgangsregel liegt in utils/jahrgangsPassung.ts (25.09.2026) — sie
-// spiegelt gehoertZumTermin im Backend und hat dort ihre Erklaerung.
-import { passtZumTermin } from '../../../utils/jahrgangsPassung';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { uhrzeit } from '../../../utils/dateUtils';
-import { fehlerText } from '../../../utils/fehler';
-import { eintragenMitRueckfrage, type UeberbuchenFrage } from '../../../utils/ueberbuchen';
+import type { UeberbuchenFrage } from '../../../utils/ueberbuchen';
 import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
-
-interface Konfi {
-  id: number;
-  name: string;
-  // Konfis: EIN Jahrgang (konfi_profiles). Team und Leitung: MEHRERE
-  // (user_jahrgang_assignments) — /admin/konfis/teamer und /admin/konfis/leitung
-  // liefern sie seit dem 25.09.2026 als jahrgang_ids.
-  jahrgang_id?: number;
-  jahrgang_ids?: number[];
-  jahrgang_name?: string;
-  role_name?: string;
-  is_super_admin?: boolean;
-}
-
-// Participant kommt zentral aus types/event. Die fruehere Fassung hier kannte
-// nur 'confirmed' | 'pending' — dieselbe Antwort liefert aber auch 'waitlist'
-// und 'opted_out' (backend/routes/events/lesen.js).
-
-interface Timeslot {
-  id: number;
-  start_time: string;
-  end_time: string;
-  max_participants: number;
-  registered_count: number;
-}
-
-interface EventJahrgang {
-  id: number;
-  name: string;
-}
-
-interface Event {
-  has_timeslots?: boolean;
-  timeslots?: Timeslot[];
-  teamer_only?: boolean;
-  jahrgang_id?: number;
-  jahrgang_name?: string;
-  jahrgaenge?: EventJahrgang[];
-}
-
+import { personUnterzeile, useTeilnehmerHinzufuegen, zeitfensterBeschriftung, type HinzufuegenRolle } from './useTeilnehmerHinzufuegen';
 
 interface ParticipantManagementModalProps {
   eventId: number;
@@ -88,7 +45,7 @@ interface ParticipantManagementModalProps {
   dismiss?: () => void;
   // 'leitung' = Admins/Org-Admins zuordnen (31.08.2026). Bewusst pro Termin;
   // niemand rutscht automatisch in einen Event-Chat.
-  filterRole?: 'teamer' | 'konfi' | 'leitung' | null;
+  filterRole?: HinzufuegenRolle | null;
 }
 
 const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
@@ -98,18 +55,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
   dismiss,
   filterRole
 }) => {
-  const { setError, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [availableKonfis, setAvailableKonfis] = useState<Konfi[]>([]);
-  const [selectedKonfis, setSelectedKonfis] = useState<number[]>([]);
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(false);
-  const [eventData, setEventData] = useState<Event | null>(null);
-  const [selectedTimeslot, setSelectedTimeslot] = useState<number | null>(null);
-  const [availableJahrgaenge, setAvailableJahrgaenge] = useState<string[]>([]);
-  const [selectedJahrgang, setSelectedJahrgang] = useState<string>('alle');
-  const [currentParticipants, setCurrentParticipants] = useState<Participant[]>([]);
 
   const handleClose = () => {
     if (dismiss) {
@@ -117,127 +63,6 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     } else {
       onClose();
     }
-  };
-
-  useEffect(() => {
-    loadInitialData();
-  }, []);
-
-  const loadInitialData = async () => {
-    try {
-      // Zuerst Event-Daten und Participants laden
-      const eventResponse = await api.get(`/events/${eventId}`);
-      setEventData(eventResponse.data);
-      const loadedParticipants: Participant[] = eventResponse.data.participants || [];
-      setCurrentParticipants(loadedParticipants);
-
-      // Dann verfügbare Konfis laden (braucht Participants für Filterung)
-      await loadAvailableKonfis(loadedParticipants);
-    } catch (err) {
-      setError('Fehler beim Laden der Daten', { ort: 'teilnehmer-verwaltung-laden', fehler: err });
-    }
-  };
-
-  // Event-Jahrgänge ermitteln (für Filter)
-  const eventJahrgaenge = eventData?.jahrgaenge?.map(j => j.name) ||
-    (eventData?.jahrgang_name ? [eventData.jahrgang_name] : []);
-  const eventJahrgangIds: number[] = eventData?.jahrgaenge?.map(j => j.id) ||
-    (eventData?.jahrgang_id ? [eventData.jahrgang_id] : []);
-  const hasEventJahrgaenge = eventJahrgaenge.length > 0;
-  // Greift die Jahrgangsgrenze fuer die Auswahl? Nicht bei 'Nur Team' und
-  // nicht ohne Jahrgang — dann steht auch kein Hinweis auf der Seite.
-  const jahrgangsGrenzeAktiv = hasEventJahrgaenge && !eventData?.teamer_only;
-
-  const loadAvailableKonfis = async (participantsList?: Participant[]) => {
-    try {
-      // Die Leitungsliste nur laden, wenn sie auch gebraucht wird — sonst
-      // holt jedes Oeffnen des Konfi-Modals eine Liste, die es nie zeigt.
-      const [konfisRes, teamerRes, leitungRes] = await Promise.all([
-        api.get('/admin/konfis'),
-        api.get('/admin/konfis/teamer'),
-        filterRole === 'leitung' ? api.get('/admin/konfis/leitung') : Promise.resolve({ data: [] })
-      ]);
-      const allKonfis = konfisRes.data.map((k: Konfi) => ({ ...k, role_name: 'konfi' }));
-      const teamerUsers = teamerRes.data.map((u: Konfi) => ({ ...u, role_name: 'teamer' }));
-      // role_name kommt hier ECHT aus dem Backend ('admin' oder 'org_admin')
-      // und wird nicht ueberschrieben — die Unterscheidung wird unten gebraucht.
-      const leitungUsers = leitungRes.data as Konfi[];
-      const allPersons = [...allKonfis, ...teamerUsers, ...leitungUsers];
-
-      // Aktuelle Participants nutzen (Parameter oder State)
-      const activeParticipants = participantsList || currentParticipants;
-
-      // Filter out already registered participants based on user_id (not booking id)
-      const participantUserIds = activeParticipants.map(p => p.user_id || p.id);
-      const available = allPersons.filter((p: Konfi) => !participantUserIds.includes(p.id));
-
-      // Filter by role if filterRole prop is set
-      let roleFiltered = available;
-      if (filterRole === 'teamer') {
-        roleFiltered = available.filter((p: Konfi) => p.role_name === 'teamer');
-      } else if (filterRole === 'leitung') {
-        roleFiltered = available.filter((p: Konfi) => p.role_name === 'admin' || p.role_name === 'org_admin');
-      } else if (filterRole === 'konfi') {
-        // Positiv auf 'konfi' pruefen: Ein '!== teamer' liesse seit der
-        // Leitungs-Zuordnung auch Admins in die Konfi-Auswahl.
-        roleFiltered = available.filter((p: Konfi) => p.role_name === 'konfi');
-      }
-
-      // Extract available Jahrgänge (wird nur für Dropdown gebraucht wenn Event keine Jahrgänge hat)
-      const jahrgaenge = [...new Set(
-        roleFiltered
-          .filter((k: Konfi) => k.jahrgang_name)
-          .map((k: Konfi) => k.jahrgang_name!)
-      )].sort() as string[];
-      setAvailableJahrgaenge(jahrgaenge);
-
-      setAvailableKonfis(roleFiltered);
-    } catch {
-      setError('Fehler beim Laden der Personen');
-    }
-  };
-
-  const filteredKonfis = availableKonfis.filter(konfi => {
-    // Search filter
-    const matchesSearch = konfi.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (konfi.jahrgang_name && konfi.jahrgang_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (konfi.role_name === 'teamer' && 'teamer'.includes(searchTerm.toLowerCase())) ||
-      ((konfi.role_name === 'admin' || konfi.role_name === 'org_admin') &&
-        'leitung'.includes(searchTerm.toLowerCase()));
-
-    if (!matchesSearch) return false;
-
-    // Wer zu keinem Jahrgang des Termins gehoert, wird gar nicht erst
-    // angeboten — Konfis, Team und Leitung gleichermassen (25.09.2026). Bis
-    // dahin galt hier "Teamer:innen und Leitung sind immer sichtbar", und
-    // nur die Konfis wurden ueber den Namen des Jahrgangs gefiltert.
-    if (!passtZumTermin(konfi, eventData, eventJahrgangIds)) return false;
-
-    // Der Jahrgangs-Filter im Kopf betrifft nur Konfis: Team und Leitung
-    // tragen mehrere Jahrgaenge und stehen ohnehin nur bei Ueberschneidung hier.
-    if (konfi.role_name !== 'konfi') return true;
-
-    // Spezifischer Jahrgang gewählt (bei "alle" reicht passtZumTermin oben)
-    if (selectedJahrgang !== 'alle') {
-      return konfi.jahrgang_name === selectedJahrgang;
-    }
-
-    return true;
-  });
-
-  const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return '';
-    return uhrzeit(date);
-  };
-
-  const handleKonfiSelection = (konfiId: number) => {
-    setSelectedKonfis(prev => 
-      prev.includes(konfiId) 
-        ? prev.filter(id => id !== konfiId)
-        : [...prev, konfiId]
-    );
   };
 
   // Rueckfrage "voll -- trotzdem eintragen?" als Ja/Nein-Alert, wie beim
@@ -255,70 +80,28 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
     });
   });
 
-  const handleAddParticipants = async () => {
-    if (selectedKonfis.length === 0) return;
-
-    // For events with timeslots, require timeslot selection
-    if (eventData?.has_timeslots && !selectedTimeslot) {
-      setError('Bitte wähle einen Zeitslot aus');
-      return;
-    }
-
-    // guard() wirft bei Doppel-Tap ('Aktion läuft bereits'). Ungefangen
-    // bliebe loading auf true hängen — dann liess sich das Modal nur
-    // noch per Swipe schliessen (User-Hinweis 12.08.).
-    try {
-      await guard(async () => {
-      setLoading(true);
-      try {
-        // Von Hand Eingetragene sind bestaetigt, auch ueber die Grenze -- aber
-        // erst nach einer Rueckfrage (Simon, 28.09.2026: "Die sollten wir auch
-        // einfügen, wenn wir Konfi hinzufügen ... oder auch bei Teamern").
-        // Jede Person geht zuerst mit ueberbuchen: false hinaus; meldet der
-        // Server "voll", fragt die App einmal je Kontingent (Konfi/Team) fuer
-        // alle Uebrigen (utils/ueberbuchen.ts).
-        const auswahl = selectedKonfis.map(
-          (id) => availableKonfis.find((k) => k.id === id) ?? { id, name: '' }
-        );
-        const ergebnis = await eintragenMitRueckfrage(
-          auswahl,
-          (person, ueberbuchen) => api.post(`/events/${eventId}/participants`, {
-            user_id: person.id,
-            status: 'confirmed',
-            // timeslot_id kommt nur dazu, wenn der Termin Zeitfenster hat.
-            ...(eventData?.has_timeslots && selectedTimeslot ? { timeslot_id: selectedTimeslot } : {}),
-            ueberbuchen
-          }).then(() => undefined),
-          frageUeberbuchen,
-          (person) => ({ name: person.name || undefined, seite: person.role_name === 'konfi' ? 'konfi' : 'team' })
-        );
-
-        // Wer drin ist, bleibt drin -- auch nach Abbruch oder Fehler. Die
-        // Uebrigen bleiben ausgewaehlt, damit man sie abwaehlen oder die
-        // Teilnehmerzahl erhoehen und es noch einmal versuchen kann.
-        setSelectedKonfis(ergebnis.offen.map((person) => person.id));
-        // Participants und verfügbare Konfis neu laden
-        const eventResponse = await api.get(`/events/${eventId}`);
-        const updatedParticipants: Participant[] = eventResponse.data.participants || [];
-        setCurrentParticipants(updatedParticipants);
-        await loadAvailableKonfis(updatedParticipants);
-        if (ergebnis.eingetragen.length > 0) onSuccess();
-        if (ergebnis.fehler) throw ergebnis.fehler;
-      } catch (err) {
-        // Die Meldung des Servers zeigen, wenn er eine hat — etwa "… gehört
-        // zu keinem Jahrgang dieses Termins" (403). Sonst der Sammelbegriff.
-        // Ueber fehlerText, damit die Fehlermessung statt des Server-Textes
-        // (er traegt den Namen der Person) den Sammelbegriff meldet.
-        setError(fehlerText(err, 'Fehler beim Hinzufügen der Teilnehmer:innen'));
-      } finally {
-        setLoading(false);
-      }
-      });
-    } catch {
-      // Zweiter Aufruf verworfen — Ladezustand sicher zuruecknehmen.
-      setLoading(false);
-    }
-  };
+  const {
+    isOnline,
+    searchTerm,
+    setSearchTerm,
+    selectedJahrgang,
+    setSelectedJahrgang,
+    selectedTimeslot,
+    setSelectedTimeslot,
+    eventData,
+    eventJahrgaenge,
+    hasEventJahrgaenge,
+    availableJahrgaenge,
+    jahrgangsGrenzeAktiv,
+    filteredKonfis,
+    selectedKonfis,
+    handleKonfiSelection,
+    alleGewaehlt,
+    alleUmschalten,
+    handleAddParticipants,
+    loading,
+    isSubmitting,
+  } = useTeilnehmerHinzufuegen({ eventId, filterRole, onSuccess, frageUeberbuchen });
 
   return (
     <IonPage>
@@ -408,21 +191,14 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                         interfaceOptions={{ arrow: false }}
                       >
                         <IonSelectOption value={null}>Zeitslot wählen...</IonSelectOption>
-                        {eventData.timeslots.map((timeslot) => {
-                          const isFull = timeslot.max_participants > 0 && (timeslot.registered_count || 0) >= timeslot.max_participants;
-                          const capacityText = timeslot.max_participants === 0
-                            ? `(${timeslot.registered_count || 0})`
-                            : `(${timeslot.registered_count || 0}/${timeslot.max_participants})`;
-                          return (
-                            <IonSelectOption
-                              key={timeslot.id}
-                              value={timeslot.id}
-                            >
-                              {formatTime(timeslot.start_time)} - {formatTime(timeslot.end_time)} {capacityText}
-                              {isFull && ' - Voll'}
-                            </IonSelectOption>
-                          );
-                        })}
+                        {eventData.timeslots.map((timeslot) => (
+                          <IonSelectOption
+                            key={timeslot.id}
+                            value={timeslot.id}
+                          >
+                            {zeitfensterBeschriftung(timeslot)}
+                          </IonSelectOption>
+                        ))}
                       </IonSelect>
                     </IonItem>
                   )}
@@ -442,14 +218,9 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                 <IonButton
                   fill="clear"
                   size="small"
-                  onClick={() => {
-                    // Alle sichtbaren (gefilterten) Personen aus-/abwaehlen.
-                    const allIds = filteredKonfis.map(k => k.id);
-                    const allSelected = allIds.every(id => selectedKonfis.includes(id));
-                    setSelectedKonfis(allSelected ? [] : allIds);
-                  }}
+                  onClick={alleUmschalten}
                 >
-                  {filteredKonfis.every(k => selectedKonfis.includes(k.id)) ? 'Keine' : 'Alle'}
+                  {alleGewaehlt ? 'Keine' : 'Alle'}
                 </IonButton>
               )}
             </IonListHeader>
@@ -518,11 +289,7 @@ const ParticipantManagementModal: React.FC<ParticipantManagementModalProps> = ({
                                 {/* Das Wort nach der Rolle (utils/rollenNamen):
                                     Gemeindeleitung und Leitung hiessen hier
                                     beide "Leitung". */}
-                                {konfi.role_name === 'teamer'
-                                  ? `${rollenName('teamer')}${konfi.jahrgang_name ? ` \u00B7 ${konfi.jahrgang_name}` : ''}`
-                                  : (konfi.role_name === 'admin' || konfi.role_name === 'org_admin')
-                                    ? rollenName(konfi.role_name)
-                                    : (konfi.jahrgang_name || '')}
+                                {personUnterzeile(konfi, rollenName)}
                               </div>
                             </div>
                           </div>

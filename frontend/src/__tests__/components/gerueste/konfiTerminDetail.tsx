@@ -32,6 +32,10 @@ export const setSuccess = vi.fn();
 export const setError = vi.fn();
 export const enqueue = vi.fn();
 export const presentAlert = vi.fn();
+/** Das Aktionsmenü der App (Zeitslot auswählen): mitgeschrieben samt Knöpfen. */
+export const presentActionSheet = vi.fn();
+/** Neu laden der Terminliste (useOfflineQuery.refresh): mitgeschrieben, z. B. nach dem Abmelde-Modal. */
+export const listeNeuLaden = vi.fn(async () => undefined);
 export const modale = {
   geoeffnet: [] as Array<{ name: string; props: Record<string, unknown> }>,
 };
@@ -54,7 +58,7 @@ vi.mock('../../../hooks/useOfflineQuery', () => ({
     querySchluessel.push(schluessel);
     return {
     data: zustand.laedt ? null : zustand.events, loading: zustand.laedt, isOffline: !zustand.online,
-    refresh: vi.fn(async () => undefined), refreshLive: vi.fn(),
+    refresh: () => listeNeuLaden(), refreshLive: vi.fn(),
     };
   },
 }));
@@ -96,7 +100,12 @@ vi.mock('@ionic/react', () => {
     IonIcon: ({ icon, 'aria-hidden': verborgen }: { icon?: string; 'aria-hidden'?: boolean | 'true' | 'false' }) => (
       <i data-icon={icon} aria-hidden={verborgen} />
     ),
-    IonSpinner: () => null, IonRefresher: () => null, IonRefresherContent: () => null,
+    IonSpinner: () => null, IonRefresherContent: () => null,
+    // „Nach unten ziehen" als Klick auf ein Element ohne Knopf-Rolle -- Tests,
+    // die Knöpfe zählen, sehen es nicht.
+    IonRefresher: ({ onIonRefresh }: { onIonRefresh?: (e: { detail: { complete: () => void } }) => void }) => (
+      <div data-testid="nach-unten-ziehen" onClick={() => onIonRefresh?.({ detail: { complete: () => undefined } })} />
+    ),
     IonButton: ({ children, onClick, disabled, color, fill, 'aria-label': label }: K & {
       onClick?: () => void; disabled?: boolean; color?: string; fill?: string; 'aria-label'?: string;
     }) => (
@@ -107,7 +116,7 @@ vi.mock('@ionic/react', () => {
       return [() => { modale.geoeffnet.push({ name, props }); }, vi.fn()];
     },
     useIonAlert: () => [presentAlert, vi.fn()],
-    useIonActionSheet: () => [vi.fn(), vi.fn()],
+    useIonActionSheet: () => [presentActionSheet, vi.fn()],
     useIonRouter: () => ({ push: vi.fn() }),
   };
 });
@@ -148,8 +157,9 @@ export const zuruecksetzen = () => {
   zustand.zeitfenster = [];
   zustand.laedt = false;
   querySchluessel.length = 0;
-  for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, enqueue, presentAlert]) f.mockReset();
+  for (const f of [api.get, api.post, api.put, api.delete, setSuccess, setError, enqueue, presentAlert, presentActionSheet]) f.mockReset();
   modale.geoeffnet.length = 0;
+  listeNeuLaden.mockClear();
   api.get.mockImplementation(async (pfad: string) => {
     if (pfad === '/konfi/events') return { data: zustand.events };
     if (/\/participants$/.test(pfad)) return { data: zustand.teilnehmer };

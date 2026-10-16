@@ -345,7 +345,8 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S6: nur das Anlegen, nicht das Bearbeiten', () => {
-    const q = lies('src/components/admin/modals/ChallengeManageModal.tsx');
+    // Seit 15.10.2026 im Hook des Formulars (App-Modal und Web-Dialog).
+    const q = lies('src/components/admin/modals/useChallengeManageFormular.ts');
     const put = q.indexOf('await api.put(`/challenges/admin/${challenge.id}`, payload);');
     const post = q.indexOf("await api.post('/challenges/admin', payload);");
     const messung = q.indexOf("trackHandlung('challenge-angelegt'");
@@ -362,7 +363,9 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S8: Postfach geöffnet, Mitteilung angetippt — nur die Art', () => {
-    const q = lies('src/components/common/PostfachModal.tsx');
+    // Seit 15.10.2026 steht die Logik des Postfachs fuer App-Modal und
+    // Web-Dialog gemeinsam in usePostfach (common/PostfachModal liest sie).
+    const q = lies('src/components/common/usePostfach.ts');
     expect(q).toMatch(/setOffen\(true\);[\s\S]{0,200}trackHandlung\('postfach-angesehen'\);/);
     expect(q).toContain("trackHandlung('mitteilung-angetippt', { art: serverSchluesselMesswert(eintrag.type) });");
   });
@@ -374,7 +377,7 @@ describe('Aufrufstellen ohne Server-Antwort', () => {
   });
 
   it('S9: Gruppe und Hauptschalter tragen ihre Kennung mit', () => {
-    const q = lies('src/components/shared/PushAuswahl.tsx');
+    const q = lies('src/components/shared/usePushAuswahl.ts');
     expect(q).toContain('speichern({ stumm }, { gruppe: id, an });');
     expect(q).toContain("speichern({ push_enabled: an }, { gruppe: 'alle', an })");
   });

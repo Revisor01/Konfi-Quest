@@ -307,11 +307,15 @@ describe('Challenge der Konfis (Web): Beitraege', () => {
 });
 
 describe('Challenge der Konfis (Web): Beitrag einreichen', () => {
-  it('der Knopf im Kopf oeffnet das Einreich-Formular der App; der Hinweis darueber sagt, wer den Beitrag sieht', async () => {
+  // Seit 15.10.2026 (Simon: im Browser jedes Formular als Fenster der
+  // Web-Fassung) das Fenster „Dein Beitrag" statt des Modals der App; die
+  // Abläufe darin prüft webBeitragDialog.test.tsx.
+  it('der Knopf im Kopf oeffnet das Fenster „Dein Beitrag" der Web-Fassung; der Hinweis darueber sagt, wer den Beitrag sieht', async () => {
     await zeigen();
     expect(hinweise()).toEqual(['Für deine Gruppe sofort sichtbar']);
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' }));
-    expect(h.presentModal).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Dein Beitrag' })).toBeInTheDocument();
+    expect(h.presentModal).not.toHaveBeenCalled();
   });
 
   it('"selbst entscheiden" mit Freigabe: der Satz der App unveraendert', async () => {

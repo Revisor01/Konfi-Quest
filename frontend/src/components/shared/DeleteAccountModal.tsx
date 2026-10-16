@@ -1,6 +1,7 @@
-import { fehlerStatus, fehlerText } from '../../utils/fehler';
-import React, { useState } from 'react';
-import { useActionGuard } from '../../hooks/useActionGuard';
+// Das Modal der App zum Löschen des eigenen Kontos. Die Logik -- Sicherung
+// mit dem Passwort, Aufruf, Meldungen, Wortlaut -- steht in useKontoLoeschen
+// und gilt ebenso für den Dialog des Browsers (web/konto/WebKontoLoeschenDialog).
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -29,9 +30,7 @@ import {
   ICON_VERBORGEN,
   ICON_WARNUNG,
 } from './icons';
-import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
-import { eigenesKontoLoeschHinweis } from '../../utils/kontoLoeschen';
+import { useKontoLoeschen } from './useKontoLoeschen';
 
 interface DeleteAccountModalProps {
   onClose: () => void;
@@ -39,44 +38,21 @@ interface DeleteAccountModalProps {
 }
 
 const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDeleted }) => {
-  const { setError, isOnline, signOut, user } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
-
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [inlineError, setInlineError] = useState('');
-
-  const handleDelete = async () => {
-    if (!password) {
-      setInlineError('Bitte gib dein Passwort zur Bestätigung ein');
-      return;
-    }
-
-    await guard(async () => {
-      try {
-        await api.post('/auth/delete-account', { password });
-
-        // Account gelöscht: sauber ausloggen (räumt Token/Cache + State -> Login).
-        onDeleted?.();
-        onClose();
-        await signOut();
-      } catch (err) {
-        if (fehlerStatus(err) === 400) {
-          setInlineError('Passwort ist falsch');
-        } else {
-          setError(fehlerText(err, 'Fehler beim Löschen des Accounts'));
-        }
-      }
-    });
-  };
-
-  const isValid = password.length > 0;
+  const {
+    password, setPassword, showPassword, setShowPassword, inlineError, isSubmitting, isOnline, isValid, loeschen, hinweis,
+  } = useKontoLoeschen({
+    onGeloescht: () => {
+      onDeleted?.();
+      onClose();
+    },
+  });
+  const handleDelete = () => { void loeschen(); };
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Account löschen</IonTitle>
+          <IonTitle>Konto löschen</IonTitle>
           <IonButtons slot="start">
             <IonButton aria-label="Schließen" className="app-modal-close-btn" onClick={onClose} disabled={isSubmitting}>
               <IonIcon icon={ICON_SCHLIESSEN} />
@@ -100,7 +76,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
                 <p style={{ margin: 0, fontSize: 'var(--app-text-basis)', lineHeight: 1.5 }}>
                   {/* Was wirklich verschwindet (28.09.2026) -- derselbe Wortlaut
                       wie in den Abfragen der Leitung (utils/kontoLoeschen.ts). */}
-                  {eigenesKontoLoeschHinweis(user?.role_name === 'konfi')}
+                  {hinweis}
                 </p>
               </IonText>
             </IonCardContent>
@@ -123,10 +99,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
                   <IonInput aria-label="Dein Passwort" aria-required="true"
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onIonInput={(e) => {
-                      setPassword(e.detail.value!);
-                      if (inlineError) setInlineError('');
-                    }}
+                    onIonInput={(e) => setPassword(e.detail.value!)}
                     placeholder="Passwort zur Bestätigung eingeben"
                     disabled={isSubmitting}
                   />
@@ -169,7 +142,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({ onClose, onDele
             ) : isSubmitting ? (
               <IonSpinner name="crescent" />
             ) : (
-              <><IonIcon slot="start" icon={ICON_LOESCHEN} /> Account endgültig löschen</>
+              <><IonIcon slot="start" icon={ICON_LOESCHEN} /> Konto endgültig löschen</>
             )}
           </IonButton>
         </IonList>

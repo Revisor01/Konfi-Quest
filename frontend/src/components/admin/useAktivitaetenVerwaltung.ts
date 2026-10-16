@@ -6,6 +6,11 @@
 // Aus AdminActivitiesPage herausgezogen (03.10.2026, Web-Fassung aller
 // Bereiche, docs/planung/web-alle-bereiche.md): Verhalten und Texte
 // unveraendert.
+//
+// Anlegen und Aendern oeffnen im Browser ab 992 px den Dialog der
+// Web-Fassung (web/leitung/WebAktivitaetKatalogDialog, Simon, 15.10.2026),
+// sonst das Modal der App. Beide lesen dieselbe Logik
+// (useAktivitaetKatalogFormular).
 
 import { useState } from 'react';
 import { useIonAlert, useIonModal } from '@ionic/react';
@@ -16,6 +21,7 @@ import { CACHE_TTL } from '../../services/offlineCache';
 import api from '../../services/api';
 import { fehlerText } from '../../utils/fehler';
 import { offlineBlockiert } from '../../utils/offlineAktion';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
 import ActivityManagementModal from './modals/ActivityManagementModal';
 
 export interface Aktivitaet {
@@ -46,6 +52,10 @@ export function useAktivitaetenVerwaltung(praesentierend: () => HTMLElement | un
   );
 
   const [gewaehlt, setGewaehlt] = useState<Aktivitaet | null>(null);
+  // Im Browser ab 992 px: der Dialog der Web-Fassung, solange dies gesetzt
+  // ist; `aktivitaet: null` heisst "anlegen".
+  const breit = useBreitesLayout();
+  const [webDialog, setWebDialog] = useState<{ aktivitaet: Aktivitaet | null } | null>(null);
   const [presentAlert] = useIonAlert();
 
   const [presentModal, dismissModal] = useIonModal(ActivityManagementModal, {
@@ -86,11 +96,19 @@ export function useAktivitaetenVerwaltung(praesentierend: () => HTMLElement | un
   };
 
   const bearbeiten = (aktivitaet: Aktivitaet) => {
+    if (breit) {
+      setWebDialog({ aktivitaet });
+      return;
+    }
     setGewaehlt(aktivitaet);
     presentModal({ presentingElement: praesentierend() });
   };
 
   const anlegen = () => {
+    if (breit) {
+      setWebDialog({ aktivitaet: null });
+      return;
+    }
     setGewaehlt(null);
     presentModal({ presentingElement: praesentierend() });
   };
@@ -110,5 +128,13 @@ export function useAktivitaetenVerwaltung(praesentierend: () => HTMLElement | un
     darfAnlegen: istLeitung,
     darfBearbeiten: istLeitung,
     darfLoeschen: istLeitung,
+    /** Browser ab 992 px: der offene Dialog (null: keiner). */
+    webDialog,
+    webDialogSchliessen: () => setWebDialog(null),
+    /** Gespeichert: Dialog zu, Liste neu -- wie onSuccess des Modals. */
+    webDialogGespeichert: () => {
+      setWebDialog(null);
+      refresh();
+    },
   };
 }

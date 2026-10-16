@@ -311,6 +311,11 @@ describe('Begriffe: die Landingpage spricht wie die App', () => {
     expect(sichtbar).toContain('Worin unterscheiden sich Gemeindeleitung und Leitung?');
   });
 
+  it('der Rückblick heißt wie in der App „Jahresrückblick", nicht „Wrapped"', () => {
+    expect(sichtbar.match(/Wrapped/g) ?? []).toEqual([]);
+    expect(sichtbar).toContain('Jahresrückblick für Konfis &amp; Team');
+  });
+
   it('der Tarif für mehrere Gemeinden heißt überall „Verbund"', () => {
     expect(sichtbar).toContain('<div class="tier">Verbund</div>');
     expect(sichtbar).toContain('"name": "Verbund – bis 4 Gemeinden"');

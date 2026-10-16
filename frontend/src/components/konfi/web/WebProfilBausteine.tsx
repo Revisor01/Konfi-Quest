@@ -6,13 +6,14 @@
 //
 // Nichts hier lädt oder speichert selbst, außer wo es ausdrücklich dasselbe
 // tut wie sein Gegenstück in der App: die Einladungen (useEinladungen, dieselben
-// Abrufe und Meldungen), die Benachrichtigungen (dieselbe Auswahl und derselbe
-// Dialog) und der Punkte-Verlauf (dieselbe Route). Die Handgriffe der
-// Einstellungen -- E-Mail, Passwort, Konto löschen -- sind die Modale der App,
-// die die Seite öffnet und hier nur als Knopf bekommt.
+// Abrufe und Meldungen), die Benachrichtigungen (dieselbe Logik, usePushAuswahl,
+// im Dialog der Web-Fassung) und der Punkte-Verlauf (dieselbe Route). Die
+// Handgriffe der Einstellungen -- E-Mail, Passwort, Konto löschen -- öffnet die
+// Seite (seit 15.10.2026 als Dialoge der Web-Fassung); hier bekommen sie nur
+// ihren Knopf.
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { IonIcon, useIonModal } from '@ionic/react';
+import { IonIcon } from '@ionic/react';
 import {
   ICON_ABMELDEN,
   ICON_BENACHRICHTIGUNG,
@@ -29,7 +30,9 @@ import { datumKurz } from '../../../utils/dateUtils';
 import { punkteText } from '../../../utils/punkteText';
 import { punkteAnzeigeDatum, nachAnzeigeDatumAbsteigend } from '../../../utils/punkteDatum';
 import type { WrappedHistoryEntry } from '../../../types/wrapped';
-import { PushAuswahlModal, ladePushEinstellungen, pushZusammenfassung, type PushEinstellungen } from '../../shared/PushAuswahl';
+import { ladePushEinstellungen, pushZusammenfassung, type PushEinstellungen } from '../../shared/usePushAuswahl';
+import WebPushAuswahlDialog from '../../shared/web/konto/WebPushAuswahlDialog';
+import { PUNKTE_VERLAUF_ANKER } from './punkteVerlaufAnker';
 import { useEinladungen } from '../../shared/EinladungenKarte';
 import WebKarte from '../../web/WebKarte';
 import WebKnopf from '../../web/WebKnopf';
@@ -97,18 +100,16 @@ export const WebEinstellungenKarte: React.FC<{ children: React.ReactNode; titel?
   </WebKarte>
 );
 
-export interface WebPushZeileProps {
-  /** Die Seite, über der der Dialog erscheint (Karten-Darstellung der Modale); erst beim Öffnen gelesen. */
-  presentingElement?: () => HTMLElement | null | undefined;
-}
-
 /**
- * Benachrichtigungen: dieselbe Auswahl wie in der App (PushAuswahlModal), als
- * Zeile der Einstellungen. Der Stand unter dem Titel sagt, was gerade gilt.
+ * Benachrichtigungen: dieselbe Auswahl wie in der App (usePushAuswahl), als
+ * Zeile der Einstellungen. Der Stand unter dem Titel sagt, was gerade gilt;
+ * „Auswählen" öffnet den Dialog der Web-Fassung (Simon, 15.10.2026) und fragt
+ * wie in der App die Erlaubnis des Geräts an, solange sie fehlt.
  */
-export const WebPushZeile: React.FC<WebPushZeileProps & { variante: 'users' | 'teamer' | 'purple' }> = ({ variante, presentingElement }) => {
+export const WebPushZeile: React.FC = () => {
   const { pushNotificationsPermission, requestPushPermissions } = useApp();
   const [einstellungen, setEinstellungen] = useState<PushEinstellungen | null>(null);
+  const [offen, setOffen] = useState(false);
 
   useEffect(() => {
     let abgemeldet = false;
@@ -118,23 +119,20 @@ export const WebPushZeile: React.FC<WebPushZeileProps & { variante: 'users' | 't
     return () => { abgemeldet = true; };
   }, []);
 
-  const [zeige, schliesse] = useIonModal(PushAuswahlModal, {
-    onClose: () => schliesse(),
-    variante,
-    onGeaendert: (e: PushEinstellungen) => setEinstellungen(e),
-  });
-
   return (
-    <WebEinstellung
-      icon={ICON_BENACHRICHTIGUNG}
-      titel="Benachrichtigungen"
-      wert={pushZusammenfassung(einstellungen, pushNotificationsPermission)}
-      knopf="Auswählen"
-      onClick={() => {
-        if (pushNotificationsPermission !== 'granted') void requestPushPermissions();
-        zeige({ presentingElement: presentingElement?.() ?? undefined });
-      }}
-    />
+    <>
+      <WebEinstellung
+        icon={ICON_BENACHRICHTIGUNG}
+        titel="Benachrichtigungen"
+        wert={pushZusammenfassung(einstellungen, pushNotificationsPermission)}
+        knopf="Auswählen"
+        onClick={() => {
+          if (pushNotificationsPermission !== 'granted') void requestPushPermissions();
+          setOffen(true);
+        }}
+      />
+      {offen && <WebPushAuswahlDialog onSchliessen={() => setOffen(false)} onGeaendert={setEinstellungen} />}
+    </>
   );
 };
 
@@ -278,14 +276,18 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
     return true;
   }), [daten, gottesdienstAktiv, gemeindeAktiv]);
 
-  if (laedt) return <WebKarte titel={titel}><WebLaden karten={0} kacheln={0} text="Der Verlauf wird geladen." /></WebKarte>;
+  // Die Karte trägt den Anker in jedem Zustand -- auch beim Laden springt die
+  // „Punkte-Übersicht" an die richtige Stelle.
+  const anker = (karte: React.ReactNode) => <div id={PUNKTE_VERLAUF_ANKER} tabIndex={-1}>{karte}</div>;
+
+  if (laedt) return anker(<WebKarte titel={titel}><WebLaden karten={0} kacheln={0} text="Der Verlauf wird geladen." /></WebKarte>);
   if (!daten) {
     return fehler
-      ? <WebKarte titel={titel}><WebFehler text="Der Verlauf konnte nicht geladen werden." onErneut={() => { void neuLaden(); }} /></WebKarte>
+      ? anker(<WebKarte titel={titel}><WebFehler text="Der Verlauf konnte nicht geladen werden." onErneut={() => { void neuLaden(); }} /></WebKarte>)
       : null;
   }
 
-  return (
+  return anker(
     <WebKarte
       titel={titel}
       untertitel={`${eintraege.length} ${eintraege.length === 1 ? 'Eintrag' : 'Einträge'}`}
@@ -329,6 +331,6 @@ export const WebPunkteVerlauf: React.FC<WebPunkteVerlaufProps> = ({ endpunkt, go
           ]}
         />
       )}
-    </WebKarte>
+    </WebKarte>,
   );
 };

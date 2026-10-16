@@ -14,6 +14,7 @@ import {
   ICON_DATEI_GEFUELLT,
   ICON_FROEHLICH,
   ICON_HAKEN_GEFUELLT,
+  ICON_HERUNTERLADEN,
   ICON_KOPIEREN,
   ICON_LOESCHEN,
   ICON_TEILEN,
@@ -41,6 +42,7 @@ import LazyImage from '../LazyImage';
 import VideoPreview from '../VideoPreview';
 import FortschrittsBalken from '../../shared/FortschrittsBalken';
 import WebUmfrage from './WebUmfrage';
+import { dateiImBrowserTeilbar } from '../dateiImBrowser';
 
 export interface WebNachrichtNutzer {
   id: number;
@@ -64,6 +66,8 @@ export interface WebNachrichtProps {
   onAntworten: (message: Message) => void;
   onKopieren: (message: Message) => void;
   onTeilen: (message: Message) => void;
+  /** Eine Datei speichern -- statt „Teilen", wenn der Browser keine Dateien teilen kann. */
+  onHerunterladen: (message: Message) => void;
   onLoeschen: (messageId: number) => void;
   onReaktion: (messageId: number, emoji: string) => void;
   onPickerOeffnen: (message: Message) => void;
@@ -80,7 +84,7 @@ export interface WebNachrichtProps {
 
 const WebNachricht: React.FC<WebNachrichtProps> = ({
   message, room, user, fortsetzung, pickerOffen, ladendeDatei, uploadFortschritt, kannTeilen,
-  onAntworten, onKopieren, onTeilen, onLoeschen, onReaktion, onPickerOeffnen, onPickerSchliessen,
+  onAntworten, onKopieren, onTeilen, onHerunterladen, onLoeschen, onReaktion, onPickerOeffnen, onPickerSchliessen,
   onAbstimmen, onNamenAufdecken, onDatei, onError, onErneutSenden, onVerwerfen,
 }) => {
   // Die Hervorhebung der beantworteten Nachricht endet nach 1,5 s -- oder
@@ -103,6 +107,11 @@ const WebNachricht: React.FC<WebNachrichtProps> = ({
     ['admin', 'org_admin'].includes(user.role_name) || (user.role_name === 'teamer' && eigene)
   );
   const hatText = !!message.content && !message.is_deleted && message.message_type !== 'poll';
+  // Eine Datei teilt der Browser nur, wenn er Dateien teilen kann (am Handy);
+  // sonst steht dort „Herunterladen" (15.10.2026: vorher kam beim Teilen ein
+  // leerer Pfad an). Text teilt er, sobald es ein Teilen-Fenster gibt.
+  const istDatei = !!message.file_path && !message.is_deleted;
+  const teilbar = istDatei ? kannTeilen && dateiImBrowserTeilbar(message.file_name || 'datei') : kannTeilen;
 
   // Picker per Tastatur: Fokus auf die erste Reaktion, danach zurueck auf den Knopf.
   const pickerKnopf = useRef<HTMLButtonElement>(null);
@@ -326,9 +335,14 @@ const WebNachricht: React.FC<WebNachrichtProps> = ({
                 <IonIcon icon={ICON_KOPIEREN} aria-hidden="true" />
               </button>
             )}
-            {kannTeilen && (
+            {teilbar && (
               <button type="button" className="web-chat-aktion" aria-label="Teilen" title="Teilen" onClick={() => onTeilen(message)}>
                 <IonIcon icon={ICON_TEILEN} aria-hidden="true" />
+              </button>
+            )}
+            {istDatei && !teilbar && (
+              <button type="button" className="web-chat-aktion" aria-label="Herunterladen" title="Herunterladen" onClick={() => onHerunterladen(message)}>
+                <IonIcon icon={ICON_HERUNTERLADEN} aria-hidden="true" />
               </button>
             )}
             {darfLoeschen && (

@@ -34,6 +34,9 @@ import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenLeitung from '../web/termine/WebMitmachenLeitung';
 import WebEventDialog from '../web/termine/WebEventDialog';
 import WebAntragPruefenDialog from '../web/termine/WebAntragPruefenDialog';
+import WebTerminAbsagenDialog from '../web/termine/WebTerminAbsagenDialog';
+import WebSerieLoeschenDialog from '../web/termine/WebSerieLoeschenDialog';
+import { serienLoeschWahl, type SerienLoeschWahl } from '../../../utils/serieLoeschen';
 import { segmentAusAdresse } from '../web/termine/typen';
 import { useZeitgeber } from '../../../hooks/useZeitgeber';
 import { trackBereich } from '../../../services/analytics';
@@ -227,6 +230,40 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
   // Ref-Getter wie beim Abmelde-Modal: Welcher Termin gemeint ist, steht erst
   // beim Oeffnen fest, die Props werden aber schon beim Rendern deklariert.
   const absageTerminRef = useRef<Event | null>(null);
+
+  /**
+   * Absagen bzw. den Grund ändern -- für das Modal der App und den Dialog des
+   * Browsers ab 992 px (WebTerminAbsagenDialog; Simon, 15.10.2026). Ein
+   * Fehler geht an das Fenster zurück, das ihn zeigt.
+   */
+  const absageSpeichern = async (termin: Event, grund: string) => {
+    if (istAbgesagt(termin)) {
+      // Eigene Route (Migration 152): /cancel lehnt einen bereits abgesagten
+      // Termin mit 400 ab und muss das fuer ausgelieferte App-Fassungen auch
+      // weiterhin tun.
+      await api.put(`/events/${termin.id}/absagegrund`, { cancelled_reason: grund });
+      setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
+    } else {
+      await api.put(`/events/${termin.id}/cancel`, {
+        // notification_message bleibt mitgeschickt: Die Route nimmt es
+        // weiterhin entgegen, und es hier wegzulassen aendert nichts am
+        // Verhalten — aber der Vertrag bleibt so unangetastet.
+        notification_message: 'Das Event wurde leider abgesagt.',
+        // Leerer Grund => das Backend macht NULL daraus, und alles verhaelt
+        // sich wie vor dem 15.09.2026.
+        cancelled_reason: grund
+      });
+      setSuccess(`Event "${termin.name}" wurde abgesagt`);
+    }
+    await refreshEvents();
+    await refreshCancelled();
+  };
+
+  // Im Browser ab 992 px: das Event, dessen Absage-Dialog offen ist.
+  const [webAbsage, setWebAbsage] = useState<Event | null>(null);
+  // Im Browser ab 992 px: die Wahl „Event einer Serie löschen", die offen ist.
+  const [webSerie, setWebSerie] = useState<{ event: Event; wahl: SerienLoeschWahl<Event> } | null>(null);
+
   const [presentAbsageModal, dismissAbsageModal] = useIonModal(TerminAbsagenModal, {
     get terminName() { return absageTerminRef.current?.name ?? ''; },
     get terminDatum() {
@@ -246,26 +283,7 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
     onSave: async (grund: string) => {
       const termin = absageTerminRef.current;
       if (!termin) return;
-      if (istAbgesagt(termin)) {
-        // Eigene Route (Migration 152): /cancel lehnt einen bereits abgesagten
-        // Termin mit 400 ab und muss das fuer ausgelieferte App-Fassungen auch
-        // weiterhin tun.
-        await api.put(`/events/${termin.id}/absagegrund`, { cancelled_reason: grund });
-        setSuccess(grund ? 'Absagegrund gespeichert' : 'Absagegrund entfernt');
-      } else {
-        await api.put(`/events/${termin.id}/cancel`, {
-          // notification_message bleibt mitgeschickt: Die Route nimmt es
-          // weiterhin entgegen, und es hier wegzulassen aendert nichts am
-          // Verhalten — aber der Vertrag bleibt so unangetastet.
-          notification_message: 'Das Event wurde leider abgesagt.',
-          // Leerer Grund => das Backend macht NULL daraus, und alles verhaelt
-          // sich wie vor dem 15.09.2026.
-          cancelled_reason: grund
-        });
-        setSuccess(`Event "${termin.name}" wurde abgesagt`);
-      }
-      await refreshEvents();
-      await refreshCancelled();
+      await absageSpeichern(termin, grund);
     },
     dismiss: () => dismissAbsageModal()
   });
@@ -345,58 +363,53 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   const handleDeleteEvent = async (event: Event) => {
     if (offlineBlockiert(isOnline, setError)) return;
-    // Check if this is part of a series
-    if (event.is_series && event.series_id) {
-      // Get other events in the series
-      const allEvents = [...events, ...(cancelledEvents || [])];
-      const seriesEvents = allEvents.filter(e =>
-        e.series_id === event.series_id && e.id !== event.id
-      );
-
-      if (seriesEvents.length > 0) {
-        // Dieser Termin + alle späteren der Serie (für "ab hier löschen", z.B. falsch
-        // angelegte Serie oder Reihe, die früher endet)
-        const followingEvents = [...seriesEvents, event].filter(e =>
-          new Date(e.event_date).getTime() >= new Date(event.event_date).getTime()
-        );
-
-        // Show action sheet for series deletion
-        const buttons: ActionSheetButton[] = [
-          {
-            text: 'Nur dieses Event löschen',
-            icon: 'trash-outline',
-            handler: () => deleteSingleEvent(event)
-          }
-        ];
-        // Nur anbieten, wenn es nach diesem Termin noch weitere gibt und nicht
-        // ohnehin die ganze Serie gemeint ist
-        if (followingEvents.length > 1 && followingEvents.length < seriesEvents.length + 1) {
-          buttons.push({
-            text: `Dieses + alle folgenden löschen (${followingEvents.length} Events)`,
-            icon: 'trash-outline',
-            role: 'destructive',
-            handler: () => deleteSeriesEvents(followingEvents, 'dieses und alle folgenden')
-          });
-        }
-        buttons.push(
-          {
-            text: `Ganze Serie löschen (${seriesEvents.length + 1} Events)`,
-            icon: 'warning-outline',
-            role: 'destructive',
-            handler: () => deleteSeriesEvents([...seriesEvents, event], 'die ganze Serie')
-          },
-          {
-            text: 'Abbrechen',
-            role: 'cancel'
-          }
-        );
-        presentActionSheet({
-          header: 'Event einer Serie löschen',
-          subHeader: `"${event.name}" ist Teil einer Serie mit ${seriesEvents.length + 1} Events.`,
-          buttons
-        });
+    // Teil einer Serie? Dann erst die Wahl: nur dieses, dieses und alle
+    // folgenden, die ganze Serie (utils/serieLoeschen.ts). Im Browser ab
+    // 992 px als kleines Fenster (WebSerieLoeschenDialog; Simon, 15.10.2026),
+    // sonst als Aktionsmenü der App. Danach in beiden dieselben Rückfragen.
+    const wahl = serienLoeschWahl(event, [...events, ...(cancelledEvents || [])]);
+    if (wahl) {
+      if (breit) {
+        setWebSerie({ event, wahl });
         return;
       }
+      // Show action sheet for series deletion
+      const buttons: ActionSheetButton[] = [
+        {
+          text: wahl.nurDiesesText,
+          icon: 'trash-outline',
+          handler: () => deleteSingleEvent(event)
+        }
+      ];
+      // Nur anbieten, wenn es nach diesem Termin noch weitere gibt und nicht
+      // ohnehin die ganze Serie gemeint ist
+      if (wahl.folgende && wahl.folgendeText) {
+        const folgende = wahl.folgende;
+        buttons.push({
+          text: wahl.folgendeText,
+          icon: 'trash-outline',
+          role: 'destructive',
+          handler: () => deleteSeriesEvents(folgende, 'dieses und alle folgenden')
+        });
+      }
+      buttons.push(
+        {
+          text: wahl.ganzeSerieText,
+          icon: 'warning-outline',
+          role: 'destructive',
+          handler: () => deleteSeriesEvents(wahl.ganzeSerie, 'die ganze Serie')
+        },
+        {
+          text: 'Abbrechen',
+          role: 'cancel'
+        }
+      );
+      presentActionSheet({
+        header: wahl.titel,
+        subHeader: wahl.satz,
+        buttons
+      });
+      return;
     }
 
     // Normal single event deletion
@@ -613,8 +626,15 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
 
   // Absagen oeffnet jetzt das Modal mit dem optionalen Grund (15.09.2026).
   // Eckdaten (Datum, Konfi-Zahl) stehen dort im Kopf, wie vorher im Sheet.
+  // Im Browser ab 992 px als Dialog der Web-Fassung (WebTerminAbsagenDialog;
+  // Simon, 15.10.2026), mit derselben Logik (useTerminAbsagen) und demselben
+  // Speichern (absageSpeichern).
   const handleCancelEvent = async (event: Event) => {
     if (offlineBlockiert(isOnline, setError)) return;
+    if (breit) {
+      setWebAbsage(event);
+      return;
+    }
     absageTerminRef.current = event;
     presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
@@ -749,6 +769,10 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Zurücksetzen',
+          // Folgenreich: Eine genehmigte Aktivität nimmt ihre Punkte zurück.
+          // Mit role 'destructive' zeigt die Rückfrage das Warndreieck
+          // (utils/rueckfragenOptik.ts; Simon, 15.10.2026).
+          role: 'destructive',
           handler: async () => {
             try {
               await api.put(`/admin/activities/requests/${request.id}/reset`);
@@ -858,6 +882,26 @@ const AdminEventsPage: React.FC<AdminEventsPageProps> = ({ onSelectEvent, select
             refreshEvents();
             refreshCancelled();
           }}
+        />
+      )}
+      {webAbsage && (
+        <WebTerminAbsagenDialog
+          terminName={webAbsage.name}
+          terminDatum={datumLang(webAbsage.event_date)}
+          // registered_count IST bereits die Konfi-Zahl (siehe Modal oben).
+          konfiAnzahl={webAbsage.registered_count || 0}
+          modus={istAbgesagt(webAbsage) ? 'grund' : 'absagen'}
+          grundVorgabe={webAbsage.cancelled_reason ?? ''}
+          onSave={(grund) => absageSpeichern(webAbsage, grund)}
+          onSchliessen={() => setWebAbsage(null)}
+        />
+      )}
+      {webSerie && (
+        <WebSerieLoeschenDialog
+          wahl={webSerie.wahl}
+          onNurDieses={() => deleteSingleEvent(webSerie.event)}
+          onMehrere={(liste, label) => deleteSeriesEvents(liste, label)}
+          onSchliessen={() => setWebSerie(null)}
         />
       )}
       {webAntrag && (

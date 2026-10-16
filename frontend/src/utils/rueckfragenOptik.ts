@@ -22,7 +22,13 @@ import { ICON_LOESCHEN_GEFUELLT, ICON_WARNUNG_GEFUELLT } from '../components/sha
  *   - `app-rueckfrage app-rueckfrage--warnung` bei jedem anderen solchen
  *     Knopf („Abmelden", „Verwerfen", „Sperren", „Ausblenden" …);
  *   - nichts, wenn kein Knopf destructive ist (Einmalpasswort, „Zu viele
- *     Anfragen") -- diese Rückfragen bleiben, wie sie sind.
+ *     Anfragen") -- diese Rückfragen bleiben in der App, wie sie sind;
+ *   - im breiten Browserfenster (html[data-layout='breit'], nur Web ab
+ *     992 px, navigation/layoutImDokument.ts) aber
+ *     `app-rueckfrage app-rueckfrage--neutral`: Auch „Absage zurücknehmen",
+ *     „Chat erstellen?" oder „Alle bestätigen?" stehen dort in der Optik der
+ *     Web-Fenster, ohne Symbol (Simon, 15.10.2026: jede Rückfrage im Browser
+ *     sieht aus wie eine des Browsers, nicht wie Android).
  * Dazu das Symbol als CSS-Eigenschaft `--app-rueckfrage-symbol` (Mülleimer
  * bzw. Warndreieck aus components/shared/icons.ts, der einen Stelle für
  * Icons). Wie das aussieht, steht in theme/rueckfragen.css. Kein Aufruf muss
@@ -40,6 +46,12 @@ import { ICON_LOESCHEN_GEFUELLT, ICON_WARNUNG_GEFUELLT } from '../components/sha
 /** Wie eine Rückfrage aussieht: Löschen (Mülleimer) oder Warnung (Warndreieck). */
 export type RueckfrageArt = 'loeschen' | 'warnung';
 
+/**
+ * Das Kennzeichen am ion-alert: eine der Arten, oder 'neutral' -- eine
+ * Rückfrage ohne folgenreichen Knopf im breiten Browserfenster (ohne Symbol).
+ */
+export type RueckfrageKennzeichen = RueckfrageArt | 'neutral';
+
 /** Ein Knopf, wie ihn useIonAlert annimmt: ein Text oder ein Objekt. */
 export type RueckfrageKnopf = string | { text?: string; role?: string };
 
@@ -49,7 +61,17 @@ export const RUECKFRAGE_KLASSE = 'app-rueckfrage';
 /** Die CSS-Eigenschaft mit dem Symbol (url(…) des Icons). */
 export const RUECKFRAGE_SYMBOL = '--app-rueckfrage-symbol';
 
-const ALLE_KLASSEN = [RUECKFRAGE_KLASSE, `${RUECKFRAGE_KLASSE}--loeschen`, `${RUECKFRAGE_KLASSE}--warnung`];
+/** Die Klasse einer Rückfrage ohne folgenreichen Knopf im breiten Browserfenster. */
+export const RUECKFRAGE_NEUTRAL = `${RUECKFRAGE_KLASSE}--neutral`;
+
+const ALLE_KLASSEN = [RUECKFRAGE_KLASSE, `${RUECKFRAGE_KLASSE}--loeschen`, `${RUECKFRAGE_KLASSE}--warnung`, RUECKFRAGE_NEUTRAL];
+
+/**
+ * Steht das Dokument im breiten Layout der Web-Fassung? Das Merkmal setzt
+ * navigation/layoutImDokument.ts an <html>; in den Apps steht es nie.
+ */
+const imBreitenLayout = (element: HTMLElement): boolean =>
+  element.ownerDocument.documentElement.getAttribute('data-layout') === 'breit';
 
 /**
  * Löschen, Entfernen, Leeren -- auch mitten im Knopf („Endgültig löschen",
@@ -84,13 +106,19 @@ export const RUECKFRAGE_SYMBOLE: Readonly<Record<RueckfrageArt, string>> = {
 /**
  * Kennzeichnet eine Rückfrage nach ihren Knöpfen (Eigenschaft `buttons` des
  * ion-alert). Räumt vorher ab, was von einem früheren Zeigen desselben
- * Elements stammt (ein <IonAlert> mit isOpen wird wiederverwendet).
+ * Elements stammt (ein <IonAlert> mit isOpen wird wiederverwendet). Ohne
+ * folgenreichen Knopf: im breiten Browserfenster 'neutral' (Optik der
+ * Web-Fenster, kein Symbol), sonst nichts.
  */
-export function rueckfrageKennzeichnen(alert: HTMLElement): RueckfrageArt | null {
+export function rueckfrageKennzeichnen(alert: HTMLElement): RueckfrageKennzeichen | null {
   const art = rueckfrageArt((alert as HTMLElement & { buttons?: RueckfrageKnopf[] }).buttons);
   alert.classList.remove(...ALLE_KLASSEN);
   alert.style.removeProperty(RUECKFRAGE_SYMBOL);
-  if (!art) return null;
+  if (!art) {
+    if (!imBreitenLayout(alert)) return null;
+    alert.classList.add(RUECKFRAGE_KLASSE, RUECKFRAGE_NEUTRAL);
+    return 'neutral';
+  }
   alert.classList.add(RUECKFRAGE_KLASSE, `${RUECKFRAGE_KLASSE}--${art}`);
   alert.style.setProperty(RUECKFRAGE_SYMBOL, `url("${RUECKFRAGE_SYMBOLE[art]}")`);
   return art;

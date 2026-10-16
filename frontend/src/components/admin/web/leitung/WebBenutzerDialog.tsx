@@ -20,11 +20,16 @@
 // Klick daneben), wie „Schließen" in der App: Das Speichern liefe sonst
 // unbemerkt weiter, und eine Ablehnung des Servers ginge ins Leere.
 //
+// Ungespeicherte Änderungen (isDirty aus useBenutzerFormular: Felder,
+// Jahrgänge, Rechte) fragen vor dem Schließen nach -- dieselbe Frage wie die
+// App, als zweites Fenster darüber wie bei Event und Badge (bis 15.10.2026
+// schloss der Dialog ohne zu fragen).
+//
 // Geöffnet im breiten Layout von AdminUsersPage (Anlegen, Bearbeiten) und
 // AdminKonfisPage (Teamer:in anlegen, festeRolle 'teamer'); unter 992 px und in
 // den Apps bleibt das Fenster der App.
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { JahrgangsZuweisung } from '../../../../types/user';
 import { datumKurz } from '../../../../utils/dateUtils';
 import { rollenName } from '../../../../utils/rollenNamen';
@@ -62,11 +67,17 @@ const zuweisungText = (z?: JahrgangsZuweisung): string | undefined => (z ? ['Zug
 
 const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRolle, onSchliessen, onGespeichert }) => {
   const {
-    currentUser, isOnline, isSubmitting, loading, geladen, isEditMode, nameAutomatisch, nurRolle, formData, aendern,
+    currentUser, isOnline, isSubmitting, loading, geladen, isDirty, isEditMode, nameAutomatisch, nurRolle, formData, aendern,
     fehler, jahrgaenge, user, jahrgangAssignments, jahrgangRechte, rechteFelder, rechteVergeben, getAllowedRoles,
     handleSave, setzeRecht, handleJahrgangAssignment,
   } = useBenutzerFormular({ userId, festeRolle, onSuccess: onGespeichert, fehlerImDialog: true });
   const sperrt = isSubmitting || nurRolle;
+  // Die Rückfrage „Ungespeicherte Änderungen" (zweites Fenster darüber).
+  const [rueckfrage, setRueckfrage] = useState(false);
+  const abbrechen = () => {
+    if (isDirty) setRueckfrage(true);
+    else onSchliessen();
+  };
   // Das Formular steht erst da, wenn Rollen, Jahrgänge (und die Person) geladen sind.
   const laedt = loading || !geladen;
 
@@ -98,16 +109,17 @@ const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRoll
   const weitere = isEditMode ? (user?.assigned_jahrgaenge ?? []).filter((z) => !jahrgaenge.some((j) => j.id === z.id)) : [];
 
   return (
+    <>
     <WebDialog
       breit
       titel={titelFuer(isEditMode, festeRolle)}
       beschreibung={isEditMode && user ? `${user.display_name} (@${user.username})` : undefined}
-      onSchliessen={onSchliessen}
+      onSchliessen={abbrechen}
       onAbsenden={() => { void handleSave(); }}
       gesperrt={isSubmitting}
       aktionen={(
         <>
-          <WebKnopf onClick={onSchliessen} disabled={isSubmitting}>Abbrechen</WebKnopf>
+          <WebKnopf onClick={abbrechen} disabled={isSubmitting}>Abbrechen</WebKnopf>
           <WebKnopf art="primaer" absenden disabled={isSubmitting || laedt || !isOnline}>
             {isEditMode ? 'Speichern' : 'Anlegen'}
           </WebKnopf>
@@ -251,6 +263,23 @@ const WebBenutzerDialog: React.FC<WebBenutzerDialogProps> = ({ userId, festeRoll
         )}
       </div>
     </WebDialog>
+    {rueckfrage && (
+      <WebDialog
+        titel="Ungespeicherte Änderungen"
+        beschreibung="Möchtest du die Änderungen verwerfen?"
+        rueckfrage="warnung"
+        onSchliessen={() => setRueckfrage(false)}
+        aktionen={(
+          <>
+            <WebKnopf onClick={() => setRueckfrage(false)}>Abbrechen</WebKnopf>
+            <WebKnopf art="gefahr" onClick={onSchliessen}>Verwerfen</WebKnopf>
+          </>
+        )}
+      >
+        {null}
+      </WebDialog>
+    )}
+    </>
   );
 };
 

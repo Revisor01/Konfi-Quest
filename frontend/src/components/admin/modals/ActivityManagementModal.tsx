@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonIcon, IonSpinner, IonList, IonListHeader, IonCard, IonCardContent, IonRange, useIonAlert } from '@ionic/react';
 import {
   ICON_BEARBEITEN_GEFUELLT,
@@ -8,40 +7,18 @@ import {
   ICON_KATEGORIE_GEFUELLT,
   ICON_SCHLIESSEN,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
-import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { useZeitgeber } from '../../../hooks/useZeitgeber';
+import { TEAM_OHNE_PUNKTE, useAktivitaetKatalogFormular, type KatalogAktivitaet, type KatalogZielgruppe } from '../useAktivitaetKatalogFormular';
 
-interface Activity {
-  id: number;
-  name: string;
-  points: number;
-  // null ist moeglich und kommt vor: in Produktion tragen zwei Aktivitaeten
-  // keinen Punkttyp (nachgemessen 30.08.2026). Die Liste kannte den Fall
-  // laengst, dieses Modal nicht — Ionic 9 typisiert useIonModal strenger und
-  // hat den Widerspruch aufgedeckt.
-  type: 'gottesdienst' | 'gemeinde' | null;
-  categories?: Category[];
-  target_role?: 'konfi' | 'teamer';
-}
-
-interface Category {
-  id: number;
-  name: string;
-  description?: string;
-  type: 'activity' | 'event' | 'both';
-}
+// Eine Aktivität des Katalogs anlegen oder bearbeiten -- das Modal der App.
+// Laden, Vorbelegung, Zielgruppe und Speichern stehen seit 15.10.2026 in
+// useAktivitaetKatalogFormular; der Browser ab 992 px zeigt dieselbe Logik im
+// Dialog web/leitung/WebAktivitaetKatalogDialog (Simon, 15.10.2026).
 
 interface ActivityManagementModalProps {
-  activity?: Activity | null;
+  activity?: KatalogAktivitaet | null;
   activityId?: number | null;
-  targetRole?: 'konfi' | 'teamer';
+  targetRole?: KatalogZielgruppe;
   onClose: () => void;
   onSuccess: () => void;
   dismiss?: () => void;
@@ -55,16 +32,21 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
   onSuccess,
   dismiss
 }) => {
-  const { setSuccess, setError } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [currentActivity, setCurrentActivity] = useState<Activity | null>(activity || null);
-  const [isDirty, setIsDirty] = useState(false);
+  const {
+    formData,
+    aendern,
+    waehleZielgruppe,
+    kategorieUmschalten,
+    categories,
+    currentActivity,
+    initializing,
+    loading,
+    isSubmitting,
+    isDirty,
+    isFormValid,
+    handleSubmit,
+  } = useAktivitaetKatalogFormular({ activity, activityId, targetRole, onSuccess });
   const [presentAlert] = useIonAlert();
-  const initializedRef = useRef(false);
-  const zeitgeber = useZeitgeber();
 
   const doClose = () => {
     if (dismiss) {
@@ -88,172 +70,6 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
       doClose();
     }
   };
-
-  const [formData, setFormData] = useState({
-    name: '',
-    points: targetRole === 'teamer' ? 0 : 1,
-    type: (targetRole === 'teamer' ? '' : 'gottesdienst') as string,
-    category_ids: [] as number[],
-    target_role: targetRole
-  });
-
-  // isDirty nach Initialisierung bei jeder formData-Änderung setzen
-  useEffect(() => {
-    if (initializedRef.current) {
-      setIsDirty(true);
-    }
-  }, [formData]);
-
-  // Load activity by ID from all activities
-  const loadActivity = async (id: number) => {
-    try {
-      const response = await api.get('/admin/activities');
-      const activities = response.data;
-      const activityData = activities.find((act: Activity) => act.id === id);
-
-      if (activityData) {
-        setCurrentActivity(activityData);
-        const categoryIds = activityData.categories?.map((cat: Category) => cat.id) || [];
-        setFormData({
-          name: activityData.name,
-          points: activityData.points,
-          type: activityData.type,
-          category_ids: categoryIds,
-          target_role: activityData.target_role || targetRole
-        });
-      } else {
- console.error('Activity not found with ID:', id);
-        setError('Aktivität nicht gefunden');
-      }
-    } catch (error) {
- console.error('Error loading activity:', error);
-      setError('Fehler beim Laden der Aktivität');
-    }
-  };
-
-  useEffect(() => {
-    const initializeModal = async () => {
-      setInitializing(true);
-      try {
-        // First load categories
-        await loadCategories();
-
-        // Then load activity if activityId is provided
-        if (activityId) {
-          await loadActivity(activityId);
-        } else if (activity) {
-          setCurrentActivity(activity);
-          setFormData({
-            name: activity.name,
-            points: activity.points,
-            // Das Formular kennt "kein Typ" als leeren String, die Daten als
-            // null (zwei Aktivitaeten in Produktion, nachgemessen 30.08.2026).
-            // Umgesetzt wird an der Grenze, damit das Select nicht auf null
-            // laeuft.
-            type: activity.type ?? '',
-            category_ids: activity.categories?.map((cat: Category) => cat.id) || [],
-            target_role: activity.target_role || targetRole
-          });
-        } else {
-          // Reset form for new activity
-          setCurrentActivity(null);
-          setFormData({
-            name: '',
-            points: targetRole === 'teamer' ? 0 : 1,
-            type: targetRole === 'teamer' ? '' : 'gottesdienst',
-            category_ids: [],
-            target_role: targetRole
-          });
-        }
-      } catch (error) {
- console.error('Error during initialization:', error);
-        setError('Fehler beim Initialisieren des Modals');
-      } finally {
-        setInitializing(false);
-      }
-    };
-
-    initializeModal().then(() => {
-      zeitgeber.nach(100, () => { initializedRef.current = true; });
-    });
-  }, [activityId, activity]);
-
-  const loadCategories = async () => {
-    try {
-      const response = await api.get('/admin/categories');
-
-      // Don't filter - show ALL categories for activities
-      // Categories with type=null should also be available for activities
-      const allCategories = response.data;
-      setCategories(allCategories);
-      return allCategories;
-    } catch (error) {
- console.error('Error loading categories:', error);
-      throw error;
-    }
-  };
-
-
-  const handleSubmit = async () => {
-    if (!formData.name.trim()) return;
-
-    await guard(async () => {
-    setLoading(true);
-    try {
-      const payload = {
-        name: formData.name.trim(),
-        points: formData.target_role === 'teamer' ? 0 : formData.points,
-        type: formData.target_role === 'teamer' ? null : formData.type,
-        category_ids: formData.category_ids,
-        target_role: formData.target_role
-      };
-
-      // Bearbeiten (PUT) faellt auch bei einem Netzabbruch im Online-Zweig in
-      // die Warteschlange; Anlegen (POST ohne Idempotenzschluessel) nur
-      // offline -- nach einem Abbruch bleibt es dort beim Fehler, sonst
-      // entstuende der Eintrag womoeglich doppelt (utils/sendenOderEinreihen.ts,
-      // Audit Grundgeruest BF-01).
-      const { weg } = await sendenOderEinreihen({
-        online: networkMonitor.isOnline,
-        methode: currentActivity ? 'PUT' : 'POST',
-        senden: () => (currentActivity
-          ? api.put(`/admin/activities/${currentActivity.id}`, payload)
-          : api.post('/admin/activities', payload)),
-        einreihen: () => (currentActivity
-          ? writeQueue.enqueue({
-            method: 'PUT',
-            url: `/admin/activities/${currentActivity.id}`,
-            body: payload,
-            maxRetries: 5,
-            hasFileUpload: false,
-            metadata: { type: 'admin', clientId: safeUUID(), label: 'Aktivität bearbeiten' },
-          })
-          : writeQueue.enqueue({
-            method: 'POST',
-            url: '/admin/activities',
-            body: payload,
-            maxRetries: 5,
-            hasFileUpload: false,
-            metadata: { type: 'admin', clientId: safeUUID(), label: 'Aktivität erstellen' },
-          })),
-      });
-      if (weg === 'eingereiht') {
-        setSuccess(currentActivity
-          ? 'Aktivität wird aktualisiert sobald du wieder online bist'
-          : 'Aktivität wird erstellt sobald du wieder online bist');
-      }
-
-      setIsDirty(false);
-      onSuccess();
-    } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Speichern der Aktivität'));
-    } finally {
-      setLoading(false);
-    }
-    });
-  };
-
-  const isFormValid = formData.name.trim().length > 0;
 
   return (
     <IonPage>
@@ -302,7 +118,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                 <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item"
-                  onClick={() => !loading && setFormData({ ...formData, target_role: 'konfi', points: formData.target_role === 'teamer' ? 1 : formData.points, type: formData.target_role === 'teamer' ? 'gottesdienst' : formData.type })}
+                  onClick={() => waehleZielgruppe('konfi')}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
                     display: 'flex',
@@ -317,7 +133,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 </div>
                 <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                   className="app-list-item"
-                  onClick={() => !loading && setFormData({ ...formData, target_role: 'teamer', points: 0, type: '' })}
+                  onClick={() => waehleZielgruppe('teamer')}
                   style={{
                     cursor: loading ? 'default' : 'pointer',
                     display: 'flex',
@@ -351,7 +167,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   <IonLabel position="stacked">Name *</IonLabel>
                   <IonInput aria-label="Name" aria-required="true"
                     value={formData.name}
-                    onIonInput={(e) => setFormData({ ...formData, name: e.detail.value! })}
+                    onIonInput={(e) => aendern({ name: e.detail.value! })}
                     placeholder="z.B. Sonntagsgottesdienst"
                     disabled={loading}
                     clearInput={true}
@@ -360,7 +176,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
 
                 {formData.target_role === 'teamer' && (
                   <div style={{ padding: 'var(--app-abstand-eng) var(--app-abstand-basis)', color: 'var(--app-text-secondary)', fontSize: 'var(--app-text-sekundaer)' }}>
-                    Aktivitäten fürs Team haben keine Punkte und keinen Typ.
+                    {TEAM_OHNE_PUNKTE}
                   </div>
                 )}
 
@@ -380,7 +196,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   ticks={true} snaps={true}
                       pin={true} pinFormatter={(value: number) => `${value}`}
                       value={formData.points}
-                      onIonChange={(e) => setFormData({ ...formData, points: e.detail.value as number })}
+                      onIonChange={(e) => aendern({ points: e.detail.value as number })}
                       disabled={loading}
                       style={{ flex: 1 }}
                     />
@@ -398,7 +214,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--app-abstand-eng)' }}>
                   <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     className="app-list-item"
-                    onClick={() => !loading && setFormData({ ...formData, type: 'gottesdienst' })}
+                    onClick={() => !loading && aendern({ type: 'gottesdienst' })}
                     style={{
                       cursor: loading ? 'default' : 'pointer',
                       opacity: loading ? 0.6 : 1,
@@ -414,7 +230,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                   </div>
                   <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                     className="app-list-item"
-                    onClick={() => !loading && setFormData({ ...formData, type: 'gemeinde' })}
+                    onClick={() => !loading && aendern({ type: 'gemeinde' })}
                     style={{
                       cursor: loading ? 'default' : 'pointer',
                       opacity: loading ? 0.6 : 1,
@@ -457,16 +273,7 @@ const ActivityManagementModal: React.FC<ActivityManagementModalProps> = ({
                     <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                       key={category.id}
                       className="app-list-item app-list-item--categories"
-                      onClick={() => {
-                        if (!loading) {
-                          setFormData(prev => ({
-                            ...prev,
-                            category_ids: prev.category_ids.includes(category.id)
-                              ? prev.category_ids.filter(id => id !== category.id)
-                              : [...prev.category_ids, category.id]
-                          }));
-                        }
-                      }}
+                      onClick={() => kategorieUmschalten(category.id)}
                       style={{
                         cursor: loading ? 'default' : 'pointer',
                         opacity: loading ? 0.6 : 1,

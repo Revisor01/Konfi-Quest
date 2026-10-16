@@ -3000,7 +3000,7 @@ class PushService {
         data.ausgabe_id = String(ausgabeId);
       }
       return await this.sendToMultipleUsers(db, userIds, {
-        title: istKonfi ? 'Deine Konfi-Zeit Wrapped ist da!' : 'Dein Team-Jahr Wrapped ist da!',
+        title: istKonfi ? 'Dein Konfi-Jahresrückblick ist da!' : 'Dein Team-Jahresrückblick ist da!',
         body: 'Schau dir jetzt deinen persönlichen Jahresrückblick an!',
         data
       });

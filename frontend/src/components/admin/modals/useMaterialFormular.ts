@@ -100,10 +100,16 @@ export interface MaterialFormularOptionen {
    * tritt zur Seite und kommt danach wieder). Ohne Angabe wie bisher.
    */
   betrachter?: BetrachterRueckrufe;
+  /**
+   * „Material angesehen" beim Öffnen der Lese-Ansicht zählen (Vorgabe). Aus
+   * einem Event zählt schon das Laden (teamer/pages/useMaterialAnsicht, wie
+   * in der App: nur nach einer Antwort des Servers); dort steht hier false.
+   */
+  angesehenMelden?: boolean;
 }
 
 export function useMaterialFormular({
-  material, nurLesen = false, onSuccess, fehlerImFenster = false, betrachter,
+  material, nurLesen = false, onSuccess, fehlerImFenster = false, betrachter, angesehenMelden = true,
 }: MaterialFormularOptionen) {
   const { setError, setSuccess, isOnline } = useApp();
   const [presentAlert] = useIonAlert();
@@ -229,8 +235,11 @@ export function useMaterialFormular({
   // Bearbeiten zu oeffnen, zaehlt nicht. Das Fenster oeffnet erst, nachdem
   // AdminMaterialPage GET /material/:id erfolgreich geladen hat; deshalb
   // genuegt hier das Einhaengen, einmal je Oeffnen.
+  // Aus einem Event (WebTerminMaterialDialog) zaehlt das Laden selbst --
+  // ohne einen Stand nur vom Geraet; hier dann nicht noch einmal.
   const angesehenGemeldet = useRef(false);
   useEffect(() => {
+    if (!angesehenMelden) return;
     if (!nurLesen || !material || angesehenGemeldet.current) return;
     angesehenGemeldet.current = true;
     trackHandlung('material-angesehen', {
@@ -239,7 +248,7 @@ export function useMaterialFormular({
         (material.links?.length ?? 0) > 0 || !!material.link_url
       )
     });
-  }, [nurLesen, material]);
+  }, [angesehenMelden, nurLesen, material]);
 
   // Datei: erst gezaehlt, wenn sie wirklich geladen ist (nativ oder im
   // Betrachter -- beide Wege laufen durch dateiOeffnen und melden true).

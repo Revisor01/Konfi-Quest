@@ -198,6 +198,8 @@ describe('Anträge: Aktionen -- dieselben Funktionen wie die App', () => {
     const frage = letzteRueckfrage();
     expect(frage.header).toBe('Aktivität zurücksetzen');
     expect(frage.message).toBe('Genehmigte Aktivität von "Ben Beispiel" zurücksetzen und wieder als offen markieren?');
+    // Folgenreich (nimmt Punkte zurück): die Rückfrage mit Warndreieck (utils/rueckfragenOptik.ts, 15.10.2026).
+    expect(knopfIn(frage, 'Zurücksetzen')?.role).toBe('destructive');
     expect(api.put).not.toHaveBeenCalled();
     await act(async () => { await knopfIn(frage, 'Zurücksetzen')!.handler!(); });
     expect(api.put).toHaveBeenCalledWith('/admin/activities/requests/72/reset');
@@ -302,12 +304,38 @@ describe('Aktivitäten: Tabelle', () => {
     expect(screen.queryByRole('group', { name: 'Aktivitäten nach Art' })).toBe(null);
   });
 
-  it('Neue Aktivität öffnet das Fenster; Tippen auf eine Aktivität ebenso', async () => {
+  // Seit 15.10.2026 öffnet der Browser dafür ein Fenster der Web-Fassung
+  // (WebAktivitaetKatalogDialog; Simon: jedes Formular, das im Browser noch
+  // ein Modal der App öffnet, bekommt eins). Die Abläufe darin prüft
+  // leitung/webAktivitaetKatalogDialog.test.tsx, App und Browser im Vergleich.
+  it('Neue Aktivität öffnet den Dialog der Web-Fassung, nicht das Modal der App; Tippen auf eine Aktivität ebenso', async () => {
     await oeffneReiter('aktivitaeten');
     fireEvent.click(screen.getByRole('button', { name: 'Neue Aktivität anlegen' }));
-    expect(geoeffnet('ActivityManagementModal')).toHaveLength(1);
+    const neu = screen.getByRole('dialog', { name: 'Neue Aktivität' });
+    expect(geoeffnet('ActivityManagementModal')).toHaveLength(0);
+    // Die Liste der Seite steht auf Konfis: Die neue Aktivität gilt ihnen.
+    await waitFor(() => expect(within(neu).getByRole('combobox', { name: 'Zielgruppe' })).toHaveValue('konfi'));
+    fireEvent.click(within(neu).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBe(null);
+
+    api.get.mockImplementation(async (pfad: string) => ({ data: pfad === '/admin/activities' ? AKTIVITAETEN_KONFI : [] }));
     fireEvent.click(screen.getByRole('button', { name: 'Adventsmarkt bearbeiten' }));
-    expect(geoeffnet('ActivityManagementModal')).toHaveLength(2);
+    const bearbeiten = screen.getByRole('dialog', { name: 'Aktivität bearbeiten' });
+    await waitFor(() => expect(within(bearbeiten).getByLabelText('Name')).toHaveValue('Adventsmarkt'));
+    expect(geoeffnet('ActivityManagementModal')).toHaveLength(0);
+  });
+
+  it('nach dem Speichern im Dialog schließt er, und die Liste lädt neu -- wie nach dem Modal der App', async () => {
+    api.get.mockImplementation(async (pfad: string) => ({ data: pfad === '/admin/activities' ? AKTIVITAETEN_KONFI : [] }));
+    await oeffneReiter('aktivitaeten');
+    fireEvent.click(screen.getByRole('button', { name: 'Adventsmarkt bearbeiten' }));
+    const dialog = screen.getByRole('dialog', { name: 'Aktivität bearbeiten' });
+    await waitFor(() => expect(within(dialog).getByLabelText('Name')).toHaveValue('Adventsmarkt'));
+    h.neuGeladen.length = 0;
+    await act(async () => { fireEvent.click(within(dialog).getByRole('button', { name: 'Speichern' })); });
+    expect(api.put).toHaveBeenCalledWith('/admin/activities/4', { name: 'Adventsmarkt', points: 3, type: 'gemeinde', category_ids: [], target_role: 'konfi' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBe(null));
+    expect(h.neuGeladen).toEqual(['admin:activities:1:konfi']);
   });
 
   it('Löschen fragt nach und ruft erst nach "Löschen" DELETE', async () => {
@@ -376,6 +404,15 @@ describe('/admin/activities (die Adresse aus "Mehr")', () => {
     expect(screen.queryByRole('table')).toBe(null);
     expect(screen.queryByRole('navigation', { name: 'Bereiche von Mitmachen' })).toBe(null);
     expect(screen.getAllByTestId('termin')).toHaveLength(3);
+  });
+
+  it('schmal: „Neue Aktivität anlegen" öffnet weiter das Modal der App -- kein Dialog', async () => {
+    h.breit = false;
+    richteEin({ nutzer: 'leitung', pfad: '/admin/activities', daten: DATEN });
+    await oeffne('aktivitaeten');
+    fireEvent.click(screen.getByRole('button', { name: 'Neue Aktivität anlegen' }));
+    expect(geoeffnet('ActivityManagementModal')).toHaveLength(1);
+    expect(screen.queryByRole('dialog')).toBe(null);
   });
 });
 

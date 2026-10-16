@@ -4,9 +4,11 @@
 // aktiven Codes, rechts der QR-Code mit Link und Teilen.
 //
 // Zustand und Aktionen kommen von der Seite (AdminInvitePage): Sie erzeugt den
-// Code, rechnet den QR-Code, verlaengert und loescht mit denselben
-// Rueckfragen wie in der App. Dort ist dieselbe Seite ein Fenster aus "Mehr";
-// diese Fassung gilt fuer die Seite unter /admin/settings/invite.
+// Code, rechnet den QR-Code, verlaengert und loescht wie in der App -- das
+// Loeschen mit derselben Rueckfrage, das Verlaengern seit 15.10.2026 in einem
+// Fenster der Web-Fassung mit denselben Stufen
+// (WebEinladungVerlaengernDialog). Dort ist dieselbe Seite ein Fenster aus
+// "Mehr"; diese Fassung gilt fuer die Seite unter /admin/settings/invite.
 //
 // Die Tabelle der aktiven Codes ist WebListe (10.10.2026): QR-Code und
 // Verlaengern stehen als weitere Knoepfe vor dem Loeschen. Eine Listen-Seite

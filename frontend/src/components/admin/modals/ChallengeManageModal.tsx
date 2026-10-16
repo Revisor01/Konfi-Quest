@@ -1,5 +1,4 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   IonHeader,
   IonToolbar,
@@ -38,90 +37,25 @@ import {
   ICON_SICHTBAR,
   ICON_TERMIN,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
-import type {
-  AdminChallenge,
-  ChallengeAudience,
-  ChallengeVisibility,
-  ChallengeMediaType
-} from '../../../types/challenges';
-import { getChallengeStatus } from '../views/ChallengesManageView';
+import type { AdminChallenge } from '../../../types/challenges';
 import { ICON_CHOICES, getIconFromString } from '../../../utils/badgeIcons';
-import {
-  baueChallengePayload,
-  istChallengeFormularGueltig,
-  audienceFuerFormular,
-  istNurTeam,
-  zeitraumFehler
-} from '../../../utils/challengeForm';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { useZeitgeber } from '../../../hooks/useZeitgeber';
-import { trackHandlung, CHALLENGE_SICHTBARKEIT_MESSWERT } from '../../../services/analytics';
+import {
+  AUDIENCE_OPTIONS,
+  CHALLENGE_GRENZEN,
+  MEDIA_OPTIONS,
+  VISIBILITY_OPTIONS,
+  useChallengeManageFormular,
+} from './useChallengeManageFormular';
 
 // Icon-Auswahl: gemeinsamer Vorrat aus utils/badgeIcons, damit
 // Challenge-Stempel, Abzeichen und Zertifikate dieselbe Bildsprache haben.
 // Rueckfall bleibt die Flagge (frueher lokal in CHALLENGE_ICONS).
 export const getChallengeIcon = (iconName?: string): string => getIconFromString(iconName, ICON_CHALLENGE_GEFUELLT);
 
-// Teilnahme-Kreis (Migration 121). Drei Zielgruppen (Simon, 27.09.2026 --
-// ersetzt den Entscheid vom 09.08.2026, der "nur Konfis" abgeschafft hatte):
-// "Konfis, weil wir damit arbeiten und die Teamer das auch sehen muessen."
-// Wer eine Challenge sieht, regelt die Zielgruppe mit dem Jahrgang:
-// 'nur_team' das ganze Team, sonst Team und Leitung der gewaehlten
-// Jahrgaenge (backend/utils/challengeLeitungSicht.js). Bleibt nach dem Start
-// eingefroren (wie Sichtbarkeit/Freigabe).
-const AUDIENCE_OPTIONS: { value: ChallengeAudience; label: string; hint: string }[] = [
-  {
-    value: 'konfis_und_team',
-    label: 'Jahrgang und Team',
-    hint: 'Die Konfis der gewählten Jahrgänge und ihr im Team — alle reichen gleichberechtigt ein.'
-  },
-  {
-    value: 'konfis',
-    label: 'Nur die Konfis',
-    hint: 'Die Konfis der gewählten Jahrgänge reichen ein. Ihr im Team seht die Beiträge und begleitet die Challenge, reicht aber selbst nichts ein.'
-  },
-  {
-    value: 'nur_team',
-    label: 'Nur das Team',
-    hint: 'Eine Runde für euch im Team. Die Konfis sehen diese Challenge nicht, eine Jahrgangs-Auswahl entfällt.'
-  }
-];
-
-const VISIBILITY_OPTIONS: { value: ChallengeVisibility; label: string; hint: string }[] = [
-  {
-    value: 'public',
-    label: 'Öffentlich',
-    hint: 'Freigegebene Beiträge sind für alle Konfis der zugewiesenen Jahrgänge sichtbar.'
-  },
-  {
-    // Neutral statt "Konfi entscheidet": auch das Team reicht ein und
-    // entscheidet dann selbst (Nutzerentscheid 24.08.2026).
-    value: 'konfi_choice',
-    label: 'Selbst entscheiden',
-    hint: 'Wer einreicht, wählt selbst: nur für die Leitung, mit Namen oder anonym.'
-  },
-  {
-    value: 'private',
-    label: 'Nur Leitung',
-    hint: 'Beiträge sehen nur die Leitung und der Konfi selbst — es gibt keine Galerie.'
-  }
-];
-
-const MEDIA_OPTIONS: { value: ChallengeMediaType; label: string; hint: string }[] = [
-  { value: 'text', label: 'Text', hint: 'Geschriebene Beiträge' },
-  { value: 'photo', label: 'Foto', hint: 'Aufnahme oder Bild aus der Galerie' },
-  { value: 'audio', label: 'Audio', hint: 'Sprachaufnahme oder Musikdatei (Upload)' },
-  { value: 'video', label: 'Video', hint: 'Videodatei (Upload)' },
-  { value: 'link', label: 'Link', hint: 'Verweis auf eine Seite, ein Lied oder ein Video' }
-];
-
-interface Jahrgang {
-  id: number;
-  name: string;
-}
+// Das Formular der App. Laden, Vorbelegung, Sperren nach dem Start, Prüfung
+// und Speichern stehen im Hook useChallengeManageFormular, den auch der
+// Dialog der Web-Fassung (shared/web/challenges/WebChallengeDialog) liest.
 
 interface ChallengeManageModalProps {
   challenge?: AdminChallenge | null;
@@ -130,199 +64,29 @@ interface ChallengeManageModalProps {
   onDirtyChange?: (dirty: boolean) => void;
 }
 
-// Lokale Zeit im Format, das IonDatetime erwartet (ohne Zeitzonen-Versatz).
-const toIonDatetimeISO = (date: Date) => {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00`;
-};
-
 const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
   challenge,
   onClose,
   onSuccess,
   onDirtyChange
 }) => {
-  const { setError } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
-  const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [isDirty, setIsDirty] = useState(false);
-  const initializedRef = useRef(false);
-  const zeitgeber = useZeitgeber();
-
-  const isEditMode = !!challenge;
-  // Nach dem Start sind visibility/moderated/starts_at/allowed_media gesperrt —
-  // das Backend antwortet dort mit 409. Entwuerfe und noch nicht gestartete
-  // (geplante) Challenges bleiben vollstaendig editierbar.
-  // Das Backend liefert `locked` bereits mit — dessen Urteil hat Vorrang, die
-  // lokale Ableitung ist nur der Fallback (z.B. bei Offline-Cache ohne Feld).
-  const challengeStatus = challenge ? getChallengeStatus(challenge) : null;
-  const isStarted = typeof challenge?.locked === 'boolean'
-    ? challenge.locked
-    : (challengeStatus === 'active' || challengeStatus === 'ended');
-
-  const [jahrgaenge, setJahrgaenge] = useState<Jahrgang[]>([]);
-
-  // Bewusst OHNE challenge_type: die Typen (Wahrnehmung/Beitrag/Praxis) hatten
-  // nie einen funktionalen Effekt und sind aus dem Formular gestrichen
-  // (User-Entscheid 07.08.). Die Spalte bleibt im Backend bestehen.
-  const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    // Standard: das Team ist immer dabei (User-Entscheid 09.08.).
-    audience: 'konfis_und_team' as ChallengeAudience,
-    visibility: 'konfi_choice' as ChallengeVisibility,
-    moderated: true,
-    allowed_media: ['text', 'photo'] as ChallengeMediaType[],
-    allow_multiple: true,
-    badge_icon: 'flag',
-    badge_name: '',
-    // Urheber ist ein OPTIONALES Freitextfeld (User-Entscheid 06.08.) — die
-    // fruehere User-Auswahl war zu lang/komplex fuers Modal. author_user_id
-    // wird beim Speichern immer auf null gesetzt, der Name lebt im Freitext.
-    author_freetext: '',
-    jahrgang_ids: [] as number[],
-    starts_at: '',
-    ends_at: '',
-    is_draft: false
-  });
-
-  useEffect(() => {
-    if (initializedRef.current) setIsDirty(true);
-  }, [formData]);
-
-  useEffect(() => { onDirtyChange?.(isDirty); }, [isDirty, onDirtyChange]);
-
-  useEffect(() => {
-    const init = async () => {
-      setInitialLoading(true);
-      await loadInitialData();
-      if (challenge) {
-        setFormData({
-          title: challenge.title || '',
-          description: challenge.description || '',
-          audience: audienceFuerFormular(challenge.audience),
-          visibility: (challenge.visibility as ChallengeVisibility) || 'konfi_choice',
-          moderated: challenge.moderated !== false,
-          allowed_media: (challenge.allowed_media as ChallengeMediaType[]) || ['text', 'photo'],
-          allow_multiple: challenge.allow_multiple !== false,
-          badge_icon: challenge.badge_icon || 'flag',
-          badge_name: challenge.badge_name || '',
-          // Bestehende User-Urheber flieszen als aufgeloester Name (author_name)
-          // in den Freitext ein — es geht beim Umstieg nichts verloren.
-          author_freetext: challenge.author_freetext || challenge.author_name || '',
-          jahrgang_ids: (challenge.jahrgaenge || []).map((j) => j.id),
-          starts_at: challenge.starts_at ? toIonDatetimeISO(new Date(challenge.starts_at)) : '',
-          ends_at: challenge.ends_at ? toIonDatetimeISO(new Date(challenge.ends_at)) : '',
-          is_draft: challenge.is_draft === true
-        });
-      } else {
-        // Neue Challenge: Start morgen, Ende in zwei Wochen — bewusst runde Zeiten.
-        const start = new Date();
-        start.setDate(start.getDate() + 1);
-        start.setHours(9, 0, 0, 0);
-        const end = new Date(start);
-        end.setDate(end.getDate() + 14);
-        end.setHours(20, 0, 0, 0);
-        setFormData((prev) => ({
-          ...prev,
-          starts_at: toIonDatetimeISO(start),
-          ends_at: toIonDatetimeISO(end)
-        }));
-      }
-      setInitialLoading(false);
-      zeitgeber.nach(100, () => { initializedRef.current = true; });
-    };
-    init();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [challenge?.id]);
-
-  const loadInitialData = async () => {
-    try {
-      const jahrgaengeRes = await api.get('/admin/jahrgaenge').catch(() => ({ data: [] }));
-      setJahrgaenge(Array.isArray(jahrgaengeRes.data) ? jahrgaengeRes.data : []);
-    } catch (err) {
-      console.error('Fehler beim Laden der Challenge-Stammdaten:', err);
-    }
-  };
-
-  const toggleMedia = (value: ChallengeMediaType) => {
-    if (isStarted || loading) return;
-    setFormData((prev) => ({
-      ...prev,
-      allowed_media: prev.allowed_media.includes(value)
-        ? prev.allowed_media.filter((m) => m !== value)
-        : [...prev.allowed_media, value]
-    }));
-  };
-
-  const toggleJahrgang = (id: number) => {
-    if (loading) return;
-    setFormData((prev) => ({
-      ...prev,
-      jahrgang_ids: prev.jahrgang_ids.includes(id)
-        ? prev.jahrgang_ids.filter((j) => j !== id)
-        : [...prev.jahrgang_ids, id]
-    }));
-  };
-
-  // Pflichtfelder, Zeitraum-Regel und Payload liegen als pure Funktionen in
-  // utils/challengeForm (testbar ohne Ionic). Wichtig seit 24.08.2026:
-  // Bei Entwürfen ist der Zeitraum KEINE Pflicht mehr.
-  const isTeamOnly = istNurTeam(formData);
-  const isFormValid = istChallengeFormularGueltig(formData);
-
-  const handleSave = async () => {
-    if (!isFormValid) {
-      // Der Zeitraum ist nur außerhalb des Entwurfs Pflicht.
-      const felder = ['Titel', 'Beschreibung', 'Stempel-Name', 'Medienarten'];
-      if (!isTeamOnly) felder.push('Jahrgänge');
-      if (!formData.is_draft) felder.push('den Zeitraum');
-      setError(`Bitte fülle ${felder.slice(0, -1).join(', ')} und ${felder[felder.length - 1]} aus.`);
-      return;
-    }
-    const zeitFehler = zeitraumFehler(formData);
-    if (zeitFehler) {
-      setError(zeitFehler);
-      return;
-    }
-
-    // guard() wirft bei Doppel-Tap ('Aktion läuft bereits'). Ungefangen
-    // bliebe loading auf true hängen — dann liess sich das Modal nur
-    // noch per Swipe schliessen (User-Hinweis 12.08.).
-    try {
-      await guard(async () => {
-      setLoading(true);
-      try {
-        const payload = baueChallengePayload(formData, isStarted);
-        if (isEditMode && challenge) {
-          await api.put(`/challenges/admin/${challenge.id}`, payload);
-        } else {
-          await api.post('/challenges/admin', payload);
-          // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
-          // S6): welche Formen Gemeinden nutzen. Kein Titel, kein Jahrgang.
-          trackHandlung('challenge-angelegt', {
-            sichtbarkeit: CHALLENGE_SICHTBARKEIT_MESSWERT[formData.visibility],
-            freigabe: formData.moderated ? 'true' : 'false'
-          });
-        }
-        setIsDirty(false);
-        // Dirty-Stand SYNCHRON melden, bevor onSuccess() über canDismiss schließt
-        // (sonst blockiert canDismiss das Schliessen -> doppeltes Anlegen).
-        onDirtyChange?.(false);
-        onSuccess();
-      } catch (err) {
-        // 409 = nach Start gesperrtes Feld geändert (Backend erzwingt Konsens-Integritaet)
-        setError(fehlerText(err, 'Fehler beim Speichern der Challenge'));
-      } finally {
-        setLoading(false);
-      }
-      });
-    } catch {
-      // Zweiter Aufruf verworfen — Ladezustand sicher zuruecknehmen.
-      setLoading(false);
-    }
-  };
+  const {
+    formData,
+    setFormData,
+    jahrgaenge,
+    loading,
+    isSubmitting,
+    initialLoading,
+    isEditMode,
+    isStarted,
+    isTeamOnly,
+    isFormValid,
+    waehleZielgruppe,
+    waehleSichtbarkeit,
+    toggleMedia,
+    toggleJahrgang,
+    handleSave,
+  } = useChallengeManageFormular({ challenge, onSuccess, onDirtyChange });
 
   const selectedIconMeta = ICON_CHOICES[formData.badge_icon];
 
@@ -351,6 +115,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
           </IonButtons>
           <IonButtons slot="end">
             <IonButton
+              aria-label={isEditMode ? 'Speichern' : 'Challenge anlegen'}
               onClick={() => handleSave()}
               disabled={loading || isSubmitting || !isFormValid}
               className="app-modal-submit-btn app-modal-submit-btn--challenges"
@@ -387,7 +152,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         placeholder="Worum geht es?"
                         clearInput={true}
                         disabled={loading}
-                        maxlength={200}
+                        maxlength={CHALLENGE_GRENZEN.titel}
                       />
                     </IonItem>
 
@@ -410,7 +175,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         placeholder="z.B. Pastor Simon, Konfi-Team Hennstedt"
                         clearInput={true}
                         disabled={loading}
-                        maxlength={200}
+                        maxlength={CHALLENGE_GRENZEN.urheber}
                       />
                     </IonItem>
                   </IonList>
@@ -436,7 +201,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.audience === option.value}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${formData.audience === option.value ? ' app-list-item--selected' : ''}`}
-                        onClick={() => !loading && !isStarted && setFormData({ ...formData, audience: option.value })}
+                        onClick={() => waehleZielgruppe(option.value)}
                         style={{
                           cursor: loading || isStarted ? 'default' : 'pointer',
                           opacity: isStarted && formData.audience !== option.value ? 0.4 : loading ? 0.6 : 1,
@@ -523,7 +288,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                       <div role="button" tabIndex={0} onKeyDown={tastaturKlick} aria-pressed={formData.visibility === option.value}
                         key={option.value}
                         className={`app-list-item app-list-item--challenges${formData.visibility === option.value ? ' app-list-item--selected' : ''}`}
-                        onClick={() => !loading && !isStarted && setFormData({ ...formData, visibility: option.value })}
+                        onClick={() => waehleSichtbarkeit(option.value)}
                         style={{
                           cursor: loading || isStarted ? 'default' : 'pointer',
                           opacity: isStarted && formData.visibility !== option.value ? 0.4 : loading ? 0.6 : 1,
@@ -599,7 +364,7 @@ const ChallengeManageModal: React.FC<ChallengeManageModalProps> = ({
                         placeholder="z.B. Hingeschaut"
                         clearInput={true}
                         disabled={loading}
-                        maxlength={100}
+                        maxlength={CHALLENGE_GRENZEN.stempelName}
                       />
                     </IonItem>
                   </IonList>

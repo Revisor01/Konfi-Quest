@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { Capacitor } from '@capacitor/core';
 import { dateien, Filesystem } from '../medienAttrappen';
 import type { Message } from '../../types/chat';
 
@@ -28,10 +29,15 @@ vi.mock('../../services/api', () => ({ default: { get: vi.fn() }, DATEI_TIMEOUT_
 const { nachrichtTeilen } = await import('../../components/chat/chatTeilen');
 
 describe('Chat: Datei teilen', () => {
+  // Der Weg der App (iPhone, Android). Im Browser gibt es diesen Cache nicht;
+  // dort geht die Datei selbst an das Teilen-Fenster (chatTeilenImBrowser.test.ts).
+  let nativ: ReturnType<typeof vi.spyOn>;
   beforeEach(() => {
     dateien.clear();
     vi.clearAllMocks();
+    nativ = vi.spyOn(Capacitor, 'isNativePlatform').mockReturnValue(true);
   });
+  afterEach(() => { nativ.mockRestore(); });
 
   it('schreibt in den Cache und teilt von dort — nie nach Documents', async () => {
     const nachricht = { id: 7, file_path: 'ab12', file_name: 'foto.jpg', content: '' } as unknown as Message;

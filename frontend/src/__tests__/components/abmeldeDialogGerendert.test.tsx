@@ -83,11 +83,18 @@ describe('Abmelden von einem Termin', () => {
     expect(onUnregister).not.toHaveBeenCalled();
   });
 
-  it('offline: gesperrt, mit Hinweis', () => {
+  // Abmelden braucht kein Netz (30.08.2026): Die Seite reiht die Abmeldung in
+  // die Warteschlange ein; das Fenster davor darf sie nicht sperren.
+  it('offline: nicht gesperrt, die Abmeldung geht an die Seite (die reiht ein)', () => {
     zustand.online = false;
-    render(<UnregisterModal eventName="Gemeindefest" onUnregister={vi.fn()} dismiss={vi.fn()} />);
+    const onUnregister = vi.fn();
+    const dismiss = vi.fn();
+    render(<UnregisterModal eventName="Gemeindefest" onUnregister={onUnregister} dismiss={dismiss} />);
     grund('Urlaub');
-    expect(bestaetigen()).toBeDisabled();
-    expect(bestaetigen().textContent).toBe(' Du bist offline');
+    expect(bestaetigen()).toBeEnabled();
+    expect(screen.queryByText(/Du bist offline/)).toBe(null);
+    fireEvent.click(bestaetigen());
+    expect(onUnregister).toHaveBeenCalledWith('Urlaub');
+    expect(dismiss).toHaveBeenCalledWith('Urlaub', 'confirm');
   });
 });

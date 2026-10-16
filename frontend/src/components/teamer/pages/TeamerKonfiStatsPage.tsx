@@ -53,6 +53,7 @@ import WebSeite from '../../web/WebSeite';
 import WebKnopf from '../../web/WebKnopf';
 import { WebLaden, WebLeer } from '../../web/WebZustaende';
 import WebKonfiHistorie from '../web/WebKonfiHistorie';
+import { zeigePunkteVerlauf } from '../../konfi/web/punkteVerlaufAnker';
 
 interface KonfiBadge {
   badge_id: number;
@@ -175,7 +176,10 @@ const TeamerKonfiStatsPage: React.FC = () => {
         titel="Konfi-Historie"
         untertitel={konfiData ? (konfiData.jahrgang_name ? `Jahrgang ${konfiData.jahrgang_name}` : 'Konfi-Zeit') : undefined}
         zurueck={{ href: '/teamer/profile', text: 'Profil' }}
-        aktionen={konfiData ? <WebKnopf onClick={() => presentPointsModal({ presentingElement: presentingElement || undefined })}>Punkte-Übersicht</WebKnopf> : undefined}
+        // Im Browser springt die Punkte-Übersicht zur Tabelle „Punkte-Verlauf"
+        // auf dieser Seite statt ein Modal zu öffnen -- dieselben Einträge
+        // stehen dort schon (Simon, 15.10.2026).
+        aktionen={konfiData ? <WebKnopf onClick={zeigePunkteVerlauf}>Punkte-Übersicht</WebKnopf> : undefined}
         pageRef={pageRef}
       >
         {loading && <WebLaden kacheln={4} karten={2} text="Die Konfi-Historie wird geladen." />}
@@ -266,7 +270,7 @@ const TeamerKonfiStatsPage: React.FC = () => {
                       </div>
                       <div className="app-list-item__content">
                         <div className="app-list-item__title">
-                          Dein Konfi-Wrapped {konfiWrapped.year}
+                          Dein Konfi-Jahresrückblick {konfiWrapped.year}
                         </div>
                         <div className="app-list-item__meta">
                           <span className="app-list-item__meta-item">

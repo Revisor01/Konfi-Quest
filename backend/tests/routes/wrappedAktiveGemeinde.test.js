@@ -106,7 +106,7 @@ describe('Rueckblick der aktiven Gemeinde', () => {
       );
 
       expect(res.status).toBe(404);
-      expect(res.body.error).toBe('Kein Wrapped-Snapshot vorhanden');
+      expect(res.body.error).toBe('Kein Jahresrückblick vorhanden');
     });
   });
 

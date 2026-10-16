@@ -25,6 +25,9 @@ const challengeDateien: Array<[string, string]> = [
   ['Konfi-Ansicht', 'src/components/konfi/views/ChallengesView.tsx'],
   ['Leitungs-Ansicht', 'src/components/admin/views/ChallengesManageView.tsx'],
   ['Challenge anlegen', 'src/components/admin/modals/ChallengeManageModal.tsx'],
+  // Seit 15.10.2026: die Logik dazu und das Fenster im Browser.
+  ['Challenge anlegen (Logik)', 'src/components/admin/modals/useChallengeManageFormular.ts'],
+  ['Challenge anlegen (Browser)', 'src/components/shared/web/challenges/WebChallengeDialog.tsx'],
 ];
 
 describe('Challenge-Stempel: das alte Wort ist weg', () => {

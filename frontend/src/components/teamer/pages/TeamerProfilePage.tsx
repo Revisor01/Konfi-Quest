@@ -47,6 +47,9 @@ import ChangePasswordModal from '../../shared/ChangePasswordModal';
 import { useNeueEmailUebernehmen } from '../../shared/useEmailAendern';
 import WebEmailAendern from '../../shared/web/konto/WebEmailAendern';
 import WebPasswortAendern from '../../shared/web/konto/WebPasswortAendern';
+import WebFunktionDialog from '../../shared/web/konto/WebFunktionDialog';
+import WebBibelUebersetzungDialog from '../../shared/web/konto/WebBibelUebersetzungDialog';
+import WebKontoLoeschenDialog from '../../shared/web/konto/WebKontoLoeschenDialog';
 import AppSperreSchalter from '../../shared/AppSperreSchalter';
 import EinladungenKarte from '../../shared/EinladungenKarte';
 import PushAuswahlEintrag from '../../shared/PushAuswahl';
@@ -176,9 +179,11 @@ const TeamerProfilePage: React.FC = () => {
   // Nach einer neuen Adresse: Profil neu laden, dann die Adresse in den
   // Context und den TokenStore (App-Modal und Web-Dialog gleich).
   const emailUebernehmen = useNeueEmailUebernehmen(refresh);
-  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail und Passwort einen
-  // eigenen Dialog statt des App-Modals.
-  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | null>(null);
+  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail, Passwort,
+  // Funktionsbeschreibung, Bibeluebersetzung und Konto loeschen einen eigenen
+  // Dialog statt des App-Modals (Simon, 11.10. und 15.10.2026) -- mit
+  // derselben Logik und denselben Aufrufen.
+  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | 'funktion' | 'uebersetzung' | 'loeschen' | null>(null);
 
   // Modals
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
@@ -267,7 +272,7 @@ const TeamerProfilePage: React.FC = () => {
   const handleLogout = () => {
     presentAlert({
       header: 'Abmelden',
-      message: 'Willst du dich wirklich abmelden?',
+      message: 'Möchtest du dich wirklich abmelden?',
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
@@ -284,8 +289,6 @@ const TeamerProfilePage: React.FC = () => {
 
   // Web-Fassung: dieselben Handgriffe (Modale, Abmelden, Rückblicke), anders gezeigt.
   if (breit) {
-    const seite = () => pageRef.current ?? null;
-    const ueber = () => pageRef.current ?? undefined;
     return (
       <WebSeite bereich="Profil" titel="Mein Profil" untertitel="Konto und Einstellungen" pageRef={pageRef}>
         {loading && <WebLaden kacheln={3} karten={2} text="Das Profil wird geladen." />}
@@ -301,16 +304,15 @@ const TeamerProfilePage: React.FC = () => {
             uebersetzung={getTranslationName(selectedTranslation)}
             cacheLabel={cacheLabel}
             rueckblicke={wrappedHistory}
-            presentingElement={seite}
             onRueckblick={setWrappedModalData}
-            onFunktion={() => presentRoleTitleModal({ presentingElement: ueber() })}
+            onFunktion={() => setWebDialog('funktion')}
             onEmail={() => setWebDialog('email')}
             onPasswort={() => setWebDialog('passwort')}
-            onUebersetzung={() => presentBibleModal({ presentingElement: ueber() })}
+            onUebersetzung={() => setWebDialog('uebersetzung')}
             onTour={() => setShowOnboarding(true)}
             onCache={handleClearMediaCache}
             onAbmelden={handleLogout}
-            onLoeschen={() => presentDeleteAccount({ presentingElement: ueber() })}
+            onLoeschen={() => setWebDialog('loeschen')}
             onNeuerungen={() => setShowUpdateWalkthrough(true)}
             onMitmachen={() => setShowMitmachenErklaerung(true)}
           />
@@ -333,6 +335,21 @@ const TeamerProfilePage: React.FC = () => {
         {webDialog === 'passwort' && (
           <WebPasswortAendern onSchliessen={() => setWebDialog(null)} onGespeichert={() => setWebDialog(null)} />
         )}
+        {webDialog === 'funktion' && (
+          <WebFunktionDialog
+            initialRoleTitle={profile?.user.role_title || ''}
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); void refresh(); }}
+          />
+        )}
+        {webDialog === 'uebersetzung' && (
+          <WebBibelUebersetzungDialog
+            currentTranslation={selectedTranslation}
+            onSelect={(code) => { void handleTranslationChange(code); setWebDialog(null); }}
+            onSchliessen={() => setWebDialog(null)}
+          />
+        )}
+        {webDialog === 'loeschen' && <WebKontoLoeschenDialog onSchliessen={() => setWebDialog(null)} />}
       </WebSeite>
     );
   }
@@ -670,10 +687,12 @@ const TeamerProfilePage: React.FC = () => {
           <IonCard className="app-card">
             <IonCardContent>
               {/* Abzeichen (Simon, 04.09.2026): Aus der Tab-Leiste ins
-                  Profil geholt -- unter "Inhalt" steht danach nur noch das. */}
+                  Profil geholt -- unter "Inhalt" steht danach nur noch das.
+                  Unter dem Profil wie im Browser (/teamer/profile/badges),
+                  nicht auf der alten Adresse /teamer/badges (15.10.2026). */}
               <div role="button" tabIndex={0} onKeyDown={tastaturKlick}
                 className="app-list-item app-list-item--badges"
-                onClick={() => router.push('/teamer/badges')}
+                onClick={() => router.push('/teamer/profile/badges')}
               >
                 <div className="app-list-item__row">
                   <div className="app-list-item__main">
@@ -745,7 +764,7 @@ const TeamerProfilePage: React.FC = () => {
             onClick={() => presentDeleteAccount({ presentingElement: pageRef.current ?? undefined })}
           >
             <IonIcon icon={ICON_LOESCHEN} slot="start" />
-            Account löschen
+            Konto löschen
           </IonButton>
         </div>
 

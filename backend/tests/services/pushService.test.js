@@ -807,7 +807,7 @@ describe('PushService: organization_id in jedem Payload', () => {
       await PushService.sendWrappedReleased(db, [USERS.konfi1.id], 'konfi', ORGS.testGemeinde.id);
 
       const [push] = gesendete();
-      expect(push.title).toBe('Deine Konfi-Zeit Wrapped ist da!');
+      expect(push.title).toBe('Dein Konfi-Jahresrückblick ist da!');
       expect(push.data.type).toBe('wrapped');
       expect(push.data.wrappedType).toBe('konfi');
       expect(push.data.organization_id).toBe('1');
@@ -817,7 +817,7 @@ describe('PushService: organization_id in jedem Payload', () => {
       await PushService.sendWrappedReleased(db, [USERS.teamer1.id], 'teamer', ORGS.testGemeinde.id);
 
       const [push] = gesendete();
-      expect(push.title).toBe('Dein Team-Jahr Wrapped ist da!');
+      expect(push.title).toBe('Dein Team-Jahresrückblick ist da!');
       expect(push.data.type).toBe('wrapped');
       expect(push.data.wrappedType).toBe('teamer');
       expect(push.data.organization_id).toBe('1');

@@ -149,6 +149,17 @@ describe('Konfi-Historie haengt an den Daten, nicht am Jahrgangsnamen', () => {
     expect(screen.getAllByText('Konfi-Historie')).toHaveLength(1);
   });
 
+  // Der Eintrag „Badges" unter „Inhalt" fuehrte auf die alte Adresse
+  // /teamer/badges -- dort ist im Browser kein Eintrag der Leiste markiert, und
+  // der Weg zurueck geht nicht ins Profil (Befund 15.10.2026). Er fuehrt jetzt
+  // wie das Profil im Browser auf /teamer/profile/badges.
+  it('„Badges" im Profil fuehrt auf /teamer/profile/badges', () => {
+    render(<TeamerProfilePage />);
+    fireEvent.click(screen.getByText('Badges'));
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith('/teamer/profile/badges');
+  });
+
   it('reine Teamer:innen ohne Konfi-Vergangenheit (konfi_data null) sehen ihn nicht', () => {
     // Fuer sie fuehrte der Einstieg ins Leere.
     render(<TeamerProfilePage />);

@@ -2220,7 +2220,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       );
 
       if (rows.length === 0) {
-        return res.status(404).json({ error: 'Kein Wrapped-Snapshot vorhanden' });
+        return res.status(404).json({ error: 'Kein Jahresrückblick vorhanden' });
       }
 
       // Freigabe-Gate: Konfi-Wrapped gibt es erst, wenn der Jahrgang
@@ -2242,7 +2242,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
           [req.user.id]
         );
         if (!gate || !gate.released) {
-          return res.status(403).json({ error: 'Wrapped ist noch nicht freigegeben' });
+          return res.status(403).json({ error: 'Der Jahresrückblick ist noch nicht freigegeben' });
         }
       }
 
@@ -2259,7 +2259,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       });
     } catch (err) {
       console.error('Error loading wrapped snapshot:', err);
-      res.status(500).json({ error: 'Fehler beim Laden des Wrapped-Snapshots' });
+      res.status(500).json({ error: 'Fehler beim Laden des Jahresrückblicks' });
     }
   });
 
@@ -2484,7 +2484,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
 
         res.json({
-          message: `Wrapped f\u00fcr ${generated} Konfis generiert`,
+          message: `Jahresrückblick für ${generated} Konfis erstellt`,
           generated,
           errors,
           jahrgang: jahrgang.name,
@@ -2499,7 +2499,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
         console.error('Error generating konfi wrapped:', err);
-        res.status(500).json({ error: 'Fehler beim Generieren der Konfi-Wrapped-Snapshots' });
+        res.status(500).json({ error: 'Fehler beim Erstellen der Jahresrückblicke der Konfis' });
       } finally {
         client.release();
       }
@@ -2677,7 +2677,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         if (teamers.length > 0 && generated === 0) {
           await client.query('ROLLBACK').catch(() => {});
           console.error(`Teamer-Wrapped ${jahr}: kein einziger Snapshot erzeugt (${errors} Fehler), Ausgabe zurückgenommen`);
-          return res.status(500).json({ error: 'Fehler beim Generieren der Teamer-Wrapped-Snapshots' });
+          return res.status(500).json({ error: 'Fehler beim Erstellen der Jahresrückblicke des Teams' });
         }
 
         await client.query('COMMIT');
@@ -2691,7 +2691,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         }
 
         res.json({
-          message: `Wrapped f\u00fcr ${generated} Personen im Team generiert`,
+          message: `Jahresrückblick für ${generated} Personen im Team erstellt`,
           generated,
           errors,
           year: jahr,
@@ -2703,7 +2703,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
         console.error('Error generating teamer wrapped:', err);
-        res.status(500).json({ error: 'Fehler beim Generieren der Teamer-Wrapped-Snapshots' });
+        res.status(500).json({ error: 'Fehler beim Erstellen der Jahresrückblicke des Teams' });
       } finally {
         client.release();
       }
@@ -3118,14 +3118,14 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
 
         await client.query('COMMIT');
         res.json({
-          message: `${rowCount} Wrapped-Snapshots gel\u00f6scht`,
+          message: `Jahresrückblicke gelöscht: ${rowCount}`,
           deleted: rowCount,
           ausgaben_geloescht: ausgabenGeloescht,
         });
       } catch (err) {
         try { await client.query('ROLLBACK'); } catch { /* ignore */ }
         console.error('Error deleting teamer wrapped snapshots:', err);
-        res.status(500).json({ error: 'Fehler beim L\u00f6schen der Wrapped-Snapshots' });
+        res.status(500).json({ error: 'Fehler beim Löschen der Jahresrückblicke' });
       } finally {
         client.release();
       }
@@ -3171,11 +3171,11 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         );
 
         await client.query('COMMIT');
-        res.json({ message: `${rowCount} Wrapped-Snapshots gel\u00f6scht`, deleted: rowCount });
+        res.json({ message: `Jahresrückblicke gelöscht: ${rowCount}`, deleted: rowCount });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => {});
         console.error('Error deleting wrapped snapshots:', err);
-        res.status(500).json({ error: 'Fehler beim L\u00f6schen der Wrapped-Snapshots' });
+        res.status(500).json({ error: 'Fehler beim Löschen der Jahresrückblicke' });
       } finally {
         client.release();
       }
@@ -3284,7 +3284,7 @@ module.exports = (db, rbacVerifier, roleHelpers) => {
         res.json(rows);
       } catch (err) {
         console.error('Error loading wrapped history:', err);
-        res.status(500).json({ error: 'Fehler beim Laden der Wrapped-Historie' });
+        res.status(500).json({ error: 'Fehler beim Laden der Jahresrückblicke' });
       }
     }
   );

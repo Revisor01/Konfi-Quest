@@ -99,11 +99,14 @@ import { linkOeffnen } from '../../../services/systemDialoge';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebMitmachenMitglied from '../../shared/web/termine/WebMitmachenMitglied';
 import WebAktivitaetMeldenDialog from '../../shared/web/termine/WebAktivitaetMeldenDialog';
+import WebAbsageDialog from '../../shared/web/termine/WebAbsageDialog';
 import { mitgliedSegmentAusAdresse, type EigenerAntragFilter, type TeamEventFilter } from '../../shared/web/termine/terminFilter';
 import { inFassung, leerVon, wahlVon } from '../../../seiten/beschreibung';
 import { EIGENE_ANTRAEGE_START, MITGLIED_BEREICHE, TEAM_EVENTS, TEAM_EVENTS_LEER_TITEL } from '../../../seiten/mitmachenMitglied';
 import WebTeamEvents from '../web/termine/WebTeamEvents';
 import WebTeamTerminDetail from '../web/termine/WebTeamTerminDetail';
+import WebQrDialog from '../../shared/web/termine/WebQrDialog';
+import WebTerminMaterialDialog from '../../shared/web/termine/WebTerminMaterialDialog';
 
 // Einmaliger Hinweis nach dem Tab-Umbau: die Aktivitäten/Anträge sind aus
 // ihrem eigenen Tab in dieses Segment gewandert (analog zu Admin/Konfi).
@@ -146,6 +149,12 @@ const TeamerEventsPage: React.FC = () => {
    * Grund und den Weg hinaus -- siehe Effekt unten und renderJahrgangHinweis.
    */
   const [jahrgangHinweis, setJahrgangHinweis] = useState(false);
+  /**
+   * Fuer WELCHES Event das Absage-Fenster der Web-Fassung offen ist (siehe
+   * oeffneAbsage). Der Effekt unten vergisst es, sobald die Adresse ein
+   * Event (neu) oeffnet.
+   */
+  const [webAbsageFuer, setWebAbsageFuer] = useState<number | null>(null);
   const [eventMaterials, setEventMaterials] = useState<EventMaterial[]>([]);
   const [eventTimeslots, setEventTimeslots] = useState<Array<{ id: number; start_time: string; end_time: string; max_participants: number; registered_count: number; waitlist_count?: number }>>([]);
   /** Teilnehmerliste aus GET /events/:id -- nur zum Lesen, siehe Effekt unten. */
@@ -223,6 +232,11 @@ const TeamerEventsPage: React.FC = () => {
   // (Simon, 11.10.2026: „Web braucht eigene kompaktere Modale überall"); Logik
   // und Folgen sind dieselben wie im Modal der App (useAktivitaetMelden).
   const [meldenOffen, setMeldenOffen] = useState(false);
+  // Im breiten Layout öffnen QR-Code und Material eines Events ein Fenster der
+  // Web-Fassung (Simon, 15.10.2026) statt der Modale der App.
+  // Mit dem Event, zu dem es gehoert: Wechselt die Adresse (etwa „Zurück"
+  // im Browser), steht es beim naechsten Event nicht wieder da.
+  const [webFenster, setWebFenster] = useState<{ art: 'qr' | 'material'; eventId: number; id?: number } | null>(null);
 
   const handleAddRequest = () => {
     presentRequestModal({
@@ -460,6 +474,12 @@ const TeamerEventsPage: React.FC = () => {
       return;
     }
     if (loading || !events || queryEventId === handledEventId) return;
+    // Ein offenes Absage-Fenster gehoert zum Event, bei dem es geoeffnet
+    // wurde. Jedes Oeffnen ueber die Adresse -- ein anderes Event oder nach
+    // Zurueck zur Liste DASSELBE wieder -- laeuft hier durch und vergisst es.
+    // Sonst ging es von selbst wieder auf, mit leerem Grund (Befund der
+    // Durchsicht, 15.10.2026).
+    setWebAbsageFuer(null);
     const eventToSelect = events.find(e => e.id === parseInt(queryEventId, 10));
     if (eventToSelect) {
       setSelectedEvent(eventToSelect);
@@ -591,7 +611,11 @@ const TeamerEventsPage: React.FC = () => {
   // TeamerAbsageModal (oeffneAbsage unten); durchgesetzt wird die Regel im
   // Backend, das ohne Grund mit error_code 'grund_erforderlich' ablehnt —
   // dieser Handler zeigt dann die Server-Meldung an.
-  const handleZusage = async (event: Event, dabei: boolean, reason?: string) => {
+  //
+  // `melden`: wohin eine Ablehnung geht -- in der App oben (setError), im
+  // Absage-Fenster des Browsers in das Fenster. Das Ergebnis sagt dem
+  // Fenster, ob es schliessen darf (angekommen oder eingereiht).
+  const handleZusage = async (event: Event, dabei: boolean, reason?: string, melden: (text: string) => void = setError): Promise<boolean> => {
     setBookingLoading(true);
     const body = reason && reason.trim() ? { dabei, reason: reason.trim() } : { dabei };
     try {
@@ -646,8 +670,10 @@ const TeamerEventsPage: React.FC = () => {
         }
       }
       refreshLive();
+      return true;
     } catch (err) {
-      setError(fehlerText(err, 'Fehler beim Speichern'));
+      melden(fehlerText(err, 'Fehler beim Speichern'));
+      return false;
     } finally {
       setBookingLoading(false);
     }
@@ -665,7 +691,17 @@ const TeamerEventsPage: React.FC = () => {
     dismiss: (data?: string, role?: string) => dismissAbsageModal(data, role)
   });
 
+  // Im Browser ab 992 px ein Fenster statt des Modals (Simon, 15.10.2026) --
+  // dieselben Regeln (shared/useAbsageFormular.ts), dieselbe Funktion.
+  // Gemerkt wird, fuer WELCHES Event es offen ist (webAbsageFuer, oben):
+  // Fuehrt die Zurueck-Taste des Browsers weg, geht es weder beim naechsten
+  // noch beim selben Event von selbst wieder auf.
+
   const oeffneAbsage = () => {
+    if (breit) {
+      setWebAbsageFuer(selectedEvent?.id ?? null);
+      return;
+    }
     presentAbsageModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
 
@@ -2148,12 +2184,9 @@ const TeamerEventsPage: React.FC = () => {
             aktionen={{
               zusage: (dabei) => { if (gewaehlt) void handleZusage(gewaehlt, dabei); },
               absage: oeffneAbsage,
-              qr: () => presentQRDisplayModal({ presentingElement: pageRef.current || presentingElement || undefined }),
+              qr: () => { if (gewaehlt) setWebFenster({ art: 'qr', eventId: gewaehlt.id }); },
               chat: () => router.push(`/teamer/chat/room/${gewaehlt?.chat_room_id}`, 'root'),
-              material: (id) => {
-                materialIdRef.current = id;
-                presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
-              },
+              material: (id) => { if (gewaehlt) setWebFenster({ art: 'material', eventId: gewaehlt.id, id }); },
               neuLaden: () => {
                 void refresh();
                 if (gewaehlt) void ladeTerminDetail(gewaehlt.id);
@@ -2190,6 +2223,29 @@ const TeamerEventsPage: React.FC = () => {
           rolle="team"
           onGemeldet={() => { void refreshRequests(); }}
           onSchliessen={() => setMeldenOffen(false)}
+        />
+      )}
+      {/* QR-Code und Material als Fenster der Web-Fassung -- dieselbe Logik wie
+          die Modale der App (useQrAnzeige, useMaterialAnsicht). Der QR-Code
+          gehört zum offenen Event; ohne eins steht er nicht da. */}
+      {webFenster?.art === 'qr' && gewaehlt?.id === webFenster.eventId && (
+        <WebQrDialog
+          eventId={gewaehlt.id}
+          eventName={gewaehlt.name}
+          eventDate={gewaehlt.event_date}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'material' && webFenster.id && gewaehlt?.id === webFenster.eventId && (
+        <WebTerminMaterialDialog materialId={webFenster.id} onSchliessen={() => setWebFenster(null)} />
+      )}
+      {gewaehlt && webAbsageFuer === gewaehlt.id && (
+        <WebAbsageDialog
+          rolle="team"
+          pflicht={absageBrauchtGrund(gewaehlt.booking_status)}
+          eventName={gewaehlt.name}
+          onAbsage={(grund, melden) => handleZusage(gewaehlt, false, grund, melden)}
+          onSchliessen={() => setWebAbsageFuer(null)}
         />
       )}
       </>

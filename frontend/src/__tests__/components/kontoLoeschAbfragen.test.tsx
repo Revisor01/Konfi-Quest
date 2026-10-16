@@ -168,9 +168,9 @@ describe('Rückfragen vor dem Löschen eines Kontos', () => {
     rolle = 'konfi';
     render(<DeleteAccountModal onClose={vi.fn()} />);
 
-    const text = screen.getByText(/Dein Account wird endgültig gelöscht/).textContent ?? '';
+    const text = screen.getByText(/Dein Konto wird endgültig gelöscht/).textContent ?? '';
     expect(text).toBe(
-      'Dein Account wird endgültig gelöscht. Dieser Vorgang kann NICHT rückgängig gemacht werden. '
+      'Dein Konto wird endgültig gelöscht. Dieser Vorgang kann NICHT rückgängig gemacht werden. '
       + 'Mit ihm verschwinden deine Punkte, Badges, Stempel, Anträge samt Fotos, Event-Anmeldungen, '
       + 'Challenge-Beiträge, Chat-Nachrichten und Zweiergespräche.'
     );
@@ -180,7 +180,7 @@ describe('Rückfragen vor dem Löschen eines Kontos', () => {
     rolle = 'teamer';
     render(<DeleteAccountModal onClose={vi.fn()} />);
 
-    const text = screen.getByText(/Dein Account wird endgültig gelöscht/).textContent ?? '';
+    const text = screen.getByText(/Dein Konto wird endgültig gelöscht/).textContent ?? '';
     for (const wort of MUSS_NENNEN) expect(text).toContain(wort);
     expect(text).toContain('in allen Gemeinden, in denen du mitarbeitest');
     expect(text).toContain('Was du für die Gemeinde angelegt hast, bleibt ohne deinen Namen.');

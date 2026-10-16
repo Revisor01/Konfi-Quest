@@ -223,7 +223,8 @@ describe('Leitung: Bearbeiten ja, Anlegen nein', () => {
     // Die Logik des Badge-Formulars steht seit 11.10.2026 im Hook (App-Modal und Web-Dialog teilen ihn).
     ['admin/useBadgeFormular.ts', "methode: isEditMode ? 'PUT' : 'POST'"],
     ['admin/useLevelFormular.ts', "methode: level?.id ? 'PUT' : 'POST'"], // Logik des LevelManagementModal (11.10.2026)
-    ['admin/modals/ActivityManagementModal.tsx', "methode: currentActivity ? 'PUT' : 'POST'"],
+    // Seit 15.10.2026 in der Logik, die App-Modal und Web-Dialog teilen.
+    ['admin/useAktivitaetKatalogFormular.ts', "methode: currentActivity ? 'PUT' : 'POST'"],
     ['admin/useKategorieFormular.ts', "methode: category ? 'PUT' : 'POST'"], // Logik des CategoryModal (11.10.2026)
     ['admin/useZertifikatFormular.ts', "methode: certificateType ? 'PUT' : 'POST'"], // Logik des CertificateModal (11.10.2026)
     // Seit 11.10.2026 in der Logik, die App-Fenster und Web-Dialog teilen.

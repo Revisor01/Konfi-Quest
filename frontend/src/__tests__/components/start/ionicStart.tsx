@@ -56,5 +56,7 @@ export function ionicStart(z: IonicStartZustand) {
       ];
     },
     useIonPopover: () => [() => undefined, () => undefined],
+    // Meldungen als Toast (der Konfispruch meldet „gespeichert" so).
+    useIonToast: () => [() => undefined, () => undefined],
   };
 }

@@ -93,7 +93,10 @@ beforeEach(() => {
 describe('Badges der Konfis (Web): Kennzahlen und Raster', () => {
   it('Seitenkopf und Kennzahlen mit konkreten Werten', () => {
     render(<KonfiBadgesPage />);
-    expect(screen.getByRole('heading', { level: 1, name: 'Deine Badges' })).toBeInTheDocument();
+    // Ein Name je Bereich (15.10.2026): Kopfzeile (Bereich) und Seitentitel
+    // heissen wie der Reiter „Badges", nicht mehr „Deine Badges".
+    expect(screen.getAllByRole('heading', { level: 1, name: 'Badges' })).toHaveLength(2);
+    expect(screen.queryByRole('heading', { name: 'Deine Badges' })).toBeNull();
     expect(screen.getByText('Sammle alle Erfolge!')).toBeInTheDocument();
     const erreicht = screen.getByRole('group', { name: 'Erreicht: 4' });
     expect(erreicht).toHaveTextContent('von 7 sichtbaren');

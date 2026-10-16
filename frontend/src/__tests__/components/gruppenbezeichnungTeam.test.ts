@@ -47,7 +47,7 @@ describe('Gruppenbezeichnung: die Gruppe heisst "Team"', () => {
     const quelle = lies('src/components/admin/pages/AdminDashboardSettingsPage.tsx');
     expect(quelle).toContain("label: 'Team'");
     expect(DASHBOARD_FUER.map((r) => r.label)).toEqual(['Konfi', 'Team']);
-    expect(DASHBOARD_LISTE_TITEL.teamer).toBe('Team-Dashboard');
+    expect(DASHBOARD_LISTE_TITEL.teamer).toBe('Startseite des Teams');
     expect(quelle).not.toContain('<IonLabel>Teamer:innen</IonLabel>');
   });
 

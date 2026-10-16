@@ -321,6 +321,8 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     let ablehnen: (grund: unknown) => void = () => {};
     h.apiPost.mockReturnValueOnce(new Promise((_ok, nein) => { ablehnen = nein; }));
     const d = await anlegen();
+    // Erst wenn das Formular seinen Ausgangsstand hat (100 ms), zählen Eingaben als Änderung.
+    await act(async () => { await new Promise((r) => setTimeout(r, 150)); });
     tippen(d, 'Anzeigename', 'Kim Neu');
     tippen(d, 'Benutzername', 'kim.neu');
     tippen(d, 'Passwort', BEISPIELWERT);
@@ -338,15 +340,18 @@ describe('Benutzer:in anlegen (Gemeindeleitung)', () => {
     await act(async () => { ablehnen({ response: { status: 409, data: { error: 'Benutzername bereits vergeben' } } }); });
     expect(meldung(d)).toBe('Benutzername bereits vergeben');
     expect(h.refresh).not.toHaveBeenCalled();
-    // Danach lässt er sich wieder schließen.
+    // Danach lässt er sich wieder schließen -- die Eingaben sind nicht
+    // gespeichert, also mit der Rückfrage wie in der App.
     expect(knopf(d, 'Abbrechen')).toBeEnabled();
     fireEvent.keyDown(d, { key: 'Escape' });
+    fireEvent.click(knopf(dialog('Ungespeicherte Änderungen'), 'Verwerfen'));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  // Ohne Eingabe; nach einer Eingabe fragt der Dialog erst nach
+  // (benutzerUngespeichert.test.tsx, App und Browser).
   it('Abbrechen, Schließen und Escape senden nichts', async () => {
     const d = await anlegen();
-    tippen(d, 'Anzeigename', 'Kim Neu');
     fireEvent.click(knopf(d, 'Abbrechen'));
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Benutzer:in anlegen' }));

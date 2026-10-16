@@ -6,7 +6,9 @@
 
 import { wahlen } from './beschreibung';
 
-export const DASHBOARD_TITEL = 'Dashboard';
+// Ein Name je Bereich, ueberall derselbe (Kachel unter „Mehr" = Seitentitel =
+// Eintrag der App; 15.10.2026): „Startseiten" statt „Dashboard".
+export const DASHBOARD_TITEL = 'Startseiten';
 
 /** Wessen Startseite. Der Browser zeigt keine Reiter, sondern beide Listen; ihre Titel stehen in DASHBOARD_LISTE_TITEL. */
 export const DASHBOARD_FUER = wahlen([
@@ -17,6 +19,6 @@ export type DashboardFuer = (typeof DASHBOARD_FUER)[number]['schluessel'];
 
 /** Die Überschrift der Liste: in der App über der Liste des Reiters, im Browser als Kartentitel. */
 export const DASHBOARD_LISTE_TITEL: Record<DashboardFuer, string> = {
-  konfi: 'Konfi-Dashboard',
-  teamer: 'Team-Dashboard',
+  konfi: 'Startseite der Konfis',
+  teamer: 'Startseite des Teams',
 };

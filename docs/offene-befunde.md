@@ -364,7 +364,18 @@ geleert** — der Beleg bleibt in Git und im CHANGELOG.
   IonPage. Nach dem Ionic-Code könnte die äußere Seite `ion-page-invisible`
   behalten; der Kommentar in `TeamerDashboardPage.tsx` nennt diese Seiten
   aber als unauffällig. Am Gerät prüfen (Mehr → Kategorien, Zertifikate,
-  Dashboard), erst dann ändern. (14.10.2026)
+  Startseiten), erst dann ändern. (14.10.2026)
+- **„Neuer Rückblick" in der App schließt beim Erstellen.** Im Browser
+  sperrt das Fenster, solange der Jahresrückblick entsteht, und zeigt Fehler
+  im Fenster. In der App bleibt das Kreuz des Modals frei; schließt man es,
+  läuft das Erstellen weiter, eine Fehlermeldung erscheint dann oben ohne
+  Zusammenhang. Klein; beim nächsten Umbau von `AdminWrappedPage` mitnehmen.
+  (15.10.2026)
+- **Messung „Material angesehen" unter Mehr › Material.** Die Lese-Ansicht
+  dort bestimmt die Art des Inhalts ohne den Weblink-Filter
+  (`useMaterialFormular`, `inhalt`), anders als Material aus einem Event
+  (`materialLinks`). Betrifft nur die anonyme Messung, nicht die Anzeige.
+  (15.10.2026)
 
 - **Unerklärtes 500 an `mark-read`.** `POST /api/chat/rooms/*/mark-read`
   antwortete zwischen 28.09. und 01.10.2026 einmal mit 500 (bei 718 × 200).

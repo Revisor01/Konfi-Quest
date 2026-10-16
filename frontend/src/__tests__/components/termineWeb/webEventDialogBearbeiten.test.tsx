@@ -7,8 +7,10 @@
 // (useEventFormular). Nachgestellt sind Server, Kontext, Netz und Ionic
 // (gerueste/leitungTerminDetail). Geprüft: Vorbelegung aus dem Event (auch die
 // Zeitfenster, die der Server in UTC liefert), der genaue Körper an
-// PUT /events/:id, danach zurück zur Liste wie in der App, die Warteschlange
-// ohne Netz -- und im schmalen Fenster weiter das App-Modal.
+// PUT /events/:id, danach bleibt der Browser auf dem Event und lädt es neu
+// (seit 15.10.2026, docs/planung/web-version.md „Vorschläge aus dem Bau";
+// die App kehrt zur Liste zurück), die Warteschlange ohne Netz -- und im
+// schmalen Fenster weiter das App-Modal.
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen, fireEvent, within, act } from '@testing-library/react';
 import {
@@ -103,6 +105,8 @@ const speichern = async (d: HTMLElement, knopf = 'Speichern') => {
   await warte();
 };
 const eventModalGeoeffnet = () => modale.geoeffnet.filter((m) => m.name === 'EventModal');
+/** Wie oft das Event geladen wurde (GET /events/7). */
+const eventAbrufe = () => api.get.mock.calls.filter(([pfad]) => pfad === '/events/7').length;
 
 describe('Bearbeiten im breiten Fenster', () => {
   it('öffnet den Dialog „Event bearbeiten", nicht das App-Modal', async () => {
@@ -138,14 +142,18 @@ describe('Bearbeiten im breiten Fenster', () => {
     expect(within(d).queryByRole('switch', { name: 'Als Serie erstellen' })).toBe(null);
   });
 
-  it('Speichern ohne Änderung: PUT /events/7 mit genau den Werten des Events, ohne Serienfelder; danach zurück zur Liste', async () => {
+  it('Speichern ohne Änderung: PUT /events/7 mit genau den Werten des Events, ohne Serienfelder; danach bleibt das Event offen und lädt neu', async () => {
     const { d, onBack } = await bearbeiten();
+    const vorher = eventAbrufe();
     await speichern(d);
     expect(api.put).toHaveBeenCalledTimes(1);
     expect(api.put).toHaveBeenCalledWith('/events/7', FREIZEIT_KOERPER);
     expect(api.post).not.toHaveBeenCalled();
     expect(screen.queryByRole('dialog')).toBe(null);
-    expect(onBack).toHaveBeenCalledTimes(1);
+    // Nicht zurück zur Liste, sondern das Event neu laden (GET /events/7).
+    expect(onBack).not.toHaveBeenCalled();
+    expect(eventAbrufe()).toBe(vorher + 1);
+    expect(screen.getByRole('heading', { level: 1, name: 'Konfi-Freizeit' })).toBeInTheDocument();
   });
 
   it('ein neuer Beginn zieht beim Bearbeiten nur das Ende mit, die gesetzten Anmeldezeiten bleiben', async () => {
@@ -200,7 +208,9 @@ describe('Bearbeiten im breiten Fenster', () => {
       metadata: { type: 'admin', clientId: expect.any(String), label: 'Event bearbeiten' },
     });
     expect(setSuccess).toHaveBeenCalledWith('Event wird aktualisiert sobald du wieder online bist');
-    expect(onBack).toHaveBeenCalledTimes(1);
+    // Auch ohne Netz bleibt das Event offen.
+    expect(onBack).not.toHaveBeenCalled();
+    expect(screen.getByRole('heading', { level: 1, name: 'Konfi-Freizeit' })).toBeInTheDocument();
   });
 });
 
@@ -308,5 +318,14 @@ describe('Schmales Fenster: das App-Modal bleibt', () => {
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Event kopieren' })); });
     expect(eventModalGeoeffnet()).toHaveLength(2);
     expect(screen.queryByRole('dialog')).toBe(null);
+  });
+
+  it('nach dem Speichern im App-Modal geht es wie bisher zurück zur Liste', async () => {
+    breit.wert = false;
+    const { onBack } = await oeffne();
+    fireEvent.click(screen.getByRole('button', { name: 'Event bearbeiten' }));
+    const modal = eventModalGeoeffnet()[0];
+    await act(async () => { (modal.props.onSuccess as () => void)(); });
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 });

@@ -33,7 +33,7 @@ import { sendenOderEinreihen } from '../../../utils/sendenOderEinreihen';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebDashboardEinstellungen from '../web/leitung/WebDashboardEinstellungen';
 import { inFassung } from '../../../seiten/beschreibung';
-import { DASHBOARD_FUER, DASHBOARD_LISTE_TITEL, type DashboardFuer } from '../../../seiten/dashboardEinstellungen';
+import { DASHBOARD_FUER, DASHBOARD_LISTE_TITEL, DASHBOARD_TITEL, type DashboardFuer } from '../../../seiten/dashboardEinstellungen';
 import {
   mergeSectionOrder,
   DEFAULT_KONFI_SECTION_ORDER,
@@ -278,7 +278,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
   if (loading) {
     return (
       <IonPage>
-        <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
+        <AppKopfzeile titel={DASHBOARD_TITEL} onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
         <IonContent>
           <LoadingSpinner fullScreen message="Einstellungen werden geladen..." />
         </IonContent>
@@ -288,10 +288,10 @@ const AdminDashboardSettingsPage: React.FC = () => {
 
   return (
     <IonPage>
-      <AppKopfzeile titel="Dashboard" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
+      <AppKopfzeile titel={DASHBOARD_TITEL} onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
 
       <IonContent className="app-gradient-background" fullscreen>
-        <AppKopfzeileGross titel="Dashboard" />
+        <AppKopfzeileGross titel={DASHBOARD_TITEL} />
 
         <IonRefresher slot="fixed" onIonRefresh={async (e) => {
           await refreshSettings();
@@ -301,7 +301,7 @@ const AdminDashboardSettingsPage: React.FC = () => {
         </IonRefresher>
 
         <SectionHeader
-          title="Dashboard"
+          title={DASHBOARD_TITEL}
           subtitle="Sichtbare Bereiche konfigurieren"
           icon={ICON_APPS}
           colors={{ primary: 'var(--app-color-users)', secondary: 'var(--app-color-users-dunkel)' }}

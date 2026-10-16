@@ -22,6 +22,12 @@ import EmptyState from '../shared/EmptyState';
 import { ICON_AKTUALISIEREN, ICON_SPERRE, ICON_WARNHINWEIS } from '../shared/icons';
 import { useApp } from '../../contexts/AppContext';
 import { istSuperAdmin } from '../../utils/superAdmin';
+import { useBreitesLayout } from '../../navigation/breitesLayout';
+import WebSeite from '../web/WebSeite';
+import { WebLeer } from '../web/WebZustaende';
+
+const NUR_SUPPORT_TITEL = 'Nur für den Support';
+const NUR_SUPPORT_TEXT = 'Diese Seite gehört zur Support-Ansicht. Sie steht nur Konten mit Super-Admin-Recht offen.';
 
 /**
  * Zeigt die Seite nur Konten mit Super-Admin-Recht. Alle anderen sehen einen
@@ -32,7 +38,18 @@ import { istSuperAdmin } from '../../utils/superAdmin';
  */
 export const NurSupport: React.FC<{ titel: string; children: React.ReactNode }> = ({ titel, children }) => {
   const { user } = useApp();
+  // Im Browser ab 992 px in der Form der Web-Fassung (15.10.2026): Seitenkopf
+  // mit dem Weg zurueck nach "Mehr", darunter der Hinweis -- vorher
+  // stand hier auch im Browser die Seite der App.
+  const breit = useBreitesLayout();
   if (istSuperAdmin(user)) return <>{children}</>;
+  if (breit) {
+    return (
+      <WebSeite bereich="Support" titel={titel} zurueck={{ href: '/admin/settings', text: 'Mehr' }}>
+        <WebLeer icon={ICON_SPERRE} titel={NUR_SUPPORT_TITEL} text={NUR_SUPPORT_TEXT} />
+      </WebSeite>
+    );
+  }
   return (
     <IonPage>
       <AppKopfzeile titel={titel} gemeindeUmschalter={false} />
@@ -40,8 +57,8 @@ export const NurSupport: React.FC<{ titel: string; children: React.ReactNode }> 
         <AppKopfzeileGross titel={titel} />
         <EmptyState
           icon={ICON_SPERRE}
-          title="Nur für den Support"
-          message="Diese Seite gehört zur Support-Ansicht. Sie steht nur Konten mit Super-Admin-Recht offen."
+          title={NUR_SUPPORT_TITEL}
+          message={NUR_SUPPORT_TEXT}
         />
       </IonContent>
     </IonPage>

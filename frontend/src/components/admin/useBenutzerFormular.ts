@@ -385,8 +385,14 @@ export function useBenutzerFormular({ userId, festeRolle, onSuccess, fehlerImDia
     });
   };
 
+  // Auch Jahrgänge und Rechte sind ungespeicherte Änderungen (15.10.2026):
+  // Wer nur einen Jahrgang abwählt und schließt, wird gefragt wie bei einem
+  // geänderten Namen -- in der App wie im Browser.
+  const geaendert = () => { if (initializedRef.current) setIsDirty(true); };
+
   const setzeRecht = (jahrgangId: number, feld: keyof FreigabeRechte, wert: boolean) => {
     setFehler(null);
+    geaendert();
     setJahrgangRechte(prev => ({
       ...prev,
       [jahrgangId]: { ...alleRechte(prev[jahrgangId]), [feld]: wert }
@@ -395,6 +401,7 @@ export function useBenutzerFormular({ userId, festeRolle, onSuccess, fehlerImDia
 
   const handleJahrgangAssignment = (jahrgangId: number, value: boolean) => {
     setFehler(null);
+    geaendert();
     setJahrgangAssignments(prev => ({
       ...prev,
       [jahrgangId]: value

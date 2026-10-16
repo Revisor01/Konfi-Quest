@@ -256,7 +256,7 @@ describe('Konfispruch: erste Wahl und Wechsel (trackKonfispruchWahl)', () => {
   });
 
   it('die Übersetzungen sind genau die Auswahl der App', () => {
-    const modal = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
+    const modal = lies('src/components/konfi/useKonfispruchWahl.ts');
     expect(modal).toContain(
       "const TRANSLATION_KEYS: Translation[] = ['luther2017', 'bigs', 'gute_nachricht', 'elberfelder'];"
     );
@@ -433,19 +433,27 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
     expect(posMessung).toBeGreaterThan(posOeffnen);
   });
 
+  // Seit 15.10.2026 laedt der Hook useMaterialAnsicht -- fuer das Modal der App
+  // (TeamerMaterialDetailPage) und das Fenster des Browsers aus den Events.
+  // Beide zaehlen hier; das Fenster schaltet die eigene Zaehlung von
+  // WebMaterialDialog ab (angesehenMelden={false}; im Verhalten geprueft in
+  // components/termineWeb/webMaterialAusEvent.test.tsx).
   it('Material an einem Event: angesehen erst nach der erfolgreichen Antwort, einmal je Öffnen', () => {
-    const quelle = lies('src/components/teamer/pages/TeamerMaterialDetailPage.tsx');
+    const quelle = lies('src/components/teamer/pages/useMaterialAnsicht.ts');
     // Nach materialDetailLaden und nur mit einer Antwort des Servers — ein
     // Stand nur vom Gerät (ohne Netz) zählt nicht; einmal je Öffnen.
     hinterAufrufVorCatch(
-      'src/components/teamer/pages/TeamerMaterialDetailPage.tsx',
-      'const { daten, ausSpeicher } = await materialDetailLaden<MaterialDetail>(materialId);',
+      'src/components/teamer/pages/useMaterialAnsicht.ts',
+      'const { daten, ausSpeicher } = await materialDetailLaden<T>(materialId);',
       "trackHandlung('material-angesehen', {"
     );
     expect(quelle).toMatch(
       /if \(!ausSpeicher && !angesehenGemeldet\.current\) \{\s*angesehenGemeldet\.current = true;\s*trackHandlung\('material-angesehen', \{/
     );
     expect(quelle).toContain('const angesehenGemeldet = useRef(false);');
+    // Das Modal der App laedt ueber den Hook, mit Messung (ohne Abschalten).
+    expect(lies('src/components/teamer/pages/TeamerMaterialDetailPage.tsx'))
+      .toContain('useMaterialAnsicht<MaterialDetail>(materialId);');
   });
 
   it.each([
@@ -453,16 +461,16 @@ describe('Aufrufstellen: nach der Antwort, nicht im catch', () => {
     ["api.patch(`${apiBasePath}/profile`, {\n            konfspruch_freitext: text,", "trackKonfispruchWahl({ quelle: 'eigen'"],
   ])('Konfispruch (%#): gemessen nach dem PATCH, vor dem catch', (aufruf, messung) => {
     hinterAufrufVorCatch(
-      'src/components/konfi/modals/KonfispruchSelectModal.tsx',
+      'src/components/konfi/useKonfispruchWahl.ts',
       `await ${aufruf}`,
       messung
     );
-    const quelle = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
+    const quelle = lies('src/components/konfi/useKonfispruchWahl.ts');
     expect(catchRumpf(quelle, quelle.indexOf('} catch', quelle.indexOf(aufruf)))).not.toContain('trackKonfispruchWahl(');
   });
 
   it('Konfispruch: der Vorher-Stand kommt aus der Anzeige, die Gemeinde aus dem Konto -- nie eine Person', () => {
-    const quelle = lies('src/components/konfi/modals/KonfispruchSelectModal.tsx');
+    const quelle = lies('src/components/konfi/useKonfispruchWahl.ts');
     expect(quelle).toContain('kirchenkreis: aktiveGemeinde?.kirchenkreis,');
     expect(quelle).toContain('landeskirche: aktiveGemeinde?.landeskirche,');
     expect(quelle.match(/const vorher = wahlAusAnzeige\(current\);/g)?.length).toBe(2);

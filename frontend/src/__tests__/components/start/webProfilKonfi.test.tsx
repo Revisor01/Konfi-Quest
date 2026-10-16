@@ -1,8 +1,9 @@
 // Profil der Konfis in der Web-Fassung, gerendert (03.10.2026,
 // docs/planung/web-alle-bereiche.md, Entscheidung 6): zweispaltig -- links die
 // Person und die Einstellungen, rechts Kennzahlen, Aufteilung und Verlauf der
-// Punkte, Rueckblicke und Neuerungen. Die Handgriffe sind die der App: dieselben
-// Modale mit denselben Eigenschaften, dasselbe Abmelden. Die Bausteine, die auch
+// Punkte, Rueckblicke und Neuerungen. Die Handgriffe tun, was die App tut --
+// seit 11. und 15.10.2026 in Dialogen der Web-Fassung (start/webProfilFenster,
+// shared/webProfilDialoge); dasselbe Abmelden. Die Bausteine, die auch
 // Team und Leitung nutzen (Einladungen, Benachrichtigungen, Verlauf), werden
 // hier mit durchgespielt.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -53,6 +54,8 @@ vi.mock('../../../components/shared/DeleteAccountModal', async () => ({ default:
 vi.mock('../../../components/konfi/modals/PointsHistoryModal', async () => ({ default: (await import('./ionicStart')).modalAttrappe('PointsHistoryModal') }));
 vi.mock('../../../components/wrapped/WrappedModal', async () => ({ default: (await import('./ionicStart')).modalAttrappe('WrappedModal') }));
 vi.mock('../../../components/shared/BibleTranslationModal', async () => ({
+  // Die Liste der Übersetzungen ist echt: Der Dialog der Web-Fassung zeigt sie.
+  BIBLE_TRANSLATIONS: (await vi.importActual<typeof import('../../../components/shared/BibleTranslationModal')>('../../../components/shared/BibleTranslationModal')).BIBLE_TRANSLATIONS,
   default: (await import('./ionicStart')).modalAttrappe('BibleTranslationModal'),
   getTranslationName: (code: string) => (code === 'LUT' ? 'Lutherbibel 2017' : code === 'BB' ? 'BasisBibel' : code),
 }));
@@ -239,13 +242,13 @@ describe('Profil der Konfis (Web): Punkte', () => {
     expect(screen.getByRole('link', { name: 'Events: 6' })).toHaveAttribute('href', '/konfi/events');
     const aktivitaeten = screen.getByRole('link', { name: 'Aktivitäten: 9' });
     expect(aktivitaeten).toHaveAttribute('href', '/konfi/events?segment=antraege');
-    expect(aktivitaeten).toHaveTextContent('2 Anträge warten');
+    expect(aktivitaeten).toHaveTextContent('2 offen');
   });
 
   it('ein einzelner Antrag und keiner stehen in der Einzahl bzw. als „Keine"', async () => {
     h.profil = { ...PROFIL, pending_requests: 1 };
     const { unmount } = await zeige();
-    expect(screen.getByRole('link', { name: 'Aktivitäten: 9' })).toHaveTextContent('1 Antrag wartet');
+    expect(screen.getByRole('link', { name: 'Aktivitäten: 9' })).toHaveTextContent('1 offen');
     unmount();
     h.profil = { ...PROFIL, pending_requests: 0 };
     await zeige();
@@ -261,18 +264,25 @@ describe('Profil der Konfis (Web): Punkte', () => {
     expect(screen.queryByText(/Platz \d+ von \d+/)).toBeNull();
   });
 
-  it('die Aufteilung zeigt Gottesdienst und Gemeinde samt Bonus; „Punkte-Uebersicht" oeffnet das Modal der App', async () => {
-    await zeige();
-    const aufteilung = karte('So setzen sich deine Punkte zusammen');
-    expect(within(aufteilung).getByRole('img', { name: 'Gottesdienst 8, Gemeinde 11' })).toBeInTheDocument();
-    expect(aufteilung).toHaveTextContent('Darin 3 Punkte Bonus');
-    expect(aufteilung).toHaveTextContent('Gottesdienst 8');
-    expect(aufteilung).toHaveTextContent('Gemeinde 11');
-    fireEvent.click(within(aufteilung).getByRole('button', { name: 'Punkte-Übersicht' }));
-    const m = modal('PointsHistoryModal');
-    expect(m?.props.pointConfig).toEqual({ gottesdienst_enabled: true, gemeinde_enabled: true });
-    expect(m?.props.profileTotals).toEqual({ total_points: 19, gottesdienst_points: 8, gemeinde_points: 11, bonus_points: 3, event_count: 6 });
-    expect(m?.optionen?.presentingElement).toBe(h.seite);
+  it('die Aufteilung zeigt Gottesdienst und Gemeinde samt Bonus; „Punkte-Uebersicht" springt zum Punkte-Verlauf (15.10.2026), kein Modal', async () => {
+    const gerollt: Element[] = [];
+    const vorher = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function rollen(this: Element) { gerollt.push(this); };
+    try {
+      await zeige();
+      const aufteilung = karte('So setzen sich deine Punkte zusammen');
+      expect(within(aufteilung).getByRole('img', { name: 'Gottesdienst 8, Gemeinde 11' })).toBeInTheDocument();
+      expect(aufteilung).toHaveTextContent('Darin 3 Punkte Bonus');
+      expect(aufteilung).toHaveTextContent('Gottesdienst 8');
+      expect(aufteilung).toHaveTextContent('Gemeinde 11');
+      const tabelle = await screen.findByRole('table', { name: 'Punkte-Verlauf' });
+      fireEvent.click(within(aufteilung).getByRole('button', { name: 'Punkte-Übersicht' }));
+      expect(gerollt).toHaveLength(1);
+      expect(gerollt[0]).toContainElement(tabelle);
+      expect(modal('PointsHistoryModal')).toBeUndefined();
+    } finally {
+      Element.prototype.scrollIntoView = vorher;
+    }
   });
 
   it('eine abgeschaltete Punkteart verschwindet aus Kachel, Aufteilung und Verlauf', async () => {
@@ -346,7 +356,7 @@ describe('Profil der Konfis (Web): Einstellungen -- dieselben Handgriffe wie in 
   // Seit 11.10.2026 (Simon: „Web braucht eigene kompaktere Modale überall")
   // öffnen E-Mail und Passwort im Browser eigene Dialoge statt der App-Modale;
   // Einzelheiten in start/webKontoUmschaltung und shared/webKontoDialoge.
-  it('E-Mail und Passwort öffnen die Dialoge der Web-Fassung, Konto loeschen das Modal der App ueber dieser Seite', async () => {
+  it('E-Mail, Passwort und Konto loeschen öffnen die Dialoge der Web-Fassung, kein App-Modal', async () => {
     h.antworten['/auth/me'] = { email: 'mia@example.org' };
     await zeige();
     fireEvent.click(knopfInZeile('E-Mail-Adresse', 'Ändern'));
@@ -358,15 +368,16 @@ describe('Profil der Konfis (Web): Einstellungen -- dieselben Handgriffe wie in 
     fireEvent.click(within(passwort).getByRole('button', { name: 'Abbrechen' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Konto löschen' }));
-    expect(modal('DeleteAccountModal')?.optionen?.presentingElement).toBe(h.seite);
-    expect(h.modale.map((m) => m.name)).toEqual(['DeleteAccountModal']);
+    expect(screen.getByRole('dialog', { name: 'Konto löschen' })).toBeInTheDocument();
+    expect(h.modale).toEqual([]);
   });
 
-  it('Bibeluebersetzung oeffnet die Auswahl mit der aktuellen Uebersetzung', async () => {
+  it('Bibeluebersetzung oeffnet den Dialog mit der aktuellen Uebersetzung, kein App-Modal', async () => {
     await zeige();
     fireEvent.click(knopfInZeile('Bibelübersetzung', 'Ändern'));
-    expect(modal('BibleTranslationModal')?.props.currentTranslation).toBe('LUT');
-    expect(modal('BibleTranslationModal')?.optionen?.presentingElement).toBe(h.seite);
+    const dialog = screen.getByRole('dialog', { name: 'Bibelübersetzung' });
+    expect(within(dialog).getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent).toMatch(/^Lutherbibel 2017/);
+    expect(h.modale).toEqual([]);
   });
 
   it('Medien-Cache leert ihn', async () => {
@@ -413,11 +424,11 @@ describe('Profil der Konfis (Web): Benachrichtigungen', () => {
     expect(await screen.findByText('2 von 3 Gruppen aufs Handy')).toBeInTheDocument();
   });
 
-  it('„Auswaehlen" oeffnet die Auswahl der App in der Farbe der Konfis', async () => {
+  it('„Auswaehlen" oeffnet den Dialog der Web-Fassung, kein App-Modal', async () => {
     await zeige();
     fireEvent.click(knopfInZeile('Benachrichtigungen', 'Auswählen'));
-    expect(modal('PushAuswahlModal')?.props.variante).toBe('purple');
-    expect(modal('PushAuswahlModal')?.optionen?.presentingElement).toBe(h.seite);
+    expect(screen.getByRole('dialog', { name: 'Benachrichtigungen' })).toBeInTheDocument();
+    expect(h.modale).toEqual([]);
     expect(h.pushAnfordern).not.toHaveBeenCalled();
   });
 
@@ -509,10 +520,19 @@ describe('Profil der Konfis (Web): Rueckblicke', () => {
     expect(screen.queryByRole('heading', { name: 'Meine Rückblicke' })).toBeNull();
   });
 
-  it('der Link ?punkte=1 aus Push und Postfach oeffnet auch hier die Punkte-Uebersicht', async () => {
-    h.suche = '?punkte=1';
-    await zeige();
-    expect(modal('PointsHistoryModal')).toBeDefined();
+  it('der Link ?punkte=1 aus Push und Postfach springt hier zum Punkte-Verlauf (15.10.2026), kein Modal', async () => {
+    const gerollt: Element[] = [];
+    const vorher = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function rollen(this: Element) { gerollt.push(this); };
+    try {
+      h.suche = '?punkte=1';
+      await zeige();
+      expect(gerollt).toHaveLength(1);
+      expect(gerollt[0]).toContainElement(screen.getByRole('heading', { name: 'Punkte-Verlauf' }));
+      expect(modal('PointsHistoryModal')).toBeUndefined();
+    } finally {
+      Element.prototype.scrollIntoView = vorher;
+    }
   });
 });
 

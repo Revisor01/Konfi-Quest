@@ -1,38 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   IonButton, IonButtons, IonCard, IonCardContent, IonContent, IonHeader, IonIcon,
   IonInput, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonPage,
   IonTitle, IonToolbar
 } from '@ionic/react';
-import api from '../../../services/api';
-import { trackHandlung, serverSchluesselMesswert } from '../../../services/analytics';
-import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import { fehlerText } from '../../../utils/fehler';
 import { ICON_SCHLIESSEN, ICON_GEMEINDE_GEFUELLT, ICON_PERSON, ICON_SCHILD } from '../../shared/icons';
 import { tastaturKlick } from '../../../utils/tastatur';
 import { rollenName, rollenFarbeVar, rollenTonVar } from '../../../utils/rollenNamen';
+import { usePersonEinladen } from '../usePersonEinladen';
+import { rollenBeschreibung } from '../useBenutzerFormular';
 
 /**
- * Eine bestehende Person in diese Gemeinde einladen (26.09.2026).
+ * Eine bestehende Person in diese Gemeinde einladen (26.09.2026) -- das
+ * Modal der App.
  *
  * SIMONS ENTWURF: "Der ORG Admin kennt den User Namen des anderen. Gibt das in
  * der Benutzer Oberflaeche ein. Der User bekommt ne Einladung und bestaetigt."
  *
- * KEINE SUCHLISTE: Gesucht wird exakt nach Benutzername oder E-Mail. Ein
- * Suchfeld ueber den ganzen Bestand haette jeder Gemeindeleitung erlaubt, die
- * Nutzenden aller anderen Gemeinden zu durchblaettern.
- *
- * KONFI STEHT NICHT ZUR WAHL (Simon: "Konfi ist nie moeglich. Ist logisch.")
- * -- Konfis gehoeren zu einem Jahrgang und kommen ueber einen Einladungscode.
- * Der Server weist die Rolle zusaetzlich ab.
+ * Laden der Rollen, Pruefen und Senden stehen seit 15.10.2026 in
+ * usePersonEinladen (dort auch, warum es keine Suchliste gibt und Konfi nicht
+ * zur Wahl steht); der Browser ab 992 px zeigt dieselbe Logik im Dialog
+ * web/leitung/WebPersonEinladenDialog.
  */
-
-interface Rolle {
-  id: number;
-  name: string;
-  display_name: string;
-}
 
 interface Props {
   onClose: () => void;
@@ -40,59 +29,19 @@ interface Props {
 }
 
 const EinladungModal: React.FC<Props> = ({ onClose, onSuccess }) => {
-  const { setError, setSuccess, isOnline } = useApp();
-  const { isSubmitting, guard } = useActionGuard();
-  const [kennung, setKennung] = useState('');
-  const [rolleId, setRolleId] = useState<number | null>(null);
-  const [rollen, setRollen] = useState<Rolle[]>([]);
-
-  useEffect(() => {
-    let abgemeldet = false;
-    api.get('/roles')
-      .then((res) => {
-        if (abgemeldet) return;
-        const alle: Rolle[] = Array.isArray(res.data) ? res.data : [];
-        // Konfi faellt raus -- siehe Kopfkommentar.
-        setRollen(alle.filter((r) => r.name !== 'konfi' && r.name !== 'super_admin'));
-      })
-      .catch(() => { if (!abgemeldet) setRollen([]); });
-    return () => { abgemeldet = true; };
-  }, []);
+  const { kennung, setKennung, rolleId, setRolleId, rollen, istGueltig, isSubmitting, isOnline, einladen } = usePersonEinladen({ onSuccess });
 
   // Wort fuer Wort dieselben Texte und Farben wie beim Anlegen einer
   // Benutzer:in (Simon, 26.09.2026: "soll es genau so aussehen, wie es in
   // 'Neue Benutzerin hinzufuegen' aussieht, damit die Leute wissen, was die
   // Rolle ist"). Zwei Dialoge, die dieselbe Entscheidung verlangen, muessen
   // sie gleich erklaeren -- sonst heisst dieselbe Rolle hier anders als dort.
-  // Farben aus EINER Stelle (utils/rollenNamen: rollenFarbe, 29.09.2026).
+  // Die Beschreibung kommt deshalb aus derselben Stelle
+  // (useBenutzerFormular), die Farben aus utils/rollenNamen (rollenFarbe,
+  // 29.09.2026).
   const rolleFarbe = (name: string) => rollenFarbeVar(name);
   const rolleTint = (name: string) => rollenTonVar(name);
-  const rolleBeschreibung = (name: string) => {
-    switch (name) {
-      case 'org_admin': return 'Voller Zugriff auf Konfis, Aktivitäten, Badges und Events – über alle Jahrgänge. Verwaltet zusätzlich die Benutzer:innen und deren Jahrgangs-Zuordnung.';
-      case 'admin': return 'Voller Zugriff auf Konfis, Aktivitäten, Badges und Events – nur für die zugewiesenen Jahrgänge.';
-      case 'teamer': return 'Eigenes Dashboard mit eigenen Badges, Team-Material und Team-Chat. Kann sich zu Events anmelden, bei denen das Team gebraucht wird. Vergibt keine Punkte und genehmigt keine Aktivitäten.';
-      default: return '';
-    }
-  };
-
-  const istGueltig = kennung.trim().length > 0 && rolleId !== null;
-
-  const einladen = () => guard(async () => {
-    if (!istGueltig) return;
-    try {
-      const res = await api.post('/einladungen', { kennung: kennung.trim(), role_id: rolleId });
-      // Anonyme Messung NACH der erfolgreichen Antwort (docs/messung/umami.md,
-      // S10): nur die feste Zielrolle -- nie die eingegebene Kennung.
-      trackHandlung('einladung-gesendet', {
-        rolle_ziel: serverSchluesselMesswert(rollen.find((r) => r.id === rolleId)?.name)
-      });
-      setSuccess(`${res.data.display_name} wurde eingeladen und entscheidet jetzt selbst.`);
-      onSuccess();
-    } catch (err) {
-      setError(fehlerText(err, 'Die Einladung konnte nicht gesendet werden'));
-    }
-  });
+  const rolleBeschreibung = rollenBeschreibung;
 
   return (
     <IonPage>

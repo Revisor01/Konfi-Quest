@@ -70,10 +70,35 @@ import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebTerminDetailLeitung from '../web/termine/WebTerminDetailLeitung';
 import { rueckwegZurPerson } from '../../../utils/rueckweg';
 import WebEventDialog from '../web/termine/WebEventDialog';
+import WebTeilnehmerHinzufuegenDialog from '../web/termine/WebTeilnehmerHinzufuegenDialog';
+import WebAbmeldungDialog from '../web/termine/WebAbmeldungDialog';
+import WebNotizDialog from '../web/termine/WebNotizDialog';
+import WebTerminAbsagenDialog from '../web/termine/WebTerminAbsagenDialog';
+import WebQrDialog from '../../shared/web/termine/WebQrDialog';
+import WebTerminMaterialDialog from '../../shared/web/termine/WebTerminMaterialDialog';
+import WebAbsageDialog from '../../shared/web/termine/WebAbsageDialog';
 
 // Ionic 9 gibt bei ref an IonItemSliding die React-Komponente zurueck, nicht
 // mehr das DOM-Element. Gebraucht wird hier nur close() — das haben beide.
 type SlidingRef = { close: () => Promise<void> };
+
+/**
+ * Das Fenster der Web-Fassung, das gerade offen ist (Simon, 15.10.2026: im
+ * Browser ab 992 px jedes Formular als kompaktes Fenster statt des
+ * App-Modals). Dieselbe Logik wie die Modale der App, je über ihren Hook.
+ */
+type WebFenster =
+  | { art: 'hinzufuegen'; rolle: 'konfi' | 'teamer' | 'leitung' }
+  | { art: 'abmeldung'; person: Participant }
+  | { art: 'notiz'; person: Participant }
+  | { art: 'absagen' }
+  | { art: 'qr' }
+  | { art: 'material'; id: number };
+
+/** Für die Fenster des Browsers: Ein Fehler geht an das Fenster zurück statt als Meldung oben. */
+interface AnwesenheitOptionen {
+  fehlerWeitergeben?: boolean;
+}
 
 // Die Termin-Form dieser Ansicht ist dieselbe, die die Abschnitte erwarten
 // (EventData). Bis zum 30.08.2026 stand hier eine zweite, fast gleiche
@@ -230,8 +255,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
    */
   const darfVerbuchen = darfVerwalten && eventData?.darf_verbuchen !== false;
 
-  const setzeEigeneZusage = async (dabei: boolean, grund?: string) => {
-    if (!eventData || zusageLaeuft) return;
+  // `melden`: wohin eine Ablehnung geht -- in der App oben (setError), im
+  // Absage-Fenster des Browsers in das Fenster. Das Ergebnis sagt dem
+  // Fenster, ob es schliessen darf.
+  const setzeEigeneZusage = async (dabei: boolean, grund?: string, melden: (text: string) => void = setError): Promise<boolean> => {
+    if (!eventData || zusageLaeuft) return false;
     setZusageLaeuft(true);
     const body = grund && grund.trim() ? { dabei, reason: grund.trim() } : { dabei };
     try {
@@ -247,10 +275,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
       }
       setSuccess(dabei ? 'Du bist dabei' : 'Absage gespeichert');
       loadEventData();
+      return true;
     } catch (err) {
       // Das Backend lehnt eine Absage nach Zusage ohne Grund mit
       // error_code 'grund_erforderlich' ab -- die Meldung durchreichen.
-      setError(fehlerText(err, 'Anmeldung fehlgeschlagen'));
+      melden(fehlerText(err, 'Anmeldung fehlgeschlagen'));
+      return false;
     } finally {
       setZusageLaeuft(false);
     }
@@ -278,7 +308,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     dismiss: (data?: string, role?: string) => dismissEigeneAbsageModal(data, role)
   });
 
+  // Im Browser ab 992 px ein Fenster statt des Modals (Simon, 15.10.2026) --
+  // dieselben Regeln (shared/useAbsageFormular.ts), dieselbe Funktion.
+  // Gemerkt wird, fuer WELCHES Event es offen ist (die Ansicht bleibt beim
+  // Wechsel des Events dieselbe Instanz); der Wechsel setzt es zurueck
+  // (Effekt auf eventId unten).
+  const [webEigeneAbsageFuer, setWebEigeneAbsageFuer] = useState<number | null>(null);
+
   const oeffneEigeneAbsage = () => {
+    if (breit) {
+      setWebEigeneAbsageFuer(eventId);
+      return;
+    }
     presentEigeneAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
@@ -315,6 +356,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Web-Fassung (11.10.2026): Im breiten Fenster oeffnen Bearbeiten und
   // Kopieren statt der App-Modale einen eigenen Dialog (WebEventDialog).
   const [webEventFormular, setWebEventFormular] = useState<'bearbeiten' | 'kopie' | null>(null);
+  // Die übrigen Fenster der Web-Fassung (Teilnehmende, Abmeldung, Notiz,
+  // Absage, QR-Code, Material) -- null: keins offen.
+  const [webFenster, setWebFenster] = useState<WebFenster | null>(null);
 
   const [presentKopierModal, dismissKopierModal] = useIonModal(EventModal, {
     event: kopierVorlage,
@@ -410,21 +454,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     get notiz() { return notizTeilnehmerRef.current?.attendance_note ?? null; },
     onSave: async (neueNotiz: string) => {
       const teilnehmer = notizTeilnehmerRef.current;
-      if (!teilnehmer?.attendance_status) return;
-      await handleAttendanceUpdate(teilnehmer, teilnehmer.attendance_status, {
-        // Der Grund bleibt, was er war: Bei 'excused' wuerde ein fehlendes
-        // Feld ihn sonst loeschen (die Route setzt ihn bei jedem
-        // 'excused'-Schreiben neu).
-        ...(teilnehmer.attendance_status === 'excused'
-          ? { excuse_reason: teilnehmer.excuse_reason || '' }
-          : {}),
-        // Leerer String heisst loeschen — die Route unterscheidet "Feld
-        // fehlt" (Notiz bleibt) von "Feld ist leer" (Notiz weg).
-        attendance_note: neueNotiz
-      });
+      if (!teilnehmer) return;
+      await notizSpeichern(teilnehmer, neueNotiz);
     },
     dismiss: () => dismissNotizModal()
   });
+
+  /** Die Notiz speichern -- aus dem Modal der App und dem Dialog des Browsers. */
+  const notizSpeichern = async (teilnehmer: Participant, neueNotiz: string, optionen?: AnwesenheitOptionen) => {
+    if (!teilnehmer.attendance_status) return;
+    await handleAttendanceUpdate(teilnehmer, teilnehmer.attendance_status, {
+      // Der Grund bleibt, was er war: Bei 'excused' wuerde ein fehlendes
+      // Feld ihn sonst loeschen (die Route setzt ihn bei jedem
+      // 'excused'-Schreiben neu).
+      ...(teilnehmer.attendance_status === 'excused'
+        ? { excuse_reason: teilnehmer.excuse_reason || '' }
+        : {}),
+      // Leerer String heisst loeschen — die Route unterscheidet "Feld
+      // fehlt" (Notiz bleibt) von "Feld ist leer" (Notiz weg).
+      attendance_note: neueNotiz
+    }, optionen);
+  };
 
   // ABMELDUNGS-MODAL (13.09.2026)
   //
@@ -455,13 +505,18 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     onSave: async (neuerGrund: string, neueNotiz: string) => {
       const teilnehmer = abmeldungTeilnehmerRef.current;
       if (!teilnehmer) return;
-      await handleAttendanceUpdate(teilnehmer, 'excused', {
-        excuse_reason: neuerGrund,
-        attendance_note: neueNotiz
-      });
+      await abmeldungSpeichern(teilnehmer, neuerGrund, neueNotiz);
     },
     dismiss: () => dismissAbmeldungModal()
   });
+
+  /** Die Abmeldung eintragen -- aus dem Modal der App und dem Dialog des Browsers. */
+  const abmeldungSpeichern = async (teilnehmer: Participant, neuerGrund: string, neueNotiz: string, optionen?: AnwesenheitOptionen) => {
+    await handleAttendanceUpdate(teilnehmer, 'excused', {
+      excuse_reason: neuerGrund,
+      attendance_note: neueNotiz
+    }, optionen);
+  };
 
   // TERMIN-ABSAGE-MODAL (15.09.2026, Migration 150): Beim Absagen laesst sich
   // ein Grund erfassen. Er ist freiwillig und geht an ALLE Teilnehmenden --
@@ -491,17 +546,27 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     get konfiAnzahl() {
       return participants.filter(p => p.role_name === 'konfi' && p.status === 'confirmed').length;
     },
-    onSave: async (grund: string) => {
-      if (!eventData) return;
-      await api.put(`/events/${eventData.id}/cancel`, {
-        notification_message: 'Das Event wurde leider abgesagt.',
-        cancelled_reason: grund
-      });
-      setSuccess('Event wurde abgesagt');
-      onBack();
-    },
+    onSave: (grund: string) => terminAbsagen(grund),
     dismiss: () => dismissAbsageModal()
   });
+
+  /**
+   * Den Termin absagen -- aus dem Modal der App und dem Dialog des Browsers
+   * (WebTerminAbsagenDialog). Ein Fehler geht an das Fenster zurück, das ihn
+   * zeigt (useTerminAbsagen).
+   */
+  const terminAbsagen = async (grund: string) => {
+    if (!eventData) return;
+    await api.put(`/events/${eventData.id}/cancel`, {
+      notification_message: 'Das Event wurde leider abgesagt.',
+      cancelled_reason: grund
+    });
+    setSuccess('Event wurde abgesagt');
+    onBack();
+  };
+
+  /** Die Zahl im Kopf der Absage: angemeldete Konfis (siehe konfiAnzahl oben). */
+  const angemeldeteKonfis = participants.filter(p => p.role_name === 'konfi' && p.status === 'confirmed').length;
 
   // Der ABSAGEGRUND wird nur ueber den Wisch an der Zeile in der Terminliste
   // (AdminEventsPage) bearbeitet -- die Absage-Karte hier bleibt reine
@@ -598,8 +663,14 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     setEventMaterials([]);
     setJahrgangFehlt(false);
     setAusSpeicher(false);
+    // Ein offenes Fenster der Web-Fassung gehoert zum vorigen Termin (etwa
+    // nach „Zurück" im Browser): Es haette dessen Person oder Material.
+    setWebFenster(null);
     setError('');
     setLoading(true);
+    // Ein offenes Absage-Fenster gehoert zum vorigen Termin -- sonst ginge es
+    // beim Zurueckwechseln (7 -> 8 -> 7) von selbst wieder auf.
+    setWebEigeneAbsageFuer(null);
   }, [eventId]);
 
   // isOnline in den Abhaengigkeiten: Kommt die Verbindung zurueck, muss der
@@ -850,7 +921,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const handleAttendanceUpdate = async (
     participant: Participant,
     status: 'present' | 'absent' | 'excused' | null,
-    texte?: { excuse_reason?: string; attendance_note?: string }
+    texte?: { excuse_reason?: string; attendance_note?: string },
+    optionen?: AnwesenheitOptionen
   ) => {
     if (offlineBlockiert(isOnline, setError)) return;
     const grund = status === 'excused' ? (texte?.excuse_reason || null) : null;
@@ -892,7 +964,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
         gruppe: participant.role_name === 'konfi' ? 'konfi' : 'teamer'
       });
       triggerRefresh('events');
-    } catch {
+    } catch (err) {
       setParticipants(prev => prev.map(p =>
         p.id === participant.id
           ? {
@@ -907,6 +979,9 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             }
           : p
       ));
+      // Ein Fenster des Browsers zeigt den Fehler selbst und bleibt offen
+      // (useAnwesenheitTexte) -- derselbe Satz wie hier.
+      if (optionen?.fehlerWeitergeben) throw err;
       setError('Fehler beim Aktualisieren der Anwesenheit');
     }
   };
@@ -919,6 +994,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Abmeldung war beim Umbau der Notiz als Alert stehengeblieben — dieselbe
   // Begruendung traegt hier genauso, und mit zwei Textfeldern erst recht.
   const showAbmeldungModal = (participant: Participant) => {
+    // Im Browser ab 992 px der Dialog der Web-Fassung (WebAbmeldungDialog).
+    if (breit) {
+      setWebFenster({ art: 'abmeldung', person: participant });
+      return;
+    }
     abmeldungTeilnehmerRef.current = participant;
     presentAbmeldungModal({ presentingElement: presentingElement || undefined });
   };
@@ -933,6 +1013,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   const showNotizModal = (participant: Participant) => {
     if (!participant.attendance_status) {
       setError('Erst die Anwesenheit setzen, dann die Notiz eintragen');
+      return;
+    }
+    // Im Browser ab 992 px der Dialog der Web-Fassung (WebNotizDialog).
+    if (breit) {
+      setWebFenster({ art: 'notiz', person: participant });
       return;
     }
     notizTeilnehmerRef.current = participant;
@@ -955,7 +1040,8 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
     // Immer angeboten, auch wenn schon 'excused': dann ist es das Bearbeiten
     // des Grundes.
     buttons.push({
-      text: participant.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet',
+      // Derselbe Wortlaut wie im Menü des Browsers (WebTeilnehmerLeitung).
+      text: participant.attendance_status === 'excused' ? 'Abmeldung bearbeiten' : 'Abgemeldet eintragen',
       icon: ICON_ENTFERNEN_GEFUELLT,
       handler: () => showAbmeldungModal(participant)
     });
@@ -1176,6 +1262,11 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // etwas SCHREIBT, bekommt ein Modal.
   const handleCancelEvent = async () => {
     if (!isOnline || !eventData) return;
+    // Im Browser ab 992 px der Dialog der Web-Fassung (WebTerminAbsagenDialog).
+    if (breit) {
+      setWebFenster({ art: 'absagen' });
+      return;
+    }
     presentAbsageModal({ presentingElement: presentingElement || undefined });
   };
 
@@ -1234,6 +1325,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   };
 
   const handleMaterialClick = (materialId: number) => {
+    // Im Browser ab 992 px das Fenster „Material ansehen" wie unter „Material
+    // verwalten" (WebTerminMaterialDialog -> WebMaterialDialog), nur lesend wie hier.
+    if (breit) {
+      setWebFenster({ art: 'material', id: materialId });
+      return;
+    }
     materialIdRef.current = materialId;
     presentMaterialModal({ presentingElement: presentingElement || pageRef.current || undefined });
   };
@@ -1422,7 +1519,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
               </div>
             </IonItemOption>
           )}
-          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Teilnahme entfernen">
+          <IonItemOption className="app-swipe-action" onClick={() => { closeOpenSlidingItems(); handleRemoveParticipant(participant); }} aria-label="Anmeldung entfernen">
             <div className="app-icon-circle app-icon-circle--lg app-icon-circle--danger">
               <IonIcon icon={ICON_LOESCHEN_GEFUELLT} />
             </div>
@@ -1441,9 +1538,10 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
   // Web-Fassung bekommt sie hereingereicht und ruft dieselben Rückfragen und
   // Modale auf.
   if (breit) {
+    // Konfi, Team, Leitung hinzufügen: der Dialog der Web-Fassung mit der
+    // Rolle des Knopfs (WebTeilnehmerHinzufuegenDialog, Logik wie das Modal).
     const oeffneHinzufuegen = (wen: 'konfi' | 'team' | 'leitung') => {
-      const oeffnen = wen === 'konfi' ? presentKonfiModal : wen === 'team' ? presentTeamerModal : presentLeitungModal;
-      oeffnen({ presentingElement: presentingElement || undefined });
+      setWebFenster({ art: 'hinzufuegen', rolle: wen === 'team' ? 'teamer' : wen });
     };
     // Zurück zur Person, von deren Detailseite das Event geöffnet wurde
     // (?person=), beschriftet mit ihrem Namen aus den Teilnehmenden bzw.
@@ -1483,7 +1581,7 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           zuruecknehmen: handleAbsageZuruecknehmen,
           bearbeiten: () => setWebEventFormular('bearbeiten'),
           kopieren: handleKopieren,
-          qr: () => presentQRDisplayModal({ presentingElement: presentingElement || undefined }),
+          qr: () => setWebFenster({ art: 'qr' }),
           chat: handleChatButtonClick,
           material: handleMaterialClick,
           eigeneZusage: (dabei) => { void setzeEigeneZusage(dabei); },
@@ -1491,9 +1589,12 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
           neuLaden: () => { void loadEventData(); },
         }}
       />
-      {/* Bearbeiten und Kopieren als eigener Dialog. Nach dem Speichern wie
-          in der App zurueck zur Liste (onBack, dort laedt sie neu); bei
-          ungespeicherten Aenderungen fragt der Dialog selbst nach. */}
+      {/* Bearbeiten und Kopieren als eigener Dialog. Nach dem Speichern
+          einer Kopie zurueck zur Liste (onBack, dort laedt sie neu); nach dem
+          Bearbeiten bleibt der Browser auf dem Event und laedt es neu
+          (docs/planung/web-version.md, „Vorschläge aus dem Bau") -- die App
+          kehrt zur Liste zurueck. Bei ungespeicherten Aenderungen fragt der
+          Dialog selbst nach. */}
       {webEventFormular && (
         <WebEventDialog
           event={webEventFormular === 'kopie' ? kopierVorlage : (eventData as unknown as VollerEvent | null)}
@@ -1503,8 +1604,68 @@ const EventDetailView: React.FC<EventDetailViewProps> = ({ eventId, onBack, hide
             const war = webEventFormular;
             setWebEventFormular(null);
             if (war === 'kopie') onBack();
-            else handleEditSuccess();
+            else void loadEventData();
           }}
+        />
+      )}
+      {/* Die übrigen Fenster der Web-Fassung -- je dieselbe Logik wie das Modal der App. */}
+      {webFenster?.art === 'hinzufuegen' && (
+        <WebTeilnehmerHinzufuegenDialog
+          eventId={eventId}
+          filterRole={webFenster.rolle}
+          onSuccess={() => {
+            setWebFenster(null);
+            void loadEventData();
+          }}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'abmeldung' && (
+        <WebAbmeldungDialog
+          teilnehmerName={webFenster.person.participant_name}
+          grund={webFenster.person.excuse_reason}
+          notiz={webFenster.person.attendance_note}
+          onSave={(grund, notiz) => abmeldungSpeichern(webFenster.person, grund, notiz, { fehlerWeitergeben: true })}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'notiz' && (
+        <WebNotizDialog
+          teilnehmerName={webFenster.person.participant_name}
+          notiz={webFenster.person.attendance_note}
+          onSave={(notiz) => notizSpeichern(webFenster.person, notiz, { fehlerWeitergeben: true })}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'absagen' && eventData && (
+        <WebTerminAbsagenDialog
+          terminName={eventData.name}
+          terminDatum={eventData.event_date ? datumLang(eventData.event_date) : ''}
+          konfiAnzahl={angemeldeteKonfis}
+          modus="absagen"
+          onSave={terminAbsagen}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'qr' && (
+        <WebQrDialog
+          eventId={eventId}
+          eventName={eventData?.name || ''}
+          eventDate={eventData?.event_date || ''}
+          onSchliessen={() => setWebFenster(null)}
+        />
+      )}
+      {webFenster?.art === 'material' && (
+        <WebTerminMaterialDialog materialId={webFenster.id} onSchliessen={() => setWebFenster(null)} />
+      )}
+      {/* Die eigene Absage als Fenster (15.10.2026), wie das Modal des Teams. */}
+      {webEigeneAbsageFuer === eventId && eventData && (
+        <WebAbsageDialog
+          rolle="team"
+          pflicht={absageBrauchtGrund(eigeneZusage)}
+          eventName={eventData.name}
+          onAbsage={(grund, melden) => setzeEigeneZusage(false, grund, melden)}
+          onSchliessen={() => setWebEigeneAbsageFuer(null)}
         />
       )}
       </>

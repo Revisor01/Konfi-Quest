@@ -7,14 +7,14 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, afterEach } from 'vitest';
 import './zeitrahmen';
 import React from 'react';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor, act } from '@testing-library/react';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import type { ModalAufruf } from './ionicStart';
 
 const h = vi.hoisted(() => ({
   breit: true,
   apiGet: vi.fn(),
+  apiPut: vi.fn(),
   push: vi.fn(),
   modale: [] as Array<{ name: string; props: Record<string, unknown>; optionen: Record<string, unknown> | undefined }>,
   alerts: [] as unknown[],
@@ -43,6 +43,8 @@ vi.mock('../../../components/konfi/modals/KonfiOnboardingModal', () => ({ defaul
 vi.mock('../../../components/konfi/modals/KonfiUpdate230WalkthroughModal', () => ({ default: () => null }));
 vi.mock('../../../components/shared/MitmachenErklaerungModal', () => ({ default: () => null }));
 vi.mock('../../../components/shared/BibleTranslationModal', async () => ({
+  // Die Liste der Übersetzungen ist echt: Der Dialog der Web-Fassung zeigt sie.
+  BIBLE_TRANSLATIONS: (await vi.importActual<typeof import('../../../components/shared/BibleTranslationModal')>('../../../components/shared/BibleTranslationModal')).BIBLE_TRANSLATIONS,
   default: (await import('./ionicStart')).modalAttrappe('BibleTranslationModal'),
   getTranslationName: (code: string) => (code === 'LUT' ? 'Lutherbibel 2017' : code),
 }));
@@ -59,11 +61,11 @@ vi.mock('../../../services/offlineCache', () => ({
   offlineCache: { get: vi.fn(async () => null), set: vi.fn(async () => undefined), isStale: () => false },
 }));
 vi.mock('../../../services/networkMonitor', () => ({ networkMonitor: { isOnline: true, subscribe: () => () => undefined } }));
-vi.mock('../../../services/api', () => ({ default: { get: h.apiGet } }));
+vi.mock('../../../services/api', () => ({ default: { get: h.apiGet, put: h.apiPut } }));
 vi.mock('../../../services/analytics', () => ({ track: vi.fn() }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({ useLiveRefresh: vi.fn() }));
 vi.mock('../../../contexts/AppContext', () => ({
-  useApp: () => ({ user: h.user, setError: vi.fn(), setSuccess: vi.fn() }),
+  useApp: () => ({ user: h.user, setError: vi.fn(), setSuccess: vi.fn(), isOnline: true }),
 }));
 vi.mock('../../../utils/haptics', () => ({ triggerPullHaptic: vi.fn() }));
 vi.mock('../../../navigation/breitesLayout', () => ({ useBreitesLayout: () => h.breit }));
@@ -240,13 +242,16 @@ describe('Konfi-Start (Web): Kopf und Punkte', () => {
     expect(within(punkte).queryByRole('progressbar', { name: 'Gesamt-Punkte' })).toBeNull();
   });
 
-  it('der Knopf „Punkte-Übersicht" oeffnet dasselbe Modal wie die App, mit der Punkte-Konfiguration', async () => {
+  // Seit 15.10.2026 (Simon): Im Browser zeigt das Profil dieselben Einträge
+  // schon als Tabelle „Punkte-Verlauf" -- die Punkte-Übersicht führt dorthin
+  // (/konfi/profile?punkte=1 springt zur Tabelle, profil: webProfilFenster).
+  it('„Punkte-Übersicht" ist ein Link zur Tabelle im Profil (?punkte=1), kein Modal', async () => {
     await zeige();
-    fireEvent.click(screen.getByRole('button', { name: 'Punkte-Übersicht' }));
-    expect(h.modale).toHaveLength(1);
-    const aufruf = h.modale[0] as ModalAufruf;
-    expect(aufruf.name).toBe('PointsHistoryModal');
-    expect(aufruf.props.pointConfig).toEqual(DASHBOARD.point_config);
+    const link = screen.getByRole('link', { name: 'Punkte-Übersicht' });
+    expect(link).toHaveAttribute('href', '/konfi/profile?punkte=1');
+    fireEvent.click(link);
+    expect(h.push).toHaveBeenCalledWith('/konfi/profile?punkte=1', 'none', 'push');
+    expect(h.modale).toEqual([]);
   });
 });
 
@@ -363,9 +368,14 @@ describe('Konfi-Start (Web): Karten', () => {
       return karteSpruch;
     });
     expect(within(k).getByText('Josua 1,9')).toBeInTheDocument();
+    // Seit 15.10.2026 ein Dialog der Web-Fassung mit der Logik der App
+    // (start/webKonfispruchDialog), kein App-Modal.
     fireEvent.click(within(k).getByRole('button', { name: 'Konfispruch ändern' }));
-    expect(h.modale.map((m) => m.name)).toEqual(['KonfispruchSelectModal']);
-    expect(h.modale[0].props.current).toEqual(PROFIL.konfspruch);
+    const dialog = screen.getByRole('dialog', { name: 'Dein Konfispruch' });
+    await waitFor(() => expect(h.apiGet).toHaveBeenCalledWith('/konfi/konfsprueche'));
+    expect(h.modale).toEqual([]);
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('ohne gewaehlten Spruch laedt die Karte zum Waehlen ein; ist er fuer den Jahrgang nicht freigegeben, fehlt sie', async () => {
@@ -391,9 +401,16 @@ describe('Konfi-Start (Web): Karten', () => {
     expect(within(k).getByText(/Der Herr ist mein Hirte\./)).toBeInTheDocument();
     expect(within(k).getByText('Psalm 23,1')).toBeInTheDocument();
     expect(within(k).getByText('Lutherbibel 2017')).toBeInTheDocument();
+    // Seit 15.10.2026 ein Dialog der Web-Fassung; die Wahl geht an dieselbe Route wie in der App.
+    h.apiPut.mockResolvedValue({ data: {} });
     fireEvent.click(within(k).getByRole('button', { name: 'Übersetzung ändern' }));
-    expect(h.modale.map((m) => m.name)).toEqual(['BibleTranslationModal']);
-    expect(h.modale[0].props.currentTranslation).toBe('LUT');
+    const dialog = screen.getByRole('dialog', { name: 'Bibelübersetzung' });
+    expect(h.modale).toEqual([]);
+    const knoepfe = within(dialog).getAllByRole('button').filter((b) => b.hasAttribute('aria-pressed'));
+    expect(knoepfe.find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent).toMatch(/^Lutherbibel 2017/);
+    await act(async () => { fireEvent.click(knoepfe.find((b) => b.textContent?.startsWith('Gute Nachricht Bibel')) as HTMLElement); });
+    expect(h.apiPut.mock.calls).toEqual([['/konfi/bible-translation', { translation: 'GNB' }]]);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   it('Badges: Zahlen, geheime Badges, neue Markierung -- ein Klick oeffnet den Dialog, Escape schliesst ihn', async () => {
@@ -505,5 +522,21 @@ describe('Konfi-Start: Zustaende und die App', () => {
     expect(container.querySelector('.web-seite')).toBeNull();
     expect(container.querySelector('.web-karte')).toBeNull();
     expect(container.textContent).toContain('Guten Morgen, Mia!');
+  });
+
+  it('Punkte, Konfispruch und Übersetzung öffnen dort die Modale der App, keinen Dialog; die Wahl der Übersetzung geht an dieselbe Route', async () => {
+    h.breit = false;
+    h.apiPut.mockResolvedValue({ data: {} });
+    const { container } = render(<KonfiDashboardPage />);
+    fireEvent.click(await screen.findByRole('button', { name: /zum Ändern tippen/ }));
+    fireEvent.click(screen.getByRole('button', { name: /KONFISPRUCH/ }));
+    // Die Ringe im Kopf der App öffnen die Punkte-Übersicht.
+    fireEvent.click(container.querySelector('.app-dashboard-header [role="button"]') as HTMLElement);
+    expect(h.modale.map((m) => m.name)).toEqual(['BibleTranslationModal', 'KonfispruchSelectModal', 'PointsHistoryModal']);
+    expect(h.modale[1].props.current).toEqual(PROFIL.konfspruch);
+    expect(h.modale[2].props.pointConfig).toEqual(DASHBOARD.point_config);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await act(async () => { (h.modale[0].props.onSelect as (c: string) => void)('GNB'); });
+    expect(h.apiPut.mock.calls).toEqual([['/konfi/bible-translation', { translation: 'GNB' }]]);
   });
 });

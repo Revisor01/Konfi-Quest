@@ -94,6 +94,8 @@ describe('Benutzer:innen (Web): Tabelle', () => {
   it('Spalten und Reihenfolge: Gemeindeleitung, Leitung, dann Team -- darin nach Name', async () => {
     render(<AdminUsersPage />);
     expect(screen.getByRole('heading', { level: 1, name: 'Benutzer:innen' })).toBeInTheDocument();
+    // Der Weg zurück nach „Mehr" wie auf den übrigen Seiten dort (fehlte bis 15.10.2026).
+    expect(screen.getByRole('link', { name: 'Mehr' })).toHaveAttribute('href', '/admin/settings');
     expect(within(tabelle()).getAllByRole('columnheader').map((c) => c.textContent))
       .toEqual(['Name', 'Rolle', 'Jahrgänge', 'Status', 'Zuletzt angemeldet', 'Aktionen']);
     expect(namen()).toEqual(['Alex Beispiel', 'Lou Exempel', 'Sam Muster', 'Charlie Demo', 'Gast Beispiel', 'Geschützt Person', 'Robin Probe']);
@@ -212,9 +214,10 @@ describe('Benutzer:innen (Web): Rechte', () => {
 describe('Benutzer:innen (Web): Aktionen oeffnen die Fenster', () => {
   // Seit 11.10.2026 steht das Benutzerformular im Browser als eigener Dialog
   // (WebBenutzerDialog; ausfuehrlich in webBenutzerDialog.test.tsx) -- das
-  // Fenster der App geht im breiten Layout nicht mehr auf. Einladen bleibt
-  // das Fenster der App.
-  it('Anlegen: der Dialog „Benutzer:in anlegen“ ohne Person; Einladen: das Fenster zum Einladen', async () => {
+  // Fenster der App geht im breiten Layout nicht mehr auf. Seit 15.10.2026
+  // ebenso „Person einladen" (WebPersonEinladenDialog; ausfuehrlich in
+  // webPersonEinladenDialog.test.tsx).
+  it('Anlegen: der Dialog „Benutzer:in anlegen“ ohne Person; Einladen: der Dialog „Person einladen“', async () => {
     render(<AdminUsersPage />);
     fireEvent.click(screen.getByRole('button', { name: 'Benutzer:in anlegen' }));
     const dialog = screen.getByRole('dialog', { name: 'Benutzer:in anlegen' });
@@ -224,8 +227,8 @@ describe('Benutzer:innen (Web): Aktionen oeffnen die Fenster', () => {
     expect(h.stand.fenster.some((f) => f.komponente === UserManagementModal)).toBe(false);
     fireEvent.click(within(dialog).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Person einladen' }));
-    expect(h.stand.fenster).toHaveLength(1);
-    expect(h.stand.fenster[0].komponente).toBe(EinladungModal);
+    expect(screen.getByRole('dialog', { name: 'Person einladen' })).toBeInTheDocument();
+    expect(h.stand.fenster.some((f) => f.komponente === EinladungModal)).toBe(false);
     await screen.findByRole('table', { name: 'Offene Einladungen' });
   });
 

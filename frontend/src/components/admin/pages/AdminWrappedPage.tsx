@@ -113,7 +113,8 @@ const datum = (iso: string | null) =>
 type TeamJahr = { jahr: number; gesperrt: boolean };
 
 const AdminWrappedPage: React.FC = () => {
-  const { user, setSuccess, setError } = useApp();
+  const app = useApp();
+  const { user, setSuccess, setError } = app;
   const [zeigeAlert] = useIonAlert();
   // Im Browser ab 992 px eine Tabelle mit Dialog (web/leitung/WebRueckblick.tsx);
   // Laden, Erzeugen und Loeschen dieser Seite bleiben dieselben.
@@ -156,6 +157,9 @@ const AdminWrappedPage: React.FC = () => {
     return bisher === 0 ? 'Zwischenstand' : `Zwischenstand ${bisher + 1}`;
   }, [neuerJahrgang, ausgaben]);
   const [erzeugt, setErzeugt] = useState(false);
+  // Die Meldung im Fenster „Neuer Rückblick" des Browsers (WebHinweis); die
+  // nächste Eingabe, Schließen oder ein neuer Versuch räumen sie weg.
+  const [fensterFehler, setFensterFehler] = useState<string | null>(null);
 
   // super_admins tragen role_name 'org_admin' -- dieselbe Pruefung wie im
   // Backend, damit die Oberflaeche nicht mehr verspricht als die Route haelt.
@@ -185,6 +189,13 @@ const AdminWrappedPage: React.FC = () => {
   useEffect(() => { setPresentingElement(pageRef.current); }, []);
 
   const erzeugen = async () => {
+    // Wohin eine Meldung geht: im Browser ins Fenster selbst -- die Meldung
+    // oben ist ein IonToast in <ion-app> und laege unter dem abgedunkelten
+    // Grund des Fensters (Befund 15.10.2026). Die App meldet weiter oben.
+    // Bewusst unter dem Namen setError: Die Positivliste der Fehlertexte
+    // (utils/bekannteFehlertexte.ts) liest die Texte an dessen Aufrufstellen.
+    const setError = breit ? setFensterFehler : app.setError;
+    setFensterFehler(null);
     if (segment === 'konfi' && !neuerJahrgang) {
       setError('Bitte einen Jahrgang wählen');
       return;
@@ -261,18 +272,19 @@ const AdminWrappedPage: React.FC = () => {
         onLoeschen={loeschen}
         dialog={{
           offen: modalOffen,
-          onOeffnen: () => setModalOffen(true),
-          onSchliessen: () => setModalOffen(false),
+          onOeffnen: () => { setFensterFehler(null); setModalOffen(true); },
+          onSchliessen: () => { setFensterFehler(null); setModalOffen(false); },
           jahrgangId: neuerJahrgang,
-          onJahrgang: setNeuerJahrgang,
+          onJahrgang: (id) => { setFensterFehler(null); setNeuerJahrgang(id); },
           jahr: neuesJahr,
-          onJahr: setNeuesJahr,
+          onJahr: (jahr) => { setFensterFehler(null); setNeuesJahr(jahr); },
           teamJahre,
           name: neuerName,
-          onName: setNeuerName,
+          onName: (name) => { setFensterFehler(null); setNeuerName(name); },
           namensVorschlag,
           erzeugt,
           onErzeugen: erzeugen,
+          fehler: fensterFehler,
         }}
       />
     );

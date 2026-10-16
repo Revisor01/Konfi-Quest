@@ -402,7 +402,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
       const [m] = await postfach(USERS.konfi1.id);
       expect(m).toMatchObject({
         type: 'wrapped',
-        title: 'Deine Konfi-Zeit Wrapped ist da!',
+        title: 'Dein Konfi-Jahresrückblick ist da!',
         organization_id: ORG1,
         read_at: null
       });
@@ -416,7 +416,7 @@ describe('Postfach: der Push-Weg schreibt die Mitteilung mit', () => {
 
       const [m] = await postfach(USERS.teamer1.id);
       expect(m.type).toBe('wrapped');
-      expect(m.title).toBe('Dein Team-Jahr Wrapped ist da!');
+      expect(m.title).toBe('Dein Team-Jahresrückblick ist da!');
       expect(m.data).toEqual({ type: 'wrapped', wrappedType: 'teamer', organization_id: String(ORG1) });
     });
 

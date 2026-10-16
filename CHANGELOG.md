@@ -190,6 +190,57 @@ Versionsüberschrift.
   „Mitglieder“ ein eigenes Fenster wie die übrigen Formulare; Angaben, Regeln
   und Auswahl bleiben dieselben wie in der App. Im neuen Gruppenchat legt Enter
   im Gruppennamen die Gruppe an.
+- Im Browser öffnen auch diese Formulare ein eigenes Fenster statt des
+  App-Fensters, mit denselben Angaben und Regeln wie in der App:
+  - im Profil Funktionsbeschreibung, Bibelübersetzung, Benachrichtigungen und
+    Konto löschen, auf der Startseite von Konfis und Team „Dein Konfispruch“
+    und die Bibelübersetzung der Tageslosung;
+  - das Postfach hinter der Glocke; führt eine Mitteilung in eine andere
+    Gemeinde, sagt das Fenster, dass gerade dorthin gewechselt wird;
+  - auf der Seite eines Events Konfi, Team oder Leitung hinzufügen (ist das
+    Event voll, fragt ein kleines Fenster „Trotzdem eintragen“), Abgemeldet
+    eintragen, Abmeldung und Notiz zur Anwesenheit, Event absagen und den
+    Absagegrund bearbeiten, ein Event einer Serie löschen, der QR-Code zum
+    Einchecken (groß, mit Zähler und Drucken), die Legende und Material aus
+    dem Event zum Lesen;
+  - die Absage von Team und Leitung (nach einer Zusage mit Grund), das
+    Abmelden der Konfis von Event oder Warteliste und die Wahl eines
+    Zeitfensters;
+  - Challenge anlegen und bearbeiten (Start und Ende im Datumsfeld des
+    Browsers) und Beitrag einreichen;
+  - Aktivität im Katalog anlegen und bearbeiten, Person einladen und
+    Einladung verlängern.
+- Im Browser sehen alle Rückfragen aus wie die Fenster der Web-Fassung, auch
+  die ohne Löschen oder Warnung, etwa „Chat erstellen?“ oder „Alle
+  bestätigen?“.
+- „Aktivität zurücksetzen“ und „Beitrag anonym stellen“ fragen mit
+  Warndreieck und rotem Knopf nach, weil sie Punkte zurücknehmen bzw. nicht
+  rückgängig zu machen sind.
+- Im Browser führt „Punkte-Übersicht“ zur Tabelle „Punkte-Verlauf“ im Profil
+  der Konfis bzw. in der Konfi-Historie des Teams; auch Links aus
+  Mitteilungen und Postfach springen dorthin.
+- Im Browser bleibt nach „Speichern“ in „Event bearbeiten“ das Event offen
+  und zeigt den neuen Stand, statt zur Liste zu springen.
+- Fehlen die Zeitfenster eines Events, ist „Anmelden“ im Browser gesperrt und
+  der Grund steht daneben, statt dass erst nach dem Klick eine Rückfrage
+  erscheint.
+- „Abgemeldet eintragen“ und „Anmeldung entfernen“ heißen in App und Browser
+  gleich, wie die Rückfrage danach.
+- Jeder Bereich heißt überall gleich, auf der Kachel unter „Mehr“, im
+  Seitentitel und in der App: „Level“, „Konfis einladen“, „Betrieb“ und
+  „Startseiten“ (mit „Startseite der Konfis“ und „Startseite des Teams“)
+  statt „Dashboard“. Die Badge-Seite der Konfis heißt „Badges“ wie der
+  Reiter.
+- Überall heißt es „Jahresrückblick“ statt „Wrapped“: in der Tour der
+  Leitung, auf der Startseite des Teams, in der Konfi-Historie, beim Teilen
+  einer Folie, in der Mitteilung („Dein Konfi-Jahresrückblick ist da!“), in
+  den Meldungen des Servers und auf konfi-quest.de.
+- Die Erklärung zu Jahrgänge sagt richtig, dass der Jahresrückblick unter
+  „Jahresrückblick“ entsteht; Jahrgänge tragen in App und Browser denselben
+  Untertitel „Punkteziele und Konfisprüche verwalten“.
+- Im Profil der Konfis im Browser steht bei den Aktivitäten „N offen“.
+- In jeder Rolle heißt es „Konto löschen“ statt „Account löschen“, und die
+  Rückfrage zum Abmelden lautet überall gleich.
 - Der Reiter „Team“ zeigt seine Anzahl gleich beim Öffnen der Konfi-Seite; in
   der App stehen die Zahlen am Umschalter Konfis/Team.
 - Der Knopf „Anwesenheit“ steht nur noch bei den Konfis, nicht beim Team.
@@ -403,6 +454,47 @@ Versionsüberschrift.
   neben der Überschrift, wie das Anlegen bei Konfis und Team.
 
 ### Behoben
+- Konfis können sich ohne Netz wieder von einem Event oder der Warteliste
+  abmelden: Das Fenster sperrte den Knopf, obwohl die Abmeldung gespeichert
+  und gesendet wird, sobald wieder Netz da ist.
+- Ohne Netz sagt das Postfach „Dein Postfach ist offline nicht verfügbar.“
+  statt eines falschen Satzes.
+- Im Challenge-Formular beschreibt „Audio“ richtig, dass Beiträge direkt
+  aufgenommen werden; Musikdateien lassen sich nicht hochladen.
+- Der Speichern-Haken im Challenge-Formular der App hat einen Namen für
+  Vorlesehilfen.
+- Konnten die Zeitfenster eines Events nicht geladen werden, lädt „nach unten
+  ziehen“ sie neu, wie die Rückfrage beim Anmelden es verspricht.
+- Im Profil der Leitung fehlte im Browser „Abmelden“ in der Karte „Konto“.
+- Im Browser bleibt im Fenster „Benachrichtigungen“ der Fokus nach dem
+  Umschalten am Schalter; mehrere Gruppen lassen sich so nacheinander per
+  Tastatur umlegen.
+- Nach „Erneut versuchen“ zeigt der QR-Code zum Einchecken den Code, statt
+  die alte Fehlermeldung stehen zu lassen.
+- Lehnt der Server eine Absage, Abmeldung oder Anmeldung mit Zeitfenster ab,
+  steht der Grund im Browser im Fenster selbst; das Fenster bleibt offen, bis
+  die Antwort da ist.
+- Wer ein Event mit Zeitfenstern ohne Internet geöffnet hat, kann sich nach
+  der Rückkehr der Verbindung anmelden, ohne den Hinweis, es gebe keine
+  Zeitfenster.
+- Wer im Formular einer Aktivität gleich nach dem Öffnen etwas ändert, wird
+  beim Schließen gefragt, ob die Änderungen verworfen werden sollen.
+- Das Fenster „Benutzer:in anlegen/bearbeiten“ fragt vor dem Schließen nach,
+  wenn etwas geändert wurde, auch an Jahrgängen und Rechten, in der App wie im
+  Browser.
+- „Konfis einladen“ im schmalen Browserfenster hat oben „Zurück“ statt eines
+  Kreuzes, das nichts tat.
+- Das Fenster „Neuer Rückblick“ im Browser bleibt offen, solange der
+  Rückblick entsteht; Fehler stehen im Fenster.
+- Benutzer:innen im Browser haben den Weg zurück nach „Mehr“.
+- Gemeinden und Betrieb zeigen Konten ohne Support-Recht den Hinweis „Nur für
+  den Support“ statt einer leeren Liste oder einer Fehlermeldung.
+- Im Browser markiert die Leiste des Teams auf den Badges „Profil“ und auf
+  dem Material „Material“; „Badges“ im Profil der App öffnet unter dem
+  Profil.
+- Im Chat im Browser teilt „Teilen“ eine Datei wirklich, mit Bildunterschrift
+  wie in der App; kann der Browser keine Dateien teilen, bietet die Nachricht
+  „Herunterladen“ an.
 - Unter Mitmachen bleibt die Seite im Browser nicht mehr weiß, wenn die
   Leitung von den Events zu den Aktivitäten wechselt (Hinweis von Malte).
 - Teamer:innen sehen im Browser ein Event wieder, das sie unter Mitmachen
@@ -661,6 +753,9 @@ Versionsüberschrift.
   nicht erst nach einem Wechsel zwischen Konfis und Team.
 
 ### Sonstiges
+- Material aus einem Event zählt im Browser in der anonymen Nutzungsmessung
+  wie in der App: ohne Netz gar nicht, und nur echte Weblinks gelten als
+  Link.
 - Die automatischen Prüfungen des Servers laufen in vier Teilen gleichzeitig;
   eine neue Fassung ist dadurch schneller geprüft und ausgeliefert.
 - Die automatischen Prüfungen halten das Aussehen nicht mehr fest, nur noch

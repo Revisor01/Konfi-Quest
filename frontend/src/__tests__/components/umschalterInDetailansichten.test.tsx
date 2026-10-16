@@ -102,12 +102,13 @@ describe('Konfi-Terminliste: behaelt ihn -- dort ist der Wechsel sinnvoll', () =
 describe('Material-Detail des Teams: kein Umschalter (26.09.2026, "Material sub Seiten auch weg damit")', () => {
   it('weder beim Laden noch mit geladenem Material', async () => {
     vi.doUnmock('../../components/teamer/pages/TeamerMaterialDetailPage');
-    vi.doMock('../../services/materialDetail', () => ({
-      materialDetailLaden: async () => ({ daten: { id: 3, title: 'Liedblatt', files: [] }, ausSpeicher: false }),
-    }));
-    vi.doMock('../../hooks/useDateiOeffnen', () => ({
-      useDateiOeffnen: () => ({ dateiOeffnen: vi.fn(), ladendeDatei: null }),
-    }));
+    // Das Material kommt vom (nachgestellten) Server. Bis 15.10.2026 wurde
+    // hier services/materialDetail per doMock ersetzt; seitdem laedt ein Hook
+    // (useMaterialAnsicht), den die Team-Seite schon vorher geladen hat --
+    // ein spaeteres doMock erreicht ihn nicht mehr.
+    api.get.mockImplementation(async (pfad: string) => (pfad === '/material/3'
+      ? { data: { id: 3, title: 'Liedblatt', files: [] } }
+      : { data: [] }));
     const Detail = (await import('../../components/teamer/pages/TeamerMaterialDetailPage')).default;
     render(<Detail materialId={3} onClose={() => undefined} />);
     for (let i = 0; i < 3; i += 1) await act(async () => { await Promise.resolve(); });

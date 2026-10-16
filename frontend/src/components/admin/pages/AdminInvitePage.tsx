@@ -51,7 +51,9 @@ import { tageBis } from '../../shared/eventFormatting';
 import { teilenImBrowser } from '../../../services/systemDialoge';
 import { datumKurz } from '../../../utils/dateUtils';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
+import AppKopfzeile from '../../shared/AppKopfzeile';
 import WebEinladung from '../web/leitung/WebEinladung';
+import WebEinladungVerlaengernDialog from '../web/leitung/WebEinladungVerlaengernDialog';
 import {
   GUELTIGKEIT_TAGE,
   STANDARD_TAGE,
@@ -59,7 +61,8 @@ import {
   gueltigkeitText,
   istGueltigkeitTage,
   verlaengerungsOptionen,
-  type GueltigkeitTage
+  type GueltigkeitTage,
+  type VerlaengerungsOption
 } from '../../../utils/einladungsGueltigkeit';
 
 interface Jahrgang {
@@ -77,7 +80,12 @@ interface ExistingInvite {
 }
 
 interface AdminInviteModalProps {
-  onClose: () => void;
+  /**
+   * Als Fenster aus "Mehr" (useIonModal): onClose und dismiss schliessen es.
+   * Als Seite unter /admin/settings/invite gibt die Route keines von beiden
+   * mit -- dann steht oben der Weg zurueck im Verlauf statt des X.
+   */
+  onClose?: () => void;
   dismiss?: () => void;
 }
 
@@ -88,11 +96,14 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   // (web/leitung/WebEinladung.tsx); als Fenster aus "Mehr" (dismiss gesetzt)
   // bleibt es bei der Darstellung der App. Zustand und Aktionen bleiben dieselben.
   const breit = useBreitesLayout();
+  // Als Seite (Route ohne onClose/dismiss): Das X rief bis 15.10.2026 ein
+  // onClose, das es dort nicht gibt (TypeError, man sass unter 992 px fest).
+  const alsSeite = !dismiss && !onClose;
   const handleClose = () => {
     if (dismiss) {
       dismiss();
     } else {
-      onClose();
+      onClose?.();
     }
   };
 
@@ -127,6 +138,10 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   const [generatingCode, setGeneratingCode] = useState(false);
   const [extendingInvite, setExtendingInvite] = useState<number | null>(null);
   const [initialQrShown, setInitialQrShown] = useState(false);
+  // Im Browser ab 992 px fragt ein Fenster der Web-Fassung nach den Tagen
+  // (web/leitung/WebEinladungVerlaengernDialog; Simon, 15.10.2026) -- mit
+  // denselben Stufen, die die App beim Öffnen ihrer Rückfrage rechnet.
+  const [verlaengern, setVerlaengern] = useState<{ code: ExistingInvite; optionen: VerlaengerungsOption[] } | null>(null);
 
   // Initialen Jahrgang und QR-Code setzen wenn Daten geladen
   useEffect(() => {
@@ -190,15 +205,20 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
     }
   };
 
-  const extendInvite = async (inviteId: number, tage: GueltigkeitTage) => {
-    if (offlineBlockiert(isOnline, setError)) return;
+  // Dieselbe Stelle fuer App und Browser. `melden` zeigt einen Fehler: die
+  // App oben (setError), das Fenster der Web-Fassung in sich selbst. Gibt
+  // zurueck, ob verlaengert ist -- dann schliesst das Fenster.
+  const extendInvite = async (inviteId: number, tage: GueltigkeitTage, melden: (text: string) => void = setError): Promise<boolean> => {
+    if (offlineBlockiert(isOnline, melden)) return false;
     try {
       setExtendingInvite(inviteId);
       const res = await api.post(`/auth/invite-codes/${inviteId}/extend`, { tage });
       if (res.data?.expires_at) setSuccess(`Einladung gilt bis ${datumKurz(res.data.expires_at)}`);
       await refreshInvites();
+      return true;
     } catch (error) {
-      setError(fehlerText(error, 'Fehler beim Verlängern des Codes'));
+      melden(fehlerText(error, 'Fehler beim Verlängern des Codes'));
+      return false;
     } finally {
       setExtendingInvite(null);
     }
@@ -210,6 +230,12 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
   const waehleVerlaengerung = (invite: ExistingInvite) => {
     if (offlineBlockiert(isOnline, setError)) return;
     const optionen = verlaengerungsOptionen(new Date(invite.expires_at));
+    // Die Seite im breiten Browserfenster (nicht das Fenster aus „Mehr"):
+    // dieselben Stufen im Fenster der Web-Fassung.
+    if (breit && !dismiss) {
+      setVerlaengern({ code: invite, optionen });
+      return;
+    }
     if (optionen.length === 0) {
       presentAlert({
         header: 'Einladung verlängern',
@@ -232,7 +258,7 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
         {
           text: 'Verlängern',
           handler: (tage: unknown) => {
-            if (istGueltigkeitTage(tage)) extendInvite(invite.id, tage);
+            if (istGueltigkeitTage(tage)) void extendInvite(invite.id, tage);
           }
         }
       ]
@@ -326,46 +352,60 @@ const AdminInvitePage: React.FC<AdminInviteModalProps> = ({ onClose, dismiss }) 
 
   if (breit && !dismiss) {
     return (
-      <WebEinladung
-        jahrgaenge={jahrgaenge || []}
-        codes={existingInvites || []}
-        laedt={loading}
-        isOnline={isOnline}
-        jahrgangId={selectedJahrgang}
-        onJahrgang={(id) => {
-          setSelectedJahrgang(id);
-          setInviteCode(null);
-          setQrCodeDataUrl(null);
-        }}
-        gueltigTage={gueltigTage}
-        onGueltigTage={setGueltigTage}
-        erzeugt={generatingCode}
-        onErzeugen={generateInviteCode}
-        inviteCode={inviteCode}
-        qrUrl={qrCodeDataUrl}
-        verlaengertId={extendingInvite}
-        onQrZeigen={showExistingInviteQR}
-        onVerlaengern={waehleVerlaengerung}
-        onLoeschen={deleteInvite}
-        onKopieren={copyInviteLink}
-        onTeilen={shareInvite}
-        ablaufSatz={formatExpiryDate}
-      />
+      <>
+        <WebEinladung
+          jahrgaenge={jahrgaenge || []}
+          codes={existingInvites || []}
+          laedt={loading}
+          isOnline={isOnline}
+          jahrgangId={selectedJahrgang}
+          onJahrgang={(id) => {
+            setSelectedJahrgang(id);
+            setInviteCode(null);
+            setQrCodeDataUrl(null);
+          }}
+          gueltigTage={gueltigTage}
+          onGueltigTage={setGueltigTage}
+          erzeugt={generatingCode}
+          onErzeugen={generateInviteCode}
+          inviteCode={inviteCode}
+          qrUrl={qrCodeDataUrl}
+          verlaengertId={extendingInvite}
+          onQrZeigen={showExistingInviteQR}
+          onVerlaengern={waehleVerlaengerung}
+          onLoeschen={deleteInvite}
+          onKopieren={copyInviteLink}
+          onTeilen={shareInvite}
+          ablaufSatz={formatExpiryDate}
+        />
+        {verlaengern && (
+          <WebEinladungVerlaengernDialog
+            code={verlaengern.code.invite_code}
+            optionen={verlaengern.optionen}
+            onVerlaengern={(tage, melden) => extendInvite(verlaengern.code.id, tage, melden)}
+            onSchliessen={() => setVerlaengern(null)}
+          />
+        )}
+      </>
     );
   }
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar>
-          <IonButtons slot="start">
-            <IonButton onClick={handleClose} aria-label="Schließen">
-              <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
-            </IonButton>
-          </IonButtons>
-          <IonTitle>Konfis einladen</IonTitle>
-        </IonToolbar>
-      </IonHeader>
+      {alsSeite ? (
+        <AppKopfzeile titel="Konfis einladen" onZurueck={() => window.history.back()} gemeindeUmschalter={false} />
+      ) : (
+        <IonHeader>
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonButton onClick={handleClose} aria-label="Schließen">
+                <IonIcon icon={ICON_SCHLIESSEN} slot="icon-only" />
+              </IonButton>
+            </IonButtons>
+            <IonTitle>Konfis einladen</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+      )}
 
       <IonContent className="app-gradient-background">
 

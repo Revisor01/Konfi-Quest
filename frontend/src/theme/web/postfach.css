@@ -1,0 +1,165 @@
+/* ====================================================================
+   Das Postfach hinter der Glocke im Browser (common/web/WebPostfachDialog,
+   Simon 15.10.2026: im Browser ein kompaktes Web-Fenster statt des
+   App-Modals). Nicht zu verwechseln mit den Support-Postfaechern
+   (support.css, .web-postfach).
+
+   Zwei Teile untereinander: die Warteschlange des Geraets (nur, wenn etwas
+   darin liegt) und die Mitteilungen. Jede Mitteilung ist ein Knopf ueber die
+   ganze Zeile: Kreis in der Farbe ihres Bereichs (dieselben Farben wie die
+   Kreise der App-Liste, utils/postfach.postfachBereich), Titel, Text, Datum
+   und -- bei mehreren Gemeinden -- die Gemeinde. Ungelesen: Titel fett und
+   der blaue Punkt der App (.app-ungelesen-punkt) rechts oben.
+   ==================================================================== */
+
+.web-postfachteil {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+}
+
+.web-postfachteil__kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--app-abstand-mittel);
+}
+
+.web-postfachteil__titel {
+  margin: 0;
+  font-size: var(--app-text-standard);
+  font-weight: var(--app-schrift-halbfett);
+  color: var(--web-text);
+}
+
+.web-postfachteil__fuss {
+  display: flex;
+  justify-content: center;
+}
+
+.web-mitteilungen {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+}
+
+.web-mitteilungen > li {
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-mitteilungen > li:last-child {
+  border-bottom: 0;
+}
+
+/* Eine Zeile: als Knopf (Mitteilung) oder still (Warteschlange). */
+.web-mitteilung {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+  padding: var(--app-abstand-mittel);
+  border: 0;
+  background: transparent;
+  color: var(--web-text);
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button.web-mitteilung {
+  cursor: pointer;
+}
+
+button.web-mitteilung:hover {
+  background: var(--web-hover);
+}
+
+button.web-mitteilung:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
+button.web-mitteilung:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.web-mitteilung--still {
+  align-items: center;
+}
+
+.web-mitteilung__kreis {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--app-radius-kreis);
+  background: var(--app-color-info);
+  color: var(--app-weiss);
+  font-size: var(--app-text-gross);
+}
+
+.web-mitteilung__kreis--badges { background: var(--app-color-badges); }
+.web-mitteilung__kreis--activities { background: var(--app-color-activities); }
+.web-mitteilung__kreis--events { background: var(--app-color-events); }
+.web-mitteilung__kreis--chat { background: var(--app-color-chat); }
+.web-mitteilung__kreis--challenges { background: var(--app-color-challenges); }
+.web-mitteilung__kreis--info { background: var(--app-color-info); }
+.web-mitteilung__kreis--warnung { background: var(--app-color-warning); }
+.web-mitteilung__kreis--fehler { background: var(--app-color-danger); }
+
+.web-mitteilung__emoji {
+  font-size: var(--app-text-untertitel);
+  line-height: 1;
+}
+
+.web-mitteilung__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--app-abstand-winzig);
+  min-width: 0;
+}
+
+.web-mitteilung__titel {
+  font-weight: var(--app-schrift-halbfett);
+  overflow-wrap: anywhere;
+}
+
+.web-mitteilung--ungelesen .web-mitteilung__titel {
+  font-weight: var(--app-schrift-fett);
+}
+
+.web-mitteilung__nachricht {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  overflow-wrap: anywhere;
+}
+
+.web-mitteilung__angaben {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--app-abstand-mittel);
+  color: var(--web-text-leise);
+  font-size: var(--app-text-klein);
+}
+
+.web-mitteilung__angabe {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--app-abstand-kompakt);
+}
+
+/* Platz fuer den Punkt, auch ohne Punkt -- sonst springt der Text. */
+.web-mitteilung__punkt {
+  flex: 0 0 10px;
+  width: 10px;
+  margin-top: var(--app-abstand-kompakt);
+}

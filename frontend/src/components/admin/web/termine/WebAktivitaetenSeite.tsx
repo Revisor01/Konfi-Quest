@@ -12,9 +12,11 @@
 // Spalten, Karte und Daten. Reiter, Filter und Leertexte kommen aus der
 // gemeinsamen Beschreibung (seiten/aktivitaetenKatalog.ts).
 //
-// Laden, Anlegen und Aendern (ActivityManagementModal) und Loeschen nach
-// Rueckfrage stehen in useAktivitaetenVerwaltung -- dieselben wie bei der Seite
-// der App (AdminActivitiesPage), die hier hereinreicht.
+// Laden, Anlegen und Aendern und Loeschen nach Rueckfrage stehen in
+// useAktivitaetenVerwaltung -- dieselben wie bei der Seite der App
+// (AdminActivitiesPage), die hier hereinreicht. Anlegen und Aendern oeffnen
+// hier den Dialog der Web-Fassung (WebAktivitaetKatalogDialog, 15.10.2026)
+// statt des Modals der App.
 
 import React, { useMemo, useState } from 'react';
 import { IonIcon } from '@ionic/react';
@@ -33,6 +35,7 @@ import { WebBildKarteSymbol } from '../../../web/WebBildKarte';
 import WebKnopf from '../../../web/WebKnopf';
 import WebPill from '../../../web/WebPill';
 import WebTreffer from '../../../web/WebTreffer';
+import WebAktivitaetKatalogDialog from '../leitung/WebAktivitaetKatalogDialog';
 import type { Aktivitaet, AktivitaetenRolle, useAktivitaetenVerwaltung } from '../../useAktivitaetenVerwaltung';
 import '../../../../theme/web/termine.css';
 import {
@@ -199,7 +202,16 @@ const WebAktivitaetenSeite: React.FC<{
         text: sucht ? `Zu „${suche.trim()}“ gibt es hier keine Aktivität.` : KATALOG_LEER.text,
         aktion: sucht ? <WebKnopf onClick={() => setSuche('')}>Suche leeren</WebKnopf> : undefined,
       }}
-    />
+    >
+      {v.webDialog && (
+        <WebAktivitaetKatalogDialog
+          aktivitaet={v.webDialog.aktivitaet}
+          targetRole={v.rolle}
+          onSchliessen={v.webDialogSchliessen}
+          onGespeichert={v.webDialogGespeichert}
+        />
+      )}
+    </WebListenSeite>
   );
 };
 

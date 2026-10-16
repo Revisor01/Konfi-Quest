@@ -92,16 +92,16 @@ Zeile.
 | `antrag-entschieden` | `entscheidung`: `angenommen` \| `abgelehnt`; `antrag_von`: `konfi` \| `teamer` | admin | `admin/modals/ActivityRequestModal.tsx` | nach erfolgreichem `PUT /admin/activities/requests/:id`; offline eingereiht zählt nicht |
 | `material-angesehen` | `inhalt`: `datei` \| `link` \| `beides` \| `nur-text` | teamer, admin | `teamer/pages/TeamerMaterialPage.tsx`, `teamer/pages/TeamerMaterialDetailPage.tsx` | nach der erfolgreichen Antwort auf `GET /material/:id`, einmal je Öffnen; ein Stand nur aus dem Zwischenspeicher zählt nicht |
 | `material-abgerufen` | `inhalt`: `datei` \| `link` | teamer, admin | dieselben beiden | Datei: nach erfolgreichem `GET /material/files/…`; Link: wenn er geöffnet wird |
-| `konfispruch-erste-wahl` (S1, ab 2.4.0) | `quelle`: `vorschlag` \| `eigen`; `spruch`: Bibelstelle des Vorschlags bzw. Wortlaut des eigenen Spruchs; `spruch_id` und `bibel` (`luther` \| `gute-nachricht` \| `bigs` \| `elberfelder`) nur beim Vorschlag; `stelle` (Stellenangabe) nur beim eigenen; `gemeinde`, `kirchenkreis`, `landeskirche`: Namen der aktiven Gemeinde und ihrer Zuordnung, ohne Zuordnung fehlt das Feld | konfi, teamer | `konfi/modals/KonfispruchSelectModal.tsx` (`trackKonfispruchWahl`) | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`, wenn vorher kein Spruch angezeigt war |
+| `konfispruch-erste-wahl` (S1, ab 2.4.0) | `quelle`: `vorschlag` \| `eigen`; `spruch`: Bibelstelle des Vorschlags bzw. Wortlaut des eigenen Spruchs; `spruch_id` und `bibel` (`luther` \| `gute-nachricht` \| `bigs` \| `elberfelder`) nur beim Vorschlag; `stelle` (Stellenangabe) nur beim eigenen; `gemeinde`, `kirchenkreis`, `landeskirche`: Namen der aktiven Gemeinde und ihrer Zuordnung, ohne Zuordnung fehlt das Feld | konfi, teamer | `konfi/useKonfispruchWahl.ts` (`trackKonfispruchWahl`; App-Fenster und Browser-Fenster teilen ihn) | nach erfolgreichem `PATCH /konfi/profile` bzw. `/teamer/profile`, wenn vorher kein Spruch angezeigt war |
 | `konfispruch-gewechselt` (S1, ab 2.4.0) | dieselben Felder für den neuen Spruch, dazu `vorher_quelle`, `vorher_spruch` und je nach Quelle `vorher_spruch_id`, `vorher_bibel` bzw. `vorher_stelle` für den alten | konfi, teamer | dieselbe Stelle | nach erfolgreichem `PATCH`, wenn ein anderer Spruch (oder derselbe in anderer Übersetzung) den angezeigten ersetzt; derselbe erneut gespeichert meldet nichts |
 | `konfispruch-gespeichert` (bis 2.3.x) | `quelle`; `bibel` beim Vorschlag | konfi, teamer | ältere App-Fassungen | senden die Store-Apps bis 2.3.x weiter; ohne Spruch und Gemeinde, zählt jede Wahl, auch Wechsel |
 | `material-angesehen`, `material-abgerufen` (S17) | wie oben (`inhalt`) | admin | `admin/modals/MaterialFormModal.tsx`, nur mit `nurLesen` | Lese-Ansicht der Material-Verwaltung: angesehen beim Öffnen (nach erfolgreichem `GET /material/:id` in `AdminMaterialPage`), Datei erst nach dem Laden. Eigenes Material zum Bearbeiten zählt nicht |
 | `badge-angelegt` (S5) | `zielgruppe`: `konfi` \| `teamer`; `nachgesendet` | admin | `admin/modals/BadgeManagementModal.tsx` | nach erfolgreichem `POST /admin/badges`; Bearbeiten zählt nicht |
 | `challenge-angelegt` (S6) | `sichtbarkeit`: `offen` \| `konfi-entscheidet` \| `privat` (aus `public`, `konfi_choice`, `private`); `freigabe`: `true` \| `false` | admin | `admin/modals/ChallengeManageModal.tsx` | nach erfolgreichem `POST /challenges/admin`; Bearbeiten zählt nicht |
 | `wrapped-angesehen` (S7) | `art`: `konfi` \| `team`; `bis_ende`: `true` \| `false` | alle | `wrapped/WrappedModal.tsx` (`hooks/useBisEndeMessung.ts`) | einmal beim Schliessen des Rückblicks, wenn Folien zu sehen waren |
-| `postfach-angesehen` (S8) | — | alle | `common/PostfachModal.tsx` | beim Öffnen des Postfachs |
-| `mitteilung-angetippt` (S8) | `art`: Mitteilungsart des Servers mit Bindestrich (`event-cancelled` …), Positivliste `MITTEILUNGS_ARTEN` | alle | `common/PostfachModal.tsx` | beim Antippen einer Mitteilung |
-| `push-gruppe-umgeschaltet` (S9) | `gruppe`: `konfi-chat` \| `konfi-termine` \| `konfi-fortschritt` \| `konfi-verwaltung` \| `alle` (Hauptschalter); `an`: `true` \| `false` | alle | `shared/PushAuswahl.tsx` | nach erfolgreichem `PUT /notifications/preferences` |
+| `postfach-angesehen` (S8) | — | alle | `common/usePostfach.ts` | beim Öffnen des Postfachs |
+| `mitteilung-angetippt` (S8) | `art`: Mitteilungsart des Servers mit Bindestrich (`event-cancelled` …), Positivliste `MITTEILUNGS_ARTEN` | alle | `common/usePostfach.ts` | beim Antippen einer Mitteilung |
+| `push-gruppe-umgeschaltet` (S9) | `gruppe`: `konfi-chat` \| `konfi-termine` \| `konfi-fortschritt` \| `konfi-verwaltung` \| `alle` (Hauptschalter); `an`: `true` \| `false` | alle | `shared/usePushAuswahl.ts` | nach erfolgreichem `PUT /notifications/preferences` |
 | `push-erlaubnis` (S9) | `ergebnis`: `erteilt` \| `abgelehnt` | alle | `contexts/AppContext.tsx` (`trackPushErlaubnis`) | nach der Antwort auf die Systemfrage (`requestPermissions`), nur wenn sie gestellt wurde |
 | `einladung-gesendet` (S10) | `rolle_ziel`: `konfi` \| `teamer` \| `admin` \| `org-admin` | admin | `admin/modals/EinladungModal.tsx` | nach erfolgreichem `POST /einladungen`; nie die Kennung |
 | `einladung-beantwortet` (S10) | `antwort`: `angenommen` \| `abgelehnt` | alle | `shared/EinladungenKarte.tsx` (`useEinladungen`, App und Web) | nach erfolgreichem `POST /einladungen/:id/annehmen\|ablehnen` |
@@ -371,8 +371,8 @@ weniger Ortsangaben oder eine richtiggestellte Erklärung, entscheidet Simon.
 - **Merkmale:** `quelle`: `vorschlag` \| `eigen`; `bibel` (nur bei
   `vorschlag`): `luther` \| `gute-nachricht` \| `bigs` \| `elberfelder` —
   die vier Übersetzungen, die die Auswahl anbietet, als Positivliste.
-- **Stelle:** `konfi/modals/KonfispruchSelectModal.tsx` (Konfi-Startseite und
-  Team-Startseite).
+- **Stelle:** `konfi/useKonfispruchWahl.ts` (Konfi-Startseite und
+  Team-Startseite, in der App und im Browser).
 - **Nicht dabei:** die Bibelstelle (siehe S1), der Text, bei eigenen Sprüchen
   weder Text noch Stellenangabe.
 - **Datenschutz:** zwei plus vier Werte; Texte gibt es heute nur für Luther und
@@ -470,8 +470,8 @@ Stellen oder eine Positivliste, die einer Server-Liste folgen muss.
   das Backend nur noch das Profil. Der Abschnitt darüber beschreibt den Weg
   bis dahin.
 - **Ereignisse ab 2.4.0** (`services/analytics.ts`, `trackKonfispruchWahl`;
-  gerufen in `konfi/modals/KonfispruchSelectModal.tsx`, das Konfi- und
-  Team-Startseite gemeinsam nutzen):
+  gerufen in `konfi/useKonfispruchWahl.ts`, den Konfi- und Team-Startseite
+  in App und Browser gemeinsam nutzen):
   - `konfispruch-erste-wahl` — vorher stand kein Spruch da.
   - `konfispruch-gewechselt` — ein angezeigter Spruch wird durch einen
     anderen ersetzt (oder derselbe in anderer Übersetzung); dazu `vorher_*`

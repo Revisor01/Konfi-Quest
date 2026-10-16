@@ -50,6 +50,8 @@ export interface RueckblickDialog {
   namensVorschlag: string;
   erzeugt: boolean;
   onErzeugen: () => void;
+  /** Die Meldung zum Erstellen (Prüfung, Server), im Fenster statt oben. */
+  fehler?: string | null;
 }
 
 export interface WebRueckblickProps {
@@ -195,15 +197,20 @@ const WebRueckblick: React.FC<WebRueckblickProps> = ({
           titel="Neuer Rückblick"
           onSchliessen={dialog.onSchliessen}
           onAbsenden={dialog.onErzeugen}
+          // Solange erstellt wird, schließt nichts das Fenster (X, Escape,
+          // Klick daneben, Abbrechen) -- sonst ginge eine Ablehnung des
+          // Servers ins Leere (15.10.2026, wie die übrigen Fenster).
+          gesperrt={dialog.erzeugt}
           aktionen={(
             <>
-              <WebKnopf art="text" onClick={dialog.onSchliessen}>Abbrechen</WebKnopf>
+              <WebKnopf art="text" onClick={dialog.onSchliessen} disabled={dialog.erzeugt}>Abbrechen</WebKnopf>
               <WebKnopf art="primaer" absenden disabled={dialog.erzeugt}>
                 {dialog.erzeugt ? 'Wird erstellt …' : 'Rückblick erstellen und freigeben'}
               </WebKnopf>
             </>
           )}
         >
+          {dialog.fehler && <WebHinweis art="fehler" rolle="alert">{dialog.fehler}</WebHinweis>}
           {reiter === 'konfi' ? (
             <>
               <WebAuswahl

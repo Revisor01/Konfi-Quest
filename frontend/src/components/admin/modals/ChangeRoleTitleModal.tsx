@@ -1,6 +1,8 @@
-import { fehlerText } from '../../../utils/fehler';
-import React, { useState } from 'react';
-import { useActionGuard } from '../../../hooks/useActionGuard';
+// Das Modal der App für die Funktionsbeschreibung (Team und Leitung). Die
+// Logik -- Speichern, Warteschlange ohne Netz, Texte -- steht in
+// shared/useFunktionsbeschreibung und gilt ebenso für den Dialog des Browsers
+// (shared/web/konto/WebFunktionDialog).
+import React from 'react';
 import {
   IonPage,
   IonHeader,
@@ -26,11 +28,12 @@ import {
   ICON_OFFLINE,
   ICON_SCHLIESSEN,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import api from '../../../services/api';
-import { writeQueue } from '../../../services/writeQueue';
-import { networkMonitor } from '../../../services/networkMonitor';
-import { safeUUID } from '../../../utils/uuid';
+import {
+  FUNKTION_BEISPIELE,
+  FUNKTION_HINWEIS,
+  FUNKTION_PLATZHALTER,
+  useFunktionsbeschreibung,
+} from '../../shared/useFunktionsbeschreibung';
 
 interface ChangeRoleTitleModalProps {
   onClose: () => void;
@@ -49,37 +52,11 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
   submitBtnClass = 'app-modal-submit-btn--settings',
   infoBoxClass = 'app-info-box--blue'
 }) => {
-  const { setSuccess, setError, isOnline } = useApp();
-  const [roleTitle, setRoleTitle] = useState(initialRoleTitle);
-  const { isSubmitting, guard } = useActionGuard();
-
-  const handleSave = async () => {
-    // Offline: Queue-Fallback (fire-and-forget)
-    if (!networkMonitor.isOnline) {
-      writeQueue.enqueue({
-        method: 'POST',
-        url: '/auth/update-role-title',
-        body: { role_title: roleTitle.trim() },
-        maxRetries: 3,
-        hasFileUpload: false,
-        metadata: { type: 'fire-and-forget', clientId: safeUUID(), label: 'Funktionsbeschreibung' },
-      });
-      setSuccess('Funktionsbeschreibung wird bei Verbindung aktualisiert');
-      onSuccess();
-      return;
-    }
-
-    await guard(async () => {
-      try {
-        await api.post('/auth/update-role-title', {
-          role_title: roleTitle.trim()
-        });
-        onSuccess();
-      } catch (err) {
-        setError(fehlerText(err, 'Fehler beim Aktualisieren der Funktionsbeschreibung'));
-      }
-    });
-  };
+  const { roleTitle, setRoleTitle, isSubmitting, isOnline, speichern } = useFunktionsbeschreibung({
+    initialRoleTitle,
+    onErfolg: onSuccess,
+  });
+  const handleSave = () => { void speichern(); };
 
   return (
     <IonPage>
@@ -116,7 +93,7 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
                   <IonInput aria-label="Funktionsbeschreibung"
                     value={roleTitle}
                     onIonInput={(e) => setRoleTitle(e.detail.value!)}
-                    placeholder="z.B. Pastor, Diakonin, Jugendmitarbeiter"
+                    placeholder={FUNKTION_PLATZHALTER}
                     disabled={isSubmitting}
                     clearInput={true}
                   />
@@ -137,11 +114,10 @@ const ChangeRoleTitleModal: React.FC<ChangeRoleTitleModalProps> = ({
           <IonCard className={`app-card ${infoBoxClass}`}>
             <IonCardContent className="app-info-box">
               <p style={{ margin: 0 }}>
-                Deine Funktionsbeschreibung wird anderen Nutzern im Chat und an anderen Stellen angezeigt.
-                Sie ersetzt nicht deine Rolle (Leitung, Gemeindeleitung, Teamer:in), sondern ergänzt sie.
+                {FUNKTION_HINWEIS}
               </p>
               <p style={{ margin: 'var(--app-abstand-mittel) 0 0 0', fontSize: 'var(--app-text-sekundaer)', fontStyle: 'italic' }}>
-                Beispiele: Pastor, Diakonin, Jugendmitarbeiter, Gemeindediakon, Pfarrerin
+                {FUNKTION_BEISPIELE}
               </p>
             </IonCardContent>
           </IonCard>

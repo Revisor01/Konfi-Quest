@@ -24,6 +24,7 @@ import UsersView from '../UsersView';
 import OffeneEinladungen from '../OffeneEinladungen';
 import WebBenutzer from '../web/leitung/WebBenutzer';
 import WebBenutzerDialog from '../web/leitung/WebBenutzerDialog';
+import WebPersonEinladenDialog from '../web/leitung/WebPersonEinladenDialog';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import LoadingSpinner from '../../common/LoadingSpinner';
 import EinladungModal from '../modals/EinladungModal';
@@ -65,6 +66,9 @@ const AdminUsersPage: React.FC = () => {
   // statt des App-Fensters -- gerendert, solange dies gesetzt ist;
   // `userId: null` heisst "anlegen".
   const [webDialog, setWebDialog] = useState<{ userId: number | null } | null>(null);
+  // Ebenso „Person einladen" (web/leitung/WebPersonEinladenDialog.tsx,
+  // dieselbe Logik usePersonEinladen; Simon, 15.10.2026).
+  const [einladenOffen, setEinladenOffen] = useState(false);
 
   // Alert Hook für Bestätigungsdialoge
   const [presentAlert] = useIonAlert();
@@ -179,7 +183,7 @@ const AdminUsersPage: React.FC = () => {
           onBearbeiten={(u) => setWebDialog({ userId: u.id })}
           onLoeschen={handleDeleteUser}
           onAnlegen={() => setWebDialog({ userId: null })}
-          onEinladen={() => presentEinladungHook({ presentingElement })}
+          onEinladen={() => setEinladenOffen(true)}
         />
         {webDialog && (
           <WebBenutzerDialog
@@ -188,6 +192,15 @@ const AdminUsersPage: React.FC = () => {
             onGespeichert={() => {
               setWebDialog(null);
               refreshUsers();
+            }}
+          />
+        )}
+        {einladenOffen && (
+          <WebPersonEinladenDialog
+            onSchliessen={() => setEinladenOffen(false)}
+            onEingeladen={() => {
+              setEinladenOffen(false);
+              allesNeuLaden();
             }}
           />
         )}

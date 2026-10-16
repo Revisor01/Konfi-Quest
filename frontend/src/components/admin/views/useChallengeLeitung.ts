@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, type RefObject } from 'react';
+import { createElement, useState, useEffect, useMemo, useCallback, type ReactElement, type RefObject } from 'react';
 import { useIonAlert, useIonModal } from '@ionic/react';
 import {
   ICON_BILD,
@@ -25,6 +25,8 @@ import { medienVergessen } from '../../../services/mediaCache';
 import { netzZuerstLaden } from '../../../services/netzZuerst';
 import { CACHE_TTL } from '../../../services/offlineCache';
 import ChallengeSubmitModal from '../../konfi/modals/ChallengeSubmitModal';
+import WebBeitragDialog from '../../shared/web/challenges/WebBeitragDialog';
+import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import { getChallengeStatus } from './ChallengesManageView';
 import { trackHandlung } from '../../../services/analytics';
 import { fehlerText } from '../../../utils/fehler';
@@ -199,15 +201,27 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
   // Zuweisung ohne Nachbau.
   const submitChallenge: KonfiChallenge | null = challenge ?? null;
 
+  // Nach dem eigenen Beitrag -- aus dem Modal der App wie aus dem Dialog des
+  // Browsers: Beitraege neu laden, Liste und Zaehler dahinter aktuell halten.
+  const nachEingereicht = () => {
+    loadSubmissions();
+    onChanged?.();
+  };
+
   const [presentSubmitModal, dismissSubmitModal] = useIonModal(ChallengeSubmitModal, {
     challenge: submitChallenge,
     onClose: () => { dismissSubmitModal(); },
     onSuccess: () => {
       dismissSubmitModal();
-      loadSubmissions();
-      onChanged?.();
+      nachEingereicht();
     }
   });
+
+  // Im Browser ab 992 px statt des Modals der Dialog der Web-Fassung
+  // (WebBeitragDialog; Simon, 15.10.2026) -- dieselbe Logik
+  // (useChallengeBeitrag). Die Seite stellt ihn mit `einreichFenster` dazu.
+  const breit = useBreitesLayout();
+  const [einreichenOffen, setEinreichenOffen] = useState(false);
 
   const counts = useMemo(() => ({
     total: submissions.length,
@@ -317,7 +331,9 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
       message: `Der Beitrag von ${submission.konfi_name || 'dieser Person'} erscheint dann ohne Namen — in der Galerie wie im Export. Das lässt sich nicht rückgängig machen; ihr in der Leitung seht weiterhin, von wem er stammt.`,
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
-        { text: 'Anonym stellen', handler: () => { moderate(submission, 'anonymize'); } }
+        // Endgültig: role 'destructive' gibt der Rückfrage das Warndreieck
+        // (utils/rueckfragenOptik.ts; Simon, 15.10.2026).
+        { text: 'Anonym stellen', role: 'destructive', handler: () => { moderate(submission, 'anonymize'); } }
       ]
     });
   };
@@ -525,8 +541,24 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
   };
 
 
-  /** Das Einreich-Modal fuer den eigenen Beitrag (nur sinnvoll, wenn canSubmitMore). */
-  const oeffneEinreichen = () => presentSubmitModal({ presentingElement: seitenRef?.current || undefined });
+  /** Das Einreich-Formular fuer den eigenen Beitrag (nur sinnvoll, wenn canSubmitMore). */
+  const oeffneEinreichen = () => {
+    if (breit) setEinreichenOffen(true);
+    else presentSubmitModal({ presentingElement: seitenRef?.current || undefined });
+  };
+
+  const einreichFenster: ReactElement | null = einreichenOffen && submitChallenge
+    ? createElement(WebBeitragDialog, {
+      // Je Challenge ein frisches Formular (wie das Modal, ChallengeSubmitModal).
+      key: submitChallenge.id,
+      challenge: submitChallenge,
+      onSchliessen: () => setEinreichenOffen(false),
+      onEingereicht: () => {
+        setEinreichenOffen(false);
+        nachEingereicht();
+      },
+    })
+    : null;
 
   return {
     user,
@@ -549,5 +581,7 @@ export function useChallengeLeitung({ challenge, onChanged, seitenRef }: Challen
     darfFreigeben,
     handleExport,
     oeffneEinreichen,
+    /** Der Dialog „Dein Beitrag" der Web-Fassung, solange er offen ist. */
+    einreichFenster,
   };
 }

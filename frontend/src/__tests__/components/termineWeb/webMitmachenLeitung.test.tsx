@@ -317,10 +317,12 @@ describe('Events: Aktionen -- dieselben Funktionen wie die Wischaktionen der App
     expect(api.post).not.toHaveBeenCalled();
   });
 
-  it('Absagen öffnet das Absage-Fenster mit dem Event', async () => {
+  // Seit 15.10.2026 ein eigener Dialog statt des App-Modals (webEventFenster.test.tsx).
+  it('Absagen öffnet das Absage-Fenster mit dem Event -- im Browser den Dialog, nicht das App-Modal', async () => {
     await oeffneEvents();
     fireEvent.click(within(zeileVon('Konfi-Tag')).getByRole('button', { name: 'Event absagen' }));
-    expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+    expect(screen.getByRole('dialog', { name: 'Event absagen' })).toHaveAccessibleDescription(/^„Konfi-Tag“ · .+ · 12 Konfis angemeldet$/);
+    expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
   });
 
   it('Löschen fragt erst nach und ruft erst nach "Löschen" DELETE auf das Event', async () => {
@@ -341,7 +343,10 @@ describe('Events: Aktionen -- dieselben Funktionen wie die Wischaktionen der App
     const zeile = zeileVon('Fahrradtour');
     expect(within(zeile).queryByRole('button', { name: 'Event absagen' })).toBe(null);
     fireEvent.click(within(zeile).getByRole('button', { name: 'Absagegrund bearbeiten' }));
-    expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+    const fenster = screen.getByRole('dialog', { name: 'Absagegrund bearbeiten' });
+    expect(within(fenster).getByRole('textbox', { name: 'Grund' })).toHaveValue('Sturmwarnung');
+    expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
+    fireEvent.click(within(fenster).getByRole('button', { name: 'Abbrechen' }));
     fireEvent.click(within(zeile).getByRole('button', { name: 'Absage zurücknehmen' }));
     const frage = letzteRueckfrage();
     expect(frage.header).toBe('Absage zurücknehmen?');
@@ -602,7 +607,8 @@ describe('Ansicht: Liste und Kacheln', () => {
     it('Absagen öffnet das Absage-Fenster', async () => {
       await kachelnOeffnen();
       fireEvent.click(within(karte('Konfi-Tag')).getByRole('button', { name: 'Event absagen: Konfi-Tag' }));
-      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+      expect(screen.getByRole('dialog', { name: 'Event absagen' })).toHaveAccessibleDescription(/^„Konfi-Tag“ · /);
+      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
     });
 
     it('Löschen fragt erst nach und ruft erst nach "Löschen" DELETE auf das Event', async () => {
@@ -623,7 +629,9 @@ describe('Ansicht: Liste und Kacheln', () => {
       const abgesagt = karte('Fahrradtour');
       expect(within(abgesagt).queryByRole('button', { name: /^Event absagen/ })).toBe(null);
       fireEvent.click(within(abgesagt).getByRole('button', { name: 'Absagegrund bearbeiten: Fahrradtour' }));
-      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(1);
+      const fenster = screen.getByRole('dialog', { name: 'Absagegrund bearbeiten' });
+      expect(geoeffnet('TerminAbsagenModal')).toHaveLength(0);
+      fireEvent.click(within(fenster).getByRole('button', { name: 'Abbrechen' }));
       fireEvent.click(within(abgesagt).getByRole('button', { name: 'Absage zurücknehmen: Fahrradtour' }));
       const frage = letzteRueckfrage();
       expect(frage.header).toBe('Absage zurücknehmen?');

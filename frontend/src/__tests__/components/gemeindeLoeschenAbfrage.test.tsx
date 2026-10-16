@@ -33,8 +33,9 @@ vi.mock('../../services/api', () => ({
   },
 }));
 
+// Die Gemeinden gehoeren zur Support-Ansicht (NurSupport): ein Konto mit Super-Admin-Recht.
 vi.mock('../../contexts/AppContext', () => ({
-  useApp: () => ({ setError, setSuccess, isOnline: true, refreshUser: vi.fn() }),
+  useApp: () => ({ user: { id: 1, role_name: 'org_admin', is_super_admin: true }, setError, setSuccess, isOnline: true, refreshUser: vi.fn() }),
 }));
 
 vi.mock('../../contexts/ModalContext', () => ({

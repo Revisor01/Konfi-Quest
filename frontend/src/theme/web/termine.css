@@ -236,6 +236,135 @@
   justify-content: flex-start;
 }
 
+/* --- b13-event-leitung: Fenster der Seite eines Events (15.10.2026) ---
+   Teilnehmende hinzufuegen, Legende und QR-Code zum Einchecken als Fenster
+   der Web-Fassung (WebTeilnehmerHinzufuegenDialog, WebLegendeDialog,
+   WebQrDialog). */
+
+/* Personen zur Wahl: der Kreis in der Farbe der Rolle vor dem Namen --
+   deshalb mittig ausgerichtet, wie im Fenster „Neuer Chat". */
+.web-wahl__zeile.web-teilnehmer-wahl__zeile {
+  align-items: center;
+}
+
+.web-teilnehmer-wahl__zeile .web-wahl__haken {
+  margin-top: 0;
+}
+
+/* Die Eintraege der Legende: Kreis in der Farbe des Status, daneben Name und Satz. */
+.web-legende-liste {
+  display: flex;
+  flex-direction: column;
+  gap: var(--app-abstand-eng);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.web-legende-liste__eintrag {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+}
+
+/* Der QR-Code zum Einchecken: gross und mittig, auf hellem Grund auch im
+   Dunkeln -- Scanner brauchen den Kontrast. */
+.web-einchecken {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-eng);
+  text-align: center;
+}
+
+.web-einchecken__name {
+  margin: 0;
+  font-size: var(--app-text-titel-gross);
+  font-weight: var(--app-schrift-fett);
+  color: var(--web-text);
+}
+
+.web-einchecken__datum,
+.web-einchecken__hinweis {
+  margin: 0;
+  color: var(--web-text-leise);
+}
+
+.web-einchecken__bild {
+  display: block;
+  width: min(480px, 100%);
+  height: auto;
+  padding: var(--app-abstand-basis);
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-karte);
+  background: var(--app-weiss);
+}
+
+.web-einchecken__zaehler {
+  margin: var(--app-abstand-eng) 0 0;
+  font-size: var(--app-anzeige-basis);
+  font-weight: var(--app-schrift-fett);
+  color: var(--web-text);
+}
+
+.web-einchecken__fehler {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  width: 100%;
+}
+
+/* Drucken mit offenem Fenster: nur Name, Datum, Code und Satz -- wie das
+   Modal der App, ohne Zaehler. */
+@media print {
+  body:has(.web-einchecken) * {
+    visibility: hidden;
+  }
+
+  .web-einchecken,
+  .web-einchecken * {
+    visibility: visible;
+  }
+
+  .web-einchecken {
+    position: fixed;
+    inset: 0;
+    justify-content: center;
+  }
+
+  .web-einchecken__zaehler {
+    display: none;
+  }
+}
+
+/* --- b13-absage: Zeitslot auswählen (WebZeitfensterDialog, 15.10.2026) ---
+   Die Zeitfenster stehen in der Liste der Auswahl (.web-wahl__liste); jede
+   Zeile ist ein Knopf, ein Klick meldet an. Ein ausgebuchtes Zeitfenster
+   bleibt erreichbar (aria-disabled) und sagt beim Klick, warum es nicht geht. */
+.web-zeitfenster-wahl__zeile {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-zeitfenster-wahl__zeile[aria-disabled='true'],
+.web-zeitfenster-wahl__zeile:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.web-zeitfenster-wahl__zeile:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
 /* --- g1-event: Event anlegen, bearbeiten und kopieren (WebEventDialog) --- */
 /* Ein Zeitfenster: Start, Ende, Plaetze und Entfernen in einer Zeile, die
    Nummer als Legende im Rahmen. */

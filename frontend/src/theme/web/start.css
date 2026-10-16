@@ -1184,6 +1184,37 @@
   margin-top: var(--app-abstand-mittel);
 }
 
+/* --- Fenster aus Profil und Startseite: Bibelübersetzung, Konfispruch ---
+   (Simon, 15.10.2026: im Browser ein kompaktes Web-Fenster statt des
+   App-Modals). Die Auswahl steht in der Liste der Auswahl (.web-wahl__liste);
+   die sechs Bibelübersetzungen ohne eigene Bildlaufleiste, die Sprüche mit
+   mehr Höhe. Bei der Bibelübersetzung ist jede Zeile ein Knopf: Ein Klick
+   wählt sie, wie in der App. */
+.web-wahl__liste.web-profil-wahl {
+  max-height: none;
+}
+
+.web-wahl__liste.web-profil-wahl--spruch {
+  max-height: 360px;
+}
+
+.web-profil-wahl__knopf {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-profil-wahl__knopf:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
 /* --- Badges verwalten (Leitung): Tabelle --- */
 .web-badge-zelle {
   display: flex;

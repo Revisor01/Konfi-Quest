@@ -25,8 +25,9 @@ vi.mock('@ionic/react', async () => {
 vi.mock('../../../components/shared/AppKopfzeile', async () => (await import('./ionicAttrappe')).KopfzeileAttrappe);
 vi.mock('../../../navigation/useAppLocation', () => ({ useAppLocation: () => ({ pathname: '/admin/organizations', search: h.suche, state: null }) }));
 vi.mock('../../../services/api', () => ({ default: { get: vi.fn().mockResolvedValue({ data: [] }), delete: vi.fn() } }));
+// Die Gemeinden gehoeren zur Support-Ansicht (NurSupport): ein Konto mit Super-Admin-Recht.
 vi.mock('../../../contexts/AppContext', () => ({
-  useApp: () => ({ setError: vi.fn(), setSuccess: vi.fn(), isOnline: true, refreshUser: vi.fn() }),
+  useApp: () => ({ user: { id: 1, role_name: 'org_admin', is_super_admin: true }, setError: vi.fn(), setSuccess: vi.fn(), isOnline: true, refreshUser: vi.fn() }),
 }));
 vi.mock('../../../contexts/ModalContext', () => ({ useModalPage: () => ({ pageRef: { current: null }, presentingElement: null }) }));
 vi.mock('../../../contexts/LiveUpdateContext', () => ({ useLiveRefresh: () => {} }));

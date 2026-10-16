@@ -41,6 +41,7 @@ import ChallengeSubmitModal from '../modals/ChallengeSubmitModal';
 import { konfiChallengeListe } from '../../../utils/challengeListen';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebKonfiChallengeDetail from '../web/challenges/WebKonfiChallengeDetail';
+import WebBeitragDialog from '../../shared/web/challenges/WebBeitragDialog';
 import ChallengeMedium from '../../shared/ChallengeMedium';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { istWebLink } from '../../../utils/linkDisplay';
@@ -315,22 +316,43 @@ const KonfiChallengeDetailInhalt: React.FC<KonfiChallengeDetailInhaltProps> = ({
     }
   });
 
-  const einreichen = () => presentSubmitModal({ presentingElement: pageRef.current || undefined });
+  // Im Browser ab 992 px statt des Modals der Dialog der Web-Fassung (Simon,
+  // 15.10.2026) -- dieselbe Logik (useChallengeBeitrag), danach dasselbe.
+  const [beitragFenster, setBeitragFenster] = useState(false);
+
+  const einreichen = () => {
+    if (breit) setBeitragFenster(true);
+    else presentSubmitModal({ presentingElement: pageRef.current || undefined });
+  };
 
   if (breit) {
     // Eine Komponente fuer alle Zustaende, mit einem Rahmen: laedt, Hinweis,
     // Challenge (WebKonfiChallengeDetail).
     return (
-      <WebKonfiChallengeDetail
-        current={current}
-        hinweisArt={hinweis ?? 'laedt'}
-        onBack={onBack}
-        onNochmal={() => { setHinweis('laedt'); void loadDetail(); }}
-        detail={detail}
-        loading={loading}
-        offlineOhneStand={offlineOhneStand}
-        onSubmit={einreichen}
-      />
+      <>
+        <WebKonfiChallengeDetail
+          current={current}
+          hinweisArt={hinweis ?? 'laedt'}
+          onBack={onBack}
+          onNochmal={() => { setHinweis('laedt'); void loadDetail(); }}
+          detail={detail}
+          loading={loading}
+          offlineOhneStand={offlineOhneStand}
+          onSubmit={einreichen}
+        />
+        {beitragFenster && current && (
+          <WebBeitragDialog
+            // Je Challenge ein frisches Formular (wie das Modal, ChallengeSubmitModal).
+            key={current.id}
+            challenge={current}
+            onSchliessen={() => setBeitragFenster(false)}
+            onEingereicht={() => {
+              setBeitragFenster(false);
+              triggerRefresh('challenges');
+            }}
+          />
+        )}
+      </>
     );
   }
 

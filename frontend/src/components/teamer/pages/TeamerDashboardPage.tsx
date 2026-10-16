@@ -65,6 +65,8 @@ import WebSeite from '../../web/WebSeite';
 import { WebFehler, WebLaden } from '../../web/WebZustaende';
 import { WebRueckblickHinweis } from '../../konfi/web/WebStartKarten';
 import WebTeamerStart from '../web/WebTeamerStart';
+import WebBibelUebersetzungDialog from '../../shared/web/konto/WebBibelUebersetzungDialog';
+import WebKonfispruchDialog from '../../konfi/web/WebKonfispruchDialog';
 
 
 
@@ -435,6 +437,10 @@ const TeamerDashboardPage: React.FC = () => {
     presentKonfispruchModal();
   };
 
+  // Im Browser (breit) öffnen Bibelübersetzung und Konfispruch Dialoge der
+  // Web-Fassung mit derselben Logik und denselben Aufrufen (Simon, 15.10.2026).
+  const [webDialog, setWebDialog] = useState<'uebersetzung' | 'konfispruch' | null>(null);
+
   const getFirstName = (name: string) => name.split(' ')[0];
 
   const getGreeting = (displayName: string): string => {
@@ -560,11 +566,26 @@ const TeamerDashboardPage: React.FC = () => {
                 show_losung: config?.show_losung !== false,
               }}
               sectionOrder={mergeSectionOrder(config?.section_order, DEFAULT_TEAMER_ORDER)}
-              onUebersetzung={() => presentBibleModal()}
-              onKonfispruch={openKonfispruch}
+              onUebersetzung={() => setWebDialog('uebersetzung')}
+              onKonfispruch={() => setWebDialog('konfispruch')}
               symbolFuer={getIconFromString}
             />
           </>
+        )}
+        {webDialog === 'uebersetzung' && (
+          <WebBibelUebersetzungDialog
+            currentTranslation={selectedTranslation}
+            onSelect={(code) => { void handleTranslationChange(code); setWebDialog(null); }}
+            onSchliessen={() => setWebDialog(null)}
+          />
+        )}
+        {webDialog === 'konfispruch' && (
+          <WebKonfispruchDialog
+            current={dashboardData?.konfspruch ?? null}
+            apiBasePath="/teamer"
+            onSchliessen={() => setWebDialog(null)}
+            onGespeichert={() => { setWebDialog(null); refreshDashboard(); }}
+          />
         )}
         {showOnboarding && (
           <TeamerOnboardingModal
@@ -724,7 +745,7 @@ const TeamerDashboardPage: React.FC = () => {
               <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 'var(--app-abstand-mittel)' }}>
                 <IonIcon icon={ICON_FUNKELN_GEFUELLT} style={{ fontSize: 'var(--app-anzeige-zahl)' }} />
                 <div role="button" tabIndex={0} onKeyDown={tastaturKlick}>
-                  <h3 style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>Dein Team-Jahr Wrapped ist da!</h3>
+                  <h3 style={{ margin: 0, fontSize: 'var(--app-text-gross)', fontWeight: 'var(--app-schrift-fett)' }}>Dein Team-Jahresrückblick ist da!</h3>
                   <p style={{ margin: 'var(--app-abstand-mini) 0 0', fontSize: 'var(--app-text-sekundaer)', opacity: 0.9 }}>Schau dir deinen Jahresrückblick an</p>
                 </div>
                 {/* X statt Chevron (Simon, 04.09.2026): Das Chevron verdeckte

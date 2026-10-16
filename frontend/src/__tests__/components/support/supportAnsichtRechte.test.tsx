@@ -49,7 +49,7 @@ describe('"Mehr": der Weg zur Support-Ansicht', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Support-Ansicht öffnen' }));
     expect(h.push).toHaveBeenCalledWith('/admin/support');
     // Der Betriebs-Ueberblick bleibt daneben erreichbar.
-    expect(screen.getByRole('button', { name: 'Performance anzeigen' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Betrieb anzeigen' })).toBeInTheDocument();
   });
 
   it.each([
@@ -60,7 +60,7 @@ describe('"Mehr": der Weg zur Support-Ansicht', () => {
     h.user = user;
     render(<AdminSettingsPage />);
     expect(screen.queryByRole('button', { name: 'Support-Ansicht öffnen' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'Performance anzeigen' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Betrieb anzeigen' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Gemeinden verwalten' })).toBeNull();
   });
 });

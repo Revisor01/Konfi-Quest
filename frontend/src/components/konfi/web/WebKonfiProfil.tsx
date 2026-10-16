@@ -4,9 +4,11 @@
 // und die Neuerungen.
 //
 // Die Seite lädt und speichert nichts selbst. Alle Handgriffe (E-Mail, Passwort,
-// Bibelübersetzung, Punkte-Übersicht, Abmelden, Konto löschen) sind die der App
-// (konfi/views/ProfileView.tsx) und kommen hier als Funktionen an; Einladungen,
-// Benachrichtigungen und der Verlauf nutzen dieselben Routen und Dialoge wie dort.
+// Bibelübersetzung, Punkte-Übersicht, Abmelden, Konto löschen) kommen von der
+// Seite (konfi/views/ProfileView.tsx) als Funktionen an -- im Browser öffnen sie
+// die Dialoge der Web-Fassung mit der Logik der App, die Punkte-Übersicht
+// springt zum Punkte-Verlauf weiter unten (Simon, 15.10.2026). Einladungen,
+// Benachrichtigungen und der Verlauf nutzen dieselben Routen wie die App.
 
 import React from 'react';
 import { IonIcon } from '@ionic/react';
@@ -69,8 +71,6 @@ export interface WebKonfiProfilProps {
   uebersetzung: string;
   cacheLabel: string;
   rueckblicke: WrappedHistoryEntry[];
-  /** Die Seite, über der Dialoge erscheinen -- erst beim Öffnen gelesen. */
-  presentingElement: () => HTMLElement | null;
   onRueckblick: (eintrag: WrappedHistoryEntry) => void;
   onPunkte: () => void;
   onTour: () => void;
@@ -151,7 +151,7 @@ const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
         />
         <WebEinstellung icon={ICON_SCHLUESSEL} titel="Passwort" wert="Sicherheitseinstellungen" knopf="Ändern" onClick={props.onPasswort} />
         <WebEinstellung icon={ICON_BUCH} titel="Bibelübersetzung" wert={props.uebersetzung} knopf="Ändern" onClick={props.onUebersetzung} />
-        <WebPushZeile variante="purple" presentingElement={props.presentingElement} />
+        <WebPushZeile />
         <WebEinstellung icon={ICON_GALERIE} titel="Medien-Cache" wert={props.cacheLabel} knopf="Leeren" onClick={props.onCache} />
       </WebEinstellungenKarte>
 
@@ -177,7 +177,7 @@ const WebKonfiProfil: React.FC<WebKonfiProfilProps> = (props) => {
         <WebKachel
           label="Aktivitäten"
           wert={String(p.activity_count || 0)}
-          zusatz={[p.pending_requests > 0 ? `${p.pending_requests} ${p.pending_requests === 1 ? 'Antrag wartet' : 'Anträge warten'}` : 'Keine Anträge offen']}
+          zusatz={[p.pending_requests > 0 ? `${p.pending_requests} offen` : 'Keine Anträge offen']}
           href="/konfi/events?segment=antraege"
         />
       </div>

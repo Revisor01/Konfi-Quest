@@ -393,6 +393,8 @@ describe('Challenge fuer Team und Leitung (Web): Moderation ueber dieselben Funk
     expect(h.presentAlert).toHaveBeenCalledWith(expect.objectContaining({ header: 'Beitrag anonym stellen' }));
     expect(h.apiPut).not.toHaveBeenCalled();
     const anonym = h.presentAlert.mock.calls[0][0].buttons.find((b: { text: string }) => b.text === 'Anonym stellen');
+    // Endgültig: die Rückfrage mit Warndreieck (utils/rueckfragenOptik.ts, 15.10.2026).
+    expect(anonym.role).toBe('destructive');
     anonym.handler();
     await waitFor(() => expect(h.apiPut).toHaveBeenCalledWith('/challenges/admin/submissions/1/moderate', { action: 'anonymize' }));
 
@@ -447,10 +449,14 @@ describe('Challenge fuer Team und Leitung (Web): Aktionen', () => {
     expect(h.bearbeiten).toHaveBeenCalledWith(expect.objectContaining({ id: 7, title: 'Fürbitten zum Erntedank' }));
   });
 
-  it('Beitrag einreichen oeffnet das Einreich-Formular der App, solange die Challenge laeuft', async () => {
+  // Seit 15.10.2026 (Simon: im Browser jedes Formular als Fenster der
+  // Web-Fassung) das Fenster „Dein Beitrag" statt des Modals der App; die
+  // Abläufe darin prüft webBeitragDialog.test.tsx.
+  it('Beitrag einreichen oeffnet das Fenster „Dein Beitrag" der Web-Fassung, solange die Challenge laeuft', async () => {
     await zeigen();
     fireEvent.click(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' }));
-    expect(h.presentModal).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('dialog', { name: 'Dein Beitrag' })).toBeInTheDocument();
+    expect(h.presentModal).not.toHaveBeenCalled();
   });
 
   it('einmal pro Person: nach dem eigenen Beitrag kein Einreichen mehr', async () => {

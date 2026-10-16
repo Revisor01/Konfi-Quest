@@ -123,7 +123,10 @@ const UserManagementModal: React.FC<UserManagementModalProps> = ({
         <IonToolbar>
           <IonTitle>{isEditMode ? 'Benutzer bearbeiten' : (festeRolle === 'teamer' ? 'Neue Teamer:in' : 'Neuer Benutzer')}</IonTitle>
           <IonButtons slot="start">
-            <IonButton aria-label="Schließen" onClick={onClose} disabled={isSubmitting} className="app-modal-close-btn">
+            {/* handleClose statt onClose (15.10.2026): Die Frage nach
+                ungespeicherten Änderungen stand nur im Ladezustand, das X des
+                Formulars schloss ohne zu fragen. Jetzt wie im Browser. */}
+            <IonButton aria-label="Schließen" onClick={handleClose} disabled={isSubmitting} className="app-modal-close-btn">
               <IonIcon icon={ICON_SCHLIESSEN} />
             </IonButton>
           </IonButtons>

@@ -27,6 +27,7 @@ import {
   terminAngaben,
   type AnmeldeAktion,
   type DetailZeitfenster,
+  type ZeitfensterStand,
 } from '../../../../utils/termineWeb';
 import type { Event } from '../../../../types/event';
 import WebDetailSeite from '../../../web/WebDetailSeite';
@@ -38,9 +39,9 @@ import { terminWebAngaben } from '../../../shared/web/termine/terminDetailAngabe
 import '../../../../theme/web/termine.css';
 
 export interface KonfiDetailAktionen {
-  /** Anmelden -- auch "Wieder anmelden" und die Warteliste: die Seite fragt bei Zeitfenstern nach. */
+  /** Anmelden -- auch "Wieder anmelden" und die Warteliste: die Seite fragt bei Zeitfenstern nach (Fenster „Zeitslot auswählen"). */
   anmelden: () => void;
-  /** Abmelden mit Grund (Fenster der App) -- auch von der Warteliste. */
+  /** Abmelden mit Grund (Fenster „Abmeldung") -- auch von der Warteliste. */
   abmelden: () => void;
   /** Abmelden vom Pflicht-Event (Fenster mit Grund, mindestens 5 Zeichen). */
   pflichtAbmelden: () => void;
@@ -65,6 +66,11 @@ export interface WebKonfiTerminDetailProps {
   gemerkt?: { teilnehmer: boolean; zeitfenster: boolean };
   /** Eine Anmeldung laeuft gerade (Sperre gegen den Doppeltipp). */
   anmeldungLaeuft: boolean;
+  /**
+   * Die Zeitfenster eines Zeitfenster-Events (utils/termineWeb.ts,
+   * zeitfensterStand): ohne sie ist "Anmelden" gesperrt, der Grund steht daneben.
+   */
+  zeitfensterStand?: ZeitfensterStand;
   aktionen: KonfiDetailAktionen;
 }
 
@@ -101,6 +107,7 @@ const WebKonfiTerminDetail: React.FC<WebKonfiTerminDetailProps> = (p) => {
     online: isOnline,
     laeuft: p.anmeldungLaeuft,
     hatKonfirmationGebucht: p.hatKonfirmationGebucht,
+    zeitfenster: p.zeitfensterStand,
   });
   const angaben = terminAngaben(eventData, { rolle: 'konfi', zeitfenster: p.zeitfenster });
   const einchecken = eventData.booking_status === 'confirmed' && !eventData.attendance_status;

@@ -186,8 +186,9 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId, 
 
   // Anlegen (Plus oben) und Bearbeiten (Wisch) -- dasselbe Formular wie auf
   // der Seite einer Challenge, samt Rueckfrage bei ungespeicherten
-  // Aenderungen (hooks/useChallengeFormular).
-  const { anlegen: openCreate, bearbeiten: openEdit } = useChallengeFormular({
+  // Aenderungen (hooks/useChallengeFormular). Im Browser ab 992 px als
+  // Dialog der Web-Fassung (`fenster`), sonst als Modal der App.
+  const { anlegen: openCreate, bearbeiten: openEdit, fenster: challengeFenster } = useChallengeFormular({
     presentingElement: () => presentingElement,
     onGespeichert: () => { refreshChallenges(); }
   });
@@ -214,6 +215,7 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId, 
   const breit = useBreitesLayout();
   if (breit) {
     return (
+      <>
       <WebChallengesLeitung
         challenges={Array.isArray(challenges) ? challenges : []}
         loading={loading}
@@ -232,6 +234,8 @@ const ChallengesPage: React.FC<ChallengesPageProps> = ({ cacheKey, modalPageId, 
         onLoeschen={handleDelete}
         pageRef={pageRef}
       />
+      {challengeFenster}
+      </>
     );
   }
 

@@ -99,18 +99,19 @@ const kacheln = () => Object.fromEntries(
 const NACHGETRAGEN = { status: 'excused', attendance_status: 'excused', excuse_reason: 'krank, Mutter hat angerufen' };
 
 describe('Abmeldung nachtragen (excused)', () => {
-  it('das Auswahlmenue bietet "Abgemeldet" an -- und "Abmeldung bearbeiten", wenn schon eingetragen', async () => {
+  // Wortlaut seit 15.10.2026 wie im Menue des Browsers: „Abgemeldet eintragen".
+  it('das Auswahlmenue bietet "Abgemeldet eintragen" an -- und "Abmeldung bearbeiten", wenn schon eingetragen', async () => {
     const menue = await menueVon({});
-    expect(menue.buttons.map((b) => b.text)).toEqual(['Anwesend', 'Abwesend', 'Abgemeldet', 'Abbrechen']);
+    expect(menue.buttons.map((b) => b.text)).toEqual(['Anwesend', 'Abwesend', 'Abgemeldet eintragen', 'Abbrechen']);
     document.body.innerHTML = '';
     const bearbeiten = await menueVon(NACHGETRAGEN);
     expect(knopfIn(bearbeiten, 'Abmeldung bearbeiten')).toBeDefined();
-    expect(knopfIn(bearbeiten, 'Abgemeldet')).toBeUndefined();
+    expect(knopfIn(bearbeiten, 'Abgemeldet eintragen')).toBeUndefined();
   });
 
   it('der Grund wird als eigenes Feld erfragt und geschickt -- der dritte Status geht an den Server', async () => {
     const menue = await menueVon({});
-    await act(async () => { knopfIn(menue, 'Abgemeldet')!.handler!(); });
+    await act(async () => { knopfIn(menue, 'Abgemeldet eintragen')!.handler!(); });
     const modal = zuletztGeoeffnet('AbmeldungNachtragenModal')!;
     expect(modal.props.teilnehmerName).toBe('Kim Konfi');
     await act(async () => { await (modal.props.onSave as (g: string, n: string) => Promise<void>)('krank', 'Attest liegt vor'); });

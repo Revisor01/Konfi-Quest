@@ -140,7 +140,7 @@ async function teileImBrowser(
     if (navigator.canShare?.({ files: [datei] })) {
       await teilenImBrowser({
         files: [datei],
-        title: wrappedType === 'teamer' ? 'Mein Teamer Wrapped' : 'Mein Konfi Wrapped',
+        title: wrappedType === 'teamer' ? 'Mein Team-Jahresrückblick' : 'Mein Konfi-Jahresrückblick',
         text: generateFallbackText(textFallbackData),
       });
       return { art: 'geteilt' };
@@ -214,7 +214,7 @@ async function teileNurText(
   try {
     if (Capacitor.isNativePlatform()) {
       await teilen({
-        title: wrappedType === 'teamer' ? 'Mein Teamer Wrapped' : 'Mein Konfi Wrapped',
+        title: wrappedType === 'teamer' ? 'Mein Team-Jahresrückblick' : 'Mein Konfi-Jahresrückblick',
         text: fallbackText,
       });
       return { art: 'nur-text' };

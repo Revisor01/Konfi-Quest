@@ -41,10 +41,10 @@ export function teamKontoLoeschHinweis(): string {
 /** Warnung im Profil vor POST /auth/delete-account (jede Rolle). */
 export function eigenesKontoLoeschHinweis(istKonfi: boolean): string {
   if (istKonfi) {
-    return 'Dein Account wird endgültig gelöscht. Dieser Vorgang kann NICHT rückgängig gemacht werden. '
+    return 'Dein Konto wird endgültig gelöscht. Dieser Vorgang kann NICHT rückgängig gemacht werden. '
       + `Mit ihm verschwinden deine ${KONTO_WEG}.`;
   }
-  return 'Dein Account wird endgültig gelöscht, in allen Gemeinden, in denen du mitarbeitest. '
+  return 'Dein Konto wird endgültig gelöscht, in allen Gemeinden, in denen du mitarbeitest. '
     + 'Dieser Vorgang kann NICHT rückgängig gemacht werden. '
     + `Mit ihm verschwinden deine ${KONTO_WEG}. Was du für die Gemeinde angelegt hast, bleibt ohne deinen Namen.`;
 }

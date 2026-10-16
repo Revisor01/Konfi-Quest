@@ -52,6 +52,9 @@ import { linkOeffnen } from '../../../services/systemDialoge';
 import { punkteText } from '../../../utils/punkteText';
 import { useBreitesLayout } from '../../../navigation/breitesLayout';
 import WebKonfiProfil from '../web/WebKonfiProfil';
+import { zeigePunkteVerlauf } from '../web/punkteVerlaufAnker';
+import WebBibelUebersetzungDialog from '../../shared/web/konto/WebBibelUebersetzungDialog';
+import WebKontoLoeschenDialog from '../../shared/web/konto/WebKontoLoeschenDialog';
 
 interface KonfiProfile {
   id: number;
@@ -227,9 +230,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   // die alte Adresse im User-Context und im TokenStore stehen, bis man sich
   // neu anmeldete. App-Modal und Web-Dialog gleich.
   const emailUebernehmen = useNeueEmailUebernehmen(onReload);
-  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail und Passwort einen
-  // eigenen Dialog statt des App-Modals.
-  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | null>(null);
+  // Im breiten Fenster (Web-Fassung) oeffnen E-Mail, Passwort,
+  // Bibeluebersetzung und Konto loeschen einen eigenen Dialog statt des
+  // App-Modals (Simon, 11.10. und 15.10.2026) -- mit derselben Logik.
+  const [webDialog, setWebDialog] = useState<'email' | 'passwort' | 'uebersetzung' | 'loeschen' | null>(null);
 
   // Modal with useIonModal Hook for Email Edit
   const [presentEmailModal, dismissEmailModal] = useIonModal(ChangeEmailModal, {
@@ -306,6 +310,9 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
   const [punkteGeoeffnetFuer, setPunkteGeoeffnetFuer] = useState<string | null>(null);
   const [rueckblickGeoeffnetFuer, setRueckblickGeoeffnetFuer] = useState<string | null>(null);
 
+  // Im Browser (breit) springt ?punkte=1 zur Tabelle „Punkte-Verlauf" auf
+  // dieser Seite, statt das Modal zu oeffnen -- dieselben Eintraege stehen dort
+  // schon (Simon, 15.10.2026). Die App oeffnet weiter die Uebersicht.
   React.useEffect(() => {
     if (!punkteParameter) {
       setPunkteGeoeffnetFuer(null);
@@ -313,6 +320,10 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
     }
     if (punkteParameter === punkteGeoeffnetFuer) return;
     setPunkteGeoeffnetFuer(punkteParameter);
+    if (breit) {
+      zeigePunkteVerlauf();
+      return;
+    }
     presentPointsModal({
       presentingElement: pageRef?.current || presentingElement || undefined
     });
@@ -340,7 +351,6 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
 
   // Web-Fassung: dieselben Handgriffe (Modale, Abmelden, Rückblicke), anders gezeigt.
   if (breit) {
-    const seite = () => pageRef?.current || presentingElement || undefined;
     return (
       <>
         <WebKonfiProfil
@@ -350,16 +360,15 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           uebersetzung={getTranslationName(selectedTranslation)}
           cacheLabel={cacheLabel}
           rueckblicke={wrappedHistory}
-          presentingElement={() => seite() ?? null}
           onRueckblick={openWrapped}
-          onPunkte={() => presentPointsModal({ presentingElement: seite() })}
+          onPunkte={zeigePunkteVerlauf}
           onTour={() => setShowOnboarding(true)}
           onEmail={() => setWebDialog('email')}
           onPasswort={() => setWebDialog('passwort')}
-          onUebersetzung={() => presentBibleModal({ presentingElement: seite() })}
+          onUebersetzung={() => setWebDialog('uebersetzung')}
           onCache={handleClearMediaCache}
           onAbmelden={handleLogout}
-          onLoeschen={() => presentDeleteAccount({ presentingElement: seite() })}
+          onLoeschen={() => setWebDialog('loeschen')}
           onNeuerungen={() => setShowUpdateWalkthrough(true)}
           onMitmachen={() => setShowMitmachenErklaerung(true)}
         />
@@ -381,6 +390,14 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
         {webDialog === 'passwort' && (
           <WebPasswortAendern onSchliessen={() => setWebDialog(null)} onGespeichert={() => setWebDialog(null)} />
         )}
+        {webDialog === 'uebersetzung' && (
+          <WebBibelUebersetzungDialog
+            currentTranslation={selectedTranslation}
+            onSelect={(code) => { void handleTranslationChange(code); setWebDialog(null); }}
+            onSchliessen={() => setWebDialog(null)}
+          />
+        )}
+        {webDialog === 'loeschen' && <WebKontoLoeschenDialog onSchliessen={() => setWebDialog(null)} />}
       </>
     );
   }
@@ -759,7 +776,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile, onReload, presenting
           onClick={() => presentDeleteAccount({ presentingElement: pageRef?.current || presentingElement || undefined })}
         >
           <IonIcon icon={ICON_LOESCHEN} slot="start" />
-          Account löschen
+          Konto löschen
         </IonButton>
       </div>
 
