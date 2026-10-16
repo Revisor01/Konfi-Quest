@@ -190,9 +190,15 @@ describe('Liste der Challenges (Leitung, Team): Neue Challenge und Bearbeiten', 
 });
 
 describe('Seite einer Challenge für Leitung und Team', () => {
+  const beitraegeGeladen = () => h.apiGet.mock.calls.filter(([r]) => r === '/challenges/admin/7/submissions').length;
   const zeigen = async () => {
     render(<ChallengeLeitungPage challengeId={7} onBack={vi.fn()} />);
     await screen.findByRole('button', { name: 'Beitrag einreichen' });
+    // Erst wenn die Beiträge einmal geladen sind, ist die Seite fertig. Sonst
+    // kommt dieses erste Laden unter Last erst nach dem Zählen an (CI,
+    // 16.10.2026: 2 statt 1), und das Nachladen nach dem Einreichen ist nicht
+    // mehr von ihm zu unterscheiden.
+    await waitFor(() => expect(beitraegeGeladen()).toBe(1));
   };
 
   it('im Browser: „Challenge bearbeiten" öffnet das Fenster mit dieser Challenge', async () => {
@@ -206,7 +212,7 @@ describe('Seite einer Challenge für Leitung und Team', () => {
 
   it('im Browser: „Beitrag einreichen" öffnet „Dein Beitrag"; danach Fenster zu, Beiträge und Zähler neu', async () => {
     await zeigen();
-    const vorher = h.apiGet.mock.calls.filter(([r]) => r === '/challenges/admin/7/submissions').length;
+    const vorher = beitraegeGeladen();
     fireEvent.click(screen.getByRole('button', { name: 'Beitrag einreichen' }));
     const dialog = screen.getByRole('dialog', { name: 'Dein Beitrag' });
     expect(h.presentModal).not.toHaveBeenCalled();
@@ -219,7 +225,7 @@ describe('Seite einer Challenge für Leitung und Team', () => {
       media_type: 'text', text_content: 'Für alle, die trauern.', link_url: null, konfi_consent: null,
     }, undefined);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Dein Beitrag' })).toBeNull());
-    await waitFor(() => expect(h.apiGet.mock.calls.filter(([r]) => r === '/challenges/admin/7/submissions').length).toBe(vorher + 1));
+    await waitFor(() => expect(beitraegeGeladen()).toBe(vorher + 1));
     expect(h.refreshAllCounts).toHaveBeenCalled();
     expect(h.triggerRefresh).toHaveBeenCalledWith('challenges');
   });
