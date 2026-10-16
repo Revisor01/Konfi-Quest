@@ -178,11 +178,7 @@ describe('Links im Text', () => {
     expect(screen.queryAllByRole('link')).toEqual([]);
   });
 
-  it('die Web-Fassung gibt eine Klasse mit, die App ihr Aussehen', () => {
-    zeige('https://example.org', { className: 'web-chat-link' });
-    expect(screen.getByRole('link')).toHaveClass('web-chat-link');
-    expect(screen.getByRole('link').getAttribute('style')).toBeNull();
-    document.body.innerHTML = '';
+  it('in der App ist ein Link unterstrichen -- nicht allein an der Farbe zu erkennen', () => {
     zeige('https://example.org');
     expect(screen.getByRole('link').getAttribute('style')).toContain('underline');
   });

@@ -2,7 +2,6 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import ChallengesManageView from '../../../components/admin/views/ChallengesManageView';
-import { ICON_UHRZEIT } from '../../../components/shared/icons';
 import type { AdminChallenge } from '../../../types/challenges';
 
 // Die Zeichen am Challenge-Eintrag von Leitung und Team (Simon, 29.09.2026,
@@ -18,6 +17,10 @@ import type { AdminChallenge } from '../../../types/challenges';
 // - Orange nur fuer Wartendes: das Eck-Badge mit Uhr (ohne Zahl, 29.09.2026).
 // - Fehlt das Feld (aelterer Server), gilt die Rechnung vom 28.09.2026:
 //   wartend + neu freigegeben.
+//
+// Farben, Formen und Lage der Zeichen sind Layout und werden nicht
+// festgeschrieben (Simon, 15.10.2026); geprueft wird, was sie zaehlen und
+// sagen.
 
 vi.mock('../../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 5, type: 'admin', role_name: 'org_admin' } }),
@@ -72,7 +75,7 @@ describe('Rote Kugel = neue Beitraege seit dem letzten Oeffnen, wartende eingesc
     expect(kugeln.length).toBe(1);
     expect(kugeln[0].textContent).toBe('2');
     expect(kugeln[0].getAttribute('aria-label')).toBe('2 neue Beiträge, davon warten 2 auf Freigabe');
-    expect(eintrag(container, EINS).querySelector('.app-zaehler-anker .app-zaehler-kugel')).toBe(kugeln[0]);
+    expect(eintrag(container, EINS).querySelector('.app-zaehler-kugel')).toBe(kugeln[0]);
     const orange = eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="2 Beiträge warten auf Freigabe"]');
     expect(orange?.textContent).toBe('');
   });
@@ -125,42 +128,15 @@ describe('Rote Kugel = neue Beitraege seit dem letzten Oeffnen, wartende eingesc
   });
 });
 
-describe('Am Symbol nur ein Kreis, rot, ohne Sonderform', () => {
-  it('der Anker traegt Symbolkreis und genau eine Kugel -- kein oranger Kreis', () => {
-    const { container } = zeige({
-      offeneFreigaben: { 1: 2 }, neueBeitraege: { 1: 1 }, neueWartend: { 1: 1 }
-    });
-    const anker = eintrag(container, EINS).querySelector('.app-zaehler-anker') as HTMLElement;
-    const kinder = [...anker.children];
-    expect(kinder.map((k) => k.className)).toEqual(['app-icon-circle app-icon-circle--lg', 'app-zaehler-kugel']);
-    // Baugleich zum Chat: dieselbe Klasse, kein Modifikator, kein Inline-Stil.
-    const kugel = kinder[1] as HTMLElement;
-    expect(kugel.tagName).toBe('SPAN');
-    expect(kugel.getAttribute('style')).toBeNull();
-    // Nichts Oranges am Symbol: weder die Segment-Zahl noch eine Warnfarbe.
-    expect(anker.querySelector('.app-segment-zahl')).toBeNull();
-    expect(anker.innerHTML).not.toContain('--app-color-warning');
-  });
-
-  it('auch nur mit wartenden (gesehen) kein oranger Kreis am Symbol', () => {
-    const { container } = zeige({ offeneFreigaben: { 1: 2 }, neueBeitraege: {}, neueWartend: {} });
-    const anker = eintrag(container, EINS).querySelector('.app-zaehler-anker') as HTMLElement;
-    expect([...anker.children].map((k) => k.className)).toEqual(['app-icon-circle app-icon-circle--lg']);
-  });
-});
-
-describe('Orange Eck-Badge: nur die Uhr', () => {
+describe('Eck-Badge fuer Wartendes: Symbol statt Zahl', () => {
   // Simon, 29.09.2026: "Im corner badge soll keine Zahl stehen!" Wie viele
-  // warten, sagen Umschalter und "Wartet" -- hier nur der Vorlesetext.
-  it('traegt das Uhr-Symbol und keine Zahl, die Zahl steht im Vorlesetext', () => {
+  // warten, sagen Umschalter und "Wartet" -- hier nur der Vorlesetext. Das
+  // Symbol sorgt dafuer, dass die Farbe nicht allein spricht.
+  it('traegt ein Symbol und keine Zahl, die Zahl steht im Vorlesetext', () => {
     const { container } = zeige({ offeneFreigaben: { 1: 4 }, neueBeitraege: {}, neueWartend: {} });
     const orange = eintrag(container, EINS).querySelector('.app-corner-badges [aria-label="4 Beiträge warten auf Freigabe"]') as HTMLElement;
-    expect(orange.className).toBe('app-corner-badge');
-    expect(orange.style.backgroundColor).toBe('var(--app-color-warning)');
     expect(orange.textContent).toBe('');
-    const uhr = orange.querySelector('ion-icon');
-    expect(uhr).not.toBeNull();
-    expect(uhr!.getAttribute('icon') ?? (uhr as unknown as { icon?: string }).icon).toBe(ICON_UHRZEIT);
+    expect(orange.querySelector('ion-icon')).not.toBeNull();
   });
 });
 

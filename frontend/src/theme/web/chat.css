@@ -94,6 +94,40 @@
   font-size: var(--app-text-hinweis);
 }
 
+/* --- Neuer Chat (WebNeuerChatDialog) ---
+   Die Personen stehen in der Liste der Auswahl (.web-wahl__liste), vor dem
+   Namen der Kreis in der Farbe der Rolle -- deshalb mittig ausgerichtet. Bei
+   der Direktnachricht ist jede Zeile ein Knopf: Ein Klick startet sie. */
+.web-wahl__zeile.web-neuer-chat__zeile {
+  align-items: center;
+}
+
+.web-neuer-chat__zeile .web-wahl__haken {
+  margin-top: 0;
+}
+
+.web-neuer-chat__person {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--web-linie-leise);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.web-neuer-chat__person:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.web-neuer-chat__person:focus-visible {
+  outline: 2px solid var(--ion-color-primary);
+  outline-offset: -2px;
+}
+
 .web-chat-liste__raeume {
   flex: 1 1 auto;
   min-height: 0;
@@ -1256,6 +1290,72 @@ a.web-chat-zeile:focus-visible {
   font-size: var(--app-text-titel-gross);
 }
 
+/* --- Fenster des Raums: Neue Umfrage, Mitglieder (WebUmfrageDialog,
+   WebMitgliederDialog; Simon, 15.10.2026) --- */
+
+/* Eine Antwortmoeglichkeit, rechts daneben das Entfernen. */
+.web-umfrage-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--app-abstand-eng);
+}
+
+/* Die Mitglieder: Kreis in der Rollenfarbe, Name, Rolle bzw. Jahrgang. */
+.web-chat-mitglieder {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--web-linie);
+  border-radius: var(--app-radius-knopf);
+}
+
+.web-chat-mitglied {
+  display: flex;
+  align-items: center;
+  gap: var(--app-abstand-mittel);
+  padding: var(--app-abstand-eng) var(--app-abstand-mittel);
+  border-bottom: 1px solid var(--web-linie-leise);
+}
+
+.web-chat-mitglied:last-child {
+  border-bottom: 0;
+}
+
+.web-chat-mitglied__text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.web-chat-mitglied__name {
+  font-weight: var(--app-schrift-halbfett);
+  overflow-wrap: anywhere;
+}
+
+.web-chat-mitglied__zeile {
+  color: var(--web-text-leise);
+  font-size: var(--app-text-hinweis);
+  overflow-wrap: anywhere;
+}
+
+/* Die Auswahl zum Hinzufuegen: Zeilen der Auswahlliste (web-wahl) mit Kreis,
+   mehr Platz als die Vorgabe -- es sind oft alle Konfis eines Jahrgangs. */
+.web-chat-personen {
+  max-height: min(50vh, 420px);
+}
+
+.web-chat-person {
+  align-items: center;
+}
+
+.web-chat-person .web-wahl__haken {
+  margin: 0;
+}
+
 /* Eine Datei ueber den Raum ziehen */
 .web-chat-ablage {
   position: absolute;
@@ -1274,12 +1374,4 @@ a.web-chat-zeile:focus-visible {
   font-size: var(--app-text-gross);
   font-weight: var(--app-schrift-halbfett);
   pointer-events: none;
-}
-
-/* Die Fenster Mitglieder, Umfrage und Neuer Chat: auf dem breiten Bildschirm
-   ein Dialog in lesbarer Groesse (Ionic setzt sonst 600 x 500). Die Klasse
-   steht am Fenster selbst (cssClass). */
-.web-chat-modal {
-  --width: 640px;
-  --height: min(82vh, 780px);
 }

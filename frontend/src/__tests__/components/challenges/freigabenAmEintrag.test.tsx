@@ -61,16 +61,11 @@ const renderListe = (offeneFreigaben?: Record<number, number>, neueBeitraege?: R
     />
   );
 
-/** Die orange Eck-Badge-Farbe, an der sich die Legende ("Oranges Feld mit Uhr") orientiert. */
-const ORANGE = 'var(--app-color-warning)';
-
 describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
-  it('zeigt das orange Eck-Badge nur an der Challenge, an der Beitraege warten', () => {
+  it('zeigt das Eck-Badge nur an der Challenge, an der Beitraege warten', () => {
     const { getByLabelText, queryAllByLabelText } = renderListe({ 31: 1 });
 
     const badge = getByLabelText('1 Beitrag wartet auf Freigabe');
-    expect(badge.className).toBe('app-corner-badge');
-    expect(badge.style.backgroundColor).toBe(ORANGE);
     expect(badge.getAttribute('role')).toBe('img');
     expect(badge.getAttribute('title')).toBe('1 Beitrag wartet auf Freigabe');
     // Challenge 40 traegt kein Badge -- insgesamt genau ein oranges Feld im
@@ -78,7 +73,11 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     expect(queryAllByLabelText(/Freigabe$/).filter((el) => el.classList.contains('app-corner-badge'))).toHaveLength(1);
   });
 
-  it('traegt nur die Uhr, keine Zahl -- bei einem wie bei zwoelf Beitraegen', () => {
+  it('traegt nur die Uhr, keine Zahl -- bei einem wie bei zwoelf Beitraegen; die Zahl steht im Vorlesetext', () => {
+    // Die Uhr ist neben der Farbe das einzige, was dieses Feld von den
+    // anderen Eck-Badges (Eingereicht, Status) unterscheidet; die Legende
+    // erklaert es als "Oranges Feld mit Uhr". Ohne sie truege nur noch die
+    // Farbe die Information (WCAG 1.4.1).
     for (const n of [1, 2, 12]) {
       const { getByLabelText, unmount } = renderListe({ 40: n });
       const badge = getByLabelText(n === 1 ? '1 Beitrag wartet auf Freigabe' : `${n} Beiträge warten auf Freigabe`);
@@ -90,29 +89,12 @@ describe('ChallengesManageView: Freigaben-Badge am Eintrag', () => {
     }
   });
 
-  it('so breit wie die anderen Symbol-Badges der Leiste (Innenabstand mini/kompakt)', () => {
-    const { getByLabelText } = renderListe({ 31: 1 });
-    expect(getByLabelText('1 Beitrag wartet auf Freigabe').style.padding)
-      .toBe('var(--app-abstand-mini) var(--app-abstand-kompakt)');
-  });
-
-  it('sitzt in der Eck-Badge-Leiste -- gesehene wartende stehen NICHT in der roten Kugel', () => {
+  it('gesehene wartende stehen NICHT in der roten Kugel', () => {
     // Der Server meldet nichts Neues (neueBeitraege leer): Die drei warten
     // schon, seit die Challenge zuletzt offen war.
     const { getByLabelText, container } = renderListe({ 31: 3 }, {});
-    const badge = getByLabelText('3 Beiträge warten auf Freigabe');
-    expect(badge.closest('.app-corner-badges')).not.toBeNull();
+    getByLabelText('3 Beiträge warten auf Freigabe');
     expect(container.querySelectorAll('.app-zaehler-kugel')).toHaveLength(0);
-  });
-
-  it('haelt den Titel vom Badge frei: mit und ohne Freigaben derselbe Freiraum', () => {
-    // Das Feld ist ohne Zahl so breit wie jedes andere Symbol-Badge; drei
-    // davon (Freigabe, Eingereicht, Status) passen in xl plus Kartenrand.
-    const mit = renderListe({ 31: 1 });
-    const titelMit = mit.getByText('Zeig uns deinen Lieblingsplatz') as HTMLElement;
-    const titelOhne = mit.getByText('Text-Challenge') as HTMLElement;
-    expect(titelMit.style.paddingRight).toBe('var(--app-freiraum-aktion-xl)');
-    expect(titelOhne.style.paddingRight).toBe('var(--app-freiraum-aktion-xl)');
   });
 
   it('ohne offene Freigaben kein Badge -- auch nicht aus pending_count der Liste', () => {

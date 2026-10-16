@@ -230,7 +230,6 @@ describe('Konfis einladen (Web)', () => {
     expect(h.qr).toHaveBeenCalledWith('https://konfi-quest.de/register?code=ABC123', expect.anything());
     expect(await screen.findByAltText('QR-Code für die Registrierung')).toHaveAttribute('src', 'data:image/png;base64,ABC123');
     expect(within(screen.getByRole('complementary', { name: 'QR-Code und Hinweise' })).getByText('ABC123')).toBeInTheDocument();
-    expect(z[0].className).toContain('web-zeile--gewaehlt');
   });
 
   it('einen neuen Code erzeugen: Jahrgang und Gueltigkeit gehen an die Route, der neue Code steht im QR-Feld', async () => {

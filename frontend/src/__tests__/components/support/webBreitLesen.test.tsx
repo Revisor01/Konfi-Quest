@@ -117,8 +117,6 @@ describe('Breit lesen: der Schalter im Kopf der Liste', () => {
     await screen.findByRole('navigation', { name: 'Vorgänge' });
     expect(schalter()).toBeDisabled();
     expect(schalter()).toHaveAttribute('title', 'Breit lesen – die Liste ausblenden');
-    // Er steht im Kopf der Liste, neben „Alle auswählen".
-    expect(schalter().closest('.web-postfach__listekopf')).not.toBeNull();
   });
 
   it('ein Klick blendet die Liste aus; über dem Lesebereich „‹ Alle Vorgänge" und ‹ ›; die Wahl ist im Gerät gemerkt', async () => {
@@ -126,7 +124,6 @@ describe('Breit lesen: der Schalter im Kopf der Liste', () => {
     expect(liste()).not.toBeNull();
     fireEvent.click(schalter());
     expect(liste()).toBeNull();
-    expect(document.querySelector('.web-postfach')!.className).toBe('web-postfach web-postfach--breit');
     const zurueck = blaettern().getByRole('button', { name: 'Zurück zu „Alle Vorgänge“' });
     expect(zurueck).toHaveTextContent('Alle Vorgänge');
     expect(blaettern().getByRole('button', { name: 'Voriger Eintrag' })).toBeEnabled();
@@ -342,12 +339,10 @@ describe('Breit lesen: die Leiste steht auch, solange der Eintrag lädt oder feh
   };
   const nichtGefunden = () => Object.assign(new Error('nicht gefunden'), { response: { status: 404, data: { error: 'Nicht gefunden' } } });
 
-  it('die Leiste steht über dem Lesebereich, nicht im Artikel des Eintrags, und bleibt beim Blättern dieselbe', async () => {
+  it('die Leiste bleibt beim Blättern dieselbe', async () => {
     await vorgangOeffnen(1);
     fireEvent.click(schalter());
     const leiste = screen.getByRole('navigation', { name: 'Blättern' });
-    expect(leiste.closest('article')).toBeNull();
-    expect(leiste.parentElement).toHaveClass('web-postfach__lesen');
     fireEvent.click(knopfDerLeiste('Nächster Eintrag'));
     await titel('Wie lege ich einen Jahrgang an?');
     expect(screen.getByRole('navigation', { name: 'Blättern' })).toBe(leiste);

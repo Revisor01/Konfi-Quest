@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -37,36 +37,23 @@ import {
   ICON_SUCHE_GEFUELLT,
   ICON_TERMIN_GEFUELLT,
 } from '../../shared/icons';
-import { useApp } from '../../../contexts/AppContext';
-import { offlineBlockiert } from '../../../utils/offlineAktion';
-import api from '../../../services/api';
 import LoadingSpinner from '../../common/LoadingSpinner';
-import { AdminUser, ChatUser } from '../../../types/user';
-import { EigenerJahrgang, KonfiEintrag } from '../../../types/chat';
+import { ChatUser } from '../../../types/user';
 import { triggerPullHaptic } from '../../../utils/haptics';
 import { closeOpenSlidingItems } from '../../../utils/slidingItems';
-import { istTeamTyp } from '../../../utils/chatRoles';
 import { tastaturKlick } from '../../../utils/tastatur';
-import { rollenName, rollenDarstellung } from '../../../utils/rollenNamen';
-
-interface Participant {
-  user_id: number;
-  user_type: 'admin' | 'konfi' | 'teamer';
-  name: string;
-  role_name?: string;
-  role_title?: string;
-  role_display_name?: string;
-  jahrgang_id?: number;
-  jahrgang_name?: string;
-  joined_at: string;
-}
-
-// Team-Mitglied = Admin/Org-Admin ODER Teamer:in (NICHT Konfi). Teamer wurden bisher
-// faelschlich wie Konfis dargestellt (lila, ohne Funktion), weil nur auf 'admin'
-// geprüft wurde. Diese Helfer behandeln 'teamer' konsistent als Team.
-const isTeamType = istTeamTyp;
-const isTeamUser = (u: { user_type?: string; type?: string }) =>
-  isTeamType('user_type' in u ? u.user_type : u.type);
+import { rollenDarstellung } from '../../../utils/rollenNamen';
+import {
+  MITGLIED_ENTFERNEN_TITEL,
+  anzeigeName,
+  istTeamPerson,
+  jahrgangVon,
+  mitgliedEntfernenFrage,
+  personKennung,
+  rollenText,
+  useChatMitglieder,
+  type ChatTeilnehmer,
+} from '../useChatMitglieder';
 
 interface MembersModalProps {
   onClose: () => void;
@@ -82,190 +69,34 @@ const MembersModal: React.FC<MembersModalProps> = ({
   roomId,
   roomType
 }) => {
-  const { user, setError, isOnline } = useApp();
   const [presentRemoveAlert] = useIonAlert();
   const pageRef = useRef<HTMLElement>(null);
 
-  const [participants, setParticipants] = useState<Participant[]>([]);
-  const [allUsers, setAllUsers] = useState<ChatUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [adding, setAdding] = useState(false);
-  const [showAddMode, setShowAddMode] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  // Laden, Auswahl, Rechte und die Wege zum Server: useChatMitglieder --
+  // dieselbe Logik wie im Dialog des Browsers (web/WebMitgliederDialog).
+  const {
+    isOnline, sortedParticipants, loading, adding, showAddMode, setShowAddMode,
+    searchText, setSearchText, selectedUsers, canManageMembers, filteredAvailableUsers,
+    loadParticipants, loadAllUsers, handleUserToggle, addSelectedUsers,
+    entfernenOfflineBlockiert, mitgliedEntfernen, zuruecksetzen,
+  } = useChatMitglieder({ roomId, roomType });
 
-  const isGroupChat = roomType === 'group';
-  const canManageMembers = user?.type === 'admin' && isGroupChat;
-
-  useEffect(() => {
-    if (roomId) loadParticipants();
-  }, [roomId]);
-
-  // Die Personenlisten braucht nur das Hinzufuegen, also nur, wer verwalten
-  // darf (30.09.2026): Vorher holte jedes Mitglied beim Oeffnen
-  // /admin/konfis -- fuer Konfis jedes Mal ein 403.
-  useEffect(() => {
-    if (roomId && canManageMembers) loadAllUsers();
-  }, [roomId, canManageMembers]);
-
-  const loadParticipants = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/chat/rooms/${roomId}/participants`);
-      setParticipants(response.data);
-    } catch (err) {
-      setError('Fehler beim Laden der Mitglieder');
- console.error('Error loading participants:', err);
-    } finally {
-      setLoading(false);
-    }
+  const hinzufuegen = async () => {
+    if (await addSelectedUsers()) onSuccess();
   };
 
-  const loadAllUsers = async () => {
-    try {
-      const [konfisRes, userJahrgangRes, adminsRes] = await Promise.all([
-        api.get('/admin/konfis'),
-        // /users statt /admin/users: createApp.js haengt denselben Router
-        // unter beiden Praefixen ein (:480 und :483). Die Oberflaeche nutzt
-        // durchgaengig /users; der zweite Mount bleibt nur fuer ausgelieferte
-        // Apps stehen (docs/api/ABRISS.md, Abschnitt D).
-        api.get('/users/me/jahrgaenge').catch(() => ({ data: [] })),
-        api.get('/users').catch(() => ({ data: [] }))
-      ]);
-
-      // Jahrgangs-Filter wie SimpleCreateChatModal
-      let allowedJahrgangIds: number[] = [];
-      const eigeneJahrgaenge = userJahrgangRes.data as EigenerJahrgang[];
-      if (eigeneJahrgaenge.length > 0) {
-        allowedJahrgangIds = eigeneJahrgaenge.map((j) => j.id);
-      }
-
-      // GET /admin/konfis liefert den Jahrgang nur als jahrgang_name; der
-      // frühere Fallback auf konfi.jahrgang griff nie.
-      const konfis: ChatUser[] = (konfisRes.data as KonfiEintrag[])
-        .filter((konfi) => {
-          if (allowedJahrgangIds.length > 0) {
-            return Boolean(konfi.jahrgang_id) && allowedJahrgangIds.includes(konfi.jahrgang_id as number);
-          }
-          return true;
-        })
-        .map((konfi) => ({
-          ...konfi,
-          type: 'konfi' as const,
-          jahrgang_name: konfi.jahrgang_name ?? undefined
-        }));
-
-      // GET /users schliesst Konfis bereits serverseitig aus
-      // (WHERE r.name NOT IN ('konfi', 'super_admin')).
-      const adminUsers: ChatUser[] = (adminsRes.data as AdminUser[])
-        .filter((u) => u.role_name !== 'konfi')
-        .map((admin) => ({
-          ...admin,
-          type: 'admin' as const,
-          role_description: admin.role_title || rollenName(admin.role_name, admin.role_display_name)
-        }));
-
-      setAllUsers([...konfis, ...adminUsers]);
-    } catch (err) {
- console.error('Error loading users:', err);
-    }
-  };
-
-  const getAvailableUsers = () => {
-    const participantIds = new Set(
-      participants.map(p => `${p.user_type}-${p.user_id}`)
-    );
-
-    return allUsers.filter(user =>
-      !participantIds.has(`${user.type}-${user.id}`)
-    );
-  };
-
-  // Sortierung: Team-Mitglieder (Admins + Teamer) zuerst, dann alphabetisch nach Name
-  const sortUsers = <T extends { name?: string; display_name?: string; type?: string; user_type?: string }>(users: T[]): T[] => {
-    return [...users].sort((a, b) => {
-      const aIsTeam = isTeamUser(a);
-      const bIsTeam = isTeamUser(b);
-
-      // Team-Mitglieder zuerst
-      if (aIsTeam && !bIsTeam) return -1;
-      if (!aIsTeam && bIsTeam) return 1;
-
-      // Dann alphabetisch nach Name
-      const aName = (a.name || a.display_name || '').toLowerCase();
-      const bName = (b.name || b.display_name || '').toLowerCase();
-      return aName.localeCompare(bName, 'de');
-    });
-  };
-
-  const filteredAvailableUsers = sortUsers(getAvailableUsers().filter(user => {
-    const name = user.name || user.display_name || '';
-    return name.toLowerCase().includes(searchText.toLowerCase()) ||
-      (user.jahrgang && user.jahrgang.toLowerCase().includes(searchText.toLowerCase()));
-  }));
-
-  // Sortierte Teilnehmer
-  const sortedParticipants = sortUsers(participants);
-
-  const handleUserToggle = (user: ChatUser) => {
-    const userId = `${user.type}-${user.id}`;
-    const newSelected = new Set(selectedUsers);
-
-    if (newSelected.has(userId)) {
-      newSelected.delete(userId);
-    } else {
-      newSelected.add(userId);
-    }
-
-    setSelectedUsers(newSelected);
-  };
-
-  const addSelectedUsers = async () => {
-    if (selectedUsers.size === 0) return;
-
-    setAdding(true);
-    try {
-      const promises = Array.from(selectedUsers).map(userId => {
-        const [type, id] = userId.split('-');
-        return api.post(`/chat/rooms/${roomId}/participants`, {
-          user_id: parseInt(id),
-          user_type: type
-        });
-      });
-
-      await Promise.all(promises);
-
-      setSelectedUsers(new Set());
-      setShowAddMode(false);
-      await loadParticipants();
-      onSuccess();
-    } catch (err) {
-      setError('Fehler beim Hinzufügen der Mitglieder');
- console.error('Error adding participants:', err);
-    } finally {
-      setAdding(false);
-    }
-  };
-
-  const confirmRemoveUser = (participant: Participant) => {
-    if (offlineBlockiert(isOnline, setError)) return;
+  const confirmRemoveUser = (participant: ChatTeilnehmer) => {
+    if (entfernenOfflineBlockiert()) return;
     presentRemoveAlert({
-      header: 'Mitglied entfernen',
-      message: `${participant.name} wirklich aus dem Chat entfernen?`,
+      header: MITGLIED_ENTFERNEN_TITEL,
+      message: mitgliedEntfernenFrage(participant.name),
       buttons: [
         { text: 'Abbrechen', role: 'cancel' },
         {
           text: 'Entfernen',
           role: 'destructive',
           handler: async () => {
-            try {
-              await api.delete(`/chat/rooms/${roomId}/participants/${participant.user_id}/${participant.user_type}`);
-              await loadParticipants();
-              onSuccess();
-            } catch (err) {
-              setError('Fehler beim Entfernen des Mitglieds');
- console.error('Error removing participant:', err);
-            }
+            if (await mitgliedEntfernen(participant)) onSuccess();
           }
         }
       ]
@@ -273,61 +104,22 @@ const MembersModal: React.FC<MembersModalProps> = ({
   };
 
   const handleClose = () => {
-    setShowAddMode(false);
-    setSelectedUsers(new Set());
-    setSearchText('');
+    zuruecksetzen();
     onClose();
-  };
-
-  const getUserDisplayName = (user: ChatUser | Participant) => {
-    if ('display_name' in user) {
-      return user.name || user.display_name || 'Unbekannt';
-    }
-    return user.name || 'Unbekannt';
-  };
-
-  // Rolle/Funktion ermitteln (für Eselsohr)
-  const getRoleText = (targetUser: ChatUser | Participant) => {
-    if (isTeamUser(targetUser)) {
-      if ('role_title' in targetUser && targetUser.role_title) {
-        return targetUser.role_title;
-      }
-      // Ohne eigenen Titel das feste Wort nach der Rolle (utils/rollenNamen);
-      // role_display_name traegt in bestehenden Gemeinden noch die alten Namen.
-      const roleName = 'role_name' in targetUser ? targetUser.role_name : undefined;
-      const ausDerAntwort =
-        ('role_display_name' in targetUser && targetUser.role_display_name)
-        || ('role_description' in targetUser && targetUser.role_description)
-        || 'Leitung';
-      return rollenName(roleName, ausDerAntwort);
-    }
-
-    return 'Konfi';
-  };
-
-  // Jahrgang ermitteln (für Meta-Zeile)
-  const getJahrgang = (targetUser: ChatUser | Participant) => {
-    if ('jahrgang_name' in targetUser && targetUser.jahrgang_name) {
-      return targetUser.jahrgang_name;
-    }
-    if ('jahrgang' in targetUser && targetUser.jahrgang) {
-      return targetUser.jahrgang;
-    }
-    return null;
   };
 
   // Render User Item - mit CSS-Klassen
   const renderUserItem = (
-    targetUser: ChatUser | Participant,
+    targetUser: ChatUser | ChatTeilnehmer,
     isSelectable: boolean,
     isSelected: boolean,
     onToggle?: () => void
   ) => {
-    const isTeam = isTeamUser(targetUser);
-    const name = getUserDisplayName(targetUser);
+    const isTeam = istTeamPerson(targetUser);
+    const name = anzeigeName(targetUser);
     const participantId = `${isTeam ? 'admin' : 'konfi'}-${'user_id' in targetUser ? targetUser.user_id : targetUser.id}`;
-    const roleText = getRoleText(targetUser);
-    const jahrgang = getJahrgang(targetUser);
+    const roleText = rollenText(targetUser);
+    const jahrgang = jahrgangVon(targetUser);
     // Strich, Kreis, Eck-Marke und Schrift in der Farbe der Rolle -- aus EINER
     // Stelle (utils/rollenNamen: rollenDarstellung, 02.10.2026). Bis dahin
     // las nur die Eck-Marke die Rolle; Strich und Kreis trugen die
@@ -408,7 +200,7 @@ const MembersModal: React.FC<MembersModalProps> = ({
               {showAddMode ? (
                 <IonButton
                   className="app-modal-submit-btn app-modal-submit-btn--chat"
-                  onClick={addSelectedUsers}
+                  onClick={hinzufuegen}
                   disabled={selectedUsers.size === 0 || adding || !isOnline}
                   aria-label="Ausgewählte Mitglieder hinzufügen"
                 >
@@ -484,11 +276,10 @@ const MembersModal: React.FC<MembersModalProps> = ({
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {filteredAvailableUsers.map((u) => {
-                          const userId = `${u.type}-${u.id}`;
                           return renderUserItem(
                             u,
                             true,
-                            selectedUsers.has(userId),
+                            selectedUsers.has(personKennung(u)),
                             () => handleUserToggle(u)
                           );
                         })}

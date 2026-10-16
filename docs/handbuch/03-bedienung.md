@@ -213,6 +213,7 @@ reichen weiter. Das gilt für:
 - Badges anlegen und bearbeiten
 - Kategorien, Level und Zertifikate
 - Benutzer:innen — auch „Teamer:in anlegen" — und Jahrgänge
+- im Chat: Neuer Chat, Umfrage erstellen und Mitglieder
 - Passwort und E-Mail-Adresse ändern, in jeder Rolle
 
 In diesen Fenstern gilt:

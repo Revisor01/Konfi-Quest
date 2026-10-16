@@ -159,7 +159,6 @@ describe('Konfis: Karten', () => {
     await oeffneKonfi('?filter=konfirmation', [gebucht, andere]);
     expect(within(karte('Konfirmation Frühling')).getByText('Angemeldet', { selector: '.web-pill' })).toBeInTheDocument();
     expect(within(karte('Konfirmation Herbst')).getByText('Anderer Termin')).toBeInTheDocument();
-    expect(karte('Konfirmation Herbst')).toHaveClass('web-termin-karte--gedaempft');
   });
 
   it('Suche nach Name, Ort und Beschreibung; "fruehling" findet "Frühling"', async () => {
@@ -340,7 +339,6 @@ describe('Team: Karten', () => {
     expect(within(karte('Teamabend')).getByText('Offen', { selector: '.web-pill' })).toBeInTheDocument();
     expect(within(karte('Sonntagsgottesdienst')).getByText('Nur Info', { selector: '.web-pill' })).toBeInTheDocument();
     expect(within(karte('Gemeindefest')).queryByText('Vergangen', { selector: '.web-pill' })).toBe(null);
-    expect(karte('Gemeindefest')).toHaveClass('web-termin-karte--gedaempft');
   });
 
   it('Jahrgang, Team-Zahlen und Material stehen auf der Karte; "Team gesucht" zeigt das Team', async () => {
@@ -423,16 +421,6 @@ describe('Ansicht: Kacheln und Liste', () => {
       expect(gedrueckt('Kacheln')).toBe('true');
       expect(gedrueckt('Liste')).toBe('false');
       expect(window.localStorage.getItem(ansichtSchluessel('events-mitglied'))).toBe(null);
-    });
-
-    it('der Umschalter steht als letztes Element rechts neben der Suche, in der Zeile der Chips', async () => {
-      await oeffnen();
-      const suche = screen.getByRole('search');
-      const rechts = suche.parentElement!;
-      expect(rechts).toHaveClass('web-werkzeuge__rechts');
-      expect(umschalter().previousElementSibling).toBe(suche);
-      expect(rechts.lastElementChild).toBe(umschalter());
-      expect(within(rechts.parentElement!).getByRole('group', { name: 'Events anzeigen' })).toBeInTheDocument();
     });
 
     it('"Liste": eine Tabelle mit denselben Events in derselben Reihenfolge; die Wahl steht im Browser', async () => {
@@ -520,19 +508,17 @@ describe('Ansicht: Kacheln und Liste', () => {
       expect(zeileVon('Konfi-Wochenende')).not.toHaveTextContent('Team gesucht');
     });
 
-    it('abgesagt: Marke "Abgesagt", der Grund und der durchgestrichene Name', async () => {
+    it('abgesagt: Marke "Abgesagt" und der Grund', async () => {
       await inListe();
       const zeile = zeileVon('Fahrradtour');
       expect(within(zeile).getByText('Abgesagt', { selector: '.web-pill' })).toBeInTheDocument();
       expect(zeile).toHaveTextContent('Abgesagt: Sturmwarnung');
-      expect(within(zeile).getByText('Fahrradtour')).toHaveStyle({ textDecoration: 'line-through' });
     });
 
     it('die Zeile ist ein echter Link auf das Event; der Klick bleibt in der App', async () => {
       await inListe();
       const link = within(zeileVon('Konfi-Tag')).getByRole('link', { name: 'Konfi-Tag' });
       expect(link).toHaveAttribute('href', '/konfi/events/301');
-      expect(link).toHaveClass('web-link--zeile');
       fireEvent.click(link);
       expect(routerPush).toHaveBeenCalledWith('/konfi/events/301', 'none', 'push');
     });
@@ -542,25 +528,20 @@ describe('Ansicht: Kacheln und Liste', () => {
       expect(within(zeileVon('Erntedank-Gottesdienst')).getByText('Verbucht')).toBeInTheDocument();
     });
 
-    it('ein zweiter Konfirmationstermin ist gesperrt, solange einer gebucht ist: "Anderer Termin", blass', async () => {
+    it('ein zweiter Konfirmationstermin ist gesperrt, solange einer gebucht ist: "Anderer Termin"', async () => {
       const gebucht = termin(304, 'Konfirmation Frühling', { event_date: inTagen(60), is_konfirmation: true, is_registered: true, booking_status: 'confirmed' });
       const andere = termin(308, 'Konfirmation Herbst', { event_date: inTagen(90), is_konfirmation: true });
       await inListe('?filter=konfirmation', [gebucht, andere]);
       expect(within(zeileVon('Konfirmation Frühling')).getByText('Angemeldet', { selector: '.web-pill' })).toBeInTheDocument();
       expect(within(zeileVon('Konfirmation Herbst')).getByText('Anderer Termin')).toBeInTheDocument();
-      expect(zeileVon('Konfirmation Herbst')).toHaveClass('web-zeile--gedaempft');
-      expect(zeileVon('Konfirmation Frühling')).not.toHaveClass('web-zeile--gedaempft');
     });
 
-    it('Vergangenes ohne Teilnahme steht blass da und trägt keine Status-Marke -- Zeile wie Karte', async () => {
+    it('Vergangenes ohne Teilnahme trägt keine Status-Marke; Merkmale bleiben', async () => {
       const altes = termin(309, 'Altes Fest', { event_date: inTagen(-5), is_konfirmation: true });
       await inListe('?filter=konfirmation', [altes]);
-      expect(zeileVon('Altes Fest')).toHaveClass('web-zeile--gedaempft');
       expect(within(zeileVon('Altes Fest')).queryByText('Vergangen')).toBe(null);
       // Pflicht-Marken und Merkmale bleiben, nur der Status fehlt: hier die Konfirmation.
       expect(within(zeileVon('Altes Fest')).getByText('Konfirmation', { selector: '.web-pill' })).toBeInTheDocument();
-      waehle('Kacheln');
-      expect(screen.getByRole('link', { name: 'Altes Fest' }).closest('article')).toHaveClass('web-termin-karte--gedaempft');
     });
 
     it('leer: derselbe Hinweis wie bei den Karten, mit Weg zu allen Events', async () => {
@@ -621,11 +602,9 @@ describe('Ansicht: Kacheln und Liste', () => {
       expect(routerPush).toHaveBeenCalledWith('/teamer/events?eventId=402', 'none', 'push');
     });
 
-    it('Vergangenes ohne Teilnahme steht blass da, ohne Status-Marke "Vergangen"; Offenes nicht', async () => {
+    it('Vergangenes ohne Teilnahme steht ohne Status-Marke "Vergangen"', async () => {
       await inListe('?filter=alle');
-      expect(zeileVon('Gemeindefest')).toHaveClass('web-zeile--gedaempft');
       expect(within(zeileVon('Gemeindefest')).queryByText('Vergangen')).toBe(null);
-      expect(zeileVon('Teamabend')).not.toHaveClass('web-zeile--gedaempft');
     });
 
     it('leer: derselbe Hinweis wie bei den Karten, mit Weg zu allen Events', async () => {

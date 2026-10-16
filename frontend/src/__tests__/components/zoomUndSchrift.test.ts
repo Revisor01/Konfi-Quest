@@ -25,7 +25,8 @@ import { join, relative, resolve } from 'path';
 //     Android nicht per setTextZoom abgekoppelt wird. Am Geraet bestaetigt
 //     ist es damit nicht (siehe Audit-Bericht, Pruefschritte).
 //
-// (c) Reiter-Beschriftungen 8,8 px (Android) / 9,4 px (iOS) -> 0.7rem.
+// Die Groesse einzelner Beschriftungen (etwa der Reiter) legt kein Test fest:
+// Das ist Gestaltung und bleibt frei aenderbar (Simon, 15.10.2026).
 // ---------------------------------------------------------------------------
 
 const frontend = process.cwd();
@@ -144,10 +145,14 @@ describe('Die Schrift folgt der Systemgroesse (UI BF-07b)', () => {
     expect(treffer).toEqual([]);
   });
 
-  it('die Textstufen der Skala sind rem und wachsen damit mit', () => {
-    const skala = [...lies('src/theme/typografie.css').matchAll(/(--app-text-[\w-]+):\s*([^;]+);/g)];
-    expect(skala.length).toBeGreaterThanOrEqual(15);
-    expect(skala.filter(([, name, wert]) => name !== '--app-text-hinweispunkt' && !/^[\d.]+rem$/.test(wert.trim())).map((m) => `${m[1]}: ${m[2]}`)).toEqual([]);
+  // Auch die Anzeigestufen (grosse Zahlen, Avatar-Initialen, Schriftzug):
+  // Stuende eine davon in px, wuechse dieser Text nicht mit der Systemschrift.
+  // Welche Stufen es gibt und wie gross sie sind, ist Gestaltung.
+  it('die Text- und Anzeigestufen der Skala sind rem und wachsen damit mit', () => {
+    const skala = [...lies('src/theme/typografie.css').matchAll(/(--app-(text|anzeige)-[\w-]+):\s*([^;]+);/g)];
+    expect(skala.filter((m) => m[2] === 'text').length).toBeGreaterThanOrEqual(15);
+    expect([...new Set(skala.map((m) => m[2]))].sort()).toEqual(['anzeige', 'text']);
+    expect(skala.filter(([, name, , wert]) => name !== '--app-text-hinweispunkt' && !/^[\d.]+rem$/.test(wert.trim())).map((m) => `${m[1]}: ${m[3]}`)).toEqual([]);
   });
 
   it('Android: die WebView wird nicht per setTextZoom von der Systemschrift abgekoppelt', () => {
@@ -156,24 +161,5 @@ describe('Die Schrift folgt der Systemgroesse (UI BF-07b)', () => {
     expect(quellen.filter((p) => /setTextZoom|textZoom/.test(readFileSync(p, 'utf8'))).map((p) => relative(frontend, p))).toEqual([]);
     const capBruecke = 'node_modules/@capacitor/android/capacitor/src/main/java/com/getcapacitor/Bridge.java';
     if (existsSync(resolve(frontend, capBruecke))) expect(lies(capBruecke)).not.toMatch(/setTextZoom/);
-  });
-});
-
-describe('Reiter-Beschriftungen (UI BF-07c)', () => {
-  const css = lies('src/theme/variables.css');
-
-  it('0.7rem auf beiden Plattformen', () => {
-    expect(lies('src/theme/typografie.css')).toMatch(/--app-text-reiter:\s*0\.7rem;/);
-    const md = css.match(/ion-tab-bar\.md ion-tab-button ion-label,[^{]*\{[^}]*\}/);
-    expect(md![0]).toContain('font-size: var(--app-text-reiter) !important');
-    const ios = css.match(/ion-tab-bar\.ios ion-tab-button ion-label \{[^}]*\}/);
-    expect(ios).not.toBeNull();
-    expect(ios![0]).toContain('font-size: min(var(--app-text-reiter), 12px) !important');
-  });
-
-  it('Android: die Beschriftung hat die ganze Breite des Reiters (Ionics 12-px-Innenabstand aufgehoben)', () => {
-    const knopf = css.match(/ion-tab-bar\.md ion-tab-button \{[^}]*\}/);
-    expect(knopf![0]).toMatch(/--padding-start:\s*0 !important/);
-    expect(knopf![0]).toMatch(/--padding-end:\s*0 !important/);
   });
 });

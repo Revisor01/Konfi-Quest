@@ -97,11 +97,10 @@ describe('Die Flaeche am Fuss der Leiste', () => {
     expect(knopf().querySelector('.app-leistengemeinde__rolle')?.textContent).toBe(rolle);
   });
 
-  it('das Symbol traegt die Farbe der Rolle dort -- aus den Tokens, nicht aus Farbwerten', () => {
+  it('das Symbol ist fuer Vorleseprogramme ausgeblendet -- der Knopf spricht', () => {
     h.app.activeOrgId = 2;
     zeigeLeiste();
     const symbol = knopf().querySelector('.app-leistengemeinde__symbol') as HTMLElement;
-    expect(symbol.style.getPropertyValue('--app-leistengemeinde-farbe')).toBe('var(--app-color-teamer)');
     expect(symbol.getAttribute('aria-hidden')).toBe('true');
   });
 
@@ -114,14 +113,6 @@ describe('Die Flaeche am Fuss der Leiste', () => {
     const leer = zeigeLeiste();
     expect(leer.container.firstChild).toBeNull();
     expect(h.apiGet).not.toHaveBeenCalled();
-  });
-
-  it('der Aufbau steht in der Leiste: Pfeil nach oben, die Liste klappt nach oben auf', () => {
-    // jsdom rechnet kein Layout: Die Regeln stehen im Stylesheet, hier die Verdrahtung.
-    const css = lies('src/components/layout/Seitenleiste.css');
-    expect(css).toMatch(/\.app-leistengemeinde__liste\s*\{[^}]*position:\s*fixed/);
-    expect(css).toMatch(/\.app-leistengemeinde__knopf\[aria-expanded='true'\] \.app-leistengemeinde__pfeil\s*\{[^}]*rotate\(180deg\)/);
-    expect(lies('src/components/layout/LeistenGemeinde.tsx')).toContain('ICON_ZUKLAPPEN');
   });
 });
 
@@ -148,7 +139,6 @@ describe('Die Liste', () => {
     expect(liste.map((e) => e.querySelector('.app-leistengemeinde__rolle')?.textContent))
       .toEqual(['Gemeindeleitung', 'Teamer:in', 'Konfi', 'Leitung']);
     expect(liste.map((e) => e.getAttribute('aria-checked'))).toEqual(['false', 'true', 'false', 'false']);
-    expect(liste.map((e) => e.classList.contains('app-leistengemeinde__eintrag--aktiv'))).toEqual([false, true, false, false]);
     // Der volle Name auch hier als title.
     expect(liste[2].getAttribute('title')).toBe(LANGER_NAME);
   });
@@ -334,55 +324,6 @@ describe('Klick daneben und Fokus weg', () => {
   });
 });
 
-describe('Lage der Liste', () => {
-  /** jsdom rechnet kein Layout -- der Knopf bekommt ein Rechteck. */
-  const mitRechteck = (r: { left: number; right: number; top: number; bottom: number; width: number }) => {
-    vi.spyOn(HTMLButtonElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      return (this.classList.contains('app-leistengemeinde__knopf')
-        ? { ...r, x: r.left, y: r.top, height: r.bottom - r.top, toJSON: () => ({}) }
-        : { left: 0, right: 0, top: 0, bottom: 0, width: 0, height: 0, x: 0, y: 0, toJSON: () => ({}) }) as DOMRect;
-    });
-  };
-  const liste = () => document.querySelector('.app-leistengemeinde__liste') as HTMLElement;
-
-  beforeEach(() => {
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 900 });
-  });
-  afterEach(() => {
-    vi.restoreAllMocks();
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 768 });
-  });
-
-  it('ausgeklappt: ueber dem Knopf, links buendig, mindestens so breit wie er', () => {
-    mitRechteck({ left: 8, right: 248, top: 820, bottom: 872, width: 240 });
-    zeigeLeiste(false);
-    oeffnen();
-    // 900 - 820 + 8 Luecke: die Unterkante der Liste liegt 8 px ueber dem Knopf.
-    expect(liste().style.left).toBe('8px');
-    expect(liste().style.bottom).toBe('88px');
-    expect(liste().style.minWidth).toBe('240px');
-  });
-
-  it('eingeklappt: neben dem Symbol, unten buendig mit ihm', () => {
-    mitRechteck({ left: 8, right: 64, top: 820, bottom: 872, width: 56 });
-    zeigeLeiste(true);
-    oeffnen();
-    expect(liste().style.left).toBe('72px');
-    expect(liste().style.bottom).toBe('28px');
-    expect(liste().style.minWidth).toBe('');
-  });
-
-  it('wird das Fenster veraendert, wird neu gemessen', () => {
-    mitRechteck({ left: 8, right: 248, top: 820, bottom: 872, width: 240 });
-    zeigeLeiste(false);
-    oeffnen();
-    expect(liste().style.bottom).toBe('88px');
-    Object.defineProperty(window, 'innerHeight', { configurable: true, value: 700 });
-    act(() => { window.dispatchEvent(new Event('resize')); });
-    expect(liste().style.bottom).toBe('-112px');
-  });
-});
-
 describe('Eingeklappte Leiste', () => {
   it('der Knopf behaelt Namen und Tooltip, auch wenn nur das Symbol zu sehen ist', () => {
     zeigeLeiste(true);
@@ -391,58 +332,42 @@ describe('Eingeklappte Leiste', () => {
     expect(k.getAttribute('aria-label')).toBe('Gemeinde wechseln, gerade Kirchspiel West, Gemeindeleitung');
   });
 
-  it('nur das Symbol: Text und Pfeil blendet das Stylesheet aus, die Liste bleibt sichtbar', () => {
-    const css = lies('src/components/layout/Seitenleiste.css');
-    // Nur am Knopf -- die Liste liegt im selben Baum und darf nicht mitverschwinden.
-    expect(css).toMatch(
-      /\.app-seitenleiste--eingeklappt \.app-leistengemeinde__knopf \.app-leistengemeinde__texte,\s*\.app-seitenleiste--eingeklappt \.app-leistengemeinde__knopf \.app-leistengemeinde__pfeil\s*\{\s*display:\s*none;/,
-    );
-    expect(css).not.toMatch(/\.app-seitenleiste--eingeklappt \.app-leistengemeinde__(?:liste|eintrag)/);
+  /** Regeln der eingeklappten Leiste, die Liste oder Eintraege der Gemeinden ausblenden. */
+  const verbergenListe = (css: string) => [...css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+    .filter(([, selektor]) => selektor.split(',').some((s) =>
+      s.includes('.app-seitenleiste--eingeklappt') && /\.app-leistengemeinde__(?:liste|eintrag)\b/.test(s)))
+    .filter(([, , rumpf]) => /display:\s*none|visibility:\s*hidden/.test(rumpf))
+    .map(([, selektor]) => selektor.trim());
+
+  it('die Liste bleibt auch eingeklappt erreichbar: keine Regel der eingeklappten Leiste blendet sie aus', () => {
+    // Eingeklappt ist nur das Symbol zu sehen; die Gemeinde muss sich trotzdem
+    // wechseln lassen. Die Liste liegt im selben Baum wie der Knopf und darf
+    // nicht mit Text und Pfeil verschwinden. jsdom wertet kein Stylesheet aus,
+    // deshalb liest dieser Test die Regeln; wie die Leiste eingeklappt
+    // aussieht, legt er nicht fest.
+    expect(verbergenListe(lies('src/components/layout/Seitenleiste.css'))).toEqual([]);
+    // Gegenprobe der Suche selbst: eine solche Regel faellt auf.
+    expect(verbergenListe('.app-seitenleiste--eingeklappt .app-leistengemeinde__liste { display: none; }')).toHaveLength(1);
+    expect(verbergenListe('.a, .app-seitenleiste--eingeklappt .app-leistengemeinde__eintrag:hover { visibility: hidden }')).toHaveLength(1);
   });
 });
 
-describe('Gestaltung nur aus Tokens', () => {
+describe('Stylesheet: Tokens, sichtbarer Fokus, Bewegung', () => {
   const css = lies('src/components/layout/Seitenleiste.css');
   const abschnitt = css.slice(css.indexOf('Gemeinde-Umschalter unten in der Leiste'));
 
   it('keine rohe Farbe in der Leiste -- Hell und Dunkel kommen aus den Tokens', () => {
-    expect(abschnitt.length).toBeGreaterThan(1000);
     const ohneKommentare = css.replace(/\/\*[\s\S]*?\*\//g, '');
     expect(ohneKommentare).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(ohneKommentare).not.toMatch(/\brgba?\(\s*\d/);
     expect(ohneKommentare).not.toMatch(/(?<![\w-])(?:white|black)(?![\w-])/);
-    expect(ohneKommentare).toContain('var(--app-surface-card)');
-    expect(ohneKommentare).toContain('var(--app-border)');
   });
 
-  it('Hover und sichtbarer Fokus sind da; Uebergaenge haengen an app-Klassen (Bewegung reduzieren)', () => {
-    expect(abschnitt).toContain('.app-leistengemeinde__knopf:hover');
-    expect(abschnitt).toContain('.app-leistengemeinde__eintrag:hover');
+  it('sichtbarer Fokus ist da; Uebergaenge haengen an app-Klassen (Bewegung reduzieren)', () => {
     expect(abschnitt).toMatch(/\.app-leistengemeinde__knopf:focus-visible[^{]*\{[^}]*outline:\s*2px solid var\(--ion-color-primary\)/);
     expect(abschnitt).toMatch(/\.app-leistengemeinde__eintrag:focus-visible[^{]*\{[^}]*outline-offset:\s*-2px/);
     for (const m of abschnitt.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
       if (/transition\s*:/.test(m[2])) expect(m[1], m[1].trim()).toContain('app-');
     }
-  });
-});
-
-describe('Lange Namen und niedrige Fenster', () => {
-  const css = lies('src/components/layout/Seitenleiste.css');
-
-  it('der Name steht auf bis zu zwei Zeilen -- „Kirchengemeinde Musterdorf" endet nicht als „Kirchengemeinde …"', () => {
-    expect(css).toMatch(/\.app-leistengemeinde__name\s*\{[^}]*-webkit-line-clamp:\s*2;[^}]*line-clamp:\s*2;/);
-    // Die Rolle bleibt eine Zeile mit Ellipse.
-    expect(css).toMatch(/\.app-leistengemeinde__rolle\s*\{[^}]*text-overflow:\s*ellipsis;[^}]*white-space:\s*nowrap;/);
-  });
-
-  it('der scrollende Mittelteil der Leiste zeigt mit zarten Schatten, dass dahinter etwas steht -- nur Tokens', () => {
-    // Mit den Support-Gruppen reicht ein Laptop-Fenster nicht fuer alle Eintraege.
-    const regel = css.match(/\.app-seitenleiste__liste\s*\{([^}]*)\}/)![1];
-    expect(regel).toMatch(/overflow-y:\s*auto;/);
-    // Zwei Deckflaechen, die mitscrollen (local), zwei feste Schatten (scroll).
-    expect(regel.match(/no-repeat local/g)).toHaveLength(2);
-    expect(regel.match(/no-repeat scroll/g)).toHaveLength(2);
-    expect(regel).toContain('rgb(var(--app-glasleiste-rgb))');
-    expect(regel).toContain('rgba(var(--app-text-system-rgb), 0.28)');
   });
 });

@@ -117,9 +117,9 @@ describe('"Bereits eingereicht" bedeutet ueberall dasselbe (M3)', () => {
     expect(badgeZahl(eintrag(container, 'Nichts eingereicht'))).toBe(0);
   });
 
-  it('beide Wege zeigen in derselben Lage dasselbe Badge', () => {
+  it('beide Wege zeigen in derselben Lage das Badge mit demselben Text', () => {
     // Moderierte Challenge, eigener Beitrag wartet: So liefert der Server die
-    // Lage je Route (siehe Kopf). Konfi und Team sehen dasselbe Zeichen mit
+    // Lage je Route (siehe Kopf). Konfi und Team sehen das Badge mit
     // demselben Text.
     const leitung = zeigeLeitung([
       leitungsChallenge(5, 'Foto der Woche', { own_submission_count: 1, has_badge: false }),
@@ -137,7 +137,5 @@ describe('"Bereits eingereicht" bedeutet ueberall dasselbe (M3)', () => {
     const konfiBadge = eintrag(konfi.container, 'Foto der Woche').querySelector(`[aria-label="${BADGE}"]`);
     expect(leitungsBadge?.getAttribute('title')).toBe(BADGE);
     expect(konfiBadge?.getAttribute('title')).toBe(BADGE);
-    expect(leitungsBadge?.className).toBe('app-corner-badge app-corner-badge--queue');
-    expect(konfiBadge?.className).toBe('app-corner-badge app-corner-badge--queue');
   });
 });

@@ -7,6 +7,11 @@
 //
 // Gelesen wird der Raum nur, solange er hier offen ist (er wird nur gebaut,
 // wenn er in der Adresse steht) und die Seite sichtbar ist (lesenNurSichtbar).
+//
+// Mitglieder und „Umfrage erstellen" oeffnen hier eigene Fenster der
+// Web-Fassung (WebMitgliederDialog, WebUmfrageDialog; Simon, 15.10.2026), nicht
+// die Modale der App -- dieser Raum steht nur im breiten Layout. Ihre Logik
+// teilen sie mit den Modalen (useChatMitglieder, useUmfrageFormular).
 
 import React, { useEffect, useRef, useState } from 'react';
 import { IonContent, IonIcon } from '@ionic/react';
@@ -20,6 +25,8 @@ import WebKnopf from '../../web/WebKnopf';
 import WebMenue, { type WebMenueEintrag } from './WebMenue';
 import WebNachrichten from './WebNachrichten';
 import WebChatEingabe from './WebChatEingabe';
+import WebMitgliederDialog from './WebMitgliederDialog';
+import WebUmfrageDialog from './WebUmfrageDialog';
 import { useUntenBleiben } from './useUntenBleiben';
 import { listenMerker } from './chatListenMerker';
 import '../../../theme/web/chat.css';
@@ -48,10 +55,9 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
     room,
     onBack: onSchliessen,
     lesenNurSichtbar: true,
-    modalKlasse: 'web-chat-modal',
   });
   const {
-    user, isOnline, setError, messages, nachrichtenGeladen,
+    user, isOnline, setError, messages, nachrichtenGeladen, loadMessages,
     contentRef, showScrollDown, handleScroll, handleScrollDownClick,
     initialUnreadRef, newDividerAnchorRef, newDividerRef,
     anfangBei, laedtAeltere, aeltereFehlgeschlagen, ladeAeltere,
@@ -61,7 +67,7 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
     showReactionPicker, reactionTargetMessage, auswahlAufheben,
     deleteMessage, nachrichtErneutSenden, nachrichtVerwerfen,
     toggleReaction, openReactionPicker, voteInPoll, namenAufdecken, handleFileClick, ladendeDatei, handleShareMessage,
-    openPollModal, openMembersModal, getDisplayRoomName,
+    getDisplayRoomName,
     canLeaveChat, istLeitung, darfTeamChatLeeren, handleClearChat, handleExportChat, handleLeaveChat,
   } = chat;
 
@@ -83,6 +89,8 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
 
   const feldRef = useRef<HTMLTextAreaElement>(null);
   const [ablage, setAblage] = useState(false);
+  // Das offene Fenster des Raums: Mitglieder oder Neue Umfrage.
+  const [fenster, setFenster] = useState<'mitglieder' | 'umfrage' | null>(null);
 
   // Mit der Maus gewaehlt: Der Fokus geht in die Eingabe. Nur, wo es eine Maus
   // gibt -- auf dem iPad schoebe das die Bildschirmtastatur ueber den Verlauf.
@@ -134,7 +142,10 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
   };
 
   // Eine Datei ueber den Verlauf ziehen: ablegen = als Anhang uebernehmen.
-  const mitDatei = (ereignis: React.DragEvent) => Array.from(ereignis.dataTransfer?.types ?? []).includes('Files');
+  // Nur ueber dem Raum selbst: Die Fenster (Mitglieder, Umfrage) haengen per
+  // Portal ausserhalb, ihre Ereignisse kaemen in React trotzdem hier an.
+  const mitDatei = (ereignis: React.DragEvent) => ereignis.currentTarget.contains(ereignis.target as Node)
+    && Array.from(ereignis.dataTransfer?.types ?? []).includes('Files');
 
   return (
     <section
@@ -161,13 +172,13 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
         </div>
         <div className="web-chat-raum__aktionen">
           {room.type !== 'direct' && (
-            <WebKnopf art="text" symbol aria-label="Mitglieder anzeigen" title="Mitglieder anzeigen" onClick={openMembersModal}>
+            <WebKnopf art="text" symbol aria-label="Mitglieder anzeigen" title="Mitglieder anzeigen" onClick={() => setFenster('mitglieder')}>
               <IonIcon icon={ICON_GRUPPE_GEFUELLT} aria-hidden="true" />
             </WebKnopf>
           )}
           {/* Umfragen anlegen bleibt der Leitung vorbehalten. */}
           {istAdmin && (
-            <WebKnopf art="text" symbol aria-label="Umfrage erstellen" title="Umfrage erstellen" onClick={openPollModal}>
+            <WebKnopf art="text" symbol aria-label="Umfrage erstellen" title="Umfrage erstellen" onClick={() => setFenster('umfrage')}>
               <IonIcon icon={ICON_DIAGRAMM} aria-hidden="true" />
             </WebKnopf>
           )}
@@ -253,6 +264,23 @@ const WebChatRaum: React.FC<WebChatRaumProps> = ({ room, listenRaum, onSchliesse
         <div className="web-chat-ablage" aria-hidden="true">
           <span>Datei hier ablegen, um sie anzuhängen</span>
         </div>
+      )}
+
+      {/* Danach wie in der App (useChatRaum, onSuccess): Fenster zu, Verlauf neu. */}
+      {fenster === 'mitglieder' && (
+        <WebMitgliederDialog
+          roomId={room.id}
+          roomType={room.type}
+          onGeaendert={() => { void loadMessages(); }}
+          onSchliessen={() => setFenster(null)}
+        />
+      )}
+      {fenster === 'umfrage' && (
+        <WebUmfrageDialog
+          roomId={room.id}
+          onErstellt={() => { void loadMessages(); }}
+          onSchliessen={() => setFenster(null)}
+        />
       )}
     </section>
   );

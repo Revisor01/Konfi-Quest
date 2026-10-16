@@ -50,34 +50,27 @@ beforeEach(() => {
 });
 
 const kopf = () => screen.getByRole('heading', { level: 1 }).closest('header') as HTMLElement;
-/** Die Knöpfe im Kopf in der Reihenfolge der Seite (Aktionen sind Knöpfe oben rechts). */
-const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim());
-/** Was direkt unter dem Kopf steht, vor den Kennzahlen: Hinweise. */
-const ersterBlock = () => document.querySelector('.web-detail')!.firstElementChild as HTMLElement;
+/** Die Knöpfe im Kopf, sortiert: welche es gibt, nicht wo sie stehen. */
+const knoepfeImKopf = () => within(kopf()).queryAllByRole('button').map((b) => b.textContent!.trim()).sort();
 const karte = (titel: string | RegExp) => screen.getByRole('region', { name: titel });
 const zeileVon = (name: string) => screen.getAllByText(name, { selector: '.web-zelle-titel' })[0].closest('tr') as HTMLElement;
 const umschalter = (name: string) => within(zeileVon(name)).getByRole('group', { name: `Anwesenheit von ${name}` });
 
 describe('Aufbau wie jede Detailseite', () => {
-  it('alle Aktionen im Kopf, die eigene Zusage als primärer Knopf ganz rechts -- keine Karte "Bist du dabei?"', async () => {
+  it('alle Aktionen im Kopf, dazu die eigene Zusage -- keine Karte "Bist du dabei?"', async () => {
     await oeffne();
-    expect(knoepfeImKopf()).toEqual(['Chat', 'QR-Code', 'Kopieren', 'Bearbeiten', 'Event absagen', 'Nicht dabei', 'Dabei']);
-    expect(within(kopf()).getByRole('button', { name: 'Dabei' })).toHaveClass('web-knopf--primaer');
-    expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toHaveClass('web-knopf--gefahr');
-    expect(within(kopf()).getByRole('button', { name: 'Event absagen' })).toHaveClass('web-knopf--gefahr');
+    expect(knoepfeImKopf()).toEqual(['Bearbeiten', 'Chat', 'Dabei', 'Event absagen', 'Kopieren', 'Nicht dabei', 'QR-Code']);
     expect(screen.queryByRole('region', { name: 'Bist du dabei?' })).toBe(null);
   });
 
-  it('die Kennzahlen stehen in einer Reihe unter dem Kopf, vor den Spalten', async () => {
+  it('die Kennzahlen: Teilnehmer:innen, Team und Warteliste', async () => {
     await oeffne();
     const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
     expect([...reihe.querySelectorAll('.web-kachel')].map((k) => k.getAttribute('aria-label')))
       .toEqual(['Teilnehmer:innen: 2 / 20', 'Team: 1 / 4', 'Warteliste: 1']);
-    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('links der Inhalt (Beschreibung, Tabellen, Abmeldungen), rechts der Block "Angaben" mit Zeitfenstern und Material', async () => {
+  it('Beschreibung, Tabellen und Abmeldungen; die Angaben mit Zeitfenstern und Material als eigener Randbereich', async () => {
     zustand.detail = freizeit({
       has_timeslots: true,
       timeslots: [{ id: 1, start_time: '2026-10-10T08:00:00Z', end_time: '2026-10-10T09:00:00Z', max_participants: 4, registered_count: 1 }],
@@ -88,33 +81,25 @@ describe('Aufbau wie jede Detailseite', () => {
       return Promise.resolve({ data: [] });
     });
     await oeffne();
-    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
-    expect(seite.tagName).toBe('ASIDE');
-    expect(seite).toHaveAttribute('aria-label', 'Angaben');
-    for (const name of ['Beschreibung', 'Konfis (2)', 'Warteliste (1)', 'Team (1)', 'Abmeldungen (1)']) {
-      expect(within(haupt).getByRole('region', { name })).toBeInTheDocument();
+    expect(screen.getByRole('complementary', { name: 'Angaben' })).toBeInTheDocument();
+    for (const name of ['Beschreibung', 'Konfis (2)', 'Warteliste (1)', 'Team (1)', 'Abmeldungen (1)', 'Angaben', 'Zeitfenster (1)', 'Material (1)']) {
+      expect(screen.getByRole('region', { name })).toBeInTheDocument();
     }
-    for (const name of ['Angaben', 'Zeitfenster (1)', 'Material (1)']) {
-      expect(within(seite).getByRole('region', { name })).toBeInTheDocument();
-    }
-    expect(within(seite).queryByRole('region', { name: 'Beschreibung' })).toBe(null);
-    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBe(null);
   });
 
   it('Teamer:innen: im Kopf Chat und QR-Code und -- weil das Event Team sucht -- die eigene Zusage, nichts zum Verwalten', async () => {
     zustand.rolle = 'teamer';
     await oeffne();
-    expect(knoepfeImKopf()).toEqual(['Chat', 'QR-Code', 'Nicht dabei', 'Dabei']);
+    expect(knoepfeImKopf()).toEqual(['Chat', 'Dabei', 'Nicht dabei', 'QR-Code']);
   });
 
-  it('offline: die eigene Zusage ist gesperrt, der Satz dazu steht als Hinweis über den Kennzahlen', async () => {
+  it('offline: die eigene Zusage ist gesperrt, der Satz dazu steht als Hinweis', async () => {
     zustand.online = false;
     zustand.cache.set('admin:events:1', [freizeit()]);
     await oeffne();
     expect(within(kopf()).getByRole('button', { name: 'Dabei' })).toBeDisabled();
     expect(within(kopf()).getByRole('button', { name: 'Nicht dabei' })).toBeDisabled();
-    expect(ersterBlock()).toHaveTextContent('Ohne Netz nicht möglich — versuch es später nochmal.');
-    expect(ersterBlock()).toHaveClass('web-hinweis');
+    expect(screen.getByText('Ohne Netz nicht möglich — versuch es später nochmal.')).toBeInTheDocument();
   });
 });
 
@@ -198,12 +183,6 @@ describe('Konfis: Anwesenheit', () => {
     await oeffne();
     const mia = within(umschalter('Mia Muster'));
     expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'true');
-    // Kompakt, damit der Status Platz hat (Simon, 07.10.2026): nur das Symbol, gruen bzw. rot verbucht.
-    expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveTextContent(/^$/);
-    expect(mia.getByRole('button', { name: 'Anwesend' })).toHaveClass('web-umschalter__knopf--anwesend');
-    expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveClass('web-umschalter__knopf--abwesend');
-    // Oben ausgerichtet: ein zweizeiliger Stand zieht Name und Knoepfe nicht in die Mitte.
-    expect((mia.getByRole('button', { name: 'Anwesend' }).closest('table') as HTMLElement)).not.toHaveClass('web-tabelle--mittig');
     expect(mia.getByRole('button', { name: 'Abwesend' })).toHaveAttribute('aria-pressed', 'false');
     const kim = within(umschalter('Kim Konfi'));
     expect(kim.getByRole('button', { name: 'Anwesend' })).toHaveAttribute('aria-pressed', 'false');
@@ -467,8 +446,8 @@ describe('Abgesagte Events', () => {
   it('Hinweis mit Grund, "Absage zurücknehmen" statt "Event absagen"; die Rücknahme fragt nach und ruft /reaktivieren', async () => {
     zustand.detail = freizeit({ registration_status: 'cancelled', cancelled: true, cancelled_reason: 'Sturmwarnung' });
     await oeffne();
-    expect(ersterBlock()).toHaveTextContent('Dieses Event ist abgesagt');
-    expect(ersterBlock()).toHaveTextContent('Grund: Sturmwarnung');
+    const absage = screen.getByText('Dieses Event ist abgesagt').closest('[role="status"]') as HTMLElement;
+    expect(absage).toHaveTextContent('Grund: Sturmwarnung');
     expect(screen.queryByRole('button', { name: 'Event absagen' })).toBe(null);
     fireEvent.click(screen.getByRole('button', { name: 'Absage zurücknehmen' }));
     const frage = letzteRueckfrage();

@@ -5,15 +5,17 @@ import MessageBubble from '../../components/chat/MessageBubble';
 import type { Message, ChatRoomBase } from '../../types/chat';
 
 // ---------------------------------------------------------------------------
-// Umfrage in der App (Simon, 10.10.2026, Bildschirmfoto iPhone mit grosser
-// Schrift): "Wittenberg" und "16 (89%)" lagen uebereinander, die Zahl war
-// nicht lesbar; im Fuss klebten "Einzelauswahl" und "18 Stimmen" aneinander.
-// Die Zeile hatte weder Abstand noch Umbruch -- reichte der Platz nicht,
-// schob sich die Antwort unter die Zahl.
+// Umfrage in der App bei grosser Schrift (Simon, 10.10.2026, Bildschirmfoto
+// iPhone mit Dynamic Type): "Wittenberg" und "16 (89%)" lagen uebereinander,
+// die Zahl war nicht lesbar; im Fuss klebten "Einzelauswahl" und
+// "18 Stimmen" aneinander. Vergroesserter Text darf keinen Inhalt verdecken
+// (WCAG 1.4.4, 1.4.10) -- deshalb bleibt diese Pruefung, auch seit Layout
+// frei aenderbar ist (Simon, 15.10.2026).
 //
-// jsdom misst kein Layout; geprueft wird deshalb, was die Ueberlagerung
-// verhindert: Zeile und Fuss brechen um und halten Abstand, die Zahl bleibt
-// rechts, und ein einzelnes langes Wort darf umbrechen.
+// jsdom misst kein Layout; geprueft wird, was die Ueberlagerung verhindert:
+// Reicht der Platz nicht, brechen Antwortzeile und Fuss um, und ein einzelnes
+// langes Wort darf umbrechen. Abstaende, Ausrichtung und Tokens legt der
+// Test nicht fest.
 // ---------------------------------------------------------------------------
 
 const ich = { id: 1, type: 'admin' as const, display_name: 'Leitung', role_name: 'admin' };
@@ -58,30 +60,30 @@ const zeigen = () =>
     />
   );
 
+/** Das naechste Element, das beide enthaelt -- die Zeile, in der sie nebeneinander stehen. */
+const gemeinsameZeile = (a: HTMLElement, b: HTMLElement): HTMLElement => {
+  let knoten = a.parentElement;
+  while (knoten && !knoten.contains(b)) knoten = knoten.parentElement;
+  return knoten as HTMLElement;
+};
+
 afterEach(() => cleanup());
 
-describe('Umfrage in der App: Zahl und Antwort überlagern sich nicht', () => {
-  it('die Zeile einer Antwort bricht um und hält Abstand, die Zahl bleibt rechts', () => {
+describe('Umfrage in der App: bei grosser Schrift ueberlagern sich Zahl und Antwort nicht', () => {
+  it('die Zeile aus Antwort und Zahl bricht um, statt die Zahl ueber die Antwort zu legen', () => {
     zeigen();
-    const zahl = screen.getAllByText('(50%)')[0].parentElement as HTMLElement;
-    const zeile = zahl.parentElement as HTMLElement;
+    const zeile = gemeinsameZeile(screen.getByText('Wittenberg'), screen.getAllByText('(50%)')[0]);
     expect(zeile.style.flexWrap).toBe('wrap');
-    expect(zeile.style.columnGap).toBe('var(--app-abstand-mittel)');
-    expect(zahl.style.marginLeft).toBe('auto');
-    expect(zahl.style.flexShrink).toBe('0');
   });
 
   it('ein langes Wort in der Antwort darf umbrechen', () => {
     zeigen();
-    const text = screen.getByText('Wittenberg');
-    expect(text.style.overflowWrap).toBe('anywhere');
+    expect(screen.getByText('Wittenberg').style.overflowWrap).toBe('anywhere');
   });
 
-  it('der Fuß bricht um und hält Abstand zwischen Art und Stimmen', () => {
+  it('der Fuss aus Art und Stimmen bricht um, statt beides aneinanderzukleben', () => {
     zeigen();
-    const fuss = screen.getByText('2 Stimmen').parentElement?.parentElement as HTMLElement;
-    expect(fuss.textContent).toContain('Einzelauswahl');
+    const fuss = gemeinsameZeile(screen.getByText('Einzelauswahl'), screen.getByText('2 Stimmen'));
     expect(fuss.style.flexWrap).toBe('wrap');
-    expect(fuss.style.columnGap).toBe('var(--app-abstand-mittel)');
   });
 });

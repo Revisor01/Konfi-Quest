@@ -205,7 +205,7 @@ describe('Challenges der Konfis (Web): Filter und Suche', () => {
 });
 
 describe('Challenges der Konfis (Web): die eigenen Stempel', () => {
-  it('dasselbe Raster wie auf der Seite einer Person: erhalten mit Datum in der Info, offen gestrichelt, vorbei sagt es', () => {
+  it('dasselbe Raster wie auf der Seite einer Person: erhalten mit Datum in der Info, offen und vorbei sagen es', () => {
     render(<KonfiChallengesPage />);
     const stempel = screen.getByRole('region', { name: 'Deine Stempel' });
     expect(stempel).toHaveTextContent('1 erhalten · 2 noch zu holen');
@@ -219,7 +219,6 @@ describe('Challenges der Konfis (Web): die eigenen Stempel', () => {
     fireEvent.blur(erhalten);
     expect(info).not.toBeVisible();
     const offen = within(stempel).getByRole('link', { name: 'Playlist' });
-    expect(offen.closest('li')).toHaveClass('web-auszeichnung--offen');
     expect(document.getElementById(offen.getAttribute('aria-describedby')!)).toHaveTextContent('Mach bei dieser Challenge mit');
     const vorbei = within(stempel).getByRole('link', { name: 'Segensbringer:in' });
     expect(document.getElementById(vorbei.getAttribute('aria-describedby')!)).toHaveTextContent('Diese Challenge ist vorbei.');
@@ -301,14 +300,6 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
       waehleAnsicht('Liste');
       expect(window.localStorage.getItem(ansichtSchluessel('challenges-leitung'))).toBeNull();
       expect(window.localStorage.getItem(ansichtSchluessel('events-mitglied'))).toBeNull();
-    });
-
-    it('der Umschalter steht als letztes Element rechts, direkt neben der Suche, in der Zeile mit den Filter-Chips', () => {
-      render(<KonfiChallengesPage />);
-      const rechts = screen.getByRole('searchbox', { name: 'Challenges durchsuchen' }).closest('.web-werkzeuge__rechts')!;
-      expect([...rechts.children].map((k) => k.getAttribute('role'))).toEqual(['search', 'group']);
-      expect(rechts.lastElementChild).toBe(umschalter());
-      expect(rechts.parentElement).toBe(screen.getByRole('group', { name: 'Challenges nach Zustand' }).parentElement);
     });
 
     it('ohne Challenges gibt es nichts umzuschalten', () => {
@@ -424,8 +415,6 @@ describe('Challenges der Konfis (Web): Ansicht Liste | Kacheln', () => {
       render(<KonfiChallengesPage />);
       const link = within(zeile('Lied der Woche')).getByRole('link');
       expect(link.getAttribute('href')).toBe('/konfi/challenges/13');
-      expect(link).toHaveClass('web-link--zeile');
-      expect(zeile('Lied der Woche')).toHaveClass('web-zeile');
       fireEvent.click(link);
       expect(h.push).toHaveBeenCalledWith('/konfi/challenges/13', 'none', 'push');
     });

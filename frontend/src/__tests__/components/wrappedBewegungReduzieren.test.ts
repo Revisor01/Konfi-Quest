@@ -6,13 +6,12 @@ import { resolve } from 'path';
  * Der Auftritt der Schrift im Rueckblick -- und seine Abschaltung.
  *
  * SIMONS WUNSCH (07.09.2026): "mehr Bewegung beim Erscheinen der Schrift".
- * Vorher standen auf den Seiten im Slogan-Aufbau (Auge, Zahl, Slogan,
- * Nachsatz) alle Teile schlagartig gleichzeitig da. Jetzt kommen sie
- * gestaffelt: erst das Auge, dann die Zahl, dann der Slogan Zeile fuer
- * Zeile, zuletzt der Nachsatz.
+ * Die Teile im Slogan-Aufbau (Auge, Zahl, Slogan, Nachsatz) kommen
+ * gestaffelt. Wie genau, ist Gestaltung und wird nicht festgeschrieben
+ * (Simon, 15.10.2026).
  *
- * DIE GEGENPROBE, die dieser Test vor allem sichert: Wer im System
- * "Bewegung reduzieren" eingestellt hat, darf davon NICHTS abbekommen.
+ * WAS DIESER TEST SICHERT: Wer im System "Bewegung reduzieren"
+ * eingestellt hat, darf davon NICHTS abbekommen.
  *
  * DIE FALLE DABEI: Der Grundzustand der aelteren Auftritts-Klassen
  * (.wrapped-anim-*) ist `opacity: 0` -- die Deckkraft kommt erst durch die
@@ -60,56 +59,6 @@ function schriftBlock(): string {
   expect(treffer).toHaveLength(1);
   return treffer[0];
 }
-
-describe('Rueckblick: Bewegung beim Erscheinen der Schrift', () => {
-  it('das Auge blendet ein', () => {
-    expect(css).toMatch(
-      /\.wrapped-slide--active \.kat-auge \{\s*animation:\s*wrapped-fade-in/
-    );
-  });
-
-  it('die Slogan-Zeilen kommen einzeln und nacheinander', () => {
-    // Zeile fuer Zeile: jede Zeile hat einen eigenen, spaeteren Versatz.
-    const versaetze = [2, 3, 4, 5].map(n => {
-      const regel = new RegExp(
-        `\\.wrapped-slide--active \\.kat-slogan > span:nth-child\\(${n}\\)\\s*\\{[^}]*animation-delay:\\s*([0-9.]+)s`
-      );
-      const m = css.match(regel);
-      expect(m, `Versatz fuer Slogan-Zeile ${n} fehlt`).not.toBeNull();
-      return parseFloat((m as RegExpMatchArray)[1]);
-    });
-    // Streng aufsteigend -- sonst erschienen zwei Zeilen gleichzeitig.
-    for (let i = 1; i < versaetze.length; i++) {
-      expect(versaetze[i]).toBeGreaterThan(versaetze[i - 1]);
-    }
-    expect(versaetze[0]).toBeCloseTo(0.2, 5);
-    expect(versaetze[versaetze.length - 1]).toBeCloseTo(0.38, 5);
-  });
-
-  it('die Zahl erscheint ohne Versatz, damit das Hochzaehlen nicht verschluckt wird', () => {
-    // useCountUp laeuft ab dem Sichtbarwerden ueber 1,6 s. Ein Versatz auf
-    // der Zahl wuerde den Anfang des Hochzaehlens unsichtbar machen.
-    const m = css.match(
-      /\.wrapped-slide--active \.kat-zahl \{\s*animation:\s*wrapped-fade-in\s+([0-9.]+)s\s+ease-out\s+both/
-    );
-    expect(m, 'Regel fuer die Zahl fehlt oder hat einen Versatz').not.toBeNull();
-    // Kurz genug, dass die Zahl steht, bevor sie zu laufen beginnt.
-    expect(parseFloat((m as RegExpMatchArray)[1])).toBeLessThanOrEqual(0.4);
-  });
-
-  it('der Auftritt laeuft nur auf der sichtbaren Seite', () => {
-    // Die Seiten liegen im Karussell schon bereit, bevor man sie sieht.
-    // Ohne diese Bedingung waere die Bewegung vorbei, bevor jemand hinsieht.
-    for (const teil of ['.kat-auge', '.kat-zahl', '.kat-slogan > span', '.kat-nachsatz']) {
-      const regel = new RegExp(
-        `\\.wrapped-slide--active ${teil.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`
-      );
-      expect(css, `${teil} ist nicht an die sichtbare Seite gebunden`).toMatch(regel);
-    }
-    // Und keine dieser Regeln steht ohne die Bedingung da.
-    expect(css).not.toMatch(/^\.kat-slogan > span \{[^}]*animation:/m);
-  });
-});
 
 describe('Rueckblick achtet auf "Bewegung reduzieren"', () => {
   it('es gibt einen Block, der die Schrift-Auftritte abschaltet', () => {

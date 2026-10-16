@@ -31,7 +31,6 @@ const quelle = (pfad: string) => readFileSync(resolve(wrappedVerzeichnis, pfad),
 
 const modal = quelle('WrappedModal.tsx');
 const shareCard = quelle('share/ShareCard.tsx');
-const shareCss = quelle('share/ShareCard.css');
 
 /**
  * Die Seiten-Schluessel aus der Renderer-Registry in WrappedModal --
@@ -119,50 +118,4 @@ describe('Teilen-Karte kennt jede Seite des Rueckblicks', () => {
     }
   });
 
-  it('jede Seite hat einen eigenen Hintergrund in ShareCard.css', () => {
-    // Ohne `.share-card--<seite>` bleibt die Flaeche schwarz -- genau das
-    // schwarze Bild, das gemeldet wurde.
-    const ohneKlasse = [...KONFI_SEITEN, ...TEAMER_SEITEN]
-      .filter(k => !shareCss.includes(`.share-card--${k}`));
-    expect(ohneKlasse, `ohne Klasse in ShareCard.css: ${ohneKlasse.join(', ')}`).toEqual([]);
-  });
-
-  it('jede Seite bringt die Farbe ihrer Seite als Schleier mit', () => {
-    // Ueber dem Foto liegt der Farbverlauf der Seite (--karten-schleier).
-    // Fehlt er bei einer Karte, greift der Standardwert -- das geteilte
-    // Bild haette dann eine andere Farbe als die Seite, von der es stammt.
-    const ohneSchleier = [...KONFI_SEITEN, ...TEAMER_SEITEN].filter(k => {
-      const block = shareCss.match(
-        new RegExp(`\\.share-card--${k.replace(/[-]/g, '\\-')}\\s*\\{[^}]*\\}`, 'g')
-      );
-      return !block || !block.some(b => b.includes('--karten-schleier'));
-    });
-    expect(ohneSchleier, `ohne --karten-schleier: ${ohneSchleier.join(', ')}`).toEqual([]);
-  });
-
-  it('die Slogan-Seiten stehen linksbuendig unten', () => {
-    // Diese vier Seiten leben vom Slogan, nicht von einer Zahl -- im
-    // Rueckblick steht er linksbuendig am unteren Rand. Faellt die Regel
-    // weg, rutscht der Text in die Mitte und das geteilte Bild sieht aus
-    // wie eine Statistikkachel statt wie die Seite.
-    //
-    // Genau das ist am 06.09.2026 beim Umbau der Farben passiert: Eine
-    // Ersetzung traf den Mehrfach-Auswahlblock und ueberschrieb seinen
-    // Inhalt. Aufgefallen ist es nur am fertigen Bild.
-    const block = shareCss.match(
-      /\.share-card--kategorie-seite,\s*\.share-card--datums-seite,\s*\.share-card--konfirmation,\s*\.share-card--werde-teamer,\s*\.share-card--weiter-so\s*\{([^}]*)\}/
-    );
-    expect(block, 'der Block fuer die Slogan-Seiten fehlt').toBeTruthy();
-    const regeln = block![1];
-    expect(regeln).toContain('justify-content: flex-end');
-    expect(regeln).toContain('align-items: flex-start');
-    expect(regeln).toContain('text-align: left');
-  });
-
-  it('die dynamischen Seiten haben einen Hintergrund', () => {
-    // Eine Klasse je Praefix reicht: `.share-card--kategorie` faengt
-    // alle Kategorie-Seiten, weil die Karte den Praefix als Klasse setzt.
-    expect(shareCss.includes('.share-card--kategorie-seite')).toBe(true);
-    expect(shareCss.includes('.share-card--datums-seite')).toBe(true);
-  });
 });

@@ -19,18 +19,15 @@ import type { Event } from '../../types/event';
 const symbolVon = (label: string) => screen.getByText(label).querySelector('[data-testid="symbol"]') as HTMLElement;
 
 describe('WebAngaben: jede Angabe mit Symbol', () => {
-  it('holt Symbol und Farbe aus der Tabelle', () => {
+  it('holt das Symbol aus der Tabelle', () => {
     render(<WebAngaben angaben={[{ label: 'Datum', wert: '14.10.2026' }, { label: 'Ort', wert: 'Kirche' }]} />);
     expect(symbolVon('Datum').getAttribute('data-icon')).toBe(ANGABE_SYMBOLE.Datum.icon);
-    expect(symbolVon('Datum')).toHaveClass('web-angaben__icon', 'app-icon-color--events');
-    expect(symbolVon('Ort')).toHaveClass('app-icon-color--location');
     expect(symbolVon('Ort')).not.toHaveAttribute('data-symbol');
   });
 
   it('ein mitgegebenes Symbol geht vor (Konfispruch heisst nach der Bibelstelle)', () => {
     render(<WebAngaben angaben={[{ label: 'Psalm 23,1', wert: 'Der Herr ist mein Hirte.', icon: 'buch', iconKlasse: 'app-icon-color--konfis' }]} />);
     expect(symbolVon('Psalm 23,1').getAttribute('data-icon')).toBe('buch');
-    expect(symbolVon('Psalm 23,1')).toHaveClass('app-icon-color--konfis');
   });
 
   it('eine unbekannte Bezeichnung bekommt das Ersatzsymbol und ist markiert -- nie gar keins', () => {

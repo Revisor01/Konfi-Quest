@@ -138,9 +138,8 @@ const wert = (karte: string, label: string): string | null => {
 /** Die Knöpfe des Stands: der erste ist der Hauptknopf (die Attrappe von IonButton trägt keine Klasse). */
 const knoepfe = () => [...document.querySelectorAll('.support-stand__knoepfe button')] as HTMLButtonElement[];
 const haupt = () => knoepfe()[0];
-/** Wo eine Adresse umbrechen darf: jede Umbruchstelle (<wbr>) als „|". */
-const umbruchStellen = (el: Element) => [...el.childNodes].map((n) => (n.nodeName === 'WBR' ? '|' : n.textContent)).join('');
-const kartenReihe = () => [...document.querySelectorAll('[data-karte]')].map((k) => k.getAttribute('data-karte'));
+/** Welche Karten der Angaben es gibt (sortiert: welche, nicht in welcher Reihenfolge). */
+const karten = () => [...document.querySelectorAll('[data-karte]')].map((k) => k.getAttribute('data-karte')).sort();
 
 describe('Vorgang (App): Kopf', () => {
   it('Kopfzeile „Vorgang 1" mit Einordnen und Archivieren; Kopf mit Betreff, „Nr. 1 · Gemeinde" und drei Zahlen', async () => {
@@ -162,7 +161,7 @@ describe('Vorgang (App): Kopf', () => {
     expect(kopfzeile().getByRole('heading', { level: 1 })).toHaveTextContent('Anfrage 3');
     expect(document.querySelector('.app-header-banner__subtitle')).toHaveTextContent(/^Nr\. 3$/);
     // Jede Angabe einmal (Leitidee 4): „noch nicht angelegt" nur als Marke im Stand.
-    expect(screen.getAllByText(/noch nicht angelegt/i).map((e) => e.className)).toEqual(['support-marke support-marke--warnung']);
+    expect(screen.getAllByText(/noch nicht angelegt/i)).toHaveLength(1);
     expect([...document.querySelectorAll('.app-stats-row__value')].map((k) => k.textContent)).toEqual(['25', '6', '2']);
     expect(screen.getByRole('region', { name: 'Verlauf' })).toHaveTextContent(/2 Nachrichten/);
     expect([...document.querySelectorAll('.app-stats-row__label')].map((k) => k.textContent)).toEqual(['Konfis', 'Teamer:innen', 'Mails']);
@@ -447,11 +446,9 @@ describe('Vorgang (App): Verlauf und Antworten', () => {
     expect(document.querySelector('li[data-mail-id="12"]')).not.toHaveClass('mail-zeile--hervorgehoben');
   });
 
-  it('die Antwortzeile unter der jüngsten Mail öffnet das Modal: „Du antwortest auf", feste Zeile „An", Betreff, Danach', async () => {
+  it('die Antwortzeile öffnet das Modal: „Du antwortest auf", feste Zeile „An", Betreff, Danach', async () => {
     await oeffnen();
     const zeile = screen.getByRole('button', { name: 'Antwort an Pastorin Lena Probe …' });
-    // Sie steht direkt unter der jüngsten Mail.
-    expect(zeile.closest('li')?.previousElementSibling).toBe(document.querySelector('li[data-mail-id="12"]'));
     fireEvent.click(zeile);
     const modal = dialog('Antworten');
     const beantwortet = within(modal.getByRole('region', { name: 'Du antwortest auf' }));
@@ -613,14 +610,12 @@ describe('Vorgang (App): Verlauf und Antworten', () => {
 });
 
 describe('Vorgang (App): Angaben', () => {
-  it('Kontakt und Gemeinde in dieser Reihenfolge; jede Angabe einmal', async () => {
+  it('Kontakt und Gemeinde; jede Angabe einmal', async () => {
     await oeffnen();
-    expect(kartenReihe()).toEqual(['kontakt', 'gemeinde']);
+    expect(karten()).toEqual(['gemeinde', 'kontakt']);
     expect(wert('kontakt', 'Person')).toBe('Pastorin Lena Probe (Gemeindeleitung)');
     const adresse = within(document.querySelector('[data-karte="kontakt"]') as HTMLElement).getByRole('link', { name: 'lena.probe@example.org' });
     expect(adresse).toHaveAttribute('href', 'mailto:lena.probe@example.org');
-    // Eine lange Adresse bricht vor dem @ und vor Punkten um, nicht mitten im Wort.
-    expect(umbruchStellen(adresse)).toBe('lena|.probe|@example|.org');
     expect(wert('kontakt', 'Eingang')).toBe('Support-Formular auf der Homepage');
     expect(wert('gemeinde', 'Laufzeit')).toBe('Testphase bis 02.11.');
     expect(wert('gemeinde', 'Konfis')).toBe('3 von 5');
@@ -639,7 +634,6 @@ describe('Vorgang (App): Angaben', () => {
     expect(leitung.getByText('Pastorin Lena Probe')).toBeInTheDocument();
     const adresse = leitung.getByRole('link', { name: 'lena.probe@example.org' });
     expect(adresse).toHaveAttribute('href', 'mailto:lena.probe@example.org');
-    expect(umbruchStellen(adresse)).toBe('lena|.probe|@example|.org');
     expect(leitung.getByText(/zuletzt angemeldet 02\.10\.2026/)).toBeInTheDocument();
   });
 
@@ -652,16 +646,16 @@ describe('Vorgang (App): Angaben', () => {
 
   it('ohne Zuordnung: „Nicht zugeordnet – laut Formular" im Kontakt, „Zuordnen" öffnet Einordnen; keine Gemeinde-Karte', async () => {
     await oeffnen(2);
-    expect(kartenReihe()).toEqual(['kontakt']);
+    expect(karten()).toEqual(['kontakt']);
     expect(wert('kontakt', 'Gemeinde')).toBe('Nicht zugeordnet – laut Formular: Kirchengemeinde Heide');
     fireEvent.click(screen.getByRole('button', { name: 'Zuordnen' }));
     expect(screen.getByRole('dialog', { name: 'Einordnen' })).toBeInTheDocument();
     expect(document.querySelectorAll('a[href*="gemeinde=null"]')).toHaveLength(0);
   });
 
-  it('eine Anfrage: Karte „Anfrage" vor dem Kontakt; der Kontakt mit Mobil -- auch in der App', async () => {
+  it('eine Anfrage: Karte „Anfrage" und der Kontakt mit Mobil -- auch in der App', async () => {
     await oeffnen(3);
-    expect(kartenReihe()).toEqual(['anfrage', 'kontakt']);
+    expect(karten()).toEqual(['anfrage', 'kontakt']);
     expect(wert('anfrage', 'Gemeinde')).toBe('Kirchengemeinde Lindenau (angefragt)');
     expect(wert('anfrage', 'Wunsch')).toBe('Standard — bis 50 Konfis · 99\u00a0€ pro Jahr');
     expect(wert('anfrage', 'Eingang')).toBe('Anfrage über die Homepage');
@@ -757,13 +751,10 @@ describe('Vorgang (App): Gemeinde anlegen im Vollbild-Modal', () => {
   });
 });
 
-describe('Vorgang (App): Löschen allein ganz unten', () => {
+describe('Vorgang (App): Löschen', () => {
   it('fragt zuerst; erst „Löschen" löscht und führt zur Liste', async () => {
     await oeffnen();
     const knopf = screen.getByRole('button', { name: 'Vorgang löschen' });
-    // Der einzige Knopf nach den Angaben.
-    const letzteKarte = [...document.querySelectorAll('[data-karte]')].pop() as HTMLElement;
-    expect(letzteKarte.compareDocumentPosition(knopf) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(knopf);
     expect(h.alert?.header).toBe('Vorgang löschen');
     expect(server.aufrufe('delete')).toHaveLength(0);

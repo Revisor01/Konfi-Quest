@@ -16,17 +16,18 @@
 //
 // Seit dem 09.10.2026 gerendert statt am Quelltext geprueft (Audit Tests
 // 26.09.2026, BF-02). Hier: die echte Termin-Detailansicht der Leitung
-// (Geruest leitungTerminDetail) samt Zeitfenster-Liste -- Zeilen, Farben,
+// (Geruest leitungTerminDetail) samt Zeitfenster-Liste -- Zeilen,
 // Aktionsmenue und was beim Speichern an den Server geht. Die beiden Modale
 // (Abmeldung, Notiz) und die Anwesenheitsmatrix rendert
 // abmeldungUndNotizModale.test.tsx. Die Typ-Zusicherungen (excuse_reason,
 // attendance_note, Urheber- und Check-in-Felder in types/event.ts) sind
 // entfallen: Die Ansichten lesen die Felder, `tsc` faellt, wenn sie fehlen.
+// Farben und Schrift der Zeilen sind Layout und werden nicht festgeschrieben
+// (Simon, 15.10.2026); geprueft wird, was die Zeile sagt.
 //
-// Was hier noch Quelltext liest, sind Waechter: Stylesheet-Regeln (die
-// Klassen, die jsdom nicht auswertet), die Gefahren-Knoepfe der Profile
-// (Stil-Waechter: kein abgeschriebenes Aussehen neben der globalen Klasse)
-// und der Inhalt des Handbuch-Kapitels.
+// Was hier noch Quelltext liest, sind Waechter: die Gefahren-Knoepfe der
+// Profile (kein abgeschriebenes Aussehen neben der globalen Klasse, ein
+// Beruehrungsziel von mindestens 48 px) und der Inhalt des Handbuch-Kapitels.
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { readFileSync } from 'fs';
@@ -40,7 +41,6 @@ import { TimeslotsSection } from '../../components/admin/views/EventDetailSectio
 import type { Participant } from '../../components/admin/views/EventDetailSections';
 
 const lies = (pfad: string) => readFileSync(resolve(process.cwd(), pfad), 'utf8');
-const css = lies('src/theme/variables.css');
 const handbuch = lies('../docs/handbuch/70-termine.md');
 
 const PUT_PFAD = '/events/7/participants/1/attendance';
@@ -62,17 +62,12 @@ const menueVon = async (zusatz: Record<string, unknown>) => {
   return letztesMenue();
 };
 
-/** Text, Farbklassen und Zusatzzeilen einer Teilnehmerzeile. */
+/** Status-Marke und Zusatzzeilen einer Teilnehmerzeile. */
 const darstellung = (zeile: HTMLElement) => {
-  const item = zeile.querySelector('.app-list-item') as HTMLElement;
-  const kreis = zeile.querySelector('.app-icon-circle') as HTMLElement;
   const badge = within(zeile).getByRole('img');
   const inhalt = zeile.querySelector('.app-list-item__content') as HTMLElement;
   return {
-    rand: [...item.classList].find((k) => k.startsWith('app-list-item--') && k !== 'app-list-item--badge-space-lg'),
-    kreis: [...kreis.classList].find((k) => k.startsWith('app-icon-circle--')),
     badge: badge.getAttribute('aria-label'),
-    badgeKlasse: [...badge.classList].find((k) => k.startsWith('app-corner-badge--')),
     // Die Zeilen unter Titel und Untertitel, in Reihenfolge.
     zusatz: [...inhalt.children].slice(2).map((el) => el.textContent),
   };
@@ -136,24 +131,15 @@ describe('Abmeldung nachtragen (excused)', () => {
     expect(d.zusatz.some((z) => z?.startsWith('Abgemeldet'))).toBe(false);
   });
 
-  it('die Zeile wird grau, nicht rot', async () => {
-    // Rot hiesse "hat gefehlt" — die Abmeldung war gemeldet.
+  it('die Zeile sagt "Abgemeldet (nachgetragen)", nicht "Abwesend"', async () => {
+    // "Abwesend" hiesse "hat gefehlt" — die Abmeldung war gemeldet.
     const d = darstellung(await mitPerson(NACHGETRAGEN));
-    expect(d).toMatchObject({
-      rand: 'app-list-item--neutral', kreis: 'app-icon-circle--neutral',
-      badge: 'Abgemeldet (nachgetragen)', badgeKlasse: 'app-corner-badge--neutral',
-    });
+    expect(d.badge).toBe('Abgemeldet (nachgetragen)');
   });
 
-  it('die grauen Klassen sind im CSS definiert (Stil-Waechter)', () => {
-    expect(css).toContain('.app-list-item--neutral, ion-item.app-list-item--neutral { border-left-color: var(--app-color-neutral); }');
-    expect(css).toContain('.app-corner-badge--neutral { background-color: var(--app-color-neutral); }');
-    expect(css).toContain('.app-icon-circle--neutral { background-color: var(--app-color-neutral); }');
-  });
-
-  it('die Selbstabmeldung bleibt rot — sie wird nicht mit umgefaerbt', async () => {
+  it('die Selbstabmeldung heisst weiter "Abgemeldet"', async () => {
     const d = darstellung(await mitPerson({ status: 'opted_out', opt_out_reason: 'Fussballturnier' }));
-    expect(d).toMatchObject({ rand: 'app-list-item--danger', kreis: 'app-icon-circle--danger', badge: 'Abgemeldet' });
+    expect(d.badge).toBe('Abgemeldet');
   });
 
   it('der Grund steht in der Teilnehmerliste, nicht nur im Menue', async () => {
@@ -168,10 +154,8 @@ describe('Abmeldung nachtragen (excused)', () => {
       .toEqual(['Fussballturnier']);
   });
 
-  it('der Zeitfenster-Abschnitt faerbt ebenfalls grau -- aus derselben Quelle wie die Liste', () => {
-    expect(darstellung(zeitfensterMit(NACHGETRAGEN))).toMatchObject({
-      rand: 'app-list-item--neutral', kreis: 'app-icon-circle--neutral', badge: 'Abgemeldet (nachgetragen)',
-    });
+  it('der Zeitfenster-Abschnitt sagt ebenfalls "Abgemeldet (nachgetragen)" -- aus derselben Quelle wie die Liste', () => {
+    expect(darstellung(zeitfensterMit(NACHGETRAGEN)).badge).toBe('Abgemeldet (nachgetragen)');
   });
 });
 
@@ -290,10 +274,10 @@ describe('Selbstabmeldung bearbeiten', () => {
   });
 
   it.each(['opted_out', 'excused'])(
-    'verbucht die Leitung eine Abmeldung (%s), faerbt die Zeile nach dem Anwesenheits-Status',
+    'verbucht die Leitung eine Abmeldung (%s), zeigt die Zeile den Anwesenheits-Status',
     async (status) => {
       const d = darstellung(await mitPerson({ status, attendance_status: 'present' }));
-      expect(d).toMatchObject({ rand: 'app-list-item--success', badge: 'Anwesend' });
+      expect(d.badge).toBe('Anwesend');
     },
   );
 
@@ -375,18 +359,6 @@ describe('Selbst-Check-in per QR-Code kennzeichnen', () => {
     expect(darstellung(await mitPerson({ ...QR, checkin_quelle: 'manuell' })).zusatz).toEqual([]);
   });
 
-  it('sie traegt dieselben Styles wie die Urheber-Zeilen', async () => {
-    // Sie gehoert in dieselbe leise Reihe -- eine abweichende Farbe machte
-    // aus einer Randnotiz eine Meldung.
-    for (const zeile of [await mitPerson({ ...QR, attendance_set_by_name: 'Simon Luthe' })]) {
-      const qr = within(zeile).getByText(/^Eingecheckt per QR-Code/) as HTMLElement;
-      const urheber = within(zeile).getByText(/^Eingetragen von/) as HTMLElement;
-      expect(qr.style.color).toBe('var(--app-text-tertiary)');
-      expect(qr.style.fontSize).toBe('var(--app-text-hinweis)');
-      expect(qr.getAttribute('style')).toBe(urheber.getAttribute('style'));
-    }
-  });
-
   it('sie steht direkt unter der Urheber-Zeile, vor der Notiz -- in beiden Listen', async () => {
     const alles = { ...QR, attendance_set_by_name: 'Simon Luthe', attendance_set_at: AM, attendance_note: 'kam spaeter' };
     const erwartet = ['Eingetragen von Simon Luthe, 13.09.', 'Eingecheckt per QR-Code, 15.09.', 'Notiz: kam spaeter'];
@@ -396,13 +368,25 @@ describe('Selbst-Check-in per QR-Code kennzeichnen', () => {
   });
 });
 
-// Waechter: Stylesheet, Profile, Handbuch.
+// Waechter: Profile, Handbuch.
 describe('Gefahren-Knoepfe nutzen eine globale Klasse (Stil-Waechter)', () => {
-  it('die Klasse ist in der globalen CSS definiert, mit Tokens', () => {
-    expect(css).toContain('.app-gefahr-knopf {');
-    expect(css).toContain('height: var(--app-abstand-block);');
-    expect(css).toContain('--border-radius: var(--app-radius-karte);');
-    expect(css).toContain('font-weight: var(--app-schrift-halbfett);');
+  // Beruehrungsziel (Android 48 dp): Das md3-Theme setzt ion-button.md auf
+  // 40 px; erst die globale Klasse hebt die Gefahren-Knoepfe der Profile
+  // (Konto loeschen, Abmelden) darueber. Wie hoch genau, ist Layout.
+  it('die Klasse macht die Knoepfe mindestens 48 px hoch', () => {
+    const tokens = lies('src/theme/abstaende.css') + lies('src/theme/variables.css');
+    const inPixel = (wert: string): number => {
+      const px = wert.match(/^([\d.]+)px$/);
+      if (px) return Number(px[1]);
+      const rem = wert.match(/^([\d.]+)rem$/);
+      if (rem) return Number(rem[1]) * 16;
+      const token = wert.match(/^var\((--[\w-]+)\)$/)?.[1];
+      const definition = token ? tokens.match(new RegExp(`${token}:\\s*([^;]+);`))?.[1] : undefined;
+      return definition ? inPixel(definition.trim()) : NaN;
+    };
+    const regel = lies('src/theme/variables.css').match(/\.app-gefahr-knopf\s*\{([^}]*)\}/)?.[1] ?? '';
+    const hoehe = regel.match(/(?:^|[;\s])(?:min-)?height:\s*([^;]+);/)?.[1].trim() ?? '';
+    expect(inPixel(hoehe), `.app-gefahr-knopf { height: ${hoehe} }`).toBeGreaterThanOrEqual(48);
   });
 
   it('die Profile schreiben das Aussehen nicht mehr selbst ab', () => {

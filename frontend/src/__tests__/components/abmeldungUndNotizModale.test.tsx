@@ -75,12 +75,10 @@ describe('Die Abmeldung nachtragen ist ein Modal', () => {
     return { onSave, dismiss };
   };
 
-  it('das Modal folgt dem Muster der anderen Modals: Kopf, Schliessen, Speichern', () => {
+  it('das Modal hat einen Kopf; Schliessen schliesst', () => {
     const { dismiss } = oeffne();
     expect(screen.getByRole('heading').textContent).toBe('Abmeldung');
     expect(screen.getByText('Abmeldung von Kim Konfi')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Schließen' }).className).toBe('app-modal-close-btn');
-    expect(screen.getByRole('button', { name: 'Abmeldung speichern' }).className).toContain('app-modal-submit-btn');
     fireEvent.click(screen.getByRole('button', { name: 'Schließen' }));
     expect(dismiss).toHaveBeenCalledTimes(1);
   });
@@ -140,11 +138,9 @@ describe('Die Notiz-Eingabe ist ein Modal', () => {
   };
   const speichern = () => screen.getByRole('button', { name: 'Notiz speichern' }) as HTMLButtonElement;
 
-  it('das Modal folgt dem Muster der anderen Modals: Kopf, Schliessen, Speichern, ein Textfeld', () => {
+  it('das Modal hat einen Kopf und genau ein Textfeld', () => {
     oeffne();
     expect(screen.getByRole('heading').textContent).toBe('Notiz');
-    expect(screen.getByRole('button', { name: 'Schließen' }).className).toBe('app-modal-close-btn');
-    expect(speichern().className).toContain('app-modal-submit-btn');
     expect(screen.getAllByRole('textbox').map((f) => f.getAttribute('aria-label'))).toEqual(['Notiz zu Kim Konfi']);
   });
 
@@ -171,15 +167,6 @@ describe('Eine Notiz laesst sich loeschen', () => {
     return onSave;
   };
   const loeschen = () => screen.queryByRole('button', { name: /Notiz löschen/ });
-
-  it('das Modal hat einen roten Loeschen-Knopf im globalen Gefahren-Stil', () => {
-    oeffne('ging um 14 Uhr');
-    const knopf = loeschen()!;
-    expect(knopf.getAttribute('data-color')).toBe('danger');
-    expect(knopf.className).toBe('app-gefahr-knopf');
-    // Der blasse Textknopf war genau das Problem.
-    expect(knopf.getAttribute('data-fill')).toBe('outline');
-  });
 
   it('der Knopf erscheint nur, wenn es etwas zu loeschen gibt', () => {
     oeffne(null);
@@ -240,12 +227,6 @@ describe('Anwesenheitsmatrix zeigt die Abmeldung', () => {
       expect(punkt.querySelector('i')!.getAttribute('data-icon')).toBe(ICON_ENTFERNEN_GEFUELLT);
       expect(punkt.querySelector('i')!.getAttribute('data-icon')).not.toBe(ICON_KREIS_LEER);
     }
-  });
-
-  it('die graue Farbe der nachgetragenen Abmeldung steht im Stylesheet (Stil-Waechter)', async () => {
-    const { readFileSync } = await import('fs');
-    const { resolve } = await import('path');
-    expect(readFileSync(resolve(process.cwd(), 'src/theme/variables.css'), 'utf8')).toContain('.attendance-matrix__dot--excused {');
   });
 
   it('die Legende benennt beide Abmelde-Wege getrennt', async () => {

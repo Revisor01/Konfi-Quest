@@ -1,9 +1,10 @@
 // Die Seite einer Challenge fuer Konfis in der Web-Fassung, gerendert
 // (docs/planung/web-alle-bereiche.md, Entscheidung 6). Aufbau wie jede
 // Detailseite (06.10.2026): im Kopf Titel, Kennzeichen und die Aktion "Beitrag
-// einreichen", darunter der Hinweis dazu und die Kennzahlen; links Aufgabe und
-// Beitraege als Raster (Feed der Gruppe, eigene Beitraege), rechts die Angaben
-// und der Stempel. Alles ueber dieselbe Logik wie die Ansicht der App
+// einreichen", dazu der Hinweis und die Kennzahlen; Aufgabe und Beitraege (Feed
+// der Gruppe, eigene Beitraege), daneben die Angaben und der Stempel. Lage,
+// Spalten und Groessen sind Layout und werden nicht festgeschrieben (Simon,
+// 15.10.2026). Alles ueber dieselbe Logik wie die Ansicht der App
 // (useKonfiChallengeAnsicht): wann die Challenge laeuft, wer einreichen darf,
 // was unter welchem Reiter steht. Im schmalen Fenster bleibt die App-Ansicht.
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -129,32 +130,25 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 
 describe('Challenge der Konfis (Web): Aufbau wie jede Detailseite', () => {
-  it('Aktionen im Kopf: "Beitrag einreichen" als primaerer Knopf -- keine eigene Karte "Mitmachen"', async () => {
+  it('Aktionen im Kopf: "Beitrag einreichen" -- keine eigene Karte "Mitmachen"', async () => {
     await zeigen();
     expect(knoepfeImKopf()).toEqual(['Beitrag einreichen']);
-    expect(within(kopf()).getByRole('button', { name: 'Beitrag einreichen' })).toHaveClass('web-knopf--primaer');
     expect(screen.queryByRole('region', { name: 'Mitmachen' })).toBeNull();
   });
 
-  it('die Kennzahlen stehen in einer Reihe unter dem Kopf: Feed, Meine Beitraege, Laufzeit, Stempel', async () => {
+  it('die Kennzahlen: Feed, Meine Beitraege, Laufzeit, Stempel', async () => {
     antworten(CHALLENGE, GALERIE, EIGENE);
     await zeigen();
     expect(kennzahlen()).toEqual(['Beiträge im Feed: 3', 'Meine Beiträge: 3', 'Laufzeit: Noch 6 Tage', 'Stempel: Erhalten']);
-    const reihe = document.querySelector('.web-detail__kennzahlen') as HTMLElement;
-    expect(kopf().compareDocumentPosition(reihe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(reihe.compareDocumentPosition(document.querySelector('.web-spalten')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
-  it('links der Inhalt (Aufgabe, Beitraege), rechts der Block "Angaben" mit Angaben und Stempel', async () => {
+  it('Aufgabe und Beitraege als Inhalt, Angaben und Stempel in der Landmarke "Angaben" daneben', async () => {
     await zeigen();
-    const [haupt, seite] = [...document.querySelector('.web-spalten')!.children] as HTMLElement[];
-    expect(seite.tagName).toBe('ASIDE');
-    expect(seite).toHaveAttribute('aria-label', 'Angaben');
-    expect(within(haupt).getByRole('region', { name: 'Worum geht es?' })).toBeInTheDocument();
-    expect(within(haupt).getByRole('list', { name: 'Aus deiner Gruppe' })).toBeInTheDocument();
-    expect(within(seite).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
-    expect(within(seite).getByRole('region', { name: 'Stempel' })).toBeInTheDocument();
-    expect(within(haupt).queryByRole('region', { name: 'Angaben' })).toBeNull();
+    const daneben = screen.getByRole('complementary', { name: 'Angaben' });
+    expect(within(daneben).getByRole('region', { name: 'Angaben' })).toBeInTheDocument();
+    expect(within(daneben).getByRole('region', { name: 'Stempel' })).toBeInTheDocument();
+    expect(daneben).not.toContainElement(screen.getByRole('region', { name: 'Worum geht es?' }));
+    expect(daneben).not.toContainElement(screen.getByRole('list', { name: 'Aus deiner Gruppe' }));
   });
 
   it('der Stempel in den Kennzahlen: offen, solange nichts freigegeben ist; nach Ablauf "Nicht erhalten"', async () => {
@@ -233,7 +227,7 @@ describe('Challenge der Konfis (Web): Kopf, Aufgabe und Angaben', () => {
   });
 });
 
-describe('Challenge der Konfis (Web): Beitraege als Raster', () => {
+describe('Challenge der Konfis (Web): Beitraege', () => {
   it('der Feed zeigt die Galerie mit Name und Herkunft, anonyme ohne Namen, das Team als Teamer:in', async () => {
     await zeigen();
     expect(screen.getByRole('heading', { level: 2, name: 'Aus deiner Gruppe' })).toBeInTheDocument();
@@ -243,11 +237,10 @@ describe('Challenge der Konfis (Web): Beitraege als Raster', () => {
     expect(beitraege()[2]).toHaveTextContent('Auch das Team macht mit');
   });
 
-  it('Bilder gross; antippen oeffnet das Foto wie in der App', async () => {
+  it('Bilder: antippen oeffnet das Foto wie in der App', async () => {
     await zeigen();
     const medium = within(beitraege()[0]).getByTestId('medium');
     expect(medium).toHaveAttribute('data-pfad', 'foto-abc');
-    expect(medium).toHaveAttribute('data-hoehe', '420');
     fireEvent.click(within(medium).getByRole('button'));
     expect(h.dateiOeffnen).toHaveBeenCalledWith('foto-abc', 'datei.jpg');
   });
@@ -378,8 +371,6 @@ describe('Challenge der Konfis (Web): Neuigkeiten und Gelesen-Melden', () => {
     await zeigen();
     expect(neuigkeiten()).toHaveTextContent('Seit deinem letzten Besuch');
     expect(neuigkeiten()).toHaveTextContent('3 Neuigkeiten');
-    // Der Hinweis steht links bei den Beitraegen, nicht ueber den Kennzahlen.
-    expect(neuigkeiten().closest('.web-spalten__haupt')).not.toBeNull();
   });
 
   it('eine Neuigkeit in der Einzahl; nichts Neues: kein Hinweis', async () => {

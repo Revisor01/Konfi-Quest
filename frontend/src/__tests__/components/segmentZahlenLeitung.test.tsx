@@ -12,8 +12,9 @@ import type { AdminChallenge } from '../../types/challenges';
 // Orange Wartezahl im Segment-Knopf (Simon, 28.09.2026, zur Ansicht):
 // Wegweiser zu dem Reiter, hinter dem etwas auf die Leitung wartet --
 // offene Freigaben, Verbuchungen, Antraege. NUR Wartendes, keine
-// Neuigkeiten (die stehen rot an Reiter und Listeneintrag). Inline im
-// Knopf, nicht absolut ueber dem Rand. Archiv zaehlt mit.
+// Neuigkeiten (die stehen rot an Reiter und Listeneintrag). Archiv zaehlt
+// mit. Farbe und Lage der Zahl sind Layout und werden nicht festgeschrieben
+// (Simon, 15.10.2026).
 
 vi.mock('../../contexts/AppContext', () => ({
   useApp: () => ({ user: { id: 4, type: 'admin', role_name: 'org_admin' } }),
@@ -46,56 +47,6 @@ describe('SegmentZahl', () => {
     expect(drei?.getAttribute('aria-label')).toBe('3 warten auf Freigabe');
     expect(render(<SegmentZahl anzahl={0} />).container.querySelector('.app-segment-zahl')).toBeNull();
     expect(render(<SegmentZahl anzahl={12} />).container.querySelector('.app-segment-zahl')?.textContent).toBe('9+');
-  });
-
-  it('Farbe steht in EINEM Token (orange), im Textfluss statt absolut', () => {
-    const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    const m = css.match(/\.app-segment-zahl \{([^}]*)\}/);
-    expect(m).not.toBeNull();
-    const regel = m![1];
-    expect(regel).toMatch(/--app-segment-zahl-farbe:\s*var\(--app-color-warning\);/);
-    expect(regel).toMatch(/background:\s*var\(--app-segment-zahl-farbe\);/);
-    expect(regel).not.toMatch(/position:\s*absolute/);
-    // Keine rote Kugel-Klasse: rot bleibt Reiter und Listeneintrag.
-    const el = render(<SegmentZahl anzahl={1} />).container.querySelector('.app-segment-zahl');
-    expect(el?.classList.contains('app-zaehler-kugel')).toBe(false);
-  });
-
-  // Simon, TestFlight 233 (29.09.2026): "ein bisschen hoeher ... nicht
-  // zentriert mit dem Text". `vertical-align: middle` setzt die Mitte der
-  // Zahl auf Grundlinie + halbe x-Hoehe; das Auge misst bei "Aktuell",
-  // "Archiv", "Events" die Mitte bis zur Versalhoehe. Gemessen im Browser:
-  // 1,08 px (iOS) bzw. 1,33 px (Android) zu tief. jsdom rechnet kein Layout,
-  // deshalb prueft der Test die Regel gegen die Schriftmasse der Geraete.
-  it('mittig zur Versalhoehe der Beschriftung: 0.075rem ueber "middle"', () => {
-    const css = readFileSync(join(process.cwd(), 'src/theme/variables.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
-    const regel = css.match(/\.app-segment-zahl \{([^}]*)\}/)![1];
-    expect(regel).toMatch(/vertical-align:\s*middle;/);
-    expect(regel).toMatch(/position:\s*relative;/);
-    const hub = regel.match(/top:\s*(-?[\d.]+)rem;/);
-    expect(hub).not.toBeNull();
-    const hubRem = -parseFloat(hub![1]);
-    expect(hubRem).toBe(0.075);
-
-    // Versal- und x-Hoehe je em (SF Pro 1443/1086, Roboto 1456/1082 von
-    // 2048), Schrift der Beschriftung: iOS-Theme 0.81rem, Android
-    // --app-text-klein 0.75rem. Noetiger Hub = (Versal - x) / 2 * Schrift.
-    const geraete = [
-      { name: 'iOS', versal: 1443 / 2048, x: 1086 / 2048, schriftRem: 0.81 },
-      { name: 'Android', versal: 1456 / 2048, x: 1082 / 2048, schriftRem: 0.75 },
-    ];
-    for (const wurzel of [16, 17]) {
-      for (const g of geraete) {
-        const noetig = ((g.versal - g.x) / 2) * g.schriftRem * wurzel;
-        const gesetzt = hubRem * wurzel;
-        expect(noetig, `${g.name} bei Wurzel ${wurzel}`).toBeGreaterThan(1);
-        expect(Math.abs(gesetzt - noetig), `${g.name} bei Wurzel ${wurzel}: ${gesetzt} gegen ${noetig}`).toBeLessThan(0.2);
-      }
-    }
-    const ios = readFileSync(join(process.cwd(), 'node_modules/@rdlabo/ionic-theme-ios27/dist/css/components/ion-segment.css'), 'utf8');
-    expect(ios).toMatch(/ion-segment-button\.ios:not\(\.ios-theme-disabled,\.ios26-disabled\)\{[^}]*font-size:\.81rem/);
-    expect(css).toMatch(/ion-segment\.md ion-segment-button ion-label \{[^}]*font-size: var\(--app-text-klein\);/);
-    expect(readFileSync(join(process.cwd(), 'src/theme/typografie.css'), 'utf8')).toMatch(/--app-text-klein:\s*0\.75rem;/);
   });
 });
 

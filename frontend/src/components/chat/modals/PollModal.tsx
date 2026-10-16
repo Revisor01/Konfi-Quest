@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -32,8 +32,15 @@ import {
   ICON_UHRZEIT,
 } from '../../shared/icons';
 import { useApp } from '../../../contexts/AppContext';
-import { useActionGuard } from '../../../hooks/useActionGuard';
-import api from '../../../services/api';
+import {
+  ABLAUF_STUNDEN,
+  FRAGE_MAX_ZEICHEN,
+  OPTIONEN_MAX,
+  OPTIONEN_MIN,
+  OPTION_MAX_ZEICHEN,
+  UMFRAGE_HINWEISE,
+  useUmfrageFormular,
+} from '../useUmfrageFormular';
 
 interface PollModalProps {
   onClose: () => void;
@@ -50,95 +57,24 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
       onClose();
     }
   };
-  const { setError, isOnline } = useApp();
+  const { isOnline } = useApp();
   const pageRef = useRef<HTMLElement>(null);
 
-  const [question, setQuestion] = useState('');
-  const [options, setOptions] = useState(['', '']);
-  const [multipleChoice, setMultipleChoice] = useState(false);
-  const [anonymous, setAnonymous] = useState(true);
-  const [exclusiveOptions, setExclusiveOptions] = useState(false);
-  // Einmalige Antwort und "Namen später" (10.10.2026). "Namen später" gibt
-  // es nur bei einer Umfrage mit Namen -- anonym und später schliessen sich
-  // aus (das Backend lehnt die Kombination auch ab).
-  const [einmaligeAntwort, setEinmaligeAntwort] = useState(false);
-  const [namenSpaeter, setNamenSpaeter] = useState(false);
-  const [hasExpiration, setHasExpiration] = useState(false);
-  const [expirationHours, setExpirationHours] = useState(24);
-  const { isSubmitting: creating, guard } = useActionGuard();
-
-  const resetForm = () => {
-    setQuestion('');
-    setOptions(['', '']);
-    setMultipleChoice(false);
-    setAnonymous(true);
-    setExclusiveOptions(false);
-    setEinmaligeAntwort(false);
-    setNamenSpaeter(false);
-    setHasExpiration(false);
-    setExpirationHours(24);
-  };
-
-  const addOption = () => {
-    if (options.length < 10) {
-      setOptions([...options, '']);
-    }
-  };
-
-  const removeOption = (index: number) => {
-    if (options.length > 2) {
-      setOptions(options.filter((_, i) => i !== index));
-    }
-  };
-
-  const updateOption = (index: number, value: string) => {
-    const newOptions = [...options];
-    newOptions[index] = value;
-    setOptions(newOptions);
-  };
+  // Felder, Prüfung und der Weg zum Server: useUmfrageFormular -- dieselbe
+  // Logik wie im Dialog des Browsers (web/WebUmfrageDialog).
+  const {
+    question, setQuestion, options, addOption, removeOption, updateOption,
+    multipleChoice, setMultipleChoice, anonymous, namenAnzeigenSetzen,
+    exclusiveOptions, exklusivSetzen, einmaligeAntwort, setEinmaligeAntwort,
+    namenSpaeter, setNamenSpaeter, hasExpiration, setHasExpiration,
+    expirationHours, setExpirationHours, creating, kannErstellen, erstellen,
+  } = useUmfrageFormular({ roomId });
 
   const createPoll = async () => {
-    const trimmedQuestion = question.trim();
-    const validOptions = options.filter(opt => opt.trim());
-
-    if (!trimmedQuestion) {
-      setError('Bitte gib eine Frage ein');
-      return;
+    if (await erstellen()) {
+      onSuccess();
+      handleClose();
     }
-
-    if (validOptions.length < 2) {
-      setError('Bitte gib mindestens 2 Antwortmöglichkeiten ein');
-      return;
-    }
-
-    await guard(async () => {
-      try {
-        const pollData = {
-          question: trimmedQuestion,
-          options: validOptions,
-          // Exklusive Optionen erzwingen Einzelauswahl (Backend setzt das auch durch).
-          multiple_choice: exclusiveOptions ? false : multipleChoice,
-          anonymous,
-          exclusive_options: exclusiveOptions,
-          einmalige_antwort: einmaligeAntwort,
-          namen_spaeter: !anonymous && namenSpaeter,
-          expires_in_hours: hasExpiration ? expirationHours : null
-        };
-
-        await api.post(`/chat/rooms/${roomId}/polls`, pollData);
-
-        resetForm();
-        onSuccess();
-        handleClose();
-      } catch (err) {
-        setError('Fehler beim Erstellen der Umfrage');
-        console.error('Error creating poll:', err);
-      }
-    });
-  };
-
-  const canCreate = () => {
-    return question.trim() && options.filter(opt => opt.trim()).length >= 2;
   };
 
   return (
@@ -152,7 +88,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
           </IonButtons>
           <IonTitle>Neue Umfrage</IonTitle>
           <IonButtons slot="end">
-            <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createPoll} disabled={!canCreate() || creating || !isOnline} aria-label="Umfrage erstellen">
+            <IonButton className="app-modal-submit-btn app-modal-submit-btn--chat" onClick={createPoll} disabled={!kannErstellen || creating || !isOnline} aria-label="Umfrage erstellen">
               {!isOnline ? <><IonIcon icon={ICON_OFFLINE} /> Du bist offline</> : creating ? <IonSpinner name="crescent" /> : <IonIcon icon={ICON_HAKEN} slot="icon-only" />}
             </IonButton>
           </IonButtons>
@@ -178,7 +114,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                   onIonInput={(e) => setQuestion(e.detail.value!)}
                   placeholder="Deine Frage eingeben..."
                   rows={2}
-                  maxlength={500}
+                  maxlength={FRAGE_MAX_ZEICHEN}
                   label="Frage"
                   labelPlacement="stacked"
                   autocapitalize="sentences"
@@ -204,13 +140,13 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                     value={option}
                     onIonInput={(e) => updateOption(index, e.detail.value!)}
                     placeholder={`Option ${index + 1}`}
-                    maxlength={200}
+                    maxlength={OPTION_MAX_ZEICHEN}
                     label={`Option ${index + 1}`}
                     labelPlacement="stacked"
                     autocapitalize="sentences"
                     autoCorrect="on"
                   />
-                  {options.length > 2 && (
+                  {options.length > OPTIONEN_MIN && (
                     <IonButton aria-label="Antwortoption entfernen"
                       fill="clear"
                       slot="end"
@@ -224,7 +160,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
               ))}
 
               {/* Option hinzufügen */}
-              {options.length < 10 && (
+              {options.length < OPTIONEN_MAX && (
                 <IonItem button onClick={addOption} detail={false}>
                   <IonIcon icon={ICON_HINZUFUEGEN} slot="start" style={{ color: 'var(--app-text-chat)' }} />
                   <IonLabel style={{ color: 'var(--app-text-chat)' }}>Option hinzufügen</IonLabel>
@@ -248,7 +184,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonLabel>
                   <h3 className="app-toggle-item__title">Mehrfachauswahl</h3>
                   <p className="app-toggle-item__hint">
-                    {exclusiveOptions ? 'Bei exklusiven Optionen nicht möglich' : 'Mehrere Antworten erlauben'}
+                    {UMFRAGE_HINWEISE.mehrfachauswahl(exclusiveOptions)}
                   </p>
                 </IonLabel>
                 <IonToggle aria-label="Mehrfachauswahl"
@@ -265,19 +201,14 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonLabel>
                   <h3 className="app-toggle-item__title">Namen anzeigen</h3>
                   <p className="app-toggle-item__hint">
-                    {anonymous
-                      ? 'Aus: anonym – niemand sieht, wer was gewählt hat'
-                      : 'An: alle sehen, wer welche Antwort gewählt hat'}
+                    {UMFRAGE_HINWEISE.namenAnzeigen(anonymous)}
                   </p>
                 </IonLabel>
                 <IonToggle aria-label="Namen anzeigen"
                   slot="end"
                   className="app-toggle--chat"
                   checked={!anonymous}
-                  onIonChange={(e) => {
-                    setAnonymous(!e.detail.checked);
-                    if (!e.detail.checked) setNamenSpaeter(false);
-                  }}
+                  onIonChange={(e) => namenAnzeigenSetzen(e.detail.checked)}
                  
                 />
               </IonItem>
@@ -287,7 +218,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                   <IonLabel>
                     <h3 className="app-toggle-item__title">Namen erst später aufdecken</h3>
                     <p className="app-toggle-item__hint">
-                      Bis du sie aufdeckst, sieht niemand die Namen – auch du nicht. Endet die Umfrage, werden sie von selbst aufgedeckt.
+                      {UMFRAGE_HINWEISE.namenSpaeter}
                     </p>
                   </IonLabel>
                   <IonToggle aria-label="Namen erst später aufdecken"
@@ -303,7 +234,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonLabel>
                   <h3 className="app-toggle-item__title">Nur einmal antworten</h3>
                   <p className="app-toggle-item__hint">
-                    Wer abgestimmt hat, kann die Antwort danach nicht mehr ändern – gut für ein Quiz
+                    {UMFRAGE_HINWEISE.einmalig}
                   </p>
                 </IonLabel>
                 <IonToggle aria-label="Nur einmal antworten"
@@ -318,17 +249,14 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonLabel>
                   <h3 className="app-toggle-item__title">Exklusive Optionen</h3>
                   <p className="app-toggle-item__hint">
-                    Jede Option kann nur von einer Person gewählt werden
+                    {UMFRAGE_HINWEISE.exklusiv}
                   </p>
                 </IonLabel>
                 <IonToggle aria-label="Exklusive Optionen"
                   slot="end"
                   className="app-toggle--chat"
                   checked={exclusiveOptions}
-                  onIonChange={(e) => {
-                    setExclusiveOptions(e.detail.checked);
-                    if (e.detail.checked) setMultipleChoice(false);
-                  }}
+                  onIonChange={(e) => exklusivSetzen(e.detail.checked)}
                  
                 />
               </IonItem>
@@ -337,7 +265,7 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                 <IonLabel>
                   <h3 className="app-toggle-item__title">Ablaufdatum</h3>
                   <p className="app-toggle-item__hint">
-                    Umfrage automatisch schließen
+                    {UMFRAGE_HINWEISE.ablauf}
                   </p>
                 </IonLabel>
                 <IonToggle aria-label="Ablaufdatum"
@@ -360,10 +288,9 @@ const PollModal: React.FC<PollModalProps> = ({ onClose, onSuccess, roomId, dismi
                     interfaceOptions={{ arrow: false }}
                     labelPlacement="start"
                   >
-                    <IonSelectOption value={1}>1 Stunde</IonSelectOption>
-                    <IonSelectOption value={8}>8 Stunden</IonSelectOption>
-                    <IonSelectOption value={24}>1 Tag</IonSelectOption>
-                    <IonSelectOption value={168}>7 Tage</IonSelectOption>
+                    {ABLAUF_STUNDEN.map(({ stunden, label }) => (
+                      <IonSelectOption key={stunden} value={stunden}>{label}</IonSelectOption>
+                    ))}
                   </IonSelect>
                 </IonItem>
               )}

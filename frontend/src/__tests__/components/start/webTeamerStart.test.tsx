@@ -298,31 +298,10 @@ describe('Team-Start (Web): Karten', () => {
   });
 });
 
-// Farbkacheln wie in der App (Simon, 10.10.2026: "auch bei teamern").
-describe('Team-Start (Web): Farbkacheln der App', () => {
-  it('jeder Abschnitt steht auf dem Verlauf seines App-Abschnitts, mit dem blassen Wort der App', async () => {
-    await zeige();
-    await waitFor(() => expect(ueberschriften()).toHaveLength(6));
-    const erwartet: Array<[string, string, string]> = [
-      ['Deine Zertifikate', 'zertifikate', 'DEINEZERTIFIKATE'],
-      ['Laufende Challenges', 'challenges', 'DEINECHALLENGE'],
-      ['Dein Konfispruch', 'konfispruch', 'DEINKONFISPRUCH'],
-      ['Deine Events', 'events', 'DEINEEVENTS'],
-      ['Deine Badges', 'badges', 'DEINEBADGES'],
-      ['Tageslosung', 'tageslosung', 'TAGESLOSUNG'],
-    ];
-    for (const [titel, farbe, wort] of erwartet) {
-      const k = karte(titel);
-      expect(k.className.split(' '), titel).toEqual(['web-farbkarte', 'web-auf-farbe', 'app-dashboard-section', `app-dashboard-section--${farbe}`]);
-      expect(k.querySelector('.app-dashboard-section__bg-text')?.textContent).toBe(wort);
-    }
-    expect(document.querySelectorAll('.web-karte')).toHaveLength(0);
-  });
-
-  it('die Kennzahlen stehen auf dem Teamer-Kopf der App', async () => {
+describe('Team-Start (Web): der Kopf mit den Kennzahlen', () => {
+  it('die Kennzahlen stehen im Bereich "Auf einen Blick"', async () => {
     await zeige();
     const kopf = screen.getByRole('region', { name: 'Auf einen Blick' });
-    expect(kopf.className.split(' ')).toEqual(['web-farbkopf', 'web-farbkopf--team', 'web-auf-farbe', 'app-dashboard-header']);
     expect(within(kopf).getByRole('link', { name: 'Anstehende Events: 3' })).toHaveAttribute('href', '/teamer/events');
     expect(within(kopf).getByRole('group', { name: 'Zertifikate gültig: 2' })).toBeInTheDocument();
   });

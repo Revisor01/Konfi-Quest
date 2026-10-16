@@ -79,18 +79,11 @@ const oeffnen = async () => {
 const stoerungen = () => within(screen.getByRole('status', { name: 'Postfächer' })).getAllByRole('listitem').map((z) => z.textContent);
 
 describe('Posteingang: Zustand der Postfächer', () => {
-  // Seit 12.10.2026 je gestörtem Postfach eine Zeile statt eines Abschnitts
-  // „Postfächer“ mit Kasten, Marke, Aufgabe und Hinweis-Kasten -- der Grund
-  // bleibt sichtbar, in denselben Sätzen wie im Browser.
+  // Je gestörtem Postfach eine Zeile -- der Grund bleibt sichtbar, in
+  // denselben Sätzen wie im Browser.
   it('stört ein Postfach, steht nur seine Zeile da: Postfach und Grund mit Zeit', async () => {
     await oeffnen();
     expect(stoerungen()).toEqual(['support@ · Fehler beim Abholen: Anmeldung fehlgeschlagen (03.10.2026, 12:02)']);
-    // Keine Kästen mehr: kein Abschnitt, keine Marke, keine Aufgabe.
-    expect(screen.queryByText('Postfächer')).toBeNull();
-    expect(screen.queryByText('Eingerichtet')).toBeNull();
-    expect(screen.queryByText(/Hilfe für Gemeinden/)).toBeNull();
-    // Der Fehler ist als Fehler gekennzeichnet.
-    expect(within(screen.getByRole('status', { name: 'Postfächer' })).getByRole('listitem')).toHaveClass('support-postfach-stoerung--fehler');
   });
 
   it('laufen beide Postfächer, steht nur eine Zeile da -- keine Störung', async () => {
@@ -98,7 +91,6 @@ describe('Posteingang: Zustand der Postfächer', () => {
     await oeffnen();
     expect(screen.getByText('moin@ und support@ eingerichtet · zuletzt abgeholt 03.10.2026, 12:00')).toBeInTheDocument();
     expect(screen.queryByRole('status', { name: 'Postfächer' })).toBeNull();
-    expect(screen.queryByText('Eingerichtet')).toBeNull();
   });
 
   it('nicht eingerichtet und auf diesem Server aus: je eine Zeile mit dem Grund', async () => {
@@ -113,11 +105,6 @@ describe('Posteingang: Zustand der Postfächer', () => {
       'moin@ · Zugangsdaten fehlen: Ohne Benutzer, Passwort und IMAP-Server auf dem Server wird dieses Postfach nicht gelesen.',
       'support@ · Auf diesem Server aus – Versand und Abholen laufen auf dem Hauptserver',
     ]);
-    const zeilen = within(screen.getByRole('status', { name: 'Postfächer' })).getAllByRole('listitem');
-    expect(zeilen.map((z) => [...z.classList].find((k) => k.startsWith('support-postfach-stoerung--')))).toEqual([
-      'support-postfach-stoerung--hinweis',
-      'support-postfach-stoerung--warnung',
-    ]);
   });
 
   it('haben beide Postfächer denselben Grund, steht er einmal da: eine Zeile für beide', async () => {
@@ -127,7 +114,6 @@ describe('Posteingang: Zustand der Postfächer', () => {
       // Zwei Namen, also Mehrzahl: „werden diese Postfächer“ (nicht „wird dieses Postfach“).
       'moin@ und support@ · Zugangsdaten fehlen: Ohne Benutzer, Passwort und IMAP-Server auf dem Server werden diese Postfächer nicht gelesen.',
     ]);
-    expect(within(screen.getByRole('status', { name: 'Postfächer' })).getByRole('listitem')).toHaveClass('support-postfach-stoerung--hinweis');
   });
 
   it('nur ein Postfach ohne Zugangsdaten: Einzahl', async () => {
@@ -175,33 +161,23 @@ describe('Posteingang: Zustand der Postfächer', () => {
 });
 
 describe('Posteingang: Liste und Filter', () => {
-  it('nur Mails ohne Vorgang, nicht archiviert, neueste zuerst; ungelesene hervorgehoben und so benannt', async () => {
+  it('nur Mails ohne Vorgang, nicht archiviert, neueste zuerst; ungelesene markiert und so benannt', async () => {
     await oeffnen();
     const eintraege = screen.getAllByRole('button', { name: /^Mail von / });
     expect(eintraege.map((e) => e.getAttribute('aria-label'))).toEqual([
       ERSTE,
       'Mail von bob@example.org: (ohne Betreff)',
     ]);
-    expect(eintraege[0]).toHaveTextContent('1 Anhang');
+    // Je Zeile Betreff, Absender und Zeit, der Auszug und das Postfach.
+    expect(eintraege[0]).toHaveTextContent('Frage zum Zugang');
+    expect(eintraege[0]).toHaveTextContent('Anna Beispiel · 03.10.2026, 11:00 · 1 Anhang');
     expect(eintraege[0]).toHaveTextContent('Wie melde ich mich an?');
-    // Wie die Zeile eines Vorgangs (12.10.2026): Betreff über die volle
-    // Breite, darunter Absender und Zeit, der Auszug und die Marke des Postfachs.
-    const inhalt = eintraege[0].querySelector('.app-list-item__content') as HTMLElement;
-    expect([...inhalt.children].map((k) => [k.className, k.textContent])).toEqual([
-      ['app-list-item__title', 'Frage zum Zugang'],
-      ['app-list-item__meta support-listenzeile__meta', 'Anna Beispiel · 03.10.2026, 11:00 · 1 Anhang'],
-      ['support-listenzeile__auszug', 'Wie melde ich mich an?'],
-      ['support-listenzeile__marken', 'moin@'],
-    ]);
-    expect((inhalt.children[0] as HTMLElement).style.hyphens).toBe('');
-    // Rechts neben dem Inhalt nur noch Punkt und Pfeil; ohne Auszug fällt seine Zeile weg.
-    expect([...(eintraege[0].querySelector('.app-list-item__row') as HTMLElement).children].map((k) => k.className))
-      .toEqual(['app-list-item__main', 'app-ungelesen-punkt support-listenzeile__punkt']);
-    expect([...(eintraege[1].querySelector('.app-list-item__content') as HTMLElement).children].map((k) => k.textContent))
-      .toEqual(['(ohne Betreff)', 'bob@example.org · 02.10.2026, 11:00', 'support@']);
+    expect(eintraege[0]).toHaveTextContent('moin@');
+    expect(eintraege[1]).toHaveTextContent('(ohne Betreff)');
+    expect(eintraege[1]).toHaveTextContent('bob@example.org · 02.10.2026, 11:00');
+    expect(eintraege[1]).toHaveTextContent('support@');
     expect(eintraege[0].querySelector('.app-ungelesen-punkt')).not.toBeNull();
     expect(eintraege[1].querySelector('.app-ungelesen-punkt')).toBeNull();
-    expect((eintraege[0].querySelector('.app-list-item__title') as HTMLElement).style.fontWeight).toBe('var(--app-schrift-fett)');
     expect(screen.getByText('2 Mails zum Einsortieren')).toBeInTheDocument();
     expect(server.aufrufe('get', '/support/mail/eingang').map((a) => a.optionen)).toEqual([undefined]);
   });

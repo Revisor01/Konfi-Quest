@@ -19,7 +19,7 @@
 // Wer die Liste und den Raum mit Daten versorgt, steht in useChatUebersicht
 // und useChatRaum -- dieselben Hooks wie in der App.
 
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { IonPage, useIonRouter } from '@ionic/react';
 import { ICON_CHATS_GEFUELLT } from '../../shared/icons';
 import AppKopfzeile from '../../shared/AppKopfzeile';
@@ -35,6 +35,7 @@ import { WebFehler, WebLaden, WebLeer } from '../../web/WebZustaende';
 import WebKnopf from '../../web/WebKnopf';
 import WebChatListe from './WebChatListe';
 import WebChatRaum from './WebChatRaum';
+import WebNeuerChatDialog from './WebNeuerChatDialog';
 import { chatListeAdresse, chatRaumAdresse } from './chatAdresse';
 import { listenMerkerFuer } from './chatListenMerker';
 import { useOhneSeitenanimation } from './useOhneSeitenanimation';
@@ -114,7 +115,10 @@ const WebChatInhalt: React.FC<WebChatProps> = ({ roomId }) => {
     onSelectRoom: (room) => oeffnen(room.id),
     anfang: { suche: merker.suche, filter: merker.filter, raeume: merker.raeume },
   });
-  const { searchText, filterType, rooms, deleteRoom, neuenChatStarten, refresh } = uebersicht;
+  const { searchText, filterType, rooms, deleteRoom, neuerChatAngelegt, refresh } = uebersicht;
+  // „Neuer Chat" als Dialog der Web-Fassung statt des App-Modals (Simon,
+  // 15.10.2026); nach dem Anlegen wie in der App: Liste neu, in den Raum.
+  const [neuerChat, setNeuerChat] = useState(false);
 
   // Suche, Reiter und Raeume fuer den naechsten Seitenwechsel merken.
   useEffect(() => {
@@ -131,7 +135,7 @@ const WebChatInhalt: React.FC<WebChatProps> = ({ roomId }) => {
         uebersicht={uebersicht}
         offenerRaumId={roomId}
         adresseVon={adresseVon}
-        onNeuerChat={() => neuenChatStarten(undefined, 'web-chat-modal')}
+        onNeuerChat={() => setNeuerChat(true)}
       />
       <section className="web-chat-haupt" aria-label={roomId !== null ? 'Geöffneter Chat' : 'Kein Chat geöffnet'}>
         {roomId !== null ? (
@@ -149,7 +153,7 @@ const WebChatInhalt: React.FC<WebChatProps> = ({ roomId }) => {
               titel="Chat auswählen"
               text="Wähle links einen Chat aus der Liste oder starte einen neuen."
               aktion={(
-                <WebKnopf art="primaer" onClick={() => neuenChatStarten(undefined, 'web-chat-modal')}>
+                <WebKnopf art="primaer" onClick={() => setNeuerChat(true)}>
                   Neuer Chat
                 </WebKnopf>
               )}
@@ -157,6 +161,15 @@ const WebChatInhalt: React.FC<WebChatProps> = ({ roomId }) => {
           </div>
         )}
       </section>
+      {neuerChat && (
+        <WebNeuerChatDialog
+          onSchliessen={() => setNeuerChat(false)}
+          onAngelegt={(raumId) => {
+            setNeuerChat(false);
+            void neuerChatAngelegt(raumId);
+          }}
+        />
+      )}
     </div>
   );
 };

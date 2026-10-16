@@ -17,7 +17,7 @@
 // Tests 26.09.2026, BF-02; bis 30.09.2026 am Quelltext geprueft).
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup, within } from '@testing-library/react';
 
 const apiGet = vi.fn();
 vi.mock('../../services/api', () => ({
@@ -154,5 +154,61 @@ describe('Mitglieder-Modal: ansehen darf jedes Mitglied, verwalten nur die Leitu
     angemeldet = { id: 4, type: 'admin', role_name: 'admin', organization_id: 1 };
     await oeffne();
     expect(abrufe()).toEqual(['/admin/konfis', '/chat/rooms/5/participants', '/users', '/users/me/jahrgaenge']);
+  });
+});
+
+// "Mitglied hinzufügen" in der App: Wer zur Auswahl steht (das Team aus
+// GET /users und die Konfis aus GET /admin/konfis, ohne die, die schon dabei
+// sind), prüft chatWeb/webMitgliederDialog.test.tsx für App und Browser
+// gemeinsam ("dieselben Personen zur Auswahl"). Hier, was nur die App zeigt:
+// an jeder Person das Wort ihrer Rolle, und dass die Auswahl ansagbar
+// umschaltet. Die Auswahl ist sonst nur an der Hintergrundfarbe zu sehen;
+// aria-pressed sagt sie Vorleseprogrammen an.
+describe('Mitglied hinzufügen in der App: Rolle an jeder Person, Auswahl schaltet um', () => {
+  const TEAM = [
+    { id: 15, display_name: 'Greta Gerdes', username: 'greta', role_name: 'org_admin', role_display_name: 'Org-Admin' },
+    { id: 14, display_name: 'Lena Lorenz', username: 'lena', role_name: 'admin', role_display_name: 'Admin' },
+    { id: 13, display_name: 'Theo Thiel', username: 'theo', role_name: 'teamer', role_display_name: 'Teamer:in' },
+  ];
+  const KONFIS = [{ id: 21, name: 'Karl Kahl', jahrgang_id: 1, jahrgang_name: '2026' }];
+
+  const hinzufuegenOeffnen = async () => {
+    angemeldet = { id: 4, type: 'admin', role_name: 'admin', organization_id: 1 };
+    apiGet.mockImplementation(async (pfad: string) => {
+      if (pfad === '/chat/rooms/5/participants') return { data: [] };
+      if (pfad === '/users') return { data: TEAM };
+      if (pfad === '/admin/konfis') return { data: KONFIS };
+      if (pfad === '/users/me/jahrgaenge') return { data: [{ id: 1, name: '2026' }] };
+      return { data: [] };
+    });
+    render(<MembersModal roomId={5} roomType="group" onClose={vi.fn()} onSuccess={vi.fn()} />);
+    for (let i = 0; i < 4; i += 1) await act(async () => { await Promise.resolve(); });
+    fireEvent.click(screen.getByRole('button', { name: 'Mitglieder hinzufügen' }));
+    await act(async () => { await Promise.resolve(); });
+  };
+  /** Eine Person der Auswahl: ein Knopf mit aria-pressed. */
+  const person = (name: string) => screen.getAllByRole('button')
+    .find((k) => k.hasAttribute('aria-pressed') && within(k).queryByText(name)) as HTMLElement;
+
+  it('jede Person nennt ihre Rolle -- Gemeindeleitung, Leitung, Teamer:in, Konfi mit Jahrgang', async () => {
+    await hinzufuegenOeffnen();
+    expect(within(person('Greta Gerdes')).getByRole('img', { name: 'Gemeindeleitung' })).toBeInTheDocument();
+    expect(person('Greta Gerdes')).toHaveTextContent('Gemeindeleitung');
+    expect(within(person('Lena Lorenz')).getByRole('img', { name: 'Leitung' })).toBeInTheDocument();
+    expect(person('Lena Lorenz')).toHaveTextContent('Leitung');
+    expect(within(person('Theo Thiel')).getByRole('img', { name: 'Teamer:in' })).toBeInTheDocument();
+    expect(person('Theo Thiel')).toHaveTextContent('Teamer:in');
+    expect(within(person('Karl Kahl')).getByRole('img', { name: 'Konfi' })).toBeInTheDocument();
+    expect(person('Karl Kahl')).toHaveTextContent('2026');
+  });
+
+  it('ein Klick wählt aus, ein zweiter wieder ab -- aria-pressed folgt', async () => {
+    await hinzufuegenOeffnen();
+    expect(person('Lena Lorenz')).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(person('Lena Lorenz'));
+    expect(person('Lena Lorenz')).toHaveAttribute('aria-pressed', 'true');
+    expect(person('Karl Kahl')).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(person('Lena Lorenz'));
+    expect(person('Lena Lorenz')).toHaveAttribute('aria-pressed', 'false');
   });
 });

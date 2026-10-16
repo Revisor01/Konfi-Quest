@@ -13,8 +13,8 @@ import { transform } from 'lightningcss';
  * `@media`-Block, ohne Selektor.
  *
  * Warum kein bestehender Test das fand: Alle CSS-Tests dieses Verzeichnisses
- * (farbTokens, abstaendeTokens, dunkelmodus, typografieTokens, popoverBreite)
- * lesen die Datei als TEXT und suchen mit regulaeren Ausdruecken darin. Eine
+ * (damals farbTokens, abstaendeTokens, dunkelmodus, typografieTokens und ein
+ * Test der Popover-Breite) lasen die Datei als TEXT und suchen mit regulaeren Ausdruecken darin. Eine
  * kaputte Klammerstruktur faellt dabei nicht auf -- die gesuchten Zeichenketten
  * stehen ja alle da. Erst der Bundler parst wirklich.
  *

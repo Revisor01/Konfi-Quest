@@ -4,9 +4,10 @@
 //
 // Gerendert wird die echte Ansicht (Geruest leitungTerminDetail) und ihre
 // Zeitfenster-Liste. Geprueft wird, was die Leitung sieht: der Absage-Kasten
-// mit beiden Urhebern, kein durchgestrichener Titel, die Kachel
-// "Abgemeldet" nach einer Absage (Befund G) und beide Teilnehmerlisten mit
-// derselben Darstellung (Befund H).
+// mit beiden Urhebern, die Kachel "Abgemeldet" nach einer Absage (Befund G)
+// und beide Teilnehmerlisten mit demselben Stand je Person (Befund H). Wie
+// es aussieht (Farben, Durchstreichen), legt kein Test fest (Simon,
+// 15.10.2026).
 import { describe, it, expect, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen, within } from '@testing-library/react';
@@ -28,17 +29,8 @@ const kacheln = () => Object.fromEntries(
   ]),
 );
 
-/** Badge-Text und Farbklassen einer Teilnehmerzeile. */
-const zeilenBild = (zeile: HTMLElement) => {
-  const badge = within(zeile).getByRole('img');
-  const klasse = (el: Element, praefix: string) => [...el.classList].find((k) => k.startsWith(praefix) && !k.includes('badge-space'));
-  return {
-    text: badge.getAttribute('aria-label'),
-    rand: klasse(zeile.querySelector('.app-list-item')!, 'app-list-item--'),
-    badge: klasse(badge, 'app-corner-badge--'),
-    kreis: klasse(zeile.querySelector('.app-icon-circle')!, 'app-icon-circle--'),
-  };
-};
+/** Der Stand einer Teilnehmerzeile, wie Vorleseprogramme ihn hoeren (Name des Eck-Badges). */
+const zeilenStand = (zeile: HTMLElement) => within(zeile).getByRole('img').getAttribute('aria-label');
 
 beforeEach(zuruecksetzen);
 
@@ -63,13 +55,6 @@ describe('der Absage-Kasten steht im Leitungs-Detail', () => {
     await oeffne();
     expect(statusText()).toBe('Abgesagt');
     expect(screen.getAllByText(GRUND)).toHaveLength(1);
-  });
-
-  it('Befund B: der Titel ist NICHT durchgestrichen', async () => {
-    zustand.detail = termin(ABGESAGT);
-    await oeffne();
-    const gestrichen = [...document.querySelectorAll<HTMLElement>('[style]')].filter((el) => el.style.textDecoration === 'line-through');
-    expect(gestrichen).toEqual([]);
   });
 
   it('ein offener Termin hat keinen Kasten', async () => {
@@ -98,21 +83,21 @@ describe('Befund G: die Kachel "Abgemeldet" zaehlt nach einer Terminabsage richt
   });
 });
 
-describe('Befund H: beide Teilnehmerlisten zeigen dieselbe Darstellung', () => {
-  const PERSONEN: Array<[string, Record<string, unknown>, ReturnType<typeof zeilenBild>]> = [
-    ['durch die Absage abgemeldet', { status: 'excused' }, { text: 'Abgemeldet', rand: 'app-list-item--danger', badge: 'app-corner-badge--danger', kreis: 'app-icon-circle--danger' }],
-    ['selbst abgemeldet', { status: 'opted_out' }, { text: 'Abgemeldet', rand: 'app-list-item--danger', badge: 'app-corner-badge--danger', kreis: 'app-icon-circle--danger' }],
-    ['nachgetragen abgemeldet', { status: 'excused', attendance_status: 'excused' }, { text: 'Abgemeldet (nachgetragen)', rand: 'app-list-item--neutral', badge: 'app-corner-badge--neutral', kreis: 'app-icon-circle--neutral' }],
-    ['gebucht', {}, { text: 'Gebucht', rand: 'app-list-item--info', badge: 'app-corner-badge--info', kreis: 'app-icon-circle--info' }],
+describe('Befund H: beide Teilnehmerlisten zeigen denselben Stand', () => {
+  const PERSONEN: Array<[string, Record<string, unknown>, string]> = [
+    ['durch die Absage abgemeldet', { status: 'excused' }, 'Abgemeldet'],
+    ['selbst abgemeldet', { status: 'opted_out' }, 'Abgemeldet'],
+    ['nachgetragen abgemeldet', { status: 'excused', attendance_status: 'excused' }, 'Abgemeldet (nachgetragen)'],
+    ['gebucht', {}, 'Gebucht'],
   ];
 
   it.each(PERSONEN)('Liste ohne Zeitfenster: %s', async (_name, zusatz, erwartet) => {
     zustand.detail = termin({ participants: [teilnahme(1, 'Kim Konfi', zusatz)] });
     await oeffne();
-    expect(zeilenBild(zeileVon('Kim Konfi'))).toEqual(erwartet);
+    expect(zeilenStand(zeileVon('Kim Konfi'))).toBe(erwartet);
   });
 
-  it.each(PERSONEN)('Zeitfenster-Liste: %s -- dasselbe Bild', (_name, zusatz, erwartet) => {
+  it.each(PERSONEN)('Zeitfenster-Liste: %s -- derselbe Stand', (_name, zusatz, erwartet) => {
     const person = teilnahme(1, 'Kim Konfi', { timeslot_id: 1, ...zusatz }) as unknown as Participant;
     render(
       <TimeslotsSection
@@ -124,7 +109,7 @@ describe('Befund H: beide Teilnehmerlisten zeigen dieselbe Darstellung', () => {
         handleRemoveParticipant={() => undefined}
       />
     );
-    expect(zeilenBild(zeileVon('Kim Konfi'))).toEqual(erwartet);
+    expect(zeilenStand(zeileVon('Kim Konfi'))).toBe(erwartet);
   });
 
   it('die Zeitfenster-Liste wirft abgemeldete Zeilen nicht heraus -- Wartende stehen getrennt darunter', () => {

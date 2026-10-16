@@ -2,8 +2,8 @@
 // Spezifitaet eines Selektors so rechnen, wie der Browser es tut. Ein
 // Text-Test kann das Rendering nicht sehen, aber gegen ein Theme pruefen,
 // ob eine App-Regel jeden Theme-Selektor echt schlaegt -- dann ist die
-// Ladereihenfolge der Stylesheets egal. Genutzt von dunkelmodus.test.ts und
-// hinweisBoxSchrift.test.ts.
+// Ladereihenfolge der Stylesheets egal. Genutzt von den Stil-Waechtern unter
+// __tests__/ (wer: Suche nach `cssSpezifitaet`).
 
 /**
  * Alle Regeln eines Stylesheets als Selektor + Rumpf. At-Regeln (@media,

@@ -147,7 +147,7 @@ button.mail-zeile__kopf:focus-visible {
    Platz, der übrig ist (Grundbreite 0, wächst bis zu seiner vollen Breite),
    und kürzt deshalb zuerst; „Support" kürzt erst, wenn vom Konto nichts mehr
    steht. Bis 12.10.2026 kürzten beide nach ihrer Breite, und in der App stand
-   bei 390 px „S…" da (Rechnung und Messung: mailZeileKonto.test.ts). */
+   bei 390 px „S…" da. */
 .mail-zeile__konto {
   flex: 1 1 0;
   max-width: max-content;

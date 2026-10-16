@@ -116,7 +116,6 @@ vi.mock('../../../components/chat/modals/MembersModal', () => ({ default: () => 
 
 import { socketNachbau, scrollAufrufe } from './webChatAttrappe';
 import WebChatRaum from '../../../components/chat/web/WebChatRaum';
-import MembersModal from '../../../components/chat/modals/MembersModal';
 import { entwuerfeZuruecksetzen } from '../../../components/chat/web/chatEntwuerfe';
 import { gezeigteTrennerAnkerLeeren } from '../../../components/chat/chatVerlauf';
 
@@ -192,15 +191,22 @@ describe('Raum (Web): Kopf', () => {
     expect(screen.queryByRole('button', { name: 'Mitglieder anzeigen' })).not.toBeInTheDocument();
   });
 
-  it('Mitglieder anzeigen oeffnet das Fenster dieses Raums, als breiten Dialog (web-chat-modal) und ohne Kartenform', async () => {
-    IM_RAUM([m()]);
+  // Bis 15.10.2026 oeffnete der Knopf das Modal der App (MembersModal, breit
+  // per web-chat-modal). Seitdem ein eigenes Fenster der Web-Fassung (Simon:
+  // „mitglieder modal ist noch app design"); mehr in webChatRaumFenster.test.tsx.
+  it('Mitglieder anzeigen oeffnet das Fenster des Browsers mit den Mitgliedern dieses Raums, nicht das Modal der App', async () => {
+    h.apiGet.mockImplementation(async (url: string) => {
+      if (url.includes('/messages')) return { data: [m()] };
+      if (url === '/chat/rooms/7/participants') return { data: [{ user_id: 21, user_type: 'konfi', name: 'Lena Probe', joined_at: '2026-09-01T10:00:00Z' }] };
+      throw new Error(`unerwartet: ${url}`);
+    });
     await zeigen();
     fireEvent.click(screen.getByRole('button', { name: 'Mitglieder anzeigen' }));
-    expect(h.modal).toHaveBeenCalledTimes(1);
-    const { komponente, props, opts } = h.modal.mock.calls[0][0];
-    expect(komponente).toBe(MembersModal);
-    expect(props).toMatchObject({ roomId: 7, roomType: 'jahrgang' });
-    expect(opts).toEqual({ presentingElement: undefined, cssClass: 'web-chat-modal' });
+    const fenster = screen.getByRole('dialog', { name: 'Mitglieder' });
+    expect(await within(fenster).findByRole('list', { name: 'Mitglieder (1)' })).toHaveTextContent('Lena Probe');
+    // Im Jahrgangs-Chat ergeben sich die Mitglieder von selbst: nichts zu verwalten.
+    expect(within(fenster).queryByRole('button', { name: 'Mitglieder hinzufügen' })).toBeNull();
+    expect(h.modal).not.toHaveBeenCalled();
   });
 
   it('Umfragen anlegen kann nur die Leitung', async () => {
@@ -228,21 +234,17 @@ describe('Raum (Web): Verlauf', () => {
     expect(screen.getByText('Anfang des Chats')).toBeInTheDocument();
   });
 
-  it('eigene Nachrichten rechts ohne Namen, fremde mit Kreis und Namen -- im Direktchat ohne beides', async () => {
+  it('eigene Nachrichten ohne Namen, fremde mit Namen -- im Direktchat ohne', async () => {
     IM_RAUM([m({ content: 'Von Lena' }), m({ content: 'Von mir', sender_id: 4, sender_type: 'admin', sender_name: 'Alex Beispiel' })]);
     await zeigen();
     // Der Verlauf ist ein Protokoll: Vorleseprogramme sagen neue Nachrichten an.
     expect(screen.getByRole('log', { name: 'Nachrichten' })).toContainElement(blase('Von Lena'));
-    expect(blase('Von mir')).toHaveClass('web-chat-nachricht--eigene');
-    expect(blase('Von Lena')).toHaveClass('web-chat-nachricht--fremde');
     expect(within(blase('Von Lena')).getByText('Lena Probe')).toBeInTheDocument();
-    expect(blase('Von Lena').querySelector('.web-chat-avatar')).toHaveTextContent('L');
     expect(within(blase('Von mir')).queryByText('Alex Beispiel')).not.toBeInTheDocument();
     cleanup();
     IM_RAUM([m({ content: 'Im Direktchat', sender_id: 8, sender_name: 'Tom Teamer', sender_type: 'teamer' })]);
     await zeigen(DIREKT);
     expect(within(blase('Im Direktchat')).queryByText('Tom Teamer')).not.toBeInTheDocument();
-    expect(blase('Im Direktchat').querySelector('.web-chat-avatar')).toBeNull();
   });
 
   it('wer innerhalb von fuenf Minuten weiterschreibt, steht nur einmal mit Namen da', async () => {
@@ -254,7 +256,6 @@ describe('Raum (Web): Verlauf', () => {
     await zeigen();
     expect(within(blase('Erste')).getByText('Lena Probe')).toBeInTheDocument();
     expect(within(blase('Zweite')).queryByText('Lena Probe')).not.toBeInTheDocument();
-    expect(blase('Zweite')).toHaveClass('web-chat-nachricht--fortsetzung');
     expect(within(blase('Dritte')).getByText('Lena Probe')).toBeInTheDocument();
   });
 

@@ -58,12 +58,6 @@ describe('Stempel-Abschnitt: Darstellung', () => {
     expect(container.querySelectorAll('ion-icon').length).toBe(STEMPEL.length + 1);
   });
 
-  it('faerbt die Stempel in der Challenge-Farbe', () => {
-    const { container } = render(<ChallengeStempelSektion marks={STEMPEL} />);
-    const html = container.innerHTML;
-    expect(html).toContain('--app-color-challenges');
-  });
-
   it('bleibt ohne Stempel ganz weg -- keine Kachel mit einer Null darauf', () => {
     const { container } = render(<ChallengeStempelSektion marks={[]} />);
     expect(container.innerHTML).toBe('');

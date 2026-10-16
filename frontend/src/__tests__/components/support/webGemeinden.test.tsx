@@ -218,17 +218,6 @@ describe('Gemeinden (Web): Zeilen mit Gemeindeleitung', () => {
     expect(within(testhausen).getByText('Gesperrt')).toBeInTheDocument();
     expect(testhausen).toHaveTextContent('Keine Gemeindeleitung eingetragen');
   });
-
-  it('der Balken am Limit warnt ab 90 % und wird ab 100 % rot', async () => {
-    antworten();
-    await zeigen();
-    const fuellung = (name: string) => zeile(name).querySelector('.web-limit__fuellung') as HTMLElement;
-    expect(fuellung('Kirchengemeinde Musterdorf').className).toBe('web-limit__fuellung');
-    expect(fuellung('Kirchengemeinde Musterdorf').style.width).toBe('76%');
-    expect(fuellung('Kirchengemeinde Fährdorf').className).toContain('web-limit__fuellung--warnung');
-    expect(fuellung('Kirchengemeinde Lindenau').className).toContain('web-limit__fuellung--fehler');
-    expect(fuellung('Kirchengemeinde Lindenau').style.width).toBe('100%');
-  });
 });
 
 describe('Gemeinden (Web): Aktionen direkt in der Zeile', () => {

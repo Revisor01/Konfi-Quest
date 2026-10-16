@@ -62,8 +62,8 @@ describe('rollenName', () => {
 // und „Organisations-Admin" -- die Ansichten zeigen trotzdem das feste Wort.
 // Weitere Ansichten pruefen das Wort gerendert in ihren eigenen Tests:
 // Benutzerliste und offene Einladungen (rollenfarbeBenutzerverwaltung),
-// Chat-Mitglieder (rollenfarbeChatMitglieder), Jahrgangs-Zuweisung
-// (rollenfarbeJahrgangZugriff), Einladen (gemeindeEinladungGerendert).
+// Jahrgangs-Zuweisung (rollenfarbeJahrgangZugriff), Einladen
+// (gemeindeEinladungGerendert).
 describe('Alle Rollen-Beschriftungen lesen rollenName', () => {
   beforeEach(() => apiGet.mockReset());
   afterEach(() => cleanup());

@@ -400,10 +400,9 @@ ion-list-header ion-label {
      ganze Familie: jede Bereichsfarbe, die irgendwo als Schrift oder Symbol
      steht. Aliasse wie im Flaechen-Block (requests/purple = konfis,
      organizations = users, group = bonus). Die dunklen Werte stehen im
-     Dunkelblock; dunkelmodus.test.ts prueft hell = Bereichsfarbe und dunkel
-     mindestens 4,5:1 auf Karte und beiden Seitengruenden. Wer eine
-     Bereichsfarbe als `color` schreibt, nimmt das Text-Token -- der Test
-     zaehlt den Restbestand. */
+     Dunkelblock; dunkelmodus.test.ts prueft dunkel mindestens 4,5:1 auf
+     Karte und beiden Seitengruenden. Wer eine Bereichsfarbe als `color`
+     schreibt, nimmt das Text-Token -- der Test zaehlt den Restbestand. */
   --app-text-konfis: #5b21b6;
   --app-text-konfis-rgb: 91, 33, 182;
   --app-text-events: #dc2626;
@@ -484,10 +483,9 @@ ion-list-header ion-label {
      1,72. Wie bei den Bereichsfarben je Kriterium ein Text-Token: hell die
      Kriterienfarbe selbst (im Hellen aendert sich nichts), dunkel eine
      aufgehellte Stufe (Dunkelblock). getCriteriaTextColor() in
-     badgeCriteria.ts liefert das Token; dunkelmodus.test.ts haelt hell =
-     Flaechenfarbe (CRITERIA_COLORS) fest und dunkel mindestens 4,5:1 auf Karte
-     und beiden Seitengruenden. `standard` ist der Rueckfall fuer Typen ohne
-     eigene Farbe (CRITERIA_FALLBACK_COLOR). */
+     badgeCriteria.ts liefert das Token; dunkelmodus.test.ts prueft dunkel
+     mindestens 4,5:1 auf Karte und beiden Seitengruenden. `standard` ist
+     der Rueckfall fuer Typen ohne eigene Farbe (CRITERIA_FALLBACK_COLOR). */
   --app-text-kriterium-total-points: #ffd700;
   --app-text-kriterium-gottesdienst-points: #ff9500;
   --app-text-kriterium-gemeinde-points: #059669;
@@ -552,8 +550,7 @@ ion-list-header ion-label {
  * Karte) das Token bekam. Im Hellen unsichtbar, weil beide Wege bei #ffffff
  * enden -- deshalb fiel es seit dem Theme-Wechsel nie auf. Mit der Modus-
  * Klasse an der Wurzel (Ionic setzt sie auf <html>) steht die Regel bei
- * (0,4,1) und gewinnt unabhaengig von der Ladereihenfolge der Stylesheets;
- * dunkelmodus.test.ts rechnet die Spezifitaet gegen das Theme nach.
+ * (0,4,1) und gewinnt unabhaengig von der Ladereihenfolge der Stylesheets.
  */
 :root.ios ion-card.app-card:not(.ios-theme-disabled),
 :root.md ion-card.app-card:not(.ios-theme-disabled) {
@@ -1363,8 +1360,8 @@ ion-tab-bar.md ion-tab-button .tab-button-text {
    reicht der Kasten 2,3 px in den unteren Innenabstand (7 px), den der
    Knopf freigibt (::part(native) overflow visible im Theme).
    Die Regel steht in beiden Looks je in ihrem Block (Android oben), wie
-   jede Reiter-Regel (md3LayoutPasst.test.ts).
-   Vertrag: reiterUnterlaengen.test.ts. */
+   die uebrigen Reiter-Regeln eines Looks -- eine Ordnung im Stylesheet,
+   kein Test haelt sie fest. */
 ion-tab-bar.ios ion-tab-button ion-label {
   font-size: min(var(--app-text-reiter), 12px) !important;
   white-space: nowrap !important;
@@ -1821,7 +1818,7 @@ ion-item {
    Kartenregel oben. Das <p> bekommt dasselbe Token ausdruecklich (nicht
    `inherit`: variables.css setzt Schriftgroessen nur ueber Tokens). Nur
    direkte <p>: Formularzeilen in der Box (IonItem, IonLabel) behalten ihre
-   eigene Groesse. Vertrag: hinweisBoxSchrift.test.ts. */
+   eigene Groesse. */
 :root.ios .app-info-box:not(.ios-theme-disabled),
 :root.md .app-info-box:not(.ios-theme-disabled),
 :root.ios .app-info-box:not(.ios-theme-disabled) > p,
@@ -3133,7 +3130,7 @@ ion-button.app-modal-submit-btn--bonus {
    "Intrinsic values return 0 at that point").
 
    Feste Breite: vorher wie nachher 320px, Sprechblase 320 x 175 --
-   deckungsgleich. Vertrag im Test: popoverBreite.test.ts. */
+   deckungsgleich. */
 .badge-popover-auto-width,
 .badge-detail-popover {
   --width: min(320px, 85vw);
@@ -3171,7 +3168,7 @@ ion-button.app-modal-submit-btn--bonus {
 
    Deshalb hier: die Callout-Flaeche selbst, mit der Spezifitaet des Themes,
    und OHNE brightness -- der Filter war es, der dieselbe Farbe auf Blase und
-   Spitze unterschiedlich aussehen liess. Vertrag im Test: dunkelmodus.test.ts. */
+   Spitze unterschiedlich aussehen liess. */
 ion-popover.badge-popover-auto-width:not(.ios-theme-disabled)::part(callout-glass),
 ion-popover.badge-detail-popover:not(.ios-theme-disabled)::part(callout-glass) {
   background: var(--app-surface-card);
@@ -4236,8 +4233,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
      Deshalb hier Ionics Variablen an die App-Tokens binden, je Plattform.
      `html:root.ios` hat Spezifitaet (0,2,1) und schlaegt Ionics `:root.ios`
      (0,2,0) unabhaengig von der Ladereihenfolge; `html:root.ios ion-modal`
-     (0,2,2) schlaegt `:root.ios ion-modal` (0,2,1). dunkelmodus.test.ts
-     rechnet jede Bindung gegen die Palette nach.
+     (0,2,2) schlaegt `:root.ios ion-modal` (0,2,1).
 
      Die Leiter, von unten: Seitengrund (Ionic je Plattform, iOS #000000,
      md #121212; Seiten mit .app-gradient-background ihr Verlauf) < Leiste
@@ -4246,8 +4242,9 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
 
      Nur --ion-background-color bleibt Ionics: Daraus leitet die Palette ihre
      Helligkeitsstufen ab (step-50 ... step-950), an denen Eingabefelder,
-     Toasts und Datumswaehler haengen; und die Karten-Rechnung (dL*) im Test
-     ist gegen genau diese beiden Gruende gemacht. --ion-tab-bar-background
+     Toasts und Datumswaehler haengen; und die gemessenen Abstaende der
+     Karte (dL*, oben) beziehen sich auf genau diese beiden Gruende.
+     --ion-tab-bar-background
      braucht keine Bindung: ion-tab-bar.ios setzt das Glas selbst, und
      ion-tab-bar.md setzt --background direkt auf den Seitengrund. */
   html:root.ios,
@@ -4261,8 +4258,7 @@ ion-toggle.app-toggle--info { --background-checked: var(--app-color-info) !impor
        keinen Blur, die Leiste MUSS deckend sein -- aber im Leisten-Ton der
        App (#1c1c1e), nicht in Ionics. Dieselbe Regel steht fuer den
        Hellmodus ausserhalb dieses Blocks (bei der :root-Glasregel); hier
-       bleibt sie, weil dunkelmodus.test.ts jede Bindung des Dunkelblocks
-       gegen Ionics Palette nachrechnet. */
+       bleibt sie bei den uebrigen Bindungen des Dunkelblocks. */
     --ion-toolbar-background: rgb(var(--app-glasleiste-rgb));
     /* Meldungen und Aktionsblaetter: Ionic nimmt auf md step-100 (#2a2a2a),
        ein weiterer Ton. Sie sind Karten ueber einem abgedunkelten Grund und
@@ -4637,11 +4633,9 @@ ion-popover ion-item.app-org-switcher__eintrag--aktiv ion-label {
    bleibt. Verworfen: top -7 / right 4 (Abstand 14,87, 100 % im Kreis, aber
    10x11px auf dem Symbol -- Simon: "es muss ueber das Icon gehen", nicht
    darauf) und die Zahl ausserhalb des Knopfes (braeuchte einen Anker um
-   den Knopf herum; die Pillen-Regel oben und die iOS-Geometrie im Test
+   den Knopf herum; die Pillen-Regel oben und die gemessene iOS-Geometrie
    haengen am direkten Kind von ion-buttons -- ein Umbau, der iOS anfasst,
    fuer ein Android-Problem, das eine Zeile loest).
-
-   Die Zahlen stehen als Vertrag im Test (postfachGlocke.test.tsx).
    ==================================================================== */
 .app-postfach-glocke {
   position: relative;
@@ -4704,7 +4698,7 @@ ion-buttons:has(> .app-postfach-glocke) {
    Mitteilung ist keine Aufgabe; im Dunkelmodus hellt Ionics Palette sie
    selbst auf. 10 px: gross genug, um ihn zu sehen, klein genug, dass er
    nicht mit der Zahl der Warteschlange (18 px) oder der roten Kugel (16 px)
-   verwechselt wird. Vertrag: postfachGlocke.test.tsx, postfachModal.test.tsx. */
+   verwechselt wird. */
 .app-ungelesen-punkt {
   display: block;
   width: 10px;

@@ -2,11 +2,12 @@
 // Supports (10.10.2026), je mit erlaubtem und verbotenem Fall:
 // - WebAktion `zeigen` und `deaktiviert`: Rechte je Zeile (Bearbeiten nur bei
 //   can_edit, das eigene Konto nicht loeschen) in Liste und Kacheln;
-// - WebListe `weitere` und `aktionenBreite`: weitere Knoepfe in derselben
-//   Spalte vor Bearbeiten und Loeschen (Passwort, Schreiben, Zurueckziehen);
+// - WebListe `weitere`: weitere Knoepfe in derselben Spalte vor Bearbeiten
+//   und Loeschen (Passwort, Schreiben, Zurueckziehen);
 // - WebListenSeite ohne `kacheln`: nur Liste, kein Umschalter, nichts gemerkt;
-//   Suche ohne `felder` (die Seite filtert selbst); Reiter mit roter Zahl;
-//   `vorInhalt` zwischen Werkzeugzeile und Liste; ohne Werkzeuge keine Zeile.
+//   Suche ohne `felder` (die Seite filtert selbst).
+// Breiten, Farben und die Lage der Teile sind Layout und werden nicht
+// festgeschrieben (Simon, 15.10.2026).
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, within, renderHook, act } from '@testing-library/react';
@@ -20,7 +21,6 @@ import WebKacheln from '../../../components/web/WebKacheln';
 import WebListenSeite, { type WebListenSeiteProps } from '../../../components/web/WebListenSeite';
 import { WebBildKarteSymbol } from '../../../components/web/WebBildKarte';
 import { ansichtSchluessel, useAnsicht } from '../../../components/web/useAnsicht';
-import { wahlen } from '../../../seiten/beschreibung';
 import { ICON_GRUPPE } from '../../../components/shared/icons';
 
 afterEach(() => {
@@ -84,23 +84,10 @@ describe('WebAktion: zeigen und deaktiviert', () => {
     expect(within(carl).queryByRole('button', { name: 'Carl bearbeiten' })).toBeNull();
     expect(within(carl).getByRole('button', { name: 'Carl löschen' })).toBeDisabled();
   });
-
-  it('Kacheln: ohne sichtbare Aktion und ohne `fuss` gibt es keinen Fuss', () => {
-    const { container } = render(
-      <WebKacheln<Person>
-        beschriftung="Leute"
-        eintraege={[LEUTE[1]]}
-        schluessel={(p) => p.id}
-        karte={(p) => ({ akzent: 'var(--app-color-konfis)', symbol: <WebBildKarteSymbol text="AB" />, label: 'Person', titel: p.name })}
-        bearbeiten={bearbeiten()}
-      />,
-    );
-    expect(container.querySelector('.web-bildkarte__fuss')).toBeNull();
-  });
 });
 
 describe('WebListe: weitere Knoepfe', () => {
-  it('stehen in der Spalte der Aktionen vor Bearbeiten und Loeschen; die Breite kommt von der Seite', () => {
+  it('stehen in der Spalte der Aktionen vor Bearbeiten und Loeschen', () => {
     render(
       <WebListe beschriftung="Leute" spalten={SPALTEN} zeilen={LEUTE} zeileSchluessel={(p) => p.id}
         weitere={(p) => <button type="button">{`${p.name} schreiben`}</button>}
@@ -110,7 +97,6 @@ describe('WebListe: weitere Knoepfe', () => {
     );
     const kopfzeile = within(screen.getByRole('table', { name: 'Leute' })).getAllByRole('columnheader');
     expect(kopfzeile.map((c) => c.textContent)).toEqual(['Name', 'Aktionen']);
-    expect(kopfzeile[1]).toHaveStyle({ width: '300px' });
     const knoepfe = within(zeile('Bea')).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent);
     expect(knoepfe).toEqual(['Bea schreiben', 'Bea bearbeiten', 'Bea löschen']);
   });
@@ -122,11 +108,6 @@ describe('WebListe: weitere Knoepfe', () => {
     expect(within(zeile('Carl')).getByRole('button', { name: 'Carl zurückziehen' })).toBeInTheDocument();
   });
 });
-
-const STAENDE = wahlen([
-  { schluessel: 'offen', label: 'Offen' },
-  { schluessel: 'neu', label: 'Neu', zahlText: () => 'neu' },
-]);
 
 type SeiteProps = Partial<WebListenSeiteProps<Person, 'offen' | 'neu'>>;
 const Seite: React.FC<SeiteProps> = (p) => (
@@ -154,14 +135,6 @@ describe('WebListenSeite: nur Liste', () => {
       kacheln={{ beschriftung: 'Leute', schluessel: (x) => x.id, karte: (x) => ({ akzent: 'red', symbol: null, label: 'P', titel: x.name }) }} />);
     expect(screen.getByRole('group', { name: 'Ansicht' })).toBeInTheDocument();
   });
-
-  it('ohne Reiter, Filter, Suche, Knoepfe und Kacheln steht keine Werkzeugzeile da; mit Suche schon', () => {
-    const { container, unmount } = render(<Seite />);
-    expect(container.querySelector('.web-werkzeuge')).toBeNull();
-    unmount();
-    const zweite = render(<Seite suche={{ beschriftung: 'Suchen', wert: '', onWert: vi.fn() }} />);
-    expect(zweite.container.querySelector('.web-werkzeuge')).not.toBeNull();
-  });
 });
 
 describe('WebListenSeite: die Seite filtert selbst', () => {
@@ -182,24 +155,6 @@ describe('WebListenSeite: die Seite filtert selbst', () => {
     expect(within(screen.getByRole('table', { name: 'Leute' })).getAllByRole('row')).toHaveLength(3);
     fireEvent.change(screen.getByRole('combobox', { name: 'Art' }), { target: { value: 'alle' } });
     expect(onWert).toHaveBeenCalledWith('alle');
-  });
-});
-
-describe('WebListenSeite: Reiter mit roter Zahl und Inhalt vor der Liste', () => {
-  it('rot nur beim Reiter, den die Seite nennt, und nur ueber null', () => {
-    render(<Seite reiter={{ beschriftung: 'Stand', wahlen: STAENDE, wert: 'offen', onWert: vi.fn(), zahlen: { offen: 4, neu: 2 }, rot: (w) => w === 'neu' }} />);
-    const gruppe = screen.getByRole('group', { name: 'Stand' });
-    const zahl = (name: RegExp) => within(gruppe).getByRole('button', { name }).querySelector('.web-chip__zahl') as HTMLElement;
-    expect(zahl(/^Neu/)).toHaveClass('web-chip__zahl--rot');
-    expect(zahl(/^Offen/)).not.toHaveClass('web-chip__zahl--rot');
-  });
-
-  it('`vorInhalt` steht zwischen Werkzeugzeile und Liste', () => {
-    render(<Seite suche={{ beschriftung: 'Suchen', wert: '', onWert: vi.fn() }} vorInhalt={<div data-testid="leiste">Auswahl</div>} />);
-    const leiste = screen.getByTestId('leiste');
-    expect(leiste.previousElementSibling).toHaveClass('web-werkzeuge');
-    expect(leiste.nextElementSibling).toHaveClass('web-karte');
-    expect(within(leiste.nextElementSibling as HTMLElement).getByRole('table', { name: 'Leute' })).toBeInTheDocument();
   });
 });
 

@@ -20,6 +20,32 @@ vi.mock('../../services/biometrics', () => ({
 
 import AppSperrbildschirm from '../../components/common/AppSperrbildschirm';
 
+/** Alle Werte, die das Stylesheet einem Token gibt (hell, dunkel, je Plattform). */
+const definitionen = (css: string, token: string): string[] =>
+  [...css.matchAll(new RegExp(`${token}:\\s*([^;]+);`, 'g'))].map((m) => m[1].trim());
+
+/** Ein Wert aus dem Stylesheet als Hexfarben -- var() ueber alle Definitionen aufgeloest. */
+const hexWerte = (css: string, wert: string): string[] => {
+  const variable = /^var\((--[\w-]+)(?:,\s*([^)]+))?\)$/.exec(wert);
+  if (variable) {
+    const werte = definitionen(css, variable[1]);
+    return (werte.length > 0 ? werte : [variable[2] ?? '']).flatMap((w) => hexWerte(css, w.trim()));
+  }
+  // Was keine sechsstellige Hexfarbe ist, laesst sich nicht nachrechnen -- und faellt auf.
+  return [/^#[0-9a-fA-F]{6}$/.test(wert) ? wert : `nicht berechenbar: ${wert}`];
+};
+
+const kanal = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+const helligkeit = (hex: string) => {
+  const [r, g, b] = [1, 3, 5].map((i) => kanal(parseInt(hex.slice(i, i + 2), 16) / 255));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+/** Kontrastverhaeltnis nach WCAG 2.x. */
+const kontrast = (a: string, b: string) => {
+  const [hell, dunkel] = [helligkeit(a), helligkeit(b)].sort((x, y) => y - x);
+  return (hell + 0.05) / (dunkel + 0.05);
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
   mockVerfuegbar.mockResolvedValue({ verfuegbar: true, art: 'faceId', bezeichnung: 'Face ID', sinnbild: 'gesicht' });
@@ -82,39 +108,6 @@ describe('Der Sperrbildschirm', () => {
     // ein offenes Modal darf den Sperrbildschirm nicht ueberlagern.
     const zIndex = Number(regeln.match(/z-index:\s*(\d+)/)?.[1]);
     expect(zIndex).toBeGreaterThan(60000);
-  });
-
-  it('legt den Verlauf deckend ueber die ganze Flaeche', () => {
-    // Der Aurora-Verlauf liegt auf ::before, damit die Grundfarbe der
-    // Hauptregel deckend bleibt. Dann muss aber auch dieses ::before die
-    // ganze Flaeche fuellen und selbst undurchsichtig sein — sonst waere
-    // der Verlauf nur Zierde ueber durchscheinendem Inhalt.
-    const css = readFileSync(
-      resolve(__dirname, '../../..', 'src/theme/variables.css'),
-      'utf-8'
-    );
-    const block = css.slice(css.indexOf('.app-sperrbildschirm::before {'));
-    const regeln = block.slice(0, block.indexOf('}'));
-
-    expect(regeln).toContain('inset: 0');
-    expect(regeln).toContain('var(--app-gradient-aurora)');
-    expect(regeln).not.toContain('backdrop-filter');
-    // Eine Deckkraft auf der Verlaufsflaeche selbst wuerde alles darunter
-    // durchscheinen lassen (das Wasserzeichen darf sie haben, diese nicht).
-    expect(regeln).not.toMatch(/(^|[\s;{])opacity\s*:/);
-  });
-
-  it('haelt den sicheren Bereich frei', () => {
-    // Notch und Home-Indicator: der Inhalt darf nicht darunter liegen.
-    const css = readFileSync(
-      resolve(__dirname, '../../..', 'src/theme/variables.css'),
-      'utf-8'
-    );
-    const block = css.slice(css.indexOf('.app-sperrbildschirm {'));
-    const regeln = block.slice(0, block.indexOf('}'));
-
-    expect(regeln).toContain('env(safe-area-inset-top');
-    expect(regeln).toContain('env(safe-area-inset-bottom');
   });
 
   it('verraet nichts ueber die angemeldete Person', async () => {
@@ -233,27 +226,40 @@ describe('Der Rueckweg — niemand darf sich aussperren', () => {
     await act(async () => { freigeben('abgebrochen'); });
   });
 
-  it('gestaltet den Rueckweg als vollen Knopf, nicht als blassen Link', () => {
-    // Auf dem Verlauf muesste ein "clear"-Knopf in Grau untergehen. Der
-    // Rueckweg darf gestalterisch zweite Wahl sein, aber nie so weit
-    // zuruecktreten, dass man ihn in einer Notlage nicht findet.
-    const quelle = readFileSync(
-      resolve(__dirname, '../../..', 'src/components/common/AppSperrbildschirm.tsx'),
-      'utf-8'
-    );
-    expect(quelle).toContain('app-sperrbildschirm__abmelden');
-    expect(quelle).not.toContain('color="medium"');
-    expect(quelle).not.toContain('fill="clear"');
+  it('ist auf dem Verlauf zu sehen: die Schrift hebt sich von jeder Farbstufe mindestens 3:1 ab', async () => {
+    // Der Rueckweg darf gestalterisch zweite Wahl sein, aber nie so weit
+    // zuruecktreten, dass man ihn in einer Notlage nicht findet. Ionics Grau
+    // (color="medium") laege auf dem Aurora-Verlauf bei 1,07 bis 1,67:1.
+    // Geprueft wird die Schriftfarbe aus dem Stylesheet gegen die Farbstufen
+    // des Verlaufs, die auf der Flaeche liegen (bis 100 %) -- welche Farbe es
+    // ist, legt der Test nicht fest. 3:1 ist die Grenze fuer Bedienelemente
+    // (WCAG 1.4.11); die 4,5:1 fuer Text erreicht auch Weiss nicht an jeder
+    // Stelle (3,23:1 auf #5b8def, siehe "Kontrast im Hellmodus" in
+    // docs/offene-befunde.md).
+    mockOeffnen.mockResolvedValue('abgebrochen');
+    render(<AppSperrbildschirm onEntsperrt={vi.fn()} onAbmelden={vi.fn()} />);
+    const knopf = (await screen.findByText('Abmelden')).closest('ion-button') as HTMLElement;
+    // Eine Ionic-Farbe am Knopf (color="...") ueberstimmt die Schriftfarbe
+    // des Stylesheets -- dann gaelte die Rechnung unten nicht mehr.
+    expect(knopf.getAttribute('color')).toBeNull();
 
-    const css = readFileSync(
-      resolve(__dirname, '../../..', 'src/theme/variables.css'),
-      'utf-8'
-    );
-    const block = css.slice(css.indexOf('.app-sperrbildschirm__abmelden {'));
-    const regeln = block.slice(0, block.indexOf('}'));
-    // Weisse Schrift in voller Deckkraft plus eigener Rahmen.
-    expect(regeln).toContain('--color: var(--app-weiss)');
-    expect(regeln).toContain('--border-width: 1px');
+    const css = readFileSync(resolve(__dirname, '../../..', 'src/theme/variables.css'), 'utf-8')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    const regel = /\.app-sperrbildschirm__abmelden\s*\{([^}]*)\}/.exec(css)![1];
+    const schrift = /(?:^|[;\s])--color:\s*([^;]+);/.exec(regel)![1].trim();
+    const schriftFarben = hexWerte(css, schrift);
+    const stufen = definitionen(css, '--app-gradient-aurora').flatMap((verlauf) =>
+      [...verlauf.matchAll(/(#[0-9a-fA-F]{6})\s+(-?\d+(?:\.\d+)?)%/g)]
+        .filter(([, , lage]) => Number(lage) <= 100)
+        .map(([, hex]) => hex));
+    expect(schriftFarben.length).toBeGreaterThan(0);
+    expect(schriftFarben.filter((f) => !/^#[0-9a-fA-F]{6}$/.test(f))).toEqual([]);
+    expect(stufen.length).toBeGreaterThan(1);
+
+    const zuSchwach = schriftFarben.flatMap((farbe) => stufen
+      .map((stufe) => ({ farbe, stufe, verhaeltnis: Math.round(kontrast(farbe, stufe) * 100) / 100 }))
+      .filter(({ verhaeltnis }) => verhaeltnis < 3));
+    expect(zuSchwach).toEqual([]);
   });
 
   it('bleibt bedienbar, wenn die Biometrie dauerhaft scheitert', async () => {

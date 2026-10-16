@@ -1,7 +1,7 @@
 // Bausteine fuer die Web-Fassungen der haeufigen Formulare (Simon,
 // 11.10.2026: „Web braucht eigene kompaktere Modale überall"): Datum und
-// Uhrzeit, Mehrfachauswahl, breiter Dialog, Grenzen und Platzhalter der
-// Felder. Gerendert wie eine Person sie bedient.
+// Uhrzeit, Mehrfachauswahl, Grenzen und Platzhalter der Felder. Gerendert
+// wie eine Person sie bedient.
 import { describe, it, expect, vi } from 'vitest';
 import React, { useState } from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
@@ -11,7 +11,6 @@ vi.mock('@ionic/react', async () => (await import('../support/ionicAttrappe')).i
 import WebDatum from '../../../components/web/WebDatum';
 import { fuerFeld, ausFeld } from '../../../components/web/webDatumWert';
 import WebMehrfachAuswahl from '../../../components/web/WebMehrfachAuswahl';
-import WebDialog from '../../../components/web/WebDialog';
 import WebFeld from '../../../components/web/WebFeld';
 import WebTextfeld from '../../../components/web/WebTextfeld';
 
@@ -123,15 +122,7 @@ describe('WebMehrfachAuswahl', () => {
   });
 });
 
-describe('WebDialog breit und WebFeld mit Grenzen', () => {
-  it('breit: Klasse für 720 px; ohne: die schmale Form', () => {
-    const { unmount } = render(<WebDialog titel="Neues Event" onSchliessen={() => {}} breit><p>Inhalt</p></WebDialog>);
-    expect(screen.getByRole('dialog', { name: 'Neues Event' }).className).toBe('web-dialog web-dialog--breit');
-    unmount();
-    render(<WebDialog titel="Neue Kategorie" onSchliessen={() => {}}><p>Inhalt</p></WebDialog>);
-    expect(screen.getByRole('dialog', { name: 'Neue Kategorie' }).className).toBe('web-dialog');
-  });
-
+describe('WebFeld mit Grenzen', () => {
   it('WebFeld: Zahl mit Grenzen und Schritt, Platzhalter als Beispiel -- der Name bleibt die Beschriftung', () => {
     render(<WebFeld label="Punkte" typ="number" wert="2" onWert={() => {}} min={1} max={10} schritt={1} platzhalter="z. B. 2" />);
     const feld = screen.getByRole('spinbutton', { name: 'Punkte' });

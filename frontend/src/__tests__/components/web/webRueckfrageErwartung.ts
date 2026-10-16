@@ -1,11 +1,10 @@
-// Wie eine Rückfrage der Web-Fassung aussehen muss -- gemeinsam für den Test
-// des WebDialog und die Tests der Stellen, die eine eigene Rückfrage zeigen
-// („Ungespeicherte Änderungen" bei Event und Badge, „Eingaben verwerfen?"
-// beim Anlegen einer Gemeinde, „Beitrag ausblenden", „Datei löschen" in der
-// Zeile des Materials). Sie sollen aussehen wie die Rückfragen der App im
-// Browser (theme/rueckfragen.css): Symbol vorn, der folgenreiche Knopf rot
-// gefüllt. jsdom rechnet keine Stile; geprüft wird die Kennzeichnung, an der
-// das Stylesheet ansetzt -- das Stylesheet selbst prüft
+// Woran eine Rückfrage der Web-Fassung zu erkennen ist -- gemeinsam für die
+// Tests der Stellen, die eine eigene Rückfrage in einem Fenster oder einer
+// Zeile zeigen (wer: Suche nach `erwarteWebRueckfrage`). An dieser
+// Kennzeichnung setzt theme/rueckfragen.css an: dasselbe Symbol und derselbe
+// rot gefüllte Knopf wie bei den Rückfragen der App im Browser. jsdom rechnet
+// keine Stile; geprüft wird die Kennzeichnung. Dass das Stylesheet dort die
+// Farbpaare benutzt, deren Kontrast gerechnet ist, prüft
 // __tests__/utils/rueckfragenOptik.test.tsx.
 import { expect } from 'vitest';
 import type { RueckfrageArt } from '../../../utils/rueckfragenOptik';

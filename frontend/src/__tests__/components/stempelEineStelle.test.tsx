@@ -164,6 +164,14 @@ describe('Stempel stehen an einer Stelle (Waechter)', () => {
     expect(manage).not.toMatch(/<KachelRaster/);
     expect(manage).not.toMatch(/import KachelRaster/);
   });
+
+  it('der Challenge-Zaehler der Konfi-Ansicht nennt Stempel, nicht Abzeichen', () => {
+    // Er stand als "ABZEICHEN" direkt ueber einem Abschnitt "Deine Stempel".
+    // Der Waechter stempelStattAbzeichen suchte nur nach 'Abzeichen' in
+    // gemischter Schreibweise und liess die Versalien durch.
+    expect(konfi).toContain("label: 'STEMPEL'");
+    expect(konfi).not.toContain("label: 'ABZEICHEN'");
+  });
 });
 
 describe('Challenge-Seite von Team und Leitung: erhaltene und offene Stempel', () => {

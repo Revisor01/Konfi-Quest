@@ -43,9 +43,4 @@ describe('LadeStandZeile', () => {
     expect(screen.getByText('Wird geladen… 0 %')).toBeInTheDocument();
     expect(screen.getByRole('progressbar').getAttribute('aria-valuenow')).toBe('0');
   });
-
-  it('der Balken nimmt die übergebene Farbe an', () => {
-    zeile({ laedt: true, prozent: 40, farbe: 'rgb(10, 20, 30)' });
-    expect(screen.getByRole('progressbar').parentElement!.style.color).toBe('rgb(10, 20, 30)');
-  });
 });

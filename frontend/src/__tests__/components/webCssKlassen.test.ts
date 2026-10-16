@@ -83,24 +83,4 @@ describe('Stylesheets der Web-Fassungen: eine Klasse, eine Datei', () => {
   it('keine Klasse steht in zwei Dateien', () => {
     expect(doppelt(alle)).toEqual([]);
   });
-
-  it('die aufgeloeste Altlast: jede der vier Klassen gehoert genau einer Datei', () => {
-    expect(alle.get('web-beschreibung')).toEqual(['web/termine.css']);
-    expect(alle.get('web-material-beschreibung')).toEqual(['web/leitung.css']);
-    expect(alle.get('web-menue')).toEqual(['web/chat.css']);
-    expect(alle.get('web-teilnehmer-menue')).toEqual(['web/termine.css']);
-    expect(alle.get('web-rolle')).toEqual(['web/start.css']);
-    expect(alle.get('web-rolle--leitung')).toEqual(['web/start.css']);
-    expect(alle.get('web-rollenmarke')).toEqual(['web/leitung.css']);
-    expect(alle.get('web-rollenmarke--leitung')).toEqual(['web/leitung.css']);
-  });
-
-  it('der Fehler vom 06.10.2026: Kreis und Balken der Konfi-Liste gehoeren je einer Datei, das Profil und der Balken der Konfi-Seite start.css', () => {
-    // Der Kreis ist seit 10.10.2026 ein allgemeiner Baustein (WebKreis) und steht in web-ansicht.css.
-    expect(alle.get('web-initialen')).toEqual(['web-ansicht.css']);
-    expect(alle.get('web-punktebalken')).toEqual(['web/leitung.css']);
-    expect(alle.get('web-avatar')).toEqual(['web/start.css']);
-    expect(alle.get('web-fortschritt')).toEqual(['web/start.css']);
-    expect(alle.get('web-fortschritt__fuellung')).toEqual(['web/start.css']);
-  });
 });

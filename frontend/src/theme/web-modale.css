@@ -34,7 +34,7 @@
 /* Ein App-Modal: zentriert, 560 px breit, so hoch wie der Inhalt.
    Die Spezifität (0,4,2) schlägt die Themes (ios27: Karte (0,3,1),
    md3 (0,2,1)) unabhängig von der Ladereihenfolge. */
-html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) {
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal):not(:has([data-dialogname])) {
   --width: min(560px, calc(100% - 48px));
   --max-width: 560px;
   --height: auto;
@@ -44,7 +44,7 @@ html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-dat
 
 /* Der Schatten direkt an der Hülle: Ionic legt ihn bei Karten-Modalen auf
    ein eigenes Element, das bei Höhe auto keine Höhe hat. */
-html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname]))::part(content) {
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal):not(:has([data-dialogname]))::part(content) {
   box-shadow: var(--app-schatten-modal);
 }
 
@@ -52,7 +52,7 @@ html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-dat
    Seiten (Hülle des Hooks > IonPage der Komponente). Die innere steht bei
    Ionic absolut und mit fester Größe -- mit Höhe auto fiel jedes dieser
    Modale auf 0 px zusammen (gemessen an 13 Modalen). */
-html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) > .ion-page > .ion-page {
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal):not(:has([data-dialogname])) > .ion-page > .ion-page {
   position: relative;
   contain: layout style;
   min-height: 0;
@@ -60,7 +60,7 @@ html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-dat
 }
 
 /* Eine schlanke Kopfzeile wie die Dialoge der Web-Fassung (sonst 64-70 px). */
-html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])) ion-header ion-toolbar {
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal):not(:has([data-dialogname])) ion-header ion-toolbar {
   --min-height: 52px;
   padding-top: 0;
 }
@@ -71,7 +71,7 @@ html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-dat
 
 /* Kamera (QR-Code scannen): Das Bild füllt die Fläche; ohne feste Höhe
    hätte es keine. */
-html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal, .web-chat-modal):not(:has([data-dialogname])):has(.app-modal-kamera) {
+html[data-layout='breit'] ion-modal:is(.modal-default, .modal-card):not(.ion-datetime-button-overlay, .wrapped-modal-fullscreen, .file-viewer-modal):not(:has([data-dialogname])):has(.app-modal-kamera) {
   --height: min(640px, calc(100% - 96px));
 }
 

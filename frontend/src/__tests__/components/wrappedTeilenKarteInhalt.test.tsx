@@ -121,21 +121,6 @@ describe('Teilen-Karte zeigt echten Inhalt', () => {
     }
   });
 
-  it('jede Karte traegt eine Hintergrundklasse', () => {
-    // Ohne Klasse ist die Flaeche schwarz. Die dynamischen Seiten teilen
-    // sich eine Sammelklasse -- der Doppelpunkt ist in CSS ungueltig.
-    const erwarteteKlasse: Record<string, string> = {
-      'kategorie:gottesdienst': 'share-card--kategorie-seite',
-      'kategorie:freizeit': 'share-card--kategorie-seite',
-      'datum:advent': 'share-card--datums-seite',
-    };
-    for (const [slideKey] of ERWARTET) {
-      const karte = zeige(slideKey).querySelector('.share-card') as HTMLElement;
-      expect(karte.className, slideKey)
-        .toContain(erwarteteKlasse[slideKey] || `share-card--${slideKey}`);
-    }
-  });
-
   // ---------------------------------------------------------------
   // Simons vier Aenderungen vom 07.09.2026, je einzeln festgehalten.
   // ---------------------------------------------------------------

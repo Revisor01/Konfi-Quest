@@ -66,16 +66,23 @@ const DIESE_DATEI = relative(SRC, __filename).split('\\').join('/');
  *  09.10.2026 +1: ohneTestLeitplanke.test.ts -- Leitplanke wie diese: sie
  *  liest die Testdateien, um zu sehen, ob jede Datei in utils/, hooks/ und
  *  services/ in einem Test vorkommt; rendern laesst sich dabei nichts. */
-// 83 seit 10.10.2026: kopfleisteAndroid prueft wie tabLeisteAndroid eine
-// Regel in variables.css; jsdom rechnet die Kaskade der Ionic-Variablen nicht,
-// rendern zeigte nichts.
+// 83 seit 10.10.2026: ein Waechter fuer die Android-Kopfleiste prueft wie
+// tabLeisteAndroid eine Regel in variables.css; jsdom rechnet die Kaskade der
+// Ionic-Variablen nicht, rendern zeigte nichts.
 // 84 seit 12.10.2026: components/support/mailZeileKonto.test.ts -- Stil-Waechter
 // fuer die Zeile einer ausgehenden Mail im Verlauf: „Support“ bleibt ganz, das
 // Konto kuerzt zuerst. jsdom rechnet kein Flex-Layout; der Test liest die
 // Flex-Regeln aus MailGespraeche.css und rechnet das Kuerzen nach der
 // Spezifikation mit gemessenen Breiten nach (gegen die Messung im Browser
 // abgeglichen). Rendern saehe den Befund („S…“ bei 390 px) nicht.
-const OBERGRENZE = 84;
+// 15.10.2026: Layout bleibt frei aenderbar (Simon), reine Layout-Waechter
+// sind geloescht -- Reiter-Unterlaengen, Android-Kopfleiste, Datumsfelder im
+// Termin-Fenster, md3LayoutPasst, tabLeisteAndroid, zusageKarteHoehe,
+// wrappedBildNichtVerdeckt, challenges/challengeIconFarbe, listenAbstaendeProfil,
+// support/mailZeileKonto, hinweisBoxSchrift, popoverBreite, tabZaehlerIos;
+// wrappedSeitenHabenBilder prueft nur noch, dass die Bilddateien da sind, und
+// liest keinen Quelltext mehr.
+const OBERGRENZE = 70;
 
 // Nicht gezaehlt: __tests__/config/ und __tests__/betrieb/ (29.09.2026, beim
 // Zusammenfuehren der Pakete A-H). Sie pruefen Konfigurationsdateien --
@@ -94,7 +101,6 @@ const BEKANNT: string[] = [
   '__tests__/components/beruehrungsziele.test.ts',
   '__tests__/components/bewegungsreduktion.test.ts',
   '__tests__/components/bibelUebersetzungenVollstaendig.test.ts',
-  '__tests__/components/challenges/challengeIconFarbe.test.ts',
   '__tests__/components/challenges/challengesSeiteGeteilt.test.ts',
   '__tests__/components/challenges/stempelStattAbzeichen.test.ts',
   '__tests__/components/chatNutzertypDreiWerte.test.ts',
@@ -107,26 +113,16 @@ const BEKANNT: string[] = [
   '__tests__/components/formularfelderBenannt.test.ts',
   '__tests__/components/gruppenbezeichnungTeam.test.ts',
   '__tests__/components/haptikBrichtNichtAb.test.ts',
-  '__tests__/components/hinweisBoxSchrift.test.ts',
   '__tests__/components/keinStillesOfflineScheitern.test.ts',
   '__tests__/components/klickbareElementeBedienbar.test.ts',
   '__tests__/components/kontoModaleAlleDreiAnsichten.test.ts',
-  '__tests__/components/listenAbstaendeProfil.test.ts',
-  '__tests__/components/md3LayoutPasst.test.ts',
   '__tests__/components/modaleBenannt.test.ts',
   '__tests__/components/modaleUeberHookBenannt.test.ts',
   '__tests__/components/onboardingTourGeteilt.test.ts',
-  '__tests__/components/popoverBreite.test.ts',
   '__tests__/components/rankingFeldnamen.test.ts',
-  '__tests__/components/reiterUnterlaengen.test.ts',
   '__tests__/components/rollenGleichbehandlung.test.ts',
-  '__tests__/components/kopfleisteAndroid.test.ts',
   '__tests__/components/stylesheetsParsen.test.ts',
-  '__tests__/components/support/mailZeileKonto.test.ts',
-  '__tests__/components/tabLeisteAndroid.test.ts',
-  '__tests__/components/tabZaehlerIos.test.ts',
   '__tests__/components/tageUndKalendertag.test.ts',
-  '__tests__/components/terminModalDatumsfelder.test.ts',
   '__tests__/components/typografieTokens.test.ts',
   '__tests__/components/umlauteUndZurueckIcon.test.ts',
   '__tests__/components/walkthroughVersionEinheitlich.test.ts',
@@ -134,15 +130,12 @@ const BEKANNT: string[] = [
   '__tests__/components/webCssKlassen.test.ts',
   '__tests__/components/webDetailSeiteEinGeruest.test.ts',
   '__tests__/components/wrappedBewegungReduzieren.test.ts',
-  '__tests__/components/wrappedBildNichtVerdeckt.test.ts',
   '__tests__/components/wrappedDramaturgieHatRenderer.test.ts',
-  '__tests__/components/wrappedSeitenHabenBilder.test.ts',
   '__tests__/components/wrappedSprueche.test.ts',
   '__tests__/components/wrappedTeilenAlleSeiten.test.ts',
   '__tests__/components/wrappedTexteUmlaute.test.ts',
   '__tests__/components/zentraleIcons.test.ts',
   '__tests__/components/zoomUndSchrift.test.ts',
-  '__tests__/components/zusageKarteHoehe.test.ts',
   '__tests__/contexts/badgeResync.test.ts',
   '__tests__/dateiverweiseImCode.test.ts',
   '__tests__/handbuchBadgeZielgruppen.test.ts',
